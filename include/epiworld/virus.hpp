@@ -78,14 +78,14 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_mutation(
     MutFun<TSeq> fun
 ) {
-    mutation_fun = std::make_shared(fun);
+    mutation_fun = std::make_shared<MutFun<TSeq>>(fun);
 }
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_transmisibility(
-    ransFun<TSeq> fun
+    TransFun<TSeq> fun
 ) {
-    transmisibility_fun = std::make_shared(fun);
+    transmisibility_fun = std::make_shared<TransFun<TSeq>>(fun);
 }
 
 template<typename TSeq>

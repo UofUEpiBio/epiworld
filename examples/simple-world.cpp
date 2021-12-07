@@ -25,6 +25,21 @@ inline double covid19_trans(
     return 0.5;
 }
 
+#define MAKE_TOOL(a,b) inline double \
+    (a)(epiworld::Virus< b > * v, epiworld::PersonTools< b > * p)
+
+MAKE_TOOL(vaccine_eff, DAT) {
+    return 0.8;
+}
+
+MAKE_TOOL(vaccine_rec, DAT) {
+    return 0.3;
+}
+
+MAKE_TOOL(vaccine_dath, DAT) {
+    return 0.1;
+}
+
 int main() {
 
     using namespace epiworld;
@@ -43,7 +58,11 @@ int main() {
     persons.push_back(epiworld::Person<DAT>());
     persons.push_back(epiworld::Person<DAT>());
 
-    // Creating disease
+    // Creating tool
+    epiworld::Tool<DAT> vaccine;
+    vaccine.set_efficacy(vaccine_eff);
+    vaccine.set_recovery(vaccine_rec);
+    vaccine.set_death(vaccine_dath);
 
 
     return 0;

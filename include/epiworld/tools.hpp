@@ -1,5 +1,6 @@
 #include <vector>
 #include <functional>
+#include <memory>
 
 #ifndef EPIWORLD_TOOLS_HPP
 #define EPIWORLD_TOOLS_HPP
@@ -20,6 +21,9 @@ class Model;
 template<typename TSeq>
 class PersonTools;
 
+template<typename TSeq>
+using ToolFun = std::function<double(Virus<TSeq>*,PersonTools<TSeq>*)>;
+
 /**
  * @brief A tool is a 
  * 
@@ -30,9 +34,9 @@ class Tool {
     friend class PersonTools<TSeq>;
 private:
     TSeq dat;
-    std::function<double(int,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)> efficacy = nullptr;
-    std::function<double(int,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)> recovery = nullptr;
-    std::function<double(int,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)> death = nullptr;
+    std::shared_ptr<ToolFun<TSeq>> efficacy = nullptr;
+    std::shared_ptr<ToolFun<TSeq>> recovery = nullptr;
+    std::shared_ptr<ToolFun<TSeq>> death = nullptr;
 
 
 public:
@@ -53,6 +57,9 @@ public:
     double get_efficacy(int tool_id, Virus<TSeq> * v, Person<TSeq> * p, Model<TSeq> * m);
     double get_recovery(int tool_id, Virus<TSeq> * v, Person<TSeq> * p, Model<TSeq> * m);
     double get_death(int tool_id, Virus<TSeq> * v, Person<TSeq> * p, Model<TSeq> * m);
+    void set_efficacy(ToolFun<TSeq> fun);
+    void set_recovery(ToolFun<TSeq> fun);
+    void set_death(ToolFun<TSeq> fun);
     ///@]
 
 };
@@ -100,6 +107,27 @@ inline double Tool<TSeq>::get_death(
     
     return this->death(tool_id, v, p, m);
 
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_efficacy(
+    ToolFun<TSeq> fun
+) {
+    efficacy = std::make_shared<ToolFun<TSeq>>(fun);
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_recovery(
+    ToolFun<TSeq> fun
+) {
+    recovery = std::make_shared<ToolFun<TSeq>>(fun);
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_death(
+    ToolFun<TSeq> fun
+) {
+    death = std::make_shared<ToolFun<TSeq>>(fun);
 }
 
 /**
@@ -152,6 +180,8 @@ inline double death_mixer_default(
     
 };
 ///@]
+
+
 
 /**
  * @brief List of tools available for the individual to 

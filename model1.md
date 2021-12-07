@@ -21,7 +21,7 @@
     - Vaccinated individuals have a reduced mortality rate `D(k,v) > D(k),` and recovered individuals `D(k,r) in (D(k,v), D(k)]`
     - Vaccinated individuals have an increased recovery rate `H(k,v) > H(k)`, whereas recovered's rate `H(k,r) in [H(k), H(k,v)).`
 
-    The sum of mortality and recovery rates is less than one, since the difference represents no change.
+    The sum of mortality and recovery rates is less than one since the difference represents no change.
 
     c. Each country vaccinates citizens at rate `V` function of `A` (availability) and `B` (citizens' acceptance rate.)
     d. In each country `i,` the entire population `N(i)` distributes between the following states:
@@ -56,7 +56,7 @@
 
         b. Recovered individuals can become sick of variant `k` with probability: `Pr(v->s|i,t,k,r) ~ Pr(h->s|i,t,k) * (1 - E(r,k)).`
 
-        c. Sick individuals with variant `k` die with probability `D(k)` or recover with probability `H(k)`; otherwise they still sick; with the rates depending on their vaccination status `v` or `n.`
+        c. Sick individuals with variant `k` die with probability `D(k)` or recover with probability `H(k)`, otherwise they stay infected; with the rates depending on their vaccination status `v` or `n.`
 
         d. Unvaccinated individuals vaccinate in country `i` with probability `P(u->v) ~ V(A(i,t), B(i)).`
 
