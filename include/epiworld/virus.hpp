@@ -96,27 +96,41 @@ inline TSeq * Virus<TSeq>::get_sequence() {
 
 template<typename TSeq>
 class PersonViruses {
+    friend class Person<TSeq>;
 private:
     Person<TSeq> * person;
     std::vector< Virus<TSeq> > viruses;
+    std::vector< int > dates;
     std::vector< bool > active;
 public:
-    void add_virus(Virus<TSeq> & v);
+    void add_virus(int date, Virus<TSeq> v);
+    Virus<TSeq> & operator()(int i);
 };
 
 template<typename TSeq>
 inline void PersonViruses<TSeq>::add_virus(
-    Virus<TSeq> & v
+    int date,
+    Virus<TSeq> v
 ) {
 
     // This will make an independent copy of the virus.
     // Will keep the original sequence and will point to the
     // mutation and transmisibility functions.
     viruses.push_back(v);
+    dates.push_back(date);
     active.push_back(true);
 
     // Pointing
     viruses[viruses.size() - 1u].person = this->person; 
+
+}
+
+template<typename TSeq>
+inline Virus<TSeq> & PersonViruses<TSeq>::operator()(
+    int i
+) {
+
+    return viruses.at(i);
 
 }
 

@@ -22,7 +22,10 @@ template<typename TSeq>
 class PersonTools;
 
 template<typename TSeq>
-using ToolFun = std::function<double(Virus<TSeq>*,PersonTools<TSeq>*)>;
+using ToolFun = std::function<double(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+
+template<typename TSeq>
+using MixerFun = std::function<double(Virus<TSeq>*,PersonTools<TSeq>*)>;
 
 /**
  * @brief A tool is a 
@@ -33,7 +36,8 @@ template<typename TSeq>
 class Tool {
     friend class PersonTools<TSeq>;
 private:
-    TSeq dat;
+    Person<TSeq> * person;
+    std::shared_ptr<TSeq> sequence = nullptr;
     std::shared_ptr<ToolFun<TSeq>> efficacy = nullptr;
     std::shared_ptr<ToolFun<TSeq>> recovery = nullptr;
     std::shared_ptr<ToolFun<TSeq>> death = nullptr;
@@ -41,6 +45,10 @@ private:
 
 public:
     Tool() {};
+    Tool(TSeq d);
+
+    void set_sequence(TSeq d);
+    std::shared_ptr<TSeq> get_sequence();
 
     /**
      * @brief Get the efficacy of tool
@@ -54,9 +62,9 @@ public:
      * the DEFAULT_EFFICACY or DEFAULT_RECOVERY as defined in the program.
      */
     ///@[
-    double get_efficacy(int tool_id, Virus<TSeq> * v, Person<TSeq> * p, Model<TSeq> * m);
-    double get_recovery(int tool_id, Virus<TSeq> * v, Person<TSeq> * p, Model<TSeq> * m);
-    double get_death(int tool_id, Virus<TSeq> * v, Person<TSeq> * p, Model<TSeq> * m);
+    double get_efficacy(Virus<TSeq> * v);
+    double get_recovery(Virus<TSeq> * v);
+    double get_death(Virus<TSeq> * v);
     void set_efficacy(ToolFun<TSeq> fun);
     void set_recovery(ToolFun<TSeq> fun);
     void set_death(ToolFun<TSeq> fun);
@@ -64,48 +72,56 @@ public:
 
 };
 
+
+
+template<typename TSeq>
+inline Tool<TSeq>::Tool(TSeq d) {
+    sequence = std::make_shared<TSeq>(d);
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_sequence(TSeq d) {
+    sequence = std::make_shared<TSeq>(d);
+}
+
+template<typename TSeq>
+inline std::shared_ptr<TSeq> Tool<TSeq>::get_sequence() {
+    return sequence;
+}
+
 template<typename TSeq>
 inline double Tool<TSeq>::get_efficacy(
-    int tool_id,
-    Virus<TSeq> * v,
-    Person<TSeq> * p,
-    Model<TSeq> * m
+    Virus<TSeq> * v
 ) {
 
-    if (efficacy == nullptr)
+    if (!efficacy)
         return DEFAULT_EFFICACY;
     
-    return this->efficacy(tool_id, v, p, m);
+    return (*this->efficacy)(person, v, person->model);
 
 }
 
 template<typename TSeq>
 inline double Tool<TSeq>::get_recovery(
-    int tool_id,
-    Virus<TSeq> * v,
-    Person<TSeq> * p,
-    Model<TSeq> * m
+    Virus<TSeq> * v
 ) {
 
-    if (efficacy == nullptr)
+    if (!recovery)
         return DEFAULT_RECOVERY;
     
-    return this->recovery(tool_id, v, p, m);
+    return (*this->recovery)(person, v, person->model);
 
 }
 
 template<typename TSeq>
 inline double Tool<TSeq>::get_death(
-    int tool_id,
-    Virus<TSeq> * v,
-    Person<TSeq> * p,
-    Model<TSeq> * m
+    Virus<TSeq> * v
 ) {
 
-    if (efficacy == nullptr)
+    if (!death)
         return DEFAULT_DEATH;
     
-    return this->death(tool_id, v, p, m);
+    return (*this->death)(person, v, person->model);
 
 }
 
@@ -145,8 +161,8 @@ inline double efficacy_mixer_default(
 )
 {
     double total = 1.0;
-    for (int i = 0; i < pt->tools.size(); ++i)
-        total *= (1.0 - pt->tools[i]->get_efficacy(i, v, pt->person, pt->model));
+    for (int i = 0; i < pt->size(); ++i)
+        total *= (1.0 - pt->operator()(i).get_efficacy(v));
 
     return 1.0 - total;
     
@@ -159,8 +175,8 @@ inline double recovery_mixer_default(
 )
 {
     double total = 1.0;
-    for (int i = 0; i < pt->tools.size(); ++i)
-        total *= (1.0 - pt->tools[i]->get_recovery(i, v, pt->person, pt->model));
+    for (int i = 0; i < pt->size(); ++i)
+        total *= (1.0 - pt->operator()(i).get_recovery(v));
 
     return 1.0 - total;
     
@@ -173,8 +189,8 @@ inline double death_mixer_default(
 )
 {
     double total = 1.0;
-    for (int i = 0; i < pt->tools.size(); ++i)
-        total *= (1.0 - pt->tools[i]->get_death(i, v, pt->person, pt->model));
+    for (int i = 0; i < pt->size(); ++i)
+        total *= (1.0 - pt->operator()(i).get_death(v));
 
     return 1.0 - total;
     
@@ -193,31 +209,43 @@ class PersonTools {
     friend class Virus<TSeq>;
     friend class Tool<TSeq>;
     friend class Person<TSeq>;
+
 private:
     Person<TSeq> * person; 
     Model<TSeq> * model;
-    std::vector<Tool<TSeq>*> tools;
-    std::vector< int > date;
-    std::function<double(Virus<TSeq>*,PersonTools<TSeq>*)> efficacy_mixer;
-    std::function<double(Virus<TSeq>*,PersonTools<TSeq>*)> recovery_mixer;
-    std::function<double(Virus<TSeq>*,PersonTools<TSeq>*)> death_mixer;
+    std::vector<Tool<TSeq>> tools;
+    std::vector< int > dates;
+    std::shared_ptr<MixerFun<TSeq>> efficacy_mixer;
+    std::shared_ptr<MixerFun<TSeq>> recovery_mixer;
+    std::shared_ptr<MixerFun<TSeq>> death_mixer;
 
 public:
     PersonTools() {};
-    void add_tool(int d, Tool<TSeq> * tool);
+    void add_tool(int date, Tool<TSeq> tool);
     double get_efficacy(Virus<TSeq> * v);
     double get_recovery(Virus<TSeq> * v);
     double get_death(Virus<TSeq> * v);
+
+    void set_efficacy_mixer(MixerFun<TSeq> fun);
+    void set_recovery_mixer(MixerFun<TSeq> fun);
+    void set_death_mixer(MixerFun<TSeq> fun);
+
+    size_t size() const;
+    Tool<TSeq> & operator()(int i);
+
+    Person<TSeq> * get_person();
+    Model<TSeq> * get_model();
 
 };
 
 template<typename TSeq>
 inline void PersonTools<TSeq>::add_tool(
-    int d,
-    Tool<TSeq> * tool
+    int date,
+    Tool<TSeq> tool
 ) {
     tools.push_back(tool);
-    date.push_back(d);
+    tools[tools.size() - 1].person = this->person;
+    dates.push_back(date);
 }
 
 template<typename TSeq>
@@ -225,7 +253,10 @@ inline double PersonTools<TSeq>::get_efficacy(
     Virus<TSeq> * v
 ) {
 
-    return efficacy_mixer(v, this);
+    if (!efficacy_mixer)
+        set_efficacy_mixer(efficacy_mixer_default<TSeq>);
+
+    return (*efficacy_mixer)(v, this);
 
 }
 
@@ -234,7 +265,10 @@ inline double PersonTools<TSeq>::get_recovery(
     Virus<TSeq> * v
 ) {
 
-    return recovery_mixer(v, this);
+    if (!recovery_mixer)
+        set_recovery_mixer(recovery_mixer_default<TSeq>);
+
+    return (*recovery_mixer)(v, this);
 
 }
 
@@ -244,10 +278,53 @@ inline double PersonTools<TSeq>::get_death(
     Virus<TSeq> * v
 ) {
 
-    return death_mixer(v, this);
+    if (!death_mixer)
+        set_death_mixer(death_mixer_default<TSeq>);
+
+    return (*death_mixer)(v, this);
 
 }
 
+template<typename TSeq>
+inline void PersonTools<TSeq>::set_efficacy_mixer(
+    MixerFun<TSeq> fun
+) {
+    efficacy_mixer = std::make_shared<MixerFun<TSeq>>(fun);
+}
+
+template<typename TSeq>
+inline void PersonTools<TSeq>::set_recovery_mixer(
+    MixerFun<TSeq> fun
+) {
+    recovery_mixer = std::make_shared<MixerFun<TSeq>>(fun);
+}
+
+template<typename TSeq>
+inline void PersonTools<TSeq>::set_death_mixer(
+    MixerFun<TSeq> fun
+) {
+    death_mixer = std::make_shared<MixerFun<TSeq>>(fun);
+}
+
+template<typename TSeq>
+inline size_t PersonTools<TSeq>::size() const {
+    return tools.size();
+}
+
+template<typename TSeq>
+inline Tool<TSeq> & PersonTools<TSeq>::operator()(int i) {
+    return tools.at(i);
+}
+
+template<typename TSeq>
+inline Person<TSeq> * PersonTools<TSeq>::get_person() {
+    return person;
+}
+
+template<typename TSeq>
+inline Model<TSeq> * PersonTools<TSeq>::get_model() {
+    return model;
+}
 
 #undef DEFAULT_EFFICACY
 #undef DEFAULT_RECOVERY
