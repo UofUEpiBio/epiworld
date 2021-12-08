@@ -50,6 +50,8 @@ public:
     void set_mutation(MutFun<TSeq> fun);
     void set_transmisibility(TransFun<TSeq> fun);
     TSeq* get_sequence();
+    Person<TSeq> * get_person();
+    Model<TSeq> * get_model();
 
 };
 
@@ -60,16 +62,16 @@ inline Virus<TSeq>::Virus(TSeq sequence) {
 
 template<typename TSeq>
 inline void Virus<TSeq>::mutate() {
-    if (mutation_fun != nullptr)
-        mutation_fun(this);
+    if (mutation_fun)
+        (*mutation_fun)(this);
 
     return;
 }
 
 template<typename TSeq>
 inline double Virus<TSeq>::transmisibility() {
-    if (transmisibility_fun != nullptr)
-        transmisibility_fun(this,person);
+    if (!transmisibility_fun)
+        (*transmisibility_fun)(this,person);
 
     return DEFAULT_TRANSMISIBILITY;
 }
@@ -93,6 +95,15 @@ inline TSeq * Virus<TSeq>::get_sequence() {
     return &this->baseline_sequence;
 }
 
+template<typename TSeq>
+inline Person<TSeq> * Virus<TSeq>::get_person() {
+    return person;
+}
+
+template<typename TSeq>
+inline Model<TSeq> * Virus<TSeq>::get_model() {
+    return person->get_model();
+}
 
 template<typename TSeq>
 class PersonViruses {
@@ -104,7 +115,10 @@ private:
     std::vector< bool > active;
 public:
     void add_virus(int date, Virus<TSeq> v);
+    size_t size() const;
     Virus<TSeq> & operator()(int i);
+    void mutate();
+
 };
 
 template<typename TSeq>
@@ -117,12 +131,18 @@ inline void PersonViruses<TSeq>::add_virus(
     // Will keep the original sequence and will point to the
     // mutation and transmisibility functions.
     viruses.push_back(v);
+    viruses.at(viruses.size() - 1u).person = this->person;
     dates.push_back(date);
     active.push_back(true);
 
     // Pointing
     viruses[viruses.size() - 1u].person = this->person; 
 
+}
+
+template<typename TSeq>
+inline size_t PersonViruses<TSeq>::size() const {
+    return viruses.size();
 }
 
 template<typename TSeq>
@@ -133,6 +153,14 @@ inline Virus<TSeq> & PersonViruses<TSeq>::operator()(
     return viruses.at(i);
 
 }
+
+template<typename TSeq>
+inline void PersonViruses<TSeq>::mutate()
+{
+    for (auto & v : viruses)
+        v.mutate();
+}
+
 
 #undef DEFAULT_TRANSMISIBILITY
 

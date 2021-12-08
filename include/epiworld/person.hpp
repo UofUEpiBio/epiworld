@@ -33,11 +33,17 @@ public:
     double get_efficacy();
     double get_recovery();
     double get_death();
+    std::mt19937 * get_rand_endgine();
+    Model<TSeq> * get_model(); 
+
+    Virus<TSeq> & get_virus(int i);
+    void mutate_virus();
 
 };
 
 template<typename TSeq>
 inline Person<TSeq>::Person() {
+    tools.person = this;
     viruses.person = this;
 }
 
@@ -72,5 +78,24 @@ inline double Person<TSeq>::get_death() {
     return tools.get_death(&viruses(0u));
 }
 
+template<typename TSeq>
+inline std::mt19937 * Person<TSeq>::get_rand_endgine() {
+    return model->get_rand_endgine();
+}
+
+template<typename TSeq>
+inline Model<TSeq> * Person<TSeq>::get_model() {
+    return model;
+}
+
+template<typename TSeq>
+inline Virus<TSeq> & Person<TSeq>::get_virus(int i) {
+    return viruses(i);
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::mutate_virus() {
+    viruses.mutate();
+}
 
 #endif
