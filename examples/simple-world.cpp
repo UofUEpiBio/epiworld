@@ -54,14 +54,13 @@ MAKE_TOOL(vaccine_dath, DAT) {
     return 0.1;
 }
 
+MAKE_TOOL(mask_eff, DAT) {
+    return 0.9;
+}
+
 int main() {
 
     using namespace epiworld;
-
-    // Initializing the world. This will include POP_SIZE
-    // individuals
-    epiworld::Model<DAT> model(POP_SIZE);
-    model.init();
 
     // Initializing disease
     epiworld::Virus<DAT> covid19(base_seq);
@@ -69,19 +68,28 @@ int main() {
     covid19.set_mutation(covid19_mut);
     covid19.set_transmisibility(covid19_trans);
 
+    // Initializing the world. This will include POP_SIZE
+    // individuals
+    epiworld::Model<DAT> model(POP_SIZE);
+    model.add_virus(covid19, 0.5); // 50% will have the virus at first
+    model.init();
+
     // Creating tool
     epiworld::Tool<DAT> vaccine;
     vaccine.set_efficacy(vaccine_eff);
     vaccine.set_recovery(vaccine_rec);
     vaccine.set_death(vaccine_dath);
 
+    epiworld::Tool<DAT> mask;
+    mask.set_efficacy(mask_eff);
+
     // First half of the individuals is vaccinated
     for (int i = 0; i < POP_SIZE; ++i)
         model(i).add_tool(0, vaccine);
     
-    // The other half has the virus
-    for (int i = 0; i < POP_SIZE; ++i)
-        model(i).add_virus(0, covid19);
+    // One half wears the mast
+    for (int i = 0; i < POP_SIZE/2; ++i)
+        model(i).add_tool(0, mask);
 
     // Now, we show the rates for each individual ------------------------------
     printf_epiworld("The Efficacy (E), Recovery (R), and Death (D) rates:\n");
@@ -89,39 +97,46 @@ int main() {
         printf_epiworld(
             "  (%2i) E: %.2f, R: %.2f, D: %.2f\n",
             i,
-            model(i).get_efficacy(),
-            model(i).get_recovery(),
-            model(i).get_death()
+            model(i).get_efficacy(&covid19),
+            model(i).get_recovery(&covid19),
+            model(i).get_death(&covid19)
             );
 
     // What happens if we make things mutate now and then ----------------------
-    printf_epiworld(
-        "The Efficacy (E), Recovery (R), and Death (D) rates (with mutation):\n"
-        );
     for (int i = 0; i < POP_SIZE; ++i)
     {
 
-        // New sequence
-        printf_epiworld("(%i2) oldseq: ", i);
-        for (const auto & s : *model(i).get_virus(0u).get_sequence())
-            printf_epiworld("%i ", s ? 1 : 0);
+        // Nothing to do if it is healthy
+        if (model(i).get_viruses().size() == 0)
+            continue;
 
-        // Applying random mutations
-        model(i).mutate_virus();
-
-        // New sequence
         printf_epiworld("\n(%i2) oldseq: ", i);
+            
         for (const auto & s : *model(i).get_virus(0u).get_sequence())
             printf_epiworld("%i ", s ? 1 : 0);
+        
+        // Applying 100 mutations (just for fun)
+        for (int m = 0; m < 100; ++m)
+            model(i).mutate_virus();
+
+        printf_epiworld("\n(%i2) New: ", i);
+            
+        for (const auto & s : *model(i).get_virus(0u).get_sequence())
+            printf_epiworld("%i ", s ? 1 : 0);
+
 
         // Printing new results
-        printf_epiworld(
-            "\n  (%2i) E: %.2f, R: %.2f, D: %.2f\n",
-            i,
-            model(i).get_efficacy(),
-            model(i).get_recovery(),
-            model(i).get_death()
-            );
+        printf_epiworld("\n");
+        for (int j = 0; j < POP_SIZE; ++j)
+        {
+            printf_epiworld(
+                "(%2i) E: %.2f, R: %.2f, D: %.2f\n",
+                j,
+                model(j).get_efficacy(&model(i).get_virus(0u)),
+                model(j).get_recovery(&model(i).get_virus(0u)),
+                model(j).get_death(&model(i).get_virus(0u))
+                );
+        }
     }
 
 

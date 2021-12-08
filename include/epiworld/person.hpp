@@ -22,6 +22,7 @@ private:
     Model<TSeq> * model;
     PersonViruses<TSeq> viruses;
     PersonTools<TSeq> tools;
+    std::vector< Person<TSeq> * > neighbors;
 
 public:
 
@@ -30,14 +31,18 @@ public:
     void add_tool(int d, Tool<TSeq> tool);
     void add_virus(int d, Virus<TSeq> virus);
 
-    double get_efficacy();
-    double get_recovery();
-    double get_death();
+    double get_efficacy(Virus<TSeq> * v);
+    double get_recovery(Virus<TSeq> * v);
+    double get_death(Virus<TSeq> * v);
+    
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
 
     Virus<TSeq> & get_virus(int i);
+    PersonViruses<TSeq> & get_viruses();
+
     void mutate_virus();
+    void add_neighbor(Person<TSeq> * p);
 
 };
 
@@ -64,18 +69,24 @@ inline void Person<TSeq>::add_virus(
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_efficacy() {
-    return tools.get_efficacy(&viruses(0u));
+inline double Person<TSeq>::get_efficacy(
+    Virus<TSeq> * v
+) {
+    return tools.get_efficacy(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_recovery() {
-    return tools.get_recovery(&viruses(0u));
+inline double Person<TSeq>::get_recovery(
+    Virus<TSeq> * v
+) {
+    return tools.get_recovery(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_death() {
-    return tools.get_death(&viruses(0u));
+inline double Person<TSeq>::get_death(
+    Virus<TSeq> * v
+) {
+    return tools.get_death(v);
 }
 
 template<typename TSeq>
@@ -89,6 +100,11 @@ inline Model<TSeq> * Person<TSeq>::get_model() {
 }
 
 template<typename TSeq>
+inline PersonViruses<TSeq> & Person<TSeq>::get_viruses() {
+    return viruses;
+}
+
+template<typename TSeq>
 inline Virus<TSeq> & Person<TSeq>::get_virus(int i) {
     return viruses(i);
 }
@@ -96,6 +112,14 @@ inline Virus<TSeq> & Person<TSeq>::get_virus(int i) {
 template<typename TSeq>
 inline void Person<TSeq>::mutate_virus() {
     viruses.mutate();
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::add_neighbor(
+    Person<TSeq> * p
+) {
+    neighbors.push_back(p);
+    p->neighbors.push_back(this);
 }
 
 #endif
