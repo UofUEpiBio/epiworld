@@ -13,13 +13,13 @@
 namespace epiworld {
 
     #include "config.hpp"
+    #include "adjlist.hpp"
 
     #include "model.hpp"
     #include "virus.hpp"
     #include "tools.hpp"
     #include "person.hpp"
 
-    #include "read.hpp"
 }
 
 #endif 

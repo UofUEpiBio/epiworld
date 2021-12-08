@@ -13,6 +13,8 @@ class Person;
 template<typename TSeq>
 class Virus;
 
+class AdjList;
+
 template<typename TSeq>
 class Model {
 private:
@@ -40,6 +42,9 @@ public:
     double runif();
 
     void add_virus(Virus<TSeq> v, double preval);
+
+    void pop_from_adjlist(std::string fn, int skip = 0);
+    void pop_from_adjlist(AdjList al, int skip = 0);
 
 };
 
@@ -117,6 +122,34 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 {
     viruses.push_back(v);
     prevalence.push_back(preval);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::pop_from_adjlist(std::string fn, int skip) {
+
+    AdjList al;
+    al.read_edgelist(fn);
+
+    this->pop_from_adjlist(al, skip);
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::pop_from_adjlist(AdjList al, int skip) {
+
+    // Resizing the people
+    persons.resize(al.vcount(), Person<TSeq>());
+
+    const auto & tmpdat = al.get_dat();
+    int i = 0;
+    for (const auto & n : tmpdat)
+    {        
+        for (const auto & link: n.second)
+            persons[i].add_neighbor(&persons[link]);
+
+        i++;
+    }
+
 }
 
 #undef CHECK_INIT

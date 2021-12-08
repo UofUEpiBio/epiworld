@@ -7,7 +7,7 @@
 // Original data will be an integer vector
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true};
-#define POP_SIZE 20
+#define POP_SIZE 100
 #define MUTATION_PROB 0.5
 
 // Defining mutation and transmission functions
@@ -72,6 +72,10 @@ int main() {
     // individuals
     epiworld::Model<DAT> model(POP_SIZE);
     model.add_virus(covid19, 0.5); // 50% will have the virus at first
+
+    // Reading network structure
+    model.pop_from_adjlist("edgelist.txt");
+
     model.init();
 
     // Creating tool

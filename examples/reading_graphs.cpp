@@ -3,10 +3,10 @@
 
 int main() {
 
-    epiworld::ReadGraph R;
-    R.read_edgelist("edgelist.txt");
+    epiworld::AdjList L;
+    L.read_edgelist("edgelist.txt");
 
-    R.print();
+    L.print();
 
     return 0;
 }
