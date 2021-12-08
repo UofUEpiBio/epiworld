@@ -3,6 +3,9 @@
 #include <memory>
 #include <stdexcept>
 #include <random>
+#include <fstream>
+#include <string>
+#include <map>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -16,6 +19,7 @@ namespace epiworld {
     #include "tools.hpp"
     #include "person.hpp"
 
+    #include "read.hpp"
 }
 
 #endif 
