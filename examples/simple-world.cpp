@@ -21,7 +21,11 @@ inline bool covid19_mut(
     {
         // Picking a location at random
         int idx = std::floor(mptr->runif() * v->get_sequence()->size());
-        v->get_sequence()->at(idx) = !v->get_sequence()->at(idx); 
+        DAT tmp_seq = *v->get_sequence();
+        tmp_seq[idx] = !v->get_sequence()->at(idx); 
+
+        // Updating its sequence
+        v->set_sequence(tmp_seq);
 
         return true;
     }
@@ -62,6 +66,9 @@ MAKE_TOOL(mask_eff, DAT) {
     return 0.9;
 }
 
+MAKE_TOOL(raw_eff, DAT) {
+    return 0.1;
+}
 
 
 int main() {
@@ -93,13 +100,20 @@ int main() {
     epiworld::Tool<DAT> mask;
     mask.set_efficacy(mask_eff);
 
+    epiworld::Tool<DAT> immune;
+    immune.set_efficacy(raw_eff);
+
     // First half of the individuals is vaccinated
-    for (int i = 0; i < POP_SIZE; ++i)
+    for (int i = 0; i < POP_SIZE/2; ++i)
         model(i).add_tool(0, vaccine);
     
-    // One half wears the mast
-    for (int i = 0; i < POP_SIZE/2; ++i)
+    // One half wears the mask
+    for (int i = POP_SIZE/2; i < POP_SIZE; ++i)
         model(i).add_tool(0, mask);
+
+    // Immune system
+    for (int i = 0; i < POP_SIZE; ++i)
+        model(i).add_tool(0, immune);
 
     // Now, we show the rates for each individual ------------------------------
     printf_epiworld("The Efficacy (E), Recovery (R), and Death (D) rates:\n");
@@ -152,7 +166,17 @@ int main() {
         }
     }
 
-    printf_epiworld("Total variants: %i\n", model.get_nvariants());
+    int nvar = model.get_nvariants();
+    printf_epiworld("Total variants: %i\n", nvar);
+    for (int i = 0; i < nvar; ++i)
+    {
+        const DAT & variant = model.get_variant_sequence()[i];
+        for (int j = 0; j < variant.size(); ++j)
+            printf_epiworld("%i", variant[j] ? 1 : 0);
+
+        printf_epiworld(": %i\n", model.get_variant_nifected()[i]);
+    }
+
 
     return 0;
 

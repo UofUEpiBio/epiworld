@@ -1,5 +1,7 @@
 #include <vector>
 #include <random>
+#include <unordered_map>
+#include "misc.hpp"
 
 #ifndef EPIWORLD_MODEL_HPP
 #define EPIWORLD_MODEL_HPP
@@ -28,7 +30,7 @@ private:
 
     // Information about the emerging variants
     int nvariants = 0;
-    std::vector< int > variant_id;
+    MapVec_type<bool,int> variant_id;
     std::vector< int > variant_parent;
     std::vector< int > variant_date;
     std::vector< int > variant_ninfected;
@@ -59,6 +61,8 @@ public:
 
     void register_variant(Virus<TSeq> * v);
     int get_nvariants() const;
+    const std::vector< TSeq > & get_variant_sequence() const;
+    const std::vector< int > & get_variant_nifected() const;
 
 };
 
@@ -137,11 +141,14 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
     viruses.push_back(v);
     prevalence.push_back(preval);
 
-    variant_id.push_back(nvariants++);
+    if (variant_id.find(*v.get_sequence()) == variant_id.end())
+        variant_id[*v.get_sequence()] = nvariants++;
+
+    // variant_id.push_back(nvariants++);
     variant_parent.push_back(-1); ///< First variant has no parent
     variant_date.push_back(today());
     variant_ninfected.push_back(0);
-    variant_sequence.push_back(v->get_sequence());
+    variant_sequence.push_back(*v.get_sequence());
 
 }
 
@@ -188,23 +195,46 @@ template<typename TSeq>
 inline void Model<TSeq>::register_variant(Virus<TSeq> * v) {
 
     // Updating registry
-    ++nvariants;
-    variant_id.push_back(nvariants);
-    variant_parent.push_back(v->get_id());
-    variant_ninfected.push_back(0);
-    variant_date.push_back(today());
-    variant_sequence.push_back(v->get_sequence())
+    if (variant_id.find(*v->get_sequence()) == variant_id.end())
+    {
+        variant_id[*v->get_sequence()] = ++nvariants;
+        variant_parent.push_back(v->get_id());
+        variant_ninfected.push_back(1);
+        variant_date.push_back(today());
+        variant_sequence.push_back(*v->get_sequence());
 
-    // Updating the variant
-    v->set_id(nvariants);
-    v->set_date(today());
+        // Updating the variant
+        v->set_id(nvariants);
+        v->set_date(today());
 
+    } else {
+
+        int tmp_id = variant_id[*v->get_sequence()];
+
+        variant_ninfected[tmp_id]++;
+
+        // Updating the variant
+        v->set_id(tmp_id);
+        v->set_date(variant_date[tmp_id]);
+
+    }    
+    
     return;
 } 
 
 template<typename TSeq>
 inline int Model<TSeq>::get_nvariants() const {
     return nvariants;
+}
+
+template<typename TSeq>
+inline const std::vector<TSeq> & Model<TSeq>::get_variant_sequence() const {
+    return variant_sequence;
+}
+
+template<typename TSeq>
+inline const std::vector<int> & Model<TSeq>::get_variant_nifected() const {
+    return variant_ninfected;
 }
 
 #undef CHECK_INIT

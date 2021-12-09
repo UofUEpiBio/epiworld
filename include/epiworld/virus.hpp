@@ -36,7 +36,7 @@ template<typename TSeq>
 class Virus {
     friend class PersonViruses<TSeq>;
 private:
-    TSeq baseline_sequence;
+    std::shared_ptr<TSeq> baseline_sequence;
     Person<TSeq> * person;
     int date;
     int id;
@@ -50,7 +50,8 @@ public:
     double transmisibility();
     void set_mutation(MutFun<TSeq> fun);
     void set_transmisibility(TransFun<TSeq> fun);
-    TSeq* get_sequence();
+    const TSeq* get_sequence();
+    void set_sequence(TSeq sequence);
     Person<TSeq> * get_person();
     Model<TSeq> * get_model();
     void set_date(int d);
@@ -62,7 +63,7 @@ public:
 
 template<typename TSeq>
 inline Virus<TSeq>::Virus(TSeq sequence) {
-    baseline_sequence = sequence;
+    baseline_sequence = std::make_shared<TSeq>(sequence);
 }
 
 template<typename TSeq>
@@ -99,8 +100,14 @@ inline void Virus<TSeq>::set_transmisibility(
 }
 
 template<typename TSeq>
-inline TSeq * Virus<TSeq>::get_sequence() {
-    return &this->baseline_sequence;
+inline const TSeq * Virus<TSeq>::get_sequence() {
+    return &(*baseline_sequence);
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_sequence(TSeq sequence) {
+    baseline_sequence = std::make_shared<TSeq>(sequence);
+    return;
 }
 
 template<typename TSeq>

@@ -6,12 +6,14 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include <unordered_map>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
 
 namespace epiworld {
 
+    #include "misc.hpp"
     #include "config.hpp"
     #include "adjlist.hpp"
 
