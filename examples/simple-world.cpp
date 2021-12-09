@@ -8,10 +8,10 @@
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true};
 #define POP_SIZE 100
-#define MUTATION_PROB 0.5
+#define MUTATION_PROB 0.1
 
 // Defining mutation and transmission functions
-inline void covid19_mut(
+inline bool covid19_mut(
     epiworld::Virus<DAT> * v
 ) {
 
@@ -22,7 +22,11 @@ inline void covid19_mut(
         // Picking a location at random
         int idx = std::floor(mptr->runif() * v->get_sequence()->size());
         v->get_sequence()->at(idx) = !v->get_sequence()->at(idx); 
+
+        return true;
     }
+
+    return false;
     
 }
 
@@ -57,6 +61,8 @@ MAKE_TOOL(vaccine_dath, DAT) {
 MAKE_TOOL(mask_eff, DAT) {
     return 0.9;
 }
+
+
 
 int main() {
 
@@ -110,6 +116,9 @@ int main() {
     for (int i = 0; i < POP_SIZE; ++i)
     {
 
+        // Updating status
+        model(i).update_status();
+
         // Nothing to do if it is healthy
         if (model(i).get_viruses().size() == 0)
             continue;
@@ -142,6 +151,8 @@ int main() {
                 );
         }
     }
+
+    printf_epiworld("Total variants: %i\n", model.get_nvariants());
 
     return 0;
 

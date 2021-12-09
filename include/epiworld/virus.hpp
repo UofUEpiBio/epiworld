@@ -17,7 +17,7 @@ class PersonViruses;
 #define DEFAULT_TRANSMISIBILITY 0.9
 
 template<typename TSeq>
-using MutFun = std::function<void(Virus<TSeq>*)>;
+using MutFun = std::function<bool(Virus<TSeq>*)>;
 
 template<typename TSeq>
 using TransFun = std::function<double(Virus<TSeq>*,Person<TSeq>*)>;
@@ -38,7 +38,8 @@ class Virus {
 private:
     TSeq baseline_sequence;
     Person<TSeq> * person;
-    int timestamp;
+    int date;
+    int id;
     std::shared_ptr<MutFun<TSeq>> mutation_fun = nullptr;
     std::shared_ptr<TransFun<TSeq>> transmisibility_fun = nullptr;
 
@@ -52,6 +53,10 @@ public:
     TSeq* get_sequence();
     Person<TSeq> * get_person();
     Model<TSeq> * get_model();
+    void set_date(int d);
+    int get_date() const;
+    void set_id(int idx);
+    int get_id() const;
 
 };
 
@@ -62,8 +67,11 @@ inline Virus<TSeq>::Virus(TSeq sequence) {
 
 template<typename TSeq>
 inline void Virus<TSeq>::mutate() {
+
     if (mutation_fun)
-        (*mutation_fun)(this);
+        if ((*mutation_fun)(this))
+            person->get_model()->register_variant(this);
+    
 
     return;
 }
@@ -103,6 +111,30 @@ inline Person<TSeq> * Virus<TSeq>::get_person() {
 template<typename TSeq>
 inline Model<TSeq> * Virus<TSeq>::get_model() {
     return person->get_model();
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_id(int idx) {
+    id = idx;
+    return;
+}
+
+template<typename TSeq>
+inline int Virus<TSeq>::get_id() const {
+    
+    return id;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_date(int d) {
+    date = d;
+    return;
+}
+
+template<typename TSeq>
+inline int Virus<TSeq>::get_date() const {
+    
+    return date;
 }
 
 template<typename TSeq>
@@ -160,6 +192,8 @@ inline void PersonViruses<TSeq>::mutate()
     for (auto & v : viruses)
         v.mutate();
 }
+
+
 
 
 #undef DEFAULT_TRANSMISIBILITY

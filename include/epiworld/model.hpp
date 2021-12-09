@@ -24,6 +24,15 @@ private:
     std::shared_ptr< std::mt19937 > engine;
     std::shared_ptr< std::uniform_real_distribution<> > runifd;
     bool initialized = false;
+    int current_date = 0;
+
+    // Information about the emerging variants
+    int nvariants = 0;
+    std::vector< int > variant_id;
+    std::vector< int > variant_parent;
+    std::vector< int > variant_date;
+    std::vector< int > variant_ninfected;
+    std::vector< TSeq > variant_sequence;
 
 
 public:
@@ -45,6 +54,11 @@ public:
 
     void pop_from_adjlist(std::string fn, int skip = 0);
     void pop_from_adjlist(AdjList al, int skip = 0);
+    int today() const;
+    void next();
+
+    void register_variant(Virus<TSeq> * v);
+    int get_nvariants() const;
 
 };
 
@@ -122,6 +136,13 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 {
     viruses.push_back(v);
     prevalence.push_back(preval);
+
+    variant_id.push_back(nvariants++);
+    variant_parent.push_back(-1); ///< First variant has no parent
+    variant_date.push_back(today());
+    variant_ninfected.push_back(0);
+    variant_sequence.push_back(v->get_sequence());
+
 }
 
 template<typename TSeq>
@@ -150,6 +171,40 @@ inline void Model<TSeq>::pop_from_adjlist(AdjList al, int skip) {
         i++;
     }
 
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::today() const {
+    return this->current_date;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::next() {
+    ++this->current_date;
+    return ;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::register_variant(Virus<TSeq> * v) {
+
+    // Updating registry
+    ++nvariants;
+    variant_id.push_back(nvariants);
+    variant_parent.push_back(v->get_id());
+    variant_ninfected.push_back(0);
+    variant_date.push_back(today());
+    variant_sequence.push_back(v->get_sequence())
+
+    // Updating the variant
+    v->set_id(nvariants);
+    v->set_date(today());
+
+    return;
+} 
+
+template<typename TSeq>
+inline int Model<TSeq>::get_nvariants() const {
+    return nvariants;
 }
 
 #undef CHECK_INIT

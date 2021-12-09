@@ -19,6 +19,25 @@ The transmission of the disease will be governed by the number of vaccinated, in
 
 ## Time dynamics
 
-Time dynamics has two components. The way in which biology moves and how agents react. 
+Time dynamics has two components, how biology evolves and how agents react. 
 
 The model develops as a continuous-time Markov process. Each block of individuals takes action at rates `L(i|N(i))` function of the local number of infections. This way, if  
+
+
+# Updating agent's status
+
+Like most other components, updating agents' states can be personalized. A naive approach allows agents to get infected with a single virus or stay as-is. The probability of this event is conditional on acquiring at most one virus. Since these are independent events, the conditional probability is computed as follows:
+
+```
+P(Variant k|None or a single variant) = P(None or a single variant | Variant k) * P(Variant k)/P(None or a single variant)
+                                      = P(Variant k)/P(None or a single variant)
+```
+
+Where 
+
+```
+P(None or a single variant) = P(None) + Sum(v in variants) P(v) * Prod(m != v) (1 - P(m))
+P(None) = Prod(v in variants) (1 - P(v))
+```
+
+Furthermore, the (Variant, Person) pairs are treated independently.
