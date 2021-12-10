@@ -38,11 +38,12 @@ using TransFun = std::function<double(Virus<TSeq>*,Person<TSeq>*)>;
 template<typename TSeq>
 class Virus {
     friend class PersonViruses<TSeq>;
+    friend class DataBase<TSeq>;
 private:
     std::shared_ptr<TSeq> baseline_sequence;
     Person<TSeq> * person;
-    int date;
-    int id;
+    int date = -99;
+    int id   = -99;
     std::shared_ptr<MutFun<TSeq>> mutation_fun = nullptr;
     std::shared_ptr<TransFun<TSeq>> transmisibility_fun = nullptr;
 

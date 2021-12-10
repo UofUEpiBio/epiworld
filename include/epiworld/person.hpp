@@ -58,8 +58,9 @@ public:
 
 template<typename TSeq>
 inline Person<TSeq>::Person() {
-    tools.person = this;
+    tools.person   = this;
     viruses.person = this;
+    status         = HEALTHY;
 }
 
 template<typename TSeq>
@@ -150,7 +151,8 @@ inline void Person<TSeq>::update_status() {
     if ((status == HEALTHY) | (status == RECOVERED))
     {
         // Step 1: Compute the individual efficcacy
-        std::vector<double> probs;
+        std::vector< double > probs;
+        std::vector< double > probs_only_v;
         std::vector< Virus<TSeq>* > variants;
         std::vector< int > certain_infection; ///< Viruses for which there's no chance of escape
 
@@ -162,8 +164,8 @@ inline void Person<TSeq>::update_status() {
 
             Person<TSeq> * neighbor = neighbors[n];
 
-            // Dead individuals make no change
-            if (neighbor->get_status() == DECEASED)
+            // Non-infected individuals make no difference
+            if (neighbor->get_status() != INFECTED)
                 continue;
 
             PersonViruses<TSeq> nviruses = neighbor->get_viruses();
@@ -202,36 +204,41 @@ inline void Person<TSeq>::update_status() {
             ]);
 
             // And we go back
+            status = INFECTED;
             return;
         }
 
         // Step 2: Calculating the prob of none or single
         double p_none_or_single = p_none;
         for (int v = 0; v < probs.size(); ++v)
-            p_none_or_single += p_none / (1.0 - probs[v]) * probs[v];
+        {
+            probs_only_v.push_back(probs[v] * (p_none / (1.0 - probs[v])));
+            p_none_or_single += probs_only_v[v];
+        }
 
         
         // Step 3: Roulette
-        double cumsum = 0.0;
+        double cumsum = p_none/p_none_or_single;
 
         for (int v = 0; v < probs.size(); ++v)
         {
             // If it yield here, then bingo, the individual will acquire the disease
-            cumsum += probs[v]/(p_none_or_single);
+            cumsum += probs_only_v[v]/(p_none_or_single);
             if (r < cumsum)
             {
                 add_virus(model->today(), *variants[v]);
                 model->get_db().up_infected(variants[v]);
+                status = INFECTED;
                 return;
             }
             
         }
 
-        // We shouldn't have reached this place
-        throw std::logic_error(
-            "Your calculations are wrong. This should't happen:\ncumsum : " +
-            std::to_string(cumsum) + "\nr      : " + std::to_string(r) + "\n"
-            );
+        // // We shouldn't have reached this place
+        // throw std::logic_error(
+        //     "Your calculations are wrong. This should't happen:\ncumsum : " +
+        //     std::to_string(cumsum) + "\nr      : " + std::to_string(r) + "\n"
+        //     );
 
     } else if (status == INFECTED)
     {

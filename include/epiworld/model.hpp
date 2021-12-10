@@ -57,6 +57,7 @@ public:
     void pop_from_adjlist(std::string fn, int skip = 0);
     void pop_from_adjlist(AdjList al, int skip = 0);
     int today() const;
+    void update_status();
     void next();
 
     void register_variant(Virus<TSeq> * v);
@@ -126,7 +127,12 @@ inline void Model<TSeq>::init(int seed) {
 
 template<typename TSeq>
 inline void Model<TSeq>::seed(unsigned int s) {
+
+    if (!engine)
+        engine = std::make_shared< std::mt19937 >();
+    
     engine->seed(s);
+
 }
 
 template<typename TSeq>
@@ -144,6 +150,7 @@ inline double Model<TSeq>::runif() {
 template<typename TSeq>
 inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 {
+
     viruses.push_back(v);
     prevalence.push_back(preval);
     register_variant(&v);
@@ -187,6 +194,12 @@ template<typename TSeq>
 inline void Model<TSeq>::next() {
     ++this->current_date;
     return ;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::update_status() {
+    for (auto & p: persons)
+        p.update_status();
 }
 
 template<typename TSeq>

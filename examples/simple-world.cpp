@@ -85,6 +85,7 @@ int main() {
     // individuals
     epiworld::Model<DAT> model(POP_SIZE);
     model.add_virus(covid19, 0.5); // 50% will have the virus at first
+    model.seed(1231);
 
     // Reading network structure
     model.pop_from_adjlist("edgelist.txt");
