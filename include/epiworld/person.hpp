@@ -178,7 +178,7 @@ inline void Person<TSeq>::update_status() {
                 // And it is a function of transmisibility as well
                 tmp_efficacy = get_efficacy(tmp_v) * neighbor->get_transmisibility(tmp_v);
                 
-                probs.push_back(tmp_efficacy);
+                probs.push_back(1.0 - tmp_efficacy);
                 variants.push_back(tmp_v);
 
                 // Adding to the product
@@ -208,22 +208,16 @@ inline void Person<TSeq>::update_status() {
         // Step 2: Calculating the prob of none or single
         double p_none_or_single = p_none;
         for (int v = 0; v < probs.size(); ++v)
-            if (probs[v] > 1e-15)
-                p_none_or_single += p_none / probs[v] * (1 - probs[v]);
+            p_none_or_single += p_none / (1.0 - probs[v]) * probs[v];
 
         
         // Step 3: Roulette
-        double cumsum = p_none / p_none_or_single;
-        
-
-        // If this is the case, then nothing happens
-        if (r < cumsum)
-            return;
+        double cumsum = 0.0;
 
         for (int v = 0; v < probs.size(); ++v)
         {
             // If it yield here, then bingo, the individual will acquire the disease
-            cumsum += (1 - probs[v])/p_none_or_single;
+            cumsum += probs[v]/(p_none_or_single);
             if (r < cumsum)
             {
                 add_virus(model->today(), *variants[v]);
