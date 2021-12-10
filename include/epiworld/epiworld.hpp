@@ -14,6 +14,7 @@
 namespace epiworld {
 
     #include "misc.hpp"
+    #include "database.hpp"
     #include "config.hpp"
     #include "adjlist.hpp"
 

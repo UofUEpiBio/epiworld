@@ -1,6 +1,11 @@
 #ifndef EPIWORLD_PERSON_HPP
 #define EPIWORLD_PERSON_HPP
 
+#define HEALTHY  0
+#define DECEASED -99
+#define INFECTED -1
+#define RECOVERED 1
+
 template<typename TSeq>
 class Virus;
 
@@ -23,6 +28,7 @@ private:
     PersonViruses<TSeq> viruses;
     PersonTools<TSeq> tools;
     std::vector< Person<TSeq> * > neighbors;
+    int status = HEALTHY;
 
 public:
 
@@ -32,6 +38,7 @@ public:
     void add_virus(int d, Virus<TSeq> virus);
 
     double get_efficacy(Virus<TSeq> * v);
+    double get_transmisibility(Virus<TSeq> * v);
     double get_recovery(Virus<TSeq> * v);
     double get_death(Virus<TSeq> * v);
     
@@ -45,6 +52,7 @@ public:
     void add_neighbor(Person<TSeq> * p);
 
     void update_status();
+    int get_status() const;
 
 };
 
@@ -75,6 +83,13 @@ inline double Person<TSeq>::get_efficacy(
     Virus<TSeq> * v
 ) {
     return tools.get_efficacy(v);
+}
+
+template<typename TSeq>
+inline double Person<TSeq>::get_transmisibility(
+    Virus<TSeq> * v
+) {
+    return tools.get_transmisibility(v);
 }
 
 template<typename TSeq>
@@ -128,89 +143,151 @@ inline void Person<TSeq>::add_neighbor(
 template<typename TSeq>
 inline void Person<TSeq>::update_status() {
 
-    // Step 1: Compute the individual efficacies
-    std::vector<double> probs;
-    std::vector< Virus<TSeq>* > variants;
-    std::vector< int > certain_infection; ///< Viruses for which there's no chance of escape
+    // No change if deceased
+    if (status == DECEASED)
+        return;
 
-    // Computing the efficacy
-    double p_none = 1.0; ///< Product of all (1 - efficacy)
-    double tmp_efficacy;
-    for (int n = 0; n < neighbors.size(); ++n)
+    if ((status == HEALTHY) | (status == RECOVERED))
     {
+        // Step 1: Compute the individual efficcacy
+        std::vector<double> probs;
+        std::vector< Virus<TSeq>* > variants;
+        std::vector< int > certain_infection; ///< Viruses for which there's no chance of escape
 
-        Person<TSeq> * neighbor = neighbors[n];
-        PersonViruses<TSeq> nviruses = neighbor->get_viruses();
-        
-        // Now over the neighbor's viruses
-        for (int v = 0; v < nviruses.size(); ++v)
+        // Computing the efficacy
+        double p_none = 1.0; ///< Product of all (1 - efficacy)
+        double tmp_efficacy;
+        for (int n = 0; n < neighbors.size(); ++n)
         {
 
-            // Computing the corresponding efficacy
-            Virus<TSeq> * tmp_v = &(neighbor->get_virus(v));
-            tmp_efficacy = get_efficacy(tmp_v);
-            probs.push_back(tmp_efficacy);
-            variants.push_back(tmp_v);
+            Person<TSeq> * neighbor = neighbors[n];
 
-            // Adding to the product
-            p_none *= tmp_efficacy;
+            // Dead individuals make no change
+            if (neighbor->get_status() == DECEASED)
+                continue;
 
-            // Is it impossible to escape?
-            if (tmp_efficacy < 1e-100)
-                certain_infection.push_back(probs.size() - 1);
+            PersonViruses<TSeq> nviruses = neighbor->get_viruses();
+            
+            // Now over the neighbor's viruses
+            for (int v = 0; v < nviruses.size(); ++v)
+            {
+
+                // Computing the corresponding efficacy
+                Virus<TSeq> * tmp_v = &(neighbor->get_virus(v));
+
+                // And it is a function of transmisibility as well
+                tmp_efficacy = get_efficacy(tmp_v) * neighbor->get_transmisibility(tmp_v);
+                
+                probs.push_back(tmp_efficacy);
+                variants.push_back(tmp_v);
+
+                // Adding to the product
+                p_none *= tmp_efficacy;
+
+                // Is it impossible to escape?
+                if (tmp_efficacy < 1e-100)
+                    certain_infection.push_back(probs.size() - 1);
 
 
+            }
         }
-    }
 
-    // Case in which infection is certain. All certain infections have
-    // equal chance of taking the individual
-    double r = model->runif();
-    if (certain_infection.size() > 0)
-    {
-        add_virus(model->today(), *variants[
-            certain_infection[std::floor(r * certain_infection.size())]
-        ]);
-
-        // And we go back
-        return;
-    }
-
-    // Step 2: Calculating the prob of none or single
-    double p_none_or_single = p_none;
-    for (int v = 0; v < probs.size(); ++v)
-        if (probs[v] > 1e-15)
-            p_none_or_single += p_none / probs[v] * (1 - probs[v]);
-
-    
-    // Step 3: Roulette
-    double cumsum = p_none / p_none_or_single;
-    
-
-    // If this is the case, then nothing happens
-    if (r < cumsum)
-        return;
-
-    for (int v = 0; v < probs.size(); ++v)
-    {
-        // If it yield here, then bingo, the individual will acquire the disease
-        cumsum += (1 - probs[v])/p_none_or_single;
-        if (r < cumsum)
+        // Case in which infection is certain. All certain infections have
+        // equal chance of taking the individual
+        double r = model->runif();
+        if (certain_infection.size() > 0)
         {
-            add_virus(model->today(), *variants[v]);
+            add_virus(model->today(), *variants[
+                certain_infection[std::floor(r * certain_infection.size())]
+            ]);
+
+            // And we go back
             return;
         }
+
+        // Step 2: Calculating the prob of none or single
+        double p_none_or_single = p_none;
+        for (int v = 0; v < probs.size(); ++v)
+            if (probs[v] > 1e-15)
+                p_none_or_single += p_none / probs[v] * (1 - probs[v]);
+
         
-    }
+        // Step 3: Roulette
+        double cumsum = p_none / p_none_or_single;
+        
 
-    // We shouldn't have reached this place
-    throw std::logic_error(
-        "Your calculations are wrong. This should't happen:\ncumsum : " +
-        std::to_string(cumsum) + "\nr      : " + std::to_string(r) + "\n"
-        );
+        // If this is the case, then nothing happens
+        if (r < cumsum)
+            return;
 
+        for (int v = 0; v < probs.size(); ++v)
+        {
+            // If it yield here, then bingo, the individual will acquire the disease
+            cumsum += (1 - probs[v])/p_none_or_single;
+            if (r < cumsum)
+            {
+                add_virus(model->today(), *variants[v]);
+                model->get_db().up_infected(variants[v]);
+                return;
+            }
+            
+        }
 
+        // We shouldn't have reached this place
+        throw std::logic_error(
+            "Your calculations are wrong. This should't happen:\ncumsum : " +
+            std::to_string(cumsum) + "\nr      : " + std::to_string(r) + "\n"
+            );
+
+    } else if (status == INFECTED)
+    {
+
+        Virus<TSeq> * vptr = &viruses(0u);
+
+        // Since individuals can either recover, die, or stay (all exclusive)
+        // we compute conditional probabilities
+        // P(die | die or recover or neither) =
+        //    P(die or recover or neither | die) * P(die) / P(die or recover or neither)
+        //    = P(die) / P(die or recover or neither)
+        // P(die or recover or neither) = 1 - P(die) * P(recover)
+        // thus
+        // P(die | die or recover or neither) = P(die) / (1 - P(die) * P(recover))
+        double p_die = get_death(vptr);
+        double p_rec = get_recovery(vptr);
+        double r = model->runif();
+
+        double cumsum = p_die / (1.0 - p_die * p_rec); 
+
+        if (r < cumsum)
+        {
+            model->get_db().up_deceased(vptr);
+            status = DECEASED;
+            return;
+        } 
+        
+        cumsum += p_rec / (1.0 - p_die * p_rec);
+        if (r < cumsum)
+        {
+            model->get_db().up_recovered(vptr);
+            status = RECOVERED;
+            viruses.clear();
+            return;
+        }
+
+    } 
+
+    return;
 
 }
+
+template<typename TSeq>
+inline int Person<TSeq>::get_status() const {
+    return status;
+}
+
+#undef HEALTHY
+#undef DECEASED
+#undef INFECTED
+#undef RECOVERED
 
 #endif

@@ -14,6 +14,9 @@ class Virus;
 template<typename TSeq>
 class PersonViruses;
 
+template<typename TSeq>
+class Model;
+
 #define DEFAULT_TRANSMISIBILITY 0.9
 
 template<typename TSeq>
@@ -147,16 +150,19 @@ inline int Virus<TSeq>::get_date() const {
 template<typename TSeq>
 class PersonViruses {
     friend class Person<TSeq>;
+
 private:
     Person<TSeq> * person;
     std::vector< Virus<TSeq> > viruses;
     std::vector< int > dates;
     std::vector< bool > active;
+
 public:
     void add_virus(int date, Virus<TSeq> v);
     size_t size() const;
     Virus<TSeq> & operator()(int i);
     void mutate();
+    void clear();
 
 };
 
@@ -200,6 +206,15 @@ inline void PersonViruses<TSeq>::mutate()
         v.mutate();
 }
 
+template<typename TSeq>
+inline void PersonViruses<TSeq>::clear()
+{
+
+    this->viruses.clear();
+    this->dates.clear();
+    this->active.clear();
+
+}
 
 
 

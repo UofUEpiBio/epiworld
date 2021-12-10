@@ -6,6 +6,7 @@
 #define EPIWORLD_TOOLS_HPP
 
 #define DEFAULT_EFFICACY .9
+#define DEFAULT_TRANSMISIBILITY .9
 #define DEFAULT_RECOVERY .5
 #define DEFAULT_DEATH    .1
 
@@ -40,6 +41,7 @@ private:
     Person<TSeq> * person;
     std::shared_ptr<TSeq> sequence = nullptr;
     std::shared_ptr<ToolFun<TSeq>> efficacy = nullptr;
+    std::shared_ptr<ToolFun<TSeq>> transmisibility = nullptr;
     std::shared_ptr<ToolFun<TSeq>> recovery = nullptr;
     std::shared_ptr<ToolFun<TSeq>> death = nullptr;
 
@@ -64,9 +66,11 @@ public:
      */
     ///@[
     double get_efficacy(Virus<TSeq> * v);
+    double get_transmisibility(Virus<TSeq> * v);
     double get_recovery(Virus<TSeq> * v);
     double get_death(Virus<TSeq> * v);
     void set_efficacy(ToolFun<TSeq> fun);
+    void set_transmisibility(ToolFun<TSeq> fun);
     void set_recovery(ToolFun<TSeq> fun);
     void set_death(ToolFun<TSeq> fun);
     ///@]
@@ -99,6 +103,18 @@ inline double Tool<TSeq>::get_efficacy(
         return DEFAULT_EFFICACY;
     
     return (*this->efficacy)(person, v, person->model);
+
+}
+
+template<typename TSeq>
+inline double Tool<TSeq>::get_transmisibility(
+    Virus<TSeq> * v
+) {
+
+    if (!transmisibility)
+        return DEFAULT_TRANSMISIBILITY;
+    
+    return (*this->transmisibility)(person, v, person->model);
 
 }
 
@@ -170,6 +186,20 @@ inline double efficacy_mixer_default(
 };
 
 template<typename TSeq>
+inline double transmisibility_mixer_default(
+    Virus<TSeq>* v,
+    PersonTools<TSeq>* pt
+)
+{
+    double total = 1.0;
+    for (int i = 0; i < pt->size(); ++i)
+        total *= (1.0 - pt->operator()(i).get_transmisibility(v));
+
+    return 1.0 - total;
+    
+};
+
+template<typename TSeq>
 inline double recovery_mixer_default(
     Virus<TSeq>* v,
     PersonTools<TSeq>* pt
@@ -217,6 +247,7 @@ private:
     std::vector<Tool<TSeq>> tools;
     std::vector< int > dates;
     std::shared_ptr<MixerFun<TSeq>> efficacy_mixer;
+    std::shared_ptr<MixerFun<TSeq>> transmisibility_mixer;
     std::shared_ptr<MixerFun<TSeq>> recovery_mixer;
     std::shared_ptr<MixerFun<TSeq>> death_mixer;
 
@@ -224,10 +255,12 @@ public:
     PersonTools() {};
     void add_tool(int date, Tool<TSeq> tool);
     double get_efficacy(Virus<TSeq> * v);
+    double get_transmisibility(Virus<TSeq> * v);
     double get_recovery(Virus<TSeq> * v);
     double get_death(Virus<TSeq> * v);
 
     void set_efficacy_mixer(MixerFun<TSeq> fun);
+    void set_transmisibility_mixer(MixerFun<TSeq> fun);
     void set_recovery_mixer(MixerFun<TSeq> fun);
     void set_death_mixer(MixerFun<TSeq> fun);
 
@@ -262,6 +295,18 @@ inline double PersonTools<TSeq>::get_efficacy(
 }
 
 template<typename TSeq>
+inline double PersonTools<TSeq>::get_transmisibility(
+    Virus<TSeq> * v
+) {
+
+    if (!transmisibility_mixer)
+        set_transmisibility_mixer(transmisibility_mixer_default<TSeq>);
+
+    return (*transmisibility_mixer)(v, this);
+
+}
+
+template<typename TSeq>
 inline double PersonTools<TSeq>::get_recovery(
     Virus<TSeq> * v
 ) {
@@ -291,6 +336,13 @@ inline void PersonTools<TSeq>::set_efficacy_mixer(
     MixerFun<TSeq> fun
 ) {
     efficacy_mixer = std::make_shared<MixerFun<TSeq>>(fun);
+}
+
+template<typename TSeq>
+inline void PersonTools<TSeq>::set_transmisibility_mixer(
+    MixerFun<TSeq> fun
+) {
+    transmisibility_mixer = std::make_shared<MixerFun<TSeq>>(fun);
 }
 
 template<typename TSeq>

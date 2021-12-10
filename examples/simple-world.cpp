@@ -137,33 +137,33 @@ int main() {
         if (model(i).get_viruses().size() == 0)
             continue;
 
-        printf_epiworld("\n(%i2) oldseq: ", i);
+        // printf_epiworld("\n(%i2) oldseq: ", i);
             
-        for (const auto & s : *model(i).get_virus(0u).get_sequence())
-            printf_epiworld("%i ", s ? 1 : 0);
+        // for (const auto & s : *model(i).get_virus(0u).get_sequence())
+        //     printf_epiworld("%i ", s ? 1 : 0);
         
-        // Applying 100 mutations (just for fun)
-        for (int m = 0; m < 100; ++m)
+        // Applying 10 mutations (just for fun)
+        for (int m = 0; m < 10; ++m)
             model(i).mutate_virus();
 
-        printf_epiworld("\n(%i2) New: ", i);
+        // printf_epiworld("\n(%i2) New: ", i);
             
-        for (const auto & s : *model(i).get_virus(0u).get_sequence())
-            printf_epiworld("%i ", s ? 1 : 0);
+        // for (const auto & s : *model(i).get_virus(0u).get_sequence())
+        //     printf_epiworld("%i ", s ? 1 : 0);
 
 
-        // Printing new results
-        printf_epiworld("\n");
-        for (int j = 0; j < POP_SIZE; ++j)
-        {
-            printf_epiworld(
-                "(%2i) E: %.2f, R: %.2f, D: %.2f\n",
-                j,
-                model(j).get_efficacy(&model(i).get_virus(0u)),
-                model(j).get_recovery(&model(i).get_virus(0u)),
-                model(j).get_death(&model(i).get_virus(0u))
-                );
-        }
+        // // Printing new results
+        // printf_epiworld("\n");
+        // for (int j = 0; j < POP_SIZE; ++j)
+        // {
+        //     printf_epiworld(
+        //         "(%2i) E: %.2f, R: %.2f, D: %.2f\n",
+        //         j,
+        //         model(j).get_efficacy(&model(i).get_virus(0u)),
+        //         model(j).get_recovery(&model(i).get_virus(0u)),
+        //         model(j).get_death(&model(i).get_virus(0u))
+        //         );
+        // }
     }
 
     int nvar = model.get_nvariants();

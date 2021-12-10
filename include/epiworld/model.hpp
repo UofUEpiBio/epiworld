@@ -18,8 +18,14 @@ class Virus;
 class AdjList;
 
 template<typename TSeq>
+class DataBase;
+
+template<typename TSeq>
 class Model {
 private:
+
+    DataBase<TSeq> db;
+
     std::vector< Person<TSeq> > persons;
     std::vector< Virus<TSeq> > viruses;
     std::vector< double > prevalence; ///< Initial prevalence of each virus
@@ -28,20 +34,14 @@ private:
     bool initialized = false;
     int current_date = 0;
 
-    // Information about the emerging variants
-    int nvariants = 0;
-    MapVec_type<bool,int> variant_id;
-    std::vector< int > variant_parent;
-    std::vector< int > variant_date;
-    std::vector< int > variant_ninfected;
-    std::vector< TSeq > variant_sequence;
-
 
 public:
 
     Model() {};
     Model(int size);
     void set_rand_engine(std::mt19937 & eng);
+
+    DataBase<TSeq> & get_db();
     std::vector< Person<TSeq> > * get_persons();
 
     Person<TSeq> & operator()(int i);
@@ -65,6 +65,12 @@ public:
     const std::vector< int > & get_variant_nifected() const;
 
 };
+
+template<typename TSeq>
+inline DataBase<TSeq> & Model<TSeq>::get_db()
+{
+    return db;
+}
 
 template<typename TSeq>
 inline Model<TSeq>::Model(int size) : persons(size) {
@@ -140,15 +146,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 {
     viruses.push_back(v);
     prevalence.push_back(preval);
-
-    if (variant_id.find(*v.get_sequence()) == variant_id.end())
-        variant_id[*v.get_sequence()] = nvariants++;
-
-    // variant_id.push_back(nvariants++);
-    variant_parent.push_back(-1); ///< First variant has no parent
-    variant_date.push_back(today());
-    variant_ninfected.push_back(0);
-    variant_sequence.push_back(*v.get_sequence());
+    register_variant(&v);
 
 }
 
@@ -195,46 +193,24 @@ template<typename TSeq>
 inline void Model<TSeq>::register_variant(Virus<TSeq> * v) {
 
     // Updating registry
-    if (variant_id.find(*v->get_sequence()) == variant_id.end())
-    {
-        variant_id[*v->get_sequence()] = ++nvariants;
-        variant_parent.push_back(v->get_id());
-        variant_ninfected.push_back(1);
-        variant_date.push_back(today());
-        variant_sequence.push_back(*v->get_sequence());
-
-        // Updating the variant
-        v->set_id(nvariants);
-        v->set_date(today());
-
-    } else {
-
-        int tmp_id = variant_id[*v->get_sequence()];
-
-        variant_ninfected[tmp_id]++;
-
-        // Updating the variant
-        v->set_id(tmp_id);
-        v->set_date(variant_date[tmp_id]);
-
-    }    
+    db.register_variant(v);
     
     return;
 } 
 
 template<typename TSeq>
 inline int Model<TSeq>::get_nvariants() const {
-    return nvariants;
+    return db.size();
 }
 
 template<typename TSeq>
 inline const std::vector<TSeq> & Model<TSeq>::get_variant_sequence() const {
-    return variant_sequence;
+    return db.get_sequence();
 }
 
 template<typename TSeq>
 inline const std::vector<int> & Model<TSeq>::get_variant_nifected() const {
-    return variant_ninfected;
+    return db.get_ninfected();
 }
 
 #undef CHECK_INIT
