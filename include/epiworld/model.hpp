@@ -119,7 +119,11 @@ inline void Model<TSeq>::init(int seed) {
         for (int p = 0; p < persons.size(); ++p)
         {
             if (runif() < prevalence[v])
+            {
                 persons[p].add_virus(0, viruses[v]);
+                db.up_infected(&viruses[v]);
+                // printf_epiworld("Person %i infected\n", p);
+            }
         }
     }
 

@@ -63,7 +63,7 @@ MAKE_TOOL(vaccine_dath, DAT) {
 }
 
 MAKE_TOOL(mask_eff, DAT) {
-    return 0.9;
+    return 0.5;
 }
 
 MAKE_TOOL(raw_eff, DAT) {
@@ -71,7 +71,14 @@ MAKE_TOOL(raw_eff, DAT) {
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    int nsteps;
+    if (argc == 1)
+        nsteps = 1000;
+    else
+        nsteps = strtol(argv[1], nullptr, 0);
+
 
     using namespace epiworld;
 
@@ -84,7 +91,7 @@ int main() {
     // Initializing the world. This will include POP_SIZE
     // individuals
     epiworld::Model<DAT> model(POP_SIZE);
-    model.add_virus(covid19, 0.5); // 50% will have the virus at first
+    model.add_virus(covid19, 0.95); // 50% will have the virus at first
     model.seed(1231);
 
     // Reading network structure
@@ -116,56 +123,17 @@ int main() {
     for (int i = 0; i < POP_SIZE; ++i)
         model(i).add_tool(0, immune);
 
-    // Now, we show the rates for each individual ------------------------------
-    printf_epiworld("The Efficacy (E), Recovery (R), and Death (D) rates:\n");
-    for (int i = 0; i < POP_SIZE; ++i)
-        printf_epiworld(
-            "  (%2i) E: %.2f, R: %.2f, D: %.2f\n",
-            i,
-            model(i).get_efficacy(&covid19),
-            model(i).get_recovery(&covid19),
-            model(i).get_death(&covid19)
-            );
-
-    // What happens if we make things mutate now and then ----------------------
-    for (int i = 0; i < POP_SIZE; ++i)
+    
+    // Initializing the simulation
+    for (int t = 0; t < nsteps; ++t)
     {
+        model.update_status();
+        model.next();
 
-        // Updating status
-        model(i).update_status();
-
-        // Nothing to do if it is healthy
-        if (model(i).get_viruses().size() == 0)
-            continue;
-
-        // printf_epiworld("\n(%i2) oldseq: ", i);
-            
-        // for (const auto & s : *model(i).get_virus(0u).get_sequence())
-        //     printf_epiworld("%i ", s ? 1 : 0);
-        
-        // Applying 10 mutations (just for fun)
-        for (int m = 0; m < 10; ++m)
-            model(i).mutate_virus();
-
-        // printf_epiworld("\n(%i2) New: ", i);
-            
-        // for (const auto & s : *model(i).get_virus(0u).get_sequence())
-        //     printf_epiworld("%i ", s ? 1 : 0);
-
-
-        // // Printing new results
-        // printf_epiworld("\n");
-        // for (int j = 0; j < POP_SIZE; ++j)
-        // {
-        //     printf_epiworld(
-        //         "(%2i) E: %.2f, R: %.2f, D: %.2f\n",
-        //         j,
-        //         model(j).get_efficacy(&model(i).get_virus(0u)),
-        //         model(j).get_recovery(&model(i).get_virus(0u)),
-        //         model(j).get_death(&model(i).get_virus(0u))
-        //         );
-        // }
+        if ((t % 1000 == 0))
+            printf_epiworld("Step %d\n", t);
     }
+    
 
     int nvar = model.get_nvariants();
     printf_epiworld("Total variants: %i\n", nvar);

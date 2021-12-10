@@ -77,6 +77,7 @@ inline void Person<TSeq>::add_virus(
     Virus<TSeq> virus
 ) {
     viruses.add_virus(d, virus);
+    status = INFECTED;
 }
 
 template<typename TSeq>
@@ -274,6 +275,9 @@ inline void Person<TSeq>::update_status() {
             viruses.clear();
             return;
         }
+
+        // If continues sick, then mutate the virus
+        mutate_virus();
 
     } 
 
