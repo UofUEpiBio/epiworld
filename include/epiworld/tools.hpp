@@ -23,7 +23,10 @@ template<typename TSeq>
 class PersonTools;
 
 template<typename TSeq>
-using ToolFun = std::function<double(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+class Tool;
+
+template<typename TSeq>
+using ToolFun = std::function<double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
 using MixerFun = std::function<double(Virus<TSeq>*,PersonTools<TSeq>*)>;
@@ -40,6 +43,7 @@ class Tool {
 private:
     Person<TSeq> * person;
     std::shared_ptr<TSeq> sequence = nullptr;
+    TSeq sequence_unique;
     std::shared_ptr<ToolFun<TSeq>> efficacy = nullptr;
     std::shared_ptr<ToolFun<TSeq>> transmisibility = nullptr;
     std::shared_ptr<ToolFun<TSeq>> recovery = nullptr;
@@ -51,7 +55,10 @@ public:
     Tool(TSeq d);
 
     void set_sequence(TSeq d);
+    void set_sequence_unique(TSeq d);
+    void set_sequence(std::shared_ptr<TSeq> d);
     std::shared_ptr<TSeq> get_sequence();
+    TSeq & get_sequence_unique();
 
     /**
      * @brief Get the efficacy of tool
@@ -90,8 +97,23 @@ inline void Tool<TSeq>::set_sequence(TSeq d) {
 }
 
 template<typename TSeq>
+inline void Tool<TSeq>::set_sequence_unique(TSeq d) {
+    sequence_unique = d;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_sequence(std::shared_ptr<TSeq> d) {
+    sequence = d;
+}
+
+template<typename TSeq>
 inline std::shared_ptr<TSeq> Tool<TSeq>::get_sequence() {
     return sequence;
+}
+
+template<typename TSeq>
+inline TSeq & Tool<TSeq>::get_sequence_unique() {
+    return sequence_unique;
 }
 
 template<typename TSeq>
@@ -102,7 +124,7 @@ inline double Tool<TSeq>::get_efficacy(
     if (!efficacy)
         return DEFAULT_EFFICACY;
     
-    return (*this->efficacy)(person, v, person->model);
+    return (*this->efficacy)(this, person, v, person->model);
 
 }
 
@@ -114,7 +136,7 @@ inline double Tool<TSeq>::get_transmisibility(
     if (!transmisibility)
         return DEFAULT_TRANSMISIBILITY;
     
-    return (*this->transmisibility)(person, v, person->model);
+    return (*this->transmisibility)(this, person, v, person->model);
 
 }
 
@@ -126,7 +148,7 @@ inline double Tool<TSeq>::get_recovery(
     if (!recovery)
         return DEFAULT_RECOVERY;
     
-    return (*this->recovery)(person, v, person->model);
+    return (*this->recovery)(this, person, v, person->model);
 
 }
 
@@ -138,7 +160,7 @@ inline double Tool<TSeq>::get_death(
     if (!death)
         return DEFAULT_DEATH;
     
-    return (*this->death)(person, v, person->model);
+    return (*this->death)(this, person, v, person->model);
 
 }
 

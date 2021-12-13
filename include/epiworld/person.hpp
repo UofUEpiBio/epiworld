@@ -268,11 +268,11 @@ inline void Person<TSeq>::update_status() {
             // Updating db and running actions
             model->get_db().up_recovered(vptr);
 
-            // If there's an action
-            if (tools->post_recovery())
-                tools->post_recovery(
-                    this, vptr, this->model()
-                );
+            // // If there's an action
+            // if (tools->post_recovery())
+            //     tools->post_recovery(
+            //         this, vptr, this->model()
+            //     );
 
             status = RECOVERED;
 

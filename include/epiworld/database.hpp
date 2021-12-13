@@ -71,7 +71,7 @@ private:
 
     // Totals
     int today_total_nvariants_active = 0;
-    int today_total_nhealthty   = 0;
+    int today_total_nhealthy   = 0;
     int today_total_nrecovered = 0;
     int today_total_ninfected  = 0;
     int today_total_ndeceased  = 0;
@@ -135,7 +135,7 @@ template<typename TSeq>
 inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 {
     model = &m;
-    today_total_nhealthty = model->get_persons()->size();
+    today_total_nhealthy = model->get_persons()->size();
     return;
 }
 
@@ -166,7 +166,7 @@ inline void DataBase<TSeq>::record()
         // Recording the overall history
         hist_total_date.push_back(model->today());
         hist_total_nvariants_active.push_back(today_total_nvariants_active);
-        hist_total_nhealthy.push_back(today_total_nhealthty);
+        hist_total_nhealthy.push_back(today_total_nhealthy);
         hist_total_nrecovered.push_back(today_total_nrecovered);
         hist_total_ninfected.push_back(today_total_ninfected);
         hist_total_ndeceased.push_back(today_total_ndeceased);
@@ -202,6 +202,8 @@ inline void DataBase<TSeq>::register_variant(Virus<TSeq> * v) {
         v->set_id(variant_id.size() - 1);
         v->set_date(model->today());
 
+        today_total_nvariants_active++;
+
     } else {
 
         int new_id = variant_id[hash];
@@ -216,8 +218,8 @@ inline void DataBase<TSeq>::register_variant(Virus<TSeq> * v) {
 
     }    
 
-    today_total_nhealthty--;
-    today_total_ninfected++;
+    // today_total_nhealthy--;
+    // today_total_ninfected++;
 
     
     return;
@@ -230,7 +232,7 @@ inline int DataBase<TSeq>::get_today_total(std::string what) const
     if (what == "nvariants_active")
         return today_total_nvariants_active;
     else if (what == "nhealthty")
-        return today_total_nhealthty;
+        return today_total_nhealthy;
     else if (what == "nrecovered")
         return today_total_nrecovered;
     else if (what == "ninfected")
@@ -306,7 +308,7 @@ template<typename TSeq>
 inline void DataBase<TSeq>::up_infected(Virus<TSeq> * v) {
 
     today_variant_ninfected[v->get_id()]++;
-    today_total_nhealthty--;
+    today_total_nhealthy--;
     today_total_ninfected++;
 
 }
@@ -318,7 +320,7 @@ inline void DataBase<TSeq>::up_recovered(Virus<TSeq> * v) {
     today_variant_ninfected[tmp_id]--;
     today_variant_nrecovered[tmp_id]++;
     today_total_ninfected--;
-    today_total_nhealthty++;
+    today_total_nhealthy++;
     today_total_nrecovered++;
 
 }
@@ -356,11 +358,12 @@ inline void DataBase<TSeq>::write_data(
             hist_variant_ndeceased[i] << "\n";
 
     file_total <<
-        "date " << "nhealthy " << "ninfected " << "nrecovered " << "ndeceased\n";
+        "date " << "nvariants " << "nhealthy " << "ninfected " << "nrecovered " << "ndeceased\n";
 
     for (int i = 0; i < hist_total_nhealthy.size(); ++i)
         file_total <<
             hist_total_date[i] << " " <<
+            hist_total_nvariants_active[i] << " " <<
             hist_total_nhealthy[i] << " " <<
             hist_total_ninfected[i] << " " <<
             hist_total_nrecovered[i] << " " <<

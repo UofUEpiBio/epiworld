@@ -8,7 +8,7 @@
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true};
 #define POP_SIZE 5000
-#define MUTATION_PROB 0.1
+#define MUTATION_PROB 0.025
 
 // Defining mutation and transmission functions
 inline bool covid19_mut(
@@ -38,11 +38,13 @@ inline double covid19_trans(
     epiworld::Virus<DAT> * v,
     epiworld::Person<DAT> * p
 ) {
-    return 1.0;
+    return 0.8;
 }
 
 #define MAKE_TOOL(a,b) inline double \
-    (a)(epiworld::Person< b > * p, epiworld::Virus< b > * v, epiworld::Model< b > * m)
+    (a)(\
+        epiworld::Tool<b> * t, \
+        epiworld::Person< b > * p, epiworld::Virus< b > * v, epiworld::Model< b > * m)
 
 MAKE_TOOL(vaccine_eff, DAT) {
 
@@ -59,33 +61,37 @@ MAKE_TOOL(vaccine_rec, DAT) {
 }
 
 MAKE_TOOL(vaccine_dath, DAT) {
-    return 0.1;
+    return 0.01;
 }
 
 MAKE_TOOL(mask_eff, DAT) {
-    return 0.5;
+    return 0.8;
 }
 
 MAKE_TOOL(raw_eff, DAT) {
-    return 0.1;
+    return 0.2;
 }
 
 MAKE_TOOL(raw_rec, DAT) {
-    return 0.01;
+
+    double dist = 0.0;
+    const auto & virusseq = v->get_sequence();
+    for (int i = 0; i < virusseq->size(); ++i)
+    {
+        // With 30% chance we will match that part of the code
+        if (m->runif() < .3)
+            t->get_sequence_unique()[i] = virusseq->at(i);
+        dist += std::fabs(virusseq->at(i) - t->get_sequence_unique()[i]);
+    }
+    
+    return (1.0 - dist/virusseq->size()) * 0.8;
+
 }
 
 MAKE_TOOL(raw_death, DAT) {
-    return 0.01;
+    return 0.005;
 }
 
-// This functio will be called after gettin covig
-MAKE_TOOL(covid_recovery, DAT) {
-
-    epiworld::Tool<DAT> new_inmunity;
-    new_inmunity.set_sequence(*v->get_sequence());
-
-
-}
 
 int main(int argc, char* argv[]) {
 
@@ -100,7 +106,7 @@ int main(int argc, char* argv[]) {
         nsteps = strtol(argv[2], nullptr, 0);
 
     } else {
-        seed   = 123;
+        seed   = 1253;
         nsteps = 365;
     }
 
@@ -116,7 +122,7 @@ int main(int argc, char* argv[]) {
     // Initializing the world. This will include POP_SIZE
     // individuals
     epiworld::Model<DAT> model(POP_SIZE);
-    model.add_virus(covid19, 0.2); // 50% will have the virus at first
+    model.add_virus(covid19, 0.025); // 5% will have the virus at first
 
     // Reading network structure
     model.pop_from_adjlist("edgelist.txt");
@@ -136,8 +142,13 @@ int main(int argc, char* argv[]) {
     immune.set_efficacy(raw_eff);
     immune.set_recovery(raw_rec);
     immune.set_death(raw_death);
+    DAT seq0(base_seq.size(), false);
+    immune.set_sequence_unique(seq0);
 
     
+    // // Response of immune system post recovery
+    // epiworld::Tool<DAT> immune_build;
+    // immune_build.set_efficacy(add_immunity);
 
     // First half of the individuals is vaccinated
     for (int i = 0; i < POP_SIZE/4; ++i)
