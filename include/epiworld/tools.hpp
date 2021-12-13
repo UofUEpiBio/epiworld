@@ -5,10 +5,10 @@
 #ifndef EPIWORLD_TOOLS_HPP
 #define EPIWORLD_TOOLS_HPP
 
-#define DEFAULT_EFFICACY 0.0
-#define DEFAULT_TRANSMISIBILITY 1
-#define DEFAULT_RECOVERY 0.0
-#define DEFAULT_DEATH    0.0
+#define DEFAULT_EFFICACY        0.0
+// #define DEFAULT_TRANSMISIBILITY 0.9
+#define DEFAULT_RECOVERY        0.0
+#define DEFAULT_DEATH           0.0
 
 template<typename TSeq>
 class Virus;
@@ -44,10 +44,10 @@ private:
     Person<TSeq> * person;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique;
-    std::shared_ptr<ToolFun<TSeq>> efficacy = nullptr;
+    std::shared_ptr<ToolFun<TSeq>> efficacy        = nullptr;
     std::shared_ptr<ToolFun<TSeq>> transmisibility = nullptr;
-    std::shared_ptr<ToolFun<TSeq>> recovery = nullptr;
-    std::shared_ptr<ToolFun<TSeq>> death = nullptr;
+    std::shared_ptr<ToolFun<TSeq>> recovery        = nullptr;
+    std::shared_ptr<ToolFun<TSeq>> death           = nullptr;
 
 
 public:
@@ -133,10 +133,7 @@ inline double Tool<TSeq>::get_transmisibility(
     Virus<TSeq> * v
 ) {
 
-    if (!transmisibility)
-        return DEFAULT_TRANSMISIBILITY;
-    
-    return (*this->transmisibility)(this, person, v, person->model);
+    return v->transmisibility();
 
 }
 
@@ -265,7 +262,6 @@ class PersonTools {
 
 private:
     Person<TSeq> * person; 
-    Model<TSeq> * model;
     std::vector<Tool<TSeq>> tools;
     std::vector< int > dates;
     std::shared_ptr<MixerFun<TSeq>> efficacy_mixer;
@@ -407,7 +403,7 @@ inline Person<TSeq> * PersonTools<TSeq>::get_person() {
 
 template<typename TSeq>
 inline Model<TSeq> * PersonTools<TSeq>::get_model() {
-    return model;
+    return person->get_model();
 }
 
 #undef DEFAULT_EFFICACY

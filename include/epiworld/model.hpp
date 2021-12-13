@@ -34,11 +34,9 @@ private:
     bool initialized = false;
     int current_date = 0;
 
-
 public:
 
     Model() {};
-    Model(int size);
     void set_rand_engine(std::mt19937 & eng);
 
     DataBase<TSeq> & get_db();
@@ -53,16 +51,26 @@ public:
 
     void add_virus(Virus<TSeq> v, double preval);
 
-    void pop_from_adjlist(std::string fn, int skip = 0);
-    void pop_from_adjlist(AdjList al, int skip = 0);
+    void pop_from_adjlist(std::string fn, int skip = 0, bool directed = false);
+    void pop_from_adjlist(AdjList al);
     int today() const;
     void update_status();
+    void mutate_variant();
     void next();
 
     void register_variant(Virus<TSeq> * v);
     int get_nvariants() const;
     const std::vector< TSeq > & get_variant_sequence() const;
     const std::vector< int > & get_variant_nifected() const;
+
+    void write_data(
+        std::string fn_variant,
+        std::string fn_total
+        ) const;
+
+    void write_edgelist(
+        std::string fn
+        ) const;
 
 };
 
@@ -76,11 +84,6 @@ template<typename TSeq>
 inline std::vector<Person<TSeq>> * Model<TSeq>::get_persons()
 {
     return &persons;
-}
-
-template<typename TSeq>
-inline Model<TSeq>::Model(int size) : persons(size) {
-    
 }
 
 template<typename TSeq>
@@ -105,8 +108,12 @@ inline void Model<TSeq>::init(int seed) {
     if (initialized) 
         throw std::logic_error("Model already initialized.");
 
+    // Initializing persons
     for (auto & p : persons)
+    {
         p.model = this;
+        p.init();
+    }
 
     // Has to happen after setting the persons
     db.set_model(*this);
@@ -160,29 +167,28 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_adjlist(std::string fn, int skip) {
+inline void Model<TSeq>::pop_from_adjlist(std::string fn, int skip, bool directed) {
 
     AdjList al;
-    al.read_edgelist(fn);
-
-    this->pop_from_adjlist(al, skip);
+    al.read_edgelist(fn, skip, directed);
+    this->pop_from_adjlist(al);
 
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_adjlist(AdjList al, int skip) {
+inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
 
     // Resizing the people
     persons.resize(al.vcount(), Person<TSeq>());
 
     const auto & tmpdat = al.get_dat();
-    int i = 0;
     for (const auto & n : tmpdat)
     {        
+        persons[n.first].model = this;
+        persons[n.first].id    = n.first;
         for (const auto & link: n.second)
-            persons[i].add_neighbor(&persons[link]);
+            persons[n.first].add_neighbor(&persons[link.first]);
 
-        i++;
     }
 
 }
@@ -201,8 +207,23 @@ inline void Model<TSeq>::next() {
 
 template<typename TSeq>
 inline void Model<TSeq>::update_status() {
+
+    // Next status
     for (auto & p: persons)
         p.update_status();
+
+    // Storing
+    for (auto & p: persons)
+        p.status = p.status_next;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::mutate_variant() {
+
+    for (auto & p: persons)
+        p.mutate_variant();
+
 }
 
 template<typename TSeq>
@@ -227,6 +248,31 @@ inline const std::vector<TSeq> & Model<TSeq>::get_variant_sequence() const {
 template<typename TSeq>
 inline const std::vector<int> & Model<TSeq>::get_variant_nifected() const {
     return db.get_today_variant("ninfected");
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::write_data(
+    std::string fn_variant,
+    std::string fn_total
+    ) const
+{
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::write_edgelist(
+    std::string fn
+    ) const
+{
+
+    std::ofstream efile(fn, std::ios_base::out);
+    efile << "source target\n";
+    for (const auto & p : persons)
+    {
+        for (auto & n : p.neighbors)
+            efile << p.id << " " << n->id << "\n";
+    }
+
 }
 
 #undef CHECK_INIT

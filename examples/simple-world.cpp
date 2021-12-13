@@ -6,9 +6,9 @@
 
 // Original data will be an integer vector
 #define DAT std::vector<bool>
-static DAT base_seq = {true, false, false, true, true};
-#define POP_SIZE 5000
-#define MUTATION_PROB 0.025
+static DAT base_seq = {true, false, false, true, true, false, true, false, true};
+#define MUTATION_PROB      0.025
+#define INITIAL_PREVALENCE 0.005
 
 // Defining mutation and transmission functions
 inline bool covid19_mut(
@@ -38,7 +38,7 @@ inline double covid19_trans(
     epiworld::Virus<DAT> * v,
     epiworld::Person<DAT> * p
 ) {
-    return 0.8;
+    return 0.9;
 }
 
 #define MAKE_TOOL(a,b) inline double \
@@ -60,7 +60,7 @@ MAKE_TOOL(vaccine_rec, DAT) {
     return 0.3;
 }
 
-MAKE_TOOL(vaccine_dath, DAT) {
+MAKE_TOOL(vaccine_death, DAT) {
     return 0.01;
 }
 
@@ -69,7 +69,7 @@ MAKE_TOOL(mask_eff, DAT) {
 }
 
 MAKE_TOOL(raw_eff, DAT) {
-    return 0.2;
+    return 0.8;
 }
 
 MAKE_TOOL(raw_rec, DAT) {
@@ -89,7 +89,7 @@ MAKE_TOOL(raw_rec, DAT) {
 }
 
 MAKE_TOOL(raw_death, DAT) {
-    return 0.005;
+    return 0.01;
 }
 
 
@@ -121,11 +121,11 @@ int main(int argc, char* argv[]) {
 
     // Initializing the world. This will include POP_SIZE
     // individuals
-    epiworld::Model<DAT> model(POP_SIZE);
-    model.add_virus(covid19, 0.025); // 5% will have the virus at first
+    epiworld::Model<DAT> model;
+    model.add_virus(covid19, INITIAL_PREVALENCE); // 5% will have the virus at first
 
     // Reading network structure
-    model.pop_from_adjlist("edgelist.txt");
+    model.pop_from_adjlist("edgelist.txt", 0, true);
 
     model.init(seed);
 
@@ -133,10 +133,11 @@ int main(int argc, char* argv[]) {
     epiworld::Tool<DAT> vaccine;
     vaccine.set_efficacy(vaccine_eff);
     vaccine.set_recovery(vaccine_rec);
-    vaccine.set_death(vaccine_dath);
+    vaccine.set_death(vaccine_death);
 
     epiworld::Tool<DAT> mask;
     mask.set_efficacy(mask_eff);
+    // mask.set_transmisibility(mask_eff);
 
     epiworld::Tool<DAT> immune;
     immune.set_efficacy(raw_eff);
@@ -151,46 +152,33 @@ int main(int argc, char* argv[]) {
     // immune_build.set_efficacy(add_immunity);
 
     // First half of the individuals is vaccinated
-    for (int i = 0; i < POP_SIZE/4; ++i)
+    for (int i = 0; i < model.size()/4; ++i)
         model(i).add_tool(0, vaccine);
     
     // One half wears the mask
-    for (int i = POP_SIZE/4*3; i < POP_SIZE; ++i)
+    for (int i = model.size()/4*3; i < model.size(); ++i)
         model(i).add_tool(0, mask);
 
     // Immune system
-    for (int i = 0; i < POP_SIZE; ++i)
+    for (int i = 0; i < model.size(); ++i)
         model(i).add_tool(0, immune);
 
-    
     // Initializing the simulation
     for (int t = 0; t < nsteps; ++t)
     {
         model.update_status();
+        model.mutate_variant();
         model.next();
 
-        if ((t % 1000 == 0))
-            printf_epiworld("Step %d\n", t);
     }
     
-
-    int nvar = model.get_nvariants();
-    printf_epiworld("Total variants: %i\n", nvar);
-    for (int i = 0; i < nvar; ++i)
-    {
-        const DAT & variant = model.get_variant_sequence()[i];
-        for (int j = 0; j < variant.size(); ++j)
-            printf_epiworld("%i", variant[j] ? 1 : 0);
-
-        printf_epiworld("\n  infected : %i", model.get_variant_nifected()[i]);
-        printf_epiworld("\n  deceased : %i", model.get_db().get_today_variant("ndeceased")[i]);
-        printf_epiworld("\n  recovered: %i\n", model.get_db().get_today_variant("nrecovered")[i]);
-    }
-
+    // Writing off the results
     model.get_db().write_data(
         "variants.txt",
         "total.txt"
     );
+
+    model.write_edgelist("simple-world-edgelist.txt");
 
     return 0;
 

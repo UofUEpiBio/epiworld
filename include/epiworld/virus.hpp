@@ -83,6 +83,7 @@ inline void Virus<TSeq>::mutate() {
 
 template<typename TSeq>
 inline double Virus<TSeq>::transmisibility() {
+    
     if (!transmisibility_fun)
         (*transmisibility_fun)(this,person);
 

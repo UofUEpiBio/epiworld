@@ -22,8 +22,10 @@ dat <- rbind(
 
 library(ggplot2)
 
-ggplot(dat, aes(x = date, y = n)) +
-  geom_line(aes(color = status))
+dat |> subset(date < 365) |>
+ggplot(aes(x = date, y = n)) +
+  geom_line(aes(color = status)) # +
+  # geom_point()
 
 ggplot(totals, aes(x = date, y = nvariants)) +
   geom_line()

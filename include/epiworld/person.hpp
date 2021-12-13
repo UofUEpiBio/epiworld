@@ -1,10 +1,12 @@
 #ifndef EPIWORLD_PERSON_HPP
 #define EPIWORLD_PERSON_HPP
 
-#define HEALTHY  0
-#define DECEASED -99
-#define INFECTED -1
-#define RECOVERED 1
+#define DECEASED     -99
+#define INFECTED     -1
+#define HEALTHY      0
+#define RECOVERED    1
+#define INCUBATION   2
+#define ASYMPTOMATIC 3
 
 template<typename TSeq>
 class Virus;
@@ -28,11 +30,14 @@ private:
     PersonViruses<TSeq> viruses;
     PersonTools<TSeq> tools;
     std::vector< Person<TSeq> * > neighbors;
-    int status = HEALTHY;
+    int status_next = HEALTHY; // Placeholder
+    int status      = HEALTHY;
+    int id          = -1;
 
 public:
 
     Person();
+    void init();
 
     void add_tool(int d, Tool<TSeq> tool);
     void add_virus(int d, Virus<TSeq> virus);
@@ -48,7 +53,7 @@ public:
     Virus<TSeq> & get_virus(int i);
     PersonViruses<TSeq> & get_viruses();
 
-    void mutate_virus();
+    void mutate_variant();
     void add_neighbor(Person<TSeq> * p);
 
     void update_status();
@@ -57,11 +62,19 @@ public:
 };
 
 template<typename TSeq>
-inline Person<TSeq>::Person() {
+inline Person<TSeq>::Person()
+{
+    
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::init()
+{
     tools.person   = this;
     viruses.person = this;
     status         = HEALTHY;
 }
+    
 
 template<typename TSeq>
 inline void Person<TSeq>::add_tool(
@@ -77,7 +90,7 @@ inline void Person<TSeq>::add_virus(
     Virus<TSeq> virus
 ) {
     viruses.add_virus(d, virus);
-    status = INFECTED;
+    status_next = INFECTED;
 }
 
 template<typename TSeq>
@@ -129,7 +142,7 @@ inline Virus<TSeq> & Person<TSeq>::get_virus(int i) {
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::mutate_virus() {
+inline void Person<TSeq>::mutate_variant() {
     viruses.mutate();
 }
 
@@ -217,6 +230,8 @@ inline void Person<TSeq>::update_status() {
         
         // Step 3: Roulette
         double cumsum = p_none/p_none_or_single;
+        if (r < cumsum)
+            return;
 
         for (int v = 0; v < probs.size(); ++v)
         {
@@ -230,12 +245,6 @@ inline void Person<TSeq>::update_status() {
             
         }
 
-        // // We shouldn't have reached this place
-        // throw std::logic_error(
-        //     "Your calculations are wrong. This should't happen:\ncumsum : " +
-        //     std::to_string(cumsum) + "\nr      : " + std::to_string(r) + "\n"
-        //     );
-
     } else if (status == INFECTED)
     {
 
@@ -245,7 +254,8 @@ inline void Person<TSeq>::update_status() {
         // we compute conditional probabilities
         // P(die | die or recover or neither) =
         //    P(die or recover or neither | die) * P(die) / P(die or recover or neither)
-        //    = P(die) / P(die or recover or neither)
+        //    = P(only die) / P(die or recover or neither)
+        // P(only die) = P(die) * (1 - P(recover))
         // P(die or recover or neither) = 1 - P(die) * P(recover)
         // thus
         // P(die | die or recover or neither) = P(die) / (1 - P(die) * P(recover))
@@ -253,36 +263,28 @@ inline void Person<TSeq>::update_status() {
         double p_rec = get_recovery(vptr);
         double r = model->runif();
 
-        double cumsum = p_die / (1.0 - p_die * p_rec); 
+        double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
 
         if (r < cumsum)
         {
+            
             model->get_db().up_deceased(vptr);
-            status = DECEASED;
+            status_next = DECEASED;
             return;
+
         } 
         
-        cumsum += p_rec / (1.0 - p_die * p_rec);
+        cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
         if (r < cumsum)
         {
             // Updating db and running actions
             model->get_db().up_recovered(vptr);
 
-            // // If there's an action
-            // if (tools->post_recovery())
-            //     tools->post_recovery(
-            //         this, vptr, this->model()
-            //     );
-
-            status = RECOVERED;
-
-
+            status_next = RECOVERED;
             viruses.clear();
             return;
-        }
 
-        // If continues sick, then mutate the virus
-        mutate_virus();
+        }
 
     } 
 

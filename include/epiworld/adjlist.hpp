@@ -12,7 +12,7 @@ class AdjList {
 private:
 
     std::string filename;
-    std::map<int,std::vector<int>> dat;
+    std::map<int,std::map<int,int>> dat;
 
     int id_min,id_max;
     int N = 0;
@@ -20,8 +20,8 @@ private:
 
 public:
 
-    void read_edgelist(std::string fn, int skip = 0, bool directed = false);
-    std::vector< int > operator()(int i) const;
+    void read_edgelist(std::string fn, int skip = 0, bool directed = true);
+    const std::map<int,int> & operator()(int i) const;
         
     void print(int limit = 20) const;
     int get_id_max() const;
@@ -29,7 +29,7 @@ public:
     size_t vcount() const;
     size_t ecount() const;
     
-    const std::map<int,std::vector<int>> & get_dat() const {
+    const std::map<int,std::map<int,int>> & get_dat() const {
         return dat;
     };
 
@@ -73,15 +73,32 @@ inline void AdjList::read_edgelist(
             break;
 
         // Adding nodes
-        dat[i].push_back(j);
-        if (dat[i].size() == 1u)
+        if (dat.find(i) == dat.end())
+        {
+
+            dat[i].insert(std::pair<int,int>(j, 0));
             N++;
+
+        } else { // Or simply increasing the counter
+
+            auto & dat_i = dat[i];
+            if (dat_i.find(j) == dat_i.end())
+                dat_i[j] = 0;
+            else
+                dat_i[j]++;
+
+        }
         
         if (!directed)
         {
-            dat[j].push_back(i);
-            if (dat[j].size() == 1u)
+
+            if (dat.find(j) == dat.end())
+            {
+                dat[j].insert(std::pair<int,int>(i,0));
                 N++;
+            } else
+                dat[j][i]++;
+
         }
 
         // Recalculating the limits
@@ -111,7 +128,7 @@ inline void AdjList::read_edgelist(
 
 }
 
-inline std::vector< int > AdjList::operator()(int i) const {
+inline const std::map<int,int> & AdjList::operator()(int i) const {
 
     if (dat.find(i) == dat.end())
         throw std::range_error(
@@ -138,9 +155,9 @@ void AdjList::print(int limit) const {
         int niter = 0;
         for (auto n_n : n.second)
             if (++niter < n_neighbors)
-                printf_epiworld("%i, ", n_n);
+                printf_epiworld("%i, ", n_n.first);
             else
-                printf_epiworld("%i}\n", n_n);
+                printf_epiworld("%i}\n", n_n.first);
     }
 
     if (limit < dat.size())
