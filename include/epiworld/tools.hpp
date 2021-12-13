@@ -5,10 +5,10 @@
 #ifndef EPIWORLD_TOOLS_HPP
 #define EPIWORLD_TOOLS_HPP
 
-#define DEFAULT_EFFICACY .9
-#define DEFAULT_TRANSMISIBILITY .9
-#define DEFAULT_RECOVERY .5
-#define DEFAULT_DEATH    .1
+#define DEFAULT_EFFICACY 0.0
+#define DEFAULT_TRANSMISIBILITY 1
+#define DEFAULT_RECOVERY 0.0
+#define DEFAULT_DEATH    0.0
 
 template<typename TSeq>
 class Virus;
@@ -250,6 +250,7 @@ private:
     std::shared_ptr<MixerFun<TSeq>> transmisibility_mixer;
     std::shared_ptr<MixerFun<TSeq>> recovery_mixer;
     std::shared_ptr<MixerFun<TSeq>> death_mixer;
+    std::shared_ptr<ToolFun<TSeq>>  post_recovery;
 
 public:
     PersonTools() {};
@@ -263,6 +264,7 @@ public:
     void set_transmisibility_mixer(MixerFun<TSeq> fun);
     void set_recovery_mixer(MixerFun<TSeq> fun);
     void set_death_mixer(MixerFun<TSeq> fun);
+    void set_post_recovery(ToolFun<TSeq> fun);
 
     size_t size() const;
     Tool<TSeq> & operator()(int i);
@@ -357,6 +359,13 @@ inline void PersonTools<TSeq>::set_death_mixer(
     MixerFun<TSeq> fun
 ) {
     death_mixer = std::make_shared<MixerFun<TSeq>>(fun);
+}
+
+template<typename TSeq>
+inline void PersonTools<TSeq>::set_post_recovery(
+    ToolFun<TSeq> fun
+) {
+    post_recovery = std::make_shared<ToolFun<TSeq>>(fun);
 }
 
 template<typename TSeq>

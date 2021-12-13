@@ -73,6 +73,12 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
+inline std::vector<Person<TSeq>> * Model<TSeq>::get_persons()
+{
+    return &persons;
+}
+
+template<typename TSeq>
 inline Model<TSeq>::Model(int size) : persons(size) {
     
 }
@@ -102,6 +108,9 @@ inline void Model<TSeq>::init(int seed) {
     for (auto & p : persons)
         p.model = this;
 
+    // Has to happen after setting the persons
+    db.set_model(*this);
+
     if (!engine)
         engine = std::make_shared< std::mt19937 >();
 
@@ -120,8 +129,8 @@ inline void Model<TSeq>::init(int seed) {
             if (runif() < prevalence[v])
             {
                 persons[p].add_virus(0, viruses[v]);
-                db.up_infected(&viruses[v]);
-                // printf_epiworld("Person %i infected\n", p);
+                // db.up_infected(&viruses[v]);
+
             }
         }
     }
@@ -185,6 +194,7 @@ inline int Model<TSeq>::today() const {
 
 template<typename TSeq>
 inline void Model<TSeq>::next() {
+    db.record();
     ++this->current_date;
     return ;
 }
@@ -216,7 +226,7 @@ inline const std::vector<TSeq> & Model<TSeq>::get_variant_sequence() const {
 
 template<typename TSeq>
 inline const std::vector<int> & Model<TSeq>::get_variant_nifected() const {
-    return db.get_ninfected();
+    return db.get_today_variant("ninfected");
 }
 
 #undef CHECK_INIT

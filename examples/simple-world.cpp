@@ -7,7 +7,7 @@
 // Original data will be an integer vector
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true};
-#define POP_SIZE 100
+#define POP_SIZE 5000
 #define MUTATION_PROB 0.1
 
 // Defining mutation and transmission functions
@@ -38,7 +38,7 @@ inline double covid19_trans(
     epiworld::Virus<DAT> * v,
     epiworld::Person<DAT> * p
 ) {
-    return 0.5;
+    return 1.0;
 }
 
 #define MAKE_TOOL(a,b) inline double \
@@ -70,24 +70,38 @@ MAKE_TOOL(raw_eff, DAT) {
     return 0.1;
 }
 
+MAKE_TOOL(raw_rec, DAT) {
+    return 0.01;
+}
+
+MAKE_TOOL(raw_death, DAT) {
+    return 0.01;
+}
+
+// This functio will be called after gettin covig
+MAKE_TOOL(covid_recovery, DAT) {
+
+    epiworld::Tool<DAT> new_inmunity;
+    new_inmunity.set_sequence(*v->get_sequence());
+
+
+}
 
 int main(int argc, char* argv[]) {
 
 
-    if ((argc != 4) & (argc != 1))
+    if ((argc != 3) & (argc != 1))
         std::logic_error("You need to specify seed and number of steps (in that order).");
 
-    int seed, nsteps, nsims;
-    if (argc == 4)
+    int seed, nsteps;
+    if (argc == 3)
     {
         seed   = strtol(argv[1], nullptr, 0);
         nsteps = strtol(argv[2], nullptr, 0);
-        nsims  = strtol(argv[3], nullptr, 0);
 
     } else {
         seed   = 123;
-        nsteps = 1000;
-        nsims  = 1000
+        nsteps = 365;
     }
 
 
@@ -102,7 +116,7 @@ int main(int argc, char* argv[]) {
     // Initializing the world. This will include POP_SIZE
     // individuals
     epiworld::Model<DAT> model(POP_SIZE);
-    model.add_virus(covid19, 0.95); // 50% will have the virus at first
+    model.add_virus(covid19, 0.2); // 50% will have the virus at first
 
     // Reading network structure
     model.pop_from_adjlist("edgelist.txt");
@@ -120,13 +134,17 @@ int main(int argc, char* argv[]) {
 
     epiworld::Tool<DAT> immune;
     immune.set_efficacy(raw_eff);
+    immune.set_recovery(raw_rec);
+    immune.set_death(raw_death);
+
+    
 
     // First half of the individuals is vaccinated
-    for (int i = 0; i < POP_SIZE/2; ++i)
+    for (int i = 0; i < POP_SIZE/4; ++i)
         model(i).add_tool(0, vaccine);
     
     // One half wears the mask
-    for (int i = POP_SIZE/2; i < POP_SIZE; ++i)
+    for (int i = POP_SIZE/4*3; i < POP_SIZE; ++i)
         model(i).add_tool(0, mask);
 
     // Immune system
@@ -153,9 +171,15 @@ int main(int argc, char* argv[]) {
         for (int j = 0; j < variant.size(); ++j)
             printf_epiworld("%i", variant[j] ? 1 : 0);
 
-        printf_epiworld(": %i\n", model.get_variant_nifected()[i]);
+        printf_epiworld("\n  infected : %i", model.get_variant_nifected()[i]);
+        printf_epiworld("\n  deceased : %i", model.get_db().get_today_variant("ndeceased")[i]);
+        printf_epiworld("\n  recovered: %i\n", model.get_db().get_today_variant("nrecovered")[i]);
     }
 
+    model.get_db().write_data(
+        "variants.txt",
+        "total.txt"
+    );
 
     return 0;
 

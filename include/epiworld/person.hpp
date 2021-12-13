@@ -200,13 +200,10 @@ inline void Person<TSeq>::update_status() {
         double r = model->runif();
         if (certain_infection.size() > 0)
         {
-            add_virus(model->today(), *variants[
-                certain_infection[std::floor(r * certain_infection.size())]
-            ]);
-
-            // And we go back
-            status = INFECTED;
+            int ord = certain_infection[std::floor(r * certain_infection.size())];
+            add_virus(model->today(), *variants[ord]);
             return;
+
         }
 
         // Step 2: Calculating the prob of none or single
@@ -228,8 +225,6 @@ inline void Person<TSeq>::update_status() {
             if (r < cumsum)
             {
                 add_virus(model->today(), *variants[v]);
-                model->get_db().up_infected(variants[v]);
-                status = INFECTED;
                 return;
             }
             
@@ -270,8 +265,18 @@ inline void Person<TSeq>::update_status() {
         cumsum += p_rec / (1.0 - p_die * p_rec);
         if (r < cumsum)
         {
+            // Updating db and running actions
             model->get_db().up_recovered(vptr);
+
+            // If there's an action
+            if (tools->post_recovery())
+                tools->post_recovery(
+                    this, vptr, this->model()
+                );
+
             status = RECOVERED;
+
+
             viruses.clear();
             return;
         }

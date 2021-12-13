@@ -184,6 +184,8 @@ inline void PersonViruses<TSeq>::add_virus(
     // Pointing
     viruses[viruses.size() - 1u].person = this->person; 
 
+    person->get_model()->get_db().up_infected(&v);
+
 }
 
 template<typename TSeq>
