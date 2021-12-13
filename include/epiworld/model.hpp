@@ -48,7 +48,6 @@ public:
 
     size_t size() const;
     void init(int seed = 0);
-    void seed(unsigned int s);
     std::mt19937 * get_rand_endgine();
     double runif();
 
@@ -130,16 +129,6 @@ inline void Model<TSeq>::init(int seed) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::seed(unsigned int s) {
-
-    if (!engine)
-        engine = std::make_shared< std::mt19937 >();
-    
-    engine->seed(s);
-
-}
-
-template<typename TSeq>
 inline std::mt19937 * Model<TSeq>::get_rand_endgine()
 {
     return engine.get();
@@ -157,7 +146,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 
     viruses.push_back(v);
     prevalence.push_back(preval);
-    register_variant(&v);
+    register_variant(&viruses[viruses.size() - 1]);
 
 }
 

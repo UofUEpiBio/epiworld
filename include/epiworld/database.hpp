@@ -46,6 +46,11 @@ inline std::vector<int> default_seq_hasher<bool>(const bool & x) {
     return {x ? 1 : 0};
 }
 
+/**
+ * @brief Statistical data about the process
+ * 
+ * @tparam TSeq 
+ */
 template<typename TSeq>
 class DataBase {
 private:
@@ -60,22 +65,48 @@ private:
     std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
 
     // Running sum of the variant's information
-    std::vector< int > ninfected; ///< Running sum
-    std::vector< int > nrecovered; ///< Running sum
-    std::vector< int > ndeceased; ///< Running sum
+    std::vector< int > today_variant_ninfected;  ///< Running sum
+    std::vector< int > today_variant_nrecovered; ///< Running sum
+    std::vector< int > today_variant_ndeceased;  ///< Running sum
+
+    // Totals
+    int today_total_nvariants_active = 0;
+    int today_total_nhealthty   = 0;
+    int today_total_nrecovered = 0;
+    int today_total_ninfected  = 0;
+    int totay_total_nrecovered = 0;
+    int today_total_ndeceased  = 0;
+    
+    int sampling_freq;
 
     // Variants history
-    std::vector< int > date;
-    std::vector< int > variant_id_dyn;
-    std::vector< int > ninfected_dyn;
-    std::vector< int > nrecovered_dyn;
-    std::vector< int > ndeceased_dyn;
+    std::vector< int > hist_variant_date;
+    std::vector< int > hist_variant_id;
+    std::vector< int > hist_variant_ninfected;
+    std::vector< int > hist_variant_nrecovered;
+    std::vector< int > hist_variant_ndeceased;
 
-    int sampling_freq;
+    // Overall hist
+    std::vector< int > hist_total_date;
+    std::vector< int > hist_total_nvariants_active;
+    std::vector< int > hist_total_nhealthy;
+    std::vector< int > hist_total_nrecovered;
+    std::vector< int > hist_total_ninfected;
+    std::vector< int > hist_total_ndeceased;  
+
 
 public:
 
     DataBase(int freq = 1) : sampling_freq(freq) {};
+
+    /**
+     * @brief Registering a new variant
+     * 
+     * @param v Pointer to the new variant.
+     * Since variants are originated in the host, the numbers simply move around.
+     * From the parent variant to the new variant. And the total number of infected
+     * does not change.
+     */
     void register_variant(Virus<TSeq> * v); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void record();
@@ -88,6 +119,10 @@ public:
     void up_recovered(Virus<TSeq> * v);
     void up_deceased(Virus<TSeq> * v);
 
+    int get_ninfected_total() const;
+    int get_ndeceased_total() const;
+    int get_ndeceased_total() const;
+
 };
 
 template<typename TSeq>
@@ -97,15 +132,24 @@ inline void DataBase<TSeq>::record()
     if ((model->today() % sampling_freq) == 0)
     {
 
-        date.push_back(model->today());
+        // Recording variant's history
+        hist_variant_date.push_back(model->today());
         for (auto & p : variant_id)
         {
-            variant_id_dyn.push_back(p.second);
-            ninfected_dyn.push_back(ninfected[p.second]);
-            nrecovered_dyn.push_back(nrecovered[p.second]);
-            ndeceased.push_back(ndeceased[p.second]);
+            hist_variant_id.push_back(p.second);
+            hist_variant_ninfected.push_back(today_variant_ninfected[p.second]);
+            hist_variant_nrecovered.push_back(today_variant_nrecovered[p.second]);
+            hist_variant_ndeceased.push_back(today_variant_ndeceased[p.second]);
 
         }
+
+        // Recording the overall history
+        hist_total_date.push_back(model->today());
+        hist_total_nvariants_active.push_back(today_total_nvariants_active);
+        hist_total_nhealthy.push_back(today_total_nhealthy);
+        hist_total_nrecovered.push_back(today_total_nrecovered);
+        hist_total_ninfected.push_back(today_total_ninfected);
+        hist_total_ndeceased.push_back(today_total_ndeceased);
 
     }
 }
@@ -120,27 +164,39 @@ inline void DataBase<TSeq>::register_variant(Virus<TSeq> * v) {
         variant_id[hash] = variant_id.size();
         sequence.push_back(*v->get_sequence());
         origin_date.push_back(model->today());
-        parent_id.push_back(v->get_id());
-        
-        ninfected.push_back(1);
-        nrecovered.push_back(0);
-        ndeceased.push_back(0);
 
+        // Collecting old ID to make the accounting
+        int tmp_id = v->get_id();
+
+        parent_id.push_back(tmp_id);
+        
+        // Moving statistics
+        today_variant_ninfected[tmp_id]--;
+        today_variant_ninfected.push_back(1);
+        today_variant_nrecovered.push_back(0);
+        today_variant_ndeceased.push_back(0);
+        
         // Updating the variant
         v->set_id(variant_id.size() - 1);
         v->set_date(model->today());
 
     } else {
 
-        int tmp_id = variant_id[hash];
+        int new_id = variant_id[hash];
 
-        ninfected[tmp_id]++;
+        // Accounting (from the old to the new)
+        today_variant_ninfected[v->get_id()]--;
+        today_variant_ninfected[new_id]++;
 
-        // Updating the variant
-        v->set_id(tmp_id);
-        v->set_date(origin_date[tmp_id]);
+        // Reflecting the change
+        v->set_id(new_id);
+        v->set_date(origin_date[new_id]);
 
     }    
+
+    today_total_nhealthty--;
+    today_total_ninfected++;
+
     
     return;
 } 
@@ -165,17 +221,32 @@ inline size_t DataBase<TSeq>::size() const
 
 template<typename TSeq>
 inline void DataBase<TSeq>::up_infected(Virus<TSeq> * v) {
-    ninfected[v->get_id()]++;
+    today_variant_ninfected[v->get_id()]++;
+    today_total_nhealthty--;
+    today_total_ninfected++;
 }
 
 template<typename TSeq>
 inline void DataBase<TSeq>::up_recovered(Virus<TSeq> * v) {
-    nrecovered[v->get_id()]++;
+
+    int tmp_id = v->get_id();
+    today_variant_ninfected[tmp_id]--;
+    today_variant_nrecovered[tmp_id]++;
+    today_total_ninfected--;
+    today_total_nrecovered++;
+
 }
 
 template<typename TSeq>
 inline void DataBase<TSeq>::up_deceased(Virus<TSeq> * v) {
-    ndeceased[v->get_id()]++;
+
+    int tmp_id = v->get_id();
+    today_variant_ninfected[tmp_id]--;
+    today_variant_ndeceased[tmp_id]++;
+    
+    today_total_ninfected--;
+    today_total_ndeceased++;
+
 }
 
 #endif

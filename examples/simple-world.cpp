@@ -73,11 +73,22 @@ MAKE_TOOL(raw_eff, DAT) {
 
 int main(int argc, char* argv[]) {
 
-    int nsteps;
-    if (argc == 1)
+
+    if ((argc != 4) & (argc != 1))
+        std::logic_error("You need to specify seed and number of steps (in that order).");
+
+    int seed, nsteps, nsims;
+    if (argc == 4)
+    {
+        seed   = strtol(argv[1], nullptr, 0);
+        nsteps = strtol(argv[2], nullptr, 0);
+        nsims  = strtol(argv[3], nullptr, 0);
+
+    } else {
+        seed   = 123;
         nsteps = 1000;
-    else
-        nsteps = strtol(argv[1], nullptr, 0);
+        nsims  = 1000
+    }
 
 
     using namespace epiworld;
@@ -92,12 +103,11 @@ int main(int argc, char* argv[]) {
     // individuals
     epiworld::Model<DAT> model(POP_SIZE);
     model.add_virus(covid19, 0.95); // 50% will have the virus at first
-    model.seed(1231);
 
     // Reading network structure
     model.pop_from_adjlist("edgelist.txt");
 
-    model.init();
+    model.init(seed);
 
     // Creating tool
     epiworld::Tool<DAT> vaccine;
