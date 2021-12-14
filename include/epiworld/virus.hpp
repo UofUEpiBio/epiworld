@@ -17,8 +17,6 @@ class PersonViruses;
 template<typename TSeq>
 class Model;
 
-#define DEFAULT_TRANSMISIBILITY 0.9
-
 template<typename TSeq>
 using MutFun = std::function<bool(Virus<TSeq>*)>;
 
@@ -45,15 +43,13 @@ private:
     int date = -99;
     int id   = -99;
     std::shared_ptr<MutFun<TSeq>> mutation_fun = nullptr;
-    std::shared_ptr<TransFun<TSeq>> transmisibility_fun = nullptr;
 
 public:
     Virus() {};
     Virus(TSeq sequence);
     void mutate();
-    double transmisibility();
+    // double transmisibility();
     void set_mutation(MutFun<TSeq> fun);
-    void set_transmisibility(TransFun<TSeq> fun);
     const TSeq* get_sequence();
     void set_sequence(TSeq sequence);
     Person<TSeq> * get_person();
@@ -75,19 +71,16 @@ inline void Virus<TSeq>::mutate() {
 
     if (mutation_fun)
         if ((*mutation_fun)(this))
+        {
+            int tmpid = get_id();
             person->get_model()->register_variant(this);
+
+            if (get_model()->get_db().get_today_variant("ninfected")[tmpid] < 0)
+                printf_epiworld("Epa!\n");
+        }
     
 
     return;
-}
-
-template<typename TSeq>
-inline double Virus<TSeq>::transmisibility() {
-    
-    if (!transmisibility_fun)
-        (*transmisibility_fun)(this,person);
-
-    return DEFAULT_TRANSMISIBILITY;
 }
 
 template<typename TSeq>
@@ -95,13 +88,6 @@ inline void Virus<TSeq>::set_mutation(
     MutFun<TSeq> fun
 ) {
     mutation_fun = std::make_shared<MutFun<TSeq>>(fun);
-}
-
-template<typename TSeq>
-inline void Virus<TSeq>::set_transmisibility(
-    TransFun<TSeq> fun
-) {
-    transmisibility_fun = std::make_shared<TransFun<TSeq>>(fun);
 }
 
 template<typename TSeq>

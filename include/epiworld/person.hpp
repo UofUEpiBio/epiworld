@@ -1,13 +1,6 @@
 #ifndef EPIWORLD_PERSON_HPP
 #define EPIWORLD_PERSON_HPP
 
-#define DECEASED     -99
-#define INFECTED     -1
-#define HEALTHY      0
-#define RECOVERED    1
-#define INCUBATION   2
-#define ASYMPTOMATIC 3
-
 template<typename TSeq>
 class Virus;
 
@@ -192,7 +185,7 @@ inline void Person<TSeq>::update_status() {
                 Virus<TSeq> * tmp_v = &(neighbor->get_virus(v));
 
                 // And it is a function of transmisibility as well
-                tmp_efficacy = get_efficacy(tmp_v) * neighbor->get_transmisibility(tmp_v);
+                tmp_efficacy = get_efficacy(tmp_v) * (1.0 - neighbor->get_transmisibility(tmp_v));
                 
                 probs.push_back(1.0 - tmp_efficacy);
                 variants.push_back(tmp_v);
@@ -207,6 +200,10 @@ inline void Person<TSeq>::update_status() {
 
             }
         }
+
+        // No virus to compute on
+        if (probs.size() == 0)
+            return;
 
         // Case in which infection is certain. All certain infections have
         // equal chance of taking the individual
@@ -296,10 +293,5 @@ template<typename TSeq>
 inline int Person<TSeq>::get_status() const {
     return status;
 }
-
-#undef HEALTHY
-#undef DECEASED
-#undef INFECTED
-#undef RECOVERED
 
 #endif

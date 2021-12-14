@@ -88,14 +88,20 @@ inline void AdjList::read_edgelist(
                 dat_i[j]++;
 
         }
+
+        if (dat.find(j) == dat.end())
+        {
+            dat[j] = std::map<int,int>();
+            N++;
+        }
         
         if (!directed)
         {
 
-            if (dat.find(j) == dat.end())
+            if (dat[j].find(i) == dat[j].end())
             {
-                dat[j].insert(std::pair<int,int>(i,0));
-                N++;
+                dat[j][i] = 0;
+                
             } else
                 dat[j][i]++;
 

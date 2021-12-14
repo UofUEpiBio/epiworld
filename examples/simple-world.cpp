@@ -6,8 +6,8 @@
 
 // Original data will be an integer vector
 #define DAT std::vector<bool>
-static DAT base_seq = {true, false, false, true, true, false, true, false, true};
-#define MUTATION_PROB      0.025
+static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
+#define MUTATION_PROB      0.005
 #define INITIAL_PREVALENCE 0.005
 
 // Defining mutation and transmission functions
@@ -34,18 +34,13 @@ inline bool covid19_mut(
     
 }
 
-inline double covid19_trans(
-    epiworld::Virus<DAT> * v,
-    epiworld::Person<DAT> * p
-) {
-    return 0.9;
-}
-
 #define MAKE_TOOL(a,b) inline double \
     (a)(\
         epiworld::Tool<b> * t, \
         epiworld::Person< b > * p, epiworld::Virus< b > * v, epiworld::Model< b > * m)
 
+
+// Getting the vaccine
 MAKE_TOOL(vaccine_eff, DAT) {
 
     double dist = 0.0;
@@ -57,41 +52,62 @@ MAKE_TOOL(vaccine_eff, DAT) {
 }
 
 MAKE_TOOL(vaccine_rec, DAT) {
-    return 0.3;
+    return 0.4;
 }
 
 MAKE_TOOL(vaccine_death, DAT) {
-    return 0.01;
+    return 0.005;
 }
 
+MAKE_TOOL(vaccine_trans, DAT) {
+    return 0.5;
+}
+
+// Wearing a Mask
 MAKE_TOOL(mask_eff, DAT) {
     return 0.8;
 }
 
-MAKE_TOOL(raw_eff, DAT) {
-    return 0.8;
+MAKE_TOOL(mask_trans, DAT) {
+    return 0.05;
 }
 
-MAKE_TOOL(raw_rec, DAT) {
+// Immune system
+MAKE_TOOL(immune_eff, DAT) {
+    return 0.3;
+}
+
+MAKE_TOOL(immune_rec, DAT) {
 
     double dist = 0.0;
     const auto & virusseq = v->get_sequence();
     for (int i = 0; i < virusseq->size(); ++i)
     {
         // With 30% chance we will match that part of the code
-        if (m->runif() < .3)
+        if (m->runif() < .5)
             t->get_sequence_unique()[i] = virusseq->at(i);
         dist += std::fabs(virusseq->at(i) - t->get_sequence_unique()[i]);
     }
     
     return (1.0 - dist/virusseq->size()) * 0.8;
 
+
 }
 
-MAKE_TOOL(raw_death, DAT) {
-    return 0.01;
+MAKE_TOOL(immune_death, DAT) {
+
+    return 0.01 * (1.0 - 1.0/(m->today() - v->get_date()));
+
 }
 
+MAKE_TOOL(immune_trans, DAT) {
+
+    if ((m->today() - v->get_date()) > 7)
+        return 1.0;
+    else
+        return 0.5;
+
+}
 
 int main(int argc, char* argv[]) {
 
@@ -106,8 +122,8 @@ int main(int argc, char* argv[]) {
         nsteps = strtol(argv[2], nullptr, 0);
 
     } else {
-        seed   = 1253;
-        nsteps = 365;
+        seed   = 15;
+        nsteps = 365 * 5;
     }
 
 
@@ -115,9 +131,7 @@ int main(int argc, char* argv[]) {
 
     // Initializing disease
     epiworld::Virus<DAT> covid19(base_seq);
-
     covid19.set_mutation(covid19_mut);
-    covid19.set_transmisibility(covid19_trans);
 
     // Initializing the world. This will include POP_SIZE
     // individuals
@@ -134,15 +148,17 @@ int main(int argc, char* argv[]) {
     vaccine.set_efficacy(vaccine_eff);
     vaccine.set_recovery(vaccine_rec);
     vaccine.set_death(vaccine_death);
+    vaccine.set_transmisibility(vaccine_trans);
 
     epiworld::Tool<DAT> mask;
     mask.set_efficacy(mask_eff);
-    // mask.set_transmisibility(mask_eff);
+    mask.set_transmisibility(mask_trans);
 
     epiworld::Tool<DAT> immune;
-    immune.set_efficacy(raw_eff);
-    immune.set_recovery(raw_rec);
-    immune.set_death(raw_death);
+    immune.set_efficacy(immune_eff);
+    immune.set_recovery(immune_rec);
+    immune.set_death(immune_death);
+    immune.set_transmisibility(immune_trans);
     DAT seq0(base_seq.size(), false);
     immune.set_sequence_unique(seq0);
 
@@ -156,7 +172,7 @@ int main(int argc, char* argv[]) {
         model(i).add_tool(0, vaccine);
     
     // One half wears the mask
-    for (int i = model.size()/4*3; i < model.size(); ++i)
+    for (int i = 0; i < model.size(); ++i)
         model(i).add_tool(0, mask);
 
     // Immune system

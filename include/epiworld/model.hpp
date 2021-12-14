@@ -222,7 +222,10 @@ template<typename TSeq>
 inline void Model<TSeq>::mutate_variant() {
 
     for (auto & p: persons)
-        p.mutate_variant();
+    {
+        if (p.get_status() == INFECTED)
+            p.mutate_variant();
+    }
 
 }
 

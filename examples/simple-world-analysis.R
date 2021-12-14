@@ -20,12 +20,23 @@ dat <- rbind(
   )
 )
 
+# Trajectory of infections -----------------------------------------------------
 library(ggplot2)
 
-dat |> subset(date < 365) |>
+dat |> #subset(date < 100) |>
 ggplot(aes(x = date, y = n)) +
-  geom_line(aes(color = status)) # +
-  # geom_point()
+  geom_line(aes(color = status))
 
 ggplot(totals, aes(x = date, y = nvariants)) +
   geom_line()
+
+# Looking at the top 10 varians
+top_variants <- by(variants$ninfected, INDICES = variants$id, FUN = max)
+top_variants <- tail(sort(top_variants), 20)
+
+variants |> subset(ninfected > 0) |>
+  subset(id %in% as.integer(names(top_variants))) |>
+  ggplot(aes(x = date, y = as.integer(ninfected), color = as.factor(id))) +
+  # geom_smooth(aes(color = as.factor(id))) +
+  geom_line()
+  labs(y = "N infected", color = "Variant id")

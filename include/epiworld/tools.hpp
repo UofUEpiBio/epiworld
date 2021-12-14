@@ -6,9 +6,9 @@
 #define EPIWORLD_TOOLS_HPP
 
 #define DEFAULT_EFFICACY        0.0
-// #define DEFAULT_TRANSMISIBILITY 0.9
+#define DEFAULT_TRANSMISIBILITY 1.0
 #define DEFAULT_RECOVERY        0.0
-#define DEFAULT_DEATH           0.0
+#define DEFAULT_DEATH           1.0
 
 template<typename TSeq>
 class Virus;
@@ -133,7 +133,10 @@ inline double Tool<TSeq>::get_transmisibility(
     Virus<TSeq> * v
 ) {
 
-    return v->transmisibility();
+    if (transmisibility)
+        return (*transmisibility)(this, this->person, v, person->get_model());
+    
+    return DEFAULT_TRANSMISIBILITY;
 
 }
 
@@ -181,6 +184,14 @@ inline void Tool<TSeq>::set_death(
 ) {
     death = std::make_shared<ToolFun<TSeq>>(fun);
 }
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_transmisibility(
+    ToolFun<TSeq> fun
+) {
+    transmisibility = std::make_shared<ToolFun<TSeq>>(fun);
+}
+
 
 /**
  * @brief Default function for combining efficacy levels
@@ -240,9 +251,9 @@ inline double death_mixer_default(
 {
     double total = 1.0;
     for (int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_death(v));
+        total *= pt->operator()(i).get_death(v);
 
-    return 1.0 - total;
+    return total;
     
 };
 ///@]
