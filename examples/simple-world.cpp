@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 #include <random>
+
 #include "../include/epiworld/epiworld.hpp"
 
 // Original data will be an integer vector
@@ -81,12 +82,14 @@ MAKE_TOOL(immune_rec, DAT) {
 
     double dist = 0.0;
     const auto & virusseq = v->get_sequence();
+    auto & immune_sequence = t->get_sequence_unique();
     for (int i = 0; i < virusseq->size(); ++i)
     {
         // With 30% chance we will match that part of the code
         if (m->runif() < .5)
-            t->get_sequence_unique()[i] = virusseq->at(i);
-        dist += std::fabs(virusseq->at(i) - t->get_sequence_unique()[i]);
+            immune_sequence[i] = virusseq->at(i);
+        dist += std::fabs(virusseq->at(i) - immune_sequence[i]);
+        
     }
     
     return (1.0 - dist/virusseq->size()) * 0.8;
