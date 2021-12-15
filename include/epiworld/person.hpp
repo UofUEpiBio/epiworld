@@ -175,14 +175,14 @@ inline void Person<TSeq>::update_status() {
             if (neighbor->get_status() != INFECTED)
                 continue;
 
-            PersonViruses<TSeq> nviruses = neighbor->get_viruses();
+            PersonViruses<TSeq> & nviruses = neighbor->get_viruses();
             
             // Now over the neighbor's viruses
             for (int v = 0; v < nviruses.size(); ++v)
             {
 
                 // Computing the corresponding efficacy
-                Virus<TSeq> * tmp_v = &(neighbor->get_virus(v));
+                Virus<TSeq> * tmp_v = &(nviruses(v));
 
                 // And it is a function of transmisibility as well
                 tmp_efficacy = get_efficacy(tmp_v) * (1.0 - neighbor->get_transmisibility(tmp_v));

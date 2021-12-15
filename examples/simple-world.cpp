@@ -83,13 +83,19 @@ MAKE_TOOL(immune_rec, DAT) {
     double dist = 0.0;
     const auto & virusseq = v->get_sequence();
     auto & immune_sequence = t->get_sequence_unique();
+
+    // Deciding whether to mutate or not
+    if (m->runif() < .5)
+    {
+        int k = floor(m->runif() * immune_sequence.size());
+        immune_sequence[k] = virusseq->at(k); 
+    }
+    
     for (int i = 0; i < virusseq->size(); ++i)
     {
         // With 30% chance we will match that part of the code
-        if (m->runif() < .5)
-            immune_sequence[i] = virusseq->at(i);
         dist += std::fabs(virusseq->at(i) - immune_sequence[i]);
-        
+
     }
     
     return (1.0 - dist/virusseq->size()) * 0.8;
