@@ -349,7 +349,7 @@ inline void DataBase<TSeq>::write_data(
     file_variant <<
         "date " << "id " << "ninfected " << "nrecovered " << "ndeceased\n";
 
-    for (int i = 0; i < hist_variant_id.size(); ++i)
+    for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
         file_variant <<
             hist_variant_date[i] << " " <<
             hist_variant_id[i] << " " <<
@@ -360,7 +360,7 @@ inline void DataBase<TSeq>::write_data(
     file_total <<
         "date " << "nvariants " << "nhealthy " << "ninfected " << "nrecovered " << "ndeceased\n";
 
-    for (int i = 0; i < hist_total_nhealthy.size(); ++i)
+    for (unsigned int i = 0; i < hist_total_nhealthy.size(); ++i)
         file_total <<
             hist_total_date[i] << " " <<
             hist_total_nvariants_active[i] << " " <<

@@ -166,7 +166,7 @@ inline void Person<TSeq>::update_status() {
         // Computing the efficacy
         double p_none = 1.0; ///< Product of all (1 - efficacy)
         double tmp_efficacy;
-        for (int n = 0; n < neighbors.size(); ++n)
+        for (unsigned int n = 0; n < neighbors.size(); ++n)
         {
 
             Person<TSeq> * neighbor = neighbors[n];
@@ -178,7 +178,7 @@ inline void Person<TSeq>::update_status() {
             PersonViruses<TSeq> & nviruses = neighbor->get_viruses();
             
             // Now over the neighbor's viruses
-            for (int v = 0; v < nviruses.size(); ++v)
+            for (unsigned int v = 0; v < nviruses.size(); ++v)
             {
 
                 // Computing the corresponding efficacy
@@ -221,7 +221,7 @@ inline void Person<TSeq>::update_status() {
 
         // Step 2: Calculating the prob of none or single
         double p_none_or_single = p_none;
-        for (int v = 0; v < probs.size(); ++v)
+        for (unsigned int v = 0; v < probs.size(); ++v)
         {
             probs_only_v.push_back(probs[v] * (p_none / (1.0 - probs[v])));
             p_none_or_single += probs_only_v[v];
@@ -233,7 +233,7 @@ inline void Person<TSeq>::update_status() {
         if (r < cumsum)
             return;
 
-        for (int v = 0; v < probs.size(); ++v)
+        for (unsigned int v = 0; v < probs.size(); ++v)
         {
             // If it yield here, then bingo, the individual will acquire the disease
             cumsum += probs_only_v[v]/(p_none_or_single);

@@ -208,12 +208,12 @@ inline double efficacy_mixer_default(
 )
 {
     double total = 1.0;
-    for (int i = 0; i < pt->size(); ++i)
+    for (unsigned int i = 0; i < pt->size(); ++i)
         total *= (1.0 - pt->operator()(i).get_efficacy(v));
 
     return 1.0 - total;
     
-};
+}
 
 template<typename TSeq>
 inline double transmisibility_mixer_default(
@@ -222,12 +222,12 @@ inline double transmisibility_mixer_default(
 )
 {
     double total = 1.0;
-    for (int i = 0; i < pt->size(); ++i)
+    for (unsigned int i = 0; i < pt->size(); ++i)
         total *= (1.0 - pt->operator()(i).get_transmisibility(v));
 
     return 1.0 - total;
     
-};
+}
 
 template<typename TSeq>
 inline double recovery_mixer_default(
@@ -236,12 +236,12 @@ inline double recovery_mixer_default(
 )
 {
     double total = 1.0;
-    for (int i = 0; i < pt->size(); ++i)
+    for (unsigned int i = 0; i < pt->size(); ++i)
         total *= (1.0 - pt->operator()(i).get_recovery(v));
 
     return 1.0 - total;
     
-};
+}
 
 template<typename TSeq>
 inline double death_mixer_default(
@@ -250,12 +250,12 @@ inline double death_mixer_default(
 )
 {
     double total = 1.0;
-    for (int i = 0; i < pt->size(); ++i)
+    for (unsigned int i = 0; i < pt->size(); ++i)
         total *= pt->operator()(i).get_death(v);
 
     return total;
     
-};
+}
 ///@]
 
 

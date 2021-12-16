@@ -138,7 +138,7 @@ inline void Model<TSeq>::init(int seed) {
     initialized = true;
 
     // Starting first infection
-    for (int v = 0; v < viruses.size(); ++v)
+    for (unsigned int v = 0; v < viruses.size(); ++v)
     {
         for (auto & p : persons)
             if (runif() < prevalence_virus[v])
@@ -147,7 +147,7 @@ inline void Model<TSeq>::init(int seed) {
     }
 
     // Tools
-    for (int t = 0; t < tools.size(); ++t)
+    for (unsigned int t = 0; t < tools.size(); ++t)
     {
         for (auto & p : persons)
             if (runif() < prevalence_tool[t])

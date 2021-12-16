@@ -23,7 +23,7 @@ public:
     void read_edgelist(std::string fn, int skip = 0, bool directed = true);
     const std::map<int,int> & operator()(int i) const;
         
-    void print(int limit = 20) const;
+    void print(unsigned int limit = 20u) const;
     int get_id_max() const;
     int get_id_min() const;
     size_t vcount() const;
@@ -144,10 +144,10 @@ inline const std::map<int,int> & AdjList::operator()(int i) const {
     return dat.find(i)->second;
 
 }
-void AdjList::print(int limit) const {
+void AdjList::print(unsigned int limit) const {
 
 
-    int counter = 0;
+    unsigned int counter = 0;
     printf_epiworld("Nodeset:\n");
     for (auto & n : dat)
     {

@@ -10,7 +10,7 @@
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
 #define MUTATION_PROB      0.000025
 #define INITIAL_PREVALENCE 0.005
-#define N_DAYS             365 * 3
+#define N_DAYS             365
 #define VACCINE_EFFICACY   0.90
 #define IMMUNE_EFFICACY    0.50
 #define VARIANT_MORTALITY  0.001
@@ -52,7 +52,7 @@ MAKE_TOOL(vaccine_eff, DAT) {
 
     double dist = 0.0;
     const auto & virusseq = v->get_sequence();
-    for (int i = 0; i < virusseq->size(); ++i)
+    for (unsigned int i = 0; i < virusseq->size(); ++i)
         dist += std::fabs(virusseq->at(i) - base_seq[i]);
     
     return (1.0 - dist/virusseq->size()) * VACCINE_EFFICACY;
@@ -98,7 +98,7 @@ MAKE_TOOL(immune_rec, DAT) {
         immune_sequence[k] = virusseq->at(k); 
     }
     
-    for (int i = 0; i < virusseq->size(); ++i)
+    for (unsigned int i = 0; i < virusseq->size(); ++i)
     {
         // With 30% chance we will match that part of the code
         dist += std::fabs(virusseq->at(i) - immune_sequence[i]);
@@ -127,7 +127,8 @@ int main(int argc, char* argv[]) {
     if ((argc != 3) & (argc != 1))
         std::logic_error("You need to specify seed and number of steps (in that order).");
 
-    int seed, nsteps;
+    int seed;
+    unsigned int nsteps;
     if (argc == 3)
     {
         seed   = strtol(argv[1], nullptr, 0);
@@ -181,7 +182,7 @@ int main(int argc, char* argv[]) {
     model.init(seed);
 
     // Initializing the simulation
-    for (int t = 0; t < nsteps; ++t)
+    for (unsigned int t = 0; t < nsteps; ++t)
     {
 
         model.update_status();

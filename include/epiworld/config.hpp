@@ -12,5 +12,4 @@
 #define INCUBATION   2
 #define ASYMPTOMATIC 3
 
-
 #endif
