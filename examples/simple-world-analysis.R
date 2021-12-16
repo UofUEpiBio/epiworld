@@ -24,7 +24,7 @@ dat <- rbind(
 library(ggplot2)
 
 dat |> #subset(date < 100) |>
-ggplot(aes(x = date, y = n)) +
+ggplot(aes(x = date, y = n / 10000 * 100)) +
   geom_line(aes(color = status))
 
 ggplot(totals, aes(x = date, y = nvariants)) +

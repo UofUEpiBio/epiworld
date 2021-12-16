@@ -8,8 +8,14 @@
 // Original data will be an integer vector
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
-#define MUTATION_PROB      0.005
+#define MUTATION_PROB      0.000025
 #define INITIAL_PREVALENCE 0.005
+#define N_DAYS             365 * 3
+#define VACCINE_EFFICACY   0.90
+#define IMMUNE_EFFICACY    0.50
+#define VARIANT_MORTALITY  0.001
+#define BASELINE_INFECCTIOUSNESS 0.9
+#define IMMUNE_LEARN_RATE 0.05
 
 // Defining mutation and transmission functions
 inline bool covid19_mut(
@@ -49,7 +55,8 @@ MAKE_TOOL(vaccine_eff, DAT) {
     for (int i = 0; i < virusseq->size(); ++i)
         dist += std::fabs(virusseq->at(i) - base_seq[i]);
     
-    return (1.0 - dist/virusseq->size()) * 0.8;
+    return (1.0 - dist/virusseq->size()) * VACCINE_EFFICACY;
+
 }
 
 MAKE_TOOL(vaccine_rec, DAT) {
@@ -57,7 +64,7 @@ MAKE_TOOL(vaccine_rec, DAT) {
 }
 
 MAKE_TOOL(vaccine_death, DAT) {
-    return 0.005;
+    return VARIANT_MORTALITY;
 }
 
 MAKE_TOOL(vaccine_trans, DAT) {
@@ -85,7 +92,7 @@ MAKE_TOOL(immune_rec, DAT) {
     auto & immune_sequence = t->get_sequence_unique();
 
     // Deciding whether to mutate or not
-    if (m->runif() < .5)
+    if (m->runif() < IMMUNE_LEARN_RATE)
     {
         int k = floor(m->runif() * immune_sequence.size());
         immune_sequence[k] = virusseq->at(k); 
@@ -98,24 +105,20 @@ MAKE_TOOL(immune_rec, DAT) {
 
     }
     
-    return (1.0 - dist/virusseq->size()) * 0.8;
+    return (1.0 - dist/virusseq->size()) * IMMUNE_EFFICACY;
 
 
 }
 
 MAKE_TOOL(immune_death, DAT) {
 
-    return 0.01 * (1.0 - 1.0/(m->today() - v->get_date()));
+    return VARIANT_MORTALITY;
 
 }
 
 MAKE_TOOL(immune_trans, DAT) {
 
-    if ((m->today() - v->get_date()) > 7)
-        return 1.0;
-    else
-        return 0.5;
-
+    return BASELINE_INFECCTIOUSNESS;
 }
 
 int main(int argc, char* argv[]) {
@@ -132,7 +135,7 @@ int main(int argc, char* argv[]) {
 
     } else {
         seed   = 15;
-        nsteps = 365 * 5;
+        nsteps = N_DAYS;
     }
 
 
@@ -150,9 +153,7 @@ int main(int argc, char* argv[]) {
     // Reading network structure
     model.pop_from_adjlist("edgelist.txt", 0, true);
 
-    model.init(seed);
-
-    // Creating tool
+    // Creating tools
     epiworld::Tool<DAT> vaccine;
     vaccine.set_efficacy(vaccine_eff);
     vaccine.set_recovery(vaccine_rec);
@@ -171,26 +172,18 @@ int main(int argc, char* argv[]) {
     DAT seq0(base_seq.size(), false);
     immune.set_sequence_unique(seq0);
 
-    
-    // // Response of immune system post recovery
-    // epiworld::Tool<DAT> immune_build;
-    // immune_build.set_efficacy(add_immunity);
 
-    // First half of the individuals is vaccinated
-    for (int i = 0; i < model.size()/4; ++i)
-        model(i).add_tool(0, vaccine);
+    // Randomly adding tools to the population
+    model.add_tool(vaccine, 0.5);
+    model.add_tool(mask, 0.5);
+    model.add_tool(immune, 1.0);
     
-    // One half wears the mask
-    for (int i = 0; i < model.size(); ++i)
-        model(i).add_tool(0, mask);
-
-    // Immune system
-    for (int i = 0; i < model.size(); ++i)
-        model(i).add_tool(0, immune);
+    model.init(seed);
 
     // Initializing the simulation
     for (int t = 0; t < nsteps; ++t)
     {
+
         model.update_status();
         model.mutate_variant();
         model.next();

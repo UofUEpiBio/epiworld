@@ -185,7 +185,10 @@ inline void Person<TSeq>::update_status() {
                 Virus<TSeq> * tmp_v = &(nviruses(v));
 
                 // And it is a function of transmisibility as well
-                tmp_efficacy = get_efficacy(tmp_v) * (1.0 - neighbor->get_transmisibility(tmp_v));
+                tmp_efficacy = std::max(
+                    get_efficacy(tmp_v),
+                    (1.0 - neighbor->get_transmisibility(tmp_v))
+                    );
                 
                 probs.push_back(1.0 - tmp_efficacy);
                 variants.push_back(tmp_v);
@@ -197,8 +200,8 @@ inline void Person<TSeq>::update_status() {
                 if (tmp_efficacy < 1e-100)
                     certain_infection.push_back(probs.size() - 1);
 
-
             }
+            
         }
 
         // No virus to compute on

@@ -15,6 +15,9 @@ class Person;
 template<typename TSeq>
 class Virus;
 
+template<typename TSeq>
+class Tool;
+
 class AdjList;
 
 template<typename TSeq>
@@ -27,8 +30,13 @@ private:
     DataBase<TSeq> db;
 
     std::vector< Person<TSeq> > persons;
+    
     std::vector< Virus<TSeq> > viruses;
-    std::vector< double > prevalence; ///< Initial prevalence of each virus
+    std::vector< double > prevalence_virus; ///< Initial prevalence_virus of each virus
+    
+    std::vector< Tool<TSeq> > tools;
+    std::vector< double > prevalence_tool;
+
     std::shared_ptr< std::mt19937 > engine;
     std::shared_ptr< std::uniform_real_distribution<> > runifd;
     bool initialized = false;
@@ -50,6 +58,7 @@ public:
     double runif();
 
     void add_virus(Virus<TSeq> v, double preval);
+    void add_tool(Tool<TSeq> t, double preval);
 
     void pop_from_adjlist(std::string fn, int skip = 0, bool directed = false);
     void pop_from_adjlist(AdjList al);
@@ -131,15 +140,19 @@ inline void Model<TSeq>::init(int seed) {
     // Starting first infection
     for (int v = 0; v < viruses.size(); ++v)
     {
-        for (int p = 0; p < persons.size(); ++p)
-        {
-            if (runif() < prevalence[v])
-            {
-                persons[p].add_virus(0, viruses[v]);
-                // db.up_infected(&viruses[v]);
+        for (auto & p : persons)
+            if (runif() < prevalence_virus[v])
+                p.add_virus(0, viruses[v]);
 
-            }
-        }
+    }
+
+    // Tools
+    for (int t = 0; t < tools.size(); ++t)
+    {
+        for (auto & p : persons)
+            if (runif() < prevalence_tool[t])
+                p.add_tool(0, tools[t]);
+
     }
 
 }
@@ -161,9 +174,16 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 {
 
     viruses.push_back(v);
-    prevalence.push_back(preval);
+    prevalence_virus.push_back(preval);
     register_variant(&viruses[viruses.size() - 1]);
 
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_tool(Tool<TSeq> t, double preval)
+{
+    tools.push_back(t);
+    prevalence_tool.push_back(preval);
 }
 
 template<typename TSeq>
@@ -212,7 +232,7 @@ inline void Model<TSeq>::update_status() {
     for (auto & p: persons)
         p.update_status();
 
-    // Storing
+    // Making the change effective
     for (auto & p: persons)
         p.status = p.status_next;
 
@@ -225,6 +245,7 @@ inline void Model<TSeq>::mutate_variant() {
     {
         if (p.get_status() == INFECTED)
             p.mutate_variant();
+
     }
 
 }
@@ -234,8 +255,8 @@ inline void Model<TSeq>::register_variant(Virus<TSeq> * v) {
 
     // Updating registry
     db.register_variant(v);
-    
     return;
+    
 } 
 
 template<typename TSeq>
