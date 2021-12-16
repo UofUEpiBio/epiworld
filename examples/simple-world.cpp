@@ -8,9 +8,9 @@
 // Original data will be an integer vector
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
-#define MUTATION_PROB      0.000025
+#define MUTATION_PROB      0.00025
 #define INITIAL_PREVALENCE 0.005
-#define N_DAYS             365
+#define N_DAYS             365 * 2
 #define VACCINE_EFFICACY   0.90
 #define IMMUNE_EFFICACY    0.50
 #define VARIANT_MORTALITY  0.001
@@ -56,6 +56,7 @@ MAKE_TOOL(vaccine_eff, DAT) {
         dist += std::fabs(virusseq->at(i) - base_seq[i]);
     
     return (1.0 - dist/virusseq->size()) * VACCINE_EFFICACY;
+    // return VACCINE_EFFICACY;
 
 }
 
@@ -106,6 +107,7 @@ MAKE_TOOL(immune_rec, DAT) {
     }
     
     return (1.0 - dist/virusseq->size()) * IMMUNE_EFFICACY;
+    // return 0.5;
 
 
 }
@@ -119,6 +121,7 @@ MAKE_TOOL(immune_death, DAT) {
 MAKE_TOOL(immune_trans, DAT) {
 
     return BASELINE_INFECCTIOUSNESS;
+
 }
 
 int main(int argc, char* argv[]) {
@@ -135,7 +138,7 @@ int main(int argc, char* argv[]) {
         nsteps = strtol(argv[2], nullptr, 0);
 
     } else {
-        seed   = 15;
+        seed   = 159;
         nsteps = N_DAYS;
     }
 
@@ -149,7 +152,7 @@ int main(int argc, char* argv[]) {
     // Initializing the world. This will include POP_SIZE
     // individuals
     epiworld::Model<DAT> model;
-    model.add_virus(covid19, INITIAL_PREVALENCE); // 5% will have the virus at first
+    model.add_virus(covid19, INITIAL_PREVALENCE); // 0.5% will have the virus at first
 
     // Reading network structure
     model.pop_from_adjlist("edgelist.txt", 0, true);

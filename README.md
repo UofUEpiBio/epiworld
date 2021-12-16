@@ -43,3 +43,16 @@ P(None) = Prod(v in variants) (1 - P(v))
 ```
 
 Furthermore, the (Variant, Person) pairs are treated independently.
+
+## Other parameters
+
+- Who did you got the infection from.
+- Omicron is 1.5 more infectious than delta.
+- Surveillance:
+    - Pull people to be tested at random.
+    - Or at symptions.
+    - A mix of the two.
+- Define a class for passing extra functions and dataset, for example, testing surveillance.
+- Exposed people become infectiuous after k days.
+- Changes in network can be a function of an ERGM. Apply K steps throught time.
+- Add progress bar.

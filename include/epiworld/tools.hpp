@@ -251,7 +251,11 @@ inline double death_mixer_default(
 {
     double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
+    {
         total *= pt->operator()(i).get_death(v);
+    }
+
+    
 
     return total;
     

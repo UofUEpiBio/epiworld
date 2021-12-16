@@ -7,6 +7,7 @@
 #include <string>
 #include <map>
 #include <unordered_map>
+// #include <omp.h>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
