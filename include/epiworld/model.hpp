@@ -67,10 +67,12 @@ public:
     void mutate_variant();
     void next();
 
-    void register_variant(Virus<TSeq> * v);
+    void record_variant(Virus<TSeq> * v);
     int get_nvariants() const;
     const std::vector< TSeq > & get_variant_sequence() const;
     const std::vector< int > & get_variant_nifected() const;
+
+    void rewire_degseq(int nrewires);
 
     void write_data(
         std::string fn_variant,
@@ -179,7 +181,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 
     viruses.push_back(v);
     prevalence_virus.push_back(preval);
-    register_variant(&viruses[viruses.size() - 1]);
+    record_variant(&viruses[viruses.size() - 1]);
 
 }
 
@@ -256,10 +258,10 @@ inline void Model<TSeq>::mutate_variant() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::register_variant(Virus<TSeq> * v) {
+inline void Model<TSeq>::record_variant(Virus<TSeq> * v) {
 
     // Updating registry
-    db.register_variant(v);
+    db.record_variant(v);
     return;
     
 } 
@@ -277,6 +279,53 @@ inline const std::vector<TSeq> & Model<TSeq>::get_variant_sequence() const {
 template<typename TSeq>
 inline const std::vector<int> & Model<TSeq>::get_variant_nifected() const {
     return db.get_today_variant("ninfected");
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::rewire_degseq(int nrewires)
+{
+
+    // Only swap if needed
+    int n = persons.size();
+    while (nrewires-- > 0)
+    {
+
+        // Picking egos
+        int id0 = std::floor(runif()*n);
+        if (persons[id0].neighbors.size() == 0u)
+            continue;
+
+        Person<TSeq> & p0 = persons[id0];
+
+        int id1 = std::floor(runif()*n - 1);     
+
+        if (id1 < 0)
+            id1 = 0;
+
+        if (id1 == id0)
+            id1++;
+
+        if (persons[id1].neighbors.size() == 1u)
+            continue;
+        
+        Person<TSeq> & p1 = persons[id1];
+
+        // Picking alters
+        int id01 = std::floor(p0.neighbors.size() * runif());
+        int id11 = std::floor(p1.neighbors.size() * runif());
+
+        // // Finding what neighbour is id0
+        // int id0_in_id01 = 0;
+        // for (auto n : persons[id0].neighbors->neighbors)
+        //     if (persons[id0].id != id0_in_id01)
+
+        // Moving alter first
+        std::swap(p0.neighbors[id01], p1.neighbors[id11]);
+        
+    }
+
+    return;
+
 }
 
 template<typename TSeq>

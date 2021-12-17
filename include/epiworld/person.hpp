@@ -39,6 +39,7 @@ public:
     double get_transmisibility(Virus<TSeq> * v);
     double get_recovery(Virus<TSeq> * v);
     double get_death(Virus<TSeq> * v);
+    int get_id() const;
     
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
@@ -112,6 +113,12 @@ inline double Person<TSeq>::get_death(
     Virus<TSeq> * v
 ) {
     return tools.get_death(v);
+}
+
+template<typename TSeq>
+inline int Person<TSeq>::get_id() const
+{
+    return id;
 }
 
 template<typename TSeq>
@@ -214,7 +221,15 @@ inline void Person<TSeq>::update_status() {
         if (certain_infection.size() > 0)
         {
             int ord = certain_infection[std::floor(r * certain_infection.size())];
+            
             add_virus(model->today(), *variants[ord]);
+
+            get_model()->get_db().record_transmision(
+                this->id,
+                variants[ord]->get_host()->get_id(),
+                model->today()
+                );
+
             return;
 
         }
@@ -240,6 +255,13 @@ inline void Person<TSeq>::update_status() {
             if (r < cumsum)
             {
                 add_virus(model->today(), *variants[v]);
+
+                get_model()->get_db().record_transmision(
+                    this->id,
+                    variants[v]->get_host()->get_id(),
+                    model->today()
+                );
+
                 return;
             }
             

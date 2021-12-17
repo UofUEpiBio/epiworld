@@ -41,6 +41,7 @@ class Tool {
     friend class PersonTools<TSeq>;
     friend class Person<TSeq>;
 private:
+
     Person<TSeq> * person;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique;

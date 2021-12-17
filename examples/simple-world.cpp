@@ -182,11 +182,11 @@ int main(int argc, char* argv[]) {
     model.add_tool(mask, 0.5);
     model.add_tool(immune, 1.0);
     
-    model.init(seed);
+    model.init(seed);  
 
     // Creating a progress bar
     EPIWORLD_CLOCK_START()
-    epiworld::Progress p(nsteps, 80);
+    epiworld::Progress pbar(nsteps, 80);
 
     // Initializing the simulation
     for (unsigned int t = 0; t < nsteps; ++t)
@@ -196,18 +196,23 @@ int main(int argc, char* argv[]) {
         model.mutate_variant();
         model.next();
 
-        p.next();
+        // 10% of rewire
+        model.rewire_degseq(floor(model.size() * .1));
+
+        pbar.next();
 
     }
 
-    p.end();
+    pbar.end();
     
     EPIWORLD_CLOCK_END("Run model")
 
     // Writing off the results
     model.get_db().write_data(
+        "variants_info.txt",
         "variants.txt",
-        "total.txt"
+        "total.txt",
+        "transmisions.txt"
     );
 
     model.write_edgelist("simple-world-edgelist.txt");

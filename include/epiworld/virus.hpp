@@ -75,7 +75,7 @@ inline void Virus<TSeq>::mutate() {
         if ((*mutation_fun)(this))
         {
             int tmpid = get_id();
-            host->get_model()->register_variant(this);
+            host->get_model()->record_variant(this);
 
             if (get_model()->get_db().get_today_variant("ninfected")[tmpid] < 0)
             {

@@ -47,6 +47,60 @@ inline std::vector<int> default_seq_hasher<bool>(const bool & x) {
 }
 
 /**
+ * @brief Default way to write sequences
+ * 
+ * @tparam TSeq 
+ * @param seq 
+ * @return std::string 
+ */
+template<typename TSeq>
+inline std::string default_seq_writer(const TSeq & seq);
+
+template<>
+inline std::string default_seq_writer<std::vector<int>>(
+    const std::vector<int> & seq
+) {
+
+    std::string out = "";
+    for (const auto & s : seq)
+        out = out + std::to_string(s);
+
+    return out;
+
+}
+
+template<>
+inline std::string default_seq_writer<std::vector<bool>>(
+    const std::vector<bool> & seq
+) {
+
+    std::string out = "";
+    for (const auto & s : seq)
+        out = out + (s ? "1" : "0");
+
+    return out;
+
+}
+
+template<>
+inline std::string default_seq_writer<bool>(
+    const bool & seq
+) {
+
+    return seq ? "1" : "0";
+
+}
+
+template<>
+inline std::string default_seq_writer<int>(
+    const int & seq
+) {
+
+    return std::to_string(seq);
+
+}
+
+/**
  * @brief Statistical data about the process
  * 
  * @tparam TSeq 
@@ -63,6 +117,7 @@ private:
     std::vector< int > parent_id;
 
     std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
+    std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
 
     // Running sum of the variant's information
     std::vector< int > today_variant_ninfected;  ///< Running sum
@@ -93,6 +148,11 @@ private:
     std::vector< int > hist_total_ninfected;
     std::vector< int > hist_total_ndeceased;  
 
+    // Transmission network
+    std::vector< int > transmision_date;
+    std::vector< int > transmision_source;
+    std::vector< int > transmision_target;
+    std::vector< int > transmision_variant;
 
 public:
 
@@ -106,7 +166,7 @@ public:
      * From the parent variant to the new variant. And the total number of infected
      * does not change.
      */
-    void register_variant(Virus<TSeq> * v); 
+    void record_variant(Virus<TSeq> * v); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void set_model(Model<TSeq> & m);
     void record();
@@ -125,10 +185,13 @@ public:
     const std::vector< int > & get_hist_variant(std::string what) const;
 
     void write_data(
-        std::string fn_variant,
-        std::string fn_total
+        std::string fn_variant_info,
+        std::string fn_variant_hist,
+        std::string fn_total_hist,
+        std::string fn_transmision
         ) const;
     
+    void record_transmision(int i, int j, int variant);
 };
 
 template<typename TSeq>
@@ -175,7 +238,7 @@ inline void DataBase<TSeq>::record()
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::register_variant(Virus<TSeq> * v) {
+inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
 
     // Updating registry
     std::vector< int > hash = seq_hasher(*v->get_sequence());
@@ -339,40 +402,97 @@ inline void DataBase<TSeq>::up_deceased(Virus<TSeq> * v) {
 
 template<typename TSeq>
 inline void DataBase<TSeq>::write_data(
-    std::string fn_variant,
-    std::string fn_total
+    std::string fn_variant_info,
+    std::string fn_variant_hist,
+    std::string fn_total_hist,
+    std::string fn_transmision
 ) const {
 
     EPIWORLD_CLOCK_START()
 
-    std::ofstream file_variant(fn_variant, std::ios_base::out);
-    std::ofstream file_total(fn_total, std::ios_base::out);
+    if (fn_variant_info != "")
+    {
+        std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
-    file_variant <<
-        "date " << "id " << "ninfected " << "nrecovered " << "ndeceased\n";
+        file_variant_info <<
+            "id " << "sequence " << "date " << "parent " << "patiente\n";
 
-    for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
+        for (const auto & v : variant_id)
+        {
+            int id = v.second;
+            file_variant_info <<
+                id << " " <<
+                seq_writer(sequence[id]) << " " <<
+                origin_date[id] << " " <<
+                parent_id[id] << " " <<
+                parent_id[id] << "\n";
+        }
+
+    }
+
+    if (fn_variant_hist != "")
+    {
+        std::ofstream file_variant(fn_variant_hist, std::ios_base::out);
+        
         file_variant <<
-            hist_variant_date[i] << " " <<
-            hist_variant_id[i] << " " <<
-            hist_variant_ninfected[i] << " " <<
-            hist_variant_nrecovered[i] << " " <<
-            hist_variant_ndeceased[i] << "\n";
+            "date " << "id " << "ninfected " << "nrecovered " << "ndeceased\n";
 
-    file_total <<
-        "date " << "nvariants " << "nhealthy " << "ninfected " << "nrecovered " << "ndeceased\n";
+        for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
+            file_variant <<
+                hist_variant_date[i] << " " <<
+                hist_variant_id[i] << " " <<
+                hist_variant_ninfected[i] << " " <<
+                hist_variant_nrecovered[i] << " " <<
+                hist_variant_ndeceased[i] << "\n";
+    }
 
-    for (unsigned int i = 0; i < hist_total_nhealthy.size(); ++i)
+    if (fn_total_hist != "")
+    {
+        std::ofstream file_total(fn_total_hist, std::ios_base::out);
+
         file_total <<
-            hist_total_date[i] << " " <<
-            hist_total_nvariants_active[i] << " " <<
-            hist_total_nhealthy[i] << " " <<
-            hist_total_ninfected[i] << " " <<
-            hist_total_nrecovered[i] << " " <<
-            hist_total_ndeceased[i] << "\n";
+            "date " << "nvariants " << "nhealthy " << "ninfected " << "nrecovered " << "ndeceased\n";
+
+        for (unsigned int i = 0; i < hist_total_nhealthy.size(); ++i)
+            file_total <<
+                hist_total_date[i] << " " <<
+                hist_total_nvariants_active[i] << " " <<
+                hist_total_nhealthy[i] << " " <<
+                hist_total_ninfected[i] << " " <<
+                hist_total_nrecovered[i] << " " <<
+                hist_total_ndeceased[i] << "\n";
+    }
+
+    if (fn_transmision != "")
+    {
+        std::ofstream file_transmision(fn_transmision, std::ios_base::out);
+        file_transmision <<
+            "date " << "variant " << "source " << "target\n";
+
+        for (unsigned int i = 0; i < transmision_target.size(); ++i)
+            file_transmision <<
+                transmision_date[i] << " " <<
+                transmision_variant[i] << " " <<
+                transmision_source[i] << " " <<
+                transmision_target[i] << "\n";
+                
+    }
+    
 
     EPIWORLD_CLOCK_END("Writing data")
 
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::record_transmision(
+    int i,
+    int j,
+    int variant
+) {
+    transmision_date.push_back(model->today());
+    transmision_source.push_back(i);
+    transmision_target.push_back(j);
+    transmision_variant.push_back(variant);
 }
 
 
