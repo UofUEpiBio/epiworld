@@ -114,6 +114,8 @@ inline size_t Model<TSeq>::size() const {
 template<typename TSeq>
 inline void Model<TSeq>::init(int seed) {
 
+    EPIWORLD_CLOCK_START()
+
     if (initialized) 
         throw std::logic_error("Model already initialized.");
 
@@ -154,6 +156,8 @@ inline void Model<TSeq>::init(int seed) {
                 p.add_tool(0, tools[t]);
 
     }
+
+    EPIWORLD_CLOCK_END("Init model")
 
 }
 
@@ -290,6 +294,8 @@ inline void Model<TSeq>::write_edgelist(
     ) const
 {
 
+    EPIWORLD_CLOCK_START()
+
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
     for (const auto & p : persons)
@@ -297,6 +303,8 @@ inline void Model<TSeq>::write_edgelist(
         for (auto & n : p.neighbors)
             efile << p.id << " " << n->id << "\n";
     }
+
+    EPIWORLD_CLOCK_END("Writing edgelist")
 
 }
 

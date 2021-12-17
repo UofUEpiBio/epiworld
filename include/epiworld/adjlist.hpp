@@ -161,16 +161,21 @@ void AdjList::print(unsigned int limit) const {
         int niter = 0;
         for (auto n_n : n.second)
             if (++niter < n_neighbors)
+            {    
                 printf_epiworld("%i, ", n_n.first);
-            else
+            }
+            else {
                 printf_epiworld("%i}\n", n_n.first);
+            }
     }
 
     if (limit < dat.size())
+    {
         printf_epiworld(
             "  (... skipping %i records ...)\n",
             static_cast<int>(dat.size() - limit)
             );
+    }
 
 }
 

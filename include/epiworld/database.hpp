@@ -343,6 +343,8 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_total
 ) const {
 
+    EPIWORLD_CLOCK_START()
+
     std::ofstream file_variant(fn_variant, std::ios_base::out);
     std::ofstream file_total(fn_total, std::ios_base::out);
 
@@ -368,6 +370,8 @@ inline void DataBase<TSeq>::write_data(
             hist_total_ninfected[i] << " " <<
             hist_total_nrecovered[i] << " " <<
             hist_total_ndeceased[i] << "\n";
+
+    EPIWORLD_CLOCK_END("Writing data")
 
 }
 

@@ -10,7 +10,7 @@
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
 #define MUTATION_PROB      0.00025
 #define INITIAL_PREVALENCE 0.005
-#define N_DAYS             365 * 2
+#define N_DAYS             60
 #define VACCINE_EFFICACY   0.90
 #define IMMUNE_EFFICACY    0.50
 #define VARIANT_MORTALITY  0.001
@@ -184,6 +184,10 @@ int main(int argc, char* argv[]) {
     
     model.init(seed);
 
+    // Creating a progress bar
+    EPIWORLD_CLOCK_START()
+    epiworld::Progress p(nsteps, 80);
+
     // Initializing the simulation
     for (unsigned int t = 0; t < nsteps; ++t)
     {
@@ -192,8 +196,14 @@ int main(int argc, char* argv[]) {
         model.mutate_variant();
         model.next();
 
+        p.next();
+
     }
+
+    p.end();
     
+    EPIWORLD_CLOCK_END("Run model")
+
     // Writing off the results
     model.get_db().write_data(
         "variants.txt",

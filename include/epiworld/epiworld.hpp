@@ -7,16 +7,17 @@
 #include <string>
 #include <map>
 #include <unordered_map>
-// #include <omp.h>
+#include <chrono>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
 
 namespace epiworld {
 
-    #include "misc.hpp"
-    #include "database.hpp"
     #include "config.hpp"
+    #include "misc.hpp"
+    #include "progress.hpp"
+    #include "database.hpp"
     #include "adjlist.hpp"
 
     #include "model.hpp"

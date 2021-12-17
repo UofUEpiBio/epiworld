@@ -24,14 +24,14 @@ template<typename TSeq>
 using TransFun = std::function<double(Virus<TSeq>*,Person<TSeq>*)>;
 
 /**
- * @brief 
+ * @brief Virus
  * 
  * @tparam TSeq 
  * @details
  * Raw transmisibility of a virus should be a function of its genetic
  * sequence. Nonetheless, transmisibility can be reduced as a result of
  * having one or more tools to fight the virus. Because of this, transmisibility
- * should be a function of the person.
+ * should be a function of the host.
  */
 template<typename TSeq>
 class Virus {
@@ -39,9 +39,10 @@ class Virus {
     friend class DataBase<TSeq>;
 private:
     std::shared_ptr<TSeq> baseline_sequence;
-    Person<TSeq> * person;
+    Person<TSeq> * host;
     int date = -99;
     int id   = -99;
+    bool active = true;
     std::shared_ptr<MutFun<TSeq>> mutation_fun = nullptr;
 
 public:
@@ -52,12 +53,13 @@ public:
     void set_mutation(MutFun<TSeq> fun);
     const TSeq* get_sequence();
     void set_sequence(TSeq sequence);
-    Person<TSeq> * get_person();
+    Person<TSeq> * get_host();
     Model<TSeq> * get_model();
     void set_date(int d);
     int get_date() const;
     void set_id(int idx);
     int get_id() const;
+    bool is_active() const;
 
 };
 
@@ -73,10 +75,12 @@ inline void Virus<TSeq>::mutate() {
         if ((*mutation_fun)(this))
         {
             int tmpid = get_id();
-            person->get_model()->register_variant(this);
+            host->get_model()->register_variant(this);
 
             if (get_model()->get_db().get_today_variant("ninfected")[tmpid] < 0)
+            {
                 printf_epiworld("Epa!\n");
+            }
         }
     
 
@@ -102,13 +106,13 @@ inline void Virus<TSeq>::set_sequence(TSeq sequence) {
 }
 
 template<typename TSeq>
-inline Person<TSeq> * Virus<TSeq>::get_person() {
-    return person;
+inline Person<TSeq> * Virus<TSeq>::get_host() {
+    return host;
 }
 
 template<typename TSeq>
 inline Model<TSeq> * Virus<TSeq>::get_model() {
-    return person->get_model();
+    return host->get_model();
 }
 
 template<typename TSeq>
@@ -136,21 +140,33 @@ inline int Virus<TSeq>::get_date() const {
 }
 
 template<typename TSeq>
+inline bool Virus<TSeq>::is_active() const {
+    return active;
+}
+
+
+/**
+ * @brief Set of viruses in host
+ * 
+ * @tparam TSeq 
+ */
+template<typename TSeq>
 class PersonViruses {
     friend class Person<TSeq>;
 
 private:
-    Person<TSeq> * person;
+    Person<TSeq> * host;
     std::vector< Virus<TSeq> > viruses;
-    std::vector< int > dates;
-    std::vector< bool > active;
+    int nactive = 0;
 
 public:
     void add_virus(int date, Virus<TSeq> v);
     size_t size() const;
+    int size_active() const;
     Virus<TSeq> & operator()(int i);
     void mutate();
     void clear();
+    void deactivate(Virus<TSeq> & v);
 
 };
 
@@ -164,14 +180,13 @@ inline void PersonViruses<TSeq>::add_virus(
     // Will keep the original sequence and will point to the
     // mutation and transmisibility functions.
     viruses.push_back(v);
-    viruses.at(viruses.size() - 1u).person = this->person;
-    dates.push_back(date);
-    active.push_back(true);
+    int vloc = viruses.size() - 1u;
+    viruses[vloc].host = host;
+    viruses[vloc].date   = host->get_model()->today();
 
-    // Pointing
-    viruses[viruses.size() - 1u].person = this->person; 
+    host->get_model()->get_db().up_infected(&v);
 
-    person->get_model()->get_db().up_infected(&v);
+    nactive++;
 
 }
 
@@ -179,6 +194,12 @@ template<typename TSeq>
 inline size_t PersonViruses<TSeq>::size() const {
     return viruses.size();
 }
+
+template<typename TSeq>
+inline int PersonViruses<TSeq>::size_active() const {
+    return nactive;
+}
+
 
 template<typename TSeq>
 inline Virus<TSeq> & PersonViruses<TSeq>::operator()(
@@ -201,12 +222,20 @@ inline void PersonViruses<TSeq>::clear()
 {
 
     this->viruses.clear();
-    this->dates.clear();
-    this->active.clear();
 
 }
 
+template<typename TSeq>
+inline void PersonViruses<TSeq>::deactivate(Virus<TSeq> & v)
+{
 
+    if (v.get_host()->id != host->id)
+        throw std::logic_error("A host cannot deactivate someone else's virus.");
+
+    nactive--;
+    v.active = false;
+
+}
 
 #undef DEFAULT_TRANSMISIBILITY
 

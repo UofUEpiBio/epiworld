@@ -63,9 +63,9 @@ inline Person<TSeq>::Person()
 template<typename TSeq>
 inline void Person<TSeq>::init()
 {
-    tools.person   = this;
-    viruses.person = this;
-    status         = HEALTHY;
+    tools.person = this;
+    viruses.host = this;
+    status       = HEALTHY;
 }
     
 
