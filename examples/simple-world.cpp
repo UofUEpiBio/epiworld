@@ -8,18 +8,23 @@
 // Original data will be an integer vector
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
-#define MUTATION_PROB      0.000025
-#define INITIAL_PREVALENCE 0.005
-#define N_DAYS             60
-#define VACCINE_EFFICACY   0.90
-#define IMMUNE_EFFICACY    0.50
-#define VARIANT_MORTALITY  0.001
-#define BASELINE_INFECCTIOUSNESS 0.5
-#define IMMUNE_LEARN_RATE 0.05
+// #define MUTATION_PROB      0.000025
+// #define INITIAL_PREVALENCE 0.005
+// #define N_DAYS             60
+// #define VACCINE_EFFICACY   0.90
+// #define IMMUNE_EFFICACY    0.50
+// #define VARIANT_MORTALITY  0.001
+// #define BASELINE_INFECCTIOUSNESS 0.5
+// #define IMMUNE_LEARN_RATE 0.05
 
-// enum epipar {
-//     MUTATION_PROB
-// };
+enum epipar {
+    MUTATION_PROB,
+    VACCINE_EFFICACY,
+    IMMUNE_EFFICACY,
+    VARIANT_MORTALITY,
+    BASELINE_INFECCTIOUSNESS,
+    IMMUNE_LEARN_RATE
+};
 
 // Defining mutation and transmission functions
 inline bool covid19_mut(
@@ -54,7 +59,7 @@ inline bool covid19_mut(
 // Getting the vaccine
 MAKE_TOOL(vaccine_eff, DAT) {
 
-    return VACCINE_EFFICACY;
+    return m->params()[epipar::VACCINE_EFFICACY];
 
 }
 
@@ -63,7 +68,7 @@ MAKE_TOOL(vaccine_rec, DAT) {
 }
 
 MAKE_TOOL(vaccine_death, DAT) {
-    return VARIANT_MORTALITY;
+    return m->params()[epipar::VARIANT_MORTALITY];
 }
 
 MAKE_TOOL(vaccine_trans, DAT) {
@@ -88,19 +93,19 @@ MAKE_TOOL(immune_eff, DAT) {
 
 MAKE_TOOL(immune_rec, DAT) {
 
-    return IMMUNE_EFFICACY;
+    return m->params()[epipar::IMMUNE_EFFICACY];
 
 }
 
 MAKE_TOOL(immune_death, DAT) {
 
-    return VARIANT_MORTALITY;
+    return m->params()[epipar::VARIANT_MORTALITY];
 
 }
 
 MAKE_TOOL(immune_trans, DAT) {
 
-    return BASELINE_INFECCTIOUSNESS;
+    return m->params()[epipar::BASELINE_INFECCTIOUSNESS];
 
 }
 
@@ -112,27 +117,39 @@ int main(int argc, char* argv[]) {
 
     int seed;
     unsigned int nsteps;
-    if (argc == 3)
+    double preval;
+    if (argc == 4)
     {
         seed   = strtol(argv[1], nullptr, 0);
         nsteps = strtol(argv[2], nullptr, 0);
+        preval = strtol(argv[3], nullptr, 0);
 
     } else {
         seed   = 159;
-        nsteps = N_DAYS;
+        nsteps = 60;
+        preval = 0.005;
     }
 
 
     using namespace epiworld;
 
+    // Initializing the model
+    epiworld::Model<DAT> model;
+    
+    // Setting up the model parameters
+    model.params().resize(6u, 0.0);
+    model.params()[epipar::MUTATION_PROB]            = 0.000025;
+    model.params()[epipar::VACCINE_EFFICACY]         = 0.90;
+    model.params()[epipar::IMMUNE_EFFICACY]          = 0.50;
+    model.params()[epipar::VARIANT_MORTALITY]        = 0.001;
+    model.params()[epipar::BASELINE_INFECCTIOUSNESS] = 0.5;
+    model.params()[epipar::IMMUNE_LEARN_RATE]        = 0.05;
+
     // Initializing disease
     epiworld::Virus<DAT> covid19(base_seq);
     covid19.set_mutation(covid19_mut);
 
-    // Initializing the world. This will include POP_SIZE
-    // individuals
-    epiworld::Model<DAT> model;
-    model.add_virus(covid19, INITIAL_PREVALENCE); // 0.5% will have the virus at first
+    model.add_virus(covid19, preval); // 0.5% will have the virus at first
 
     // Reading network structure
     model.pop_from_adjlist("edgelist.txt", 0, true);
