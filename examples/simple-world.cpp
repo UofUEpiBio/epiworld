@@ -28,15 +28,14 @@ enum epipar {
 
 // Defining mutation and transmission functions
 inline bool covid19_mut(
-    epiworld::Virus<DAT> * v
+    epiworld::Virus<DAT> * v,
+    epiworld::Model<DAT> * m
 ) {
 
-    epiworld::Model<DAT> * mptr = v->get_model();
-
-    if (mptr->runif() < MUTATION_PROB)
+    if (m->runif() < m->operator()(MUTATION_PROB))
     {
         // Picking a location at random
-        int idx = std::floor(mptr->runif() * v->get_sequence()->size());
+        int idx = std::floor(m->runif() * v->get_sequence()->size());
         DAT tmp_seq = *v->get_sequence();
         tmp_seq[idx] = !v->get_sequence()->at(idx); 
 

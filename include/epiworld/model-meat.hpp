@@ -25,8 +25,8 @@ inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
 }
 
 template<typename TSeq>
-inline Person<TSeq> & Model<TSeq>::operator()(int i) {
-    return persons.at(i);
+inline double & Model<TSeq>::operator()(int i) {
+    return parameters[i];
 }
 
 template<typename TSeq>

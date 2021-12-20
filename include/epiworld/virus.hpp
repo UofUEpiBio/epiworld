@@ -18,10 +18,10 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-using MutFun = std::function<bool(Virus<TSeq>*)>;
+using MutFun = std::function<bool(Virus<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
-using TransFun = std::function<double(Virus<TSeq>*,Person<TSeq>*)>;
+using TransFun = std::function<double(Virus<TSeq>*,Person<TSeq>*,Model<TSeq>*)>;
 
 /**
  * @brief Virus
@@ -72,7 +72,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::mutate() {
 
     if (mutation_fun)
-        if ((*mutation_fun)(this))
+        if ((*mutation_fun)(this, this->get_model()))
         {
             int tmpid = get_id();
             host->get_model()->record_variant(this);

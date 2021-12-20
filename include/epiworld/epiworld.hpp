@@ -28,4 +28,8 @@ namespace epiworld {
 
 }
 
+namespace EW {
+    #define PARAMETER(a)
+}
+
 #endif 

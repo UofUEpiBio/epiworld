@@ -48,7 +48,7 @@ public:
     DataBase<TSeq> & get_db();
     std::vector< Person<TSeq> > * get_persons();
 
-    Person<TSeq> & operator()(int i);
+    double & operator()(int i);
 
     size_t size() const;
     void init(int seed = 0);
