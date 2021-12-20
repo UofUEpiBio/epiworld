@@ -11,13 +11,13 @@
         auto epiworld_clock_start = std::chrono::steady_clock::now();
     #define EPIWORLD_CLOCK_END(a) \
         auto epiworld_clock_end   = std::chrono::steady_clock::now(); \
-        std::chrono::duration<double> epiworld_elapsed_seconds = \
+        std::chrono::duration<double,std::milli> epiworld_elapsed = \
             epiworld_clock_end-epiworld_clock_start;\
         std::string epoworld_clock_str = a; \
         printf_epiworld(\
-            "(elapsed) %-20s: %04.2fs\n",\
+            "(elapsed) %-20s: % 8.2fms\n",\
             epoworld_clock_str.c_str(),\
-            epiworld_elapsed_seconds.count());
+            epiworld_elapsed.count());
 #else
     #define EPIWORLD_CLOCK_START()
     #define EPIWORLD_CLOCK_END(a)

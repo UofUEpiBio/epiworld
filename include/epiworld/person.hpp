@@ -227,7 +227,7 @@ inline void Person<TSeq>::update_status() {
             get_model()->get_db().record_transmision(
                 this->id,
                 variants[ord]->get_host()->get_id(),
-                model->today()
+                variants[ord]->get_id()
                 );
 
             return;
@@ -259,7 +259,7 @@ inline void Person<TSeq>::update_status() {
                 get_model()->get_db().record_transmision(
                     this->id,
                     variants[v]->get_host()->get_id(),
-                    model->today()
+                    variants[v]->get_id()
                 );
 
                 return;

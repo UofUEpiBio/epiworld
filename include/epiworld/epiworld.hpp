@@ -20,7 +20,8 @@ namespace epiworld {
     #include "database.hpp"
     #include "adjlist.hpp"
 
-    #include "model.hpp"
+    #include "model-bones.hpp"
+    #include "model-meat.hpp"
     #include "virus.hpp"
     #include "tools.hpp"
     #include "person.hpp"

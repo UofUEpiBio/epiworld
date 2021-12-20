@@ -8,14 +8,18 @@
 // Original data will be an integer vector
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
-#define MUTATION_PROB      0.00025
+#define MUTATION_PROB      0.000025
 #define INITIAL_PREVALENCE 0.005
 #define N_DAYS             60
 #define VACCINE_EFFICACY   0.90
 #define IMMUNE_EFFICACY    0.50
 #define VARIANT_MORTALITY  0.001
-#define BASELINE_INFECCTIOUSNESS 0.9
+#define BASELINE_INFECCTIOUSNESS 0.5
 #define IMMUNE_LEARN_RATE 0.05
+
+// enum epipar {
+//     MUTATION_PROB
+// };
 
 // Defining mutation and transmission functions
 inline bool covid19_mut(
@@ -50,13 +54,7 @@ inline bool covid19_mut(
 // Getting the vaccine
 MAKE_TOOL(vaccine_eff, DAT) {
 
-    double dist = 0.0;
-    const auto & virusseq = v->get_sequence();
-    for (unsigned int i = 0; i < virusseq->size(); ++i)
-        dist += std::fabs(virusseq->at(i) - base_seq[i]);
-    
-    return (1.0 - dist/virusseq->size()) * VACCINE_EFFICACY;
-    // return VACCINE_EFFICACY;
+    return VACCINE_EFFICACY;
 
 }
 
@@ -83,32 +81,14 @@ MAKE_TOOL(mask_trans, DAT) {
 
 // Immune system
 MAKE_TOOL(immune_eff, DAT) {
+
     return 0.3;
+
 }
 
 MAKE_TOOL(immune_rec, DAT) {
 
-    double dist = 0.0;
-    const auto & virusseq = v->get_sequence();
-    auto & immune_sequence = t->get_sequence_unique();
-
-    // Deciding whether to mutate or not
-    if (m->runif() < IMMUNE_LEARN_RATE)
-    {
-        int k = floor(m->runif() * immune_sequence.size());
-        immune_sequence[k] = virusseq->at(k); 
-    }
-    
-    for (unsigned int i = 0; i < virusseq->size(); ++i)
-    {
-        // With 30% chance we will match that part of the code
-        dist += std::fabs(virusseq->at(i) - immune_sequence[i]);
-
-    }
-    
-    return (1.0 - dist/virusseq->size()) * IMMUNE_EFFICACY;
-    // return 0.5;
-
+    return IMMUNE_EFFICACY;
 
 }
 

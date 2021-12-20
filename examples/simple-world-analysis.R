@@ -1,5 +1,8 @@
-totals   <- read.table("examples/total.txt", sep = " ", header = TRUE)
-variants <- read.table("examples/variants.txt", sep = " ", header = TRUE)
+library(data.table)
+
+totals   <- fread("examples/total.txt", sep = " ", header = TRUE)
+variants <- fread("examples/variants.txt", sep = " ", header = TRUE)
+transmi  <- fread("examples/transmisions.txt", sep = " ", header = TRUE)
 
 
 dat <- rbind(
@@ -40,3 +43,8 @@ variants |> subset(ninfected > 0) |>
   # geom_smooth(aes(color = as.factor(id))) +
   geom_line()
   labs(y = "N infected", color = "Variant id")
+
+
+transmi[, .(n = .N), by = .(source, variant)][, n]  |> 
+  summary()
+  hist(main = "Distribution of Reproductive number")
