@@ -24,7 +24,7 @@ EPI_MUTFUN(covid19_mut, DAT) {
     if (EPI_RUNIF() < EPI_PARAMS(MUTATION_PROB))
     {
         // Picking a location at random
-        int idx = std::floor(m->runif() * v->get_sequence()->size());
+        int idx = std::floor(EPI_RUNIF() * v->get_sequence()->size());
         DAT tmp_seq = *v->get_sequence();
         tmp_seq[idx] = !v->get_sequence()->at(idx); 
 
@@ -163,30 +163,29 @@ int main(int argc, char* argv[]) {
     model.add_tool(mask, 0.5);
     model.add_tool(immune, 1.0);
     
-    model.init(seed);  
+    model.init(nsteps, seed);  
 
     // Creating a progress bar
-    EPIWORLD_CLOCK_START("Run model")
-    epiworld::Progress pbar(nsteps, 80);
+    EPIWORLD_CLOCK_START("(01) Run model")
 
     // Initializing the simulation
-    for (unsigned int t = 0; t < nsteps; ++t)
+    EPIWORLD_RUN(model) 
     {
 
+        // We can execute these components in whatever order the
+        // user needs.
         model.update_status();
         model.mutate_variant();
         model.next();
 
-        // 10% of rewire
+        // In this case we are applying degree sequence rewiring
+        // to change the network just a bit.
         model.rewire_degseq(floor(model.size() * .1));
-
-        pbar.next();
-
+        
     }
 
-    pbar.end();
     
-    EPIWORLD_CLOCK_END("Run model")
+    EPIWORLD_CLOCK_END("(01) Run model")
 
     // Writing off the results
     model.get_db().write_data(
@@ -198,7 +197,7 @@ int main(int argc, char* argv[]) {
 
     model.write_edgelist("simple-world-edgelist.txt");
 
-    EPIWORLD_CLOCK_REPORT("Elapsed times")
+    EPIWORLD_CLOCK_REPORT("--- ELAPSED TIMES ---")
 
     return 0;
 

@@ -18,7 +18,7 @@ private:
     int i;            ///< Current iteration step
     
 public:
-
+    Progress() {};
     Progress(int n_, int width_);
     ~Progress() {};
 
@@ -54,6 +54,8 @@ inline void Progress::next() {
     {
         printf_epiworld("|");
     }
+    if (i >= n)
+        end();
 
     last_loc = cur_loc;
 

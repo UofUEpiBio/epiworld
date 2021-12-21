@@ -33,4 +33,11 @@
 
 #define EPI_RUNIF() m->runif()
 
+#define EPIWORLD_RUN(a) \
+    if (a.get_verbose()) \
+    { \
+        printf_epiworld("Running the model...\n");\
+    } \
+    for (int niter = 0; niter < a.get_ndays(); ++niter)
+
 #endif

@@ -215,7 +215,7 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_transmision
 ) const {
 
-    EPIWORLD_CLOCK_START("Writing data")
+    EPIWORLD_CLOCK_START("(02) Writing data")
 
     if (fn_variant_info != "")
     {
@@ -286,7 +286,7 @@ inline void DataBase<TSeq>::write_data(
     }
     
 
-    EPIWORLD_CLOCK_END("Writing data")
+    EPIWORLD_CLOCK_END("(02) Writing data")
 
 }
 

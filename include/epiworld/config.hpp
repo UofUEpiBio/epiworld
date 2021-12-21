@@ -9,23 +9,23 @@
 #ifdef EPIWORLD_TIMING
     #include <chrono>
     #define EPIWORLD_CLOCK_SETUP() \
-        std::unordered_map<std::string,std::pair<double,unsigned int>> epiworld_clock_timing;
+        std::map<std::string,std::pair<double,unsigned int>> epiworld_clock_timing;
     #define EPIWORLD_CLOCK_START(a) \
         auto epiworld_clock_start = std::chrono::steady_clock::now(); \
-        if (epiworld_clock_timing.find(a) == epiworld_clock_timing.end()) \
-            epiworld_clock_timing[a] = std::pair<double,int>(0,1); \
+        if (epiworld::epiworld_clock_timing.find(a) == epiworld::epiworld_clock_timing.end()) \
+            epiworld::epiworld_clock_timing[a] = std::pair<double,int>(0,1); \
         else \
-            epiworld_clock_timing[a].second++;
+            epiworld::epiworld_clock_timing[a].second++;
     #define EPIWORLD_CLOCK_END(a) \
         auto epiworld_clock_end   = std::chrono::steady_clock::now(); \
         std::chrono::duration<double,std::milli> epiworld_elapsed = \
             epiworld_clock_end-epiworld_clock_start; \
-        epiworld_clock_timing[a].first += epiworld_elapsed.count();
+        epiworld::epiworld_clock_timing[a].first += epiworld_elapsed.count();
     #define EPIWORLD_CLOCK_REPORT(a) \
         /* Start by computing the sizes and relative scale of things */ \
         double mint = 1000.0; \
         unsigned int maxsize = 0;\
-        for (auto & t : epiworld_clock_timing) { \
+        for (auto & t : epiworld::epiworld_clock_timing) { \
             if (mint > t.second.first) \
                 mint = t.second.first; \
             if (maxsize < t.first.size()) \
@@ -34,7 +34,7 @@
         std::string t_unit = mint > 1000 ? "s" : "ms"; \
         std::string epiworld_msg = "%-" + std::to_string(maxsize) + "s: % 8.2f%s (avg %.2f for %i counts)\n";\
         printf_epiworld("%s\n", a); \
-        for (auto & times : epiworld_clock_timing) \
+        for (auto & times : epiworld::epiworld_clock_timing) \
         {\
             printf_epiworld(\
                 epiworld_msg.c_str(),\

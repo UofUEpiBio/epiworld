@@ -35,12 +35,16 @@ inline size_t Model<TSeq>::size() const {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::init(int seed) {
+inline void Model<TSeq>::init(int ndays, int seed) {
 
-    EPIWORLD_CLOCK_START("Init model")
+    EPIWORLD_CLOCK_START("(00) Init model")
 
     if (initialized) 
         throw std::logic_error("Model already initialized.");
+
+    // Setting up the number of steps
+    this->ndays = ndays;
+    pb = Progress(ndays, 80);
 
     // Initializing persons
     for (auto & p : persons)
@@ -80,7 +84,7 @@ inline void Model<TSeq>::init(int seed) {
 
     }
 
-    EPIWORLD_CLOCK_END("Init model")
+    EPIWORLD_CLOCK_END("(00) Init model")
 
 }
 
@@ -147,8 +151,14 @@ inline int Model<TSeq>::today() const {
 
 template<typename TSeq>
 inline void Model<TSeq>::next() {
+
     db.record();
     ++this->current_date;
+    
+    // Advicing the progress bar
+    if (verbose)
+        pb.next();
+
     return ;
 }
 
@@ -200,6 +210,16 @@ inline const std::vector<TSeq> & Model<TSeq>::get_variant_sequence() const {
 template<typename TSeq>
 inline const std::vector<int> & Model<TSeq>::get_variant_nifected() const {
     return db.get_today_variant("ninfected");
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::get_ndays() const {
+    return ndays;
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::get_verbose() const {
+    return verbose;
 }
 
 template<typename TSeq>
@@ -264,7 +284,7 @@ inline void Model<TSeq>::write_edgelist(
     ) const
 {
 
-    EPIWORLD_CLOCK_START("Writing edgelist")
+    EPIWORLD_CLOCK_START("(03) Writing edgelist")
 
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
@@ -274,7 +294,7 @@ inline void Model<TSeq>::write_edgelist(
             efile << p.id << " " << n->id << "\n";
     }
 
-    EPIWORLD_CLOCK_END("Writing edgelist")
+    EPIWORLD_CLOCK_END("(03) Writing edgelist")
 
 }
 

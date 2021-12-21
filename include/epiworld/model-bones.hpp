@@ -37,6 +37,9 @@ private:
     std::shared_ptr< std::mt19937 > engine;
     std::shared_ptr< std::uniform_real_distribution<> > runifd;
     std::vector< double > parameters;
+    int ndays;
+    Progress pb;
+    bool verbose     = true;
     bool initialized = false;
     int current_date = 0;
 
@@ -51,7 +54,7 @@ public:
     double & operator()(int i);
 
     size_t size() const;
-    void init(int seed = 0);
+    void init(int seed, int ndays);
     std::mt19937 * get_rand_endgine();
     double runif();
 
@@ -69,6 +72,8 @@ public:
     int get_nvariants() const;
     const std::vector< TSeq > & get_variant_sequence() const;
     const std::vector< int > & get_variant_nifected() const;
+    int get_ndays() const;
+    bool get_verbose() const;
 
     void rewire_degseq(int nrewires);
 
