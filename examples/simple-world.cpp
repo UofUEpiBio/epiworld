@@ -38,7 +38,11 @@ EPI_MUTFUN(covid19_mut, DAT) {
     
 }
 
-
+// If before the third day of infection, then
+    // no infectious
+#define CHECK_LATENT() \
+    if ((m->today() - v->get_date()) <= 3) \
+        return 0.0;
 
 // Getting the vaccine
 EPI_NEW_TOOL(vaccine_eff, DAT) {
@@ -53,7 +57,10 @@ EPI_NEW_TOOL(vaccine_death, DAT) {
     return EPI_PARAMS(VARIANT_MORTALITY);
 }
 
+
 EPI_NEW_TOOL(vaccine_trans, DAT) {
+
+    CHECK_LATENT()
     return 0.5;
 }
 
@@ -63,13 +70,15 @@ EPI_NEW_TOOL(mask_eff, DAT) {
 }
 
 EPI_NEW_TOOL(mask_trans, DAT) {
+
+    CHECK_LATENT()
     return 0.05;
 }
 
 // Immune system
 EPI_NEW_TOOL(immune_eff, DAT) {
 
-    return 0.3;
+    return EPI_PARAMS(IMMUNE_EFFICACY);
 
 }
 
@@ -82,6 +91,7 @@ EPI_NEW_TOOL(immune_death, DAT) {
 }
 
 EPI_NEW_TOOL(immune_trans, DAT) {
+    CHECK_LATENT()
     return EPI_PARAMS(BASELINE_INFECCTIOUSNESS);
 }
 
@@ -116,22 +126,24 @@ EPI_RECFUN(post_covid, DAT) {
 int main(int argc, char* argv[]) {
 
 
-    if ((argc != 3) & (argc != 1))
+    if ((argc != 5) & (argc != 1))
         std::logic_error("You need to specify seed and number of steps (in that order).");
 
     int seed;
     unsigned int nsteps;
-    double preval;
-    if (argc == 4)
+    double preval,mutrate;
+    if (argc == 5)
     {
         seed   = strtol(argv[1], nullptr, 0);
         nsteps = strtol(argv[2], nullptr, 0);
         preval = strtod(argv[3], nullptr);
+        mutrate = strtod(argv[4], nullptr);
 
     } else {
-        seed   = 159;
-        nsteps = 60;
-        preval = 0.005;
+        seed    = 159;
+        nsteps  = 60;
+        preval  = 0.005;
+        mutrate = 0.000025;
     }
 
 
@@ -142,11 +154,11 @@ int main(int argc, char* argv[]) {
     
     // Setting up the model parameters, these are six
     model.params().resize(6u, 0.0);
-    model.params()[MUTATION_PROB]            = 0.00025;
+    model.params()[MUTATION_PROB]            = mutrate;
     model.params()[VACCINE_EFFICACY]         = 0.90;
-    model.params()[IMMUNE_EFFICACY]          = 0.50;
+    model.params()[IMMUNE_EFFICACY]          = 0.10;
     model.params()[VARIANT_MORTALITY]        = 0.001;
-    model.params()[BASELINE_INFECCTIOUSNESS] = 0.5;
+    model.params()[BASELINE_INFECCTIOUSNESS] = 0.90;
     model.params()[IMMUNE_LEARN_RATE]        = 0.05;
 
     // Initializing disease
