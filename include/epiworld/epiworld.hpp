@@ -14,6 +14,8 @@
 
 namespace epiworld {
 
+    #include "epiworld-macros.hpp"
+
     #include "config.hpp"
     #include "misc.hpp"
     #include "progress.hpp"
@@ -26,10 +28,6 @@ namespace epiworld {
     #include "tools.hpp"
     #include "person.hpp"
 
-}
-
-namespace EW {
-    #define PARAMETER(a)
 }
 
 #endif 

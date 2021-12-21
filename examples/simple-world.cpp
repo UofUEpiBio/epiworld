@@ -8,14 +8,6 @@
 // Original data will be an integer vector
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
-// #define MUTATION_PROB      0.000025
-// #define INITIAL_PREVALENCE 0.005
-// #define N_DAYS             60
-// #define VACCINE_EFFICACY   0.90
-// #define IMMUNE_EFFICACY    0.50
-// #define VARIANT_MORTALITY  0.001
-// #define BASELINE_INFECCTIOUSNESS 0.5
-// #define IMMUNE_LEARN_RATE 0.05
 
 enum epipar {
     MUTATION_PROB,
@@ -27,12 +19,9 @@ enum epipar {
 };
 
 // Defining mutation and transmission functions
-inline bool covid19_mut(
-    epiworld::Virus<DAT> * v,
-    epiworld::Model<DAT> * m
-) {
+EPI_MUTFUN(covid19_mut, DAT) {
 
-    if (m->runif() < m->operator()(MUTATION_PROB))
+    if (EPI_RUNIF() < EPI_PARAMS(MUTATION_PROB))
     {
         // Picking a location at random
         int idx = std::floor(m->runif() * v->get_sequence()->size());
@@ -49,62 +38,58 @@ inline bool covid19_mut(
     
 }
 
-#define MAKE_TOOL(a,b) inline double \
-    (a)(\
-        epiworld::Tool<b> * t, \
-        epiworld::Person< b > * p, epiworld::Virus< b > * v, epiworld::Model< b > * m)
 
 
 // Getting the vaccine
-MAKE_TOOL(vaccine_eff, DAT) {
+EPI_NEW_TOOL(vaccine_eff, DAT) {
 
-    return m->params()[epipar::VACCINE_EFFICACY];
+    return EPI_PARAMS(VACCINE_EFFICACY);
 
 }
 
-MAKE_TOOL(vaccine_rec, DAT) {
+EPI_NEW_TOOL(vaccine_rec, DAT) {
     return 0.4;
 }
 
-MAKE_TOOL(vaccine_death, DAT) {
-    return m->params()[epipar::VARIANT_MORTALITY];
+EPI_NEW_TOOL(vaccine_death, DAT) {
+    return EPI_PARAMS(VARIANT_MORTALITY);
 }
 
-MAKE_TOOL(vaccine_trans, DAT) {
+EPI_NEW_TOOL(vaccine_trans, DAT) {
     return 0.5;
 }
 
 // Wearing a Mask
-MAKE_TOOL(mask_eff, DAT) {
+EPI_NEW_TOOL(mask_eff, DAT) {
     return 0.8;
 }
 
-MAKE_TOOL(mask_trans, DAT) {
+EPI_NEW_TOOL(mask_trans, DAT) {
     return 0.05;
 }
 
 // Immune system
-MAKE_TOOL(immune_eff, DAT) {
+EPI_NEW_TOOL(immune_eff, DAT) {
 
     return 0.3;
 
 }
 
-MAKE_TOOL(immune_rec, DAT) {
+EPI_NEW_TOOL(immune_rec, DAT) {
 
-    return m->params()[epipar::IMMUNE_EFFICACY];
-
-}
-
-MAKE_TOOL(immune_death, DAT) {
-
-    return m->params()[epipar::VARIANT_MORTALITY];
+    return EPI_PARAMS(IMMUNE_EFFICACY);
 
 }
 
-MAKE_TOOL(immune_trans, DAT) {
+EPI_NEW_TOOL(immune_death, DAT) {
 
-    return m->params()[epipar::BASELINE_INFECCTIOUSNESS];
+    return EPI_PARAMS(VARIANT_MORTALITY);
+
+}
+
+EPI_NEW_TOOL(immune_trans, DAT) {
+
+    return EPI_PARAMS(BASELINE_INFECCTIOUSNESS);
 
 }
 
@@ -137,12 +122,12 @@ int main(int argc, char* argv[]) {
     
     // Setting up the model parameters
     model.params().resize(6u, 0.0);
-    model.params()[epipar::MUTATION_PROB]            = 0.000025;
-    model.params()[epipar::VACCINE_EFFICACY]         = 0.90;
-    model.params()[epipar::IMMUNE_EFFICACY]          = 0.50;
-    model.params()[epipar::VARIANT_MORTALITY]        = 0.001;
-    model.params()[epipar::BASELINE_INFECCTIOUSNESS] = 0.5;
-    model.params()[epipar::IMMUNE_LEARN_RATE]        = 0.05;
+    model.params()[MUTATION_PROB]            = 0.000025;
+    model.params()[VACCINE_EFFICACY]         = 0.90;
+    model.params()[IMMUNE_EFFICACY]          = 0.50;
+    model.params()[VARIANT_MORTALITY]        = 0.001;
+    model.params()[BASELINE_INFECCTIOUSNESS] = 0.5;
+    model.params()[IMMUNE_LEARN_RATE]        = 0.05;
 
     // Initializing disease
     epiworld::Virus<DAT> covid19(base_seq);
