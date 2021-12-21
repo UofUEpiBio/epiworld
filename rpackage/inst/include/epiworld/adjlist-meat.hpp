@@ -109,7 +109,7 @@ inline const std::map<int,int> & AdjList::operator()(int i) const {
     return dat.find(i)->second;
 
 }
-void AdjList::print(unsigned int limit) const {
+inline void AdjList::print(unsigned int limit) const {
 
 
     unsigned int counter = 0;

@@ -68,6 +68,18 @@ inline void Model<TSeq>::init(int ndays, int seed) {
 
     initialized = true;
 
+    // Starting first infection and tools
+    dist_virus();
+    dist_tools();
+
+    EPIWORLD_CLOCK_END("(00) Init model")
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::dist_virus()
+{
+
     // Starting first infection
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
@@ -77,6 +89,11 @@ inline void Model<TSeq>::init(int ndays, int seed) {
 
     }
 
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::dist_tools()
+{
     // Tools
     for (unsigned int t = 0; t < tools.size(); ++t)
     {
@@ -85,8 +102,6 @@ inline void Model<TSeq>::init(int ndays, int seed) {
                 p.add_tool(0, tools[t]);
 
     }
-
-    EPIWORLD_CLOCK_END("(00) Init model")
 
 }
 
@@ -172,7 +187,7 @@ inline void Model<TSeq>::update_status() {
 
     // Making the change effective
     for (auto & p: persons)
-        if (p.status != DECEASED)
+        if (p.status != STATES::DECEASED)
             p.status = p.status_next;
 
 }
@@ -303,6 +318,19 @@ template<typename TSeq>
 inline std::vector<double> & Model<TSeq>::params()
 {
     return parameters;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::reset() {
+    
+    // Restablishing people
+    for (auto & p : persons)
+        p.reset();
+
+    // Re distributing tools and virus
+    dist_virus();
+    dist_tools();
+
 }
 
 #undef CHECK_INIT

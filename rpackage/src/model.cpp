@@ -1,6 +1,4 @@
 #include <Rcpp.h>
-#include "epiworld/epiworld.hpp"
-
 using namespace Rcpp;
 #include "epiworld-common.hpp"
 

@@ -1,3 +1,10 @@
+#ifndef EPIWORLD_RPKG_HPP
+#define EPIWORLD_RPKG_HPP
+
+#define printf_epiworld Rprintf
+
+#include "epiworld/epiworld.hpp"
+
 #define TSEQ std::vector<bool>
 
 // If before the third day of infection, then
@@ -17,3 +24,5 @@ enum epipar {
   BASELINE_INFECCTIOUSNESS,
   IMMUNE_LEARN_RATE
 };
+
+#endif

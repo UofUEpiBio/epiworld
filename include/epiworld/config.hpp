@@ -5,7 +5,7 @@
     #define printf_epiworld fflush(stdout);printf
 #endif
 
-#define EPIWORLD_TIMING 1
+// #define EPIWORLD_TIMING 1
 #ifdef EPIWORLD_TIMING
     #include <chrono>
     #define EPIWORLD_CLOCK_SETUP() \

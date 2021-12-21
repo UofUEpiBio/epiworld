@@ -269,7 +269,6 @@ inline void Person<TSeq>::reset() {
     this->status      = STATES::HEALTHY;
     this->status_next = STATES::HEALTHY;
 
-
 }
 
 #endif
