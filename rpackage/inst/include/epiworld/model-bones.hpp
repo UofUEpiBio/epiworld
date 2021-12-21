@@ -43,9 +43,6 @@ private:
     bool initialized = false;
     int current_date = 0;
 
-    void dist_tools();
-    void dist_virus();
-
 public:
 
     Model() {};
@@ -90,8 +87,6 @@ public:
         ) const;
 
     std::vector<double> & params();
-
-    void reset();
 
 };
 
