@@ -26,6 +26,7 @@
  */
 #define EPI_MUTFUN(fname,tseq) inline bool \
     (fname)(\
+    epiworld::Person<tseq> * p, \
     epiworld::Virus<tseq> * v, \
     epiworld::Model<tseq> * m \
     )

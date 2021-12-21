@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
     {
         seed   = strtol(argv[1], nullptr, 0);
         nsteps = strtol(argv[2], nullptr, 0);
-        preval = strtol(argv[3], nullptr, 0);
+        preval = strtod(argv[3], nullptr);
 
     } else {
         seed   = 159;
@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
     model.init(seed);  
 
     // Creating a progress bar
-    EPIWORLD_CLOCK_START()
+    EPIWORLD_CLOCK_START("Run model")
     epiworld::Progress pbar(nsteps, 80);
 
     // Initializing the simulation
@@ -197,6 +197,8 @@ int main(int argc, char* argv[]) {
     );
 
     model.write_edgelist("simple-world-edgelist.txt");
+
+    EPIWORLD_CLOCK_REPORT("Elapsed times")
 
     return 0;
 

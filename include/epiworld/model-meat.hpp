@@ -37,7 +37,7 @@ inline size_t Model<TSeq>::size() const {
 template<typename TSeq>
 inline void Model<TSeq>::init(int seed) {
 
-    EPIWORLD_CLOCK_START()
+    EPIWORLD_CLOCK_START("Init model")
 
     if (initialized) 
         throw std::logic_error("Model already initialized.");
@@ -264,7 +264,7 @@ inline void Model<TSeq>::write_edgelist(
     ) const
 {
 
-    EPIWORLD_CLOCK_START()
+    EPIWORLD_CLOCK_START("Writing edgelist")
 
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
