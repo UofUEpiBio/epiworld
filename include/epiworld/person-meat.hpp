@@ -105,10 +105,10 @@ template<typename TSeq>
 inline void Person<TSeq>::update_status() {
 
     // No change if deceased
-    if (status == STATUS::DECEASED)
+    if (status == STATES::DECEASED)
         return;
 
-    if ((status == STATUS::HEALTHY) | (status == STATUS::RECOVERED))
+    if ((status == STATES::HEALTHY) | (status == STATES::RECOVERED))
     {
         // Step 1: Compute the individual efficcacy
         std::vector< double > probs;
@@ -125,7 +125,7 @@ inline void Person<TSeq>::update_status() {
             Person<TSeq> * neighbor = neighbors[n];
 
             // Non-infected individuals make no difference
-            if (neighbor->get_status() != STATUS::INFECTED & neighbor->get_status() != STATUS::ASYMPTOMATIC)
+            if ((neighbor->get_status() != STATES::INFECTED) & (neighbor->get_status() != STATES::ASYMPTOMATIC))
                 continue;
 
             PersonViruses<TSeq> & nviruses = neighbor->get_viruses();
@@ -213,7 +213,7 @@ inline void Person<TSeq>::update_status() {
             
         }
 
-    } else if (status == STATUS::INFECTED)
+    } else if (status == STATES::INFECTED)
     {
 
         Virus<TSeq> * vptr = &viruses(0u);

@@ -33,6 +33,8 @@ namespace epiworld {
     #include "personviruses-meat.hpp"
     #include "tools-bones.hpp"
     #include "tools-meat.hpp"
+    #include "persontools-bones.hpp"
+    #include "persontools-meat.hpp"
     #include "person-bones.hpp"
     #include "person-meat.hpp"
 

@@ -37,10 +37,10 @@ private:
     Person<TSeq> * person;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique;
-    std::shared_ptr<ToolFun<TSeq>> efficacy        = nullptr;
-    std::shared_ptr<ToolFun<TSeq>> transmisibility = nullptr;
-    std::shared_ptr<ToolFun<TSeq>> recovery        = nullptr;
-    std::shared_ptr<ToolFun<TSeq>> death           = nullptr;
+    ToolFun<TSeq> efficacy        = nullptr;
+    ToolFun<TSeq> transmisibility = nullptr;
+    ToolFun<TSeq> recovery        = nullptr;
+    ToolFun<TSeq> death           = nullptr;
 
 
 public:
