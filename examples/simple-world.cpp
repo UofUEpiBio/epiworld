@@ -42,9 +42,7 @@ EPI_MUTFUN(covid19_mut, DAT) {
 
 // Getting the vaccine
 EPI_NEW_TOOL(vaccine_eff, DAT) {
-
     return EPI_PARAMS(VACCINE_EFFICACY);
-
 }
 
 EPI_NEW_TOOL(vaccine_rec, DAT) {
@@ -76,21 +74,15 @@ EPI_NEW_TOOL(immune_eff, DAT) {
 }
 
 EPI_NEW_TOOL(immune_rec, DAT) {
-
     return EPI_PARAMS(IMMUNE_EFFICACY);
-
 }
 
 EPI_NEW_TOOL(immune_death, DAT) {
-
     return EPI_PARAMS(VARIANT_MORTALITY);
-
 }
 
 EPI_NEW_TOOL(immune_trans, DAT) {
-
     return EPI_PARAMS(BASELINE_INFECCTIOUSNESS);
-
 }
 
 int main(int argc, char* argv[]) {
@@ -120,7 +112,7 @@ int main(int argc, char* argv[]) {
     // Initializing the model
     epiworld::Model<DAT> model;
     
-    // Setting up the model parameters
+    // Setting up the model parameters, these are six
     model.params().resize(6u, 0.0);
     model.params()[MUTATION_PROB]            = 0.000025;
     model.params()[VACCINE_EFFICACY]         = 0.90;
@@ -181,7 +173,7 @@ int main(int argc, char* argv[]) {
         // In this case we are applying degree sequence rewiring
         // to change the network just a bit.
         model.rewire_degseq(floor(model.size() * .1));
-        
+
     }
 
     

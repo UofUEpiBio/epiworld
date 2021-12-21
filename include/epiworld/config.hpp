@@ -53,11 +53,15 @@
 
 EPIWORLD_CLOCK_SETUP()
 
-#define DECEASED     -99
-#define INFECTED     -1
-#define HEALTHY      0
-#define RECOVERED    1
-#define INCUBATION   2
-#define ASYMPTOMATIC 3
+enum STATES {
+    DECEASED,
+    INFECTED,
+    HEALTHY,
+    RECOVERED,
+    INCUBATION,
+    ASYMPTOMATIC,
+    ISOLATED
+};
+
 
 #endif
