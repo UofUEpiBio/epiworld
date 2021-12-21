@@ -20,6 +20,9 @@ class Model;
 template<typename TSeq>
 using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
+template<typename TSeq>
+using PostRecFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+
 
 /**
  * @brief Virus
@@ -41,7 +44,8 @@ private:
     int date = -99;
     int id   = -99;
     bool active = true;
-    std::shared_ptr<MutFun<TSeq>> mutation_fun = nullptr;
+    MutFun<TSeq> mutation_fun = nullptr;
+    PostRecFun<TSeq> post_recovery_fun = nullptr;
 
 public:
     Virus() {};
@@ -57,6 +61,9 @@ public:
     void set_id(int idx);
     int get_id() const;
     bool is_active() const;
+
+    void set_post_recovery(PostRecFun<TSeq> fun);
+    void post_recovery();
 
 };
 

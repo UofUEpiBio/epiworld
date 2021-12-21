@@ -4,8 +4,6 @@
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
 
-
-
 template<typename TSeq>
 inline DataBase<TSeq> & Model<TSeq>::get_db()
 {
@@ -55,6 +53,10 @@ inline void Model<TSeq>::init(int ndays, int seed) {
 
     // Has to happen after setting the persons
     db.set_model(*this);
+
+    // Recording variants
+    for (Virus<TSeq> & v : viruses)
+        record_variant(&v);
 
     if (!engine)
         engine = std::make_shared< std::mt19937 >();
@@ -106,7 +108,6 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 
     viruses.push_back(v);
     prevalence_virus.push_back(preval);
-    record_variant(&viruses[viruses.size() - 1]);
 
 }
 

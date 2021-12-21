@@ -85,6 +85,34 @@ EPI_NEW_TOOL(immune_trans, DAT) {
     return EPI_PARAMS(BASELINE_INFECCTIOUSNESS);
 }
 
+// We assume individuals cannot become reinfected with the
+// same variant
+EPI_NEW_TOOL(post_rec_efficacy, DAT) 
+{
+
+    const auto vseq = v->get_sequence();
+    const auto tseq = t->get_sequence();
+
+    // If different, then no help
+    for (unsigned int i = 0; i < vseq->size(); ++i)
+        if (vseq->at(i) != tseq->at(i))
+            return 0.0;
+
+    // If completely matches, then it is almost 100% efficacy
+    return 0.95;
+    
+        
+}
+
+EPI_RECFUN(post_covid, DAT) {
+
+    epiworld::Tool<DAT> immunity;
+    immunity.set_sequence(*v->get_sequence());
+    immunity.set_efficacy(post_rec_efficacy);
+    p->add_tool(m->today(), immunity);
+
+}
+
 int main(int argc, char* argv[]) {
 
 
@@ -114,7 +142,7 @@ int main(int argc, char* argv[]) {
     
     // Setting up the model parameters, these are six
     model.params().resize(6u, 0.0);
-    model.params()[MUTATION_PROB]            = 0.000025;
+    model.params()[MUTATION_PROB]            = 0.00025;
     model.params()[VACCINE_EFFICACY]         = 0.90;
     model.params()[IMMUNE_EFFICACY]          = 0.50;
     model.params()[VARIANT_MORTALITY]        = 0.001;
@@ -124,6 +152,7 @@ int main(int argc, char* argv[]) {
     // Initializing disease
     epiworld::Virus<DAT> covid19(base_seq);
     covid19.set_mutation(covid19_mut);
+    covid19.set_post_recovery(post_covid);
 
     model.add_virus(covid19, preval); // 0.5% will have the virus at first
 

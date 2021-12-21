@@ -23,8 +23,8 @@ private:
     PersonViruses<TSeq> viruses;
     PersonTools<TSeq> tools;
     std::vector< Person<TSeq> * > neighbors;
-    int status_next = HEALTHY; // Placeholder
-    int status      = HEALTHY;
+    int status_next = STATES::HEALTHY; // Placeholder
+    int status      = STATES::HEALTHY;
     int id          = -1;
 
 public:

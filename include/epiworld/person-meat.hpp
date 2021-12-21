@@ -100,7 +100,6 @@ inline void Person<TSeq>::add_neighbor(
     p->neighbors.push_back(this);
 }
 
-
 template<typename TSeq>
 inline void Person<TSeq>::update_status() {
 
@@ -240,7 +239,13 @@ inline void Person<TSeq>::update_status() {
             model->get_db().up_recovered(vptr);
 
             status_next = RECOVERED;
+
+            // Checking if something happens after recovery
+            // (e.g., full immunity)
+            vptr->post_recovery();
+
             viruses.clear();
+            
             return;
 
         }

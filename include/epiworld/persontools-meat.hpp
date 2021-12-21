@@ -163,12 +163,6 @@ inline void PersonTools<TSeq>::set_death_mixer(
     death_mixer = MixerFun<TSeq>(fun);
 }
 
-template<typename TSeq>
-inline void PersonTools<TSeq>::set_post_recovery(
-    ToolFun<TSeq> fun
-) {
-    post_recovery = ToolFun<TSeq>(fun);
-}
 
 template<typename TSeq>
 inline size_t PersonTools<TSeq>::size() const {

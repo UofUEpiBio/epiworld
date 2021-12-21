@@ -31,6 +31,13 @@
     epiworld::Model<tseq> * m \
     )
 
+#define EPI_RECFUN(fname,tseq) inline void \
+    (fname)(\
+    epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq> * v, \
+    epiworld::Model<tseq> * m \
+    )
+
 #define EPI_RUNIF() m->runif()
 
 #define EPIWORLD_RUN(a) \

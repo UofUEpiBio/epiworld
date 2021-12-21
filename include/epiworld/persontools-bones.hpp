@@ -20,7 +20,6 @@ private:
     MixerFun<TSeq> transmisibility_mixer;
     MixerFun<TSeq> recovery_mixer;
     MixerFun<TSeq> death_mixer;
-    ToolFun<TSeq>  post_recovery;
 
 public:
     PersonTools() {};
@@ -34,7 +33,6 @@ public:
     void set_transmisibility_mixer(MixerFun<TSeq> fun);
     void set_recovery_mixer(MixerFun<TSeq> fun);
     void set_death_mixer(MixerFun<TSeq> fun);
-    void set_post_recovery(ToolFun<TSeq> fun);
 
     size_t size() const;
     Tool<TSeq> & operator()(int i);

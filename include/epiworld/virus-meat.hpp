@@ -10,7 +10,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::mutate() {
 
     if (mutation_fun)
-        if ((*mutation_fun)(host, this, this->get_model()))
+        if (mutation_fun(host, this, this->get_model()))
         {
             int tmpid = get_id();
             host->get_model()->record_variant(this);
@@ -29,7 +29,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_mutation(
     MutFun<TSeq> fun
 ) {
-    mutation_fun = std::make_shared<MutFun<TSeq>>(fun);
+    mutation_fun = MutFun<TSeq>(fun);
 }
 
 template<typename TSeq>
@@ -81,5 +81,24 @@ template<typename TSeq>
 inline bool Virus<TSeq>::is_active() const {
     return active;
 }
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_post_recovery(PostRecFun<TSeq> fun)
+{
+    post_recovery_fun = PostRecFun<TSeq>(fun);
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::post_recovery()
+{
+
+    if (post_recovery_fun)
+        return post_recovery_fun(host, this, host->get_model());    
+
+    return;
+        
+}
+
+
 
 #endif
