@@ -5,9 +5,10 @@
 \alias{add_tool_mask}
 \alias{add_tool_vaccine}
 \alias{add_virus_covid19}
-\alias{new_model}
-\alias{run_model}
-\title{Create a new model}
+\alias{new_epi_model}
+\alias{init_epi_model}
+\alias{run_epi_model}
+\title{Creates a new model}
 \usage{
 add_tool_immune(model, baselineseq, preval)
 
@@ -17,10 +18,12 @@ add_tool_vaccine(model, baselineseq, preval)
 
 add_virus_covid19(model, baselineseq, preval)
 
-new_model()
+new_epi_model()
 
-run_model(model, nsteps, seed)
+init_epi_model(model, nsteps, seed)
+
+run_epi_model(model)
 }
 \description{
-Create a new model
+Creates a new model
 }
