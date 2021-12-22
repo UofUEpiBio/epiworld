@@ -255,6 +255,16 @@ inline bool Model<TSeq>::get_verbose() const {
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::verbose_on() {
+    verbose = true;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::verbose_off() {
+    verbose = false;
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::rewire_degseq(int nrewires)
 {
 

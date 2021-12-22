@@ -5,6 +5,9 @@
 \alias{init_epi_model}
 \alias{run_epi_model}
 \alias{print.epi_model}
+\alias{reset_epi_model}
+\alias{verbose_on_epi_model}
+\alias{verbose_off_epi_model}
 \alias{edgelist_from_file}
 \alias{edgelist_from_vec}
 \alias{add_tool_immune}
@@ -20,6 +23,12 @@ init_epi_model(model, nsteps, seed)
 run_epi_model(model)
 
 \method{print}{epi_model}(x)
+
+reset_epi_model(x)
+
+verbose_on_epi_model(x)
+
+verbose_off_epi_model(x)
 
 edgelist_from_file(model, fname, skip, directed)
 

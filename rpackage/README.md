@@ -34,25 +34,111 @@ library(igraph)
 #> 
 #>     union
 
-set.seed(1231)
-net <- sample_smallworld(1, 1000, 4, .1)
-
 m <- new_epi_model()
 geneseq <- c(T, F, T, T, F)
 
+# Creating tools
 add_tool_immune(m, !geneseq, 1)
 add_tool_vaccine(m, !geneseq, .5)
 add_tool_mask(m, !geneseq, .25)
 
-add_virus_covid19(m, geneseq, .5)
+# And the virus
+add_virus_covid19(m, geneseq, .05)
 
-init_epi_model(m, 10, 10)
-#> _________________________________________________________________________
-print(m)
+# Adding people
+set.seed(1231)
+net   <- igraph::sample_smallworld(1, 1000, 4, .1)
+edges <- igraph::as_edgelist(net)
+
+edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)
+
+# Virus and tools are distributed
+init_epi_model(m, 100, 123)
+
+# We can get information about the model
+m
+#> Population size   : 1000
+#> Days (duration)   : 0 (of 100)
+#> Number of variants: 1
+#> 
+#> Virus(es):
+#>  - COVID19 (baseline prevalence: 0.05)
+#> Tool(s):
+#>  - Immune system (baseline prevalence: 1.00)
+#>  - Vaccine (baseline prevalence: 0.50)
+#>  - Face masks (baseline prevalence: 0.25)
+#> Statistics:
+#>  - Total variants active : 1
+#> 
+#>  - Total healthy         : 961
+#>  - Total infected        : 39
+#>  - Total deceased        : 0
+#> 
+#>  - Total # of recoveries : 0
+
+# And run the model
 run_epi_model(m)
 #> Running the model...
+#> _________________________________________________________________________
 #> ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+m
+#> Population size   : 1000
+#> Days (duration)   : 100 (of 100)
+#> Number of variants: 31
+#> 
+#> Virus(es):
+#>  - COVID19 (baseline prevalence: 0.05)
+#> Tool(s):
+#>  - Immune system (baseline prevalence: 1.00)
+#>  - Vaccine (baseline prevalence: 0.50)
+#>  - Face masks (baseline prevalence: 0.25)
+#> Statistics:
+#>  - Total variants active : 31
+#> 
+#>  - Total healthy         : 355
+#>  - Total infected        : 619
+#>  - Total deceased        : 26
+#> 
+#>  - Total # of recoveries : 7508
 ```
+
+Can run multiple times:
+
+``` r
+verbose_off_epi_model(m)
+
+ans <- lapply(1:200, function(i) {
+  reset_epi_model(m)
+  run_epi_model(m)
+  message(".", appendLF = FALSE)
+  data.frame(
+    replicate  = i,
+    date       = get_hist_variant(m, "date"),
+    id         = get_hist_variant(m, "id"),
+    nrecovered = get_hist_variant(m, "date"),
+    ninfected  = get_hist_variant(m, "ninfected"),
+    ndeceased  = get_hist_variant(m, "ndeceased")
+  )
+  
+})
+#> ........................................................................................................................................................................................................
+
+ans <- do.call(rbind, ans)
+```
+
+Visualizing
+
+``` r
+library(ggplot2)
+ggplot(ans[ans$id == 0,], aes(x = as.integer(date), y = ninfected)) +
+  geom_point(alpha = .5, color = "grey") +
+  # geom_point(alpha = .5, color = "red", aes(y = ndeceased)) +
+  labs(
+    x = "Date", y = "Infected with COVID",
+    caption = "Includes 200 replicates")
+```
+
+<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
 
 ## Code of Conduct
 

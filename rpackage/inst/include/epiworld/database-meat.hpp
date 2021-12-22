@@ -96,8 +96,12 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
 template<typename TSeq>
 inline int DataBase<TSeq>::get_today_total(std::string what) const
 {
-
-    if (what == "nvariants_active")
+    if (what == "")
+    { 
+        printf_epiworld(
+            "The following values are allowed in -what-: \"nvariants_active\", \"nhealthy\", \"nrecovered\", \"ninfected\", and \"ndeceased\".");
+        return 0;
+    } else if (what == "nvariants_active")
         return today_total_nvariants_active;
     else if (what == "nhealthy")
         return today_total_nhealthy;
@@ -115,8 +119,16 @@ inline int DataBase<TSeq>::get_today_total(std::string what) const
 template<typename TSeq>
 inline const std::vector<int> & DataBase<TSeq>::get_today_variant(std::string what) const
 {
-    
-    if (what == "nrecovered")
+    if (what == "")
+    {
+
+        printf_epiworld(
+        "The following values are allowed in -what-: \"nrecovered\", \"ninfected\", and \"ndeceased\"."
+        );
+        
+        return today_variant_nrecovered;
+
+    } else if (what == "nrecovered")
         return today_variant_nrecovered;
     else if (what == "ninfected")
         return today_variant_ninfected;
@@ -130,7 +142,16 @@ inline const std::vector<int> & DataBase<TSeq>::get_today_variant(std::string wh
 template<typename TSeq>
 inline const std::vector<int> & DataBase<TSeq>::get_hist_total(std::string what) const
 {
-    if (what == "date")
+    if (what == "")
+    {
+
+        printf_epiworld(
+        "The following values are allowed in -what-: \"nvariants_active\", \"nhealthy\", \"nrecovered\", \"ninfected\", and \"ndeceased\"."
+        );
+        
+        return hist_total_date;
+
+    } else if (what == "date")
         return hist_total_date;
     else if (what == "nvariants_active")
         return hist_total_nvariants_active;
@@ -151,7 +172,16 @@ template<typename TSeq>
 inline const std::vector<int> & DataBase<TSeq>::get_hist_variant(std::string what) const
 {
     
-    if (what == "date")
+    if (what == "")
+    {
+
+         printf_epiworld(
+            "The following values are allowed in -what-: \"date\", \"id\", \"nrecovered\", \"ninfected\", and \"ndeceased\"."
+        );
+        
+        return hist_variant_date;
+
+    } else if (what == "date")
         return hist_variant_date;
     else if (what == "id")
         return hist_variant_id;

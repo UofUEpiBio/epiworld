@@ -78,6 +78,8 @@ public:
     const std::vector< int > & get_variant_nifected() const;
     int get_ndays() const;
     bool get_verbose() const;
+    void verbose_off();
+    void verbose_on();
 
     void rewire_degseq(int nrewires);
 

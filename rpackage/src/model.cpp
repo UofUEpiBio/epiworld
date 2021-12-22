@@ -80,7 +80,7 @@ SEXP print_epi_model(SEXP x) {
 }
 
 //' @export
-//' @rdname new_epi_model()
+//' @rdname new_epi_model
 // [[Rcpp::export(invisible=true, rng=false)]]
 SEXP reset_epi_model(SEXP x) {
   Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(x);
@@ -88,4 +88,20 @@ SEXP reset_epi_model(SEXP x) {
   return x;
 }
 
+//' @export
+//' @rdname new_epi_model
+// [[Rcpp::export(invisible=true, rng=false)]]
+SEXP verbose_on_epi_model(SEXP x) {
+  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(x);
+  ptr->verbose_on();
+  return x;
+}
 
+//' @export
+//' @rdname new_epi_model
+// [[Rcpp::export(invisible=true, rng=false)]]
+SEXP verbose_off_epi_model(SEXP x) {
+  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(x);
+  ptr->verbose_off();
+  return x;
+}

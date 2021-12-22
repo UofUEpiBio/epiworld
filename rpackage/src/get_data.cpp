@@ -2,90 +2,43 @@
 using namespace Rcpp;
 #include "epiworld-common.hpp"
 
-//' Creates a new model
+//' Extract database information from the model
+//' 
+//' @param what Character (string). What information to extract. leaving `what`
+//' equal to `""` will print the available datum.
+//' 
 //' @export
-// [[Rcpp::export]]
-SEXP new_epi_model() {
-  
-  Rcpp::XPtr< epiworld::Model< TSEQ > > model(new epiworld::Model<TSEQ>);
-  
-  // Setting up the model parameters, these are six
-  model->params().resize(8u, 0.0);
-  model->params()[MUTATION_PROB]            = 0.005;
-  model->params()[VACCINE_EFFICACY]         = 0.90;
-  model->params()[VACCINE_RECOVERY]         = 0.20;
-  model->params()[VACCINE_DEATH]            = 0.0001;
-  model->params()[IMMUNE_EFFICACY]          = 0.10;
-  model->params()[VARIANT_MORTALITY]        = 0.001;
-  model->params()[BASELINE_INFECCTIOUSNESS] = 0.90;
-  model->params()[IMMUNE_LEARN_RATE]        = 0.05;
+//' @name get_info
+// [[Rcpp::export(rng = false)]]
+std::vector< int > get_today_variant(SEXP model, std::string what) {
+  Rcpp::XPtr< epiworld::Model< TSEQ > > ptr(model);
+  return ptr->get_db().get_today_variant(what);
+}
 
-  model.attr("class") = "epi_model";
-  
-  return model;
-  
+//' @rdname get_info
+//' @export
+// [[Rcpp::export(rng = false)]]
+int get_today_total(SEXP model, std::string what) {
+  Rcpp::XPtr< epiworld::Model< TSEQ > > ptr(model);
+  return ptr->get_db().get_today_total(what);
+}
+
+//' @rdname get_info
+//' @export
+// [[Rcpp::export(rng = false)]]
+std::vector< int > get_hist_total(SEXP model, std::string what) {
+  Rcpp::XPtr< epiworld::Model< TSEQ > > ptr(model);
+  return ptr->get_db().get_hist_total(what);
+}
+
+//' @rdname get_info
+//' @export
+// [[Rcpp::export(rng = false)]]
+std::vector< int > get_hist_variant(SEXP model, std::string what) {
+  Rcpp::XPtr< epiworld::Model< TSEQ > > ptr(model);
+  return ptr->get_db().get_hist_variant(what);
 }
 
 
-//' @export
-//' @rdname new_epi_model
-// [[Rcpp::export(invisible = true, rng = false)]]
-int init_epi_model(SEXP model, int nsteps, int seed) {
-  
-  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
-  
-  ptr->init(nsteps, seed);  
-  
-  return 0;
-  
-}
-
-//' @export
-//' @rdname new_epi_model
-// [[Rcpp::export(invisible = true)]]
-int run_epi_model(SEXP model) {
-  
-  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
-  
-  // Creating a progress bar
-  EPIWORLD_CLOCK_START("(01) Run model")
-    
-  // Initializing the simulation
-  EPIWORLD_RUN((*ptr)) 
-  {
-    
-    // We can execute these components in whatever order the
-    // user needs.
-    ptr->update_status();
-    ptr->mutate_variant();
-    ptr->next();
-    
-    // In this case we are applying degree sequence rewiring
-    // to change the network just a bit.
-    ptr->rewire_degseq(floor(ptr->size() * .1));
-    
-  }
-
-  return 0;
-
-}
-
-//' @export
-//' @rdname new_epi_model
-// [[Rcpp::export(invisible=true, rng=false, name = "print.epi_model")]]
-SEXP print_epi_model(SEXP x) {
-  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(x);
-  ptr->print();
-  return x;
-}
-
-//' @export
-//' @rdname new_epi_model()
-// [[Rcpp::export(invisible=true, rng=false)]]
-SEXP reset_epi_model(SEXP x) {
-  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(x);
-  ptr->reset();
-  return x;
-}
 
 

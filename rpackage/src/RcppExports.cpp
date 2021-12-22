@@ -10,6 +10,50 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// get_today_variant
+std::vector< int > get_today_variant(SEXP model, std::string what);
+RcppExport SEXP _epiworld_get_today_variant(SEXP modelSEXP, SEXP whatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type what(whatSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_today_variant(model, what));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_today_total
+int get_today_total(SEXP model, std::string what);
+RcppExport SEXP _epiworld_get_today_total(SEXP modelSEXP, SEXP whatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type what(whatSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_today_total(model, what));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_hist_total
+std::vector< int > get_hist_total(SEXP model, std::string what);
+RcppExport SEXP _epiworld_get_hist_total(SEXP modelSEXP, SEXP whatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type what(whatSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_hist_total(model, what));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_hist_variant
+std::vector< int > get_hist_variant(SEXP model, std::string what);
+RcppExport SEXP _epiworld_get_hist_variant(SEXP modelSEXP, SEXP whatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type what(whatSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_hist_variant(model, what));
+    return rcpp_result_gen;
+END_RCPP
+}
 // new_epi_model
 SEXP new_epi_model();
 RcppExport SEXP _epiworld_new_epi_model() {
@@ -60,6 +104,26 @@ BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(reset_epi_model(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// verbose_on_epi_model
+SEXP verbose_on_epi_model(SEXP x);
+RcppExport SEXP _epiworld_verbose_on_epi_model(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(verbose_on_epi_model(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// verbose_off_epi_model
+SEXP verbose_off_epi_model(SEXP x);
+RcppExport SEXP _epiworld_verbose_off_epi_model(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(verbose_off_epi_model(x));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -140,11 +204,17 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_epiworld_get_today_variant", (DL_FUNC) &_epiworld_get_today_variant, 2},
+    {"_epiworld_get_today_total", (DL_FUNC) &_epiworld_get_today_total, 2},
+    {"_epiworld_get_hist_total", (DL_FUNC) &_epiworld_get_hist_total, 2},
+    {"_epiworld_get_hist_variant", (DL_FUNC) &_epiworld_get_hist_variant, 2},
     {"_epiworld_new_epi_model", (DL_FUNC) &_epiworld_new_epi_model, 0},
     {"_epiworld_init_epi_model", (DL_FUNC) &_epiworld_init_epi_model, 3},
     {"_epiworld_run_epi_model", (DL_FUNC) &_epiworld_run_epi_model, 1},
     {"_epiworld_print_epi_model", (DL_FUNC) &_epiworld_print_epi_model, 1},
     {"_epiworld_reset_epi_model", (DL_FUNC) &_epiworld_reset_epi_model, 1},
+    {"_epiworld_verbose_on_epi_model", (DL_FUNC) &_epiworld_verbose_on_epi_model, 1},
+    {"_epiworld_verbose_off_epi_model", (DL_FUNC) &_epiworld_verbose_off_epi_model, 1},
     {"_epiworld_edgelist_from_file", (DL_FUNC) &_epiworld_edgelist_from_file, 4},
     {"_epiworld_edgelist_from_vec", (DL_FUNC) &_epiworld_edgelist_from_vec, 4},
     {"_epiworld_add_tool_immune", (DL_FUNC) &_epiworld_add_tool_immune, 3},
