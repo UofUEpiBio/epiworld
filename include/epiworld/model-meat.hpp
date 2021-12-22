@@ -42,7 +42,7 @@ inline void Model<TSeq>::init(int ndays, int seed) {
 
     // Setting up the number of steps
     this->ndays = ndays;
-    pb = Progress(ndays, 80);
+    // pb = Progress(ndays, 80);
 
     // Initializing persons
     for (auto & p : persons)
@@ -51,12 +51,12 @@ inline void Model<TSeq>::init(int ndays, int seed) {
         p.init();
     }
 
-    // Has to happen after setting the persons
-    db.set_model(*this);
+    // // Has to happen after setting the persons
+    // db.set_model(*this);
 
-    // Recording variants
-    for (Virus<TSeq> & v : viruses)
-        record_variant(&v);
+    // // Recording variants
+    // for (Virus<TSeq> & v : viruses)
+    //     record_variant(&v);
 
     if (!engine)
         engine = std::make_shared< std::mt19937 >();
@@ -69,8 +69,9 @@ inline void Model<TSeq>::init(int ndays, int seed) {
     initialized = true;
 
     // Starting first infection and tools
-    dist_virus();
-    dist_tools();
+    reset();
+    // dist_virus();
+    // dist_tools();
 
     EPIWORLD_CLOCK_END("(00) Init model")
 
@@ -147,15 +148,29 @@ inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
 
     // Resizing the people
     persons.clear();
+    persons_ids.clear();
     persons.resize(al.vcount(), Person<TSeq>());
 
     const auto & tmpdat = al.get_dat();
+    
+    int loc;
     for (const auto & n : tmpdat)
-    {        
-        persons[n.first].model = this;
-        persons[n.first].id    = n.first;
+    {
+        if (persons_ids.find(n.first) == persons_ids.end())
+            persons_ids[n.first] = persons_ids.size();
+
+        loc = persons_ids[n.first];
+
+        persons[loc].model = this;
+        persons[loc].id    = n.first;
+
         for (const auto & link: n.second)
-            persons[n.first].add_neighbor(&persons[link.first]);
+        {
+            if (persons_ids.find(link.first) == persons_ids.end())
+                persons_ids[link.first] = persons_ids.size();
+
+            persons[loc].add_neighbor(&persons[persons_ids[link.first]]);
+        }
 
     }
 
@@ -325,8 +340,18 @@ template<typename TSeq>
 inline void Model<TSeq>::reset() {
     
     // Restablishing people
+    pb = Progress(ndays, 80);
+
     for (auto & p : persons)
         p.reset();
+    
+    current_date = 0;
+
+    db.set_model(*this);
+
+    // Recording variants
+    for (Virus<TSeq> & v : viruses)
+        record_variant(&v);
 
     // Re distributing tools and virus
     dist_virus();
@@ -338,6 +363,7 @@ template<typename TSeq>
 inline void Model<TSeq>::print() const
 {
     printf_epiworld("Population size   : %i\n", static_cast<int>(size()));
+    printf_epiworld("Days (duration)   : %i (of %i)\n", today(), ndays);
     printf_epiworld("Number of variants: %i\n\n", static_cast<int>(db.get_nvariants()));
     printf_epiworld("Virus(es):\n");
     int i = 0;
@@ -358,6 +384,13 @@ inline void Model<TSeq>::print() const
             prevalence_tool[i++]
             );
     }
+
+    printf_epiworld("Statistics:\n");
+    printf_epiworld(" - Total variants active : %i\n\n", db.get_today_total("nvariants_active"));
+    printf_epiworld(" - Total healthy         : %i\n", db.get_today_total("nhealthy"));
+    printf_epiworld(" - Total infected        : %i\n", db.get_today_total("ninfected"));
+    printf_epiworld(" - Total deceased        : %i\n\n", db.get_today_total("ndeceased"));
+    printf_epiworld(" - Total # of recoveries : %i\n", db.get_today_total("nrecovered"));
 
     return;
 

@@ -15,7 +15,7 @@ inline AdjList::AdjList(
     {
 
         i = source[n];
-        j = source[n];
+        j = target[n];
 
         // Adding nodes
         if (dat.find(i) == dat.end())

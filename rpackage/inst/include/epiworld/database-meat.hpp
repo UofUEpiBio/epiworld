@@ -5,6 +5,7 @@ template<typename TSeq>
 inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 {
     model = &m;
+    reset();
     today_total_nhealthy = model->get_persons()->size();
     return;
 }
@@ -88,9 +89,6 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
 
     }    
 
-    // today_total_nhealthy--;
-    // today_total_ninfected++;
-
     
     return;
 } 
@@ -101,7 +99,7 @@ inline int DataBase<TSeq>::get_today_total(std::string what) const
 
     if (what == "nvariants_active")
         return today_total_nvariants_active;
-    else if (what == "nhealthty")
+    else if (what == "nhealthy")
         return today_total_nhealthy;
     else if (what == "nrecovered")
         return today_total_nrecovered;
@@ -305,6 +303,39 @@ inline void DataBase<TSeq>::record_transmision(
 template<typename TSeq>
 inline size_t DataBase<TSeq>::get_nvariants() const {
     return variant_id.size();
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::reset() {
+    variant_id.clear();
+    sequence.clear();
+    origin_date.clear();
+    parent_id.clear();
+    today_variant_ninfected.clear();
+    today_variant_nrecovered.clear();
+    today_variant_ndeceased.clear();
+    hist_variant_date.clear();
+    hist_variant_id.clear();
+    hist_variant_ninfected.clear();
+    hist_variant_nrecovered.clear();
+    hist_variant_ndeceased.clear();
+    hist_total_date.clear();
+    hist_total_nvariants_active.clear();
+    hist_total_nhealthy.clear();
+    hist_total_nrecovered.clear();
+    hist_total_ninfected.clear();
+    hist_total_ndeceased.clear();
+    transmision_date.clear();
+    transmision_source.clear();
+    transmision_target.clear();
+    transmision_variant.clear();
+
+    today_total_nvariants_active = 0;
+    today_total_nhealthy = 0;
+    today_total_nrecovered = 0;
+    today_total_ninfected = 0;
+    today_total_ndeceased = 0;
+
 }
 
 #endif

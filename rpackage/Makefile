@@ -9,7 +9,7 @@ install: $(PKGNAME)_$(VERSION).tar.gz
 	R CMD INSTALL $(PKGNAME)_$(VERSION).tar.gz
 		
 
-$(PKGNAME)_$(VERSION).tar.gz: R/*.R inst/NEWS README.md
+$(PKGNAME)_$(VERSION).tar.gz: R/*.R man
 	$(MAKE) clean && \
 		R CMD build --no-build-vignettes --no-manual . 
 

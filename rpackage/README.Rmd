@@ -55,17 +55,26 @@ set.seed(1231)
 net   <- igraph::sample_smallworld(1, 1000, 4, .1)
 edges <- igraph::as_edgelist(net)
 
-edgelist_from_vec(m, edges[,1], edges[,2], directed = FALSE)
+edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)
 
 # Virus and tools are distributed
-init_epi_model(m, 10, 10)
+init_epi_model(m, 10, 600)
 
 # We can get information about the model
 m
 
 # And run the model
 run_epi_model(m)
+m
 
+```
+
+Can run multiple times:
+
+```{r}
+reset_epi_model(m);run_epi_model(m);m
+reset_epi_model(m);run_epi_model(m);m
+reset_epi_model(m);run_epi_model(m);m
 ```
 
 ## Code of Conduct

@@ -10,54 +10,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// add_tool_immune
-int add_tool_immune(SEXP model, std::vector< bool >& baselineseq, double preval);
-RcppExport SEXP _epiworld_add_tool_immune(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
-    Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
-    rcpp_result_gen = Rcpp::wrap(add_tool_immune(model, baselineseq, preval));
-    return rcpp_result_gen;
-END_RCPP
-}
-// add_tool_mask
-int add_tool_mask(SEXP model, std::vector< bool >& baselineseq, double preval);
-RcppExport SEXP _epiworld_add_tool_mask(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
-    Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
-    rcpp_result_gen = Rcpp::wrap(add_tool_mask(model, baselineseq, preval));
-    return rcpp_result_gen;
-END_RCPP
-}
-// add_tool_vaccine
-int add_tool_vaccine(SEXP model, std::vector< bool >& baselineseq, double preval);
-RcppExport SEXP _epiworld_add_tool_vaccine(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
-    Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
-    rcpp_result_gen = Rcpp::wrap(add_tool_vaccine(model, baselineseq, preval));
-    return rcpp_result_gen;
-END_RCPP
-}
-// add_virus_covid19
-int add_virus_covid19(SEXP model, std::vector< bool > baselineseq, double preval);
-RcppExport SEXP _epiworld_add_virus_covid19(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::vector< bool > >::type baselineseq(baselineseqSEXP);
-    Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
-    rcpp_result_gen = Rcpp::wrap(add_virus_covid19(model, baselineseq, preval));
-    return rcpp_result_gen;
-END_RCPP
-}
 // new_epi_model
 SEXP new_epi_model();
 RcppExport SEXP _epiworld_new_epi_model() {
@@ -101,6 +53,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// reset_epi_model
+SEXP reset_epi_model(SEXP x);
+RcppExport SEXP _epiworld_reset_epi_model(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(reset_epi_model(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // edgelist_from_file
 int edgelist_from_file(SEXP model, std::string fname, int skip, bool directed);
 RcppExport SEXP _epiworld_edgelist_from_file(SEXP modelSEXP, SEXP fnameSEXP, SEXP skipSEXP, SEXP directedSEXP) {
@@ -128,18 +90,67 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// add_tool_immune
+int add_tool_immune(SEXP model, std::vector< bool >& baselineseq, double preval);
+RcppExport SEXP _epiworld_add_tool_immune(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
+    Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
+    rcpp_result_gen = Rcpp::wrap(add_tool_immune(model, baselineseq, preval));
+    return rcpp_result_gen;
+END_RCPP
+}
+// add_tool_vaccine
+int add_tool_vaccine(SEXP model, std::vector< bool >& baselineseq, double preval);
+RcppExport SEXP _epiworld_add_tool_vaccine(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
+    Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
+    rcpp_result_gen = Rcpp::wrap(add_tool_vaccine(model, baselineseq, preval));
+    return rcpp_result_gen;
+END_RCPP
+}
+// add_tool_mask
+int add_tool_mask(SEXP model, std::vector< bool >& baselineseq, double preval);
+RcppExport SEXP _epiworld_add_tool_mask(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
+    Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
+    rcpp_result_gen = Rcpp::wrap(add_tool_mask(model, baselineseq, preval));
+    return rcpp_result_gen;
+END_RCPP
+}
+// add_virus_covid19
+int add_virus_covid19(SEXP model, std::vector< bool > baselineseq, double preval);
+RcppExport SEXP _epiworld_add_virus_covid19(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::vector< bool > >::type baselineseq(baselineseqSEXP);
+    Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
+    rcpp_result_gen = Rcpp::wrap(add_virus_covid19(model, baselineseq, preval));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_epiworld_add_tool_immune", (DL_FUNC) &_epiworld_add_tool_immune, 3},
-    {"_epiworld_add_tool_mask", (DL_FUNC) &_epiworld_add_tool_mask, 3},
-    {"_epiworld_add_tool_vaccine", (DL_FUNC) &_epiworld_add_tool_vaccine, 3},
-    {"_epiworld_add_virus_covid19", (DL_FUNC) &_epiworld_add_virus_covid19, 3},
     {"_epiworld_new_epi_model", (DL_FUNC) &_epiworld_new_epi_model, 0},
     {"_epiworld_init_epi_model", (DL_FUNC) &_epiworld_init_epi_model, 3},
     {"_epiworld_run_epi_model", (DL_FUNC) &_epiworld_run_epi_model, 1},
     {"_epiworld_print_epi_model", (DL_FUNC) &_epiworld_print_epi_model, 1},
+    {"_epiworld_reset_epi_model", (DL_FUNC) &_epiworld_reset_epi_model, 1},
     {"_epiworld_edgelist_from_file", (DL_FUNC) &_epiworld_edgelist_from_file, 4},
     {"_epiworld_edgelist_from_vec", (DL_FUNC) &_epiworld_edgelist_from_vec, 4},
+    {"_epiworld_add_tool_immune", (DL_FUNC) &_epiworld_add_tool_immune, 3},
+    {"_epiworld_add_tool_vaccine", (DL_FUNC) &_epiworld_add_tool_vaccine, 3},
+    {"_epiworld_add_tool_mask", (DL_FUNC) &_epiworld_add_tool_mask, 3},
+    {"_epiworld_add_virus_covid19", (DL_FUNC) &_epiworld_add_virus_covid19, 3},
     {NULL, NULL, 0}
 };
 

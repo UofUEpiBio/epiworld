@@ -48,7 +48,7 @@
     #define EPIWORLD_CLOCK_SETUP()
     #define EPIWORLD_CLOCK_START(a)
     #define EPIWORLD_CLOCK_END(a)
-    #define EPIWORLD_CLOCK_REPORT()
+    #define EPIWORLD_CLOCK_REPORT(a)
 #endif
 
 EPIWORLD_CLOCK_SETUP()

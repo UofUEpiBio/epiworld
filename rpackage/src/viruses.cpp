@@ -60,7 +60,7 @@ int add_virus_covid19(
     double preval
   ) {
   
-  epiworld::Virus<TSEQ> covid19(baselineseq);
+  epiworld::Virus<TSEQ> covid19(baselineseq, "COVID19");
   covid19.set_mutation(covid19_mut);
   covid19.set_post_recovery(post_covid);
 

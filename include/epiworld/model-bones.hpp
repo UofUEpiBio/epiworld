@@ -27,6 +27,7 @@ private:
     DataBase<TSeq> db;
 
     std::vector< Person<TSeq> > persons;
+    std::map< int,int >         persons_ids;
     
     std::vector< Virus<TSeq> > viruses;
     std::vector< double > prevalence_virus; ///< Initial prevalence_virus of each virus

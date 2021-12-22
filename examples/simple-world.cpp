@@ -235,6 +235,8 @@ int main(int argc, char* argv[]) {
 
     EPIWORLD_CLOCK_REPORT("--- ELAPSED TIMES ---")
 
+    model.print();
+
     return 0;
 
 }
