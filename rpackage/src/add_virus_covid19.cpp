@@ -52,8 +52,8 @@ EPI_RECFUN(post_covid, TSEQ) {
 }
 
 //' @export
-//' @rdname new_model
-// [[Rcpp::export(invisible = true)]]
+//' @rdname new_epi_model
+// [[Rcpp::export(invisible = true, rng = false)]]
 int add_virus_covid19(
     SEXP model,
     std::vector< bool > baselineseq,

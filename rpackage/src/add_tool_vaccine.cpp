@@ -28,9 +28,9 @@ EPI_NEW_TOOL(vaccine_trans, TSEQ) {
   return EPI_PARAMS(VACCINE_EFFICACY);
 }
 
-//' @rdname new_model
+//' @rdname new_epi_model
 //' @export
-// [[Rcpp::export(invisible = true)]]
+// [[Rcpp::export(invisible = true, rng = false)]]
 int add_tool_vaccine(
     SEXP model,
     std::vector< bool > & baselineseq,

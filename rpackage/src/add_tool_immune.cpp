@@ -21,9 +21,9 @@ EPI_NEW_TOOL(immune_trans, TSEQ) {
   return EPI_PARAMS(BASELINE_INFECCTIOUSNESS);
 }
 
-//' @rdname new_model
+//' @rdname new_epi_model
 //' @export
-// [[Rcpp::export(invisible = true)]]
+// [[Rcpp::export(invisible = true, rng = false)]]
 int add_tool_immune(
     SEXP model,
     std::vector< bool > & baselineseq,

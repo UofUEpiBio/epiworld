@@ -14,9 +14,9 @@ EPI_NEW_TOOL(mask_trans, TSEQ) {
   return 0.05;
 }
 
-//' @rdname new_model
+//' @rdname new_epi_model
 //' @export
-// [[Rcpp::export(invisible = true)]]
+// [[Rcpp::export(invisible = true, rng = false)]]
 int add_tool_mask(
     SEXP model,
     std::vector< bool > & baselineseq,

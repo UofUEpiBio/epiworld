@@ -2,10 +2,10 @@
 using namespace Rcpp;
 #include "epiworld-common.hpp"
 
-//' Create a new model
+//' Creates a new model
 //' @export
 // [[Rcpp::export]]
-SEXP new_model() {
+SEXP new_epi_model() {
   
   Rcpp::XPtr< epiworld::Model< TSEQ > > model(new epiworld::Model<TSEQ>);
   
@@ -20,7 +20,7 @@ SEXP new_model() {
   model->params()[BASELINE_INFECCTIOUSNESS] = 0.90;
   model->params()[IMMUNE_LEARN_RATE]        = 0.05;
 
-  model.attr("class") = "epiworld";
+  model.attr("class") = "epi_model";
   
   return model;
   

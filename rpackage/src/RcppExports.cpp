@@ -15,7 +15,6 @@ int add_tool_immune(SEXP model, std::vector< bool >& baselineseq, double preval)
 RcppExport SEXP _epiworld_add_tool_immune(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
     Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
     Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
@@ -28,7 +27,6 @@ int add_tool_mask(SEXP model, std::vector< bool >& baselineseq, double preval);
 RcppExport SEXP _epiworld_add_tool_mask(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
     Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
     Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
@@ -41,7 +39,6 @@ int add_tool_vaccine(SEXP model, std::vector< bool >& baselineseq, double preval
 RcppExport SEXP _epiworld_add_tool_vaccine(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
     Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
     Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
@@ -54,7 +51,6 @@ int add_virus_covid19(SEXP model, std::vector< bool > baselineseq, double preval
 RcppExport SEXP _epiworld_add_virus_covid19(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
     Rcpp::traits::input_parameter< std::vector< bool > >::type baselineseq(baselineseqSEXP);
     Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
@@ -62,26 +58,36 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// new_model
-SEXP new_model();
-RcppExport SEXP _epiworld_new_model() {
+// new_epi_model
+SEXP new_epi_model();
+RcppExport SEXP _epiworld_new_epi_model() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(new_model());
+    rcpp_result_gen = Rcpp::wrap(new_epi_model());
     return rcpp_result_gen;
 END_RCPP
 }
-// run_model
-int run_model(SEXP model, int nsteps, int seed);
-RcppExport SEXP _epiworld_run_model(SEXP modelSEXP, SEXP nstepsSEXP, SEXP seedSEXP) {
+// init_epi_model
+int init_epi_model(SEXP model, int nsteps, int seed);
+RcppExport SEXP _epiworld_init_epi_model(SEXP modelSEXP, SEXP nstepsSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< int >::type nsteps(nstepsSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(init_epi_model(model, nsteps, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// run_epi_model
+int run_epi_model(SEXP model);
+RcppExport SEXP _epiworld_run_epi_model(SEXP modelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< int >::type nsteps(nstepsSEXP);
-    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_model(model, nsteps, seed));
+    rcpp_result_gen = Rcpp::wrap(run_epi_model(model));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -91,8 +97,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epiworld_add_tool_mask", (DL_FUNC) &_epiworld_add_tool_mask, 3},
     {"_epiworld_add_tool_vaccine", (DL_FUNC) &_epiworld_add_tool_vaccine, 3},
     {"_epiworld_add_virus_covid19", (DL_FUNC) &_epiworld_add_virus_covid19, 3},
-    {"_epiworld_new_model", (DL_FUNC) &_epiworld_new_model, 0},
-    {"_epiworld_run_model", (DL_FUNC) &_epiworld_run_model, 3},
+    {"_epiworld_new_epi_model", (DL_FUNC) &_epiworld_new_epi_model, 0},
+    {"_epiworld_init_epi_model", (DL_FUNC) &_epiworld_init_epi_model, 3},
+    {"_epiworld_run_epi_model", (DL_FUNC) &_epiworld_run_epi_model, 1},
     {NULL, NULL, 0}
 };
 

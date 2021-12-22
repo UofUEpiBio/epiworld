@@ -4,13 +4,24 @@
 using namespace Rcpp;
 
 //' @export
-//' @rdname new_model
-// [[Rcpp::export(invisible = true)]]
-int run_model(SEXP model, int nsteps, int seed) {
+//' @rdname new_epi_model
+// [[Rcpp::export(invisible = true, rng = false)]]
+int init_epi_model(SEXP model, int nsteps, int seed) {
   
   Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
   
   ptr->init(nsteps, seed);  
+  
+  return 0;
+  
+}
+
+//' @export
+//' @rdname new_epi_model
+// [[Rcpp::export(invisible = true)]]
+int run_epi_model(SEXP model) {
+  
+  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
   
   // Creating a progress bar
   EPIWORLD_CLOCK_START("(01) Run model")
@@ -28,12 +39,9 @@ int run_model(SEXP model, int nsteps, int seed) {
     // In this case we are applying degree sequence rewiring
     // to change the network just a bit.
     ptr->rewire_degseq(floor(ptr->size() * .1));
-    Rprintf("|");
-    
+
   }
 
-  Rprintf("\n");
-  
   return 0;
   
   
