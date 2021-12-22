@@ -43,3 +43,11 @@ man: R/*
 
 docker:
 	docker run -v$(pwd):/fmcmc-pkg/ -w/fmcmc-pkg --rm -i uscbiostats/fmcmc-dev:latest make check
+
+# Once running, we can set a debug point using 'break [filename].hpp:[linenumber]
+# and then type 'run'
+debug:
+	R -d gdb switch
+
+profile: install
+	R --debugger=valgrind --debugger-args='--tool=cachegrind --cachegrind-out-file=test.cache.out'

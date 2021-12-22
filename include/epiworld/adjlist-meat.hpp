@@ -1,6 +1,78 @@
 #ifndef EPIWORLD_ADJLIST_MEAT_HPP
 #define EPIWORLD_ADJLIST_MEAT_HPP
 
+inline AdjList::AdjList(
+    const std::vector< int > & source,
+    const std::vector< int > & target,
+    bool directed
+) {
+
+    id_min = INT_MAX;
+    id_max = INT_MIN;
+
+    int i,j;
+    for (unsigned int n = 0; n < source.size(); ++n)
+    {
+
+        i = source[n];
+        j = source[n];
+
+        // Adding nodes
+        if (dat.find(i) == dat.end())
+        {
+
+            dat[i].insert(std::pair<int,int>(j, 0));
+            N++;
+
+        } else { // Or simply increasing the counter
+
+            auto & dat_i = dat[i];
+            if (dat_i.find(j) == dat_i.end())
+                dat_i[j] = 0;
+            else
+                dat_i[j]++;
+
+        }
+
+        if (dat.find(j) == dat.end())
+        {
+            dat[j] = std::map<int,int>();
+            N++;
+        }
+        
+        if (!directed)
+        {
+
+            if (dat[j].find(i) == dat[j].end())
+            {
+                dat[j][i] = 0;
+                
+            } else
+                dat[j][i]++;
+
+        }
+
+        // Recalculating the limits
+        if (i < id_min)
+            id_min = i;
+
+        if (j < id_min)
+            id_min = j;
+
+        if (i > id_max)
+            id_max = i;
+
+        if (j > id_max)
+            id_max = j;
+
+        E++;
+
+    }
+
+    return;
+
+}
+
 inline void AdjList::read_edgelist(
     std::string fn,
     int skip,

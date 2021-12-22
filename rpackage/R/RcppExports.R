@@ -43,3 +43,21 @@ run_epi_model <- function(model) {
     invisible(.Call(`_epiworld_run_epi_model`, model))
 }
 
+#' @export
+#' @rdname new_epi_model
+print.epi_model <- function(x) {
+    invisible(.Call(`_epiworld_print_epi_model`, x))
+}
+
+#' @export
+#' @rdname new_epi_model
+edgelist_from_file <- function(model, fname, skip, directed) {
+    invisible(.Call(`_epiworld_edgelist_from_file`, model, fname, skip, directed))
+}
+
+#' @export
+#' @rdname new_epi_model
+edgelist_from_vec <- function(model, source, target, directed) {
+    invisible(.Call(`_epiworld_edgelist_from_vec`, model, source, target, directed))
+}
+

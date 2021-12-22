@@ -91,6 +91,43 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// print_epi_model
+SEXP print_epi_model(SEXP x);
+RcppExport SEXP _epiworld_print_epi_model(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(print_epi_model(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// edgelist_from_file
+int edgelist_from_file(SEXP model, std::string fname, int skip, bool directed);
+RcppExport SEXP _epiworld_edgelist_from_file(SEXP modelSEXP, SEXP fnameSEXP, SEXP skipSEXP, SEXP directedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type fname(fnameSEXP);
+    Rcpp::traits::input_parameter< int >::type skip(skipSEXP);
+    Rcpp::traits::input_parameter< bool >::type directed(directedSEXP);
+    rcpp_result_gen = Rcpp::wrap(edgelist_from_file(model, fname, skip, directed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// edgelist_from_vec
+int edgelist_from_vec(SEXP model, const std::vector< int >& source, const std::vector< int >& target, bool directed);
+RcppExport SEXP _epiworld_edgelist_from_vec(SEXP modelSEXP, SEXP sourceSEXP, SEXP targetSEXP, SEXP directedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< const std::vector< int >& >::type source(sourceSEXP);
+    Rcpp::traits::input_parameter< const std::vector< int >& >::type target(targetSEXP);
+    Rcpp::traits::input_parameter< bool >::type directed(directedSEXP);
+    rcpp_result_gen = Rcpp::wrap(edgelist_from_vec(model, source, target, directed));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_epiworld_add_tool_immune", (DL_FUNC) &_epiworld_add_tool_immune, 3},
@@ -100,6 +137,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epiworld_new_epi_model", (DL_FUNC) &_epiworld_new_epi_model, 0},
     {"_epiworld_init_epi_model", (DL_FUNC) &_epiworld_init_epi_model, 3},
     {"_epiworld_run_epi_model", (DL_FUNC) &_epiworld_run_epi_model, 1},
+    {"_epiworld_print_epi_model", (DL_FUNC) &_epiworld_print_epi_model, 1},
+    {"_epiworld_edgelist_from_file", (DL_FUNC) &_epiworld_edgelist_from_file, 4},
+    {"_epiworld_edgelist_from_vec", (DL_FUNC) &_epiworld_edgelist_from_vec, 4},
     {NULL, NULL, 0}
 };
 

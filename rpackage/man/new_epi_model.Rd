@@ -8,6 +8,9 @@
 \alias{new_epi_model}
 \alias{init_epi_model}
 \alias{run_epi_model}
+\alias{print.epi_model}
+\alias{edgelist_from_file}
+\alias{edgelist_from_vec}
 \title{Creates a new model}
 \usage{
 add_tool_immune(model, baselineseq, preval)
@@ -23,6 +26,12 @@ new_epi_model()
 init_epi_model(model, nsteps, seed)
 
 run_epi_model(model)
+
+\method{print}{epi_model}(x)
+
+edgelist_from_file(model, fname, skip, directed)
+
+edgelist_from_vec(model, source, target, directed)
 }
 \description{
 Creates a new model

@@ -41,6 +41,7 @@ class Virus {
 private:
     std::shared_ptr<TSeq> baseline_sequence;
     Person<TSeq> * host;
+    std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
     int id   = -99;
     bool active = true;
@@ -48,8 +49,8 @@ private:
     PostRecFun<TSeq> post_recovery_fun = nullptr;
 
 public:
-    Virus() {};
-    Virus(TSeq sequence);
+    Virus(std::string name = "unknown virus");
+    Virus(TSeq sequence, std::string name = "unknown virus");
     void mutate();
     void set_mutation(MutFun<TSeq> fun);
     const TSeq* get_sequence();
@@ -64,6 +65,9 @@ public:
 
     void set_post_recovery(PostRecFun<TSeq> fun);
     void post_recovery();
+
+    void set_name(std::string name);
+    std::string get_name() const;
 
 };
 

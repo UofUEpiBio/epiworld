@@ -1,5 +1,7 @@
 ---
 output: github_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -35,18 +37,37 @@ This is a basic example which shows you how to solve a common problem:
 
 ```{r example}
 library(epiworld)
+library(igraph)
 
 m <- new_epi_model()
 geneseq <- c(T, F, T, T, F)
 
+# Creating tools
 add_tool_immune(m, !geneseq, 1)
 add_tool_vaccine(m, !geneseq, .5)
 add_tool_mask(m, !geneseq, .25)
 
+# And the virus
 add_virus_covid19(m, geneseq, .5)
 
+# Adding people
+set.seed(1231)
+net   <- igraph::sample_smallworld(1, 1000, 4, .1)
+edges <- igraph::as_edgelist(net)
+
+edgelist_from_vec(m, edges[,1], edges[,2], directed = FALSE)
+
+# Virus and tools are distributed
 init_epi_model(m, 10, 10)
 
+# We can get information about the model
+m
+
+# And run the model
 run_epi_model(m)
+
 ```
 
+## Code of Conduct
+
+Please note that the epiworld project is released with a [Contributor Code of Conduct](https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html). By contributing to this project, you agree to abide by its terms.

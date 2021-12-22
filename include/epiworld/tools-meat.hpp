@@ -8,8 +8,15 @@
 #define DEFAULT_DEATH           1.0
 
 template<typename TSeq>
-inline Tool<TSeq>::Tool(TSeq d) {
+inline Tool<TSeq>::Tool(std::string name)
+{
+    set_name(name);
+}
+
+template<typename TSeq>
+inline Tool<TSeq>::Tool(TSeq d, std::string name) {
     sequence = std::make_shared<TSeq>(d);
+    tool_name = name;
 }
 
 template<typename TSeq>
@@ -111,6 +118,23 @@ inline void Tool<TSeq>::set_transmisibility(
     ToolFun<TSeq> fun
 ) {
     transmisibility = ToolFun<TSeq>(fun);
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_name(std::string name)
+{
+    if (name != "")
+        tool_name = std::make_shared<std::string>(name);
+}
+
+template<typename TSeq>
+inline std::string Tool<TSeq>::get_name() const {
+
+    if (tool_name)
+        return *tool_name;
+
+    return "unknown tool";
+
 }
 
 #undef DEFAULT_EFFICACY

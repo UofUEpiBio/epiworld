@@ -2,8 +2,14 @@
 #define EPIWORLD_VIRUS_MEAT_HPP
 
 template<typename TSeq>
-inline Virus<TSeq>::Virus(TSeq sequence) {
+inline Virus<TSeq>::Virus(std::string name) {
+    set_name(name);
+}
+
+template<typename TSeq>
+inline Virus<TSeq>::Virus(TSeq sequence, std::string name) {
     baseline_sequence = std::make_shared<TSeq>(sequence);
+    set_name(name);
 }
 
 template<typename TSeq>
@@ -99,6 +105,26 @@ inline void Virus<TSeq>::post_recovery()
         
 }
 
+template<typename TSeq>
+inline void Virus<TSeq>::set_name(std::string name)
+{
 
+    if (name == "")
+        virus_name = nullptr;
+    else
+        virus_name = std::make_shared<std::string>(name);
+
+}
+
+template<typename TSeq>
+inline std::string Virus<TSeq>::get_name() const
+{
+
+    if (virus_name)
+        return *virus_name;
+    
+    return "unknown virus";
+
+}
 
 #endif

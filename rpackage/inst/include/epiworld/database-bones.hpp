@@ -186,6 +186,8 @@ public:
         ) const;
     
     void record_transmision(int i, int j, int variant);
+
+    size_t get_nvariants() const;
 };
 
 

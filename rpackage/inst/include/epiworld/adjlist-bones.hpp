@@ -4,7 +4,6 @@
 class AdjList {
 private:
 
-    std::string filename;
     std::map<int,std::map<int,int>> dat;
 
     int id_min,id_max;
@@ -12,6 +11,14 @@ private:
     int E = 0;
 
 public:
+
+    AdjList() {};
+
+    AdjList(
+        const std::vector< int > & source,
+        const std::vector< int > & target,
+        bool directed
+        );
 
     void read_edgelist(std::string fn, int skip = 0, bool directed = true);
     const std::map<int,int> & operator()(int i) const;

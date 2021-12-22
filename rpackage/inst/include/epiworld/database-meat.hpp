@@ -302,4 +302,9 @@ inline void DataBase<TSeq>::record_transmision(
     transmision_variant.push_back(variant);
 }
 
+template<typename TSeq>
+inline size_t DataBase<TSeq>::get_nvariants() const {
+    return variant_id.size();
+}
+
 #endif

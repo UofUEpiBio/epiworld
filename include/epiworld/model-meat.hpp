@@ -146,6 +146,7 @@ template<typename TSeq>
 inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
 
     // Resizing the people
+    persons.clear();
     persons.resize(al.vcount(), Person<TSeq>());
 
     const auto & tmpdat = al.get_dat();
@@ -330,6 +331,35 @@ inline void Model<TSeq>::reset() {
     // Re distributing tools and virus
     dist_virus();
     dist_tools();
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::print() const
+{
+    printf_epiworld("Population size   : %i\n", static_cast<int>(size()));
+    printf_epiworld("Number of variants: %i\n\n", static_cast<int>(db.get_nvariants()));
+    printf_epiworld("Virus(es):\n");
+    int i = 0;
+    for (auto & v : viruses)
+    {    printf_epiworld(
+            " - %s (baseline prevalence: %.2f)\n",
+            v.get_name().c_str(),
+            prevalence_virus[i++]
+            );
+    }
+
+    printf_epiworld("Tool(s):\n");
+    i = 0;
+    for (auto & t : tools)
+    {    printf_epiworld(
+            " - %s (baseline prevalence: %.2f)\n",
+            t.get_name().c_str(),
+            prevalence_tool[i++]
+            );
+    }
+
+    return;
 
 }
 

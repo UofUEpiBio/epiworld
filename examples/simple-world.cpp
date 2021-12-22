@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
     model.params()[IMMUNE_LEARN_RATE]        = 0.05;
 
     // Initializing disease
-    epiworld::Virus<DAT> covid19(base_seq);
+    epiworld::Virus<DAT> covid19(base_seq, "COVID19");
     covid19.set_mutation(covid19_mut);
     covid19.set_post_recovery(post_covid);
 
@@ -172,17 +172,17 @@ int main(int argc, char* argv[]) {
     model.pop_from_adjlist("edgelist.txt", 0, true);
 
     // Creating tools
-    epiworld::Tool<DAT> vaccine;
+    epiworld::Tool<DAT> vaccine("Vaccine");
     vaccine.set_efficacy(vaccine_eff);
     vaccine.set_recovery(vaccine_rec);
     vaccine.set_death(vaccine_death);
     vaccine.set_transmisibility(vaccine_trans);
 
-    epiworld::Tool<DAT> mask;
+    epiworld::Tool<DAT> mask("Face masks");
     mask.set_efficacy(mask_eff);
     mask.set_transmisibility(mask_trans);
 
-    epiworld::Tool<DAT> immune;
+    epiworld::Tool<DAT> immune("Immune system");
     immune.set_efficacy(immune_eff);
     immune.set_recovery(immune_rec);
     immune.set_death(immune_death);
@@ -197,6 +197,9 @@ int main(int argc, char* argv[]) {
     model.add_tool(immune, 1.0);
     
     model.init(nsteps, seed);  
+
+    // Screen information
+    model.print();
 
     // Creating a progress bar
     EPIWORLD_CLOCK_START("(01) Run model")

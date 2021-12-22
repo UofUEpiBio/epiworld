@@ -35,17 +35,17 @@ class Tool {
 private:
 
     Person<TSeq> * person;
-    std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique;
+    std::shared_ptr<std::string> tool_name = nullptr;
+    std::shared_ptr<TSeq> sequence = nullptr;
     ToolFun<TSeq> efficacy        = nullptr;
     ToolFun<TSeq> transmisibility = nullptr;
     ToolFun<TSeq> recovery        = nullptr;
     ToolFun<TSeq> death           = nullptr;
 
-
 public:
-    Tool() {};
-    Tool(TSeq d);
+    Tool(std::string name = "unknown tool");
+    Tool(TSeq d, std::string name = "unknown tool");
 
     void set_sequence(TSeq d);
     void set_sequence_unique(TSeq d);
@@ -74,6 +74,9 @@ public:
     void set_recovery(ToolFun<TSeq> fun);
     void set_death(ToolFun<TSeq> fun);
     ///@]
+
+    void set_name(std::string name);
+    std::string get_name() const;
 
 };
 

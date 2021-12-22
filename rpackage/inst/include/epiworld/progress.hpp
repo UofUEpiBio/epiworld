@@ -22,6 +22,7 @@ public:
     Progress(int n_, int width_);
     ~Progress() {};
 
+    void start();
     void next();
     void end();
 
@@ -36,16 +37,21 @@ inline Progress::Progress(int n_, int width_) {
     last_loc  = 0;
     i         = 0;
 
-    // printf_epiworld("0");
+}
+
+inline void Progress::start()
+{
     for (int j = 0; j < (width); ++j)
     {
         printf_epiworld("_");
     }
     printf_epiworld("\n");
-
 }
 
 inline void Progress::next() {
+
+    if (i == 0)
+        start();
 
     cur_loc = std::floor((++i) * step_size);
 

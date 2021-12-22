@@ -92,6 +92,7 @@ public:
     std::vector<double> & params();
 
     void reset();
+    void print() const;
 
 };
 
