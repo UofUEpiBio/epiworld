@@ -107,10 +107,13 @@ Can run multiple times:
 ``` r
 verbose_off_epi_model(m)
 
-ans <- lapply(1:200, function(i) {
+ans <- parallel::mclapply(1:1000, function(i) {
+  
+  # Running and resetting the model
   reset_epi_model(m)
   run_epi_model(m)
-  message(".", appendLF = FALSE)
+  
+  # Retrieving the model information
   data.frame(
     replicate  = i,
     date       = get_hist_variant(m, "date"),
@@ -120,8 +123,7 @@ ans <- lapply(1:200, function(i) {
     ndeceased  = get_hist_variant(m, "ndeceased")
   )
   
-})
-#> ........................................................................................................................................................................................................
+}, mc.cores = 6L)
 
 ans <- do.call(rbind, ans)
 ```
@@ -132,10 +134,9 @@ Visualizing
 library(ggplot2)
 ggplot(ans[ans$id == 0,], aes(x = as.integer(date), y = ninfected)) +
   geom_point(alpha = .5, color = "grey") +
-  # geom_point(alpha = .5, color = "red", aes(y = ndeceased)) +
   labs(
     x = "Date", y = "Infected with COVID",
-    caption = "Includes 200 replicates")
+    caption = "Includes 1000 replicates")
 ```
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />

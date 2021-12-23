@@ -101,10 +101,9 @@ Visualizing
 library(ggplot2)
 ggplot(ans[ans$id == 0,], aes(x = as.integer(date), y = ninfected)) +
   geom_point(alpha = .5, color = "grey") +
-  # geom_point(alpha = .5, color = "red", aes(y = ndeceased)) +
   labs(
     x = "Date", y = "Infected with COVID",
-    caption = "Includes 200 replicates")
+    caption = "Includes 1000 replicates")
 ```
 
 
