@@ -9,17 +9,6 @@ SEXP new_epi_model() {
   
   Rcpp::XPtr< epiworld::Model< TSEQ > > model(new epiworld::Model<TSEQ>);
   
-  // Setting up the model parameters, these are six
-  model->params().resize(8u, 0.0);
-  model->params()[MUTATION_PROB]            = 0.005;
-  model->params()[VACCINE_EFFICACY]         = 0.90;
-  model->params()[VACCINE_RECOVERY]         = 0.20;
-  model->params()[VACCINE_DEATH]            = 0.0001;
-  model->params()[IMMUNE_EFFICACY]          = 0.10;
-  model->params()[VARIANT_MORTALITY]        = 0.001;
-  model->params()[BASELINE_INFECCTIOUSNESS] = 0.90;
-  model->params()[IMMUNE_LEARN_RATE]        = 0.05;
-
   model.attr("class") = "epi_model";
   
   return model;
@@ -71,6 +60,24 @@ int run_epi_model(SEXP model) {
 }
 
 //' @export
+//' @param pname String (character scalar). Name of the parameter to update.
+//' @param value Double (numeric scalar). New value for the parameter.
+// [[Rcpp::export(invisible=true, rng=false)]]
+int update_epi_params(SEXP model, std::string pname, double value) {
+
+  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
+  std::map< std::string, double > & params = ptr->params();
+  if (params.find(pname) == params.end())
+    stop("The parameter " + pname + " does not exist in the model.");
+  
+  // If found, then it can be passed
+  params[pname] = value;
+  
+  return 0;
+  
+}
+
+//' @export
 //' @rdname new_epi_model
 // [[Rcpp::export(invisible=true, rng=false, name = "print.epi_model")]]
 SEXP print_epi_model(SEXP x) {
@@ -91,17 +98,27 @@ SEXP reset_epi_model(SEXP x) {
 //' @export
 //' @rdname new_epi_model
 // [[Rcpp::export(invisible=true, rng=false)]]
-SEXP verbose_on_epi_model(SEXP x) {
-  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(x);
+int verbose_on_epi_model(SEXP model) {
+  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
   ptr->verbose_on();
-  return x;
+  return 0;
 }
 
 //' @export
 //' @rdname new_epi_model
 // [[Rcpp::export(invisible=true, rng=false)]]
-SEXP verbose_off_epi_model(SEXP x) {
-  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(x);
+int verbose_off_epi_model(SEXP model) {
+  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
   ptr->verbose_off();
-  return x;
+  return 0;
+}
+
+//' @export
+//' @param seed Integer. Seed to be passed.
+//' @rdname new_epi_model
+// [[Rcpp::export(invisible=true, rng=false)]]
+int set_seed_epi_model(SEXP model, int seed) {
+  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
+  ptr->seed(seed);
+  return 0;
 }

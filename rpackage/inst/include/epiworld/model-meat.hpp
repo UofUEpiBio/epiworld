@@ -23,8 +23,13 @@ inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
 }
 
 template<typename TSeq>
-inline double & Model<TSeq>::operator()(int i) {
-    return parameters[i];
+inline double & Model<TSeq>::operator()(std::string pname) {
+
+    if (parameters.find(pname) == parameters.end())
+        throw std::range_error("The parameter "+ pname + "is not in the model.");
+
+    return parameters[pname];
+
 }
 
 template<typename TSeq>
@@ -116,6 +121,11 @@ template<typename TSeq>
 inline double Model<TSeq>::runif() {
     CHECK_INIT()
     return runifd->operator()(*engine);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::seed(unsigned int s) {
+    this->engine->seed(s);
 }
 
 template<typename TSeq>
@@ -341,7 +351,7 @@ inline void Model<TSeq>::write_edgelist(
 }
 
 template<typename TSeq>
-inline std::vector<double> & Model<TSeq>::params()
+inline std::map<std::string,double> & Model<TSeq>::params()
 {
     return parameters;
 }
@@ -395,12 +405,38 @@ inline void Model<TSeq>::print() const
             );
     }
 
-    printf_epiworld("Statistics:\n");
+    printf_epiworld("\nStatistics:\n");
     printf_epiworld(" - Total variants active : %i\n\n", db.get_today_total("nvariants_active"));
     printf_epiworld(" - Total healthy         : %i\n", db.get_today_total("nhealthy"));
     printf_epiworld(" - Total infected        : %i\n", db.get_today_total("ninfected"));
     printf_epiworld(" - Total deceased        : %i\n\n", db.get_today_total("ndeceased"));
-    printf_epiworld(" - Total # of recoveries : %i\n", db.get_today_total("nrecovered"));
+    printf_epiworld(" - Total # of recoveries : %i\n\n", db.get_today_total("nrecovered"));
+
+    // Information about the parameters included
+    printf_epiworld("Model parameters:\n");
+    unsigned int nchar = 0u;
+    for (auto & p : parameters)
+        if (p.first.length() > nchar)
+            nchar = p.first.length();
+
+    std::string fmt = " - %-" + std::to_string(nchar + 1) + "s : ";
+    for (auto & p : parameters)
+    {
+        std::string fmt_tmp = fmt;
+        if (std::fabs(p.second) < 0.0001)
+            fmt_tmp += "%.1e\n";
+        else
+            fmt_tmp += "%.4f\n";
+
+        printf_epiworld(
+            fmt_tmp.c_str(),
+            p.first.c_str(),
+            p.second
+        );
+
+        
+    }
+
 
     return;
 

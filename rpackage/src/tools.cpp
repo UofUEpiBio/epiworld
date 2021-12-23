@@ -9,29 +9,53 @@ using namespace Rcpp;
 
 // Immune system
 EPI_NEW_TOOL(immune_eff, TSEQ) {
-  return EPI_PARAMS(IMMUNE_EFFICACY);
+  return *t->p00;
 }
 
 EPI_NEW_TOOL(immune_rec, TSEQ) {
-  return EPI_PARAMS(IMMUNE_EFFICACY);
+  
+  // // Immune system improvement
+  // if (EPI_RUNIF() < *t->p01)
+  // {
+  //   
+  //   TSEQ new_seq = *t->get_sequence();
+  //   int loc = std::floor(EPI_RUNIF() * new_seq.size());
+  //   new_seq[loc] = v->get_sequence()->at(loc);
+  //   
+  //   t->get_sequence() = std::make_shared<TSEQ>(new_seq);
+  //   
+  // }
+  
+  return *t->p01;
+  
 }
 
 EPI_NEW_TOOL(immune_death, TSEQ) {
-  return EPI_PARAMS(VARIANT_MORTALITY);
+  return *t->p02;
 }
 
 EPI_NEW_TOOL(immune_trans, TSEQ) {
   CHECK_LATENT()
-  return EPI_PARAMS(BASELINE_INFECCTIOUSNESS);
+  return *t->p03;
 }
 
 //' @rdname new_epi_model
+//' @param preval Baseline prevalence. What proportion of the population will
+//' be assigned this tool.
+//' @param efficacy Efficacy level (probability of not becoming infected).
+//' @param recovery Probability of recovery.
+//' @param death Probability of death.
+//' @param transm Probability of transmision.
 //' @export
 // [[Rcpp::export(invisible = true, rng = false)]]
 int add_tool_immune(
     SEXP model,
     std::vector< bool > & baselineseq,
-    double preval
+    double preval,
+    double efficacy = 0.1,
+    double recovery = 0.1,
+    double death    = 0.001,
+    double transm   = 0.9
 ) {
   
   // Creating the tool
@@ -42,8 +66,15 @@ int add_tool_immune(
   immune.set_transmisibility(immune_trans);
   immune.set_sequence_unique(baselineseq);
   
-  // Adding it to the models
+  // Getting the model
   Rcpp::XPtr< epiworld::Model<TSEQ> > mptr(model);
+  
+  immune.add_param(efficacy, "immune efficacy", *mptr);
+  immune.add_param(recovery, "immune recovery", *mptr);
+  immune.add_param(death, "immune death", *mptr);
+  immune.add_param(transm, "immune transm", *mptr);
+  
+  // Adding the terms to the model
   mptr->add_tool(immune, preval);
   
   return 0;
@@ -61,21 +92,21 @@ if ((m->today() - v->get_date()) <= 3) \
   return 0.0;
 
 EPI_NEW_TOOL(vaccine_eff, TSEQ) {
-  return EPI_PARAMS(VACCINE_EFFICACY);
+  return *t->p00;
 }
 
 EPI_NEW_TOOL(vaccine_rec, TSEQ) {
-  return EPI_PARAMS(VACCINE_RECOVERY);
+  return *t->p01;
 }
 
 EPI_NEW_TOOL(vaccine_death, TSEQ) {
-  return EPI_PARAMS(VARIANT_MORTALITY);
+  return *t->p02;
 }
 
 EPI_NEW_TOOL(vaccine_trans, TSEQ) {
   
   CHECK_LATENT()
-  return EPI_PARAMS(VACCINE_EFFICACY);
+  return *t->p03;
 }
 
 //' @rdname new_epi_model
@@ -84,7 +115,11 @@ EPI_NEW_TOOL(vaccine_trans, TSEQ) {
 int add_tool_vaccine(
     SEXP model,
     std::vector< bool > & baselineseq,
-    double preval
+    double preval,
+    double efficacy = 0.9,
+    double recovery = 0.4,
+    double death    = 0.0001,
+    double transm   = 0.5
 ) {
   
   // Creating the tool
@@ -97,6 +132,13 @@ int add_tool_vaccine(
   
   // Adding it to the models
   Rcpp::XPtr< epiworld::Model<TSEQ> > mptr(model);
+  
+  
+  vaccine.add_param(efficacy, "vax efficacy", *mptr);
+  vaccine.add_param(recovery, "vax recovery", *mptr);
+  vaccine.add_param(death, "vax death", *mptr);
+  vaccine.add_param(transm, "vax transm", *mptr);
+  
   mptr->add_tool(vaccine, preval);
   
   return 0;
@@ -109,13 +151,13 @@ int add_tool_vaccine(
 
 // Wearing a Mask
 EPI_NEW_TOOL(mask_eff, TSEQ) {
-  return 0.8;
+  return *t->p00;
 }
 
 EPI_NEW_TOOL(mask_trans, TSEQ) {
   
   CHECK_LATENT()
-  return 0.05;
+  return *t->p01;
 }
 
 //' @rdname new_epi_model
@@ -124,7 +166,9 @@ EPI_NEW_TOOL(mask_trans, TSEQ) {
 int add_tool_mask(
     SEXP model,
     std::vector< bool > & baselineseq,
-    double preval
+    double preval,
+    double efficacy = 0.3,
+    double transm   = 0.1
 ) {
   
   // Creating the tool
@@ -134,6 +178,10 @@ int add_tool_mask(
   
   // Adding it to the models
   Rcpp::XPtr< epiworld::Model<TSEQ> > mptr(model);
+  
+  mask.add_param(efficacy, "mask efficacy", *mptr);
+  mask.add_param(transm, "mask transm", *mptr);
+  
   mptr->add_tool(mask, preval);
   
   return 0;

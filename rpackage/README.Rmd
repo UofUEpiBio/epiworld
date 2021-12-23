@@ -74,7 +74,7 @@ Can run multiple times (in parallel):
 ```{r}
 verbose_off_epi_model(m)
 
-ans <- parallel::mclapply(1:1000, function(i) {
+ans <- parallel::mclapply(1:100, function(i) {
   
   # Running and resetting the model
   reset_epi_model(m)
@@ -90,7 +90,7 @@ ans <- parallel::mclapply(1:1000, function(i) {
     ndeceased  = get_hist_variant(m, "ndeceased")
   )
   
-}, mc.cores = 6L)
+}, mc.cores = 1L)
 
 ans <- do.call(rbind, ans)
 ```

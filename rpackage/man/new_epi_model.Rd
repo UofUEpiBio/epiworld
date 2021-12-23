@@ -8,6 +8,7 @@
 \alias{reset_epi_model}
 \alias{verbose_on_epi_model}
 \alias{verbose_off_epi_model}
+\alias{set_seed_epi_model}
 \alias{edgelist_from_file}
 \alias{edgelist_from_vec}
 \alias{add_tool_immune}
@@ -26,21 +27,59 @@ run_epi_model(model)
 
 reset_epi_model(x)
 
-verbose_on_epi_model(x)
+verbose_on_epi_model(model)
 
-verbose_off_epi_model(x)
+verbose_off_epi_model(model)
+
+set_seed_epi_model(model, seed)
 
 edgelist_from_file(model, fname, skip, directed)
 
 edgelist_from_vec(model, source, target, directed)
 
-add_tool_immune(model, baselineseq, preval)
+add_tool_immune(
+  model,
+  baselineseq,
+  preval,
+  efficacy = 0.1,
+  recovery = 0.1,
+  death = 0.001,
+  transm = 0.9
+)
 
-add_tool_vaccine(model, baselineseq, preval)
+add_tool_vaccine(
+  model,
+  baselineseq,
+  preval,
+  efficacy = 0.9,
+  recovery = 0.4,
+  death = 1e-04,
+  transm = 0.5
+)
 
-add_tool_mask(model, baselineseq, preval)
+add_tool_mask(model, baselineseq, preval, efficacy = 0.3, transm = 0.1)
 
-add_virus_covid19(model, baselineseq, preval)
+add_virus_covid19(
+  model,
+  baselineseq,
+  preval,
+  mutrate = 5e-05,
+  post_immunity = 0.95
+)
+}
+\arguments{
+\item{seed}{Integer. Seed to be passed.}
+
+\item{preval}{Baseline prevalence. What proportion of the population will
+be assigned this tool.}
+
+\item{efficacy}{Efficacy level (probability of not becoming infected).}
+
+\item{recovery}{Probability of recovery.}
+
+\item{death}{Probability of death.}
+
+\item{transm}{Probability of transmision.}
 }
 \description{
 Creates a new model

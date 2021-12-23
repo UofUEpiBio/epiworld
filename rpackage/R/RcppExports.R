@@ -49,6 +49,13 @@ run_epi_model <- function(model) {
 }
 
 #' @export
+#' @param pname String (character scalar). Name of the parameter to update.
+#' @param value Double (numeric scalar). New value for the parameter.
+update_epi_params <- function(model, pname, value) {
+    invisible(.Call(`_epiworld_update_epi_params`, model, pname, value))
+}
+
+#' @export
 #' @rdname new_epi_model
 print.epi_model <- function(x) {
     invisible(.Call(`_epiworld_print_epi_model`, x))
@@ -62,14 +69,21 @@ reset_epi_model <- function(x) {
 
 #' @export
 #' @rdname new_epi_model
-verbose_on_epi_model <- function(x) {
-    invisible(.Call(`_epiworld_verbose_on_epi_model`, x))
+verbose_on_epi_model <- function(model) {
+    invisible(.Call(`_epiworld_verbose_on_epi_model`, model))
 }
 
 #' @export
 #' @rdname new_epi_model
-verbose_off_epi_model <- function(x) {
-    invisible(.Call(`_epiworld_verbose_off_epi_model`, x))
+verbose_off_epi_model <- function(model) {
+    invisible(.Call(`_epiworld_verbose_off_epi_model`, model))
+}
+
+#' @export
+#' @param seed Integer. Seed to be passed.
+#' @rdname new_epi_model
+set_seed_epi_model <- function(model, seed) {
+    invisible(.Call(`_epiworld_set_seed_epi_model`, model, seed))
 }
 
 #' @export
@@ -85,26 +99,32 @@ edgelist_from_vec <- function(model, source, target, directed) {
 }
 
 #' @rdname new_epi_model
+#' @param preval Baseline prevalence. What proportion of the population will
+#' be assigned this tool.
+#' @param efficacy Efficacy level (probability of not becoming infected).
+#' @param recovery Probability of recovery.
+#' @param death Probability of death.
+#' @param transm Probability of transmision.
 #' @export
-add_tool_immune <- function(model, baselineseq, preval) {
-    invisible(.Call(`_epiworld_add_tool_immune`, model, baselineseq, preval))
+add_tool_immune <- function(model, baselineseq, preval, efficacy = 0.1, recovery = 0.1, death = 0.001, transm = 0.9) {
+    invisible(.Call(`_epiworld_add_tool_immune`, model, baselineseq, preval, efficacy, recovery, death, transm))
 }
 
 #' @rdname new_epi_model
 #' @export
-add_tool_vaccine <- function(model, baselineseq, preval) {
-    invisible(.Call(`_epiworld_add_tool_vaccine`, model, baselineseq, preval))
+add_tool_vaccine <- function(model, baselineseq, preval, efficacy = 0.9, recovery = 0.4, death = 0.0001, transm = 0.5) {
+    invisible(.Call(`_epiworld_add_tool_vaccine`, model, baselineseq, preval, efficacy, recovery, death, transm))
 }
 
 #' @rdname new_epi_model
 #' @export
-add_tool_mask <- function(model, baselineseq, preval) {
-    invisible(.Call(`_epiworld_add_tool_mask`, model, baselineseq, preval))
+add_tool_mask <- function(model, baselineseq, preval, efficacy = 0.3, transm = 0.1) {
+    invisible(.Call(`_epiworld_add_tool_mask`, model, baselineseq, preval, efficacy, transm))
 }
 
 #' @export
 #' @rdname new_epi_model
-add_virus_covid19 <- function(model, baselineseq, preval) {
-    invisible(.Call(`_epiworld_add_virus_covid19`, model, baselineseq, preval))
+add_virus_covid19 <- function(model, baselineseq, preval, mutrate = 0.00005, post_immunity = .95) {
+    invisible(.Call(`_epiworld_add_virus_covid19`, model, baselineseq, preval, mutrate, post_immunity))
 }
 
