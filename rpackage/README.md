@@ -67,6 +67,7 @@ m
 #>  - Immune system (baseline prevalence: 1.00)
 #>  - Vaccine (baseline prevalence: 0.50)
 #>  - Face masks (baseline prevalence: 0.25)
+#> 
 #> Statistics:
 #>  - Total variants active : 1
 #> 
@@ -75,6 +76,20 @@ m
 #>  - Total deceased        : 0
 #> 
 #>  - Total # of recoveries : 0
+#> 
+#> Model parameters:
+#>  - covid19 mutation rate  : 5.0e-05
+#>  - immune death           : 0.0010
+#>  - immune efficacy        : 0.1000
+#>  - immune recovery        : 0.1000
+#>  - immune transm          : 0.9000
+#>  - mask efficacy          : 0.3000
+#>  - mask transm            : 0.1000
+#>  - post-covid immunity    : 0.9500
+#>  - vax death              : 0.0001
+#>  - vax efficacy           : 0.9000
+#>  - vax recovery           : 0.4000
+#>  - vax transm             : 0.5000
 
 # And run the model
 run_epi_model(m)
@@ -84,7 +99,7 @@ run_epi_model(m)
 m
 #> Population size   : 1000
 #> Days (duration)   : 100 (of 100)
-#> Number of variants: 31
+#> Number of variants: 3
 #> 
 #> Virus(es):
 #>  - COVID19 (baseline prevalence: 0.05)
@@ -92,22 +107,37 @@ m
 #>  - Immune system (baseline prevalence: 1.00)
 #>  - Vaccine (baseline prevalence: 0.50)
 #>  - Face masks (baseline prevalence: 0.25)
+#> 
 #> Statistics:
-#>  - Total variants active : 31
+#>  - Total variants active : 3
 #> 
-#>  - Total healthy         : 355
-#>  - Total infected        : 619
-#>  - Total deceased        : 26
+#>  - Total healthy         : 377
+#>  - Total infected        : 590
+#>  - Total deceased        : 33
 #> 
-#>  - Total # of recoveries : 7508
+#>  - Total # of recoveries : 11047
+#> 
+#> Model parameters:
+#>  - covid19 mutation rate  : 5.0e-05
+#>  - immune death           : 0.0010
+#>  - immune efficacy        : 0.1000
+#>  - immune recovery        : 0.1000
+#>  - immune transm          : 0.9000
+#>  - mask efficacy          : 0.3000
+#>  - mask transm            : 0.1000
+#>  - post-covid immunity    : 0.9500
+#>  - vax death              : 0.0001
+#>  - vax efficacy           : 0.9000
+#>  - vax recovery           : 0.4000
+#>  - vax transm             : 0.5000
 ```
 
-Can run multiple times:
+Can run multiple times (in parallel):
 
 ``` r
 verbose_off_epi_model(m)
 
-ans <- parallel::mclapply(1:1000, function(i) {
+ans <- parallel::mclapply(1:100, function(i) {
   
   # Running and resetting the model
   reset_epi_model(m)
@@ -123,7 +153,7 @@ ans <- parallel::mclapply(1:1000, function(i) {
     ndeceased  = get_hist_variant(m, "ndeceased")
   )
   
-}, mc.cores = 6L)
+}, mc.cores = 1L)
 
 ans <- do.call(rbind, ans)
 ```
@@ -136,7 +166,7 @@ ggplot(ans[ans$id == 0,], aes(x = as.integer(date), y = ninfected)) +
   geom_point(alpha = .5, color = "grey") +
   labs(
     x = "Date", y = "Infected with COVID",
-    caption = "Includes 1000 replicates")
+    caption = "Includes 100 replicates")
 ```
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />

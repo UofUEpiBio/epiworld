@@ -103,7 +103,7 @@ ggplot(ans[ans$id == 0,], aes(x = as.integer(date), y = ninfected)) +
   geom_point(alpha = .5, color = "grey") +
   labs(
     x = "Date", y = "Infected with COVID",
-    caption = "Includes 1000 replicates")
+    caption = "Includes 100 replicates")
 ```
 
 
