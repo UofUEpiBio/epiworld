@@ -23,8 +23,13 @@ inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
 }
 
 template<typename TSeq>
-inline double & Model<TSeq>::operator()(int i) {
-    return parameters[i];
+inline double & Model<TSeq>::operator()(std::string pname) {
+
+    if (parameters.find(pname) == parameters.end())
+        throw std::range_error("The parameter "+ pname + "is not in the model.");
+
+    return parameters[pname];
+    
 }
 
 template<typename TSeq>
@@ -341,7 +346,7 @@ inline void Model<TSeq>::write_edgelist(
 }
 
 template<typename TSeq>
-inline std::vector<double> & Model<TSeq>::params()
+inline std::unordered_map<std::string,double> & Model<TSeq>::params()
 {
     return parameters;
 }

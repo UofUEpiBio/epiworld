@@ -37,7 +37,7 @@ private:
 
     std::shared_ptr< std::mt19937 > engine;
     std::shared_ptr< std::uniform_real_distribution<> > runifd;
-    std::vector< double > parameters;
+    std::unordered_map<std::string, double > parameters;
     int ndays;
     Progress pb;
     bool verbose     = true;
@@ -55,7 +55,7 @@ public:
     DataBase<TSeq> & get_db();
     std::vector< Person<TSeq> > * get_persons();
 
-    double & operator()(int i);
+    double & operator()(std::string pname);
 
     size_t size() const;
     void init(int seed, int ndays);
@@ -92,7 +92,7 @@ public:
         std::string fn
         ) const;
 
-    std::vector<double> & params();
+    std::unordered_map<std::string, double> & params();
 
     void reset();
     void print() const;

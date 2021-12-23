@@ -69,7 +69,7 @@ m
 
 ```
 
-Can run multiple times:
+Can run multiple times (in parallel):
 
 ```{r}
 verbose_off_epi_model(m)

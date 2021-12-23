@@ -13,7 +13,7 @@ EPI_MUTFUN(covid19_mut, TSEQ) {
     TSEQ tmp_seq = *v->get_sequence();
     tmp_seq[idx] = !v->get_sequence()->at(idx); 
     
-    // UpTSEQing its sequence
+    // Updating its sequence
     v->set_sequence(tmp_seq);
     
     return true;

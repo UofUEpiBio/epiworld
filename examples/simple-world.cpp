@@ -20,8 +20,8 @@ enum epipar {
 
 // Defining mutation and transmission functions
 EPI_MUTFUN(covid19_mut, DAT) {
-
-    if (EPI_RUNIF() < EPI_PARAMS(MUTATION_PROB))
+    
+    if (EPI_RUNIF() < *(v->p00))
     {
         // Picking a location at random
         int idx = std::floor(EPI_RUNIF() * v->get_sequence()->size());
@@ -46,7 +46,7 @@ EPI_MUTFUN(covid19_mut, DAT) {
 
 // Getting the vaccine
 EPI_NEW_TOOL(vaccine_eff, DAT) {
-    return EPI_PARAMS(VACCINE_EFFICACY);
+    return *(t->p00);
 }
 
 EPI_NEW_TOOL(vaccine_rec, DAT) {
@@ -54,7 +54,7 @@ EPI_NEW_TOOL(vaccine_rec, DAT) {
 }
 
 EPI_NEW_TOOL(vaccine_death, DAT) {
-    return EPI_PARAMS(VARIANT_MORTALITY);
+    return *(t->p01);
 }
 
 
@@ -77,22 +77,20 @@ EPI_NEW_TOOL(mask_trans, DAT) {
 
 // Immune system
 EPI_NEW_TOOL(immune_eff, DAT) {
-
-    return EPI_PARAMS(IMMUNE_EFFICACY);
-
+    return *(t->p00);
 }
 
 EPI_NEW_TOOL(immune_rec, DAT) {
-    return EPI_PARAMS(IMMUNE_EFFICACY);
+    return *(t->p01);
 }
 
 EPI_NEW_TOOL(immune_death, DAT) {
-    return EPI_PARAMS(VARIANT_MORTALITY);
+    return *(t->p02);
 }
 
 EPI_NEW_TOOL(immune_trans, DAT) {
     CHECK_LATENT()
-    return EPI_PARAMS(BASELINE_INFECCTIOUSNESS);
+    return *(t->p03);
 }
 
 // We assume individuals cannot become reinfected with the
@@ -151,22 +149,11 @@ int main(int argc, char* argv[]) {
 
     // Initializing the model
     epiworld::Model<DAT> model;
-    
-    // Setting up the model parameters, these are six
-    model.params().resize(6u, 0.0);
-    model.params()[MUTATION_PROB]            = mutrate;
-    model.params()[VACCINE_EFFICACY]         = 0.90;
-    model.params()[IMMUNE_EFFICACY]          = 0.10;
-    model.params()[VARIANT_MORTALITY]        = 0.001;
-    model.params()[BASELINE_INFECCTIOUSNESS] = 0.90;
-    model.params()[IMMUNE_LEARN_RATE]        = 0.05;
 
     // Initializing disease
     epiworld::Virus<DAT> covid19(base_seq, "COVID19");
     covid19.set_mutation(covid19_mut);
-    covid19.set_post_recovery(post_covid);
-
-    model.add_virus(covid19, preval); // 0.5% will have the virus at first
+    covid19.set_post_recovery(post_covid);  
 
     // Reading network structure
     model.pop_from_adjlist("edgelist.txt", 0, true);
@@ -177,6 +164,7 @@ int main(int argc, char* argv[]) {
     vaccine.set_recovery(vaccine_rec);
     vaccine.set_death(vaccine_death);
     vaccine.set_transmisibility(vaccine_trans);
+    
 
     epiworld::Tool<DAT> mask("Face masks");
     mask.set_efficacy(mask_eff);
@@ -191,7 +179,21 @@ int main(int argc, char* argv[]) {
     immune.set_sequence_unique(seq0);
 
 
-    // Randomly adding tools to the population
+    // Setting up the model parameters   
+    covid19.add_param(mutrate, "Mutation rate", model);
+
+    immune.add_param(0.10, "imm efficacy", model);
+    immune.add_param(0.10, "imm recovery", model);
+    immune.add_param(0.001, "imm death", model);
+    immune.add_param(0.90, "imm trans", model);
+
+    vaccine.add_param(0.90, "vax efficacy", model);
+    vaccine.add_param(0.0001, "vax death", model);
+
+
+    // Adding the virus and the tools to the model
+    model.add_virus(covid19, preval); 
+
     model.add_tool(vaccine, 0.5);
     model.add_tool(mask, 0.5);
     model.add_tool(immune, 1.0);
