@@ -163,7 +163,7 @@ inline double Tool<TSeq>::add_param(
     Model<TSeq> & m
     ) {
 
-    std::unordered_map<std::string,double> & parmap = m.params();
+    std::map<std::string,double> & parmap = m.params();
 
     if (parmap.find(pname) == parmap.end())
         parmap[pname] = initial_value;
@@ -189,7 +189,7 @@ inline double Tool<TSeq>::set_param(
     Model<TSeq> & m
     ) {
 
-    std::unordered_map<std::string,double> & parmap = m.params();
+    std::map<std::string,double> & parmap = m.params();
 
     if (parmap.find(pname) == parmap.end())
         throw std::logic_error("The parameter " + pname + " does not exists.");

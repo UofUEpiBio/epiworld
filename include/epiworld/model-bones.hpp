@@ -37,7 +37,7 @@ private:
 
     std::shared_ptr< std::mt19937 > engine;
     std::shared_ptr< std::uniform_real_distribution<> > runifd;
-    std::unordered_map<std::string, double > parameters;
+    std::map<std::string, double > parameters;
     int ndays;
     Progress pb;
     bool verbose     = true;
@@ -50,7 +50,6 @@ private:
 public:
 
     Model() {};
-    void set_rand_engine(std::mt19937 & eng);
 
     DataBase<TSeq> & get_db();
     std::vector< Person<TSeq> > * get_persons();
@@ -59,8 +58,18 @@ public:
 
     size_t size() const;
     void init(int seed, int ndays);
+
+    /**
+     * @brief Random number generation
+     * 
+     * @param eng 
+     */
+    ///@[
+    void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
     double runif();
+    void seed(unsigned int s);
+    ///@]
 
     void add_virus(Virus<TSeq> v, double preval);
     void add_tool(Tool<TSeq> t, double preval);
@@ -92,12 +101,11 @@ public:
         std::string fn
         ) const;
 
-    std::unordered_map<std::string, double> & params();
+    std::map<std::string, double> & params();
 
     void reset();
     void print() const;
 
 };
-
 
 #endif

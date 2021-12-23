@@ -145,20 +145,17 @@ int main(int argc, char* argv[]) {
     }
 
 
-    using namespace epiworld;
-
-    // Initializing the model
+    // Initializing the model and reading population --------------------------
     epiworld::Model<DAT> model;
 
-    // Initializing disease
+    model.pop_from_adjlist("edgelist.txt", 0, true);
+
+    // Initializing disease ---------------------------------------------------
     epiworld::Virus<DAT> covid19(base_seq, "COVID19");
     covid19.set_mutation(covid19_mut);
     covid19.set_post_recovery(post_covid);  
 
-    // Reading network structure
-    model.pop_from_adjlist("edgelist.txt", 0, true);
-
-    // Creating tools
+    // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine");
     vaccine.set_efficacy(vaccine_eff);
     vaccine.set_recovery(vaccine_rec);
@@ -178,8 +175,7 @@ int main(int argc, char* argv[]) {
     DAT seq0(base_seq.size(), false);
     immune.set_sequence_unique(seq0);
 
-
-    // Setting up the model parameters   
+    // Setting up the model parameters ----------------------------------------   
     covid19.add_param(mutrate, "Mutation rate", model);
 
     immune.add_param(0.10, "imm efficacy", model);
@@ -190,14 +186,14 @@ int main(int argc, char* argv[]) {
     vaccine.add_param(0.90, "vax efficacy", model);
     vaccine.add_param(0.0001, "vax death", model);
 
-
-    // Adding the virus and the tools to the model
+    // Adding the virus and the tools to the model ----------------------------
     model.add_virus(covid19, preval); 
 
     model.add_tool(vaccine, 0.5);
     model.add_tool(mask, 0.5);
     model.add_tool(immune, 1.0);
     
+    // Initializing and printing information about the model ------------------
     model.init(nsteps, seed);  
 
     // Screen information
