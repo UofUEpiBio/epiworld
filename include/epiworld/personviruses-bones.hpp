@@ -9,6 +9,7 @@
 template<typename TSeq>
 class PersonViruses {
     friend class Person<TSeq>;
+    friend class Model<TSeq>;
 
 private:
     Person<TSeq> * host;
@@ -23,6 +24,7 @@ public:
     void mutate();
     void reset();
     void deactivate(Virus<TSeq> & v);
+    Person<TSeq> * get_host();
 
 };
 

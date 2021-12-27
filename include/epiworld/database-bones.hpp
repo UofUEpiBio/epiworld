@@ -163,6 +163,7 @@ public:
     void record_variant(Virus<TSeq> * v); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void set_model(Model<TSeq> & m);
+    Model<TSeq> * get_model();
     void record();
 
     const std::vector< TSeq > & get_sequence() const;

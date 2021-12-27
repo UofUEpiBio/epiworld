@@ -88,16 +88,68 @@ inline Virus<TSeq> & Person<TSeq>::get_virus(int i) {
 }
 
 template<typename TSeq>
+inline PersonTools<TSeq> & Person<TSeq>::get_tools() {
+    return tools;
+}
+
+template<typename TSeq>
+inline Tool<TSeq> & Person<TSeq>::get_tool(int i) {
+    return tools(i);
+}
+
+template<typename TSeq>
 inline void Person<TSeq>::mutate_variant() {
     viruses.mutate();
 }
 
 template<typename TSeq>
 inline void Person<TSeq>::add_neighbor(
-    Person<TSeq> * p
+    Person<TSeq> * p,
+    bool check_source,
+    bool check_target
 ) {
-    neighbors.push_back(p);
-    p->neighbors.push_back(this);
+    // Can we find the neighbor?
+    if (check_source)
+    {
+
+        bool found = false;
+        for (auto & n: neighbors)    
+            if (n->get_id() == p->get_id())
+            {
+                found = true;
+                break;
+            }
+
+        if (!found)
+            neighbors.push_back(p);
+
+    } else 
+        neighbors.push_back(p);
+
+    if (check_target)
+    {
+
+        bool found = false;
+        for (auto & n: p->neighbors)
+            if (n->get_id() == id)
+            {
+                found = true;
+                break;
+            }
+
+        if (!found)
+            p->neighbors.push_back(this);
+    
+    } else 
+        p->neighbors.push_back(this);
+    
+
+}
+
+template<typename TSeq>
+inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
+{
+    return neighbors;
 }
 
 template<typename TSeq>

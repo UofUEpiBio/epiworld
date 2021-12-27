@@ -50,6 +50,7 @@ private:
 public:
 
     Model() {};
+    Model(const Model<TSeq> & m);
 
     DataBase<TSeq> & get_db();
     std::vector< Person<TSeq> > * get_persons();
@@ -105,6 +106,8 @@ public:
 
     void reset();
     void print() const;
+
+    Model<TSeq> && clone() const;
 
 };
 

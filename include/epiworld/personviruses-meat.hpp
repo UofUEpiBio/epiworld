@@ -68,4 +68,9 @@ inline void PersonViruses<TSeq>::deactivate(Virus<TSeq> & v)
 
 }
 
+template<typename TSeq>
+inline Person<TSeq> * PersonViruses<TSeq>::get_host() {
+    return host;
+}
+
 #endif

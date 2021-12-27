@@ -36,9 +36,9 @@ class Tool {
 private:
 
     Person<TSeq> * person;
-    TSeq sequence_unique;
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
+    TSeq sequence_unique  = default_sequence<TSeq>();
     ToolFun<TSeq> efficacy        = nullptr;
     ToolFun<TSeq> transmisibility = nullptr;
     ToolFun<TSeq> recovery        = nullptr;
@@ -113,6 +113,8 @@ public:
     double par(std::string pname);
     double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
     ///@]
+
+    Person<TSeq> * get_person();
 
 };
 

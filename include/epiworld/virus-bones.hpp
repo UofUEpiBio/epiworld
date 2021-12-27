@@ -23,7 +23,6 @@ using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 template<typename TSeq>
 using PostRecFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
-
 /**
  * @brief Virus
  * 
@@ -39,8 +38,8 @@ class Virus {
     friend class PersonViruses<TSeq>;
     friend class DataBase<TSeq>;
 private:
-    std::shared_ptr<TSeq> baseline_sequence;
     Person<TSeq> * host;
+    std::shared_ptr<TSeq> baseline_sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
     int id   = -99;

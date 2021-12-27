@@ -5,6 +5,58 @@
         throw std::logic_error("Model not initialized.");
 
 template<typename TSeq>
+inline Model<TSeq>::Model(const Model<TSeq> & model) :
+    db(model.db),
+    persons(model.persons),
+    persons_ids(model.persons_ids),
+    viruses(model.viruses),
+    prevalence_virus(model.prevalence_virus),
+    tools(model.tools),
+    prevalence_tool(model.prevalence_tool),
+    engine(model.engine),
+    runifd(model.runifd),
+    parameters(model.parameters),
+    ndays(model.ndays),
+    pb(model.pb),
+    verbose(model.verbose),
+    initialized(model.initialized),
+    current_date(model.current_date)
+{
+
+    // Pointing to the right place
+    db.set_model(*this);
+
+    // Removing old neighbors
+    for (auto & p: persons)
+        p.neighbors.clear();
+    
+    // Rechecking individuals
+    for (unsigned int p = 0u; p < size(); ++p)
+    {
+        // Making room
+        const Person<TSeq> & person_this = model.persons[p];
+        Person<TSeq> & person_res  = persons[p];
+
+        // Person pointing to the right model and person
+        person_res.model        = this;
+        person_res.viruses.host = &person_res;
+        person_res.tools.person = &person_res;
+
+        // Readding
+        std::vector< Person<TSeq> * > neigh = person_this.neighbors;
+        for (unsigned int n = 0u; n < neigh.size(); ++n)
+        {
+            // Point to the right neighbors
+            int loc = persons_ids[neigh[n]->get_id()];
+            person_res.add_neighbor(&persons[loc], true, true);
+
+        }
+
+    }
+
+}
+
+template<typename TSeq>
 inline DataBase<TSeq> & Model<TSeq>::get_db()
 {
     return db;
@@ -131,7 +183,7 @@ inline void Model<TSeq>::seed(unsigned int s) {
 template<typename TSeq>
 inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 {
-
+    
     viruses.push_back(v);
     prevalence_virus.push_back(preval);
 
@@ -179,7 +231,10 @@ inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
             if (persons_ids.find(link.first) == persons_ids.end())
                 persons_ids[link.first] = persons_ids.size();
 
-            persons[loc].add_neighbor(&persons[persons_ids[link.first]]);
+            persons[loc].add_neighbor(
+                &persons[persons_ids[link.first]],
+                true, true
+                );
         }
 
     }
@@ -439,6 +494,49 @@ inline void Model<TSeq>::print() const
 
 
     return;
+
+}
+
+template<typename TSeq>
+inline Model<TSeq> && Model<TSeq>::clone() const {
+
+    // Step 1: Regen the individuals and make sure that:
+    //  - Neighbors point to the right place
+    //  - DB is pointing to the right place
+    Model<TSeq> res(*this);
+
+    // Pointing to the right place
+    res.get_db().set_model(res);
+
+    // Removing old neighbors
+    for (auto & p: res.persons)
+        p.neighbors.clear();
+    
+    // Rechecking individuals
+    for (unsigned int p = 0u; p < size(); ++p)
+    {
+        // Making room
+        const Person<TSeq> & person_this = persons[p];
+        Person<TSeq> & person_res  = res.persons[p];
+
+        // Person pointing to the right model and person
+        person_res.model        = &res;
+        person_res.viruses.host = &person_res;
+        person_res.tools.person = &person_res;
+
+        // Readding
+        std::vector< Person<TSeq> * > neigh = person_this.neighbors;
+        for (unsigned int n = 0u; n < neigh.size(); ++n)
+        {
+            // Point to the right neighbors
+            int loc = res.persons_ids[neigh[n]->get_id()];
+            person_res.add_neighbor(&res.persons[loc], true, true);
+
+        }
+
+    }
+
+    return res;
 
 }
 

@@ -47,8 +47,17 @@ public:
     Virus<TSeq> & get_virus(int i);
     PersonViruses<TSeq> & get_viruses();
 
+    Tool<TSeq> & get_tool(int i);
+    PersonTools<TSeq> & get_tools();
+
     void mutate_variant();
-    void add_neighbor(Person<TSeq> * p);
+    void add_neighbor(
+        Person<TSeq> * p,
+        bool check_source = true,
+        bool check_target = true
+        );
+
+    std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
     int get_status() const;
