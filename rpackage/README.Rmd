@@ -48,7 +48,7 @@ add_tool_vaccine(m, !geneseq, .5)
 add_tool_mask(m, !geneseq, .25)
 
 # And the virus
-add_virus_covid19(m, geneseq, .05)
+add_virus_covid19(m, geneseq, .05, mutrate = 0.0)
 
 # Adding people
 set.seed(1231)
@@ -58,7 +58,7 @@ edges <- igraph::as_edgelist(net)
 edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)
 
 # Virus and tools are distributed
-init_epi_model(m, 100, 123)
+init_epi_model(m, 60, 123)
 
 # We can get information about the model
 m
@@ -90,7 +90,7 @@ ans <- parallel::mclapply(1:100, function(i) {
     ndeceased  = get_hist_variant(m, "ndeceased")
   )
   
-}, mc.cores = 1L)
+}, mc.cores = 6L)
 
 ans <- do.call(rbind, ans)
 ```

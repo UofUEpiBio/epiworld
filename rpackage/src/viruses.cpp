@@ -47,7 +47,7 @@ EPI_RECFUN(post_covid, TSEQ) {
   epiworld::Tool<TSEQ> immunity;
   immunity.set_sequence(*v->get_sequence());
   immunity.set_efficacy(post_rec_efficacy);
-  immunity.set_param("Immune sys learning rate", *m);
+  // immunity.set_param("Immune sys learning rate", *m);
   immunity.set_param("post-covid immunity", *m);
   
   p->add_tool(m->today(), immunity);

@@ -8,9 +8,8 @@
  */
 template<typename TSeq>
 class PersonTools {
-    friend class Virus<TSeq>;
-    friend class Tool<TSeq>;
     friend class Person<TSeq>;
+    friend class Model<TSeq>;
 
 private:
     Person<TSeq> * person; 

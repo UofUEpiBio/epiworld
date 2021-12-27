@@ -11,6 +11,11 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 }
 
 template<typename TSeq>
+inline Model<TSeq> * DataBase<TSeq>::get_model() {
+    return model;
+}
+
+template<typename TSeq>
 inline const std::vector< TSeq > & DataBase<TSeq>::get_sequence() const {
     return sequence;
 }

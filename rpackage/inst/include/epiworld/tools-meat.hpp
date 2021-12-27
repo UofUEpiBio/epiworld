@@ -226,6 +226,12 @@ inline double Tool<TSeq>::par(std::string pname)
     return person->model->params()[pname];
 }
 
+template<typename TSeq>
+inline Person<TSeq> * Tool<TSeq>::get_person()
+{
+    return person;
+}
+
 #undef CASES_PAR
 #undef CASE_PAR
 #undef DEFAULT_EFFICACY

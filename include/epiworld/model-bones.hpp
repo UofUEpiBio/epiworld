@@ -51,6 +51,8 @@ public:
 
     Model() {};
     Model(const Model<TSeq> & m);
+    Model(Model<TSeq> && m) = delete;
+    Model<TSeq> & operator=(const Model<TSeq> & m) = delete;
 
     DataBase<TSeq> & get_db();
     std::vector< Person<TSeq> > * get_persons();
