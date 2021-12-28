@@ -5,6 +5,13 @@
     #define printf_epiworld fflush(stdout);printf
 #endif
 
+#ifdef EPIWORLD_USE_OMP
+    #include <omp.h>
+#else
+
+#endif
+
+
 // #define EPIWORLD_TIMING 1
 #ifdef EPIWORLD_TIMING
     #include <chrono>

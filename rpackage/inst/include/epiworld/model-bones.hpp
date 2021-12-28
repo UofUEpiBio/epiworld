@@ -38,7 +38,7 @@ private:
     std::shared_ptr< std::mt19937 > engine;
     std::shared_ptr< std::uniform_real_distribution<> > runifd;
     std::map<std::string, double > parameters;
-    int ndays;
+    unsigned int ndays;
     Progress pb;
     bool verbose     = true;
     bool initialized = false;
@@ -60,7 +60,7 @@ public:
     double & operator()(std::string pname);
 
     size_t size() const;
-    void init(int seed, int ndays);
+    void init(unsigned int seed, unsigned int ndays);
 
     /**
      * @brief Random number generation
@@ -88,7 +88,8 @@ public:
     int get_nvariants() const;
     const std::vector< TSeq > & get_variant_sequence() const;
     const std::vector< int > & get_variant_nifected() const;
-    int get_ndays() const;
+    unsigned int get_ndays() const;
+    void set_ndays(unsigned int ndays);
     bool get_verbose() const;
     void verbose_off();
     void verbose_on();

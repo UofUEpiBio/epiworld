@@ -23,6 +23,7 @@ private:
     PersonViruses<TSeq> viruses;
     PersonTools<TSeq> tools;
     std::vector< Person<TSeq> * > neighbors;
+    unsigned int index; ///< Location in the Model
     int status_next = STATES::HEALTHY; // Placeholder
     int status      = STATES::HEALTHY;
     int id          = -1;

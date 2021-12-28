@@ -4,6 +4,7 @@
 # epiworld
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The goal of epiworld is to …
@@ -43,7 +44,7 @@ add_tool_vaccine(m, !geneseq, .5)
 add_tool_mask(m, !geneseq, .25)
 
 # And the virus
-add_virus_covid19(m, geneseq, .05)
+add_virus_covid19(m, geneseq, .05, mutrate = 0.0)
 
 # Adding people
 set.seed(1231)
@@ -53,12 +54,12 @@ edges <- igraph::as_edgelist(net)
 edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)
 
 # Virus and tools are distributed
-init_epi_model(m, 100, 123)
+init_epi_model(m, 60, 123)
 
 # We can get information about the model
 m
 #> Population size   : 1000
-#> Days (duration)   : 0 (of 100)
+#> Days (duration)   : 0 (of 60)
 #> Number of variants: 1
 #> 
 #> Virus(es):
@@ -78,7 +79,7 @@ m
 #>  - Total # of recoveries : 0
 #> 
 #> Model parameters:
-#>  - covid19 mutation rate  : 5.0e-05
+#>  - covid19 mutation rate  : 0.0e+00
 #>  - immune death           : 0.0010
 #>  - immune efficacy        : 0.1000
 #>  - immune recovery        : 0.1000
@@ -98,8 +99,8 @@ run_epi_model(m)
 #> ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
 m
 #> Population size   : 1000
-#> Days (duration)   : 100 (of 100)
-#> Number of variants: 3
+#> Days (duration)   : 60 (of 60)
+#> Number of variants: 1
 #> 
 #> Virus(es):
 #>  - COVID19 (baseline prevalence: 0.05)
@@ -109,16 +110,16 @@ m
 #>  - Face masks (baseline prevalence: 0.25)
 #> 
 #> Statistics:
-#>  - Total variants active : 3
+#>  - Total variants active : 1
 #> 
-#>  - Total healthy         : 377
-#>  - Total infected        : 590
-#>  - Total deceased        : 33
+#>  - Total healthy         : 359
+#>  - Total infected        : 619
+#>  - Total deceased        : 22
 #> 
-#>  - Total # of recoveries : 11047
+#>  - Total # of recoveries : 5913
 #> 
 #> Model parameters:
-#>  - covid19 mutation rate  : 5.0e-05
+#>  - covid19 mutation rate  : 0.0e+00
 #>  - immune death           : 0.0010
 #>  - immune efficacy        : 0.1000
 #>  - immune recovery        : 0.1000
@@ -153,7 +154,7 @@ ans <- parallel::mclapply(1:100, function(i) {
     ndeceased  = get_hist_variant(m, "ndeceased")
   )
   
-}, mc.cores = 1L)
+}, mc.cores = 6L)
 
 ans <- do.call(rbind, ans)
 ```

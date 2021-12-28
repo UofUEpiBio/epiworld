@@ -54,6 +54,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
     }
 
+    // Finally, seeds are resetted automatically based on the original
+    // engine
+    seed(floor(model.runifd() * UINT_MAX));
+
 }
 
 template<typename TSeq>
@@ -90,7 +94,10 @@ inline size_t Model<TSeq>::size() const {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::init(int ndays, int seed) {
+inline void Model<TSeq>::init(
+    unsigned int ndays,
+    unsigned int seed
+    ) {
 
     EPIWORLD_CLOCK_START("(00) Init model")
 
@@ -99,7 +106,6 @@ inline void Model<TSeq>::init(int ndays, int seed) {
 
     // Setting up the number of steps
     this->ndays = ndays;
-    // pb = Progress(ndays, 80);
 
     // Initializing persons
     for (auto & p : persons)
@@ -107,13 +113,6 @@ inline void Model<TSeq>::init(int ndays, int seed) {
         p.model = this;
         p.init();
     }
-
-    // // Has to happen after setting the persons
-    // db.set_model(*this);
-
-    // // Recording variants
-    // for (Virus<TSeq> & v : viruses)
-    //     record_variant(&v);
 
     if (!engine)
         engine = std::make_shared< std::mt19937 >();
@@ -127,8 +126,6 @@ inline void Model<TSeq>::init(int ndays, int seed) {
 
     // Starting first infection and tools
     reset();
-    // dist_virus();
-    // dist_tools();
 
     EPIWORLD_CLOCK_END("(00) Init model")
 
@@ -225,11 +222,16 @@ inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
 
         persons[loc].model = this;
         persons[loc].id    = n.first;
+        persons[loc].index = loc;
 
         for (const auto & link: n.second)
         {
             if (persons_ids.find(link.first) == persons_ids.end())
                 persons_ids[link.first] = persons_ids.size();
+
+            unsigned int loc_link   = persons_ids[link.first];
+            persons[loc_link].id    = link.first;
+            persons[loc_link].index = loc_link;
 
             persons[loc].add_neighbor(
                 &persons[persons_ids[link.first]],
@@ -310,8 +312,13 @@ inline const std::vector<int> & Model<TSeq>::get_variant_nifected() const {
 }
 
 template<typename TSeq>
-inline int Model<TSeq>::get_ndays() const {
+inline unsigned int Model<TSeq>::get_ndays() const {
     return ndays;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_ndays(unsigned int ndays) {
+    this->ndays = ndays;
 }
 
 template<typename TSeq>
@@ -334,41 +341,58 @@ inline void Model<TSeq>::rewire_degseq(int nrewires)
 {
 
     // Only swap if needed
-    int n = persons.size();
+    int N = persons.size();
     while (nrewires-- > 0)
     {
 
         // Picking egos
-        int id0 = std::floor(runif()*n);
+        int id0 = std::floor(runif() * N);
         if (persons[id0].neighbors.size() == 0u)
             continue;
 
         Person<TSeq> & p0 = persons[id0];
 
-        int id1 = std::floor(runif()*n - 1);     
+        int id1 = std::floor(runif() * N - 1);     
 
+        // Correcting for under or overflow.
         if (id1 < 0)
             id1 = 0;
 
         if (id1 == id0)
             id1++;
 
+        // If the same chose, then keep going.
         if (persons[id1].neighbors.size() == 1u)
             continue;
         
         Person<TSeq> & p1 = persons[id1];
 
-        // Picking alters
+        // Picking alters (relative location in their lists)
         int id01 = std::floor(p0.neighbors.size() * runif());
         int id11 = std::floor(p1.neighbors.size() * runif());
 
-        // // Finding what neighbour is id0
-        // int id0_in_id01 = 0;
-        // for (auto n : persons[id0].neighbors->neighbors)
-        //     if (persons[id0].id != id0_in_id01)
+        // When rewiring, we need to flip the individuals from the other
+        // end as well, since we are dealing withi an undirected graph
+
+        // Finding what neighbour is id0
+        unsigned int n0,n1;
+        Person<TSeq> & p01 = persons[p0.neighbors[id01]->index];
+        for (n0 = 0; n0 < p01.neighbors.size(); ++n0)
+        {
+            if (p0.id == p01.neighbors[n0]->get_id())
+                break;            
+        }
+
+        Person<TSeq> & p11 = persons[p1.neighbors[id11]->index];
+        for (n1 = 0; n1 < p11.neighbors.size(); ++n1)
+        {
+            if (p1.id == p11.neighbors[n1]->get_id())
+                break;            
+        }
 
         // Moving alter first
         std::swap(p0.neighbors[id01], p1.neighbors[id11]);
+        std::swap(p01.neighbors[n0], p11.neighbors[n1]);
         
     }
 

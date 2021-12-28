@@ -38,7 +38,7 @@ private:
     std::shared_ptr< std::mt19937 > engine;
     std::shared_ptr< std::uniform_real_distribution<> > runifd;
     std::map<std::string, double > parameters;
-    int ndays;
+    unsigned int ndays;
     Progress pb;
     bool verbose     = true;
     bool initialized = false;
@@ -60,7 +60,7 @@ public:
     double & operator()(std::string pname);
 
     size_t size() const;
-    void init(int seed, int ndays);
+    void init(unsigned int seed, unsigned int ndays);
 
     /**
      * @brief Random number generation
@@ -88,11 +88,23 @@ public:
     int get_nvariants() const;
     const std::vector< TSeq > & get_variant_sequence() const;
     const std::vector< int > & get_variant_nifected() const;
-    int get_ndays() const;
+    unsigned int get_ndays() const;
+    void set_ndays(unsigned int ndays);
     bool get_verbose() const;
     void verbose_off();
     void verbose_on();
 
+    /**
+     * @brief Rewire the network preserving the degree sequence.
+     *
+     * @details This implementation assumes an undirected network,
+     * thus if {(i,j), (k,l)} -> {(i,l), (k,j)}, the reciprocal
+     * is also true, i.e., {(j,i), (l,k)} -> {(j,k), (l,i)}.
+     * 
+     * @param nrewires Number of rewires (or tries).
+     * 
+     * @result A rewired version of the network.
+     */
     void rewire_degseq(int nrewires);
 
     void write_data(

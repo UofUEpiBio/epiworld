@@ -45,6 +45,6 @@
     { \
         printf_epiworld("Running the model...\n");\
     } \
-    for (int niter = 0; niter < a.get_ndays(); ++niter)
+    for (unsigned int niter = 0; niter < a.get_ndays(); ++niter)
 
 #endif
