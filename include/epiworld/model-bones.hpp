@@ -44,6 +44,10 @@ private:
     bool initialized = false;
     int current_date = 0;
 
+    // std::vector< int > states_susceptible = {STATES::HEALTHY, STATES::RECOVERED};
+    // std::vector< int > states_infected    = {STATES::INFECTED, STATES::INCUBATION, STATES::ASYMPTOMATIC, STATES::CRITICAL};
+    // std::vector< int > states_removed;
+
     void dist_tools();
     void dist_virus();
 
@@ -107,9 +111,19 @@ public:
      */
     void rewire_degseq(int nrewires);
 
+    /**
+     * @brief Wrapper of `DataBase::write_data`
+     * 
+     * @param fn_variant_info 
+     * @param fn_variant_hist 
+     * @param fn_total_hist 
+     * @param fn_transmission 
+     */
     void write_data(
-        std::string fn_variant,
-        std::string fn_total
+        std::string fn_variant_info,
+        std::string fn_variant_hist,
+        std::string fn_total_hist,
+        std::string fn_transmission
         ) const;
 
     void write_edgelist(

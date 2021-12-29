@@ -402,10 +402,14 @@ inline void Model<TSeq>::rewire_degseq(int nrewires)
 
 template<typename TSeq>
 inline void Model<TSeq>::write_data(
-    std::string fn_variant,
-    std::string fn_total
+    std::string fn_variant_info,
+    std::string fn_variant_hist,
+    std::string fn_total_hist,
+    std::string fn_transmission
     ) const
 {
+
+    db.write_data(fn_variant_info,fn_variant_hist,fn_total_hist,fn_transmission);
 
 }
 
