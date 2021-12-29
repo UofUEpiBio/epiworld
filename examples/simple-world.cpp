@@ -9,15 +9,6 @@
 #define DAT std::vector<bool>
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
 
-enum epipar {
-    MUTATION_PROB,
-    VACCINE_EFFICACY,
-    IMMUNE_EFFICACY,
-    VARIANT_MORTALITY,
-    BASELINE_INFECCTIOUSNESS,
-    IMMUNE_LEARN_RATE
-};
-
 // Defining mutation and transmission functions
 EPI_MUTFUN(covid19_mut, DAT) {
     
@@ -222,7 +213,7 @@ int main(int argc, char* argv[]) {
     EPIWORLD_CLOCK_END("(01) Run model")
 
     // Writing off the results
-    model.get_db().write_data(
+    model.write_data(
         "variants_info.txt",
         "variants.txt",
         "total.txt",

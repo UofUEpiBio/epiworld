@@ -152,8 +152,11 @@ inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
     return neighbors;
 }
 
+
+
 template<typename TSeq>
-inline void Person<TSeq>::update_status() {
+inline void Person<TSeq>::update_status()
+{
 
     // No change if deceased
     if (status == STATES::DECEASED)
@@ -279,7 +282,7 @@ inline void Person<TSeq>::update_status() {
         {
             
             model->get_db().up_deceased(vptr);
-            status_next = DECEASED;
+            status_next = STATES::DECEASED;
             return;
 
         } 
@@ -290,7 +293,7 @@ inline void Person<TSeq>::update_status() {
             // Updating db and running actions
             model->get_db().up_recovered(vptr);
 
-            status_next = RECOVERED;
+            status_next = STATES::RECOVERED;
 
             // Checking if something happens after recovery
             // (e.g., full immunity)

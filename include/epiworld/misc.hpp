@@ -70,5 +70,14 @@ inline std::vector<double> default_sequence() {
 }
 ///@]
 
+template<typename Ta>
+inline bool IN(Ta & a, std::vector< Ta > & b)
+{
+    for (auto & i : b)
+        if (a == b)
+            return true;
+
+    return false;
+}
 
 #endif

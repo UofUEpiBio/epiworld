@@ -60,14 +60,25 @@
 
 EPIWORLD_CLOCK_SETUP()
 
+/**
+ * @brief List of possible states in the model
+ * 
+ * @details Currently, only `DECEASED`, `INFECTED`, `RECOVERED`, and `HEALTHY` are used.
+ * 
+ */
 enum STATES {
-    DECEASED,
-    INFECTED,
+    // States where individuals can acquire a new disease
     HEALTHY,
     RECOVERED,
+    // States related to the disease (so they can recover)
     INCUBATION,
     ASYMPTOMATIC,
-    ISOLATED
+    INFECTED,
+    ISOLATED,
+    CRITICAL,
+    // States in which individuals have no effect in the model
+    REMOVED,
+    DECEASED
 };
 
 
