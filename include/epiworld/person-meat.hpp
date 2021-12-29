@@ -159,10 +159,10 @@ inline void Person<TSeq>::update_status()
 {
 
     // No change if deceased
-    if (status == STATES::DECEASED)
+    if (status == STATUS::DECEASED)
         return;
 
-    if ((status == STATES::HEALTHY) | (status == STATES::RECOVERED))
+    if ((status == STATUS::HEALTHY) | (status == STATUS::RECOVERED))
     {
         // Step 1: Compute the individual efficcacy
         std::vector< double > probs;
@@ -179,7 +179,7 @@ inline void Person<TSeq>::update_status()
             Person<TSeq> * neighbor = neighbors[n];
 
             // Non-infected individuals make no difference
-            if ((neighbor->get_status() != STATES::INFECTED) & (neighbor->get_status() != STATES::ASYMPTOMATIC))
+            if ((neighbor->get_status() != STATUS::INFECTED) & (neighbor->get_status() != STATUS::ASYMPTOMATIC))
                 continue;
 
             PersonViruses<TSeq> & nviruses = neighbor->get_viruses();
@@ -267,7 +267,7 @@ inline void Person<TSeq>::update_status()
             
         }
 
-    } else if (status == STATES::INFECTED)
+    } else if (status == STATUS::INFECTED)
     {
 
         Virus<TSeq> * vptr = &viruses(0u);
@@ -282,7 +282,7 @@ inline void Person<TSeq>::update_status()
         {
             
             model->get_db().up_deceased(vptr);
-            status_next = STATES::DECEASED;
+            status_next = STATUS::DECEASED;
             return;
 
         } 
@@ -293,7 +293,7 @@ inline void Person<TSeq>::update_status()
             // Updating db and running actions
             model->get_db().up_recovered(vptr);
 
-            status_next = STATES::RECOVERED;
+            status_next = STATUS::RECOVERED;
 
             // Checking if something happens after recovery
             // (e.g., full immunity)
@@ -321,8 +321,8 @@ inline void Person<TSeq>::reset() {
 
     this->viruses.reset();
     this->tools.reset();
-    this->status      = STATES::HEALTHY;
-    this->status_next = STATES::HEALTHY;
+    this->status      = STATUS::HEALTHY;
+    this->status_next = STATUS::HEALTHY;
 
 }
 

@@ -270,7 +270,7 @@ inline void Model<TSeq>::update_status() {
 
     // Making the change effective
     for (auto & p: persons)
-        if (p.status != STATES::DECEASED)
+        if (p.status != STATUS::DECEASED)
             p.status = p.status_next;
 
 }
@@ -567,6 +567,132 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     return res;
 
 }
+
+#define EPIWORLD_CHECK_STATUS(a, b) \
+    for (auto & i : b) \
+        if (a == i) \
+            throw std::logic_error("The status " + std::to_string(i) + " already exists."); 
+#define EPIWORLD_CHECK_ALL_STATUSES(a) \
+    EPIWORLD_CHECK_STATUS(a, status_susceptible) \
+    EPIWORLD_CHECK_STATUS(a, status_infected) \
+    EPIWORLD_CHECK_STATUS(a, states_recovered)
+
+template<typename TSeq>
+inline void Model<TSeq>::add_status_susceptible(int s, std::string lab)
+{
+
+    EPIWORLD_CHECK_ALL_STATUSES(s)
+    status_susceptible.push_back(s);
+    status_susceptible_labels.push_back(lab);
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_status_infected(int s, std::string lab)
+{
+
+    EPIWORLD_CHECK_ALL_STATUSES(s)
+    status_infected.push_back(s);
+    status_infected_labels.push_back(lab);
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_status_removed(int s, std::string lab)
+{
+
+    EPIWORLD_CHECK_ALL_STATUSES(s)
+    status_removed.push_back(s);
+    status_removed_labels.push_back(lab);
+
+}
+
+#define EPIWORLD_NEW_STATUS_CODE(a) \
+    int a = INT_MIN; \
+    for (auto & p : status_susceptible) \
+        if (a < p) a = p + 1; \
+    for (auto & p : status_infected) \
+        if (a < p) a = p + 1; \
+    for (auto & p : status_removed) \
+        if (a < p) a = p + 1;
+
+template<typename TSeq>
+inline void Model<TSeq>::add_status_susceptible(std::string lab)
+{
+    EPIWORLD_NEW_STATUS_CODE(new_status)
+    status_susceptible.push_back(new_status);
+    status_susceptible_labels.push_back(lab);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_status_infected(std::string lab)
+{
+    EPIWORLD_NEW_STATUS_CODE(new_status)
+    status_infected.push_back(new_status);
+    status_infected_labels.push_back(lab);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_status_removed(std::string lab)
+{
+    EPIWORLD_NEW_STATUS_CODE(new_status)
+    status_removed.push_back(new_status);
+    status_removed_labels.push_back(lab);
+}
+
+#define EPIWORLD_COLLECT_STATUSES(out,id,lab) \
+    std::vector< std::pair<int, std::string> > out; \
+    for (unsigned int i = 0; i < id.size(); ++i) \
+        out.push_back( \
+            std::pair<int,std::string>( \
+                id[i], lab[i] \
+            ) \
+        );
+
+template<typename TSeq>
+inline std::vector< std::pair<int,std::string> >
+Model<TSeq>::get_status_susceptible() const
+{
+
+    EPIWORLD_COLLECT_STATUSES(
+        res,
+        status_susceptible,
+        status_susceptible_labels
+        )
+    
+    return res;
+}
+
+template<typename TSeq>
+inline std::vector< std::pair<int,std::string> >
+Model<TSeq>::get_status_infected() const
+{
+    EPIWORLD_COLLECT_STATUSES(
+        res,
+        status_infected,
+        status_infected_labels
+        )
+
+    return res;
+}
+
+template<typename TSeq>
+inline std::vector< std::pair<int,std::string> >
+Model<TSeq>::get_status_removed() const
+{
+    EPIWORLD_COLLECT_STATUSES(
+        res,
+        status_removed,
+        status_removed_labels
+        )
+
+    return res;
+}
+
+#undef EPIWORLD_CHECK_STATE
+#undef EPIWORLD_CHECK_ALL_STATES
+#undef EPIWORLD_NEW_STATE_CODE
+#undef EPIWORLD_COLLECT_STATUSES
 
 #undef CHECK_INIT
 #endif

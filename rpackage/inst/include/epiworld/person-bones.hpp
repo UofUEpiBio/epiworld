@@ -24,8 +24,8 @@ private:
     PersonTools<TSeq> tools;
     std::vector< Person<TSeq> * > neighbors;
     unsigned int index; ///< Location in the Model
-    int status_next = STATES::HEALTHY; // Placeholder
-    int status      = STATES::HEALTHY;
+    int status_next = STATUS::HEALTHY; // Placeholder
+    int status      = STATUS::HEALTHY;
     int id          = -1;
 
 public:

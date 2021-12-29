@@ -67,18 +67,9 @@ EPIWORLD_CLOCK_SETUP()
  * 
  */
 enum STATES {
-    // States where individuals can acquire a new disease
     HEALTHY,
-    RECOVERED,
-    // States related to the disease (so they can recover)
-    INCUBATION,
-    ASYMPTOMATIC,
     INFECTED,
-    ISOLATED,
-    CRITICAL,
-    // States in which individuals have no effect in the model
-    REMOVED,
-    DECEASED
+    REMOVED
 };
 
 

@@ -1,14 +1,27 @@
 #ifndef EPIWORLD_ROULETTE_HPP 
 #define EPIWORLD_ROULETTE_HPP
+
+template<typename TSeq>
+class Model;
+
 /**
- * @brief Weighted sampling
+ * @brief Conditional Weighted Sampling
+ * 
+ * @details 
+ * The sampling function will draw one of `{-1, 0,...,probs.size() - 1}` in a
+ * weighted fashion. The probabilities are drawn given that either one or none
+ * of the cases is drawn; in the latter returns -1.
  * 
  * @param probs Vector of probabilities.
+ * @param m A `Model`. This is used to draw random uniform numbers.
  * @return int If -1 then it means that none got sampled, otherwise the index
  * of the entry that got drawn.
  */
 template<typename TSeq>
-inline int roulette(const std::vector< double > & probs, Model<TSeq> * m)
+inline int roulette(
+    const std::vector< double > & probs,
+    Model<TSeq> * m
+    )
 {
 
     // Step 1: Computing the prob on none 
@@ -54,7 +67,6 @@ inline int roulette(const std::vector< double > & probs, Model<TSeq> * m)
 
     return static_cast<int>(probs.size() - 1u);
 
-
 }
 
 template<typename TSeq>
@@ -73,7 +85,7 @@ inline int roulette_state(Person<TSeq> * p, Model<TSeq> * m)
         Person<TSeq> * neighbor = p->neighbors[n];
 
         // Non-infected individuals make no difference
-        if ((neighbor->get_status() != STATES::INFECTED) & (neighbor->get_status() != STATES::ASYMPTOMATIC))
+        if ((neighbor->get_status() != STATUS::INFECTED) & (neighbor->get_status() != STATUS::ASYMPTOMATIC))
             continue;
 
         PersonViruses<TSeq> & nviruses = neighbor->get_viruses();
@@ -116,7 +128,7 @@ inline int roulette_state(Person<TSeq> * p, Model<TSeq> * m)
         variants[which]->get_id()
     );
 
-    return STATES::INFECTED; 
+    return STATUS::INFECTED; 
 }
 
 #endif

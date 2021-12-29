@@ -270,7 +270,7 @@ inline void Model<TSeq>::update_status() {
 
     // Making the change effective
     for (auto & p: persons)
-        if (p.status != STATES::DECEASED)
+        if (p.status != STATUS::DECEASED)
             p.status = p.status_next;
 
 }

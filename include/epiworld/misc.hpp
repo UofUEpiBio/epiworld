@@ -70,6 +70,14 @@ inline std::vector<double> default_sequence() {
 }
 ///@]
 
+/**
+ * @brief Check whether `a` is included in `b`
+ * 
+ * @tparam Ta Type of `a`. Could be int, double, etc.
+ * @param a Scalar of class `Ta`.
+ * @param b Vector `std::vector` of class `Ta`.
+ * @return `true` if `a in b`, and `false` otherwise.
+ */
 template<typename Ta>
 inline bool IN(Ta & a, std::vector< Ta > & b)
 {

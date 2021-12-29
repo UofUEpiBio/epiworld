@@ -40,13 +40,17 @@ private:
     std::map<std::string, double > parameters;
     unsigned int ndays;
     Progress pb;
+
+    std::vector< int > status_susceptible;
+    std::vector< std::string > status_susceptible_labels;
+    std::vector< int > status_infected;
+    std::vector< std::string > status_infected_labels;
+    std::vector< int > status_removed;
+    std::vector< std::string > status_removed_labels;
+    
     bool verbose     = true;
     bool initialized = false;
     int current_date = 0;
-
-    // std::vector< int > states_susceptible = {STATES::HEALTHY, STATES::RECOVERED};
-    // std::vector< int > states_infected    = {STATES::INFECTED, STATES::INCUBATION, STATES::ASYMPTOMATIC, STATES::CRITICAL};
-    // std::vector< int > states_removed;
 
     void dist_tools();
     void dist_virus();
@@ -136,6 +140,35 @@ public:
     void print() const;
 
     Model<TSeq> && clone() const;
+
+    /**
+     * @brief Adds extra statuses to the model
+     * 
+     * @details
+     * Adding values of `s` that are already present in the model will
+     * result in an error.
+     * 
+     * The functions `get_status_*` return the current values for the 
+     * statuses included in the model.
+     * 
+     * @param s `int` Code of the status
+     * @param lab `std::string` Name of the status.
+     * 
+     * @return `add_status*` returns nothing.
+     * @return `get_status_*` returns a vector of pairs with the 
+     * statuses and their labels.
+     */
+    ///@[
+    void add_status_susceptible(int s, std::string lab);
+    void add_status_infected(int s, std::string lab);
+    void add_status_removed(int s, std::string lab);
+    void add_status_susceptible(std::string lab);
+    void add_status_infected(std::string lab);
+    void add_status_removed(std::string lab);
+    std::vector< std::pair<int,std::string> > get_status_susceptible() const;
+    std::vector< std::pair<int,std::string> > get_status_infected() const;
+    std::vector< std::pair<int,std::string> > get_status_removed() const;
+    ///@]
 
 };
 
