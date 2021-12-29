@@ -27,6 +27,9 @@ private:
     int status_next = STATUS::HEALTHY; // Placeholder
     int status      = STATUS::HEALTHY;
     int id          = -1;
+    std::function<int(Person<TSeq>*,Model<TSeq>*)> update_susceptible = default_update_susceptible<TSeq>;
+    std::function<int(Person<TSeq>*,Model<TSeq>*)> update_infected = default_update_infected<TSeq>;
+    std::function<int(Person<TSeq>*,Model<TSeq>*)> update_removed = nullptr;
 
 public:
 

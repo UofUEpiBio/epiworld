@@ -22,6 +22,7 @@ class DataBase;
 
 template<typename TSeq>
 class Model {
+    friend class Person<TSeq>;
 private:
 
     DataBase<TSeq> db;
@@ -41,12 +42,12 @@ private:
     unsigned int ndays;
     Progress pb;
 
-    std::vector< int > status_susceptible;
-    std::vector< std::string > status_susceptible_labels;
-    std::vector< int > status_infected;
-    std::vector< std::string > status_infected_labels;
-    std::vector< int > status_removed;
-    std::vector< std::string > status_removed_labels;
+    std::vector< int > status_susceptible = {STATUS::HEALTHY, STATUS::RECOVERED};
+    std::vector< std::string > status_susceptible_labels = {"healthy", "recovered"};
+    std::vector< int > status_infected = {STATUS::INFECTED};
+    std::vector< std::string > status_infected_labels = {"infected"};
+    std::vector< int > status_removed = {STATUS::REMOVED};
+    std::vector< std::string > status_removed_labels = {"removed"};
     
     bool verbose     = true;
     bool initialized = false;

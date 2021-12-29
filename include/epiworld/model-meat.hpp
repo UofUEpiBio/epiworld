@@ -270,7 +270,7 @@ inline void Model<TSeq>::update_status() {
 
     // Making the change effective
     for (auto & p: persons)
-        if (p.status != STATUS::DECEASED)
+        if (IN(p.status, status_removed))
             p.status = p.status_next;
 
 }
@@ -280,7 +280,7 @@ inline void Model<TSeq>::mutate_variant() {
 
     for (auto & p: persons)
     {
-        if (p.get_status() == INFECTED)
+        if (IN(p.get_status(), status_infected))
             p.mutate_variant();
 
     }
@@ -575,7 +575,7 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
 #define EPIWORLD_CHECK_ALL_STATUSES(a) \
     EPIWORLD_CHECK_STATUS(a, status_susceptible) \
     EPIWORLD_CHECK_STATUS(a, status_infected) \
-    EPIWORLD_CHECK_STATUS(a, states_recovered)
+    EPIWORLD_CHECK_STATUS(a, status_removed)
 
 template<typename TSeq>
 inline void Model<TSeq>::add_status_susceptible(int s, std::string lab)

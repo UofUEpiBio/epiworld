@@ -66,9 +66,10 @@ EPIWORLD_CLOCK_SETUP()
  * @details Currently, only `DECEASED`, `INFECTED`, `RECOVERED`, and `HEALTHY` are used.
  * 
  */
-enum STATES {
+enum STATUS {
     HEALTHY,
     INFECTED,
+    RECOVERED,
     REMOVED
 };
 

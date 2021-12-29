@@ -1,6 +1,12 @@
 #ifndef EPIWORLD_MISC_HPP 
 #define EPIWORLD_MISC_HPP
 
+template<typename TSeq>
+class Model;
+
+template<typename TSeq>
+class Person;
+
 // Relevant for anything using vecHasher function ------------------------------
 template <typename T>
 struct vecHasher {
@@ -79,13 +85,78 @@ inline std::vector<double> default_sequence() {
  * @return `true` if `a in b`, and `false` otherwise.
  */
 template<typename Ta>
-inline bool IN(Ta & a, std::vector< Ta > & b)
+inline bool IN(const Ta & a, const std::vector< Ta > & b)
 {
     for (auto & i : b)
-        if (a == b)
+        if (a == i)
             return true;
 
     return false;
+}
+
+/**
+ * @brief Conditional Weighted Sampling
+ * 
+ * @details 
+ * The sampling function will draw one of `{-1, 0,...,probs.size() - 1}` in a
+ * weighted fashion. The probabilities are drawn given that either one or none
+ * of the cases is drawn; in the latter returns -1.
+ * 
+ * @param probs Vector of probabilities.
+ * @param m A `Model`. This is used to draw random uniform numbers.
+ * @return int If -1 then it means that none got sampled, otherwise the index
+ * of the entry that got drawn.
+ */
+template<typename TSeq>
+inline int roulette(
+    const std::vector< double > & probs,
+    Model<TSeq> * m
+    )
+{
+
+    // Step 1: Computing the prob on none 
+    double p_none = 1.0;
+    std::vector< int > certain_infection;
+    for (unsigned int p = 0u; p < probs.size(); ++p)
+    {
+        p_none *= (1.0 - probs[p]);
+
+        if (probs[p] > (1 - 1e-100))
+            certain_infection.push_back(p);
+        
+    }
+
+    double r = m->runif();
+    // If there are one or more probs that go close to 1, sample
+    // uniformly
+    if (certain_infection.size() > 0)
+        return certain_infection[std::floor(r * certain_infection.size())];
+
+    // Step 2: Calculating the prob of none or single
+    std::vector< double > probs_only_p;
+    double p_none_or_single = p_none;
+    for (unsigned int p = 0u; p < probs.size(); ++p)
+    {
+        probs_only_p.push_back(probs[p] * (p_none / (1.0 - probs[p])));
+        p_none_or_single += probs_only_p[p];
+    }
+
+    // Step 3: Roulette
+    double cumsum = p_none/p_none_or_single;
+    if (r < cumsum)
+        return -1;
+
+    for (unsigned int p = 0u; p < probs.size(); ++p)
+    {
+        // If it yield here, then bingo, the individual will acquire the disease
+        cumsum += probs_only_p[p]/(p_none_or_single);
+        if (r < cumsum)
+            return static_cast<int>(p);
+        
+    }
+
+    return static_cast<int>(probs.size() - 1u);
+
 }
 
 #endif
