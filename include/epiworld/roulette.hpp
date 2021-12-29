@@ -108,15 +108,15 @@ inline int roulette_state(Person<TSeq> * p, Model<TSeq> * m)
     if (which < 0)
         return p->get_status();
 
-    p->add_virus(m->today(), *variants[v]);
+    p->add_virus(m->today(), *variants[which]);
 
     m->get_db().record_transmision(
         p->get_id(),
-        variants[v]->get_host()->get_id(),
-        variants[v]->get_id()
+        variants[which]->get_host()->get_id(),
+        variants[which]->get_id()
     );
 
-    return which; 
+    return STATES::INFECTED; 
 }
 
 #endif
