@@ -162,17 +162,17 @@ inline void Person<TSeq>::update_status()
 {
 
     // No change if removed
-    if (IN<int>(status, model->status_removed))
+    if (IN(status, model->status_removed))
     {
         if (update_removed)
             status_next = update_removed(this, model);
 
-    } else if (IN<int>(status, model->status_susceptible)) {
+    } else if (IN(status, model->status_susceptible)) {
         
         if (update_susceptible)
             status_next = update_susceptible(this, model);
 
-    } else if (IN<int>(status, model->status_infected)) {
+    } else if (IN(status, model->status_infected)) {
 
         if (update_infected)
             status_next = update_infected(this, model);
@@ -181,15 +181,15 @@ inline void Person<TSeq>::update_status()
         throw std::range_error(
             "The reported status " + std::to_string(status) + " is not valid.");
 
-    if (status != status_next)
-        model->get_db().update_counters()
+    // if (status != status_next)
+    //     model->get_db().update_counters();
 
     return;
 
 }
 
 template<typename TSeq>
-inline int Person<TSeq>::get_status() const {
+inline unsigned int Person<TSeq>::get_status() const {
     return status;
 }
 

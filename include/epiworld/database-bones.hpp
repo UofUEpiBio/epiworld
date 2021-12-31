@@ -139,9 +139,8 @@ private:
     std::vector< int > hist_variant_ninfected;
     std::vector< int > hist_variant_nrecovered;
     std::vector< int > hist_variant_nremoved;
-    
-    // {Variant 1: {Day 1: {Healthy, Infected, etc.}, Day 2: ...}, Variant 2: ...}
-    std::vector< std::vector< std::vector< int > > > hist_variant_status;
+    std::vector< int > hist_variant_status;
+    std::vector< int > hist_variant_counts;
 
     // Overall hist
     std::vector< int > hist_total_date;
@@ -150,9 +149,11 @@ private:
     std::vector< int > hist_total_nrecovered;
     std::vector< int > hist_total_ninfected;
     std::vector< int > hist_total_nremoved;
+    std::vector< int > hist_total_status;
+    std::vector< int > hist_total_counts;
 
     // {Day 1: {Healthy, Infected, ...}, Day 2: {...}, ...}
-    std::vector< std::vector< int > > hist_total_status;  
+    std::vector< std::vector< int > > hist_total;  
 
     // Transmission network
     std::vector< int > transmision_date;

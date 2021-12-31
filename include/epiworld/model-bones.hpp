@@ -23,6 +23,7 @@ class DataBase;
 template<typename TSeq>
 class Model {
     friend class Person<TSeq>;
+    friend class DataBase<TSeq>;
 private:
 
     DataBase<TSeq> db;
@@ -48,6 +49,8 @@ private:
     std::vector< std::string > status_infected_labels = {"infected"};
     std::vector< unsigned int > status_removed = {STATUS::REMOVED};
     std::vector< std::string > status_removed_labels = {"removed"};
+
+    unsigned int nstatus = 4u;
     
     bool verbose     = true;
     bool initialized = false;

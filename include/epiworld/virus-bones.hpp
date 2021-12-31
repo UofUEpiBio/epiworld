@@ -38,7 +38,7 @@ class Virus {
     friend class PersonViruses<TSeq>;
     friend class DataBase<TSeq>;
 private:
-    Person<TSeq> * host;
+    Person<TSeq> * host = nullptr;
     std::shared_ptr<TSeq> baseline_sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;

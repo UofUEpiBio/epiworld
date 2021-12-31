@@ -11,15 +11,15 @@ class Person;
  * @brief Helper macro to add virus and update the db
  * 
  */
-#define EPIWORLD_ADD_VIRUS(virus,new_state) \
-    p->add_virus(m->today(), *variants[which]); \
+#define EPIWORLD_ADD_VIRUS(virus_ptr,new_state) \
+    p->add_virus(m->today(), *virus_ptr); \
     /* Recording information in the database */ \
     m->get_db().record_transmision( \
         p->get_id(), \
-        variants[which]->get_host()->get_id(), \
-        variants[which]->get_id() \
+        virus_ptr->get_host()->get_id(), \
+        virus_ptr->get_id() \
     ); \
-    m->get_db().up_infected(*variants[which], p->get_status(), STATUS::INFECTED);
+    m->get_db().up_infected(virus_ptr, p->get_status(), STATUS::INFECTED);
 
 
 template<typename TSeq>

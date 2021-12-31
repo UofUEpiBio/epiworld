@@ -15,7 +15,7 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
         m.status_removed.size()
     );
 
-    for (const auto & p : m.get_persons())
+    for (const auto & p : *m.get_persons())
         ++today_total[p.get_status()];
 
     return;
@@ -40,24 +40,42 @@ inline void DataBase<TSeq>::record()
     {
 
         // Recording variant's history
-        
         for (auto & p : variant_id)
         {
-            hist_variant_date.push_back(model->today());
-            hist_variant_id.push_back(p.second);
-            hist_variant_ninfected.push_back(today_variant_ninfected[p.second]);
-            hist_variant_nrecovered.push_back(today_variant_nrecovered[p.second]);
-            hist_variant_nremoved.push_back(today_variant_nremoved[p.second]);
+
+            for (unsigned int s = 0u; s < model->nstatus; ++s)
+            {
+
+                hist_variant_date.push_back(model->today());
+                hist_variant_id.push_back(p.second);
+                hist_variant_status.push_back(s);
+                hist_variant_counts.push_back(today_variant[p.second][s]);
+
+            }
+            // hist_variant_date.push_back(model->today());
+            // hist_variant_id.push_back(p.second);
+            // // hist_variant
+            // hist_variant_ninfected.push_back(today_variant_ninfected[p.second]);
+            // hist_variant_nrecovered.push_back(today_variant_nrecovered[p.second]);
+            // hist_variant_nremoved.push_back(today_variant_nremoved[p.second]);
 
         }
 
         // Recording the overall history
-        hist_total_date.push_back(model->today());
-        hist_total_nvariants_active.push_back(today_total_nvariants_active);
-        hist_total_nhealthy.push_back(today_total_nhealthy);
-        hist_total_nrecovered.push_back(today_total_nrecovered);
-        hist_total_ninfected.push_back(today_total_ninfected);
-        hist_total_nremoved.push_back(today_total_nremoved);
+        for (unsigned int s = 0u; s < model->nstatus; ++s)
+        {
+            hist_total_date.push_back(model->today());
+            hist_total_nvariants_active.push_back(today_total_nvariants_active);
+            hist_total_status.push_back(s);
+            hist_total_counts.push_back(today_total[s]);
+
+        }
+        // hist_total_date.push_back(model->today());
+        // hist_total_nvariants_active.push_back(today_total_nvariants_active);
+        // hist_total_nhealthy.push_back(today_total_nhealthy);
+        // hist_total_nrecovered.push_back(today_total_nrecovered);
+        // hist_total_ninfected.push_back(today_total_ninfected);
+        // hist_total_nremoved.push_back(today_total_nremoved);
 
     }
 }
@@ -67,45 +85,59 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
 
     // Updating registry
     std::vector< int > hash = seq_hasher(*v->get_sequence());
+    unsigned int old_id = v->get_id();
+    unsigned int new_id;
     if (variant_id.find(hash) == variant_id.end())
     {
-        variant_id[hash] = variant_id.size();
+
+        new_id = variant_id.size();
+        variant_id[hash] = new_id;
         sequence.push_back(*v->get_sequence());
         origin_date.push_back(model->today());
-
-        // Collecting old ID to make the accounting
-        int tmp_id = v->get_id();
-
-        parent_id.push_back(tmp_id);
         
-        // Moving statistics
-        if (variant_id.size() > 1)
-            today_variant_ninfected[tmp_id]--;
-            
-        today_variant_ninfected.push_back(1);
-        today_variant_nrecovered.push_back(0);
-        today_variant_nremoved.push_back(0);
+        parent_id.push_back(old_id);
+        
+        today_variant.push_back({});
+        today_variant[new_id].resize(
+            model->status_susceptible.size() +
+            model->status_infected.size() +
+            model->status_removed.size(),
+            0
+        );
         
         // Updating the variant
-        v->set_id(variant_id.size() - 1);
+        v->set_id(new_id);
         v->set_date(model->today());
 
         today_total_nvariants_active++;
 
     } else {
 
-        int new_id = variant_id[hash];
-
-        // Accounting (from the old to the new)
-        today_variant_ninfected[v->get_id()]--;
-        today_variant_ninfected[new_id]++;
+        // Finding the id
+        new_id = variant_id[hash];
 
         // Reflecting the change
         v->set_id(new_id);
         v->set_date(origin_date[new_id]);
 
-    }    
+    }
 
+    // Moving statistics (only if we are affecting an individual)
+    if (v->get_host() != nullptr)
+    {
+        if (variant_id.size() > 1)
+            today_variant_ninfected[old_id]--;
+            
+        today_variant_ninfected.push_back(1);
+        today_variant_nrecovered.push_back(0);
+        today_variant_nremoved.push_back(0);
+
+        // Correcting math
+        unsigned int tmp_status = v->get_host()->get_status();
+        today_variant[old_id][tmp_status]--;
+        today_variant[new_id][tmp_status]++;
+
+    }
     
     return;
 } 
@@ -283,15 +315,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant(fn_variant_hist, std::ios_base::out);
         
         file_variant <<
-            "date " << "id " << "ninfected " << "nrecovered " << "nremoved\n";
+            "date " << "id " << "status " << "n\n";
 
         for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
-                hist_variant_ninfected[i] << " " <<
-                hist_variant_nrecovered[i] << " " <<
-                hist_variant_nremoved[i] << "\n";
+                hist_variant_status[i] << " " <<
+                hist_variant_counts[i] << "\n";
     }
 
     if (fn_total_hist != "")
@@ -299,16 +330,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_total(fn_total_hist, std::ios_base::out);
 
         file_total <<
-            "date " << "nvariants " << "nhealthy " << "ninfected " << "nrecovered " << "nremoved\n";
+            "date " << "nvariants " << "status" << "counts\n";
 
         for (unsigned int i = 0; i < hist_total_nhealthy.size(); ++i)
             file_total <<
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " " <<
-                hist_total_nhealthy[i] << " " <<
-                hist_total_ninfected[i] << " " <<
-                hist_total_nrecovered[i] << " " <<
-                hist_total_nremoved[i] << "\n";
+                hist_total_status[i] << " " << 
+                hist_total_counts[i] << "\n";
     }
 
     if (fn_transmision != "")

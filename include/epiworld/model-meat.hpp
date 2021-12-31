@@ -183,9 +183,14 @@ inline void Model<TSeq>::seed(unsigned int s) {
 template<typename TSeq>
 inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 {
+
+    // Setting the id
+    v.set_id(viruses.size());
     
+    // Adding new virus
     viruses.push_back(v);
     prevalence_virus.push_back(preval);
+
 
 }
 
@@ -587,6 +592,7 @@ inline void Model<TSeq>::add_status_susceptible(unsigned int s, std::string lab)
     EPIWORLD_CHECK_ALL_STATUSES(s)
     status_susceptible.push_back(s);
     status_susceptible_labels.push_back(lab);
+    nstatus++;
 
 }
 
@@ -610,41 +616,29 @@ inline void Model<TSeq>::add_status_removed(unsigned int s, std::string lab)
 
 }
 
-#define EPIWORLD_NEW_STATUS_CODE(a) \
-    int a = INT_MIN; \
-    for (auto & p : status_susceptible) \
-        if (a < p) a = p + 1; \
-    for (auto & p : status_infected) \
-        if (a < p) a = p + 1; \
-    for (auto & p : status_removed) \
-        if (a < p) a = p + 1;
-
 template<typename TSeq>
 inline void Model<TSeq>::add_status_susceptible(std::string lab)
 {
-    EPIWORLD_NEW_STATUS_CODE(new_status)
-    status_susceptible.push_back(new_status);
+    status_susceptible.push_back(nstatus++);
     status_susceptible_labels.push_back(lab);
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::add_status_infected(std::string lab)
 {
-    EPIWORLD_NEW_STATUS_CODE(new_status)
-    status_infected.push_back(new_status);
+    status_infected.push_back(nstatus++);
     status_infected_labels.push_back(lab);
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::add_status_removed(std::string lab)
 {
-    EPIWORLD_NEW_STATUS_CODE(new_status)
-    status_removed.push_back(new_status);
+    status_removed.push_back(nstatus++);
     status_removed_labels.push_back(lab);
 }
 
 #define EPIWORLD_COLLECT_STATUSES(out,id,lab) \
-    std::vector< std::pair<int, std::string> > out; \
+    std::vector< std::pair<unsigned int, std::string> > out; \
     for (unsigned int i = 0; i < id.size(); ++i) \
         out.push_back( \
             std::pair<int,std::string>( \
@@ -694,7 +688,6 @@ Model<TSeq>::get_status_removed() const
 
 #undef EPIWORLD_CHECK_STATE
 #undef EPIWORLD_CHECK_ALL_STATES
-#undef EPIWORLD_NEW_STATE_CODE
 #undef EPIWORLD_COLLECT_STATUSES
 
 #undef CHECK_INIT
