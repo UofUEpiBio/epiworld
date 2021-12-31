@@ -116,14 +116,20 @@ private:
     // Running sum of the variant's information
     std::vector< int > today_variant_ninfected;  ///< Running sum
     std::vector< int > today_variant_nrecovered; ///< Running sum
-    std::vector< int > today_variant_ndeceased;  ///< Running sum
+    std::vector< int > today_variant_nremoved;  ///< Running sum
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    std::vector< std::vector<int> > today_variant;
 
     // Totals
     int today_total_nvariants_active = 0;
     int today_total_nhealthy   = 0;
     int today_total_nrecovered = 0;
     int today_total_ninfected  = 0;
-    int today_total_ndeceased  = 0;
+    int today_total_nremoved  = 0;
+    
+    // {Healthy, Infected, etc.}
+    std::vector< int > today_total;
     
     int sampling_freq;
 
@@ -132,7 +138,10 @@ private:
     std::vector< int > hist_variant_id;
     std::vector< int > hist_variant_ninfected;
     std::vector< int > hist_variant_nrecovered;
-    std::vector< int > hist_variant_ndeceased;
+    std::vector< int > hist_variant_nremoved;
+    
+    // {Variant 1: {Day 1: {Healthy, Infected, etc.}, Day 2: ...}, Variant 2: ...}
+    std::vector< std::vector< std::vector< int > > > hist_variant_status;
 
     // Overall hist
     std::vector< int > hist_total_date;
@@ -140,7 +149,10 @@ private:
     std::vector< int > hist_total_nhealthy;
     std::vector< int > hist_total_nrecovered;
     std::vector< int > hist_total_ninfected;
-    std::vector< int > hist_total_ndeceased;  
+    std::vector< int > hist_total_nremoved;
+
+    // {Day 1: {Healthy, Infected, ...}, Day 2: {...}, ...}
+    std::vector< std::vector< int > > hist_total_status;  
 
     // Transmission network
     std::vector< int > transmision_date;
@@ -170,9 +182,17 @@ public:
     const std::vector< int > & get_ninfected() const;
     size_t size() const;
 
-    void up_infected(Virus<TSeq> * v);
-    void up_recovered(Virus<TSeq> * v);
-    void up_deceased(Virus<TSeq> * v);
+    void up_infected(
+        Virus<TSeq> * v,
+        unsigned int prev_status,
+        unsigned int new_status
+        );
+
+    void down_infected(
+        Virus<TSeq> * v,
+        unsigned int prev_status,
+        unsigned int new_status
+        );
 
     int get_today_total(std::string what) const;
     const std::vector< int > & get_today_variant(std::string what) const;

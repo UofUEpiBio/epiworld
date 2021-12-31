@@ -7,6 +7,21 @@ class Model;
 template<typename TSeq>
 class Person;
 
+/**
+ * @brief Helper macro to add virus and update the db
+ * 
+ */
+#define EPIWORLD_ADD_VIRUS(virus,new_state) \
+    p->add_virus(m->today(), *variants[which]); \
+    /* Recording information in the database */ \
+    m->get_db().record_transmision( \
+        p->get_id(), \
+        variants[which]->get_host()->get_id(), \
+        variants[which]->get_id() \
+    ); \
+    m->get_db().up_infected(*variants[which], p->get_status(), STATUS::INFECTED);
+
+
 template<typename TSeq>
 inline int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m)
 {
@@ -58,13 +73,7 @@ inline int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m)
     if (which < 0)
         return p->get_status();
 
-    p->add_virus(m->today(), *variants[which]);
-
-    m->get_db().record_transmision(
-        p->get_id(),
-        variants[which]->get_host()->get_id(),
-        variants[which]->get_id()
-    );
+    EPIWORLD_ADD_VIRUS(variants[which], STATUS::INFECTED)
 
     return STATUS::INFECTED; 
 
@@ -84,7 +93,7 @@ inline int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
     if (r < cumsum)
     {
         
-        m->get_db().up_deceased(vptr);
+        m->get_db().down_infected(vptr,p->get_status(), STATUS::REMOVED);
         return STATUS::REMOVED;
 
     } 
@@ -93,7 +102,7 @@ inline int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
     if (r < cumsum)
     {
         // Updating db and running actions
-        m->get_db().up_recovered(vptr);
+        m->get_db().down_infected(vptr,p->get_status(), STATUS::RECOVERED);
 
         // Checking if something happens after recovery
         // (e.g., full immunity)

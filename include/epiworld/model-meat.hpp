@@ -140,7 +140,10 @@ inline void Model<TSeq>::dist_virus()
     {
         for (auto & p : persons)
             if (runif() < prevalence_virus[v])
+            {
                 p.add_virus(0, viruses[v]);
+                db.up_infected(&viruses[v], p.get_status(), STATUS::INFECTED);
+            }
 
     }
 
@@ -492,7 +495,7 @@ inline void Model<TSeq>::print() const
     printf_epiworld(" - Total variants active : %i\n\n", db.get_today_total("nvariants_active"));
     printf_epiworld(" - Total healthy         : %i\n", db.get_today_total("nhealthy"));
     printf_epiworld(" - Total infected        : %i\n", db.get_today_total("ninfected"));
-    printf_epiworld(" - Total deceased        : %i\n\n", db.get_today_total("ndeceased"));
+    printf_epiworld(" - Total removed        : %i\n\n", db.get_today_total("nremoved"));
     printf_epiworld(" - Total # of recoveries : %i\n\n", db.get_today_total("nrecovered"));
 
     // Information about the parameters included
@@ -578,7 +581,7 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     EPIWORLD_CHECK_STATUS(a, status_removed)
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_susceptible(int s, std::string lab)
+inline void Model<TSeq>::add_status_susceptible(unsigned int s, std::string lab)
 {
 
     EPIWORLD_CHECK_ALL_STATUSES(s)
@@ -588,7 +591,7 @@ inline void Model<TSeq>::add_status_susceptible(int s, std::string lab)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_infected(int s, std::string lab)
+inline void Model<TSeq>::add_status_infected(unsigned int s, std::string lab)
 {
 
     EPIWORLD_CHECK_ALL_STATUSES(s)
@@ -598,7 +601,7 @@ inline void Model<TSeq>::add_status_infected(int s, std::string lab)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_removed(int s, std::string lab)
+inline void Model<TSeq>::add_status_removed(unsigned int s, std::string lab)
 {
 
     EPIWORLD_CHECK_ALL_STATUSES(s)
@@ -650,7 +653,7 @@ inline void Model<TSeq>::add_status_removed(std::string lab)
         );
 
 template<typename TSeq>
-inline std::vector< std::pair<int,std::string> >
+inline std::vector< std::pair<unsigned int,std::string> >
 Model<TSeq>::get_status_susceptible() const
 {
 
@@ -664,7 +667,7 @@ Model<TSeq>::get_status_susceptible() const
 }
 
 template<typename TSeq>
-inline std::vector< std::pair<int,std::string> >
+inline std::vector< std::pair<unsigned int,std::string> >
 Model<TSeq>::get_status_infected() const
 {
     EPIWORLD_COLLECT_STATUSES(
@@ -677,7 +680,7 @@ Model<TSeq>::get_status_infected() const
 }
 
 template<typename TSeq>
-inline std::vector< std::pair<int,std::string> >
+inline std::vector< std::pair<unsigned int,std::string> >
 Model<TSeq>::get_status_removed() const
 {
     EPIWORLD_COLLECT_STATUSES(

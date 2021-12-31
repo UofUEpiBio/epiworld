@@ -42,11 +42,11 @@ private:
     unsigned int ndays;
     Progress pb;
 
-    std::vector< int > status_susceptible = {STATUS::HEALTHY, STATUS::RECOVERED};
+    std::vector< unsigned int > status_susceptible = {STATUS::HEALTHY, STATUS::RECOVERED};
     std::vector< std::string > status_susceptible_labels = {"healthy", "recovered"};
-    std::vector< int > status_infected = {STATUS::INFECTED};
+    std::vector< unsigned int > status_infected = {STATUS::INFECTED};
     std::vector< std::string > status_infected_labels = {"infected"};
-    std::vector< int > status_removed = {STATUS::REMOVED};
+    std::vector< unsigned int > status_removed = {STATUS::REMOVED};
     std::vector< std::string > status_removed_labels = {"removed"};
     
     bool verbose     = true;
@@ -152,7 +152,7 @@ public:
      * The functions `get_status_*` return the current values for the 
      * statuses included in the model.
      * 
-     * @param s `int` Code of the status
+     * @param s `unsigned int` Code of the status
      * @param lab `std::string` Name of the status.
      * 
      * @return `add_status*` returns nothing.
@@ -160,15 +160,15 @@ public:
      * statuses and their labels.
      */
     ///@[
-    void add_status_susceptible(int s, std::string lab);
-    void add_status_infected(int s, std::string lab);
-    void add_status_removed(int s, std::string lab);
+    void add_status_susceptible(unsigned int s, std::string lab);
+    void add_status_infected(unsigned int s, std::string lab);
+    void add_status_removed(unsigned int s, std::string lab);
     void add_status_susceptible(std::string lab);
     void add_status_infected(std::string lab);
     void add_status_removed(std::string lab);
-    std::vector< std::pair<int,std::string> > get_status_susceptible() const;
-    std::vector< std::pair<int,std::string> > get_status_infected() const;
-    std::vector< std::pair<int,std::string> > get_status_removed() const;
+    std::vector< std::pair<unsigned int,std::string> > get_status_susceptible() const;
+    std::vector< std::pair<unsigned int,std::string> > get_status_infected() const;
+    std::vector< std::pair<unsigned int,std::string> > get_status_removed() const;
     ///@]
 
 };

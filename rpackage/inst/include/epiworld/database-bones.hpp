@@ -116,14 +116,14 @@ private:
     // Running sum of the variant's information
     std::vector< int > today_variant_ninfected;  ///< Running sum
     std::vector< int > today_variant_nrecovered; ///< Running sum
-    std::vector< int > today_variant_ndeceased;  ///< Running sum
+    std::vector< int > today_variant_nremoved;  ///< Running sum
 
     // Totals
     int today_total_nvariants_active = 0;
     int today_total_nhealthy   = 0;
     int today_total_nrecovered = 0;
     int today_total_ninfected  = 0;
-    int today_total_ndeceased  = 0;
+    int today_total_nremoved  = 0;
     
     int sampling_freq;
 
@@ -132,7 +132,7 @@ private:
     std::vector< int > hist_variant_id;
     std::vector< int > hist_variant_ninfected;
     std::vector< int > hist_variant_nrecovered;
-    std::vector< int > hist_variant_ndeceased;
+    std::vector< int > hist_variant_nremoved;
 
     // Overall hist
     std::vector< int > hist_total_date;
@@ -140,7 +140,7 @@ private:
     std::vector< int > hist_total_nhealthy;
     std::vector< int > hist_total_nrecovered;
     std::vector< int > hist_total_ninfected;
-    std::vector< int > hist_total_ndeceased;  
+    std::vector< int > hist_total_nremoved;  
 
     // Transmission network
     std::vector< int > transmision_date;
@@ -172,7 +172,7 @@ public:
 
     void up_infected(Virus<TSeq> * v);
     void up_recovered(Virus<TSeq> * v);
-    void up_deceased(Virus<TSeq> * v);
+    void up_removed(Virus<TSeq> * v);
 
     int get_today_total(std::string what) const;
     const std::vector< int > & get_today_variant(std::string what) const;

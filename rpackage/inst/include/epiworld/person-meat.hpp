@@ -155,7 +155,7 @@ inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
 template<typename TSeq>
 inline void Person<TSeq>::update_status() {
 
-    // No change if deceased
+    // No change if removed
     if (status == STATUS::DECEASED)
         return;
 
@@ -278,7 +278,7 @@ inline void Person<TSeq>::update_status() {
         if (r < cumsum)
         {
             
-            model->get_db().up_deceased(vptr);
+            model->get_db().up_removed(vptr);
             status_next = DECEASED;
             return;
 

@@ -35,7 +35,7 @@ inline void DataBase<TSeq>::record()
             hist_variant_id.push_back(p.second);
             hist_variant_ninfected.push_back(today_variant_ninfected[p.second]);
             hist_variant_nrecovered.push_back(today_variant_nrecovered[p.second]);
-            hist_variant_ndeceased.push_back(today_variant_ndeceased[p.second]);
+            hist_variant_nremoved.push_back(today_variant_nremoved[p.second]);
 
         }
 
@@ -45,7 +45,7 @@ inline void DataBase<TSeq>::record()
         hist_total_nhealthy.push_back(today_total_nhealthy);
         hist_total_nrecovered.push_back(today_total_nrecovered);
         hist_total_ninfected.push_back(today_total_ninfected);
-        hist_total_ndeceased.push_back(today_total_ndeceased);
+        hist_total_nremoved.push_back(today_total_nremoved);
 
     }
 }
@@ -72,7 +72,7 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
             
         today_variant_ninfected.push_back(1);
         today_variant_nrecovered.push_back(0);
-        today_variant_ndeceased.push_back(0);
+        today_variant_nremoved.push_back(0);
         
         // Updating the variant
         v->set_id(variant_id.size() - 1);
@@ -104,7 +104,7 @@ inline int DataBase<TSeq>::get_today_total(std::string what) const
     if (what == "")
     { 
         printf_epiworld(
-            "The following values are allowed in -what-: \"nvariants_active\", \"nhealthy\", \"nrecovered\", \"ninfected\", and \"ndeceased\".");
+            "The following values are allowed in -what-: \"nvariants_active\", \"nhealthy\", \"nrecovered\", \"ninfected\", and \"nremoved\".");
         return 0;
     } else if (what == "nvariants_active")
         return today_total_nvariants_active;
@@ -114,8 +114,8 @@ inline int DataBase<TSeq>::get_today_total(std::string what) const
         return today_total_nrecovered;
     else if (what == "ninfected")
         return today_total_ninfected;
-    else if (what == "ndeceased")
-        return today_total_ndeceased;
+    else if (what == "nremoved")
+        return today_total_nremoved;
     else 
         throw std::logic_error("\""+ what + "\" is not included in the database.");   
 
@@ -128,7 +128,7 @@ inline const std::vector<int> & DataBase<TSeq>::get_today_variant(std::string wh
     {
 
         printf_epiworld(
-        "The following values are allowed in -what-: \"nrecovered\", \"ninfected\", and \"ndeceased\"."
+        "The following values are allowed in -what-: \"nrecovered\", \"ninfected\", and \"nremoved\"."
         );
         
         return today_variant_nrecovered;
@@ -137,8 +137,8 @@ inline const std::vector<int> & DataBase<TSeq>::get_today_variant(std::string wh
         return today_variant_nrecovered;
     else if (what == "ninfected")
         return today_variant_ninfected;
-    else if (what == "ndeceased")
-        return today_variant_ndeceased;
+    else if (what == "nremoved")
+        return today_variant_nremoved;
     else 
         throw std::logic_error("\""+ what + "\" is not included in the database.");   
 
@@ -151,7 +151,7 @@ inline const std::vector<int> & DataBase<TSeq>::get_hist_total(std::string what)
     {
 
         printf_epiworld(
-        "The following values are allowed in -what-: \"nvariants_active\", \"nhealthy\", \"nrecovered\", \"ninfected\", and \"ndeceased\"."
+        "The following values are allowed in -what-: \"nvariants_active\", \"nhealthy\", \"nrecovered\", \"ninfected\", and \"nremoved\"."
         );
         
         return hist_total_date;
@@ -166,8 +166,8 @@ inline const std::vector<int> & DataBase<TSeq>::get_hist_total(std::string what)
         return hist_total_nrecovered;
     else if (what == "ninfected")
         return hist_total_ninfected;
-    else if (what == "ndeceased")
-        return hist_total_ndeceased;
+    else if (what == "nremoved")
+        return hist_total_nremoved;
     else 
         throw std::logic_error("\""+ what + "\" is not included in the database.");   
 
@@ -181,7 +181,7 @@ inline const std::vector<int> & DataBase<TSeq>::get_hist_variant(std::string wha
     {
 
          printf_epiworld(
-            "The following values are allowed in -what-: \"date\", \"id\", \"nrecovered\", \"ninfected\", and \"ndeceased\"."
+            "The following values are allowed in -what-: \"date\", \"id\", \"nrecovered\", \"ninfected\", and \"nremoved\"."
         );
         
         return hist_variant_date;
@@ -194,8 +194,8 @@ inline const std::vector<int> & DataBase<TSeq>::get_hist_variant(std::string wha
         return hist_variant_nrecovered;
     else if (what == "ninfected")
         return hist_variant_ninfected;
-    else if (what == "ndeceased")
-        return hist_variant_ndeceased;
+    else if (what == "nremoved")
+        return hist_variant_nremoved;
     else 
         throw std::logic_error("\""+ what + "\" is not included in the database.");   
 
@@ -229,14 +229,14 @@ inline void DataBase<TSeq>::up_recovered(Virus<TSeq> * v) {
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::up_deceased(Virus<TSeq> * v) {
+inline void DataBase<TSeq>::up_removed(Virus<TSeq> * v) {
 
     int tmp_id = v->get_id();
     today_variant_ninfected[tmp_id]--;
-    today_variant_ndeceased[tmp_id]++;
+    today_variant_nremoved[tmp_id]++;
     
     today_total_ninfected--;
-    today_total_ndeceased++;
+    today_total_nremoved++;
 
 }
 
@@ -275,7 +275,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant(fn_variant_hist, std::ios_base::out);
         
         file_variant <<
-            "date " << "id " << "ninfected " << "nrecovered " << "ndeceased\n";
+            "date " << "id " << "ninfected " << "nrecovered " << "nremoved\n";
 
         for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
@@ -283,7 +283,7 @@ inline void DataBase<TSeq>::write_data(
                 hist_variant_id[i] << " " <<
                 hist_variant_ninfected[i] << " " <<
                 hist_variant_nrecovered[i] << " " <<
-                hist_variant_ndeceased[i] << "\n";
+                hist_variant_nremoved[i] << "\n";
     }
 
     if (fn_total_hist != "")
@@ -291,7 +291,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_total(fn_total_hist, std::ios_base::out);
 
         file_total <<
-            "date " << "nvariants " << "nhealthy " << "ninfected " << "nrecovered " << "ndeceased\n";
+            "date " << "nvariants " << "nhealthy " << "ninfected " << "nrecovered " << "nremoved\n";
 
         for (unsigned int i = 0; i < hist_total_nhealthy.size(); ++i)
             file_total <<
@@ -300,7 +300,7 @@ inline void DataBase<TSeq>::write_data(
                 hist_total_nhealthy[i] << " " <<
                 hist_total_ninfected[i] << " " <<
                 hist_total_nrecovered[i] << " " <<
-                hist_total_ndeceased[i] << "\n";
+                hist_total_nremoved[i] << "\n";
     }
 
     if (fn_transmision != "")
@@ -348,18 +348,18 @@ inline void DataBase<TSeq>::reset() {
     parent_id.clear();
     today_variant_ninfected.clear();
     today_variant_nrecovered.clear();
-    today_variant_ndeceased.clear();
+    today_variant_nremoved.clear();
     hist_variant_date.clear();
     hist_variant_id.clear();
     hist_variant_ninfected.clear();
     hist_variant_nrecovered.clear();
-    hist_variant_ndeceased.clear();
+    hist_variant_nremoved.clear();
     hist_total_date.clear();
     hist_total_nvariants_active.clear();
     hist_total_nhealthy.clear();
     hist_total_nrecovered.clear();
     hist_total_ninfected.clear();
-    hist_total_ndeceased.clear();
+    hist_total_nremoved.clear();
     transmision_date.clear();
     transmision_source.clear();
     transmision_target.clear();
@@ -369,7 +369,7 @@ inline void DataBase<TSeq>::reset() {
     today_total_nhealthy = 0;
     today_total_nrecovered = 0;
     today_total_ninfected = 0;
-    today_total_ndeceased = 0;
+    today_total_nremoved = 0;
 
 }
 

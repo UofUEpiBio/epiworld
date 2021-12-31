@@ -33,7 +33,7 @@ inline void Person<TSeq>::add_virus(
     Virus<TSeq> virus
 ) {
     viruses.add_virus(d, virus);
-    status_next = INFECTED;
+    status_next = STATUS::INFECTED;
 }
 
 template<typename TSeq>
@@ -161,7 +161,7 @@ template<typename TSeq>
 inline void Person<TSeq>::update_status()
 {
 
-    // No change if deceased
+    // No change if removed
     if (IN<int>(status, model->status_removed))
     {
         if (update_removed)
@@ -180,6 +180,9 @@ inline void Person<TSeq>::update_status()
     } else
         throw std::range_error(
             "The reported status " + std::to_string(status) + " is not valid.");
+
+    if (status != status_next)
+        model->get_db().update_counters()
 
     return;
 

@@ -488,7 +488,7 @@ inline void Model<TSeq>::print() const
     printf_epiworld(" - Total variants active : %i\n\n", db.get_today_total("nvariants_active"));
     printf_epiworld(" - Total healthy         : %i\n", db.get_today_total("nhealthy"));
     printf_epiworld(" - Total infected        : %i\n", db.get_today_total("ninfected"));
-    printf_epiworld(" - Total deceased        : %i\n\n", db.get_today_total("ndeceased"));
+    printf_epiworld(" - Total removed        : %i\n\n", db.get_today_total("nremoved"));
     printf_epiworld(" - Total # of recoveries : %i\n\n", db.get_today_total("nrecovered"));
 
     // Information about the parameters included
