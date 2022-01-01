@@ -23,7 +23,7 @@ class Person;
 
 
 template<typename TSeq>
-inline int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m)
+inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m)
 {
 
     // Step 1: Compute the individual efficcacy
@@ -75,12 +75,12 @@ inline int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m)
 
     EPIWORLD_ADD_VIRUS(variants[which], STATUS::INFECTED)
 
-    return STATUS::INFECTED; 
+    return static_cast<unsigned int>(STATUS::INFECTED); 
 
 }
 
 template<typename TSeq>
-inline int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
+inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
     Virus<TSeq> * vptr = &(p->get_virus(0u));
 
@@ -110,7 +110,7 @@ inline int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
         p->get_viruses().reset();
         
-        return STATUS::RECOVERED;
+        return static_cast<unsigned int>(STATUS::RECOVERED);
 
     }
 

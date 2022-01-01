@@ -4,6 +4,12 @@
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
 
+#define NEXT_STATUS() \
+    /* Making the change effective */ \
+    for (auto & p: persons) \
+        if (!IN(p.status, status_removed)) \
+            p.status = p.status_next;
+
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     db(model.db),
@@ -147,6 +153,8 @@ inline void Model<TSeq>::dist_virus()
 
     }
 
+    NEXT_STATUS()
+
 }
 
 template<typename TSeq>
@@ -276,10 +284,7 @@ inline void Model<TSeq>::update_status() {
     for (auto & p: persons)
         p.update_status();
 
-    // Making the change effective
-    for (auto & p: persons)
-        if (IN(p.status, status_removed))
-            p.status = p.status_next;
+    NEXT_STATUS()
 
 }
 
@@ -468,6 +473,8 @@ inline void Model<TSeq>::reset() {
     dist_virus();
     dist_tools();
 
+    
+
 }
 
 template<typename TSeq>
@@ -496,15 +503,38 @@ inline void Model<TSeq>::print() const
             );
     }
 
-    printf_epiworld("\nStatistics:\n");
-    printf_epiworld(" - Total variants active : %i\n\n", db.get_today_total("nvariants_active"));
-    printf_epiworld(" - Total healthy         : %i\n", db.get_today_total("nhealthy"));
-    printf_epiworld(" - Total infected        : %i\n", db.get_today_total("ninfected"));
-    printf_epiworld(" - Total removed        : %i\n\n", db.get_today_total("nremoved"));
-    printf_epiworld(" - Total # of recoveries : %i\n\n", db.get_today_total("nrecovered"));
+    printf_epiworld("\nStatistics (susceptible):\n");
+    for (unsigned int s = 0u; s < status_susceptible.size(); ++s)
+    {
+        printf_epiworld(
+            " - Total %s: %i\n",
+            status_susceptible_labels[s].c_str(),
+            db.today_total[ status_susceptible[s] ]
+            );
+    }
+
+    printf_epiworld("\nStatistics (infected):\n");
+    for (unsigned int s = 0u; s < status_infected.size(); ++s)
+    {
+        printf_epiworld(
+            " - Total %s: %i\n",
+            status_infected_labels[s].c_str(),
+            db.today_total[ status_infected[s] ]
+            );
+    }
+
+    printf_epiworld("\nStatistics (removed):\n");
+    for (unsigned int s = 0u; s < status_removed.size(); ++s)
+    {
+        printf_epiworld(
+            " - Total %s: %i\n",
+            status_removed_labels[s].c_str(),
+            db.today_total[ status_removed[s] ]
+            );
+    }
 
     // Information about the parameters included
-    printf_epiworld("Model parameters:\n");
+    printf_epiworld("\nModel parameters:\n");
     unsigned int nchar = 0u;
     for (auto & p : parameters)
         if (p.first.length() > nchar)
@@ -689,6 +719,7 @@ Model<TSeq>::get_status_removed() const
 #undef EPIWORLD_CHECK_STATE
 #undef EPIWORLD_CHECK_ALL_STATES
 #undef EPIWORLD_COLLECT_STATUSES
+#undef NEXT_STATUS
 
 #undef CHECK_INIT
 #endif
