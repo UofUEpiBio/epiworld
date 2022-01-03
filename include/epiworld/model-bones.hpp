@@ -37,8 +37,11 @@ private:
     std::vector< Tool<TSeq> > tools;
     std::vector< double > prevalence_tool;
 
-    std::shared_ptr< std::mt19937 > engine;
-    std::shared_ptr< std::uniform_real_distribution<> > runifd;
+    std::shared_ptr< std::mt19937 > engine =
+        std::make_shared< std::mt19937 >();
+    std::shared_ptr< std::uniform_real_distribution<> > runifd =
+        std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
+        
     std::map<std::string, double > parameters;
     unsigned int ndays;
     Progress pb;

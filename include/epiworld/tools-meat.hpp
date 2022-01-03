@@ -16,7 +16,7 @@ inline Tool<TSeq>::Tool(std::string name)
 template<typename TSeq>
 inline Tool<TSeq>::Tool(TSeq d, std::string name) {
     sequence = std::make_shared<TSeq>(d);
-    tool_name = name;
+    tool_name = std::make_shared<std::string>(name);
 }
 
 template<typename TSeq>

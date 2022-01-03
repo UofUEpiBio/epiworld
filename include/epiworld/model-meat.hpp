@@ -120,13 +120,10 @@ inline void Model<TSeq>::init(
         p.init();
     }
 
-    if (!engine)
-        engine = std::make_shared< std::mt19937 >();
-
     engine->seed(seed);
 
-    if (!runifd)
-        runifd = std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
+    // if (!runifd)
+    //     runifd = std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
 
     initialized = true;
 
@@ -179,7 +176,7 @@ inline std::mt19937 * Model<TSeq>::get_rand_endgine()
 
 template<typename TSeq>
 inline double Model<TSeq>::runif() {
-    CHECK_INIT()
+    // CHECK_INIT()
     return runifd->operator()(*engine);
 }
 

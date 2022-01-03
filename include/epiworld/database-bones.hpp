@@ -117,11 +117,11 @@ private:
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_variant;
 
-    // Totals
-    int today_total_nvariants_active = 0;
-    
     // {Healthy, Infected, etc.}
     std::vector< int > today_total;
+
+    // Totals
+    int today_total_nvariants_active = 0;
     
     int sampling_freq;
 
