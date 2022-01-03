@@ -2,50 +2,69 @@
 #define EPIWORLD_ADJLIST_MEAT_HPP
 
 inline AdjList::AdjList(
-    const std::vector< int > & source,
-    const std::vector< int > & target,
-    bool directed
+    const std::vector< unsigned int > & source,
+    const std::vector< unsigned int > & target,
+    bool directed,
+    int min_id,
+    int max_id
 ) {
 
-    id_min = INT_MAX;
-    id_max = INT_MIN;
+    id_min = UINT_MAX;
+    id_max = 0u;
 
     int i,j;
-    for (unsigned int n = 0; n < source.size(); ++n)
+    for (unsigned int m = 0; m < source.size(); ++m)
     {
 
-        i = source[n];
-        j = target[n];
+        i = source[m];
+        j = target[m];
+
+        if ((max_id > 0) && (i > max_id))
+            throw std::range_error(
+                "The source["+std::to_string(m)+"] = " + std::to_string(i) +
+                " is above the max_id " + std::to_string(max_id)
+                );
+
+        if ((min_id > 0) && (i < min_id))
+            throw std::range_error(
+                "The source["+std::to_string(m)+"] = " + std::to_string(i) + 
+                " is below the min_id " + std::to_string(min_id)
+                );
+
+        if ((max_id > 0) && (j > max_id))
+            throw std::range_error(
+                "The target["+std::to_string(m)+"] = " + std::to_string(j) +
+                " is above the max_id " + std::to_string(max_id)
+                );
+
+        if ((min_id > 0) && (j < min_id))
+            throw std::range_error(
+                "The target["+std::to_string(m)+"] = " + std::to_string(i) +
+                " is below the min_id " + std::to_string(min_id)
+                );
 
         // Adding nodes
         if (dat.find(i) == dat.end())
-        {
-
-            dat[i].insert(std::pair<int,int>(j, 0));
-            N++;
-
-        } else { // Or simply increasing the counter
+            dat[i].insert(std::pair<unsigned int, unsigned int>(j, 1u));
+        else { // Or simply increasing the counter
 
             auto & dat_i = dat[i];
             if (dat_i.find(j) == dat_i.end())
-                dat_i[j] = 0;
+                dat_i[j] = 1u;
             else
                 dat_i[j]++;
 
         }
 
         if (dat.find(j) == dat.end())
-        {
-            dat[j] = std::map<int,int>();
-            N++;
-        }
+            dat[j] = std::map<unsigned int, unsigned int>();            
         
         if (!directed)
         {
 
             if (dat[j].find(i) == dat[j].end())
             {
-                dat[j][i] = 0;
+                dat[j][i] = 1u;
                 
             } else
                 dat[j][i]++;
@@ -53,21 +72,30 @@ inline AdjList::AdjList(
         }
 
         // Recalculating the limits
-        if (i < id_min)
-            id_min = i;
+        if (i < static_cast<int>(id_min))
+            id_min = static_cast<unsigned int>(i);
 
-        if (j < id_min)
-            id_min = j;
+        if (j < static_cast<int>(id_min))
+            id_min = static_cast<unsigned int>(j);
 
-        if (i > id_max)
-            id_max = i;
+        if (i > static_cast<int>(id_max))
+            id_max = static_cast<unsigned int>(i);
 
-        if (j > id_max)
-            id_max = j;
+        if (j > static_cast<int>(id_max))
+            id_max = static_cast<unsigned int>(j);
 
         E++;
 
     }
+
+    // Checking if the max found matches the max identified
+    if (max_id >= 0)
+        id_max = static_cast<unsigned int>(max_id);
+
+    if (min_id >= 0)
+        id_min = static_cast<unsigned int>(min_id);
+
+    N = id_max - id_min + 1u;
 
     return;
 
@@ -76,7 +104,9 @@ inline AdjList::AdjList(
 inline void AdjList::read_edgelist(
     std::string fn,
     int skip,
-    bool directed
+    bool directed,
+    int min_id,
+    int max_id
 ) {
 
     int i,j;
@@ -89,13 +119,14 @@ inline void AdjList::read_edgelist(
     id_max = INT_MIN;
 
     int linenum = 0;
+    std::vector< unsigned int > source_;
+    std::vector< unsigned int > target_;
+
     while (!filei.eof())
     {
 
         if (linenum < skip)
             continue;
-
-        linenum++;
 
         filei >> i >> j;
 
@@ -109,55 +140,32 @@ inline void AdjList::read_edgelist(
         if (filei.fail())
             break;
 
-        // Adding nodes
-        if (dat.find(i) == dat.end())
-        {
+        if ((max_id > 0) && (i > max_id))
+            throw std::range_error(
+                "The source["+std::to_string(linenum)+"] = " + std::to_string(i) +
+                " is above the max_id " + std::to_string(max_id)
+                );
 
-            dat[i].insert(std::pair<int,int>(j, 0));
-            N++;
+        if ((min_id > 0) && (i < min_id))
+            throw std::range_error(
+                "The source["+std::to_string(linenum)+"] = " + std::to_string(i) + 
+                " is below the min_id " + std::to_string(min_id)
+                );
 
-        } else { // Or simply increasing the counter
+        if ((max_id > 0) && (j > max_id))
+            throw std::range_error(
+                "The target["+std::to_string(linenum)+"] = " + std::to_string(j) +
+                " is above the max_id " + std::to_string(max_id)
+                );
 
-            auto & dat_i = dat[i];
-            if (dat_i.find(j) == dat_i.end())
-                dat_i[j] = 0;
-            else
-                dat_i[j]++;
+        if ((min_id > 0) && (j < min_id))
+            throw std::range_error(
+                "The target["+std::to_string(linenum)+"] = " + std::to_string(i) +
+                " is below the min_id " + std::to_string(min_id)
+                );
 
-        }
-
-        if (dat.find(j) == dat.end())
-        {
-            dat[j] = std::map<int,int>();
-            N++;
-        }
-        
-        if (!directed)
-        {
-
-            if (dat[j].find(i) == dat[j].end())
-            {
-                dat[j][i] = 0;
-                
-            } else
-                dat[j][i]++;
-
-        }
-
-        // Recalculating the limits
-        if (i < id_min)
-            id_min = i;
-
-        if (j < id_min)
-            id_min = j;
-
-        if (i > id_max)
-            id_max = i;
-
-        if (j > id_max)
-            id_max = j;
-
-        E++;
+        source_.push_back(i);
+        target_.push_back(j);
 
     }
 
@@ -167,18 +175,26 @@ inline void AdjList::read_edgelist(
             fn + " in line " + std::to_string(linenum)
         );
     
+    // Now using the right constructor
+    *this = AdjList(source_,target_,directed,min_id,max_id);
+
     return;
 
 }
 
-inline const std::map<int,int> & AdjList::operator()(int i) const {
+inline std::map<unsigned int,unsigned int> AdjList::operator()(
+    unsigned int i
+    ) const {
 
-    if (dat.find(i) == dat.end())
+    if ((i < id_min) | (i > id_max))
         throw std::range_error(
             "The vertex id " + std::to_string(i) + " is not in the network."
             );
 
-    return dat.find(i)->second;
+    if (dat.find(i) == dat.end())
+        return std::map<unsigned int,unsigned int>();
+    else
+        return dat.find(i)->second;
 
 }
 inline void AdjList::print(unsigned int limit) const {
@@ -216,12 +232,12 @@ inline void AdjList::print(unsigned int limit) const {
 
 }
 
-inline int AdjList::get_id_max() const 
+inline unsigned int AdjList::get_id_max() const 
 {
     return id_max;
 }
 
-inline int AdjList::get_id_min() const 
+inline unsigned int AdjList::get_id_min() const 
 {
     return id_min;
 }

@@ -13,8 +13,8 @@ inline AdjList rgraph_bernoulli_undirected(
     Model<TSeq> & m
 ) {
 
-    std::vector< int > source;
-    std::vector< int > target;
+    std::vector< unsigned int > source;
+    std::vector< unsigned int > target;
 
     int a,b;
     for (unsigned int i = 0u; i < floor(n * p); ++i)
@@ -27,9 +27,7 @@ inline AdjList rgraph_bernoulli_undirected(
 
     }
 
-    AdjList al(
-        source, target, false
-    );
+    AdjList al(source, target, false, 0,static_cast<int>(n) - 1);
 
     return al;
     

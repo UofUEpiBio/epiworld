@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
 
         // In this case we are applying degree sequence rewiring
         // to change the network just a bit.
-        model.rewire_degseq(floor(model.size() * .1));
+        model.rewire_degseq(0.10);
 
     }
 

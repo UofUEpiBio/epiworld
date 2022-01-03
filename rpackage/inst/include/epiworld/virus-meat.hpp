@@ -17,15 +17,7 @@ inline void Virus<TSeq>::mutate() {
 
     if (mutation_fun)
         if (mutation_fun(host, this, this->get_model()))
-        {
-            int tmpid = get_id();
             host->get_model()->record_variant(this);
-
-            if (get_model()->get_db().get_today_variant("ninfected")[tmpid] < 0)
-            {
-                printf_epiworld("Epa!\n");
-            }
-        }
     
 
     return;

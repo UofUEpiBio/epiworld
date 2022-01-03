@@ -92,7 +92,13 @@ public:
     void add_virus(Virus<TSeq> v, double preval);
     void add_tool(Tool<TSeq> t, double preval);
 
-    void pop_from_adjlist(std::string fn, int skip = 0, bool directed = false);
+    void pop_from_adjlist(
+        std::string fn,
+        int skip = 0,
+        bool directed = false,
+        int min_id = -1,
+        int max_id = -1
+        );
     void pop_from_adjlist(AdjList al);
     int today() const;
     void update_status();
@@ -116,11 +122,11 @@ public:
      * thus if {(i,j), (k,l)} -> {(i,l), (k,j)}, the reciprocal
      * is also true, i.e., {(j,i), (l,k)} -> {(j,k), (l,i)}.
      * 
-     * @param nrewires Number of rewires (or tries).
+     * @param proportion Proportion of ties to be rewired.
      * 
      * @result A rewired version of the network.
      */
-    void rewire_degseq(int nrewires);
+    void rewire_degseq(double proportion);
 
     /**
      * @brief Wrapper of `DataBase::write_data`

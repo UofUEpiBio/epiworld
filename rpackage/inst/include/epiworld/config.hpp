@@ -60,14 +60,17 @@
 
 EPIWORLD_CLOCK_SETUP()
 
-enum STATES {
-    DECEASED,
-    INFECTED,
+/**
+ * @brief List of possible states in the model
+ * 
+ * @details Currently, only `DECEASED`, `INFECTED`, `RECOVERED`, and `HEALTHY` are used.
+ * 
+ */
+enum STATUS {
     HEALTHY,
+    INFECTED,
     RECOVERED,
-    INCUBATION,
-    ASYMPTOMATIC,
-    ISOLATED
+    REMOVED
 };
 
 

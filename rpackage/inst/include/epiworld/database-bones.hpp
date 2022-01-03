@@ -101,6 +101,7 @@ inline std::string default_seq_writer<int>(
  */
 template<typename TSeq>
 class DataBase {
+    friend class Model<TSeq>;
 private:
     Model<TSeq> * model;
 
@@ -113,34 +114,31 @@ private:
     std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
     std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
 
-    // Running sum of the variant's information
-    std::vector< int > today_variant_ninfected;  ///< Running sum
-    std::vector< int > today_variant_nrecovered; ///< Running sum
-    std::vector< int > today_variant_nremoved;  ///< Running sum
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    std::vector< std::vector<int> > today_variant;
+
+    // {Healthy, Infected, etc.}
+    std::vector< int > today_total;
 
     // Totals
     int today_total_nvariants_active = 0;
-    int today_total_nhealthy   = 0;
-    int today_total_nrecovered = 0;
-    int today_total_ninfected  = 0;
-    int today_total_nremoved  = 0;
     
     int sampling_freq;
 
     // Variants history
     std::vector< int > hist_variant_date;
     std::vector< int > hist_variant_id;
-    std::vector< int > hist_variant_ninfected;
-    std::vector< int > hist_variant_nrecovered;
-    std::vector< int > hist_variant_nremoved;
+    std::vector< int > hist_variant_status;
+    std::vector< int > hist_variant_counts;
 
     // Overall hist
     std::vector< int > hist_total_date;
     std::vector< int > hist_total_nvariants_active;
-    std::vector< int > hist_total_nhealthy;
-    std::vector< int > hist_total_nrecovered;
-    std::vector< int > hist_total_ninfected;
-    std::vector< int > hist_total_nremoved;  
+    std::vector< int > hist_total_status;
+    std::vector< int > hist_total_counts;
+
+    // {Day 1: {Healthy, Infected, ...}, Day 2: {...}, ...}
+    std::vector< std::vector< int > > hist_total;  
 
     // Transmission network
     std::vector< int > transmision_date;
@@ -170,14 +168,22 @@ public:
     const std::vector< int > & get_ninfected() const;
     size_t size() const;
 
-    void up_infected(Virus<TSeq> * v);
-    void up_recovered(Virus<TSeq> * v);
-    void up_removed(Virus<TSeq> * v);
+    void up_infected(
+        Virus<TSeq> * v,
+        unsigned int prev_status,
+        unsigned int new_status
+        );
 
-    int get_today_total(std::string what) const;
-    const std::vector< int > & get_today_variant(std::string what) const;
-    const std::vector< int > & get_hist_total(std::string what) const;
-    const std::vector< int > & get_hist_variant(std::string what) const;
+    void down_infected(
+        Virus<TSeq> * v,
+        unsigned int prev_status,
+        unsigned int new_status
+        );
+
+    // int get_today_total(std::string what) const;
+    // const std::vector< int > & get_today_variant(std::string what) const;
+    // const std::vector< int > & get_hist_total(std::string what) const;
+    // const std::vector< int > & get_hist_variant(std::string what) const;
 
     void write_data(
         std::string fn_variant_info,

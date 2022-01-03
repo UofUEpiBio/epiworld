@@ -207,7 +207,13 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_adjlist(std::string fn, int skip, bool directed) {
+inline void Model<TSeq>::pop_from_adjlist(
+    std::string fn,
+    int skip,
+    bool directed,
+    int min_id,
+    int max_id
+    ) {
 
     AdjList al;
     al.read_edgelist(fn, skip, directed);
@@ -347,37 +353,74 @@ inline void Model<TSeq>::verbose_off() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::rewire_degseq(int nrewires)
+inline void Model<TSeq>::rewire_degseq(double proportion)
 {
 
+    // Identifying individuals with degree > 0
+    std::vector< unsigned int > non_isolates;
+    std::vector< double > weights;
+    double nedges = 0.0;
+    for (unsigned int i = 0u; i < persons.size(); ++i)
+    {
+        if (persons[i].neighbors.size() > 0u)
+        {
+            non_isolates.push_back(i);
+            weights.push_back(
+                static_cast<double>(persons[i].neighbors.size())
+                );
+            nedges += 1.0;
+        }
+    }
+
+    if (non_isolates.size() == 0u)
+        throw std::logic_error("The graph is completely disconnected.");
+
+    // Cumulative probs
+    weights[0u] /= nedges;
+    for (unsigned int i = 1u; i < non_isolates.size(); ++i)
+    {
+         weights[i] /= nedges;
+         weights[i] += weights[i - 1u];
+    }
+
     // Only swap if needed
-    int N = persons.size();
+    unsigned int N = non_isolates.size();
+    double prob;
+    int nrewires = floor(proportion * nedges);
     while (nrewires-- > 0)
     {
 
         // Picking egos
-        int id0 = std::floor(runif() * N);
-        if (persons[id0].neighbors.size() == 0u)
-            continue;
+        prob = runif();
+        int id0 = N - 1;
+        for (unsigned int i = 0u; i < N; ++i)
+            if (prob <= weights[i])
+            {
+                id0 = i;
+                break;
+            }
 
-        Person<TSeq> & p0 = persons[id0];
-
-        int id1 = std::floor(runif() * N - 1);     
+        prob = runif();
+        int id1 = N - 1;
+        for (unsigned int i = 0u; i < N; ++i)
+            if (prob <= weights[i])
+            {
+                id1 = i;
+                break;
+            }
 
         // Correcting for under or overflow.
-        if (id1 < 0)
-            id1 = 0;
-
         if (id1 == id0)
             id1++;
 
-        // If the same chose, then keep going.
-        if (persons[id1].neighbors.size() == 1u)
-            continue;
-        
-        Person<TSeq> & p1 = persons[id1];
+        if (id1 >= static_cast<int>(N))
+            id1 = 0;
+
+        Person<TSeq> & p0 = persons[non_isolates[id0]];
+        Person<TSeq> & p1 = persons[non_isolates[id1]];
 
         // Picking alters (relative location in their lists)
+        // In this case, these are uniformly distributed within the list
         int id01 = std::floor(p0.neighbors.size() * runif());
         int id11 = std::floor(p1.neighbors.size() * runif());
 
@@ -500,36 +543,6 @@ inline void Model<TSeq>::print() const
             );
     }
 
-    printf_epiworld("\nStatistics (susceptible):\n");
-    for (unsigned int s = 0u; s < status_susceptible.size(); ++s)
-    {
-        printf_epiworld(
-            " - Total %s: %i\n",
-            status_susceptible_labels[s].c_str(),
-            db.today_total[ status_susceptible[s] ]
-            );
-    }
-
-    printf_epiworld("\nStatistics (infected):\n");
-    for (unsigned int s = 0u; s < status_infected.size(); ++s)
-    {
-        printf_epiworld(
-            " - Total %s: %i\n",
-            status_infected_labels[s].c_str(),
-            db.today_total[ status_infected[s] ]
-            );
-    }
-
-    printf_epiworld("\nStatistics (removed):\n");
-    for (unsigned int s = 0u; s < status_removed.size(); ++s)
-    {
-        printf_epiworld(
-            " - Total %s: %i\n",
-            status_removed_labels[s].c_str(),
-            db.today_total[ status_removed[s] ]
-            );
-    }
-
     // Information about the parameters included
     printf_epiworld("\nModel parameters:\n");
     unsigned int nchar = 0u;
@@ -537,7 +550,7 @@ inline void Model<TSeq>::print() const
         if (p.first.length() > nchar)
             nchar = p.first.length();
 
-    std::string fmt = " - %-" + std::to_string(nchar + 1) + "s : ";
+    std::string fmt = " - %-" + std::to_string(nchar + 1) + "s: ";
     for (auto & p : parameters)
     {
         std::string fmt_tmp = fmt;
@@ -555,6 +568,88 @@ inline void Model<TSeq>::print() const
         
     }
 
+
+    nchar = 0u;
+    for (auto & p : status_susceptible_labels)
+        if (p.length() > nchar)
+            nchar = p.length();
+    
+    for (auto & p : status_infected_labels)
+        if (p.length() > nchar)
+            nchar = p.length();
+
+    for (auto & p : status_removed_labels)
+        if (p.length() > nchar)
+            nchar = p.length();
+
+    if (initialized) 
+        fmt = " - Total %-" + std::to_string(nchar + 1) + "s: %i\n";
+    else
+        fmt = " - Total %-" + std::to_string(nchar + 1) + "s: %s\n";
+        
+    printf_epiworld("\nStatistics (susceptible):\n");
+    for (unsigned int s = 0u; s < status_susceptible.size(); ++s)
+    {
+        if (initialized)
+        {
+            
+            printf_epiworld(
+                fmt.c_str(),
+                status_susceptible_labels[s].c_str(),
+                db.today_total[ status_susceptible[s] ]
+                );
+
+        } else {
+            printf_epiworld(
+                fmt.c_str(),
+                status_susceptible_labels[s].c_str(),
+                " - "
+                );
+        }
+    }
+
+    printf_epiworld("\nStatistics (infected):\n");
+    for (unsigned int s = 0u; s < status_infected.size(); ++s)
+    {
+        if (initialized)
+        {
+            
+            printf_epiworld(
+                fmt.c_str(),
+                status_infected_labels[s].c_str(),
+                db.today_total[ status_infected[s] ]
+                );
+
+        } else {
+            printf_epiworld(
+                fmt.c_str(),
+                status_infected_labels[s].c_str(),
+                " - "
+                );
+        }
+    }
+
+    printf_epiworld("\nStatistics (removed):\n");
+    for (unsigned int s = 0u; s < status_removed.size(); ++s)
+    {
+        if (initialized)
+        {
+            
+            printf_epiworld(
+                fmt.c_str(),
+                status_removed_labels[s].c_str(),
+                db.today_total[ status_removed[s] ]
+                );
+
+        } else {
+            printf_epiworld(
+                fmt.c_str(),
+                status_removed_labels[s].c_str(),
+                " - "
+                );
+        }
+    }
+    
 
     return;
 

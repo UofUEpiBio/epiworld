@@ -13,9 +13,7 @@ inline void PersonViruses<TSeq>::add_virus(
     viruses.push_back(v);
     int vloc = viruses.size() - 1u;
     viruses[vloc].host = host;
-    viruses[vloc].date   = host->get_model()->today();
-
-    host->get_model()->get_db().up_infected(&v);
+    viruses[vloc].date = host->get_model()->today();
 
     nactive++;
 

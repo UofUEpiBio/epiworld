@@ -25,6 +25,8 @@ namespace epiworld {
     #include "adjlist-bones.hpp"
     #include "adjlist-meat.hpp"
 
+    #include "randgraph.hpp"
+
     #include "model-bones.hpp"
     #include "model-meat.hpp"
     #include "virus-bones.hpp"
@@ -35,6 +37,8 @@ namespace epiworld {
     #include "tools-meat.hpp"
     #include "persontools-bones.hpp"
     #include "persontools-meat.hpp"
+    
+    #include "person-meat-status.hpp"
     #include "person-bones.hpp"
     #include "person-meat.hpp"
 

@@ -24,9 +24,12 @@ private:
     PersonTools<TSeq> tools;
     std::vector< Person<TSeq> * > neighbors;
     unsigned int index; ///< Location in the Model
-    int status_next = STATUS::HEALTHY; // Placeholder
-    int status      = STATUS::HEALTHY;
+    unsigned int status_next = STATUS::HEALTHY; // Placeholder
+    unsigned int status      = STATUS::HEALTHY;
     int id          = -1;
+    std::function<unsigned int(Person<TSeq>*,Model<TSeq>*)> update_susceptible = default_update_susceptible<TSeq>;
+    std::function<unsigned int(Person<TSeq>*,Model<TSeq>*)> update_infected = default_update_infected<TSeq>;
+    std::function<unsigned int(Person<TSeq>*,Model<TSeq>*)> update_removed = nullptr;
 
 public:
 
@@ -61,7 +64,7 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
-    int get_status() const;
+    unsigned int get_status() const;
 
     void reset();
 

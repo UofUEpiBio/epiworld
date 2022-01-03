@@ -38,6 +38,13 @@
     epiworld::Model<tseq> * m \
     )
 
+#define EPI_POSTRECFUN(funname,tseq) inline void \
+    (funname)( \
+    epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq>* v, \
+    epiworld::Model<tseq> * m\
+    )
+
 #define EPI_RUNIF() m->runif()
 
 #define EPIWORLD_RUN(a) \

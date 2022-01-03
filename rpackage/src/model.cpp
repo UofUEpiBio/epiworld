@@ -51,7 +51,7 @@ int run_epi_model(SEXP model) {
     
     // In this case we are applying degree sequence rewiring
     // to change the network just a bit.
-    ptr->rewire_degseq(floor(ptr->size() * .1));
+    ptr->rewire_degseq(0.1);
     
   }
 
