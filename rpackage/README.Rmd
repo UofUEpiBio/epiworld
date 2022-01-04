@@ -68,7 +68,7 @@ edges <- igraph::as_edgelist(net)
 edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)
 
 # Virus and tools are distributed
-init_epi_model(m, 100, 12)
+init_epi_model(m, 60, 12)
 
 # We can get information about the model
 m
@@ -87,7 +87,7 @@ head(history)
 
 library(ggplot2)
 ggplot(history, aes(x = date, y = counts)) +
-  geom_line(aes(colour = status))
+  geom_line(aes(colour = status)) 
 ```
 
 

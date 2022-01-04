@@ -176,6 +176,8 @@ inline double Virus<TSeq>::set_param(
     if (parmap.find(pname) == parmap.end())
         throw std::logic_error("The parameter " + pname + " does not exists.");
 
+    params.push_back(&(parmap[pname]));
+
     unsigned int res = static_cast<unsigned int >(params.size()) - 1u;
     CASES_PAR(res)
 
