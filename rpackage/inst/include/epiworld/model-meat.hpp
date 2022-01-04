@@ -318,16 +318,6 @@ inline int Model<TSeq>::get_nvariants() const {
 }
 
 template<typename TSeq>
-inline const std::vector<TSeq> & Model<TSeq>::get_variant_sequence() const {
-    return db.get_sequence();
-}
-
-template<typename TSeq>
-inline const std::vector<int> & Model<TSeq>::get_variant_nifected() const {
-    return db.get_today_variant("ninfected");
-}
-
-template<typename TSeq>
 inline unsigned int Model<TSeq>::get_ndays() const {
     return ndays;
 }

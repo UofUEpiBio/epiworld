@@ -13,21 +13,7 @@ EPI_NEW_TOOL(immune_eff, TSEQ) {
 }
 
 EPI_NEW_TOOL(immune_rec, TSEQ) {
-  
-  // // Immune system improvement
-  // if (EPI_RUNIF() < *t->p01)
-  // {
-  //   
-  //   TSEQ new_seq = *t->get_sequence();
-  //   int loc = std::floor(EPI_RUNIF() * new_seq.size());
-  //   new_seq[loc] = v->get_sequence()->at(loc);
-  //   
-  //   t->get_sequence() = std::make_shared<TSEQ>(new_seq);
-  //   
-  // }
-  
   return *t->p01;
-  
 }
 
 EPI_NEW_TOOL(immune_death, TSEQ) {

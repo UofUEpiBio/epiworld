@@ -11,46 +11,42 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // get_today_variant
-std::vector< int > get_today_variant(SEXP model, std::string what);
-RcppExport SEXP _epiworld_get_today_variant(SEXP modelSEXP, SEXP whatSEXP) {
+DataFrame get_today_variant(SEXP model);
+RcppExport SEXP _epiworld_get_today_variant(SEXP modelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::string >::type what(whatSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_today_variant(model, what));
+    rcpp_result_gen = Rcpp::wrap(get_today_variant(model));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_today_total
-int get_today_total(SEXP model, std::string what);
-RcppExport SEXP _epiworld_get_today_total(SEXP modelSEXP, SEXP whatSEXP) {
+DataFrame get_today_total(SEXP model);
+RcppExport SEXP _epiworld_get_today_total(SEXP modelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::string >::type what(whatSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_today_total(model, what));
+    rcpp_result_gen = Rcpp::wrap(get_today_total(model));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_hist_total
-std::vector< int > get_hist_total(SEXP model, std::string what);
-RcppExport SEXP _epiworld_get_hist_total(SEXP modelSEXP, SEXP whatSEXP) {
+DataFrame get_hist_total(SEXP model);
+RcppExport SEXP _epiworld_get_hist_total(SEXP modelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::string >::type what(whatSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_hist_total(model, what));
+    rcpp_result_gen = Rcpp::wrap(get_hist_total(model));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_hist_variant
-std::vector< int > get_hist_variant(SEXP model, std::string what);
-RcppExport SEXP _epiworld_get_hist_variant(SEXP modelSEXP, SEXP whatSEXP) {
+DataFrame get_hist_variant(SEXP model);
+RcppExport SEXP _epiworld_get_hist_variant(SEXP modelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< std::string >::type what(whatSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_hist_variant(model, what));
+    rcpp_result_gen = Rcpp::wrap(get_hist_variant(model));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -164,16 +160,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // edgelist_from_vec
-int edgelist_from_vec(SEXP model, const std::vector< int >& source, const std::vector< int >& target, bool directed);
-RcppExport SEXP _epiworld_edgelist_from_vec(SEXP modelSEXP, SEXP sourceSEXP, SEXP targetSEXP, SEXP directedSEXP) {
+int edgelist_from_vec(SEXP model, const std::vector< unsigned int >& source, const std::vector< unsigned int >& target, bool directed, int min_id, int max_id);
+RcppExport SEXP _epiworld_edgelist_from_vec(SEXP modelSEXP, SEXP sourceSEXP, SEXP targetSEXP, SEXP directedSEXP, SEXP min_idSEXP, SEXP max_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< const std::vector< int >& >::type source(sourceSEXP);
-    Rcpp::traits::input_parameter< const std::vector< int >& >::type target(targetSEXP);
+    Rcpp::traits::input_parameter< const std::vector< unsigned int >& >::type source(sourceSEXP);
+    Rcpp::traits::input_parameter< const std::vector< unsigned int >& >::type target(targetSEXP);
     Rcpp::traits::input_parameter< bool >::type directed(directedSEXP);
-    rcpp_result_gen = Rcpp::wrap(edgelist_from_vec(model, source, target, directed));
+    Rcpp::traits::input_parameter< int >::type min_id(min_idSEXP);
+    Rcpp::traits::input_parameter< int >::type max_id(max_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(edgelist_from_vec(model, source, target, directed, min_id, max_id));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -239,10 +237,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_epiworld_get_today_variant", (DL_FUNC) &_epiworld_get_today_variant, 2},
-    {"_epiworld_get_today_total", (DL_FUNC) &_epiworld_get_today_total, 2},
-    {"_epiworld_get_hist_total", (DL_FUNC) &_epiworld_get_hist_total, 2},
-    {"_epiworld_get_hist_variant", (DL_FUNC) &_epiworld_get_hist_variant, 2},
+    {"_epiworld_get_today_variant", (DL_FUNC) &_epiworld_get_today_variant, 1},
+    {"_epiworld_get_today_total", (DL_FUNC) &_epiworld_get_today_total, 1},
+    {"_epiworld_get_hist_total", (DL_FUNC) &_epiworld_get_hist_total, 1},
+    {"_epiworld_get_hist_variant", (DL_FUNC) &_epiworld_get_hist_variant, 1},
     {"_epiworld_new_epi_model", (DL_FUNC) &_epiworld_new_epi_model, 0},
     {"_epiworld_init_epi_model", (DL_FUNC) &_epiworld_init_epi_model, 3},
     {"_epiworld_run_epi_model", (DL_FUNC) &_epiworld_run_epi_model, 1},
@@ -253,7 +251,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epiworld_verbose_off_epi_model", (DL_FUNC) &_epiworld_verbose_off_epi_model, 1},
     {"_epiworld_set_seed_epi_model", (DL_FUNC) &_epiworld_set_seed_epi_model, 2},
     {"_epiworld_edgelist_from_file", (DL_FUNC) &_epiworld_edgelist_from_file, 4},
-    {"_epiworld_edgelist_from_vec", (DL_FUNC) &_epiworld_edgelist_from_vec, 4},
+    {"_epiworld_edgelist_from_vec", (DL_FUNC) &_epiworld_edgelist_from_vec, 6},
     {"_epiworld_add_tool_immune", (DL_FUNC) &_epiworld_add_tool_immune, 7},
     {"_epiworld_add_tool_vaccine", (DL_FUNC) &_epiworld_add_tool_vaccine, 7},
     {"_epiworld_add_tool_mask", (DL_FUNC) &_epiworld_add_tool_mask, 5},

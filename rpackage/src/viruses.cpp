@@ -25,21 +25,8 @@ EPI_MUTFUN(covid19_mut, TSEQ) {
 
 // We assume individuals cannot become reinfected with the
 // same variant
-EPI_NEW_TOOL(post_rec_efficacy, TSEQ) 
-{
-  
-  const auto vseq = v->get_sequence();
-  const auto tseq = t->get_sequence();
-  
-  // If different, then no help
-  for (unsigned int i = 0; i < vseq->size(); ++i)
-    if (vseq->at(i) != tseq->at(i))
-      return 0.0;
-    
-  // If completely matches, then it is almost 100% efficacy
-  return *v->p00;
-    
-    
+EPI_NEW_TOOL(post_rec_efficacy, TSEQ) {
+  return *t->p00;
 }
 
 EPI_RECFUN(post_covid, TSEQ) {

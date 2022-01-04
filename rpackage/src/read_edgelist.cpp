@@ -25,16 +25,17 @@ int edgelist_from_file(
 // [[Rcpp::export(invisible = true)]]
 int edgelist_from_vec(
     SEXP model,
-    const std::vector< int > & source,
-    const std::vector< int > & target,
-    bool directed
+    const std::vector< unsigned int > & source,
+    const std::vector< unsigned int > & target,
+    bool directed,
+    int min_id = -1,
+    int max_id = -1
     ) {
   
   Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
-  epiworld::AdjList al(source, target, directed);
+  epiworld::AdjList al(source, target, directed, min_id, max_id);
   ptr->pop_from_adjlist(al);
   
   return 0;
-  
   
 }

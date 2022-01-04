@@ -59,12 +59,6 @@ inline void DataBase<TSeq>::record()
             hist_total_counts.push_back(today_total[s]);
 
         }
-        // hist_total_date.push_back(model->today());
-        // hist_total_nvariants_active.push_back(today_total_nvariants_active);
-        // hist_total_nhealthy.push_back(today_total_nhealthy);
-        // hist_total_nrecovered.push_back(today_total_nrecovered);
-        // hist_total_ninfected.push_back(today_total_ninfected);
-        // hist_total_nremoved.push_back(today_total_nremoved);
 
     }
 }
@@ -114,13 +108,6 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
     // Moving statistics (only if we are affecting an individual)
     if (v->get_host() != nullptr)
     {
-        // if (variant_id.size() > 1)
-        //     today_variant_ninfected[old_id]--;
-            
-        // today_variant_ninfected.push_back(1);
-        // today_variant_nrecovered.push_back(0);
-        // today_variant_nremoved.push_back(0);
-
         // Correcting math
         unsigned int tmp_status = v->get_host()->get_status();
         today_variant[old_id][tmp_status]--;
@@ -130,109 +117,6 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
     
     return;
 } 
-
-// template<typename TSeq>
-// inline int DataBase<TSeq>::get_today_total(std::string what) const
-// {
-//     if (what == "")
-//     { 
-//         printf_epiworld(
-//             "The following values are allowed in -what-: \"nvariants_active\", \"nhealthy\", \"nrecovered\", \"ninfected\", and \"nremoved\".");
-//         return 0;
-//     } else if (what == "nvariants_active")
-//         return today_total_nvariants_active;
-//     else if (what == "nhealthy")
-//         return today_total_nhealthy;
-//     else if (what == "nrecovered")
-//         return today_total_nrecovered;
-//     else if (what == "ninfected")
-//         return today_total_ninfected;
-//     else if (what == "nremoved")
-//         return today_total_nremoved;
-//     else 
-//         throw std::logic_error("\""+ what + "\" is not included in the database.");   
-
-// }
-
-// template<typename TSeq>
-// inline const std::vector<int> & DataBase<TSeq>::get_today_variant(std::string what) const
-// {
-//     if (what == "")
-//     {
-
-//         printf_epiworld(
-//         "The following values are allowed in -what-: \"nrecovered\", \"ninfected\", and \"nremoved\"."
-//         );
-        
-//         return today_variant_nrecovered;
-
-//     } else if (what == "nrecovered")
-//         return today_variant_nrecovered;
-//     else if (what == "ninfected")
-//         return today_variant_ninfected;
-//     else if (what == "nremoved")
-//         return today_variant_nremoved;
-//     else 
-//         throw std::logic_error("\""+ what + "\" is not included in the database.");   
-
-// }
-
-// template<typename TSeq>
-// inline const std::vector<int> & DataBase<TSeq>::get_hist_total(std::string what) const
-// {
-//     if (what == "")
-//     {
-
-//         printf_epiworld(
-//         "The following values are allowed in -what-: \"nvariants_active\", \"nhealthy\", \"nrecovered\", \"ninfected\", and \"nremoved\"."
-//         );
-        
-//         return hist_total_date;
-
-//     } else if (what == "date")
-//         return hist_total_date;
-//     else if (what == "nvariants_active")
-//         return hist_total_nvariants_active;
-//     else if (what == "nhealthty")
-//         return hist_total_nhealthy;
-//     else if (what == "nrecovered")
-//         return hist_total_nrecovered;
-//     else if (what == "ninfected")
-//         return hist_total_ninfected;
-//     else if (what == "nremoved")
-//         return hist_total_nremoved;
-//     else 
-//         throw std::logic_error("\""+ what + "\" is not included in the database.");   
-
-// }
-
-// template<typename TSeq>
-// inline const std::vector<int> & DataBase<TSeq>::get_hist_variant(std::string what) const
-// {
-    
-//     if (what == "")
-//     {
-
-//          printf_epiworld(
-//             "The following values are allowed in -what-: \"date\", \"id\", \"nrecovered\", \"ninfected\", and \"nremoved\"."
-//         );
-        
-//         return hist_variant_date;
-
-//     } else if (what == "date")
-//         return hist_variant_date;
-//     else if (what == "id")
-//         return hist_variant_id;
-//     else if (what == "nrecovered")
-//         return hist_variant_nrecovered;
-//     else if (what == "ninfected")
-//         return hist_variant_ninfected;
-//     else if (what == "nremoved")
-//         return hist_variant_nremoved;
-//     else 
-//         throw std::logic_error("\""+ what + "\" is not included in the database.");   
-
-// }
 
 template<typename TSeq>
 inline size_t DataBase<TSeq>::size() const
@@ -255,7 +139,7 @@ inline void DataBase<TSeq>::up_infected(
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::down_infected(
+inline void DataBase<TSeq>::down_infected( 
     Virus<TSeq> * v,
     unsigned int prev_status,
     unsigned int new_status
@@ -268,6 +152,98 @@ inline void DataBase<TSeq>::down_infected(
 
 
 }
+
+#define EPIWORLD_GET_STATUS_LABELS(stdstrvec) \
+    stdstrvec.resize(model->nstatus); \
+    for (unsigned int i = 0u; i < model->status_susceptible.size(); ++i) \
+        stdstrvec[model->status_susceptible[i]] = model->status_susceptible_labels[i]; \
+    for (unsigned int i = 0u; i < model->status_infected.size(); ++i) \
+        stdstrvec[model->status_infected[i]] = model->status_infected_labels[i]; \
+    for (unsigned int i = 0u; i < model->status_removed.size(); ++i) \
+        stdstrvec[model->status_removed[i]] = model->status_removed_labels[i];
+
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_today_total(
+    std::vector< std::string > & status,
+    std::vector< int > & counts
+) const
+{
+    
+    EPIWORLD_GET_STATUS_LABELS(status)
+    counts = today_total;
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_today_variant(
+    std::vector< std::string > & status,
+    std::vector< int > & id,
+    std::vector< int > & counts
+    ) const
+{
+    
+    std::vector< std::string > labels;
+    EPIWORLD_GET_STATUS_LABELS(labels)    
+    status.resize(today_variant.size(), "");
+    id.resize(today_variant.size(), 0);
+    counts.resize(today_variant.size(),0);
+    int n = 0u;
+    for (unsigned int v = 0u; v < today_variant.size(); ++v)
+        for (unsigned int s = 0u; s < labels.size(); ++s)
+        {
+            status[n]   = labels[s];
+            id[n]       = static_cast<int>(v);
+            counts[n++] = today_variant[v][s];
+
+        }
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hist_total(
+    std::vector< int > & date,
+    std::vector< std::string > & status,
+    std::vector< int > & counts
+) const {
+
+    date = hist_total_date;
+    std::vector< std::string > labels;
+    EPIWORLD_GET_STATUS_LABELS(labels)
+
+    status.resize(hist_total_status.size(), "");
+    for (unsigned int i = 0u; i < hist_total_status.size(); ++i)
+        status[i] = labels[hist_total_status[i]];
+
+    counts = hist_total_counts;
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hist_variant(
+    std::vector< int > & date,
+    std::vector< int > & id,
+    std::vector< std::string > & status,
+    std::vector< int > & counts
+) const {
+
+    date = hist_variant_date;
+    std::vector< std::string > labels;
+    EPIWORLD_GET_STATUS_LABELS(labels)
+    id = hist_variant_id;
+    status.resize(hist_variant_status.size(), "");
+    for (unsigned int i = 0u; i < hist_variant_status.size(); ++i)
+        status[i] = labels[hist_variant_status[i]];
+
+    counts = hist_variant_counts;
+
+    return;
+
+}
+
+#undef EPIWORLD_GET_STATUS_LABELS
 
 template<typename TSeq>
 inline void DataBase<TSeq>::write_data(
@@ -299,6 +275,20 @@ inline void DataBase<TSeq>::write_data(
 
     }
 
+    // Preparing labels
+    std::vector< std::string > labels(model->nstatus);
+    for (unsigned int i = 0u; i < model->status_susceptible.size(); ++i)
+        labels[model->status_susceptible[i]] =
+            model->status_susceptible_labels[i];
+    
+    for (unsigned int i = 0u; i < model->status_infected.size(); ++i)
+        labels[model->status_infected[i]] =
+            model->status_infected_labels[i];
+
+    for (unsigned int i = 0u; i < model->status_removed.size(); ++i)
+        labels[model->status_removed[i]] =
+            model->status_removed_labels[i];
+
     if (fn_variant_hist != "")
     {
         std::ofstream file_variant(fn_variant_hist, std::ios_base::out);
@@ -310,7 +300,7 @@ inline void DataBase<TSeq>::write_data(
             file_variant <<
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
-                hist_variant_status[i] << " " <<
+                labels[hist_variant_status[i]] << " " <<
                 hist_variant_counts[i] << "\n";
     }
 
@@ -325,7 +315,7 @@ inline void DataBase<TSeq>::write_data(
             file_total <<
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " " <<
-                hist_total_status[i] << " " << 
+                labels[hist_total_status[i]] << " " << 
                 hist_total_counts[i] << "\n";
     }
 

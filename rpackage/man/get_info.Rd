@@ -6,20 +6,18 @@
 \alias{get_today_total}
 \alias{get_hist_total}
 \alias{get_hist_variant}
-\title{Extract database information from the model}
+\title{Extract database information from the model
+//'}
 \usage{
-get_today_variant(model, what)
+get_today_variant(model)
 
-get_today_total(model, what)
+get_today_total(model)
 
-get_hist_total(model, what)
+get_hist_total(model)
 
-get_hist_variant(model, what)
-}
-\arguments{
-\item{what}{Character (string). What information to extract. leaving \code{what}
-equal to \code{""} will print the available datum.}
+get_hist_variant(model)
 }
 \description{
 Extract database information from the model
+//'
 }

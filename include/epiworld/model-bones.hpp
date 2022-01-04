@@ -107,8 +107,6 @@ public:
 
     void record_variant(Virus<TSeq> * v);
     int get_nvariants() const;
-    const std::vector< TSeq > & get_variant_sequence() const;
-    const std::vector< int > & get_variant_nifected() const;
     unsigned int get_ndays() const;
     void set_ndays(unsigned int ndays);
     bool get_verbose() const;

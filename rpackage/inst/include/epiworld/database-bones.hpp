@@ -137,9 +137,6 @@ private:
     std::vector< int > hist_total_status;
     std::vector< int > hist_total_counts;
 
-    // {Day 1: {Healthy, Infected, ...}, Day 2: {...}, ...}
-    std::vector< std::vector< int > > hist_total;  
-
     // Transmission network
     std::vector< int > transmision_date;
     std::vector< int > transmision_source;
@@ -180,10 +177,43 @@ public:
         unsigned int new_status
         );
 
-    // int get_today_total(std::string what) const;
-    // const std::vector< int > & get_today_variant(std::string what) const;
-    // const std::vector< int > & get_hist_total(std::string what) const;
-    // const std::vector< int > & get_hist_variant(std::string what) const;
+    /**
+     * @brief Get recorded information from the model
+     * 
+     * @param what std::string, The status, e.g., 0, 1, 2, ...
+     * @return In `get_today_total`, the current counts of `what`.
+     * @return In `get_today_variant`, the current counts of `what` for
+     * each variant.
+     * @return In `get_hist_total`, the time series of `what`
+     * @return In `get_hist_variant`, the time series of what for each variant.
+     * @return In `get_hist_total_date` and `get_hist_variant_date` the
+     * corresponding dates
+     */
+    ///@[
+    void get_today_total(
+        std::vector< std::string > & status,
+        std::vector< int > & counts
+    ) const;
+
+    void get_today_variant(
+        std::vector< std::string > & status,
+        std::vector< int > & id,
+        std::vector< int > & counts
+    ) const;
+
+    void get_hist_total(
+        std::vector< int > & date,
+        std::vector< std::string > & status,
+        std::vector< int > & counts
+    ) const;
+
+    void get_hist_variant(
+        std::vector< int > & date,
+        std::vector< int > & id,
+        std::vector< std::string > & status,
+        std::vector< int > & counts
+    ) const;
+    ///@]
 
     void write_data(
         std::string fn_variant_info,

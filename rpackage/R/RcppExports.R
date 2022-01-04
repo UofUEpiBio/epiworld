@@ -2,32 +2,29 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' Extract database information from the model
-#' 
-#' @param what Character (string). What information to extract. leaving `what`
-#' equal to `""` will print the available datum.
-#' 
+#' //' 
 #' @export
 #' @name get_info
-get_today_variant <- function(model, what) {
-    .Call(`_epiworld_get_today_variant`, model, what)
+get_today_variant <- function(model) {
+    .Call(`_epiworld_get_today_variant`, model)
 }
 
 #' @rdname get_info
 #' @export
-get_today_total <- function(model, what) {
-    .Call(`_epiworld_get_today_total`, model, what)
+get_today_total <- function(model) {
+    .Call(`_epiworld_get_today_total`, model)
 }
 
 #' @rdname get_info
 #' @export
-get_hist_total <- function(model, what) {
-    .Call(`_epiworld_get_hist_total`, model, what)
+get_hist_total <- function(model) {
+    .Call(`_epiworld_get_hist_total`, model)
 }
 
 #' @rdname get_info
 #' @export
-get_hist_variant <- function(model, what) {
-    .Call(`_epiworld_get_hist_variant`, model, what)
+get_hist_variant <- function(model) {
+    .Call(`_epiworld_get_hist_variant`, model)
 }
 
 #' Creates a new model
@@ -94,8 +91,8 @@ edgelist_from_file <- function(model, fname, skip, directed) {
 
 #' @export
 #' @rdname new_epi_model
-edgelist_from_vec <- function(model, source, target, directed) {
-    invisible(.Call(`_epiworld_edgelist_from_vec`, model, source, target, directed))
+edgelist_from_vec <- function(model, source, target, directed, min_id = -1L, max_id = -1L) {
+    invisible(.Call(`_epiworld_edgelist_from_vec`, model, source, target, directed, min_id, max_id))
 }
 
 #' @rdname new_epi_model

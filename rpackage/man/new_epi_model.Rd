@@ -35,7 +35,7 @@ set_seed_epi_model(model, seed)
 
 edgelist_from_file(model, fname, skip, directed)
 
-edgelist_from_vec(model, source, target, directed)
+edgelist_from_vec(model, source, target, directed, min_id = -1L, max_id = -1L)
 
 add_tool_immune(
   model,
