@@ -185,32 +185,15 @@ int main(int argc, char* argv[]) {
     model.add_tool(immune, 1.0);
     
     // Initializing and printing information about the model ------------------
-    model.init(nsteps, seed);  
+    model.init(nsteps, seed);
+    model.set_rewire_fun(epiworld::rewire_degseq<DAT>);  
+    model.set_rewire_prop(0.10);
 
     // Screen information
     model.print();
 
-    // Creating a progress bar
-    EPIWORLD_CLOCK_START("(01) Run model")
-
-    // Initializing the simulation
-    EPIWORLD_RUN(model) 
-    {
-
-        // We can execute these components in whatever order the
-        // user needs.
-        model.update_status();
-        model.mutate_variant();
-        model.next();
-
-        // In this case we are applying degree sequence rewiring
-        // to change the network just a bit.
-        model.rewire_degseq(0.10);
-
-    }
-
-    
-    EPIWORLD_CLOCK_END("(01) Run model")
+    // Running the model
+    model.run();
 
     // Writing off the results
     model.write_data(
@@ -221,8 +204,6 @@ int main(int argc, char* argv[]) {
     );
 
     model.write_edgelist("simple-world-edgelist.txt");
-
-    EPIWORLD_CLOCK_REPORT("--- ELAPSED TIMES ---")
 
     model.print();
 

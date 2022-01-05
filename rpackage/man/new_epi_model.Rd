@@ -4,6 +4,7 @@
 \alias{new_epi_model}
 \alias{init_epi_model}
 \alias{run_epi_model}
+\alias{set_rewire_degseq}
 \alias{print.epi_model}
 \alias{reset_epi_model}
 \alias{verbose_on_epi_model}
@@ -22,6 +23,8 @@ new_epi_model()
 init_epi_model(model, nsteps, seed)
 
 run_epi_model(model)
+
+set_rewire_degseq(model, prop)
 
 \method{print}{epi_model}(x)
 
@@ -69,6 +72,8 @@ add_virus_covid19(
 }
 \arguments{
 \item{seed}{Integer. Seed to be passed.}
+
+\item{prop}{Proportion of rewiring}
 
 \item{preval}{Baseline prevalence. What proportion of the population will
 be assigned this tool.}

@@ -39,24 +39,24 @@ int run_epi_model(SEXP model) {
   // Creating a progress bar
   EPIWORLD_CLOCK_START("(01) Run model")
     
-  // Initializing the simulation
-  EPIWORLD_RUN((*ptr)) 
-  {
-    
-    // We can execute these components in whatever order the
-    // user needs.
-    ptr->update_status();
-    ptr->mutate_variant();
-    ptr->next();
-    
-    // In this case we are applying degree sequence rewiring
-    // to change the network just a bit.
-    ptr->rewire_degseq(0.1);
-    
-  }
+  ptr->run();
 
   return 0;
 
+}
+
+//' @export
+//' @param prop Proportion of rewiring
+//' @rdname new_epi_model
+// [[Rcpp::export(invisible = true)]]
+int set_rewire_degseq(SEXP model, double prop) {
+  
+  Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
+  ptr->set_rewire_fun(epiworld::rewire_degseq<TSEQ>);
+  ptr->set_rewire_prop(prop);
+  
+  return 0;
+  
 }
 
 //' @export

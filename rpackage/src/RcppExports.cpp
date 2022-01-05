@@ -83,6 +83,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// set_rewire_degseq
+int set_rewire_degseq(SEXP model, double prop);
+RcppExport SEXP _epiworld_set_rewire_degseq(SEXP modelSEXP, SEXP propSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< double >::type prop(propSEXP);
+    rcpp_result_gen = Rcpp::wrap(set_rewire_degseq(model, prop));
+    return rcpp_result_gen;
+END_RCPP
+}
 // update_epi_params
 int update_epi_params(SEXP model, std::string pname, double value);
 RcppExport SEXP _epiworld_update_epi_params(SEXP modelSEXP, SEXP pnameSEXP, SEXP valueSEXP) {
@@ -244,6 +256,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epiworld_new_epi_model", (DL_FUNC) &_epiworld_new_epi_model, 0},
     {"_epiworld_init_epi_model", (DL_FUNC) &_epiworld_init_epi_model, 3},
     {"_epiworld_run_epi_model", (DL_FUNC) &_epiworld_run_epi_model, 1},
+    {"_epiworld_set_rewire_degseq", (DL_FUNC) &_epiworld_set_rewire_degseq, 2},
     {"_epiworld_update_epi_params", (DL_FUNC) &_epiworld_update_epi_params, 3},
     {"_epiworld_print_epi_model", (DL_FUNC) &_epiworld_print_epi_model, 1},
     {"_epiworld_reset_epi_model", (DL_FUNC) &_epiworld_reset_epi_model, 1},

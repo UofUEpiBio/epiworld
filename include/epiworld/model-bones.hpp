@@ -39,8 +39,15 @@ private:
 
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
+    
     std::shared_ptr< std::uniform_real_distribution<> > runifd =
         std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
+
+    std::shared_ptr< std::normal_distribution<> > rnormd =
+        std::make_shared< std::normal_distribution<> >(0.0);
+
+    std::function<void(Model<TSeq>*,double)> rewire_fun;
+    double rewire_prop;
         
     std::map<std::string, double > parameters;
     unsigned int ndays;
@@ -75,7 +82,6 @@ public:
     double & operator()(std::string pname);
 
     size_t size() const;
-    void init(unsigned int seed, unsigned int ndays);
 
     /**
      * @brief Random number generation
@@ -86,6 +92,7 @@ public:
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
     double runif();
+    double rnorm(double mean = 0.0, double sd = 1.0);
     void seed(unsigned int s);
     ///@]
 
@@ -100,18 +107,31 @@ public:
         int max_id = -1
         );
     void pop_from_adjlist(AdjList al);
-    int today() const;
+
+    /**
+     * @brief Functions to run the model
+     * 
+     * @param seed Seed to be used for Pseudo-RNG.
+     * @param ndays Number of days (steps) of the simulation.
+     * 
+     */
+    ///@[
+    void init(unsigned int seed, unsigned int ndays);
     void update_status();
     void mutate_variant();
     void next();
+    void run();
+    ///@]
 
     void record_variant(Virus<TSeq> * v);
+
     int get_nvariants() const;
     unsigned int get_ndays() const;
     void set_ndays(unsigned int ndays);
     bool get_verbose() const;
     void verbose_off();
     void verbose_on();
+    int today() const;
 
     /**
      * @brief Rewire the network preserving the degree sequence.
@@ -124,7 +144,12 @@ public:
      * 
      * @result A rewired version of the network.
      */
-    void rewire_degseq(double proportion);
+    ///@[
+    void set_rewire_fun(std::function<void(Model<TSeq>*,double)> fun);
+    void set_rewire_prop(double prop);
+    double get_rewire_prop() const;
+    void rewire();
+    ///@]
 
     /**
      * @brief Wrapper of `DataBase::write_data`
@@ -141,9 +166,26 @@ public:
         std::string fn_transmission
         ) const;
 
+    /**
+     * @brief Export the network data in edgelist form
+     * 
+     * @param fn std::string. File name.
+     * @param source Integer vector
+     * @param target Integer vector
+     * 
+     * @details When passing the source and target, the function will
+     * write the edgelist on those.
+     */
+    ///[@
     void write_edgelist(
         std::string fn
         ) const;
+
+    void write_edgelist(
+        std::vector< unsigned int > & source,
+        std::vector< unsigned int > & target
+        ) const;
+    ///@]
 
     std::map<std::string, double> & params();
 

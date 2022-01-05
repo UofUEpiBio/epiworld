@@ -181,6 +181,12 @@ inline double Model<TSeq>::runif() {
 }
 
 template<typename TSeq>
+inline double Model<TSeq>::rnorm(double mean, double sd) {
+    // CHECK_INIT()
+    return (rnorm->operator()(*engine)) * sd + mean;
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::seed(unsigned int s) {
     this->engine->seed(s);
 }
@@ -216,7 +222,7 @@ inline void Model<TSeq>::pop_from_adjlist(
     ) {
 
     AdjList al;
-    al.read_edgelist(fn, skip, directed);
+    al.read_edgelist(fn, skip, directed, min_id, max_id);
     this->pop_from_adjlist(al);
 
 }
@@ -278,6 +284,28 @@ inline void Model<TSeq>::next() {
         pb.next();
 
     return ;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::run() 
+{
+
+        // Initializing the simulation
+    EPIWORLD_RUN((*this))
+    {
+
+        // We can execute these components in whatever order the
+        // user needs.
+        this->update_status();
+        this->mutate_variant();
+        this->next();
+
+        // In this case we are applying degree sequence rewiring
+        // to change the network just a bit.
+        this->rewire();
+
+    }
+
 }
 
 template<typename TSeq>
@@ -343,105 +371,35 @@ inline void Model<TSeq>::verbose_off() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::rewire_degseq(double proportion)
+inline void Model<TSeq>::set_rewire_fun(std::function<void(Model<TSeq>*,double)> fun) {
+    rewire_fun = fun;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_rewire_prop(double prop)
 {
 
-    // Identifying individuals with degree > 0
-    std::vector< unsigned int > non_isolates;
-    std::vector< double > weights;
-    double nedges = 0.0;
-    for (unsigned int i = 0u; i < persons.size(); ++i)
-    {
-        if (persons[i].neighbors.size() > 0u)
-        {
-            non_isolates.push_back(i);
-            weights.push_back(
-                static_cast<double>(persons[i].neighbors.size())
-                );
-            nedges += 1.0;
-        }
-    }
+    if (prop < 0.0)
+        throw std::range_error("Proportions cannot be negative.");
 
-    if (non_isolates.size() == 0u)
-        throw std::logic_error("The graph is completely disconnected.");
+    if (prop > 1.0)
+        throw std::range_error("Proportions cannot be above 1.0.");
 
-    // Cumulative probs
-    weights[0u] /= nedges;
-    for (unsigned int i = 1u; i < non_isolates.size(); ++i)
-    {
-         weights[i] /= nedges;
-         weights[i] += weights[i - 1u];
-    }
-
-    // Only swap if needed
-    unsigned int N = non_isolates.size();
-    double prob;
-    int nrewires = floor(proportion * nedges);
-    while (nrewires-- > 0)
-    {
-
-        // Picking egos
-        prob = runif();
-        int id0 = N - 1;
-        for (unsigned int i = 0u; i < N; ++i)
-            if (prob <= weights[i])
-            {
-                id0 = i;
-                break;
-            }
-
-        prob = runif();
-        int id1 = N - 1;
-        for (unsigned int i = 0u; i < N; ++i)
-            if (prob <= weights[i])
-            {
-                id1 = i;
-                break;
-            }
-
-        // Correcting for under or overflow.
-        if (id1 == id0)
-            id1++;
-
-        if (id1 >= static_cast<int>(N))
-            id1 = 0;
-
-        Person<TSeq> & p0 = persons[non_isolates[id0]];
-        Person<TSeq> & p1 = persons[non_isolates[id1]];
-
-        // Picking alters (relative location in their lists)
-        // In this case, these are uniformly distributed within the list
-        int id01 = std::floor(p0.neighbors.size() * runif());
-        int id11 = std::floor(p1.neighbors.size() * runif());
-
-        // When rewiring, we need to flip the individuals from the other
-        // end as well, since we are dealing withi an undirected graph
-
-        // Finding what neighbour is id0
-        unsigned int n0,n1;
-        Person<TSeq> & p01 = persons[p0.neighbors[id01]->index];
-        for (n0 = 0; n0 < p01.neighbors.size(); ++n0)
-        {
-            if (p0.id == p01.neighbors[n0]->get_id())
-                break;            
-        }
-
-        Person<TSeq> & p11 = persons[p1.neighbors[id11]->index];
-        for (n1 = 0; n1 < p11.neighbors.size(); ++n1)
-        {
-            if (p1.id == p11.neighbors[n1]->get_id())
-                break;            
-        }
-
-        // Moving alter first
-        std::swap(p0.neighbors[id01], p1.neighbors[id11]);
-        std::swap(p01.neighbors[n0], p11.neighbors[n1]);
-        
-    }
-
-    return;
-
+    rewire_prop = prop;
 }
+
+template<typename TSeq>
+inline double Model<TSeq>::get_rewire_prop() const {
+    return rewire_prop;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::rewire() {
+
+    if (rewire_fun)
+        rewire_fun(this, rewire_prop);
+}
+
 
 template<typename TSeq>
 inline void Model<TSeq>::write_data(
@@ -510,9 +468,17 @@ inline void Model<TSeq>::reset() {
 template<typename TSeq>
 inline void Model<TSeq>::print() const
 {
-    printf_epiworld("Population size   : %i\n", static_cast<int>(size()));
-    printf_epiworld("Days (duration)   : %i (of %i)\n", today(), ndays);
-    printf_epiworld("Number of variants: %i\n\n", static_cast<int>(db.get_nvariants()));
+    printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
+    printf_epiworld("Days (duration)    : %i (of %i)\n", today(), ndays);
+    printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_nvariants()));
+    
+    if (rewire_fun)
+    {
+        printf_epiworld("Rewiring           : on (%.2f)\n\n", rewire_prop);
+    } else {
+        printf_epiworld("Rewiring           : off\n\n");
+    }
+
     printf_epiworld("Virus(es):\n");
     int i = 0;
     for (auto & v : viruses)
@@ -554,7 +520,6 @@ inline void Model<TSeq>::print() const
             p.first.c_str(),
             p.second
         );
-
         
     }
 

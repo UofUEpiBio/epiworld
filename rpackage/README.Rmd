@@ -68,6 +68,7 @@ edges <- igraph::as_edgelist(net)
 edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)
 
 # Virus and tools are distributed
+set_rewire_degseq(m, 0.1);
 init_epi_model(m, 60, 12)
 
 # We can get information about the model

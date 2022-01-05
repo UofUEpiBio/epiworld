@@ -71,6 +71,12 @@ inline int Person<TSeq>::get_id() const
 }
 
 template<typename TSeq>
+inline unsigned int Person<TSeq>::get_index() const
+{
+    return index;
+}
+
+template<typename TSeq>
 inline std::mt19937 * Person<TSeq>::get_rand_endgine() {
     return model->get_rand_endgine();
 }

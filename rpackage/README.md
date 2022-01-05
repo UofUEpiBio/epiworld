@@ -4,7 +4,6 @@
 # epiworld
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The goal of epiworld is to …
@@ -39,58 +38,63 @@ m <- new_epi_model()
 geneseq <- c(T, F, T, T, F)
 
 # Creating tools
-add_tool_immune(m, !geneseq, 1)
-add_tool_vaccine(m, !geneseq, .5)
-add_tool_mask(m, !geneseq, .25)
+add_tool_immune(
+  model       = m,
+  baselineseq = geneseq,
+  preval      = 1,
+  efficacy    = .5,
+  recovery    = .1
+  )
 
 # And the virus
-add_virus_covid19(m, geneseq, .05, mutrate = 0.0)
+add_virus_covid19(
+  model         = m,
+  baselineseq   = geneseq,
+  preval        = .025,
+  mutrate       = 0.0,
+  post_immunity = 0.95
+  )
 
 # Adding people
-set.seed(1231)
-net   <- igraph::sample_smallworld(1, 1000, 4, .1)
+set.seed(131)
+net   <- igraph::sample_smallworld(1, 10000, 10, .1)
 edges <- igraph::as_edgelist(net)
 
 edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)
 
 # Virus and tools are distributed
-init_epi_model(m, 60, 123)
+set_rewire_degseq(m, 0.1);
+init_epi_model(m, 60, 12)
 
 # We can get information about the model
 m
-#> Population size   : 1000
-#> Days (duration)   : 0 (of 60)
-#> Number of variants: 1
+#> Population size    : 10000
+#> Days (duration)    : 0 (of 60)
+#> Number of variants : 1
+#> Rewiring           : on (0.10)
 #> 
 #> Virus(es):
-#>  - COVID19 (baseline prevalence: 0.05)
+#>  - COVID19 (baseline prevalence: 0.03)
 #> Tool(s):
 #>  - Immune system (baseline prevalence: 1.00)
-#>  - Vaccine (baseline prevalence: 0.50)
-#>  - Face masks (baseline prevalence: 0.25)
-#> 
-#> Statistics:
-#>  - Total variants active : 1
-#> 
-#>  - Total healthy         : 961
-#>  - Total infected        : 39
-#>  - Total deceased        : 0
-#> 
-#>  - Total # of recoveries : 0
 #> 
 #> Model parameters:
-#>  - covid19 mutation rate  : 0.0e+00
-#>  - immune death           : 0.0010
-#>  - immune efficacy        : 0.1000
-#>  - immune recovery        : 0.1000
-#>  - immune transm          : 0.9000
-#>  - mask efficacy          : 0.3000
-#>  - mask transm            : 0.1000
-#>  - post-covid immunity    : 0.9500
-#>  - vax death              : 0.0001
-#>  - vax efficacy           : 0.9000
-#>  - vax recovery           : 0.4000
-#>  - vax transm             : 0.5000
+#>  - covid19 mutation rate : 0.0e+00
+#>  - immune death          : 0.0010
+#>  - immune efficacy       : 0.5000
+#>  - immune recovery       : 0.1000
+#>  - immune transm         : 0.9000
+#>  - post-covid immunity   : 0.9500
+#> 
+#> Statistics (susceptible):
+#>  - Total healthy   : 9746
+#>  - Total recovered : 0
+#> 
+#> Statistics (infected):
+#>  - Total infected  : 254
+#> 
+#> Statistics (removed):
+#>  - Total removed   : 0
 
 # And run the model
 run_epi_model(m)
@@ -98,79 +102,54 @@ run_epi_model(m)
 #> _________________________________________________________________________
 #> ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
 m
-#> Population size   : 1000
-#> Days (duration)   : 60 (of 60)
-#> Number of variants: 1
+#> Population size    : 10000
+#> Days (duration)    : 60 (of 60)
+#> Number of variants : 1
+#> Rewiring           : on (0.10)
 #> 
 #> Virus(es):
-#>  - COVID19 (baseline prevalence: 0.05)
+#>  - COVID19 (baseline prevalence: 0.03)
 #> Tool(s):
 #>  - Immune system (baseline prevalence: 1.00)
-#>  - Vaccine (baseline prevalence: 0.50)
-#>  - Face masks (baseline prevalence: 0.25)
-#> 
-#> Statistics:
-#>  - Total variants active : 1
-#> 
-#>  - Total healthy         : 359
-#>  - Total infected        : 619
-#>  - Total deceased        : 22
-#> 
-#>  - Total # of recoveries : 5913
 #> 
 #> Model parameters:
-#>  - covid19 mutation rate  : 0.0e+00
-#>  - immune death           : 0.0010
-#>  - immune efficacy        : 0.1000
-#>  - immune recovery        : 0.1000
-#>  - immune transm          : 0.9000
-#>  - mask efficacy          : 0.3000
-#>  - mask transm            : 0.1000
-#>  - post-covid immunity    : 0.9500
-#>  - vax death              : 0.0001
-#>  - vax efficacy           : 0.9000
-#>  - vax recovery           : 0.4000
-#>  - vax transm             : 0.5000
+#>  - covid19 mutation rate : 0.0e+00
+#>  - immune death          : 0.0010
+#>  - immune efficacy       : 0.5000
+#>  - immune recovery       : 0.1000
+#>  - immune transm         : 0.9000
+#>  - post-covid immunity   : 0.9500
+#> 
+#> Statistics (susceptible):
+#>  - Total healthy   : 0
+#>  - Total recovered : 9206
+#> 
+#> Statistics (infected):
+#>  - Total infected  : 608
+#> 
+#> Statistics (removed):
+#>  - Total removed   : 186
 ```
 
-Can run multiple times (in parallel):
+We can visualize the results
 
 ``` r
-verbose_off_epi_model(m)
+history <- get_hist_total(m)
+head(history)
+#>   date    status counts
+#> 1    0   healthy   9746
+#> 2    0  infected    231
+#> 3    0 recovered     22
+#> 4    0   removed      1
+#> 5    1   healthy   9746
+#> 6    1  infected    208
 
-ans <- parallel::mclapply(1:100, function(i) {
-  
-  # Running and resetting the model
-  reset_epi_model(m)
-  run_epi_model(m)
-  
-  # Retrieving the model information
-  data.frame(
-    replicate  = i,
-    date       = get_hist_variant(m, "date"),
-    id         = get_hist_variant(m, "id"),
-    nrecovered = get_hist_variant(m, "date"),
-    ninfected  = get_hist_variant(m, "ninfected"),
-    ndeceased  = get_hist_variant(m, "ndeceased")
-  )
-  
-}, mc.cores = 6L)
-
-ans <- do.call(rbind, ans)
-```
-
-Visualizing
-
-``` r
 library(ggplot2)
-ggplot(ans[ans$id == 0,], aes(x = as.integer(date), y = ninfected)) +
-  geom_point(alpha = .5, color = "grey") +
-  labs(
-    x = "Date", y = "Infected with COVID",
-    caption = "Includes 100 replicates")
+ggplot(history, aes(x = date, y = counts)) +
+  geom_line(aes(colour = status)) 
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
 
 ## Code of Conduct
 

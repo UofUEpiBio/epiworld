@@ -46,6 +46,13 @@ run_epi_model <- function(model) {
 }
 
 #' @export
+#' @param prop Proportion of rewiring
+#' @rdname new_epi_model
+set_rewire_degseq <- function(model, prop) {
+    invisible(.Call(`_epiworld_set_rewire_degseq`, model, prop))
+}
+
+#' @export
 #' @param pname String (character scalar). Name of the parameter to update.
 #' @param value Double (numeric scalar). New value for the parameter.
 update_epi_params <- function(model, pname, value) {

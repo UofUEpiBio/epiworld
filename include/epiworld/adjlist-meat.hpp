@@ -9,7 +9,7 @@ inline AdjList::AdjList(
     int max_id
 ) {
 
-    id_min = UINT_MAX;
+    id_min = static_cast<unsigned int>(INT_MAX);
     id_max = 0u;
 
     int i,j;

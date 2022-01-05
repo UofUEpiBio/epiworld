@@ -44,6 +44,7 @@ public:
     double get_recovery(Virus<TSeq> * v);
     double get_death(Virus<TSeq> * v);
     int get_id() const;
+    unsigned int get_index() const;
     
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
