@@ -47,7 +47,7 @@ private:
     std::shared_ptr< std::normal_distribution<> > rnormd =
         std::make_shared< std::normal_distribution<> >(0.0);
 
-    std::function<void(Model<TSeq>*,double)> rewire_fun;
+    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> rewire_fun;
     double rewire_prop;
         
     std::map<std::string, double > parameters;
@@ -160,7 +160,7 @@ public:
      * @result A rewired version of the network.
      */
     ///@[
-    void set_rewire_fun(std::function<void(Model<TSeq>*,double)> fun);
+    void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> fun);
     void set_rewire_prop(double prop);
     double get_rewire_prop() const;
     void rewire();

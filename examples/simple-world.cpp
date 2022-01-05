@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
     // Initializing the model and reading population --------------------------
     epiworld::Model<DAT> model;
 
-    model.pop_from_adjlist("edgelist.txt", 0, true);
+    model.pop_from_adjlist("edgelist.txt", 0, false);
 
     // Initializing disease ---------------------------------------------------
     epiworld::Virus<DAT> covid19(base_seq, "COVID19");

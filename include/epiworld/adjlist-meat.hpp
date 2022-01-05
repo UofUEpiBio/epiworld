@@ -253,10 +253,12 @@ inline size_t AdjList::ecount() const
 }
 
 inline bool AdjList::is_directed() const {
+
     if (dat.size() == 0u)
         throw std::logic_error("The edgelist is empty.");
     
     return directed;
+    
 }
 
 #endif

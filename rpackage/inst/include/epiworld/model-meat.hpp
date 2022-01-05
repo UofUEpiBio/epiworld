@@ -269,6 +269,15 @@ inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
 }
 
 template<typename TSeq>
+inline bool Model<TSeq>::is_directed() const
+{
+    if (population.size() == 0u)
+        throw std::logic_error("The population hasn't been initialized.");
+
+    return directed;
+}
+
+template<typename TSeq>
 inline int Model<TSeq>::today() const {
     return this->current_date;
 }
@@ -371,7 +380,9 @@ inline void Model<TSeq>::verbose_off() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_rewire_fun(std::function<void(Model<TSeq>*,double)> fun) {
+inline void Model<TSeq>::set_rewire_fun(
+    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> fun
+    ) {
     rewire_fun = fun;
 }
 
@@ -397,7 +408,7 @@ template<typename TSeq>
 inline void Model<TSeq>::rewire() {
 
     if (rewire_fun)
-        rewire_fun(this, rewire_prop);
+        rewire_fun(&population, this, rewire_prop);
 }
 
 

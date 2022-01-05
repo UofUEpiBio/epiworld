@@ -7,7 +7,7 @@ inline AdjList::AdjList(
     bool directed,
     int min_id,
     int max_id
-) {
+) : directed(directed) {
 
     id_min = static_cast<unsigned int>(INT_MAX);
     id_max = 0u;
@@ -250,6 +250,15 @@ inline size_t AdjList::vcount() const
 inline size_t AdjList::ecount() const 
 {
     return E;
+}
+
+inline bool AdjList::is_directed() const {
+
+    if (dat.size() == 0u)
+        throw std::logic_error("The edgelist is empty.");
+    
+    return directed;
+    
 }
 
 #endif

@@ -5,7 +5,7 @@ class AdjList {
 private:
 
     std::map<unsigned int,std::map<unsigned int, unsigned int>> dat;
-
+    bool directed;
     unsigned int id_min,id_max;
     unsigned int N = 0;
     unsigned int E = 0;
@@ -55,9 +55,11 @@ public:
     size_t vcount() const;
     size_t ecount() const;
     
-    const std::map<unsigned int,std::map<unsigned int,unsigned int>> & get_dat() const {
+    std::map<unsigned int,std::map<unsigned int,unsigned int>> & get_dat() {
         return dat;
     };
+
+    bool is_directed() const;
 
 };
 

@@ -55,7 +55,7 @@ public:
     size_t vcount() const;
     size_t ecount() const;
     
-    const std::map<unsigned int,std::map<unsigned int,unsigned int>> & get_dat() const {
+    std::map<unsigned int,std::map<unsigned int,unsigned int>> & get_dat() {
         return dat;
     };
 
