@@ -3,10 +3,18 @@
 
 #include "../epiworld.hpp"
 
+/**
+ * @brief Immunity to the virus
+ * 
+ */
 EPI_NEW_TOOL(virus_immune,bool) {
     return 1.0;
 }
 
+/**
+ * @brief Adds immunity after recovery
+ * 
+ */
 EPI_POSTRECFUN(add_immunity,bool) {
     epiworld::Tool<bool> immune;
     immune.set_efficacy(virus_immune);
@@ -14,19 +22,37 @@ EPI_POSTRECFUN(add_immunity,bool) {
     return;
 }
 
+/**
+ * @brief Efficacy of the immune system
+ * 
+ */
 EPI_NEW_TOOL(immune_efficacy,bool) {
     return *(t->p00);
 }
 
+/**
+ * @brief Recovery rate of the immune system
+ * 
+ */
 EPI_NEW_TOOL(immune_recovery,bool) {
     return *(t->p01);
 }
 
+/**
+ * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * 
+ * @param model A Model<TSeq> object where to set up the SIR.
+ * @param vname std::string Name of the virus
+ * @param initial_prevalence double Initial prevalence
+ * @param initial_efficacy double Initial efficacy of the immune system
+ * @param initial_recovery double Initial recovery rate of the immune system
+ */
 inline void set_up_sir(
-    epiworld::Model<bool> & m,
+    epiworld::Model<bool> & model,
     std::string vname,
     double initial_prevalence,
-    unsigned int dur
+    double initial_efficacy,
+    double initial_recovery
     )
 {
 
@@ -39,15 +65,12 @@ inline void set_up_sir(
     immune_sys.set_efficacy(immune_efficacy);
     immune_sys.set_recovery(immune_recovery);
 
-    immune_sys.add_param(.5, "Immune efficacy", m);
-    immune_sys.add_param(.5, "Immune recovery", m);
+    immune_sys.add_param(initial_efficacy, "Immune efficacy", model);
+    immune_sys.add_param(initial_recovery, "Immune recovery", model);
 
     // Adding the tool and the virus
-    m.add_tool(immune_sys, 1.0);
-    m.add_virus(virus, initial_prevalence);
-
-    // Other parameters
-    m.set_ndays(dur);
+    model.add_tool(immune_sys, 1.0);
+    model.add_virus(virus, initial_prevalence);
 
     return;
 

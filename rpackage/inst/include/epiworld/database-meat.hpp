@@ -10,7 +10,7 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     // Initializing the counts
     today_total.resize(m.nstatus);
 
-    for (const auto & p : *m.get_persons())
+    for (const auto & p : *m.get_population())
         ++today_total[p.get_status()];
 
     return;

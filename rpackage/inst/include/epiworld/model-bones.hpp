@@ -77,7 +77,7 @@ public:
     Model<TSeq> & operator=(const Model<TSeq> & m) = delete;
 
     DataBase<TSeq> & get_db();
-    std::vector< Person<TSeq> > * get_persons();
+    std::vector< Person<TSeq> > * get_population();
 
     double & operator()(std::string pname);
 

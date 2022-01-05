@@ -28,23 +28,23 @@ int main() {
 
     // Looking at people
     std::cout << "Neighbors person[0] in m : " ;
-    for (auto & n : m.get_persons()->at(0u).get_neighbors())
+    for (auto & n : m.get_population()->at(0u).get_neighbors())
         std::cout << n << ", ";
     std::cout << std::endl;
 
 
     std::cout << "Neighbors person[0] in m2 : " ;
-    for (auto & n : m2.get_persons()->at(0u).get_neighbors())
+    for (auto & n : m2.get_population()->at(0u).get_neighbors())
         std::cout << n << ", ";
     std::cout << std::endl;
 
     std::cout << "Person[0] in m viruses and tools  : " <<
-        m.get_persons()->at(0u).get_viruses().get_host() << ", " <<
-        m.get_persons()->at(0u).get_tools().get_person() << std::endl;
+        m.get_population()->at(0u).get_viruses().get_host() << ", " <<
+        m.get_population()->at(0u).get_tools().get_person() << std::endl;
 
     std::cout << "Person[0] in m2 viruses and tools : " <<
-        m2.get_persons()->at(0u).get_viruses().get_host() << ", " <<
-        m2.get_persons()->at(0u).get_tools().get_person() << std::endl;
+        m2.get_population()->at(0u).get_viruses().get_host() << ", " <<
+        m2.get_population()->at(0u).get_tools().get_person() << std::endl;
             
 
     return 0;

@@ -28,8 +28,9 @@ private:
 
     DataBase<TSeq> db;
 
-    std::vector< Person<TSeq> > persons;
-    std::map< int,int >         persons_ids;
+    std::vector< Person<TSeq> > population;
+    std::map< int,int >         population_ids;
+    bool directed;
     
     std::vector< Virus<TSeq> > viruses;
     std::vector< double > prevalence_virus; ///< Initial prevalence_virus of each virus
@@ -77,8 +78,6 @@ public:
     Model<TSeq> & operator=(const Model<TSeq> & m) = delete;
 
     DataBase<TSeq> & get_db();
-    std::vector< Person<TSeq> > * get_persons();
-
     double & operator()(std::string pname);
 
     size_t size() const;
@@ -99,6 +98,19 @@ public:
     void add_virus(Virus<TSeq> v, double preval);
     void add_tool(Tool<TSeq> t, double preval);
 
+    /**
+     * @brief Accessing population of the model
+     * 
+     * @param fn std::string Filename of the edgelist file.
+     * @param skip int Number of lines to skip in `fn`.
+     * @param directed bool Whether the graph is directed or not.
+     * @param min_id int Minimum id number (if negative, the program will
+     * try to guess from the data.)
+     * @param max_id int Maximum id number (if negative, the program will
+     * try to guess from the data.)
+     * @param al AdjList to read into the model.
+     */
+    ///@[
     void pop_from_adjlist(
         std::string fn,
         int skip = 0,
@@ -107,6 +119,9 @@ public:
         int max_id = -1
         );
     void pop_from_adjlist(AdjList al);
+    bool is_directed() const;
+    std::vector< Person<TSeq> > * get_population();
+    ///@]
 
     /**
      * @brief Functions to run the model

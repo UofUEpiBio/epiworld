@@ -15,7 +15,7 @@ inline void rewire_degseq(Model<TSeq> * model, double proportion)
     std::vector< unsigned int > non_isolates;
     std::vector< double > weights;
     double nedges = 0.0;
-    std::vector< Person<TSeq> > * persons = model->get_persons();
+    std::vector< Person<TSeq> > * persons = model->get_population();
     for (unsigned int i = 0u; i < persons->size(); ++i)
     {
         if (persons->operator[](i).get_neighbors().size() > 0u)

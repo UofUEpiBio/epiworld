@@ -6,15 +6,15 @@
 
 #define NEXT_STATUS() \
     /* Making the change effective */ \
-    for (auto & p: persons) \
+    for (auto & p: population) \
         if (!IN(p.status, status_removed)) \
             p.status = p.status_next;
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     db(model.db),
-    persons(model.persons),
-    persons_ids(model.persons_ids),
+    population(model.population),
+    population_ids(model.population_ids),
     viruses(model.viruses),
     prevalence_virus(model.prevalence_virus),
     tools(model.tools),
@@ -33,15 +33,15 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     db.set_model(*this);
 
     // Removing old neighbors
-    for (auto & p: persons)
+    for (auto & p: population)
         p.neighbors.clear();
     
     // Rechecking individuals
     for (unsigned int p = 0u; p < size(); ++p)
     {
         // Making room
-        const Person<TSeq> & person_this = model.persons[p];
-        Person<TSeq> & person_res  = persons[p];
+        const Person<TSeq> & person_this = model.population[p];
+        Person<TSeq> & person_res  = population[p];
 
         // Person pointing to the right model and person
         person_res.model        = this;
@@ -53,8 +53,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
-            int loc = persons_ids[neigh[n]->get_id()];
-            person_res.add_neighbor(&persons[loc], true, true);
+            int loc = population_ids[neigh[n]->get_id()];
+            person_res.add_neighbor(&population[loc], true, true);
 
         }
 
@@ -73,9 +73,9 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
-inline std::vector<Person<TSeq>> * Model<TSeq>::get_persons()
+inline std::vector<Person<TSeq>> * Model<TSeq>::get_population()
 {
-    return &persons;
+    return &population;
 }
 
 template<typename TSeq>
@@ -96,7 +96,7 @@ inline double & Model<TSeq>::operator()(std::string pname) {
 
 template<typename TSeq>
 inline size_t Model<TSeq>::size() const {
-    return persons.size();
+    return population.size();
 }
 
 template<typename TSeq>
@@ -113,8 +113,8 @@ inline void Model<TSeq>::init(
     // Setting up the number of steps
     this->ndays = ndays;
 
-    // Initializing persons
-    for (auto & p : persons)
+    // Initializing population
+    for (auto & p : population)
     {
         p.model = this;
         p.init();
@@ -141,7 +141,7 @@ inline void Model<TSeq>::dist_virus()
     // Starting first infection
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
-        for (auto & p : persons)
+        for (auto & p : population)
             if (runif() < prevalence_virus[v])
             {
                 p.add_virus(0, viruses[v]);
@@ -160,7 +160,7 @@ inline void Model<TSeq>::dist_tools()
     // Tools
     for (unsigned int t = 0; t < tools.size(); ++t)
     {
-        for (auto & p : persons)
+        for (auto & p : population)
             if (runif() < prevalence_tool[t])
                 p.add_tool(0, tools[t]);
 
@@ -231,35 +231,35 @@ template<typename TSeq>
 inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
 
     // Resizing the people
-    persons.clear();
-    persons_ids.clear();
-    persons.resize(al.vcount(), Person<TSeq>());
+    population.clear();
+    population_ids.clear();
+    population.resize(al.vcount(), Person<TSeq>());
 
     const auto & tmpdat = al.get_dat();
     
     int loc;
     for (const auto & n : tmpdat)
     {
-        if (persons_ids.find(n.first) == persons_ids.end())
-            persons_ids[n.first] = persons_ids.size();
+        if (population_ids.find(n.first) == population_ids.end())
+            population_ids[n.first] = population_ids.size();
 
-        loc = persons_ids[n.first];
+        loc = population_ids[n.first];
 
-        persons[loc].model = this;
-        persons[loc].id    = n.first;
-        persons[loc].index = loc;
+        population[loc].model = this;
+        population[loc].id    = n.first;
+        population[loc].index = loc;
 
         for (const auto & link: n.second)
         {
-            if (persons_ids.find(link.first) == persons_ids.end())
-                persons_ids[link.first] = persons_ids.size();
+            if (population_ids.find(link.first) == population_ids.end())
+                population_ids[link.first] = population_ids.size();
 
-            unsigned int loc_link   = persons_ids[link.first];
-            persons[loc_link].id    = link.first;
-            persons[loc_link].index = loc_link;
+            unsigned int loc_link   = population_ids[link.first];
+            population[loc_link].id    = link.first;
+            population[loc_link].index = loc_link;
 
-            persons[loc].add_neighbor(
-                &persons[persons_ids[link.first]],
+            population[loc].add_neighbor(
+                &population[population_ids[link.first]],
                 true, true
                 );
         }
@@ -312,7 +312,7 @@ template<typename TSeq>
 inline void Model<TSeq>::update_status() {
 
     // Next status
-    for (auto & p: persons)
+    for (auto & p: population)
         p.update_status();
 
     NEXT_STATUS()
@@ -322,7 +322,7 @@ inline void Model<TSeq>::update_status() {
 template<typename TSeq>
 inline void Model<TSeq>::mutate_variant() {
 
-    for (auto & p: persons)
+    for (auto & p: population)
     {
         if (IN(p.get_status(), status_infected))
             p.mutate_variant();
@@ -424,7 +424,7 @@ inline void Model<TSeq>::write_edgelist(
 
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
-    for (const auto & p : persons)
+    for (const auto & p : population)
     {
         for (auto & n : p.neighbors)
             efile << p.id << " " << n->id << "\n";
@@ -446,7 +446,7 @@ inline void Model<TSeq>::reset() {
     // Restablishing people
     pb = Progress(ndays, 80);
 
-    for (auto & p : persons)
+    for (auto & p : population)
         p.reset();
     
     current_date = 0;
@@ -622,15 +622,15 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     res.get_db().set_model(res);
 
     // Removing old neighbors
-    for (auto & p: res.persons)
+    for (auto & p: res.population)
         p.neighbors.clear();
     
     // Rechecking individuals
     for (unsigned int p = 0u; p < size(); ++p)
     {
         // Making room
-        const Person<TSeq> & person_this = persons[p];
-        Person<TSeq> & person_res  = res.persons[p];
+        const Person<TSeq> & person_this = population[p];
+        Person<TSeq> & person_res  = res.population[p];
 
         // Person pointing to the right model and person
         person_res.model        = &res;
@@ -642,8 +642,8 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
-            int loc = res.persons_ids[neigh[n]->get_id()];
-            person_res.add_neighbor(&res.persons[loc], true, true);
+            int loc = res.population_ids[neigh[n]->get_id()];
+            person_res.add_neighbor(&res.population[loc], true, true);
 
         }
 
