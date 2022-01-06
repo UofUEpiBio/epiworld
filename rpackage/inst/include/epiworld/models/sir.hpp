@@ -3,7 +3,6 @@
 
 #include "../epiworld.hpp"
 
-
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
  * 
@@ -13,43 +12,49 @@
  * @param initial_efficacy double Initial efficacy of the immune system
  * @param initial_recovery double Initial recovery rate of the immune system
  */
+template<typename TSeq>
 inline void set_up_sir(
-    epiworld::Model<bool> & model,
+    epiworld::Model<TSeq> & model,
     std::string vname,
-    double initial_prevalence,
-    double initial_efficacy,
-    double initial_recovery
+    double prevalence,
+    double efficacy,
+    double recovery,
+    double post_immunity
     )
 {
 
-    
-    EPI_NEW_TOOL_LAMBDA(immune_efficacy,bool) {return *(t->p00);}
+    EPI_NEW_POSTRECFUN_LAMBDA(add_immunity,TSeq) {
 
-    EPI_NEW_TOOL_LAMBDA(virus_immune,bool) {return 1.0;}
-    EPI_POSTRECFUN_LAMBDA(add_immunity,bool) {
-        epiworld::Tool<bool> immune;
+        EPI_NEW_TOOL_LAMBDA(virus_immune,TSeq) {return TPAR(00);};
+
+        epiworld::Tool<TSeq> immune;
         immune.set_efficacy(virus_immune);
+        immune.set_param("Post immunity", *m);
         p->add_tool(m->today(), immune);
         return;
-    }
 
-    EPI_NEW_TOOL_LAMBDA(immune_recovery,bool) {return *(t->p01);}
+    };
+
+    EPI_NEW_TOOL_LAMBDA(immune_efficacy,TSeq) {return TPAR(00);};
+    EPI_NEW_TOOL_LAMBDA(immune_recovery,TSeq) {return TPAR(01);};
+    EPI_NEW_TOOL_LAMBDA(immune_transmision,TSeq) {return TPAR(01);};
 
     // Preparing the virus
-    epiworld::Virus<bool> virus(true, vname);
+    epiworld::Virus<TSeq> virus(true, vname);
     virus.set_post_recovery(add_immunity);
 
     // Preparing the immune system
-    epiworld::Tool<bool> immune_sys(true, "immune system");
+    epiworld::Tool<TSeq> immune_sys(true, "Immune system");
     immune_sys.set_efficacy(immune_efficacy);
     immune_sys.set_recovery(immune_recovery);
 
-    immune_sys.add_param(initial_efficacy, "Immune efficacy", model);
-    immune_sys.add_param(initial_recovery, "Immune recovery", model);
+    immune_sys.add_param(efficacy, "Immune efficacy", model);
+    immune_sys.add_param(recovery, "Immune recovery", model);
+    immune_sys.add_param(post_immunity, "Post immunity", model);
 
     // Adding the tool and the virus
     model.add_tool(immune_sys, 1.0);
-    model.add_virus(virus, initial_prevalence);
+    model.add_virus(virus, prevalence);
 
     return;
 

@@ -87,7 +87,7 @@ inline std::vector<double> default_sequence() {
 template<typename Ta>
 inline bool IN(const Ta & a, const std::vector< Ta > & b)
 {
-    for (auto & i : b)
+    for (const auto & i : b)
         if (a == i)
             return true;
 

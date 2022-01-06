@@ -42,20 +42,22 @@
     epiworld::Model<tseq> * m )
 
 #define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
-    MutFun<tseq> funname = \
-    [](Person<tseq> * p, Virus<tseq> * v, Model<tseq> * m)
-
-#define EPI_NEW_RECFUN(funname,tseq) inline void \
-    (funname)(\
-    epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
-    epiworld::Model<tseq> * m)
-
-#define EPI_NEW_RECFUN_LAMBDA(funname,tseq) \
-    epiworld::RecFun<tseq> funname = \
+    epiworld::MutFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
     epiworld::Virus<tseq> * v, \
     epiworld::Model<tseq> * m)
+
+// #define EPI_NEW_RECFUN(funname,tseq) inline void \
+//     (funname)(\
+//     epiworld::Person<tseq> * p, \
+//     epiworld::Virus<tseq> * v, \
+//     epiworld::Model<tseq> * m)
+
+// #define EPI_NEW_RECFUN_LAMBDA(funname,tseq) \
+//     epiworld::RecFun<tseq> funname = \
+//     [](epiworld::Person<tseq> * p, \
+//     epiworld::Virus<tseq> * v, \
+//     epiworld::Model<tseq> * m)
 
 #define EPI_NEW_POSTRECFUN(funname,tseq) inline void \
     (funname)( \

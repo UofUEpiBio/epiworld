@@ -37,7 +37,7 @@ int run_epi_model(SEXP model) {
   Rcpp::XPtr< epiworld::Model<TSEQ> > ptr(model);
   
   // Creating a progress bar
-  EPIWORLD_CLOCK_START("(01) Run model")
+
     
   ptr->run();
 

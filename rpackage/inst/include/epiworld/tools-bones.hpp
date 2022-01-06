@@ -24,10 +24,10 @@ template<typename TSeq>
 using MixerFun = std::function<double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 /**
- * @brief A tool is a 
+ * @brief Tools for defending the host against the virus
  * 
+ * @tparam TSeq Type of sequence
  */
-
 template<typename TSeq> 
 class Tool {
     friend class PersonTools<TSeq>;
@@ -58,15 +58,12 @@ public:
     TSeq & get_sequence_unique();
 
     /**
-     * @brief Get the efficacy of tool
+     * @brief Get and set the tool functions
      * 
-     * @param tool_id The index of the tool in the person
-     * @param p The corresponding person.
-     * @param m The corresponding model.
+     * @param v The virus over which to operate
+     * @param fun the function to be used
+     * 
      * @return double 
-     * 
-     * @details If there is no efficacy or recovery function specified, it will return
-     * the DEFAULT_EFFICACY or DEFAULT_RECOVERY as defined in the program.
      */
     ///@[
     double get_efficacy(Virus<TSeq> * v);

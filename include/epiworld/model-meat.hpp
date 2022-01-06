@@ -125,7 +125,7 @@ inline void Model<TSeq>::init(
     unsigned int seed
     ) {
 
-    EPIWORLD_CLOCK_START("(00) Init model")
+
 
     if (initialized) 
         throw std::logic_error("Model already initialized.");
@@ -150,7 +150,7 @@ inline void Model<TSeq>::init(
     // Starting first infection and tools
     reset();
 
-    EPIWORLD_CLOCK_END("(00) Init model")
+
 
 }
 
@@ -476,7 +476,7 @@ inline void Model<TSeq>::write_edgelist(
     ) const
 {
 
-    EPIWORLD_CLOCK_START("(03) Writing edgelist")
+
 
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
@@ -486,7 +486,7 @@ inline void Model<TSeq>::write_edgelist(
             efile << p.id << " " << n->id << "\n";
     }
 
-    EPIWORLD_CLOCK_END("(03) Writing edgelist")
+
 
 }
 

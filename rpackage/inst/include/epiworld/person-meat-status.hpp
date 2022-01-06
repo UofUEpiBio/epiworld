@@ -22,46 +22,40 @@ class Person;
     m->get_db().up_infected(virus_ptr, p->get_status(), STATUS::INFECTED);
 
 
+#define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
+    /* Step 1: Compute the individual efficcacy */ \
+    std::vector< double > probs; \
+    std::vector< Virus<TSeq>* > variants; \
+    /* Computing the efficacy */ \
+    for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
+    { \
+        Person<TSeq> * neighbor = p->get_neighbors()[n]; \
+        /* Non-infected individuals make no difference */ \
+        if (!IN(neighbor->get_status(), m->get_status_infected())) \
+            continue; \
+        PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); \
+        /* Now over the neighbor's viruses */ \
+        double tmp_transmision; \
+        for (unsigned int v = 0; v < nviruses.size(); ++v) \
+        { \
+            /* Computing the corresponding efficacy */ \
+            Virus<TSeq> * tmp_v = &(nviruses(v)); \
+            /* And it is a function of transmisibility as well */ \
+            tmp_transmision = \
+                (1.0 - p->get_efficacy(tmp_v)) * \
+                neighbor->get_transmisibility(tmp_v) \
+                ; \
+            probs.push_back(tmp_transmision); \
+            variants.push_back(tmp_v); \
+        } \
+    }
+
 template<typename TSeq>
 inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m)
 {
 
-    // Step 1: Compute the individual efficcacy
-    std::vector< double > probs;
-    std::vector< Virus<TSeq>* > variants;
-
-    // Computing the efficacy
-    double tmp_efficacy;
-    for (unsigned int n = 0; n < p->get_neighbors().size(); ++n)
-    {
-
-        Person<TSeq> * neighbor = p->get_neighbors()[n];
-
-        // Non-infected individuals make no difference
-        if (neighbor->get_status() != STATUS::INFECTED)
-            continue;
-
-        PersonViruses<TSeq> & nviruses = neighbor->get_viruses();
-        
-        // Now over the neighbor's viruses
-        for (unsigned int v = 0; v < nviruses.size(); ++v)
-        {
-
-            // Computing the corresponding efficacy
-            Virus<TSeq> * tmp_v = &(nviruses(v));
-
-            // And it is a function of transmisibility as well
-            tmp_efficacy = std::max(
-                p->get_efficacy(tmp_v),
-                (1.0 - neighbor->get_transmisibility(tmp_v))
-                );
-            
-            probs.push_back(1.0 - tmp_efficacy);
-            variants.push_back(tmp_v);
-
-        }
-        
-    }
+    // This computes the prob of getting any neighbor variant
+    EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants)
 
     // No virus to compute on
     if (probs.size() == 0)
@@ -92,7 +86,7 @@ inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
     if (r < cumsum)
     {
-        
+    
         m->get_db().down_infected(vptr,p->get_status(), STATUS::REMOVED);
         return STATUS::REMOVED;
 

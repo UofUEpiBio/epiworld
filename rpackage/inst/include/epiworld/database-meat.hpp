@@ -253,8 +253,6 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_transmision
 ) const {
 
-    EPIWORLD_CLOCK_START("(02) Writing data")
-
     if (fn_variant_info != "")
     {
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
@@ -333,9 +331,6 @@ inline void DataBase<TSeq>::write_data(
                 transmision_target[i] << "\n";
                 
     }
-    
-
-    EPIWORLD_CLOCK_END("(02) Writing data")
 
 }
 

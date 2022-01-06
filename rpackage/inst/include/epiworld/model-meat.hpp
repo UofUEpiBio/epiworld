@@ -13,8 +13,6 @@
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     db(model.db),
-    population(model.population),
-    population_ids(model.population_ids),
     viruses(model.viruses),
     prevalence_virus(model.prevalence_virus),
     tools(model.tools),
@@ -33,18 +31,45 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     db.set_model(*this);
 
     // Removing old neighbors
-    for (auto & p: population)
+    model.clone_population(
+        population,
+        population_ids,
+        directed,
+        this
+        );
+
+    // Finally, seeds are resetted automatically based on the original
+    // engine
+    seed(floor(runif() * UINT_MAX));
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::clone_population(
+    std::vector< Person<TSeq> > & p,
+    std::map<int,int> & p_ids,
+    bool & d,
+    Model<TSeq> * model
+) const {
+
+    // Copy and clean
+    p     = population;
+    p_ids = population_ids;
+    d     = directed;
+
+    for (auto & p: p)
         p.neighbors.clear();
     
-    // Rechecking individuals
-    for (unsigned int p = 0u; p < size(); ++p)
+    // Relinking individuals
+    for (unsigned int i = 0u; i < size(); ++i)
     {
         // Making room
-        const Person<TSeq> & person_this = model.population[p];
-        Person<TSeq> & person_res  = population[p];
+        const Person<TSeq> & person_this = population[i];
+        Person<TSeq> & person_res        = p[i];
 
         // Person pointing to the right model and person
-        person_res.model        = this;
+        if (model != nullptr)
+            person_res.model        = model;
         person_res.viruses.host = &person_res;
         person_res.tools.person = &person_res;
 
@@ -53,17 +78,12 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
-            int loc = population_ids[neigh[n]->get_id()];
-            person_res.add_neighbor(&population[loc], true, true);
+            int loc = p_ids[neigh[n]->get_id()];
+            person_res.add_neighbor(&p[loc], true, true);
 
         }
 
     }
-
-    // Finally, seeds are resetted automatically based on the original
-    // engine
-    seed(floor(model.runifd() * UINT_MAX));
-
 }
 
 template<typename TSeq>
@@ -105,7 +125,7 @@ inline void Model<TSeq>::init(
     unsigned int seed
     ) {
 
-    EPIWORLD_CLOCK_START("(00) Init model")
+
 
     if (initialized) 
         throw std::logic_error("Model already initialized.");
@@ -130,7 +150,7 @@ inline void Model<TSeq>::init(
     // Starting first infection and tools
     reset();
 
-    EPIWORLD_CLOCK_END("(00) Init model")
+
 
 }
 
@@ -166,6 +186,29 @@ inline void Model<TSeq>::dist_tools()
 
     }
 
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::chrono_start() {
+    time_start = std::chrono::steady_clock::now();
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::chrono_end() {
+    time_end = std::chrono::steady_clock::now();
+    time_elapsed += (time_end - time_start);
+    time_n++;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_backup() {
+    backup = std::unique_ptr<Model<TSeq>>(new Model<TSeq>(*this));
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::restore_backup() {
+    if (backup != nullptr)
+        *this = *backup;
 }
 
 template<typename TSeq>
@@ -299,7 +342,8 @@ template<typename TSeq>
 inline void Model<TSeq>::run() 
 {
 
-        // Initializing the simulation
+    // Initializing the simulation
+    chrono_start();
     EPIWORLD_RUN((*this))
     {
 
@@ -314,6 +358,7 @@ inline void Model<TSeq>::run()
         this->rewire();
 
     }
+    chrono_end();
 
 }
 
@@ -431,7 +476,7 @@ inline void Model<TSeq>::write_edgelist(
     ) const
 {
 
-    EPIWORLD_CLOCK_START("(03) Writing edgelist")
+
 
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
@@ -441,7 +486,7 @@ inline void Model<TSeq>::write_edgelist(
             efile << p.id << " " << n->id << "\n";
     }
 
-    EPIWORLD_CLOCK_END("(03) Writing edgelist")
+
 
 }
 
@@ -456,6 +501,16 @@ inline void Model<TSeq>::reset() {
     
     // Restablishing people
     pb = Progress(ndays, 80);
+
+    if (backup != nullptr)
+    {
+        backup->clone_population(
+            population,
+            population_ids,
+            directed,
+            this
+        );
+    }
 
     for (auto & p : population)
         p.reset();
@@ -472,16 +527,36 @@ inline void Model<TSeq>::reset() {
     dist_virus();
     dist_tools();
 
-    
-
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::print() const
 {
+
+    // Horizontal line
+    std::string line = "";
+    for (unsigned int i = 0u; i < 80u; ++i)
+        line += "_";
+
+    printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
     printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
     printf_epiworld("Days (duration)    : %i (of %i)\n", today(), ndays);
     printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_nvariants()));
+    if (time_n > 0u)
+    {
+        std::string abbr;
+        double elapsed;
+        double total;
+        get_elapsed("auto", &elapsed, &total, nullptr, &abbr, false);
+        printf_epiworld("Last run elapsed t : %.2f%s\n", elapsed, abbr.c_str());
+        if (time_n > 1u)
+        {
+            printf_epiworld("Total elapsed t    : %.2f%s (%i runs)\n", total, abbr.c_str(), time_n);
+        }
+
+    } else {
+        printf_epiworld("Last run elapsed t : -\n");
+    }
     
     if (rewire_fun)
     {
@@ -549,11 +624,11 @@ inline void Model<TSeq>::print() const
             nchar = p.length();
 
     if (initialized) 
-        fmt = " - Total %-" + std::to_string(nchar + 1) + "s: %i\n";
+        fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %i\n";
     else
-        fmt = " - Total %-" + std::to_string(nchar + 1) + "s: %s\n";
+        fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %s\n";
         
-    printf_epiworld("\nStatistics (susceptible):\n");
+    printf_epiworld("\nDistribution of the population at time %i:\n", today());
     for (unsigned int s = 0u; s < status_susceptible.size(); ++s)
     {
         if (initialized)
@@ -561,20 +636,20 @@ inline void Model<TSeq>::print() const
             
             printf_epiworld(
                 fmt.c_str(),
-                status_susceptible_labels[s].c_str(),
+                (status_susceptible_labels[s] + " (S)").c_str(),
                 db.today_total[ status_susceptible[s] ]
                 );
 
         } else {
             printf_epiworld(
                 fmt.c_str(),
-                status_susceptible_labels[s].c_str(),
+                (status_susceptible_labels[s] + " (S)").c_str(),
                 " - "
                 );
         }
     }
 
-    printf_epiworld("\nStatistics (infected):\n");
+    // printf_epiworld("\nStatistics (infected):\n");
     for (unsigned int s = 0u; s < status_infected.size(); ++s)
     {
         if (initialized)
@@ -582,20 +657,20 @@ inline void Model<TSeq>::print() const
             
             printf_epiworld(
                 fmt.c_str(),
-                status_infected_labels[s].c_str(),
+                (status_infected_labels[s] + " (I)").c_str(),
                 db.today_total[ status_infected[s] ]
                 );
 
         } else {
             printf_epiworld(
                 fmt.c_str(),
-                status_infected_labels[s].c_str(),
+                (status_infected_labels[s] + " (I)").c_str(),
                 " - "
                 );
         }
     }
 
-    printf_epiworld("\nStatistics (removed):\n");
+    // printf_epiworld("\nStatistics (removed):\n");
     for (unsigned int s = 0u; s < status_removed.size(); ++s)
     {
         if (initialized)
@@ -603,19 +678,23 @@ inline void Model<TSeq>::print() const
             
             printf_epiworld(
                 fmt.c_str(),
-                status_removed_labels[s].c_str(),
+                (status_removed_labels[s] + " (R)").c_str(),
                 db.today_total[ status_removed[s] ]
                 );
 
         } else {
             printf_epiworld(
                 fmt.c_str(),
-                status_removed_labels[s].c_str(),
+                (status_removed_labels[s] + " (R)").c_str(),
                 " - "
                 );
         }
     }
     
+    printf_epiworld(
+        "\n(S): Susceptible, (I): Infected, (R): Recovered\n%s\n\n",
+        line.c_str()
+        );
 
     return;
 
@@ -735,44 +814,195 @@ inline void Model<TSeq>::add_status_removed(std::string lab)
         );
 
 template<typename TSeq>
-inline std::vector< std::pair<unsigned int,std::string> >
+inline const std::vector< unsigned int > &
 Model<TSeq>::get_status_susceptible() const
 {
-
-    EPIWORLD_COLLECT_STATUSES(
-        res,
-        status_susceptible,
-        status_susceptible_labels
-        )
-    
-    return res;
+    return status_susceptible;
 }
 
 template<typename TSeq>
-inline std::vector< std::pair<unsigned int,std::string> >
+inline const std::vector< unsigned int > &
 Model<TSeq>::get_status_infected() const
 {
-    EPIWORLD_COLLECT_STATUSES(
-        res,
-        status_infected,
-        status_infected_labels
-        )
-
-    return res;
+    return status_infected;
 }
 
 template<typename TSeq>
-inline std::vector< std::pair<unsigned int,std::string> >
+inline const std::vector< unsigned int > &
 Model<TSeq>::get_status_removed() const
 {
-    EPIWORLD_COLLECT_STATUSES(
-        res,
-        status_removed,
-        status_removed_labels
-        )
-
-    return res;
+    return status_removed;
 }
+
+template<typename TSeq>
+inline const std::vector< std::string > &
+Model<TSeq>::get_status_susceptible_labels() const
+{
+    return status_susceptible_labels;
+}
+
+template<typename TSeq>
+inline const std::vector< std::string > &
+Model<TSeq>::get_status_infected_labels() const
+{
+    return status_infected_labels;
+}
+
+template<typename TSeq>
+inline const std::vector< std::string > &
+Model<TSeq>::get_status_removed_labels() const
+{
+    return status_removed_labels;
+}
+
+#define CASE_PAR(a,b) case a: b = &(parameters[pname]);break;
+#define CASES_PAR(a) \
+    switch (a) \
+    { \
+    CASE_PAR(0u, p00) \
+    CASE_PAR(1u, p01) \
+    CASE_PAR(2u, p02) \
+    CASE_PAR(3u, p03) \
+    CASE_PAR(4u, p04) \
+    CASE_PAR(5u, p05) \
+    CASE_PAR(6u, p06) \
+    CASE_PAR(7u, p07) \
+    CASE_PAR(8u, p08) \
+    CASE_PAR(9u, p09) \
+    CASE_PAR(10u, p10) \
+    default: \
+        break; \
+    }
+
+template<typename TSeq>
+inline double Model<TSeq>::add_param(
+    double initial_value,
+    std::string pname
+    ) {
+
+    if (parameters.find(pname) == parameters.end())
+        parameters[pname] = initial_value;
+
+    CASES_PAR(npar_used++)
+    
+    return initial_value;
+
+}
+
+template<typename TSeq>
+inline double Model<TSeq>::set_param(
+    std::string pname
+    ) {
+
+    if (parameters.find(pname) == parameters.end())
+        throw std::logic_error("The parameter " + pname + " does not exists.");
+
+    CASES_PAR(npar_used++)
+
+    return parameters[pname];
+    
+}
+
+template<typename TSeq>
+inline double Model<TSeq>::get_param(std::string pname)
+{
+    if (parameters.find(pname) == parameters.end())
+        throw std::logic_error("The parameter " + pname + " does not exists.");
+
+    return parameters[pname];
+}
+
+template<typename TSeq>
+inline double Model<TSeq>::par(std::string pname)
+{
+    return parameters[pname];
+}
+
+#define DURCAST(tunit,txtunit) {\
+        elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
+            time_end - time_start).count(); \
+        elapsed_total = std::chrono::duration_cast<std::chrono:: tunit>(time_elapsed).count(); \
+        abbr_unit     = txtunit;}
+
+template<typename TSeq>
+inline void Model<TSeq>::get_elapsed(
+    std::string unit,
+    double * last_elapsed,
+    double * total_elapsed,
+    unsigned int * n_replicates,
+    std::string * unit_abbr,
+    bool print
+) const {
+
+    // Preparing the result
+    double elapsed, elapsed_total;
+    std::string abbr_unit;
+
+    // Figuring out the length
+    if (unit == "auto")
+    {
+
+        size_t tlength = std::to_string(
+            static_cast<int>(floor(time_elapsed.count()))
+            ).length();
+        
+        if (tlength <= 1)
+            unit = "nanoseconds";
+        else if (tlength <= 3)
+            unit = "microseconds";
+        else if (tlength <= 6)
+            unit = "milliseconds";
+        else if (tlength <= 8)
+            unit = "seconds";
+        else if (tlength <= 9)
+            unit = "minutes";
+        else 
+            unit = "hours";
+
+    }
+
+    if (unit == "nanoseconds")       DURCAST(nanoseconds,"ns")
+    else if (unit == "microseconds") DURCAST(microseconds,"\xC2\xB5s")
+    else if (unit == "milliseconds") DURCAST(milliseconds,"ms")
+    else if (unit == "seconds")      DURCAST(seconds,"s")
+    else if (unit == "minutes")      DURCAST(minutes,"m")
+    else if (unit == "hours")        DURCAST(hours,"h")
+    else
+        throw std::range_error("The time unit " + unit + " is not supported.");
+
+
+    if (last_elapsed != nullptr)
+        *last_elapsed = elapsed;
+    if (total_elapsed != nullptr)
+        *total_elapsed = elapsed_total;
+    if (n_replicates != nullptr)
+        *n_replicates = time_n;
+    if (unit_abbr != nullptr)
+        *unit_abbr = abbr_unit;
+
+    if (!print)
+        return;
+
+    if (time_n > 1u)
+    {
+        printf_epiworld("last run elapsed time : %.2f%s\n",
+            elapsed, abbr_unit.c_str());
+        printf_epiworld("total elapsed time    : %.2f%s\n",
+            elapsed_total, abbr_unit.c_str());
+        printf_epiworld("total runs            : %i\n",
+            static_cast<int>(time_n));
+        printf_epiworld("mean run elapsed time : %.2f%s\n",
+            elapsed_total/static_cast<double>(time_n), abbr_unit.c_str());
+
+    } else {
+        printf_epiworld("last run elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());
+    }
+}
+
+#undef DURCAST
+
+#undef CASES_PAR
+#undef CASE_PAR
 
 #undef EPIWORLD_CHECK_STATE
 #undef EPIWORLD_CHECK_ALL_STATES
