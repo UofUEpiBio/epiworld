@@ -10,7 +10,7 @@
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
 
 // Defining mutation and transmission functions
-EPI_MUTFUN(covid19_mut, DAT) {
+EPI_NEW_MUTFUN(covid19_mut, DAT) {
     
     if (EPI_RUNIF() < *(v->p00))
     {
@@ -29,82 +29,32 @@ EPI_MUTFUN(covid19_mut, DAT) {
     
 }
 
-// If before the third day of infection, then
-    // no infectious
-#define CHECK_LATENT() \
-    if ((m->today() - v->get_date()) <= 3) \
-        return 0.0;
-
 // Getting the vaccine
-EPI_NEW_TOOL(vaccine_eff, DAT) {
-    return *(t->p00);
-}
-
-EPI_NEW_TOOL(vaccine_rec, DAT) {
-    return 0.4;
-}
-
-EPI_NEW_TOOL(vaccine_death, DAT) {
-    return *(t->p01);
-}
-
-
-EPI_NEW_TOOL(vaccine_trans, DAT) {
-
-    return 0.5;
-}
+EPI_NEW_TOOL(vaccine_eff, DAT) {return TPAR(00);} 
+EPI_NEW_TOOL(vaccine_rec, DAT) {return 0.4;}
+EPI_NEW_TOOL(vaccine_death, DAT) {return TPAR(01);}
+EPI_NEW_TOOL(vaccine_trans, DAT) {return 0.5;}
 
 // Wearing a Mask
-EPI_NEW_TOOL(mask_eff, DAT) {
-    return 0.8;
-}
-
-EPI_NEW_TOOL(mask_trans, DAT) {
-
-    return 0.05;
-}
+EPI_NEW_TOOL(mask_eff, DAT) {return 0.8;}
+EPI_NEW_TOOL(mask_trans, DAT) {return 0.05;}
 
 // Immune system
-EPI_NEW_TOOL(immune_eff, DAT) {
-    return *(t->p00);
-}
+EPI_NEW_TOOL(immune_eff, DAT) {return TPAR(00);}
+EPI_NEW_TOOL(immune_rec, DAT) {return TPAR(01);}
+EPI_NEW_TOOL(immune_death, DAT) {return TPAR(02);}
+EPI_NEW_TOOL(immune_trans, DAT) {return TPAR(03);}
 
-EPI_NEW_TOOL(immune_rec, DAT) {
-    return *(t->p01);
-}
-
-EPI_NEW_TOOL(immune_death, DAT) {
-    return *(t->p02);
-}
-
-EPI_NEW_TOOL(immune_trans, DAT) {
-    return *(t->p03);
-}
-
-// We assume individuals cannot become reinfected with the
-// same variant
-EPI_NEW_TOOL(post_rec_efficacy, DAT) 
-{
-
-    const auto vseq = v->get_sequence();
-    const auto tseq = t->get_sequence();
-
-    // If different, then no help
-    for (unsigned int i = 0; i < vseq->size(); ++i)
-        if (vseq->at(i) != tseq->at(i))
-            return 0.0;
-
-    // If completely matches, then it is almost 100% efficacy
-    return 0.95;
-    
-        
-}
-
-EPI_RECFUN(post_covid, DAT) {
+// Post covid recovery
+EPI_NEW_RECFUN(post_covid, DAT) {
 
     epiworld::Tool<DAT> immunity;
     immunity.set_sequence(*v->get_sequence());
-    immunity.set_efficacy(post_rec_efficacy);
+
+    // Post efficacy the individual has full immunity
+    EPI_NEW_TOOL_LAMBDA(post_efficacy, DAT) {return 1.0;};
+
+    immunity.set_efficacy(post_efficacy);
     p->add_tool(m->today(), immunity);
 
 }
@@ -131,7 +81,6 @@ int main(int argc, char* argv[]) {
         preval  = 0.005;
         mutrate = 0.000025;
     }
-
 
     // Initializing the model and reading population --------------------------
     epiworld::Model<DAT> model;

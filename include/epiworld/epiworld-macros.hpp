@@ -15,6 +15,17 @@
     )
 
 /**
+ * @brief Create a Tool within a function
+ * 
+ */
+#define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
+    epiworld::ToolFun<tseq> funname = \
+    [](epiworld::Tool<tseq> * t, \
+    epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq> * v, \
+    epiworld::Model<tseq> * m)
+
+/**
  * @brief Helper macro for accessing model parameters
  * 
  */
@@ -24,26 +35,40 @@
  * @brief Helper macro for defining Mutation Functions
  * 
  */
-#define EPI_MUTFUN(fname,tseq) inline bool \
-    (fname)(\
+#define EPI_NEW_MUTFUN(funname,tseq) inline bool \
+    (funname)(\
     epiworld::Person<tseq> * p, \
     epiworld::Virus<tseq> * v, \
-    epiworld::Model<tseq> * m \
-    )
+    epiworld::Model<tseq> * m )
 
-#define EPI_RECFUN(fname,tseq) inline void \
-    (fname)(\
+#define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
+    MutFun<tseq> funname = \
+    [](Person<tseq> * p, Virus<tseq> * v, Model<tseq> * m)
+
+#define EPI_NEW_RECFUN(funname,tseq) inline void \
+    (funname)(\
     epiworld::Person<tseq> * p, \
     epiworld::Virus<tseq> * v, \
-    epiworld::Model<tseq> * m \
-    )
+    epiworld::Model<tseq> * m)
 
-#define EPI_POSTRECFUN(funname,tseq) inline void \
+#define EPI_NEW_RECFUN_LAMBDA(funname,tseq) \
+    epiworld::RecFun<tseq> funname = \
+    [](epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq> * v, \
+    epiworld::Model<tseq> * m)
+
+#define EPI_NEW_POSTRECFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
     epiworld::Virus<tseq>* v, \
     epiworld::Model<tseq> * m\
     )
+
+#define EPI_NEW_POSTRECFUN_LAMBDA(funname,tseq) \
+    epiworld::PostRecFun<tseq> funname = \
+    [](epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq>* v, \
+    epiworld::Model<tseq> * m)
 
 #define EPI_RUNIF() m->runif()
 
@@ -53,5 +78,10 @@
         printf_epiworld("Running the model...\n");\
     } \
     for (unsigned int niter = 0; niter < a.get_ndays(); ++niter)
+
+#define EPI_TOKENPASTE(a,b) a ## b
+#define VPAR(num) *(v->EPI_TOKENPASTE(p,num))
+#define TPAR(num) *(t->EPI_TOKENPASTE(p,num))
+
 
 #endif

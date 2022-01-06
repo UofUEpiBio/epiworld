@@ -24,7 +24,7 @@
  * @brief Helper macro for defining Mutation Functions
  * 
  */
-#define EPI_MUTFUN(fname,tseq) inline bool \
+#define EPI_NEW_MUTFUN(fname,tseq) inline bool \
     (fname)(\
     epiworld::Person<tseq> * p, \
     epiworld::Virus<tseq> * v, \

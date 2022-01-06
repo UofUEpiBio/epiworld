@@ -8,7 +8,7 @@
  * 
  */
 EPI_NEW_TOOL(virus_immune,bool) {
-    return 1.0;
+    return *(t->p00);
 }
 
 /**
@@ -18,6 +18,7 @@ EPI_NEW_TOOL(virus_immune,bool) {
 EPI_POSTRECFUN(add_immunity,bool) {
     epiworld::Tool<bool> immune;
     immune.set_efficacy(virus_immune);
+    immune.set_param("post immunity", *m);
     p->add_tool(m->today(), immune);
     return;
 }
@@ -35,6 +36,10 @@ EPI_NEW_TOOL(immune_efficacy,bool) {
  * 
  */
 EPI_NEW_TOOL(immune_recovery,bool) {
+    return *(t->p01);
+}
+
+EPI_NEW_TOOL(immune_transmision,bool) {
     return *(t->p01);
 }
 
