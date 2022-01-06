@@ -35,9 +35,9 @@ inline double transmisibility_mixer_default(
 {
     double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_transmisibility(v));
+        total *= pt->operator()(i).get_transmisibility(v);
 
-    return 1.0 - total;
+    return total;
     
 }
 

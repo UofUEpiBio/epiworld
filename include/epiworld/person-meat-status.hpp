@@ -31,7 +31,7 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
     std::vector< Virus<TSeq>* > variants;
 
     // Computing the efficacy
-    double tmp_efficacy;
+    double tmp_transmision;
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n)
     {
 
@@ -51,12 +51,12 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
             Virus<TSeq> * tmp_v = &(nviruses(v));
 
             // And it is a function of transmisibility as well
-            tmp_efficacy = std::max(
-                p->get_efficacy(tmp_v),
-                (1.0 - neighbor->get_transmisibility(tmp_v))
-                );
+            tmp_transmision =
+                (1.0 - p->get_efficacy(tmp_v)) *
+                neighbor->get_transmisibility(tmp_v)
+                ;
             
-            probs.push_back(1.0 - tmp_efficacy);
+            probs.push_back(tmp_transmision);
             variants.push_back(tmp_v);
 
         }

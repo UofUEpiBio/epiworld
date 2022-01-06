@@ -51,7 +51,6 @@ EPI_NEW_TOOL(vaccine_death, DAT) {
 
 EPI_NEW_TOOL(vaccine_trans, DAT) {
 
-    CHECK_LATENT()
     return 0.5;
 }
 
@@ -62,7 +61,6 @@ EPI_NEW_TOOL(mask_eff, DAT) {
 
 EPI_NEW_TOOL(mask_trans, DAT) {
 
-    CHECK_LATENT()
     return 0.05;
 }
 
@@ -80,7 +78,6 @@ EPI_NEW_TOOL(immune_death, DAT) {
 }
 
 EPI_NEW_TOOL(immune_trans, DAT) {
-    CHECK_LATENT()
     return *(t->p03);
 }
 

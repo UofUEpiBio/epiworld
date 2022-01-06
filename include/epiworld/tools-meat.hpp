@@ -62,7 +62,10 @@ inline double Tool<TSeq>::get_transmisibility(
 ) {
 
     if (transmisibility)
-        return transmisibility(this, this->person, v, person->get_model());
+    {
+        double t = transmisibility(this, this->person, v, person->get_model());
+        return t;
+    }
     
     return DEFAULT_TRANSMISIBILITY;
 
