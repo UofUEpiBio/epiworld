@@ -735,44 +735,112 @@ inline void Model<TSeq>::add_status_removed(std::string lab)
         );
 
 template<typename TSeq>
-inline std::vector< std::pair<unsigned int,std::string> >
+inline const std::vector< unsigned int > &
 Model<TSeq>::get_status_susceptible() const
 {
-
-    EPIWORLD_COLLECT_STATUSES(
-        res,
-        status_susceptible,
-        status_susceptible_labels
-        )
-    
-    return res;
+    return status_susceptible;
 }
 
 template<typename TSeq>
-inline std::vector< std::pair<unsigned int,std::string> >
+inline const std::vector< unsigned int > &
 Model<TSeq>::get_status_infected() const
 {
-    EPIWORLD_COLLECT_STATUSES(
-        res,
-        status_infected,
-        status_infected_labels
-        )
-
-    return res;
+    return status_infected;
 }
 
 template<typename TSeq>
-inline std::vector< std::pair<unsigned int,std::string> >
+inline const std::vector< unsigned int > &
 Model<TSeq>::get_status_removed() const
 {
-    EPIWORLD_COLLECT_STATUSES(
-        res,
-        status_removed,
-        status_removed_labels
-        )
-
-    return res;
+    return status_removed;
 }
+
+template<typename TSeq>
+inline const std::vector< std::string > &
+Model<TSeq>::get_status_susceptible_labels() const
+{
+    return status_susceptible_labels;
+}
+
+template<typename TSeq>
+inline const std::vector< std::string > &
+Model<TSeq>::get_status_infected_labels() const
+{
+    return status_infected_labels;
+}
+
+template<typename TSeq>
+inline const std::vector< std::string > &
+Model<TSeq>::get_status_removed_labels() const
+{
+    return status_removed_labels;
+}
+
+#define CASE_PAR(a,b) case a: b = &(parameters[pname]);break;
+#define CASES_PAR(a) \
+    switch (a) \
+    { \
+    CASE_PAR(0u, p00) \
+    CASE_PAR(1u, p01) \
+    CASE_PAR(2u, p02) \
+    CASE_PAR(3u, p03) \
+    CASE_PAR(4u, p04) \
+    CASE_PAR(5u, p05) \
+    CASE_PAR(6u, p06) \
+    CASE_PAR(7u, p07) \
+    CASE_PAR(8u, p08) \
+    CASE_PAR(9u, p09) \
+    CASE_PAR(10u, p10) \
+    default: \
+        break; \
+    }
+
+template<typename TSeq>
+inline double Model<TSeq>::add_param(
+    double initial_value,
+    std::string pname
+    ) {
+
+    if (parameters.find(pname) == parameters.end())
+        parameters[pname] = initial_value;
+
+    CASES_PAR(npar_used++)
+    
+    return initial_value;
+
+}
+
+template<typename TSeq>
+inline double Model<TSeq>::set_param(
+    std::string pname
+    ) {
+
+    if (parameters.find(pname) == parameters.end())
+        throw std::logic_error("The parameter " + pname + " does not exists.");
+
+    CASES_PAR(npar_used++)
+
+    return parameters[pname];
+    
+}
+
+template<typename TSeq>
+inline double Model<TSeq>::get_param(std::string pname)
+{
+    if (parameters.find(pname) == parameters.end())
+        throw std::logic_error("The parameter " + pname + " does not exists.");
+
+    return parameters[pname];
+}
+
+template<typename TSeq>
+inline double Model<TSeq>::par(std::string pname)
+{
+    return parameters[pname];
+}
+
+#undef CASES_PAR
+#undef CASE_PAR
 
 #undef EPIWORLD_CHECK_STATE
 #undef EPIWORLD_CHECK_ALL_STATES

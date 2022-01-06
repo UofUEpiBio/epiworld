@@ -233,9 +233,12 @@ public:
     void add_status_susceptible(std::string lab);
     void add_status_infected(std::string lab);
     void add_status_removed(std::string lab);
-    std::vector< std::pair<unsigned int,std::string> > get_status_susceptible() const;
-    std::vector< std::pair<unsigned int,std::string> > get_status_infected() const;
-    std::vector< std::pair<unsigned int,std::string> > get_status_removed() const;
+    const std::vector< unsigned int > & get_status_susceptible() const;
+    const std::vector< unsigned int > & get_status_infected() const;
+    const std::vector< unsigned int > & get_status_removed() const;
+    const std::vector< std::string > & get_status_susceptible_labels() const;
+    const std::vector< std::string > & get_status_infected_labels() const;
+    const std::vector< std::string > & get_status_removed_labels() const;
     ///@]
 
     ///@[
@@ -246,6 +249,7 @@ public:
     double par(unsigned int k);
     double par(std::string pname);
     double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
+    unsigned int npar_used = 0u;
     ///@]
 
 };

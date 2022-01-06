@@ -59,28 +59,7 @@ EPI_NEW_RECFUN(post_covid, DAT) {
 
 }
 
-int main(int argc, char* argv[]) {
-
-
-    if ((argc != 5) & (argc != 1))
-        std::logic_error("You need to specify seed and number of steps (in that order).");
-
-    int seed;
-    unsigned int nsteps;
-    double preval,mutrate;
-    if (argc == 5)
-    {
-        seed   = strtol(argv[1], nullptr, 0);
-        nsteps = strtol(argv[2], nullptr, 0);
-        preval = strtod(argv[3], nullptr);
-        mutrate = strtod(argv[4], nullptr);
-
-    } else {
-        seed    = 159;
-        nsteps  = 60;
-        preval  = 0.005;
-        mutrate = 0.000025;
-    }
+int main() {
 
     // Initializing the model and reading population --------------------------
     epiworld::Model<DAT> model;
@@ -99,7 +78,6 @@ int main(int argc, char* argv[]) {
     vaccine.set_death(vaccine_death);
     vaccine.set_transmisibility(vaccine_trans);
     
-
     epiworld::Tool<DAT> mask("Face masks");
     mask.set_efficacy(mask_eff);
     mask.set_transmisibility(mask_trans);
@@ -113,7 +91,7 @@ int main(int argc, char* argv[]) {
     immune.set_sequence_unique(seq0);
 
     // Setting up the model parameters ----------------------------------------   
-    covid19.add_param(mutrate, "Mutation rate", model);
+    covid19.add_param(0.001, "Mutation rate", model);
 
     immune.add_param(0.10, "imm efficacy", model);
     immune.add_param(0.10, "imm recovery", model);
@@ -124,14 +102,14 @@ int main(int argc, char* argv[]) {
     vaccine.add_param(0.0001, "vax death", model);
 
     // Adding the virus and the tools to the model ----------------------------
-    model.add_virus(covid19, preval); 
+    model.add_virus(covid19, 0.01); 
 
     model.add_tool(vaccine, 0.5);
     model.add_tool(mask, 0.5);
     model.add_tool(immune, 1.0);
     
     // Initializing and printing information about the model ------------------
-    model.init(nsteps, seed);
+    model.init(60, 1231);
     model.set_rewire_fun(epiworld::rewire_degseq<DAT>);  
     model.set_rewire_prop(0.10);
 

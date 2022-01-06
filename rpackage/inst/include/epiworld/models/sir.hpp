@@ -3,40 +3,6 @@
 
 #include "../epiworld.hpp"
 
-/**
- * @brief Immunity to the virus
- * 
- */
-EPI_NEW_TOOL(virus_immune,bool) {
-    return 1.0;
-}
-
-/**
- * @brief Adds immunity after recovery
- * 
- */
-EPI_POSTRECFUN(add_immunity,bool) {
-    epiworld::Tool<bool> immune;
-    immune.set_efficacy(virus_immune);
-    p->add_tool(m->today(), immune);
-    return;
-}
-
-/**
- * @brief Efficacy of the immune system
- * 
- */
-EPI_NEW_TOOL(immune_efficacy,bool) {
-    return *(t->p00);
-}
-
-/**
- * @brief Recovery rate of the immune system
- * 
- */
-EPI_NEW_TOOL(immune_recovery,bool) {
-    return *(t->p01);
-}
 
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
@@ -55,6 +21,19 @@ inline void set_up_sir(
     double initial_recovery
     )
 {
+
+    
+    EPI_NEW_TOOL_LAMBDA(immune_efficacy,bool) {return *(t->p00);}
+
+    EPI_NEW_TOOL_LAMBDA(virus_immune,bool) {return 1.0;}
+    EPI_POSTRECFUN_LAMBDA(add_immunity,bool) {
+        epiworld::Tool<bool> immune;
+        immune.set_efficacy(virus_immune);
+        p->add_tool(m->today(), immune);
+        return;
+    }
+
+    EPI_NEW_TOOL_LAMBDA(immune_recovery,bool) {return *(t->p01);}
 
     // Preparing the virus
     epiworld::Virus<bool> virus(true, vname);
