@@ -1,4 +1,4 @@
 examples:
-	cd examples && $(MAKE) -B && ./simple-world.o
+	cd examples && $(MAKE) -B
 
 .PHONY: examples

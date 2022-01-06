@@ -70,12 +70,43 @@ private:
     void dist_tools();
     void dist_virus();
 
+    std::chrono::time_point<std::chrono::steady_clock> time_start;
+    std::chrono::time_point<std::chrono::steady_clock> time_end;
+
+    // std::chrono::milliseconds
+    std::chrono::duration<double,std::micro> time_elapsed = 
+        std::chrono::duration<double,std::micro>::zero();
+    unsigned int time_n = 0u;
+    void chrono_start();
+    void chrono_end();
+
+    std::unique_ptr< Model<TSeq> > backup = nullptr;
+
 public:
 
     Model() {};
     Model(const Model<TSeq> & m);
     Model(Model<TSeq> && m) = delete;
     Model<TSeq> & operator=(const Model<TSeq> & m) = delete;
+
+    void clone_population(
+        std::vector< Person<TSeq> > & p,
+        std::map<int,int> & p_ids,
+        bool & d,
+        Model<TSeq> * m = nullptr
+    ) const ;
+
+    /**
+     * @brief Set the backup object
+     * @details `backup` can be used to restore the entire object
+     * after a run. This can be useful if the user wishes to have
+     * individuals start with the same network from the beginning.
+     * 
+     */
+    ///@[
+    void set_backup();
+    void restore_backup();
+    ///@]
 
     DataBase<TSeq> & get_db();
     double & operator()(std::string pname);
@@ -204,6 +235,17 @@ public:
 
     std::map<std::string, double> & params();
 
+    /**
+     * @brief Reset the model
+     * 
+     * @details Resetting the model will:
+     * - clear the database
+     * - restore the population (if `set_backup()` was called before)
+     * - re-distribute tools
+     * - re-distribute viruses
+     * - set the date to 0
+     * 
+     */
     void reset();
     void print() const;
 
@@ -251,6 +293,15 @@ public:
     double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
     unsigned int npar_used = 0u;
     ///@]
+
+    void get_elapsed(
+        std::string unit = "auto",
+        double * last_elapsed = nullptr,
+        double * total_elapsed = nullptr,
+        unsigned int * n_replicates = nullptr,
+        std::string * unit_abbr = nullptr,
+        bool print = true
+    ) const;
 
 };
 
