@@ -4,7 +4,7 @@
 #include "../epiworld.hpp"
 
 enum JAYSTATUS {
-    LATENT = 3u,
+    LATENT = 4u,
     SYMPTOMATIC,
     SYMPTOMATIC_ISOLATED, // sampled and discovered
     ASYMPTOMATIC
@@ -45,23 +45,34 @@ EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
     
     unsigned int days_since_infected = m->today() - v->get_date();
     unsigned int status = p->get_status();
+
+    // Figuring out latent period
+    if (v->get_data().size() == 0u)
+    {
+        double latent_days = m->rgamma(MPAR(00), 1.0);
+        v->get_data().push_back(latent_days);
+
+        v->get_data().push_back(
+            m->rgamma(MPAR(01), 1.0) + latent_days
+        );
+    }
     
     // If still latent, nothing happens
-    if (days_since_infected <= VPAR(00))
+    if (days_since_infected <= v->get_data()[0u])
         return status;
 
     // If past days infected + latent, then bye.
-    if (days_since_infected >= (VPAR(00) + VPAR(01)))
+    if (days_since_infected >= v->get_data()[1u])
         EPIWORLD_UPDATE_INFECTED_REMOVE(STATUS::REMOVED);
 
     // If it is infected, then it can be asymptomatic or symptomatic
     if (status == JAYSTATUS::LATENT)
     {
         // Will be symptomatic?
-        if (EPI_RUNIF() < VPAR(02))
+        if (EPI_RUNIF() < VPAR(00))
         {
             // If you are symptomatic, then you may be catched
-            if (EPI_RUNIF() < MPAR(00))
+            if (EPI_RUNIF() < MPAR(02))
                 EPIWORLD_UPDATE_INFECTED_REMOVE(JAYSTATUS::SYMPTOMATIC_ISOLATED);
 
             EPIWORLD_UPDATE_INFECTED_REMOVE(JAYSTATUS::SYMPTOMATIC);
@@ -115,12 +126,12 @@ inline void set_up_jay(
 {
 
     // General model parameters
+    model.add_param(latent_period, "Latent period");
+    model.add_param(infect_period, "Infect period");
     model.add_param(surveillance_prob, "Surveilance prob.");
 
     // Virus ------------------------------------------------------------------
     epiworld::Virus<TSeq> covid("Covid19");
-    covid.add_param(latent_period, "Latent period", model);
-    covid.add_param(infect_period, "Infect period", model);
     covid.add_param(prob_symptoms, "Prob of symptoms", model);
     model.add_virus(covid, prevalence);
    

@@ -230,9 +230,29 @@ inline double Model<TSeq>::runif() {
 }
 
 template<typename TSeq>
+inline double Model<TSeq>::rnorm() {
+    // CHECK_INIT()
+    return (rnormd->operator()(*engine));
+}
+
+template<typename TSeq>
 inline double Model<TSeq>::rnorm(double mean, double sd) {
     // CHECK_INIT()
-    return (rnorm->operator()(*engine)) * sd + mean;
+    return (rnormd->operator()(*engine)) * sd + mean;
+}
+
+template<typename TSeq>
+inline double Model<TSeq>::rgamma() {
+    return rgammad->operator()(*engine);
+}
+
+template<typename TSeq>
+inline double Model<TSeq>::rgamma(double alpha, double beta) {
+    auto old_param = rgammad->param();
+    rgammad->param(std::gamma_distribution<>::param_type(alpha, beta));
+    double ans = rgammad->operator()(*engine);
+    rgammad->param(old_param);
+    return ans;
 }
 
 template<typename TSeq>

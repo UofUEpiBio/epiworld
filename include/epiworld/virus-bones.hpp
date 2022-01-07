@@ -44,7 +44,8 @@ private:
     PostRecFun<TSeq> post_recovery_fun = nullptr;
 
     // Setup parameters
-    std::vector< double * > params;  
+    std::vector< double * > params;
+    std::vector< double > data;
 
 public:
     Virus(std::string name = "unknown virus");
@@ -98,6 +99,8 @@ public:
     double par(std::string pname);
     double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
     ///@]
+
+    std::vector< double > & get_data();
 
 };
 

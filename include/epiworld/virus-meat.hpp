@@ -210,6 +210,11 @@ inline double Virus<TSeq>::par(std::string pname)
     return host->model->params()[pname];
 }
 
+template<typename TSeq>
+inline std::vector< double > & Virus<TSeq>::get_data() {
+    return data;
+}
+
 #undef CASES_PAR
 #undef CASE_PAR
 

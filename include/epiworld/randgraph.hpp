@@ -208,12 +208,12 @@ inline void rewire_degseq(
 
         // Since it is a map, we need to find the actual ids (positions)
         // are not good enough.
-        unsigned int count = 0u;
+        int count = 0;
         for (auto & n : p0)
             if (count++ == id01)
                 id01 = n.first;
 
-        count = 0u;
+        count = 0;
         for (auto & n : p1)
             if (count++ == id11)
                 id11 = n.first;

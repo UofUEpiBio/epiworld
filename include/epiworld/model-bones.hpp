@@ -131,8 +131,10 @@ public:
     void seed(unsigned int s);
     void set_rand_gamma(double alpha, double beta);
     double runif();
-    double rnorm(double mean = 0.0, double sd = 1.0);
+    double rnorm();
+    double rnorm(double mean, double sd);
     double rgamma();
+    double rgamma(double alpha, double beta);
     ///@]
 
     void add_virus(Virus<TSeq> v, double preval);

@@ -307,13 +307,13 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_total(fn_total_hist, std::ios_base::out);
 
         file_total <<
-            "date " << "nvariants " << "status" << "counts\n";
+            "date " << "nvariants " << "status " << "counts\n";
 
         for (unsigned int i = 0; i < hist_total_date.size(); ++i)
             file_total <<
                 hist_total_date[i] << " " <<
-                hist_total_nvariants_active[i] << " " <<
-                labels[hist_total_status[i]] << " " << 
+                hist_total_nvariants_active[i] << " \"" <<
+                labels[hist_total_status[i]] << "\" " << 
                 hist_total_counts[i] << "\n";
     }
 
