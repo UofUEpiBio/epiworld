@@ -237,6 +237,11 @@ inline Person<TSeq> * Tool<TSeq>::get_person()
     return person;
 }
 
+template<typename TSeq>
+inline unsigned int Tool<TSeq>::get_id() const {
+    return id;
+}
+
 #undef CASES_PAR
 #undef CASE_PAR
 #undef DEFAULT_EFFICACY

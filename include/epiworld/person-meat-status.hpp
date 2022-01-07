@@ -73,40 +73,33 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
 
 }
 
+#define EPIWORLD_UPDATE_INFECTED_CALC_PROBS(prob_rec, prob_die) \
+    Virus<TSeq> * v = &(p->get_virus(0u)); \
+    double prob_rec = p->get_recovery(v); \
+    double prob_die = p->get_death(v); 
+
+#define EPIWORLD_UPDATE_INFECTED_REMOVE(newstatus) \
+    {m->get_db().down_infected(v, p->get_status(), newstatus);\
+    return static_cast<unsigned int>(newstatus);}
+
+#define EPIWORLD_UPDATE_INFECTED_RECOVER(newstatus) \
+    {m->get_db().down_infected(v, p->get_status(), newstatus);\
+    v->post_recovery();p->get_viruses().reset();\
+    return static_cast<unsigned int>(newstatus);}
+
 template<typename TSeq>
 inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
-    Virus<TSeq> * vptr = &(p->get_virus(0u));
-
-    double p_die = p->get_death(vptr);
-    double p_rec = p->get_recovery(vptr);
-    double r = m->runif();
+    EPIWORLD_UPDATE_INFECTED_CALC_PROBS(p_rec, p_die)
+    double r = EPI_RUNIF();
 
     double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
-
     if (r < cumsum)
-    {
-    
-        m->get_db().down_infected(vptr,p->get_status(), STATUS::REMOVED);
-        return STATUS::REMOVED;
-
-    } 
+        EPIWORLD_UPDATE_INFECTED_REMOVE(STATUS::REMOVED);
     
     cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
     if (r < cumsum)
-    {
-        // Updating db and running actions
-        m->get_db().down_infected(vptr,p->get_status(), STATUS::RECOVERED);
-
-        // Checking if something happens after recovery
-        // (e.g., full immunity)
-        vptr->post_recovery(); 
-
-        p->get_viruses().reset();
-        
-        return static_cast<unsigned int>(STATUS::RECOVERED);
-
-    }
+        EPIWORLD_UPDATE_INFECTED_RECOVER(STATUS::RECOVERED)
 
     return p->get_status();
 

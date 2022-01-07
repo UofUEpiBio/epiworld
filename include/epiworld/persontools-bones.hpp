@@ -39,6 +39,8 @@ public:
     Person<TSeq> * get_person();
     Model<TSeq> * get_model();
     void reset();
+    bool has_tool(unsigned int t) const;
+    bool has_tool(std::string name) const;
 
 };
 

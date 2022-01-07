@@ -47,18 +47,6 @@
     epiworld::Virus<tseq> * v, \
     epiworld::Model<tseq> * m)
 
-// #define EPI_NEW_RECFUN(funname,tseq) inline void \
-//     (funname)(\
-//     epiworld::Person<tseq> * p, \
-//     epiworld::Virus<tseq> * v, \
-//     epiworld::Model<tseq> * m)
-
-// #define EPI_NEW_RECFUN_LAMBDA(funname,tseq) \
-//     epiworld::RecFun<tseq> funname = \
-//     [](epiworld::Person<tseq> * p, \
-//     epiworld::Virus<tseq> * v, \
-//     epiworld::Model<tseq> * m)
-
 #define EPI_NEW_POSTRECFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
@@ -84,6 +72,14 @@
 #define EPI_TOKENPASTE(a,b) a ## b
 #define VPAR(num) *(v->EPI_TOKENPASTE(p,num))
 #define TPAR(num) *(t->EPI_TOKENPASTE(p,num))
+#define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
+
+#define EPI_NEW_UPDATEFUN(funname,tseq) inline unsigned int \
+    (funname)(epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
+
+#define EPI_NEW_UPDATEFUN_LAMBDA(funname,tseq) inline unsigned int \
+    epiworld::UpdateFun<tseq> funname = \
+    [](epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
 
 
 #endif

@@ -193,4 +193,26 @@ inline void PersonTools<TSeq>::reset()
 
 }
 
+template<typename TSeq>
+inline bool PersonTools<TSeq>::has_tool(unsigned int t) const {
+
+    for (auto * tool : tools)
+        if (tool.get_id() == t)
+            return true;
+
+    return false;
+
+}
+
+template<typename TSeq>
+inline bool PersonTools<TSeq>::has_tool(std::string name) const {
+
+    for (auto * tool : tools)
+        if (tool.get_name() == name)
+            return true;
+
+    return false;
+    
+}
+
 #endif

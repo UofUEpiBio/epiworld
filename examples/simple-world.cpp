@@ -46,7 +46,7 @@ EPI_NEW_TOOL(immune_death, DAT) {return TPAR(02);}
 EPI_NEW_TOOL(immune_trans, DAT) {return TPAR(03);}
 
 // Post covid recovery
-EPI_NEW_RECFUN(post_covid, DAT) {
+EPI_NEW_POSTRECFUN(post_covid, DAT) {
 
     epiworld::Tool<DAT> immunity;
     immunity.set_sequence(*v->get_sequence());

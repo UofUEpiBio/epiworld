@@ -105,6 +105,12 @@ inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::set_rand_gamma(double alpha, double beta)
+{
+    rgammad = std::make_shared<std::gamma_distribution<>>(alpha,beta);
+}
+
+template<typename TSeq>
 inline double & Model<TSeq>::operator()(std::string pname) {
 
     if (parameters.find(pname) == parameters.end())
@@ -251,6 +257,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 template<typename TSeq>
 inline void Model<TSeq>::add_tool(Tool<TSeq> t, double preval)
 {
+    t.id = tools.size();
     tools.push_back(t);
     prevalence_tool.push_back(preval);
 }
@@ -513,7 +520,12 @@ inline void Model<TSeq>::reset() {
     }
 
     for (auto & p : population)
+    {
         p.reset();
+        p.set_update_susceptible(update_susceptible);
+        p.set_update_infected(update_infected);
+        p.set_update_removed(update_removed);
+    }
     
     current_date = 0;
 
@@ -997,6 +1009,27 @@ inline void Model<TSeq>::get_elapsed(
     } else {
         printf_epiworld("last run elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());
     }
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_update_susceptible(UpdateFun<TSeq> fun) {
+    
+    update_susceptible = fun;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_update_infected(UpdateFun<TSeq> fun) {
+    
+    update_infected = fun;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_update_removed(UpdateFun<TSeq> fun) {
+    
+    update_removed = fun;
+
 }
 
 #undef DURCAST

@@ -209,4 +209,29 @@ inline void Person<TSeq>::reset() {
 
 }
 
+template<typename TSeq>
+inline void Person<TSeq>::set_update_susceptible(UpdateFun<TSeq> fun) {
+    update_susceptible = fun;
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::set_update_infected(UpdateFun<TSeq> fun) {
+    update_infected = fun;
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::set_update_removed(UpdateFun<TSeq> fun) {
+    update_removed = fun;
+}
+
+template<typename TSeq>
+inline bool Person<TSeq>::has_tool(unsigned int t) const {
+    return tools.has_tool(t);
+}
+
+template<typename TSeq>
+inline bool Person<TSeq>::has_tool(std::string name) const {
+    return tools.has_tool(name);
+}
+
 #endif

@@ -27,9 +27,9 @@ private:
     unsigned int status_next = STATUS::HEALTHY; // Placeholder
     unsigned int status      = STATUS::HEALTHY;
     int id          = -1;
-    std::function<unsigned int(Person<TSeq>*,Model<TSeq>*)> update_susceptible = default_update_susceptible<TSeq>;
-    std::function<unsigned int(Person<TSeq>*,Model<TSeq>*)> update_infected = default_update_infected<TSeq>;
-    std::function<unsigned int(Person<TSeq>*,Model<TSeq>*)> update_removed = nullptr;
+    UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
+    UpdateFun<TSeq> update_infected = default_update_infected<TSeq>;
+    UpdateFun<TSeq> update_removed = nullptr;
 
 public:
 
@@ -68,6 +68,12 @@ public:
     unsigned int get_status() const;
 
     void reset();
+
+    void set_update_susceptible(UpdateFun<TSeq> fun);
+    void set_update_infected(UpdateFun<TSeq> fun);
+    void set_update_removed(UpdateFun<TSeq> fun);
+    bool has_tool(unsigned int t) const;
+    bool has_tool(std::string name) const;
 
 };
 

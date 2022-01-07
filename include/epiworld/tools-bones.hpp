@@ -17,11 +17,11 @@ class PersonTools;
 template<typename TSeq>
 class Tool;
 
-template<typename TSeq>
-using ToolFun = std::function<double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+// template<typename TSeq>
+// using ToolFun = std::function<double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
-template<typename TSeq>
-using MixerFun = std::function<double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+// template<typename TSeq>
+// using MixerFun = std::function<double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 /**
  * @brief Tools for defending the host against the virus
@@ -36,6 +36,7 @@ class Tool {
 private:
 
     Person<TSeq> * person;
+    unsigned int id = 0u;
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique  = default_sequence<TSeq>();
@@ -112,6 +113,8 @@ public:
     ///@]
 
     Person<TSeq> * get_person();
+    unsigned int get_id() const;
+
 
 };
 

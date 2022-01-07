@@ -15,9 +15,9 @@
 
 namespace epiworld {
 
+    #include "config.hpp"
     #include "epiworld-macros.hpp"
 
-    #include "config.hpp"
     #include "misc.hpp"
     #include "progress.hpp"
 

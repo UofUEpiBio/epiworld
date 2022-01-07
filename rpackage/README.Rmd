@@ -62,7 +62,7 @@ add_virus_covid19(
 
 # Adding people
 set.seed(131)
-net   <- igraph::sample_smallworld(1, 10000, 10, .1)
+net   <- igraph::sample_smallworld(1, 1000, 10, .1)
 edges <- igraph::as_edgelist(net)
 
 edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)

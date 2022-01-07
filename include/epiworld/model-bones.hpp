@@ -47,6 +47,9 @@ private:
     std::shared_ptr< std::normal_distribution<> > rnormd =
         std::make_shared< std::normal_distribution<> >(0.0);
 
+    std::shared_ptr< std::gamma_distribution<> > rgammad = 
+        std::make_shared< std::gamma_distribution<> >();
+
     std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> rewire_fun;
     double rewire_prop;
         
@@ -81,6 +84,10 @@ private:
     void chrono_end();
 
     std::unique_ptr< Model<TSeq> > backup = nullptr;
+
+    UpdateFun<TSeq> update_susceptible = nullptr;
+    UpdateFun<TSeq> update_infected = nullptr;
+    UpdateFun<TSeq> update_removed = nullptr;
 
 public:
 
@@ -121,9 +128,11 @@ public:
     ///@[
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
+    void seed(unsigned int s);
+    void set_rand_gamma(double alpha, double beta);
     double runif();
     double rnorm(double mean = 0.0, double sd = 1.0);
-    void seed(unsigned int s);
+    double rgamma();
     ///@]
 
     void add_virus(Virus<TSeq> v, double preval);
@@ -197,6 +206,9 @@ public:
     void rewire();
     ///@]
 
+    inline void set_update_susceptible(UpdateFun<TSeq> fun);
+    inline void set_update_infected(UpdateFun<TSeq> fun);
+    inline void set_update_removed(UpdateFun<TSeq> fun);
     /**
      * @brief Wrapper of `DataBase::write_data`
      * 

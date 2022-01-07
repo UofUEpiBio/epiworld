@@ -17,11 +17,7 @@ class PersonViruses;
 template<typename TSeq>
 class Model;
 
-template<typename TSeq>
-using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
-template<typename TSeq>
-using PostRecFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 /**
  * @brief Virus
