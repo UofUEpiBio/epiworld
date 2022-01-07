@@ -19,7 +19,7 @@ class Person;
         virus_ptr->get_host()->get_id(), \
         virus_ptr->get_id() \
     ); \
-    m->get_db().up_infected(virus_ptr, p->get_status(), STATUS::INFECTED);
+    m->get_db().up_infected(virus_ptr, p->get_status(), new_state);
 
 
 #define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
