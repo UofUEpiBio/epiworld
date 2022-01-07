@@ -59,15 +59,15 @@
     epiworld::Virus<tseq> * v, \
     epiworld::Model<tseq> * m)
 
-#define EPI_NEW_POSTRECFUN(funname,tseq) inline void \
+#define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
     epiworld::Virus<tseq>* v, \
     epiworld::Model<tseq> * m\
     )
 
-#define EPI_NEW_POSTRECFUN_LAMBDA(funname,tseq) \
-    epiworld::PostRecFun<tseq> funname = \
+#define EPI_NEW_VIRUSFUN_LAMBDA(funname,tseq) \
+    epiworld::VirusFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
     epiworld::Virus<tseq>* v, \
     epiworld::Model<tseq> * m)

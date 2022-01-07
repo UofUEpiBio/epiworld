@@ -37,7 +37,7 @@ template<typename TSeq>
 using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
-using PostRecFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using VirusFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
 using UpdateFun = std::function<unsigned int(Person<TSeq>*,Model<TSeq>*)>;

@@ -100,7 +100,7 @@ inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
         // Checking if something happens after recovery
         // (e.g., full immunity)
-        vptr->post_recovery(); 
+        vptr->get_post_recovery(); 
 
         p->get_viruses().reset();
         

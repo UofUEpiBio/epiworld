@@ -33,7 +33,7 @@ int add_virus_covid19(
     
   };
   
-  EPI_NEW_POSTRECFUN_LAMBDA(post_covid, TSEQ) {
+  EPI_NEW_VIRUSFUN_LAMBDA(post_covid, TSEQ) {
     
     // We assume individuals cannot become reinfected with the
     // same variant

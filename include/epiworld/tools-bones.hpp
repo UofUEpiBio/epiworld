@@ -75,6 +75,14 @@ public:
     void set_transmisibility(ToolFun<TSeq> fun);
     void set_recovery(ToolFun<TSeq> fun);
     void set_death(ToolFun<TSeq> fun);
+    void set_efficacy(double * prob);
+    void set_transmisibility(double * prob);
+    void set_recovery(double * prob);
+    void set_death(double * prob);
+    void set_efficacy(double prob);
+    void set_transmisibility(double prob);
+    void set_recovery(double prob);
+    void set_death(double prob);
     ///@]
 
     void set_name(std::string name);

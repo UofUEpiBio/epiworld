@@ -84,7 +84,7 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
 
 #define EPIWORLD_UPDATE_INFECTED_RECOVER(newstatus) \
     {m->get_db().down_infected(v, p->get_status(), newstatus);\
-    v->post_recovery();p->get_viruses().reset();\
+    v->get_post_recovery();p->get_viruses().reset();\
     return static_cast<unsigned int>(newstatus);}
 
 template<typename TSeq>

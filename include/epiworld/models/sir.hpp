@@ -23,36 +23,32 @@ inline void set_up_sir(
     )
 {
 
+    // Setting up parameters
+    model.add_param(post_immunity, "Post immunity");
+    model.add_param(efficacy, "Immune efficacy");
+    model.add_param(recovery, "Immune recovery");
+
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(true, vname);
 
-    EPI_NEW_POSTRECFUN_LAMBDA(add_immunity,TSeq) {
-
-        EPI_NEW_TOOL_LAMBDA(virus_immune,TSeq) {return MPAR(0);};
+    EPI_NEW_VIRUSFUN_LAMBDA(add_immunity,TSeq) {
 
         epiworld::Tool<TSeq> immune;
-        immune.set_efficacy(virus_immune);
-        immune.set_param("Post immunity", *m);
+        immune.set_efficacy(&MPAR(0));
         p->add_tool(m->today(), immune);
         return;
 
     };
     
     virus.set_post_recovery(add_immunity);
-    virus.add_param(post_immunity, "Post immunity", model);
+    
 
     // Preparing the immune system -----------------------------------
     epiworld::Tool<TSeq> immune_sys(true, "Immune system");
     
-    EPI_NEW_TOOL_LAMBDA(immune_efficacy,TSeq) {return MPAR(0);};
-    EPI_NEW_TOOL_LAMBDA(immune_recovery,TSeq) {return MPAR(1);};
-    
-    immune_sys.set_efficacy(immune_efficacy);
-    immune_sys.set_recovery(immune_recovery);
-
-    immune_sys.add_param(efficacy, "Immune efficacy", model);
-    immune_sys.add_param(recovery, "Immune recovery", model);
-
+    immune_sys.set_efficacy(&model("Immune efficacy"));
+    immune_sys.set_recovery(&model("Immune recovery"));
+   
     // Adding the tool and the virus
     model.add_tool(immune_sys, 1.0);
     model.add_virus(virus, prevalence);

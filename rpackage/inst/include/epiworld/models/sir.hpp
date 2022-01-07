@@ -23,7 +23,7 @@ inline void set_up_sir(
     )
 {
 
-    EPI_NEW_POSTRECFUN_LAMBDA(add_immunity,TSeq) {
+    EPI_NEW_VIRUSFUN_LAMBDA(add_immunity,TSeq) {
 
         EPI_NEW_TOOL_LAMBDA(virus_immune,TSeq) {return MPAR(0);};
 

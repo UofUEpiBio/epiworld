@@ -62,10 +62,7 @@ inline double Tool<TSeq>::get_transmisibility(
 ) {
 
     if (transmisibility)
-    {
-        double t = transmisibility(this, this->person, v, person->get_model());
-        return t;
-    }
+        return transmisibility(this, this->person, v, person->get_model());
     
     return DEFAULT_TRANSMISIBILITY;
 
@@ -122,6 +119,103 @@ inline void Tool<TSeq>::set_transmisibility(
 ) {
     transmisibility = ToolFun<TSeq>(fun);
 }
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_efficacy(double * prob) {
+    
+    ToolFun<TSeq> tmpfun =
+        [&prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+    set_efficacy(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_transmisibility(double * prob) {
+    
+    ToolFun<TSeq> tmpfun =
+        [&prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+    set_efficacy(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_recovery(double * prob) {
+    
+    ToolFun<TSeq> tmpfun =
+        [&prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+    set_efficacy(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_death(double * prob) {
+    
+    ToolFun<TSeq> tmpfun =
+        [&prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+    set_efficacy(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_efficacy(double prob) {
+    
+    ToolFun<TSeq> tmpfun =
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+    set_efficacy(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_transmisibility(double prob) {
+    
+    ToolFun<TSeq> tmpfun =
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+    set_efficacy(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_recovery(double prob) {
+    
+    ToolFun<TSeq> tmpfun =
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+    set_efficacy(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_death(double prob) {
+    
+    ToolFun<TSeq> tmpfun =
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+    set_efficacy(tmpfun);
+
+}
+
 
 template<typename TSeq>
 inline void Tool<TSeq>::set_name(std::string name)

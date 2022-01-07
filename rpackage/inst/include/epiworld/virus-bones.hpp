@@ -21,7 +21,7 @@ template<typename TSeq>
 using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
-using PostRecFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using VirusFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 /**
  * @brief Virus
@@ -45,7 +45,7 @@ private:
     int id   = -99;
     bool active = true;
     MutFun<TSeq> mutation_fun = nullptr;
-    PostRecFun<TSeq> post_recovery_fun = nullptr;
+    VirusFun<TSeq> post_recovery = nullptr;
 
     // Setup parameters
     std::vector< double * > params;  
@@ -65,8 +65,8 @@ public:
     int get_id() const;
     bool is_active() const;
 
-    void set_post_recovery(PostRecFun<TSeq> fun);
-    void post_recovery();
+    void set_post_recovery(VirusFun<TSeq> fun);
+    void get_post_recovery();
 
     void set_name(std::string name);
     std::string get_name() const;

@@ -46,7 +46,7 @@ EPI_NEW_TOOL(immune_death, DAT) {return MPAR(5);}
 EPI_NEW_TOOL(immune_trans, DAT) {return MPAR(6);}
 
 // Post covid recovery
-EPI_NEW_POSTRECFUN(post_covid, DAT) {
+EPI_NEW_VIRUSFUN(post_covid, DAT) {
 
     epiworld::Tool<DAT> immunity;
     immunity.set_sequence(*v->get_sequence());
@@ -66,6 +66,15 @@ int main() {
 
     model.pop_from_adjlist("edgelist.txt", 0, false);
 
+    // Setting up the model parameters 
+    model.add_param(0.001, "Mutation rate");
+    model.add_param(0.90, "vax efficacy");
+    model.add_param(0.0001, "vax death");
+    model.add_param(0.10, "imm efficacy");
+    model.add_param(0.10, "imm recovery");
+    model.add_param(0.001, "imm death");
+    model.add_param(0.90, "imm trans");
+
     // Initializing disease ---------------------------------------------------
     epiworld::Virus<DAT> covid19(base_seq, "COVID19");
     covid19.set_mutation(covid19_mut);
@@ -73,7 +82,9 @@ int main() {
 
     // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine");
-    vaccine.set_efficacy(vaccine_eff);
+    // vaccine.set_efficacy(vaccine_eff);
+    vaccine.set_efficacy(model("vax efficacy"));
+    vaccine.set_recovery(0.4);
     vaccine.set_recovery(vaccine_rec);
     vaccine.set_death(vaccine_death);
     vaccine.set_transmisibility(vaccine_trans);
@@ -90,14 +101,7 @@ int main() {
     DAT seq0(base_seq.size(), false);
     immune.set_sequence_unique(seq0);
 
-    // Setting up the model parameters ----------------------------------------   
-    model.add_param(0.001, "Mutation rate");
-    model.add_param(0.90, "vax efficacy");
-    model.add_param(0.0001, "vax death");
-    model.add_param(0.10, "imm efficacy");
-    model.add_param(0.10, "imm recovery");
-    model.add_param(0.001, "imm death");
-    model.add_param(0.90, "imm trans");
+
 
     // Adding the virus and the tools to the model ----------------------------
     model.add_virus(covid19, 0.01); 

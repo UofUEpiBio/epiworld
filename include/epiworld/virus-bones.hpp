@@ -41,7 +41,10 @@ private:
     int id   = -99;
     bool active = true;
     MutFun<TSeq> mutation_fun = nullptr;
-    PostRecFun<TSeq> post_recovery_fun = nullptr;
+    VirusFun<TSeq> post_recovery  = nullptr;
+    VirusFun<TSeq> infectiousness = nullptr;
+    VirusFun<TSeq> persistance    = nullptr;
+    VirusFun<TSeq> death          = nullptr;
 
     // Setup parameters
     std::vector< double * > params;
@@ -62,8 +65,29 @@ public:
     int get_id() const;
     bool is_active() const;
 
-    void set_post_recovery(PostRecFun<TSeq> fun);
-    void post_recovery();
+        /**
+     * @brief Get and set the tool functions
+     * 
+     * @param v The virus over which to operate
+     * @param fun the function to be used
+     * 
+     * @return double 
+     */
+    ///@[
+    double get_infectiousness(Virus<TSeq> * v);
+    double get_persistance(Virus<TSeq> * v);
+    double get_death(Virus<TSeq> * v);
+    void get_post_recovery();
+    void set_infectiousness(VirusFun<TSeq> fun);
+    void set_persistance(VirusFun<TSeq> fun);
+    void set_death(VirusFun<TSeq> fun);
+    void set_post_recovery(VirusFun<TSeq> fun);
+    void set_infectiousness(double prob);
+    void set_persistance(double prob);
+    void set_death(double prob);
+    void set_post_recovery(double prob);
+    ///@]
+
 
     void set_name(std::string name);
     std::string get_name() const;
