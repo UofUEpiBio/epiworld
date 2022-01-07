@@ -8,7 +8,7 @@ template<typename Tnet = Network>\
 inline double (a) (const Tnet & Array, uint i, uint j, NetCounterData * data)
 
 /**Lambda function for definition of a network counter function*/
-#define TOOL_LAMBDA(funname) \
+#defineEPI_NEW_TOOL_LAMBDA(funname,TSeq) \
 epiworld::ToolFun<TSeq> funname = \
     [](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
 
@@ -23,21 +23,21 @@ inline void factory_tool_simple_immunesys(
 {
 
     // Designing the functions
-    TOOL_LAMBDA(tmp_efficacy) {
-        return (*t->p00);
-    }
+    EPI_NEW_TOOL_LAMBDA(tmp_efficacy,TSeq) {
+        return (*m->p0);
+    };
 
-    TOOL_LAMBDA(tmp_transmission) {
-        return (*t->p01);
-    }
+    EPI_NEW_TOOL_LAMBDA(tmp_transmission,TSeq) {
+        return (*m->p1);
+    };
 
-    TOOL_LAMBDA(tmp_recovery) {
-        return (*t->p02);
-    }
+    EPI_NEW_TOOL_LAMBDA(tmp_recovery,TSeq) {
+        return (*m->p2);
+    };
 
-    TOOL_LAMBDA(tmp_death) {
-        return (*t->p03);
-    }
+    EPI_NEW_TOOL_LAMBDA(tmp_death,TSeq) {
+        return (*m->p3);
+    };
 
     // Creating the tool
     epiworld::Tool<TSeq> immune("immune system");
@@ -46,14 +46,14 @@ inline void factory_tool_simple_immunesys(
     immune.set_recovery(tmp_recovery);
     immune.set_death(tmp_death);
 
-    // Setting the parameters
-    immune.add_param(0.10, "imm efficacy", model);
-    immune.add_param(0.10, "imm recovery", model);
-    immune.add_param(0.90, "imm trans", model);
-    immune.add_param(0.001, "imm death", model);
-
     // Adding the tool
     model.add_tool(immune, 1.0);
+
+    // Setting the parameters
+    model.add_param(0.10, "imm efficacy");
+    model.add_param(0.10, "imm recovery");
+    model.add_param(0.90, "imm trans");
+    model.add_param(0.001, "imm death");
 
     return;
 

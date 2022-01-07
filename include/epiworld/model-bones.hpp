@@ -297,6 +297,28 @@ public:
     const std::vector< std::string > & get_status_removed_labels() const;
     ///@]
 
+    /**
+     * @brief Setting and accessing parameters from the model
+     * 
+     * @details Tools can incorporate parameters included in the model.
+     * Internally, parameters in the tool are stored as pointers to
+     * an std::map<> of parameters in the model. Using the `unsigned int`
+     * method directly fetches the parameters in the order these were
+     * added to the tool. Accessing parameters via the `std::string` method
+     * involves searching the parameter directly in the std::map<> member
+     * of the model (so it is not recommended.)
+     * 
+     * The function `set_param()` can be used when the parameter already
+     * exists in the model.
+     * 
+     * The `par()` function members are aliases for `get_param()`.
+     * 
+     * @param initial_val 
+     * @param pname Name of the parameter to add or to fetch
+     * @return The current value of the parameter
+     * in the model.
+     * 
+     */
     ///@[
     double add_param(double initial_val, std::string pname);
     double set_param(std::string pname);
@@ -304,7 +326,11 @@ public:
     double get_param(std::string pname);
     double par(unsigned int k);
     double par(std::string pname);
-    double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
+    double 
+        *p0,*p1,*p2,*p3,*p4,*p5,*p6,*p7,*p8,*p9,
+        *p10,*p11,*p12,*p13,*p14,*p15,*p16,*p17,*p18,*p19,
+        *p20,*p21,*p22,*p23,*p24,*p25,*p26,*p27,*p28,*p29,
+        *p30,*p31,*p32,*p33,*p34,*p35,*p36,*p37,*p38,*p39;
     unsigned int npar_used = 0u;
     ///@]
 

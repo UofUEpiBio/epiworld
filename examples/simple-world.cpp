@@ -12,7 +12,7 @@ static DAT base_seq = {true, false, false, true, true, false, true, false, true,
 // Defining mutation and transmission functions
 EPI_NEW_MUTFUN(covid19_mut, DAT) {
     
-    if (EPI_RUNIF() < *(v->p00))
+    if (EPI_RUNIF() < MPAR(0))
     {
         // Picking a location at random
         int idx = std::floor(EPI_RUNIF() * v->get_sequence()->size());
@@ -30,9 +30,9 @@ EPI_NEW_MUTFUN(covid19_mut, DAT) {
 }
 
 // Getting the vaccine
-EPI_NEW_TOOL(vaccine_eff, DAT) {return TPAR(00);} 
+EPI_NEW_TOOL(vaccine_eff, DAT) {return MPAR(1);} 
 EPI_NEW_TOOL(vaccine_rec, DAT) {return 0.4;}
-EPI_NEW_TOOL(vaccine_death, DAT) {return TPAR(01);}
+EPI_NEW_TOOL(vaccine_death, DAT) {return MPAR(2);}
 EPI_NEW_TOOL(vaccine_trans, DAT) {return 0.5;}
 
 // Wearing a Mask
@@ -40,10 +40,10 @@ EPI_NEW_TOOL(mask_eff, DAT) {return 0.8;}
 EPI_NEW_TOOL(mask_trans, DAT) {return 0.05;}
 
 // Immune system
-EPI_NEW_TOOL(immune_eff, DAT) {return TPAR(00);}
-EPI_NEW_TOOL(immune_rec, DAT) {return TPAR(01);}
-EPI_NEW_TOOL(immune_death, DAT) {return TPAR(02);}
-EPI_NEW_TOOL(immune_trans, DAT) {return TPAR(03);}
+EPI_NEW_TOOL(immune_eff, DAT) {return MPAR(3);}
+EPI_NEW_TOOL(immune_rec, DAT) {return MPAR(4);}
+EPI_NEW_TOOL(immune_death, DAT) {return MPAR(5);}
+EPI_NEW_TOOL(immune_trans, DAT) {return MPAR(6);}
 
 // Post covid recovery
 EPI_NEW_POSTRECFUN(post_covid, DAT) {
@@ -91,15 +91,13 @@ int main() {
     immune.set_sequence_unique(seq0);
 
     // Setting up the model parameters ----------------------------------------   
-    covid19.add_param(0.001, "Mutation rate", model);
-
-    immune.add_param(0.10, "imm efficacy", model);
-    immune.add_param(0.10, "imm recovery", model);
-    immune.add_param(0.001, "imm death", model);
-    immune.add_param(0.90, "imm trans", model);
-
-    vaccine.add_param(0.90, "vax efficacy", model);
-    vaccine.add_param(0.0001, "vax death", model);
+    model.add_param(0.001, "Mutation rate");
+    model.add_param(0.90, "vax efficacy");
+    model.add_param(0.0001, "vax death");
+    model.add_param(0.10, "imm efficacy");
+    model.add_param(0.10, "imm recovery");
+    model.add_param(0.001, "imm death");
+    model.add_param(0.90, "imm trans");
 
     // Adding the virus and the tools to the model ----------------------------
     model.add_virus(covid19, 0.01); 

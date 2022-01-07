@@ -25,7 +25,7 @@ inline void set_up_sir(
 
     EPI_NEW_POSTRECFUN_LAMBDA(add_immunity,TSeq) {
 
-        EPI_NEW_TOOL_LAMBDA(virus_immune,TSeq) {return TPAR(00);};
+        EPI_NEW_TOOL_LAMBDA(virus_immune,TSeq) {return MPAR(0);};
 
         epiworld::Tool<TSeq> immune;
         immune.set_efficacy(virus_immune);
@@ -35,9 +35,9 @@ inline void set_up_sir(
 
     };
 
-    EPI_NEW_TOOL_LAMBDA(immune_efficacy,TSeq) {return TPAR(00);};
-    EPI_NEW_TOOL_LAMBDA(immune_recovery,TSeq) {return TPAR(01);};
-    EPI_NEW_TOOL_LAMBDA(immune_transmision,TSeq) {return TPAR(01);};
+    EPI_NEW_TOOL_LAMBDA(immune_efficacy,TSeq) {return MPAR(0);};
+    EPI_NEW_TOOL_LAMBDA(immune_recovery,TSeq) {return MPAR(1);};
+    EPI_NEW_TOOL_LAMBDA(immune_transmision,TSeq) {return MPAR(1);};
 
     // Preparing the virus
     epiworld::Virus<TSeq> virus(true, vname);

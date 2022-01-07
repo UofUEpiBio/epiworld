@@ -140,97 +140,6 @@ inline std::string Tool<TSeq>::get_name() const {
 
 }
 
-#define CASE_PAR(a,b) case a: b = &(parmap[pname]);break;
-#define CASES_PAR(a) \
-    switch (a) \
-    { \
-    CASE_PAR(0u, p00) \
-    CASE_PAR(1u, p01) \
-    CASE_PAR(2u, p02) \
-    CASE_PAR(3u, p03) \
-    CASE_PAR(4u, p04) \
-    CASE_PAR(5u, p05) \
-    CASE_PAR(6u, p06) \
-    CASE_PAR(7u, p07) \
-    CASE_PAR(8u, p08) \
-    CASE_PAR(9u, p09) \
-    CASE_PAR(10u, p10) \
-    default: \
-        break; \
-    }
-
-template<typename TSeq>
-inline double Tool<TSeq>::add_param(
-    double initial_value,
-    std::string pname,
-    Model<TSeq> & m
-    ) {
-
-    std::map<std::string,double> & parmap = m.params();
-
-    if (parmap.find(pname) == parmap.end())
-        parmap[pname] = initial_value;
-
-    /*
-    "References and pointers to either key or data stored in the container are
-    only invalidated by erasing that element, even when the corresponding
-    iterator is invalidated."
-    https://en.cppreference.com/w/cpp/container/unordered_map
-    */
-    params.push_back(&(parmap[pname]));
-
-    unsigned int res = static_cast<unsigned int >(params.size()) - 1u;
-    CASES_PAR(res)
-    
-    return initial_value;
-
-}
-
-template<typename TSeq>
-inline double Tool<TSeq>::set_param(
-    std::string pname,
-    Model<TSeq> & m
-    ) {
-
-    std::map<std::string,double> & parmap = m.params();
-
-    if (parmap.find(pname) == parmap.end())
-        throw std::logic_error("The parameter " + pname + " does not exists.");
-
-    params.push_back(&(parmap[pname]));
-    
-    unsigned int res = static_cast<unsigned int >(params.size()) - 1u;
-    CASES_PAR(res)
-
-    return parmap[pname];
-    
-}
-
-
-template<typename TSeq>
-inline double Tool<TSeq>::get_param(unsigned int k)
-{
-    return *(params[k]);
-}
-
-template<typename TSeq>
-inline double Tool<TSeq>::get_param(std::string pname)
-{
-    return person->model->params()[pname];
-}
-
-template<typename TSeq>
-inline double Tool<TSeq>::par(unsigned int k)
-{
-    return *(params[k]);
-}
-
-template<typename TSeq>
-inline double Tool<TSeq>::par(std::string pname)
-{
-    return person->model->params()[pname];
-}
-
 template<typename TSeq>
 inline Person<TSeq> * Tool<TSeq>::get_person()
 {
@@ -242,8 +151,6 @@ inline unsigned int Tool<TSeq>::get_id() const {
     return id;
 }
 
-#undef CASES_PAR
-#undef CASE_PAR
 #undef DEFAULT_EFFICACY
 #undef DEFAULT_RECOVERY
 #undef DEFAULT_DEATH

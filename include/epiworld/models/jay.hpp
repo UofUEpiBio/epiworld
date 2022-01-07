@@ -49,11 +49,11 @@ EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
     // Figuring out latent period
     if (v->get_data().size() == 0u)
     {
-        double latent_days = m->rgamma(MPAR(00), 1.0);
+        double latent_days = m->rgamma(MPAR(0), 1.0);
         v->get_data().push_back(latent_days);
 
         v->get_data().push_back(
-            m->rgamma(MPAR(01), 1.0) + latent_days
+            m->rgamma(MPAR(1), 1.0) + latent_days
         );
     }
     
@@ -69,10 +69,10 @@ EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
     if (status == JAYSTATUS::LATENT)
     {
         // Will be symptomatic?
-        if (EPI_RUNIF() < VPAR(00))
+        if (EPI_RUNIF() < MPAR(2))
         {
             // If you are symptomatic, then you may be catched
-            if (EPI_RUNIF() < MPAR(02))
+            if (EPI_RUNIF() < MPAR(3))
                 EPIWORLD_UPDATE_INFECTED_REMOVE(JAYSTATUS::SYMPTOMATIC_ISOLATED);
 
             EPIWORLD_UPDATE_INFECTED_REMOVE(JAYSTATUS::SYMPTOMATIC);
@@ -113,7 +113,6 @@ inline void set_up_jay(
     std::string vname,
     double prevalence            = 0.05,
     double efficacy_vax          = 0.9,
-    unsigned int degree          = 3u,
     double latent_period         = 3u,
     double infect_period         = 6u,
     double prob_symptoms         = 0.6,
@@ -124,26 +123,18 @@ inline void set_up_jay(
     double prob_transmission     = 0.9
     )
 {
-
-    // General model parameters
-    model.add_param(latent_period, "Latent period");
-    model.add_param(infect_period, "Infect period");
-    model.add_param(surveillance_prob, "Surveilance prob.");
-
     // Virus ------------------------------------------------------------------
     epiworld::Virus<TSeq> covid("Covid19");
-    covid.add_param(prob_symptoms, "Prob of symptoms", model);
+    
     model.add_virus(covid, prevalence);
    
     // Vaccine tool -----------------------------------------------------------
     epiworld::Tool<TSeq> vax("Vaccine");
-    EPI_NEW_TOOL_LAMBDA(tool_vax_efficacy, TSeq) {return TPAR(00);};
-    EPI_NEW_TOOL_LAMBDA(tool_vax_infect, TSeq) {return TPAR(01);};
+    EPI_NEW_TOOL_LAMBDA(tool_vax_efficacy, TSeq) {return MPAR(4);};
+    EPI_NEW_TOOL_LAMBDA(tool_vax_infect, TSeq) {return MPAR(5);};
         
     vax.set_efficacy(tool_vax_efficacy);
     vax.set_transmisibility(tool_vax_infect);
-    vax.add_param(efficacy_vax, "Vax efficacy", model);
-    vax.add_param(prop_vax_redux_transm, "Vax redux transmision", model);
     
     model.add_tool(vax, prop_vaccinated);
 
@@ -156,13 +147,11 @@ inline void set_up_jay(
             return 0.0;
 
         // Otherwise
-        return TPAR(00);
+        return MPAR(6);
 
     };
 
-    immune.add_param(prob_transmission, "Prob of transmission", model);
     model.add_tool(immune, 1.0);
-
 
     model.add_status_infected("latent");
     model.add_status_infected("infectious");
@@ -172,6 +161,15 @@ inline void set_up_jay(
 
     model.set_update_infected(jay_update_infected<TSeq>);
     model.set_update_susceptible(jay_update_susceptible<TSeq>);
+
+    // General model parameters
+    model.add_param(latent_period, "Latent period");
+    model.add_param(infect_period, "Infect period");
+    model.add_param(prob_symptoms, "Prob of symptoms");
+    model.add_param(surveillance_prob, "Surveilance prob.");
+    model.add_param(efficacy_vax, "Vax efficacy");
+    model.add_param(prop_vax_redux_transm, "Vax redux transmision");
+    model.add_param(prob_transmission, "Prob of transmission");
 
     return;
 
