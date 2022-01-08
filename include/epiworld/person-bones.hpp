@@ -40,9 +40,9 @@ public:
     void add_virus(int d, Virus<TSeq> virus);
 
     double get_contagion_reduction(Virus<TSeq> * v);
-    double get_contagion_reduction(Virus<TSeq> * v);
-    double get_recovery(Virus<TSeq> * v);
-    double get_death(Virus<TSeq> * v);
+    double get_transmission_reduction(Virus<TSeq> * v);
+    double get_recovery_enhancer(Virus<TSeq> * v);
+    double get_death_reduction(Virus<TSeq> * v);
     int get_id() const;
     unsigned int get_index() const;
     

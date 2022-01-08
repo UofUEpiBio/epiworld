@@ -1,159 +1,92 @@
-
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 # epiworld
 
-<!-- badges: start -->
-<!-- badges: end -->
+This C++ template-header-only library provides a general framework for epidemiologic simulation. The main features of the library are:
 
-The goal of epiworld is to …
+  1. Four key classes: `Model`, `Person`, `Tool`, and `Virus`.
+  2. The model features a social networks of `Persons`.
+  3. `Persons` can have multiple `Tools` as a defense system.
+  4. `Tools` can reduce contagion rate, transmissibility, death rates, and improve recovery rates.
+  5. `Viruses` can mutate (generating new variants).
+  6. `Models` can feature multiple states, e.g., `HEALTHY`, `SUSCEPTIBLE`, etc.
+  7. `Models` can have an arbitrary number of parameters.
 
-## Installation
+# Hello world
 
-You can install the development version of epiworld from
-[GitHub](https://github.com/) with:
+```{cpp}
+#include "include/epiworld/epiworld.hpp"
 
-``` r
-# install.packages("devtools")
-devtools::install_github("gvegayon/world-epi")
+int main()
+{
+
+  // Creating a virus
+  epiworld::Virus<> covid19("covid 19");
+  covid19.set_infectiousness(.8);
+  
+  // Creating a tool
+  epiworld::Tool<> vax("vaccine");
+  vax.set_contagion_reduction(.95);
+
+  // Creating a model
+  epiworld::Model<> model;
+
+  // Adding the tool and virus
+  model.add_virus(covid19, .01);
+  model.add_tool(vax, .5);
+
+  // Generating a random pop
+  model.pop_from_adjlist(
+    epiworld::rgraph_smallworld(1000, 5, .2)
+  );
+
+  // Initializing setting days and seed
+  model.init(60, 123123);
+
+  // Running the model
+  model.run();
+
+  model.print();
+
+  return;
+}
+
 ```
 
-## Example
+## Tools
 
-This is a basic example which shows you how to solve a common problem:
+## Contagion
 
-``` r
-library(epiworld)
-library(igraph)
-#> 
-#> Attaching package: 'igraph'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     decompose, spectrum
-#> The following object is masked from 'package:base':
-#> 
-#>     union
+Susceptible individuals can acquire a virus from any of their infected connections. The probability that susceptible individual `i` gets the virus `v` from individual `j` depends on how three things:
 
-m <- new_epi_model()
-geneseq <- c(T, F, T, T, F)
+1. The transmissibility of the virus, Pv in [0,1],
+2. The contagion reduction factor of `i`, Cr in [0,1], and
+3. The host's transmission reduction factor, Tr [0,1].
 
-# Creating tools
-add_tool_immune(
-  model       = m,
-  baselineseq = geneseq,
-  preval      = 1,
-  efficacy    = .5,
-  recovery    = .1
-  )
+The last two are computed from `i` and `j`'s tools. Ultimately, the probability of `i` getting virus `v` from `j` equals:
 
-# And the virus
-add_virus_covid19(
-  model         = m,
-  baselineseq   = geneseq,
-  preval        = .025,
-  mutrate       = 0.0,
-  post_immunity = 0.95
-  )
-
-# Adding people
-set.seed(131)
-net   <- igraph::sample_smallworld(1, 10000, 10, .1)
-edges <- igraph::as_edgelist(net)
-
-edgelist_from_vec(m, edges[,1], edges[,2], directed = TRUE)
-
-# Virus and tools are distributed
-set_rewire_degseq(m, 0.1);
-init_epi_model(m, 60, 12)
-
-# We can get information about the model
-m
-#> Population size    : 10000
-#> Days (duration)    : 0 (of 60)
-#> Number of variants : 1
-#> Rewiring           : on (0.10)
-#> 
-#> Virus(es):
-#>  - COVID19 (baseline prevalence: 0.03)
-#> Tool(s):
-#>  - Immune system (baseline prevalence: 1.00)
-#> 
-#> Model parameters:
-#>  - covid19 mutation rate : 0.0e+00
-#>  - immune death          : 0.0010
-#>  - immune efficacy       : 0.5000
-#>  - immune recovery       : 0.1000
-#>  - immune transm         : 0.9000
-#>  - post-covid immunity   : 0.9500
-#> 
-#> Statistics (susceptible):
-#>  - Total healthy   : 9746
-#>  - Total recovered : 0
-#> 
-#> Statistics (infected):
-#>  - Total infected  : 254
-#> 
-#> Statistics (removed):
-#>  - Total removed   : 0
-
-# And run the model
-run_epi_model(m)
-#> Running the model...
-#> _________________________________________________________________________
-#> ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
-m
-#> Population size    : 10000
-#> Days (duration)    : 60 (of 60)
-#> Number of variants : 1
-#> Rewiring           : on (0.10)
-#> 
-#> Virus(es):
-#>  - COVID19 (baseline prevalence: 0.03)
-#> Tool(s):
-#>  - Immune system (baseline prevalence: 1.00)
-#> 
-#> Model parameters:
-#>  - covid19 mutation rate : 0.0e+00
-#>  - immune death          : 0.0010
-#>  - immune efficacy       : 0.5000
-#>  - immune recovery       : 0.1000
-#>  - immune transm         : 0.9000
-#>  - post-covid immunity   : 0.9500
-#> 
-#> Statistics (susceptible):
-#>  - Total healthy   : 0
-#>  - Total recovered : 9206
-#> 
-#> Statistics (infected):
-#>  - Total infected  : 608
-#> 
-#> Statistics (removed):
-#>  - Total removed   : 186
+```
+P(Virus v) = Pv * (1 - Cr) *(1 - Tr) 
 ```
 
-We can visualize the results
+Nonetheless, the default behavior of the simulation model is to assume that individuals can acquire only one disease at a time, if any. This way, the actual probability is:
 
-``` r
-history <- get_hist_total(m)
-head(history)
-#>   date    status counts
-#> 1    0   healthy   9746
-#> 2    0  infected    231
-#> 3    0 recovered     22
-#> 4    0   removed      1
-#> 5    1   healthy   9746
-#> 6    1  infected    208
-
-library(ggplot2)
-ggplot(history, aes(x = date, y = counts)) +
-  geom_line(aes(colour = status)) 
+```
+P(Virus v| at most one virus) = Prcond(i,v,j)
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
+The latter is calculated using Bayes' rule
 
-## Code of Conduct
+```
+Prcond(i,v,j) = P(at most one virus|Virus v) * P(Variant v) / P(at most one virus)
+              = P(Only Virus v)/P(Virus v) * P(Virus v) / P(at most one virus)
+              = P(Only Virus v)/P(at most one virus)
+```
 
-Please note that the epiworld project is released with a [Contributor
-Code of
-Conduct](https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html).
-By contributing to this project, you agree to abide by its terms.
+Where
+
+```
+P(Vnly Virus V)      = P(Virus V) * Prod(m!=V) (1 - P(Virus m))
+P(at most one virus) = P(None) + Sum(k in viruses) P(Virus k) * Prod(m != k) (1 - P(Virus m))
+P(None)              = Prod(k in Viruses) (1 - P(Virus k))
+```
+
+This way, viruses with higher transmissibility will be more likely to be acquired when competing with other variants.

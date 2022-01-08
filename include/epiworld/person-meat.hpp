@@ -44,24 +44,24 @@ inline double Person<TSeq>::get_contagion_reduction(
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_contagion_reduction(
+inline double Person<TSeq>::get_transmission_reduction(
     Virus<TSeq> * v
 ) {
-    return tools.get_contagion_reduction(v);
+    return tools.get_transmission_reduction(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_recovery(
+inline double Person<TSeq>::get_recovery_enhancer(
     Virus<TSeq> * v
 ) {
-    return tools.get_recovery(v);
+    return tools.get_recovery_enhancer(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_death(
+inline double Person<TSeq>::get_death_reduction(
     Virus<TSeq> * v
 ) {
-    return tools.get_death(v);
+    return tools.get_death_reduction(v);
 }
 
 template<typename TSeq>

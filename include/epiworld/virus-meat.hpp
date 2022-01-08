@@ -80,33 +80,20 @@ inline bool Virus<TSeq>::is_active() const {
     return active;
 }
 
-template<typename TSeq>
-inline double Virus<TSeq>::get_infectiousness()
-{
-    if (infectiousness)
-        infectiousness(host, this, host->get_model());
-
-    return DEFAULT_VIRUS_INFECTIOUSNESS;
+#define EPIWORLD_GET_V(suffix,macroname) \
+template<typename TSeq> \
+inline double Virus<TSeq>:: EPI_TOKENPASTE(get_,suffix)() \
+{ \
+    if (suffix) \
+        suffix(host, this, host->get_model()); \
+    return EPI_TOKENPASTE(DEFAULT_VIRUS_,macroname);\
 }
 
-template<typename TSeq>
-inline double Virus<TSeq>::get_persistance()
-{
-    if (persistance)
-        persistance(host, this, host->get_model());
+EPIWORLD_GET_V(infectiousness,INFECTIOUSNESS)
+EPIWORLD_GET_V(persistance,PERSISTANCE)
+EPIWORLD_GET_V(death,DEATH)
 
-    return DEFAULT_VIRUS_PERSISTANCE;
-}
-
-template<typename TSeq>
-inline double Virus<TSeq>::get_death()
-{
-    if (death)
-        death(host, this, host->get_model());
-
-    return DEFAULT_VIRUS_DEATH;
-}
-
+#undef EPIWORLD_GET_V
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_post_recovery(VirusFun<TSeq> fun)

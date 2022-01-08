@@ -35,7 +35,7 @@ inline double transmission_reduction_mixer_default(
 {
     double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= pt->operator()(i).get_contagion_reduction(v);
+        total *= pt->operator()(i).get_transmission_reduction(v);
 
     return total;
     
@@ -51,7 +51,7 @@ inline double recovery_enhancer_mixer_default(
 {
     double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_recovery(v));
+        total *= (1.0 - pt->operator()(i).get_recovery_enhancer(v));
 
     return 1.0 - total;
     
@@ -68,7 +68,7 @@ inline double death_reduction_mixer_default(
     double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
     {
-        total *= pt->operator()(i).get_death(v);
+        total *= pt->operator()(i).get_death_reduction(v);
     } 
 
     return total;

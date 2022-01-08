@@ -44,7 +44,7 @@ class Person;
             tmp_transmision = \
                 (1.0 - p->get_contagion_reduction(tmp_v)) * \
                 tmp_v->get_infectiousness() * \
-                neighbor->get_contagion_reduction(tmp_v) \
+                neighbor->get_transmission_reduction(tmp_v) \
                 ; \
             probs.push_back(tmp_transmision); \
             variants.push_back(tmp_v); \
@@ -76,8 +76,8 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
 
 #define EPIWORLD_UPDATE_INFECTED_CALC_PROBS(prob_rec, prob_die) \
     Virus<TSeq> * v = &(p->get_virus(0u)); \
-    double prob_rec =  (1 - v->get_persistance())/p->get_recovery(v); \
-    double prob_die = v->get_death() / p->get_death(v); 
+    double prob_rec =  (1 - v->get_persistance() * (1 - 1/p->get_recovery_enhancer(v))); \
+    double prob_die = v->get_death() * p->get_death_reduction(v); 
 
 #define EPIWORLD_UPDATE_INFECTED_REMOVE(newstatus) \
     {m->get_db().down_infected(v, p->get_status(), newstatus);\
