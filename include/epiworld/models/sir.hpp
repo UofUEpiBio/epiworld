@@ -9,7 +9,7 @@
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param initial_prevalence double Initial prevalence
- * @param initial_efficacy double Initial efficacy of the immune system
+ * @param initial_efficacy double Initial contagion_reduction of the immune system
  * @param initial_recovery double Initial recovery rate of the immune system
  */
 template<typename TSeq>
@@ -17,7 +17,7 @@ inline void set_up_sir(
     epiworld::Model<TSeq> & model,
     std::string vname,
     double prevalence,
-    double efficacy,
+    double contagion_reduction,
     double recovery,
     double post_immunity
     )
@@ -25,7 +25,7 @@ inline void set_up_sir(
 
     // Setting up parameters
     model.add_param(post_immunity, "Post immunity");
-    model.add_param(efficacy, "Immune efficacy");
+    model.add_param(contagion_reduction, "Immune contagion_reduction");
     model.add_param(recovery, "Immune recovery");
 
     // Preparing the virus -------------------------------------------
@@ -34,7 +34,7 @@ inline void set_up_sir(
     EPI_NEW_VIRUSFUN_LAMBDA(add_immunity,TSeq) {
 
         epiworld::Tool<TSeq> immune;
-        immune.set_efficacy(&MPAR(0));
+        immune.set_contagion_reduction(&MPAR(0));
         p->add_tool(m->today(), immune);
         return;
 
@@ -46,7 +46,7 @@ inline void set_up_sir(
     // Preparing the immune system -----------------------------------
     epiworld::Tool<TSeq> immune_sys(true, "Immune system");
     
-    immune_sys.set_efficacy(&model("Immune efficacy"));
+    immune_sys.set_contagion_reduction(&model("Immune contagion_reduction"));
     immune_sys.set_recovery(&model("Immune recovery"));
    
     // Adding the tool and the virus

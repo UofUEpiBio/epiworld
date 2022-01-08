@@ -26,7 +26,7 @@ class Person;
     /* Step 1: Compute the individual efficcacy */ \
     std::vector< double > probs; \
     std::vector< Virus<TSeq>* > variants; \
-    /* Computing the efficacy */ \
+    /* Computing the contagion_reduction */ \
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
     { \
         Person<TSeq> * neighbor = p->get_neighbors()[n]; \
@@ -38,12 +38,13 @@ class Person;
         double tmp_transmision; \
         for (unsigned int v = 0; v < nviruses.size(); ++v) \
         { \
-            /* Computing the corresponding efficacy */ \
+            /* Computing the corresponding contagion_reduction */ \
             Virus<TSeq> * tmp_v = &(nviruses(v)); \
-            /* And it is a function of transmisibility as well */ \
+            /* And it is a function of contagion_reduction as well */ \
             tmp_transmision = \
-                (1.0 - p->get_efficacy(tmp_v)) * \
-                neighbor->get_transmisibility(tmp_v) \
+                (1.0 - p->get_contagion_reduction(tmp_v)) * \
+                tmp_v->get_infectiousness() * \
+                neighbor->get_contagion_reduction(tmp_v) \
                 ; \
             probs.push_back(tmp_transmision); \
             variants.push_back(tmp_v); \
@@ -75,8 +76,8 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
 
 #define EPIWORLD_UPDATE_INFECTED_CALC_PROBS(prob_rec, prob_die) \
     Virus<TSeq> * v = &(p->get_virus(0u)); \
-    double prob_rec = p->get_recovery(v); \
-    double prob_die = p->get_death(v); 
+    double prob_rec =  (1 - v->get_persistance())/p->get_recovery(v); \
+    double prob_die = v->get_death() / p->get_death(v); 
 
 #define EPIWORLD_UPDATE_INFECTED_REMOVE(newstatus) \
     {m->get_db().down_infected(v, p->get_status(), newstatus);\

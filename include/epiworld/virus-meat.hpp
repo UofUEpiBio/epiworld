@@ -81,6 +81,34 @@ inline bool Virus<TSeq>::is_active() const {
 }
 
 template<typename TSeq>
+inline double Virus<TSeq>::get_infectiousness()
+{
+    if (infectiousness)
+        infectiousness(host, this, host->get_model());
+
+    return DEFAULT_VIRUS_INFECTIOUSNESS;
+}
+
+template<typename TSeq>
+inline double Virus<TSeq>::get_persistance()
+{
+    if (persistance)
+        persistance(host, this, host->get_model());
+
+    return DEFAULT_VIRUS_PERSISTANCE;
+}
+
+template<typename TSeq>
+inline double Virus<TSeq>::get_death()
+{
+    if (death)
+        death(host, this, host->get_model());
+
+    return DEFAULT_VIRUS_DEATH;
+}
+
+
+template<typename TSeq>
 inline void Virus<TSeq>::set_post_recovery(VirusFun<TSeq> fun)
 {
     post_recovery = VirusFun<TSeq>(fun);

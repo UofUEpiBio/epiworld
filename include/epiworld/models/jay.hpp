@@ -104,7 +104,7 @@ EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param initial_prevalence double Initial prevalence
- * @param initial_efficacy double Initial efficacy of the immune system
+ * @param initial_contagion_reduction double Initial contagion_reduction of the immune system
  * @param initial_recovery double Initial recovery rate of the immune system
  */
 template<typename TSeq>
@@ -130,11 +130,11 @@ inline void set_up_jay(
    
     // Vaccine tool -----------------------------------------------------------
     epiworld::Tool<TSeq> vax("Vaccine");
-    EPI_NEW_TOOL_LAMBDA(tool_vax_efficacy, TSeq) {return MPAR(4);};
+    EPI_NEW_TOOL_LAMBDA(tool_vax_contagion_reduction, TSeq) {return MPAR(4);};
     EPI_NEW_TOOL_LAMBDA(tool_vax_infect, TSeq) {return MPAR(5);};
         
-    vax.set_efficacy(tool_vax_efficacy);
-    vax.set_transmisibility(tool_vax_infect);
+    vax.set_contagion_reduction(tool_vax_contagion_reduction);
+    vax.set_contagion_reduction(tool_vax_infect);
     
     model.add_tool(vax, prop_vaccinated);
 
@@ -167,7 +167,7 @@ inline void set_up_jay(
     model.add_param(infect_period, "Infect period");
     model.add_param(prob_symptoms, "Prob of symptoms");
     model.add_param(surveillance_prob, "Surveilance prob.");
-    model.add_param(efficacy_vax, "Vax efficacy");
+    model.add_param(efficacy_vax, "Vax contagion_reduction");
     model.add_param(prop_vax_redux_transm, "Vax redux transmision");
     model.add_param(prob_transmission, "Prob of transmission");
 

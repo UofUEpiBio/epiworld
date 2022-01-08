@@ -45,14 +45,14 @@ inline TSeq & Tool<TSeq>::get_sequence_unique() {
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::get_efficacy(
+inline double Tool<TSeq>::get_contagion_reduction(
     Virus<TSeq> * v
 ) {
 
-    if (!efficacy)
+    if (!contagion_reduction)
         return DEFAULT_EFFICACY;
     
-    return efficacy(this, person, v, person->model);
+    return contagion_reduction(this, person, v, person->model);
 
 }
 
@@ -96,10 +96,10 @@ inline double Tool<TSeq>::get_death(
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_efficacy(
+inline void Tool<TSeq>::set_contagion_reduction(
     ToolFun<TSeq> fun
 ) {
-    efficacy = fun;
+    contagion_reduction = fun;
 }
 
 template<typename TSeq>

@@ -2,7 +2,7 @@
 #define EPIWORLD_PERSONTOOLS_MEAT_HPP
 
 /**
- * @brief Default function for combining efficacy levels
+ * @brief Default function for combining contagion_reduction levels
  * 
  * @tparam TSeq 
  * @param pt 
@@ -10,7 +10,7 @@
  */
 ///@[
 template<typename TSeq>
-inline double efficacy_mixer_default(
+inline double contagion_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
@@ -19,14 +19,14 @@ inline double efficacy_mixer_default(
 {
     double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_efficacy(v));
+        total *= (1.0 - pt->operator()(i).get_contagion_reduction(v));
 
     return 1.0 - total;
     
 }
 
 template<typename TSeq>
-inline double transmisibility_mixer_default(
+inline double transmission_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
@@ -35,14 +35,14 @@ inline double transmisibility_mixer_default(
 {
     double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= pt->operator()(i).get_transmisibility(v);
+        total *= pt->operator()(i).get_contagion_reduction(v);
 
     return total;
     
 }
 
 template<typename TSeq>
-inline double recovery_mixer_default(
+inline double recovery_enhancer_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
@@ -58,7 +58,7 @@ inline double recovery_mixer_default(
 }
 
 template<typename TSeq>
-inline double death_mixer_default(
+inline double death_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
@@ -87,80 +87,80 @@ inline void PersonTools<TSeq>::add_tool(
 }
 
 template<typename TSeq>
-inline double PersonTools<TSeq>::get_efficacy(
+inline double PersonTools<TSeq>::get_contagion_reduction(
     Virus<TSeq> * v
 ) {
 
-    if (!efficacy_mixer)
-        set_efficacy_mixer(efficacy_mixer_default<TSeq>);
+    if (!contagion_reduction_mixer)
+        set_contagion_reduction_mixer(contagion_reduction_mixer_default<TSeq>);
 
-    return efficacy_mixer(this, person, v, person->get_model());
+    return contagion_reduction_mixer(this, person, v, person->get_model());
 
 }
 
 template<typename TSeq>
-inline double PersonTools<TSeq>::get_transmisibility(
+inline double PersonTools<TSeq>::get_transmission_reduction(
     Virus<TSeq> * v
 ) {
 
-    if (!transmisibility_mixer)
-        set_transmisibility_mixer(transmisibility_mixer_default<TSeq>);
+    if (!transmission_reduction_mixer)
+        set_transmission_reduction_mixer(transmission_reduction_mixer_default<TSeq>);
 
-    return transmisibility_mixer(this, person, v, person->get_model());
+    return transmission_reduction_mixer(this, person, v, person->get_model());
 
 }
 
 template<typename TSeq>
-inline double PersonTools<TSeq>::get_recovery(
+inline double PersonTools<TSeq>::get_recovery_enhancer(
     Virus<TSeq> * v
 ) {
 
-    if (!recovery_mixer)
-        set_recovery_mixer(recovery_mixer_default<TSeq>);
+    if (!recovery_enhancer_mixer)
+        set_recovery_enhancer_mixer(recovery_enhancer_mixer_default<TSeq>);
 
-    return recovery_mixer(this, person, v, person->get_model());
+    return recovery_enhancer_mixer(this, person, v, person->get_model());
 
 }
 
 
 template<typename TSeq>
-inline double PersonTools<TSeq>::get_death(
+inline double PersonTools<TSeq>::get_death_reduction(
     Virus<TSeq> * v
 ) {
 
-    if (!death_mixer)
-        set_death_mixer(death_mixer_default<TSeq>);
+    if (!death_reduction_mixer)
+        set_death_reduction_mixer(death_reduction_mixer_default<TSeq>);
 
-    return death_mixer(this, person, v, person->get_model());
+    return death_reduction_mixer(this, person, v, person->get_model());
 
 }
 
 template<typename TSeq>
-inline void PersonTools<TSeq>::set_efficacy_mixer(
+inline void PersonTools<TSeq>::set_contagion_reduction_mixer(
     MixerFun<TSeq> fun
 ) {
-    efficacy_mixer = MixerFun<TSeq>(fun);
+    contagion_reduction_mixer = MixerFun<TSeq>(fun);
 }
 
 template<typename TSeq>
-inline void PersonTools<TSeq>::set_transmisibility_mixer(
+inline void PersonTools<TSeq>::set_transmission_reduction_mixer(
     MixerFun<TSeq> fun
 ) {
-    transmisibility_mixer = MixerFun<TSeq>(fun);
+    transmission_reduction_mixer = MixerFun<TSeq>(fun);
 }
 
 template<typename TSeq>
-inline void PersonTools<TSeq>::set_recovery_mixer(
+inline void PersonTools<TSeq>::set_recovery_enhancer_mixer(
     MixerFun<TSeq> fun
 ) {
-    recovery_mixer = MixerFun<TSeq>(fun);
+    recovery_enhancer_mixer = MixerFun<TSeq>(fun);
 }
 
 template<typename TSeq>
-inline void PersonTools<TSeq>::set_death_mixer(
+inline void PersonTools<TSeq>::set_death_reduction_mixer(
     MixerFun<TSeq> fun
 ) {
-    death_mixer = MixerFun<TSeq>(fun);
+    death_reduction_mixer = MixerFun<TSeq>(fun);
 }
 
 

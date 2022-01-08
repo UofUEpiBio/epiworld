@@ -37,17 +37,17 @@ inline void Person<TSeq>::add_virus(
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_efficacy(
+inline double Person<TSeq>::get_contagion_reduction(
     Virus<TSeq> * v
 ) {
-    return tools.get_efficacy(v);
+    return tools.get_contagion_reduction(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_transmisibility(
+inline double Person<TSeq>::get_contagion_reduction(
     Virus<TSeq> * v
 ) {
-    return tools.get_transmisibility(v);
+    return tools.get_contagion_reduction(v);
 }
 
 template<typename TSeq>

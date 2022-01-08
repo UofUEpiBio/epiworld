@@ -28,8 +28,8 @@ private:
     unsigned int status      = STATUS::HEALTHY;
     int id          = -1;
     UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
-    UpdateFun<TSeq> update_infected = default_update_infected<TSeq>;
-    UpdateFun<TSeq> update_removed = nullptr;
+    UpdateFun<TSeq> update_infected    = default_update_infected<TSeq>;
+    UpdateFun<TSeq> update_removed     = nullptr;
 
 public:
 
@@ -39,8 +39,8 @@ public:
     void add_tool(int d, Tool<TSeq> tool);
     void add_virus(int d, Virus<TSeq> virus);
 
-    double get_efficacy(Virus<TSeq> * v);
-    double get_transmisibility(Virus<TSeq> * v);
+    double get_contagion_reduction(Virus<TSeq> * v);
+    double get_contagion_reduction(Virus<TSeq> * v);
     double get_recovery(Virus<TSeq> * v);
     double get_death(Virus<TSeq> * v);
     int get_id() const;

@@ -40,7 +40,7 @@ private:
     int date = -99;
     int id   = -99;
     bool active = true;
-    MutFun<TSeq> mutation_fun = nullptr;
+    MutFun<TSeq> mutation_fun     = nullptr;
     VirusFun<TSeq> post_recovery  = nullptr;
     VirusFun<TSeq> infectiousness = nullptr;
     VirusFun<TSeq> persistance    = nullptr;
@@ -74,18 +74,24 @@ public:
      * @return double 
      */
     ///@[
-    double get_infectiousness(Virus<TSeq> * v);
-    double get_persistance(Virus<TSeq> * v);
-    double get_death(Virus<TSeq> * v);
+    double get_infectiousness();
+    double get_persistance();
+    double get_death();
+    
     void get_post_recovery();
+    void set_post_recovery(VirusFun<TSeq> fun);
+
     void set_infectiousness(VirusFun<TSeq> fun);
     void set_persistance(VirusFun<TSeq> fun);
     void set_death(VirusFun<TSeq> fun);
-    void set_post_recovery(VirusFun<TSeq> fun);
+    
+    void set_infectiousness(double * prob);
+    void set_persistance(double * prob);
+    void set_death(double * prob);
+    
     void set_infectiousness(double prob);
     void set_persistance(double prob);
     void set_death(double prob);
-    void set_post_recovery(double prob);
     ///@]
 
 

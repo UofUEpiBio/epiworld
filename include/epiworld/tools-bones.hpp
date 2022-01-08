@@ -40,10 +40,10 @@ private:
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique  = default_sequence<TSeq>();
-    ToolFun<TSeq> efficacy        = nullptr;
-    ToolFun<TSeq> transmisibility = nullptr;
-    ToolFun<TSeq> recovery        = nullptr;
-    ToolFun<TSeq> death           = nullptr;
+    ToolFun<TSeq> contagion_reduction    = nullptr;
+    ToolFun<TSeq> transmission_reduction = nullptr;
+    ToolFun<TSeq> recovery_enhancer      = nullptr;
+    ToolFun<TSeq> death_reduction        = nullptr;
 
     // Setup parameters
     std::vector< double * > params;  
@@ -67,22 +67,22 @@ public:
      * @return double 
      */
     ///@[
-    double get_efficacy(Virus<TSeq> * v);
-    double get_transmisibility(Virus<TSeq> * v);
-    double get_recovery(Virus<TSeq> * v);
-    double get_death(Virus<TSeq> * v);
-    void set_efficacy(ToolFun<TSeq> fun);
-    void set_transmisibility(ToolFun<TSeq> fun);
-    void set_recovery(ToolFun<TSeq> fun);
-    void set_death(ToolFun<TSeq> fun);
-    void set_efficacy(double * prob);
-    void set_transmisibility(double * prob);
-    void set_recovery(double * prob);
-    void set_death(double * prob);
-    void set_efficacy(double prob);
-    void set_transmisibility(double prob);
-    void set_recovery(double prob);
-    void set_death(double prob);
+    double get_contagion_reduction(Virus<TSeq> * v);
+    double get_transmission_reduction(Virus<TSeq> * v);
+    double get_recovery_enhancer(Virus<TSeq> * v);
+    double get_death_reduction(Virus<TSeq> * v);
+    void set_contagion_reduction(ToolFun<TSeq> fun);
+    void set_transmission_reduction(ToolFun<TSeq> fun);
+    void set_recovery_enhancer(ToolFun<TSeq> fun);
+    void set_death_reduction(ToolFun<TSeq> fun);
+    void set_contagion_reduction(double * prob);
+    void set_transmission_reduction(double * prob);
+    void set_recovery_enhancer(double * prob);
+    void set_death_reduction(double * prob);
+    void set_contagion_reduction(double prob);
+    void set_transmission_reduction(double prob);
+    void set_recovery_enhancer(double prob);
+    void set_death_reduction(double prob);
     ///@]
 
     void set_name(std::string name);

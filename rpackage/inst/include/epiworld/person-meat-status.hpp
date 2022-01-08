@@ -26,7 +26,7 @@ class Person;
     /* Step 1: Compute the individual efficcacy */ \
     std::vector< double > probs; \
     std::vector< Virus<TSeq>* > variants; \
-    /* Computing the efficacy */ \
+    /* Computing the contagion_reduction */ \
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
     { \
         Person<TSeq> * neighbor = p->get_neighbors()[n]; \
@@ -38,11 +38,11 @@ class Person;
         double tmp_transmision; \
         for (unsigned int v = 0; v < nviruses.size(); ++v) \
         { \
-            /* Computing the corresponding efficacy */ \
+            /* Computing the corresponding contagion_reduction */ \
             Virus<TSeq> * tmp_v = &(nviruses(v)); \
             /* And it is a function of transmisibility as well */ \
             tmp_transmision = \
-                (1.0 - p->get_efficacy(tmp_v)) * \
+                (1.0 - p->get_contagion_reduction(tmp_v)) * \
                 neighbor->get_transmisibility(tmp_v) \
                 ; \
             probs.push_back(tmp_transmision); \

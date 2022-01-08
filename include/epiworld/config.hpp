@@ -55,5 +55,32 @@ enum STATUS {
     REMOVED
 };
 
+#ifndef DEFAULT_TOOL_EFFICACY
+    #define DEFAULT_TOOL_EFFICACY        0.0
+#endif
+
+#ifndef DEFAULT_TOOL_TRANSMISIBILITY
+    #define DEFAULT_TOOL_TRANSMISIBILITY 1.0
+#endif
+
+#ifndef DEFAULT_TOOL_RECOVERY
+    #define DEFAULT_TOOL_RECOVERY        1.0
+#endif
+
+#ifndef DEFAULT_TOOL_DEATH
+    #define DEFAULT_TOOL_DEATH           1.0
+#endif
+
+#ifndef DEFAULT_VIRUS_INFECTIOUSNESS
+    #define DEFAULT_VIRUS_INFECTIOUSNESS 1.0
+#endif
+
+#ifndef DEFAULT_VIRUS_PERSISTANCE
+    #define DEFAULT_VIRUS_PERSISTANCE    0.5
+#endif
+
+#ifndef DEFAULT_VIRUS_DEATH
+    #define DEFAULT_VIRUS_DEATH          0.0
+#endif
 
 #endif

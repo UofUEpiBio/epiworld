@@ -39,7 +39,7 @@ public:
     void add_tool(int d, Tool<TSeq> tool);
     void add_virus(int d, Virus<TSeq> virus);
 
-    double get_efficacy(Virus<TSeq> * v);
+    double get_contagion_reduction(Virus<TSeq> * v);
     double get_transmisibility(Virus<TSeq> * v);
     double get_recovery(Virus<TSeq> * v);
     double get_death(Virus<TSeq> * v);
