@@ -44,7 +44,7 @@ class Person;
             tmp_transmision = \
                 (1.0 - p->get_contagion_reduction(tmp_v)) * \
                 tmp_v->get_infectiousness() * \
-                neighbor->get_transmission_reduction(tmp_v) \
+                (1.0 - neighbor->get_transmission_reduction(tmp_v)) \
                 ; \
             probs.push_back(tmp_transmision); \
             variants.push_back(tmp_v); \
@@ -56,7 +56,41 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
 {
 
     // This computes the prob of getting any neighbor variant
-    EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants)
+    /* Step 1: Compute the individual efficcacy */ 
+    std::vector< double > probs; 
+    std::vector< Virus<TSeq>* > variants; 
+    /* Computing the contagion_reduction */ 
+    for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) 
+    { 
+
+        Person<TSeq> * neighbor = p->get_neighbors()[n]; 
+        
+        /* Non-infected individuals make no difference */ 
+        if (!IN(neighbor->get_status(), m->get_status_infected())) 
+            continue; 
+        
+        PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); 
+        /* Now over the neighbor's viruses */ 
+        
+        double tmp_transmision; 
+        for (unsigned int v = 0; v < nviruses.size(); ++v) 
+        { 
+        
+            /* Computing the corresponding contagion_reduction */ 
+            Virus<TSeq> * tmp_v = &(nviruses(v)); 
+        
+            /* And it is a function of contagion_reduction as well */ 
+            tmp_transmision = 
+                (1.0 - p->get_contagion_reduction(tmp_v)) * 
+                tmp_v->get_infectiousness() * 
+                (1.0 - neighbor->get_transmission_reduction(tmp_v)) 
+                ; 
+        
+            probs.push_back(tmp_transmision); 
+            variants.push_back(tmp_v); 
+            
+        } 
+    }
 
     // No virus to compute on
     if (probs.size() == 0)
@@ -76,7 +110,7 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
 
 #define EPIWORLD_UPDATE_INFECTED_CALC_PROBS(prob_rec, prob_die) \
     Virus<TSeq> * v = &(p->get_virus(0u)); \
-    double prob_rec =  (1 - v->get_persistance() * (1 - 1/p->get_recovery_enhancer(v))); \
+    double prob_rec =  (1 - v->get_persistance() * (1.0 - p->get_recovery_enhancer(v))); \
     double prob_die = v->get_death() * p->get_death_reduction(v); 
 
 #define EPIWORLD_UPDATE_INFECTED_REMOVE(newstatus) \

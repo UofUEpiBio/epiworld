@@ -47,7 +47,7 @@ inline void set_up_sir(
     epiworld::Tool<TSeq> immune_sys(true, "Immune system");
     
     immune_sys.set_contagion_reduction(&model("Immune contagion_reduction"));
-    immune_sys.set_recovery(&model("Immune recovery"));
+    immune_sys.set_recovery_enhancer(&model("Immune recovery"));
    
     // Adding the tool and the virus
     model.add_tool(immune_sys, 1.0);

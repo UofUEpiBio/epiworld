@@ -164,16 +164,26 @@ template<typename TSeq>
 inline void Model<TSeq>::dist_virus()
 {
 
+
     // Starting first infection
+    int n = size();
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
-        for (auto & p : population)
-            if (runif() < prevalence_virus[v])
-            {
-                p.add_virus(0, viruses[v]);
-                db.up_infected(&viruses[v], p.get_status(), STATUS::INFECTED);
-            }
+        // Picking how many
+        std::binomial_distribution<> bd(size(), prevalence_virus[v]);
+        int nsampled = bd(*engine);
 
+        while (nsampled > 0)
+        {
+            int loc = static_cast<unsigned int>(floor(runif() * n));
+            if (population[loc].has_virus(viruses[v].get_id()))
+                continue;
+            
+            population[loc].add_virus(today(), viruses[v]);
+            db.up_infected(&viruses[v], population[loc].get_status(), STATUS::INFECTED);
+            nsampled--;
+
+        }
     }
 
     NEXT_STATUS()
@@ -183,13 +193,25 @@ inline void Model<TSeq>::dist_virus()
 template<typename TSeq>
 inline void Model<TSeq>::dist_tools()
 {
-    // Tools
+
+    // Starting first infection
+    int n = size();
     for (unsigned int t = 0; t < tools.size(); ++t)
     {
-        for (auto & p : population)
-            if (runif() < prevalence_tool[t])
-                p.add_tool(0, tools[t]);
+        // Picking how many
+        std::binomial_distribution<> bd(size(), prevalence_tool[t]);
+        int nsampled = bd(*engine);
 
+        while (nsampled > 0)
+        {
+            int loc = static_cast<unsigned int>(floor(runif() * n));
+            if (population[loc].has_tool(tools[t].get_id()))
+                continue;
+            
+            population[loc].add_tool(today(), tools[t]);
+            nsampled--;
+
+        }
     }
 
 }
@@ -542,9 +564,18 @@ inline void Model<TSeq>::reset() {
     for (auto & p : population)
     {
         p.reset();
-        p.set_update_susceptible(update_susceptible);
-        p.set_update_infected(update_infected);
-        p.set_update_removed(update_removed);
+        
+        if (update_susceptible)
+            p.set_update_susceptible(update_susceptible);
+        else if (!p.update_susceptible)
+            throw std::logic_error("No update_susceptible function set.");
+        if (update_infected)
+            p.set_update_infected(update_infected);
+        else if (!p.update_infected)
+            throw std::logic_error("No update_infected function set.");
+        if (update_removed)
+            p.set_update_removed(update_removed);
+        
     }
     
     current_date = 0;

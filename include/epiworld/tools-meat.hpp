@@ -69,21 +69,56 @@ EPIWORLD_SET(death_reduction,ToolFun<TSeq> fun)
 
 #undef EPIWORLD_SET
 
-#define EPIWORLD_SET_LAMBDA(suffix,astk) \
-    template<typename TSeq> \
-    inline void Tool<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
-    double astk prob) { \
-    ToolFun<TSeq> tmpfun = \
-        [&prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
-        return astk prob; }; \
-    EPI_TOKENPASTE(set_,suffix)(tmpfun);}
+template<typename TSeq>
+inline void Tool<TSeq>::set_contagion_reduction(double * prob)
+{
+    ToolFun<TSeq> tmpfun =
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+        set_contagion_reduction(tmpfun);
+}
 
-EPIWORLD_SET_LAMBDA(contagion_reduction,*)
-EPIWORLD_SET_LAMBDA(transmission_reduction,*)
-EPIWORLD_SET_LAMBDA(recovery_enhancer,*)
-EPIWORLD_SET_LAMBDA(death_reduction,*)
+// EPIWORLD_SET_LAMBDA(contagion_reduction)
+template<typename TSeq>
+inline void Tool<TSeq>::set_transmission_reduction(double * prob)
+{
+    ToolFun<TSeq> tmpfun =
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+        set_transmission_reduction(tmpfun);
+}
 
-#undef EPIWORLD_SET_LAMBDA
+// EPIWORLD_SET_LAMBDA(transmission_reduction)
+template<typename TSeq>
+inline void Tool<TSeq>::set_recovery_enhancer(double * prob)
+{
+    ToolFun<TSeq> tmpfun =
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+        set_recovery_enhancer(tmpfun);
+}
+
+// EPIWORLD_SET_LAMBDA(recovery_enhancer)
+template<typename TSeq>
+inline void Tool<TSeq>::set_death_reduction(double * prob)
+{
+    ToolFun<TSeq> tmpfun =
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+        set_death_reduction(tmpfun);
+}
+
+// EPIWORLD_SET_LAMBDA(death_reduction)
+
+// #undef EPIWORLD_SET_LAMBDA
 
 #define EPIWORLD_SET_LAMBDA2(suffix) \
     template<typename TSeq> \

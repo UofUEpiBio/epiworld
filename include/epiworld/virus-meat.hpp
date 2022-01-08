@@ -114,7 +114,7 @@ EPIWORLD_SET_V(death)
     inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
     double * prob) { \
     VirusFun<TSeq> tmpfun = \
-        [&prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
         return * prob; }; \
     EPI_TOKENPASTE(set_,suffix)(tmpfun);}
 

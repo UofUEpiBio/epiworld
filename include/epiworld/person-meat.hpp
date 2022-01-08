@@ -175,6 +175,9 @@ inline void Person<TSeq>::update_status()
 
     } else if (IN(status, model->status_susceptible)) {
         
+        if (!update_susceptible)
+            throw std::logic_error("No update_susceptible function?!");
+
         if (update_susceptible)
             status_next = update_susceptible(this, model);
 
@@ -232,6 +235,16 @@ inline bool Person<TSeq>::has_tool(unsigned int t) const {
 template<typename TSeq>
 inline bool Person<TSeq>::has_tool(std::string name) const {
     return tools.has_tool(name);
+}
+
+template<typename TSeq>
+inline bool Person<TSeq>::has_virus(unsigned int t) const {
+    return viruses.has_virus(t);
+}
+
+template<typename TSeq>
+inline bool Person<TSeq>::has_virus(std::string name) const {
+    return viruses.has_virus(name);
 }
 
 #endif

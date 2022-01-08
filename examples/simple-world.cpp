@@ -70,6 +70,7 @@ int main() {
     model.add_param(0.001, "Mutation rate");
     model.add_param(0.90, "vax efficacy");
     model.add_param(0.0001, "vax death");
+    model.add_param(0.2, "vax redux trans");
     model.add_param(0.10, "imm efficacy");
     model.add_param(0.10, "imm recovery");
     model.add_param(0.001, "imm death");
@@ -83,14 +84,13 @@ int main() {
     // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine");
     // vaccine.set_efficacy(vaccine_eff);
-    vaccine.set_efficacy(model("vax efficacy"));
-    vaccine.set_recovery(0.4);
-    vaccine.set_recovery(vaccine_rec);
-    vaccine.set_death(vaccine_death);
-    vaccine.set_transmisibility(vaccine_trans);
+    vaccine.set_contagion_reduction(&model("vax efficacy"));
+    vaccine.set_recovery_enhancer(0.4);
+    vaccine.set_death_reduction(&model("vax death"));
+    vaccine.set_transmission_reduction(&model("vax redux trans"));
     
     epiworld::Tool<DAT> mask("Face masks");
-    mask.set_efficacy(mask_eff);
+    mask.set_contagion_reduction(mask_eff);
     mask.set_transmisibility(mask_trans);
 
     epiworld::Tool<DAT> immune("Immune system");

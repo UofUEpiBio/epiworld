@@ -74,6 +74,8 @@ public:
     void set_update_removed(UpdateFun<TSeq> fun);
     bool has_tool(unsigned int t) const;
     bool has_tool(std::string name) const;
+    bool has_virus(unsigned int t) const;
+    bool has_virus(std::string name) const;
 
 };
 
