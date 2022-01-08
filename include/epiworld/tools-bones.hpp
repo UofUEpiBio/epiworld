@@ -28,7 +28,7 @@ class Tool;
  * 
  * @tparam TSeq Type of sequence
  */
-template<typename TSeq> 
+template<typename TSeq=bool> 
 class Tool {
     friend class PersonTools<TSeq>;
     friend class Person<TSeq>;

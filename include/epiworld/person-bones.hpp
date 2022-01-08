@@ -13,7 +13,7 @@ class PersonViruses;
 template<typename TSeq>
 class PersonTools;
 
-template<typename TSeq>
+template<typename TSeq = bool>
 class Person {
     friend class Model<TSeq>;
     friend class Tool<TSeq>;

@@ -95,6 +95,50 @@ EPIWORLD_GET_V(death,DEATH)
 
 #undef EPIWORLD_GET_V
 
+#define EPIWORLD_SET_V(suffix) \
+template<typename TSeq> \
+inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix)(\
+    VirusFun<TSeq> fun) \
+{ \
+    suffix = fun;\
+}
+
+EPIWORLD_SET_V(infectiousness)
+EPIWORLD_SET_V(persistance)
+EPIWORLD_SET_V(death)
+
+#undef EPIWORLD_SET_V
+
+#define EPIWORLD_SET_LAMBDA(suffix) \
+    template<typename TSeq> \
+    inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
+    double * prob) { \
+    VirusFun<TSeq> tmpfun = \
+        [&prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
+        return * prob; }; \
+    EPI_TOKENPASTE(set_,suffix)(tmpfun);}
+
+EPIWORLD_SET_LAMBDA(infectiousness)
+EPIWORLD_SET_LAMBDA(persistance)
+EPIWORLD_SET_LAMBDA(death)
+
+#undef EPIWORLD_SET_LAMBDA
+
+#define EPIWORLD_SET_LAMBDA2(suffix) \
+    template<typename TSeq> \
+    inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
+    double prob) { \
+    VirusFun<TSeq> tmpfun = \
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
+        return prob; }; \
+    EPI_TOKENPASTE(set_,suffix)(tmpfun);}
+
+EPIWORLD_SET_LAMBDA2(infectiousness)
+EPIWORLD_SET_LAMBDA2(persistance)
+EPIWORLD_SET_LAMBDA2(death)
+
+#undef EPIWORLD_SET_LAMBDA2
+
 template<typename TSeq>
 inline void Virus<TSeq>::set_post_recovery(VirusFun<TSeq> fun)
 {

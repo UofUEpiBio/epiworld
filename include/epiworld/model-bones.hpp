@@ -20,7 +20,7 @@ class AdjList;
 template<typename TSeq>
 class DataBase;
 
-template<typename TSeq>
+template<typename TSeq = bool>
 class Model {
     friend class Person<TSeq>;
     friend class DataBase<TSeq>;

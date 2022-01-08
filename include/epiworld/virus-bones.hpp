@@ -29,7 +29,7 @@ class Model;
  * having one or more tools to fight the virus. Because of this, transmisibility
  * should be a function of the host.
  */
-template<typename TSeq>
+template<typename TSeq = bool>
 class Virus {
     friend class PersonViruses<TSeq>;
     friend class DataBase<TSeq>;

@@ -6,7 +6,7 @@
  * 
  * @tparam TSeq 
  */
-template<typename TSeq>
+template<typename TSeq = bool>
 class PersonTools {
     friend class Person<TSeq>;
     friend class Model<TSeq>;
