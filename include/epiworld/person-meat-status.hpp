@@ -60,8 +60,8 @@ inline unsigned int default_update_susceptible(
 
     // This computes the prob of getting any neighbor variant
     /* Step 1: Compute the individual efficcacy */ 
-    std::vector< double > probs; 
-    std::vector< Virus<TSeq>* > variants; 
+    // std::vector< double > probs; 
+    // std::vector< Virus<TSeq>* > variants; 
     /* Computing the contagion_reduction */ 
     unsigned int nvariants_tmp = 0u;
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) 
