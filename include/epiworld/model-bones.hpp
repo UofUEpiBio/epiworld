@@ -96,7 +96,7 @@ public:
 
     Model() {};
     Model(const Model<TSeq> & m);
-    Model(Model<TSeq> && m) = delete;
+    Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m) = delete;
 
     void clone_population(
@@ -105,6 +105,10 @@ public:
         bool & d,
         Model<TSeq> * m = nullptr
     ) const ;
+
+    void clone_population(
+        const Model<TSeq> & m
+    );
 
     /**
      * @brief Set the backup object

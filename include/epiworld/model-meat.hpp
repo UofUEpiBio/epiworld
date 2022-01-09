@@ -45,6 +45,39 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 }
 
 template<typename TSeq>
+inline Model<TSeq>::Model(Model<TSeq> && model) :
+    db(std::move(model.db)),
+    viruses(std::move(model.viruses)),
+    prevalence_virus(std::move(model.prevalence_virus)),
+    tools(std::move(model.tools)),
+    prevalence_tool(std::move(model.prevalence_tool)),
+    engine(std::move(model.engine)),
+    runifd(std::move(model.runifd)),
+    parameters(std::move(model.parameters)),
+    ndays(std::move(model.ndays)),
+    pb(std::move(model.pb)),
+    verbose(std::move(model.verbose)),
+    initialized(std::move(model.initialized)),
+    current_date(std::move(model.current_date)),
+    population(std::move(model.population)),
+    population_ids(std::move(model.population_ids)),
+    directed(std::move(model.directed))
+{
+
+    // // Pointing to the right place
+    // db.set_model(*this);
+
+    // // Removing old neighbors
+    // model.clone_population(
+    //     population,
+    //     population_ids,
+    //     directed,
+    //     this
+    //     );
+
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::clone_population(
     std::vector< Person<TSeq> > & p,
     std::map<int,int> & p_ids,
@@ -84,6 +117,17 @@ inline void Model<TSeq>::clone_population(
         }
 
     }
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::clone_population(const Model<TSeq> & m)
+{
+    m.clone_population(
+        population,
+        population_ids,
+        directed,
+        this
+    );
 }
 
 template<typename TSeq>
@@ -131,8 +175,6 @@ inline void Model<TSeq>::init(
     unsigned int seed
     ) {
 
-
-
     if (initialized) 
         throw std::logic_error("Model already initialized.");
 
@@ -169,8 +211,16 @@ inline void Model<TSeq>::dist_virus()
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
         // Picking how many
-        std::binomial_distribution<> bd(size(), prevalence_virus[v]);
-        int nsampled = bd(*engine);
+        int nsampled;
+        if (prevalence_virus[v] > 0.0)
+        {
+            nsampled = static_cast<int>(std::floor(prevalence_virus[v]));
+        }
+        else
+        {
+            std::binomial_distribution<> bd(size(), prevalence_virus[v]);
+            nsampled = bd(*engine);
+        }
 
         while (nsampled > 0)
         {
@@ -198,9 +248,17 @@ inline void Model<TSeq>::dist_tools()
     for (unsigned int t = 0; t < tools.size(); ++t)
     {
         // Picking how many
-        std::binomial_distribution<> bd(size(), prevalence_tool[t]);
-        int nsampled = bd(*engine);
-
+        int nsampled;
+        if (prevalence_tool[t] > 0.0)
+        {
+            nsampled = static_cast<int>(std::floor(prevalence_tool[t]));
+        }
+        else
+        {
+            std::binomial_distribution<> bd(size(), prevalence_tool[t]);
+            nsampled = bd(*engine);
+        }
+        
         while (nsampled > 0)
         {
             int loc = static_cast<unsigned int>(floor(runif() * n));
