@@ -52,7 +52,10 @@ class Person;
     }
 
 template<typename TSeq>
-inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m)
+inline unsigned int default_update_susceptible(
+    Person<TSeq> * p,
+    Model<TSeq> * m
+    )
 {
 
     // This computes the prob of getting any neighbor variant
@@ -60,6 +63,7 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
     std::vector< double > probs; 
     std::vector< Virus<TSeq>* > variants; 
     /* Computing the contagion_reduction */ 
+    unsigned int nvariants_tmp = 0u;
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) 
     { 
 
@@ -86,23 +90,26 @@ inline unsigned int default_update_susceptible(Person<TSeq> * p, Model<TSeq> * m
                 (1.0 - neighbor->get_transmission_reduction(tmp_v)) 
                 ; 
         
-            probs.push_back(tmp_transmision); 
-            variants.push_back(tmp_v); 
+            m->array_double_tmp[nvariants_tmp]  = tmp_transmision;
+            m->array_virus_tmp[nvariants_tmp++] = tmp_v;
+            // probs.push_back(tmp_transmision); 
+            // variants.push_back(tmp_v); 
             
         } 
     }
 
     // No virus to compute on
-    if (probs.size() == 0)
+    // if (probs.size() == 0)
+    if (nvariants_tmp == 0u)
         return p->get_status();
 
     // Running the roulette
-    int which = roulette(probs, m);
+    int which = roulette(nvariants_tmp, m);
 
     if (which < 0)
         return p->get_status();
 
-    EPIWORLD_ADD_VIRUS(variants[which], STATUS::INFECTED)
+    EPIWORLD_ADD_VIRUS(m->array_virus_tmp[which], STATUS::INFECTED)
 
     return static_cast<unsigned int>(STATUS::INFECTED); 
 

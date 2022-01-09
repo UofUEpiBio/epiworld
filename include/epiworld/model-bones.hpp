@@ -86,10 +86,13 @@ private:
     std::unique_ptr< Model<TSeq> > backup = nullptr;
 
     UpdateFun<TSeq> update_susceptible = nullptr;
-    UpdateFun<TSeq> update_infected = nullptr;
-    UpdateFun<TSeq> update_removed = nullptr;
+    UpdateFun<TSeq> update_infected    = nullptr;
+    UpdateFun<TSeq> update_removed     = nullptr;
 
 public:
+
+    std::array<double,EPIWORLD_MAXNEIGHBORS> array_double_tmp;
+    std::array<Virus<TSeq> *,EPIWORLD_MAXNEIGHBORS> array_virus_tmp;
 
     Model() {};
     Model(const Model<TSeq> & m);

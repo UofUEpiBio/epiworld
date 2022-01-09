@@ -5,6 +5,10 @@
     #define printf_epiworld fflush(stdout);printf
 #endif
 
+#ifndef EPIWORLD_MAXNEIGHBORS
+    #define EPIWORLD_MAXNEIGHBORS 100000
+#endif
+
 #ifdef EPIWORLD_USE_OMP
     #include <omp.h>
 #else

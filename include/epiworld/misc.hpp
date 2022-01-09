@@ -159,4 +159,59 @@ inline int roulette(
 
 }
 
+template<typename TSeq>
+inline int roulette(
+    unsigned int nelements,
+    Model<TSeq> * m
+    )
+{
+
+    // Step 1: Computing the prob on none 
+    double p_none = 1.0;
+    unsigned int ncertain = 0u;
+    // std::vector< int > certain_infection;
+    for (unsigned int p = 0u; p < nelements; ++p)
+    {
+        p_none *= (1.0 - m->array_double_tmp[p]);
+
+        if (m->array_double_tmp[p] > (1 - 1e-100))
+            m->array_double_tmp[nelements + ncertain++] = p;
+            // certain_infection.push_back(p);
+        
+    }
+
+    double r = m->runif();
+    // If there are one or more probs that go close to 1, sample
+    // uniformly
+    if (ncertain > 0u)
+        return m->array_double_tmp[nelements + std::floor(ncertain * r)]; //    certain_infection[std::floor(r * certain_infection.size())];
+
+    // Step 2: Calculating the prob of none or single
+    // std::vector< double > probs_only_p;
+    double p_none_or_single = p_none;
+    for (unsigned int p = 0u; p < nelements; ++p)
+    {
+        m->array_double_tmp[nelements + p] = 
+            m->array_double_tmp[p] * (p_none / (1.0 - m->array_double_tmp[p]));
+        p_none_or_single += m->array_double_tmp[nelements + p];
+    }
+
+    // Step 3: Roulette
+    double cumsum = p_none/p_none_or_single;
+    if (r < cumsum)
+        return -1;
+
+    for (unsigned int p = 0u; p < nelements; ++p)
+    {
+        // If it yield here, then bingo, the individual will acquire the disease
+        cumsum += m->array_double_tmp[nelements + p]/(p_none_or_single);
+        if (r < cumsum)
+            return static_cast<int>(p);
+        
+    }
+
+    return static_cast<int>(nelements - 1u);
+
+}
+
 #endif
