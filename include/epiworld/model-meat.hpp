@@ -147,9 +147,8 @@ inline void Model<TSeq>::init(
     }
 
     engine->seed(seed);
-
-    // if (!runifd)
-    //     runifd = std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
+    array_double_tmp.resize(size()/2, 0.0);
+    array_virus_tmp.resize(size());
 
     initialized = true;
 

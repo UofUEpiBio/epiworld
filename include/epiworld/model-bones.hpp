@@ -91,8 +91,8 @@ private:
 
 public:
 
-    std::array<double,EPIWORLD_MAXNEIGHBORS> array_double_tmp;
-    std::array<Virus<TSeq> *,EPIWORLD_MAXNEIGHBORS> array_virus_tmp;
+    std::vector<double> array_double_tmp;
+    std::vector<Virus<TSeq> *> array_virus_tmp;
 
     Model() {};
     Model(const Model<TSeq> & m);
