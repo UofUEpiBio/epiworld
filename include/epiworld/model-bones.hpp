@@ -34,9 +34,11 @@ private:
     
     std::vector< Virus<TSeq> > viruses;
     std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
+    std::vector< bool > prevalence_virus_as_proportion;
     
     std::vector< Tool<TSeq> > tools;
     std::vector< epiworld_double > prevalence_tool;
+    std::vector< bool > prevalence_tool_as_proportion;
 
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
@@ -145,7 +147,9 @@ public:
     ///@]
 
     void add_virus(Virus<TSeq> v, epiworld_double preval);
+    void add_virus_n(Virus<TSeq> v, unsigned int preval);
     void add_tool(Tool<TSeq> t, epiworld_double preval);
+    void add_tool_n(Tool<TSeq> t, unsigned int preval);
 
     /**
      * @brief Accessing population of the model

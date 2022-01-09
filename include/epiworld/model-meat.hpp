@@ -212,14 +212,13 @@ inline void Model<TSeq>::dist_virus()
     {
         // Picking how many
         int nsampled;
-        if (prevalence_virus[v] > 0.0)
+        if (prevalence_virus_as_proportion[v])
         {
-            nsampled = static_cast<int>(std::floor(prevalence_virus[v]));
+            nsampled = static_cast<int>(std::floor(prevalence_virus[v] * size())) + 1;
         }
         else
         {
-            std::binomial_distribution<> bd(size(), prevalence_virus[v]);
-            nsampled = bd(*engine);
+            nsampled = static_cast<int>(prevalence_virus[v]);
         }
 
         while (nsampled > 0)
@@ -249,14 +248,13 @@ inline void Model<TSeq>::dist_tools()
     {
         // Picking how many
         int nsampled;
-        if (prevalence_tool[t] > 0.0)
+        if (prevalence_tool_as_proportion[t])
         {
-            nsampled = static_cast<int>(std::floor(prevalence_tool[t]));
+            nsampled = static_cast<int>(std::floor(prevalence_tool[t] * size())) + 1;
         }
         else
         {
-            std::binomial_distribution<> bd(size(), prevalence_tool[t]);
-            nsampled = bd(*engine);
+            nsampled = static_cast<int>(prevalence_tool[t]);
         }
         
         while (nsampled > 0)
@@ -343,22 +341,63 @@ template<typename TSeq>
 inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
 {
 
+    if (preval > 1.0)
+        throw std::range_error("Prevalence of virus cannot be above 1.0");
+
+    if (preval < 0.0)
+        throw std::range_error("Prevalence of virus cannot be negative");
+
     // Setting the id
     v.set_id(viruses.size());
     
     // Adding new virus
     viruses.push_back(v);
     prevalence_virus.push_back(preval);
+    prevalence_virus_as_proportion.push_back(true);
 
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
+{
+
+    if (preval > size())
+        throw std::range_error("There are only " + std::to_string(size()) + 
+        "individuals in the population. Cannot add the virus to " + std::to_string(preval));
+
+    // Setting the id
+    v.set_id(viruses.size());
+    
+    // Adding new virus
+    viruses.push_back(v);
+    prevalence_virus.push_back(preval);
+    prevalence_virus_as_proportion.push_back(false);
 
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
 {
+
+    if (preval > 1.0)
+        throw std::range_error("Prevalence of tool cannot be above 1.0");
+
+    if (preval < 0.0)
+        throw std::range_error("Prevalence of tool cannot be negative");
+
     t.id = tools.size();
     tools.push_back(t);
     prevalence_tool.push_back(preval);
+    prevalence_tool_as_proportion.push_back(true);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
+{
+    t.id = tools.size();
+    tools.push_back(t);
+    prevalence_tool.push_back(preval);
+    prevalence_tool_as_proportion.push_back(false);
 }
 
 template<typename TSeq>
@@ -688,21 +727,58 @@ inline void Model<TSeq>::print() const
     printf_epiworld("Virus(es):\n");
     int i = 0;
     for (auto & v : viruses)
-    {    printf_epiworld(
-            " - %s (baseline prevalence: %.2f)\n",
-            v.get_name().c_str(),
-            prevalence_virus[i++]
+    {    
+
+        if (prevalence_virus_as_proportion[i])
+        {
+
+            printf_epiworld(
+                " - %s (baseline prevalence: %.2f%%)\n",
+                v.get_name().c_str(),
+                prevalence_virus[i++] * 100.00
             );
+
+        }
+        else
+        {
+
+            printf_epiworld(
+                " - %s (baseline prevalence: %i seeds)\n",
+                v.get_name().c_str(),
+                static_cast<int>(prevalence_virus[i++])
+            );
+
+        }
+
     }
 
     printf_epiworld("Tool(s):\n");
     i = 0;
     for (auto & t : tools)
-    {    printf_epiworld(
-            " - %s (baseline prevalence: %.2f)\n",
-            t.get_name().c_str(),
-            prevalence_tool[i++]
-            );
+    {   
+
+        if (prevalence_tool_as_proportion[i])
+        {
+
+            printf_epiworld(
+                " - %s (baseline prevalence: %.2f%%)\n",
+                t.get_name().c_str(),
+                prevalence_tool[i++] * 100.0
+                );
+
+        }
+        else
+        {
+
+            printf_epiworld(
+                " - %s (baseline prevalence: %i seeds)\n",
+                t.get_name().c_str(),
+                static_cast<int>(prevalence_tool[i++])
+                );
+
+        }
+        
+
     }
 
     // Information about the parameters included

@@ -30,7 +30,7 @@ int main()
   epiworld::Model<> model;
 
   // Adding the tool and virus
-  model.add_virus(covid19, .01);
+  model.add_virus(covid19, 10);
   model.add_tool(vax, .5);
 
   // Generating a random pop
@@ -49,6 +49,39 @@ int main()
   return;
 }
 
+```
+
+Possible output:
+
+```
+Running the model...
+_________________________________________________________________________
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+
+________________________________________________________________________________
+SIMULATION STUDY
+
+Population size    : 1000
+Days (duration)    : 60 (of 60)
+Number of variants : 1
+Last run elapsed t : 6.00ms
+Rewiring           : off
+
+Virus(es):
+ - unknown virus (baseline prevalence: 5.00)
+Tool(s):
+ - unknown tool (baseline prevalence: 0.50)
+
+Model parameters:
+
+Distribution of the population at time 60:
+ - Total healthy (S)   : 118
+ - Total recovered (S) : 312
+ - Total infected (I)  : 570
+ - Total removed (R)   : 0
+
+(S): Susceptible, (I): Infected, (R): Recovered
+________________________________________________________________________________
 ```
 
 ## Tools

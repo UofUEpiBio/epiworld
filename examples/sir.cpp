@@ -8,7 +8,7 @@ int main() {
     set_up_sir(
         model,    // Model object
         "a virus", // Name of the virus
-        75.0,        // Initial prevalence
+        0.01,        // Initial prevalence
         .5,        // Efficacy rate
         .5,        // Recovery rate
         .95        // Post immunity
