@@ -149,13 +149,13 @@ inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_rand_gamma(double alpha, double beta)
+inline void Model<TSeq>::set_rand_gamma(epiworld_double alpha, epiworld_double beta)
 {
     rgammad = std::make_shared<std::gamma_distribution<>>(alpha,beta);
 }
 
 template<typename TSeq>
-inline double & Model<TSeq>::operator()(std::string pname) {
+inline epiworld_double & Model<TSeq>::operator()(std::string pname) {
 
     if (parameters.find(pname) == parameters.end())
         throw std::range_error("The parameter "+ pname + "is not in the model.");
@@ -303,33 +303,33 @@ inline std::mt19937 * Model<TSeq>::get_rand_endgine()
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::runif() {
+inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
     return runifd->operator()(*engine);
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::rnorm() {
+inline epiworld_double Model<TSeq>::rnorm() {
     // CHECK_INIT()
     return (rnormd->operator()(*engine));
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::rnorm(double mean, double sd) {
+inline epiworld_double Model<TSeq>::rnorm(epiworld_double mean, epiworld_double sd) {
     // CHECK_INIT()
     return (rnormd->operator()(*engine)) * sd + mean;
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::rgamma() {
+inline epiworld_double Model<TSeq>::rgamma() {
     return rgammad->operator()(*engine);
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::rgamma(double alpha, double beta) {
+inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
     auto old_param = rgammad->param();
     rgammad->param(std::gamma_distribution<>::param_type(alpha, beta));
-    double ans = rgammad->operator()(*engine);
+    epiworld_double ans = rgammad->operator()(*engine);
     rgammad->param(old_param);
     return ans;
 }
@@ -340,7 +340,7 @@ inline void Model<TSeq>::seed(unsigned int s) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
+inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
 {
 
     // Setting the id
@@ -354,7 +354,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool(Tool<TSeq> t, double preval)
+inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
 {
     t.id = tools.size();
     tools.push_back(t);
@@ -532,13 +532,13 @@ inline void Model<TSeq>::verbose_off() {
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rewire_fun(
-    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> fun
+    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun
     ) {
     rewire_fun = fun;
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_rewire_prop(double prop)
+inline void Model<TSeq>::set_rewire_prop(epiworld_double prop)
 {
 
     if (prop < 0.0)
@@ -551,7 +551,7 @@ inline void Model<TSeq>::set_rewire_prop(double prop)
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::get_rewire_prop() const {
+inline epiworld_double Model<TSeq>::get_rewire_prop() const {
     return rewire_prop;
 }
 
@@ -597,7 +597,7 @@ inline void Model<TSeq>::write_edgelist(
 }
 
 template<typename TSeq>
-inline std::map<std::string,double> & Model<TSeq>::params()
+inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 {
     return parameters;
 }
@@ -665,8 +665,8 @@ inline void Model<TSeq>::print() const
     if (time_n > 0u)
     {
         std::string abbr;
-        double elapsed;
-        double total;
+        epiworld_double elapsed;
+        epiworld_double total;
         get_elapsed("auto", &elapsed, &total, nullptr, &abbr, false);
         printf_epiworld("Last run elapsed t : %.2f%s\n", elapsed, abbr.c_str());
         if (time_n > 1u)
@@ -996,8 +996,8 @@ Model<TSeq>::get_status_removed_labels() const
     }
 
 template<typename TSeq>
-inline double Model<TSeq>::add_param(
-    double initial_value,
+inline epiworld_double Model<TSeq>::add_param(
+    epiworld_double initial_value,
     std::string pname
     ) {
 
@@ -1011,7 +1011,7 @@ inline double Model<TSeq>::add_param(
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::set_param(
+inline epiworld_double Model<TSeq>::set_param(
     std::string pname
     ) {
 
@@ -1025,7 +1025,7 @@ inline double Model<TSeq>::set_param(
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::get_param(std::string pname)
+inline epiworld_double Model<TSeq>::get_param(std::string pname)
 {
     if (parameters.find(pname) == parameters.end())
         throw std::logic_error("The parameter " + pname + " does not exists.");
@@ -1034,7 +1034,7 @@ inline double Model<TSeq>::get_param(std::string pname)
 }
 
 template<typename TSeq>
-inline double Model<TSeq>::par(std::string pname)
+inline epiworld_double Model<TSeq>::par(std::string pname)
 {
     return parameters[pname];
 }
@@ -1048,15 +1048,15 @@ inline double Model<TSeq>::par(std::string pname)
 template<typename TSeq>
 inline void Model<TSeq>::get_elapsed(
     std::string unit,
-    double * last_elapsed,
-    double * total_elapsed,
+    epiworld_double * last_elapsed,
+    epiworld_double * total_elapsed,
     unsigned int * n_replicates,
     std::string * unit_abbr,
     bool print
 ) const {
 
     // Preparing the result
-    double elapsed, elapsed_total;
+    epiworld_double elapsed, elapsed_total;
     std::string abbr_unit;
 
     // Figuring out the length
@@ -1113,7 +1113,7 @@ inline void Model<TSeq>::get_elapsed(
         printf_epiworld("total runs            : %i\n",
             static_cast<int>(time_n));
         printf_epiworld("mean run elapsed time : %.2f%s\n",
-            elapsed_total/static_cast<double>(time_n), abbr_unit.c_str());
+            elapsed_total/static_cast<epiworld_double>(time_n), abbr_unit.c_str());
 
     } else {
         printf_epiworld("last run elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());

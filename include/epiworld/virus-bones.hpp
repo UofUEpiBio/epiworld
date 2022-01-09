@@ -47,8 +47,8 @@ private:
     VirusFun<TSeq> death          = nullptr;
 
     // Setup parameters
-    std::vector< double * > params;
-    std::vector< double > data;
+    std::vector< epiworld_double * > params;
+    std::vector< epiworld_double > data;
 
 public:
     Virus(std::string name = "unknown virus");
@@ -71,12 +71,12 @@ public:
      * @param v The virus over which to operate
      * @param fun the function to be used
      * 
-     * @return double 
+     * @return epiworld_double 
      */
     ///@[
-    double get_infectiousness();
-    double get_persistance();
-    double get_death();
+    epiworld_double get_infectiousness();
+    epiworld_double get_persistance();
+    epiworld_double get_death();
     
     void get_post_recovery();
     void set_post_recovery(VirusFun<TSeq> fun);
@@ -85,20 +85,20 @@ public:
     void set_persistance(VirusFun<TSeq> fun);
     void set_death(VirusFun<TSeq> fun);
     
-    void set_infectiousness(double * prob);
-    void set_persistance(double * prob);
-    void set_death(double * prob);
+    void set_infectiousness(epiworld_double * prob);
+    void set_persistance(epiworld_double * prob);
+    void set_death(epiworld_double * prob);
     
-    void set_infectiousness(double prob);
-    void set_persistance(double prob);
-    void set_death(double prob);
+    void set_infectiousness(epiworld_double prob);
+    void set_persistance(epiworld_double prob);
+    void set_death(epiworld_double prob);
     ///@]
 
 
     void set_name(std::string name);
     std::string get_name() const;
 
-    std::vector< double > & get_data();
+    std::vector< epiworld_double > & get_data();
 
 };
 

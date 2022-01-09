@@ -27,7 +27,7 @@ struct vecHasher {
     }
 };
 
-template<typename Ta = double, typename Tb = unsigned int> 
+template<typename Ta = epiworld_double, typename Tb = unsigned int> 
 using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
 
 /**
@@ -56,7 +56,7 @@ inline int default_sequence() {
 }
 
 template<>
-inline double default_sequence() {
+inline epiworld_double default_sequence() {
     return 0.0;
 }
 
@@ -71,7 +71,7 @@ inline std::vector<int> default_sequence() {
 }
 
 template<>
-inline std::vector<double> default_sequence() {
+inline std::vector<epiworld_double> default_sequence() {
     return {0.0};
 }
 ///@]
@@ -79,7 +79,7 @@ inline std::vector<double> default_sequence() {
 /**
  * @brief Check whether `a` is included in `b`
  * 
- * @tparam Ta Type of `a`. Could be int, double, etc.
+ * @tparam Ta Type of `a`. Could be int, epiworld_double, etc.
  * @param a Scalar of class `Ta`.
  * @param b Vector `std::vector` of class `Ta`.
  * @return `true` if `a in b`, and `false` otherwise.
@@ -109,13 +109,13 @@ inline bool IN(const Ta & a, const std::vector< Ta > & b)
  */
 template<typename TSeq>
 inline int roulette(
-    const std::vector< double > & probs,
+    const std::vector< epiworld_double > & probs,
     Model<TSeq> * m
     )
 {
 
     // Step 1: Computing the prob on none 
-    double p_none = 1.0;
+    epiworld_double p_none = 1.0;
     std::vector< int > certain_infection;
     for (unsigned int p = 0u; p < probs.size(); ++p)
     {
@@ -126,15 +126,15 @@ inline int roulette(
         
     }
 
-    double r = m->runif();
+    epiworld_double r = m->runif();
     // If there are one or more probs that go close to 1, sample
     // uniformly
     if (certain_infection.size() > 0)
         return certain_infection[std::floor(r * certain_infection.size())];
 
     // Step 2: Calculating the prob of none or single
-    std::vector< double > probs_only_p;
-    double p_none_or_single = p_none;
+    std::vector< epiworld_double > probs_only_p;
+    epiworld_double p_none_or_single = p_none;
     for (unsigned int p = 0u; p < probs.size(); ++p)
     {
         probs_only_p.push_back(probs[p] * (p_none / (1.0 - probs[p])));
@@ -142,7 +142,7 @@ inline int roulette(
     }
 
     // Step 3: Roulette
-    double cumsum = p_none/p_none_or_single;
+    epiworld_double cumsum = p_none/p_none_or_single;
     if (r < cumsum)
         return -1;
 
@@ -167,7 +167,7 @@ inline int roulette(
 {
 
     // Step 1: Computing the prob on none 
-    double p_none = 1.0;
+    epiworld_double p_none = 1.0;
     unsigned int ncertain = 0u;
     // std::vector< int > certain_infection;
     for (unsigned int p = 0u; p < nelements; ++p)
@@ -180,15 +180,15 @@ inline int roulette(
         
     }
 
-    double r = m->runif();
+    epiworld_double r = m->runif();
     // If there are one or more probs that go close to 1, sample
     // uniformly
     if (ncertain > 0u)
         return m->array_double_tmp[nelements + std::floor(ncertain * r)]; //    certain_infection[std::floor(r * certain_infection.size())];
 
     // Step 2: Calculating the prob of none or single
-    // std::vector< double > probs_only_p;
-    double p_none_or_single = p_none;
+    // std::vector< epiworld_double > probs_only_p;
+    epiworld_double p_none_or_single = p_none;
     for (unsigned int p = 0u; p < nelements; ++p)
     {
         m->array_double_tmp[nelements + p] = 
@@ -197,7 +197,7 @@ inline int roulette(
     }
 
     // Step 3: Roulette
-    double cumsum = p_none/p_none_or_single;
+    epiworld_double cumsum = p_none/p_none_or_single;
     if (r < cumsum)
         return -1;
 

@@ -23,10 +23,10 @@ private:
 public:
     PersonTools() {};
     void add_tool(int date, Tool<TSeq> tool);
-    double get_contagion_reduction(Virus<TSeq> * v);
-    double get_transmission_reduction(Virus<TSeq> * v);
-    double get_recovery_enhancer(Virus<TSeq> * v);
-    double get_death_reduction(Virus<TSeq> * v);
+    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
+    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
+    epiworld_double get_death_reduction(Virus<TSeq> * v);
 
     void set_contagion_reduction_mixer(MixerFun<TSeq> fun);
     void set_transmission_reduction_mixer(MixerFun<TSeq> fun);

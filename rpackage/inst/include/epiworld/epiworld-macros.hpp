@@ -6,7 +6,7 @@
  * @brief Helper macro to define a new tool
  * 
  */
-#define EPI_NEW_TOOL(fname,tseq) inline double \
+#define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
     epiworld::Tool< tseq > * t, \
     epiworld::Person< tseq > * p, \

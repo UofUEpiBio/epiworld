@@ -24,7 +24,7 @@ class Person;
 
 #define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
     /* Step 1: Compute the individual efficcacy */ \
-    std::vector< double > probs; \
+    std::vector< epiworld_double > probs; \
     std::vector< Virus<TSeq>* > variants; \
     /* Computing the contagion_reduction */ \
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
@@ -35,7 +35,7 @@ class Person;
             continue; \
         PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); \
         /* Now over the neighbor's viruses */ \
-        double tmp_transmision; \
+        epiworld_double tmp_transmision; \
         for (unsigned int v = 0; v < nviruses.size(); ++v) \
         { \
             /* Computing the corresponding contagion_reduction */ \
@@ -78,11 +78,11 @@ inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
     Virus<TSeq> * vptr = &(p->get_virus(0u));
 
-    double p_die = p->get_death(vptr);
-    double p_rec = p->get_recovery(vptr);
-    double r = m->runif();
+    epiworld_double p_die = p->get_death(vptr);
+    epiworld_double p_rec = p->get_recovery(vptr);
+    epiworld_double r = m->runif();
 
-    double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
+    epiworld_double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
 
     if (r < cumsum)
     {

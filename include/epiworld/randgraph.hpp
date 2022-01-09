@@ -14,28 +14,28 @@ template<typename TSeq, typename TDat>
 inline void rewire_degseq(
     TDat * persons,
     Model<TSeq> * model,
-    double proportion
+    epiworld_double proportion
     );
 
 template<typename TSeq>
 inline void rewire_degseq(
     std::vector< Person<TSeq> > * persons,
     Model<TSeq> * model,
-    double proportion
+    epiworld_double proportion
     )
 {
 
     // Identifying individuals with degree > 0
     std::vector< unsigned int > non_isolates;
-    std::vector< double > weights;
-    double nedges = 0.0;
+    std::vector< epiworld_double > weights;
+    epiworld_double nedges = 0.0;
     // std::vector< Person<TSeq> > * persons = model->get_population();
     for (unsigned int i = 0u; i < persons->size(); ++i)
     {
         if (persons->operator[](i).get_neighbors().size() > 0u)
         {
             non_isolates.push_back(i);
-            double wtemp = static_cast<double>(persons->operator[](i).get_neighbors().size());
+            epiworld_double wtemp = static_cast<epiworld_double>(persons->operator[](i).get_neighbors().size());
             weights.push_back(wtemp);
             nedges += wtemp;
         }
@@ -54,7 +54,7 @@ inline void rewire_degseq(
 
     // Only swap if needed
     unsigned int N = non_isolates.size();
-    double prob;
+    epiworld_double prob;
     int nrewires = floor(proportion * nedges);
     while (nrewires-- > 0)
     {
@@ -132,20 +132,20 @@ template<typename TSeq>
 inline void rewire_degseq(
     AdjList * persons,
     Model<TSeq> * model,
-    double proportion
+    epiworld_double proportion
     )
 {
 
     // Identifying individuals with degree > 0
     std::vector< unsigned int > non_isolates;
-    std::vector< double > weights;
-    double nedges = 0.0;
+    std::vector< epiworld_double > weights;
+    epiworld_double nedges = 0.0;
     // std::vector< Person<TSeq> > * persons = model->get_population();
     for (auto & p : persons->get_dat())
     {
         
         non_isolates.push_back(p.first);
-        double wtemp = static_cast<double>(p.second.size());
+        epiworld_double wtemp = static_cast<epiworld_double>(p.second.size());
         weights.push_back(wtemp);
 
         nedges += wtemp;
@@ -165,7 +165,7 @@ inline void rewire_degseq(
 
     // Only swap if needed
     unsigned int N = non_isolates.size();
-    double prob;
+    epiworld_double prob;
     int nrewires = floor(proportion * nedges / (
         persons->is_directed() ? 1.0 : 2.0
     ));
@@ -244,7 +244,7 @@ inline void rewire_degseq(
 template<typename TSeq>
 inline AdjList rgraph_bernoulli(
     unsigned int n,
-    double p,
+    epiworld_double p,
     bool directed,
     Model<TSeq> & model
 ) {
@@ -328,7 +328,7 @@ template<typename TSeq>
 inline AdjList rgraph_smallworld(
     unsigned int n,
     unsigned int k,
-    double p,
+    epiworld_double p,
     bool directed,
     Model<TSeq> & model
 ) {

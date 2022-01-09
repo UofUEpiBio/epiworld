@@ -49,7 +49,7 @@ EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
     // Figuring out latent period
     if (v->get_data().size() == 0u)
     {
-        double latent_days = m->rgamma(MPAR(0), 1.0);
+        epiworld_double latent_days = m->rgamma(MPAR(0), 1.0);
         v->get_data().push_back(latent_days);
 
         v->get_data().push_back(
@@ -84,7 +84,7 @@ EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
     }
     
     // Otherwise, it can be removed
-    double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
+    epiworld_double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
     if (EPI_RUNIF() < cumsum)
         EPIWORLD_UPDATE_INFECTED_REMOVE(STATUS::REMOVED);
     
@@ -103,24 +103,24 @@ EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
  * 
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
- * @param initial_prevalence double Initial prevalence
- * @param initial_contagion_reduction double Initial contagion_reduction of the immune system
- * @param initial_recovery double Initial recovery rate of the immune system
+ * @param initial_prevalence epiworld_double Initial prevalence
+ * @param initial_contagion_reduction epiworld_double Initial contagion_reduction of the immune system
+ * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
 template<typename TSeq>
 inline void set_up_jay(
     epiworld::Model<TSeq> & model,
     std::string vname,
-    double prevalence            = 0.05,
-    double efficacy_vax          = 0.9,
-    double latent_period         = 3u,
-    double infect_period         = 6u,
-    double prob_symptoms         = 0.6,
-    double prop_vaccinated       = 0.25,
-    double prop_vax_redux_transm = 0.5,
-    double prop_vax_redux_infect = 0.5,
-    double surveillance_prob     = 0.001,
-    double prob_transmission     = 0.9
+    epiworld_double prevalence            = 0.05,
+    epiworld_double efficacy_vax          = 0.9,
+    epiworld_double latent_period         = 3u,
+    epiworld_double infect_period         = 6u,
+    epiworld_double prob_symptoms         = 0.6,
+    epiworld_double prop_vaccinated       = 0.25,
+    epiworld_double prop_vax_redux_transm = 0.5,
+    epiworld_double prop_vax_redux_infect = 0.5,
+    epiworld_double surveillance_prob     = 0.001,
+    epiworld_double prob_transmission     = 0.9
     )
 {
     // Virus ------------------------------------------------------------------

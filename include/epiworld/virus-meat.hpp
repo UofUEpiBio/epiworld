@@ -82,7 +82,7 @@ inline bool Virus<TSeq>::is_active() const {
 
 #define EPIWORLD_GET_V(suffix,macroname) \
 template<typename TSeq> \
-inline double Virus<TSeq>:: EPI_TOKENPASTE(get_,suffix)() \
+inline epiworld_double Virus<TSeq>:: EPI_TOKENPASTE(get_,suffix)() \
 { \
     if (suffix) \
         suffix(host, this, host->get_model()); \
@@ -112,7 +112,7 @@ EPIWORLD_SET_V(death)
 #define EPIWORLD_SET_LAMBDA(suffix) \
     template<typename TSeq> \
     inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
-    double * prob) { \
+    epiworld_double * prob) { \
     VirusFun<TSeq> tmpfun = \
         [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
         return * prob; }; \
@@ -127,7 +127,7 @@ EPIWORLD_SET_LAMBDA(death)
 #define EPIWORLD_SET_LAMBDA2(suffix) \
     template<typename TSeq> \
     inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
-    double prob) { \
+    epiworld_double prob) { \
     VirusFun<TSeq> tmpfun = \
         [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
         return prob; }; \
@@ -179,7 +179,7 @@ inline std::string Virus<TSeq>::get_name() const
 }
 
 template<typename TSeq>
-inline std::vector< double > & Virus<TSeq>::get_data() {
+inline std::vector< epiworld_double > & Virus<TSeq>::get_data() {
     return data;
 }
 

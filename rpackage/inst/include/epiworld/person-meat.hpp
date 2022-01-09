@@ -37,28 +37,28 @@ inline void Person<TSeq>::add_virus(
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_contagion_reduction(
+inline epiworld_double Person<TSeq>::get_contagion_reduction(
     Virus<TSeq> * v
 ) {
     return tools.get_contagion_reduction(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_transmisibility(
+inline epiworld_double Person<TSeq>::get_transmisibility(
     Virus<TSeq> * v
 ) {
     return tools.get_transmisibility(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_recovery(
+inline epiworld_double Person<TSeq>::get_recovery(
     Virus<TSeq> * v
 ) {
     return tools.get_recovery(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_death(
+inline epiworld_double Person<TSeq>::get_death(
     Virus<TSeq> * v
 ) {
     return tools.get_death(v);

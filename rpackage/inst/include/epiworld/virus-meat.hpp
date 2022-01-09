@@ -139,13 +139,13 @@ inline std::string Virus<TSeq>::get_name() const
     }
 
 template<typename TSeq>
-inline double Virus<TSeq>::add_param(
-    double initial_value,
+inline epiworld_double Virus<TSeq>::add_param(
+    epiworld_double initial_value,
     std::string pname,
     Model<TSeq> & m
     ) {
 
-    std::map<std::string,double> & parmap = m.params();
+    std::map<std::string,epiworld_double> & parmap = m.params();
 
     if (parmap.find(pname) == parmap.end())
         parmap[pname] = initial_value;
@@ -166,12 +166,12 @@ inline double Virus<TSeq>::add_param(
 }
 
 template<typename TSeq>
-inline double Virus<TSeq>::set_param(
+inline epiworld_double Virus<TSeq>::set_param(
     std::string pname,
     Model<TSeq> & m
     ) {
 
-    std::map<std::string,double> & parmap = m.params();
+    std::map<std::string,epiworld_double> & parmap = m.params();
 
     if (parmap.find(pname) == parmap.end())
         throw std::logic_error("The parameter " + pname + " does not exists.");
@@ -187,25 +187,25 @@ inline double Virus<TSeq>::set_param(
 
 
 template<typename TSeq>
-inline double Virus<TSeq>::get_param(unsigned int k)
+inline epiworld_double Virus<TSeq>::get_param(unsigned int k)
 {
     return *(params[k]);
 }
 
 template<typename TSeq>
-inline double Virus<TSeq>::get_param(std::string pname)
+inline epiworld_double Virus<TSeq>::get_param(std::string pname)
 {
     return host->model->params()[pname];
 }
 
 template<typename TSeq>
-inline double Virus<TSeq>::par(unsigned int k)
+inline epiworld_double Virus<TSeq>::par(unsigned int k)
 {
     return *(params[k]);
 }
 
 template<typename TSeq>
-inline double Virus<TSeq>::par(std::string pname)
+inline epiworld_double Virus<TSeq>::par(std::string pname)
 {
     return host->model->params()[pname];
 }

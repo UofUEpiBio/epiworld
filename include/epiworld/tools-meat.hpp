@@ -42,7 +42,7 @@ inline TSeq & Tool<TSeq>::get_sequence_unique() {
 
 #define EPIWORLD_SET_TOOL(suffix,macroname) \
     template<typename TSeq> \
-    inline double Tool<TSeq>:: EPI_TOKENPASTE(get_,suffix) ( \
+    inline epiworld_double Tool<TSeq>:: EPI_TOKENPASTE(get_,suffix) ( \
         Virus<TSeq> * v \
     ) { \
         if (suffix) \
@@ -70,7 +70,7 @@ EPIWORLD_SET(death_reduction,ToolFun<TSeq> fun)
 #undef EPIWORLD_SET
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_contagion_reduction(double * prob)
+inline void Tool<TSeq>::set_contagion_reduction(epiworld_double * prob)
 {
     ToolFun<TSeq> tmpfun =
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
@@ -82,7 +82,7 @@ inline void Tool<TSeq>::set_contagion_reduction(double * prob)
 
 // EPIWORLD_SET_LAMBDA(contagion_reduction)
 template<typename TSeq>
-inline void Tool<TSeq>::set_transmission_reduction(double * prob)
+inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 {
     ToolFun<TSeq> tmpfun =
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
@@ -94,7 +94,7 @@ inline void Tool<TSeq>::set_transmission_reduction(double * prob)
 
 // EPIWORLD_SET_LAMBDA(transmission_reduction)
 template<typename TSeq>
-inline void Tool<TSeq>::set_recovery_enhancer(double * prob)
+inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 {
     ToolFun<TSeq> tmpfun =
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
@@ -106,7 +106,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(double * prob)
 
 // EPIWORLD_SET_LAMBDA(recovery_enhancer)
 template<typename TSeq>
-inline void Tool<TSeq>::set_death_reduction(double * prob)
+inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 {
     ToolFun<TSeq> tmpfun =
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
@@ -123,7 +123,7 @@ inline void Tool<TSeq>::set_death_reduction(double * prob)
 #define EPIWORLD_SET_LAMBDA2(suffix) \
     template<typename TSeq> \
     inline void Tool<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
-    double prob) { \
+    epiworld_double prob) { \
     ToolFun<TSeq> tmpfun = \
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
         return prob; }; \

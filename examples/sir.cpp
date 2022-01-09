@@ -8,7 +8,7 @@ int main() {
     set_up_sir(
         model,    // Model object
         "a virus", // Name of the virus
-        .001,        // Initial prevalence
+        75.0,        // Initial prevalence
         .5,        // Efficacy rate
         .5,        // Recovery rate
         .95        // Post immunity
@@ -17,7 +17,7 @@ int main() {
     // Adding a bernoulli graph as step 0
     printf("Generating random graph... ");fflush(stdout);
     model.pop_from_adjlist(
-        epiworld::rgraph_smallworld(1e6, 5, .001, false, model)
+        epiworld::rgraph_smallworld(100000, 5, .001, false, model)
     );
     printf("done.\n");
 

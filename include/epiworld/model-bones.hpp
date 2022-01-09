@@ -33,10 +33,10 @@ private:
     bool directed;
     
     std::vector< Virus<TSeq> > viruses;
-    std::vector< double > prevalence_virus; ///< Initial prevalence_virus of each virus
+    std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
     
     std::vector< Tool<TSeq> > tools;
-    std::vector< double > prevalence_tool;
+    std::vector< epiworld_double > prevalence_tool;
 
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
@@ -50,10 +50,10 @@ private:
     std::shared_ptr< std::gamma_distribution<> > rgammad = 
         std::make_shared< std::gamma_distribution<> >();
 
-    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> rewire_fun;
-    double rewire_prop;
+    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
+    epiworld_double rewire_prop;
         
-    std::map<std::string, double > parameters;
+    std::map<std::string, epiworld_double > parameters;
     unsigned int ndays;
     Progress pb;
 
@@ -77,8 +77,8 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> time_end;
 
     // std::chrono::milliseconds
-    std::chrono::duration<double,std::micro> time_elapsed = 
-        std::chrono::duration<double,std::micro>::zero();
+    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+        std::chrono::duration<epiworld_double,std::micro>::zero();
     unsigned int time_n = 0u;
     void chrono_start();
     void chrono_end();
@@ -91,7 +91,7 @@ private:
 
 public:
 
-    std::vector<double> array_double_tmp;
+    std::vector<epiworld_double> array_double_tmp;
     std::vector<Virus<TSeq> *> array_virus_tmp;
 
     Model() {};
@@ -123,7 +123,7 @@ public:
     ///@]
 
     DataBase<TSeq> & get_db();
-    double & operator()(std::string pname);
+    epiworld_double & operator()(std::string pname);
 
     size_t size() const;
 
@@ -136,16 +136,16 @@ public:
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
     void seed(unsigned int s);
-    void set_rand_gamma(double alpha, double beta);
-    double runif();
-    double rnorm();
-    double rnorm(double mean, double sd);
-    double rgamma();
-    double rgamma(double alpha, double beta);
+    void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
+    epiworld_double runif();
+    epiworld_double rnorm();
+    epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
+    epiworld_double rgamma();
+    epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
     ///@]
 
-    void add_virus(Virus<TSeq> v, double preval);
-    void add_tool(Tool<TSeq> t, double preval);
+    void add_virus(Virus<TSeq> v, epiworld_double preval);
+    void add_tool(Tool<TSeq> t, epiworld_double preval);
 
     /**
      * @brief Accessing population of the model
@@ -209,9 +209,9 @@ public:
      * @result A rewired version of the network.
      */
     ///@[
-    void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> fun);
-    void set_rewire_prop(double prop);
-    double get_rewire_prop() const;
+    void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
+    void set_rewire_prop(epiworld_double prop);
+    epiworld_double get_rewire_prop() const;
     void rewire();
     ///@]
 
@@ -254,7 +254,7 @@ public:
         ) const;
     ///@]
 
-    std::map<std::string, double> & params();
+    std::map<std::string, epiworld_double> & params();
 
     /**
      * @brief Reset the model
@@ -327,13 +327,13 @@ public:
      * 
      */
     ///@[
-    double add_param(double initial_val, std::string pname);
-    double set_param(std::string pname);
-    double get_param(unsigned int k);
-    double get_param(std::string pname);
-    double par(unsigned int k);
-    double par(std::string pname);
-    double 
+    epiworld_double add_param(epiworld_double initial_val, std::string pname);
+    epiworld_double set_param(std::string pname);
+    epiworld_double get_param(unsigned int k);
+    epiworld_double get_param(std::string pname);
+    epiworld_double par(unsigned int k);
+    epiworld_double par(std::string pname);
+    epiworld_double 
         *p0,*p1,*p2,*p3,*p4,*p5,*p6,*p7,*p8,*p9,
         *p10,*p11,*p12,*p13,*p14,*p15,*p16,*p17,*p18,*p19,
         *p20,*p21,*p22,*p23,*p24,*p25,*p26,*p27,*p28,*p29,
@@ -343,8 +343,8 @@ public:
 
     void get_elapsed(
         std::string unit = "auto",
-        double * last_elapsed = nullptr,
-        double * total_elapsed = nullptr,
+        epiworld_double * last_elapsed = nullptr,
+        epiworld_double * total_elapsed = nullptr,
         unsigned int * n_replicates = nullptr,
         std::string * unit_abbr = nullptr,
         bool print = true

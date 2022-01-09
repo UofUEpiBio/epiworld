@@ -18,10 +18,10 @@ template<typename TSeq>
 class Tool;
 
 // template<typename TSeq>
-// using ToolFun = std::function<double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+// using ToolFun = std::function<epiworld_double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 // template<typename TSeq>
-// using MixerFun = std::function<double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+// using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 /**
  * @brief Tools for defending the host against the virus
@@ -46,7 +46,7 @@ private:
     ToolFun<TSeq> death_reduction        = nullptr;
 
     // Setup parameters
-    std::vector< double * > params;  
+    std::vector< epiworld_double * > params;  
 
 public:
     Tool(std::string name = "unknown tool");
@@ -64,25 +64,25 @@ public:
      * @param v The virus over which to operate
      * @param fun the function to be used
      * 
-     * @return double 
+     * @return epiworld_double 
      */
     ///@[
-    double get_contagion_reduction(Virus<TSeq> * v);
-    double get_transmission_reduction(Virus<TSeq> * v);
-    double get_recovery_enhancer(Virus<TSeq> * v);
-    double get_death_reduction(Virus<TSeq> * v);
+    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
+    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
+    epiworld_double get_death_reduction(Virus<TSeq> * v);
     void set_contagion_reduction(ToolFun<TSeq> fun);
     void set_transmission_reduction(ToolFun<TSeq> fun);
     void set_recovery_enhancer(ToolFun<TSeq> fun);
     void set_death_reduction(ToolFun<TSeq> fun);
-    void set_contagion_reduction(double * prob);
-    void set_transmission_reduction(double * prob);
-    void set_recovery_enhancer(double * prob);
-    void set_death_reduction(double * prob);
-    void set_contagion_reduction(double prob);
-    void set_transmission_reduction(double prob);
-    void set_recovery_enhancer(double prob);
-    void set_death_reduction(double prob);
+    void set_contagion_reduction(epiworld_double * prob);
+    void set_transmission_reduction(epiworld_double * prob);
+    void set_recovery_enhancer(epiworld_double * prob);
+    void set_death_reduction(epiworld_double * prob);
+    void set_contagion_reduction(epiworld_double prob);
+    void set_transmission_reduction(epiworld_double prob);
+    void set_recovery_enhancer(epiworld_double prob);
+    void set_death_reduction(epiworld_double prob);
     ///@]
 
     void set_name(std::string name);

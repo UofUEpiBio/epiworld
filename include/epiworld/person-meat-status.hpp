@@ -24,7 +24,7 @@ class Person;
 
 #define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
     /* Step 1: Compute the individual efficcacy */ \
-    std::vector< double > probs; \
+    std::vector< epiworld_double > probs; \
     std::vector< Virus<TSeq>* > variants; \
     /* Computing the contagion_reduction */ \
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
@@ -35,7 +35,7 @@ class Person;
             continue; \
         PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); \
         /* Now over the neighbor's viruses */ \
-        double tmp_transmision; \
+        epiworld_double tmp_transmision; \
         for (unsigned int v = 0; v < nviruses.size(); ++v) \
         { \
             /* Computing the corresponding contagion_reduction */ \
@@ -60,7 +60,7 @@ inline unsigned int default_update_susceptible(
 
     // This computes the prob of getting any neighbor variant
     /* Step 1: Compute the individual efficcacy */ 
-    // std::vector< double > probs; 
+    // std::vector< epiworld_double > probs; 
     // std::vector< Virus<TSeq>* > variants; 
     /* Computing the contagion_reduction */ 
     unsigned int nvariants_tmp = 0u;
@@ -76,7 +76,7 @@ inline unsigned int default_update_susceptible(
         PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); 
         /* Now over the neighbor's viruses */ 
         
-        double tmp_transmision; 
+        epiworld_double tmp_transmision; 
         for (unsigned int v = 0; v < nviruses.size(); ++v) 
         { 
         
@@ -117,8 +117,8 @@ inline unsigned int default_update_susceptible(
 
 #define EPIWORLD_UPDATE_INFECTED_CALC_PROBS(prob_rec, prob_die) \
     Virus<TSeq> * v = &(p->get_virus(0u)); \
-    double prob_rec =  (1 - v->get_persistance() * (1.0 - p->get_recovery_enhancer(v))); \
-    double prob_die = v->get_death() * p->get_death_reduction(v); 
+    epiworld_double prob_rec =  (1 - v->get_persistance() * (1.0 - p->get_recovery_enhancer(v))); \
+    epiworld_double prob_die = v->get_death() * p->get_death_reduction(v); 
 
 #define EPIWORLD_UPDATE_INFECTED_REMOVE(newstatus) \
     {m->get_db().down_infected(v, p->get_status(), newstatus);\
@@ -133,9 +133,9 @@ template<typename TSeq>
 inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
     EPIWORLD_UPDATE_INFECTED_CALC_PROBS(p_rec, p_die)
-    double r = EPI_RUNIF();
+    epiworld_double r = EPI_RUNIF();
 
-    double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
+    epiworld_double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
     if (r < cumsum)
         EPIWORLD_UPDATE_INFECTED_REMOVE(STATUS::REMOVED);
     

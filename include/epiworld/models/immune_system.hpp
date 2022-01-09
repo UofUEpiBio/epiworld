@@ -5,7 +5,7 @@
 
 #define PERSONRULE(funname) \
 template<typename Tnet = Network>\
-inline double (a) (const Tnet & Array, uint i, uint j, NetCounterData * data)
+inline epiworld_double (a) (const Tnet & Array, uint i, uint j, NetCounterData * data)
 
 /**Lambda function for definition of a network counter function*/
 #defineEPI_NEW_TOOL_LAMBDA(funname,TSeq) \
@@ -15,10 +15,10 @@ epiworld::ToolFun<TSeq> funname = \
 template<typename TSeq>
 inline void factory_tool_simple_immunesys(
     Model<TSeq> & model,
-    double defaul_contagion_reduction = 0.1,
-    double defaul_recovery = 0.5,
-    double defaul_trans = 0.5,
-    double defaul_death = 0.001
+    epiworld_double defaul_contagion_reduction = 0.1,
+    epiworld_double defaul_recovery = 0.5,
+    epiworld_double defaul_trans = 0.5,
+    epiworld_double defaul_death = 0.001
     ) 
 {
 

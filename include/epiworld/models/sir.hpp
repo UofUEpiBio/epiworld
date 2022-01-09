@@ -8,18 +8,18 @@
  * 
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
- * @param initial_prevalence double Initial prevalence
- * @param initial_efficacy double Initial contagion_reduction of the immune system
- * @param initial_recovery double Initial recovery rate of the immune system
+ * @param initial_prevalence epiworld_double Initial prevalence
+ * @param initial_efficacy epiworld_double Initial contagion_reduction of the immune system
+ * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
 template<typename TSeq>
 inline void set_up_sir(
     epiworld::Model<TSeq> & model,
     std::string vname,
-    double prevalence,
-    double contagion_reduction,
-    double recovery,
-    double post_immunity
+    epiworld_double prevalence,
+    epiworld_double contagion_reduction,
+    epiworld_double recovery,
+    epiworld_double post_immunity
     )
 {
 

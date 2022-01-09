@@ -12,7 +12,7 @@ class Progress {
 private:
     int    width;     ///< Total width size (number of bars)
     int    n;         ///< Total number of iterations
-    double step_size; ///< Size of the step
+    epiworld_double step_size; ///< Size of the step
     int last_loc;     ///< Last location of the bar
     int cur_loc;      ///< Last location of the bar
     int i;            ///< Current iteration step
@@ -33,7 +33,7 @@ inline Progress::Progress(int n_, int width_) {
 
     width     = std::max(7, width_ - 7);
     n         = n_;
-    step_size = static_cast<double>(width)/static_cast<double>(n);
+    step_size = static_cast<epiworld_double>(width)/static_cast<epiworld_double>(n);
     last_loc  = 0;
     i         = 0;
 

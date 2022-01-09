@@ -48,7 +48,7 @@ private:
     VirusFun<TSeq> post_recovery = nullptr;
 
     // Setup parameters
-    std::vector< double * > params;  
+    std::vector< epiworld_double * > params;  
 
 public:
     Virus(std::string name = "unknown virus");
@@ -94,13 +94,13 @@ public:
      * 
      */
     ///@[
-    double add_param(double initial_val, std::string pname, Model<TSeq> & m);
-    double set_param(std::string pname, Model<TSeq> & m);
-    double get_param(unsigned int k);
-    double get_param(std::string pname);
-    double par(unsigned int k);
-    double par(std::string pname);
-    double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
+    epiworld_double add_param(epiworld_double initial_val, std::string pname, Model<TSeq> & m);
+    epiworld_double set_param(std::string pname, Model<TSeq> & m);
+    epiworld_double get_param(unsigned int k);
+    epiworld_double get_param(std::string pname);
+    epiworld_double par(unsigned int k);
+    epiworld_double par(std::string pname);
+    epiworld_double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
     ///@]
 
 };
