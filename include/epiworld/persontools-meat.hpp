@@ -208,7 +208,7 @@ template<typename TSeq>
 inline bool PersonTools<TSeq>::has_tool(std::string name) const {
 
     for (auto * tool : tools)
-        if (tool.get_name() == name)
+        if (tool->get_name() == name)
             return true;
 
     return false;
