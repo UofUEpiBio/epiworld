@@ -1,0 +1,53 @@
+#include "../include/epiworld/epiworld.hpp"
+
+int main()
+{
+
+    // Setting up model --------------------------------------------------------
+    epiworld::Model<> model;
+    model.set_user_data({"person_id", "virus_id"});
+    
+    model.pop_from_adjlist(
+        epiworld::rgraph_smallworld(1000, 5, .1, false, model)
+    );
+
+    model.add_param(.9, "infectiousness");
+    model.add_param(.3, "recovery");
+
+    // Setting up virus --------------------------------------------------------
+    epiworld::Virus<> v("covid");
+    EPI_NEW_VIRUSFUN_LAMBDA(immunity, bool)
+    {
+        epiworld::Tool<> immune("immune");
+        immune.set_contagion_reduction(1.0);
+        p->add_tool(m->today(), immune);
+
+        m->add_user_data({
+            static_cast< epiworld_double >(p->get_id()),
+            static_cast< epiworld_double >(v->get_id())
+            });
+
+    };
+
+    v.set_post_recovery(immunity);
+    v.set_infectiousness(&model("infectiousness"));
+    
+    // Setting up tool ---------------------------------------------------------
+    epiworld::Tool<> is("immune system");
+    is.set_contagion_reduction(.3);
+    is.set_death_reduction(.9);
+    is.set_recovery_enhancer(&model("recovery"));
+
+    model.add_tool_n(is, 1000);
+    model.add_virus_n(v, 5);
+
+    model.init(112, 60);
+
+    model.run();
+    model.print();
+
+    model.get_user_data().print();
+
+    model.get_user_data().write("user-data.txt");
+
+}

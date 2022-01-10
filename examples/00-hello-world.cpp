@@ -15,7 +15,7 @@ int main()
   epiworld::Model<> model;
 
   // Adding the tool and virus
-  model.add_virus(covid19, 5);
+  model.add_virus_n(covid19, 5);
   model.add_tool(vax, .5);
 
   // Generating a random pop

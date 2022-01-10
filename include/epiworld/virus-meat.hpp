@@ -2,64 +2,6 @@
 #define EPIWORLD_VIRUS_MEAT_HPP
 
 template<typename TSeq>
-inline Virus<TSeq>::Virus(const Virus<TSeq> & virus) :
-    host(virus.host),
-    baseline_sequence(virus.baseline_sequence),
-    date(virus.date),
-    virus_name(virus.virus_name),
-    id(virus.id),
-    active(virus.active),
-    mutation_fun(virus.mutation_fun),
-    post_recovery(virus.post_recovery),
-    infectiousness(virus.infectiousness),
-    persistance(virus.persistance),
-    death(virus.death),
-    data(virus.data)
-{
-
-
-}
-
-template<typename TSeq>
-inline Virus<TSeq>::Virus(Virus<TSeq> && virus) :
-    host(std::move(virus.host)),
-    baseline_sequence(std::move(virus.baseline_sequence)),
-    date(std::move(virus.date)),
-    virus_name(std::move(virus.virus_name)),
-    id(std::move(virus.id)),
-    active(std::move(virus.active)),
-    mutation_fun(std::move(virus.mutation_fun)),
-    post_recovery(std::move(virus.post_recovery)),
-    infectiousness(std::move(virus.infectiousness)),
-    persistance(std::move(virus.persistance)),
-    death(std::move(virus.death)),
-    data(std::move(virus.data))
-{
-
-}
-
-template<typename TSeq>
-inline Virus<TSeq> & Virus<TSeq>::operator=(const Virus<TSeq> & virus)
-{
-
-    host = virus.host;
-    baseline_sequence = virus.baseline_sequence;
-    date = virus.date;
-    virus_name = virus.virus_name;
-    id = virus.id;
-    active = virus.active;
-    mutation_fun   = virus.mutation_fun;
-    post_recovery  = virus.post_recovery;
-    infectiousness = virus.infectiousness;
-    persistance    = virus.persistance;
-    death          = virus.death;
-    data           = virus.data;
-
-    return *this;
-}
-
-
-template<typename TSeq>
 inline Virus<TSeq>::Virus(std::string name) {
     set_name(name);
 }

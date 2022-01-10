@@ -29,9 +29,9 @@ inline void set_up_sir(
     model.add_param(recovery, "Immune recovery");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(true, vname);
+    epiworld::Virus<TSeq> virus(vname);
 
-    EPI_NEW_VIRUSFUN_LAMBDA(add_immunity,TSeq) {
+    EPI_NEW_POSTRECOVERYFUN_LAMBDA(add_immunity,TSeq) {
 
         epiworld::Tool<TSeq> immune;
         immune.set_contagion_reduction(&MPAR(0));
@@ -42,9 +42,8 @@ inline void set_up_sir(
     
     virus.set_post_recovery(add_immunity);
     
-
     // Preparing the immune system -----------------------------------
-    epiworld::Tool<TSeq> immune_sys(true, "Immune system");
+    epiworld::Tool<TSeq> immune_sys("Immune system");
     
     immune_sys.set_contagion_reduction(&model("Immune contagion_reduction"));
     immune_sys.set_recovery_enhancer(&model("Immune recovery"));

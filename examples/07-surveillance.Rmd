@@ -96,7 +96,7 @@ int main()
 
 ```
 
-# Jay's simulation
+# Surveillance simulation
 
 - Incubation time of the disease `~ Gamma(3, 1)`
 - Duration of the disease `~Gamma(12, 1)`
@@ -105,6 +105,7 @@ int main()
 - Vaccinated population: 25%
 - Vaccine efficacy: .9.
 - Vaccine reduction on transmission: 0.5.
+- Surveillance program of x% of the population at random.
 - Individuals who test positive become isolated.
 
 ## Preliminary results
@@ -114,16 +115,16 @@ int main()
 pop_size <- 20e3
 pop_seed <- pop_size * .01
 s_levels <- c(0.0001, 0.002)
-system(sprintf("./jay.o %i %i 100 %.04f 2>&1", pop_seed, pop_size, s_levels[1]), intern = TRUE) |>
+system(sprintf("./07-surveillance.o %i %i 100 %.04f 2>&1", pop_seed, pop_size, s_levels[1]), intern = TRUE) |>
   cat(sep = "\n")
-hist1 <- read.csv("jay_hist.txt", sep = " ")
-surv1 <- read.csv("jay_user_data.txt", sep = " ")
+hist1 <- read.csv("07-surveillance_hist.txt", sep = " ")
+surv1 <- read.csv("07-surveillance_user_data.txt", sep = " ")
 
 # With high surveillance
-system(sprintf("./jay.o %i %i 100 %.04f 2>&1", pop_seed, pop_size, s_levels[2]), intern = TRUE) |>
+system(sprintf("./07-surveillance.o %i %i 100 %.04f 2>&1", pop_seed, pop_size, s_levels[2]), intern = TRUE) |>
   cat(sep = "\n")
-hist2 <- read.csv("jay_hist.txt", sep = " ")
-surv2 <- read.csv("jay_user_data.txt", sep = " ")
+hist2 <- read.csv("07-surveillance_hist.txt", sep = " ")
+surv2 <- read.csv("07-surveillance_user_data.txt", sep = " ")
 hist_comb <- rbind(
   cbind(sim = as.character(s_levels[1]), hist1),
   cbind(sim = as.character(s_levels[2]), hist2)

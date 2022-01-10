@@ -22,22 +22,22 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
-    verbose(model.verbose),
-    initialized(model.initialized),
-    current_date(model.current_date),
-    global_action_functions(model.global_action_functions),
-    global_action_dates(model.global_action_dates),
     status_susceptible(model.status_susceptible),
     status_susceptible_labels(model.status_susceptible_labels),
     status_infected(model.status_infected),
     status_infected_labels(model.status_infected_labels),
     status_removed(model.status_removed),
     status_removed_labels(model.status_removed_labels),
+    nstatus(model.nstatus),
     baseline_status_healthy(model.baseline_status_healthy),
     baseline_status_infected(model.baseline_status_infected),
-    baseline_status_recovered(model.baseline_status_recovered),
     baseline_status_removed(model.baseline_status_removed),
-    nstatus(model.nstatus)
+    baseline_status_recovered(model.baseline_status_recovered),
+    verbose(model.verbose),
+    initialized(model.initialized),
+    current_date(model.current_date),
+    global_action_functions(model.global_action_functions),
+    global_action_dates(model.global_action_dates)
 {
 
     // Pointing to the right place
@@ -240,7 +240,7 @@ inline void Model<TSeq>::dist_virus()
         int nsampled;
         if (prevalence_virus_as_proportion[v])
         {
-            nsampled = static_cast<int>(std::floor(prevalence_virus[v] * size())) + 1;
+            nsampled = static_cast<int>(std::floor(prevalence_virus[v] * size()));
         }
         else
         {
@@ -281,7 +281,7 @@ inline void Model<TSeq>::dist_tools()
         int nsampled;
         if (prevalence_tool_as_proportion[t])
         {
-            nsampled = static_cast<int>(std::floor(prevalence_tool[t] * size())) + 1;
+            nsampled = static_cast<int>(std::floor(prevalence_tool[t] * size()));
         }
         else
         {

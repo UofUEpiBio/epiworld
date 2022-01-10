@@ -53,11 +53,8 @@ private:
     std::vector< epiworld_double > data;
 
 public:
-    Virus(const Virus<TSeq> & virus);
-    Virus(Virus<TSeq> && virus);
     Virus(std::string name = "unknown virus");
-    // Virus(TSeq sequence, std::string name = "unknown virus");
-    Virus<TSeq> & operator=(const Virus<TSeq> & v);
+
     void mutate();
     void set_mutation(MutFun<TSeq> fun);
     const TSeq* get_sequence();

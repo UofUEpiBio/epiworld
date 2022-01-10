@@ -83,8 +83,6 @@
     for (unsigned int niter = 0; niter < a.get_ndays(); ++niter)
 
 #define EPI_TOKENPASTE(a,b) a ## b
-#define VPAR(num) *(v->EPI_TOKENPASTE(p,num))
-#define TPAR(num) *(t->EPI_TOKENPASTE(p,num))
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
 
 #define EPI_NEW_UPDATEFUN(funname,tseq) inline unsigned int \

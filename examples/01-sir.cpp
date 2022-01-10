@@ -1,4 +1,3 @@
-#include <iostream>
 #include "../include/epiworld/models/sir.hpp"
 
 int main() {
@@ -15,28 +14,15 @@ int main() {
     );
 
     // Adding a bernoulli graph as step 0
-    printf("Generating random graph... ");fflush(stdout);
     model.pop_from_adjlist(
-        epiworld::rgraph_smallworld(100000, 5, .001, false, model)
+        epiworld::rgraph_smallworld(10000, 5, .001, false, model)
     );
-    printf("done.\n");
-
-    auto start = std::chrono::high_resolution_clock::now();
 
     model.init(100, 123);
+
     // Running and checking the results
     model.run();
-    
-    auto end = std::chrono::high_resolution_clock::now();
-
     model.print();
-
-    model.get_elapsed("milliseconds");
-
-    
-    std::cout << "Elapsed time: " <<
-        (std::chrono::duration_cast<std::chrono::milliseconds>(end - start)).count() << 
-        " seconds" << std::endl;
 
     return 0;
 }

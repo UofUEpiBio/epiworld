@@ -29,32 +29,13 @@ EPI_NEW_MUTFUN(covid19_mut, DAT) {
     
 }
 
-// Getting the vaccine
-EPI_NEW_TOOL(vaccine_eff, DAT) {return MPAR(1);} 
-EPI_NEW_TOOL(vaccine_rec, DAT) {return 0.4;}
-EPI_NEW_TOOL(vaccine_death, DAT) {return MPAR(2);}
-EPI_NEW_TOOL(vaccine_trans, DAT) {return 0.5;}
-
-// Wearing a Mask
-EPI_NEW_TOOL(mask_eff, DAT) {return 0.8;}
-EPI_NEW_TOOL(mask_trans, DAT) {return 0.05;}
-
-// Immune system
-EPI_NEW_TOOL(immune_eff, DAT) {return MPAR(3);}
-EPI_NEW_TOOL(immune_rec, DAT) {return MPAR(4);}
-EPI_NEW_TOOL(immune_death, DAT) {return MPAR(5);}
-EPI_NEW_TOOL(immune_trans, DAT) {return MPAR(6);}
-
 // Post covid recovery
 EPI_NEW_VIRUSFUN(post_covid, DAT) {
 
     epiworld::Tool<DAT> immunity;
     immunity.set_sequence(*v->get_sequence());
 
-    // Post efficacy the individual has full immunity
-    EPI_NEW_TOOL_LAMBDA(post_efficacy, DAT) {return 1.0;};
-
-    immunity.set_efficacy(post_efficacy);
+    immunity.set_contagion_reduction(1.0);
     p->add_tool(m->today(), immunity);
 
 }
@@ -70,38 +51,35 @@ int main() {
     model.add_param(0.001, "Mutation rate");
     model.add_param(0.90, "vax efficacy");
     model.add_param(0.0001, "vax death");
-    model.add_param(0.2, "vax redux trans");
     model.add_param(0.10, "imm efficacy");
     model.add_param(0.10, "imm recovery");
     model.add_param(0.001, "imm death");
     model.add_param(0.90, "imm trans");
 
     // Initializing disease ---------------------------------------------------
-    epiworld::Virus<DAT> covid19(base_seq, "COVID19");
+    epiworld::Virus<DAT> covid19("COVID19");
+    covid19.set_sequence(base_seq);
     covid19.set_mutation(covid19_mut);
     covid19.set_post_recovery(post_covid);  
 
     // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine");
-    // vaccine.set_efficacy(vaccine_eff);
     vaccine.set_contagion_reduction(&model("vax efficacy"));
     vaccine.set_recovery_enhancer(0.4);
     vaccine.set_death_reduction(&model("vax death"));
-    vaccine.set_transmission_reduction(&model("vax redux trans"));
+    vaccine.set_transmission_reduction(0.5);
     
     epiworld::Tool<DAT> mask("Face masks");
-    mask.set_contagion_reduction(mask_eff);
-    mask.set_transmisibility(mask_trans);
+    mask.set_contagion_reduction(0.8);
+    mask.set_transmission_reduction(0.05);
 
     epiworld::Tool<DAT> immune("Immune system");
-    immune.set_efficacy(immune_eff);
-    immune.set_recovery(immune_rec);
-    immune.set_death(immune_death);
-    immune.set_transmisibility(immune_trans);
+    immune.set_contagion_reduction(&model("imm efficacy"));
+    immune.set_recovery_enhancer(&model("imm recovery"));
+    immune.set_death_reduction(&model("imm death"));
+    immune.set_transmission_reduction(&model("imm trans"));
     DAT seq0(base_seq.size(), false);
     immune.set_sequence_unique(seq0);
-
-
 
     // Adding the virus and the tools to the model ----------------------------
     model.add_virus(covid19, 0.01); 

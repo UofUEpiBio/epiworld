@@ -20,7 +20,7 @@ enum TOOLS {
 };
 
 template<typename TSeq>
-EPI_NEW_UPDATEFUN(jay_update_susceptible, TSeq) {
+EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {
 
     // This computes the prob of getting any neighbor variant
     EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants)
@@ -43,7 +43,7 @@ EPI_NEW_UPDATEFUN(jay_update_susceptible, TSeq) {
 }
 
 template<typename TSeq>
-EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
+EPI_NEW_UPDATEFUN(surveillance_update_infected,TSeq)
 {
 
     EPIWORLD_UPDATE_INFECTED_CALC_PROBS(p_rec, p_die)
@@ -126,8 +126,8 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
 
         // Who is the lucky one
         unsigned int i = static_cast<unsigned int>(std::floor(EPI_RUNIF() * m->size()));
-        Person<TSeq> * p = &pop[i];
-        if (IN(p->get_status(), m->get_status_infected()))
+        epiworld::Person<TSeq> * p = &pop[i];
+        if (epiworld::IN(p->get_status(), m->get_status_infected()))
         {
 
             ndetected += 1.0;
@@ -184,7 +184,7 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
 template<typename TSeq>
-inline void set_up_jay(
+inline void set_up_surveillance(
     epiworld::Model<TSeq> & model,
     std::string vname,
     unsigned int prevalence               = 50,
@@ -265,8 +265,8 @@ inline void set_up_jay(
     model.add_status_infected(JAYSTATUS::ASYMPTOMATIC, "asymptomatic");
     model.add_status_infected(JAYSTATUS::ASYMPTOMATIC_ISOLATED, "asymptomatic isolated");
 
-    model.set_update_infected(jay_update_infected<TSeq>);
-    model.set_update_susceptible(jay_update_susceptible<TSeq>);
+    model.set_update_infected(surveillance_update_infected<TSeq>);
+    model.set_update_susceptible(surveillance_update_susceptible<TSeq>);
 
     return;
 
