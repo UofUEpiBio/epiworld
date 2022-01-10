@@ -31,37 +31,39 @@ template<typename TSeq>
 inline void Person<TSeq>::add_virus(
     int d,
     Virus<TSeq> virus
-) {
+)
+{
+
     viruses.add_virus(d, virus);
-    status_next = STATUS::INFECTED;
+
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_efficacy(
+inline epiworld_double Person<TSeq>::get_contagion_reduction(
     Virus<TSeq> * v
 ) {
-    return tools.get_efficacy(v);
+    return tools.get_contagion_reduction(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_transmisibility(
+inline epiworld_double Person<TSeq>::get_transmission_reduction(
     Virus<TSeq> * v
 ) {
-    return tools.get_transmisibility(v);
+    return tools.get_transmission_reduction(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_recovery(
+inline epiworld_double Person<TSeq>::get_recovery_enhancer(
     Virus<TSeq> * v
 ) {
-    return tools.get_recovery(v);
+    return tools.get_recovery_enhancer(v);
 }
 
 template<typename TSeq>
-inline double Person<TSeq>::get_death(
+inline epiworld_double Person<TSeq>::get_death_reduction(
     Virus<TSeq> * v
 ) {
-    return tools.get_death(v);
+    return tools.get_death_reduction(v);
 }
 
 template<typename TSeq>
@@ -175,6 +177,9 @@ inline void Person<TSeq>::update_status()
 
     } else if (IN(status, model->status_susceptible)) {
         
+        if (!update_susceptible)
+            throw std::logic_error("No update_susceptible function?!");
+
         if (update_susceptible)
             status_next = update_susceptible(this, model);
 
@@ -195,7 +200,7 @@ inline void Person<TSeq>::update_status()
 }
 
 template<typename TSeq>
-inline unsigned int Person<TSeq>::get_status() const {
+inline unsigned int & Person<TSeq>::get_status() {
     return status;
 }
 
@@ -204,8 +209,8 @@ inline void Person<TSeq>::reset() {
 
     this->viruses.reset();
     this->tools.reset();
-    this->status      = STATUS::HEALTHY;
-    this->status_next = STATUS::HEALTHY;
+    this->status      = model->baseline_status_healthy;
+    this->status_next = model->baseline_status_healthy;
 
 }
 
@@ -232,6 +237,16 @@ inline bool Person<TSeq>::has_tool(unsigned int t) const {
 template<typename TSeq>
 inline bool Person<TSeq>::has_tool(std::string name) const {
     return tools.has_tool(name);
+}
+
+template<typename TSeq>
+inline bool Person<TSeq>::has_virus(unsigned int t) const {
+    return viruses.has_virus(t);
+}
+
+template<typename TSeq>
+inline bool Person<TSeq>::has_virus(std::string name) const {
+    return viruses.has_virus(name);
 }
 
 #endif

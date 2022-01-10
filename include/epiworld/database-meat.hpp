@@ -5,12 +5,14 @@ template<typename TSeq>
 inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 {
     model = &m;
+    user_data.model = &m;
+
     reset();
 
     // Initializing the counts
     today_total.resize(m.nstatus);
 
-    for (const auto & p : *m.get_population())
+    for (auto & p : *m.get_population())
         ++today_total[p.get_status()];
 
     return;
@@ -165,13 +167,17 @@ inline void DataBase<TSeq>::down_infected(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_today_total(
-    std::vector< std::string > & status,
-    std::vector< int > & counts
+    std::vector< std::string > * status,
+    std::vector< int > * counts
 ) const
 {
-    
-    EPIWORLD_GET_STATUS_LABELS(status)
-    counts = today_total;
+    if (status != nullptr)
+    {
+        EPIWORLD_GET_STATUS_LABELS((*status))
+    }
+
+    if (counts != nullptr)
+        *counts = today_total;
 
 }
 
@@ -378,6 +384,42 @@ inline void DataBase<TSeq>::reset() {
     today_variant.clear();
 
 
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::set_user_data(
+    std::vector< std::string > names
+)
+{
+    user_data = UserData<TSeq>(names);
+    user_data.model = model;
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::add_user_data(
+    std::vector< epiworld_double > x
+)
+{
+
+    user_data.add(x);
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::add_user_data(
+    unsigned int k,
+    epiworld_double x
+)
+{
+
+    user_data.add(k, x);
+
+}
+
+template<typename TSeq>
+inline UserData<TSeq> & DataBase<TSeq>::get_user_data()
+{
+    return user_data;
 }
 
 #endif

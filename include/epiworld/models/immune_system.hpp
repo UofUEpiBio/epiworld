@@ -5,7 +5,7 @@
 
 #define PERSONRULE(funname) \
 template<typename Tnet = Network>\
-inline double (a) (const Tnet & Array, uint i, uint j, NetCounterData * data)
+inline epiworld_double (a) (const Tnet & Array, uint i, uint j, NetCounterData * data)
 
 /**Lambda function for definition of a network counter function*/
 #defineEPI_NEW_TOOL_LAMBDA(funname,TSeq) \
@@ -15,15 +15,15 @@ epiworld::ToolFun<TSeq> funname = \
 template<typename TSeq>
 inline void factory_tool_simple_immunesys(
     Model<TSeq> & model,
-    double defaul_efficacy = 0.1,
-    double defaul_recovery = 0.5,
-    double defaul_trans = 0.5,
-    double defaul_death = 0.001
+    epiworld_double defaul_contagion_reduction = 0.1,
+    epiworld_double defaul_recovery = 0.5,
+    epiworld_double defaul_trans = 0.5,
+    epiworld_double defaul_death = 0.001
     ) 
 {
 
     // Designing the functions
-    EPI_NEW_TOOL_LAMBDA(tmp_efficacy,TSeq) {
+    EPI_NEW_TOOL_LAMBDA(tmp_contagion_reduction,TSeq) {
         return (*m->p0);
     };
 
@@ -41,7 +41,7 @@ inline void factory_tool_simple_immunesys(
 
     // Creating the tool
     epiworld::Tool<TSeq> immune("immune system");
-    immune.set_efficacy(tmp_efficacy);
+    immune.set_contagion_reduction(tmp_contagion_reduction);
     immune.set_transmission(tmp_transmission);
     immune.set_recovery(tmp_recovery);
     immune.set_death(tmp_death);
@@ -50,7 +50,7 @@ inline void factory_tool_simple_immunesys(
     model.add_tool(immune, 1.0);
 
     // Setting the parameters
-    model.add_param(0.10, "imm efficacy");
+    model.add_param(0.10, "imm contagion_reduction");
     model.add_param(0.10, "imm recovery");
     model.add_param(0.90, "imm trans");
     model.add_param(0.001, "imm death");

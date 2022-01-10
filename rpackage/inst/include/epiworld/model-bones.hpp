@@ -33,10 +33,10 @@ private:
     bool directed;
     
     std::vector< Virus<TSeq> > viruses;
-    std::vector< double > prevalence_virus; ///< Initial prevalence_virus of each virus
+    std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
     
     std::vector< Tool<TSeq> > tools;
-    std::vector< double > prevalence_tool;
+    std::vector< epiworld_double > prevalence_tool;
 
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
@@ -47,10 +47,10 @@ private:
     std::shared_ptr< std::normal_distribution<> > rnormd =
         std::make_shared< std::normal_distribution<> >(0.0);
 
-    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> rewire_fun;
-    double rewire_prop;
+    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
+    epiworld_double rewire_prop;
         
-    std::map<std::string, double > parameters;
+    std::map<std::string, epiworld_double > parameters;
     unsigned int ndays;
     Progress pb;
 
@@ -74,8 +74,8 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> time_end;
 
     // std::chrono::milliseconds
-    std::chrono::duration<double,std::micro> time_elapsed = 
-        std::chrono::duration<double,std::micro>::zero();
+    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+        std::chrono::duration<epiworld_double,std::micro>::zero();
     unsigned int time_n = 0u;
     void chrono_start();
     void chrono_end();
@@ -109,7 +109,7 @@ public:
     ///@]
 
     DataBase<TSeq> & get_db();
-    double & operator()(std::string pname);
+    epiworld_double & operator()(std::string pname);
 
     size_t size() const;
 
@@ -121,13 +121,13 @@ public:
     ///@[
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
-    double runif();
-    double rnorm(double mean = 0.0, double sd = 1.0);
+    epiworld_double runif();
+    epiworld_double rnorm(epiworld_double mean = 0.0, epiworld_double sd = 1.0);
     void seed(unsigned int s);
     ///@]
 
-    void add_virus(Virus<TSeq> v, double preval);
-    void add_tool(Tool<TSeq> t, double preval);
+    void add_virus(Virus<TSeq> v, epiworld_double preval);
+    void add_tool(Tool<TSeq> t, epiworld_double preval);
 
     /**
      * @brief Accessing population of the model
@@ -191,9 +191,9 @@ public:
      * @result A rewired version of the network.
      */
     ///@[
-    void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,double)> fun);
-    void set_rewire_prop(double prop);
-    double get_rewire_prop() const;
+    void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
+    void set_rewire_prop(epiworld_double prop);
+    epiworld_double get_rewire_prop() const;
     void rewire();
     ///@]
 
@@ -233,7 +233,7 @@ public:
         ) const;
     ///@]
 
-    std::map<std::string, double> & params();
+    std::map<std::string, epiworld_double> & params();
 
     /**
      * @brief Reset the model
@@ -284,20 +284,20 @@ public:
     ///@]
 
     ///@[
-    double add_param(double initial_val, std::string pname);
-    double set_param(std::string pname);
-    double get_param(unsigned int k);
-    double get_param(std::string pname);
-    double par(unsigned int k);
-    double par(std::string pname);
-    double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
+    epiworld_double add_param(epiworld_double initial_val, std::string pname);
+    epiworld_double set_param(std::string pname);
+    epiworld_double get_param(unsigned int k);
+    epiworld_double get_param(std::string pname);
+    epiworld_double par(unsigned int k);
+    epiworld_double par(std::string pname);
+    epiworld_double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
     unsigned int npar_used = 0u;
     ///@]
 
     void get_elapsed(
         std::string unit = "auto",
-        double * last_elapsed = nullptr,
-        double * total_elapsed = nullptr,
+        epiworld_double * last_elapsed = nullptr,
+        epiworld_double * total_elapsed = nullptr,
         unsigned int * n_replicates = nullptr,
         std::string * unit_abbr = nullptr,
         bool print = true

@@ -13,7 +13,7 @@ class PersonViruses;
 template<typename TSeq>
 class PersonTools;
 
-template<typename TSeq>
+template<typename TSeq = bool>
 class Person {
     friend class Model<TSeq>;
     friend class Tool<TSeq>;
@@ -28,8 +28,8 @@ private:
     unsigned int status      = STATUS::HEALTHY;
     int id          = -1;
     UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
-    UpdateFun<TSeq> update_infected = default_update_infected<TSeq>;
-    UpdateFun<TSeq> update_removed = nullptr;
+    UpdateFun<TSeq> update_infected    = default_update_infected<TSeq>;
+    UpdateFun<TSeq> update_removed     = nullptr;
 
 public:
 
@@ -39,10 +39,10 @@ public:
     void add_tool(int d, Tool<TSeq> tool);
     void add_virus(int d, Virus<TSeq> virus);
 
-    double get_efficacy(Virus<TSeq> * v);
-    double get_transmisibility(Virus<TSeq> * v);
-    double get_recovery(Virus<TSeq> * v);
-    double get_death(Virus<TSeq> * v);
+    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
+    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
+    epiworld_double get_death_reduction(Virus<TSeq> * v);
     int get_id() const;
     unsigned int get_index() const;
     
@@ -65,7 +65,7 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
-    unsigned int get_status() const;
+    unsigned int & get_status();
 
     void reset();
 
@@ -74,6 +74,8 @@ public:
     void set_update_removed(UpdateFun<TSeq> fun);
     bool has_tool(unsigned int t) const;
     bool has_tool(std::string name) const;
+    bool has_virus(unsigned int t) const;
+    bool has_virus(std::string name) const;
 
 };
 

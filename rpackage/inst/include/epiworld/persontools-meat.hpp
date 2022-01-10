@@ -2,38 +2,38 @@
 #define EPIWORLD_PERSONTOOLS_MEAT_HPP
 
 /**
- * @brief Default function for combining efficacy levels
+ * @brief Default function for combining contagion_reduction levels
  * 
  * @tparam TSeq 
  * @param pt 
- * @return double 
+ * @return epiworld_double 
  */
 ///@[
 template<typename TSeq>
-inline double efficacy_mixer_default(
+inline epiworld_double efficacy_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
     Model<TSeq>* m
 )
 {
-    double total = 1.0;
+    epiworld_double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_efficacy(v));
+        total *= (1.0 - pt->operator()(i).get_contagion_reduction(v));
 
     return 1.0 - total;
     
 }
 
 template<typename TSeq>
-inline double transmisibility_mixer_default(
+inline epiworld_double transmisibility_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
     Model<TSeq>* m
 )
 {
-    double total = 1.0;
+    epiworld_double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
         total *= pt->operator()(i).get_transmisibility(v);
 
@@ -42,14 +42,14 @@ inline double transmisibility_mixer_default(
 }
 
 template<typename TSeq>
-inline double recovery_mixer_default(
+inline epiworld_double recovery_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
     Model<TSeq>* m
 )
 {
-    double total = 1.0;
+    epiworld_double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
         total *= (1.0 - pt->operator()(i).get_recovery(v));
 
@@ -58,14 +58,14 @@ inline double recovery_mixer_default(
 }
 
 template<typename TSeq>
-inline double death_mixer_default(
+inline epiworld_double death_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
     Model<TSeq>* m
 )
 {
-    double total = 1.0;
+    epiworld_double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
     {
         total *= pt->operator()(i).get_death(v);
@@ -87,7 +87,7 @@ inline void PersonTools<TSeq>::add_tool(
 }
 
 template<typename TSeq>
-inline double PersonTools<TSeq>::get_efficacy(
+inline epiworld_double PersonTools<TSeq>::get_contagion_reduction(
     Virus<TSeq> * v
 ) {
 
@@ -99,7 +99,7 @@ inline double PersonTools<TSeq>::get_efficacy(
 }
 
 template<typename TSeq>
-inline double PersonTools<TSeq>::get_transmisibility(
+inline epiworld_double PersonTools<TSeq>::get_transmisibility(
     Virus<TSeq> * v
 ) {
 
@@ -111,7 +111,7 @@ inline double PersonTools<TSeq>::get_transmisibility(
 }
 
 template<typename TSeq>
-inline double PersonTools<TSeq>::get_recovery(
+inline epiworld_double PersonTools<TSeq>::get_recovery(
     Virus<TSeq> * v
 ) {
 
@@ -124,7 +124,7 @@ inline double PersonTools<TSeq>::get_recovery(
 
 
 template<typename TSeq>
-inline double PersonTools<TSeq>::get_death(
+inline epiworld_double PersonTools<TSeq>::get_death(
     Virus<TSeq> * v
 ) {
 

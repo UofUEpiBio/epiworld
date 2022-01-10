@@ -71,4 +71,26 @@ inline Person<TSeq> * PersonViruses<TSeq>::get_host() {
     return host;
 }
 
+template<typename TSeq>
+inline bool PersonViruses<TSeq>::has_virus(unsigned int v) const
+{
+    int v2 = static_cast<int>(v);
+    for (auto & virus : viruses)
+        if (v2 == virus.get_id())
+            return true;
+
+    return false;
+}
+
+template<typename TSeq>
+inline bool PersonViruses<TSeq>::has_virus(std::string vname) const
+{
+    for (auto & virus : viruses)
+        if (vname == virus.get_name())
+            return true;
+            
+    return false;
+}
+
+
 #endif

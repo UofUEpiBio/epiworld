@@ -28,7 +28,7 @@ EPI_NEW_TOOL(immune_trans, TSEQ) {
 //' @rdname new_epi_model
 //' @param preval Baseline prevalence. What proportion of the population will
 //' be assigned this tool.
-//' @param efficacy Efficacy level (probability of not becoming infected).
+//' @param contagion_reduction Efficacy level (probability of not becoming infected).
 //' @param recovery Probability of recovery.
 //' @param death Probability of death.
 //' @param transm Probability of transmision.
@@ -38,7 +38,7 @@ int add_tool_immune(
     SEXP model,
     std::vector< bool > & baselineseq,
     double preval,
-    double efficacy = 0.1,
+    double contagion_reduction = 0.1,
     double recovery = 0.1,
     double death    = 0.001,
     double transm   = 0.9
@@ -46,7 +46,7 @@ int add_tool_immune(
   
   // Creating the tool
   epiworld::Tool<TSEQ> immune("Immune system");
-  immune.set_efficacy(immune_eff);
+  immune.set_contagion_reduction(immune_eff);
   immune.set_recovery(immune_rec);
   immune.set_death(immune_death);
   immune.set_transmisibility(immune_trans);
@@ -55,7 +55,7 @@ int add_tool_immune(
   // Getting the model
   Rcpp::XPtr< epiworld::Model<TSEQ> > mptr(model);
   
-  immune.add_param(efficacy, "immune efficacy", *mptr);
+  immune.add_param(contagion_reduction, "immune contagion_reduction", *mptr);
   immune.add_param(recovery, "immune recovery", *mptr);
   immune.add_param(death, "immune death", *mptr);
   immune.add_param(transm, "immune transm", *mptr);
@@ -102,7 +102,7 @@ int add_tool_vaccine(
     SEXP model,
     std::vector< bool > & baselineseq,
     double preval,
-    double efficacy = 0.9,
+    double contagion_reduction = 0.9,
     double recovery = 0.4,
     double death    = 0.0001,
     double transm   = 0.5
@@ -111,7 +111,7 @@ int add_tool_vaccine(
   // Creating the tool
   // Creating tools
   epiworld::Tool<TSEQ> vaccine("Vaccine");
-  vaccine.set_efficacy(vaccine_eff);
+  vaccine.set_contagion_reduction(vaccine_eff);
   vaccine.set_recovery(vaccine_rec);
   vaccine.set_death(vaccine_death);
   vaccine.set_transmisibility(vaccine_trans);
@@ -120,7 +120,7 @@ int add_tool_vaccine(
   Rcpp::XPtr< epiworld::Model<TSEQ> > mptr(model);
   
   
-  vaccine.add_param(efficacy, "vax efficacy", *mptr);
+  vaccine.add_param(contagion_reduction, "vax contagion_reduction", *mptr);
   vaccine.add_param(recovery, "vax recovery", *mptr);
   vaccine.add_param(death, "vax death", *mptr);
   vaccine.add_param(transm, "vax transm", *mptr);
@@ -153,19 +153,19 @@ int add_tool_mask(
     SEXP model,
     std::vector< bool > & baselineseq,
     double preval,
-    double efficacy = 0.3,
+    double contagion_reduction = 0.3,
     double transm   = 0.1
 ) {
   
   // Creating the tool
   epiworld::Tool<TSEQ> mask("Face masks");
-  mask.set_efficacy(mask_eff);
+  mask.set_contagion_reduction(mask_eff);
   mask.set_transmisibility(mask_trans);
   
   // Adding it to the models
   Rcpp::XPtr< epiworld::Model<TSEQ> > mptr(model);
   
-  mask.add_param(efficacy, "mask efficacy", *mptr);
+  mask.add_param(contagion_reduction, "mask contagion_reduction", *mptr);
   mask.add_param(transm, "mask transm", *mptr);
   
   mptr->add_tool(mask, preval);

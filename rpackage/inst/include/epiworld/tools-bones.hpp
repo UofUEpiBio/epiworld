@@ -18,10 +18,10 @@ template<typename TSeq>
 class Tool;
 
 template<typename TSeq>
-using ToolFun = std::function<double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MixerFun = std::function<double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 /**
  * @brief Tools for defending the host against the virus
@@ -39,13 +39,13 @@ private:
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique  = default_sequence<TSeq>();
-    ToolFun<TSeq> efficacy        = nullptr;
+    ToolFun<TSeq> contagion_reduction        = nullptr;
     ToolFun<TSeq> transmisibility = nullptr;
     ToolFun<TSeq> recovery        = nullptr;
     ToolFun<TSeq> death           = nullptr;
 
     // Setup parameters
-    std::vector< double * > params;  
+    std::vector< epiworld_double * > params;  
 
 public:
     Tool(std::string name = "unknown tool");
@@ -63,14 +63,14 @@ public:
      * @param v The virus over which to operate
      * @param fun the function to be used
      * 
-     * @return double 
+     * @return epiworld_double 
      */
     ///@[
-    double get_efficacy(Virus<TSeq> * v);
-    double get_transmisibility(Virus<TSeq> * v);
-    double get_recovery(Virus<TSeq> * v);
-    double get_death(Virus<TSeq> * v);
-    void set_efficacy(ToolFun<TSeq> fun);
+    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_transmisibility(Virus<TSeq> * v);
+    epiworld_double get_recovery(Virus<TSeq> * v);
+    epiworld_double get_death(Virus<TSeq> * v);
+    void set_contagion_reduction(ToolFun<TSeq> fun);
     void set_transmisibility(ToolFun<TSeq> fun);
     void set_recovery(ToolFun<TSeq> fun);
     void set_death(ToolFun<TSeq> fun);
@@ -102,13 +102,13 @@ public:
      * 
      */
     ///@[
-    double add_param(double initial_val, std::string pname, Model<TSeq> & m);
-    double set_param(std::string pname, Model<TSeq> & m);
-    double get_param(unsigned int k);
-    double get_param(std::string pname);
-    double par(unsigned int k);
-    double par(std::string pname);
-    double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
+    epiworld_double add_param(epiworld_double initial_val, std::string pname, Model<TSeq> & m);
+    epiworld_double set_param(std::string pname, Model<TSeq> & m);
+    epiworld_double get_param(unsigned int k);
+    epiworld_double get_param(std::string pname);
+    epiworld_double par(unsigned int k);
+    epiworld_double par(std::string pname);
+    epiworld_double * p00,*p01,*p02,*p03,*p04,*p05,*p06,*p07,*p08,*p09,*p10;
     ///@]
 
     Person<TSeq> * get_person();

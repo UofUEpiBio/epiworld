@@ -6,7 +6,7 @@
  * 
  * @tparam TSeq 
  */
-template<typename TSeq>
+template<typename TSeq = bool>
 class PersonViruses {
     friend class Person<TSeq>;
     friend class Model<TSeq>;
@@ -25,6 +25,8 @@ public:
     void reset();
     void deactivate(Virus<TSeq> & v);
     Person<TSeq> * get_host();
+    bool has_virus(unsigned int v) const;
+    bool has_virus(std::string vname) const;
 
 };
 

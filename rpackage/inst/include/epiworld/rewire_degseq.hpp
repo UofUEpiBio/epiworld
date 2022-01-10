@@ -8,13 +8,13 @@ template<typename TSeq>
 class Person;
 
 template<typename TSeq>
-inline void rewire_degseq(Model<TSeq> * model, double proportion)
+inline void rewire_degseq(Model<TSeq> * model, epiworld_double proportion)
 {
 
     // Identifying individuals with degree > 0
     std::vector< unsigned int > non_isolates;
-    std::vector< double > weights;
-    double nedges = 0.0;
+    std::vector< epiworld_double > weights;
+    epiworld_double nedges = 0.0;
     std::vector< Person<TSeq> > * persons = model->get_population();
     for (unsigned int i = 0u; i < persons->size(); ++i)
     {
@@ -22,7 +22,7 @@ inline void rewire_degseq(Model<TSeq> * model, double proportion)
         {
             non_isolates.push_back(i);
             weights.push_back(
-                static_cast<double>(persons->operator[](i).get_neighbors().size())
+                static_cast<epiworld_double>(persons->operator[](i).get_neighbors().size())
                 );
             nedges += 1.0;
         }
@@ -41,7 +41,7 @@ inline void rewire_degseq(Model<TSeq> * model, double proportion)
 
     // Only swap if needed
     unsigned int N = non_isolates.size();
-    double prob;
+    epiworld_double prob;
     int nrewires = floor(proportion * nedges);
     while (nrewires-- > 0)
     {

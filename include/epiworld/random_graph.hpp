@@ -20,7 +20,7 @@ public:
 
     void init(int s);
     void set_rand_engine(std::mt19937 & e);
-    double runif();
+    epiworld_double runif();
 
 };
 
@@ -47,7 +47,7 @@ inline void RandGraph::set_rand_engine(std::mt19937 & e)
 
 }
 
-inline double RandGraph::runif() {
+inline epiworld_double RandGraph::runif() {
 
     if (!initialized)
         throw std::logic_error("The object has not been initialized");

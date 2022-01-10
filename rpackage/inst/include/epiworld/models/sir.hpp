@@ -8,18 +8,18 @@
  * 
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
- * @param initial_prevalence double Initial prevalence
- * @param initial_efficacy double Initial efficacy of the immune system
- * @param initial_recovery double Initial recovery rate of the immune system
+ * @param initial_prevalence epiworld_double Initial prevalence
+ * @param initial_contagion_reduction epiworld_double Initial contagion_reduction of the immune system
+ * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
 template<typename TSeq>
 inline void set_up_sir(
     epiworld::Model<TSeq> & model,
     std::string vname,
-    double prevalence,
-    double efficacy,
-    double recovery,
-    double post_immunity
+    epiworld_double prevalence,
+    epiworld_double contagion_reduction,
+    epiworld_double recovery,
+    epiworld_double post_immunity
     )
 {
 
@@ -28,14 +28,14 @@ inline void set_up_sir(
         EPI_NEW_TOOL_LAMBDA(virus_immune,TSeq) {return MPAR(0);};
 
         epiworld::Tool<TSeq> immune;
-        immune.set_efficacy(virus_immune);
+        immune.set_contagion_reduction(virus_immune);
         immune.set_param("Post immunity", *m);
         p->add_tool(m->today(), immune);
         return;
 
     };
 
-    EPI_NEW_TOOL_LAMBDA(immune_efficacy,TSeq) {return MPAR(0);};
+    EPI_NEW_TOOL_LAMBDA(immune_contagion_reduction,TSeq) {return MPAR(0);};
     EPI_NEW_TOOL_LAMBDA(immune_recovery,TSeq) {return MPAR(1);};
     EPI_NEW_TOOL_LAMBDA(immune_transmision,TSeq) {return MPAR(1);};
 
@@ -45,10 +45,10 @@ inline void set_up_sir(
 
     // Preparing the immune system
     epiworld::Tool<TSeq> immune_sys(true, "Immune system");
-    immune_sys.set_efficacy(immune_efficacy);
+    immune_sys.set_contagion_reduction(immune_contagion_reduction);
     immune_sys.set_recovery(immune_recovery);
 
-    immune_sys.add_param(efficacy, "Immune efficacy", model);
+    immune_sys.add_param(contagion_reduction, "Immune contagion_reduction", model);
     immune_sys.add_param(recovery, "Immune recovery", model);
     immune_sys.add_param(post_immunity, "Post immunity", model);
 

@@ -6,11 +6,11 @@ inline Virus<TSeq>::Virus(std::string name) {
     set_name(name);
 }
 
-template<typename TSeq>
-inline Virus<TSeq>::Virus(TSeq sequence, std::string name) {
-    baseline_sequence = std::make_shared<TSeq>(sequence);
-    set_name(name);
-}
+// template<typename TSeq>
+// inline Virus<TSeq>::Virus(TSeq sequence, std::string name) {
+//     baseline_sequence = std::make_shared<TSeq>(sequence);
+//     set_name(name);
+// }
 
 template<typename TSeq>
 inline void Virus<TSeq>::mutate() {
@@ -80,10 +80,99 @@ inline bool Virus<TSeq>::is_active() const {
     return active;
 }
 
+
+
 template<typename TSeq>
-inline void Virus<TSeq>::set_post_recovery(VirusFun<TSeq> fun)
+inline epiworld_double Virus<TSeq>::get_infectiousness()
 {
-    post_recovery = VirusFun<TSeq>(fun);
+
+    if (infectiousness)
+        return infectiousness(host, this, host->get_model());
+        
+    return DEFAULT_VIRUS_INFECTIOUSNESS;
+
+}
+
+
+
+template<typename TSeq>
+inline epiworld_double Virus<TSeq>::get_persistance()
+{
+
+    if (persistance)
+        return persistance(host, this, host->get_model());
+        
+    return DEFAULT_VIRUS_PERSISTANCE;
+
+}
+
+
+
+template<typename TSeq>
+inline epiworld_double Virus<TSeq>::get_death()
+{
+
+    if (death)
+        return death(host, this, host->get_model());
+        
+    return DEFAULT_VIRUS_DEATH;
+
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_infectiousness(VirusFun<TSeq> fun)
+{
+    infectiousness = fun;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_persistance(VirusFun<TSeq> fun)
+{
+    persistance = fun;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_death(VirusFun<TSeq> fun)
+{
+    death = fun;
+}
+
+#undef EPIWORLD_SET_V
+
+#define EPIWORLD_SET_LAMBDA(suffix) \
+    template<typename TSeq> \
+    inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
+    epiworld_double * prob) { \
+    VirusFun<TSeq> tmpfun = \
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
+        return * prob; }; \
+    EPI_TOKENPASTE(set_,suffix)(tmpfun);}
+
+EPIWORLD_SET_LAMBDA(infectiousness)
+EPIWORLD_SET_LAMBDA(persistance)
+EPIWORLD_SET_LAMBDA(death)
+
+#undef EPIWORLD_SET_LAMBDA
+
+#define EPIWORLD_SET_LAMBDA2(suffix) \
+    template<typename TSeq> \
+    inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
+    epiworld_double prob) { \
+    VirusFun<TSeq> tmpfun = \
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
+        return prob; }; \
+    EPI_TOKENPASTE(set_,suffix)(tmpfun);}
+
+EPIWORLD_SET_LAMBDA2(infectiousness)
+EPIWORLD_SET_LAMBDA2(persistance)
+EPIWORLD_SET_LAMBDA2(death)
+
+#undef EPIWORLD_SET_LAMBDA2
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_post_recovery(PostRecoveryFun<TSeq> fun)
+{
+    post_recovery = fun;
 }
 
 template<typename TSeq>
@@ -120,7 +209,7 @@ inline std::string Virus<TSeq>::get_name() const
 }
 
 template<typename TSeq>
-inline std::vector< double > & Virus<TSeq>::get_data() {
+inline std::vector< epiworld_double > & Virus<TSeq>::get_data() {
     return data;
 }
 

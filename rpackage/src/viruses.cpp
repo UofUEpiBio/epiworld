@@ -37,13 +37,13 @@ int add_virus_covid19(
     
     // We assume individuals cannot become reinfected with the
     // same variant
-    EPI_NEW_TOOL_LAMBDA(post_rec_efficacy, TSEQ) {
+    EPI_NEW_TOOL_LAMBDA(post_rec_contagion_reduction, TSEQ) {
       return *t->p00;
     };
     
     epiworld::Tool<TSEQ> immunity;
     immunity.set_sequence(*v->get_sequence());
-    immunity.set_efficacy(post_rec_efficacy);
+    immunity.set_contagion_reduction(post_rec_contagion_reduction);
     // immunity.set_param("Immune sys learning rate", *m);
     immunity.set_param("post-covid immunity", *m);
     

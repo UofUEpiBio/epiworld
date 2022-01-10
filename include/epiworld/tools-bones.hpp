@@ -18,17 +18,17 @@ template<typename TSeq>
 class Tool;
 
 // template<typename TSeq>
-// using ToolFun = std::function<double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+// using ToolFun = std::function<epiworld_double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 // template<typename TSeq>
-// using MixerFun = std::function<double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+// using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 /**
  * @brief Tools for defending the host against the virus
  * 
  * @tparam TSeq Type of sequence
  */
-template<typename TSeq> 
+template<typename TSeq=bool> 
 class Tool {
     friend class PersonTools<TSeq>;
     friend class Person<TSeq>;
@@ -40,17 +40,17 @@ private:
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique  = default_sequence<TSeq>();
-    ToolFun<TSeq> efficacy        = nullptr;
-    ToolFun<TSeq> transmisibility = nullptr;
-    ToolFun<TSeq> recovery        = nullptr;
-    ToolFun<TSeq> death           = nullptr;
+    ToolFun<TSeq> contagion_reduction    = nullptr;
+    ToolFun<TSeq> transmission_reduction = nullptr;
+    ToolFun<TSeq> recovery_enhancer      = nullptr;
+    ToolFun<TSeq> death_reduction        = nullptr;
 
     // Setup parameters
-    std::vector< double * > params;  
+    std::vector< epiworld_double * > params;  
 
 public:
     Tool(std::string name = "unknown tool");
-    Tool(TSeq d, std::string name = "unknown tool");
+    // Tool(TSeq d, std::string name = "unknown tool");
 
     void set_sequence(TSeq d);
     void set_sequence_unique(TSeq d);
@@ -64,25 +64,25 @@ public:
      * @param v The virus over which to operate
      * @param fun the function to be used
      * 
-     * @return double 
+     * @return epiworld_double 
      */
     ///@[
-    double get_efficacy(Virus<TSeq> * v);
-    double get_transmisibility(Virus<TSeq> * v);
-    double get_recovery(Virus<TSeq> * v);
-    double get_death(Virus<TSeq> * v);
-    void set_efficacy(ToolFun<TSeq> fun);
-    void set_transmisibility(ToolFun<TSeq> fun);
-    void set_recovery(ToolFun<TSeq> fun);
-    void set_death(ToolFun<TSeq> fun);
-    void set_efficacy(double * prob);
-    void set_transmisibility(double * prob);
-    void set_recovery(double * prob);
-    void set_death(double * prob);
-    void set_efficacy(double prob);
-    void set_transmisibility(double prob);
-    void set_recovery(double prob);
-    void set_death(double prob);
+    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
+    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
+    epiworld_double get_death_reduction(Virus<TSeq> * v);
+    void set_contagion_reduction(ToolFun<TSeq> fun);
+    void set_transmission_reduction(ToolFun<TSeq> fun);
+    void set_recovery_enhancer(ToolFun<TSeq> fun);
+    void set_death_reduction(ToolFun<TSeq> fun);
+    void set_contagion_reduction(epiworld_double * prob);
+    void set_transmission_reduction(epiworld_double * prob);
+    void set_recovery_enhancer(epiworld_double * prob);
+    void set_death_reduction(epiworld_double * prob);
+    void set_contagion_reduction(epiworld_double prob);
+    void set_transmission_reduction(epiworld_double prob);
+    void set_recovery_enhancer(epiworld_double prob);
+    void set_death_reduction(epiworld_double prob);
     ///@]
 
     void set_name(std::string name);

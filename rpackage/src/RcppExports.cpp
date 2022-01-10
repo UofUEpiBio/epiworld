@@ -188,48 +188,48 @@ BEGIN_RCPP
 END_RCPP
 }
 // add_tool_immune
-int add_tool_immune(SEXP model, std::vector< bool >& baselineseq, double preval, double efficacy, double recovery, double death, double transm);
+int add_tool_immune(SEXP model, std::vector< bool >& baselineseq, double preval, double contagion_reduction, double recovery, double death, double transm);
 RcppExport SEXP _epiworld_add_tool_immune(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP, SEXP efficacySEXP, SEXP recoverySEXP, SEXP deathSEXP, SEXP transmSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
     Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
     Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
-    Rcpp::traits::input_parameter< double >::type efficacy(efficacySEXP);
+    Rcpp::traits::input_parameter< double >::type contagion_reduction(efficacySEXP);
     Rcpp::traits::input_parameter< double >::type recovery(recoverySEXP);
     Rcpp::traits::input_parameter< double >::type death(deathSEXP);
     Rcpp::traits::input_parameter< double >::type transm(transmSEXP);
-    rcpp_result_gen = Rcpp::wrap(add_tool_immune(model, baselineseq, preval, efficacy, recovery, death, transm));
+    rcpp_result_gen = Rcpp::wrap(add_tool_immune(model, baselineseq, preval, contagion_reduction, recovery, death, transm));
     return rcpp_result_gen;
 END_RCPP
 }
 // add_tool_vaccine
-int add_tool_vaccine(SEXP model, std::vector< bool >& baselineseq, double preval, double efficacy, double recovery, double death, double transm);
+int add_tool_vaccine(SEXP model, std::vector< bool >& baselineseq, double preval, double contagion_reduction, double recovery, double death, double transm);
 RcppExport SEXP _epiworld_add_tool_vaccine(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP, SEXP efficacySEXP, SEXP recoverySEXP, SEXP deathSEXP, SEXP transmSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
     Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
     Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
-    Rcpp::traits::input_parameter< double >::type efficacy(efficacySEXP);
+    Rcpp::traits::input_parameter< double >::type contagion_reduction(efficacySEXP);
     Rcpp::traits::input_parameter< double >::type recovery(recoverySEXP);
     Rcpp::traits::input_parameter< double >::type death(deathSEXP);
     Rcpp::traits::input_parameter< double >::type transm(transmSEXP);
-    rcpp_result_gen = Rcpp::wrap(add_tool_vaccine(model, baselineseq, preval, efficacy, recovery, death, transm));
+    rcpp_result_gen = Rcpp::wrap(add_tool_vaccine(model, baselineseq, preval, contagion_reduction, recovery, death, transm));
     return rcpp_result_gen;
 END_RCPP
 }
 // add_tool_mask
-int add_tool_mask(SEXP model, std::vector< bool >& baselineseq, double preval, double efficacy, double transm);
+int add_tool_mask(SEXP model, std::vector< bool >& baselineseq, double preval, double contagion_reduction, double transm);
 RcppExport SEXP _epiworld_add_tool_mask(SEXP modelSEXP, SEXP baselineseqSEXP, SEXP prevalSEXP, SEXP efficacySEXP, SEXP transmSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type model(modelSEXP);
     Rcpp::traits::input_parameter< std::vector< bool >& >::type baselineseq(baselineseqSEXP);
     Rcpp::traits::input_parameter< double >::type preval(prevalSEXP);
-    Rcpp::traits::input_parameter< double >::type efficacy(efficacySEXP);
+    Rcpp::traits::input_parameter< double >::type contagion_reduction(efficacySEXP);
     Rcpp::traits::input_parameter< double >::type transm(transmSEXP);
-    rcpp_result_gen = Rcpp::wrap(add_tool_mask(model, baselineseq, preval, efficacy, transm));
+    rcpp_result_gen = Rcpp::wrap(add_tool_mask(model, baselineseq, preval, contagion_reduction, transm));
     return rcpp_result_gen;
 END_RCPP
 }

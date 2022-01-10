@@ -6,7 +6,7 @@
  * @brief Helper macro to define a new tool
  * 
  */
-#define EPI_NEW_TOOL(fname,tseq) inline double \
+#define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
     epiworld::Tool< tseq > * t, \
     epiworld::Person< tseq > * p, \
@@ -47,6 +47,19 @@
     epiworld::Virus<tseq> * v, \
     epiworld::Model<tseq> * m)
 
+#define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
+    (funname)( \
+    epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq>* v, \
+    epiworld::Model<tseq> * m\
+    )
+
+#define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
+    epiworld::PostRecoveryFun<tseq> funname = \
+    [](epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq>* v, \
+    epiworld::Model<tseq> * m)
+
 #define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
@@ -70,8 +83,6 @@
     for (unsigned int niter = 0; niter < a.get_ndays(); ++niter)
 
 #define EPI_TOKENPASTE(a,b) a ## b
-#define VPAR(num) *(v->EPI_TOKENPASTE(p,num))
-#define TPAR(num) *(t->EPI_TOKENPASTE(p,num))
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
 
 #define EPI_NEW_UPDATEFUN(funname,tseq) inline unsigned int \
@@ -81,5 +92,11 @@
     epiworld::UpdateFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
 
+#define EPI_NEW_GLOBALFUN(funname,tseq) inline void \
+    (funname)(epiworld::Model<tseq>* m)
+
+#define EPI_NEW_GLOBALFUN_LAMBDA(funname,tseq) inline void \
+    epiworld::GlobalFun<tseq> funname = \
+    [](epiworld::Model<tseq>* m)
 
 #endif

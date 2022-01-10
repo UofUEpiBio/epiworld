@@ -29,8 +29,10 @@ class Model;
  * having one or more tools to fight the virus. Because of this, transmisibility
  * should be a function of the host.
  */
-template<typename TSeq>
+template<typename TSeq = bool>
 class Virus {
+    friend class Person<TSeq>;
+    friend class Model<TSeq>;
     friend class PersonViruses<TSeq>;
     friend class DataBase<TSeq>;
 private:
@@ -40,19 +42,19 @@ private:
     int date = -99;
     int id   = -99;
     bool active = true;
-    MutFun<TSeq> mutation_fun = nullptr;
-    VirusFun<TSeq> post_recovery  = nullptr;
-    VirusFun<TSeq> infectiousness = nullptr;
-    VirusFun<TSeq> persistance    = nullptr;
-    VirusFun<TSeq> death          = nullptr;
+    MutFun<TSeq>          mutation_fun   = nullptr;
+    PostRecoveryFun<TSeq> post_recovery  = nullptr;
+    VirusFun<TSeq>        infectiousness = nullptr;
+    VirusFun<TSeq>        persistance    = nullptr;
+    VirusFun<TSeq>        death          = nullptr;
 
     // Setup parameters
-    std::vector< double * > params;
-    std::vector< double > data;
+    std::vector< epiworld_double * > params;
+    std::vector< epiworld_double > data;
 
 public:
     Virus(std::string name = "unknown virus");
-    Virus(TSeq sequence, std::string name = "unknown virus");
+
     void mutate();
     void set_mutation(MutFun<TSeq> fun);
     const TSeq* get_sequence();
@@ -71,28 +73,34 @@ public:
      * @param v The virus over which to operate
      * @param fun the function to be used
      * 
-     * @return double 
+     * @return epiworld_double 
      */
     ///@[
-    double get_infectiousness(Virus<TSeq> * v);
-    double get_persistance(Virus<TSeq> * v);
-    double get_death(Virus<TSeq> * v);
+    epiworld_double get_infectiousness();
+    epiworld_double get_persistance();
+    epiworld_double get_death();
+    
     void get_post_recovery();
+    void set_post_recovery(PostRecoveryFun<TSeq> fun);
+
     void set_infectiousness(VirusFun<TSeq> fun);
     void set_persistance(VirusFun<TSeq> fun);
     void set_death(VirusFun<TSeq> fun);
-    void set_post_recovery(VirusFun<TSeq> fun);
-    void set_infectiousness(double prob);
-    void set_persistance(double prob);
-    void set_death(double prob);
-    void set_post_recovery(double prob);
+    
+    void set_infectiousness(epiworld_double * prob);
+    void set_persistance(epiworld_double * prob);
+    void set_death(epiworld_double * prob);
+    
+    void set_infectiousness(epiworld_double prob);
+    void set_persistance(epiworld_double prob);
+    void set_death(epiworld_double prob);
     ///@]
 
 
     void set_name(std::string name);
     std::string get_name() const;
 
-    std::vector< double > & get_data();
+    std::vector< epiworld_double > & get_data();
 
 };
 

@@ -45,25 +45,25 @@ inline TSeq & Tool<TSeq>::get_sequence_unique() {
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::get_efficacy(
+inline epiworld_double Tool<TSeq>::get_contagion_reduction(
     Virus<TSeq> * v
 ) {
 
-    if (!efficacy)
+    if (!contagion_reduction)
         return DEFAULT_EFFICACY;
     
-    return efficacy(this, person, v, person->model);
+    return contagion_reduction(this, person, v, person->model);
 
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::get_transmisibility(
+inline epiworld_double Tool<TSeq>::get_transmisibility(
     Virus<TSeq> * v
 ) {
 
     if (transmisibility)
     {
-        double t = transmisibility(this, this->person, v, person->get_model());
+        epiworld_double t = transmisibility(this, this->person, v, person->get_model());
         return t;
     }
     
@@ -72,7 +72,7 @@ inline double Tool<TSeq>::get_transmisibility(
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::get_recovery(
+inline epiworld_double Tool<TSeq>::get_recovery(
     Virus<TSeq> * v
 ) {
 
@@ -84,7 +84,7 @@ inline double Tool<TSeq>::get_recovery(
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::get_death(
+inline epiworld_double Tool<TSeq>::get_death(
     Virus<TSeq> * v
 ) {
 
@@ -96,10 +96,10 @@ inline double Tool<TSeq>::get_death(
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_efficacy(
+inline void Tool<TSeq>::set_contagion_reduction(
     ToolFun<TSeq> fun
 ) {
-    efficacy = fun;
+    contagion_reduction = fun;
 }
 
 template<typename TSeq>
@@ -160,13 +160,13 @@ inline std::string Tool<TSeq>::get_name() const {
     }
 
 template<typename TSeq>
-inline double Tool<TSeq>::add_param(
-    double initial_value,
+inline epiworld_double Tool<TSeq>::add_param(
+    epiworld_double initial_value,
     std::string pname,
     Model<TSeq> & m
     ) {
 
-    std::map<std::string,double> & parmap = m.params();
+    std::map<std::string,epiworld_double> & parmap = m.params();
 
     if (parmap.find(pname) == parmap.end())
         parmap[pname] = initial_value;
@@ -187,12 +187,12 @@ inline double Tool<TSeq>::add_param(
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::set_param(
+inline epiworld_double Tool<TSeq>::set_param(
     std::string pname,
     Model<TSeq> & m
     ) {
 
-    std::map<std::string,double> & parmap = m.params();
+    std::map<std::string,epiworld_double> & parmap = m.params();
 
     if (parmap.find(pname) == parmap.end())
         throw std::logic_error("The parameter " + pname + " does not exists.");
@@ -208,25 +208,25 @@ inline double Tool<TSeq>::set_param(
 
 
 template<typename TSeq>
-inline double Tool<TSeq>::get_param(unsigned int k)
+inline epiworld_double Tool<TSeq>::get_param(unsigned int k)
 {
     return *(params[k]);
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::get_param(std::string pname)
+inline epiworld_double Tool<TSeq>::get_param(std::string pname)
 {
     return person->model->params()[pname];
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::par(unsigned int k)
+inline epiworld_double Tool<TSeq>::par(unsigned int k)
 {
     return *(params[k]);
 }
 
 template<typename TSeq>
-inline double Tool<TSeq>::par(std::string pname)
+inline epiworld_double Tool<TSeq>::par(std::string pname)
 {
     return person->model->params()[pname];
 }

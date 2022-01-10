@@ -6,7 +6,7 @@
  * 
  * @tparam TSeq 
  */
-template<typename TSeq>
+template<typename TSeq = bool>
 class PersonTools {
     friend class Person<TSeq>;
     friend class Model<TSeq>;
@@ -15,23 +15,23 @@ private:
     Person<TSeq> * person; 
     std::vector<Tool<TSeq>> tools;
     std::vector< int > dates;
-    MixerFun<TSeq> efficacy_mixer;
-    MixerFun<TSeq> transmisibility_mixer;
-    MixerFun<TSeq> recovery_mixer;
-    MixerFun<TSeq> death_mixer;
+    MixerFun<TSeq> contagion_reduction_mixer;
+    MixerFun<TSeq> transmission_reduction_mixer;
+    MixerFun<TSeq> recovery_enhancer_mixer;
+    MixerFun<TSeq> death_reduction_mixer;
 
 public:
     PersonTools() {};
     void add_tool(int date, Tool<TSeq> tool);
-    double get_efficacy(Virus<TSeq> * v);
-    double get_transmisibility(Virus<TSeq> * v);
-    double get_recovery(Virus<TSeq> * v);
-    double get_death(Virus<TSeq> * v);
+    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
+    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
+    epiworld_double get_death_reduction(Virus<TSeq> * v);
 
-    void set_efficacy_mixer(MixerFun<TSeq> fun);
-    void set_transmisibility_mixer(MixerFun<TSeq> fun);
-    void set_recovery_mixer(MixerFun<TSeq> fun);
-    void set_death_mixer(MixerFun<TSeq> fun);
+    void set_contagion_reduction_mixer(MixerFun<TSeq> fun);
+    void set_transmission_reduction_mixer(MixerFun<TSeq> fun);
+    void set_recovery_enhancer_mixer(MixerFun<TSeq> fun);
+    void set_death_reduction_mixer(MixerFun<TSeq> fun);
 
     size_t size() const;
     Tool<TSeq> & operator()(int i);
