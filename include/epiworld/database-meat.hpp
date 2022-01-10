@@ -5,6 +5,8 @@ template<typename TSeq>
 inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 {
     model = &m;
+    user_data.model = &m;
+
     reset();
 
     // Initializing the counts

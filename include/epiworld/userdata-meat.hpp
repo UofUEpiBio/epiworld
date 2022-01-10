@@ -31,6 +31,7 @@ inline void UserData<TSeq>::add(std::vector<epiworld_double> x)
     data_dates.push_back(model->today());
 
     n++;
+    last_day = model->today();
 
 }
 
@@ -38,16 +39,21 @@ template<typename TSeq>
 inline void UserData<TSeq>::add(unsigned int j, epiworld_double x)
 {
 
-    if (model->today() != (n - 1))
+    // Starting with a new day?
+    if (static_cast<int>(model->today()) != last_day)
     {
+
         std::vector< epiworld_double > tmp(k, 0.0);
+
         tmp[j] = x;
-        this->add(x);
+
+        add(tmp);
+
     }
     else
     {
 
-        this->operator()(n - 1, k) = x;
+        this->operator()(n - 1, j) = x;
 
     }
 
@@ -93,32 +99,15 @@ inline void UserData<TSeq>::get_all(
 template<typename TSeq>
 inline epiworld_double & UserData<TSeq>::operator()(
     unsigned int i,
-    unsigned int j,
-    bool auto_fill
+    unsigned int j
 )
 {
 
     if (j >= k)
         throw std::out_of_range("j cannot be greater than k - 1.");
 
-    if (!auto_fill && (i >= n))
-    {
-
-            throw std::out_of_range("j cannot be greater than n - 1.");
-
-    }
-    else if (i >= (n + 1u))
-    {
-
-        data_dates.resize(i + 1u);
-        data_data.resize(i * k + (j + 1u), 0.0);
-
-        for (unsigned int l = (n - 1); l < data_dates.size(); ++l)
-            data_dates = l;
-
-        n = i + 1u;
-
-    }
+    if (i >= n)
+        throw std::out_of_range("j cannot be greater than n - 1.");
 
     return data_data[k * i + j];
 
@@ -127,8 +116,7 @@ inline epiworld_double & UserData<TSeq>::operator()(
 template<typename TSeq>
 inline epiworld_double & UserData<TSeq>::operator()(
     unsigned int i,
-    std::string name,
-    bool auto_fill
+    std::string name
 )
 {
     int loc = -1;
@@ -151,7 +139,7 @@ inline epiworld_double & UserData<TSeq>::operator()(
             "in the user UserData database."
         );
 
-    return operator()(i, static_cast<unsigned int>(loc), auto_fill);
+    return operator()(i, static_cast<unsigned int>(loc));
 
 }
 
@@ -187,6 +175,43 @@ inline void UserData<TSeq>::write(std::string fn)
             file_ud << " " << data_data[ndata++];
 
         file_ud << "\n";
+    }
+
+    return;
+}
+
+template<typename TSeq>
+inline void UserData<TSeq>::print() const
+{
+    // File header
+    printf_epiworld("Total records: %i\n", n);
+    printf_epiworld("date");
+
+    for (auto & cn : data_names)
+    {
+
+        printf_epiworld(" %s", cn.c_str());
+
+    }
+
+    printf_epiworld("\n");
+    
+    unsigned int ndata = 0u;
+    
+    for (unsigned int i = 0u; i < n; ++i)
+    {
+
+        printf_epiworld("%i", data_dates[i]);
+
+        for (unsigned int j = 0u; j < k; ++j)
+        {
+
+            printf_epiworld(" %.2f", data_data[ndata++]);
+
+        }
+
+        printf_epiworld("\n");
+
     }
 
     return;

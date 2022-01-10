@@ -365,6 +365,7 @@ public:
     ///[@
     void set_user_data(std::vector< std::string > names);
     void add_user_data(unsigned int j, epiworld_double x);
+    void add_user_data(std::vector< epiworld_double > x);
     UserData<TSeq> & get_user_data();
     ///@]
 

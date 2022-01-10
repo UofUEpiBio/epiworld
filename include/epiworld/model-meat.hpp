@@ -31,7 +31,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
     // Pointing to the right place
     db.set_model(*this);
-    db.get_user_data().model = db.get_model();
 
     // Removing old neighbors
     model.clone_population(
@@ -1233,6 +1232,12 @@ template<typename TSeq>
 inline void Model<TSeq>::add_user_data(unsigned int j, epiworld_double x)
 {
     db.add_user_data(j, x);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_user_data(std::vector<epiworld_double> x)
+{
+    db.add_user_data(x);
 }
 
 template<typename TSeq>

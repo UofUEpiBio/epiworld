@@ -25,6 +25,8 @@ private:
     unsigned int k = 0u;
     unsigned int n = 0u;
 
+    int last_day = -1;
+
 public:
 
     UserData() {};
@@ -39,14 +41,12 @@ public:
 
     epiworld_double & operator()(
         unsigned int i,
-        unsigned int j,
-        bool auto_fill = true
+        unsigned int j
         );
 
     epiworld_double & operator()(
         unsigned int i,
-        std::string name,
-        bool auto_fill = true
+        std::string name
         );
 
     std::vector< std::string > & get_names();
@@ -65,6 +65,7 @@ public:
     unsigned int ncol() const;
 
     void write(std::string fn);
+    void print() const;
 
 };
 
