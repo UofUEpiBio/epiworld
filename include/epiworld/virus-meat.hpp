@@ -2,15 +2,73 @@
 #define EPIWORLD_VIRUS_MEAT_HPP
 
 template<typename TSeq>
+inline Virus<TSeq>::Virus(const Virus<TSeq> & virus) :
+    host(virus.host),
+    baseline_sequence(virus.baseline_sequence),
+    date(virus.date),
+    virus_name(virus.virus_name),
+    id(virus.id),
+    active(virus.active),
+    mutation_fun(virus.mutation_fun),
+    post_recovery(virus.post_recovery),
+    infectiousness(virus.infectiousness),
+    persistance(virus.persistance),
+    death(virus.death),
+    data(virus.data)
+{
+
+
+}
+
+template<typename TSeq>
+inline Virus<TSeq>::Virus(Virus<TSeq> && virus) :
+    host(std::move(virus.host)),
+    baseline_sequence(std::move(virus.baseline_sequence)),
+    date(std::move(virus.date)),
+    virus_name(std::move(virus.virus_name)),
+    id(std::move(virus.id)),
+    active(std::move(virus.active)),
+    mutation_fun(std::move(virus.mutation_fun)),
+    post_recovery(std::move(virus.post_recovery)),
+    infectiousness(std::move(virus.infectiousness)),
+    persistance(std::move(virus.persistance)),
+    death(std::move(virus.death)),
+    data(std::move(virus.data))
+{
+
+}
+
+template<typename TSeq>
+inline Virus<TSeq> & Virus<TSeq>::operator=(const Virus<TSeq> & virus)
+{
+
+    host = virus.host;
+    baseline_sequence = virus.baseline_sequence;
+    date = virus.date;
+    virus_name = virus.virus_name;
+    id = virus.id;
+    active = virus.active;
+    mutation_fun   = virus.mutation_fun;
+    post_recovery  = virus.post_recovery;
+    infectiousness = virus.infectiousness;
+    persistance    = virus.persistance;
+    death          = virus.death;
+    data           = virus.data;
+
+    return *this;
+}
+
+
+template<typename TSeq>
 inline Virus<TSeq>::Virus(std::string name) {
     set_name(name);
 }
 
-template<typename TSeq>
-inline Virus<TSeq>::Virus(TSeq sequence, std::string name) {
-    baseline_sequence = std::make_shared<TSeq>(sequence);
-    set_name(name);
-}
+// template<typename TSeq>
+// inline Virus<TSeq>::Virus(TSeq sequence, std::string name) {
+//     baseline_sequence = std::make_shared<TSeq>(sequence);
+//     set_name(name);
+// }
 
 template<typename TSeq>
 inline void Virus<TSeq>::mutate() {
@@ -80,32 +138,62 @@ inline bool Virus<TSeq>::is_active() const {
     return active;
 }
 
-#define EPIWORLD_GET_V(suffix,macroname) \
-template<typename TSeq> \
-inline epiworld_double Virus<TSeq>:: EPI_TOKENPASTE(get_,suffix)() \
-{ \
-    if (suffix) \
-        suffix(host, this, host->get_model()); \
-    return EPI_TOKENPASTE(DEFAULT_VIRUS_,macroname);\
+
+
+template<typename TSeq>
+inline epiworld_double Virus<TSeq>::get_infectiousness()
+{
+
+    if (infectiousness)
+        return infectiousness(host, this, host->get_model());
+        
+    return DEFAULT_VIRUS_INFECTIOUSNESS;
+
 }
 
-EPIWORLD_GET_V(infectiousness,INFECTIOUSNESS)
-EPIWORLD_GET_V(persistance,PERSISTANCE)
-EPIWORLD_GET_V(death,DEATH)
 
-#undef EPIWORLD_GET_V
 
-#define EPIWORLD_SET_V(suffix) \
-template<typename TSeq> \
-inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix)(\
-    VirusFun<TSeq> fun) \
-{ \
-    suffix = fun;\
+template<typename TSeq>
+inline epiworld_double Virus<TSeq>::get_persistance()
+{
+
+    if (persistance)
+        return persistance(host, this, host->get_model());
+        
+    return DEFAULT_VIRUS_PERSISTANCE;
+
 }
 
-EPIWORLD_SET_V(infectiousness)
-EPIWORLD_SET_V(persistance)
-EPIWORLD_SET_V(death)
+
+
+template<typename TSeq>
+inline epiworld_double Virus<TSeq>::get_death()
+{
+
+    if (death)
+        return death(host, this, host->get_model());
+        
+    return DEFAULT_VIRUS_DEATH;
+
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_infectiousness(VirusFun<TSeq> fun)
+{
+    infectiousness = fun;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_persistance(VirusFun<TSeq> fun)
+{
+    persistance = fun;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_death(VirusFun<TSeq> fun)
+{
+    death = fun;
+}
 
 #undef EPIWORLD_SET_V
 
@@ -140,9 +228,9 @@ EPIWORLD_SET_LAMBDA2(death)
 #undef EPIWORLD_SET_LAMBDA2
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_post_recovery(VirusFun<TSeq> fun)
+inline void Virus<TSeq>::set_post_recovery(PostRecoveryFun<TSeq> fun)
 {
-    post_recovery = VirusFun<TSeq>(fun);
+    post_recovery = fun;
 }
 
 template<typename TSeq>

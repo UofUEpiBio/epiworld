@@ -8,11 +8,11 @@ inline Tool<TSeq>::Tool(std::string name)
     set_name(name);
 }
 
-template<typename TSeq>
-inline Tool<TSeq>::Tool(TSeq d, std::string name) {
-    sequence = std::make_shared<TSeq>(d);
-    tool_name = std::make_shared<std::string>(name);
-}
+// template<typename TSeq>
+// inline Tool<TSeq>::Tool(TSeq d, std::string name) {
+//     sequence = std::make_shared<TSeq>(d);
+//     tool_name = std::make_shared<std::string>(name);
+// }
 
 template<typename TSeq>
 inline void Tool<TSeq>::set_sequence(TSeq d) {
@@ -50,10 +50,58 @@ inline TSeq & Tool<TSeq>::get_sequence_unique() {
         return EPI_TOKENPASTE(DEFAULT_TOOL_,macroname);\
     }
 
-EPIWORLD_SET_TOOL(contagion_reduction, CONTAGION_REDUCTION)
-EPIWORLD_SET_TOOL(transmission_reduction, TRANSMISSION_REDUCTION)
-EPIWORLD_SET_TOOL(recovery_enhancer, RECOVERY_ENHANCER)
-EPIWORLD_SET_TOOL(death_reduction, DEATH_REDUCTION)
+template<typename TSeq>
+inline epiworld_double Tool<TSeq>::get_contagion_reduction(
+    Virus<TSeq> * v
+)
+{
+
+    if (contagion_reduction)
+        return contagion_reduction(this, this->person, v, person->get_model());
+
+    return DEFAULT_TOOL_CONTAGION_REDUCTION;
+
+}
+
+template<typename TSeq>
+inline epiworld_double Tool<TSeq>::get_transmission_reduction(
+    Virus<TSeq> * v
+)
+{
+
+    if (transmission_reduction)
+        return transmission_reduction(this, this->person, v, person->get_model());
+
+    return DEFAULT_TOOL_TRANSMISSION_REDUCTION;
+
+}
+
+template<typename TSeq>
+inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
+    Virus<TSeq> * v
+)
+{
+
+    if (recovery_enhancer)
+        return recovery_enhancer(this, this->person, v, person->get_model());
+
+    return DEFAULT_TOOL_RECOVERY_ENHANCER;
+
+}
+
+template<typename TSeq>
+inline epiworld_double Tool<TSeq>::get_death_reduction(
+    Virus<TSeq> * v
+)
+{
+
+    if (death_reduction)
+        return death_reduction(this, this->person, v, person->get_model());
+
+    return DEFAULT_TOOL_DEATH_REDUCTION;
+
+}
+
 
 #undef EPIWORLD_SET_TOOL
 
@@ -119,23 +167,69 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 // EPIWORLD_SET_LAMBDA(death_reduction)
 
 // #undef EPIWORLD_SET_LAMBDA
+template<typename TSeq>
+inline void Tool<TSeq>::set_contagion_reduction(
+    epiworld_double prob
+)
+{
 
-#define EPIWORLD_SET_LAMBDA2(suffix) \
-    template<typename TSeq> \
-    inline void Tool<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
-    epiworld_double prob) { \
-    ToolFun<TSeq> tmpfun = \
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
-        return prob; }; \
-    EPI_TOKENPASTE(set_,suffix)(tmpfun);}
+    ToolFun<TSeq> tmpfun = 
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
 
-EPIWORLD_SET_LAMBDA2(contagion_reduction)
-EPIWORLD_SET_LAMBDA2(transmission_reduction)
-EPIWORLD_SET_LAMBDA2(recovery_enhancer)
-EPIWORLD_SET_LAMBDA2(death_reduction)
+    set_contagion_reduction(tmpfun);
 
-#undef EPIWORLD_SET_LAMBDA2
+}
 
+template<typename TSeq>
+inline void Tool<TSeq>::set_transmission_reduction(
+    epiworld_double prob
+)
+{
+
+    ToolFun<TSeq> tmpfun = 
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+
+    set_transmission_reduction(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_recovery_enhancer(
+    epiworld_double prob
+)
+{
+
+    ToolFun<TSeq> tmpfun = 
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+
+    set_recovery_enhancer(tmpfun);
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_death_reduction(
+    epiworld_double prob
+)
+{
+
+    ToolFun<TSeq> tmpfun = 
+        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+
+    set_death_reduction(tmpfun);
+
+}
 
 template<typename TSeq>
 inline void Tool<TSeq>::set_name(std::string name)

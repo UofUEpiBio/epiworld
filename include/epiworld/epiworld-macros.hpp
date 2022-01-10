@@ -47,6 +47,19 @@
     epiworld::Virus<tseq> * v, \
     epiworld::Model<tseq> * m)
 
+#define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
+    (funname)( \
+    epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq>* v, \
+    epiworld::Model<tseq> * m\
+    )
+
+#define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
+    epiworld::PostRecoveryFun<tseq> funname = \
+    [](epiworld::Person<tseq> * p, \
+    epiworld::Virus<tseq>* v, \
+    epiworld::Model<tseq> * m)
+
 #define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \

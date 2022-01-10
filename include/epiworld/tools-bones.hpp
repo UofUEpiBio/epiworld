@@ -50,7 +50,7 @@ private:
 
 public:
     Tool(std::string name = "unknown tool");
-    Tool(TSeq d, std::string name = "unknown tool");
+    // Tool(TSeq d, std::string name = "unknown tool");
 
     void set_sequence(TSeq d);
     void set_sequence_unique(TSeq d);

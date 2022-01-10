@@ -31,6 +31,8 @@ class Model;
  */
 template<typename TSeq = bool>
 class Virus {
+    friend class Person<TSeq>;
+    friend class Model<TSeq>;
     friend class PersonViruses<TSeq>;
     friend class DataBase<TSeq>;
 private:
@@ -40,19 +42,22 @@ private:
     int date = -99;
     int id   = -99;
     bool active = true;
-    MutFun<TSeq> mutation_fun     = nullptr;
-    VirusFun<TSeq> post_recovery  = nullptr;
-    VirusFun<TSeq> infectiousness = nullptr;
-    VirusFun<TSeq> persistance    = nullptr;
-    VirusFun<TSeq> death          = nullptr;
+    MutFun<TSeq>          mutation_fun   = nullptr;
+    PostRecoveryFun<TSeq> post_recovery  = nullptr;
+    VirusFun<TSeq>        infectiousness = nullptr;
+    VirusFun<TSeq>        persistance    = nullptr;
+    VirusFun<TSeq>        death          = nullptr;
 
     // Setup parameters
     std::vector< epiworld_double * > params;
     std::vector< epiworld_double > data;
 
 public:
+    Virus(const Virus<TSeq> & virus);
+    Virus(Virus<TSeq> && virus);
     Virus(std::string name = "unknown virus");
-    Virus(TSeq sequence, std::string name = "unknown virus");
+    // Virus(TSeq sequence, std::string name = "unknown virus");
+    Virus<TSeq> & operator=(const Virus<TSeq> & v);
     void mutate();
     void set_mutation(MutFun<TSeq> fun);
     const TSeq* get_sequence();
@@ -79,7 +84,7 @@ public:
     epiworld_double get_death();
     
     void get_post_recovery();
-    void set_post_recovery(VirusFun<TSeq> fun);
+    void set_post_recovery(PostRecoveryFun<TSeq> fun);
 
     void set_infectiousness(VirusFun<TSeq> fun);
     void set_persistance(VirusFun<TSeq> fun);

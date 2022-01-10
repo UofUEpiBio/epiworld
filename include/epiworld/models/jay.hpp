@@ -94,7 +94,7 @@ EPI_NEW_UPDATEFUN(jay_update_infected,TSeq)
 }
 
 template<typename TSeq>
-EPI_NEW_VIRUSFUN(post_covid, TSeq)
+EPI_NEW_POSTRECOVERYFUN(post_covid, TSeq)
 {
 
     epiworld::Tool<TSeq> immunity;
@@ -257,7 +257,7 @@ inline void set_up_jay(
     model.reset_status_codes(
         new_status,
         {"susceptible", "latent", "recovered", "removed"},
-        true
+        false
     );
 
     model.add_status_infected(JAYSTATUS::SYMPTOMATIC, "symptomatic");

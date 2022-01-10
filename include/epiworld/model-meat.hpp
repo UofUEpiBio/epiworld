@@ -398,7 +398,7 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
 
     // Setting the id
     v.set_id(viruses.size());
-    
+
     // Adding new virus
     viruses.push_back(v);
     prevalence_virus.push_back(preval);
@@ -1236,7 +1236,7 @@ inline void Model<TSeq>::print_status_codes() const
         printf_epiworld(
             fmt.c_str(),
             status_removed[i],
-            (status_removed_labels[i] + " (I)").c_str(),
+            (status_removed_labels[i] + " (R)").c_str(),
             status_removed[i] == baseline_status_removed ? " *" : ""
         );
 
