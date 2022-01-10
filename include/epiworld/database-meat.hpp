@@ -12,7 +12,7 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     // Initializing the counts
     today_total.resize(m.nstatus);
 
-    for (const auto & p : *m.get_population())
+    for (auto & p : *m.get_population())
         ++today_total[p.get_status()];
 
     return;
@@ -167,13 +167,17 @@ inline void DataBase<TSeq>::down_infected(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_today_total(
-    std::vector< std::string > & status,
-    std::vector< int > & counts
+    std::vector< std::string > * status,
+    std::vector< int > * counts
 ) const
 {
-    
-    EPIWORLD_GET_STATUS_LABELS(status)
-    counts = today_total;
+    if (status != nullptr)
+    {
+        EPIWORLD_GET_STATUS_LABELS((*status))
+    }
+
+    if (counts != nullptr)
+        *counts = today_total;
 
 }
 

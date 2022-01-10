@@ -109,8 +109,8 @@ public:
      */
     ///@[
     void get_today_total(
-        std::vector< std::string > & status,
-        std::vector< int > & counts
+        std::vector< std::string > * status = nullptr,
+        std::vector< int > * counts = nullptr
     ) const;
 
     void get_today_variant(

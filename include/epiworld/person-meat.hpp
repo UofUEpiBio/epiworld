@@ -31,9 +31,11 @@ template<typename TSeq>
 inline void Person<TSeq>::add_virus(
     int d,
     Virus<TSeq> virus
-) {
+)
+{
+
     viruses.add_virus(d, virus);
-    status_next = STATUS::INFECTED;
+
 }
 
 template<typename TSeq>
@@ -198,7 +200,7 @@ inline void Person<TSeq>::update_status()
 }
 
 template<typename TSeq>
-inline unsigned int Person<TSeq>::get_status() const {
+inline unsigned int & Person<TSeq>::get_status() {
     return status;
 }
 
@@ -207,8 +209,8 @@ inline void Person<TSeq>::reset() {
 
     this->viruses.reset();
     this->tools.reset();
-    this->status      = STATUS::HEALTHY;
-    this->status_next = STATUS::HEALTHY;
+    this->status      = model->baseline_status_healthy;
+    this->status_next = model->baseline_status_healthy;
 
 }
 

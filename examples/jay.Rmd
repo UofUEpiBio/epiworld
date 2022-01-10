@@ -1,0 +1,80 @@
+---
+title: "Example with Jay's Model"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+# Features of this simulation
+
+- Incubation time of the disease `~ Gamma(3, 1)`
+- Duration of the disease `~Gamma(12, 1)`
+- Probability of becoming symptomatic: 0.9
+- Prob. of transmission: 1.0.
+- Vaccinated population: 25%
+- Vaccine efficacy: .9.
+- Vaccine reduction on transmission: 0.5.
+- Individuals who test positive become isolated.
+
+## Case 1: 0.001 surveillance
+
+```{bash}
+./jay.o 100 10000 100 .0001
+```
+
+```{r}
+hist1 <- read.csv("jay_hist.txt", sep = " ")
+surv1 <- read.csv("jay_user_data.txt", sep = " ")
+```
+
+
+```{bash}
+./jay.o 100 10000 100 .02
+```
+
+```{r read-hist2}
+hist2 <- read.csv("jay_hist.txt", sep = " ")
+surv2 <- read.csv("jay_user_data.txt", sep = " ")
+hist_comb <- rbind(
+  cbind(sim= "0.0001", hist1),
+  cbind(sim= "0.02", hist2)
+  )
+```
+
+```{r}
+ggplot(hist_comb, aes(x = date, y = counts, colour = status, linetype=sim)) +
+  geom_line()
+```
+
+
+
+## Cases detected
+
+
+```{r}
+survdat <- rbind(
+  with(surv1, rbind(
+    data.frame(Id = "0.0001", Date = date, Type = "N Sampled",  n = nsampled),
+    data.frame(Id = "0.0001", Date = date, Type = "N detected",  n = ndetected),
+    data.frame(Id = "0.0001", Date = date, Type = "N detected Asymp",  n = ndetected_asympt),
+    data.frame(Id = "0.0001", Date = date, Type = "N Asymp",  n = nasymptomatic)
+  )),
+  with(surv2, rbind(
+    data.frame(Id = "0.02", Date = date, Type = "N Sampled",  n = nsampled),
+    data.frame(Id = "0.02", Date = date, Type = "N detected",  n = ndetected),
+    data.frame(Id = "0.02", Date = date, Type = "N detected Asymp",  n = ndetected_asympt),
+    data.frame(Id = "0.02", Date = date, Type = "N Asymp",  n = nasymptomatic)
+  ))
+)
+
+
+ggplot(survdat, aes(x = Date, y = n, colour = Type)) +
+  geom_line() +
+  facet_wrap(~Id)
+```
+

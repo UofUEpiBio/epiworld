@@ -25,8 +25,19 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     verbose(model.verbose),
     initialized(model.initialized),
     current_date(model.current_date),
-    global_action_function(std::move(model.global_action_function)),
-    global_action_dates(std::move(model.global_action_dates))
+    global_action_functions(model.global_action_functions),
+    global_action_dates(model.global_action_dates),
+    status_susceptible(model.status_susceptible),
+    status_susceptible_labels(model.status_susceptible_labels),
+    status_infected(model.status_infected),
+    status_infected_labels(model.status_infected_labels),
+    status_removed(model.status_removed),
+    status_removed_labels(model.status_removed_labels),
+    baseline_status_healthy(model.baseline_status_healthy),
+    baseline_status_infected(model.baseline_status_infected),
+    baseline_status_recovered(model.baseline_status_recovered),
+    baseline_status_removed(model.baseline_status_removed),
+    nstatus(model.nstatus)
 {
 
     // Pointing to the right place
@@ -64,8 +75,19 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     population(std::move(model.population)),
     population_ids(std::move(model.population_ids)),
     directed(std::move(model.directed)),
-    global_action_function(std::move(model.global_action_function)),
-    global_action_dates(std::move(model.global_action_dates))
+    global_action_functions(std::move(model.global_action_functions)),
+    global_action_dates(std::move(model.global_action_dates)),
+    status_susceptible(std::move(model.status_susceptible)),
+    status_susceptible_labels(std::move(model.status_susceptible_labels)),
+    status_infected(std::move(model.status_infected)),
+    status_infected_labels(std::move(model.status_infected_labels)),
+    status_removed(std::move(model.status_removed)),
+    status_removed_labels(std::move(model.status_removed_labels)),
+    baseline_status_healthy(model.baseline_status_healthy),
+    baseline_status_infected(model.baseline_status_infected),
+    baseline_status_recovered(model.baseline_status_recovered),
+    baseline_status_removed(model.baseline_status_removed),
+    nstatus(model.nstatus)
 {
 
     // // Pointing to the right place
@@ -225,6 +247,10 @@ inline void Model<TSeq>::dist_virus()
             nsampled = static_cast<int>(prevalence_virus[v]);
         }
 
+        if (nsampled > static_cast<int>(size()))
+            throw std::range_error("There are only " + std::to_string(size()) + 
+            " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
+
         while (nsampled > 0)
         {
             int loc = static_cast<unsigned int>(floor(runif() * n));
@@ -232,7 +258,8 @@ inline void Model<TSeq>::dist_virus()
                 continue;
             
             population[loc].add_virus(today(), viruses[v]);
-            db.up_infected(&viruses[v], population[loc].get_status(), STATUS::INFECTED);
+            population[loc].status_next = baseline_status_infected;
+            db.up_infected(&viruses[v], population[loc].get_status(), baseline_status_infected);
             nsampled--;
 
         }
@@ -260,6 +287,10 @@ inline void Model<TSeq>::dist_tools()
         {
             nsampled = static_cast<int>(prevalence_tool[t]);
         }
+
+        if (nsampled > static_cast<int>(size()))
+            throw std::range_error("There are only " + std::to_string(size()) + 
+            " individuals in the population. Cannot add the tool to " + std::to_string(nsampled));
         
         while (nsampled > 0)
         {
@@ -364,10 +395,6 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
 template<typename TSeq>
 inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
 {
-
-    if (preval > size())
-        throw std::range_error("There are only " + std::to_string(size()) + 
-        "individuals in the population. Cannot add the virus to " + std::to_string(preval));
 
     // Setting the id
     v.set_id(viruses.size());
@@ -501,6 +528,8 @@ inline void Model<TSeq>::run()
         this->update_status();
         this->mutate_variant();
         this->next();
+
+        this->run_global_actions();
 
         // In this case we are applying degree sequence rewiring
         // to change the network just a bit.
@@ -824,7 +853,14 @@ inline void Model<TSeq>::print() const
             nchar = p.length();
 
     if (initialized) 
-        fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %i\n";
+    {
+        
+        if (today() != 0)
+            fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %7i -> %i\n";
+        else
+            fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %i\n";
+
+    }
     else
         fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %s\n";
         
@@ -834,18 +870,39 @@ inline void Model<TSeq>::print() const
         if (initialized)
         {
             
-            printf_epiworld(
-                fmt.c_str(),
-                (status_susceptible_labels[s] + " (S)").c_str(),
-                db.today_total[ status_susceptible[s] ]
-                );
+            if (today() != 0)
+            {
 
-        } else {
+                printf_epiworld(
+                    fmt.c_str(),
+                    (status_susceptible_labels[s] + " (S)").c_str(),
+                    db.hist_total_counts[status_susceptible[s]],
+                    db.today_total[ status_susceptible[s] ]
+                    );
+
+            }
+            else
+            {
+
+                printf_epiworld(
+                    fmt.c_str(),
+                    (status_susceptible_labels[s] + " (S)").c_str(),
+                    db.today_total[ status_susceptible[s] ]
+                    );
+
+            }
+            
+
+        }
+        else
+        {
+
             printf_epiworld(
                 fmt.c_str(),
                 (status_susceptible_labels[s] + " (S)").c_str(),
                 " - "
                 );
+
         }
     }
 
@@ -855,11 +912,24 @@ inline void Model<TSeq>::print() const
         if (initialized)
         {
             
-            printf_epiworld(
-                fmt.c_str(),
-                (status_infected_labels[s] + " (I)").c_str(),
-                db.today_total[ status_infected[s] ]
-                );
+            if (today() != 0)
+            {
+                printf_epiworld(
+                    fmt.c_str(),
+                    (status_infected_labels[s] + " (I)").c_str(),
+                    db.hist_total_counts[ status_infected[s] ],
+                    db.today_total[ status_infected[s] ]
+                    );
+            }
+            else
+            {
+                printf_epiworld(
+                    fmt.c_str(),
+                    (status_infected_labels[s] + " (I)").c_str(),
+                    db.today_total[ status_infected[s] ]
+                    );
+            }
+            
 
         } else {
             printf_epiworld(
@@ -876,11 +946,24 @@ inline void Model<TSeq>::print() const
         if (initialized)
         {
             
-            printf_epiworld(
-                fmt.c_str(),
-                (status_removed_labels[s] + " (R)").c_str(),
-                db.today_total[ status_removed[s] ]
-                );
+            if (today() != 0)
+            {
+                printf_epiworld(
+                    fmt.c_str(),
+                    (status_removed_labels[s] + " (R)").c_str(),
+                    db.hist_total_counts[ status_removed[s] ],
+                    db.today_total[ status_removed[s] ]
+                    );
+            }
+            else
+            {
+                printf_epiworld(
+                    fmt.c_str(),
+                    (status_removed_labels[s] + " (R)").c_str(),
+                    db.today_total[ status_removed[s] ]
+                    );
+            }
+            
 
         } else {
             printf_epiworld(
@@ -970,6 +1053,7 @@ inline void Model<TSeq>::add_status_infected(unsigned int s, std::string lab)
     EPIWORLD_CHECK_ALL_STATUSES(s)
     status_infected.push_back(s);
     status_infected_labels.push_back(lab);
+    nstatus++;
 
 }
 
@@ -980,6 +1064,7 @@ inline void Model<TSeq>::add_status_removed(unsigned int s, std::string lab)
     EPIWORLD_CHECK_ALL_STATUSES(s)
     status_removed.push_back(s);
     status_removed_labels.push_back(lab);
+    nstatus++;
 
 }
 
@@ -1054,6 +1139,141 @@ Model<TSeq>::get_status_removed_labels() const
 {
     return status_removed_labels;
 }
+
+template<typename TSeq>
+inline void Model<TSeq>::reset_status_codes(
+    std::vector< unsigned int > codes,
+    std::vector< std::string > names,
+    bool verbose
+)
+{
+
+    if (codes.size() != 4u)
+        throw std::length_error("The vector of codes should be of length 4.");
+
+    if (names.size() != 4u)
+        throw std::length_error("The vector of names should be of length 4.");
+
+    status_susceptible.clear();
+    status_susceptible_labels.clear();
+    status_infected.clear();
+    status_infected_labels.clear();
+    status_removed.clear();
+    status_removed_labels.clear();
+    nstatus = 0u;
+
+    baseline_status_healthy   = codes[0u];
+    baseline_status_infected  = codes[1u];
+    baseline_status_recovered = codes[2u];
+    baseline_status_removed   = codes[3u];
+
+    add_status_susceptible(codes[0u], names[0u]);
+    add_status_infected(codes[1u], names[1u]);
+    add_status_susceptible(codes[2u], names[2u]);
+    add_status_removed(codes[3u], names[3u]);
+
+    if (verbose)
+        print_status_codes();    
+
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::print_status_codes() const
+{
+
+    // Horizontal line
+    std::string line = "";
+    for (unsigned int i = 0u; i < 80u; ++i)
+        line += "_";
+
+    printf_epiworld("\n%s\nDEFAULT STATUS CODES\n\n", line.c_str());
+
+    unsigned int nchar = 0u;
+    for (auto & p : status_susceptible_labels)
+        if (p.length() > nchar)
+            nchar = p.length();
+    
+    for (auto & p : status_infected_labels)
+        if (p.length() > nchar)
+            nchar = p.length();
+
+    for (auto & p : status_removed_labels)
+        if (p.length() > nchar)
+            nchar = p.length();
+
+    std::string fmt = " %2i = %-" + std::to_string(nchar + 1 + 4) + "s %s\n";
+    for (unsigned int i = 0u; i < status_susceptible.size(); ++i)
+    {
+
+        printf_epiworld(
+            fmt.c_str(),
+            status_susceptible[i],
+            (status_susceptible_labels[i] + " (S)").c_str(),
+            (
+                (status_susceptible[i] == baseline_status_healthy) |
+                (status_susceptible[i] == baseline_status_recovered)
+            ) ? " *" : ""
+        );
+
+    }
+
+    for (unsigned int i = 0u; i < status_infected.size(); ++i)
+    {
+
+        printf_epiworld(
+            fmt.c_str(),
+            status_infected[i],
+            (status_infected_labels[i] + " (I)").c_str(),
+            status_infected[i] == baseline_status_infected ? " *" : ""
+        );
+
+    }
+
+    for (unsigned int i = 0u; i < status_removed.size(); ++i)
+    {
+
+        printf_epiworld(
+            fmt.c_str(),
+            status_removed[i],
+            (status_removed_labels[i] + " (I)").c_str(),
+            status_removed[i] == baseline_status_removed ? " *" : ""
+        );
+
+    }
+
+    printf_epiworld(
+        "\n(S): Susceptible, (I): Infected, (R): Recovered\n * : Baseline status (default)\n%s\n\n",
+        line.c_str()
+        );
+
+
+}
+
+template<typename TSeq>
+inline unsigned int Model<TSeq>::get_default_healthy() const
+{
+    return baseline_status_healthy;
+}
+
+template<typename TSeq>
+inline unsigned int Model<TSeq>::get_default_infected() const
+{
+    return baseline_status_infected;
+}
+
+template<typename TSeq>
+inline unsigned int Model<TSeq>::get_default_recovered() const
+{
+    return baseline_status_recovered;
+}
+
+template<typename TSeq>
+inline unsigned int Model<TSeq>::get_default_removed() const
+{
+    return baseline_status_removed;
+}
+
 
 #define CASE_PAR(a,b) case a: b = &(parameters[pname]);break;
 #define CASES_PAR(a) \
@@ -1253,7 +1473,7 @@ inline void Model<TSeq>::add_global_action(
 )
 {
 
-    global_action_function.push_back(fun);
+    global_action_functions.push_back(fun);
     global_action_dates.push_back(date);
 
 }
@@ -1268,13 +1488,13 @@ inline void Model<TSeq>::run_global_actions()
         if (global_action_dates[i] < 0)
         {
 
-            global_action_function[i](this);
+            global_action_functions[i](this);
 
         }
         else if (global_action_dates[i] == today())
         {
 
-            global_action_function[i](this);
+            global_action_functions[i](this);
 
         }
 

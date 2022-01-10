@@ -81,5 +81,11 @@
     epiworld::UpdateFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
 
+#define EPI_NEW_GLOBALFUN(funname,tseq) inline void \
+    (funname)(epiworld::Model<tseq>* m)
+
+#define EPI_NEW_GLOBALFUN_LAMBDA(funname,tseq) inline void \
+    epiworld::GlobalFun<tseq> funname = \
+    [](epiworld::Model<tseq>* m)
 
 #endif

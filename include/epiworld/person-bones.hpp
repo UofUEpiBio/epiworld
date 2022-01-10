@@ -65,7 +65,7 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
-    unsigned int get_status() const;
+    unsigned int & get_status();
 
     void reset();
 

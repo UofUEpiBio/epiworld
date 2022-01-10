@@ -67,6 +67,10 @@ private:
     std::vector< std::string > status_removed_labels = {"removed"};
 
     unsigned int nstatus = 4u;
+    unsigned int baseline_status_healthy   = STATUS::HEALTHY;
+    unsigned int baseline_status_infected  = STATUS::INFECTED;
+    unsigned int baseline_status_removed   = STATUS::REMOVED;
+    unsigned int baseline_status_recovered = STATUS::RECOVERED;
     
     bool verbose     = true;
     bool initialized = false;
@@ -91,7 +95,7 @@ private:
     UpdateFun<TSeq> update_infected    = nullptr;
     UpdateFun<TSeq> update_removed     = nullptr;
 
-    std::function<void(Model<TSeq>*)> global_action_function = nullptr;
+    std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
     std::vector< int > global_action_dates;
 
 public:
@@ -309,7 +313,28 @@ public:
     const std::vector< std::string > & get_status_susceptible_labels() const;
     const std::vector< std::string > & get_status_infected_labels() const;
     const std::vector< std::string > & get_status_removed_labels() const;
+    void print_status_codes() const;
+    unsigned int get_default_healthy() const;
+    unsigned int get_default_infected() const;
+    unsigned int get_default_recovered() const;
+    unsigned int get_default_removed() const;
     ///@]
+
+    /**
+     * @brief Reset all the status codes of the model
+     * 
+     * @details 
+     * The default values are those specified in the enum STATUS.
+     * 
+     * @param codes In the following order: Healthy, Infected, Recovered, Removed
+     * @param names Names matching the codes
+     * @param verbose When `true`, it will print the new mappings.
+     */
+    void reset_status_codes(
+        std::vector< unsigned int > codes,
+        std::vector< std::string > names,
+        bool verbose = true
+    );
 
     /**
      * @brief Setting and accessing parameters from the model
@@ -375,6 +400,8 @@ public:
         );
 
     void run_global_actions();
+
+    void clear_status_set();
 
 };
 

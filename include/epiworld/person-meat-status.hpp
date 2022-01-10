@@ -109,16 +109,16 @@ inline unsigned int default_update_susceptible(
     if (which < 0)
         return p->get_status();
 
-    EPIWORLD_ADD_VIRUS(m->array_virus_tmp[which], STATUS::INFECTED)
+    EPIWORLD_ADD_VIRUS(m->array_virus_tmp[which], m->get_default_infected())
 
-    return static_cast<unsigned int>(STATUS::INFECTED); 
+    return static_cast<unsigned int>(m->get_default_infected()); 
 
 }
 
 #define EPIWORLD_UPDATE_INFECTED_CALC_PROBS(prob_rec, prob_die) \
     Virus<TSeq> * v = &(p->get_virus(0u)); \
     epiworld_double prob_rec =  (1 - v->get_persistance() * (1.0 - p->get_recovery_enhancer(v))); \
-    epiworld_double prob_die = v->get_death() * p->get_death_reduction(v); 
+    epiworld_double prob_die = v->get_death() * (1.0 - p->get_death_reduction(v)); 
 
 #define EPIWORLD_UPDATE_INFECTED_REMOVE(newstatus) \
     {m->get_db().down_infected(v, p->get_status(), newstatus);\
@@ -137,11 +137,11 @@ inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
     epiworld_double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
     if (r < cumsum)
-        EPIWORLD_UPDATE_INFECTED_REMOVE(STATUS::REMOVED);
+        EPIWORLD_UPDATE_INFECTED_REMOVE(m->get_default_removed());
     
     cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
     if (r < cumsum)
-        EPIWORLD_UPDATE_INFECTED_RECOVER(STATUS::RECOVERED)
+        EPIWORLD_UPDATE_INFECTED_RECOVER(m->get_default_recovered())
 
     return p->get_status();
 

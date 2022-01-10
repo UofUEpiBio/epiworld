@@ -50,6 +50,9 @@ using VirusFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 template<typename TSeq>
 using UpdateFun = std::function<unsigned int(Person<TSeq>*,Model<TSeq>*)>;
 
+template<typename TSeq>
+using GlobalFun = std::function<void(Model<TSeq>*)>;
+
 /**
  * @brief List of possible states in the model
  * 
