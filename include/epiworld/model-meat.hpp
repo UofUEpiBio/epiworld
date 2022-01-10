@@ -24,11 +24,14 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     pb(model.pb),
     verbose(model.verbose),
     initialized(model.initialized),
-    current_date(model.current_date)
+    current_date(model.current_date),
+    global_action_function(std::move(model.global_action_function)),
+    global_action_dates(std::move(model.global_action_dates))
 {
 
     // Pointing to the right place
     db.set_model(*this);
+    db.get_user_data().model = db.get_model();
 
     // Removing old neighbors
     model.clone_population(
@@ -61,7 +64,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     current_date(std::move(model.current_date)),
     population(std::move(model.population)),
     population_ids(std::move(model.population_ids)),
-    directed(std::move(model.directed))
+    directed(std::move(model.directed)),
+    global_action_function(std::move(model.global_action_function)),
+    global_action_dates(std::move(model.global_action_dates))
 {
 
     // // Pointing to the right place
@@ -1234,6 +1239,42 @@ template<typename TSeq>
 inline UserData<TSeq> & Model<TSeq>::get_user_data()
 {
     return db.get_user_data();
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_global_action(
+    std::function<void(Model<TSeq>*)> fun,
+    int date
+)
+{
+
+    global_action_function.push_back(fun);
+    global_action_dates.push_back(date);
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::run_global_actions()
+{
+
+    for (unsigned int i = 0u; i < global_action_dates.size(); ++i)
+    {
+
+        if (global_action_dates[i] < 0)
+        {
+
+            global_action_function[i](this);
+
+        }
+        else if (global_action_dates[i] == today())
+        {
+
+            global_action_function[i](this);
+
+        }
+
+    }
+
 }
 
 #undef DURCAST

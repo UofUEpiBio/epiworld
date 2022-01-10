@@ -167,4 +167,29 @@ inline unsigned int UserData<TSeq>::ncol() const
     return k;
 }
 
+template<typename TSeq>
+inline void UserData<TSeq>::write(std::string fn)
+{
+    std::ofstream file_ud(fn, std::ios_base::out);
+
+    // File header
+    file_ud << "\"date\"";
+    for (auto & cn : data_names)
+        file_ud << " \"" + cn + "\"";
+    file_ud << "\n";
+    
+    unsigned int ndata = 0u;
+    for (unsigned int i = 0u; i < n; ++i)
+    {
+        file_ud << data_dates[i];
+
+        for (unsigned int j = 0u; j < k; ++j)
+            file_ud << " " << data_data[ndata++];
+
+        file_ud << "\n";
+    }
+
+    return;
+}
+
 #endif

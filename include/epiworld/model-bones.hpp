@@ -91,6 +91,9 @@ private:
     UpdateFun<TSeq> update_infected    = nullptr;
     UpdateFun<TSeq> update_removed     = nullptr;
 
+    std::function<void(Model<TSeq>*)> global_action_function = nullptr;
+    std::vector< int > global_action_dates;
+
 public:
 
     std::vector<epiworld_double> array_double_tmp;
@@ -354,9 +357,23 @@ public:
         bool print = true
     ) const;
 
+    /**
+     * @brief Set the user data object
+     * 
+     * @param names 
+     */
+    ///[@
     void set_user_data(std::vector< std::string > names);
     void add_user_data(unsigned int j, epiworld_double x);
     UserData<TSeq> & get_user_data();
+    ///@]
+
+    void add_global_action(
+        std::function<void(Model<TSeq>*)> fun,
+        int date
+        );
+
+    void run_global_actions();
 
 };
 

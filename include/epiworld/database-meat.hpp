@@ -386,6 +386,7 @@ inline void DataBase<TSeq>::set_user_data(
 )
 {
     user_data = UserData<TSeq>(names);
+    user_data.model = model;
 }
 
 template<typename TSeq>

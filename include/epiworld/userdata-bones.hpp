@@ -7,8 +7,14 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
+class DataBase;
+
+template<typename TSeq>
 class UserData
 {
+    friend class Model<TSeq>;
+    friend class DataBase<TSeq>;
+
 private:
     Model<TSeq> * model;
 
@@ -57,6 +63,8 @@ public:
 
     unsigned int nrow() const;
     unsigned int ncol() const;
+
+    void write(std::string fn);
 
 };
 
