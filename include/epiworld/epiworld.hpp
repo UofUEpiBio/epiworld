@@ -21,7 +21,10 @@ namespace epiworld {
     #include "misc.hpp"
     #include "progress.hpp"
 
-    // #include "rewire_degseq.hpp"
+    #include "userdata-bones.hpp"
+    #include "userdata-meat.hpp"
+
+    #include "seq_processing.hpp"
 
     #include "database-bones.hpp"
     #include "database-meat.hpp"

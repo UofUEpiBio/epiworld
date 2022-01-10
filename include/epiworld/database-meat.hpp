@@ -380,4 +380,39 @@ inline void DataBase<TSeq>::reset() {
 
 }
 
+template<typename TSeq>
+inline void DataBase<TSeq>::set_user_data(
+    std::vector< std::string > names
+)
+{
+    user_data = UserData<TSeq>(names);
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::add_user_data(
+    std::vector< epiworld_double > x
+)
+{
+
+    user_data.add(x);
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::add_user_data(
+    unsigned int k,
+    epiworld_double x
+)
+{
+
+    user_data.add(k, x);
+
+}
+
+template<typename TSeq>
+inline UserData<TSeq> & DataBase<TSeq>::get_user_data()
+{
+    return user_data;
+}
+
 #endif

@@ -7,92 +7,8 @@ class Model;
 template<typename TSeq>
 class Virus;
 
-/**
- * @brief Hasher function to turn the sequence into an integer vector
- * 
- * @tparam TSeq 
- * @param x 
- * @return std::vector<int> 
- */
 template<typename TSeq>
-inline std::vector<int> default_seq_hasher(const TSeq & x);
-
-template<>
-inline std::vector<int> default_seq_hasher<std::vector<int>>(const std::vector<int> & x) {
-    return x;
-}
-
-template<>
-inline std::vector<int> default_seq_hasher<std::vector<bool>>(const std::vector<bool> & x) {
-    std::vector<int> ans;
-    for (const auto & i : x)
-        ans.push_back(i? 1 : 0);
-    return ans;
-}
-
-template<>
-inline std::vector<int> default_seq_hasher<int>(const int & x) {
-    return {x};
-}
-
-template<>
-inline std::vector<int> default_seq_hasher<bool>(const bool & x) {
-    return {x ? 1 : 0};
-}
-
-/**
- * @brief Default way to write sequences
- * 
- * @tparam TSeq 
- * @param seq 
- * @return std::string 
- */
-template<typename TSeq = bool>
-inline std::string default_seq_writer(const TSeq & seq);
-
-template<>
-inline std::string default_seq_writer<std::vector<int>>(
-    const std::vector<int> & seq
-) {
-
-    std::string out = "";
-    for (const auto & s : seq)
-        out = out + std::to_string(s);
-
-    return out;
-
-}
-
-template<>
-inline std::string default_seq_writer<std::vector<bool>>(
-    const std::vector<bool> & seq
-) {
-
-    std::string out = "";
-    for (const auto & s : seq)
-        out = out + (s ? "1" : "0");
-
-    return out;
-
-}
-
-template<>
-inline std::string default_seq_writer<bool>(
-    const bool & seq
-) {
-
-    return seq ? "1" : "0";
-
-}
-
-template<>
-inline std::string default_seq_writer<int>(
-    const int & seq
-) {
-
-    return std::to_string(seq);
-
-}
+class UserData;
 
 /**
  * @brief Statistical data about the process
@@ -142,6 +58,8 @@ private:
     std::vector< int > transmision_source;
     std::vector< int > transmision_target;
     std::vector< int > transmision_variant;
+
+    UserData<TSeq> user_data;
 
 public:
 
@@ -227,6 +145,13 @@ public:
     size_t get_nvariants() const;
 
     void reset();
+
+    
+    void set_user_data(std::vector< std::string > names);
+    void add_user_data(std::vector< epiworld_double > x);
+    void add_user_data(unsigned int j, epiworld_double x);
+    UserData<TSeq> & get_user_data();
+
 
 };
 

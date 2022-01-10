@@ -1217,6 +1217,25 @@ inline void Model<TSeq>::set_update_removed(UpdateFun<TSeq> fun) {
 
 }
 
+
+template<typename TSeq>
+inline void Model<TSeq>::set_user_data(std::vector< std::string > names)
+{
+    db.set_user_data(names);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_user_data(unsigned int j, epiworld_double x)
+{
+    db.add_user_data(j, x);
+}
+
+template<typename TSeq>
+inline UserData<TSeq> & Model<TSeq>::get_user_data()
+{
+    return db.get_user_data();
+}
+
 #undef DURCAST
 
 #undef CASES_PAR
