@@ -1,3 +1,5 @@
+[![Tests and coverage](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml/badge.svg)](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml)
+
 # epiworld
 
 This C++ template-header-only library provides a general framework for epidemiologic simulation. The main features of the library are:
