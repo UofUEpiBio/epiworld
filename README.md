@@ -17,44 +17,74 @@ This C++ template-header-only library provides a general framework for epidemiol
 
 # Hello world
 
+Here is a simple SIRS model implemented with 
+
 ```cpp
-#include "include/epiworld/epiworld.hpp"
+#include "../include/epiworld/epiworld.hpp"
+
+using namespace epiworld;
 
 int main()
 {
 
-  // Creating a virus
-  epiworld::Virus<> covid19("covid 19");
-  covid19.set_prob_infecting(.8);
+        // Creating a model
+    Model<> model;
+
+    // Adding the tool and virus
+    Virus<> virus("covid 19");
+    virus.set_post_immunity(1.0);
+    model.add_virus_n(virus, 5);
+    
+    Tool<> tool("vaccine");
+    model.add_tool(tool, .5);
+
+    // Generating a random pop 
+    model.pop_from_random(1000);
+
+    // Initializing setting days and seed
+    model.init(100, 123);
+
+    // Running the model
+    model.run();
+    model.print();
   
-  // Creating a tool
-  epiworld::Tool<> vax("vaccine");
-  vax.set_contagion_reduction(.95);
-
-  // Creating a model
-  epiworld::Model<> model;
-
-  // Adding the tool and virus
-  model.add_virus(covid19, .01);
-  model.add_tool(vax, .5);
-
-  // Generating a random pop
-  model.pop_from_adjlist(
-    epiworld::rgraph_smallworld(1000, 5, .2)
-  );
-
-  // Initializing setting days and seed
-  model.init(60, 123123);
-
-  // Running the model
-  model.run();
-
-  model.print();
-
-  return;
 }
-
 ```
+
+And you should get something like the following:
+
+```bash
+Running the model...
+_________________________________________________________________________
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+
+________________________________________________________________________________
+SIMULATION STUDY
+
+Population size    : 1000
+Days (duration)    : 100 (of 100)
+Number of variants : 1
+Last run elapsed t : 3.00ms
+Rewiring           : off
+
+Virus(es):
+ - covid 19 (baseline prevalence: 5 seeds)
+Tool(s):
+ - vaccine (baseline prevalence: 50.00%)
+
+Model parameters:
+
+Distribution of the population at time 100:
+ - Total healthy (S)   :     995 -> 149
+ - Total recovered (S) :       0 -> 841
+ - Total infected (I)  :       5 -> 10
+ - Total removed (R)   :       0 -> 0
+
+(S): Susceptible, (I): Infected, (R): Recovered
+________________________________________________________________________________
+```
+
+Which took about 0.003 seconds.
 
 ## Tools
 

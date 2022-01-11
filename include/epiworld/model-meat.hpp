@@ -169,6 +169,19 @@ inline std::vector<Person<TSeq>> * Model<TSeq>::get_population()
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::pop_from_random(
+    unsigned int n,
+    unsigned int k,
+    bool d,
+    epiworld_double p
+)
+{
+    pop_from_adjlist(
+        rgraph_smallworld(n, k, p, d, *this)
+    );
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
 {
     engine = std::make_shared< std::mt19937 >(eng);
@@ -517,8 +530,8 @@ inline int Model<TSeq>::today() const {
 template<typename TSeq>
 inline void Model<TSeq>::next() {
 
-    db.record();
     ++this->current_date;
+    db.record();
     
     // Advicing the progress bar
     if (verbose)
@@ -788,6 +801,9 @@ inline void Model<TSeq>::reset() {
     // Re distributing tools and virus
     dist_virus();
     dist_tools();
+
+    // Recording the original state
+    db.record();
 
 }
 

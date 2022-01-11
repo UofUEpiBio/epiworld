@@ -181,6 +181,12 @@ public:
     void pop_from_adjlist(AdjList al);
     bool is_directed() const;
     std::vector< Person<TSeq> > * get_population();
+    void pop_from_random(
+        unsigned int n = 1000,
+        unsigned int k = 5,
+        bool d = false,
+        epiworld_double p = .01
+        );
     ///@]
 
     /**

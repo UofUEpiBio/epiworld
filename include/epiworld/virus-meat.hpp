@@ -212,6 +212,13 @@ inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
 template<typename TSeq>
 inline void Virus<TSeq>::set_post_recovery(PostRecoveryFun<TSeq> fun)
 {
+    if (post_recovery_fun)
+    {
+        printf_epiworld(
+            "Warning: a PostRecoveryFun is alreay in place (overwriting)."
+            );
+    }
+
     post_recovery_fun = fun;
 }
 
@@ -224,6 +231,94 @@ inline void Virus<TSeq>::post_recovery()
 
     return;
         
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_post_immunity(
+    epiworld_double prob
+)
+{
+
+    if (post_recovery_fun)
+    {
+
+        std::string msg =
+            std::string(
+                "You cannot set post immunity when a post_recovery "
+                ) +
+            std::string(
+                "function is already in place. Redesign the post_recovery function."
+                );
+
+        throw std::logic_error(msg);
+        
+    }
+
+    PostRecoveryFun<TSeq> tmpfun = 
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            Tool<TSeq> no_reinfect(
+                "No reinfect virus " +
+                std::to_string(v->get_id())
+                );
+            
+            no_reinfect.set_susceptibility_reduction(prob);
+            no_reinfect.set_death_reduction(0.0);
+            no_reinfect.set_transmission_reduction(0.0);
+            no_reinfect.set_recovery_enhancer(0.0);
+
+            p->add_tool(m->today(), no_reinfect);
+
+            return;
+
+        };
+
+    post_recovery_fun = tmpfun;
+
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_post_immunity(
+    epiworld_double * prob
+)
+{
+
+    if (post_recovery_fun)
+    {
+
+        std::string msg =
+            std::string(
+                "You cannot set post immunity when a post_recovery "
+                ) +
+            std::string(
+                "function is already in place. Redesign the post_recovery function."
+                );
+
+        throw std::logic_error(msg);
+
+    }
+
+    PostRecoveryFun<TSeq> tmpfun = 
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            Tool<TSeq> no_reinfect(
+                "No reinfect virus " +
+                std::to_string(v->get_id())
+                );
+            
+            no_reinfect.set_susceptibility_reduction(*prob);
+            no_reinfect.set_death_reduction(0.0);
+            no_reinfect.set_transmission_reduction(0.0);
+            no_reinfect.set_recovery_enhancer(0.0);
+
+            p->add_tool(m->today(), no_reinfect);
+
+            return;
+
+        };
+
+    post_recovery_fun = tmpfun;
+
 }
 
 template<typename TSeq>

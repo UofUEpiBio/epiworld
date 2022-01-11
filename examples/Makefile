@@ -18,6 +18,9 @@ INTELFLAGS=-g -O2
 02b-sir_multiple_runs.o: 02b-sir_multiple_runs.cpp
 	$(GPP) $(CPPFLAGS)  02b-sir_multiple_runs.cpp -o 02b-sir_multiple_runs.o && ./02b-sir_multiple_runs.o
 
+03-simple-sir.o: 03-simple-sir.cpp
+	$(GPP) $(CPPFLAGS) 03-simple-sir.cpp -o 03-simple-sir.p && ./03-simple.sir.o
+
 04-advanced-usage.o: 04-advanced-usage.cpp
 	$(GPP) $(CPPFLAGS) 04-advanced-usage.cpp -o 04-advanced-usage.o && ./04-advanced-usage.o
 
@@ -38,7 +41,8 @@ sir-omp.o: sir.cpp
 	$(INTEL)  $(INTELFLAGS) -qopenmp sir-omp.cpp -o sir-omp.o && ./sir-omp.o
 
 ALL_EXAMPLES=00-hello-world.o 01-sir.o 02-sir_multiple_runs.o 02b-sir_multiple_runs.o \
-	     04-advanced-usage.o 05-user-data.o 06-sir-omp.o 07-surveillance.o
+	     03-simple-sir.o 04-advanced-usage.o 05-user-data.o 06-sir-omp.o \
+	     07-surveillance.o
 all-examples:
 	$(MAKE) $(ALL_EXAMPLES)
 

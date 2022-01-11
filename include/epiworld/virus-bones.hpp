@@ -82,6 +82,8 @@ public:
     
     void post_recovery();
     void set_post_recovery(PostRecoveryFun<TSeq> fun);
+    void set_post_immunity(epiworld_double prob);
+    void set_post_immunity(epiworld_double * prob);
 
     void set_prob_infecting_fun(VirusFun<TSeq> fun);
     void set_prob_recovery_fun(VirusFun<TSeq> fun);

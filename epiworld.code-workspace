@@ -55,7 +55,15 @@
 			"ctime": "cpp",
 			"ratio": "cpp",
 			"bitset": "cpp",
-			"regex": "cpp"
+			"regex": "cpp",
+			"condition_variable": "cpp",
+			"cstring": "cpp",
+			"set": "cpp",
+			"unordered_set": "cpp",
+			"mutex": "cpp",
+			"shared_mutex": "cpp",
+			"thread": "cpp",
+			"cfenv": "cpp"
 		}
 	}
 }
