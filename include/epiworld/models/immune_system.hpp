@@ -15,7 +15,7 @@ epiworld::ToolFun<TSeq> funname = \
 template<typename TSeq>
 inline void factory_tool_simple_immunesys(
     Model<TSeq> & model,
-    epiworld_double defaul_contagion_reduction = 0.1,
+    epiworld_double defaul_susceptibility_reduction = 0.1,
     epiworld_double defaul_recovery = 0.5,
     epiworld_double defaul_trans = 0.5,
     epiworld_double defaul_death = 0.001
@@ -23,7 +23,7 @@ inline void factory_tool_simple_immunesys(
 {
 
     // Designing the functions
-    EPI_NEW_TOOL_LAMBDA(tmp_contagion_reduction,TSeq) {
+    EPI_NEW_TOOL_LAMBDA(tmp_susceptibility_reduction,TSeq) {
         return (*m->p0);
     };
 
@@ -41,7 +41,7 @@ inline void factory_tool_simple_immunesys(
 
     // Creating the tool
     epiworld::Tool<TSeq> immune("immune system");
-    immune.set_contagion_reduction(tmp_contagion_reduction);
+    immune.set_susceptibility_reduction(tmp_susceptibility_reduction);
     immune.set_transmission(tmp_transmission);
     immune.set_recovery(tmp_recovery);
     immune.set_death(tmp_death);
@@ -50,7 +50,7 @@ inline void factory_tool_simple_immunesys(
     model.add_tool(immune, 1.0);
 
     // Setting the parameters
-    model.add_param(0.10, "imm contagion_reduction");
+    model.add_param(0.10, "imm susceptibility_reduction");
     model.add_param(0.10, "imm recovery");
     model.add_param(0.90, "imm trans");
     model.add_param(0.001, "imm death");

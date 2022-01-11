@@ -83,104 +83,144 @@ inline bool Virus<TSeq>::is_active() const {
 
 
 template<typename TSeq>
-inline epiworld_double Virus<TSeq>::get_infectiousness()
+inline epiworld_double Virus<TSeq>::get_prob_infecting()
 {
 
-    if (infectiousness)
-        return infectiousness(host, this, host->get_model());
+    if (probability_of_infecting_fun)
+        return probability_of_infecting_fun(host, this, host->get_model());
         
-    return DEFAULT_VIRUS_INFECTIOUSNESS;
+    return EPI_DEFAULT_VIRUS_PROB_INFECTION;
 
 }
 
 
 
 template<typename TSeq>
-inline epiworld_double Virus<TSeq>::get_persistance()
+inline epiworld_double Virus<TSeq>::get_prob_recovery()
 {
 
-    if (persistance)
-        return persistance(host, this, host->get_model());
+    if (probability_of_recovery_fun)
+        return probability_of_recovery_fun(host, this, host->get_model());
         
-    return DEFAULT_VIRUS_PERSISTANCE;
+    return EPI_DEFAULT_VIRUS_PROB_RECOVERY;
 
 }
 
 
 
 template<typename TSeq>
-inline epiworld_double Virus<TSeq>::get_death()
+inline epiworld_double Virus<TSeq>::get_prob_death()
 {
 
-    if (death)
-        return death(host, this, host->get_model());
+    if (probability_of_death_fun)
+        return probability_of_death_fun(host, this, host->get_model());
         
-    return DEFAULT_VIRUS_DEATH;
+    return EPI_DEFAULT_VIRUS_PROB_DEATH;
 
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_infectiousness(VirusFun<TSeq> fun)
+inline void Virus<TSeq>::set_prob_infecting_fun(VirusFun<TSeq> fun)
 {
-    infectiousness = fun;
+    probability_of_infecting_fun = fun;
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_persistance(VirusFun<TSeq> fun)
+inline void Virus<TSeq>::set_prob_recovery_fun(VirusFun<TSeq> fun)
 {
-    persistance = fun;
+    probability_of_recovery_fun = fun;
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_death(VirusFun<TSeq> fun)
+inline void Virus<TSeq>::set_prob_death_fun(VirusFun<TSeq> fun)
 {
-    death = fun;
+    probability_of_death_fun = fun;
 }
 
-#undef EPIWORLD_SET_V
+template<typename TSeq>
+inline void Virus<TSeq>::set_prob_infecting(epiworld_double * prob)
+{
+    VirusFun<TSeq> tmpfun = 
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+    
+    probability_of_infecting_fun = tmpfun;
+}
 
-#define EPIWORLD_SET_LAMBDA(suffix) \
-    template<typename TSeq> \
-    inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
-    epiworld_double * prob) { \
-    VirusFun<TSeq> tmpfun = \
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
-        return * prob; }; \
-    EPI_TOKENPASTE(set_,suffix)(tmpfun);}
+template<typename TSeq>
+inline void Virus<TSeq>::set_prob_recovery(epiworld_double * prob)
+{
+    VirusFun<TSeq> tmpfun = 
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+    
+    probability_of_recovery_fun = tmpfun;
+}
 
-EPIWORLD_SET_LAMBDA(infectiousness)
-EPIWORLD_SET_LAMBDA(persistance)
-EPIWORLD_SET_LAMBDA(death)
+template<typename TSeq>
+inline void Virus<TSeq>::set_prob_death(epiworld_double * prob)
+{
+    VirusFun<TSeq> tmpfun = 
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return *prob;
+        };
+    
+    probability_of_death_fun = tmpfun;
+}
 
-#undef EPIWORLD_SET_LAMBDA
+template<typename TSeq>
+inline void Virus<TSeq>::set_prob_infecting(epiworld_double prob)
+{
+    VirusFun<TSeq> tmpfun = 
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+    
+    probability_of_infecting_fun = tmpfun;
+}
 
-#define EPIWORLD_SET_LAMBDA2(suffix) \
-    template<typename TSeq> \
-    inline void Virus<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
-    epiworld_double prob) { \
-    VirusFun<TSeq> tmpfun = \
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m) { \
-        return prob; }; \
-    EPI_TOKENPASTE(set_,suffix)(tmpfun);}
+template<typename TSeq>
+inline void Virus<TSeq>::set_prob_recovery(epiworld_double prob)
+{
+    VirusFun<TSeq> tmpfun = 
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+    
+    probability_of_recovery_fun = tmpfun;
+}
 
-EPIWORLD_SET_LAMBDA2(infectiousness)
-EPIWORLD_SET_LAMBDA2(persistance)
-EPIWORLD_SET_LAMBDA2(death)
-
-#undef EPIWORLD_SET_LAMBDA2
+template<typename TSeq>
+inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
+{
+    VirusFun<TSeq> tmpfun = 
+        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        {
+            return prob;
+        };
+    
+    probability_of_death_fun = tmpfun;
+}
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_post_recovery(PostRecoveryFun<TSeq> fun)
 {
-    post_recovery = fun;
+    post_recovery_fun = fun;
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::get_post_recovery()
+inline void Virus<TSeq>::post_recovery()
 {
 
-    if (post_recovery)
-        return post_recovery(host, this, host->get_model());    
+    if (post_recovery_fun)
+        return post_recovery_fun(host, this, host->get_model());    
 
     return;
         

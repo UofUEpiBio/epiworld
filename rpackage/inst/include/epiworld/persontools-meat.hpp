@@ -2,7 +2,7 @@
 #define EPIWORLD_PERSONTOOLS_MEAT_HPP
 
 /**
- * @brief Default function for combining contagion_reduction levels
+ * @brief Default function for combining susceptibility_reduction levels
  * 
  * @tparam TSeq 
  * @param pt 
@@ -19,7 +19,7 @@ inline epiworld_double efficacy_mixer_default(
 {
     epiworld_double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_contagion_reduction(v));
+        total *= (1.0 - pt->operator()(i).get_susceptibility_reduction(v));
 
     return 1.0 - total;
     
@@ -87,7 +87,7 @@ inline void PersonTools<TSeq>::add_tool(
 }
 
 template<typename TSeq>
-inline epiworld_double PersonTools<TSeq>::get_contagion_reduction(
+inline epiworld_double PersonTools<TSeq>::get_susceptibility_reduction(
     Virus<TSeq> * v
 ) {
 

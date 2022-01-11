@@ -16,10 +16,11 @@ int main()
 
     // Setting up virus --------------------------------------------------------
     epiworld::Virus<> v("covid");
-    EPI_NEW_VIRUSFUN_LAMBDA(immunity, bool)
+    EPI_NEW_POSTRECOVERYFUN_LAMBDA(immunity, bool)
     {
+        
         epiworld::Tool<> immune("immune");
-        immune.set_contagion_reduction(1.0);
+        immune.set_susceptibility_reduction(1.0);
         p->add_tool(m->today(), immune);
 
         m->add_user_data({
@@ -30,11 +31,11 @@ int main()
     };
 
     v.set_post_recovery(immunity);
-    v.set_infectiousness(&model("infectiousness"));
+    v.set_prob_infecting(&model("infectiousness"));
     
     // Setting up tool ---------------------------------------------------------
     epiworld::Tool<> is("immune system");
-    is.set_contagion_reduction(.3);
+    is.set_susceptibility_reduction(.3);
     is.set_death_reduction(.9);
     is.set_recovery_enhancer(&model("recovery"));
 

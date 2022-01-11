@@ -17,12 +17,6 @@ class PersonTools;
 template<typename TSeq>
 class Tool;
 
-// template<typename TSeq>
-// using ToolFun = std::function<epiworld_double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
-
-// template<typename TSeq>
-// using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
-
 /**
  * @brief Tools for defending the host against the virus
  * 
@@ -40,10 +34,10 @@ private:
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique  = default_sequence<TSeq>();
-    ToolFun<TSeq> contagion_reduction    = nullptr;
-    ToolFun<TSeq> transmission_reduction = nullptr;
-    ToolFun<TSeq> recovery_enhancer      = nullptr;
-    ToolFun<TSeq> death_reduction        = nullptr;
+    ToolFun<TSeq> susceptibility_reduction_fun = nullptr;
+    ToolFun<TSeq> transmission_reduction_fun   = nullptr;
+    ToolFun<TSeq> recovery_enhancer_fun        = nullptr;
+    ToolFun<TSeq> death_reduction_fun          = nullptr;
 
     // Setup parameters
     std::vector< epiworld_double * > params;  
@@ -67,19 +61,19 @@ public:
      * @return epiworld_double 
      */
     ///@[
-    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);
     epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
     epiworld_double get_death_reduction(Virus<TSeq> * v);
-    void set_contagion_reduction(ToolFun<TSeq> fun);
-    void set_transmission_reduction(ToolFun<TSeq> fun);
-    void set_recovery_enhancer(ToolFun<TSeq> fun);
-    void set_death_reduction(ToolFun<TSeq> fun);
-    void set_contagion_reduction(epiworld_double * prob);
+    void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
+    void set_transmission_reduction_fun(ToolFun<TSeq> fun);
+    void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
+    void set_death_reduction_fun(ToolFun<TSeq> fun);
+    void set_susceptibility_reduction(epiworld_double * prob);
     void set_transmission_reduction(epiworld_double * prob);
     void set_recovery_enhancer(epiworld_double * prob);
     void set_death_reduction(epiworld_double * prob);
-    void set_contagion_reduction(epiworld_double prob);
+    void set_susceptibility_reduction(epiworld_double prob);
     void set_transmission_reduction(epiworld_double prob);
     void set_recovery_enhancer(epiworld_double prob);
     void set_death_reduction(epiworld_double prob);

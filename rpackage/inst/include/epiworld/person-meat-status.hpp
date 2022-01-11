@@ -26,7 +26,7 @@ class Person;
     /* Step 1: Compute the individual efficcacy */ \
     std::vector< epiworld_double > probs; \
     std::vector< Virus<TSeq>* > variants; \
-    /* Computing the contagion_reduction */ \
+    /* Computing the susceptibility_reduction */ \
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
     { \
         Person<TSeq> * neighbor = p->get_neighbors()[n]; \
@@ -38,11 +38,11 @@ class Person;
         epiworld_double tmp_transmision; \
         for (unsigned int v = 0; v < nviruses.size(); ++v) \
         { \
-            /* Computing the corresponding contagion_reduction */ \
+            /* Computing the corresponding susceptibility_reduction */ \
             Virus<TSeq> * tmp_v = &(nviruses(v)); \
             /* And it is a function of transmisibility as well */ \
             tmp_transmision = \
-                (1.0 - p->get_contagion_reduction(tmp_v)) * \
+                (1.0 - p->get_susceptibility_reduction(tmp_v)) * \
                 neighbor->get_transmisibility(tmp_v) \
                 ; \
             probs.push_back(tmp_transmision); \
@@ -100,7 +100,7 @@ inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
         // Checking if something happens after recovery
         // (e.g., full immunity)
-        vptr->get_post_recovery(); 
+        vptr->post_recovery(); 
 
         p->get_viruses().reset();
         

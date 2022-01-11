@@ -39,7 +39,7 @@ private:
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique  = default_sequence<TSeq>();
-    ToolFun<TSeq> contagion_reduction        = nullptr;
+    ToolFun<TSeq> susceptibility_reduction        = nullptr;
     ToolFun<TSeq> transmisibility = nullptr;
     ToolFun<TSeq> recovery        = nullptr;
     ToolFun<TSeq> death           = nullptr;
@@ -66,11 +66,11 @@ public:
      * @return epiworld_double 
      */
     ///@[
-    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmisibility(Virus<TSeq> * v);
     epiworld_double get_recovery(Virus<TSeq> * v);
     epiworld_double get_death(Virus<TSeq> * v);
-    void set_contagion_reduction(ToolFun<TSeq> fun);
+    void set_susceptibility_reduction(ToolFun<TSeq> fun);
     void set_transmisibility(ToolFun<TSeq> fun);
     void set_recovery(ToolFun<TSeq> fun);
     void set_death(ToolFun<TSeq> fun);

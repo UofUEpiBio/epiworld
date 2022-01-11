@@ -39,25 +39,14 @@ inline TSeq & Tool<TSeq>::get_sequence_unique() {
     return sequence_unique;
 }
 
-
-#define EPIWORLD_SET_TOOL(suffix,macroname) \
-    template<typename TSeq> \
-    inline epiworld_double Tool<TSeq>:: EPI_TOKENPASTE(get_,suffix) ( \
-        Virus<TSeq> * v \
-    ) { \
-        if (suffix) \
-            return suffix(this, this->person, v, person->get_model()); \
-        return EPI_TOKENPASTE(DEFAULT_TOOL_,macroname);\
-    }
-
 template<typename TSeq>
-inline epiworld_double Tool<TSeq>::get_contagion_reduction(
+inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
     Virus<TSeq> * v
 )
 {
 
-    if (contagion_reduction)
-        return contagion_reduction(this, this->person, v, person->get_model());
+    if (susceptibility_reduction_fun)
+        return susceptibility_reduction_fun(this, this->person, v, person->get_model());
 
     return DEFAULT_TOOL_CONTAGION_REDUCTION;
 
@@ -69,8 +58,8 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 )
 {
 
-    if (transmission_reduction)
-        return transmission_reduction(this, this->person, v, person->get_model());
+    if (transmission_reduction_fun)
+        return transmission_reduction_fun(this, this->person, v, person->get_model());
 
     return DEFAULT_TOOL_TRANSMISSION_REDUCTION;
 
@@ -82,8 +71,8 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 )
 {
 
-    if (recovery_enhancer)
-        return recovery_enhancer(this, this->person, v, person->get_model());
+    if (recovery_enhancer_fun)
+        return recovery_enhancer_fun(this, this->person, v, person->get_model());
 
     return DEFAULT_TOOL_RECOVERY_ENHANCER;
 
@@ -95,80 +84,109 @@ inline epiworld_double Tool<TSeq>::get_death_reduction(
 )
 {
 
-    if (death_reduction)
-        return death_reduction(this, this->person, v, person->get_model());
+    if (death_reduction_fun)
+        return death_reduction_fun(this, this->person, v, person->get_model());
 
     return DEFAULT_TOOL_DEATH_REDUCTION;
 
 }
 
-
-#undef EPIWORLD_SET_TOOL
-
-#define EPIWORLD_SET(suffix,input) \
-    template<typename TSeq> \
-    inline void Tool<TSeq>:: EPI_TOKENPASTE(set_,suffix) (\
-    input) { suffix = fun;}
-
-EPIWORLD_SET(contagion_reduction,ToolFun<TSeq> fun)
-EPIWORLD_SET(transmission_reduction,ToolFun<TSeq> fun)
-EPIWORLD_SET(recovery_enhancer,ToolFun<TSeq> fun)
-EPIWORLD_SET(death_reduction,ToolFun<TSeq> fun)
-
-#undef EPIWORLD_SET
+template<typename TSeq>
+inline void Tool<TSeq>::set_susceptibility_reduction_fun(
+    ToolFun<TSeq> fun
+)
+{
+    susceptibility_reduction_fun = fun;
+}
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_contagion_reduction(epiworld_double * prob)
+inline void Tool<TSeq>::set_transmission_reduction_fun(
+    ToolFun<TSeq> fun
+)
 {
+    transmission_reduction_fun = fun;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_recovery_enhancer_fun(
+    ToolFun<TSeq> fun
+)
+{
+    recovery_enhancer_fun = fun;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_death_reduction_fun(
+    ToolFun<TSeq> fun
+)
+{
+    death_reduction_fun = fun;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
+{
+
     ToolFun<TSeq> tmpfun =
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
         {
             return *prob;
         };
-        set_contagion_reduction(tmpfun);
+
+    susceptibility_reduction_fun = tmpfun;
+
 }
 
-// EPIWORLD_SET_LAMBDA(contagion_reduction)
+// EPIWORLD_SET_LAMBDA(susceptibility_reduction)
 template<typename TSeq>
 inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 {
+    
     ToolFun<TSeq> tmpfun =
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
         {
             return *prob;
         };
-        set_transmission_reduction(tmpfun);
+
+    transmission_reduction_fun = tmpfun;
+
 }
 
 // EPIWORLD_SET_LAMBDA(transmission_reduction)
 template<typename TSeq>
 inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 {
+
     ToolFun<TSeq> tmpfun =
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
         {
             return *prob;
         };
-        set_recovery_enhancer(tmpfun);
+
+    recovery_enhancer_fun = tmpfun;
+
 }
 
 // EPIWORLD_SET_LAMBDA(recovery_enhancer)
 template<typename TSeq>
 inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 {
+
     ToolFun<TSeq> tmpfun =
         [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
         {
             return *prob;
         };
-        set_death_reduction(tmpfun);
+
+    death_reduction_fun = tmpfun;
+
 }
 
 // EPIWORLD_SET_LAMBDA(death_reduction)
 
 // #undef EPIWORLD_SET_LAMBDA
 template<typename TSeq>
-inline void Tool<TSeq>::set_contagion_reduction(
+inline void Tool<TSeq>::set_susceptibility_reduction(
     epiworld_double prob
 )
 {
@@ -179,7 +197,7 @@ inline void Tool<TSeq>::set_contagion_reduction(
             return prob;
         };
 
-    set_contagion_reduction(tmpfun);
+    susceptibility_reduction_fun = tmpfun;
 
 }
 
@@ -195,7 +213,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
             return prob;
         };
 
-    set_transmission_reduction(tmpfun);
+    transmission_reduction_fun = tmpfun;
 
 }
 
@@ -211,7 +229,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
             return prob;
         };
 
-    set_recovery_enhancer(tmpfun);
+    recovery_enhancer_fun = tmpfun;
 
 }
 
@@ -227,7 +245,7 @@ inline void Tool<TSeq>::set_death_reduction(
             return prob;
         };
 
-    set_death_reduction(tmpfun);
+    death_reduction_fun = tmpfun;
 
 }
 

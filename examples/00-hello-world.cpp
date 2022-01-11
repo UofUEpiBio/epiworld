@@ -5,11 +5,11 @@ int main()
 
   // Creating a virus
   epiworld::Virus<> covid19("covid 19");
-  covid19.set_infectiousness(.8);
+  covid19.set_prob_infecting(.8);
   
   // Creating a tool
   epiworld::Tool<> vax("vaccine");
-  vax.set_contagion_reduction(.95);
+  vax.set_susceptibility_reduction(.95);
 
   // Creating a model
   epiworld::Model<> model;
@@ -32,4 +32,5 @@ int main()
   model.print();
 
   return 0;
+  
 }

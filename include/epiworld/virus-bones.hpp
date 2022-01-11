@@ -42,11 +42,11 @@ private:
     int date = -99;
     int id   = -99;
     bool active = true;
-    MutFun<TSeq>          mutation_fun   = nullptr;
-    PostRecoveryFun<TSeq> post_recovery  = nullptr;
-    VirusFun<TSeq>        infectiousness = nullptr;
-    VirusFun<TSeq>        persistance    = nullptr;
-    VirusFun<TSeq>        death          = nullptr;
+    MutFun<TSeq>          mutation_fun                 = nullptr;
+    PostRecoveryFun<TSeq> post_recovery_fun                = nullptr;
+    VirusFun<TSeq>        probability_of_infecting_fun = nullptr;
+    VirusFun<TSeq>        probability_of_recovery_fun  = nullptr;
+    VirusFun<TSeq>        probability_of_death_fun     = nullptr;
 
     // Setup parameters
     std::vector< epiworld_double * > params;
@@ -76,24 +76,24 @@ public:
      * @return epiworld_double 
      */
     ///@[
-    epiworld_double get_infectiousness();
-    epiworld_double get_persistance();
-    epiworld_double get_death();
+    epiworld_double get_prob_infecting();
+    epiworld_double get_prob_recovery();
+    epiworld_double get_prob_death();
     
-    void get_post_recovery();
+    void post_recovery();
     void set_post_recovery(PostRecoveryFun<TSeq> fun);
 
-    void set_infectiousness(VirusFun<TSeq> fun);
-    void set_persistance(VirusFun<TSeq> fun);
-    void set_death(VirusFun<TSeq> fun);
+    void set_prob_infecting_fun(VirusFun<TSeq> fun);
+    void set_prob_recovery_fun(VirusFun<TSeq> fun);
+    void set_prob_death_fun(VirusFun<TSeq> fun);
     
-    void set_infectiousness(epiworld_double * prob);
-    void set_persistance(epiworld_double * prob);
-    void set_death(epiworld_double * prob);
+    void set_prob_infecting(epiworld_double * prob);
+    void set_prob_recovery(epiworld_double * prob);
+    void set_prob_death(epiworld_double * prob);
     
-    void set_infectiousness(epiworld_double prob);
-    void set_persistance(epiworld_double prob);
-    void set_death(epiworld_double prob);
+    void set_prob_infecting(epiworld_double prob);
+    void set_prob_recovery(epiworld_double prob);
+    void set_prob_death(epiworld_double prob);
     ///@]
 
 

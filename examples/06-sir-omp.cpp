@@ -10,12 +10,13 @@ int main() {
 
     for (unsigned int i = 0u; i < nthreads; ++i)
         set_up_sir(
-            models[i],    // Model object
+            models[i], // Model object
             "a virus", // Name of the virus
-            .001,        // Initial prevalence
-            .5,        // Efficacy rate
-            .5,        // Recovery rate
-            .95        // Post immunity
+            0.01,      // Initial prevalence
+            1.0,       // Infectiousness
+            0.5,       // Efficacy rate
+            0.5,       // Recovery rate
+            0.95       // Post immunity
         );
 
     // Adding a bernoulli graph as step 0

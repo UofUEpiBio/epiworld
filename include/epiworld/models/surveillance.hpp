@@ -99,7 +99,7 @@ EPI_NEW_POSTRECOVERYFUN(post_covid, TSeq)
 
     epiworld::Tool<TSeq> immunity;
 
-    immunity.set_contagion_reduction(1.0 - MPAR(8));
+    immunity.set_susceptibility_reduction(1.0 - MPAR(8));
 
     p->add_tool(m->today(), immunity);
 
@@ -180,7 +180,7 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param initial_prevalence epiworld_double Initial prevalence
- * @param initial_contagion_reduction epiworld_double Initial contagion_reduction of the immune system
+ * @param initial_susceptibility_reduction epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
 template<typename TSeq>
@@ -216,8 +216,7 @@ inline void set_up_surveillance(
     // Virus ------------------------------------------------------------------
     epiworld::Virus<TSeq> covid("Covid19");
     covid.set_post_recovery(post_covid<TSeq>);
-    covid.set_death(&model("Prob. death"));
-    covid.set_persistance(0.0);
+    covid.set_prob_death(&model("Prob. death"));
 
     EPI_NEW_VIRUSFUN_LAMBDA(ptransmitfun, TSeq)
     {
@@ -234,7 +233,7 @@ inline void set_up_surveillance(
         return MPAR(6);
     };
 
-    covid.set_infectiousness(ptransmitfun);
+    covid.set_prob_infecting_fun(ptransmitfun);
     
     model.add_virus_n(covid, prevalence);
 
@@ -243,7 +242,7 @@ inline void set_up_surveillance(
    
     // Vaccine tool -----------------------------------------------------------
     epiworld::Tool<TSeq> vax("Vaccine");
-    vax.set_contagion_reduction(&model("Vax efficacy"));
+    vax.set_susceptibility_reduction(&model("Vax efficacy"));
     vax.set_transmission_reduction(&model("Vax redux transmision"));
     
     model.add_tool(vax, prop_vaccinated);

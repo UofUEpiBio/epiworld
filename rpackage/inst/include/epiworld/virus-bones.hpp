@@ -45,7 +45,7 @@ private:
     int id   = -99;
     bool active = true;
     MutFun<TSeq> mutation_fun = nullptr;
-    VirusFun<TSeq> post_recovery = nullptr;
+    VirusFun<TSeq> post_recovery_fun = nullptr;
 
     // Setup parameters
     std::vector< epiworld_double * > params;  
@@ -66,7 +66,7 @@ public:
     bool is_active() const;
 
     void set_post_recovery(VirusFun<TSeq> fun);
-    void get_post_recovery();
+    void post_recovery();
 
     void set_name(std::string name);
     std::string get_name() const;

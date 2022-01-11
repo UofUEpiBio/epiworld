@@ -2,7 +2,7 @@
 #define EPIWORLD_PERSONTOOLS_MEAT_HPP
 
 /**
- * @brief Default function for combining contagion_reduction levels
+ * @brief Default function for combining susceptibility_reduction levels
  * 
  * @tparam TSeq 
  * @param pt 
@@ -10,7 +10,7 @@
  */
 ///@[
 template<typename TSeq>
-inline epiworld_double contagion_reduction_mixer_default(
+inline epiworld_double susceptibility_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
     Virus<TSeq>* v,
@@ -19,7 +19,7 @@ inline epiworld_double contagion_reduction_mixer_default(
 {
     epiworld_double total = 1.0;
     for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_contagion_reduction(v));
+        total *= (1.0 - pt->operator()(i).get_susceptibility_reduction(v));
 
     return 1.0 - total;
     
@@ -87,14 +87,14 @@ inline void PersonTools<TSeq>::add_tool(
 }
 
 template<typename TSeq>
-inline epiworld_double PersonTools<TSeq>::get_contagion_reduction(
+inline epiworld_double PersonTools<TSeq>::get_susceptibility_reduction(
     Virus<TSeq> * v
 ) {
 
-    if (!contagion_reduction_mixer)
-        set_contagion_reduction_mixer(contagion_reduction_mixer_default<TSeq>);
+    if (!susceptibility_reduction_mixer)
+        set_susceptibility_reduction_mixer(susceptibility_reduction_mixer_default<TSeq>);
 
-    return contagion_reduction_mixer(this, person, v, person->get_model());
+    return susceptibility_reduction_mixer(this, person, v, person->get_model());
 
 }
 
@@ -136,10 +136,10 @@ inline epiworld_double PersonTools<TSeq>::get_death_reduction(
 }
 
 template<typename TSeq>
-inline void PersonTools<TSeq>::set_contagion_reduction_mixer(
+inline void PersonTools<TSeq>::set_susceptibility_reduction_mixer(
     MixerFun<TSeq> fun
 ) {
-    contagion_reduction_mixer = MixerFun<TSeq>(fun);
+    susceptibility_reduction_mixer = MixerFun<TSeq>(fun);
 }
 
 template<typename TSeq>

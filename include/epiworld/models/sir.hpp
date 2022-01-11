@@ -9,7 +9,7 @@
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param initial_prevalence epiworld_double Initial prevalence
- * @param initial_efficacy epiworld_double Initial contagion_reduction of the immune system
+ * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
 template<typename TSeq>
@@ -18,7 +18,7 @@ inline void set_up_sir(
     std::string vname,
     epiworld_double prevalence,
     epiworld_double infectiousness,
-    epiworld_double contagion_reduction,
+    epiworld_double susceptibility_reduction,
     epiworld_double recovery,
     epiworld_double post_immunity
     )
@@ -26,7 +26,7 @@ inline void set_up_sir(
 
     // Setting up parameters
     model.add_param(post_immunity, "Post immunity");
-    model.add_param(contagion_reduction, "Immune contagion_reduction");
+    model.add_param(susceptibility_reduction, "Immune suscept. redux.");
     model.add_param(recovery, "Immune recovery");
     model.add_param(infectiousness, "Infectiousness");
 
@@ -36,18 +36,18 @@ inline void set_up_sir(
     EPI_NEW_POSTRECOVERYFUN_LAMBDA(add_immunity,TSeq) {
 
         epiworld::Tool<TSeq> immune;
-        immune.set_contagion_reduction(&MPAR(0));
+        immune.set_susceptibility_reduction(&MPAR(0));
         p->add_tool(m->today(), immune);
         return;
 
     };
-    virus.set_infectiousness(&model("Infectiousness"));
+    virus.set_prob_infecting(&model("Infectiousness"));
     virus.set_post_recovery(add_immunity);
     
     // Preparing the immune system -----------------------------------
     epiworld::Tool<TSeq> immune_sys("Immune system");
     
-    immune_sys.set_contagion_reduction(&model("Immune contagion_reduction"));
+    immune_sys.set_susceptibility_reduction(&model("Immune suscept. redux."));
     immune_sys.set_recovery_enhancer(&model("Immune recovery"));
    
     // Adding the tool and the virus

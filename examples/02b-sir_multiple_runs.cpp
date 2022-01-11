@@ -10,11 +10,11 @@ int main() {
     set_up_sir(
         sir,    // Model object
         "a virus", // Name of the virus
-        .1,        // Initial prevalence
-        .8,        // Infectiousness
-        .5,        // Efficacy rate
-        .5,        // Recovery rate
-        .8        // Post immunity
+        0.01,      // Initial prevalence
+        1.0,       // Infectiousness
+        0.5,       // Efficacy rate
+        0.5,       // Recovery rate
+        0.95       // Post immunity
     );
 
     // Adding a bernoulli graph as step 0

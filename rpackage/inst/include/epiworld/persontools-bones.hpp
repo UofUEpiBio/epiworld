@@ -23,7 +23,7 @@ private:
 public:
     PersonTools() {};
     void add_tool(int date, Tool<TSeq> tool);
-    epiworld_double get_contagion_reduction(Virus<TSeq> * v);
+    epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmisibility(Virus<TSeq> * v);
     epiworld_double get_recovery(Virus<TSeq> * v);
     epiworld_double get_death(Virus<TSeq> * v);

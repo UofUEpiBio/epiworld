@@ -83,15 +83,15 @@ inline bool Virus<TSeq>::is_active() const {
 template<typename TSeq>
 inline void Virus<TSeq>::set_post_recovery(VirusFun<TSeq> fun)
 {
-    post_recovery = VirusFun<TSeq>(fun);
+    post_recovery_fun = VirusFun<TSeq>(fun);
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::get_post_recovery()
+inline void Virus<TSeq>::post_recovery()
 {
 
-    if (post_recovery)
-        return get_post_recovery(host, this, host->get_model());    
+    if (post_recovery_fun)
+        return post_recovery(host, this, host->get_model());    
 
     return;
         

@@ -45,14 +45,14 @@ inline TSeq & Tool<TSeq>::get_sequence_unique() {
 }
 
 template<typename TSeq>
-inline epiworld_double Tool<TSeq>::get_contagion_reduction(
+inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
     Virus<TSeq> * v
 ) {
 
-    if (!contagion_reduction)
+    if (!susceptibility_reduction)
         return DEFAULT_EFFICACY;
     
-    return contagion_reduction(this, person, v, person->model);
+    return susceptibility_reduction(this, person, v, person->model);
 
 }
 
@@ -96,10 +96,10 @@ inline epiworld_double Tool<TSeq>::get_death(
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_contagion_reduction(
+inline void Tool<TSeq>::set_susceptibility_reduction(
     ToolFun<TSeq> fun
 ) {
-    contagion_reduction = fun;
+    susceptibility_reduction = fun;
 }
 
 template<typename TSeq>

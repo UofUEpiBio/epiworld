@@ -35,7 +35,7 @@ EPI_NEW_VIRUSFUN(post_covid, DAT) {
     epiworld::Tool<DAT> immunity;
     immunity.set_sequence(*v->get_sequence());
 
-    immunity.set_contagion_reduction(1.0);
+    immunity.set_susceptibility_reduction(1.0);
     p->add_tool(m->today(), immunity);
 
 }
@@ -64,17 +64,17 @@ int main() {
 
     // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine");
-    vaccine.set_contagion_reduction(&model("vax efficacy"));
+    vaccine.set_susceptibility_reduction(&model("vax efficacy"));
     vaccine.set_recovery_enhancer(0.4);
     vaccine.set_death_reduction(&model("vax death"));
     vaccine.set_transmission_reduction(0.5);
     
     epiworld::Tool<DAT> mask("Face masks");
-    mask.set_contagion_reduction(0.8);
+    mask.set_susceptibility_reduction(0.8);
     mask.set_transmission_reduction(0.05);
 
     epiworld::Tool<DAT> immune("Immune system");
-    immune.set_contagion_reduction(&model("imm efficacy"));
+    immune.set_susceptibility_reduction(&model("imm efficacy"));
     immune.set_recovery_enhancer(&model("imm recovery"));
     immune.set_death_reduction(&model("imm death"));
     immune.set_transmission_reduction(&model("imm trans"));
