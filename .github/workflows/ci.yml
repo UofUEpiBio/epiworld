@@ -11,7 +11,7 @@ name: Tests and coverage
 on: [push, pull_request]
 
 env:
-  cntr: gveagyon/epiworld:latest
+  cntr: gvegayon/epiworld:latest
 
 jobs:
   build:
