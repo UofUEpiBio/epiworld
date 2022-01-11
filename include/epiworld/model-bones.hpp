@@ -106,7 +106,7 @@ public:
     Model() {};
     Model(const Model<TSeq> & m);
     Model(Model<TSeq> && m);
-    Model<TSeq> & operator=(const Model<TSeq> & m) = delete;
+    Model<TSeq> & operator=(const Model<TSeq> & m);
 
     void clone_population(
         std::vector< Person<TSeq> > & p,
@@ -196,6 +196,12 @@ public:
     void mutate_variant();
     void next();
     void run();
+    void run_multiple(
+        unsigned int nexperiments,
+        std::function<void(Model<TSeq>*)> fun,
+        bool reset,
+        bool verbose
+        );
     ///@]
 
     void record_variant(Virus<TSeq> * v);

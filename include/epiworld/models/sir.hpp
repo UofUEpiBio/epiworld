@@ -17,6 +17,7 @@ inline void set_up_sir(
     epiworld::Model<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
+    epiworld_double infectiousness,
     epiworld_double contagion_reduction,
     epiworld_double recovery,
     epiworld_double post_immunity
@@ -27,6 +28,7 @@ inline void set_up_sir(
     model.add_param(post_immunity, "Post immunity");
     model.add_param(contagion_reduction, "Immune contagion_reduction");
     model.add_param(recovery, "Immune recovery");
+    model.add_param(infectiousness, "Infectiousness");
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
@@ -39,7 +41,7 @@ inline void set_up_sir(
         return;
 
     };
-    
+    virus.set_infectiousness(&model("Infectiousness"));
     virus.set_post_recovery(add_immunity);
     
     // Preparing the immune system -----------------------------------

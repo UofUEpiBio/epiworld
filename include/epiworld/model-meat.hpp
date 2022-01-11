@@ -319,14 +319,27 @@ inline void Model<TSeq>::chrono_end() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_backup() {
+inline void Model<TSeq>::set_backup()
+{
+
     backup = std::unique_ptr<Model<TSeq>>(new Model<TSeq>(*this));
+
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::restore_backup() {
+inline void Model<TSeq>::restore_backup()
+{
+
     if (backup != nullptr)
-        *this = *backup;
+    {
+
+        clone_population(*backup);
+
+        db = backup->db;
+        db.set_model(*this);
+
+    }
+
 }
 
 template<typename TSeq>
@@ -537,6 +550,63 @@ inline void Model<TSeq>::run()
 
     }
     chrono_end();
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::run_multiple(
+    unsigned int nexperiments,
+    std::function<void(Model<TSeq>*)> fun,
+    bool reset,
+    bool verbose
+)
+{
+
+    if (reset)
+        set_backup();
+
+    bool old_verb = this->verbose;
+    verbose_off();
+
+    Progress pb_multiple(
+        nexperiments,
+        EPIWORLD_PROGRESS_BAR_WIDTH
+        )
+        ;
+    if (verbose)
+    {
+
+        printf_epiworld(
+            "Starting multiple runs (%i)\n", 
+            static_cast<int>(nexperiments)
+        );
+
+        pb_multiple.start();
+
+    }
+
+    for (unsigned int n = 0u; n < nexperiments; ++n)
+    {
+        
+        run();
+
+        fun(this);
+
+        if (n < (nexperiments - 1u) && reset)
+            this->reset();
+
+        if (verbose)
+            pb_multiple.next();
+    
+    }
+
+    if (verbose)
+        pb_multiple.end();
+
+    if (old_verb)
+        verbose_on();
+
+    return;
 
 }
 

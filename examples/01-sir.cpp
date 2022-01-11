@@ -15,7 +15,7 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     model.pop_from_adjlist(
-        epiworld::rgraph_smallworld(10000, 5, .001, false, model)
+        epiworld::rgraph_smallworld(100000, 5, .001, false, model)
     );
 
     model.init(100, 123);

@@ -194,6 +194,7 @@ inline void DataBase<TSeq>::get_today_variant(
     status.resize(today_variant.size(), "");
     id.resize(today_variant.size(), 0);
     counts.resize(today_variant.size(),0);
+
     int n = 0u;
     for (unsigned int v = 0u; v < today_variant.size(); ++v)
         for (unsigned int s = 0u; s < labels.size(); ++s)
@@ -211,7 +212,8 @@ inline void DataBase<TSeq>::get_hist_total(
     std::vector< int > & date,
     std::vector< std::string > & status,
     std::vector< int > & counts
-) const {
+) const
+{
 
     date = hist_total_date;
     std::vector< std::string > labels;
@@ -257,7 +259,8 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_variant_hist,
     std::string fn_total_hist,
     std::string fn_transmision
-) const {
+) const
+{
 
     if (fn_variant_info != "")
     {

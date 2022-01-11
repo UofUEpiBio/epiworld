@@ -11,7 +11,7 @@ This C++ template-header-only library provides a general framework for epidemiol
   7. `Models` can have an arbitrary number of parameters.
   8. **REALLY FAST** About 6.5 Million person/day simulations per second.
 
-<img src="/home/george/Documents/research/world-epi/contents.svg">
+<img src="contents.svg">
 
 # Hello world
 
