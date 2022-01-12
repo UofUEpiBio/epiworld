@@ -5,6 +5,6 @@ README.md: 02-sir_multiple_runs.o
 	echo "" >> README.md && \
 	echo "Output from the program:" >> README.md && \
 	echo "" >> README.md && \
-	echo "```" >> README.md && \
-	./02-sir_multiple_runs.o &>> README.md && \
-	echo "```" >> README.md
+	echo "\`\`\`" >> README.md && \
+	./02-sir_multiple_runs.o >> README.md && \
+	echo "\`\`\`" >> README.md

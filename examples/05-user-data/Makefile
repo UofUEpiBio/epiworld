@@ -5,6 +5,6 @@ README.md: 05-user-data.o
 	echo "" >> README.md && \
 	echo "Output from the program:" >> README.md && \
 	echo "" >> README.md && \
-	echo "```" >> README.md && \
-	./05-user-data.o &>> README.md && \
-	echo "```" >> README.md
+	echo "\`\`\`" >> README.md && \
+	./05-user-data.o >> README.md && \
+	echo "\`\`\`" >> README.md

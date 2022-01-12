@@ -5,6 +5,6 @@ README.md: 04-advanced-usage.o
 	echo "" >> README.md && \
 	echo "Output from the program:" >> README.md && \
 	echo "" >> README.md && \
-	echo "```" >> README.md && \
-	./04-advanced-usage.o &>> README.md && \
-	echo "```" >> README.md
+	echo "\`\`\`" >> README.md && \
+	./04-advanced-usage.o >> README.md && \
+	echo "\`\`\`" >> README.md

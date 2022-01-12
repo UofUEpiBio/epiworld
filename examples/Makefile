@@ -37,9 +37,9 @@ allmake:
 		echo "\techo \"\" >> README.md && \\"               >> $$f/Makefile ; \
 		echo "\techo \"Output from the program:\" >> README.md && \\" >> $$f/Makefile ; \
 		echo "\techo \"\" >> README.md && \\" >> $$f/Makefile ; \
-		echo "\techo \"\`\`\`\" >> README.md && \\" >> $$f/Makefile ; \
-		echo "\t./$$f.o &>> README.md && \\" >> $$f/Makefile ; \
-		echo "\techo \"\`\`\`\" >> README.md" >> $$f/Makefile ; \
+		echo "\techo \"\\\`\\\`\\\`\" >> README.md && \\" >> $$f/Makefile ; \
+		echo "\t./$$f.o >> README.md && \\" >> $$f/Makefile ; \
+		echo "\techo \"\\\`\\\`\\\`\" >> README.md" >> $$f/Makefile ; \
 	done
 
 clean:

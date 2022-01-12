@@ -5,6 +5,6 @@ README.md: 07-surveillance.o
 	echo "" >> README.md && \
 	echo "Output from the program:" >> README.md && \
 	echo "" >> README.md && \
-	echo "```" >> README.md && \
-	./07-surveillance.o &>> README.md && \
-	echo "```" >> README.md
+	echo "\`\`\`" >> README.md && \
+	./07-surveillance.o >> README.md && \
+	echo "\`\`\`" >> README.md

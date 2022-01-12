@@ -5,6 +5,6 @@ README.md: 00-hello-world.o
 	echo "" >> README.md && \
 	echo "Output from the program:" >> README.md && \
 	echo "" >> README.md && \
-	echo "```" >> README.md && \
-	./00-hello-world.o ${}1>> README.md && \
-	echo "```" >> README.md
+	echo "\`\`\`" >> README.md && \
+	./00-hello-world.o >> README.md && \
+	echo "\`\`\`" >> README.md

@@ -5,6 +5,6 @@ README.md: 03-simple-sir.o
 	echo "" >> README.md && \
 	echo "Output from the program:" >> README.md && \
 	echo "" >> README.md && \
-	echo "```" >> README.md && \
-	./03-simple-sir.o &>> README.md && \
-	echo "```" >> README.md
+	echo "\`\`\`" >> README.md && \
+	./03-simple-sir.o >> README.md && \
+	echo "\`\`\`" >> README.md
