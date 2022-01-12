@@ -1,2 +1,5 @@
-examples/
+examples/*/*
+!*.md
+!Makefile
+!*.cpp
 .Rproj.user

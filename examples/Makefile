@@ -1,37 +1,24 @@
 VPATH = ../include/epiworld
-CPPFLAGS= -std=c++11 -Wall -pedantic -g -O3 -ftree-vectorize -DEPIWORLD_TIMING # -fopenmp
+CPPFLAGS= -std=c++11 -Wall -pedantic -g -O3 -ftree-vectorize # -fopenmp
 GPP=g++
 # icpx take a look at ~/.profile
 # # /opt/intel/oneapi/setvars.sh 
 INTEL=dpcpp
 INTELFLAGS=-g -O2
 
-00-hello-world.o: 00-hello-world.cpp
-	$(GPP) $(CPPFLAGS) 00-hello-world.cpp -o 00-hello-world.o && ./00-hello-world.o
+ALL_EXAMPLES=00-hello-world 01-sir 02-sir_multiple_runs 02b-sir_multiple_runs \
+	     03-simple-sir 04-advanced-usage 05-user-data 06-sir-omp \
+	     07-surveillance
 
-01-sir.o: 01-sir.cpp
-	$(GPP) $(CPPFLAGS)  01-sir.cpp -o 01-sir.o && ./01-sir.o
+all-examples:
+	for f in $(ALL_EXAMPLES); do \
+		cd $$f && $(MAKE) $$f.o && ./$$f.o ; cd .. ;\
+	done
 
-02-sir_multiple_runs.o: 02-sir_multiple_runs.cpp
-	$(GPP) $(CPPFLAGS)  02-sir_multiple_runs.cpp -o 02-sir_multiple_runs.o && ./02-sir_multiple_runs.o
-
-02b-sir_multiple_runs.o: 02b-sir_multiple_runs.cpp
-	$(GPP) $(CPPFLAGS)  02b-sir_multiple_runs.cpp -o 02b-sir_multiple_runs.o && ./02b-sir_multiple_runs.o
-
-03-simple-sir.o: 03-simple-sir.cpp
-	$(GPP) $(CPPFLAGS) 03-simple-sir.cpp -o 03-simple-sir.p && ./03-simple.sir.o
-
-04-advanced-usage.o: 04-advanced-usage.cpp
-	$(GPP) $(CPPFLAGS) 04-advanced-usage.cpp -o 04-advanced-usage.o && ./04-advanced-usage.o
-
-05-user-data.o: 05-user-data.cpp
-	$(GPP) $(CPPFLAGS) 05-user-data.cpp -o 05-user-data.o && ./05-user-data.o
-
-06-sir-omp.o: 06-sir-omp.cpp
-	$(GPP) $(CPPFLAGS) -fopenmp 06-sir-omp.cpp -o 06-sir-omp.o && ./06-sir-omp.o
-
-07-surveillance.o: 07-surveillance.cpp
-	$(GPP) $(CPPFLAGS)  07-surveillance.cpp -g -o 07-surveillance.o && ./07-surveillance.o 
+all-readme:
+	for f in $(ALL_EXAMPLES); do \
+		cd $$f && $(MAKE) README.md ; cd .. ;\
+	done
 
 # Others ----------------------------------------------------------------------
 sir-intel.o: sir.cpp
@@ -40,11 +27,19 @@ sir-intel.o: sir.cpp
 sir-omp.o: sir.cpp
 	$(INTEL)  $(INTELFLAGS) -qopenmp sir-omp.cpp -o sir-omp.o && ./sir-omp.o
 
-ALL_EXAMPLES=00-hello-world.o 01-sir.o 02-sir_multiple_runs.o 02b-sir_multiple_runs.o \
-	     03-simple-sir.o 04-advanced-usage.o 05-user-data.o 06-sir-omp.o \
-	     07-surveillance.o
-all-examples:
-	$(MAKE) $(ALL_EXAMPLES)
+allmake:
+	for f in $(ALL_EXAMPLES); do \
+		mkdir $$f ; \
+		mv $$f.* $$f ;\
+		echo "$$f.o: $$f.cpp\n\t$(GPP) $(CPPFLAGS) $$f.cpp -o $$f.o" > $$f/Makefile ; \
+		echo "README.md: $$f.o" >> $$f/Makefile ; \
+		echo "\techo \"## Example: $$f\" > README.md && \\" >> $$f/Makefile ; \
+		echo "\techo \"\" >> README.md && \\" >> $$f/Makefile ; \
+		echo "\t./$$f.o $1>> README.md" >> $$f/Makefile ; \
+	done
+# $(MAKE) $(ALL_EXAMPLES)
+
+
 
 clean:
 	rm -f *.o

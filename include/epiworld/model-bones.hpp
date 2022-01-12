@@ -1,8 +1,3 @@
-#include <vector>
-#include <random>
-#include <unordered_map>
-#include "misc.hpp"
-
 #ifndef EPIWORLD_MODEL_HPP
 #define EPIWORLD_MODEL_HPP
 

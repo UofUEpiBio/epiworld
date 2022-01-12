@@ -8,7 +8,7 @@ int main()
     model.set_user_data({"person_id", "virus_id"});
     
     model.pop_from_adjlist(
-        epiworld::rgraph_smallworld(1000, 5, .1, false, model)
+        epiworld::rgraph_smallworld(200, 5, .1, false, model)
     );
 
     model.add_param(.9, "infectiousness");
@@ -39,10 +39,10 @@ int main()
     is.set_death_reduction(.9);
     is.set_recovery_enhancer(&model("recovery"));
 
-    model.add_tool_n(is, 1000);
+    model.add_tool(is, 1.0);
     model.add_virus_n(v, 5);
 
-    model.init(112, 60);
+    model.init(112, 30);
 
     model.run();
     model.print();
