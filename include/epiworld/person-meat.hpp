@@ -249,4 +249,18 @@ inline bool Person<TSeq>::has_virus(std::string name) const {
     return viruses.has_virus(name);
 }
 
+template<typename TSeq>
+inline bool Person<TSeq>::visited() const
+{
+    
+    return visited_person == model->visited_model;
+
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::toggle_visited()
+{
+    visited_person = !visited_person;
+}
+
 #endif

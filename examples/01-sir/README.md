@@ -13,7 +13,7 @@ SIMULATION STUDY
 Population size    : 100000
 Days (duration)    : 100 (of 100)
 Number of variants : 1
-Last run elapsed t : 1.00s
+Last run elapsed t : 928.00ms
 Rewiring           : off
 
 Virus(es):

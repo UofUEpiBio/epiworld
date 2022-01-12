@@ -14,6 +14,7 @@ class Person;
 #define EPIWORLD_ADD_VIRUS(virus_ptr,new_state) \
     {p->add_virus(m->today(), *virus_ptr); \
     /* Recording information in the database */ \
+    if (m->is_queuing_on()) m->get_queue() += p; \
     m->get_db().record_transmision( \
         p->get_id(), \
         virus_ptr->get_host()->get_id(), \
@@ -117,10 +118,13 @@ inline unsigned int default_update_susceptible(
 
 #define EPIWORLD_UPDATE_INFECTED_REMOVE(newstatus) \
     {m->get_db().down_infected(v, p->get_status(), newstatus);\
+    if (m->is_queuing_on()) m->get_queue() -= p; \
+    p->get_viruses().reset();\
     return static_cast<unsigned int>(newstatus);}
 
 #define EPIWORLD_UPDATE_INFECTED_RECOVER(newstatus) \
     {m->get_db().down_infected(v, p->get_status(), newstatus);\
+    if (m->is_queuing_on()) m->get_queue() -= p; \
     v->post_recovery();p->get_viruses().reset();\
     return static_cast<unsigned int>(newstatus);}
 
@@ -135,12 +139,16 @@ inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
     epiworld_double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
 
     if (r < cumsum)
+    {
         EPIWORLD_UPDATE_INFECTED_REMOVE(m->get_default_removed());
+    }
     
     cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
     
     if (r < cumsum)
+    {
         EPIWORLD_UPDATE_INFECTED_RECOVER(m->get_default_recovered())
+    }
 
     return p->get_status();
 

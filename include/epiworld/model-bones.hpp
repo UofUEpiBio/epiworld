@@ -97,6 +97,10 @@ private:
     std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
     std::vector< int > global_action_dates;
 
+    Queue<TSeq> queue;
+    bool visited_model = EPI_DEFAULT_VISITED;
+    bool use_queuing   = true;
+
 public:
 
     std::vector<epiworld_double> array_double_tmp;
@@ -196,7 +200,7 @@ public:
      * 
      */
     ///@[
-    void init(unsigned int seed, unsigned int ndays);
+    void init(unsigned int ndays, unsigned int seed);
     void update_status();
     void mutate_variant();
     void next();
@@ -413,6 +417,13 @@ public:
     void run_global_actions();
 
     void clear_status_set();
+
+    void toggle_visited();
+
+    void queuing_on();
+    void queuing_off();
+    bool is_queuing_on() const;
+    Queue<TSeq> & get_queue();
 
 };
 

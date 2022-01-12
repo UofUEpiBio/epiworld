@@ -33,6 +33,8 @@ namespace epiworld {
 
     #include "randgraph.hpp"
 
+    #include "queue-bones.hpp"
+
     #include "model-bones.hpp"
     #include "model-meat.hpp"
     #include "virus-bones.hpp"

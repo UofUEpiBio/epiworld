@@ -20,8 +20,7 @@ template<typename TSeq = bool>
 class Person {
     friend class Model<TSeq>;
     friend class Tool<TSeq>;
-    friend class Queue<TSeq>
-
+    friend class Queue<TSeq>;
 private:
     Model<TSeq> * model;
     PersonViruses<TSeq> viruses;
@@ -34,6 +33,9 @@ private:
     UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
     UpdateFun<TSeq> update_infected    = default_update_infected<TSeq>;
     UpdateFun<TSeq> update_removed     = nullptr;
+
+    bool visited_person = !EPI_DEFAULT_VISITED;
+    bool in_queue       = false;
 
 public:
 
@@ -80,6 +82,9 @@ public:
     bool has_tool(std::string name) const;
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
+
+    bool visited() const;
+    void toggle_visited();
 
 };
 

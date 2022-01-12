@@ -37,7 +37,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     initialized(model.initialized),
     current_date(model.current_date),
     global_action_functions(model.global_action_functions),
-    global_action_dates(model.global_action_dates)
+    global_action_dates(model.global_action_dates),
+    visited_model(model.visited_model),
+    queue(model.queue),
+    use_queuing(model.use_queuing)
 {
 
     // Pointing to the right place
@@ -50,6 +53,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         directed,
         this
         );
+
+    // Figure out the queuing
+    if (use_queuing)
+        queue.set_model(this);
 
     // Finally, seeds are resetted automatically based on the original
     // engine
@@ -87,7 +94,10 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     baseline_status_infected(model.baseline_status_infected),
     baseline_status_recovered(model.baseline_status_recovered),
     baseline_status_removed(model.baseline_status_removed),
-    nstatus(model.nstatus)
+    nstatus(model.nstatus),
+    visited_model(model.visited_model),
+    queue(std::move(model.queue)),
+    use_queuing(model.use_queuing)
 {
 
     // // Pointing to the right place
@@ -233,6 +243,8 @@ inline void Model<TSeq>::init(
 
     initialized = true;
 
+    queue.set_model(this);
+
     // Starting first infection and tools
     reset();
 
@@ -275,8 +287,16 @@ inline void Model<TSeq>::dist_virus()
             db.up_infected(&viruses[v], population[loc].get_status(), baseline_status_infected);
             nsampled--;
 
+            if (use_queuing)
+            {
+                queue += &population[loc];
+            }
+
         }
     }
+
+    if (use_queuing)
+        queue.update();
 
     NEXT_STATUS()
 
@@ -446,6 +466,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
     tools.push_back(t);
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(true);
+
 }
 
 template<typename TSeq>
@@ -496,6 +517,7 @@ inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
 
         for (const auto & link: n.second)
         {
+
             if (population_ids.find(link.first) == population_ids.end())
                 population_ids[link.first] = population_ids.size();
 
@@ -507,6 +529,7 @@ inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
                 &population[population_ids[link.first]],
                 true, true
                 );
+
         }
 
     }
@@ -627,8 +650,25 @@ template<typename TSeq>
 inline void Model<TSeq>::update_status() {
 
     // Next status
-    for (auto & p: population)
-        p.update_status();
+    if (use_queuing)
+    {
+        
+        for (unsigned int p = 0u; p < size(); ++p)
+            if (queue[p] > 0)
+                population[p].update_status();
+
+    }
+    else
+    {
+
+        for (auto & p: population)
+            p.update_status();
+
+    }
+    
+
+    if (use_queuing)
+        queue.update();
 
     NEXT_STATUS()
 
@@ -798,6 +838,9 @@ inline void Model<TSeq>::reset() {
     for (Virus<TSeq> & v : viruses)
         record_variant(&v);
 
+    if (use_queuing)
+        queue.set_model(this);
+
     // Re distributing tools and virus
     dist_virus();
     dist_tools();
@@ -807,267 +850,8 @@ inline void Model<TSeq>::reset() {
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::print() const
-{
-
-    // Horizontal line
-    std::string line = "";
-    for (unsigned int i = 0u; i < 80u; ++i)
-        line += "_";
-
-    printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
-    printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
-    printf_epiworld("Days (duration)    : %i (of %i)\n", today(), ndays);
-    printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_nvariants()));
-    if (time_n > 0u)
-    {
-        std::string abbr;
-        epiworld_double elapsed;
-        epiworld_double total;
-        get_elapsed("auto", &elapsed, &total, nullptr, &abbr, false);
-        printf_epiworld("Last run elapsed t : %.2f%s\n", elapsed, abbr.c_str());
-        if (time_n > 1u)
-        {
-            printf_epiworld("Total elapsed t    : %.2f%s (%i runs)\n", total, abbr.c_str(), time_n);
-        }
-
-    } else {
-        printf_epiworld("Last run elapsed t : -\n");
-    }
-    
-    if (rewire_fun)
-    {
-        printf_epiworld("Rewiring           : on (%.2f)\n\n", rewire_prop);
-    } else {
-        printf_epiworld("Rewiring           : off\n\n");
-    }
-
-    printf_epiworld("Virus(es):\n");
-    int i = 0;
-    for (auto & v : viruses)
-    {    
-
-        if (prevalence_virus_as_proportion[i])
-        {
-
-            printf_epiworld(
-                " - %s (baseline prevalence: %.2f%%)\n",
-                v.get_name().c_str(),
-                prevalence_virus[i++] * 100.00
-            );
-
-        }
-        else
-        {
-
-            printf_epiworld(
-                " - %s (baseline prevalence: %i seeds)\n",
-                v.get_name().c_str(),
-                static_cast<int>(prevalence_virus[i++])
-            );
-
-        }
-
-    }
-
-    printf_epiworld("Tool(s):\n");
-    i = 0;
-    for (auto & t : tools)
-    {   
-
-        if (prevalence_tool_as_proportion[i])
-        {
-
-            printf_epiworld(
-                " - %s (baseline prevalence: %.2f%%)\n",
-                t.get_name().c_str(),
-                prevalence_tool[i++] * 100.0
-                );
-
-        }
-        else
-        {
-
-            printf_epiworld(
-                " - %s (baseline prevalence: %i seeds)\n",
-                t.get_name().c_str(),
-                static_cast<int>(prevalence_tool[i++])
-                );
-
-        }
-        
-
-    }
-
-    // Information about the parameters included
-    printf_epiworld("\nModel parameters:\n");
-    unsigned int nchar = 0u;
-    for (auto & p : parameters)
-        if (p.first.length() > nchar)
-            nchar = p.first.length();
-
-    std::string fmt = " - %-" + std::to_string(nchar + 1) + "s: ";
-    for (auto & p : parameters)
-    {
-        std::string fmt_tmp = fmt;
-        if (std::fabs(p.second) < 0.0001)
-            fmt_tmp += "%.1e\n";
-        else
-            fmt_tmp += "%.4f\n";
-
-        printf_epiworld(
-            fmt_tmp.c_str(),
-            p.first.c_str(),
-            p.second
-        );
-        
-    }
-
-
-    nchar = 0u;
-    for (auto & p : status_susceptible_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-    
-    for (auto & p : status_infected_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-
-    for (auto & p : status_removed_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-
-    if (initialized) 
-    {
-        
-        if (today() != 0)
-            fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %7i -> %i\n";
-        else
-            fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %i\n";
-
-    }
-    else
-        fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %s\n";
-        
-    printf_epiworld("\nDistribution of the population at time %i:\n", today());
-    for (unsigned int s = 0u; s < status_susceptible.size(); ++s)
-    {
-        if (initialized)
-        {
-            
-            if (today() != 0)
-            {
-
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_susceptible_labels[s] + " (S)").c_str(),
-                    db.hist_total_counts[status_susceptible[s]],
-                    db.today_total[ status_susceptible[s] ]
-                    );
-
-            }
-            else
-            {
-
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_susceptible_labels[s] + " (S)").c_str(),
-                    db.today_total[ status_susceptible[s] ]
-                    );
-
-            }
-            
-
-        }
-        else
-        {
-
-            printf_epiworld(
-                fmt.c_str(),
-                (status_susceptible_labels[s] + " (S)").c_str(),
-                " - "
-                );
-
-        }
-    }
-
-    // printf_epiworld("\nStatistics (infected):\n");
-    for (unsigned int s = 0u; s < status_infected.size(); ++s)
-    {
-        if (initialized)
-        {
-            
-            if (today() != 0)
-            {
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_infected_labels[s] + " (I)").c_str(),
-                    db.hist_total_counts[ status_infected[s] ],
-                    db.today_total[ status_infected[s] ]
-                    );
-            }
-            else
-            {
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_infected_labels[s] + " (I)").c_str(),
-                    db.today_total[ status_infected[s] ]
-                    );
-            }
-            
-
-        } else {
-            printf_epiworld(
-                fmt.c_str(),
-                (status_infected_labels[s] + " (I)").c_str(),
-                " - "
-                );
-        }
-    }
-
-    // printf_epiworld("\nStatistics (removed):\n");
-    for (unsigned int s = 0u; s < status_removed.size(); ++s)
-    {
-        if (initialized)
-        {
-            
-            if (today() != 0)
-            {
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_removed_labels[s] + " (R)").c_str(),
-                    db.hist_total_counts[ status_removed[s] ],
-                    db.today_total[ status_removed[s] ]
-                    );
-            }
-            else
-            {
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_removed_labels[s] + " (R)").c_str(),
-                    db.today_total[ status_removed[s] ]
-                    );
-            }
-            
-
-        } else {
-            printf_epiworld(
-                fmt.c_str(),
-                (status_removed_labels[s] + " (R)").c_str(),
-                " - "
-                );
-        }
-    }
-    
-    printf_epiworld(
-        "\n(S): Susceptible, (I): Infected, (R): Recovered\n%s\n\n",
-        line.c_str()
-        );
-
-    return;
-
-}
+// Too big to keep here
+#include "model-meat-print.hpp"
 
 template<typename TSeq>
 inline Model<TSeq> && Model<TSeq>::clone() const {
@@ -1586,6 +1370,36 @@ inline void Model<TSeq>::run_global_actions()
 
     }
 
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::toggle_visited()
+{
+    visited_model = !visited_model;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::queuing_on()
+{
+    use_queuing = true;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::queuing_off()
+{
+    use_queuing = false;
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::is_queuing_on() const
+{
+    return use_queuing;
+}
+
+template<typename TSeq>
+inline Queue<TSeq> & Model<TSeq>::get_queue()
+{
+    return queue;
 }
 
 #undef DURCAST

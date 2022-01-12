@@ -36,9 +36,6 @@ EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {
         return p->get_status();
 
     EPIWORLD_ADD_VIRUS(variants[which], JAYSTATUS::LATENT)
-    p->get_virus(0).get_data().clear();
-
-    return static_cast<unsigned int>(JAYSTATUS::LATENT); 
 
 }
 
@@ -77,11 +74,15 @@ EPI_NEW_UPDATEFUN(surveillance_update_infected,TSeq)
         if (EPI_RUNIF() < MPAR(2))
         {
             // If you are symptomatic, then you may be catched
-            EPIWORLD_UPDATE_INFECTED_REMOVE(JAYSTATUS::SYMPTOMATIC);
+            m->get_db().down_infected(v, p->get_status(), JAYSTATUS::SYMPTOMATIC);
+
+            return static_cast<unsigned int>(JAYSTATUS::SYMPTOMATIC);
 
         }
         
-        EPIWORLD_UPDATE_INFECTED_REMOVE(JAYSTATUS::ASYMPTOMATIC);
+        m->get_db().down_infected(v, p->get_status(), JAYSTATUS::ASYMPTOMATIC);
+
+        return static_cast<unsigned int>(JAYSTATUS::ASYMPTOMATIC);
 
     }
     

@@ -17,6 +17,10 @@
     #define epiworld_double float
 #endif
 
+#ifndef epiworld_fast_int
+    #define epiworld_fast_int std::int_fast16_t
+#endif
+
 #endif
 
 template<typename TSeq>
@@ -95,6 +99,26 @@ enum STATUS {
 
 #ifndef EPI_DEFAULT_VIRUS_PROB_DEATH
     #define EPI_DEFAULT_VIRUS_PROB_DEATH        0.0
+#endif
+
+/**
+ * @brief A utility for bookeeping
+ * 
+ * @details The `Model<TSeq>` class will keep this value
+ * and every new `Person<TSeq>` will have the oposit at construction.
+ * The idea is that users can make use of the function `Person::visited()`
+ * when needing to keep track of whether the agent has been seen before
+ * within a routine. The member function `Model<TSeq>::toggle_visited()`
+ * will change the value of the model object automatically when
+ * the next states are updated.
+ * 
+ * Users can call `Model::toggle_visited()` when needed to reset the
+ * book-kepping.
+ * 
+ * 
+ */
+#ifndef EPI_DEFAULT_VISITED
+    #define EPI_DEFAULT_VISITED true
 #endif
 
 #endif
