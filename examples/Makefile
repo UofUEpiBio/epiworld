@@ -1,5 +1,5 @@
 VPATH = ../include/epiworld
-CPPFLAGS= -std=c++11 -Wall -pedantic -g -O3 -ftree-vectorize # -fopenmp
+CPPFLAGS= -std=c++11 -Wall -pedantic -g -O2 -ftree-vectorize # -fopenmp
 GPP=g++
 # icpx take a look at ~/.profile
 # # /opt/intel/oneapi/setvars.sh 
@@ -34,12 +34,13 @@ allmake:
 		echo "$$f.o: $$f.cpp\n\t$(GPP) $(CPPFLAGS) $$f.cpp -o $$f.o" > $$f/Makefile ; \
 		echo "README.md: $$f.o" >> $$f/Makefile ; \
 		echo "\techo \"## Example: $$f\" > README.md && \\" >> $$f/Makefile ; \
+		echo "\techo \"\" >> README.md && \\"               >> $$f/Makefile ; \
+		echo "\techo \"Output from the program:\" >> README.md && \\" >> $$f/Makefile ; \
 		echo "\techo \"\" >> README.md && \\" >> $$f/Makefile ; \
-		echo "\t./$$f.o $1>> README.md" >> $$f/Makefile ; \
+		echo "\techo \"\`\`\`\" >> README.md && \\" >> $$f/Makefile ; \
+		echo "\t./$$f.o &>> README.md && \\" >> $$f/Makefile ; \
+		echo "\techo \"\`\`\`\" >> README.md" >> $$f/Makefile ; \
 	done
-# $(MAKE) $(ALL_EXAMPLES)
-
-
 
 clean:
 	rm -f *.o
