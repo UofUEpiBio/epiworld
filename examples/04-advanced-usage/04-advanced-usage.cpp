@@ -1,9 +1,4 @@
-#include <iostream>
-#include <memory>
-#include <vector>
-#include <random>
-
-#include "../include/epiworld/epiworld.hpp"
+#include "../../include/epiworld/epiworld.hpp"
 
 // Original data will be an integer vector
 #define DAT std::vector<bool>
@@ -90,6 +85,7 @@ int main() {
     
     // Initializing and printing information about the model ------------------
     model.init(60, 1231);
+    model.queuing_off(); // Not working with rewiring just yet.
     model.set_rewire_fun(epiworld::rewire_degseq<DAT>);  
     model.set_rewire_prop(0.10);
 

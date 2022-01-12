@@ -1,6 +1,5 @@
-#include <iostream>
 #include <omp.h>
-#include "../include/epiworld/models/sir.hpp"
+#include "../../include/epiworld/models/sir.hpp"
 
 int main() {
 
@@ -52,9 +51,10 @@ int main() {
         m.get_elapsed("milliseconds");
 
     
-    std::cout << "Elapsed time: " <<
-        (std::chrono::duration_cast<std::chrono::milliseconds>(end - start)).count() << 
-        " seconds" << std::endl;
+    printf(
+        "Elapsed time: %.2f seconds\n",
+        (std::chrono::duration_cast<std::chrono::milliseconds>(end - start)).count()
+    );
 
     return 0;
 }

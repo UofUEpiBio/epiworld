@@ -1,4 +1,4 @@
-#include "../include/epiworld/models/sir.hpp"
+#include "../../include/epiworld/models/sir.hpp"
 
 
 int main() {
