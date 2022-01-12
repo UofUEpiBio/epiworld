@@ -15,10 +15,14 @@ class AdjList;
 template<typename TSeq>
 class DataBase;
 
+template<typename TSeq>
+class Queue;
+
 template<typename TSeq = bool>
 class Model {
     friend class Person<TSeq>;
     friend class DataBase<TSeq>;
+    friend class Queue<TSeq>;
 private:
 
     DataBase<TSeq> db;

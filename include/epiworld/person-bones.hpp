@@ -13,10 +13,14 @@ class PersonViruses;
 template<typename TSeq>
 class PersonTools;
 
+template<typename TSeq>
+class Queue;
+
 template<typename TSeq = bool>
 class Person {
     friend class Model<TSeq>;
     friend class Tool<TSeq>;
+    friend class Queue<TSeq>
 
 private:
     Model<TSeq> * model;
