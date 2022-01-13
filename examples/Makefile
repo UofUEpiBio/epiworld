@@ -21,8 +21,8 @@ all-readme:
 	done
 
 # Others ----------------------------------------------------------------------
-sir-intel.o: sir.cpp
-	$(INTEL) $(INTELFLAGS)  sir.cpp -o sir-intel.o && ./sir-intel.o
+00-hello-world/hello-intel.o: 00-hello-world/00-hello-world.cpp
+	cd 00-hello-world && $(INTEL) $(INTELFLAGS) 00-hello-world.cpp -o hello-intel.o && ./hello-intel.o
 
 sir-omp.o: sir.cpp
 	$(INTEL)  $(INTELFLAGS) -qopenmp sir-omp.cpp -o sir-omp.o && ./sir-omp.o

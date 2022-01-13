@@ -44,13 +44,13 @@ private:
     // Variants history
     std::vector< int > hist_variant_date;
     std::vector< int > hist_variant_id;
-    std::vector< int > hist_variant_status;
+    std::vector< epiworld_fast_uint > hist_variant_status;
     std::vector< int > hist_variant_counts;
 
     // Overall hist
     std::vector< int > hist_total_date;
     std::vector< int > hist_total_nvariants_active;
-    std::vector< int > hist_total_status;
+    std::vector< epiworld_fast_uint > hist_total_status;
     std::vector< int > hist_total_counts;
 
     // Transmission network
@@ -85,14 +85,14 @@ public:
 
     void up_infected(
         Virus<TSeq> * v,
-        unsigned int prev_status,
-        unsigned int new_status
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
         );
 
     void down_infected(
         Virus<TSeq> * v,
-        unsigned int prev_status,
-        unsigned int new_status
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
         );
 
     /**

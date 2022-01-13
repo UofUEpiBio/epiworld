@@ -54,7 +54,7 @@ class Person;
     }
 
 template<typename TSeq>
-inline unsigned int default_update_susceptible(
+inline epiworld_fast_uint default_update_susceptible(
     Person<TSeq> * p,
     Model<TSeq> * m
     )
@@ -120,16 +120,16 @@ inline unsigned int default_update_susceptible(
     {m->get_db().down_infected(v, p->get_status(), newstatus);\
     if (m->is_queuing_on()) m->get_queue() -= p; \
     p->get_viruses().reset();\
-    return static_cast<unsigned int>(newstatus);}
+    return static_cast<epiworld_fast_uint>(newstatus);}
 
 #define EPIWORLD_UPDATE_INFECTED_RECOVER(newstatus) \
     {m->get_db().down_infected(v, p->get_status(), newstatus);\
     if (m->is_queuing_on()) m->get_queue() -= p; \
     v->post_recovery();p->get_viruses().reset();\
-    return static_cast<unsigned int>(newstatus);}
+    return static_cast<epiworld_fast_uint>(newstatus);}
 
 template<typename TSeq>
-inline unsigned int default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
+inline epiworld_fast_uint default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
 
     epiworld::Virus<TSeq> * v = &(p->get_virus(0u)); 
     epiworld_double p_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 

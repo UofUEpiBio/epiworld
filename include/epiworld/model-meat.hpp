@@ -906,7 +906,10 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     EPIWORLD_CHECK_STATUS(a, status_removed)
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_susceptible(unsigned int s, std::string lab)
+inline void Model<TSeq>::add_status_susceptible(
+    epiworld_fast_uint s,
+    std::string lab
+)
 {
 
     EPIWORLD_CHECK_ALL_STATUSES(s)
@@ -917,7 +920,10 @@ inline void Model<TSeq>::add_status_susceptible(unsigned int s, std::string lab)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_infected(unsigned int s, std::string lab)
+inline void Model<TSeq>::add_status_infected(
+    epiworld_fast_uint s,
+    std::string lab
+)
 {
 
     EPIWORLD_CHECK_ALL_STATUSES(s)
@@ -928,7 +934,10 @@ inline void Model<TSeq>::add_status_infected(unsigned int s, std::string lab)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_removed(unsigned int s, std::string lab)
+inline void Model<TSeq>::add_status_removed(
+    epiworld_fast_uint s,
+    std::string lab
+)
 {
 
     EPIWORLD_CHECK_ALL_STATUSES(s)
@@ -960,7 +969,7 @@ inline void Model<TSeq>::add_status_removed(std::string lab)
 }
 
 #define EPIWORLD_COLLECT_STATUSES(out,id,lab) \
-    std::vector< std::pair<unsigned int, std::string> > out; \
+    std::vector< std::pair<epiworld_fast_uint, std::string> > out; \
     for (unsigned int i = 0; i < id.size(); ++i) \
         out.push_back( \
             std::pair<int,std::string>( \
@@ -969,21 +978,21 @@ inline void Model<TSeq>::add_status_removed(std::string lab)
         );
 
 template<typename TSeq>
-inline const std::vector< unsigned int > &
+inline const std::vector< epiworld_fast_uint > &
 Model<TSeq>::get_status_susceptible() const
 {
     return status_susceptible;
 }
 
 template<typename TSeq>
-inline const std::vector< unsigned int > &
+inline const std::vector< epiworld_fast_uint > &
 Model<TSeq>::get_status_infected() const
 {
     return status_infected;
 }
 
 template<typename TSeq>
-inline const std::vector< unsigned int > &
+inline const std::vector< epiworld_fast_uint > &
 Model<TSeq>::get_status_removed() const
 {
     return status_removed;
@@ -1012,7 +1021,7 @@ Model<TSeq>::get_status_removed_labels() const
 
 template<typename TSeq>
 inline void Model<TSeq>::reset_status_codes(
-    std::vector< unsigned int > codes,
+    std::vector< epiworld_fast_uint > codes,
     std::vector< std::string > names,
     bool verbose
 )
@@ -1121,25 +1130,25 @@ inline void Model<TSeq>::print_status_codes() const
 }
 
 template<typename TSeq>
-inline unsigned int Model<TSeq>::get_default_healthy() const
+inline epiworld_fast_uint Model<TSeq>::get_default_healthy() const
 {
     return baseline_status_healthy;
 }
 
 template<typename TSeq>
-inline unsigned int Model<TSeq>::get_default_infected() const
+inline epiworld_fast_uint Model<TSeq>::get_default_infected() const
 {
     return baseline_status_infected;
 }
 
 template<typename TSeq>
-inline unsigned int Model<TSeq>::get_default_recovered() const
+inline epiworld_fast_uint Model<TSeq>::get_default_recovered() const
 {
     return baseline_status_recovered;
 }
 
 template<typename TSeq>
-inline unsigned int Model<TSeq>::get_default_removed() const
+inline epiworld_fast_uint Model<TSeq>::get_default_removed() const
 {
     return baseline_status_removed;
 }

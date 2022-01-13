@@ -111,7 +111,7 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
     if (v->get_host() != nullptr)
     {
         // Correcting math
-        unsigned int tmp_status = v->get_host()->get_status();
+        epiworld_fast_uint tmp_status = v->get_host()->get_status();
         today_variant[old_id][tmp_status]--;
         today_variant[new_id][tmp_status]++;
 
@@ -129,8 +129,8 @@ inline size_t DataBase<TSeq>::size() const
 template<typename TSeq>
 inline void DataBase<TSeq>::up_infected(
     Virus<TSeq> * v,
-    unsigned int prev_status,
-    unsigned int new_status
+    epiworld_fast_uint prev_status,
+    epiworld_fast_uint new_status
 ) {
 
     today_total[prev_status]--;
@@ -143,8 +143,8 @@ inline void DataBase<TSeq>::up_infected(
 template<typename TSeq>
 inline void DataBase<TSeq>::down_infected( 
     Virus<TSeq> * v,
-    unsigned int prev_status,
-    unsigned int new_status
+    epiworld_fast_uint prev_status,
+    epiworld_fast_uint new_status
 ) {
 
     today_total[prev_status]--;
@@ -157,11 +157,11 @@ inline void DataBase<TSeq>::down_infected(
 
 #define EPIWORLD_GET_STATUS_LABELS(stdstrvec) \
     stdstrvec.resize(model->nstatus); \
-    for (unsigned int i = 0u; i < model->status_susceptible.size(); ++i) \
+    for (epiworld_fast_uint i = 0u; i < model->status_susceptible.size(); ++i) \
         stdstrvec[model->status_susceptible[i]] = model->status_susceptible_labels[i]; \
-    for (unsigned int i = 0u; i < model->status_infected.size(); ++i) \
+    for (epiworld_fast_uint i = 0u; i < model->status_infected.size(); ++i) \
         stdstrvec[model->status_infected[i]] = model->status_infected_labels[i]; \
-    for (unsigned int i = 0u; i < model->status_removed.size(); ++i) \
+    for (epiworld_fast_uint i = 0u; i < model->status_removed.size(); ++i) \
         stdstrvec[model->status_removed[i]] = model->status_removed_labels[i];
 
 

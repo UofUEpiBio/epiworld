@@ -27,8 +27,8 @@ private:
     PersonTools<TSeq> tools;
     std::vector< Person<TSeq> * > neighbors;
     unsigned int index; ///< Location in the Model
-    unsigned int status_next = STATUS::HEALTHY; // Placeholder
-    unsigned int status      = STATUS::HEALTHY;
+    epiworld_fast_uint status_next = STATUS::HEALTHY; // Placeholder
+    epiworld_fast_uint status      = STATUS::HEALTHY;
     int id          = -1;
     UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
     UpdateFun<TSeq> update_infected    = default_update_infected<TSeq>;
@@ -71,7 +71,7 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
-    unsigned int & get_status();
+    epiworld_fast_uint & get_status();
 
     void reset();
 

@@ -46,7 +46,7 @@ EPI_NEW_UPDATEFUN(surveillance_update_infected,TSeq)
     EPIWORLD_UPDATE_INFECTED_CALC_PROBS(p_rec, p_die)
     
     unsigned int days_since_infected = m->today() - v->get_date();
-    unsigned int status = p->get_status();
+    epiworld_fast_uint status = p->get_status();
 
     // Figuring out latent period
     if (v->get_data().size() == 0u)
@@ -76,13 +76,13 @@ EPI_NEW_UPDATEFUN(surveillance_update_infected,TSeq)
             // If you are symptomatic, then you may be catched
             m->get_db().down_infected(v, p->get_status(), JAYSTATUS::SYMPTOMATIC);
 
-            return static_cast<unsigned int>(JAYSTATUS::SYMPTOMATIC);
+            return static_cast<epiworld_fast_uint>(JAYSTATUS::SYMPTOMATIC);
 
         }
         
         m->get_db().down_infected(v, p->get_status(), JAYSTATUS::ASYMPTOMATIC);
 
-        return static_cast<unsigned int>(JAYSTATUS::ASYMPTOMATIC);
+        return static_cast<epiworld_fast_uint>(JAYSTATUS::ASYMPTOMATIC);
 
     }
     
@@ -222,7 +222,7 @@ inline void set_up_surveillance(
     EPI_NEW_VIRUSFUN_LAMBDA(ptransmitfun, TSeq)
     {
         // No chance of infecting
-        unsigned int  s = p->get_status();
+        epiworld_fast_uint  s = p->get_status();
         if (s == JAYSTATUS::LATENT)
             return static_cast<epiworld_double>(0.0);
         else if (s == JAYSTATUS::SYMPTOMATIC_ISOLATED)
@@ -248,7 +248,7 @@ inline void set_up_surveillance(
     
     model.add_tool(vax, prop_vaccinated);
 
-    std::vector< unsigned int > new_status =
+    std::vector< epiworld_fast_uint > new_status =
         {
             JAYSTATUS::SUSCEPTIBLE, JAYSTATUS::LATENT, JAYSTATUS::RECOVERED,
             JAYSTATUS::REMOVED

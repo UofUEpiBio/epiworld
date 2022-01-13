@@ -200,7 +200,7 @@ inline void Person<TSeq>::update_status()
 }
 
 template<typename TSeq>
-inline unsigned int & Person<TSeq>::get_status() {
+inline epiworld_fast_uint & Person<TSeq>::get_status() {
     return status;
 }
 

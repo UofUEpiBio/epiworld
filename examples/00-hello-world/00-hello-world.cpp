@@ -11,7 +11,7 @@ int main()
     // Adding the tool and virus
     Virus<> virus("covid 19");
     virus.set_post_immunity(1.0);
-    model.add_virus_n(virus, 5);
+    model.add_virus_n(virus, 50);
     
     Tool<> tool("vaccine");
     model.add_tool(tool, .5);

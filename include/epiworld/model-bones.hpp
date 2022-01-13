@@ -58,18 +58,18 @@ private:
     unsigned int ndays;
     Progress pb;
 
-    std::vector< unsigned int > status_susceptible = {STATUS::HEALTHY, STATUS::RECOVERED};
+    std::vector< epiworld_fast_uint > status_susceptible = {STATUS::HEALTHY, STATUS::RECOVERED};
     std::vector< std::string > status_susceptible_labels = {"healthy", "recovered"};
-    std::vector< unsigned int > status_infected = {STATUS::INFECTED};
+    std::vector< epiworld_fast_uint > status_infected = {STATUS::INFECTED};
     std::vector< std::string > status_infected_labels = {"infected"};
-    std::vector< unsigned int > status_removed = {STATUS::REMOVED};
+    std::vector< epiworld_fast_uint > status_removed = {STATUS::REMOVED};
     std::vector< std::string > status_removed_labels = {"removed"};
 
-    unsigned int nstatus = 4u;
-    unsigned int baseline_status_healthy   = STATUS::HEALTHY;
-    unsigned int baseline_status_infected  = STATUS::INFECTED;
-    unsigned int baseline_status_removed   = STATUS::REMOVED;
-    unsigned int baseline_status_recovered = STATUS::RECOVERED;
+    epiworld_fast_uint nstatus = 4u;
+    epiworld_fast_uint baseline_status_healthy   = STATUS::HEALTHY;
+    epiworld_fast_uint baseline_status_infected  = STATUS::INFECTED;
+    epiworld_fast_uint baseline_status_removed   = STATUS::REMOVED;
+    epiworld_fast_uint baseline_status_recovered = STATUS::RECOVERED;
     
     bool verbose     = true;
     bool initialized = false;
@@ -316,23 +316,23 @@ public:
      * statuses and their labels.
      */
     ///@[
-    void add_status_susceptible(unsigned int s, std::string lab);
-    void add_status_infected(unsigned int s, std::string lab);
-    void add_status_removed(unsigned int s, std::string lab);
+    void add_status_susceptible(epiworld_fast_uint s, std::string lab);
+    void add_status_infected(epiworld_fast_uint s, std::string lab);
+    void add_status_removed(epiworld_fast_uint s, std::string lab);
     void add_status_susceptible(std::string lab);
     void add_status_infected(std::string lab);
     void add_status_removed(std::string lab);
-    const std::vector< unsigned int > & get_status_susceptible() const;
-    const std::vector< unsigned int > & get_status_infected() const;
-    const std::vector< unsigned int > & get_status_removed() const;
+    const std::vector< epiworld_fast_uint > & get_status_susceptible() const;
+    const std::vector< epiworld_fast_uint > & get_status_infected() const;
+    const std::vector< epiworld_fast_uint > & get_status_removed() const;
     const std::vector< std::string > & get_status_susceptible_labels() const;
     const std::vector< std::string > & get_status_infected_labels() const;
     const std::vector< std::string > & get_status_removed_labels() const;
     void print_status_codes() const;
-    unsigned int get_default_healthy() const;
-    unsigned int get_default_infected() const;
-    unsigned int get_default_recovered() const;
-    unsigned int get_default_removed() const;
+    epiworld_fast_uint get_default_healthy() const;
+    epiworld_fast_uint get_default_infected() const;
+    epiworld_fast_uint get_default_recovered() const;
+    epiworld_fast_uint get_default_removed() const;
     ///@]
 
     /**
@@ -346,7 +346,7 @@ public:
      * @param verbose When `true`, it will print the new mappings.
      */
     void reset_status_codes(
-        std::vector< unsigned int > codes,
+        std::vector< epiworld_fast_uint > codes,
         std::vector< std::string > names,
         bool verbose = true
     );

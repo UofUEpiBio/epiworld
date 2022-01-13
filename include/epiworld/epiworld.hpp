@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <climits>
+#include <cstdint>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
