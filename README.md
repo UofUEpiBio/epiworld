@@ -39,7 +39,7 @@ int main()
     model.add_tool(tool, .5);
 
     // Generating a random pop 
-    model.pop_from_random(1000);
+    model.pop_from_random(100000);
 
     // Initializing setting days and seed
     model.init(100, 123);
