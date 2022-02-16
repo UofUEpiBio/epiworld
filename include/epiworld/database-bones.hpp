@@ -52,12 +52,15 @@ private:
     std::vector< int > hist_total_nvariants_active;
     std::vector< epiworld_fast_uint > hist_total_status;
     std::vector< int > hist_total_counts;
+    std::vector< epiworld_fast_uint > hist_total_transition_matrix;
 
     // Transmission network
     std::vector< int > transmision_date;
     std::vector< int > transmision_source;
     std::vector< int > transmision_target;
     std::vector< int > transmision_variant;
+
+    std::vector< epiworld_fast_uint > transition_matrix;
 
     UserData<TSeq> user_data;
 
@@ -80,16 +83,16 @@ public:
     void record();
 
     const std::vector< TSeq > & get_sequence() const;
-    const std::vector< int > & get_ninfected() const;
+    const std::vector< int > & get_nexposed() const;
     size_t size() const;
 
-    void up_infected(
+    void up_exposed(
         Virus<TSeq> * v,
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
         );
 
-    void down_infected(
+    void down_exposed(
         Virus<TSeq> * v,
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status

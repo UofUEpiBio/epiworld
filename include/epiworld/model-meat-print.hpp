@@ -124,7 +124,7 @@ inline void Model<TSeq>::print() const
         if (p.length() > nchar)
             nchar = p.length();
     
-    for (auto & p : status_infected_labels)
+    for (auto & p : status_exposed_labels)
         if (p.length() > nchar)
             nchar = p.length();
 
@@ -186,8 +186,7 @@ inline void Model<TSeq>::print() const
         }
     }
 
-    // printf_epiworld("\nStatistics (infected):\n");
-    for (unsigned int s = 0u; s < status_infected.size(); ++s)
+    for (unsigned int s = 0u; s < status_exposed.size(); ++s)
     {
         if (initialized)
         {
@@ -196,17 +195,17 @@ inline void Model<TSeq>::print() const
             {
                 printf_epiworld(
                     fmt.c_str(),
-                    (status_infected_labels[s] + " (I)").c_str(),
-                    db.hist_total_counts[ status_infected[s] ],
-                    db.today_total[ status_infected[s] ]
+                    (status_exposed_labels[s] + " (E)").c_str(),
+                    db.hist_total_counts[ status_exposed[s] ],
+                    db.today_total[ status_exposed[s] ]
                     );
             }
             else
             {
                 printf_epiworld(
                     fmt.c_str(),
-                    (status_infected_labels[s] + " (I)").c_str(),
-                    db.today_total[ status_infected[s] ]
+                    (status_exposed_labels[s] + " (E)").c_str(),
+                    db.today_total[ status_exposed[s] ]
                     );
             }
             
@@ -214,7 +213,7 @@ inline void Model<TSeq>::print() const
         } else {
             printf_epiworld(
                 fmt.c_str(),
-                (status_infected_labels[s] + " (I)").c_str(),
+                (status_exposed_labels[s] + " (E)").c_str(),
                 " - "
                 );
         }
@@ -255,7 +254,7 @@ inline void Model<TSeq>::print() const
     }
     
     printf_epiworld(
-        "\n(S): Susceptible, (I): Infected, (R): Recovered\n%s\n\n",
+        "\n(S): Susceptible, (E): Exposed, (R): Removed\n%s\n\n",
         line.c_str()
         );
 

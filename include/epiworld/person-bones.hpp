@@ -31,7 +31,7 @@ private:
     epiworld_fast_uint status      = STATUS::HEALTHY;
     int id          = -1;
     UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
-    UpdateFun<TSeq> update_infected    = default_update_infected<TSeq>;
+    UpdateFun<TSeq> update_exposed    = default_update_exposed<TSeq>;
     UpdateFun<TSeq> update_removed     = nullptr;
 
     bool visited_person = !EPI_DEFAULT_VISITED;
@@ -76,7 +76,7 @@ public:
     void reset();
 
     void set_update_susceptible(UpdateFun<TSeq> fun);
-    void set_update_infected(UpdateFun<TSeq> fun);
+    void set_update_exposed(UpdateFun<TSeq> fun);
     void set_update_removed(UpdateFun<TSeq> fun);
     bool has_tool(unsigned int t) const;
     bool has_tool(std::string name) const;

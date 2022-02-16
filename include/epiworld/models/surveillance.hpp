@@ -3,7 +3,7 @@
 
 #include "../epiworld.hpp"
 
-enum JAYSTATUS {
+enum SURVSTATUS {
     SUSCEPTIBLE,
     LATENT,
     SYMPTOMATIC,
@@ -35,17 +35,17 @@ EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {
     if (which < 0)
         return p->get_status();
 
-    EPIWORLD_ADD_VIRUS(variants[which], JAYSTATUS::LATENT)
+    EPIWORLD_ADD_VIRUS(variants[which], SURVSTATUS::LATENT)
 
 }
 
 template<typename TSeq>
-EPI_NEW_UPDATEFUN(surveillance_update_infected,TSeq)
+EPI_NEW_UPDATEFUN(surveillance_update_exposed,TSeq)
 {
 
-    EPIWORLD_UPDATE_INFECTED_CALC_PROBS(p_rec, p_die)
+    EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(p_rec, p_die)
     
-    unsigned int days_since_infected = m->today() - v->get_date();
+    unsigned int days_since_exposed = m->today() - v->get_date();
     epiworld_fast_uint status = p->get_status();
 
     // Figuring out latent period
@@ -60,35 +60,35 @@ EPI_NEW_UPDATEFUN(surveillance_update_infected,TSeq)
     }
     
     // If still latent, nothing happens
-    if (days_since_infected <= v->get_data()[0u])
+    if (days_since_exposed <= v->get_data()[0u])
         return status;
 
     // If past days infected + latent, then bye.
-    if (days_since_infected >= v->get_data()[1u])
-        EPIWORLD_UPDATE_INFECTED_REMOVE(JAYSTATUS::RECOVERED);
+    if (days_since_exposed >= v->get_data()[1u])
+        EPIWORLD_UPDATE_EXPOSED_REMOVE(SURVSTATUS::RECOVERED);
 
     // If it is infected, then it can be asymptomatic or symptomatic
-    if (status == JAYSTATUS::LATENT)
+    if (status == SURVSTATUS::LATENT)
     {
         // Will be symptomatic?
         if (EPI_RUNIF() < MPAR(2))
         {
             // If you are symptomatic, then you may be catched
-            m->get_db().down_infected(v, p->get_status(), JAYSTATUS::SYMPTOMATIC);
+            m->get_db().down_exposed(v, p->get_status(), SURVSTATUS::SYMPTOMATIC);
 
-            return static_cast<epiworld_fast_uint>(JAYSTATUS::SYMPTOMATIC);
+            return static_cast<epiworld_fast_uint>(SURVSTATUS::SYMPTOMATIC);
 
         }
         
-        m->get_db().down_infected(v, p->get_status(), JAYSTATUS::ASYMPTOMATIC);
+        m->get_db().down_exposed(v, p->get_status(), SURVSTATUS::ASYMPTOMATIC);
 
-        return static_cast<epiworld_fast_uint>(JAYSTATUS::ASYMPTOMATIC);
+        return static_cast<epiworld_fast_uint>(SURVSTATUS::ASYMPTOMATIC);
 
     }
     
     // Otherwise, it can be removed
     if (EPI_RUNIF() < p_die)
-        EPIWORLD_UPDATE_INFECTED_REMOVE(JAYSTATUS::REMOVED);
+        EPIWORLD_UPDATE_EXPOSED_REMOVE(SURVSTATUS::REMOVED);
     
     return p->get_status();
 
@@ -128,28 +128,28 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
         // Who is the lucky one
         unsigned int i = static_cast<unsigned int>(std::floor(EPI_RUNIF() * m->size()));
         epiworld::Person<TSeq> * p = &pop[i];
-        if (epiworld::IN(p->get_status(), m->get_status_infected()))
+        if (epiworld::IN(p->get_status(), m->get_status_exposed()))
         {
 
             ndetected += 1.0;
-            if (p->get_status() == JAYSTATUS::ASYMPTOMATIC)
+            if (p->get_status() == SURVSTATUS::ASYMPTOMATIC)
             {
                 ndetected_asympt += 1.0;
 
-                m->get_db().down_infected(
-                    &p->get_virus(0u), p->get_status(), JAYSTATUS::ASYMPTOMATIC_ISOLATED
+                m->get_db().down_exposed(
+                    &p->get_virus(0u), p->get_status(), SURVSTATUS::ASYMPTOMATIC_ISOLATED
                     );
                 
-                p->get_status() = JAYSTATUS::ASYMPTOMATIC_ISOLATED;
+                p->get_status() = SURVSTATUS::ASYMPTOMATIC_ISOLATED;
             }
             else 
             {
 
-                m->get_db().down_infected(
-                    &p->get_virus(0u), p->get_status(), JAYSTATUS::SYMPTOMATIC_ISOLATED
+                m->get_db().down_exposed(
+                    &p->get_virus(0u), p->get_status(), SURVSTATUS::SYMPTOMATIC_ISOLATED
                     );
                 
-                p->get_status() = JAYSTATUS::SYMPTOMATIC_ISOLATED;
+                p->get_status() = SURVSTATUS::SYMPTOMATIC_ISOLATED;
 
             }
 
@@ -167,7 +167,7 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
             static_cast<epiworld_double>(nsampled),
             ndetected,
             ndetected_asympt,
-            static_cast<epiworld_double>(totals[JAYSTATUS::ASYMPTOMATIC])
+            static_cast<epiworld_double>(totals[SURVSTATUS::ASYMPTOMATIC])
         }
         );
 
@@ -223,11 +223,11 @@ inline void set_up_surveillance(
     {
         // No chance of infecting
         epiworld_fast_uint  s = p->get_status();
-        if (s == JAYSTATUS::LATENT)
+        if (s == SURVSTATUS::LATENT)
             return static_cast<epiworld_double>(0.0);
-        else if (s == JAYSTATUS::SYMPTOMATIC_ISOLATED)
+        else if (s == SURVSTATUS::SYMPTOMATIC_ISOLATED)
             return static_cast<epiworld_double>(0.0);
-        else if (s == JAYSTATUS::ASYMPTOMATIC_ISOLATED)
+        else if (s == SURVSTATUS::ASYMPTOMATIC_ISOLATED)
             return static_cast<epiworld_double>(0.0);
 
         // Otherwise
@@ -250,8 +250,8 @@ inline void set_up_surveillance(
 
     std::vector< epiworld_fast_uint > new_status =
         {
-            JAYSTATUS::SUSCEPTIBLE, JAYSTATUS::LATENT, JAYSTATUS::RECOVERED,
-            JAYSTATUS::REMOVED
+            SURVSTATUS::SUSCEPTIBLE, SURVSTATUS::LATENT, SURVSTATUS::RECOVERED,
+            SURVSTATUS::REMOVED
         };
 
     model.reset_status_codes(
@@ -260,12 +260,12 @@ inline void set_up_surveillance(
         false
     );
 
-    model.add_status_infected(JAYSTATUS::SYMPTOMATIC, "symptomatic");
-    model.add_status_infected(JAYSTATUS::SYMPTOMATIC_ISOLATED, "symptomatic isolated");
-    model.add_status_infected(JAYSTATUS::ASYMPTOMATIC, "asymptomatic");
-    model.add_status_infected(JAYSTATUS::ASYMPTOMATIC_ISOLATED, "asymptomatic isolated");
+    model.add_status_exposed(SURVSTATUS::SYMPTOMATIC, "symptomatic");
+    model.add_status_exposed(SURVSTATUS::SYMPTOMATIC_ISOLATED, "symptomatic isolated");
+    model.add_status_exposed(SURVSTATUS::ASYMPTOMATIC, "asymptomatic");
+    model.add_status_exposed(SURVSTATUS::ASYMPTOMATIC_ISOLATED, "asymptomatic isolated");
 
-    model.set_update_infected(surveillance_update_infected<TSeq>);
+    model.set_update_exposed(surveillance_update_exposed<TSeq>);
     model.set_update_susceptible(surveillance_update_susceptible<TSeq>);
 
     return;

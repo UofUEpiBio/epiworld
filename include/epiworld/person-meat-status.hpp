@@ -20,7 +20,7 @@ class Person;
         virus_ptr->get_host()->get_id(), \
         virus_ptr->get_id() \
     ); \
-    m->get_db().up_infected(virus_ptr, p->get_status(), new_state);\
+    m->get_db().up_exposed(virus_ptr, p->get_status(), new_state);\
     return new_state;}
 
 
@@ -33,7 +33,7 @@ class Person;
     { \
         epiworld::Person<TSeq> * neighbor = p->get_neighbors()[n]; \
         /* Non-infected individuals make no difference */ \
-        if (!epiworld::IN(neighbor->get_status(), m->get_status_infected())) \
+        if (!epiworld::IN(neighbor->get_status(), m->get_status_exposed())) \
             continue; \
         epiworld::PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); \
         /* Now over the neighbor's viruses */ \
@@ -68,7 +68,7 @@ inline epiworld_fast_uint default_update_susceptible(
         Person<TSeq> * neighbor = p->get_neighbors()[n]; 
         
         /* Non-infected individuals make no difference */ 
-        if (!IN(neighbor->get_status(), m->get_status_infected())) 
+        if (!IN(neighbor->get_status(), m->get_status_exposed())) 
             continue; 
         
         PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); 
@@ -106,30 +106,30 @@ inline epiworld_fast_uint default_update_susceptible(
 
     EPIWORLD_ADD_VIRUS(
         m->array_virus_tmp[which],
-        m->get_default_infected()
+        m->get_default_exposed()
         )
 
 }
 
-#define EPIWORLD_UPDATE_INFECTED_CALC_PROBS(prob_rec, prob_die) \
+#define EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(prob_rec, prob_die) \
     epiworld::Virus<TSeq> * v = &(p->get_virus(0u)); \
     epiworld_double prob_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); \
     epiworld_double prob_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
 
-#define EPIWORLD_UPDATE_INFECTED_REMOVE(newstatus) \
-    {m->get_db().down_infected(v, p->get_status(), newstatus);\
+#define EPIWORLD_UPDATE_EXPOSED_REMOVE(newstatus) \
+    {m->get_db().down_exposed(v, p->get_status(), newstatus);\
     if (m->is_queuing_on()) m->get_queue() -= p; \
     p->get_viruses().reset();\
     return static_cast<epiworld_fast_uint>(newstatus);}
 
-#define EPIWORLD_UPDATE_INFECTED_RECOVER(newstatus) \
-    {m->get_db().down_infected(v, p->get_status(), newstatus);\
+#define EPIWORLD_UPDATE_EXPOSED_RECOVER(newstatus) \
+    {m->get_db().down_exposed(v, p->get_status(), newstatus);\
     if (m->is_queuing_on()) m->get_queue() -= p; \
     v->post_recovery();p->get_viruses().reset();\
     return static_cast<epiworld_fast_uint>(newstatus);}
 
 template<typename TSeq>
-inline epiworld_fast_uint default_update_infected(Person<TSeq> * p, Model<TSeq> * m) {
+inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 
     epiworld::Virus<TSeq> * v = &(p->get_virus(0u)); 
     epiworld_double p_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
@@ -140,14 +140,14 @@ inline epiworld_fast_uint default_update_infected(Person<TSeq> * p, Model<TSeq> 
 
     if (r < cumsum)
     {
-        EPIWORLD_UPDATE_INFECTED_REMOVE(m->get_default_removed());
+        EPIWORLD_UPDATE_EXPOSED_REMOVE(m->get_default_removed());
     }
     
     cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
     
     if (r < cumsum)
     {
-        EPIWORLD_UPDATE_INFECTED_RECOVER(m->get_default_recovered())
+        EPIWORLD_UPDATE_EXPOSED_RECOVER(m->get_default_recovered())
     }
 
     return p->get_status();

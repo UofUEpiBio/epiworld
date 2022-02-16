@@ -43,7 +43,7 @@ allmake:
 	done
 
 clean:
-	rm */*.o
+	rm -f */*.o
 
 mem-usage:
 	valgrind --tool=massif ./sir.o && echo "Now use ms_print to see the memory usage"

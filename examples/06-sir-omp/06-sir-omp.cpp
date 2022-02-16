@@ -52,7 +52,7 @@ int main() {
 
     
     printf(
-        "Elapsed time: %d milliseconds\n",
+        "Elapsed time: %ld milliseconds\n",
         (std::chrono::duration_cast<std::chrono::milliseconds>(end - start)).count()
     );
 

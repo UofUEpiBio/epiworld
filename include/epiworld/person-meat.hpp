@@ -183,10 +183,10 @@ inline void Person<TSeq>::update_status()
         if (update_susceptible)
             status_next = update_susceptible(this, model);
 
-    } else if (IN(status, model->status_infected)) {
+    } else if (IN(status, model->status_exposed)) {
 
-        if (update_infected)
-            status_next = update_infected(this, model);
+        if (update_exposed)
+            status_next = update_exposed(this, model);
 
     } else
         throw std::range_error(
@@ -220,8 +220,8 @@ inline void Person<TSeq>::set_update_susceptible(UpdateFun<TSeq> fun) {
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::set_update_infected(UpdateFun<TSeq> fun) {
-    update_infected = fun;
+inline void Person<TSeq>::set_update_exposed(UpdateFun<TSeq> fun) {
+    update_exposed = fun;
 }
 
 template<typename TSeq>

@@ -119,7 +119,7 @@ inline epiworld_fast_int Queue<TSeq>::operator[](unsigned int i) const
 //         // We just visit the individual.
 //         p->toggle_visited();
 
-//         if (IN(p->get_status(), model->status_infected))
+//         if (IN(p->get_status(), model->status_exposed))
 //         {
 
 //             // Increasing the number in the queue

@@ -85,7 +85,7 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
         today_variant.push_back({});
         today_variant[new_id].resize(
             model->status_susceptible.size() +
-            model->status_infected.size() +
+            model->status_exposed.size() +
             model->status_removed.size(),
             0
         );
@@ -127,7 +127,7 @@ inline size_t DataBase<TSeq>::size() const
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::up_infected(
+inline void DataBase<TSeq>::up_exposed(
     Virus<TSeq> * v,
     epiworld_fast_uint prev_status,
     epiworld_fast_uint new_status
@@ -141,7 +141,7 @@ inline void DataBase<TSeq>::up_infected(
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::down_infected( 
+inline void DataBase<TSeq>::down_exposed( 
     Virus<TSeq> * v,
     epiworld_fast_uint prev_status,
     epiworld_fast_uint new_status
@@ -159,8 +159,8 @@ inline void DataBase<TSeq>::down_infected(
     stdstrvec.resize(model->nstatus); \
     for (epiworld_fast_uint i = 0u; i < model->status_susceptible.size(); ++i) \
         stdstrvec[model->status_susceptible[i]] = model->status_susceptible_labels[i]; \
-    for (epiworld_fast_uint i = 0u; i < model->status_infected.size(); ++i) \
-        stdstrvec[model->status_infected[i]] = model->status_infected_labels[i]; \
+    for (epiworld_fast_uint i = 0u; i < model->status_exposed.size(); ++i) \
+        stdstrvec[model->status_exposed[i]] = model->status_exposed_labels[i]; \
     for (epiworld_fast_uint i = 0u; i < model->status_removed.size(); ++i) \
         stdstrvec[model->status_removed[i]] = model->status_removed_labels[i];
 
@@ -288,9 +288,9 @@ inline void DataBase<TSeq>::write_data(
         labels[model->status_susceptible[i]] =
             model->status_susceptible_labels[i];
     
-    for (unsigned int i = 0u; i < model->status_infected.size(); ++i)
-        labels[model->status_infected[i]] =
-            model->status_infected_labels[i];
+    for (unsigned int i = 0u; i < model->status_exposed.size(); ++i)
+        labels[model->status_exposed[i]] =
+            model->status_exposed_labels[i];
 
     for (unsigned int i = 0u; i < model->status_removed.size(); ++i)
         labels[model->status_removed[i]] =

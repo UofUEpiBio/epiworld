@@ -60,14 +60,14 @@ private:
 
     std::vector< epiworld_fast_uint > status_susceptible = {STATUS::HEALTHY, STATUS::RECOVERED};
     std::vector< std::string > status_susceptible_labels = {"healthy", "recovered"};
-    std::vector< epiworld_fast_uint > status_infected = {STATUS::INFECTED};
-    std::vector< std::string > status_infected_labels = {"infected"};
+    std::vector< epiworld_fast_uint > status_exposed = {STATUS::EXPOSED};
+    std::vector< std::string > status_exposed_labels = {"exposed"};
     std::vector< epiworld_fast_uint > status_removed = {STATUS::REMOVED};
     std::vector< std::string > status_removed_labels = {"removed"};
 
     epiworld_fast_uint nstatus = 4u;
     epiworld_fast_uint baseline_status_healthy   = STATUS::HEALTHY;
-    epiworld_fast_uint baseline_status_infected  = STATUS::INFECTED;
+    epiworld_fast_uint baseline_status_exposed  = STATUS::EXPOSED;
     epiworld_fast_uint baseline_status_removed   = STATUS::REMOVED;
     epiworld_fast_uint baseline_status_recovered = STATUS::RECOVERED;
     
@@ -91,7 +91,7 @@ private:
     std::unique_ptr< Model<TSeq> > backup = nullptr;
 
     UpdateFun<TSeq> update_susceptible = nullptr;
-    UpdateFun<TSeq> update_infected    = nullptr;
+    UpdateFun<TSeq> update_exposed    = nullptr;
     UpdateFun<TSeq> update_removed     = nullptr;
 
     std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
@@ -242,7 +242,7 @@ public:
     ///@]
 
     inline void set_update_susceptible(UpdateFun<TSeq> fun);
-    inline void set_update_infected(UpdateFun<TSeq> fun);
+    inline void set_update_exposed(UpdateFun<TSeq> fun);
     inline void set_update_removed(UpdateFun<TSeq> fun);
     /**
      * @brief Wrapper of `DataBase::write_data`
@@ -317,20 +317,20 @@ public:
      */
     ///@[
     void add_status_susceptible(epiworld_fast_uint s, std::string lab);
-    void add_status_infected(epiworld_fast_uint s, std::string lab);
+    void add_status_exposed(epiworld_fast_uint s, std::string lab);
     void add_status_removed(epiworld_fast_uint s, std::string lab);
     void add_status_susceptible(std::string lab);
-    void add_status_infected(std::string lab);
+    void add_status_exposed(std::string lab);
     void add_status_removed(std::string lab);
     const std::vector< epiworld_fast_uint > & get_status_susceptible() const;
-    const std::vector< epiworld_fast_uint > & get_status_infected() const;
+    const std::vector< epiworld_fast_uint > & get_status_exposed() const;
     const std::vector< epiworld_fast_uint > & get_status_removed() const;
     const std::vector< std::string > & get_status_susceptible_labels() const;
-    const std::vector< std::string > & get_status_infected_labels() const;
+    const std::vector< std::string > & get_status_exposed_labels() const;
     const std::vector< std::string > & get_status_removed_labels() const;
     void print_status_codes() const;
     epiworld_fast_uint get_default_healthy() const;
-    epiworld_fast_uint get_default_infected() const;
+    epiworld_fast_uint get_default_exposed() const;
     epiworld_fast_uint get_default_recovered() const;
     epiworld_fast_uint get_default_removed() const;
     ///@]

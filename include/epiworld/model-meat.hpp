@@ -24,13 +24,13 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     pb(model.pb),
     status_susceptible(model.status_susceptible),
     status_susceptible_labels(model.status_susceptible_labels),
-    status_infected(model.status_infected),
-    status_infected_labels(model.status_infected_labels),
+    status_exposed(model.status_exposed),
+    status_exposed_labels(model.status_exposed_labels),
     status_removed(model.status_removed),
     status_removed_labels(model.status_removed_labels),
     nstatus(model.nstatus),
     baseline_status_healthy(model.baseline_status_healthy),
-    baseline_status_infected(model.baseline_status_infected),
+    baseline_status_exposed(model.baseline_status_exposed),
     baseline_status_removed(model.baseline_status_removed),
     baseline_status_recovered(model.baseline_status_recovered),
     verbose(model.verbose),
@@ -86,12 +86,12 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     global_action_dates(std::move(model.global_action_dates)),
     status_susceptible(std::move(model.status_susceptible)),
     status_susceptible_labels(std::move(model.status_susceptible_labels)),
-    status_infected(std::move(model.status_infected)),
-    status_infected_labels(std::move(model.status_infected_labels)),
+    status_exposed(std::move(model.status_exposed)),
+    status_exposed_labels(std::move(model.status_exposed_labels)),
     status_removed(std::move(model.status_removed)),
     status_removed_labels(std::move(model.status_removed_labels)),
     baseline_status_healthy(model.baseline_status_healthy),
-    baseline_status_infected(model.baseline_status_infected),
+    baseline_status_exposed(model.baseline_status_exposed),
     baseline_status_recovered(model.baseline_status_recovered),
     baseline_status_removed(model.baseline_status_removed),
     nstatus(model.nstatus),
@@ -283,8 +283,8 @@ inline void Model<TSeq>::dist_virus()
                 continue;
             
             population[loc].add_virus(today(), viruses[v]);
-            population[loc].status_next = baseline_status_infected;
-            db.up_infected(&viruses[v], population[loc].get_status(), baseline_status_infected);
+            population[loc].status_next = baseline_status_exposed;
+            db.up_exposed(&viruses[v], population[loc].get_status(), baseline_status_exposed);
             nsampled--;
 
             if (use_queuing)
@@ -679,7 +679,7 @@ inline void Model<TSeq>::mutate_variant() {
 
     for (auto & p: population)
     {
-        if (IN(p.get_status(), status_infected))
+        if (IN(p.get_status(), status_exposed))
             p.mutate_variant();
 
     }
@@ -821,10 +821,10 @@ inline void Model<TSeq>::reset() {
             p.set_update_susceptible(update_susceptible);
         else if (!p.update_susceptible)
             throw std::logic_error("No update_susceptible function set.");
-        if (update_infected)
-            p.set_update_infected(update_infected);
-        else if (!p.update_infected)
-            throw std::logic_error("No update_infected function set.");
+        if (update_exposed)
+            p.set_update_exposed(update_exposed);
+        else if (!p.update_exposed)
+            throw std::logic_error("No update_exposed function set.");
         if (update_removed)
             p.set_update_removed(update_removed);
         
@@ -902,7 +902,7 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
             throw std::logic_error("The status " + std::to_string(i) + " already exists."); 
 #define EPIWORLD_CHECK_ALL_STATUSES(a) \
     EPIWORLD_CHECK_STATUS(a, status_susceptible) \
-    EPIWORLD_CHECK_STATUS(a, status_infected) \
+    EPIWORLD_CHECK_STATUS(a, status_exposed) \
     EPIWORLD_CHECK_STATUS(a, status_removed)
 
 template<typename TSeq>
@@ -920,15 +920,15 @@ inline void Model<TSeq>::add_status_susceptible(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_infected(
+inline void Model<TSeq>::add_status_exposed(
     epiworld_fast_uint s,
     std::string lab
 )
 {
 
     EPIWORLD_CHECK_ALL_STATUSES(s)
-    status_infected.push_back(s);
-    status_infected_labels.push_back(lab);
+    status_exposed.push_back(s);
+    status_exposed_labels.push_back(lab);
     nstatus++;
 
 }
@@ -955,10 +955,10 @@ inline void Model<TSeq>::add_status_susceptible(std::string lab)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_infected(std::string lab)
+inline void Model<TSeq>::add_status_exposed(std::string lab)
 {
-    status_infected.push_back(nstatus++);
-    status_infected_labels.push_back(lab);
+    status_exposed.push_back(nstatus++);
+    status_exposed_labels.push_back(lab);
 }
 
 template<typename TSeq>
@@ -986,9 +986,9 @@ Model<TSeq>::get_status_susceptible() const
 
 template<typename TSeq>
 inline const std::vector< epiworld_fast_uint > &
-Model<TSeq>::get_status_infected() const
+Model<TSeq>::get_status_exposed() const
 {
-    return status_infected;
+    return status_exposed;
 }
 
 template<typename TSeq>
@@ -1007,9 +1007,9 @@ Model<TSeq>::get_status_susceptible_labels() const
 
 template<typename TSeq>
 inline const std::vector< std::string > &
-Model<TSeq>::get_status_infected_labels() const
+Model<TSeq>::get_status_exposed_labels() const
 {
-    return status_infected_labels;
+    return status_exposed_labels;
 }
 
 template<typename TSeq>
@@ -1035,19 +1035,19 @@ inline void Model<TSeq>::reset_status_codes(
 
     status_susceptible.clear();
     status_susceptible_labels.clear();
-    status_infected.clear();
-    status_infected_labels.clear();
+    status_exposed.clear();
+    status_exposed_labels.clear();
     status_removed.clear();
     status_removed_labels.clear();
     nstatus = 0u;
 
     baseline_status_healthy   = codes[0u];
-    baseline_status_infected  = codes[1u];
+    baseline_status_exposed  = codes[1u];
     baseline_status_recovered = codes[2u];
     baseline_status_removed   = codes[3u];
 
     add_status_susceptible(codes[0u], names[0u]);
-    add_status_infected(codes[1u], names[1u]);
+    add_status_exposed(codes[1u], names[1u]);
     add_status_susceptible(codes[2u], names[2u]);
     add_status_removed(codes[3u], names[3u]);
 
@@ -1073,7 +1073,7 @@ inline void Model<TSeq>::print_status_codes() const
         if (p.length() > nchar)
             nchar = p.length();
     
-    for (auto & p : status_infected_labels)
+    for (auto & p : status_exposed_labels)
         if (p.length() > nchar)
             nchar = p.length();
 
@@ -1097,14 +1097,14 @@ inline void Model<TSeq>::print_status_codes() const
 
     }
 
-    for (unsigned int i = 0u; i < status_infected.size(); ++i)
+    for (unsigned int i = 0u; i < status_exposed.size(); ++i)
     {
 
         printf_epiworld(
             fmt.c_str(),
-            status_infected[i],
-            (status_infected_labels[i] + " (I)").c_str(),
-            status_infected[i] == baseline_status_infected ? " *" : ""
+            status_exposed[i],
+            (status_exposed_labels[i] + " (E)").c_str(),
+            status_exposed[i] == baseline_status_exposed ? " *" : ""
         );
 
     }
@@ -1122,7 +1122,7 @@ inline void Model<TSeq>::print_status_codes() const
     }
 
     printf_epiworld(
-        "\n(S): Susceptible, (I): Infected, (R): Recovered\n * : Baseline status (default)\n%s\n\n",
+        "\n(S): Susceptible, (E): Exposed, (R): Recovered\n * : Baseline status (default)\n%s\n\n",
         line.c_str()
         );
 
@@ -1136,9 +1136,9 @@ inline epiworld_fast_uint Model<TSeq>::get_default_healthy() const
 }
 
 template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_infected() const
+inline epiworld_fast_uint Model<TSeq>::get_default_exposed() const
 {
-    return baseline_status_infected;
+    return baseline_status_exposed;
 }
 
 template<typename TSeq>
@@ -1307,9 +1307,9 @@ inline void Model<TSeq>::set_update_susceptible(UpdateFun<TSeq> fun) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_update_infected(UpdateFun<TSeq> fun) {
+inline void Model<TSeq>::set_update_exposed(UpdateFun<TSeq> fun) {
     
-    update_infected = fun;
+    update_exposed = fun;
 
 }
 
