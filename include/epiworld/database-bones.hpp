@@ -52,7 +52,7 @@ private:
     std::vector< int > hist_total_nvariants_active;
     std::vector< epiworld_fast_uint > hist_total_status;
     std::vector< int > hist_total_counts;
-    std::vector< epiworld_fast_uint > hist_total_transition_matrix;
+    std::vector< int > hist_transition_matrix;
 
     // Transmission network
     std::vector< int > transmision_date;
@@ -60,7 +60,7 @@ private:
     std::vector< int > transmision_target;
     std::vector< int > transmision_variant;
 
-    std::vector< epiworld_fast_uint > transition_matrix;
+    std::vector< int > transition_matrix;
 
     UserData<TSeq> user_data;
 
@@ -97,6 +97,8 @@ public:
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
         );
+
+    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
 
     /**
      * @brief Get recorded information from the model
@@ -140,7 +142,8 @@ public:
         std::string fn_variant_info,
         std::string fn_variant_hist,
         std::string fn_total_hist,
-        std::string fn_transmision
+        std::string fn_transmision,
+        std::string fn_transition
         ) const;
     
     void record_transmision(int i, int j, int variant);

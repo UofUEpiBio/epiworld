@@ -35,7 +35,8 @@ EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {
     if (which < 0)
         return p->get_status();
 
-    EPIWORLD_ADD_VIRUS(variants[which], SURVSTATUS::LATENT)
+    p->add_virus(SURVSTATUS::LATENT, *variants[which]); 
+    return m->get_default_exposed();
 
 }
 

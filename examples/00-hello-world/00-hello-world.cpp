@@ -25,5 +25,14 @@ int main()
     // Running the model
     model.run();
     model.print();
+
+    // Writing the data
+    model.write_data(
+        "variant_info.txt",
+        "variant_hist.txt",
+        "total_hist.txt",
+        "transmissions.txt",
+        "transitions.txt"
+        );
   
 }

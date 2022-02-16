@@ -7,8 +7,10 @@
 #define NEXT_STATUS() \
     /* Making the change effective */ \
     for (auto & p: population) \
-        if (!IN(p.status, status_removed)) \
-            p.status = p.status_next;
+        if (!IN(p.status, status_removed)) {\
+            db.record_transition(p.status, p.status_next);\
+            p.status = p.status_next;\
+        }
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -282,15 +284,10 @@ inline void Model<TSeq>::dist_virus()
             if (population[loc].has_virus(viruses[v].get_id()))
                 continue;
             
-            population[loc].add_virus(today(), viruses[v]);
+            population[loc].add_virus(baseline_status_exposed, viruses[v]);
             population[loc].status_next = baseline_status_exposed;
-            db.up_exposed(&viruses[v], population[loc].get_status(), baseline_status_exposed);
-            nsampled--;
 
-            if (use_queuing)
-            {
-                queue += &population[loc];
-            }
+            nsampled--;
 
         }
     }
@@ -763,11 +760,12 @@ inline void Model<TSeq>::write_data(
     std::string fn_variant_info,
     std::string fn_variant_hist,
     std::string fn_total_hist,
-    std::string fn_transmission
+    std::string fn_transmission,
+    std::string fn_transition
     ) const
 {
 
-    db.write_data(fn_variant_info,fn_variant_hist,fn_total_hist,fn_transmission);
+    db.write_data(fn_variant_info,fn_variant_hist,fn_total_hist,fn_transmission,fn_transition);
 
 }
 

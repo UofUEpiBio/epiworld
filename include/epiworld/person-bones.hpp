@@ -43,7 +43,7 @@ public:
     void init();
 
     void add_tool(int d, Tool<TSeq> tool);
-    void add_virus(int d, Virus<TSeq> virus);
+    void add_virus(epiworld_fast_uint new_status, Virus<TSeq> virus);
 
     epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);

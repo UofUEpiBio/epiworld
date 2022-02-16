@@ -3,7 +3,7 @@
 
 template<typename TSeq>
 inline void PersonViruses<TSeq>::add_virus(
-    int date,
+    epiworld_fast_uint new_status,
     Virus<TSeq> v
 ) {
 
@@ -14,6 +14,24 @@ inline void PersonViruses<TSeq>::add_virus(
     int vloc = viruses.size() - 1u;
     viruses[vloc].host = host;
     viruses[vloc].date = host->get_model()->today();
+
+    // Recording transmission (only if not initial)
+    if (v.get_host() != nullptr)
+    {
+
+        host->get_model()->get_db().record_transmision(
+            host->get_id(),
+            v.get_host()->get_id(),
+            v.get_id()
+        );
+
+    }
+    
+    host->get_model()->get_db().up_exposed(
+        &v,
+        host->get_status(),
+        new_status
+    );
 
     nactive++;
 

@@ -29,12 +29,15 @@ inline void Person<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    int d,
+    epiworld_fast_uint new_status,
     Virus<TSeq> virus
 )
 {
 
-    viruses.add_virus(d, virus);
+    viruses.add_virus(new_status, virus);
+
+    if (model->is_queuing_on())
+        model->get_queue() += this;
 
 }
 

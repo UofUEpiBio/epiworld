@@ -7,22 +7,6 @@ class Model;
 template<typename TSeq>
 class Person;
 
-/**
- * @brief Helper macro to add virus and update the db
- * 
- */
-#define EPIWORLD_ADD_VIRUS(virus_ptr,new_state) \
-    {p->add_virus(m->today(), *virus_ptr); \
-    /* Recording information in the database */ \
-    if (m->is_queuing_on()) m->get_queue() += p; \
-    m->get_db().record_transmision( \
-        p->get_id(), \
-        virus_ptr->get_host()->get_id(), \
-        virus_ptr->get_id() \
-    ); \
-    m->get_db().up_exposed(virus_ptr, p->get_status(), new_state);\
-    return new_state;}
-
 
 #define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
     /* Step 1: Compute the individual efficcacy */ \
@@ -104,10 +88,9 @@ inline epiworld_fast_uint default_update_susceptible(
     if (which < 0)
         return p->get_status();
 
-    EPIWORLD_ADD_VIRUS(
-        m->array_virus_tmp[which],
-        m->get_default_exposed()
-        )
+    p->add_virus(m->get_default_exposed(), *(m->array_virus_tmp[which])); 
+
+    return m->get_default_exposed();
 
 }
 

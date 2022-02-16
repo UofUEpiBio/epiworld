@@ -17,7 +17,7 @@ private:
     int nactive = 0;
 
 public:
-    void add_virus(int date, Virus<TSeq> v);
+    void add_virus(epiworld_fast_uint new_status, Virus<TSeq> v);
     size_t size() const;
     int size_active() const;
     Virus<TSeq> & operator()(int i);

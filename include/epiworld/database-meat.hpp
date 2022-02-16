@@ -11,6 +11,8 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 
     // Initializing the counts
     today_total.resize(m.nstatus);
+    transition_matrix.resize(m.nstatus * m.nstatus);
+    std::fill(transition_matrix.begin(), transition_matrix.end(), 0u);
 
     for (auto & p : *m.get_population())
         ++today_total[p.get_status()];
@@ -59,8 +61,10 @@ inline void DataBase<TSeq>::record()
             hist_total_nvariants_active.push_back(today_total_nvariants_active);
             hist_total_status.push_back(s);
             hist_total_counts.push_back(today_total[s]);
-
         }
+
+        for (auto cell : transition_matrix)
+                hist_transition_matrix.push_back(cell);
 
     }
 }
@@ -152,6 +156,16 @@ inline void DataBase<TSeq>::down_exposed(
 
     today_variant[v->get_id()][prev_status]--;
 
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::record_transition(
+    epiworld_fast_uint from,
+    epiworld_fast_uint to
+) {
+
+    transition_matrix[to * model->nstatus + from]++;
 
 }
 
@@ -258,7 +272,8 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_variant_info,
     std::string fn_variant_hist,
     std::string fn_total_hist,
-    std::string fn_transmision
+    std::string fn_transmision,
+    std::string fn_transition
 ) const
 {
 
@@ -338,6 +353,29 @@ inline void DataBase<TSeq>::write_data(
                 transmision_variant[i] << " " <<
                 transmision_source[i] << " " <<
                 transmision_target[i] << "\n";
+                
+    }
+
+    if (fn_transition != "")
+    {
+        std::ofstream file_transition(fn_transition, std::ios_base::out);
+        file_transition <<
+            "date " << "from " << "to " << "counts\n";
+
+        int ns = model->nstatus;
+
+        for (unsigned int i = 0; i <= model->today(); ++i)
+        {
+
+            for (int from = 0u; from < ns; ++from)
+                for (int to = 0u; to < ns; ++to)
+                    file_transition <<
+                        i << " " <<
+                        labels[from] << " " <<
+                        labels[to] << " " <<
+                        hist_transition_matrix[i * (ns * ns) + to * ns + from] << "\n";
+                
+        }
                 
     }
 
