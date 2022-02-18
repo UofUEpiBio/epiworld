@@ -36,10 +36,10 @@ private:
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...} to update
     std::vector< std::vector<int> > today_variant_next;
 
-    // {Healthy, Infected, etc.}
+    // {Susceptible, Infected, etc.}
     std::vector< int > today_total;
 
-    // {Helathy, Infected, etc.} to update
+    // {Susceptible, Infected, etc.} to update
     std::vector< int > today_total_next;
 
     // Totals

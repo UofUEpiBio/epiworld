@@ -31,10 +31,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     status_removed(model.status_removed),
     status_removed_labels(model.status_removed_labels),
     nstatus(model.nstatus),
-    baseline_status_healthy(model.baseline_status_healthy),
+    baseline_status_susceptible(model.baseline_status_susceptible),
     baseline_status_exposed(model.baseline_status_exposed),
     baseline_status_removed(model.baseline_status_removed),
-    baseline_status_recovered(model.baseline_status_recovered),
     verbose(model.verbose),
     initialized(model.initialized),
     current_date(model.current_date),
@@ -92,9 +91,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     status_exposed_labels(std::move(model.status_exposed_labels)),
     status_removed(std::move(model.status_removed)),
     status_removed_labels(std::move(model.status_removed_labels)),
-    baseline_status_healthy(model.baseline_status_healthy),
+    baseline_status_susceptible(model.baseline_status_susceptible),
     baseline_status_exposed(model.baseline_status_exposed),
-    baseline_status_recovered(model.baseline_status_recovered),
     baseline_status_removed(model.baseline_status_removed),
     nstatus(model.nstatus),
     visited_model(model.visited_model),
@@ -1025,11 +1023,11 @@ inline void Model<TSeq>::reset_status_codes(
 )
 {
 
-    if (codes.size() != 4u)
-        throw std::length_error("The vector of codes should be of length 4.");
+    if (codes.size() != 3u)
+        throw std::length_error("The vector of codes should be of length 3.");
 
-    if (names.size() != 4u)
-        throw std::length_error("The vector of names should be of length 4.");
+    if (names.size() != 3u)
+        throw std::length_error("The vector of names should be of length 3.");
 
     status_susceptible.clear();
     status_susceptible_labels.clear();
@@ -1039,15 +1037,13 @@ inline void Model<TSeq>::reset_status_codes(
     status_removed_labels.clear();
     nstatus = 0u;
 
-    baseline_status_healthy   = codes[0u];
-    baseline_status_exposed  = codes[1u];
-    baseline_status_recovered = codes[2u];
-    baseline_status_removed   = codes[3u];
+    baseline_status_susceptible = codes[0u];
+    baseline_status_exposed     = codes[1u];
+    baseline_status_removed     = codes[2u];
 
     add_status_susceptible(codes[0u], names[0u]);
     add_status_exposed(codes[1u], names[1u]);
-    add_status_susceptible(codes[2u], names[2u]);
-    add_status_removed(codes[3u], names[3u]);
+    add_status_removed(codes[2u], names[2u]);
 
     if (verbose)
         print_status_codes();    
@@ -1087,10 +1083,7 @@ inline void Model<TSeq>::print_status_codes() const
             fmt.c_str(),
             status_susceptible[i],
             (status_susceptible_labels[i] + " (S)").c_str(),
-            (
-                (status_susceptible[i] == baseline_status_healthy) |
-                (status_susceptible[i] == baseline_status_recovered)
-            ) ? " *" : ""
+            (status_susceptible[i] == baseline_status_susceptible) ? " *" : ""
         );
 
     }
@@ -1120,7 +1113,7 @@ inline void Model<TSeq>::print_status_codes() const
     }
 
     printf_epiworld(
-        "\n(S): Susceptible, (E): Exposed, (R): Recovered\n * : Baseline status (default)\n%s\n\n",
+        "\n(S): Susceptible, (E): Exposed, (R): Removed\n * : Baseline status (default)\n%s\n\n",
         line.c_str()
         );
 
@@ -1128,21 +1121,15 @@ inline void Model<TSeq>::print_status_codes() const
 }
 
 template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_healthy() const
+inline epiworld_fast_uint Model<TSeq>::get_default_susceptible() const
 {
-    return baseline_status_healthy;
+    return baseline_status_susceptible;
 }
 
 template<typename TSeq>
 inline epiworld_fast_uint Model<TSeq>::get_default_exposed() const
 {
     return baseline_status_exposed;
-}
-
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_recovered() const
-{
-    return baseline_status_recovered;
 }
 
 template<typename TSeq>

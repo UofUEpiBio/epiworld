@@ -15,7 +15,7 @@ inline void Person<TSeq>::init()
 {
     tools.person = this;
     viruses.host = this;
-    status       = HEALTHY;
+    status       = STATUS::SUSCEPTIBLE;
 }
     
 
@@ -212,8 +212,8 @@ inline void Person<TSeq>::reset() {
 
     this->viruses.reset();
     this->tools.reset();
-    this->status      = model->baseline_status_healthy;
-    this->status_next = model->baseline_status_healthy;
+    this->status      = model->baseline_status_susceptible;
+    this->status_next = model->baseline_status_susceptible;
 
 }
 

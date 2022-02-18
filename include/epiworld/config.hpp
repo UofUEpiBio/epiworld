@@ -66,14 +66,11 @@ using GlobalFun = std::function<void(Model<TSeq>*)>;
 
 /**
  * @brief List of possible states in the model
- * 
- * @details Currently, only `DECEASED`, `EXPOSED`, `RECOVERED`, and `HEALTHY` are used.
- * 
+ *  
  */
 enum STATUS {
-    HEALTHY,
+    SUSCEPTIBLE,
     EXPOSED,
-    RECOVERED,
     REMOVED
 };
 

@@ -251,13 +251,12 @@ inline void set_up_surveillance(
 
     std::vector< epiworld_fast_uint > new_status =
         {
-            SURVSTATUS::SUSCEPTIBLE, SURVSTATUS::LATENT, SURVSTATUS::RECOVERED,
-            SURVSTATUS::REMOVED
+            SURVSTATUS::SUSCEPTIBLE, SURVSTATUS::LATENT, SURVSTATUS::RECOVERED
         };
 
     model.reset_status_codes(
         new_status,
-        {"susceptible", "latent", "recovered", "removed"},
+        {"susceptible", "latent", "recovered"},
         false
     );
 
@@ -265,6 +264,7 @@ inline void set_up_surveillance(
     model.add_status_exposed(SURVSTATUS::SYMPTOMATIC_ISOLATED, "symptomatic isolated");
     model.add_status_exposed(SURVSTATUS::ASYMPTOMATIC, "asymptomatic");
     model.add_status_exposed(SURVSTATUS::ASYMPTOMATIC_ISOLATED, "asymptomatic isolated");
+    model.add_status_removed(SURVSTATUS::REMOVED, "removed");
 
     model.set_update_exposed(surveillance_update_exposed<TSeq>);
     model.set_update_susceptible(surveillance_update_susceptible<TSeq>);

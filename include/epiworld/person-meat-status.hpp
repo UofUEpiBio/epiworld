@@ -130,7 +130,7 @@ inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> *
     
     if (r < cumsum)
     {
-        EPIWORLD_UPDATE_EXPOSED_RECOVER(m->get_default_recovered())
+        EPIWORLD_UPDATE_EXPOSED_RECOVER(m->get_default_removed())
     }
 
     return p->get_status();

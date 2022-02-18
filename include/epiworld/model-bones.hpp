@@ -58,18 +58,19 @@ private:
     unsigned int ndays;
     Progress pb;
 
-    std::vector< epiworld_fast_uint > status_susceptible = {STATUS::HEALTHY, STATUS::RECOVERED};
-    std::vector< std::string > status_susceptible_labels = {"healthy", "recovered"};
+    std::vector< epiworld_fast_uint > status_susceptible = {STATUS::SUSCEPTIBLE};
+    std::vector< std::string > status_susceptible_labels = {"susceptible"};
+
     std::vector< epiworld_fast_uint > status_exposed = {STATUS::EXPOSED};
     std::vector< std::string > status_exposed_labels = {"exposed"};
+
     std::vector< epiworld_fast_uint > status_removed = {STATUS::REMOVED};
     std::vector< std::string > status_removed_labels = {"removed"};
 
-    epiworld_fast_uint nstatus = 4u;
-    epiworld_fast_uint baseline_status_healthy   = STATUS::HEALTHY;
-    epiworld_fast_uint baseline_status_exposed  = STATUS::EXPOSED;
-    epiworld_fast_uint baseline_status_removed   = STATUS::REMOVED;
-    epiworld_fast_uint baseline_status_recovered = STATUS::RECOVERED;
+    epiworld_fast_uint nstatus = 3u;
+    epiworld_fast_uint baseline_status_susceptible = STATUS::SUSCEPTIBLE;
+    epiworld_fast_uint baseline_status_exposed     = STATUS::EXPOSED;
+    epiworld_fast_uint baseline_status_removed     = STATUS::REMOVED;
     
     bool verbose     = true;
     bool initialized = false;
@@ -91,7 +92,7 @@ private:
     std::unique_ptr< Model<TSeq> > backup = nullptr;
 
     UpdateFun<TSeq> update_susceptible = nullptr;
-    UpdateFun<TSeq> update_exposed    = nullptr;
+    UpdateFun<TSeq> update_exposed     = nullptr;
     UpdateFun<TSeq> update_removed     = nullptr;
 
     std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
@@ -331,9 +332,8 @@ public:
     const std::vector< std::string > & get_status_exposed_labels() const;
     const std::vector< std::string > & get_status_removed_labels() const;
     void print_status_codes() const;
-    epiworld_fast_uint get_default_healthy() const;
+    epiworld_fast_uint get_default_susceptible() const;
     epiworld_fast_uint get_default_exposed() const;
-    epiworld_fast_uint get_default_recovered() const;
     epiworld_fast_uint get_default_removed() const;
     ///@]
 
@@ -343,7 +343,7 @@ public:
      * @details 
      * The default values are those specified in the enum STATUS.
      * 
-     * @param codes In the following order: Healthy, Infected, Recovered, Removed
+     * @param codes In the following order: Susceptible, Infected, Removed
      * @param names Names matching the codes
      * @param verbose When `true`, it will print the new mappings.
      */
