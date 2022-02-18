@@ -337,7 +337,9 @@ inline AdjList rgraph_smallworld(
     AdjList ring = rgraph_ring_lattice(n,k,directed);
     
     // Rewiring and returning
-    rewire_degseq(&ring, &model, p);
+    if (k > 0u)
+        rewire_degseq(&ring, &model, p);
+        
     return ring;
 
 }

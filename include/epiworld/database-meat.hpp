@@ -11,11 +11,17 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 
     // Initializing the counts
     today_total.resize(m.nstatus);
+    for (auto & p : *m.get_population())
+        ++today_total[p.get_status()];
+    
+    today_total_next.resize(m.nstatus);
+    std::fill(today_total_next.begin(), today_total_next.end(), 0);
+
     transition_matrix.resize(m.nstatus * m.nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0u);
 
-    for (auto & p : *m.get_population())
-        ++today_total[p.get_status()];
+    transition_matrix_next.resize(m.nstatus * m.nstatus);
+    std::fill(transition_matrix_next.begin(), transition_matrix_next.end(), 0u);
 
     return;
 
@@ -34,6 +40,31 @@ inline const std::vector< TSeq > & DataBase<TSeq>::get_sequence() const {
 template<typename TSeq>
 inline void DataBase<TSeq>::record() 
 {
+
+    // Updating values according to today's changes
+    for (auto i = 0u; i < model->nstatus; ++i)
+    {
+        today_total[i] += today_total_next[i];
+        today_total_next[i] = 0;
+    }
+
+    for (auto v = 0u; v < today_variant.size(); ++v)
+    {
+
+        for (auto i = 0u; i < model->nstatus; ++i)
+        {
+            today_variant[v][i] += today_variant_next[v][i];
+            today_variant_next[v][i] = 0;
+        }
+
+    }
+    
+    for (auto i = 0u; i < transition_matrix.size(); ++i)
+    {
+        transition_matrix[i] += transition_matrix_next[i];
+        transition_matrix_next[i] = 0;
+    }
+
     // Only store every now and then
     if ((model->today() % sampling_freq) == 0)
     {
@@ -93,6 +124,8 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
             model->status_removed.size(),
             0
         );
+
+        today_variant_next.push_back(today_variant[new_id]);
         
         // Updating the variant
         v->set_id(new_id);
@@ -116,8 +149,8 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
     {
         // Correcting math
         epiworld_fast_uint tmp_status = v->get_host()->get_status();
-        today_variant[old_id][tmp_status]--;
-        today_variant[new_id][tmp_status]++;
+        today_variant_next[old_id][tmp_status]--;
+        today_variant_next[new_id][tmp_status]++;
 
     }
     
@@ -137,10 +170,10 @@ inline void DataBase<TSeq>::up_exposed(
     epiworld_fast_uint new_status
 ) {
 
-    today_total[prev_status]--;
-    today_total[new_status]++;
+    today_total_next[prev_status]--;
+    today_total_next[new_status]++;
 
-    today_variant[v->get_id()][new_status]++;
+    today_variant_next[v->get_id()][new_status]++;
 
 }
 
@@ -151,10 +184,10 @@ inline void DataBase<TSeq>::down_exposed(
     epiworld_fast_uint new_status
 ) {
 
-    today_total[prev_status]--;
-    today_total[new_status]++;
+    today_total_next[prev_status]--;
+    today_total_next[new_status]++;
 
-    today_variant[v->get_id()][prev_status]--;
+    today_variant_next[v->get_id()][prev_status]--;
 
 
 }
@@ -165,7 +198,7 @@ inline void DataBase<TSeq>::record_transition(
     epiworld_fast_uint to
 ) {
 
-    transition_matrix[to * model->nstatus + from]++;
+    transition_matrix_next[to * model->nstatus + from]++;
 
 }
 
@@ -177,6 +210,25 @@ inline void DataBase<TSeq>::record_transition(
         stdstrvec[model->status_exposed[i]] = model->status_exposed_labels[i]; \
     for (epiworld_fast_uint i = 0u; i < model->status_removed.size(); ++i) \
         stdstrvec[model->status_removed[i]] = model->status_removed_labels[i];
+
+
+template<typename TSeq>
+inline int DataBase<TSeq>::get_today_total(
+    std::string what
+) const
+{
+    std::vector< std::string > labels;
+    EPIWORLD_GET_STATUS_LABELS(labels)
+
+    for (auto i = 0u; i < labels.size(); ++i)
+    {
+        if (labels[i] == what)
+            return today_total[i];
+    }
+
+    throw std::range_error("The value '" + what + "' is not in the model.");
+
+}
 
 
 template<typename TSeq>
@@ -364,7 +416,7 @@ inline void DataBase<TSeq>::write_data(
 
         int ns = model->nstatus;
 
-        for (unsigned int i = 0; i <= model->today(); ++i)
+        for (int i = 0; i <= model->today(); ++i)
         {
 
             for (int from = 0u; from < ns; ++from)

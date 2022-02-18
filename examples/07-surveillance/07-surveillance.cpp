@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
     surveillance.print();
 
     surveillance.write_data(
-        "","", "07-surveillance_hist.txt", ""
+        "","", "07-surveillance_hist.txt", "", ""
     );
 
     surveillance.get_user_data().write("07-surveillance_user_data.txt");

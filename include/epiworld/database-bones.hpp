@@ -32,9 +32,15 @@ private:
 
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_variant;
+    
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...} to update
+    std::vector< std::vector<int> > today_variant_next;
 
     // {Healthy, Infected, etc.}
     std::vector< int > today_total;
+
+    // {Helathy, Infected, etc.} to update
+    std::vector< int > today_total_next;
 
     // Totals
     int today_total_nvariants_active = 0;
@@ -61,6 +67,7 @@ private:
     std::vector< int > transmision_variant;
 
     std::vector< int > transition_matrix;
+    std::vector< int > transition_matrix_next;
 
     UserData<TSeq> user_data;
 
@@ -113,6 +120,7 @@ public:
      * corresponding dates
      */
     ///@[
+    int get_today_total(std::string what) const;
     void get_today_total(
         std::vector< std::string > * status = nullptr,
         std::vector< int > * counts = nullptr

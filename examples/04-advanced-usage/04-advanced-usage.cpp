@@ -100,7 +100,8 @@ int main() {
         "variants_info.txt",
         "variants.txt",
         "total.txt",
-        "transmisions.txt"
+        "transmisions.txt",
+        "transition.txt"
     );
 
     model.write_edgelist("simple-world-edgelist.txt");
