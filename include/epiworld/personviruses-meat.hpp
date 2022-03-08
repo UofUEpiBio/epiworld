@@ -79,8 +79,7 @@ inline void PersonViruses<TSeq>::deactivate(Virus<TSeq> & v)
     if (v.get_host()->id != host->id)
         throw std::logic_error("A host cannot deactivate someone else's virus.");
 
-    nactive--;
-    v.active = false;
+    v.deactivate();
 
 }
 

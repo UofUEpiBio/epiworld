@@ -102,6 +102,8 @@ private:
     bool visited_model = EPI_DEFAULT_VISITED;
     bool use_queuing   = true;
 
+    std::vector< Virus<TSeq> * > virus_to_remove;
+
 public:
 
     std::vector<epiworld_double> array_double_tmp;

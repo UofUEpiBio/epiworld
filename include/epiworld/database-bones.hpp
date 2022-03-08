@@ -121,6 +121,7 @@ public:
      */
     ///@[
     int get_today_total(std::string what) const;
+    int get_today_total(epiworld_fast_uint what) const;
     void get_today_total(
         std::vector< std::string > * status = nullptr,
         std::vector< int > * counts = nullptr

@@ -10,7 +10,7 @@
         if (!IN(p.status, status_removed)) {\
             db.record_transition(p.status, p.status_next);\
             p.status = p.status_next;\
-        }
+        } 
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -666,6 +666,19 @@ inline void Model<TSeq>::update_status() {
         queue.update();
 
     NEXT_STATUS()
+
+    // Removing and deactivating viruses
+    for (auto v : virus_to_remove)
+    {
+
+        if (IN(v->get_host()->get_status(), status_susceptible))
+            v->post_recovery();
+
+        v->get_host()->get_viruses().reset();
+
+    }
+
+    virus_to_remove.clear();
 
 }
 

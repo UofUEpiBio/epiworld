@@ -66,6 +66,7 @@ public:
     void set_id(int idx);
     int get_id() const;
     bool is_active() const;
+    void deactivate();
 
         /**
      * @brief Get and set the tool functions

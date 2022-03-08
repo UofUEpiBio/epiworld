@@ -260,6 +260,9 @@ inline AdjList rgraph_bernoulli(
 
     unsigned int m = d(*model.get_rand_endgine());
 
+    source.resize(m);
+    target.resize(m);
+
     int a,b;
     for (unsigned int i = 0u; i < m; ++i)
     {
@@ -277,8 +280,58 @@ inline AdjList rgraph_bernoulli(
                 b = 0u;
         }
 
-        source.push_back(a);
-        target.push_back(b);
+        source[i] = a;
+        target[i] = b;
+
+    }
+
+    AdjList al(source, target, directed, 0, static_cast<int>(n) - 1);
+
+    return al;
+    
+}
+
+template<typename TSeq>
+inline AdjList rgraph_bernoulli2(
+    unsigned int n,
+    epiworld_double p,
+    bool directed,
+    Model<TSeq> & model
+) {
+
+    std::vector< unsigned int > source;
+    std::vector< unsigned int > target;
+
+    // Checking the density (how many)
+    std::binomial_distribution<> d(
+        n * (n - 1.0) / (directed ? 1.0 : 2.0),
+        p
+    );
+
+    // Need to compensate for the possible number of diagonal
+    // elements sampled. If n * n, then each diag element has
+    // 1/(n^2) chance of sampling
+
+    unsigned int m = d(*model.get_rand_endgine());
+
+    source.resize(m);
+    target.resize(m);
+
+    double n2 = static_cast<double>(n * n);
+
+    int loc,row,col;
+    for (unsigned int i = 0u; i < m; ++i)
+    {
+        loc = floor(model.runif() * n2);
+        col = floor(static_cast<double>(loc)/static_cast<double>(n));
+        row = loc - row * n;
+
+        // Undirected needs to swap
+        if (!directed && (col > row))
+            std::swap(col, row);
+
+        source[i] = row;
+        target[i] = col;
 
     }
 

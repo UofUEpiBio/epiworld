@@ -189,6 +189,10 @@ inline void DataBase<TSeq>::down_exposed(
 
     today_variant_next[v->get_id()][prev_status]--;
 
+    // Adding the virus to the list of those that
+    // will be removed later on at the end of the update
+    model->virus_to_remove.push_back(v);
+
 
 }
 
@@ -229,7 +233,6 @@ inline int DataBase<TSeq>::get_today_total(
     throw std::range_error("The value '" + what + "' is not in the model.");
 
 }
-
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_today_total(

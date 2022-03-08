@@ -64,7 +64,11 @@
 			"shared_mutex": "cpp",
 			"thread": "cpp",
 			"cfenv": "cpp",
-			"cinttypes": "cpp"
+			"cinttypes": "cpp",
+			"compare": "cpp",
+			"concepts": "cpp",
+			"ranges": "cpp",
+			"stop_token": "cpp"
 		}
 	}
 }

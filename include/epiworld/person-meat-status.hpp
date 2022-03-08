@@ -102,13 +102,13 @@ inline epiworld_fast_uint default_update_susceptible(
 #define EPIWORLD_UPDATE_EXPOSED_REMOVE(newstatus) \
     {m->get_db().down_exposed(v, p->get_status(), newstatus);\
     if (m->is_queuing_on()) m->get_queue() -= p; \
-    p->get_viruses().reset();\
+    /* p->get_viruses().reset();*/ /*Viruses are removed after the updates are completed */\
     return static_cast<epiworld_fast_uint>(newstatus);}
 
 #define EPIWORLD_UPDATE_EXPOSED_RECOVER(newstatus) \
     {m->get_db().down_exposed(v, p->get_status(), newstatus);\
     if (m->is_queuing_on()) m->get_queue() -= p; \
-    v->post_recovery();p->get_viruses().reset();\
+    /* v->post_recovery();p->get_viruses().reset(); *//* VIRUSES ARE REMOVED AND APPLIED THE RESET LATER */\
     return static_cast<epiworld_fast_uint>(newstatus);}
 
 template<typename TSeq>
