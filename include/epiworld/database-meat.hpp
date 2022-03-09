@@ -327,7 +327,7 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_variant_info,
     std::string fn_variant_hist,
     std::string fn_total_hist,
-    std::string fn_transmision,
+    std::string fn_transmission,
     std::string fn_transition
 ) const
 {
@@ -396,18 +396,18 @@ inline void DataBase<TSeq>::write_data(
                 hist_total_counts[i] << "\n";
     }
 
-    if (fn_transmision != "")
+    if (fn_transmission != "")
     {
-        std::ofstream file_transmision(fn_transmision, std::ios_base::out);
-        file_transmision <<
+        std::ofstream file_transmission(fn_transmission, std::ios_base::out);
+        file_transmission <<
             "date " << "variant " << "source " << "target\n";
 
-        for (unsigned int i = 0; i < transmision_target.size(); ++i)
-            file_transmision <<
-                transmision_date[i] << " " <<
-                transmision_variant[i] << " " <<
-                transmision_source[i] << " " <<
-                transmision_target[i] << "\n";
+        for (unsigned int i = 0; i < transmission_target.size(); ++i)
+            file_transmission <<
+                transmission_date[i] << " " <<
+                transmission_variant[i] << " " <<
+                transmission_source[i] << " " <<
+                transmission_target[i] << "\n";
                 
     }
 
@@ -437,15 +437,15 @@ inline void DataBase<TSeq>::write_data(
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_transmision(
+inline void DataBase<TSeq>::record_transmission(
     int i,
     int j,
     int variant
 ) {
-    transmision_date.push_back(model->today());
-    transmision_source.push_back(i);
-    transmision_target.push_back(j);
-    transmision_variant.push_back(variant);
+    transmission_date.push_back(model->today());
+    transmission_source.push_back(i);
+    transmission_target.push_back(j);
+    transmission_variant.push_back(variant);
 }
 
 template<typename TSeq>
@@ -470,10 +470,10 @@ inline void DataBase<TSeq>::reset() {
     hist_total_status.clear();
     hist_total_counts.clear();
     
-    transmision_date.clear();
-    transmision_source.clear();
-    transmision_target.clear();
-    transmision_variant.clear();
+    transmission_date.clear();
+    transmission_source.clear();
+    transmission_target.clear();
+    transmission_variant.clear();
 
     today_total_nvariants_active = 0;
     today_total.clear();

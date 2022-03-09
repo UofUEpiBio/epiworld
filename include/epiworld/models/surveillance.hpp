@@ -210,7 +210,7 @@ inline void set_up_surveillance(
     model.add_param(prob_symptoms, "Prob of symptoms");
     model.add_param(surveillance_prob, "Surveilance prob.");
     model.add_param(efficacy_vax, "Vax efficacy");
-    model.add_param(prop_vax_redux_transm, "Vax redux transmision");
+    model.add_param(prop_vax_redux_transm, "Vax redux transmission");
     model.add_param(prob_transmission, "Prob of transmission");
     model.add_param(prob_death, "Prob. death");
     model.add_param(prob_reinfect, "Prob. reinfect");
@@ -245,7 +245,7 @@ inline void set_up_surveillance(
     // Vaccine tool -----------------------------------------------------------
     epiworld::Tool<TSeq> vax("Vaccine");
     vax.set_susceptibility_reduction(&model("Vax efficacy"));
-    vax.set_transmission_reduction(&model("Vax redux transmision"));
+    vax.set_transmission_reduction(&model("Vax redux transmission"));
     
     model.add_tool(vax, prop_vaccinated);
 

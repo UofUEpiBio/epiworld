@@ -260,7 +260,7 @@ public:
         std::string fn_variant_info,
         std::string fn_variant_hist,
         std::string fn_total_hist,
-        std::string fn_transmision,
+        std::string fn_transmission,
         std::string fn_transition
         ) const;
 

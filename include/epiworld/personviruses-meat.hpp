@@ -19,7 +19,7 @@ inline void PersonViruses<TSeq>::add_virus(
     if (v.get_host() != nullptr)
     {
 
-        host->get_model()->get_db().record_transmision(
+        host->get_model()->get_db().record_transmission(
             host->get_id(),
             v.get_host()->get_id(),
             v.get_id()

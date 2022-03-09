@@ -21,18 +21,18 @@ class Person;
             continue; \
         epiworld::PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); \
         /* Now over the neighbor's viruses */ \
-        epiworld_double tmp_transmision; \
+        epiworld_double tmp_transmission; \
         for (unsigned int v = 0; v < nviruses.size(); ++v) \
         { \
             /* Computing the corresponding susceptibility_reduction */ \
             epiworld::Virus<TSeq> * tmp_v = &(nviruses(v)); \
             /* And it is a function of susceptibility_reduction as well */ \
-            tmp_transmision = \
+            tmp_transmission = \
                 (1.0 - p->get_susceptibility_reduction(tmp_v)) * \
                 tmp_v->get_prob_infecting() * \
                 (1.0 - neighbor->get_transmission_reduction(tmp_v)) \
                 ; \
-            probs.push_back(tmp_transmision); \
+            probs.push_back(tmp_transmission); \
             variants.push_back(tmp_v); \
         } \
     }
@@ -58,7 +58,7 @@ inline epiworld_fast_uint default_update_susceptible(
         PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); 
         /* Now over the neighbor's viruses */ 
         
-        epiworld_double tmp_transmision; 
+        epiworld_double tmp_transmission; 
         for (unsigned int v = 0; v < nviruses.size(); ++v) 
         { 
         
@@ -66,13 +66,13 @@ inline epiworld_fast_uint default_update_susceptible(
             Virus<TSeq> * tmp_v = &(nviruses(v)); 
         
             /* And it is a function of susceptibility_reduction as well */ 
-            tmp_transmision = 
+            tmp_transmission = 
                 (1.0 - p->get_susceptibility_reduction(tmp_v)) * 
                 tmp_v->get_prob_infecting() * 
                 (1.0 - neighbor->get_transmission_reduction(tmp_v)) 
                 ; 
         
-            m->array_double_tmp[nvariants_tmp]  = tmp_transmision;
+            m->array_double_tmp[nvariants_tmp]  = tmp_transmission;
             m->array_virus_tmp[nvariants_tmp++] = tmp_v;
             
         } 

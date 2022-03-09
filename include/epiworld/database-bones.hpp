@@ -61,10 +61,10 @@ private:
     std::vector< int > hist_transition_matrix;
 
     // Transmission network
-    std::vector< int > transmision_date;
-    std::vector< int > transmision_source;
-    std::vector< int > transmision_target;
-    std::vector< int > transmision_variant;
+    std::vector< int > transmission_date;
+    std::vector< int > transmission_source;
+    std::vector< int > transmission_target;
+    std::vector< int > transmission_variant;
 
     std::vector< int > transition_matrix;
     std::vector< int > transition_matrix_next;
@@ -151,11 +151,11 @@ public:
         std::string fn_variant_info,
         std::string fn_variant_hist,
         std::string fn_total_hist,
-        std::string fn_transmision,
+        std::string fn_transmission,
         std::string fn_transition
         ) const;
     
-    void record_transmision(int i, int j, int variant);
+    void record_transmission(int i, int j, int variant);
 
     size_t get_nvariants() const;
 
