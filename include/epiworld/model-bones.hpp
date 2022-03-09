@@ -200,6 +200,8 @@ public:
      * 
      * @param seed Seed to be used for Pseudo-RNG.
      * @param ndays Number of days (steps) of the simulation.
+     * @param fun In the case of `run_multiple`, a function that is called
+     * after each experiment.
      * 
      */
     ///@[

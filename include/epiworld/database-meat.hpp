@@ -278,21 +278,27 @@ inline void DataBase<TSeq>::get_today_variant(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_hist_total(
-    std::vector< int > & date,
-    std::vector< std::string > & status,
-    std::vector< int > & counts
+    std::vector< int > * date,
+    std::vector< std::string > * status,
+    std::vector< int > * counts
 ) const
 {
 
-    date = hist_total_date;
+    if (date != nullptr)
+        *date = hist_total_date;
+
     std::vector< std::string > labels;
     EPIWORLD_GET_STATUS_LABELS(labels)
 
-    status.resize(hist_total_status.size(), "");
-    for (unsigned int i = 0u; i < hist_total_status.size(); ++i)
-        status[i] = labels[hist_total_status[i]];
+    if (status != nullptr)
+    {
+        status->resize(hist_total_status.size(), "");
+        for (unsigned int i = 0u; i < hist_total_status.size(); ++i)
+            status->operator[](i) = labels[hist_total_status[i]];
+    }
 
-    counts = hist_total_counts;
+    if (counts != nullptr)
+        *counts = hist_total_counts;
 
     return;
 

@@ -49,6 +49,7 @@ inline void tracked_agents_check_init(epiworld::Model<TSeq> * m)
         tracked_started = true;
         
     }
+
 }
 
 EPI_NEW_UPDATEFUN(update_susceptible, bool)
@@ -117,6 +118,20 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
 
 EPI_NEW_GLOBALFUN(global_accounting, bool)
 {
+
+    // On the last day, also reset tracked agents and
+    // set the initialized value to false
+    if (static_cast<unsigned int>(m->today()) == m->get_ndays())
+    {
+
+        tracked_started = false;
+        tracked_agents_infected.clear();
+        tracked_agents_infected_next.clear();
+        tracked_ninfected = 0;
+        tracked_ninfected_next = 0;    
+
+        return;
+    }
 
     std::swap(tracked_agents_infected, tracked_agents_infected_next);
     tracked_agents_infected_next.clear();

@@ -1,0 +1,181 @@
+---
+output: html_document
+---
+
+```{r global-params}
+EPI_BETA  <- 1.25
+EPI_GAMMA <- 0.5
+EPI_N     <- 10000
+EPI_0     <- 0.01
+
+Sys.setenv(
+    EPI_BETA  = EPI_BETA,
+    EPI_GAMMA = EPI_GAMMA,
+    EPI_N     = EPI_N,
+    EPI_0     = EPI_0
+)
+```
+
+# Compartmental Models
+
+```{r setup}
+library(deSolve)
+library(ggplot2)
+library(data.table)
+
+# Code from
+# Chapter 2: SIR
+# Book "Epidemics: Models and Data using R"
+# By: Ottar N. Bjørnstad
+sirmod <- function(t, y, parms) {
+
+    # Pull state variables from y vector
+    S = y[1]
+    I = y[2]
+    R = y[3]
+    
+    # Pull parameter values from parms vector
+    beta  = parms["beta"]
+    mu    = parms["mu"]
+    gamma = parms["gamma"]
+    N     = parms["N"]
+    
+    # Define equations
+    dS  = mu * (N - S) - beta * S * I/N
+    dI  = beta * S * I/N - (mu + gamma) * I
+    dR  = gamma * I - mu * R
+    res = c(dS, dI, dR)
+    
+    # Return list of gradients
+    list(res)
+
+}
+
+# Initial parameters
+times <- seq(0, 26, by = 1)
+parms <- c(mu = 0, N = EPI_N, beta = EPI_BETA, gamma = EPI_GAMMA)
+start <- c(S = EPI_N * (1 - EPI_0), I = EPI_N * EPI_0, R = 0)
+```
+
+```{r run-model}
+out <- ode(y = start, times = times, func = sirmod, parms= parms)
+out <- as.data.frame(out)
+out <- rbind(
+    with(out, data.table(date = time, status = "susceptible", counts = S)),
+    with(out, data.table(date = time, status = "infected", counts = I)),
+    with(out, data.table(date = time, status = "recovered", counts = R))
+)
+```
+
+Now we visualize the model
+
+```{r visualize}
+ggplot(out, aes(x = date, y = counts)) +
+    geom_line(aes(colour = status)) +
+    labs(title = "Compartmental SIR")
+```
+
+# Agent-Based Model Approach
+
+## Mathematical preliminaries
+
+That agent $i$ becomes infected can be computed as follow:
+
+\renewcommand{\Pr}[1]{\text{P}\left(#1\right)}
+\newcommand{\Prcond}[2]{\text{P}\left(#1\vphantom{#2}\right.\left|\vphantom{#1}#2\right)}
+\newcommand{\E}[1]{\mathbb{E}\left(#1\right)}
+
+\begin{equation}
+\Pr{S_i\to I_i} = 1 - \Pr{\text{No infection}}
+\end{equation}
+
+At the same time, the probability of not becoming infected equals to the
+probability of no infected agent transmiting the infection. The probability
+that agent $j$ infects $i$ equals
+
+\begin{equation}
+\Pr{j\text{ infects }i} = %
+    \overbrace{\Pr{j\text{ interacts with }i}}^{\beta}\times%
+    \overbrace{\Prcond{\text{infection}}{j\text{ interacts with }i}}^{\text{Prob of transmission: }p_t}
+\end{equation}
+
+In this case, $\beta$ is parametrized such that its values are within $(0,1)$.
+Since transmission from the $I$ infected agents happens independently, we finally have:
+
+\begin{equation}
+\Pr{S_i\to I_i} = 1 - \left[1 - \beta p_t\right]^I
+\end{equation}
+
+With the above equation, we can now calculate the change in the number of susceptible
+agents. In this case, it equals to the expected number of new infections:
+
+\begin{equation}
+\E{\Delta S} = -S\times\left\{1 - \left[1 - \beta p_t\right]^I\right\}
+\end{equation}
+
+With the same parametrization in cannonical SIR model (Kermack and McKendrick), the
+instantaneous change in the number of susceptible agent equals
+$\frac{\delta}{\delta t}S = -S \beta I$. We can show
+that, given $S$ and $I$, as $\beta\downarrow 0$, i.e., the population grows, both rates
+converge to the same number. Formally
+
+\begin{align}
+& \lim_{\beta\downarrow 0} \frac{\E{\Delta S}}{\frac{\delta}{\delta t}S} \\
+& \text{Following L'Hopital's rule} \\
+& = \lim_{\beta\downarrow 0} \frac{\frac{\delta}{\delta \beta} \E{\Delta S}}{\frac{\delta^2}{\delta\beta\delta t}S} \\
+& = \lim_{\beta\downarrow 0} \frac{-SI\left[1-\beta p_t\right]^{I-1}p_t}{-SI} \\
+& \text{Since we assume }p_t = 1 \\
+& = \lim_{\beta\downarrow 0} \left[1-\beta\right]^{I-1} \\
+& = 1
+\end{align}
+
+The same can be shown for the change in the number recovered. 
+
+## Simulation study
+
+Now, what happens with `epiworld`.
+
+```{bash}
+./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d25 -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599
+```
+
+```{r}
+library(ggplot2)
+epiworld <- data.table::fread("total_hist.txt")
+ggplot(epiworld, aes(x = date, y = counts)) +
+    geom_line(aes(colour = status)) +
+    labs(title = "ABM SIR")
+```
+
+# Comparing ABC with Compartmental Models
+
+To this end, we will compare the results of the first run of the Compartmental
+model with 100 runs of the ABC, compute the confidence interval, and see how
+likely is the compartmental model to fall within the trajectory of the ABC
+simulation.
+
+```{bash}
+./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d25 -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100
+```
+
+```{r experiment100}
+library(ggplot2)
+library(data.table)
+epiworld <- data.table::fread("09-sir-connected-experiments.csv")
+epiworld <- epiworld[, .(
+    min  = quantile(counts, probs = .025),
+    mean = mean(counts),
+    max  = quantile(counts, probs = .975)), by = .(date, status)]
+
+# Merging Compartmental
+epiworld <- merge(
+    epiworld,
+    out[, .(date = date, status = status, compartmental = counts)],
+    by = c("date", "status")
+)
+
+setorder(epiworld, status, date)
+ggplot(epiworld, aes(x = date, y = mean)) +
+    geom_ribbon(aes(ymin = min, ymax = max, colour = status), alpha = 0.1) +
+    geom_point(aes(x = date, y = compartmental, colour = status))
+```

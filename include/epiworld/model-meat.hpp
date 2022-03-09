@@ -857,6 +857,9 @@ inline void Model<TSeq>::reset() {
     // Recording the original state
     db.record();
 
+    // Start removes from scratch
+    virus_to_remove.clear();
+
 }
 
 // Too big to keep here

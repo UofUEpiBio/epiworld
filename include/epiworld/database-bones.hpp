@@ -134,9 +134,9 @@ public:
     ) const;
 
     void get_hist_total(
-        std::vector< int > & date,
-        std::vector< std::string > & status,
-        std::vector< int > & counts
+        std::vector< int > * date,
+        std::vector< std::string > * status,
+        std::vector< int > * counts
     ) const;
 
     void get_hist_variant(
