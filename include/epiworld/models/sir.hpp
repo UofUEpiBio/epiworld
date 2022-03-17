@@ -12,7 +12,7 @@
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
-template<typename TSeq>
+template<typename TSeq = bool>
 inline void set_up_sir(
     epiworld::Model<TSeq> & model,
     std::string vname,
