@@ -2,17 +2,23 @@
 output: html_document
 ---
 
+# General parameters
+
+The following are parameters used for both ABM and Compartmental models.
+
 ```{r global-params}
-EPI_BETA  <- 1.25
+EPI_BETA  <- 0.75
 EPI_GAMMA <- 0.5
 EPI_N     <- 10000
 EPI_0     <- 0.01
+EPI_NDAYS <- 50
 
 Sys.setenv(
     EPI_BETA  = EPI_BETA,
     EPI_GAMMA = EPI_GAMMA,
     EPI_N     = EPI_N,
-    EPI_0     = EPI_0
+    EPI_0     = EPI_0,
+    EPI_NDAYS = EPI_NDAYS
 )
 ```
 
@@ -52,7 +58,7 @@ sirmod <- function(t, y, parms) {
 }
 
 # Initial parameters
-times <- seq(0, 26, by = 1)
+times <- seq(0, EPI_NDAYS, by = 1)
 parms <- c(mu = 0, N = EPI_N, beta = EPI_BETA, gamma = EPI_GAMMA)
 start <- c(S = EPI_N * (1 - EPI_0), I = EPI_N * EPI_0, R = 0)
 ```
@@ -129,14 +135,14 @@ converge to the same number. Formally
 & = 1
 \end{align}
 
-The same can be shown for the change in the number recovered. 
+The same can be shown for the change in the number recovered.
 
 ## Simulation study
 
 Now, what happens with `epiworld`.
 
 ```{bash}
-./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d25 -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599
+./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599
 ```
 
 ```{r}
@@ -147,15 +153,15 @@ ggplot(epiworld, aes(x = date, y = counts)) +
     labs(title = "ABM SIR")
 ```
 
-# Comparing ABC with Compartmental Models
+# Comparing ABM with Compartmental Models
 
 To this end, we will compare the results of the first run of the Compartmental
-model with 100 runs of the ABC, compute the confidence interval, and see how
-likely is the compartmental model to fall within the trajectory of the ABC
+model with 100 runs of the ABM, compute the confidence interval, and see how
+likely is the compartmental model to fall within the trajectory of the ABM
 simulation.
 
 ```{bash}
-./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d25 -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100
+./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100
 ```
 
 ```{r experiment100}
@@ -177,5 +183,26 @@ epiworld <- merge(
 setorder(epiworld, status, date)
 ggplot(epiworld, aes(x = date, y = mean)) +
     geom_ribbon(aes(ymin = min, ymax = max, colour = status), alpha = 0.1) +
-    geom_point(aes(x = date, y = compartmental, colour = status))
+    geom_line(aes(x = date, y = compartmental, colour = sprintf("%s (compt)", status)))
+```
+
+It seems that, although both yield the same equilibria, compartmental models 
+reach the highest point of the simulation earlier. This makes sense as within
+a single day of the ABM simulation, compartmental models have more events 
+taking place. Nonetheless, as predicted, as $\beta\downarrow 0$, the differences
+become lesser. Furthermore, we could use the fact that the transition rates
+are known to compute an adjustment.
+
+```{r comparing-rates}
+S <- 1000
+rate_comp <- function(I,B) S * B * I
+
+rate_abm <- function(I,B) S * (1 - (1 - B)^I)
+
+op <- par(mfrow = c(3, 2))
+for (i in c(1, 10, 100)) {
+    curve(rate_comp(i, x), from = .01, to = 0.05)
+    curve(rate_abm(i, x), from = .01, to = 0.05, add = FALSE, lty = 2)
+}
+par(op)
 ```

@@ -194,6 +194,8 @@ inline void set_up_sir_connected(
     // Adding updating function
     model.add_global_action(global_accounting, -1);
 
+    model.queuing_off(); // No queuing need
+
     return;
 
 }
