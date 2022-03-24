@@ -9,6 +9,7 @@ The following are parameters used for both ABM and Compartmental models.
 ```{r global-params}
 EPI_BETA  <- 0.75
 EPI_GAMMA <- 0.5
+EPI_ALPHA <- 0.2
 EPI_N     <- 10000
 EPI_0     <- 0.01
 EPI_NDAYS <- 50
@@ -16,6 +17,7 @@ EPI_NDAYS <- 50
 Sys.setenv(
     EPI_BETA  = EPI_BETA,
     EPI_GAMMA = EPI_GAMMA,
+    EPI_ALPHA = EPI_ALPHA,
     EPI_N     = EPI_N,
     EPI_0     = EPI_0,
     EPI_NDAYS = EPI_NDAYS
@@ -23,6 +25,8 @@ Sys.setenv(
 ```
 
 # Compartmental Models
+
+## SIR Model
 
 ```{r setup}
 library(deSolve)
@@ -81,7 +85,82 @@ ggplot(out, aes(x = date, y = counts)) +
     labs(title = "Compartmental SIR")
 ```
 
+## SEIR Model
+
+```{r setup-seir}
+# Code adapted from
+# Chapter 2: SIR
+# Book "Epidemics: Models and Data using R"
+# By: Ottar N. Bjørnstad
+seirmod <- function(t, y, parms) {
+
+    # Pull state variables from y vector
+    S = y[1]
+    E = y[2]
+    I = y[3]
+    R = y[4]
+    
+    # Pull parameter values from parms vector
+    beta  = parms["beta"]
+    mu    = parms["mu"]
+    alpha = parms["alpha"]
+    gamma = parms["gamma"]
+    N     = parms["N"]
+    
+    # Define equations
+    dS  = mu * (N - S) - beta * S * I/N - mu * S
+    dE  = beta * S * I/N - (mu + alpha) * E
+    dI  = alpha * E - (mu + gamma) * I
+    dR  = gamma * I - mu * R
+    res = c(dS, dE, dI, dR)
+    
+    # Return list of gradients
+    list(res)
+
+}
+
+# Initial parameters
+parms <- c(
+    mu = 0, N = EPI_N, beta = EPI_BETA,
+    alpha = EPI_ALPHA, gamma = EPI_GAMMA
+    )
+start <- c(S = EPI_N * (1 - EPI_0), E = 0, I = EPI_N * EPI_0, R = 0)
+```
+
+```{r run-seir-model}
+out_seir <- ode(y = start, times = times, func = seirmod, parms = parms)
+out_seir <- as.data.frame(out_seir)
+out_seir <- rbind(
+    with(out_seir, data.table(date = time, status = "susceptible", counts = S)),
+    with(out_seir, data.table(date = time, status = "exposed", counts = E)),
+    with(out_seir, data.table(date = time, status = "infected", counts = I)),
+    with(out_seir, data.table(date = time, status = "recovered", counts = R))
+)
+```
+
+Now we visualize the model
+
+```{r visualize-seir}
+ggplot(out_seir, aes(x = date, y = counts)) +
+    geom_line(aes(colour = status)) +
+    labs(title = "Compartmental SEIR")
+```
+
 # Agent-Based Model Approach
+
+Calculation of the expected number of days in state $a$ when prob of changing
+state equals $\alpha$ is $1/\alpha$
+
+```{r a-prob}
+set.seed(712)
+a <- .3
+R <- matrix(runif(2e5 * 50), ncol = 50)
+dat <- apply(R, 1, \(x) {
+    which.max(x < a)
+})
+
+mean(dat) - 1 / a
+```
 
 ## Mathematical preliminaries
 
