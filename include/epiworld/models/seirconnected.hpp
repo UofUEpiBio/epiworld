@@ -116,7 +116,7 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
     } else if (status == SEIRCONSTATUS::INFECTED)
     {
 
-        if (m->runif() < 1.0/(*m->p2))
+        if (m->runif() < (*m->p2))
         {
 
             tracked_ninfected_next--;

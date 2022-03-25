@@ -8,7 +8,7 @@ The following are parameters used for both ABM and Compartmental models.
 
 ```{r global-params}
 EPI_BETA  <- 0.75
-EPI_GAMMA <- 0.5
+EPI_GAMMA <- 0.33
 EPI_LATENCY <- 1/0.33
 EPI_N     <- 10000
 EPI_0     <- 0.01
@@ -253,6 +253,8 @@ model with 100 runs of the ABM, compute the confidence interval, and see how
 likely is the compartmental model to fall within the trajectory of the ABM
 simulation.
 
+## SIR
+
 ```{bash}
 ./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100
 ```
@@ -286,7 +288,38 @@ taking place. Nonetheless, as predicted, as $\beta\downarrow 0$, the differences
 become lesser. Furthermore, we could use the fact that the transition rates
 are known to compute an adjustment.
 
-```{r comparing-rates}
+
+## SEIR
+
+```{bash}
+./09-seir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100 -l $EPI_LATENCY
+```
+
+```{r experiment100-seir}
+library(ggplot2)
+library(data.table)
+epiworld_seir <- data.table::fread("09-seir-connected-experiments.csv")
+epiworld_seir <- epiworld_seir[, .(
+    min  = quantile(counts, probs = .025),
+    mean = mean(counts),
+    max  = quantile(counts, probs = .975)), by = .(date, status)]
+
+# Merging Compartmental
+epiworld_seir <- merge(
+    epiworld_seir,
+    out_seir[, .(date = date, status = status, compartmental = counts)],
+    by = c("date", "status")
+)
+
+setorder(epiworld_seir, status, date)
+ggplot(epiworld_seir, aes(x = date, y = mean)) +
+    geom_ribbon(aes(ymin = min, ymax = max, colour = status), alpha = 0.1) +
+    geom_line(aes(x = date, y = compartmental, colour = sprintf("%s (compt)", status)))
+```
+
+## Rates
+
+```{r comparing-rates-seir}
 S <- 1000
 rate_comp <- function(I,B) S * B * I
 
