@@ -107,6 +107,7 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
             tracked_agents_infected_next.push_back(p);
             tracked_ninfected_next++;
 
+            m->get_db().up_exposed(&p->get_virus(0u), SEIRCONSTATUS::EXPOSED, SEIRCONSTATUS::INFECTED);
             return SEIRCONSTATUS::INFECTED;
 
         }
@@ -198,11 +199,11 @@ inline void set_up_seir_connected(
     model.reset_status_codes(
         new_status,
         {"susceptible", "exposed", "recovered"},
-        false
+        true
     );
 
     model.add_status_exposed(SEIRCONSTATUS::INFECTED, "infected");
-
+    model.print_status_codes();
     model.set_update_exposed(update_infected);
     model.set_update_susceptible(update_susceptible);
 

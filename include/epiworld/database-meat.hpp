@@ -95,13 +95,15 @@ inline void DataBase<TSeq>::record()
         }
 
         for (auto cell : transition_matrix)
-                hist_transition_matrix.push_back(cell);
+            hist_transition_matrix.push_back(cell);
 
     }
+
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v) {
+inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
+{
 
     // Updating registry
     std::vector< int > hash = seq_hasher(*v->get_sequence());
@@ -448,19 +450,24 @@ inline void DataBase<TSeq>::record_transmission(
     int j,
     int variant
 ) {
+
     transmission_date.push_back(model->today());
     transmission_source.push_back(i);
     transmission_target.push_back(j);
     transmission_variant.push_back(variant);
+
 }
 
 template<typename TSeq>
-inline size_t DataBase<TSeq>::get_nvariants() const {
+inline size_t DataBase<TSeq>::get_nvariants() const
+{
     return variant_id.size();
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::reset() {
+inline void DataBase<TSeq>::reset()
+{
+
     variant_id.clear();
     sequence.clear();
     origin_date.clear();
@@ -484,7 +491,6 @@ inline void DataBase<TSeq>::reset() {
     today_total_nvariants_active = 0;
     today_total.clear();
     today_variant.clear();
-
 
 }
 

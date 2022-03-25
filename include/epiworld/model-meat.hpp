@@ -234,7 +234,7 @@ inline void Model<TSeq>::init(
     for (auto & p : population)
     {
         p.model = this;
-        p.init();
+        p.init(baseline_status_susceptible);
     }
 
     engine->seed(seed);

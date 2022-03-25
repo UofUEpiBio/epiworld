@@ -11,11 +11,12 @@ inline Person<TSeq>::Person()
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::init()
+inline void Person<TSeq>::init(epiworld_fast_uint baseline_status)
 {
     tools.person = this;
     viruses.host = this;
-    status       = STATUS::SUSCEPTIBLE;
+    status       = baseline_status;
+    status_next  = baseline_status;
 }
     
 

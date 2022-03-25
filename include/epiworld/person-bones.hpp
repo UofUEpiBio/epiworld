@@ -27,11 +27,11 @@ private:
     PersonTools<TSeq> tools;
     std::vector< Person<TSeq> * > neighbors;
     unsigned int index; ///< Location in the Model
-    epiworld_fast_uint status_next = STATUS::SUSCEPTIBLE; // Placeholder
-    epiworld_fast_uint status      = STATUS::SUSCEPTIBLE;
+    epiworld_fast_uint status_next; // Placeholder
+    epiworld_fast_uint status;
     int id          = -1;
     UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
-    UpdateFun<TSeq> update_exposed    = default_update_exposed<TSeq>;
+    UpdateFun<TSeq> update_exposed     = default_update_exposed<TSeq>;
     UpdateFun<TSeq> update_removed     = nullptr;
 
     bool visited_person = !EPI_DEFAULT_VISITED;
@@ -40,7 +40,7 @@ private:
 public:
 
     Person();
-    void init();
+    void init(epiworld_fast_uint baseline_status);
 
     void add_tool(int d, Tool<TSeq> tool);
     void add_virus(epiworld_fast_uint new_status, Virus<TSeq> virus);
