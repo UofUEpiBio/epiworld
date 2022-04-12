@@ -1,9 +1,6 @@
 #ifndef EPIWORLD_USERDATA_MEAT_HPP
 #define EPIWORLD_USERDATA_MEAT_HPP
 
-
-#include "epiworld.hpp"
-
 template<typename TSeq>
 class UserData;
 

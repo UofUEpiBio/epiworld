@@ -1,7 +1,3 @@
-#include <vector>
-#include <functional>
-#include <memory>
-
 #ifndef EPIWORLD_VIRUS_HPP
 #define EPIWORLD_VIRUS_HPP
 

@@ -1,4 +1,4 @@
-#include "../../include/epiworld/epiworld.hpp"
+#include "../../epiworld.hpp"
 
 // Original data will be an integer vector
 #define DAT std::vector<bool>

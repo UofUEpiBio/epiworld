@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_IMMUNE_SYSTEM_HPP
 #define EPIWORLD_IMMUNE_SYSTEM_HPP
 
-#include "../epiworld.hpp"
-
 #define PERSONRULE(funname) \
 template<typename Tnet = Network>\
 inline epiworld_double (a) (const Tnet & Array, uint i, uint j, NetCounterData * data)

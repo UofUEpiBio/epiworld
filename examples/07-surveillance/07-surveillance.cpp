@@ -1,3 +1,4 @@
+#include "../../epiworld.hpp"
 #include "../../include/epiworld/models/surveillance.hpp"
 
 int main(int argc, char* argv[]) {

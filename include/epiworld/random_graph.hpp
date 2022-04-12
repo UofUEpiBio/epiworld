@@ -1,8 +1,3 @@
-#include <vector>
-#include <random>
-#include <memory>
-#include <stdexcept>
-
 #ifndef EPIWORLD_RANDOM_GRAPH_HPP
 #define EPIWORLD_RANDOM_GRAPH_HPP
 

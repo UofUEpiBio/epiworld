@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_SEIR_H 
 #define EPIWORLD_SEIR_H
 
-#include "../epiworld.hpp"
-
 enum SEIRCONSTATUS {
     SUSCEPTIBLE,
     EXPOSED,

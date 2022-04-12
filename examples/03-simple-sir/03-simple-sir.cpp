@@ -1,4 +1,4 @@
-#include "../../include/epiworld/epiworld.hpp"
+#include "../../epiworld.hpp"
 
 int main()
 {

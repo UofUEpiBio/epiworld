@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_USERDATA_BONES_HPP
 #define EPIWORLD_USERDATA_BONES_HPP
 
-#include "epiworld.hpp"
-
 template<typename TSeq>
 class Model;
 

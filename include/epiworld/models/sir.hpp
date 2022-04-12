@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_SIR_H 
 #define EPIWORLD_SIR_H
 
-#include "../epiworld.hpp"
-
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
  * 
