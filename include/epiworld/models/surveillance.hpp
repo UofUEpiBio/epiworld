@@ -33,7 +33,7 @@ EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {
     if (which < 0)
         return p->get_status();
 
-    p->add_virus(SURVSTATUS::LATENT, *variants[which]); 
+    p->add_virus(variants[which]); 
     return m->get_default_exposed();
 
 }
@@ -64,30 +64,33 @@ EPI_NEW_UPDATEFUN(surveillance_update_exposed,TSeq)
 
     // If past days infected + latent, then bye.
     if (days_since_exposed >= v->get_data()[1u])
-        EPIWORLD_UPDATE_EXPOSED_REMOVE(SURVSTATUS::RECOVERED);
+    {
+        p->rm_virus(v);
+        return SURVSTATUS::RECOVERED;
+    }
 
     // If it is infected, then it can be asymptomatic or symptomatic
     if (status == SURVSTATUS::LATENT)
     {
+
         // Will be symptomatic?
         if (EPI_RUNIF() < MPAR(2))
         {
             // If you are symptomatic, then you may be catched
-            m->get_db().down_exposed(v, p->get_status(), SURVSTATUS::SYMPTOMATIC);
-
             return static_cast<epiworld_fast_uint>(SURVSTATUS::SYMPTOMATIC);
 
         }
         
-        m->get_db().down_exposed(v, p->get_status(), SURVSTATUS::ASYMPTOMATIC);
-
         return static_cast<epiworld_fast_uint>(SURVSTATUS::ASYMPTOMATIC);
 
     }
     
     // Otherwise, it can be removed
     if (EPI_RUNIF() < p_die)
-        EPIWORLD_UPDATE_EXPOSED_REMOVE(SURVSTATUS::REMOVED);
+    {
+        p->rm_virus(v);
+        return SURVSTATUS::REMOVED;
+    }
     
     return p->get_status();
 
@@ -134,22 +137,11 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
             if (p->get_status() == SURVSTATUS::ASYMPTOMATIC)
             {
                 ndetected_asympt += 1.0;
-
-                m->get_db().down_exposed(
-                    &p->get_virus(0u), p->get_status(), SURVSTATUS::ASYMPTOMATIC_ISOLATED
-                    );
-                
                 p->get_status() = SURVSTATUS::ASYMPTOMATIC_ISOLATED;
             }
             else 
             {
-
-                m->get_db().down_exposed(
-                    &p->get_virus(0u), p->get_status(), SURVSTATUS::SYMPTOMATIC_ISOLATED
-                    );
-                
                 p->get_status() = SURVSTATUS::SYMPTOMATIC_ISOLATED;
-
             }
 
             

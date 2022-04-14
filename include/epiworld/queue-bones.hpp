@@ -70,11 +70,10 @@ inline void Queue<TSeq>::update()
     for (unsigned int i = 0u; i < active_next.size(); ++i)
     {
         active[i] += active_next[i];
-        if (active[i] < 0)
-            throw std::logic_error("Not possible!");
         active_next[i] = 0;
-
     }
+
+    EPI_DEBUG_ALL_NON_NEGATIVE(active);
 }
 
 template<typename TSeq>

@@ -317,14 +317,19 @@ inline void Model<TSeq>::dist_virus()
             throw std::range_error("There are only " + std::to_string(size()) + 
             " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
 
+        std::vector < bool > sampled(size(), false);
         while (nsampled > 0)
         {
 
 
             int loc = static_cast<unsigned int>(floor(runif() * n));
-            Person<TSeq> & person = population[loc];
-            if (person.has_virus(viruses[v].get_id()))
+
+            if (sampled[loc])
                 continue;
+
+            sampled[loc] = true;
+
+            Person<TSeq> & person = population[loc];
             
             person.add_virus(&viruses[v]);
             person.status_next = baseline_status_exposed;
@@ -702,7 +707,7 @@ inline void Model<TSeq>::update_status() {
         
         for (unsigned int p = 0u; p < size(); ++p)
             if (queue[p] > 0)
-                population[p].update_status();
+                population[p].update_status();            
 
     }
     else
@@ -901,9 +906,6 @@ inline void Model<TSeq>::reset() {
 
     // Recording the original state
     db.record();
-
-    // Start removes from scratch
-    virus_to_remove.clear();
 
 }
 

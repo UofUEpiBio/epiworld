@@ -10,6 +10,9 @@ inline void Model<TSeq>::print() const
     for (unsigned int i = 0u; i < 80u; ++i)
         line += "_";
 
+    // Prints a message if debugging is on
+    EPI_DEBUG_NOTIFY_ACTIVE()
+
     printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
     printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
     printf_epiworld("Days (duration)    : %i (of %i)\n", today(), ndays);

@@ -149,6 +149,48 @@ enum STATUS {
     #define EPI_DEFAULT_VISITED true
 #endif
 
+#ifdef EPI_DEBUG
+    #define EPI_DEBUG_NOTIFY_ACTIVE() \
+        printf_epiworld("[epiworld-debug] DEBUGGING ON (compiled with EPI_DEBUG defined)\n");
+    #define EPI_DEBUG_ALL_NON_NEGATIVE(vect) \
+        for (auto & v : vect) \
+            if (static_cast<double>(v) < 0.0) \
+                throw std::logic_error("A negative value not allowed.");
+
+    #define EPI_DEBUG_SUM_DBL(vect, num) \
+        double _epi_debug_sum = 0.0; \
+        for (auto & v : vect) \
+        {   \
+            _epi_debug_sum += static_cast<double>(v);\
+            if (_epi_debug_sum > static_cast<double>(num)) \
+                throw std::logic_error("[epiworld-debug] The sum of elements not reached."); \
+        }
+
+    #define EPI_DEBUG_SUM_INT(vect, num) \
+        int _epi_debug_sum = 0; \
+        for (auto & v : vect) \
+        {   \
+            _epi_debug_sum += static_cast<int>(v);\
+            if (_epi_debug_sum > static_cast<int>(num)) \
+                throw std::logic_error("[epiworld-debug] The sum of elements not reached."); \
+        }
+
+    #define EPI_DEBUG_VECTOR_MATCH_INT(a, b) \
+        if (a.size() != b.size())  \
+            throw std::length_error("[epiworld-debug] The vectors do not match size."); \
+        for (size_t _i = 0u; _i < a.size(); ++_i) \
+            if (a[_i] != b[_i]) \
+                throw std::logic_error("[epiworld-debug] The vectors do not match.");
+
+
+#else
+    #define EPI_DEBUG_NOTIFY_ACTIVE()
+    #define EPI_DEBUG_ALL_NON_NEGATIVE(vect)
+    #define EPI_DEBUG_SUM_DBL(vect, num)
+    #define EPI_DEBUG_SUM_INT(vect, num)
+    #define EPI_DEBUG_VECTOR_MATCH_INT(a, b)
+#endif
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1263,6 +1305,7 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 
     // Initializing the counts
     today_total.resize(m.nstatus);
+    std::fill(today_total.begin(), today_total.end(), 0);
     for (auto & p : *m.get_population())
         ++today_total[p.get_status()];
     
@@ -1270,10 +1313,10 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     std::fill(today_total_next.begin(), today_total_next.end(), 0);
 
     transition_matrix.resize(m.nstatus * m.nstatus);
-    std::fill(transition_matrix.begin(), transition_matrix.end(), 0u);
+    std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
 
     transition_matrix_next.resize(m.nstatus * m.nstatus);
-    std::fill(transition_matrix_next.begin(), transition_matrix_next.end(), 0u);
+    std::fill(transition_matrix_next.begin(), transition_matrix_next.end(), 0);
 
     return;
 
@@ -1299,6 +1342,22 @@ inline void DataBase<TSeq>::record()
         today_total[i] += today_total_next[i];
         today_total_next[i] = 0;
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // DEBUGGING BLOCK
+    ////////////////////////////////////////////////////////////////////////////
+    EPI_DEBUG_SUM_INT(today_total, model->size())
+    EPI_DEBUG_ALL_NON_NEGATIVE(today_total)
+
+    #ifdef EPI_DEBUG
+    // Checking whether the sums correspond
+    std::vector< int > _today_total_cp(today_total.size(), 0);
+    for (auto & p : model->population)
+        _today_total_cp[p.get_status()]++;
+    
+    EPI_DEBUG_VECTOR_MATCH_INT(_today_total_cp, today_total)
+    #endif
+    ////////////////////////////////////////////////////////////////////////////
 
     for (auto v = 0u; v < today_variant.size(); ++v)
     {
@@ -1444,6 +1503,7 @@ inline void DataBase<TSeq>::state_change(
 ) {
     today_total_next[prev_status]--;
     today_total_next[new_status]++;
+    return;
 }
 
 template<typename TSeq>
@@ -1737,8 +1797,12 @@ inline void DataBase<TSeq>::reset()
     transmission_variant.clear();
 
     today_total_nvariants_active = 0;
+
     today_total.clear();
+    today_total_next.clear();
+    
     today_variant.clear();
+    today_variant_next.clear();
 
 }
 
@@ -2657,11 +2721,10 @@ inline void Queue<TSeq>::update()
     for (unsigned int i = 0u; i < active_next.size(); ++i)
     {
         active[i] += active_next[i];
-        if (active[i] < 0)
-            throw std::logic_error("Not possible!");
         active_next[i] = 0;
-
     }
+
+    EPI_DEBUG_ALL_NON_NEGATIVE(active);
 }
 
 template<typename TSeq>
@@ -3245,12 +3308,54 @@ public:
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
 
-#define NEXT_STATUS() \
-    /* Making the change effective */ \
-    for (auto & p: population) \
-        if (!IN(p.status, status_removed)) {\
-            p.status = p.status_next;\
-        } 
+#define ADD_VIRUSES() \
+    for (size_t v = 0u; v < virus_to_add.size(); ++v) \
+    { \
+        \
+        Virus<TSeq> * virus   = virus_to_add[v]; \
+        Person<TSeq> * person = virus_to_add_person[v]; \
+        \
+        /* Recording transmission */ \
+        if (virus->get_host() != nullptr) \
+            db.record_transmission( \
+                virus->get_host()->get_id(),\
+                person->get_id(),\
+                virus->get_id()\
+            );\
+        \
+        /*Accounting for the transmission */ \
+        db.up_exposed(virus, person->status_next); \
+        \
+        /* Adding the virus */ \
+        person->get_viruses().add_virus(person->status_next, *virus); \
+        \
+    } \
+    virus_to_add.clear();virus_to_add_person.clear();
+
+#define RM_VIRUSES() \
+    for (auto v : virus_to_remove) \
+    { \
+        \
+        if (IN(v->get_host()->get_status(), status_susceptible)) \
+            v->post_recovery(); \
+        \
+        /* Accounting for the improve */ \
+        db.down_exposed(v, v->get_host()->status); \
+        \
+        /* Removing the virus (THIS SHOULD BE DEACTIVATE INSTEAD) */ \
+        v->get_host()->get_viruses().reset(); \
+        \
+    } \
+    \
+    virus_to_remove.clear(); 
+
+#define UPDATE_QUEUE() \
+    if (use_queuing) \
+        queue.update(); 
+
+#define UPDATE_STATUS() \
+    for (auto & p : population) \
+        p.status = p.status_next;
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -3516,24 +3621,40 @@ inline void Model<TSeq>::dist_virus()
             throw std::range_error("There are only " + std::to_string(size()) + 
             " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
 
+        std::vector < bool > sampled(size(), false);
         while (nsampled > 0)
         {
+
+
             int loc = static_cast<unsigned int>(floor(runif() * n));
-            if (population[loc].has_virus(viruses[v].get_id()))
+
+            if (sampled[loc])
                 continue;
+
+            sampled[loc] = true;
+
+            Person<TSeq> & person = population[loc];
             
-            population[loc].add_virus(baseline_status_exposed, viruses[v]);
-            population[loc].status_next = baseline_status_exposed;
+            person.add_virus(&viruses[v]);
+            person.status_next = baseline_status_exposed;
+            db.state_change(person.status, baseline_status_exposed);
 
             nsampled--;
 
         }
-    }
+    }      
 
-    if (use_queuing)
-        queue.update();
+    // Adding the next viruses
+    ADD_VIRUSES()
 
-    NEXT_STATUS()
+    // Removing and deactivating viruses
+    RM_VIRUSES()
+
+    // Updating the queuing sequence
+    UPDATE_QUEUE()
+
+    // Moving to the next assigned status
+    UPDATE_STATUS()
 
 }
 
@@ -3890,7 +4011,7 @@ inline void Model<TSeq>::update_status() {
         
         for (unsigned int p = 0u; p < size(); ++p)
             if (queue[p] > 0)
-                population[p].update_status();
+                population[p].update_status();            
 
     }
     else
@@ -3902,52 +4023,16 @@ inline void Model<TSeq>::update_status() {
     }
     
     // Adding the next viruses
-    for (size_t v = 0u; v < virus_to_add.size(); ++v)
-    {
-
-        Virus<TSeq> * virus   = virus_to_add[v];
-        Person<TSeq> * person = virus_to_add_person[v];
-
-        // Recording transmission
-        db.record_transmission(
-            virus->get_host()->get_id(),
-            person->get_id(),
-            virus->get_id()
-        );
-
-        // Accounting for the transmission
-        db.up_exposed(virus, person->status_next);
-
-        // Adding the virus
-        person->get_viruses().add_virus(person->status_next, virus);
-
-    }
-
-    virus_to_add.clear();
-    virus_to_add_person.clear();
+    ADD_VIRUSES()
 
     // Removing and deactivating viruses
-    for (auto v : virus_to_remove)
-    {
+    RM_VIRUSES()
 
-        if (IN(v->get_host()->get_status(), status_susceptible))
-            v->post_recovery();
+    // Updating the queuing sequence
+    UPDATE_QUEUE()
 
-        // Accounting for the improve
-        db.down_exposed(v, v->get_host()->status);
-        
-        // Removing the virus (THIS SHOULD BE DEACTIVATE INSTEAD)
-        v->get_host()->get_viruses().reset();
-
-
-    }
-
-    virus_to_remove.clear();
-
-    if (use_queuing)
-        queue.update();
-
-    NEXT_STATUS()
+    // Moving to the next assigned status
+    UPDATE_STATUS()
 
 }
 
@@ -4126,9 +4211,6 @@ inline void Model<TSeq>::reset() {
     // Recording the original state
     db.record();
 
-    // Start removes from scratch
-    virus_to_remove.clear();
-
 }
 
 // Too big to keep here
@@ -4152,6 +4234,9 @@ inline void Model<TSeq>::print() const
     std::string line = "";
     for (unsigned int i = 0u; i < 80u; ++i)
         line += "_";
+
+    // Prints a message if debugging is on
+    EPI_DEBUG_NOTIFY_ACTIVE()
 
     printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
     printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
@@ -4971,7 +5056,11 @@ inline Queue<TSeq> & Model<TSeq>::get_queue()
 #undef EPIWORLD_CHECK_STATE
 #undef EPIWORLD_CHECK_ALL_STATES
 #undef EPIWORLD_COLLECT_STATUSES
-#undef NEXT_STATUS
+
+#undef ADD_VIRUSES
+#undef RM_VIRUSES
+#undef UPDATE_QUEUE
+#undef UPDATE_STATUS
 
 #undef CHECK_INIT
 #endif
@@ -6594,7 +6683,7 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
-    epiworld_fast_uint & get_status();
+    const epiworld_fast_uint & get_status() const;
 
     void reset();
 
@@ -6851,7 +6940,7 @@ inline void Person<TSeq>::update_status()
 }
 
 template<typename TSeq>
-inline epiworld_fast_uint & Person<TSeq>::get_status() {
+inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
     return status;
 }
 

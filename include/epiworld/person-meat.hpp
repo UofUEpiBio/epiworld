@@ -217,7 +217,7 @@ inline void Person<TSeq>::update_status()
 }
 
 template<typename TSeq>
-inline epiworld_fast_uint & Person<TSeq>::get_status() {
+inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
     return status;
 }
 
