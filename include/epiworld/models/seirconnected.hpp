@@ -1,3 +1,4 @@
+#define EPI_DEBUG
 #ifndef EPIWORLD_SEIR_H 
 #define EPIWORLD_SEIR_H
 
@@ -76,9 +77,22 @@ EPI_NEW_UPDATEFUN(update_susceptible, bool)
         );
 
         // Infecting the individual
+        #ifdef EPI_DEBUG
+        if (tracked_agents_infected[which]->get_viruses().size() == 0)
+        {
+
+            printf_epiworld("[epiworld-debug] date: %i\n", m->today());
+            printf_epiworld("[epiworld-debug] sim#: %i\n", m->get_n_replicates());
+
+            throw std::logic_error(
+                "[epiworld-debug] The agent " + std::to_string(which) + " has no "+
+                "virus to share. The agent's status is: " +
+                std::to_string(tracked_agents_infected[which]->get_status())
+            );
+        }
+        #endif
         p->add_virus(
-            SEIRCONSTATUS::EXPOSED, 
-            tracked_agents_infected[which]->get_virus(0u)
+            &tracked_agents_infected[which]->get_virus(0u)
             ); 
 
         return SEIRCONSTATUS::EXPOSED;
@@ -105,7 +119,6 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
             tracked_agents_infected_next.push_back(p);
             tracked_ninfected_next++;
 
-            m->get_db().up_exposed(&p->get_virus(0u), SEIRCONSTATUS::EXPOSED, SEIRCONSTATUS::INFECTED);
             return SEIRCONSTATUS::INFECTED;
 
         }
@@ -118,8 +131,8 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
         {
 
             tracked_ninfected_next--;
-            epiworld::Virus<> * v = &p->get_virus(0u);
-            EPIWORLD_UPDATE_EXPOSED_RECOVER(SEIRCONSTATUS::RECOVERED)
+            p->rm_virus(&p->get_virus(0u));
+            return SEIRCONSTATUS::RECOVERED;
 
         }
 
@@ -136,7 +149,7 @@ EPI_NEW_GLOBALFUN(global_accounting, bool)
 
     // On the last day, also reset tracked agents and
     // set the initialized value to false
-    if (static_cast<unsigned int>(m->today()) == m->get_ndays())
+    if (static_cast<unsigned int>(m->today()) == (m->get_ndays() - 1))
     {
 
         tracked_started = false;

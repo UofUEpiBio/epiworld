@@ -51,7 +51,13 @@
 
 #define UPDATE_STATUS() \
     for (auto & p : population) \
-        p.status = p.status_next;
+    { \
+        if (p.status_next != p.status) \
+        {\
+            db.state_change(p.status, p.status_next); \
+            p.status = p.status_next; \
+        }\
+    }
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -333,7 +339,6 @@ inline void Model<TSeq>::dist_virus()
             
             person.add_virus(&viruses[v]);
             person.status_next = baseline_status_exposed;
-            db.state_change(person.status, baseline_status_exposed);
 
             nsampled--;
 
@@ -400,7 +405,7 @@ template<typename TSeq>
 inline void Model<TSeq>::chrono_end() {
     time_end = std::chrono::steady_clock::now();
     time_elapsed += (time_end - time_start);
-    time_n++;
+    n_replicates++;
 }
 
 template<typename TSeq>
@@ -605,12 +610,34 @@ inline int Model<TSeq>::today() const {
 template<typename TSeq>
 inline void Model<TSeq>::next() {
 
+    // Adding the next viruses
+    ADD_VIRUSES()
+
+    // Removing and deactivating viruses
+    RM_VIRUSES()
+
+    // Updating the queuing sequence
+    UPDATE_QUEUE()
+
+    // Moving to the next assigned status
+    UPDATE_STATUS()
+
     ++this->current_date;
     db.record();
     
-    // Advicing the progress bar
+    // Advancing the progress bar
     if (verbose)
         pb.next();
+
+    #ifdef EPI_DEBUG
+    // Checking that all individuals in EXPOSED have a virus
+    for (auto & p : population)
+    {
+        if (IN(p.get_status(), status_exposed))
+            if (p.get_viruses().size() == 0u)
+                throw std::logic_error("Individual with no virus is part of the exposed group.");
+    }
+    #endif
 
     return ;
 }
@@ -626,15 +653,20 @@ inline void Model<TSeq>::run()
 
         // We can execute these components in whatever order the
         // user needs.
-        this->update_status();
-        this->mutate_variant();
-        this->next();
-
-        this->run_global_actions();
-
+        this->update_status();       
+    
         // In this case we are applying degree sequence rewiring
         // to change the network just a bit.
         this->rewire();
+
+        // We start with the global actions
+        this->run_global_actions();
+
+        // This locks all the changes
+        this->next();
+
+        // Mutation must happen at the very end of all
+        this->mutate_variant();
 
     }
     chrono_end();
@@ -718,18 +750,6 @@ inline void Model<TSeq>::update_status() {
 
     }
     
-    // Adding the next viruses
-    ADD_VIRUSES()
-
-    // Removing and deactivating viruses
-    RM_VIRUSES()
-
-    // Updating the queuing sequence
-    UPDATE_QUEUE()
-
-    // Moving to the next assigned status
-    UPDATE_STATUS()
-
 }
 
 template<typename TSeq>
@@ -761,6 +781,12 @@ inline int Model<TSeq>::get_nvariants() const {
 template<typename TSeq>
 inline unsigned int Model<TSeq>::get_ndays() const {
     return ndays;
+}
+
+template<typename TSeq>
+inline unsigned int Model<TSeq>::get_n_replicates() const
+{
+    return n_replicates;
 }
 
 template<typename TSeq>
@@ -1277,7 +1303,6 @@ inline void Model<TSeq>::get_elapsed(
     std::string unit,
     epiworld_double * last_elapsed,
     epiworld_double * total_elapsed,
-    unsigned int * n_replicates,
     std::string * unit_abbr,
     bool print
 ) const {
@@ -1323,24 +1348,22 @@ inline void Model<TSeq>::get_elapsed(
         *last_elapsed = elapsed;
     if (total_elapsed != nullptr)
         *total_elapsed = elapsed_total;
-    if (n_replicates != nullptr)
-        *n_replicates = time_n;
     if (unit_abbr != nullptr)
         *unit_abbr = abbr_unit;
 
     if (!print)
         return;
 
-    if (time_n > 1u)
+    if (n_replicates > 1u)
     {
         printf_epiworld("last run elapsed time : %.2f%s\n",
             elapsed, abbr_unit.c_str());
         printf_epiworld("total elapsed time    : %.2f%s\n",
             elapsed_total, abbr_unit.c_str());
         printf_epiworld("total runs            : %i\n",
-            static_cast<int>(time_n));
+            static_cast<int>(n_replicates));
         printf_epiworld("mean run elapsed time : %.2f%s\n",
-            elapsed_total/static_cast<epiworld_double>(time_n), abbr_unit.c_str());
+            elapsed_total/static_cast<epiworld_double>(n_replicates), abbr_unit.c_str());
 
     } else {
         printf_epiworld("last run elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());

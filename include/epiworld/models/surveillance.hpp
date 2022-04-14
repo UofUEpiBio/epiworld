@@ -123,13 +123,20 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
     epiworld_double ndetected_asympt = 0.0;
     
     auto & pop = *(m->get_population());
+    std::vector< bool > sampled(m->size(), false);
     
     while (to_go-- > 0)
     {
 
         // Who is the lucky one
         unsigned int i = static_cast<unsigned int>(std::floor(EPI_RUNIF() * m->size()));
+
+        if (sampled[i])
+            continue;
+
+        sampled[i] = true;
         epiworld::Person<TSeq> * p = &pop[i];
+        
         if (epiworld::IN(p->get_status(), m->get_status_exposed()))
         {
 
@@ -137,11 +144,11 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
             if (p->get_status() == SURVSTATUS::ASYMPTOMATIC)
             {
                 ndetected_asympt += 1.0;
-                p->get_status() = SURVSTATUS::ASYMPTOMATIC_ISOLATED;
+                p->update_status(SURVSTATUS::ASYMPTOMATIC_ISOLATED);
             }
             else 
             {
-                p->get_status() = SURVSTATUS::SYMPTOMATIC_ISOLATED;
+                p->update_status(SURVSTATUS::SYMPTOMATIC_ISOLATED);
             }
 
             

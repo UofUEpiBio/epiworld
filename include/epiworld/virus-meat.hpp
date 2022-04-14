@@ -18,7 +18,6 @@ inline void Virus<TSeq>::mutate() {
     if (mutation_fun)
         if (mutation_fun(host, this, this->get_model()))
             host->get_model()->record_variant(this);
-    
 
     return;
 }

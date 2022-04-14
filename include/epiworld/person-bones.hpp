@@ -72,6 +72,7 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
+    void update_status(epiworld_fast_uint new_status);
     const epiworld_fast_uint & get_status() const;
 
     void reset();

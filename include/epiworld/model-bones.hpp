@@ -85,7 +85,7 @@ private:
     // std::chrono::milliseconds
     std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
-    unsigned int time_n = 0u;
+    unsigned int n_replicates = 0u;
     void chrono_start();
     void chrono_end();
 
@@ -230,6 +230,7 @@ public:
 
     int get_nvariants() const;
     unsigned int get_ndays() const;
+    unsigned int get_n_replicates() const;
     void set_ndays(unsigned int ndays);
     bool get_verbose() const;
     void verbose_off();
@@ -406,7 +407,6 @@ public:
         std::string unit = "auto",
         epiworld_double * last_elapsed = nullptr,
         epiworld_double * total_elapsed = nullptr,
-        unsigned int * n_replicates = nullptr,
         std::string * unit_abbr = nullptr,
         bool print = true
     ) const;

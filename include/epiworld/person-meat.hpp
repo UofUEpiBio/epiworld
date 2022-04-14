@@ -207,11 +207,29 @@ inline void Person<TSeq>::update_status()
         throw std::range_error(
             "The reported status " + std::to_string(status) + " is not valid.");
 
-    // Updating db
-    if (status_next != status)
-        model->get_db().state_change(status, status_next);
+    return;
 
+}
 
+template<typename TSeq>
+inline void Person<TSeq>::update_status(epiworld_fast_uint new_status)
+{
+
+    if (new_status == status)
+        return;
+
+    // No change if removed
+    bool status_ok = 
+        IN(new_status, model->status_removed) |
+        IN(new_status, model->status_susceptible) |
+        IN(new_status, model->status_exposed);
+
+    if (!status_ok)
+        throw std::range_error(
+            "The reported status " + std::to_string(new_status) + " is not valid.");
+
+    status_next = new_status;
+    
     return;
 
 }

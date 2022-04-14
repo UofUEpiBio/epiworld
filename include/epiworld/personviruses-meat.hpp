@@ -51,6 +51,7 @@ inline void PersonViruses<TSeq>::reset()
 {
 
     this->viruses.clear();
+    nactive = 0;
 
 }
 

@@ -80,8 +80,7 @@ EPI_NEW_UPDATEFUN(update_susceptible, bool)
 
         // Infecting the individual
         p->add_virus(
-            SIRCONSTATUS::INFECTED, 
-            tracked_agents_infected[which]->get_virus(0u)
+            &tracked_agents_infected[which]->get_virus(0u)
             ); 
 
         return SIRCONSTATUS::INFECTED;
@@ -103,7 +102,8 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
 
         tracked_ninfected_next--;
         epiworld::Virus<> * v = &p->get_virus(0u);
-        EPIWORLD_UPDATE_EXPOSED_RECOVER(SIRCONSTATUS::RECOVERED)
+        p->rm_virus(v);
+        return SIRCONSTATUS::RECOVERED;
 
     }
 
@@ -119,7 +119,7 @@ EPI_NEW_GLOBALFUN(global_accounting, bool)
 
     // On the last day, also reset tracked agents and
     // set the initialized value to false
-    if (static_cast<unsigned int>(m->today()) == m->get_ndays())
+    if (static_cast<unsigned int>(m->today()) == (m->get_ndays() - 1))
     {
 
         tracked_started = false;
