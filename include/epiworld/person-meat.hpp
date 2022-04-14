@@ -30,15 +30,28 @@ inline void Person<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    epiworld_fast_uint new_status,
-    Virus<TSeq> virus
+    Virus<TSeq> * virus
 )
 {
 
-    viruses.add_virus(new_status, virus);
+    model->virus_to_add.push_back(virus);
+    model->virus_to_add_person.push_back(this);
 
     if (model->is_queuing_on())
         model->get_queue() += this;
+
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_virus(
+    Virus<TSeq> * virus
+)
+{
+
+    model->virus_to_remove.push_back(virus);
+
+    if (model->is_queuing_on())
+        model->get_queue() -= this;
 
 }
 
@@ -167,8 +180,6 @@ inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
     return neighbors;
 }
 
-
-
 template<typename TSeq>
 inline void Person<TSeq>::update_status()
 {
@@ -196,8 +207,10 @@ inline void Person<TSeq>::update_status()
         throw std::range_error(
             "The reported status " + std::to_string(status) + " is not valid.");
 
-    // if (status != status_next)
-    //     model->get_db().update_counters();
+    // Updating db
+    if (status_next != status)
+        model->get_db().state_change(status, status_next);
+
 
     return;
 

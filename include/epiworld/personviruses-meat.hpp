@@ -15,24 +15,6 @@ inline void PersonViruses<TSeq>::add_virus(
     viruses[vloc].host = host;
     viruses[vloc].date = host->get_model()->today();
 
-    // Recording transmission (only if not initial)
-    if (v.get_host() != nullptr)
-    {
-
-        host->get_model()->get_db().record_transmission(
-            host->get_id(),
-            v.get_host()->get_id(),
-            v.get_id()
-        );
-
-    }
-    
-    host->get_model()->get_db().up_exposed(
-        &v,
-        host->get_status(),
-        new_status
-    );
-
     nactive++;
 
 }

@@ -4,13 +4,54 @@
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
 
-#define NEXT_STATUS() \
-    /* Making the change effective */ \
-    for (auto & p: population) \
-        if (!IN(p.status, status_removed)) {\
-            db.record_transition(p.status, p.status_next);\
-            p.status = p.status_next;\
-        } 
+#define ADD_VIRUSES() \
+    for (size_t v = 0u; v < virus_to_add.size(); ++v) \
+    { \
+        \
+        Virus<TSeq> * virus   = virus_to_add[v]; \
+        Person<TSeq> * person = virus_to_add_person[v]; \
+        \
+        /* Recording transmission */ \
+        if (virus->get_host() != nullptr) \
+            db.record_transmission( \
+                virus->get_host()->get_id(),\
+                person->get_id(),\
+                virus->get_id()\
+            );\
+        \
+        /*Accounting for the transmission */ \
+        db.up_exposed(virus, person->status_next); \
+        \
+        /* Adding the virus */ \
+        person->get_viruses().add_virus(person->status_next, *virus); \
+        \
+    } \
+    virus_to_add.clear();virus_to_add_person.clear();
+
+#define RM_VIRUSES() \
+    for (auto v : virus_to_remove) \
+    { \
+        \
+        if (IN(v->get_host()->get_status(), status_susceptible)) \
+            v->post_recovery(); \
+        \
+        /* Accounting for the improve */ \
+        db.down_exposed(v, v->get_host()->status); \
+        \
+        /* Removing the virus (THIS SHOULD BE DEACTIVATE INSTEAD) */ \
+        v->get_host()->get_viruses().reset(); \
+        \
+    } \
+    \
+    virus_to_remove.clear(); 
+
+#define UPDATE_QUEUE() \
+    if (use_queuing) \
+        queue.update(); 
+
+#define UPDATE_STATUS() \
+    for (auto & p : population) \
+        p.status = p.status_next;
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -278,22 +319,33 @@ inline void Model<TSeq>::dist_virus()
 
         while (nsampled > 0)
         {
+
+
             int loc = static_cast<unsigned int>(floor(runif() * n));
-            if (population[loc].has_virus(viruses[v].get_id()))
+            Person<TSeq> & person = population[loc];
+            if (person.has_virus(viruses[v].get_id()))
                 continue;
             
-            population[loc].add_virus(baseline_status_exposed, viruses[v]);
-            population[loc].status_next = baseline_status_exposed;
+            person.add_virus(&viruses[v]);
+            person.status_next = baseline_status_exposed;
+            db.state_change(person.status, baseline_status_exposed);
 
             nsampled--;
 
         }
-    }
+    }      
 
-    if (use_queuing)
-        queue.update();
+    // Adding the next viruses
+    ADD_VIRUSES()
 
-    NEXT_STATUS()
+    // Removing and deactivating viruses
+    RM_VIRUSES()
+
+    // Updating the queuing sequence
+    UPDATE_QUEUE()
+
+    // Moving to the next assigned status
+    UPDATE_STATUS()
 
 }
 
@@ -661,24 +713,17 @@ inline void Model<TSeq>::update_status() {
 
     }
     
-
-    if (use_queuing)
-        queue.update();
-
-    NEXT_STATUS()
+    // Adding the next viruses
+    ADD_VIRUSES()
 
     // Removing and deactivating viruses
-    for (auto v : virus_to_remove)
-    {
+    RM_VIRUSES()
 
-        if (IN(v->get_host()->get_status(), status_susceptible))
-            v->post_recovery();
+    // Updating the queuing sequence
+    UPDATE_QUEUE()
 
-        v->get_host()->get_viruses().reset();
-
-    }
-
-    virus_to_remove.clear();
+    // Moving to the next assigned status
+    UPDATE_STATUS()
 
 }
 
@@ -1420,7 +1465,11 @@ inline Queue<TSeq> & Model<TSeq>::get_queue()
 #undef EPIWORLD_CHECK_STATE
 #undef EPIWORLD_CHECK_ALL_STATES
 #undef EPIWORLD_COLLECT_STATUSES
-#undef NEXT_STATUS
+
+#undef ADD_VIRUSES
+#undef RM_VIRUSES
+#undef UPDATE_QUEUE
+#undef UPDATE_STATUS
 
 #undef CHECK_INIT
 #endif

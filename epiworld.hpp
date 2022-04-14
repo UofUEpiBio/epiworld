@@ -1152,15 +1152,18 @@ public:
 
     void up_exposed(
         Virus<TSeq> * v,
-        epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
         );
 
     void down_exposed(
         Virus<TSeq> * v,
+        epiworld_fast_uint prev_status
+        );
+
+    void state_change(
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
-        );
+    );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
 
@@ -1417,12 +1420,8 @@ inline size_t DataBase<TSeq>::size() const
 template<typename TSeq>
 inline void DataBase<TSeq>::up_exposed(
     Virus<TSeq> * v,
-    epiworld_fast_uint prev_status,
     epiworld_fast_uint new_status
 ) {
-
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
 
     today_variant_next[v->get_id()][new_status]++;
 
@@ -1431,20 +1430,20 @@ inline void DataBase<TSeq>::up_exposed(
 template<typename TSeq>
 inline void DataBase<TSeq>::down_exposed( 
     Virus<TSeq> * v,
-    epiworld_fast_uint prev_status,
-    epiworld_fast_uint new_status
+    epiworld_fast_uint prev_status
 ) {
-
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
 
     today_variant_next[v->get_id()][prev_status]--;
 
-    // Adding the virus to the list of those that
-    // will be removed later on at the end of the update
-    model->virus_to_remove.push_back(v);
+}
 
-
+template<typename TSeq>
+inline void DataBase<TSeq>::state_change(
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+    today_total_next[prev_status]--;
+    today_total_next[new_status]++;
 }
 
 template<typename TSeq>
@@ -2882,7 +2881,15 @@ private:
     bool visited_model = EPI_DEFAULT_VISITED;
     bool use_queuing   = true;
 
-    std::vector< Virus<TSeq> * > virus_to_remove;
+    /**
+     * @brief Variables used to keep track of the actions
+     * to be made regarding viruses.
+     */
+    ///@{
+    std::vector< Virus<TSeq> * >  virus_to_remove;
+    std::vector< Virus<TSeq> * >  virus_to_add;
+    std::vector< Person<TSeq> * > virus_to_add_person;
+    ///@}
 
 public:
 
@@ -3242,7 +3249,6 @@ public:
     /* Making the change effective */ \
     for (auto & p: population) \
         if (!IN(p.status, status_removed)) {\
-            db.record_transition(p.status, p.status_next);\
             p.status = p.status_next;\
         } 
 
@@ -3895,11 +3901,30 @@ inline void Model<TSeq>::update_status() {
 
     }
     
+    // Adding the next viruses
+    for (size_t v = 0u; v < virus_to_add.size(); ++v)
+    {
 
-    if (use_queuing)
-        queue.update();
+        Virus<TSeq> * virus   = virus_to_add[v];
+        Person<TSeq> * person = virus_to_add_person[v];
 
-    NEXT_STATUS()
+        // Recording transmission
+        db.record_transmission(
+            virus->get_host()->get_id(),
+            person->get_id(),
+            virus->get_id()
+        );
+
+        // Accounting for the transmission
+        db.up_exposed(virus, person->status_next);
+
+        // Adding the virus
+        person->get_viruses().add_virus(person->status_next, virus);
+
+    }
+
+    virus_to_add.clear();
+    virus_to_add_person.clear();
 
     // Removing and deactivating viruses
     for (auto v : virus_to_remove)
@@ -3908,11 +3933,21 @@ inline void Model<TSeq>::update_status() {
         if (IN(v->get_host()->get_status(), status_susceptible))
             v->post_recovery();
 
+        // Accounting for the improve
+        db.down_exposed(v, v->get_host()->status);
+        
+        // Removing the virus (THIS SHOULD BE DEACTIVATE INSTEAD)
         v->get_host()->get_viruses().reset();
+
 
     }
 
     virus_to_remove.clear();
+
+    if (use_queuing)
+        queue.update();
+
+    NEXT_STATUS()
 
 }
 
@@ -5529,24 +5564,6 @@ inline void PersonViruses<TSeq>::add_virus(
     viruses[vloc].host = host;
     viruses[vloc].date = host->get_model()->today();
 
-    // Recording transmission (only if not initial)
-    if (v.get_host() != nullptr)
-    {
-
-        host->get_model()->get_db().record_transmission(
-            host->get_id(),
-            v.get_host()->get_id(),
-            v.get_id()
-        );
-
-    }
-    
-    host->get_model()->get_db().up_exposed(
-        &v,
-        host->get_status(),
-        new_status
-    );
-
     nactive++;
 
 }
@@ -6444,7 +6461,7 @@ inline epiworld_fast_uint default_update_susceptible(
     if (which < 0)
         return p->get_status();
 
-    p->add_virus(m->get_default_exposed(), *(m->array_virus_tmp[which])); 
+    p->add_virus(m->array_virus_tmp[which]); 
 
     return m->get_default_exposed();
 
@@ -6455,17 +6472,6 @@ inline epiworld_fast_uint default_update_susceptible(
     epiworld_double prob_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); \
     epiworld_double prob_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
 
-#define EPIWORLD_UPDATE_EXPOSED_REMOVE(newstatus) \
-    {m->get_db().down_exposed(v, p->get_status(), newstatus);\
-    if (m->is_queuing_on()) m->get_queue() -= p; \
-    /* p->get_viruses().reset();*/ /*Viruses are removed after the updates are completed */\
-    return static_cast<epiworld_fast_uint>(newstatus);}
-
-#define EPIWORLD_UPDATE_EXPOSED_RECOVER(newstatus) \
-    {m->get_db().down_exposed(v, p->get_status(), newstatus);\
-    if (m->is_queuing_on()) m->get_queue() -= p; \
-    /* v->post_recovery();p->get_viruses().reset(); *//* VIRUSES ARE REMOVED AND APPLIED THE RESET LATER */\
-    return static_cast<epiworld_fast_uint>(newstatus);}
 
 template<typename TSeq>
 inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
@@ -6479,14 +6485,16 @@ inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> *
 
     if (r < cumsum)
     {
-        EPIWORLD_UPDATE_EXPOSED_REMOVE(m->get_default_removed());
+        p->rm_virus(v);
+        return m->get_default_removed();
     }
     
     cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
     
     if (r < cumsum)
     {
-        EPIWORLD_UPDATE_EXPOSED_RECOVER(m->get_default_removed())
+        p->rm_virus(v);
+        return m->get_default_removed();
     }
 
     return p->get_status();
@@ -6557,7 +6565,8 @@ public:
     void init(epiworld_fast_uint baseline_status);
 
     void add_tool(int d, Tool<TSeq> tool);
-    void add_virus(epiworld_fast_uint new_status, Virus<TSeq> virus);
+    void add_virus(Virus<TSeq> * virus);
+    void rm_virus(Virus<TSeq> * virus);
 
     epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);
@@ -6655,15 +6664,28 @@ inline void Person<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    epiworld_fast_uint new_status,
-    Virus<TSeq> virus
+    Virus<TSeq> * virus
 )
 {
 
-    viruses.add_virus(new_status, virus);
+    model->virus_to_add.push_back(virus);
+    model->virus_to_add_person.push_back(this);
 
     if (model->is_queuing_on())
         model->get_queue() += this;
+
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_virus(
+    Virus<TSeq> * virus
+)
+{
+
+    model->virus_to_remove.push_back(virus);
+
+    if (model->is_queuing_on())
+        model->get_queue() -= this;
 
 }
 
@@ -6792,8 +6814,6 @@ inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
     return neighbors;
 }
 
-
-
 template<typename TSeq>
 inline void Person<TSeq>::update_status()
 {
@@ -6821,8 +6841,10 @@ inline void Person<TSeq>::update_status()
         throw std::range_error(
             "The reported status " + std::to_string(status) + " is not valid.");
 
-    // if (status != status_next)
-    //     model->get_db().update_counters();
+    // Updating db
+    if (status_next != status)
+        model->get_db().state_change(status, status_next);
+
 
     return;
 

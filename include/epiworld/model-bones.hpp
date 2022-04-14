@@ -102,7 +102,15 @@ private:
     bool visited_model = EPI_DEFAULT_VISITED;
     bool use_queuing   = true;
 
-    std::vector< Virus<TSeq> * > virus_to_remove;
+    /**
+     * @brief Variables used to keep track of the actions
+     * to be made regarding viruses.
+     */
+    ///@{
+    std::vector< Virus<TSeq> * >  virus_to_remove;
+    std::vector< Virus<TSeq> * >  virus_to_add;
+    std::vector< Person<TSeq> * > virus_to_add_person;
+    ///@}
 
 public:
 

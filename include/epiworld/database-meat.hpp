@@ -168,12 +168,8 @@ inline size_t DataBase<TSeq>::size() const
 template<typename TSeq>
 inline void DataBase<TSeq>::up_exposed(
     Virus<TSeq> * v,
-    epiworld_fast_uint prev_status,
     epiworld_fast_uint new_status
 ) {
-
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
 
     today_variant_next[v->get_id()][new_status]++;
 
@@ -182,20 +178,20 @@ inline void DataBase<TSeq>::up_exposed(
 template<typename TSeq>
 inline void DataBase<TSeq>::down_exposed( 
     Virus<TSeq> * v,
-    epiworld_fast_uint prev_status,
-    epiworld_fast_uint new_status
+    epiworld_fast_uint prev_status
 ) {
-
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
 
     today_variant_next[v->get_id()][prev_status]--;
 
-    // Adding the virus to the list of those that
-    // will be removed later on at the end of the update
-    model->virus_to_remove.push_back(v);
+}
 
-
+template<typename TSeq>
+inline void DataBase<TSeq>::state_change(
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+    today_total_next[prev_status]--;
+    today_total_next[new_status]++;
 }
 
 template<typename TSeq>
