@@ -122,4 +122,46 @@ enum STATUS {
     #define EPI_DEFAULT_VISITED true
 #endif
 
+#ifdef EPI_DEBUG
+    #define EPI_DEBUG_NOTIFY_ACTIVE() \
+        printf_epiworld("[epiworld-debug] DEBUGGING ON (compiled with EPI_DEBUG defined)\n");
+    #define EPI_DEBUG_ALL_NON_NEGATIVE(vect) \
+        for (auto & v : vect) \
+            if (static_cast<double>(v) < 0.0) \
+                throw std::logic_error("A negative value not allowed.");
+
+    #define EPI_DEBUG_SUM_DBL(vect, num) \
+        double _epi_debug_sum = 0.0; \
+        for (auto & v : vect) \
+        {   \
+            _epi_debug_sum += static_cast<double>(v);\
+            if (_epi_debug_sum > static_cast<double>(num)) \
+                throw std::logic_error("[epiworld-debug] The sum of elements not reached."); \
+        }
+
+    #define EPI_DEBUG_SUM_INT(vect, num) \
+        int _epi_debug_sum = 0; \
+        for (auto & v : vect) \
+        {   \
+            _epi_debug_sum += static_cast<int>(v);\
+            if (_epi_debug_sum > static_cast<int>(num)) \
+                throw std::logic_error("[epiworld-debug] The sum of elements not reached."); \
+        }
+
+    #define EPI_DEBUG_VECTOR_MATCH_INT(a, b) \
+        if (a.size() != b.size())  \
+            throw std::length_error("[epiworld-debug] The vectors do not match size."); \
+        for (size_t _i = 0u; _i < a.size(); ++_i) \
+            if (a[_i] != b[_i]) \
+                throw std::logic_error("[epiworld-debug] The vectors do not match.");
+
+
+#else
+    #define EPI_DEBUG_NOTIFY_ACTIVE()
+    #define EPI_DEBUG_ALL_NON_NEGATIVE(vect)
+    #define EPI_DEBUG_SUM_DBL(vect, num)
+    #define EPI_DEBUG_SUM_INT(vect, num)
+    #define EPI_DEBUG_VECTOR_MATCH_INT(a, b)
+#endif
+
 #endif

@@ -43,7 +43,8 @@ public:
     void init(epiworld_fast_uint baseline_status);
 
     void add_tool(int d, Tool<TSeq> tool);
-    void add_virus(epiworld_fast_uint new_status, Virus<TSeq> virus);
+    void add_virus(Virus<TSeq> * virus);
+    void rm_virus(Virus<TSeq> * virus);
 
     epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);
@@ -71,7 +72,9 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
-    epiworld_fast_uint & get_status();
+    void update_status(epiworld_fast_uint new_status);
+    const epiworld_fast_uint & get_status() const;
+    const epiworld_fast_uint & get_status_next() const;
 
     void reset();
 

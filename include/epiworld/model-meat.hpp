@@ -4,13 +4,60 @@
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
 
-#define NEXT_STATUS() \
-    /* Making the change effective */ \
-    for (auto & p: population) \
-        if (!IN(p.status, status_removed)) {\
-            db.record_transition(p.status, p.status_next);\
-            p.status = p.status_next;\
-        } 
+#define ADD_VIRUSES() \
+    for (size_t v = 0u; v < virus_to_add.size(); ++v) \
+    { \
+        \
+        Virus<TSeq> * virus   = virus_to_add[v]; \
+        Person<TSeq> * person = virus_to_add_person[v]; \
+        \
+        /* Recording transmission */ \
+        if (virus->get_host() != nullptr) \
+            db.record_transmission( \
+                virus->get_host()->get_id(),\
+                person->get_id(),\
+                virus->get_id()\
+            );\
+        \
+        /*Accounting for the transmission */ \
+        db.up_exposed(virus, person->status_next); \
+        \
+        /* Adding the virus */ \
+        person->get_viruses().add_virus(person->status_next, *virus); \
+        \
+    } \
+    virus_to_add.clear();virus_to_add_person.clear();
+
+#define RM_VIRUSES() \
+    for (auto v : virus_to_remove) \
+    { \
+        \
+        if (IN(v->get_host()->get_status(), status_susceptible)) \
+            v->post_recovery(); \
+        \
+        /* Accounting for the improve */ \
+        db.down_exposed(v, v->get_host()->status); \
+        \
+        /* Removing the virus (THIS SHOULD BE DEACTIVATE INSTEAD) */ \
+        v->get_host()->get_viruses().reset(); \
+        \
+    } \
+    \
+    virus_to_remove.clear(); 
+
+#define UPDATE_QUEUE() \
+    if (use_queuing) \
+        queue.update(); 
+
+#define UPDATE_STATUS() \
+    for (auto & p : population) \
+    { \
+        if (p.status_next != p.status) \
+        {\
+            db.state_change(p.status, p.status_next); \
+            p.status = p.status_next; \
+        }\
+    }
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -276,24 +323,39 @@ inline void Model<TSeq>::dist_virus()
             throw std::range_error("There are only " + std::to_string(size()) + 
             " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
 
+        std::vector < bool > sampled(size(), false);
         while (nsampled > 0)
         {
+
+
             int loc = static_cast<unsigned int>(floor(runif() * n));
-            if (population[loc].has_virus(viruses[v].get_id()))
+
+            if (sampled[loc])
                 continue;
+
+            sampled[loc] = true;
+
+            Person<TSeq> & person = population[loc];
             
-            population[loc].add_virus(baseline_status_exposed, viruses[v]);
-            population[loc].status_next = baseline_status_exposed;
+            person.add_virus(&viruses[v]);
+            person.status_next = baseline_status_exposed;
 
             nsampled--;
 
         }
-    }
+    }      
 
-    if (use_queuing)
-        queue.update();
+    // Adding the next viruses
+    ADD_VIRUSES()
 
-    NEXT_STATUS()
+    // Removing and deactivating viruses
+    RM_VIRUSES()
+
+    // Updating the queuing sequence
+    UPDATE_QUEUE()
+
+    // Moving to the next assigned status
+    UPDATE_STATUS()
 
 }
 
@@ -343,7 +405,7 @@ template<typename TSeq>
 inline void Model<TSeq>::chrono_end() {
     time_end = std::chrono::steady_clock::now();
     time_elapsed += (time_end - time_start);
-    time_n++;
+    n_replicates++;
 }
 
 template<typename TSeq>
@@ -548,12 +610,34 @@ inline int Model<TSeq>::today() const {
 template<typename TSeq>
 inline void Model<TSeq>::next() {
 
+    // Adding the next viruses
+    ADD_VIRUSES()
+
+    // Removing and deactivating viruses
+    RM_VIRUSES()
+
+    // Updating the queuing sequence
+    UPDATE_QUEUE()
+
+    // Moving to the next assigned status
+    UPDATE_STATUS()
+
     ++this->current_date;
     db.record();
     
-    // Advicing the progress bar
+    // Advancing the progress bar
     if (verbose)
         pb.next();
+
+    #ifdef EPI_DEBUG
+    // Checking that all individuals in EXPOSED have a virus
+    for (auto & p : population)
+    {
+        if (IN(p.get_status(), status_exposed))
+            if (p.get_viruses().size() == 0u)
+                throw std::logic_error("Individual with no virus is part of the exposed group.");
+    }
+    #endif
 
     return ;
 }
@@ -569,15 +653,20 @@ inline void Model<TSeq>::run()
 
         // We can execute these components in whatever order the
         // user needs.
-        this->update_status();
-        this->mutate_variant();
-        this->next();
-
+        this->update_status();       
+    
+        // We start with the global actions
         this->run_global_actions();
 
         // In this case we are applying degree sequence rewiring
         // to change the network just a bit.
         this->rewire();
+
+        // This locks all the changes
+        this->next();
+
+        // Mutation must happen at the very end of all
+        this->mutate_variant();
 
     }
     chrono_end();
@@ -650,7 +739,7 @@ inline void Model<TSeq>::update_status() {
         
         for (unsigned int p = 0u; p < size(); ++p)
             if (queue[p] > 0)
-                population[p].update_status();
+                population[p].update_status();            
 
     }
     else
@@ -661,25 +750,6 @@ inline void Model<TSeq>::update_status() {
 
     }
     
-
-    if (use_queuing)
-        queue.update();
-
-    NEXT_STATUS()
-
-    // Removing and deactivating viruses
-    for (auto v : virus_to_remove)
-    {
-
-        if (IN(v->get_host()->get_status(), status_susceptible))
-            v->post_recovery();
-
-        v->get_host()->get_viruses().reset();
-
-    }
-
-    virus_to_remove.clear();
-
 }
 
 template<typename TSeq>
@@ -711,6 +781,12 @@ inline int Model<TSeq>::get_nvariants() const {
 template<typename TSeq>
 inline unsigned int Model<TSeq>::get_ndays() const {
     return ndays;
+}
+
+template<typename TSeq>
+inline unsigned int Model<TSeq>::get_n_replicates() const
+{
+    return n_replicates;
 }
 
 template<typename TSeq>
@@ -856,9 +932,6 @@ inline void Model<TSeq>::reset() {
 
     // Recording the original state
     db.record();
-
-    // Start removes from scratch
-    virus_to_remove.clear();
 
 }
 
@@ -1230,7 +1303,6 @@ inline void Model<TSeq>::get_elapsed(
     std::string unit,
     epiworld_double * last_elapsed,
     epiworld_double * total_elapsed,
-    unsigned int * n_replicates,
     std::string * unit_abbr,
     bool print
 ) const {
@@ -1276,24 +1348,22 @@ inline void Model<TSeq>::get_elapsed(
         *last_elapsed = elapsed;
     if (total_elapsed != nullptr)
         *total_elapsed = elapsed_total;
-    if (n_replicates != nullptr)
-        *n_replicates = time_n;
     if (unit_abbr != nullptr)
         *unit_abbr = abbr_unit;
 
     if (!print)
         return;
 
-    if (time_n > 1u)
+    if (n_replicates > 1u)
     {
         printf_epiworld("last run elapsed time : %.2f%s\n",
             elapsed, abbr_unit.c_str());
         printf_epiworld("total elapsed time    : %.2f%s\n",
             elapsed_total, abbr_unit.c_str());
         printf_epiworld("total runs            : %i\n",
-            static_cast<int>(time_n));
+            static_cast<int>(n_replicates));
         printf_epiworld("mean run elapsed time : %.2f%s\n",
-            elapsed_total/static_cast<epiworld_double>(time_n), abbr_unit.c_str());
+            elapsed_total/static_cast<epiworld_double>(n_replicates), abbr_unit.c_str());
 
     } else {
         printf_epiworld("last run elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());
@@ -1420,7 +1490,11 @@ inline Queue<TSeq> & Model<TSeq>::get_queue()
 #undef EPIWORLD_CHECK_STATE
 #undef EPIWORLD_CHECK_ALL_STATES
 #undef EPIWORLD_COLLECT_STATUSES
-#undef NEXT_STATUS
+
+#undef ADD_VIRUSES
+#undef RM_VIRUSES
+#undef UPDATE_QUEUE
+#undef UPDATE_STATUS
 
 #undef CHECK_INIT
 #endif

@@ -30,15 +30,28 @@ inline void Person<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    epiworld_fast_uint new_status,
-    Virus<TSeq> virus
+    Virus<TSeq> * virus
 )
 {
 
-    viruses.add_virus(new_status, virus);
+    model->virus_to_add.push_back(virus);
+    model->virus_to_add_person.push_back(this);
 
     if (model->is_queuing_on())
         model->get_queue() += this;
+
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_virus(
+    Virus<TSeq> * virus
+)
+{
+
+    model->virus_to_remove.push_back(virus);
+
+    if (model->is_queuing_on())
+        model->get_queue() -= this;
 
 }
 
@@ -167,8 +180,6 @@ inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
     return neighbors;
 }
 
-
-
 template<typename TSeq>
 inline void Person<TSeq>::update_status()
 {
@@ -196,16 +207,41 @@ inline void Person<TSeq>::update_status()
         throw std::range_error(
             "The reported status " + std::to_string(status) + " is not valid.");
 
-    // if (status != status_next)
-    //     model->get_db().update_counters();
-
     return;
 
 }
 
 template<typename TSeq>
-inline epiworld_fast_uint & Person<TSeq>::get_status() {
+inline void Person<TSeq>::update_status(epiworld_fast_uint new_status)
+{
+
+    if (new_status == status)
+        return;
+
+    // No change if removed
+    bool status_ok = 
+        IN(new_status, model->status_removed) |
+        IN(new_status, model->status_susceptible) |
+        IN(new_status, model->status_exposed);
+
+    if (!status_ok)
+        throw std::range_error(
+            "The reported status " + std::to_string(new_status) + " is not valid.");
+
+    status_next = new_status;
+    
+    return;
+
+}
+
+template<typename TSeq>
+inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
     return status;
+}
+
+template<typename TSeq>
+inline const epiworld_fast_uint & Person<TSeq>::get_status_next() const {
+    return status_next;
 }
 
 template<typename TSeq>

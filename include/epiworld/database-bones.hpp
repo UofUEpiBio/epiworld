@@ -95,15 +95,18 @@ public:
 
     void up_exposed(
         Virus<TSeq> * v,
-        epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
         );
 
     void down_exposed(
         Virus<TSeq> * v,
+        epiworld_fast_uint prev_status
+        );
+
+    void state_change(
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
-        );
+    );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
 

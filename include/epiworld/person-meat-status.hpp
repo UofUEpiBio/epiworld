@@ -88,7 +88,7 @@ inline epiworld_fast_uint default_update_susceptible(
     if (which < 0)
         return p->get_status();
 
-    p->add_virus(m->get_default_exposed(), *(m->array_virus_tmp[which])); 
+    p->add_virus(m->array_virus_tmp[which]); 
 
     return m->get_default_exposed();
 
@@ -99,17 +99,6 @@ inline epiworld_fast_uint default_update_susceptible(
     epiworld_double prob_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); \
     epiworld_double prob_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
 
-#define EPIWORLD_UPDATE_EXPOSED_REMOVE(newstatus) \
-    {m->get_db().down_exposed(v, p->get_status(), newstatus);\
-    if (m->is_queuing_on()) m->get_queue() -= p; \
-    /* p->get_viruses().reset();*/ /*Viruses are removed after the updates are completed */\
-    return static_cast<epiworld_fast_uint>(newstatus);}
-
-#define EPIWORLD_UPDATE_EXPOSED_RECOVER(newstatus) \
-    {m->get_db().down_exposed(v, p->get_status(), newstatus);\
-    if (m->is_queuing_on()) m->get_queue() -= p; \
-    /* v->post_recovery();p->get_viruses().reset(); *//* VIRUSES ARE REMOVED AND APPLIED THE RESET LATER */\
-    return static_cast<epiworld_fast_uint>(newstatus);}
 
 template<typename TSeq>
 inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
@@ -123,14 +112,16 @@ inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> *
 
     if (r < cumsum)
     {
-        EPIWORLD_UPDATE_EXPOSED_REMOVE(m->get_default_removed());
+        p->rm_virus(v);
+        return m->get_default_removed();
     }
     
     cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
     
     if (r < cumsum)
     {
-        EPIWORLD_UPDATE_EXPOSED_RECOVER(m->get_default_removed())
+        p->rm_virus(v);
+        return m->get_default_removed();
     }
 
     return p->get_status();

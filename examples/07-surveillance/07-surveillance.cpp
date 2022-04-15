@@ -1,4 +1,5 @@
-#include "../../epiworld.hpp"
+#define EPI_DEBUG
+#include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/models/surveillance.hpp"
 
 int main(int argc, char* argv[]) {

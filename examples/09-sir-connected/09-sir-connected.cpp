@@ -1,3 +1,4 @@
+#include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/models/sirconnected.hpp"
 #include "../../include/cxxopts/cxxopts.hpp"
 

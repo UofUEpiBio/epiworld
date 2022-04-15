@@ -2,7 +2,8 @@ VERSION:=$(shell Rscript -e 'x<-readLines("DESCRIPTION");cat(gsub(".+[:]\\s*", "
 PKGNAME:=$(shell Rscript -e 'x<-readLines("DESCRIPTION");cat(gsub(".+[:]\\s*", "", x[grepl("^Package", x)]))')
 
 update:
-	rsync -avr ../include/epiworld inst/include/
+	rsync -avr ../include/epiworld/models inst/include/ &&\
+		rsync -avr ../epiworld.hpp inst/include/
 
 
 install: $(PKGNAME)_$(VERSION).tar.gz 

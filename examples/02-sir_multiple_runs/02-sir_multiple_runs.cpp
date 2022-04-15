@@ -1,4 +1,5 @@
-#include "../../epiworld.hpp"
+#define EPI_DEBUG
+#include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/models/sir.hpp"
 
 int main() {

@@ -11,6 +11,7 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 
     // Initializing the counts
     today_total.resize(m.nstatus);
+    std::fill(today_total.begin(), today_total.end(), 0);
     for (auto & p : *m.get_population())
         ++today_total[p.get_status()];
     
@@ -18,10 +19,10 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     std::fill(today_total_next.begin(), today_total_next.end(), 0);
 
     transition_matrix.resize(m.nstatus * m.nstatus);
-    std::fill(transition_matrix.begin(), transition_matrix.end(), 0u);
+    std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
 
     transition_matrix_next.resize(m.nstatus * m.nstatus);
-    std::fill(transition_matrix_next.begin(), transition_matrix_next.end(), 0u);
+    std::fill(transition_matrix_next.begin(), transition_matrix_next.end(), 0);
 
     return;
 
@@ -47,6 +48,22 @@ inline void DataBase<TSeq>::record()
         today_total[i] += today_total_next[i];
         today_total_next[i] = 0;
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // DEBUGGING BLOCK
+    ////////////////////////////////////////////////////////////////////////////
+    EPI_DEBUG_SUM_INT(today_total, model->size())
+    EPI_DEBUG_ALL_NON_NEGATIVE(today_total)
+
+    #ifdef EPI_DEBUG
+    // Checking whether the sums correspond
+    std::vector< int > _today_total_cp(today_total.size(), 0);
+    for (auto & p : model->population)
+        _today_total_cp[p.get_status()]++;
+    
+    EPI_DEBUG_VECTOR_MATCH_INT(_today_total_cp, today_total)
+    #endif
+    ////////////////////////////////////////////////////////////////////////////
 
     for (auto v = 0u; v < today_variant.size(); ++v)
     {
@@ -168,12 +185,8 @@ inline size_t DataBase<TSeq>::size() const
 template<typename TSeq>
 inline void DataBase<TSeq>::up_exposed(
     Virus<TSeq> * v,
-    epiworld_fast_uint prev_status,
     epiworld_fast_uint new_status
 ) {
-
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
 
     today_variant_next[v->get_id()][new_status]++;
 
@@ -182,20 +195,21 @@ inline void DataBase<TSeq>::up_exposed(
 template<typename TSeq>
 inline void DataBase<TSeq>::down_exposed( 
     Virus<TSeq> * v,
-    epiworld_fast_uint prev_status,
-    epiworld_fast_uint new_status
+    epiworld_fast_uint prev_status
 ) {
-
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
 
     today_variant_next[v->get_id()][prev_status]--;
 
-    // Adding the virus to the list of those that
-    // will be removed later on at the end of the update
-    model->virus_to_remove.push_back(v);
+}
 
-
+template<typename TSeq>
+inline void DataBase<TSeq>::state_change(
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+    today_total_next[prev_status]--;
+    today_total_next[new_status]++;
+    return;
 }
 
 template<typename TSeq>
@@ -489,8 +503,12 @@ inline void DataBase<TSeq>::reset()
     transmission_variant.clear();
 
     today_total_nvariants_active = 0;
+
     today_total.clear();
+    today_total_next.clear();
+    
     today_variant.clear();
+    today_variant_next.clear();
 
 }
 
