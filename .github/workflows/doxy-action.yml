@@ -28,6 +28,9 @@ jobs:
       #   run: |
       #     sudo mv mathjax docs/
       #     sudo mv design docs/
+      - name: Sorting pages
+        run: |
+          sudo mv docs/html/* docs/
       
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
@@ -35,7 +38,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/
 
-      - name: Sorting pages
-        run: |
-          sudo mv html/* .
+      
 
