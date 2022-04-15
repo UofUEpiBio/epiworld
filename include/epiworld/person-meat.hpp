@@ -240,6 +240,11 @@ inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
 }
 
 template<typename TSeq>
+inline const epiworld_fast_uint & Person<TSeq>::get_status_next() const {
+    return status_next;
+}
+
+template<typename TSeq>
 inline void Person<TSeq>::reset() {
 
     this->viruses.reset();

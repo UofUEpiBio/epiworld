@@ -137,7 +137,8 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
         sampled[i] = true;
         epiworld::Person<TSeq> * p = &pop[i];
         
-        if (epiworld::IN(p->get_status(), m->get_status_exposed()))
+        // If still exposed for the next term
+        if (epiworld::IN(p->get_status_next(), m->get_status_exposed()))
         {
 
             ndetected += 1.0;

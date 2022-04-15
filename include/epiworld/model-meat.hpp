@@ -655,12 +655,12 @@ inline void Model<TSeq>::run()
         // user needs.
         this->update_status();       
     
+        // We start with the global actions
+        this->run_global_actions();
+
         // In this case we are applying degree sequence rewiring
         // to change the network just a bit.
         this->rewire();
-
-        // We start with the global actions
-        this->run_global_actions();
 
         // This locks all the changes
         this->next();
