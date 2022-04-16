@@ -128,7 +128,7 @@ public:
      * 
      * @param eng 
      */
-    ///@[
+    ///@{
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
     void seed(unsigned int s);
@@ -138,7 +138,7 @@ public:
     epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
     epiworld_double rgamma();
     epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
-    ///@]
+    ///@}
 
     // Accessing parameters of the function
     const size_t get_n_samples() {return n_samples;};

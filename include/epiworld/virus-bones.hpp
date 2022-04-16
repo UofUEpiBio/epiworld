@@ -72,7 +72,7 @@ public:
      * 
      * @return epiworld_double 
      */
-    ///@[
+    ///@{
     epiworld_double get_prob_infecting();
     epiworld_double get_prob_recovery();
     epiworld_double get_prob_death();
@@ -93,7 +93,7 @@ public:
     void set_prob_infecting(epiworld_double prob);
     void set_prob_recovery(epiworld_double prob);
     void set_prob_death(epiworld_double prob);
-    ///@]
+    ///@}
 
 
     void set_name(std::string name);

@@ -4,7 +4,7 @@
 /**
  * @brief Set of viruses in host
  * 
- * @tparam TSeq 
+ * @tparam TSeq Type of sequence
  */
 template<typename TSeq = bool>
 class PersonViruses {

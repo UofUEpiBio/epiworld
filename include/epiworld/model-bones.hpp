@@ -18,6 +18,15 @@ class DataBase;
 template<typename TSeq>
 class Queue;
 
+/**
+ * @brief Core class of epiworld.
+ * 
+ * The model class provides the wrapper that puts together `Person`, `Virus`, and
+ * `Tools`.
+ * 
+ * @tparam TSeq Type of sequence. In principle, users can build models in which
+ * virus and human sequence is represented as numeric vectors (if needed.)
+ */
 template<typename TSeq = bool>
 class Model {
     friend class Person<TSeq>;
@@ -140,10 +149,10 @@ public:
      * individuals start with the same network from the beginning.
      * 
      */
-    ///@[
+    ///@{
     void set_backup();
     void restore_backup();
-    ///@]
+    ///@}
 
     DataBase<TSeq> & get_db();
     epiworld_double & operator()(std::string pname);
@@ -155,7 +164,7 @@ public:
      * 
      * @param eng 
      */
-    ///@[
+    ///@{
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
     void seed(unsigned int s);
@@ -165,7 +174,7 @@ public:
     epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
     epiworld_double rgamma();
     epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
-    ///@]
+    ///@}
 
     void add_virus(Virus<TSeq> v, epiworld_double preval);
     void add_virus_n(Virus<TSeq> v, unsigned int preval);
@@ -184,7 +193,7 @@ public:
      * try to guess from the data.)
      * @param al AdjList to read into the model.
      */
-    ///@[
+    ///@{
     void pop_from_adjlist(
         std::string fn,
         int skip = 0,
@@ -201,7 +210,7 @@ public:
         bool d = false,
         epiworld_double p = .01
         );
-    ///@]
+    ///@}
 
     /**
      * @brief Functions to run the model
@@ -212,7 +221,7 @@ public:
      * after each experiment.
      * 
      */
-    ///@[
+    ///@{
     void init(unsigned int ndays, unsigned int seed);
     void update_status();
     void mutate_variant();
@@ -224,7 +233,7 @@ public:
         bool reset,
         bool verbose
         );
-    ///@]
+    ///@}
 
     void record_variant(Virus<TSeq> * v);
 
@@ -235,7 +244,7 @@ public:
     bool get_verbose() const;
     void verbose_off();
     void verbose_on();
-    int today() const;
+    int today() const; ///< The current time of the model
 
     /**
      * @brief Rewire the network preserving the degree sequence.
@@ -248,12 +257,12 @@ public:
      * 
      * @result A rewired version of the network.
      */
-    ///@[
+    ///@{
     void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
     void set_rewire_prop(epiworld_double prop);
     epiworld_double get_rewire_prop() const;
     void rewire();
-    ///@]
+    ///@}
 
     inline void set_update_susceptible(UpdateFun<TSeq> fun);
     inline void set_update_exposed(UpdateFun<TSeq> fun);
@@ -285,7 +294,7 @@ public:
      * @details When passing the source and target, the function will
      * write the edgelist on those.
      */
-    ///[@
+    ///@{
     void write_edgelist(
         std::string fn
         ) const;
@@ -294,7 +303,7 @@ public:
         std::vector< unsigned int > & source,
         std::vector< unsigned int > & target
         ) const;
-    ///@]
+    ///@}
 
     std::map<std::string, epiworld_double> & params();
 
@@ -331,7 +340,7 @@ public:
      * @return `get_status_*` returns a vector of pairs with the 
      * statuses and their labels.
      */
-    ///@[
+    ///@{
     void add_status_susceptible(epiworld_fast_uint s, std::string lab);
     void add_status_exposed(epiworld_fast_uint s, std::string lab);
     void add_status_removed(epiworld_fast_uint s, std::string lab);
@@ -348,7 +357,7 @@ public:
     epiworld_fast_uint get_default_susceptible() const;
     epiworld_fast_uint get_default_exposed() const;
     epiworld_fast_uint get_default_removed() const;
-    ///@]
+    ///@}
 
     /**
      * @brief Reset all the status codes of the model
@@ -388,7 +397,7 @@ public:
      * in the model.
      * 
      */
-    ///@[
+    ///@{
     epiworld_double add_param(epiworld_double initial_val, std::string pname);
     epiworld_double set_param(std::string pname);
     epiworld_double get_param(unsigned int k);
@@ -401,7 +410,7 @@ public:
         *p20,*p21,*p22,*p23,*p24,*p25,*p26,*p27,*p28,*p29,
         *p30,*p31,*p32,*p33,*p34,*p35,*p36,*p37,*p38,*p39;
     unsigned int npar_used = 0u;
-    ///@]
+    ///@}
 
     void get_elapsed(
         std::string unit = "auto",
@@ -421,7 +430,7 @@ public:
     void add_user_data(unsigned int j, epiworld_double x);
     void add_user_data(std::vector< epiworld_double > x);
     UserData<TSeq> & get_user_data();
-    ///@]
+    ///@}
 
     void add_global_action(
         std::function<void(Model<TSeq>*)> fun,

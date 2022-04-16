@@ -122,7 +122,7 @@ public:
      * @return In `get_hist_total_date` and `get_hist_variant_date` the
      * corresponding dates
      */
-    ///@[
+    ///@{
     int get_today_total(std::string what) const;
     int get_today_total(epiworld_fast_uint what) const;
     void get_today_total(
@@ -148,7 +148,7 @@ public:
         std::vector< std::string > & status,
         std::vector< int > & counts
     ) const;
-    ///@]
+    ///@}
 
     void write_data(
         std::string fn_variant_info,
