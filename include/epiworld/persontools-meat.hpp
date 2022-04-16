@@ -8,7 +8,7 @@
  * @param pt 
  * @return epiworld_double 
  */
-///@[
+///@{
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     PersonTools<TSeq>* pt,
@@ -74,7 +74,7 @@ inline epiworld_double death_reduction_mixer_default(
     return 1.0 - total;
     
 }
-///@]
+///@}
 
 template<typename TSeq>
 inline void PersonTools<TSeq>::add_tool(

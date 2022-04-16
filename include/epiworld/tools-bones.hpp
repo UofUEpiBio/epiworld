@@ -60,7 +60,7 @@ public:
      * 
      * @return epiworld_double 
      */
-    ///@[
+    ///@{
     epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);
     epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
@@ -77,7 +77,7 @@ public:
     void set_transmission_reduction(epiworld_double prob);
     void set_recovery_enhancer(epiworld_double prob);
     void set_death_reduction(epiworld_double prob);
-    ///@]
+    ///@}
 
     void set_name(std::string name);
     std::string get_name() const;

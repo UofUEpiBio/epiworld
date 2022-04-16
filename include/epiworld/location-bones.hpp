@@ -18,11 +18,11 @@ private:
      * @brief Spatial location parameters
      * 
      */
-    ///@[
+    ///@{
     epiworld_double longitude = 0.0;
     epiworld_double latitude  = 0.0;
     epiworld_double altitude  = 0.0;
-    ///@]
+    ///@}
 
 public:
     add_person(Person<TSeq> & p);

@@ -41,7 +41,7 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
  * @tparam TSeq 
  * @return TSeq 
  */
-///@[
+///@{
 template<typename TSeq>
 inline TSeq default_sequence();
 
@@ -74,7 +74,7 @@ template<>
 inline std::vector<epiworld_double> default_sequence() {
     return {0.0};
 }
-///@]
+///@}
 
 /**
  * @brief Check whether `a` is included in `b`
