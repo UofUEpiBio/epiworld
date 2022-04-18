@@ -111,7 +111,7 @@ public:
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
 
     /**
-     * @brief Get recorded information from the model
+     * @name Get recorded information from the model
      * 
      * @param what std::string, The status, e.g., 0, 1, 2, ...
      * @return In `get_today_total`, the current counts of `what`.

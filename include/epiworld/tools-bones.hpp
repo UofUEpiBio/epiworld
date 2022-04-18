@@ -53,7 +53,7 @@ public:
     TSeq & get_sequence_unique();
 
     /**
-     * @brief Get and set the tool functions
+     * @name Get and set the tool functions
      * 
      * @param v The virus over which to operate
      * @param fun the function to be used

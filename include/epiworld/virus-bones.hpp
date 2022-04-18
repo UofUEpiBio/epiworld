@@ -64,8 +64,8 @@ public:
     bool is_active() const;
     void deactivate();
 
-        /**
-     * @brief Get and set the tool functions
+    /**
+     * @name Get and set the tool functions
      * 
      * @param v The virus over which to operate
      * @param fun the function to be used

@@ -124,7 +124,7 @@ public:
     void set_kernel_fun(FUN< epiworld_double (VEC( epiworld_double )&, epiworld_double, LFMCMC<TData>*)> fun);
     
     /**
-     * @brief Random number generation
+     * @name Random number generation
      * 
      * @param eng 
      */

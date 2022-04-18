@@ -2,7 +2,7 @@
 #define EPIWORLD_PERSONTOOLS_MEAT_HPP
 
 /**
- * @brief Default function for combining susceptibility_reduction levels
+ * @name Default function for combining susceptibility_reduction levels
  * 
  * @tparam TSeq 
  * @param pt 

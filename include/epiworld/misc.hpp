@@ -31,7 +31,7 @@ template<typename Ta = epiworld_double, typename Tb = unsigned int>
 using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
 
 /**
- * @brief Default sequence initializers
+ * @name Default sequence initializers
  * 
  * @details 
  * If the user does not provide a default sequence, this function is used when

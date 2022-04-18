@@ -112,7 +112,7 @@ private:
     bool use_queuing   = true;
 
     /**
-     * @brief Variables used to keep track of the actions
+     * @name Variables used to keep track of the actions
      * to be made regarding viruses.
      */
     ///@{
@@ -143,7 +143,7 @@ public:
     );
 
     /**
-     * @brief Set the backup object
+     * @name Set the backup object
      * @details `backup` can be used to restore the entire object
      * after a run. This can be useful if the user wishes to have
      * individuals start with the same network from the beginning.
@@ -160,7 +160,7 @@ public:
     size_t size() const;
 
     /**
-     * @brief Random number generation
+     * @name Random number generation
      * 
      * @param eng 
      */
@@ -182,7 +182,7 @@ public:
     void add_tool_n(Tool<TSeq> t, unsigned int preval);
 
     /**
-     * @brief Accessing population of the model
+     * @name Accessing population of the model
      * 
      * @param fn std::string Filename of the edgelist file.
      * @param skip int Number of lines to skip in `fn`.
@@ -213,7 +213,7 @@ public:
     ///@}
 
     /**
-     * @brief Functions to run the model
+     * @name Functions to run the model
      * 
      * @param seed Seed to be used for Pseudo-RNG.
      * @param ndays Number of days (steps) of the simulation.
@@ -226,8 +226,8 @@ public:
     void update_status();
     void mutate_variant();
     void next();
-    void run();
-    void run_multiple(
+    void run(); ///< Runs the simulation (after initialization)
+    void run_multiple( ///< Multiple runs of the simulation
         unsigned int nexperiments,
         std::function<void(Model<TSeq>*)> fun,
         bool reset,
@@ -247,7 +247,7 @@ public:
     int today() const; ///< The current time of the model
 
     /**
-     * @brief Rewire the network preserving the degree sequence.
+     * @name Rewire the network preserving the degree sequence.
      *
      * @details This implementation assumes an undirected network,
      * thus if {(i,j), (k,l)} -> {(i,l), (k,j)}, the reciprocal
@@ -285,7 +285,7 @@ public:
         ) const;
 
     /**
-     * @brief Export the network data in edgelist form
+     * @name Export the network data in edgelist form
      * 
      * @param fn std::string. File name.
      * @param source Integer vector
@@ -324,7 +324,7 @@ public:
     Model<TSeq> && clone() const;
 
     /**
-     * @brief Adds extra statuses to the model
+     * @name Manage status (states) in the model
      * 
      * @details
      * Adding values of `s` that are already present in the model will
@@ -376,7 +376,7 @@ public:
     );
 
     /**
-     * @brief Setting and accessing parameters from the model
+     * @name Setting and accessing parameters from the model
      * 
      * @details Tools can incorporate parameters included in the model.
      * Internally, parameters in the tool are stored as pointers to
@@ -421,9 +421,9 @@ public:
     ) const;
 
     /**
-     * @brief Set the user data object
+     * @name Set the user data object
      * 
-     * @param names 
+     * @param names string vector with the names of the variables.
      */
     ///[@
     void set_user_data(std::vector< std::string > names);
@@ -432,6 +432,16 @@ public:
     UserData<TSeq> & get_user_data();
     ///@}
 
+    /**
+     * @brief Set a global action
+     * 
+     * @param fun A function to be called on the prescribed dates
+     * @param date Integer indicating when the function is called (see details)
+     * 
+     * @details When date is less than zero, then the function is called
+     * at the end of every day. Otherwise, the function will be called only
+     * at the end of the indicated date.
+     */
     void add_global_action(
         std::function<void(Model<TSeq>*)> fun,
         int date
@@ -443,10 +453,19 @@ public:
 
     void toggle_visited();
 
-    void queuing_on();
-    void queuing_off();
-    bool is_queuing_on() const;
-    Queue<TSeq> & get_queue();
+    /**
+     * @name Queuing system
+     * @details When queueing is on, the model will keep track of which agents
+     * are either in risk of exposure or exposed. This then is used at each 
+     * step to act only on the aforementioned agents.
+     * 
+     */
+    ////@{
+    void queuing_on(); ///< Activates the queuing system (default.)
+    void queuing_off(); ///< Deactivates the queuing system.
+    bool is_queuing_on() const; ///< Query if the queuing system is on.
+    Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
+    ///@}
 
 };
 
