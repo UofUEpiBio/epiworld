@@ -8,6 +8,10 @@ template<typename TSeq>
 class Person;
 
 // Relevant for anything using vecHasher function ------------------------------
+/**
+ * @brief Vector hasher
+ * @tparam T 
+ */
 template <typename T>
 struct vecHasher {
     std::size_t operator()(std::vector< T > const&  dat) const noexcept {

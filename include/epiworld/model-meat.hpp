@@ -86,7 +86,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     current_date(model.current_date),
     global_action_functions(model.global_action_functions),
     global_action_dates(model.global_action_dates),
-    visited_model(model.visited_model),
     queue(model.queue),
     use_queuing(model.use_queuing)
 {
@@ -142,7 +141,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     baseline_status_exposed(model.baseline_status_exposed),
     baseline_status_removed(model.baseline_status_removed),
     nstatus(model.nstatus),
-    visited_model(model.visited_model),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing)
 {
@@ -1450,12 +1448,6 @@ inline void Model<TSeq>::run_global_actions()
 
     }
 
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::toggle_visited()
-{
-    visited_model = !visited_model;
 }
 
 template<typename TSeq>

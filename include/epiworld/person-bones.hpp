@@ -16,6 +16,11 @@ class PersonTools;
 template<typename TSeq>
 class Queue;
 
+/**
+ * @brief Person (agents)
+ * 
+ * @tparam TSeq Sequence type (should match `TSeq` across the model)
+ */
 template<typename TSeq = bool>
 class Person {
     friend class Model<TSeq>;
@@ -34,7 +39,6 @@ private:
     UpdateFun<TSeq> update_exposed     = default_update_exposed<TSeq>;
     UpdateFun<TSeq> update_removed     = nullptr;
 
-    bool visited_person = !EPI_DEFAULT_VISITED;
     bool in_queue       = false;
 
 public:
@@ -46,12 +50,21 @@ public:
     void add_virus(Virus<TSeq> * virus);
     void rm_virus(Virus<TSeq> * virus);
 
+    /**
+     * @name Get the rates (multipliers) for the agent
+     * 
+     * @param v A pointer to a virus.
+     * @return epiworld_double 
+     */
+    ///@{
     epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);
     epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
     epiworld_double get_death_reduction(Virus<TSeq> * v);
-    int get_id() const;
-    unsigned int get_index() const;
+    ///@}
+
+    int get_id() const; ///< Id of the individual
+    unsigned int get_index() const; ///< Location (0, ..., n-1).
     
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
@@ -78,16 +91,21 @@ public:
 
     void reset();
 
+    /**
+     * @brief Set the update functions
+     * 
+     * @param fun 
+     */
+    ///@{
     void set_update_susceptible(UpdateFun<TSeq> fun);
     void set_update_exposed(UpdateFun<TSeq> fun);
     void set_update_removed(UpdateFun<TSeq> fun);
+    ///@}
+
     bool has_tool(unsigned int t) const;
     bool has_tool(std::string name) const;
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
-
-    bool visited() const;
-    void toggle_visited();
 
 };
 

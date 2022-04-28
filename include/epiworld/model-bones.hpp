@@ -108,7 +108,6 @@ private:
     std::vector< int > global_action_dates;
 
     Queue<TSeq> queue;
-    bool visited_model = EPI_DEFAULT_VISITED;
     bool use_queuing   = true;
 
     /**
@@ -450,8 +449,6 @@ public:
     void run_global_actions();
 
     void clear_status_set();
-
-    void toggle_visited();
 
     /**
      * @name Queuing system

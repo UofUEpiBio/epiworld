@@ -129,26 +129,6 @@ enum STATUS {
     #define EPI_DEFAULT_VIRUS_PROB_DEATH        0.0
 #endif
 
-/**
- * @brief A utility for bookeeping
- * 
- * @details The `Model<TSeq>` class will keep this value
- * and every new `Person<TSeq>` will have the oposit at construction.
- * The idea is that users can make use of the function `Person::visited()`
- * when needing to keep track of whether the agent has been seen before
- * within a routine. The member function `Model<TSeq>::toggle_visited()`
- * will change the value of the model object automatically when
- * the next states are updated.
- * 
- * Users can call `Model::toggle_visited()` when needed to reset the
- * book-kepping.
- * 
- * 
- */
-#ifndef EPI_DEFAULT_VISITED
-    #define EPI_DEFAULT_VISITED true
-#endif
-
 #ifdef EPI_DEBUG
     #define EPI_DEBUG_NOTIFY_ACTIVE() \
         printf_epiworld("[epiworld-debug] DEBUGGING ON (compiled with EPI_DEBUG defined)\n");
@@ -341,6 +321,10 @@ template<typename TSeq>
 class Person;
 
 // Relevant for anything using vecHasher function ------------------------------
+/**
+ * @brief Vector hasher
+ * @tparam T 
+ */
 template <typename T>
 struct vecHasher {
     std::size_t operator()(std::vector< T > const&  dat) const noexcept {
@@ -364,7 +348,7 @@ template<typename Ta = epiworld_double, typename Tb = unsigned int>
 using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
 
 /**
- * @brief Default sequence initializers
+ * @name Default sequence initializers
  * 
  * @details 
  * If the user does not provide a default sequence, this function is used when
@@ -374,7 +358,7 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
  * @tparam TSeq 
  * @return TSeq 
  */
-///@[
+///@{
 template<typename TSeq>
 inline TSeq default_sequence();
 
@@ -407,7 +391,7 @@ template<>
 inline std::vector<epiworld_double> default_sequence() {
     return {0.0};
 }
-///@]
+///@}
 
 /**
  * @brief Check whether `a` is included in `b`
@@ -670,6 +654,11 @@ class Model;
 template<typename TSeq>
 class DataBase;
 
+/**
+ * @brief Personalized data by the user
+ * 
+ * @tparam TSeq 
+ */
 template<typename TSeq>
 class UserData
 {
@@ -692,14 +681,36 @@ public:
 
     UserData() {};
 
+    /**
+     * @brief Construct a new User Data object
+     * 
+     * @param names A vector of names. The length of the vector sets
+     * the number of columns to record.
+     */
     UserData(std::vector< std::string > names);
 
+    /**
+     * @name Append data 
+     * 
+     * @param x A vector of length `ncol()` (if vector), otherwise a `epiworld_double`.
+     * @param j Index of the data point, from 0 to `ncol() - 1`.
+     */
+    ///@{
     void add(std::vector<epiworld_double> x);
     void add(
         unsigned int j,
         epiworld_double x
         );
+    ///@}
 
+    /**
+     * @name Access data 
+     * 
+     * @param i Row (0 through ndays - 1.)
+     * @param j Column (0 through `ncols()`).
+     * @return epiworld_double& 
+     */
+    ///@{
     epiworld_double & operator()(
         unsigned int i,
         unsigned int j
@@ -709,6 +720,7 @@ public:
         unsigned int i,
         std::string name
         );
+    ///@}
 
     std::vector< std::string > & get_names();
 
@@ -1210,7 +1222,7 @@ public:
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
 
     /**
-     * @brief Get recorded information from the model
+     * @name Get recorded information from the model
      * 
      * @param what std::string, The status, e.g., 0, 1, 2, ...
      * @return In `get_today_total`, the current counts of `what`.
@@ -1221,7 +1233,7 @@ public:
      * @return In `get_hist_total_date` and `get_hist_variant_date` the
      * corresponding dates
      */
-    ///@[
+    ///@{
     int get_today_total(std::string what) const;
     int get_today_total(epiworld_fast_uint what) const;
     void get_today_total(
@@ -1247,7 +1259,7 @@ public:
         std::vector< std::string > & status,
         std::vector< int > & counts
     ) const;
-    ///@]
+    ///@}
 
     void write_data(
         std::string fn_variant_info,
@@ -2733,83 +2745,6 @@ inline epiworld_fast_int Queue<TSeq>::operator[](unsigned int i) const
     return active[i];
 }
 
-
-// template<typename TSeq>
-// inline void Queue<TSeq>::initialize(Model<TSeq> * m, Person<TSeq> * p)
-// {
-
-//     // In the first step we need to set up everything    
-//     if (!queuing_started)
-//     {
-
-//         model = m;
-//         p     = &model->population[0u];
-
-//         n_steps_left = m->size();
-//         active.resize(n_steps_left, 0);
-//         active_next.resize(n_steps_left, 0);
-
-//         // The queuing is now running
-//         queuing_started = true;
-
-//     }
-
-//     if (--n_steps_left < 0)
-//     {
-//         model->toggle_visited();
-//         return;
-//     }
-
-    
-//     // Visited marks whether we checked if it was infected or not
-//     bool add_all = false;
-//     if (!p->visited()) 
-//     {
-
-//         // We just visit the individual.
-//         p->toggle_visited();
-
-//         if (IN(p->get_status(), model->status_exposed))
-//         {
-
-//             // Increasing the number in the queue
-//             active[p->index]++;
-
-//             // For sure add all the neighbors, but still need to check
-//             add_all = true;
-
-//         }
-
-//     }
-//     else
-//     {
-//         return;
-//     }
-    
-//     // Checking on the neighbors
-//     for (auto * n : p->neighbors)
-//     {
-
-//         // Not in queue, but still need to add b/c p is infected.
-//         // (if visited, no need to go again).
-//         if (add_all)
-//         {
-
-//             // Since neighbor is infected
-//             active[n->index]++;
-
-//         }
-        
-//         // Now going inside
-//         if (!n->visited())
-//             initialize(model, n);
-
-//     }
-
-//     return;
-
-// }
-
 template<typename TSeq>
 inline void Queue<TSeq>::set_model(Model<TSeq> * m)
 {
@@ -2860,6 +2795,15 @@ class DataBase;
 template<typename TSeq>
 class Queue;
 
+/**
+ * @brief Core class of epiworld.
+ * 
+ * The model class provides the wrapper that puts together `Person`, `Virus`, and
+ * `Tools`.
+ * 
+ * @tparam TSeq Type of sequence. In principle, users can build models in which
+ * virus and human sequence is represented as numeric vectors (if needed.)
+ */
 template<typename TSeq = bool>
 class Model {
     friend class Person<TSeq>;
@@ -2927,7 +2871,7 @@ private:
     // std::chrono::milliseconds
     std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
-    unsigned int time_n = 0u;
+    unsigned int n_replicates = 0u;
     void chrono_start();
     void chrono_end();
 
@@ -2941,11 +2885,10 @@ private:
     std::vector< int > global_action_dates;
 
     Queue<TSeq> queue;
-    bool visited_model = EPI_DEFAULT_VISITED;
     bool use_queuing   = true;
 
     /**
-     * @brief Variables used to keep track of the actions
+     * @name Variables used to keep track of the actions
      * to be made regarding viruses.
      */
     ///@{
@@ -2976,16 +2919,16 @@ public:
     );
 
     /**
-     * @brief Set the backup object
+     * @name Set the backup object
      * @details `backup` can be used to restore the entire object
      * after a run. This can be useful if the user wishes to have
      * individuals start with the same network from the beginning.
      * 
      */
-    ///@[
+    ///@{
     void set_backup();
     void restore_backup();
-    ///@]
+    ///@}
 
     DataBase<TSeq> & get_db();
     epiworld_double & operator()(std::string pname);
@@ -2993,11 +2936,11 @@ public:
     size_t size() const;
 
     /**
-     * @brief Random number generation
+     * @name Random number generation
      * 
      * @param eng 
      */
-    ///@[
+    ///@{
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
     void seed(unsigned int s);
@@ -3007,7 +2950,7 @@ public:
     epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
     epiworld_double rgamma();
     epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
-    ///@]
+    ///@}
 
     void add_virus(Virus<TSeq> v, epiworld_double preval);
     void add_virus_n(Virus<TSeq> v, unsigned int preval);
@@ -3015,7 +2958,7 @@ public:
     void add_tool_n(Tool<TSeq> t, unsigned int preval);
 
     /**
-     * @brief Accessing population of the model
+     * @name Accessing population of the model
      * 
      * @param fn std::string Filename of the edgelist file.
      * @param skip int Number of lines to skip in `fn`.
@@ -3026,7 +2969,7 @@ public:
      * try to guess from the data.)
      * @param al AdjList to read into the model.
      */
-    ///@[
+    ///@{
     void pop_from_adjlist(
         std::string fn,
         int skip = 0,
@@ -3043,10 +2986,10 @@ public:
         bool d = false,
         epiworld_double p = .01
         );
-    ///@]
+    ///@}
 
     /**
-     * @brief Functions to run the model
+     * @name Functions to run the model
      * 
      * @param seed Seed to be used for Pseudo-RNG.
      * @param ndays Number of days (steps) of the simulation.
@@ -3054,32 +2997,33 @@ public:
      * after each experiment.
      * 
      */
-    ///@[
+    ///@{
     void init(unsigned int ndays, unsigned int seed);
     void update_status();
     void mutate_variant();
     void next();
-    void run();
-    void run_multiple(
+    void run(); ///< Runs the simulation (after initialization)
+    void run_multiple( ///< Multiple runs of the simulation
         unsigned int nexperiments,
         std::function<void(Model<TSeq>*)> fun,
         bool reset,
         bool verbose
         );
-    ///@]
+    ///@}
 
     void record_variant(Virus<TSeq> * v);
 
     int get_nvariants() const;
     unsigned int get_ndays() const;
+    unsigned int get_n_replicates() const;
     void set_ndays(unsigned int ndays);
     bool get_verbose() const;
     void verbose_off();
     void verbose_on();
-    int today() const;
+    int today() const; ///< The current time of the model
 
     /**
-     * @brief Rewire the network preserving the degree sequence.
+     * @name Rewire the network preserving the degree sequence.
      *
      * @details This implementation assumes an undirected network,
      * thus if {(i,j), (k,l)} -> {(i,l), (k,j)}, the reciprocal
@@ -3089,12 +3033,12 @@ public:
      * 
      * @result A rewired version of the network.
      */
-    ///@[
+    ///@{
     void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
     void set_rewire_prop(epiworld_double prop);
     epiworld_double get_rewire_prop() const;
     void rewire();
-    ///@]
+    ///@}
 
     inline void set_update_susceptible(UpdateFun<TSeq> fun);
     inline void set_update_exposed(UpdateFun<TSeq> fun);
@@ -3117,7 +3061,7 @@ public:
         ) const;
 
     /**
-     * @brief Export the network data in edgelist form
+     * @name Export the network data in edgelist form
      * 
      * @param fn std::string. File name.
      * @param source Integer vector
@@ -3126,7 +3070,7 @@ public:
      * @details When passing the source and target, the function will
      * write the edgelist on those.
      */
-    ///[@
+    ///@{
     void write_edgelist(
         std::string fn
         ) const;
@@ -3135,7 +3079,7 @@ public:
         std::vector< unsigned int > & source,
         std::vector< unsigned int > & target
         ) const;
-    ///@]
+    ///@}
 
     std::map<std::string, epiworld_double> & params();
 
@@ -3156,7 +3100,7 @@ public:
     Model<TSeq> && clone() const;
 
     /**
-     * @brief Adds extra statuses to the model
+     * @name Manage status (states) in the model
      * 
      * @details
      * Adding values of `s` that are already present in the model will
@@ -3172,7 +3116,7 @@ public:
      * @return `get_status_*` returns a vector of pairs with the 
      * statuses and their labels.
      */
-    ///@[
+    ///@{
     void add_status_susceptible(epiworld_fast_uint s, std::string lab);
     void add_status_exposed(epiworld_fast_uint s, std::string lab);
     void add_status_removed(epiworld_fast_uint s, std::string lab);
@@ -3189,7 +3133,7 @@ public:
     epiworld_fast_uint get_default_susceptible() const;
     epiworld_fast_uint get_default_exposed() const;
     epiworld_fast_uint get_default_removed() const;
-    ///@]
+    ///@}
 
     /**
      * @brief Reset all the status codes of the model
@@ -3208,7 +3152,7 @@ public:
     );
 
     /**
-     * @brief Setting and accessing parameters from the model
+     * @name Setting and accessing parameters from the model
      * 
      * @details Tools can incorporate parameters included in the model.
      * Internally, parameters in the tool are stored as pointers to
@@ -3229,7 +3173,7 @@ public:
      * in the model.
      * 
      */
-    ///@[
+    ///@{
     epiworld_double add_param(epiworld_double initial_val, std::string pname);
     epiworld_double set_param(std::string pname);
     epiworld_double get_param(unsigned int k);
@@ -3242,29 +3186,38 @@ public:
         *p20,*p21,*p22,*p23,*p24,*p25,*p26,*p27,*p28,*p29,
         *p30,*p31,*p32,*p33,*p34,*p35,*p36,*p37,*p38,*p39;
     unsigned int npar_used = 0u;
-    ///@]
+    ///@}
 
     void get_elapsed(
         std::string unit = "auto",
         epiworld_double * last_elapsed = nullptr,
         epiworld_double * total_elapsed = nullptr,
-        unsigned int * n_replicates = nullptr,
         std::string * unit_abbr = nullptr,
         bool print = true
     ) const;
 
     /**
-     * @brief Set the user data object
+     * @name Set the user data object
      * 
-     * @param names 
+     * @param names string vector with the names of the variables.
      */
     ///[@
     void set_user_data(std::vector< std::string > names);
     void add_user_data(unsigned int j, epiworld_double x);
     void add_user_data(std::vector< epiworld_double > x);
     UserData<TSeq> & get_user_data();
-    ///@]
+    ///@}
 
+    /**
+     * @brief Set a global action
+     * 
+     * @param fun A function to be called on the prescribed dates
+     * @param date Integer indicating when the function is called (see details)
+     * 
+     * @details When date is less than zero, then the function is called
+     * at the end of every day. Otherwise, the function will be called only
+     * at the end of the indicated date.
+     */
     void add_global_action(
         std::function<void(Model<TSeq>*)> fun,
         int date
@@ -3274,12 +3227,19 @@ public:
 
     void clear_status_set();
 
-    void toggle_visited();
-
-    void queuing_on();
-    void queuing_off();
-    bool is_queuing_on() const;
-    Queue<TSeq> & get_queue();
+    /**
+     * @name Queuing system
+     * @details When queueing is on, the model will keep track of which agents
+     * are either in risk of exposure or exposed. This then is used at each 
+     * step to act only on the aforementioned agents.
+     * 
+     */
+    ////@{
+    void queuing_on(); ///< Activates the queuing system (default.)
+    void queuing_off(); ///< Deactivates the queuing system.
+    bool is_queuing_on() const; ///< Query if the queuing system is on.
+    Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
+    ///@}
 
 };
 
@@ -3355,7 +3315,13 @@ public:
 
 #define UPDATE_STATUS() \
     for (auto & p : population) \
-        p.status = p.status_next;
+    { \
+        if (p.status_next != p.status) \
+        {\
+            db.state_change(p.status, p.status_next); \
+            p.status = p.status_next; \
+        }\
+    }
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -3384,7 +3350,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     current_date(model.current_date),
     global_action_functions(model.global_action_functions),
     global_action_dates(model.global_action_dates),
-    visited_model(model.visited_model),
     queue(model.queue),
     use_queuing(model.use_queuing)
 {
@@ -3440,7 +3405,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     baseline_status_exposed(model.baseline_status_exposed),
     baseline_status_removed(model.baseline_status_removed),
     nstatus(model.nstatus),
-    visited_model(model.visited_model),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing)
 {
@@ -3637,7 +3601,6 @@ inline void Model<TSeq>::dist_virus()
             
             person.add_virus(&viruses[v]);
             person.status_next = baseline_status_exposed;
-            db.state_change(person.status, baseline_status_exposed);
 
             nsampled--;
 
@@ -3704,7 +3667,7 @@ template<typename TSeq>
 inline void Model<TSeq>::chrono_end() {
     time_end = std::chrono::steady_clock::now();
     time_elapsed += (time_end - time_start);
-    time_n++;
+    n_replicates++;
 }
 
 template<typename TSeq>
@@ -3909,12 +3872,34 @@ inline int Model<TSeq>::today() const {
 template<typename TSeq>
 inline void Model<TSeq>::next() {
 
+    // Adding the next viruses
+    ADD_VIRUSES()
+
+    // Removing and deactivating viruses
+    RM_VIRUSES()
+
+    // Updating the queuing sequence
+    UPDATE_QUEUE()
+
+    // Moving to the next assigned status
+    UPDATE_STATUS()
+
     ++this->current_date;
     db.record();
     
-    // Advicing the progress bar
+    // Advancing the progress bar
     if (verbose)
         pb.next();
+
+    #ifdef EPI_DEBUG
+    // Checking that all individuals in EXPOSED have a virus
+    for (auto & p : population)
+    {
+        if (IN(p.get_status(), status_exposed))
+            if (p.get_viruses().size() == 0u)
+                throw std::logic_error("Individual with no virus is part of the exposed group.");
+    }
+    #endif
 
     return ;
 }
@@ -3930,15 +3915,20 @@ inline void Model<TSeq>::run()
 
         // We can execute these components in whatever order the
         // user needs.
-        this->update_status();
-        this->mutate_variant();
-        this->next();
-
+        this->update_status();       
+    
+        // We start with the global actions
         this->run_global_actions();
 
         // In this case we are applying degree sequence rewiring
         // to change the network just a bit.
         this->rewire();
+
+        // This locks all the changes
+        this->next();
+
+        // Mutation must happen at the very end of all
+        this->mutate_variant();
 
     }
     chrono_end();
@@ -4022,18 +4012,6 @@ inline void Model<TSeq>::update_status() {
 
     }
     
-    // Adding the next viruses
-    ADD_VIRUSES()
-
-    // Removing and deactivating viruses
-    RM_VIRUSES()
-
-    // Updating the queuing sequence
-    UPDATE_QUEUE()
-
-    // Moving to the next assigned status
-    UPDATE_STATUS()
-
 }
 
 template<typename TSeq>
@@ -4065,6 +4043,12 @@ inline int Model<TSeq>::get_nvariants() const {
 template<typename TSeq>
 inline unsigned int Model<TSeq>::get_ndays() const {
     return ndays;
+}
+
+template<typename TSeq>
+inline unsigned int Model<TSeq>::get_n_replicates() const
+{
+    return n_replicates;
 }
 
 template<typename TSeq>
@@ -4223,8 +4207,8 @@ inline void Model<TSeq>::reset() {
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_MODEL_MEAT_VISITED_HPP
-#define EPIWORLD_MODEL_MEAT_VISITED_HPP
+#ifndef EPIWORLD_MODEL_MEAT_PRINT_HPP
+#define EPIWORLD_MODEL_MEAT_PRINT_HPP
 
 template<typename TSeq>
 inline void Model<TSeq>::print() const
@@ -4242,16 +4226,16 @@ inline void Model<TSeq>::print() const
     printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
     printf_epiworld("Days (duration)    : %i (of %i)\n", today(), ndays);
     printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_nvariants()));
-    if (time_n > 0u)
+    if (n_replicates > 0u)
     {
         std::string abbr;
         epiworld_double elapsed;
         epiworld_double total;
-        get_elapsed("auto", &elapsed, &total, nullptr, &abbr, false);
+        get_elapsed("auto", &elapsed, &total, &abbr, false);
         printf_epiworld("Last run elapsed t : %.2f%s\n", elapsed, abbr.c_str());
-        if (time_n > 1u)
+        if (n_replicates > 1u)
         {
-            printf_epiworld("Total elapsed t    : %.2f%s (%i runs)\n", total, abbr.c_str(), time_n);
+            printf_epiworld("Total elapsed t    : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
         }
 
     } else {
@@ -4866,7 +4850,6 @@ inline void Model<TSeq>::get_elapsed(
     std::string unit,
     epiworld_double * last_elapsed,
     epiworld_double * total_elapsed,
-    unsigned int * n_replicates,
     std::string * unit_abbr,
     bool print
 ) const {
@@ -4912,24 +4895,22 @@ inline void Model<TSeq>::get_elapsed(
         *last_elapsed = elapsed;
     if (total_elapsed != nullptr)
         *total_elapsed = elapsed_total;
-    if (n_replicates != nullptr)
-        *n_replicates = time_n;
     if (unit_abbr != nullptr)
         *unit_abbr = abbr_unit;
 
     if (!print)
         return;
 
-    if (time_n > 1u)
+    if (n_replicates > 1u)
     {
         printf_epiworld("last run elapsed time : %.2f%s\n",
             elapsed, abbr_unit.c_str());
         printf_epiworld("total elapsed time    : %.2f%s\n",
             elapsed_total, abbr_unit.c_str());
         printf_epiworld("total runs            : %i\n",
-            static_cast<int>(time_n));
+            static_cast<int>(n_replicates));
         printf_epiworld("mean run elapsed time : %.2f%s\n",
-            elapsed_total/static_cast<epiworld_double>(time_n), abbr_unit.c_str());
+            elapsed_total/static_cast<epiworld_double>(n_replicates), abbr_unit.c_str());
 
     } else {
         printf_epiworld("last run elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());
@@ -5016,12 +4997,6 @@ inline void Model<TSeq>::run_global_actions()
 
     }
 
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::toggle_visited()
-{
-    visited_model = !visited_model;
 }
 
 template<typename TSeq>
@@ -5148,15 +5123,15 @@ public:
     bool is_active() const;
     void deactivate();
 
-        /**
-     * @brief Get and set the tool functions
+    /**
+     * @name Get and set the tool functions
      * 
      * @param v The virus over which to operate
      * @param fun the function to be used
      * 
      * @return epiworld_double 
      */
-    ///@[
+    ///@{
     epiworld_double get_prob_infecting();
     epiworld_double get_prob_recovery();
     epiworld_double get_prob_death();
@@ -5177,7 +5152,7 @@ public:
     void set_prob_infecting(epiworld_double prob);
     void set_prob_recovery(epiworld_double prob);
     void set_prob_death(epiworld_double prob);
-    ///@]
+    ///@}
 
 
     void set_name(std::string name);
@@ -5226,7 +5201,6 @@ inline void Virus<TSeq>::mutate() {
     if (mutation_fun)
         if (mutation_fun(host, this, this->get_model()))
             host->get_model()->record_variant(this);
-    
 
     return;
 }
@@ -5590,7 +5564,7 @@ inline std::vector< epiworld_double > & Virus<TSeq>::get_data() {
 /**
  * @brief Set of viruses in host
  * 
- * @tparam TSeq 
+ * @tparam TSeq Type of sequence
  */
 template<typename TSeq = bool>
 class PersonViruses {
@@ -5689,6 +5663,7 @@ inline void PersonViruses<TSeq>::reset()
 {
 
     this->viruses.clear();
+    nactive = 0;
 
 }
 
@@ -5804,14 +5779,14 @@ public:
     TSeq & get_sequence_unique();
 
     /**
-     * @brief Get and set the tool functions
+     * @name Get and set the tool functions
      * 
      * @param v The virus over which to operate
      * @param fun the function to be used
      * 
      * @return epiworld_double 
      */
-    ///@[
+    ///@{
     epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);
     epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
@@ -5828,7 +5803,7 @@ public:
     void set_transmission_reduction(epiworld_double prob);
     void set_recovery_enhancer(epiworld_double prob);
     void set_death_reduction(epiworld_double prob);
-    ///@]
+    ///@}
 
     void set_name(std::string name);
     std::string get_name() const;
@@ -6227,13 +6202,13 @@ public:
 #define EPIWORLD_PERSONTOOLS_MEAT_HPP
 
 /**
- * @brief Default function for combining susceptibility_reduction levels
+ * @name Default function for combining susceptibility_reduction levels
  * 
  * @tparam TSeq 
  * @param pt 
  * @return epiworld_double 
  */
-///@[
+///@{
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     PersonTools<TSeq>* pt,
@@ -6299,7 +6274,7 @@ inline epiworld_double death_reduction_mixer_default(
     return 1.0 - total;
     
 }
-///@]
+///@}
 
 template<typename TSeq>
 inline void PersonTools<TSeq>::add_tool(
@@ -6627,6 +6602,11 @@ class PersonTools;
 template<typename TSeq>
 class Queue;
 
+/**
+ * @brief Person (agents)
+ * 
+ * @tparam TSeq Sequence type (should match `TSeq` across the model)
+ */
 template<typename TSeq = bool>
 class Person {
     friend class Model<TSeq>;
@@ -6645,7 +6625,6 @@ private:
     UpdateFun<TSeq> update_exposed     = default_update_exposed<TSeq>;
     UpdateFun<TSeq> update_removed     = nullptr;
 
-    bool visited_person = !EPI_DEFAULT_VISITED;
     bool in_queue       = false;
 
 public:
@@ -6657,12 +6636,21 @@ public:
     void add_virus(Virus<TSeq> * virus);
     void rm_virus(Virus<TSeq> * virus);
 
+    /**
+     * @name Get the rates (multipliers) for the agent
+     * 
+     * @param v A pointer to a virus.
+     * @return epiworld_double 
+     */
+    ///@{
     epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);
     epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
     epiworld_double get_death_reduction(Virus<TSeq> * v);
-    int get_id() const;
-    unsigned int get_index() const;
+    ///@}
+
+    int get_id() const; ///< Id of the individual
+    unsigned int get_index() const; ///< Location (0, ..., n-1).
     
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
@@ -6683,20 +6671,27 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
+    void update_status(epiworld_fast_uint new_status);
     const epiworld_fast_uint & get_status() const;
+    const epiworld_fast_uint & get_status_next() const;
 
     void reset();
 
+    /**
+     * @brief Set the update functions
+     * 
+     * @param fun 
+     */
+    ///@{
     void set_update_susceptible(UpdateFun<TSeq> fun);
     void set_update_exposed(UpdateFun<TSeq> fun);
     void set_update_removed(UpdateFun<TSeq> fun);
+    ///@}
+
     bool has_tool(unsigned int t) const;
     bool has_tool(std::string name) const;
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
-
-    bool visited() const;
-    void toggle_visited();
 
 };
 
@@ -6930,11 +6925,29 @@ inline void Person<TSeq>::update_status()
         throw std::range_error(
             "The reported status " + std::to_string(status) + " is not valid.");
 
-    // Updating db
-    if (status_next != status)
-        model->get_db().state_change(status, status_next);
+    return;
 
+}
 
+template<typename TSeq>
+inline void Person<TSeq>::update_status(epiworld_fast_uint new_status)
+{
+
+    if (new_status == status)
+        return;
+
+    // No change if removed
+    bool status_ok = 
+        IN(new_status, model->status_removed) |
+        IN(new_status, model->status_susceptible) |
+        IN(new_status, model->status_exposed);
+
+    if (!status_ok)
+        throw std::range_error(
+            "The reported status " + std::to_string(new_status) + " is not valid.");
+
+    status_next = new_status;
+    
     return;
 
 }
@@ -6942,6 +6955,11 @@ inline void Person<TSeq>::update_status()
 template<typename TSeq>
 inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
     return status;
+}
+
+template<typename TSeq>
+inline const epiworld_fast_uint & Person<TSeq>::get_status_next() const {
+    return status_next;
 }
 
 template<typename TSeq>
@@ -6987,20 +7005,6 @@ inline bool Person<TSeq>::has_virus(unsigned int t) const {
 template<typename TSeq>
 inline bool Person<TSeq>::has_virus(std::string name) const {
     return viruses.has_virus(name);
-}
-
-template<typename TSeq>
-inline bool Person<TSeq>::visited() const
-{
-    
-    return visited_person == model->visited_model;
-
-}
-
-template<typename TSeq>
-inline void Person<TSeq>::toggle_visited()
-{
-    visited_person = !visited_person;
 }
 
 #endif

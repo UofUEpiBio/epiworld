@@ -1,5 +1,5 @@
-#ifndef EPIWORLD_MODEL_MEAT_VISITED_HPP
-#define EPIWORLD_MODEL_MEAT_VISITED_HPP
+#ifndef EPIWORLD_MODEL_MEAT_PRINT_HPP
+#define EPIWORLD_MODEL_MEAT_PRINT_HPP
 
 template<typename TSeq>
 inline void Model<TSeq>::print() const

@@ -43,6 +43,7 @@ EPI_NEW_UPDATEFUN(surveillance_update_exposed,TSeq)
 {
 
     EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(p_rec, p_die)
+    (void) p_rec;
     
     unsigned int days_since_exposed = m->today() - v->get_date();
     epiworld_fast_uint status = p->get_status();
