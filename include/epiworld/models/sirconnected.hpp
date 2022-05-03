@@ -14,6 +14,7 @@ std::vector< epiworld::Person<>* > tracked_agents_infected_next(0u);
 bool tracked_started = false;
 int tracked_ninfected = 0;
 int tracked_ninfected_next = 0;
+epiworld_double tracked_current_infect_prob = 0.0;
 
 template<typename TSeq>
 inline void tracked_agents_check_init(epiworld::Model<TSeq> * m) 
@@ -45,6 +46,12 @@ inline void tracked_agents_check_init(epiworld::Model<TSeq> * m)
         }
         
         tracked_started = true;
+
+        // Computing infection probability
+        tracked_current_infect_prob =  1.0 - std::pow(
+            1.0 - (*m->p0) * (*m->p1) / m->size(),
+            tracked_ninfected
+        );
         
     }
 
@@ -59,14 +66,7 @@ EPI_NEW_UPDATEFUN(update_susceptible, bool)
     if (tracked_ninfected == 0)
         return p->get_status();
 
-    // Computing probability of contagion
-    // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
-    epiworld_double prob_infect = 1.0 - std::pow(
-        1.0 - (*m->p0) * (*m->p1) / m->size(),
-        tracked_ninfected
-        );
-
-    if (m->runif() < prob_infect)
+    if (m->runif() < tracked_current_infect_prob)
     {
 
         // Adding the individual to the queue
@@ -127,6 +127,7 @@ EPI_NEW_GLOBALFUN(global_accounting, bool)
         tracked_agents_infected_next.clear();
         tracked_ninfected = 0;
         tracked_ninfected_next = 0;    
+        tracked_current_infect_prob = 0.0;
 
         return;
     }
@@ -136,6 +137,11 @@ EPI_NEW_GLOBALFUN(global_accounting, bool)
 
     tracked_ninfected += tracked_ninfected_next;
     tracked_ninfected_next = 0;
+
+    tracked_current_infect_prob = 1.0 - std::pow(
+        1.0 - (*m->p0) * (*m->p1) / m->size(),
+        tracked_ninfected
+        );
 
 }
 

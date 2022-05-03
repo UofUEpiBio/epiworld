@@ -220,8 +220,8 @@ The same can be shown for the change in the number recovered.
 
 Now, what happens with `epiworld`.
 
-```{bash}
-./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599
+```{r}
+system("./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599")
 ```
 
 ```{r abm-sir}
@@ -232,8 +232,8 @@ ggplot(epiworld, aes(x = date, y = counts)) +
     labs(title = "ABM SIR")
 ```
 
-```{bash}
-./09-seir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -l $EPI_LATENCY
+```{r}
+system("./09-seir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -l $EPI_LATENCY")
 ```
 
 ```{r abm-seir}
@@ -255,8 +255,8 @@ simulation.
 
 ## SIR
 
-```{bash}
-./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100
+```{r}
+system("./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100")
 ```
 
 ```{r experiment100}
@@ -291,8 +291,8 @@ are known to compute an adjustment.
 
 ## SEIR
 
-```{bash}
-./09-seir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100 -l $EPI_LATENCY
+```{r}
+system("./09-seir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100 -l $EPI_LATENCY")
 ```
 
 ```{r experiment100-seir}
