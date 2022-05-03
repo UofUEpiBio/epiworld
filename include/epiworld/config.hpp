@@ -74,6 +74,13 @@ enum STATUS {
     REMOVED
 };
 
+/**
+ * @name Constants in epiworld 
+ * 
+ * @details The following are the default values some probabilities and
+ * rates take when no value has been specified in the model.
+ */
+///@{
 #ifndef DEFAULT_TOOL_CONTAGION_REDUCTION
     #define DEFAULT_TOOL_CONTAGION_REDUCTION    0.0
 #endif
@@ -101,6 +108,7 @@ enum STATUS {
 #ifndef EPI_DEFAULT_VIRUS_PROB_DEATH
     #define EPI_DEFAULT_VIRUS_PROB_DEATH        0.0
 #endif
+///@}
 
 #ifdef EPI_DEBUG
     #define EPI_DEBUG_NOTIFY_ACTIVE() \

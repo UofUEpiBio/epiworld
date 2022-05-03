@@ -218,13 +218,7 @@ inline void Person<TSeq>::update_status(epiworld_fast_uint new_status)
     if (new_status == status)
         return;
 
-    // No change if removed
-    bool status_ok = 
-        IN(new_status, model->status_removed) |
-        IN(new_status, model->status_susceptible) |
-        IN(new_status, model->status_exposed);
-
-    if (!status_ok)
+    if (new_status >= model->nstatus)
         throw std::range_error(
             "The reported status " + std::to_string(new_status) + " is not valid.");
 
