@@ -42,13 +42,6 @@ template<typename TSeq>
 inline void DataBase<TSeq>::record() 
 {
 
-    // Updating values according to today's changes
-    for (auto i = 0u; i < model->nstatus; ++i)
-    {
-        today_total[i] += today_total_next[i];
-        today_total_next[i] = 0;
-    }
-
     ////////////////////////////////////////////////////////////////////////////
     // DEBUGGING BLOCK
     ////////////////////////////////////////////////////////////////////////////
@@ -64,23 +57,6 @@ inline void DataBase<TSeq>::record()
     EPI_DEBUG_VECTOR_MATCH_INT(_today_total_cp, today_total)
     #endif
     ////////////////////////////////////////////////////////////////////////////
-
-    for (auto v = 0u; v < today_variant.size(); ++v)
-    {
-
-        for (auto i = 0u; i < model->nstatus; ++i)
-        {
-            today_variant[v][i] += today_variant_next[v][i];
-            today_variant_next[v][i] = 0;
-        }
-
-    }
-    
-    for (auto i = 0u; i < transition_matrix.size(); ++i)
-    {
-        transition_matrix[i] += transition_matrix_next[i];
-        transition_matrix_next[i] = 0;
-    }
 
     // Only store every now and then
     if ((model->today() % sampling_freq) == 0)
@@ -137,15 +113,8 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
         parent_id.push_back(old_id);
         
         today_variant.push_back({});
-        today_variant[new_id].resize(
-            model->status_susceptible.size() +
-            model->status_exposed.size() +
-            model->status_removed.size(),
-            0
-        );
-
-        today_variant_next.push_back(today_variant[new_id]);
-        
+        today_variant[new_id].resize(model->nstatus, 0);
+       
         // Updating the variant
         v->set_id(new_id);
         v->set_date(model->today());
@@ -168,8 +137,8 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
     {
         // Correcting math
         epiworld_fast_uint tmp_status = v->get_host()->get_status();
-        today_variant_next[old_id][tmp_status]--;
-        today_variant_next[new_id][tmp_status]++;
+        today_variant[old_id][tmp_status]--;
+        today_variant[new_id][tmp_status]++;
 
     }
     
@@ -183,32 +152,35 @@ inline size_t DataBase<TSeq>::size() const
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::up_exposed(
-    Virus<TSeq> * v,
-    epiworld_fast_uint new_status
-) {
-
-    today_variant_next[v->get_id()][new_status]++;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::down_exposed( 
-    Virus<TSeq> * v,
-    epiworld_fast_uint prev_status
-) {
-
-    today_variant_next[v->get_id()][prev_status]--;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::state_change(
+inline void DataBase<TSeq>::update_state(
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
 ) {
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
+
+    today_total[prev_status]--;
+    today_total[new_status]++;
+    return;
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::update_virus(
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+
+    today_variant[prev_status]--;
+    today_variant[new_status]++;
+    return;
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::update_tool(
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+
+    today_tool[prev_status]--;
+    today_tool[new_status]++;
     return;
 }
 
@@ -218,31 +190,19 @@ inline void DataBase<TSeq>::record_transition(
     epiworld_fast_uint to
 ) {
 
-    transition_matrix_next[to * model->nstatus + from]++;
+    transition_matrix[to * model->nstatus + from]++;
 
 }
-
-#define EPIWORLD_GET_STATUS_LABELS(stdstrvec) \
-    stdstrvec.resize(model->nstatus); \
-    for (epiworld_fast_uint i = 0u; i < model->status_susceptible.size(); ++i) \
-        stdstrvec[model->status_susceptible[i]] = model->status_susceptible_labels[i]; \
-    for (epiworld_fast_uint i = 0u; i < model->status_exposed.size(); ++i) \
-        stdstrvec[model->status_exposed[i]] = model->status_exposed_labels[i]; \
-    for (epiworld_fast_uint i = 0u; i < model->status_removed.size(); ++i) \
-        stdstrvec[model->status_removed[i]] = model->status_removed_labels[i];
-
 
 template<typename TSeq>
 inline int DataBase<TSeq>::get_today_total(
     std::string what
 ) const
 {
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
 
-    for (auto i = 0u; i < labels.size(); ++i)
+    for (auto i = 0u; i < model->status_labels.size(); ++i)
     {
-        if (labels[i] == what)
+        if (model->status_labels[i] == what)
             return today_total[i];
     }
 
@@ -257,9 +217,7 @@ inline void DataBase<TSeq>::get_today_total(
 ) const
 {
     if (status != nullptr)
-    {
-        EPIWORLD_GET_STATUS_LABELS((*status))
-    }
+        (*status) = model->status_labels;
 
     if (counts != nullptr)
         *counts = today_total;
@@ -273,18 +231,16 @@ inline void DataBase<TSeq>::get_today_variant(
     std::vector< int > & counts
     ) const
 {
-    
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)    
+      
     status.resize(today_variant.size(), "");
     id.resize(today_variant.size(), 0);
     counts.resize(today_variant.size(),0);
 
     int n = 0u;
     for (unsigned int v = 0u; v < today_variant.size(); ++v)
-        for (unsigned int s = 0u; s < labels.size(); ++s)
+        for (unsigned int s = 0u; s < model->status_labels.size(); ++s)
         {
-            status[n]   = labels[s];
+            status[n]   = model->status_labels[s];
             id[n]       = static_cast<int>(v);
             counts[n++] = today_variant[v][s];
 
@@ -303,14 +259,11 @@ inline void DataBase<TSeq>::get_hist_total(
     if (date != nullptr)
         *date = hist_total_date;
 
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
-
     if (status != nullptr)
     {
         status->resize(hist_total_status.size(), "");
         for (unsigned int i = 0u; i < hist_total_status.size(); ++i)
-            status->operator[](i) = labels[hist_total_status[i]];
+            status->operator[](i) = model->status_labels[hist_total_status[i]];
     }
 
     if (counts != nullptr)
@@ -330,7 +283,8 @@ inline void DataBase<TSeq>::get_hist_variant(
 
     date = hist_variant_date;
     std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
+    labels = model->status_labels;
+    
     id = hist_variant_id;
     status.resize(hist_variant_status.size(), "");
     for (unsigned int i = 0u; i < hist_variant_status.size(); ++i)
@@ -341,8 +295,6 @@ inline void DataBase<TSeq>::get_hist_variant(
     return;
 
 }
-
-#undef EPIWORLD_GET_STATUS_LABELS
 
 template<typename TSeq>
 inline void DataBase<TSeq>::write_data(
@@ -374,20 +326,6 @@ inline void DataBase<TSeq>::write_data(
 
     }
 
-    // Preparing labels
-    std::vector< std::string > labels(model->nstatus);
-    for (unsigned int i = 0u; i < model->status_susceptible.size(); ++i)
-        labels[model->status_susceptible[i]] =
-            model->status_susceptible_labels[i];
-    
-    for (unsigned int i = 0u; i < model->status_exposed.size(); ++i)
-        labels[model->status_exposed[i]] =
-            model->status_exposed_labels[i];
-
-    for (unsigned int i = 0u; i < model->status_removed.size(); ++i)
-        labels[model->status_removed[i]] =
-            model->status_removed_labels[i];
-
     if (fn_variant_hist != "")
     {
         std::ofstream file_variant(fn_variant_hist, std::ios_base::out);
@@ -399,7 +337,7 @@ inline void DataBase<TSeq>::write_data(
             file_variant <<
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
-                labels[hist_variant_status[i]] << " " <<
+                model->status_labels[hist_variant_status[i]] << " " <<
                 hist_variant_counts[i] << "\n";
     }
 
@@ -414,7 +352,7 @@ inline void DataBase<TSeq>::write_data(
             file_total <<
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
-                labels[hist_total_status[i]] << "\" " << 
+                model->status_labels[hist_total_status[i]] << "\" " << 
                 hist_total_counts[i] << "\n";
     }
 
@@ -448,8 +386,8 @@ inline void DataBase<TSeq>::write_data(
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
                         i << " " <<
-                        labels[from] << " " <<
-                        labels[to] << " " <<
+                        model->status_labels[from] << " " <<
+                        model->status_labels[to] << " " <<
                         hist_transition_matrix[i * (ns * ns) + to * ns + from] << "\n";
                 
         }
@@ -505,10 +443,10 @@ inline void DataBase<TSeq>::reset()
     today_total_nvariants_active = 0;
 
     today_total.clear();
-    today_total_next.clear();
     
     today_variant.clear();
-    today_variant_next.clear();
+
+    today_tool.clear();
 
 }
 

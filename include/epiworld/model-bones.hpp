@@ -67,19 +67,10 @@ private:
     unsigned int ndays;
     Progress pb;
 
-    std::vector< epiworld_fast_uint > status_susceptible = {STATUS::SUSCEPTIBLE};
-    std::vector< std::string > status_susceptible_labels = {"susceptible"};
-
-    std::vector< epiworld_fast_uint > status_exposed = {STATUS::EXPOSED};
-    std::vector< std::string > status_exposed_labels = {"exposed"};
-
-    std::vector< epiworld_fast_uint > status_removed = {STATUS::REMOVED};
-    std::vector< std::string > status_removed_labels = {"removed"};
-
-    epiworld_fast_uint nstatus = 3u;
-    epiworld_fast_uint baseline_status_susceptible = STATUS::SUSCEPTIBLE;
-    epiworld_fast_uint baseline_status_exposed     = STATUS::EXPOSED;
-    epiworld_fast_uint baseline_status_removed     = STATUS::REMOVED;
+    std::vector< epiworld_fast_uint > status(0u);
+    std::vector< UpdateFun<TSeq> >    status_fun(0u);
+    std::vector< std::string >        status_labels(0u);
+    epiworld_fast_uint nstatus = 0u;
     
     bool verbose     = true;
     bool initialized = false;
@@ -99,10 +90,6 @@ private:
     void chrono_end();
 
     std::unique_ptr< Model<TSeq> > backup = nullptr;
-
-    UpdateFun<TSeq> update_susceptible = nullptr;
-    UpdateFun<TSeq> update_exposed     = nullptr;
-    UpdateFun<TSeq> update_removed     = nullptr;
 
     std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
     std::vector< int > global_action_dates;
@@ -282,9 +269,6 @@ public:
     void rewire();
     ///@}
 
-    inline void set_update_susceptible(UpdateFun<TSeq> fun);
-    inline void set_update_exposed(UpdateFun<TSeq> fun);
-    inline void set_update_removed(UpdateFun<TSeq> fun);
     /**
      * @brief Wrapper of `DataBase::write_data`
      * 
@@ -345,13 +329,10 @@ public:
      * @name Manage status (states) in the model
      * 
      * @details
-     * Adding values of `s` that are already present in the model will
-     * result in an error.
      * 
-     * The functions `get_status_*` return the current values for the 
+     * The functions `get_status` return the current values for the 
      * statuses included in the model.
      * 
-     * @param s `unsigned int` Code of the status
      * @param lab `std::string` Name of the status.
      * 
      * @return `add_status*` returns nothing.
@@ -359,39 +340,12 @@ public:
      * statuses and their labels.
      */
     ///@{
-    void add_status_susceptible(epiworld_fast_uint s, std::string lab);
-    void add_status_exposed(epiworld_fast_uint s, std::string lab);
-    void add_status_removed(epiworld_fast_uint s, std::string lab);
-    void add_status_susceptible(std::string lab);
-    void add_status_exposed(std::string lab);
-    void add_status_removed(std::string lab);
-    const std::vector< epiworld_fast_uint > & get_status_susceptible() const;
-    const std::vector< epiworld_fast_uint > & get_status_exposed() const;
-    const std::vector< epiworld_fast_uint > & get_status_removed() const;
-    const std::vector< std::string > & get_status_susceptible_labels() const;
-    const std::vector< std::string > & get_status_exposed_labels() const;
-    const std::vector< std::string > & get_status_removed_labels() const;
+    void add_status(std::string lab, UpdateFun<TSeq> fun);
+    const std::vector< epiworld_fast_uint > & get_status() const;
+    const std::vector< std::string > & get_status_labels() const;
+    const std::vector< UpdateFun<TSeq> > & get_status_fun() const;
     void print_status_codes() const;
-    epiworld_fast_uint get_default_susceptible() const;
-    epiworld_fast_uint get_default_exposed() const;
-    epiworld_fast_uint get_default_removed() const;
     ///@}
-
-    /**
-     * @brief Reset all the status codes of the model
-     * 
-     * @details 
-     * The default values are those specified in the enum STATUS.
-     * 
-     * @param codes In the following order: Susceptible, Infected, Removed
-     * @param names Names matching the codes
-     * @param verbose When `true`, it will print the new mappings.
-     */
-    void reset_status_codes(
-        std::vector< epiworld_fast_uint > codes,
-        std::vector< std::string > names,
-        bool verbose = true
-    );
 
     /**
      * @name Setting and accessing parameters from the model

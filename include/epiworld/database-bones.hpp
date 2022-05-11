@@ -32,15 +32,12 @@ private:
 
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_variant;
-    
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...} to update
-    std::vector< std::vector<int> > today_variant_next;
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    std::vector< std::vector<int> > today_tool;
 
     // {Susceptible, Infected, etc.}
     std::vector< int > today_total;
-
-    // {Susceptible, Infected, etc.} to update
-    std::vector< int > today_total_next;
 
     // Totals
     int today_total_nvariants_active = 0;
@@ -67,7 +64,6 @@ private:
     std::vector< int > transmission_variant;
 
     std::vector< int > transition_matrix;
-    std::vector< int > transition_matrix_next;
 
     UserData<TSeq> user_data;
 
@@ -93,17 +89,17 @@ public:
     const std::vector< int > & get_nexposed() const;
     size_t size() const;
 
-    void up_exposed(
-        Virus<TSeq> * v,
+    void update_state(
+        epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
-        );
+    );
 
-    void down_exposed(
-        Virus<TSeq> * v,
-        epiworld_fast_uint prev_status
-        );
+    void update_virus(
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+    );
 
-    void state_change(
+    void update_tool(
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
     );

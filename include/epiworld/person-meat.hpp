@@ -5,6 +5,51 @@
 // inline bool IN(Ta & a, std::vector< Ta > & b);
 
 template<typename TSeq>
+inline void default_add_virus(Person<TSeq> * p, Model<TSeq> * m)
+{
+
+    Virus<TSeq> * v = virus_tmp;
+
+    // Has a host? If so, we need to register the transmission
+    if (v->get_host())
+    {
+
+        // ... only if not the same person
+        if (v->get_host()->get_id() != v->get_id())
+            m->get_db().record_transmission(
+                v->get_host()->get_id(), p->get_id(), v->get_id() 
+            );
+
+    }
+    
+    // Update virus accounting
+    p->n_viruses++;
+    size_t n_viruses = p->n_viruses;
+
+    if (n_viruses-- >= p->viruses.size())
+        p->viruses[n_viruses] = *(p->virus_tmp);
+    else
+        p->viruses.push_back(*(p->virus_tmp));
+
+    p->viruses[n_viruses].host = p;
+    p->viruses[n_viruses].date = m->today();
+
+
+}
+
+template<typename TSeq>
+inline void default_add_tool(Person<TSeq> * p, Model<TSeq> * m)
+{
+
+    // Update tool accounting
+    // m->get_db().state_change()
+    
+    // Adding the tool to the sequence
+    p->tools.add_tool(m->today(), *p->tool_tmp);
+
+}
+
+template<typename TSeq>
 inline Person<TSeq>::Person()
 {
     
@@ -22,36 +67,30 @@ inline void Person<TSeq>::init(epiworld_fast_uint baseline_status)
 
 template<typename TSeq>
 inline void Person<TSeq>::add_tool(
-    int d,
-    Tool<TSeq> tool
+    Tool<TSeq> tool,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
 ) {
-    tools.add_tool(d, tool);
+    
+    epiworld_fast_uint status_new_ =
+        ((status_new < 0) ? status : static_cast<epiworld_fast_uint>(status_new));
+
+    model->actions_add(this, status_new_, add_tool_, queue_);
+
 }
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    Virus<TSeq> * virus
+    Virus<TSeq> * virus,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
 )
 {
 
-    model->virus_to_add.push_back(virus);
-    model->virus_to_add_person.push_back(this);
+    epiworld_fast_uint status_new_ =
+        ((status_new < 0) ? status : static_cast<epiworld_fast_uint>(status_new));
 
-    if (model->is_queuing_on())
-        model->get_queue() += this;
-
-}
-
-template<typename TSeq>
-inline void Person<TSeq>::rm_virus(
-    Virus<TSeq> * virus
-)
-{
-
-    model->virus_to_remove.push_back(virus);
-
-    if (model->is_queuing_on())
-        model->get_queue() -= this;
+    model->actions_add(this, status_new_, add_virus_, queue);
 
 }
 
@@ -185,44 +224,23 @@ inline void Person<TSeq>::update_status()
 {
 
     // No change if removed
-    if (IN(status, model->status_removed))
-    {
-        if (update_removed)
-            status_next = update_removed(this, model);
-
-    } else if (IN(status, model->status_susceptible)) {
-        
-        if (!update_susceptible)
-            throw std::logic_error("No update_susceptible function?!");
-
-        if (update_susceptible)
-            status_next = update_susceptible(this, model);
-
-    } else if (IN(status, model->status_exposed)) {
-
-        if (update_exposed)
-            status_next = update_exposed(this, model);
-
-    } else
-        throw std::range_error(
-            "The reported status " + std::to_string(status) + " is not valid.");
+    if (model->status_fun[status])
+        model->status_fun[status](this, model);
 
     return;
 
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::update_status(epiworld_fast_uint new_status)
+inline void Person<TSeq>::update_status(
+    epiworld_fast_uint new_status,
+    epiworld_fast_int queue
+    )
 {
 
-    if (new_status == status)
-        return;
-
-    if (new_status >= model->nstatus)
-        throw std::range_error(
-            "The reported status " + std::to_string(new_status) + " is not valid.");
-
-    status_next = new_status;
+    model->actions_add(
+        this, new_status, nullptr, queue
+    );
     
     return;
 

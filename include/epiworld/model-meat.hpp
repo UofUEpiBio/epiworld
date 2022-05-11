@@ -1132,80 +1132,23 @@ inline void Model<TSeq>::add_status_removed(std::string lab)
 
 template<typename TSeq>
 inline const std::vector< epiworld_fast_uint > &
-Model<TSeq>::get_status_susceptible() const
+Model<TSeq>::get_status() const
 {
-    return status_susceptible;
-}
-
-template<typename TSeq>
-inline const std::vector< epiworld_fast_uint > &
-Model<TSeq>::get_status_exposed() const
-{
-    return status_exposed;
-}
-
-template<typename TSeq>
-inline const std::vector< epiworld_fast_uint > &
-Model<TSeq>::get_status_removed() const
-{
-    return status_removed;
+    return status;
 }
 
 template<typename TSeq>
 inline const std::vector< std::string > &
-Model<TSeq>::get_status_susceptible_labels() const
+Model<TSeq>::get_status_labels() const
 {
-    return status_susceptible_labels;
+    return status_labels;
 }
 
 template<typename TSeq>
-inline const std::vector< std::string > &
-Model<TSeq>::get_status_exposed_labels() const
+inline const std::vector< UpdateFun<TSeq> > &
+Model<TSeq>::get_status_fun() const
 {
-    return status_exposed_labels;
-}
-
-template<typename TSeq>
-inline const std::vector< std::string > &
-Model<TSeq>::get_status_removed_labels() const
-{
-    return status_removed_labels;
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::reset_status_codes(
-    std::vector< epiworld_fast_uint > codes,
-    std::vector< std::string > names,
-    bool verbose
-)
-{
-
-    if (codes.size() != 3u)
-        throw std::length_error("The vector of codes should be of length 3.");
-
-    if (names.size() != 3u)
-        throw std::length_error("The vector of names should be of length 3.");
-
-    status_susceptible.clear();
-    status_susceptible_labels.clear();
-    status_exposed.clear();
-    status_exposed_labels.clear();
-    status_removed.clear();
-    status_removed_labels.clear();
-    nstatus = 0u;
-
-    baseline_status_susceptible = codes[0u];
-    baseline_status_exposed     = codes[1u];
-    baseline_status_removed     = codes[2u];
-
-    add_status_susceptible(codes[0u], names[0u]);
-    add_status_exposed(codes[1u], names[1u]);
-    add_status_removed(codes[2u], names[2u]);
-
-    if (verbose)
-        print_status_codes();    
-
-
+    return status_fun;
 }
 
 template<typename TSeq>
@@ -1217,84 +1160,26 @@ inline void Model<TSeq>::print_status_codes() const
     for (unsigned int i = 0u; i < 80u; ++i)
         line += "_";
 
-    printf_epiworld("\n%s\nDEFAULT STATUS CODES\n\n", line.c_str());
+    printf_epiworld("\n%s\nSTATUS CODES\n\n", line.c_str());
 
     unsigned int nchar = 0u;
-    for (auto & p : status_susceptible_labels)
+    for (auto & p : status_labels)
         if (p.length() > nchar)
             nchar = p.length();
     
-    for (auto & p : status_exposed_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-
-    for (auto & p : status_removed_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-
-    std::string fmt = " %2i = %-" + std::to_string(nchar + 1 + 4) + "s %s\n";
-    for (unsigned int i = 0u; i < status_susceptible.size(); ++i)
+    std::string fmt = " %2i = %-" + std::to_string(nchar + 1 + 4) + "s\n";
+    for (unsigned int i = 0u; i < status.size(); ++i)
     {
 
         printf_epiworld(
             fmt.c_str(),
-            status_susceptible[i],
-            (status_susceptible_labels[i] + " (S)").c_str(),
-            (status_susceptible[i] == baseline_status_susceptible) ? " *" : ""
+            status[i],
+            (status_labels[i] + " (S)").c_str()
         );
 
     }
 
-    for (unsigned int i = 0u; i < status_exposed.size(); ++i)
-    {
-
-        printf_epiworld(
-            fmt.c_str(),
-            status_exposed[i],
-            (status_exposed_labels[i] + " (E)").c_str(),
-            status_exposed[i] == baseline_status_exposed ? " *" : ""
-        );
-
-    }
-
-    for (unsigned int i = 0u; i < status_removed.size(); ++i)
-    {
-
-        printf_epiworld(
-            fmt.c_str(),
-            status_removed[i],
-            (status_removed_labels[i] + " (R)").c_str(),
-            status_removed[i] == baseline_status_removed ? " *" : ""
-        );
-
-    }
-
-    printf_epiworld(
-        "\n(S): Susceptible, (E): Exposed, (R): Removed\n * : Baseline status (default)\n%s\n\n",
-        line.c_str()
-        );
-
-
 }
-
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_susceptible() const
-{
-    return baseline_status_susceptible;
-}
-
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_exposed() const
-{
-    return baseline_status_exposed;
-}
-
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_removed() const
-{
-    return baseline_status_removed;
-}
-
 
 #define CASE_PAR(a,b) case a: b = &(parameters[pname]);break;
 #define CASES_PAR(a) \
@@ -1437,28 +1322,6 @@ inline void Model<TSeq>::get_elapsed(
         printf_epiworld("last run elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());
     }
 }
-
-template<typename TSeq>
-inline void Model<TSeq>::set_update_susceptible(UpdateFun<TSeq> fun) {
-    
-    update_susceptible = fun;
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::set_update_exposed(UpdateFun<TSeq> fun) {
-    
-    update_exposed = fun;
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::set_update_removed(UpdateFun<TSeq> fun) {
-    
-    update_removed = fun;
-
-}
-
 
 template<typename TSeq>
 inline void Model<TSeq>::set_user_data(std::vector< std::string > names)

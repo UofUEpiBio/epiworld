@@ -16,6 +16,12 @@ class PersonTools;
 template<typename TSeq>
 class Queue;
 
+template<typename TSeq>
+inline void default_add_virus(Person<TSeq> * p, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_add_tool(Person<TSeq> * p, Model<TSeq> * m);
+
 /**
  * @brief Person (agents)
  * 
@@ -26,31 +32,49 @@ class Person {
     friend class Model<TSeq>;
     friend class Tool<TSeq>;
     friend class Queue<TSeq>;
+    friend void default_add_virus<TSeq>(Person<TSeq>*p, Model<TSeq>*m);
+    friend void default_add_tool<TSeq>(Person<TSeq>*p, Model<TSeq>*m);
 private:
     Model<TSeq> * model;
-    PersonViruses<TSeq> viruses;
-    PersonTools<TSeq> tools;
+    
     std::vector< Person<TSeq> * > neighbors;
+
     unsigned int index; ///< Location in the Model
-    epiworld_fast_uint status_next; // Placeholder
     epiworld_fast_uint status;
     int id          = -1;
-    UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
-    UpdateFun<TSeq> update_exposed     = default_update_exposed<TSeq>;
-    UpdateFun<TSeq> update_removed     = nullptr;
-
+    
     bool in_queue       = false;
     bool locked         = false;
+    
+    std::vector< Virus<TSeq> > viruses;
+    std::shared_ptr< Virus<TSeq> > virus_tmp;
+    epiworld_fast_int virus_to_remove_idx;
+    epiworld_fast_uint n_viruses;
+
+    PersonTools<TSeq> tools;
+    shared_ptr< Tool<TSeq> > tool_tmp;
+    epiworld_fast_int tool_to_remove_idx;
+
+    ActionFun<TSeq> add_virus_ = default_add_virus<TSeq>;
+    ActionFun<TSeq> add_tool_ = default_add_tools<TSeq>;
 
 public:
 
     Person();
     void init(epiworld_fast_uint baseline_status);
 
-    void add_tool(int d, Tool<TSeq> tool);
-    void add_virus(Virus<TSeq> * virus);
-    void rm_virus(Virus<TSeq> * virus);
+    void add_tool(
+        Tool<TSeq> tool,
+        epiworld_fast_int status_new,
+        epiworld_fast_int queue
+        );
 
+    void add_virus(
+        Virus<TSeq> * virus,
+        epiworld_fast_int status_new,
+        epiworld_fast_int queue
+        );
+    
     /**
      * @name Get the rates (multipliers) for the agent
      * 
@@ -86,9 +110,12 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
-    void update_status(epiworld_fast_uint new_status);
+    void update_status(
+        epiworld_fast_uint new_status,
+        epiworld_fast_int queue = 0
+        );
+
     const epiworld_fast_uint & get_status() const;
-    const epiworld_fast_uint & get_status_next() const;
 
     void reset();
 

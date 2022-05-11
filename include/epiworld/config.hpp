@@ -59,7 +59,7 @@ template<typename TSeq>
 using VirusFun = std::function<epiworld_double(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
-using UpdateFun = std::function<epiworld_fast_uint(Person<TSeq>*,Model<TSeq>*)>;
+using UpdateFun = std::function<void(Person<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
