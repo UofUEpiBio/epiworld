@@ -111,14 +111,33 @@ private:
     bool use_queuing   = true;
 
     /**
-     * @name Variables used to keep track of the actions
+     * @brief Variables used to keep track of the actions
      * to be made regarding viruses.
      */
-    ///@{
-    std::vector< Virus<TSeq> * >  virus_to_remove;
-    std::vector< Virus<TSeq> * >  virus_to_add;
-    std::vector< Person<TSeq> * > virus_to_add_person;
-    ///@}
+    std::vector< Action<TSeq> > actions(0u);
+    epiworld_fast_uint nactions = 0u;
+
+    /**
+     * @brief Construct a new Action object
+     * 
+     * @param person_ Person over which the action will be called
+     * @param new_status_ New state of the person
+     * @param call_ Function the action will call
+     * @param queue_ Change in the queue
+     */
+    void actions_add(
+        Person<TSeq> * person_,
+        epiworld_fast_uint new_status_,
+        ActionFun<TSeq> call_    = nullptr,
+        epiworld_fast_int queue_ = 0u
+        );
+
+    /**
+     * @brief Executes the stored action
+     * 
+     * @param model_ Model over which it will be executed.
+     */
+    void actions_run();
 
 public:
 

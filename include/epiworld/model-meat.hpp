@@ -60,6 +60,76 @@
     }
 
 template<typename TSeq>
+inline void Model<TSeq>::actions_add(
+    Person<TSeq> * person_,
+    epiworld_fast_uint new_status_,
+    ActionFun<TSeq> call_,
+    epiworld_fast_int queue_
+) {
+    
+    if (person->locked)
+        throw std::logic_error(
+            "The person with id " + std::to_string(person->id) + 
+            " has already an action in progress. Only one action per agent" +
+            " per iteration is allowed."
+            );
+
+    // Locking the agent
+    person_->locked = true;
+
+    nactions++;
+
+    if (nactions > actions.size())
+    {
+
+        actions.push_back(Action<TSeq>(person_, new_status_, call_, queue_));
+
+    }
+    else 
+    {
+        actions[nactions] = Action<TSeq>(person_, new_status_, call_, queue_);
+    }
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::actions_run()
+{
+    // Making the call
+    size_t nactions_ = nactions;
+    for (size_t i = 0u; i < nactions_; ++i)
+    {
+
+        Action<TSeq> & a = dat[i];
+
+        // Applying function
+        if (a.call)
+        {
+            a.call(a.person, this);
+        }
+
+        // Updating accounting
+        db.update_accounting(a.person->status, a.new_status);
+
+        // Updating status
+        if (a.person->status != a.new_status)
+            a.person->status = a.new_status;
+
+        // Reduce the counter
+        nactions--;
+
+        // Unlocking person
+        a.person->locked = false;
+
+    }
+
+    return;
+    
+}
+
+template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     db(model.db),
     viruses(model.viruses),

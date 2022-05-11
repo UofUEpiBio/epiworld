@@ -40,6 +40,7 @@ private:
     UpdateFun<TSeq> update_removed     = nullptr;
 
     bool in_queue       = false;
+    bool locked         = false;
 
 public:
 

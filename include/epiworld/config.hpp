@@ -64,6 +64,17 @@ using UpdateFun = std::function<epiworld_fast_uint(Person<TSeq>*,Model<TSeq>*)>;
 template<typename TSeq>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
 
+template<typename TSeq>
+using ActionFun = std::function(void(Person<TSeq>*,Model<TSeq>*));
+
+template<typename TSeq>
+struct Action {
+    Person<TSeq> * person;
+    epiworld_fast_uint new_status;
+    ActionFun<TSeq> call;
+    epiworld_fast_int queue;
+};
+
 /**
  * @brief List of possible states in the model
  *  
