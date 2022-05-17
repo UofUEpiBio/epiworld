@@ -43,6 +43,12 @@ private:
     // Setup parameters
     std::vector< epiworld_double * > params;  
 
+    epiworld_fast_int status_init = -1;
+    epiworld_fast_int status_end = -1;
+
+    epiworld_fast_int queue_init = 1; ///< Change of status when added to host.
+    epiworld_fast_int queue_post = -1; ///< Change of status when removed from host.
+
 public:
     Tool(std::string name = "unknown tool");
     // Tool(TSeq d, std::string name = "unknown tool");
@@ -66,14 +72,17 @@ public:
     epiworld_double get_transmission_reduction(Virus<TSeq> * v);
     epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
     epiworld_double get_death_reduction(Virus<TSeq> * v);
+    
     void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
     void set_transmission_reduction_fun(ToolFun<TSeq> fun);
     void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
     void set_death_reduction_fun(ToolFun<TSeq> fun);
+
     void set_susceptibility_reduction(epiworld_double * prob);
     void set_transmission_reduction(epiworld_double * prob);
     void set_recovery_enhancer(epiworld_double * prob);
     void set_death_reduction(epiworld_double * prob);
+
     void set_susceptibility_reduction(epiworld_double prob);
     void set_transmission_reduction(epiworld_double prob);
     void set_recovery_enhancer(epiworld_double prob);
@@ -88,6 +97,8 @@ public:
     void set_id(int id);
     void set_date(int d);
 
+    void set_status(epiworld_fast_int init, epiworld_fast_int end);
+    void set_queue(epiworld_fast_int init, epiworld_fast_int end);
 
 };
 

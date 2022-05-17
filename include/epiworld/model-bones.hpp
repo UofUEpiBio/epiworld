@@ -40,11 +40,11 @@ private:
     std::map< int,int >         population_ids;
     bool directed;
     
-    std::vector< Virus<TSeq> > viruses;
+    std::vector< std::shared_ptr<Virus<TSeq>> > viruses;
     std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
     std::vector< bool > prevalence_virus_as_proportion;
     
-    std::vector< Tool<TSeq> > tools;
+    std::vector< std::shared_ptr<Tool<TSeq>> > tools;
     std::vector< epiworld_double > prevalence_tool;
     std::vector< bool > prevalence_tool_as_proportion;
 

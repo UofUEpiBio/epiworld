@@ -261,18 +261,6 @@ inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::update_status()
-{
-
-    // No change if removed
-    if (model->status_fun[status])
-        model->status_fun[status](this, model);
-
-    return;
-
-}
-
-template<typename TSeq>
 inline void Person<TSeq>::change_status(
     epiworld_fast_uint new_status,
     epiworld_fast_int queue
@@ -293,11 +281,6 @@ inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
 }
 
 template<typename TSeq>
-inline const epiworld_fast_uint & Person<TSeq>::get_status_next() const {
-    return status_next;
-}
-
-template<typename TSeq>
 inline void Person<TSeq>::reset() {
 
     this->viruses.reset();
@@ -305,21 +288,6 @@ inline void Person<TSeq>::reset() {
     this->status      = model->baseline_status_susceptible;
     this->status_next = model->baseline_status_susceptible;
 
-}
-
-template<typename TSeq>
-inline void Person<TSeq>::set_update_susceptible(UpdateFun<TSeq> fun) {
-    update_susceptible = fun;
-}
-
-template<typename TSeq>
-inline void Person<TSeq>::set_update_exposed(UpdateFun<TSeq> fun) {
-    update_exposed = fun;
-}
-
-template<typename TSeq>
-inline void Person<TSeq>::set_update_removed(UpdateFun<TSeq> fun) {
-    update_removed = fun;
 }
 
 template<typename TSeq>

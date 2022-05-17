@@ -48,17 +48,27 @@ private:
     std::vector< epiworld_double * > params;
     std::vector< epiworld_double > data;
 
+    epiworld_fast_int status_init = -1; ///< Change of status when added to host.
+    epiworld_fast_int status_post = -1; ///< Change of status when removed from host.
+
+    epiworld_fast_int queue_init = 1; ///< Change of status when added to host.
+    epiworld_fast_int queue_post = -1; ///< Change of status when removed from host.
+
 public:
     Virus(std::string name = "unknown virus");
 
     void mutate();
     void set_mutation(MutFun<TSeq> fun);
+    
     const TSeq* get_sequence();
     void set_sequence(TSeq sequence);
+    
     Person<TSeq> * get_host();
     Model<TSeq> * get_model();
+    
     void set_date(int d);
     int get_date() const;
+
     void set_id(int idx);
     int get_id() const;
 
@@ -98,6 +108,8 @@ public:
     std::string get_name() const;
 
     std::vector< epiworld_double > & get_data();
+
+    void set_status(epiworld_fast_int init, epiworld_fast_int end);
 
 };
 

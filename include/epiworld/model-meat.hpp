@@ -114,6 +114,12 @@ inline void Model<TSeq>::actions_run()
         // Updating status
         if (p->status != a.new_status)
         {
+
+            if (a.new_status >= nstatus)
+                throw std::range_error(
+                    "The proposed status " + std::to_string(a.new_status) + " is out of range. " +
+                    "The model currently has " + std::to_string(nstatus - 1) + " statuses.");
+
             // Updating accounting
             db.update_accounting(p->status, a.new_status);
 
@@ -128,6 +134,12 @@ inline void Model<TSeq>::actions_run()
 
         // Reduce the counter
         nactions--;
+
+        // Updating queue
+        if (a.queue > 0)
+            queue += p;
+        else if (a.queue < 0)
+            queue -= p;
 
         // Unlocking person
         a.person->locked = false;
@@ -383,6 +395,7 @@ inline void Model<TSeq>::dist_virus()
 
     // Starting first infection
     int n = size();
+    std::vector< size_t > idx(n);
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
         // Picking how many
@@ -400,39 +413,31 @@ inline void Model<TSeq>::dist_virus()
             throw std::range_error("There are only " + std::to_string(size()) + 
             " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
 
-        std::vector < bool > sampled(size(), false);
+
+        std::shared_ptr< Virus<TSeq> > virus = viruses[v];
+        
+        int n_left = n;
+        std::iota(idx.begin(), idx.end(), 0);
         while (nsampled > 0)
         {
 
+            int loc = static_cast<unsigned int>(floor(runif() * (n_left--)));
 
-            int loc = static_cast<unsigned int>(floor(runif() * n));
-
-            if (sampled[loc])
-                continue;
-
-            sampled[loc] = true;
-
-            Person<TSeq> & person = population[loc];
+            Person<TSeq> & person = population[idx[loc]];
             
-            person.add_virus(&viruses[v]);
-            person.status_next = baseline_status_exposed;
+            // Adding action
+            person.add_virus(virus, virus->status_init, virus->queue_init);
 
+            // Adjusting sample
             nsampled--;
+            std::switch(idx[loc], idx[n_left]);
+
 
         }
     }      
 
-    // Adding the next viruses
-    ADD_VIRUSES()
-
-    // Removing and deactivating viruses
-    RM_VIRUSES()
-
-    // Updating the queuing sequence
-    UPDATE_QUEUE()
-
-    // Moving to the next assigned status
-    UPDATE_STATUS()
+    // Apply the actions
+    actions_run();
 
 }
 
@@ -442,6 +447,7 @@ inline void Model<TSeq>::dist_tools()
 
     // Starting first infection
     int n = size();
+    std::vector< size_t > idx(n);
     for (unsigned int t = 0; t < tools.size(); ++t)
     {
         // Picking how many
@@ -459,17 +465,25 @@ inline void Model<TSeq>::dist_tools()
             throw std::range_error("There are only " + std::to_string(size()) + 
             " individuals in the population. Cannot add the tool to " + std::to_string(nsampled));
         
+        std::shared_ptr< Tool<TSeq> > tool = tools[t];
+
+        int n_left = n;
+        std::iota(idx.begin(), idx.end(), 0);
         while (nsampled > 0)
         {
-            int loc = static_cast<unsigned int>(floor(runif() * n));
-            if (population[loc].has_tool(tools[t].get_id()))
-                continue;
+            int loc = static_cast<unsigned int>(floor(runif() * n_left--));
             
-            population[loc].add_tool(today(), tools[t]);
+            population[idx[loc]].add_tool(tool, tool->state_init, tool->queue_init);
+            
             nsampled--;
+
+            std::switch(idx[loc], idx[n_left]);
 
         }
     }
+
+    // Apply the actions
+    actions_run();
 
 }
 
@@ -566,7 +580,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
     v.set_id(viruses.size());
     
     // Adding new virus
-    viruses.push_back(v);
+    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
     prevalence_virus.push_back(preval);
     prevalence_virus_as_proportion.push_back(true);
 
@@ -580,7 +594,7 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
     v.set_id(viruses.size());
 
     // Adding new virus
-    viruses.push_back(v);
+    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
     prevalence_virus.push_back(preval);
     prevalence_virus_as_proportion.push_back(false);
 
@@ -597,7 +611,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
         throw std::range_error("Prevalence of tool cannot be negative");
 
     t.id = tools.size();
-    tools.push_back(t);
+    tools.push_back(std::make_shared< Tool<TSeq> >(t));
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(true);
 
@@ -816,14 +830,18 @@ inline void Model<TSeq>::update_status() {
         
         for (unsigned int p = 0u; p < size(); ++p)
             if (queue[p] > 0)
-                population[p].update_status();            
+            {
+                if (status_fun[population[p]->status])
+                    status_fun[population[p]->status](&population[p], this);
+            }
 
     }
     else
     {
 
         for (auto & p: population)
-            p.update_status();
+            if (status_fun[population[p]->status])
+                    status_fun[population[p]->status](&population[p], this);
 
     }
     

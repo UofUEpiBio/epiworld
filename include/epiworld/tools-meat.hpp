@@ -290,4 +290,24 @@ inline void Tool<TSeq>::set_date(int d)
     this->date = d;
 }
 
+template<typename TSeq>
+inline void Tool<TSeq>::set_status(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    status_init = init;
+    status_end = end;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_queue(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    queue_init = init;
+    queue_end = end;
+}
+
 #endif

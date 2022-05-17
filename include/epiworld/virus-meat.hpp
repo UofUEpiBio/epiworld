@@ -340,4 +340,24 @@ inline std::vector< epiworld_double > & Virus<TSeq>::get_data() {
     return data;
 }
 
+template<typename TSeq>
+inline void Virus<TSeq>::set_status(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    status_init = init;
+    status_end = end;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_queue(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    queue_init = init;
+    queue_end = end;
+}
+
 #endif

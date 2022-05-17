@@ -69,8 +69,6 @@ private:
     ActionFun<TSeq> rm_virus_ = default_rm_virus<TSeq>;
     ActionFun<TSeq> rm_tool_ = default_rm_tools<TSeq>;
 
-    void update_status();
-
 public:
 
     Person();
@@ -89,6 +87,7 @@ public:
      * @param status_new Status after the change
      * @param queue 
      */
+    ///@{
     void add_tool(
         std::shared_ptr< Tool<TSeq> > tool,
         epiworld_fast_int status_new = -1,
@@ -112,6 +111,7 @@ public:
         epiworld_fast_int status_new = -1,
         epiworld_fast_int queue = 0
     );
+    ///@}
     
     /**
      * @name Get the rates (multipliers) for the agent
@@ -155,17 +155,6 @@ public:
     const epiworld_fast_uint & get_status() const;
 
     void reset();
-
-    /**
-     * @brief Set the update functions
-     * 
-     * @param fun 
-     */
-    ///@{
-    void set_update_susceptible(UpdateFun<TSeq> fun);
-    void set_update_exposed(UpdateFun<TSeq> fun);
-    void set_update_removed(UpdateFun<TSeq> fun);
-    ///@}
 
     bool has_tool(unsigned int t) const;
     bool has_tool(std::string name) const;
