@@ -23,9 +23,14 @@ private:
 
     // Variants information 
     MapVec_type<int,int> variant_id; ///< The squence is the key
-    std::vector< TSeq> sequence;
-    std::vector< int > origin_date;
-    std::vector< int > parent_id;
+    std::vector< TSeq> variant_sequence;
+    std::vector< int > variant_origin_date;
+    std::vector< int > variant_parent_id;
+
+    MapVec_type<int,int> tool_id; ///< The squence is the key
+    std::vector< TSeq> tool_sequence;
+    std::vector< int > tool_origin_date;
+    std::vector< int > tool_origin_date;
 
     std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
     std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
@@ -49,6 +54,12 @@ private:
     std::vector< int > hist_variant_id;
     std::vector< epiworld_fast_uint > hist_variant_status;
     std::vector< int > hist_variant_counts;
+
+    // Tools history
+    std::vector< int > hist_tool_date;
+    std::vector< int > hist_tool_id;
+    std::vector< epiworld_fast_uint > hist_tool_status;
+    std::vector< int > hist_tool_counts;
 
     // Overall hist
     std::vector< int > hist_total_date;
@@ -80,6 +91,7 @@ public:
      * does not change.
      */
     void record_variant(Virus<TSeq> * v); 
+    void record_tool(Tool<TSeq> * t); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void set_model(Model<TSeq> & m);
     Model<TSeq> * get_model();
@@ -149,6 +161,8 @@ public:
     void write_data(
         std::string fn_variant_info,
         std::string fn_variant_hist,
+        std::string fn_tool_info,
+        std::string fn_tool_hist,
         std::string fn_total_hist,
         std::string fn_transmission,
         std::string fn_transition

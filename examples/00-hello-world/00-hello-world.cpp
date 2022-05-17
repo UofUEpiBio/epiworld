@@ -32,6 +32,8 @@ int main()
     model.write_data(
         "variant_info.txt",
         "variant_hist.txt",
+        "tool_info.txt",
+        "tool_hist.txt",
         "total_hist.txt",
         "transmissions.txt",
         "transitions.txt"

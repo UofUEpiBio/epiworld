@@ -30,7 +30,8 @@ class Tool {
 private:
 
     Person<TSeq> * person;
-    unsigned int id = 0u;
+    int date = -99;
+    int id   = -99;
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique  = default_sequence<TSeq>();
@@ -84,6 +85,8 @@ public:
 
     Person<TSeq> * get_person();
     unsigned int get_id() const;
+    void set_id(int id);
+    void set_date(int d);
 
 
 };

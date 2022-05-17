@@ -15,14 +15,9 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     for (auto & p : *m.get_population())
         ++today_total[p.get_status()];
     
-    today_total_next.resize(m.nstatus);
-    std::fill(today_total_next.begin(), today_total_next.end(), 0);
-
     transition_matrix.resize(m.nstatus * m.nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
 
-    transition_matrix_next.resize(m.nstatus * m.nstatus);
-    std::fill(transition_matrix_next.begin(), transition_matrix_next.end(), 0);
 
     return;
 
@@ -35,7 +30,7 @@ inline Model<TSeq> * DataBase<TSeq>::get_model() {
 
 template<typename TSeq>
 inline const std::vector< TSeq > & DataBase<TSeq>::get_sequence() const {
-    return sequence;
+    return variant_sequence;
 }
 
 template<typename TSeq>
@@ -107,10 +102,10 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
 
         new_id = variant_id.size();
         variant_id[hash] = new_id;
-        sequence.push_back(*v->get_sequence());
-        origin_date.push_back(model->today());
+        variant_sequence.push_back(*v->get_sequence());
+        variant_origin_date.push_back(model->today());
         
-        parent_id.push_back(old_id);
+        variant_parent_id.push_back(old_id);
         
         today_variant.push_back({});
         today_variant[new_id].resize(model->nstatus, 0);
@@ -128,7 +123,7 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
 
         // Reflecting the change
         v->set_id(new_id);
-        v->set_date(origin_date[new_id]);
+        v->set_date(variant_origin_date[new_id]);
 
     }
 
@@ -139,6 +134,55 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
         epiworld_fast_uint tmp_status = v->get_host()->get_status();
         today_variant[old_id][tmp_status]--;
         today_variant[new_id][tmp_status]++;
+
+    }
+    
+    return;
+} 
+
+template<typename TSeq>
+inline void DataBase<TSeq>::record_tool(Tool<TSeq> * t)
+{
+
+    // Updating registry
+    std::vector< int > hash = seq_hasher(*t->get_sequence());
+    unsigned int old_id = t->get_id();
+    unsigned int new_id;
+    if (tool_id.find(hash) == tool_id.end())
+    {
+
+        new_id = tool_id.size();
+        tool_id[hash] = new_id;
+        tool_sequence.push_back(*t->get_sequence());
+        tool_origin_date.push_back(model->today());
+        
+        tool_parent_id.push_back(old_id);
+        
+        today_tool.push_back({});
+        today_tool[new_id].resize(model->nstatus, 0);
+       
+        // Updating the tool
+        t->set_id(new_id);
+        t->set_date(model->today());
+
+    } else {
+
+        // Finding the id
+        new_id = tool_id[hash];
+
+        // Reflecting the change
+        t->set_id(new_id);
+        t->set_date(tool_origin_date[new_id]);
+
+    }
+
+    // Moving statistics (only if we are affecting an individual)
+    if (t->get_person() != nullptr)
+    {
+        // Correcting math
+        epiworld_fast_uint tmp_status = t->get_person()->get_status();
+        today_tool[old_id][tmp_status]--;
+        today_tool[new_id][tmp_status]++;
 
     }
     
@@ -300,6 +344,8 @@ template<typename TSeq>
 inline void DataBase<TSeq>::write_data(
     std::string fn_variant_info,
     std::string fn_variant_hist,
+    std::string fn_tool_info,
+    std::string fn_tool_hist,
     std::string fn_total_hist,
     std::string fn_transmission,
     std::string fn_transition
@@ -311,17 +357,17 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
-            "id " << "sequence " << "date " << "parent " << "patiente\n";
+            "id " << "variant_sequence " << "date " << "parent " << "patiente\n";
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_variant_info <<
                 id << " " <<
-                seq_writer(sequence[id]) << " " <<
-                origin_date[id] << " " <<
-                parent_id[id] << " " <<
-                parent_id[id] << "\n";
+                seq_writer(variant_sequence[id]) << " " <<
+                variant_origin_date[id] << " " <<
+                variant_parent_id[id] << " " <<
+                variant_parent_id[id] << "\n";
         }
 
     }
@@ -335,6 +381,41 @@ inline void DataBase<TSeq>::write_data(
 
         for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
+                hist_variant_date[i] << " " <<
+                hist_variant_id[i] << " " <<
+                model->status_labels[hist_variant_status[i]] << " " <<
+                hist_variant_counts[i] << "\n";
+    }
+
+    if (fn_tool_info != "")
+    {
+        std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
+
+        file_tool_info <<
+            "id " << "variant_sequence " << "date " << "parent " << "patiente\n";
+
+        for (const auto & v : variant_id)
+        {
+            int id = v.second;
+            file_tool_info <<
+                id << " " <<
+                seq_writer(variant_sequence[id]) << " " <<
+                variant_origin_date[id] << " " <<
+                variant_parent_id[id] << " " <<
+                variant_parent_id[id] << "\n";
+        }
+
+    }
+
+    if (fn_tool_hist != "")
+    {
+        std::ofstream file_tool_hist(fn_tool_hist, std::ios_base::out);
+        
+        file_tool_hist <<
+            "date " << "id " << "status " << "n\n";
+
+        for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
+            file_tool_hist <<
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
                 model->status_labels[hist_variant_status[i]] << " " <<
@@ -421,14 +502,19 @@ inline void DataBase<TSeq>::reset()
 {
 
     variant_id.clear();
-    sequence.clear();
-    origin_date.clear();
-    parent_id.clear();
+    variant_sequence.clear();
+    variant_origin_date.clear();
+    variant_parent_id.clear();
     
     hist_variant_date.clear();
     hist_variant_id.clear();
     hist_variant_status.clear();
     hist_variant_counts.clear();
+
+    hist_tool_date.clear();
+    hist_tool_id.clear();
+    hist_tool_status.clear();
+    hist_tool_counts.clear();
     
     hist_total_date.clear();
     hist_total_nvariants_active.clear();

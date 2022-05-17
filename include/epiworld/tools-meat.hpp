@@ -269,12 +269,25 @@ inline std::string Tool<TSeq>::get_name() const {
 template<typename TSeq>
 inline Person<TSeq> * Tool<TSeq>::get_person()
 {
-    return person;
+    return this->person;
 }
 
 template<typename TSeq>
 inline unsigned int Tool<TSeq>::get_id() const {
     return id;
+}
+
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_id(int id)
+{
+    this->id = id;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_date(int d)
+{
+    this->date = d;
 }
 
 #endif

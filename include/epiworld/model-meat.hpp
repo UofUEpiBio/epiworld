@@ -1049,99 +1049,34 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
 
 }
 
-#define EPIWORLD_CHECK_STATUS(a, b) \
-    for (auto & i : b) \
-        if (a == i) \
-            throw std::logic_error("The status " + std::to_string(i) + " already exists."); 
-#define EPIWORLD_CHECK_ALL_STATUSES(a) \
-    EPIWORLD_CHECK_STATUS(a, status_susceptible) \
-    EPIWORLD_CHECK_STATUS(a, status_exposed) \
-    EPIWORLD_CHECK_STATUS(a, status_removed)
+
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_susceptible(
-    epiworld_fast_uint s,
-    std::string lab
+inline void Model<TSeq>::add_status(
+    std::string lab, 
+    UpdateFun<TSeq> fun
 )
 {
+    if (this->initialized)
+        throw std::logic_error("Cannot add status once the model has been initialized.");
 
-    EPIWORLD_CHECK_ALL_STATUSES(s)
-    status_susceptible.push_back(s);
-    status_susceptible_labels.push_back(lab);
+    // Checking it doesn't match
+    for (auto & s : status_labels)
+        if (s == lab)
+            throw std::logic_error("Status \"" + s + "\" already registered.");
+
+    status_labels.push_back(lab);
+    status_fun(fun);
     nstatus++;
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::add_status_exposed(
-    epiworld_fast_uint s,
-    std::string lab
-)
-{
-
-    EPIWORLD_CHECK_ALL_STATUSES(s)
-    status_exposed.push_back(s);
-    status_exposed_labels.push_back(lab);
-    nstatus++;
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_status_removed(
-    epiworld_fast_uint s,
-    std::string lab
-)
-{
-
-    EPIWORLD_CHECK_ALL_STATUSES(s)
-    status_removed.push_back(s);
-    status_removed_labels.push_back(lab);
-    nstatus++;
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_status_susceptible(std::string lab)
-{
-    status_susceptible.push_back(nstatus++);
-    status_susceptible_labels.push_back(lab);
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_status_exposed(std::string lab)
-{
-    status_exposed.push_back(nstatus++);
-    status_exposed_labels.push_back(lab);
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_status_removed(std::string lab)
-{
-    status_removed.push_back(nstatus++);
-    status_removed_labels.push_back(lab);
-}
-
-#define EPIWORLD_COLLECT_STATUSES(out,id,lab) \
-    std::vector< std::pair<epiworld_fast_uint, std::string> > out; \
-    for (unsigned int i = 0; i < id.size(); ++i) \
-        out.push_back( \
-            std::pair<int,std::string>( \
-                id[i], lab[i] \
-            ) \
-        );
-
-template<typename TSeq>
-inline const std::vector< epiworld_fast_uint > &
-Model<TSeq>::get_status() const
-{
-    return status;
-}
 
 template<typename TSeq>
 inline const std::vector< std::string > &
-Model<TSeq>::get_status_labels() const
+Model<TSeq>::get_status() const
 {
-    return status_labels;
+    return status;
 }
 
 template<typename TSeq>
@@ -1411,10 +1346,6 @@ inline Queue<TSeq> & Model<TSeq>::get_queue()
 
 #undef CASES_PAR
 #undef CASE_PAR
-
-#undef EPIWORLD_CHECK_STATE
-#undef EPIWORLD_CHECK_ALL_STATES
-#undef EPIWORLD_COLLECT_STATUSES
 
 #undef ADD_VIRUSES
 #undef RM_VIRUSES

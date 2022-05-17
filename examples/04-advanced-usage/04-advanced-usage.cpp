@@ -100,6 +100,8 @@ int main() {
     model.write_data(
         "variants_info.txt",
         "variants.txt",
+        "tool_info.txt",
+        "tool_hist.txt",
         "total.txt",
         "transmisions.txt",
         "transition.txt"

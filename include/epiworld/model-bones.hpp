@@ -274,6 +274,8 @@ public:
      * 
      * @param fn_variant_info Filename. Information about the variant.
      * @param fn_variant_hist Filename. History of the variant.
+     * @param fn_tool_info Filename. Information about the tool.
+     * @param fn_tool_hist Filename. History of the tool.
      * @param fn_total_hist   Filename. Aggregated history (status)
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
@@ -281,6 +283,8 @@ public:
     void write_data(
         std::string fn_variant_info,
         std::string fn_variant_hist,
+        std::string fn_tool_info,
+        std::string fn_tool_hist,
         std::string fn_total_hist,
         std::string fn_transmission,
         std::string fn_transition
@@ -341,8 +345,7 @@ public:
      */
     ///@{
     void add_status(std::string lab, UpdateFun<TSeq> fun);
-    const std::vector< epiworld_fast_uint > & get_status() const;
-    const std::vector< std::string > & get_status_labels() const;
+    const std::vector< std::string > & get_status() const;
     const std::vector< UpdateFun<TSeq> > & get_status_fun() const;
     void print_status_codes() const;
     ///@}
