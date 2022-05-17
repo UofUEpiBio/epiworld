@@ -10,6 +10,18 @@ class Virus;
 template<typename TSeq>
 class UserData;
 
+template<typename TSeq>
+inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
+
 /**
  * @brief Statistical data about the process
  * 
@@ -18,6 +30,10 @@ class UserData;
 template<typename TSeq>
 class DataBase {
     friend class Model<TSeq>;
+    friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
 
@@ -78,6 +94,25 @@ private:
 
     UserData<TSeq> user_data;
 
+    void update_state(
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+    );
+
+    void update_virus(
+        epiworld_fast_uint virus_id,
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+    );
+
+    void update_tool(
+        epiworld_fast_uint tool_id,
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+    );
+
+    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
+
 public:
 
     DataBase(int freq = 1) : sampling_freq(freq) {};
@@ -100,23 +135,6 @@ public:
     const std::vector< TSeq > & get_sequence() const;
     const std::vector< int > & get_nexposed() const;
     size_t size() const;
-
-    void update_state(
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
-    );
-
-    void update_virus(
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
-    );
-
-    void update_tool(
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
-    );
-
-    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
 
     /**
      * @name Get recorded information from the model

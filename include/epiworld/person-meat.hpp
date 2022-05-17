@@ -5,10 +5,11 @@
 // inline bool IN(Ta & a, std::vector< Ta > & b);
 
 template<typename TSeq>
-inline void default_add_virus(Person<TSeq> * p, Model<TSeq> * m)
+inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    Virus<TSeq> * v = virus_tmp;
+    Person<TSeq> * p = a.person;
+    std::shared_ptr< Virus<TSeq> > v = p->virus_tmp;
 
     // Has a host? If so, we need to register the transmission
     if (v->get_host())
@@ -27,10 +28,12 @@ inline void default_add_virus(Person<TSeq> * p, Model<TSeq> * m)
     size_t n_viruses = p->n_viruses;
 
     if (n_viruses-- >= p->viruses.size())
-        p->viruses[n_viruses] = *(p->virus_tmp);
+        p->viruses[n_viruses] = std::make_shared< Virus<TSeq> >(*v);
     else
-        p->viruses.push_back(*(p->virus_tmp));
+        p->viruses.push_back(std::make_shared< Virus<TSeq> >(*v));
 
+    // Notice that both host and date can be changed in this case
+    // as only the sequence is a shared_ptr itself.
     p->viruses[n_viruses].host = p;
     p->viruses[n_viruses].date = m->today();
 
@@ -38,14 +41,48 @@ inline void default_add_virus(Person<TSeq> * p, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_add_tool(Person<TSeq> * p, Model<TSeq> * m)
+inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    // Update tool accounting
-    // m->get_db().state_change()
+    Person<TSeq> * p = a.person;
+    std::shared_ptr< Tool<TSeq> > t = p->tool_tmp;
     
-    // Adding the tool to the sequence
-    p->tools.add_tool(m->today(), *p->tool_tmp);
+    // Update tool accounting
+    p->n_tools++;
+    size_t n_tools = p->n_tools;
+
+    if (n_tools-- >= p->tools.size())
+        p->tools[n_tools] = std::make_shared< Tool<TSeq> >(*t);
+    else
+        p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
+
+    p->tools[n_tools].date = m->today();
+
+}
+
+template<typename TSeq>
+inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
+{
+
+    Person<TSeq> * p = a.person;    
+
+    if (--p->n_viruses > 0)
+        std::swap(p->viruses[p->virus_to_remove_idx], p->viruses[p->n_viruses - 1]);
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
+{
+
+    Person<TSeq> * p = a.person;    
+
+    if (--p->n_viruses > 0)
+        std::swap(p->viruses[p->virus_to_remove_idx], p->viruses[p->n_viruses - 1]);
+
+    return;
 
 }
 
@@ -67,7 +104,7 @@ inline void Person<TSeq>::init(epiworld_fast_uint baseline_status)
 
 template<typename TSeq>
 inline void Person<TSeq>::add_tool(
-    Tool<TSeq> tool,
+    std::shared_ptr< Tool<TSeq> > tool,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 ) {
@@ -75,13 +112,15 @@ inline void Person<TSeq>::add_tool(
     epiworld_fast_uint status_new_ =
         ((status_new < 0) ? status : static_cast<epiworld_fast_uint>(status_new));
 
+    tool_tmp = tool;
+
     model->actions_add(this, status_new_, add_tool_, queue_);
 
 }
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    Virus<TSeq> * virus,
+    std::shared_ptr< Virus<TSeq> > virus,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -89,6 +128,8 @@ inline void Person<TSeq>::add_virus(
 
     epiworld_fast_uint status_new_ =
         ((status_new < 0) ? status : static_cast<epiworld_fast_uint>(status_new));
+
+    virus_tmp = virus;
 
     model->actions_add(this, status_new_, add_virus_, queue);
 
@@ -232,7 +273,7 @@ inline void Person<TSeq>::update_status()
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::update_status(
+inline void Person<TSeq>::change_status(
     epiworld_fast_uint new_status,
     epiworld_fast_int queue
     )

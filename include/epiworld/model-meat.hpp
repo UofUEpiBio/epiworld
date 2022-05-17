@@ -103,19 +103,28 @@ inline void Model<TSeq>::actions_run()
     {
 
         Action<TSeq> & a = dat[i];
+        Person<TSeq> * p = a.person;
 
         // Applying function
         if (a.call)
         {
-            a.call(a.person, this);
+            a.call(p, this);
         }
 
-        // Updating accounting
-        db.update_accounting(a.person->status, a.new_status);
-
         // Updating status
-        if (a.person->status != a.new_status)
-            a.person->status = a.new_status;
+        if (p->status != a.new_status)
+        {
+            // Updating accounting
+            db.update_accounting(p->status, a.new_status);
+
+            for (size_t v = 0u; v < p->n_viruses; ++v)
+                db.update_virus(p->viruses[v]->id, p->status, a.new_status);
+
+            for (size_t t = 0u; t < p->n_tools; ++t)
+                db.update_tool(p->tools[t]->id, p->status, a.new_status);
+
+            p->status = a.new_status;
+        }
 
         // Reduce the counter
         nactions--;

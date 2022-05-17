@@ -146,11 +146,11 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
             if (p->get_status() == SURVSTATUS::ASYMPTOMATIC)
             {
                 ndetected_asympt += 1.0;
-                p->update_status(SURVSTATUS::ASYMPTOMATIC_ISOLATED);
+                p->change_status(SURVSTATUS::ASYMPTOMATIC_ISOLATED);
             }
             else 
             {
-                p->update_status(SURVSTATUS::SYMPTOMATIC_ISOLATED);
+                p->change_status(SURVSTATUS::SYMPTOMATIC_ISOLATED);
             }
 
             

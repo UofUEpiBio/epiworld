@@ -39,7 +39,7 @@ private:
     int id   = -99;
     bool active = true;
     MutFun<TSeq>          mutation_fun                 = nullptr;
-    PostRecoveryFun<TSeq> post_recovery_fun                = nullptr;
+    PostRecoveryFun<TSeq> post_recovery_fun            = nullptr;
     VirusFun<TSeq>        probability_of_infecting_fun = nullptr;
     VirusFun<TSeq>        probability_of_recovery_fun  = nullptr;
     VirusFun<TSeq>        probability_of_death_fun     = nullptr;
@@ -61,8 +61,6 @@ public:
     int get_date() const;
     void set_id(int idx);
     int get_id() const;
-    bool is_active() const;
-    void deactivate();
 
     /**
      * @name Get and set the tool functions

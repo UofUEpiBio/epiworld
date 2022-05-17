@@ -115,8 +115,8 @@ private:
     void actions_add(
         Person<TSeq> * person_,
         epiworld_fast_uint new_status_,
-        ActionFun<TSeq> call_    = nullptr,
-        epiworld_fast_int queue_ = 0u
+        ActionFun<TSeq> call_,
+        epiworld_fast_int queue_
         );
 
     /**

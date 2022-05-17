@@ -6671,7 +6671,7 @@ public:
     std::vector< Person<TSeq> * > & get_neighbors();
 
     void update_status();
-    void update_status(epiworld_fast_uint new_status);
+    void change_status(epiworld_fast_uint new_status);
     const epiworld_fast_uint & get_status() const;
     const epiworld_fast_uint & get_status_next() const;
 
@@ -6930,7 +6930,7 @@ inline void Person<TSeq>::update_status()
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::update_status(epiworld_fast_uint new_status)
+inline void Person<TSeq>::change_status(epiworld_fast_uint new_status)
 {
 
     if (new_status == status)

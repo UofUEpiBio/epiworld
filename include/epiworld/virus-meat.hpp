@@ -75,22 +75,6 @@ inline int Virus<TSeq>::get_date() const {
 }
 
 template<typename TSeq>
-inline bool Virus<TSeq>::is_active() const {
-    return active;
-}
-
-template<typename TSeq>
-inline void Virus<TSeq>::deactivate()
-{
-
-    active = false;
-    host->get_viruses().nactive--;
-
-}
-
-
-
-template<typename TSeq>
 inline epiworld_double Virus<TSeq>::get_prob_infecting()
 {
 

@@ -208,23 +208,25 @@ inline void DataBase<TSeq>::update_state(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::update_virus(
+        epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
 ) {
 
-    today_variant[prev_status]--;
-    today_variant[new_status]++;
+    today_variant[virus_id][prev_status]--;
+    today_variant[virus_id][new_status]++;
     return;
 }
 
 template<typename TSeq>
 inline void DataBase<TSeq>::update_tool(
+        epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
 ) {
 
-    today_tool[prev_status]--;
-    today_tool[new_status]++;
+    today_tool[tool_id][prev_status]--;
+    today_tool[tool_id][new_status]++;
     return;
 }
 
