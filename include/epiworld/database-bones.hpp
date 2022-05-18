@@ -125,8 +125,8 @@ public:
      * From the parent variant to the new variant. And the total number of infected
      * does not change.
      */
-    void record_variant(Virus<TSeq> * v); 
-    void record_tool(Tool<TSeq> * t); 
+    void record_variant(VirusPtr<TSeq> v); 
+    void record_tool(ToolPtr<TSeq> t); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void set_model(Model<TSeq> & m);
     Model<TSeq> * get_model();

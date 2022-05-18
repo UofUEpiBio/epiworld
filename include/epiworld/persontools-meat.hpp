@@ -13,7 +13,7 @@ template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
-    Virus<TSeq>* v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -29,7 +29,7 @@ template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
-    Virus<TSeq>* v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -45,7 +45,7 @@ template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
-    Virus<TSeq>* v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -61,7 +61,7 @@ template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
-    Virus<TSeq>* v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -88,7 +88,7 @@ inline void PersonTools<TSeq>::add_tool(
 
 template<typename TSeq>
 inline epiworld_double PersonTools<TSeq>::get_susceptibility_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
 
     if (!susceptibility_reduction_mixer)
@@ -100,7 +100,7 @@ inline epiworld_double PersonTools<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double PersonTools<TSeq>::get_transmission_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
 
     if (!transmission_reduction_mixer)
@@ -112,7 +112,7 @@ inline epiworld_double PersonTools<TSeq>::get_transmission_reduction(
 
 template<typename TSeq>
 inline epiworld_double PersonTools<TSeq>::get_recovery_enhancer(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
 
     if (!recovery_enhancer_mixer)
@@ -125,7 +125,7 @@ inline epiworld_double PersonTools<TSeq>::get_recovery_enhancer(
 
 template<typename TSeq>
 inline epiworld_double PersonTools<TSeq>::get_death_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
 
     if (!death_reduction_mixer)

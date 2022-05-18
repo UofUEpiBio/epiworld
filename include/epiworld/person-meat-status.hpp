@@ -11,7 +11,7 @@ class Person;
 #define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
     /* Step 1: Compute the individual efficcacy */ \
     std::vector< epiworld_double > probs; \
-    std::vector< epiworld::Virus<TSeq>* > variants; \
+    std::vector< epiworld::VirusPtr<TSeq> > variants; \
     /* Computing the susceptibility_reduction */ \
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
     { \
@@ -25,7 +25,7 @@ class Person;
         for (unsigned int v = 0; v < nviruses.size(); ++v) \
         { \
             /* Computing the corresponding susceptibility_reduction */ \
-            epiworld::Virus<TSeq> * tmp_v = &(nviruses(v)); \
+            epiworld::VirusPtr<TSeq> tmp_v = &(nviruses(v)); \
             /* And it is a function of susceptibility_reduction as well */ \
             tmp_transmission = \
                 (1.0 - p->get_susceptibility_reduction(tmp_v)) * \
@@ -63,7 +63,7 @@ inline epiworld_fast_uint default_update_susceptible(
         { 
         
             /* Computing the corresponding susceptibility_reduction */ 
-            Virus<TSeq> * tmp_v = &(nviruses(v)); 
+            VirusPtr<TSeq> tmp_v = &(nviruses(v)); 
         
             /* And it is a function of susceptibility_reduction as well */ 
             tmp_transmission = 
@@ -95,7 +95,7 @@ inline epiworld_fast_uint default_update_susceptible(
 }
 
 #define EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(prob_rec, prob_die) \
-    epiworld::Virus<TSeq> * v = &(p->get_virus(0u)); \
+    epiworld::VirusPtr<TSeq> v = &(p->get_virus(0u)); \
     epiworld_double prob_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); \
     epiworld_double prob_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
 
@@ -103,7 +103,7 @@ inline epiworld_fast_uint default_update_susceptible(
 template<typename TSeq>
 inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 
-    epiworld::Virus<TSeq> * v = &(p->get_virus(0u)); 
+    epiworld::VirusPtr<TSeq> v = &(p->get_virus(0u)); 
     epiworld_double p_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
     epiworld_double p_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
     

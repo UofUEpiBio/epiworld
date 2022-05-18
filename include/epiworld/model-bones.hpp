@@ -40,11 +40,11 @@ private:
     std::map< int,int >         population_ids;
     bool directed;
     
-    std::vector< std::shared_ptr<Virus<TSeq>> > viruses;
+    std::vector< VirusPtr<TSeq> > viruses;
     std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
     std::vector< bool > prevalence_virus_as_proportion;
     
-    std::vector< std::shared_ptr<Tool<TSeq>> > tools;
+    std::vector< ToolPtr<TSeq> > tools;
     std::vector< epiworld_double > prevalence_tool;
     std::vector< bool > prevalence_tool_as_proportion;
 
@@ -129,7 +129,7 @@ private:
 public:
 
     std::vector<epiworld_double> array_double_tmp;
-    std::vector<Virus<TSeq> *> array_virus_tmp;
+    std::vector<VirusPtr<TSeq>> array_virus_tmp;
 
     Model() {};
     Model(const Model<TSeq> & m);
@@ -254,7 +254,7 @@ public:
         );
     ///@}
 
-    void record_variant(Virus<TSeq> * v);
+    void record_variant(VirusPtr<TSeq> v);
 
     int get_nvariants() const;
     unsigned int get_ndays() const;
@@ -461,10 +461,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(std::shared_ptr< Virus<TSeq> > v);
-    epiworld_double get_transmission_reduction(std::shared_ptr< Virus<TSeq> > v);
-    epiworld_double get_recovery_enhancer(std::shared_ptr< Virus<TSeq> > v);
-    epiworld_double get_death_reduction(std::shared_ptr< Virus<TSeq> > v);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
 
     void set_susceptibility_reduction_mixer(MixerFun<TSeq> fun);
     void set_transmission_reduction_mixer(MixerFun<TSeq> fun);

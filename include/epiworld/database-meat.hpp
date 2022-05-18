@@ -90,7 +90,7 @@ inline void DataBase<TSeq>::record()
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
+inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
 {
 
     // Updating registry
@@ -141,7 +141,7 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
 } 
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_tool(Tool<TSeq> * t)
+inline void DataBase<TSeq>::record_tool(ToolPtr<TSeq> t)
 {
 
     // Updating registry

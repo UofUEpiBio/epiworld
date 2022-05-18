@@ -54,13 +54,13 @@ private:
     bool in_queue = false;
     bool locked   = false;
     
-    std::vector< std::shared_ptr< Virus<TSeq> > > viruses;
-    std::shared_ptr< Virus<TSeq> > virus_tmp;
+    std::vector< VirusPtr<TSeq> > viruses;
+    VirusPtr<TSeq> virus_tmp;
     epiworld_fast_int virus_to_remove_idx;
     epiworld_fast_uint n_viruses;
 
-    std::vector< std::shared_ptr< Tool<TSeq> > > tools;
-    std::shared_ptr< Tool<TSeq> > tool_tmp;
+    std::vector< ToolPtr<TSeq> > tools;
+    ToolPtr<TSeq> tool_tmp;
     epiworld_fast_int tool_to_remove_idx;
     epiworld_fast_uint n_tools;
 
@@ -88,13 +88,13 @@ public:
      */
     ///@{
     void add_tool(
-        std::shared_ptr< Tool<TSeq> > tool,
+        ToolPtr<TSeq> tool,
         epiworld_fast_int status_new = -1,
         epiworld_fast_int queue = 0
         );
 
     void add_virus(
-        std::shared_ptr< Virus<TSeq> > virus,
+        VirusPtr<TSeq> virus,
         epiworld_fast_int status_new = -1,
         epiworld_fast_int queue = 0
         );
@@ -119,10 +119,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
-    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
-    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
-    epiworld_double get_death_reduction(Virus<TSeq> * v);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
     ///@}
 
     int get_id() const; ///< Id of the individual
@@ -131,12 +131,12 @@ public:
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
 
-    std::shared_ptr< Virus<TSeq> > & get_virus(int i);
-    std::vector< std::shared_ptr< Virus<TSeq> > > & get_viruses();
+    VirusPtr<TSeq> & get_virus(int i);
+    std::vector< VirusPtr<TSeq> > & get_viruses();
     size_t get_n_viruses() const noexcept;
 
-    std::shared_ptr< Tool<TSeq> > & get_tool(int i);
-    std::vector< std::shared_ptr< Tool<TSeq> >> & get_tools();
+    ToolPtr<TSeq> & get_tool(int i);
+    std::vector< ToolPtr<TSeq>> & get_tools();
     size_t get_n_tools() const noexcept;
 
     void mutate_variant();

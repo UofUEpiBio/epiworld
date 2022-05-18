@@ -133,7 +133,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -145,7 +145,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -157,7 +157,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -169,7 +169,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -181,7 +181,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -193,7 +193,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -247,7 +247,7 @@ inline void Virus<TSeq>::set_post_immunity(
     }
 
     PostRecoveryFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             Tool<TSeq> no_reinfect(
                 "No reinfect virus " +
@@ -291,7 +291,7 @@ inline void Virus<TSeq>::set_post_immunity(
     }
 
     PostRecoveryFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             Tool<TSeq> no_reinfect(
                 "No reinfect virus " +

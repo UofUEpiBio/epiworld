@@ -106,7 +106,7 @@ inline void Model<TSeq>::actions_run()
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     Person<TSeq>* p,
-    std::shared_ptr< Virus<TSeq> > v,
+    VirusPtr<TSeq> v,
     Model<TSeq> * m
 )
 {
@@ -121,7 +121,7 @@ inline epiworld_double susceptibility_reduction_mixer_default(
 template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
     Person<TSeq>* p,
-    std::shared_ptr< Virus<TSeq> > v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -136,7 +136,7 @@ inline epiworld_double transmission_reduction_mixer_default(
 template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
     Person<TSeq>* p,
-    std::shared_ptr< Virus<TSeq> > v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -151,7 +151,7 @@ inline epiworld_double recovery_enhancer_mixer_default(
 template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
     Person<TSeq>* p,
-    std::shared_ptr< Virus<TSeq> > v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -427,7 +427,7 @@ inline void Model<TSeq>::dist_virus()
             " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
 
 
-        std::shared_ptr< Virus<TSeq> > virus = viruses[v];
+        VirusPtr<TSeq> virus = viruses[v];
         
         int n_left = n;
         std::iota(idx.begin(), idx.end(), 0);
@@ -478,7 +478,7 @@ inline void Model<TSeq>::dist_tools()
             throw std::range_error("There are only " + std::to_string(size()) + 
             " individuals in the population. Cannot add the tool to " + std::to_string(nsampled));
         
-        std::shared_ptr< Tool<TSeq> > tool = tools[t];
+        ToolPtr<TSeq> tool = tools[t];
 
         int n_left = n;
         std::iota(idx.begin(), idx.end(), 0);
@@ -860,7 +860,7 @@ inline void Model<TSeq>::mutate_variant() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::record_variant(Virus<TSeq> * v) {
+inline void Model<TSeq>::record_variant(VirusPtr<TSeq> v) {
 
     // Updating registry
     db.record_variant(v);

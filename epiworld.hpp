@@ -71,19 +71,19 @@ class Tool;
 
 
 template<typename TSeq>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(ToolPtr<TSeq>,Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using MutFun = std::function<bool(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using PostRecoveryFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using PostRecoveryFun = std::function<void(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using VirusFun = std::function<epiworld_double(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using VirusFun = std::function<epiworld_double(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
 using UpdateFun = std::function<epiworld_fast_uint(Person<TSeq>*,Model<TSeq>*)>;
@@ -200,9 +200,9 @@ enum STATUS {
  */
 #define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
-    epiworld::Tool< tseq > * t, \
+    epiworld::ToolPtr< tseq > t, \
     epiworld::Person< tseq > * p, \
-    epiworld::Virus< tseq > * v, \
+    epiworld::VirusPtr< tseq > v, \
     epiworld::Model< tseq > * m\
     )
 
@@ -212,9 +212,9 @@ enum STATUS {
  */
 #define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
     epiworld::ToolFun<tseq> funname = \
-    [](epiworld::Tool<tseq> * t, \
+    [](epiworld::ToolPtr<tseq> t, \
     epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
+    epiworld::VirusPtr<tseq> v, \
     epiworld::Model<tseq> * m)
 
 /**
@@ -230,39 +230,39 @@ enum STATUS {
 #define EPI_NEW_MUTFUN(funname,tseq) inline bool \
     (funname)(\
     epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
+    epiworld::VirusPtr<tseq> v, \
     epiworld::Model<tseq> * m )
 
 #define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
     epiworld::MutFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
+    epiworld::VirusPtr<tseq> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    epiworld::VirusPtr<tseq> v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
     epiworld::PostRecoveryFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    epiworld::VirusPtr<tseq> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    epiworld::VirusPtr<tseq> v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_VIRUSFUN_LAMBDA(funname,tseq) \
     epiworld::VirusFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    epiworld::VirusPtr<tseq> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_RUNIF() m->runif()
@@ -1194,7 +1194,7 @@ public:
      * From the parent variant to the new variant. And the total number of infected
      * does not change.
      */
-    void record_variant(Virus<TSeq> * v); 
+    void record_variant(VirusPtr<TSeq> v); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void set_model(Model<TSeq> & m);
     Model<TSeq> * get_model();
@@ -1205,12 +1205,12 @@ public:
     size_t size() const;
 
     void up_exposed(
-        Virus<TSeq> * v,
+        VirusPtr<TSeq> v,
         epiworld_fast_uint new_status
         );
 
     void down_exposed(
-        Virus<TSeq> * v,
+        VirusPtr<TSeq> v,
         epiworld_fast_uint prev_status
         );
 
@@ -1425,7 +1425,7 @@ inline void DataBase<TSeq>::record()
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
+inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
 {
 
     // Updating registry
@@ -1490,7 +1490,7 @@ inline size_t DataBase<TSeq>::size() const
 
 template<typename TSeq>
 inline void DataBase<TSeq>::up_exposed(
-    Virus<TSeq> * v,
+    VirusPtr<TSeq> v,
     epiworld_fast_uint new_status
 ) {
 
@@ -1500,7 +1500,7 @@ inline void DataBase<TSeq>::up_exposed(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::down_exposed( 
-    Virus<TSeq> * v,
+    VirusPtr<TSeq> v,
     epiworld_fast_uint prev_status
 ) {
 
@@ -2892,15 +2892,15 @@ private:
      * to be made regarding viruses.
      */
     ///@{
-    std::vector< Virus<TSeq> * >  virus_to_remove;
-    std::vector< Virus<TSeq> * >  virus_to_add;
+    std::vector< VirusPtr<TSeq> >  virus_to_remove;
+    std::vector< VirusPtr<TSeq> >  virus_to_add;
     std::vector< Person<TSeq> * > virus_to_add_person;
     ///@}
 
 public:
 
     std::vector<epiworld_double> array_double_tmp;
-    std::vector<Virus<TSeq> *> array_virus_tmp;
+    std::vector<VirusPtr<TSeq>> array_virus_tmp;
 
     Model() {};
     Model(const Model<TSeq> & m);
@@ -3011,7 +3011,7 @@ public:
         );
     ///@}
 
-    void record_variant(Virus<TSeq> * v);
+    void record_variant(VirusPtr<TSeq> v);
 
     int get_nvariants() const;
     unsigned int get_ndays() const;
@@ -3272,7 +3272,7 @@ public:
     for (size_t v = 0u; v < virus_to_add.size(); ++v) \
     { \
         \
-        Virus<TSeq> * virus   = virus_to_add[v]; \
+        VirusPtr<TSeq> virus   = virus_to_add[v]; \
         Person<TSeq> * person = virus_to_add_person[v]; \
         \
         /* Recording transmission */ \
@@ -4027,7 +4027,7 @@ inline void Model<TSeq>::mutate_variant() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::record_variant(Virus<TSeq> * v) {
+inline void Model<TSeq>::record_variant(VirusPtr<TSeq> v) {
 
     // Updating registry
     db.record_variant(v);
@@ -5332,7 +5332,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -5344,7 +5344,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -5356,7 +5356,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -5368,7 +5368,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -5380,7 +5380,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -5392,7 +5392,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -5446,7 +5446,7 @@ inline void Virus<TSeq>::set_post_immunity(
     }
 
     PostRecoveryFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             Tool<TSeq> no_reinfect(
                 "No reinfect virus " +
@@ -5490,7 +5490,7 @@ inline void Virus<TSeq>::set_post_immunity(
     }
 
     PostRecoveryFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             Tool<TSeq> no_reinfect(
                 "No reinfect virus " +
@@ -5787,10 +5787,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
-    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
-    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
-    epiworld_double get_death_reduction(Virus<TSeq> * v);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
     void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
     void set_transmission_reduction_fun(ToolFun<TSeq> fun);
     void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
@@ -5876,7 +5876,7 @@ inline TSeq & Tool<TSeq>::get_sequence_unique() {
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 )
 {
 
@@ -5889,7 +5889,7 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_transmission_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 )
 {
 
@@ -5902,7 +5902,7 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 )
 {
 
@@ -5915,7 +5915,7 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_death_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 )
 {
 
@@ -5963,7 +5963,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -5978,7 +5978,7 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 {
     
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -5993,7 +5993,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -6008,7 +6008,7 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -6027,7 +6027,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -6043,7 +6043,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -6059,7 +6059,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -6075,7 +6075,7 @@ inline void Tool<TSeq>::set_death_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -6156,10 +6156,10 @@ private:
 public:
     PersonTools() {};
     void add_tool(int date, Tool<TSeq> tool);
-    epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
-    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
-    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
-    epiworld_double get_death_reduction(Virus<TSeq> * v);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
 
     void set_susceptibility_reduction_mixer(MixerFun<TSeq> fun);
     void set_transmission_reduction_mixer(MixerFun<TSeq> fun);
@@ -6213,7 +6213,7 @@ template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
-    Virus<TSeq>* v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -6229,7 +6229,7 @@ template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
-    Virus<TSeq>* v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -6245,7 +6245,7 @@ template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
-    Virus<TSeq>* v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -6261,7 +6261,7 @@ template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
     PersonTools<TSeq>* pt,
     Person<TSeq>* p,
-    Virus<TSeq>* v,
+    VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
 {
@@ -6288,7 +6288,7 @@ inline void PersonTools<TSeq>::add_tool(
 
 template<typename TSeq>
 inline epiworld_double PersonTools<TSeq>::get_susceptibility_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
 
     if (!susceptibility_reduction_mixer)
@@ -6300,7 +6300,7 @@ inline epiworld_double PersonTools<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double PersonTools<TSeq>::get_transmission_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
 
     if (!transmission_reduction_mixer)
@@ -6312,7 +6312,7 @@ inline epiworld_double PersonTools<TSeq>::get_transmission_reduction(
 
 template<typename TSeq>
 inline epiworld_double PersonTools<TSeq>::get_recovery_enhancer(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
 
     if (!recovery_enhancer_mixer)
@@ -6325,7 +6325,7 @@ inline epiworld_double PersonTools<TSeq>::get_recovery_enhancer(
 
 template<typename TSeq>
 inline epiworld_double PersonTools<TSeq>::get_death_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
 
     if (!death_reduction_mixer)
@@ -6448,7 +6448,7 @@ class Person;
 #define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
     /* Step 1: Compute the individual efficcacy */ \
     std::vector< epiworld_double > probs; \
-    std::vector< epiworld::Virus<TSeq>* > variants; \
+    std::vector< epiworld::VirusPtr<TSeq> > variants; \
     /* Computing the susceptibility_reduction */ \
     for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
     { \
@@ -6462,7 +6462,7 @@ class Person;
         for (unsigned int v = 0; v < nviruses.size(); ++v) \
         { \
             /* Computing the corresponding susceptibility_reduction */ \
-            epiworld::Virus<TSeq> * tmp_v = &(nviruses(v)); \
+            epiworld::VirusPtr<TSeq> tmp_v = &(nviruses(v)); \
             /* And it is a function of susceptibility_reduction as well */ \
             tmp_transmission = \
                 (1.0 - p->get_susceptibility_reduction(tmp_v)) * \
@@ -6500,7 +6500,7 @@ inline epiworld_fast_uint default_update_susceptible(
         { 
         
             /* Computing the corresponding susceptibility_reduction */ 
-            Virus<TSeq> * tmp_v = &(nviruses(v)); 
+            VirusPtr<TSeq> tmp_v = &(nviruses(v)); 
         
             /* And it is a function of susceptibility_reduction as well */ 
             tmp_transmission = 
@@ -6532,7 +6532,7 @@ inline epiworld_fast_uint default_update_susceptible(
 }
 
 #define EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(prob_rec, prob_die) \
-    epiworld::Virus<TSeq> * v = &(p->get_virus(0u)); \
+    epiworld::VirusPtr<TSeq> v = &(p->get_virus(0u)); \
     epiworld_double prob_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); \
     epiworld_double prob_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
 
@@ -6540,7 +6540,7 @@ inline epiworld_fast_uint default_update_susceptible(
 template<typename TSeq>
 inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 
-    epiworld::Virus<TSeq> * v = &(p->get_virus(0u)); 
+    epiworld::VirusPtr<TSeq> v = &(p->get_virus(0u)); 
     epiworld_double p_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
     epiworld_double p_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
     
@@ -6633,8 +6633,8 @@ public:
     void init(epiworld_fast_uint baseline_status);
 
     void add_tool(int d, Tool<TSeq> tool);
-    void add_virus(Virus<TSeq> * virus);
-    void rm_virus(Virus<TSeq> * virus);
+    void add_virus(VirusPtr<TSeq> virus);
+    void rm_virus(VirusPtr<TSeq> virus);
 
     /**
      * @name Get the rates (multipliers) for the agent
@@ -6643,10 +6643,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
-    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
-    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
-    epiworld_double get_death_reduction(Virus<TSeq> * v);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
     ///@}
 
     int get_id() const; ///< Id of the individual
@@ -6748,7 +6748,7 @@ inline void Person<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    Virus<TSeq> * virus
+    VirusPtr<TSeq> virus
 )
 {
 
@@ -6762,7 +6762,7 @@ inline void Person<TSeq>::add_virus(
 
 template<typename TSeq>
 inline void Person<TSeq>::rm_virus(
-    Virus<TSeq> * virus
+    VirusPtr<TSeq> virus
 )
 {
 
@@ -6775,28 +6775,28 @@ inline void Person<TSeq>::rm_virus(
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_susceptibility_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
     return tools.get_susceptibility_reduction(v);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_transmission_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
     return tools.get_transmission_reduction(v);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_recovery_enhancer(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
     return tools.get_recovery_enhancer(v);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_death_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
     return tools.get_death_reduction(v);
 }

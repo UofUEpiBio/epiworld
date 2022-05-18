@@ -9,7 +9,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p = a.person;
-    std::shared_ptr< Virus<TSeq> > v = p->virus_tmp;
+    VirusPtr<TSeq> v = p->virus_tmp;
 
     // Has a host? If so, we need to register the transmission
     if (v->get_host())
@@ -45,7 +45,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p = a.person;
-    std::shared_ptr< Tool<TSeq> > t = p->tool_tmp;
+    ToolPtr<TSeq> t = p->tool_tmp;
     
     // Update tool accounting
     p->n_tools++;
@@ -94,7 +94,7 @@ inline Person<TSeq>::Person()
 
 template<typename TSeq>
 inline void Person<TSeq>::add_tool(
-    std::shared_ptr< Tool<TSeq> > tool,
+    ToolPtr<TSeq> tool,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 ) {
@@ -110,7 +110,7 @@ inline void Person<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    std::shared_ptr< Virus<TSeq> > virus,
+    VirusPtr<TSeq> virus,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -127,28 +127,28 @@ inline void Person<TSeq>::add_virus(
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_susceptibility_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
     return tools.get_susceptibility_reduction(v);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_transmission_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
     return tools.get_transmission_reduction(v);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_recovery_enhancer(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
     return tools.get_recovery_enhancer(v);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_death_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 ) {
     return tools.get_death_reduction(v);
 }
@@ -176,12 +176,12 @@ inline Model<TSeq> * Person<TSeq>::get_model() {
 }
 
 template<typename TSeq>
-inline std::vector< std::shared_ptr<Virus<TSeq>> > & Person<TSeq>::get_viruses() {
+inline std::vector< VirusPtr<TSeq> > & Person<TSeq>::get_viruses() {
     return viruses;
 }
 
 template<typename TSeq>
-inline std::shared_ptr< Virus<TSeq> > & Person<TSeq>::get_virus(int i) {
+inline VirusPtr<TSeq> & Person<TSeq>::get_virus(int i) {
     return viruses.at(i);
 }
 
@@ -192,12 +192,12 @@ inline size_t Person<TSeq>::get_n_viruses() const noexcept
 }
 
 template<typename TSeq>
-inline std::vector< std::shared_ptr<Tool<TSeq>> > & Person<TSeq>::get_tools() {
+inline std::vector< ToolPtr<TSeq> > & Person<TSeq>::get_tools() {
     return tools;
 }
 
 template<typename TSeq>
-inline std::shared_ptr<Tool<TSeq>> & Person<TSeq>::get_tool(int i)
+inline ToolPtr<TSeq> & Person<TSeq>::get_tool(int i)
 {
     return tools.at(i);
 }
