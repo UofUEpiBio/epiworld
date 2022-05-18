@@ -46,51 +46,38 @@ inline epiworld_fast_uint default_update_susceptible(
 
     // This computes the prob of getting any neighbor variant
     unsigned int nvariants_tmp = 0u;
-    for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) 
-    { 
-
-        Person<TSeq> * neighbor = p->get_neighbors()[n]; 
-        
-        /* Non-infected individuals make no difference */ 
-        if (!IN(neighbor->get_status(), m->get_status_exposed())) 
-            continue; 
-        
-        PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); 
-        /* Now over the neighbor's viruses */ 
-        
-        epiworld_double tmp_transmission; 
-        for (unsigned int v = 0; v < nviruses.size(); ++v) 
+    for (auto & neighbor: p->get_neighbors()) 
+    {
+                 
+        for (auto & v : nviruses) 
         { 
-        
-            /* Computing the corresponding susceptibility_reduction */ 
-            VirusPtr<TSeq> tmp_v = &(nviruses(v)); 
-        
+                
             /* And it is a function of susceptibility_reduction as well */ 
-            tmp_transmission = 
-                (1.0 - p->get_susceptibility_reduction(tmp_v)) * 
-                tmp_v->get_prob_infecting() * 
-                (1.0 - neighbor->get_transmission_reduction(tmp_v)) 
+            epiworld_double tmp_transmission = 
+                (1.0 - p->get_susceptibility_reduction(v)) * 
+                v->get_prob_infecting() * 
+                (1.0 - neighbor->get_transmission_reduction(v)) 
                 ; 
         
             m->array_double_tmp[nvariants_tmp]  = tmp_transmission;
-            m->array_virus_tmp[nvariants_tmp++] = tmp_v;
+            m->array_virus_tmp[nvariants_tmp++] = v;
             
         } 
     }
 
     // No virus to compute
     if (nvariants_tmp == 0u)
-        return p->get_status();
+        return;
 
     // Running the roulette
     int which = roulette(nvariants_tmp, m);
 
     if (which < 0)
-        return p->get_status();
+        return;
 
     p->add_virus(m->array_virus_tmp[which]); 
 
-    return m->get_default_exposed();
+    return;
 
 }
 

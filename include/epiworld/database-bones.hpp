@@ -11,6 +11,12 @@ template<typename TSeq>
 class UserData;
 
 template<typename TSeq>
+class VirusPtr;
+
+template<typename TSeq>
+class ToolPtr;
+
+template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>

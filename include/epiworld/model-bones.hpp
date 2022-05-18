@@ -18,6 +18,12 @@ class DataBase;
 template<typename TSeq>
 class Queue;
 
+template<typename TSeq>
+class VirusPtr;
+
+template<typename TSeq>
+class ToolPtr;
+
 /**
  * @brief Core class of epiworld.
  * 
@@ -125,6 +131,20 @@ private:
      * @param model_ Model over which it will be executed.
      */
     void actions_run();
+
+    /**
+     * @name Tool Mixers
+     * 
+     * These functions combine the effects tools have to deliver
+     * a single effect. For example, wearing a mask, been vaccinated,
+     * and the immune system combine together to jointly reduce
+     * the susceptibility for a given virus.
+     * 
+     */
+    MixerFun<TSeq> susceptibility_reduction_mixer;
+    MixerFun<TSeq> transmission_reduction_mixer;
+    MixerFun<TSeq> recovery_enhancer_mixer;
+    MixerFun<TSeq> death_reduction_mixer;
 
 public:
 

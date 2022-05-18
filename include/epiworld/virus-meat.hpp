@@ -360,4 +360,30 @@ inline void Virus<TSeq>::set_queue(
     queue_end = end;
 }
 
+template<typename TSeq>
+inline void Virus<TSeq>::get_status(
+    epiworld_fast_int * init,
+    epiworld_fast_int * end
+)
+{
+    if (init != nullptr)
+        *init = status_init;
+
+    if (end != nullptr)
+        *end = status_end;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::get_queue(
+    epiworld_fast_int * init,
+    epiworld_fast_int * end
+)
+{
+    if (init != nullptr)
+        *init = queue_init;
+
+    if (end != nullptr)
+        *end = queue_end;
+}
+
 #endif

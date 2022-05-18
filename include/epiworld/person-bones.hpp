@@ -8,10 +8,10 @@ template<typename TSeq>
 class Tool;
 
 template<typename TSeq>
-class PersonViruses;
+class VirusPtr;
 
 template<typename TSeq>
-class PersonTools;
+class ToolPtr;
 
 template<typename TSeq>
 class Queue;
@@ -89,26 +89,26 @@ public:
     ///@{
     void add_tool(
         ToolPtr<TSeq> tool,
-        epiworld_fast_int status_new = -1,
-        epiworld_fast_int queue = 0
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
         );
 
     void add_virus(
         VirusPtr<TSeq> virus,
-        epiworld_fast_int status_new = -1,
-        epiworld_fast_int queue = 0
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
         );
 
     void rm_tool(
         epiworld_fast_uint tool_idx,
-        epiworld_fast_int status_new = -1,
-        epiworld_fast_int queue = 0
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
     );
 
     void rm_virus(
         epiworld_fast_uint virus_idx,
-        epiworld_fast_int status_new = -1,
-        epiworld_fast_int queue = 0
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
     );
     ///@}
     
@@ -161,6 +161,8 @@ public:
     bool has_tool(std::string name) const;
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
+
+    bool is_locked() const noexcept;
 
 };
 

@@ -48,8 +48,8 @@ private:
     std::vector< epiworld_double * > params;
     std::vector< epiworld_double > data;
 
-    epiworld_fast_int status_init = -1; ///< Change of status when added to host.
-    epiworld_fast_int status_post = -1; ///< Change of status when removed from host.
+    epiworld_fast_int status_init = -99; ///< Change of status when added to host.
+    epiworld_fast_int status_post = -99; ///< Change of status when removed from host.
 
     epiworld_fast_int queue_init = 1; ///< Change of status when added to host.
     epiworld_fast_int queue_post = -1; ///< Change of status when removed from host.
@@ -109,7 +109,24 @@ public:
 
     std::vector< epiworld_double > & get_data();
 
+    /**
+     * @name Get and set the status and queue
+     * 
+     * After applied, viruses can change the status and affect
+     * the queue of agents. These function sets the default values,
+     * which are retrieved when adding or removing a virus does not
+     * specify a change in status or in queue.
+     * 
+     * @param init 
+     * @param end 
+     */
+    ///@{
     void set_status(epiworld_fast_int init, epiworld_fast_int end);
+    void set_queue(epiworld_fast_int init, epiworld_fast_int end);
+
+    void get_status(epiworld_fast_int * init, epiworld_fast_int * end);
+    void get_queue(epiworld_fast_int * init, epiworld_fast_int * end);
+    ///@}
 
 };
 

@@ -92,6 +92,15 @@ inline Person<TSeq>::Person()
     
 }
 
+#define CHECK_COALESCE_(storage_, proposed_, virus_tool_, alt_) \
+    epiworld_fast_uint (storage_); \
+    if ((proposed_) == -99) {\
+        if ((virus_tool_) == -99) \
+            (storage_) = (alt_);\
+        else (storage_) = static_cast<epiworld_fast_uint>((virus_tool_));\
+    } else (storage_) = static_cast<epiworld_fast_uint>((proposed_));
+
+
 template<typename TSeq>
 inline void Person<TSeq>::add_tool(
     ToolPtr<TSeq> tool,
@@ -99,8 +108,8 @@ inline void Person<TSeq>::add_tool(
     epiworld_fast_int queue
 ) {
     
-    epiworld_fast_uint status_new_ =
-        ((status_new < 0) ? status : static_cast<epiworld_fast_uint>(status_new));
+    CHECK_COALESCE_(status_new_, status_new, tool->status_init, status)
+    CHECK_COALESCE_(queue_, queue, tool->queue_init, 0)
 
     tool_tmp = tool;
 
@@ -116,41 +125,82 @@ inline void Person<TSeq>::add_virus(
 )
 {
 
-    epiworld_fast_uint status_new_ =
-        ((status_new < 0) ? status : static_cast<epiworld_fast_uint>(status_new));
+    // Checking the virus exists
+    if (virus->get_id() >= model->get_nvariants())
+        throw std::range_error("The virus with id: " + std::to_string(virus->get_id()) + 
+            " has not been registered. There are only " + std::to_string(model->get_nvariants()) + 
+            " included in the model.");
 
+    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
+    CHECK_COALESCE_(queue_, queue, virus->queue_init, 1)
+            
     virus_tmp = virus;
 
-    model->actions_add(this, status_new_, add_virus_, queue);
+    model->actions_add(this, status_new_, add_virus_, queue_new_);
 
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_tool(
+    epiworld_fast_uint tool_idx,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
+    CHECK_COALESCE_(queue_, queue, virus->queue_init, 0)
+
+    tool_to_remove_idx = tool_idx;
+
+    model->actions_add(this, status_new_, rm_virus_, queue_new_);
+
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_virus(
+    epiworld_fast_uint virus_idx,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
+    CHECK_COALESCE_(queue_, queue, virus->queue_init, -1)
+
+    virus_to_remove_idx = virus_idx;
+
+    model->actions_add(this, status_new_, rm_virus_, queue_new_);
+    
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_susceptibility_reduction(
     VirusPtr<TSeq> v
 ) {
-    return tools.get_susceptibility_reduction(v);
+
+    return model->susceptibility_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_transmission_reduction(
     VirusPtr<TSeq> v
 ) {
-    return tools.get_transmission_reduction(v);
+    return model->transmission_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_recovery_enhancer(
     VirusPtr<TSeq> v
 ) {
-    return tools.get_recovery_enhancer(v);
+    return model->recovery_enhancer_mixer(this, v, model);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_death_reduction(
     VirusPtr<TSeq> v
 ) {
-    return tools.get_death_reduction(v);
+    return model->death_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
@@ -288,33 +338,49 @@ inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::reset() {
+inline void Person<TSeq>::reset()
+{
 
-    this->viruses.reset();
-    this->tools.reset();
-    this->status      = model->baseline_status_susceptible;
-    this->status_next = model->baseline_status_susceptible;
+    this->viruses.clear();
+    n_viruses = 0u;
 
+    this->tools.clear();
+    n_tools = 0u;
+
+    this->status = 0u;
+    
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_tool(unsigned int t) const {
+inline bool Person<TSeq>::has_tool(unsigned int t) const
+{
     return tools.has_tool(t);
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_tool(std::string name) const {
+inline bool Person<TSeq>::has_tool(std::string name) const
+{
     return tools.has_tool(name);
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_virus(unsigned int t) const {
+inline bool Person<TSeq>::has_virus(unsigned int t) const
+{
     return viruses.has_virus(t);
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_virus(std::string name) const {
+inline bool Person<TSeq>::has_virus(std::string name) const
+{
     return viruses.has_virus(name);
 }
+
+template<typename TSeq>
+inline bool Person<TSeq>::is_locked() const noexcept 
+{
+    return locked;
+}
+
+#undef CHECK_COALESCE_
 
 #endif

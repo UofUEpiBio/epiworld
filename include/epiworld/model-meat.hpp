@@ -850,10 +850,9 @@ inline void Model<TSeq>::mutate_variant() {
     for (auto & p: population)
     {
 
-    if (p.n_viruses > 0u)
-        for (auto & v : p.viruses)
-        if (IN(p.get_status(), status_exposed))
-            p.mutate_variant();
+        if (p.n_viruses > 0u)
+            for (auto & v : p.viruses)
+                v->mutate();
 
     }
 
