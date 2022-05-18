@@ -354,25 +354,47 @@ inline void Person<TSeq>::reset()
 template<typename TSeq>
 inline bool Person<TSeq>::has_tool(unsigned int t) const
 {
-    return tools.has_tool(t);
+
+    for (auto & tool : tools)
+        if (tool->get_id() == t)
+            return true;
+
+    return false;
+
 }
 
 template<typename TSeq>
 inline bool Person<TSeq>::has_tool(std::string name) const
 {
-    return tools.has_tool(name);
+
+    for (auto & tool : tools)
+        if (tool->get_name() == t)
+            return true;
+
+    return false;
+
 }
 
 template<typename TSeq>
 inline bool Person<TSeq>::has_virus(unsigned int t) const
 {
-    return viruses.has_virus(t);
+    for (auto & v : viruses)
+        if (v->get_id() == t)
+            return true;
+
+    return false;
 }
 
 template<typename TSeq>
 inline bool Person<TSeq>::has_virus(std::string name) const
 {
-    return viruses.has_virus(name);
+    
+    for (auto & v : viruses)
+        if (v->get_name() == name)
+            return true;
+
+    return false;
+
 }
 
 template<typename TSeq>
