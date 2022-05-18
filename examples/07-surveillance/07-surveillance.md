@@ -72,7 +72,7 @@ int main()
   model.add_tool(vax, .5);
 
   // Generating a random pop
-  model.pop_from_adjlist(
+  model.population_from_adjlist(
     epiworld::rgraph_smallworld(1000, 5, .2)
   );
 

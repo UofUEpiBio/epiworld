@@ -19,7 +19,7 @@ int main()
     model.add_tool(tool, .5);
 
     // Generating a random pop 
-    model.pop_from_random(10000);
+    model.population_smallworld(10000);
 
     // Initializing setting days and seed
     model.init(100, 123);

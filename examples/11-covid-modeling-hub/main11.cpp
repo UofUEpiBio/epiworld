@@ -94,7 +94,7 @@ int main()
 
     // Setup
     epiworld::Model<> model;
-    model.pop_from_random();
+    model.population_smallworld();
     model.add_virus(epiworld::Virus<>(), 0.1);
     model.add_tool(epiworld::Tool<>(), 1.0);
 

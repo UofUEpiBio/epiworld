@@ -2970,17 +2970,17 @@ public:
      * @param al AdjList to read into the model.
      */
     ///@{
-    void pop_from_adjlist(
+    void population_from_adjlist(
         std::string fn,
         int skip = 0,
         bool directed = false,
         int min_id = -1,
         int max_id = -1
         );
-    void pop_from_adjlist(AdjList al);
+    void population_from_adjlist(AdjList al);
     bool is_directed() const;
     std::vector< Person<TSeq> > * get_population();
-    void pop_from_random(
+    void population_smallworld(
         unsigned int n = 1000,
         unsigned int k = 5,
         bool d = false,
@@ -3488,14 +3488,14 @@ inline std::vector<Person<TSeq>> * Model<TSeq>::get_population()
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_random(
+inline void Model<TSeq>::population_smallworld(
     unsigned int n,
     unsigned int k,
     bool d,
     epiworld_double p
 )
 {
-    pop_from_adjlist(
+    population_from_adjlist(
         rgraph_smallworld(n, k, p, d, *this)
     );
 }
@@ -3798,7 +3798,7 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_adjlist(
+inline void Model<TSeq>::population_from_adjlist(
     std::string fn,
     int skip,
     bool directed,
@@ -3808,12 +3808,12 @@ inline void Model<TSeq>::pop_from_adjlist(
 
     AdjList al;
     al.read_edgelist(fn, skip, directed, min_id, max_id);
-    this->pop_from_adjlist(al);
+    this->population_from_adjlist(al);
 
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
+inline void Model<TSeq>::population_from_adjlist(AdjList al) {
 
     // Resizing the people
     population.clear();

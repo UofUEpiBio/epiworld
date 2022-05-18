@@ -128,7 +128,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](std::shared_ptr<Tool<TSeq>> t, Person<TSeq> * p, std::shared_ptr<Virus<TSeq>> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -143,7 +143,7 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 {
     
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](std::shared_ptr<Tool<TSeq>> t, Person<TSeq> * p, std::shared_ptr<Virus<TSeq>> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -158,7 +158,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](std::shared_ptr<Tool<TSeq>> t, Person<TSeq> * p, std::shared_ptr<Virus<TSeq>> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -173,7 +173,7 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](std::shared_ptr<Tool<TSeq>> t, Person<TSeq> * p, std::shared_ptr<Virus<TSeq>> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -192,7 +192,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](std::shared_ptr<Tool<TSeq>> t, Person<TSeq> * p, std::shared_ptr<Virus<TSeq>> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -208,7 +208,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](std::shared_ptr<Tool<TSeq>> t, Person<TSeq> * p, std::shared_ptr<Virus<TSeq>> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -224,7 +224,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](std::shared_ptr<Tool<TSeq>> t, Person<TSeq> * p, std::shared_ptr<Virus<TSeq>> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -240,7 +240,7 @@ inline void Tool<TSeq>::set_death_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](std::shared_ptr<Tool<TSeq>> t, Person<TSeq> * p, std::shared_ptr<Virus<TSeq>> v, Model<TSeq> * m)
         {
             return prob;
         };

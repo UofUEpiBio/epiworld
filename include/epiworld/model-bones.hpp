@@ -167,7 +167,8 @@ public:
     /**
      * @name Random number generation
      * 
-     * @param eng 
+     * @param eng Random number generator
+     * @param s Seed
      */
     ///@{
     void set_rand_engine(std::mt19937 & eng);
@@ -181,10 +182,23 @@ public:
     epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
     ///@}
 
+    /**
+     * @name Add Virus/Tool to the model
+     * 
+     * This is done before the model has been initialized.
+     * 
+     * @param v Virus to be added
+     * @param t Tool to be added
+     * @param preval Initial prevalence (initial state.) It can be
+     * specified as a proportion (between zero and one,) or an integer
+     * indicating number of individuals.
+     */
+    ///@{
     void add_virus(Virus<TSeq> v, epiworld_double preval);
     void add_virus_n(Virus<TSeq> v, unsigned int preval);
     void add_tool(Tool<TSeq> t, epiworld_double preval);
     void add_tool_n(Tool<TSeq> t, unsigned int preval);
+    ///@}
 
     /**
      * @name Accessing population of the model
@@ -199,17 +213,17 @@ public:
      * @param al AdjList to read into the model.
      */
     ///@{
-    void pop_from_adjlist(
+    void population_from_adjlist(
         std::string fn,
         int skip = 0,
         bool directed = false,
         int min_id = -1,
         int max_id = -1
         );
-    void pop_from_adjlist(AdjList al);
+    void population_from_adjlist(AdjList al);
     bool is_directed() const;
     std::vector< Person<TSeq> > * get_population();
-    void pop_from_random(
+    void population_smallworld(
         unsigned int n = 1000,
         unsigned int k = 5,
         bool d = false,
@@ -438,6 +452,24 @@ public:
     void queuing_off(); ///< Deactivates the queuing system.
     bool is_queuing_on() const; ///< Query if the queuing system is on.
     Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
+    ///@}
+
+    /**
+     * @name Get the susceptibility reduction object
+     * 
+     * @param v 
+     * @return epiworld_double 
+     */
+    ///@{
+    epiworld_double get_susceptibility_reduction(std::shared_ptr< Virus<TSeq> > v);
+    epiworld_double get_transmission_reduction(std::shared_ptr< Virus<TSeq> > v);
+    epiworld_double get_recovery_enhancer(std::shared_ptr< Virus<TSeq> > v);
+    epiworld_double get_death_reduction(std::shared_ptr< Virus<TSeq> > v);
+
+    void set_susceptibility_reduction_mixer(MixerFun<TSeq> fun);
+    void set_transmission_reduction_mixer(MixerFun<TSeq> fun);
+    void set_recovery_enhancer_mixer(MixerFun<TSeq> fun);
+    void set_death_reduction_mixer(MixerFun<TSeq> fun);
     ///@}
 
 };

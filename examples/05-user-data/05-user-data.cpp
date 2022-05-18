@@ -8,7 +8,7 @@ int main()
     epiworld::Model<> model;
     model.set_user_data({"person_id", "virus_id"});
     
-    model.pop_from_adjlist(
+    model.population_from_adjlist(
         epiworld::rgraph_smallworld(200, 5, .1, false, model)
     );
 

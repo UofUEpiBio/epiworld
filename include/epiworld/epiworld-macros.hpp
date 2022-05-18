@@ -8,9 +8,9 @@
  */
 #define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
-    epiworld::Tool< tseq > * t, \
+    std::shared_ptr<epiworld::Tool< tseq >> t, \
     epiworld::Person< tseq > * p, \
-    epiworld::Virus< tseq > * v, \
+    std::shared_ptr<epiworld::Virus< tseq >> v, \
     epiworld::Model< tseq > * m\
     )
 
@@ -20,9 +20,9 @@
  */
 #define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
     epiworld::ToolFun<tseq> funname = \
-    [](epiworld::Tool<tseq> * t, \
+    [](std::shared_ptr<epiworld::Tool<tseq>> t, \
     epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
 /**
@@ -38,39 +38,39 @@
 #define EPI_NEW_MUTFUN(funname,tseq) inline bool \
     (funname)(\
     epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m )
 
 #define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
     epiworld::MutFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
     epiworld::PostRecoveryFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_VIRUSFUN_LAMBDA(funname,tseq) \
     epiworld::VirusFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_RUNIF() m->runif()

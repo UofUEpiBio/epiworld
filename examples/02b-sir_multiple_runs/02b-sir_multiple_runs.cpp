@@ -19,7 +19,7 @@ int main() {
     );
 
     // Adding a bernoulli graph as step 0
-    sir.pop_from_adjlist(
+    sir.population_from_adjlist(
         epiworld::rgraph_smallworld(pop_size, 5, .01, false, sir)
     );
 

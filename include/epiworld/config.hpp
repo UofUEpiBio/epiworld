@@ -44,19 +44,19 @@ class Tool;
 
 
 template<typename TSeq>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(std::shared_ptr<Tool<TSeq>>,Person<TSeq>*,std::shared_ptr<Virus<TSeq>>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(Person<TSeq>*,std::shared_ptr<Virus<TSeq>>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using MutFun = std::function<bool(Person<TSeq>*,std::shared_ptr<Virus<TSeq>>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using PostRecoveryFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using PostRecoveryFun = std::function<void(Person<TSeq>*,std::shared_ptr<Virus<TSeq>>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using VirusFun = std::function<epiworld_double(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using VirusFun = std::function<epiworld_double(Person<TSeq>*,std::shared_ptr<Virus<TSeq>>,Model<TSeq>*)>;
 
 template<typename TSeq>
 using UpdateFun = std::function<void(Person<TSeq>*,Model<TSeq>*)>;

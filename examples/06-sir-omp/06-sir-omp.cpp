@@ -22,7 +22,7 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     printf("Generating random graph... ");fflush(stdout);
-    models[0u].pop_from_adjlist(
+    models[0u].population_from_adjlist(
         epiworld::rgraph_smallworld(250000, 5, .01, false, models[0u])
     );
 

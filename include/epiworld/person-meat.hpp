@@ -93,16 +93,6 @@ inline Person<TSeq>::Person()
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::init(epiworld_fast_uint baseline_status)
-{
-    tools.person = this;
-    viruses.host = this;
-    status       = baseline_status;
-    status_next  = baseline_status;
-}
-    
-
-template<typename TSeq>
 inline void Person<TSeq>::add_tool(
     std::shared_ptr< Tool<TSeq> > tool,
     epiworld_fast_int status_new,
@@ -186,28 +176,45 @@ inline Model<TSeq> * Person<TSeq>::get_model() {
 }
 
 template<typename TSeq>
-inline PersonViruses<TSeq> & Person<TSeq>::get_viruses() {
+inline std::vector< std::shared_ptr<Virus<TSeq>> > & Person<TSeq>::get_viruses() {
     return viruses;
 }
 
 template<typename TSeq>
-inline Virus<TSeq> & Person<TSeq>::get_virus(int i) {
-    return viruses(i);
+inline std::shared_ptr< Virus<TSeq> > & Person<TSeq>::get_virus(int i) {
+    return viruses.at(i);
 }
 
 template<typename TSeq>
-inline PersonTools<TSeq> & Person<TSeq>::get_tools() {
+inline size_t Person<TSeq>::get_n_viruses() const noexcept
+{
+    return viruses.size();
+}
+
+template<typename TSeq>
+inline std::vector< std::shared_ptr<Tool<TSeq>> > & Person<TSeq>::get_tools() {
     return tools;
 }
 
 template<typename TSeq>
-inline Tool<TSeq> & Person<TSeq>::get_tool(int i) {
-    return tools(i);
+inline std::shared_ptr<Tool<TSeq>> & Person<TSeq>::get_tool(int i)
+{
+    return tools.at(i);
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::mutate_variant() {
-    viruses.mutate();
+inline size_t Person<TSeq>::get_n_tools() const noexcept
+{
+    return tools.size();
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::mutate_variant()
+{
+
+    for (auto & v : viruses)
+        v->mutate();
+
 }
 
 template<typename TSeq>

@@ -4,61 +4,6 @@
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
 
-#define ADD_VIRUSES() \
-    for (size_t v = 0u; v < virus_to_add.size(); ++v) \
-    { \
-        \
-        Virus<TSeq> * virus   = virus_to_add[v]; \
-        Person<TSeq> * person = virus_to_add_person[v]; \
-        \
-        /* Recording transmission */ \
-        if (virus->get_host() != nullptr) \
-            db.record_transmission( \
-                virus->get_host()->get_id(),\
-                person->get_id(),\
-                virus->get_id()\
-            );\
-        \
-        /*Accounting for the transmission */ \
-        db.up_exposed(virus, person->status_next); \
-        \
-        /* Adding the virus */ \
-        person->get_viruses().add_virus(person->status_next, *virus); \
-        \
-    } \
-    virus_to_add.clear();virus_to_add_person.clear();
-
-#define RM_VIRUSES() \
-    for (auto v : virus_to_remove) \
-    { \
-        \
-        if (IN(v->get_host()->get_status(), status_susceptible)) \
-            v->post_recovery(); \
-        \
-        /* Accounting for the improve */ \
-        db.down_exposed(v, v->get_host()->status); \
-        \
-        /* Removing the virus (THIS SHOULD BE DEACTIVATE INSTEAD) */ \
-        v->get_host()->get_viruses().reset(); \
-        \
-    } \
-    \
-    virus_to_remove.clear(); 
-
-#define UPDATE_QUEUE() \
-    if (use_queuing) \
-        queue.update(); 
-
-#define UPDATE_STATUS() \
-    for (auto & p : population) \
-    { \
-        if (p.status_next != p.status) \
-        {\
-            db.state_change(p.status, p.status_next); \
-            p.status = p.status_next; \
-        }\
-    }
-
 template<typename TSeq>
 inline void Model<TSeq>::actions_add(
     Person<TSeq> * person_,
@@ -149,6 +94,77 @@ inline void Model<TSeq>::actions_run()
     return;
     
 }
+
+/**
+ * @name Default function for combining susceptibility_reduction levels
+ * 
+ * @tparam TSeq 
+ * @param pt 
+ * @return epiworld_double 
+ */
+///@{
+template<typename TSeq>
+inline epiworld_double susceptibility_reduction_mixer_default(
+    Person<TSeq>* p,
+    std::shared_ptr< Virus<TSeq> > v,
+    Model<TSeq> * m
+)
+{
+    epiworld_double total = 1.0;
+    for (auto & tool : p->get_tools())
+        total *= (1.0 - tool->get_susceptibility_reduction(v));
+
+    return 1.0 - total;
+    
+}
+
+template<typename TSeq>
+inline epiworld_double transmission_reduction_mixer_default(
+    Person<TSeq>* p,
+    std::shared_ptr< Virus<TSeq> > v,
+    Model<TSeq>* m
+)
+{
+    epiworld_double total = 1.0;
+    for (auto & tool : p->get_tools())
+        total *= (1.0 - tool->get_transmission_reduction(v));
+
+    return (1.0 - total);
+    
+}
+
+template<typename TSeq>
+inline epiworld_double recovery_enhancer_mixer_default(
+    Person<TSeq>* p,
+    std::shared_ptr< Virus<TSeq> > v,
+    Model<TSeq>* m
+)
+{
+    epiworld_double total = 1.0;
+    for (auto & tool : p->get_tools())
+        total *= (1.0 - tool->get_recovery_enhancer(v));
+
+    return 1.0 - total;
+    
+}
+
+template<typename TSeq>
+inline epiworld_double death_reduction_mixer_default(
+    Person<TSeq>* p,
+    std::shared_ptr< Virus<TSeq> > v,
+    Model<TSeq>* m
+)
+{
+    epiworld_double total = 1.0;
+    for (auto & tool : p->get_tools())
+    {
+        total *= (1.0 - tool->get_death_reduction(v));
+    } 
+
+    return 1.0 - total;
+    
+}
+///@}
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -315,14 +331,14 @@ inline std::vector<Person<TSeq>> * Model<TSeq>::get_population()
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_random(
+inline void Model<TSeq>::population_smallworld(
     unsigned int n,
     unsigned int k,
     bool d,
     epiworld_double p
 )
 {
-    pop_from_adjlist(
+    population_from_adjlist(
         rgraph_smallworld(n, k, p, d, *this)
     );
 }
@@ -368,10 +384,7 @@ inline void Model<TSeq>::init(
 
     // Initializing population
     for (auto & p : population)
-    {
         p.model = this;
-        p.init(baseline_status_susceptible);
-    }
 
     engine->seed(seed);
     array_double_tmp.resize(size()/2, 0.0);
@@ -627,7 +640,7 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_adjlist(
+inline void Model<TSeq>::population_from_adjlist(
     std::string fn,
     int skip,
     bool directed,
@@ -637,12 +650,12 @@ inline void Model<TSeq>::pop_from_adjlist(
 
     AdjList al;
     al.read_edgelist(fn, skip, directed, min_id, max_id);
-    this->pop_from_adjlist(al);
+    this->population_from_adjlist(al);
 
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::pop_from_adjlist(AdjList al) {
+inline void Model<TSeq>::population_from_adjlist(AdjList al) {
 
     // Resizing the people
     population.clear();
@@ -701,18 +714,6 @@ inline int Model<TSeq>::today() const {
 template<typename TSeq>
 inline void Model<TSeq>::next() {
 
-    // Adding the next viruses
-    ADD_VIRUSES()
-
-    // Removing and deactivating viruses
-    RM_VIRUSES()
-
-    // Updating the queuing sequence
-    UPDATE_QUEUE()
-
-    // Moving to the next assigned status
-    UPDATE_STATUS()
-
     ++this->current_date;
     db.record();
     
@@ -721,13 +722,7 @@ inline void Model<TSeq>::next() {
         pb.next();
 
     #ifdef EPI_DEBUG
-    // Checking that all individuals in EXPOSED have a virus
-    for (auto & p : population)
-    {
-        if (IN(p.get_status(), status_exposed))
-            if (p.get_viruses().size() == 0u)
-                throw std::logic_error("Individual with no virus is part of the exposed group.");
-    }
+    // A possible check here
     #endif
 
     return ;
@@ -844,6 +839,8 @@ inline void Model<TSeq>::update_status() {
                     status_fun[population[p]->status](&population[p], this);
 
     }
+
+    actions_run();
     
 }
 
@@ -852,6 +849,9 @@ inline void Model<TSeq>::mutate_variant() {
 
     for (auto & p: population)
     {
+
+    if (p.n_viruses > 0u)
+        for (auto & v : p.viruses)
         if (IN(p.get_status(), status_exposed))
             p.mutate_variant();
 
@@ -1341,6 +1341,8 @@ inline void Model<TSeq>::run_global_actions()
 
         }
 
+        actions_run();
+
     }
 
 }
@@ -1373,11 +1375,6 @@ inline Queue<TSeq> & Model<TSeq>::get_queue()
 
 #undef CASES_PAR
 #undef CASE_PAR
-
-#undef ADD_VIRUSES
-#undef RM_VIRUSES
-#undef UPDATE_QUEUE
-#undef UPDATE_STATUS
 
 #undef CHECK_INIT
 #endif

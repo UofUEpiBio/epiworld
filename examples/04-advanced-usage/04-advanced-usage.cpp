@@ -41,7 +41,7 @@ int main() {
     // Initializing the model and reading population --------------------------
     epiworld::Model<DAT> model;
 
-    model.pop_from_adjlist("edgelist.txt", 0, false);
+    model.population_from_adjlist("edgelist.txt", 0, false);
 
     // Setting up the model parameters 
     model.add_param(0.001, "Mutation rate");

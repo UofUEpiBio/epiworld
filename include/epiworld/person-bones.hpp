@@ -48,8 +48,8 @@ private:
     std::vector< Person<TSeq> * > neighbors;
 
     unsigned int index; ///< Location in the Model
-    epiworld_fast_uint status;
-    int id          = -1;
+    epiworld_fast_uint status = 0u;
+    int id = -1;
     
     bool in_queue = false;
     bool locked   = false;
@@ -72,7 +72,6 @@ private:
 public:
 
     Person();
-    void init(epiworld_fast_uint baseline_status);
 
     /**
      * @name Add/Remove Virus/Tool
@@ -132,11 +131,13 @@ public:
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
 
-    Virus<TSeq> & get_virus(int i);
-    PersonViruses<TSeq> & get_viruses();
+    std::shared_ptr< Virus<TSeq> > & get_virus(int i);
+    std::vector< std::shared_ptr< Virus<TSeq> > > & get_viruses();
+    size_t get_n_viruses() const noexcept;
 
-    Tool<TSeq> & get_tool(int i);
-    PersonTools<TSeq> & get_tools();
+    std::shared_ptr< Tool<TSeq> > & get_tool(int i);
+    std::vector< std::shared_ptr< Tool<TSeq> >> & get_tools();
+    size_t get_n_tools() const noexcept;
 
     void mutate_variant();
     void add_neighbor(

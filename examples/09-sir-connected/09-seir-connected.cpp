@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
     );
 
     // Adding a bernoulli graph as step 0
-    model.pop_from_random(popsize, 1, false, .0);
+    model.population_smallworld(popsize, 1, false, .0);
 
     model.init(ndays, result["seed"].as<int>());
 

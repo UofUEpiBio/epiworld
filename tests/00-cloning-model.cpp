@@ -11,7 +11,7 @@ int main() {
     epiworld::Virus<bool> v;
     epiworld::Tool<bool> t;
 
-    m.pop_from_adjlist("../examples/edgelist.txt");
+    m.population_from_adjlist("../examples/edgelist.txt");
 
     m.add_virus(v, .5);
     m.add_tool(t, .5);
