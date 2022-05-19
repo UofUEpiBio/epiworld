@@ -10,8 +10,8 @@ class Virus;
 template<typename TSeq>
 class UserData;
 
-template<typename TSeq>
-class VirusPtr;
+// template<typename TSeq>
+// class VirusPtr;
 
 template<typename TSeq>
 class ToolPtr;

@@ -148,6 +148,12 @@ inline void Person<TSeq>::rm_tool(
 )
 {
 
+    if (tool_idx >= n_tools)
+        throw std::range_error(
+            "The Tool you want to remove is out of range. This Person only has " +
+            std::to_string(n_tools) + " tools."
+        )
+
     CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
     CHECK_COALESCE_(queue_, queue, virus->queue_init, 0)
 
@@ -164,6 +170,11 @@ inline void Person<TSeq>::rm_virus(
     epiworld_fast_int queue
 )
 {
+    if (tool_idx >= n_viruses)
+        throw std::range_error(
+            "The Virus you want to remove is out of range. This Person only has " +
+            std::to_string(n_viruses) + " viruses."
+        )
 
     CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
     CHECK_COALESCE_(queue_, queue, virus->queue_init, -1)

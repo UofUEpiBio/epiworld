@@ -394,6 +394,45 @@ inline void Model<TSeq>::init(
 
     queue.set_model(this);
 
+    // Checking whether the proposed status in/out/removed
+    // are valid
+    int _init, _end, _removed;
+    for (auto & v : viruses)
+    {
+        v->get_status(&_init, &_end, &_removed)
+        
+        // Negative unspecified status
+        if (((_init != -99) && (_init < 0)) || (_init >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        // Negative unspecified status
+        if (((_end != -99) && (_end < 0)) || (_end >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        if (((_removed != -99) && (_removed < 0)) || (_removed >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+        
+    }
+
+    for (auto & t : tools)
+    {
+        t->get_status(&_init, &_end)
+        
+        // Negative unspecified status
+        if (((_init != -99) && (_init < 0)) || (_init >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        // Negative unspecified status
+        if (((_end != -99) && (_end < 0)) || (_end >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+    }
+
     // Starting first infection and tools
     reset();
 

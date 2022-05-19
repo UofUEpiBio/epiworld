@@ -19,10 +19,13 @@ template<typename TSeq>
 class Queue;
 
 template<typename TSeq>
-class VirusPtr;
+struct Action;
 
-template<typename TSeq>
-class ToolPtr;
+// template<typename TSeq>
+// class VirusPtr;
+
+// template<typename TSeq>
+// class ToolPtr;
 
 /**
  * @brief Core class of epiworld.
@@ -149,7 +152,7 @@ private:
 public:
 
     std::vector<epiworld_double> array_double_tmp;
-    std::vector<VirusPtr<TSeq>> array_virus_tmp;
+    std::vector<VirusPtr<TSeq>*> array_virus_tmp;
 
     Model() {};
     Model(const Model<TSeq> & m);
@@ -378,7 +381,7 @@ public:
      * statuses and their labels.
      */
     ///@{
-    void add_status(std::string lab, UpdateFun<TSeq> fun);
+    void add_status(std::string lab, UpdateFun<TSeq> fun = nullptr);
     const std::vector< std::string > & get_status() const;
     const std::vector< UpdateFun<TSeq> > & get_status_fun() const;
     void print_status_codes() const;
@@ -481,11 +484,6 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
-
     void set_susceptibility_reduction_mixer(MixerFun<TSeq> fun);
     void set_transmission_reduction_mixer(MixerFun<TSeq> fun);
     void set_recovery_enhancer_mixer(MixerFun<TSeq> fun);

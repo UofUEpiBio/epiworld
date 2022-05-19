@@ -7,14 +7,17 @@ class Virus;
 template<typename TSeq>
 class Tool;
 
-template<typename TSeq>
-class VirusPtr;
+// template<typename TSeq>
+// class VirusPtr;
 
-template<typename TSeq>
-class ToolPtr;
+// template<typename TSeq>
+// class ToolPtr;
 
 template<typename TSeq>
 class Queue;
+
+template<typename TSeq>
+struct Action;
 
 template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
@@ -41,7 +44,7 @@ class Person {
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_person<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
     

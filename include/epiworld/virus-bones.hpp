@@ -48,11 +48,13 @@ private:
     std::vector< epiworld_double * > params;
     std::vector< epiworld_double > data;
 
-    epiworld_fast_int status_init = -99; ///< Change of status when added to host.
-    epiworld_fast_int status_post = -99; ///< Change of status when removed from host.
+    epiworld_fast_int status_init    = -99; ///< Change of status when added to host.
+    epiworld_fast_int status_post    = -99; ///< Change of status when removed from host.
+    epiworld_fast_int status_removed = -99; ///< Change of status when host is removed
 
-    epiworld_fast_int queue_init = 1; ///< Change of status when added to host.
-    epiworld_fast_int queue_post = -1; ///< Change of status when removed from host.
+    epiworld_fast_int queue_init    = 1; ///< Change of status when added to host.
+    epiworld_fast_int queue_post    = -1; ///< Change of status when removed from host.
+    epiworld_fast_int queue_removed = -99; ///< Change of status when host is removed
 
 public:
     Virus(std::string name = "unknown virus");
@@ -117,15 +119,34 @@ public:
      * which are retrieved when adding or removing a virus does not
      * specify a change in status or in queue.
      * 
-     * @param init 
-     * @param end 
+     * @param init After the virus/tool is added to the host.
+     * @param end After the virus/tool is removed.
+     * @param removed After the host (Person) is removed.
      */
     ///@{
-    void set_status(epiworld_fast_int init, epiworld_fast_int end);
-    void set_queue(epiworld_fast_int init, epiworld_fast_int end);
+    void set_status(
+        epiworld_fast_int init,
+        epiworld_fast_int end,
+        epiworld_fast_int removed
+        );
+        
+    void set_queue(
+        epiworld_fast_int init,
+        epiworld_fast_int end,
+        epiworld_fast_int removed
+        );
 
-    void get_status(epiworld_fast_int * init, epiworld_fast_int * end);
-    void get_queue(epiworld_fast_int * init, epiworld_fast_int * end);
+    void get_status(
+        epiworld_fast_int * init,
+        epiworld_fast_int * end,
+        epiworld_fast_int * removed
+        );
+
+    void get_queue(
+        epiworld_fast_int * init,
+        epiworld_fast_int * end,
+        epiworld_fast_int * removed
+        );
     ///@}
 
 };

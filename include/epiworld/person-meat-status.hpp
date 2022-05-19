@@ -7,38 +7,8 @@ class Model;
 template<typename TSeq>
 class Person;
 
-
-#define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
-    /* Step 1: Compute the individual efficcacy */ \
-    std::vector< epiworld_double > probs; \
-    std::vector< epiworld::VirusPtr<TSeq> > variants; \
-    /* Computing the susceptibility_reduction */ \
-    for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
-    { \
-        epiworld::Person<TSeq> * neighbor = p->get_neighbors()[n]; \
-        /* Non-infected individuals make no difference */ \
-        if (!epiworld::IN(neighbor->get_status(), m->get_status_exposed())) \
-            continue; \
-        epiworld::PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); \
-        /* Now over the neighbor's viruses */ \
-        epiworld_double tmp_transmission; \
-        for (unsigned int v = 0; v < nviruses.size(); ++v) \
-        { \
-            /* Computing the corresponding susceptibility_reduction */ \
-            epiworld::VirusPtr<TSeq> tmp_v = &(nviruses(v)); \
-            /* And it is a function of susceptibility_reduction as well */ \
-            tmp_transmission = \
-                (1.0 - p->get_susceptibility_reduction(tmp_v)) * \
-                tmp_v->get_prob_infecting() * \
-                (1.0 - neighbor->get_transmission_reduction(tmp_v)) \
-                ; \
-            probs.push_back(tmp_transmission); \
-            variants.push_back(tmp_v); \
-        } \
-    }
-
 template<typename TSeq>
-inline epiworld_fast_uint default_update_susceptible(
+inline void default_update_susceptible(
     Person<TSeq> * p,
     Model<TSeq> * m
     )
@@ -53,14 +23,13 @@ inline epiworld_fast_uint default_update_susceptible(
         { 
                 
             /* And it is a function of susceptibility_reduction as well */ 
-            epiworld_double tmp_transmission = 
+            m->array_double_tmp[nvariants_tmp] =
                 (1.0 - p->get_susceptibility_reduction(v)) * 
                 v->get_prob_infecting() * 
                 (1.0 - neighbor->get_transmission_reduction(v)) 
                 ; 
         
-            m->array_double_tmp[nvariants_tmp]  = tmp_transmission;
-            m->array_virus_tmp[nvariants_tmp++] = v;
+            m->array_virus_tmp[nvariants_tmp++] = &v;
             
         } 
     }
@@ -75,43 +44,74 @@ inline epiworld_fast_uint default_update_susceptible(
     if (which < 0)
         return;
 
-    p->add_virus(m->array_virus_tmp[which]); 
+    p->add_virus(*m->array_virus_tmp[which]); 
 
     return;
 
 }
 
 #define EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(prob_rec, prob_die) \
-    epiworld::VirusPtr<TSeq> v = &(p->get_virus(0u)); \
+    epiworld::VirusPtr<TSeq> & v = p->get_virus(0u); \
     epiworld_double prob_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); \
     epiworld_double prob_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
 
 
 template<typename TSeq>
-inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
+inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 
-    epiworld::VirusPtr<TSeq> v = &(p->get_virus(0u)); 
-    epiworld_double p_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
-    epiworld_double p_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
-    
-    epiworld_double r = EPI_RUNIF();
-    epiworld_double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
-
-    if (r < cumsum)
+    // Odd: Die, Even: Recover
+    epiworld_fast_uint n_events = 0u;
+    for (auto & v : p->get_viruses())
     {
-        p->rm_virus(v);
-        return m->get_default_removed();
+        // Die
+        m->array_double_tmp[n_events] = 
+            v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
+
+        // Recover
+        m->array_double_tmp[n_events++] = 
+            v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
+
     }
     
-    cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
-    
-    if (r < cumsum)
+    if (n_events == 0u)
+        return;
+
+    // Running the roulette
+    int which = roulette(nvariants_tmp, m);
+
+    if (which < 0)
+        return;
+
+    // Which roulette happen?
+    if ((which % 2) == 0) // If odd
     {
-        p->rm_virus(v);
-        return m->get_default_removed();
+
+        size_t which_v = std::ceil(which / 2);
+        
+        // Retrieving the default values of the virus
+        epiworld::VirusPtr & v = p->get_viruses()[which_v];
+        int dead_status, dead_queue;
+        v->get_status(nullptr, nullptr, &dead_status);
+        v->get_queue(nullptr, nullptr, &dead_queue);
+
+        // Applying change of status
+        p->change_status(
+            // Either preserve the current status or apply a new one
+            (dead_status < 0) ? p->get_status() : static_cast<epiworld_fast_uint>(dead_status),
+
+            // By default, it will be removed from the queue... unless the user
+            // says the contrary!
+            (dead_queue == -99) ? -m->get_queue()[p->get_index()] : dead_queue
+            );
+
+    } else {
+
+        size_t which_v = std::floor(which / 2);
+        p->rm_virus(which)
+
     }
 
-    return p->get_status();
+    return ;
 
 }
 

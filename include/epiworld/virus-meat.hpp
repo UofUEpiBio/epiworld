@@ -343,47 +343,65 @@ inline std::vector< epiworld_double > & Virus<TSeq>::get_data() {
 template<typename TSeq>
 inline void Virus<TSeq>::set_status(
     epiworld_fast_int init,
-    epiworld_fast_int end
+    epiworld_fast_int end,
+    epiworld_fast_int removed
 )
 {
-    status_init = init;
-    status_end = end;
+    status_init    = init;
+    status_end     = end;
+    status_removed = removed;
 }
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_queue(
     epiworld_fast_int init,
-    epiworld_fast_int end
+    epiworld_fast_int end,
+    epiworld_fast_int removed
 )
 {
-    queue_init = init;
-    queue_end = end;
+
+    queue_init    = init;
+    queue_end     = end;
+    queue_removed = removed;
+
 }
 
 template<typename TSeq>
 inline void Virus<TSeq>::get_status(
     epiworld_fast_int * init,
-    epiworld_fast_int * end
+    epiworld_fast_int * end,
+    epiworld_fast_int * removed
 )
 {
+
     if (init != nullptr)
         *init = status_init;
 
     if (end != nullptr)
         *end = status_end;
+
+    if (removed != nullptr)
+        *removed = status_removed;
+
 }
 
 template<typename TSeq>
 inline void Virus<TSeq>::get_queue(
     epiworld_fast_int * init,
-    epiworld_fast_int * end
+    epiworld_fast_int * end,
+    epiworld_fast_int * removed
 )
 {
+
     if (init != nullptr)
         *init = queue_init;
 
     if (end != nullptr)
         *end = queue_end;
+
+    if (removed != nullptr)
+        *removed = queue_removed;
+        
 }
 
 #endif

@@ -21,20 +21,38 @@ template<typename TSeq>
 EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {
 
     // This computes the prob of getting any neighbor variant
-    EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants)
+    unsigned int nvariants_tmp = 0u;
+    for (auto & neighbor: p->get_neighbors()) 
+    {
+                 
+        for (auto & v : nviruses) 
+        { 
+                
+            /* And it is a function of susceptibility_reduction as well */ 
+            epiworld_double tmp_transmission = 
+                (1.0 - p->get_susceptibility_reduction(v)) * 
+                v->get_prob_infecting() * 
+                (1.0 - neighbor->get_transmission_reduction(v)) 
+                ; 
+        
+            m->array_double_tmp[nvariants_tmp]  = tmp_transmission;
+            m->array_virus_tmp[nvariants_tmp++] = &v;
+            
+        } 
+    }
 
     // No virus to compute on
-    if (probs.size() == 0)
-        return p->get_status();
+    if (nvariants_tmp == 0)
+        return;
 
     // Running the roulette
-    int which = roulette(probs, m);
+    int which = roulette(m->array_double_tmp, m);
 
     if (which < 0)
-        return p->get_status();
+        return;
 
-    p->add_virus(variants[which]); 
-    return m->get_default_exposed();
+    p->add_virus(*m->array_virus_tmp[which]); 
+    return;
 
 }
 
@@ -42,8 +60,8 @@ template<typename TSeq>
 EPI_NEW_UPDATEFUN(surveillance_update_exposed,TSeq)
 {
 
-    EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(p_rec, p_die)
-    (void) p_rec;
+    epiworld::VirusPtr<TSeq> & v = p->get_virus(0u); 
+    epiworld_double p_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
     
     unsigned int days_since_exposed = m->today() - v->get_date();
     epiworld_fast_uint status = p->get_status();
