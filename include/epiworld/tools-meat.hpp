@@ -273,6 +273,12 @@ inline Person<TSeq> * Tool<TSeq>::get_person()
 }
 
 template<typename TSeq>
+inline void Tool<TSeq>::set_person(Person<TSeq> * p)
+{
+    person = p;
+}
+
+template<typename TSeq>
 inline unsigned int Tool<TSeq>::get_id() const {
     return id;
 }
@@ -297,7 +303,7 @@ inline void Tool<TSeq>::set_status(
 )
 {
     status_init = init;
-    status_end = end;
+    status_post = end;
 }
 
 template<typename TSeq>
@@ -307,7 +313,35 @@ inline void Tool<TSeq>::set_queue(
 )
 {
     queue_init = init;
-    queue_end = end;
+    queue_post = end;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::get_status(
+    epiworld_fast_int * init,
+    epiworld_fast_int * post
+)
+{
+    if (init != nullptr)
+        *init = status_init;
+
+    if (post != nullptr)
+        *post = status_post;
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::get_queue(
+    epiworld_fast_int * init,
+    epiworld_fast_int * post
+)
+{
+    if (init != nullptr)
+        *init = queue_init;
+
+    if (post != nullptr)
+        *post = queue_post;
+
 }
 
 #endif

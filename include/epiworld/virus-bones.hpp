@@ -66,6 +66,8 @@ public:
     void set_sequence(TSeq sequence);
     
     Person<TSeq> * get_host();
+    void set_host(Person<TSeq> * p);
+
     Model<TSeq> * get_model();
     
     void set_date(int d);

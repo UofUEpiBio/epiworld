@@ -50,7 +50,7 @@ inline void Model<TSeq>::print() const
 
             printf_epiworld(
                 " - %s (baseline prevalence: %.2f%%)\n",
-                v.get_name().c_str(),
+                v->get_name().c_str(),
                 prevalence_virus[i++] * 100.00
             );
 
@@ -60,7 +60,7 @@ inline void Model<TSeq>::print() const
 
             printf_epiworld(
                 " - %s (baseline prevalence: %i seeds)\n",
-                v.get_name().c_str(),
+                v->get_name().c_str(),
                 static_cast<int>(prevalence_virus[i++])
             );
 
@@ -78,7 +78,7 @@ inline void Model<TSeq>::print() const
 
             printf_epiworld(
                 " - %s (baseline prevalence: %.2f%%)\n",
-                t.get_name().c_str(),
+                t->get_name().c_str(),
                 prevalence_tool[i++] * 100.0
                 );
 
@@ -88,7 +88,7 @@ inline void Model<TSeq>::print() const
 
             printf_epiworld(
                 " - %s (baseline prevalence: %i seeds)\n",
-                t.get_name().c_str(),
+                t->get_name().c_str(),
                 static_cast<int>(prevalence_tool[i++])
                 );
 
@@ -123,15 +123,7 @@ inline void Model<TSeq>::print() const
 
 
     nchar = 0u;
-    for (auto & p : status_susceptible_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-    
-    for (auto & p : status_exposed_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-
-    for (auto & p : status_removed_labels)
+    for (auto & p : status_labels)
         if (p.length() > nchar)
             nchar = p.length();
 
@@ -148,7 +140,7 @@ inline void Model<TSeq>::print() const
         fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %s\n";
         
     printf_epiworld("\nDistribution of the population at time %i:\n", today());
-    for (unsigned int s = 0u; s < status_susceptible.size(); ++s)
+    for (unsigned int s = 0u; s < status.size(); ++s)
     {
         if (initialized)
         {
@@ -158,9 +150,9 @@ inline void Model<TSeq>::print() const
 
                 printf_epiworld(
                     fmt.c_str(),
-                    (status_susceptible_labels[s] + " (S)").c_str(),
-                    db.hist_total_counts[status_susceptible[s]],
-                    db.today_total[ status_susceptible[s] ]
+                    (status_labels[s] + " (S)").c_str(),
+                    db.hist_total_counts[status[s]],
+                    db.today_total[ status[s] ]
                     );
 
             }
@@ -169,8 +161,8 @@ inline void Model<TSeq>::print() const
 
                 printf_epiworld(
                     fmt.c_str(),
-                    (status_susceptible_labels[s] + " (S)").c_str(),
-                    db.today_total[ status_susceptible[s] ]
+                    (status_labels[s] + " (S)").c_str(),
+                    db.today_total[ status[s] ]
                     );
 
             }
@@ -182,84 +174,12 @@ inline void Model<TSeq>::print() const
 
             printf_epiworld(
                 fmt.c_str(),
-                (status_susceptible_labels[s] + " (S)").c_str(),
+                (status_labels[s] + " (S)").c_str(),
                 " - "
                 );
 
         }
     }
-
-    for (unsigned int s = 0u; s < status_exposed.size(); ++s)
-    {
-        if (initialized)
-        {
-            
-            if (today() != 0)
-            {
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_exposed_labels[s] + " (E)").c_str(),
-                    db.hist_total_counts[ status_exposed[s] ],
-                    db.today_total[ status_exposed[s] ]
-                    );
-            }
-            else
-            {
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_exposed_labels[s] + " (E)").c_str(),
-                    db.today_total[ status_exposed[s] ]
-                    );
-            }
-            
-
-        } else {
-            printf_epiworld(
-                fmt.c_str(),
-                (status_exposed_labels[s] + " (E)").c_str(),
-                " - "
-                );
-        }
-    }
-
-    // printf_epiworld("\nStatistics (removed):\n");
-    for (unsigned int s = 0u; s < status_removed.size(); ++s)
-    {
-        if (initialized)
-        {
-            
-            if (today() != 0)
-            {
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_removed_labels[s] + " (R)").c_str(),
-                    db.hist_total_counts[ status_removed[s] ],
-                    db.today_total[ status_removed[s] ]
-                    );
-            }
-            else
-            {
-                printf_epiworld(
-                    fmt.c_str(),
-                    (status_removed_labels[s] + " (R)").c_str(),
-                    db.today_total[ status_removed[s] ]
-                    );
-            }
-            
-
-        } else {
-            printf_epiworld(
-                fmt.c_str(),
-                (status_removed_labels[s] + " (R)").c_str(),
-                " - "
-                );
-        }
-    }
-    
-    printf_epiworld(
-        "\n(S): Susceptible, (E): Exposed, (R): Removed\n%s\n\n",
-        line.c_str()
-        );
 
     return;
 

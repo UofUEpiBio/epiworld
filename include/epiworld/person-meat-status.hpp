@@ -19,7 +19,7 @@ inline void default_update_susceptible(
     for (auto & neighbor: p->get_neighbors()) 
     {
                  
-        for (auto & v : nviruses) 
+        for (auto & v : neighbor->get_viruses()) 
         { 
                 
             /* And it is a function of susceptibility_reduction as well */ 
@@ -71,7 +71,7 @@ inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
         return;
 
     // Running the roulette
-    int which = roulette(nvariants_tmp, m);
+    int which = roulette(n_events, m);
 
     if (which < 0)
         return;
@@ -83,8 +83,8 @@ inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
         size_t which_v = std::ceil(which / 2);
         
         // Retrieving the default values of the virus
-        epiworld::VirusPtr & v = p->get_viruses()[which_v];
-        int dead_status, dead_queue;
+        epiworld::VirusPtr<TSeq> & v = p->get_viruses()[which_v];
+        epiworld_fast_int dead_status, dead_queue;
         v->get_status(nullptr, nullptr, &dead_status);
         v->get_queue(nullptr, nullptr, &dead_queue);
 
@@ -101,7 +101,7 @@ inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
     } else {
 
         size_t which_v = std::floor(which / 2);
-        p->rm_virus(which)
+        p->rm_virus(which);
 
     }
 

@@ -13,8 +13,8 @@ class UserData;
 // template<typename TSeq>
 // class VirusPtr;
 
-template<typename TSeq>
-class ToolPtr;
+// template<typename TSeq>
+// class ToolPtr;
 
 template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
@@ -52,7 +52,7 @@ private:
     MapVec_type<int,int> tool_id; ///< The squence is the key
     std::vector< TSeq> tool_sequence;
     std::vector< int > tool_origin_date;
-    std::vector< int > tool_origin_date;
+    std::vector< int > tool_parent_id;
 
     std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
     std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
@@ -131,8 +131,8 @@ public:
      * From the parent variant to the new variant. And the total number of infected
      * does not change.
      */
-    void record_variant(VirusPtr<TSeq> v); 
-    void record_tool(ToolPtr<TSeq> t); 
+    void record_variant(Virus<TSeq> & v); 
+    void record_tool(Tool<TSeq> & t); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void set_model(Model<TSeq> & m);
     Model<TSeq> * get_model();

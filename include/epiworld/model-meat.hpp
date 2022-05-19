@@ -12,11 +12,11 @@ inline void Model<TSeq>::actions_add(
     epiworld_fast_int queue_
 ) {
     
-    if (person->locked)
+    if (person_->locked)
         throw std::logic_error(
-            "The person with id " + std::to_string(person->id) + 
-            " has already an action in progress. Only one action per agent" +
-            " per iteration is allowed."
+            std::string("The person with id ") + std::to_string(person_->id) + 
+            std::string(" has already an action in progress. Only one action per agent") +
+            std::string(" per iteration is allowed.")
             );
 
     // Locking the agent
@@ -47,13 +47,13 @@ inline void Model<TSeq>::actions_run()
     for (size_t i = 0u; i < nactions_; ++i)
     {
 
-        Action<TSeq> & a = dat[i];
+        Action<TSeq> & a = actions[i];
         Person<TSeq> * p = a.person;
 
         // Applying function
         if (a.call)
         {
-            a.call(p, this);
+            a.call(a, this);
         }
 
         // Updating status
@@ -66,7 +66,7 @@ inline void Model<TSeq>::actions_run()
                     "The model currently has " + std::to_string(nstatus - 1) + " statuses.");
 
             // Updating accounting
-            db.update_accounting(p->status, a.new_status);
+            db.update_state(p->status, a.new_status);
 
             for (size_t v = 0u; v < p->n_viruses; ++v)
                 db.update_virus(p->viruses[v]->id, p->status, a.new_status);
@@ -178,16 +178,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
-    status_susceptible(model.status_susceptible),
-    status_susceptible_labels(model.status_susceptible_labels),
-    status_exposed(model.status_exposed),
-    status_exposed_labels(model.status_exposed_labels),
-    status_removed(model.status_removed),
-    status_removed_labels(model.status_removed_labels),
+    status(model.status),
+    status_fun(model.status_fun),
+    status_labels(model.status_labels),
     nstatus(model.nstatus),
-    baseline_status_susceptible(model.baseline_status_susceptible),
-    baseline_status_exposed(model.baseline_status_exposed),
-    baseline_status_removed(model.baseline_status_removed),
     verbose(model.verbose),
     initialized(model.initialized),
     current_date(model.current_date),
@@ -238,15 +232,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     directed(std::move(model.directed)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
-    status_susceptible(std::move(model.status_susceptible)),
-    status_susceptible_labels(std::move(model.status_susceptible_labels)),
-    status_exposed(std::move(model.status_exposed)),
-    status_exposed_labels(std::move(model.status_exposed_labels)),
-    status_removed(std::move(model.status_removed)),
-    status_removed_labels(std::move(model.status_removed_labels)),
-    baseline_status_susceptible(model.baseline_status_susceptible),
-    baseline_status_exposed(model.baseline_status_exposed),
-    baseline_status_removed(model.baseline_status_removed),
+    status(std::move(model.status)),
+    status_fun(std::move(model.status_fun)),
+    status_labels(std::move(model.status_labels)),
     nstatus(model.nstatus),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing)
@@ -287,12 +275,6 @@ inline void Model<TSeq>::clone_population(
         // Making room
         const Person<TSeq> & person_this = population[i];
         Person<TSeq> & person_res        = p[i];
-
-        // Person pointing to the right model and person
-        if (model != nullptr)
-            person_res.model        = model;
-        person_res.viruses.host = &person_res;
-        person_res.tools.person = &person_res;
 
         // Readding
         std::vector< Person<TSeq> * > neigh = person_this.neighbors;
@@ -379,6 +361,12 @@ inline void Model<TSeq>::init(
     if (initialized) 
         throw std::logic_error("Model already initialized.");
 
+    if (nstatus == 0u)
+        throw std::logic_error(
+            std::string("No statuses registered in this model. ") +
+            std::string("At least one status should be included. See the function -Model::add_status()-")
+            );
+
     // Setting up the number of steps
     this->ndays = ndays;
 
@@ -396,10 +384,10 @@ inline void Model<TSeq>::init(
 
     // Checking whether the proposed status in/out/removed
     // are valid
-    int _init, _end, _removed;
+    epiworld_fast_int _init, _end, _removed;
     for (auto & v : viruses)
     {
-        v->get_status(&_init, &_end, &_removed)
+        v->get_status(&_init, &_end, &_removed);
         
         // Negative unspecified status
         if (((_init != -99) && (_init < 0)) || (_init >= nstatus))
@@ -419,7 +407,7 @@ inline void Model<TSeq>::init(
 
     for (auto & t : tools)
     {
-        t->get_status(&_init, &_end)
+        t->get_status(&_init, &_end);
         
         // Negative unspecified status
         if (((_init != -99) && (_init < 0)) || (_init >= nstatus))
@@ -482,7 +470,7 @@ inline void Model<TSeq>::dist_virus()
 
             // Adjusting sample
             nsampled--;
-            std::switch(idx[loc], idx[n_left]);
+            std::swap(idx[loc], idx[n_left]);
 
 
         }
@@ -525,11 +513,11 @@ inline void Model<TSeq>::dist_tools()
         {
             int loc = static_cast<unsigned int>(floor(runif() * n_left--));
             
-            population[idx[loc]].add_tool(tool, tool->state_init, tool->queue_init);
+            population[idx[loc]].add_tool(tool, tool->status_init, tool->queue_init);
             
             nsampled--;
 
-            std::switch(idx[loc], idx[n_left]);
+            std::swap(idx[loc], idx[n_left]);
 
         }
     }
@@ -861,12 +849,12 @@ inline void Model<TSeq>::update_status() {
     // Next status
     if (use_queuing)
     {
-        
-        for (unsigned int p = 0u; p < size(); ++p)
-            if (queue[p] > 0)
+        int i = -1;
+        for (auto & p: population)
+            if (queue[++i] > 0)
             {
-                if (status_fun[population[p]->status])
-                    status_fun[population[p]->status](&population[p], this);
+                if (status_fun[p.status])
+                    status_fun[p.status](&p, this);
             }
 
     }
@@ -874,8 +862,8 @@ inline void Model<TSeq>::update_status() {
     {
 
         for (auto & p: population)
-            if (status_fun[population[p]->status])
-                    status_fun[population[p]->status](&population[p], this);
+            if (status_fun[p.status])
+                    status_fun[p.status](&p, this);
 
     }
 
@@ -898,10 +886,19 @@ inline void Model<TSeq>::mutate_variant() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::record_variant(VirusPtr<TSeq> v) {
+inline void Model<TSeq>::record_variant(Virus<TSeq> & v) {
 
     // Updating registry
     db.record_variant(v);
+    return;
+    
+} 
+
+template<typename TSeq>
+inline void Model<TSeq>::record_tool(Tool<TSeq> & t) {
+
+    // Updating registry
+    db.record_tool(t);
     return;
     
 } 
@@ -979,13 +976,18 @@ template<typename TSeq>
 inline void Model<TSeq>::write_data(
     std::string fn_variant_info,
     std::string fn_variant_hist,
+    std::string fn_tool_info,
+    std::string fn_tool_hist,
     std::string fn_total_hist,
     std::string fn_transmission,
     std::string fn_transition
     ) const
 {
 
-    db.write_data(fn_variant_info,fn_variant_hist,fn_total_hist,fn_transmission,fn_transition);
+    db.write_data(
+        fn_variant_info, fn_variant_hist,
+        fn_tool_info, fn_tool_hist,
+        fn_total_hist, fn_transmission, fn_transition);
 
 }
 
@@ -995,8 +997,6 @@ inline void Model<TSeq>::write_edgelist(
     ) const
 {
 
-
-
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
     for (const auto & p : population)
@@ -1004,8 +1004,6 @@ inline void Model<TSeq>::write_edgelist(
         for (auto & n : p.neighbors)
             efile << p.id << " " << n->id << "\n";
     }
-
-
 
 }
 
@@ -1032,29 +1030,19 @@ inline void Model<TSeq>::reset() {
     }
 
     for (auto & p : population)
-    {
         p.reset();
-        
-        if (update_susceptible)
-            p.set_update_susceptible(update_susceptible);
-        else if (!p.update_susceptible)
-            throw std::logic_error("No update_susceptible function set.");
-        if (update_exposed)
-            p.set_update_exposed(update_exposed);
-        else if (!p.update_exposed)
-            throw std::logic_error("No update_exposed function set.");
-        if (update_removed)
-            p.set_update_removed(update_removed);
-        
-    }
     
     current_date = 0;
 
     db.set_model(*this);
 
     // Recording variants
-    for (Virus<TSeq> & v : viruses)
-        record_variant(&v);
+    for (auto & v : viruses)
+        record_variant(*v);
+
+    // Recording tools
+    for (auto & t : tools)
+        record_tool(*t);
 
     if (use_queuing)
         queue.set_model(this);
@@ -1131,7 +1119,7 @@ inline void Model<TSeq>::add_status(
             throw std::logic_error("Status \"" + s + "\" already registered.");
 
     status_labels.push_back(lab);
-    status_fun(fun);
+    status_fun.push_back(fun);
     nstatus++;
 
 }
@@ -1141,7 +1129,7 @@ template<typename TSeq>
 inline const std::vector< std::string > &
 Model<TSeq>::get_status() const
 {
-    return status;
+    return status_labels;
 }
 
 template<typename TSeq>

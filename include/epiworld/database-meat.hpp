@@ -90,19 +90,19 @@ inline void DataBase<TSeq>::record()
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
+inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
 {
 
     // Updating registry
-    std::vector< int > hash = seq_hasher(*v->get_sequence());
-    unsigned int old_id = v->get_id();
+    std::vector< int > hash = seq_hasher(*v.get_sequence());
+    unsigned int old_id = v.get_id();
     unsigned int new_id;
     if (variant_id.find(hash) == variant_id.end())
     {
 
         new_id = variant_id.size();
         variant_id[hash] = new_id;
-        variant_sequence.push_back(*v->get_sequence());
+        variant_sequence.push_back(*v.get_sequence());
         variant_origin_date.push_back(model->today());
         
         variant_parent_id.push_back(old_id);
@@ -111,8 +111,8 @@ inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
         today_variant[new_id].resize(model->nstatus, 0);
        
         // Updating the variant
-        v->set_id(new_id);
-        v->set_date(model->today());
+        v.set_id(new_id);
+        v.set_date(model->today());
 
         today_total_nvariants_active++;
 
@@ -122,16 +122,16 @@ inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
         new_id = variant_id[hash];
 
         // Reflecting the change
-        v->set_id(new_id);
-        v->set_date(variant_origin_date[new_id]);
+        v.set_id(new_id);
+        v.set_date(variant_origin_date[new_id]);
 
     }
 
     // Moving statistics (only if we are affecting an individual)
-    if (v->get_host() != nullptr)
+    if (v.get_host() != nullptr)
     {
         // Correcting math
-        epiworld_fast_uint tmp_status = v->get_host()->get_status();
+        epiworld_fast_uint tmp_status = v.get_host()->get_status();
         today_variant[old_id][tmp_status]--;
         today_variant[new_id][tmp_status]++;
 
@@ -141,19 +141,19 @@ inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
 } 
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_tool(ToolPtr<TSeq> t)
+inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 {
 
     // Updating registry
-    std::vector< int > hash = seq_hasher(*t->get_sequence());
-    unsigned int old_id = t->get_id();
+    std::vector< int > hash = seq_hasher(*t.get_sequence());
+    unsigned int old_id = t.get_id();
     unsigned int new_id;
     if (tool_id.find(hash) == tool_id.end())
     {
 
         new_id = tool_id.size();
         tool_id[hash] = new_id;
-        tool_sequence.push_back(*t->get_sequence());
+        tool_sequence.push_back(*t.get_sequence());
         tool_origin_date.push_back(model->today());
         
         tool_parent_id.push_back(old_id);
@@ -162,8 +162,8 @@ inline void DataBase<TSeq>::record_tool(ToolPtr<TSeq> t)
         today_tool[new_id].resize(model->nstatus, 0);
        
         // Updating the tool
-        t->set_id(new_id);
-        t->set_date(model->today());
+        t.set_id(new_id);
+        t.set_date(model->today());
 
     } else {
 
@@ -171,16 +171,16 @@ inline void DataBase<TSeq>::record_tool(ToolPtr<TSeq> t)
         new_id = tool_id[hash];
 
         // Reflecting the change
-        t->set_id(new_id);
-        t->set_date(tool_origin_date[new_id]);
+        t.set_id(new_id);
+        t.set_date(tool_origin_date[new_id]);
 
     }
 
     // Moving statistics (only if we are affecting an individual)
-    if (t->get_person() != nullptr)
+    if (t.get_person() != nullptr)
     {
         // Correcting math
-        epiworld_fast_uint tmp_status = t->get_person()->get_status();
+        epiworld_fast_uint tmp_status = t.get_person()->get_status();
         today_tool[old_id][tmp_status]--;
         today_tool[new_id][tmp_status]++;
 

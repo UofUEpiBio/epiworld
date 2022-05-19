@@ -44,7 +44,7 @@ class Person {
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_person<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
     
@@ -68,13 +68,14 @@ private:
     epiworld_fast_uint n_tools;
 
     ActionFun<TSeq> add_virus_ = default_add_virus<TSeq>;
-    ActionFun<TSeq> add_tool_ = default_add_tools<TSeq>;
+    ActionFun<TSeq> add_tool_ = default_add_tool<TSeq>;
     ActionFun<TSeq> rm_virus_ = default_rm_virus<TSeq>;
-    ActionFun<TSeq> rm_tool_ = default_rm_tools<TSeq>;
+    ActionFun<TSeq> rm_tool_ = default_rm_tool<TSeq>;
 
 public:
 
     Person();
+    Person(const Person<TSeq> & p);
 
     /**
      * @name Add/Remove Virus/Tool
@@ -96,8 +97,20 @@ public:
         epiworld_fast_int queue = -99
         );
 
+    void add_tool(
+        Tool<TSeq> tool,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+        );
+
     void add_virus(
         VirusPtr<TSeq> virus,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+        );
+
+    void add_virus(
+        Virus<TSeq> virus,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
         );

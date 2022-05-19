@@ -76,9 +76,9 @@ private:
     unsigned int ndays;
     Progress pb;
 
-    std::vector< epiworld_fast_uint > status(0u);
-    std::vector< UpdateFun<TSeq> >    status_fun(0u);
-    std::vector< std::string >        status_labels(0u);
+    std::vector< epiworld_fast_uint > status = {};
+    std::vector< UpdateFun<TSeq> >    status_fun = {};
+    std::vector< std::string >        status_labels = {};
     epiworld_fast_uint nstatus = 0u;
     
     bool verbose     = true;
@@ -110,7 +110,7 @@ private:
      * @brief Variables used to keep track of the actions
      * to be made regarding viruses.
      */
-    std::vector< Action<TSeq> > actions(0u);
+    std::vector< Action<TSeq> > actions = {};
     epiworld_fast_uint nactions = 0u;
 
     /**
@@ -277,7 +277,8 @@ public:
         );
     ///@}
 
-    void record_variant(VirusPtr<TSeq> v);
+    void record_variant(Virus<TSeq> & v);
+    void record_tool(Tool<TSeq> & t);
 
     int get_nvariants() const;
     unsigned int get_ndays() const;

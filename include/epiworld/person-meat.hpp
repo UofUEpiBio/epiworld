@@ -34,8 +34,8 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 
     // Notice that both host and date can be changed in this case
     // as only the sequence is a shared_ptr itself.
-    p->viruses[n_viruses].host = p;
-    p->viruses[n_viruses].date = m->today();
+    p->viruses[n_viruses]->set_host(p);
+    p->viruses[n_viruses]->set_date(m->today());
 
 
 }
@@ -56,7 +56,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
     else
         p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
 
-    p->tools[n_tools].date = m->today();
+    p->tools[n_tools]->set_date(m->today());
 
 }
 
@@ -92,6 +92,49 @@ inline Person<TSeq>::Person()
     
 }
 
+template<typename TSeq>
+inline Person<TSeq>::Person(const Person<TSeq> & p)
+{
+
+    model = p.model;
+    
+    // We can't do anything with the neighbors
+    neighbors.reserve(p.neighbors.size());
+
+    index  = p.index;
+    status = p.status;
+    id     = p.id;
+    
+    in_queue = p.in_queue;
+    locked   = p.locked;
+
+    // Dealing with the virus
+    viruses.reserve(p.n_viruses);
+    for (auto & v : p.viruses)
+    {
+        // Will create a copy of the virus, with the exeption of
+        // the virus code
+        viruses.push_back(std::make_shared<Virus<TSeq>>(*v));
+        viruses[n_viruses++]->host = this;
+
+    }
+
+    tools.reserve(p.n_tools);
+    for (auto & t : p.tools)
+    {
+        // Will create a copy of the virus, with the exeption of
+        // the virus code
+        tools.push_back(std::make_shared<Tool<TSeq>>(*t));
+
+    }
+    
+    add_virus_ = p.add_virus_;
+    add_tool_ = p.add_tool_;
+    rm_virus_ = p.rm_virus_;
+    rm_tool_ = p.rm_tool_;
+    
+}
+
 #define CHECK_COALESCE_(storage_, proposed_, virus_tool_, alt_) \
     epiworld_fast_uint (storage_); \
     if ((proposed_) == -99) {\
@@ -118,6 +161,17 @@ inline void Person<TSeq>::add_tool(
 }
 
 template<typename TSeq>
+inline void Person<TSeq>::add_tool(
+    Tool<TSeq> tool,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+    ToolPtr<TSeq> tool_ptr = std::make_shared< Tool<TSeq> >(tool);
+    add_tool(tool_ptr, status_new, queue);
+}
+
+template<typename TSeq>
 inline void Person<TSeq>::add_virus(
     VirusPtr<TSeq> virus,
     epiworld_fast_int status_new,
@@ -136,8 +190,19 @@ inline void Person<TSeq>::add_virus(
             
     virus_tmp = virus;
 
-    model->actions_add(this, status_new_, add_virus_, queue_new_);
+    model->actions_add(this, status_new_, add_virus_, queue_);
 
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::add_virus(
+    Virus<TSeq> virus,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+    VirusPtr<TSeq> virus_ptr = std::make_shared< Virus<TSeq> >(virus);
+    add_virus(virus_ptr, status_new, queue);
 }
 
 template<typename TSeq>
@@ -152,14 +217,16 @@ inline void Person<TSeq>::rm_tool(
         throw std::range_error(
             "The Tool you want to remove is out of range. This Person only has " +
             std::to_string(n_tools) + " tools."
-        )
+        );
 
-    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
-    CHECK_COALESCE_(queue_, queue, virus->queue_init, 0)
+    ToolPtr<TSeq> & tool = tools[tool_idx];
+
+    CHECK_COALESCE_(status_new_, status_new, tool->status_post, status)
+    CHECK_COALESCE_(queue_, queue, tool->queue_post, 0)
 
     tool_to_remove_idx = tool_idx;
 
-    model->actions_add(this, status_new_, rm_virus_, queue_new_);
+    model->actions_add(this, status_new_, rm_virus_, queue_);
 
 }
 
@@ -170,18 +237,20 @@ inline void Person<TSeq>::rm_virus(
     epiworld_fast_int queue
 )
 {
-    if (tool_idx >= n_viruses)
+    if (virus_idx >= n_viruses)
         throw std::range_error(
             "The Virus you want to remove is out of range. This Person only has " +
             std::to_string(n_viruses) + " viruses."
-        )
+        );
+
+    VirusPtr<TSeq> & virus = viruses[virus_idx];
 
     CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
     CHECK_COALESCE_(queue_, queue, virus->queue_init, -1)
 
     virus_to_remove_idx = virus_idx;
 
-    model->actions_add(this, status_new_, rm_virus_, queue_new_);
+    model->actions_add(this, status_new_, rm_virus_, queue_);
     
 }
 
@@ -379,7 +448,7 @@ inline bool Person<TSeq>::has_tool(std::string name) const
 {
 
     for (auto & tool : tools)
-        if (tool->get_name() == t)
+        if (tool->get_name() == name)
             return true;
 
     return false;

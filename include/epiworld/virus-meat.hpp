@@ -17,7 +17,7 @@ inline void Virus<TSeq>::mutate() {
 
     if (mutation_fun)
         if (mutation_fun(host, this, this->get_model()))
-            host->get_model()->record_variant(this);
+            host->get_model()->record_variant(*this);
 
     return;
 }
@@ -43,6 +43,11 @@ inline void Virus<TSeq>::set_sequence(TSeq sequence) {
 template<typename TSeq>
 inline Person<TSeq> * Virus<TSeq>::get_host() {
     return host;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_host(Person<TSeq> * p) {
+    host = p;
 }
 
 template<typename TSeq>
@@ -79,7 +84,7 @@ inline epiworld_double Virus<TSeq>::get_prob_infecting()
 {
 
     if (probability_of_infecting_fun)
-        return probability_of_infecting_fun(host, this, host->get_model());
+        return probability_of_infecting_fun(host, *this, host->get_model());
         
     return EPI_DEFAULT_VIRUS_PROB_INFECTION;
 
@@ -92,7 +97,7 @@ inline epiworld_double Virus<TSeq>::get_prob_recovery()
 {
 
     if (probability_of_recovery_fun)
-        return probability_of_recovery_fun(host, this, host->get_model());
+        return probability_of_recovery_fun(host, *this, host->get_model());
         
     return EPI_DEFAULT_VIRUS_PROB_RECOVERY;
 
@@ -105,7 +110,7 @@ inline epiworld_double Virus<TSeq>::get_prob_death()
 {
 
     if (probability_of_death_fun)
-        return probability_of_death_fun(host, this, host->get_model());
+        return probability_of_death_fun(host, *this, host->get_model());
         
     return EPI_DEFAULT_VIRUS_PROB_DEATH;
 
@@ -133,7 +138,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -145,7 +150,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -157,7 +162,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -169,7 +174,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -181,7 +186,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -193,7 +198,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -259,7 +264,7 @@ inline void Virus<TSeq>::set_post_immunity(
             no_reinfect.set_transmission_reduction(0.0);
             no_reinfect.set_recovery_enhancer(0.0);
 
-            p->add_tool(m->today(), no_reinfect);
+            p->add_tool(no_reinfect);
 
             return;
 
@@ -348,7 +353,7 @@ inline void Virus<TSeq>::set_status(
 )
 {
     status_init    = init;
-    status_end     = end;
+    status_post    = end;
     status_removed = removed;
 }
 
@@ -361,7 +366,7 @@ inline void Virus<TSeq>::set_queue(
 {
 
     queue_init    = init;
-    queue_end     = end;
+    queue_post     = end;
     queue_removed = removed;
 
 }
@@ -378,7 +383,7 @@ inline void Virus<TSeq>::get_status(
         *init = status_init;
 
     if (end != nullptr)
-        *end = status_end;
+        *end = status_post;
 
     if (removed != nullptr)
         *removed = status_removed;
@@ -397,7 +402,7 @@ inline void Virus<TSeq>::get_queue(
         *init = queue_init;
 
     if (end != nullptr)
-        *end = queue_end;
+        *end = queue_post;
 
     if (removed != nullptr)
         *removed = queue_removed;

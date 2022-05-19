@@ -5597,7 +5597,7 @@ inline void Virus<TSeq>::set_status(
 )
 {
     status_init    = init;
-    status_end     = end;
+    status_post     = end;
     status_removed = removed;
 }
 
@@ -5610,7 +5610,7 @@ inline void Virus<TSeq>::set_queue(
 {
 
     queue_init    = init;
-    queue_end     = end;
+    queue_post     = end;
     queue_removed = removed;
 
 }
@@ -5627,7 +5627,7 @@ inline void Virus<TSeq>::get_status(
         *init = status_init;
 
     if (end != nullptr)
-        *end = status_end;
+        *end = status_post;
 
     if (removed != nullptr)
         *removed = status_removed;
@@ -5646,7 +5646,7 @@ inline void Virus<TSeq>::get_queue(
         *init = queue_init;
 
     if (end != nullptr)
-        *end = queue_end;
+        *end = queue_post;
 
     if (removed != nullptr)
         *removed = queue_removed;
@@ -5720,7 +5720,7 @@ private:
     std::vector< epiworld_double * > params;  
 
     epiworld_fast_int status_init = -1;
-    epiworld_fast_int status_end = -1;
+    epiworld_fast_int status_post = -1;
 
     epiworld_fast_int queue_init = 1; ///< Change of status when added to host.
     epiworld_fast_int queue_post = -1; ///< Change of status when removed from host.
@@ -6096,7 +6096,7 @@ inline void Tool<TSeq>::set_status(
 )
 {
     status_init = init;
-    status_end = end;
+    status_post = end;
 }
 
 template<typename TSeq>
@@ -6106,7 +6106,7 @@ inline void Tool<TSeq>::set_queue(
 )
 {
     queue_init = init;
-    queue_end = end;
+    queue_post = end;
 }
 
 #endif

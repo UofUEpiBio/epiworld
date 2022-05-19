@@ -55,13 +55,13 @@ template<typename TSeq>
 using MixerFun = std::function<epiworld_double(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MutFun = std::function<bool(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
 using PostRecoveryFun = std::function<void(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using VirusFun = std::function<epiworld_double(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using VirusFun = std::function<epiworld_double(Person<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
 using UpdateFun = std::function<void(Person<TSeq>*,Model<TSeq>*)>;
@@ -70,7 +70,10 @@ template<typename TSeq>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
 
 template<typename TSeq>
-using ActionFun = std::function(void(Person<TSeq>*,Model<TSeq>*));
+struct Action;
+
+template<typename TSeq>
+using ActionFun = std::function<void(Action<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
 struct Action {
@@ -78,6 +81,13 @@ struct Action {
     epiworld_fast_uint new_status;
     ActionFun<TSeq> call;
     epiworld_fast_int queue;
+public:
+    Action(
+        Person<TSeq> * person_,
+        epiworld_fast_uint new_status_,
+        ActionFun<TSeq> call_,
+        epiworld_fast_int queue_
+    ) : person(person_), new_status(new_status_), call(call_), queue(queue_) {};
 };
 
 /**

@@ -43,11 +43,11 @@ private:
     // Setup parameters
     std::vector< epiworld_double * > params;  
 
-    epiworld_fast_int status_init = -1;
-    epiworld_fast_int status_end = -1;
+    epiworld_fast_int status_init = -99;
+    epiworld_fast_int status_post = -99;
 
-    epiworld_fast_int queue_init = 1; ///< Change of status when added to host.
-    epiworld_fast_int queue_post = -1; ///< Change of status when removed from host.
+    epiworld_fast_int queue_init = 0; ///< Change of status when added to host.
+    epiworld_fast_int queue_post = 0; ///< Change of status when removed from host.
 
 public:
     Tool(std::string name = "unknown tool");
@@ -93,12 +93,15 @@ public:
     std::string get_name() const;
 
     Person<TSeq> * get_person();
+    void set_person(Person<TSeq> * p);
     unsigned int get_id() const;
     void set_id(int id);
     void set_date(int d);
 
-    void set_status(epiworld_fast_int init, epiworld_fast_int end);
-    void set_queue(epiworld_fast_int init, epiworld_fast_int end);
+    void set_status(epiworld_fast_int init, epiworld_fast_int post);
+    void set_queue(epiworld_fast_int init, epiworld_fast_int post);
+    void get_status(epiworld_fast_int * init, epiworld_fast_int * post);
+    void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
 
 };
 
