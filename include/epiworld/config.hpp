@@ -49,7 +49,7 @@ template<typename TSeq>
 using ToolPtr = std::shared_ptr< Tool< TSeq > >;
 
 template<typename TSeq>
-using ToolFun = std::function<epiworld_double(ToolPtr<TSeq>,Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
 using MixerFun = std::function<epiworld_double(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;

@@ -29,11 +29,11 @@ class Tool {
     friend class Model<TSeq>;
 private:
 
-    Person<TSeq> * person;
+    Person<TSeq> * person = nullptr;
     int date = -99;
     int id   = -99;
     std::shared_ptr<std::string> tool_name = nullptr;
-    std::shared_ptr<TSeq> sequence = nullptr;
+    std::shared_ptr<TSeq> sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
     TSeq sequence_unique  = default_sequence<TSeq>();
     ToolFun<TSeq> susceptibility_reduction_fun = nullptr;
     ToolFun<TSeq> transmission_reduction_fun   = nullptr;

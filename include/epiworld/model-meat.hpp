@@ -32,7 +32,7 @@ inline void Model<TSeq>::actions_add(
     }
     else 
     {
-        actions[nactions] = Action<TSeq>(person_, new_status_, call_, queue_);
+        actions[nactions - 1] = Action<TSeq>(person_, new_status_, call_, queue_);
     }
 
     return;
@@ -87,7 +87,7 @@ inline void Model<TSeq>::actions_run()
             queue -= p;
 
         // Unlocking person
-        a.person->locked = false;
+        p->locked = false;
 
     }
 
@@ -178,7 +178,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
-    status(model.status),
     status_fun(model.status_fun),
     status_labels(model.status_labels),
     nstatus(model.nstatus),
@@ -232,7 +231,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     directed(std::move(model.directed)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
-    status(std::move(model.status)),
     status_fun(std::move(model.status_fun)),
     status_labels(std::move(model.status_labels)),
     nstatus(model.nstatus),
@@ -1156,12 +1154,12 @@ inline void Model<TSeq>::print_status_codes() const
             nchar = p.length();
     
     std::string fmt = " %2i = %-" + std::to_string(nchar + 1 + 4) + "s\n";
-    for (unsigned int i = 0u; i < status.size(); ++i)
+    for (unsigned int i = 0u; i < nstatus; ++i)
     {
 
         printf_epiworld(
             fmt.c_str(),
-            status[i],
+            i,
             (status_labels[i] + " (S)").c_str()
         );
 

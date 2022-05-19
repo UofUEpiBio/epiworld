@@ -21,6 +21,31 @@ class Queue;
 template<typename TSeq>
 struct Action;
 
+template<typename TSeq>
+inline epiworld_double susceptibility_reduction_mixer_default(
+    Person<TSeq>* p,
+    VirusPtr<TSeq> v,
+    Model<TSeq>* m
+    );
+template<typename TSeq>
+inline epiworld_double transmission_reduction_mixer_default(
+    Person<TSeq>* p,
+    VirusPtr<TSeq> v,
+    Model<TSeq>* m
+    );
+template<typename TSeq>
+inline epiworld_double recovery_enhancer_mixer_default(
+    Person<TSeq>* p,
+    VirusPtr<TSeq> v,
+    Model<TSeq>* m
+    );
+template<typename TSeq>
+inline epiworld_double death_reduction_mixer_default(
+    Person<TSeq>* p,
+    VirusPtr<TSeq> v,
+    Model<TSeq>* m
+    );
+
 // template<typename TSeq>
 // class VirusPtr;
 
@@ -76,7 +101,6 @@ private:
     unsigned int ndays;
     Progress pb;
 
-    std::vector< epiworld_fast_uint > status = {};
     std::vector< UpdateFun<TSeq> >    status_fun = {};
     std::vector< std::string >        status_labels = {};
     epiworld_fast_uint nstatus = 0u;
@@ -144,10 +168,10 @@ private:
      * the susceptibility for a given virus.
      * 
      */
-    MixerFun<TSeq> susceptibility_reduction_mixer;
-    MixerFun<TSeq> transmission_reduction_mixer;
-    MixerFun<TSeq> recovery_enhancer_mixer;
-    MixerFun<TSeq> death_reduction_mixer;
+    MixerFun<TSeq> susceptibility_reduction_mixer = susceptibility_reduction_mixer_default<TSeq>;
+    MixerFun<TSeq> transmission_reduction_mixer = transmission_reduction_mixer_default<TSeq>;
+    MixerFun<TSeq> recovery_enhancer_mixer = recovery_enhancer_mixer_default<TSeq>;
+    MixerFun<TSeq> death_reduction_mixer = death_reduction_mixer_default<TSeq>;
 
 public:
 

@@ -27,10 +27,12 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     p->n_viruses++;
     size_t n_viruses = p->n_viruses;
 
-    if (n_viruses-- >= p->viruses.size())
-        p->viruses[n_viruses] = std::make_shared< Virus<TSeq> >(*v);
+    if (n_viruses <= p->viruses.size())
+        p->viruses[n_viruses - 1] = std::make_shared< Virus<TSeq> >(*v);
     else
         p->viruses.push_back(std::make_shared< Virus<TSeq> >(*v));
+
+    n_viruses--;
 
     // Notice that both host and date can be changed in this case
     // as only the sequence is a shared_ptr itself.
@@ -51,12 +53,12 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
     p->n_tools++;
     size_t n_tools = p->n_tools;
 
-    if (n_tools-- >= p->tools.size())
-        p->tools[n_tools] = std::make_shared< Tool<TSeq> >(*t);
+    if (n_tools <= p->tools.size())
+        p->tools[n_tools - 1] = std::make_shared< Tool<TSeq> >(*t);
     else
         p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
 
-    p->tools[n_tools]->set_date(m->today());
+    p->tools[n_tools - 1]->set_date(m->today());
 
 }
 

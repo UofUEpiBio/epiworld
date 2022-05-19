@@ -20,6 +20,7 @@ inline void Virus<TSeq>::mutate() {
             host->get_model()->record_variant(*this);
 
     return;
+    
 }
 
 template<typename TSeq>

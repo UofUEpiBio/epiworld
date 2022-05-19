@@ -60,12 +60,12 @@ private:
     std::vector< VirusPtr<TSeq> > viruses;
     VirusPtr<TSeq> virus_tmp;
     epiworld_fast_int virus_to_remove_idx;
-    epiworld_fast_uint n_viruses;
+    epiworld_fast_uint n_viruses = 0u;
 
     std::vector< ToolPtr<TSeq> > tools;
     ToolPtr<TSeq> tool_tmp;
     epiworld_fast_int tool_to_remove_idx;
-    epiworld_fast_uint n_tools;
+    epiworld_fast_uint n_tools = 0u;
 
     ActionFun<TSeq> add_virus_ = default_add_virus<TSeq>;
     ActionFun<TSeq> add_tool_ = default_add_tool<TSeq>;
