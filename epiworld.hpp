@@ -69,12 +69,17 @@ class Virus;
 template<typename TSeq>
 class Tool;
 
+template<typename TSeq>
+using VirusPtr = std::shared_ptr< Virus< TSeq > >;
+
+template<typename TSeq>
+using ToolPtr = std::shared_ptr< Tool< TSeq > >;
 
 template<typename TSeq>
 using ToolFun = std::function<epiworld_double(ToolPtr<TSeq>,Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
 using MutFun = std::function<bool(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
@@ -86,10 +91,21 @@ template<typename TSeq>
 using VirusFun = std::function<epiworld_double(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using UpdateFun = std::function<epiworld_fast_uint(Person<TSeq>*,Model<TSeq>*)>;
+using UpdateFun = std::function<void(Person<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
+
+template<typename TSeq>
+using ActionFun = std::function(void(Person<TSeq>*,Model<TSeq>*));
+
+template<typename TSeq>
+struct Action {
+    Person<TSeq> * person;
+    epiworld_fast_uint new_status;
+    ActionFun<TSeq> call;
+    epiworld_fast_int queue;
+};
 
 /**
  * @brief List of possible states in the model
@@ -101,6 +117,13 @@ enum STATUS {
     REMOVED
 };
 
+/**
+ * @name Constants in epiworld 
+ * 
+ * @details The following are the default values some probabilities and
+ * rates take when no value has been specified in the model.
+ */
+///@{
 #ifndef DEFAULT_TOOL_CONTAGION_REDUCTION
     #define DEFAULT_TOOL_CONTAGION_REDUCTION    0.0
 #endif
@@ -128,6 +151,7 @@ enum STATUS {
 #ifndef EPI_DEFAULT_VIRUS_PROB_DEATH
     #define EPI_DEFAULT_VIRUS_PROB_DEATH        0.0
 #endif
+///@}
 
 #ifdef EPI_DEBUG
     #define EPI_DEBUG_NOTIFY_ACTIVE() \
@@ -200,9 +224,9 @@ enum STATUS {
  */
 #define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
-    epiworld::ToolPtr< tseq > t, \
+    std::shared_ptr<epiworld::Tool< tseq >> t, \
     epiworld::Person< tseq > * p, \
-    epiworld::VirusPtr< tseq > v, \
+    std::shared_ptr<epiworld::Virus< tseq >> v, \
     epiworld::Model< tseq > * m\
     )
 
@@ -212,9 +236,9 @@ enum STATUS {
  */
 #define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
     epiworld::ToolFun<tseq> funname = \
-    [](epiworld::ToolPtr<tseq> t, \
+    [](std::shared_ptr<epiworld::Tool<tseq>> t, \
     epiworld::Person<tseq> * p, \
-    epiworld::VirusPtr<tseq> v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
 /**
@@ -230,39 +254,39 @@ enum STATUS {
 #define EPI_NEW_MUTFUN(funname,tseq) inline bool \
     (funname)(\
     epiworld::Person<tseq> * p, \
-    epiworld::VirusPtr<tseq> v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m )
 
 #define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
     epiworld::MutFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::VirusPtr<tseq> v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
-    epiworld::VirusPtr<tseq> v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
     epiworld::PostRecoveryFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::VirusPtr<tseq> v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
-    epiworld::VirusPtr<tseq> v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_VIRUSFUN_LAMBDA(funname,tseq) \
     epiworld::VirusFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    epiworld::VirusPtr<tseq> v, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
 #define EPI_RUNIF() m->runif()
@@ -402,7 +426,7 @@ inline std::vector<epiworld_double> default_sequence() {
  * @return `true` if `a in b`, and `false` otherwise.
  */
 template<typename Ta>
-inline bool IN(const Ta & a, const std::vector< Ta > & b)
+inline bool IN(const Ta & a, const std::vector< Ta > & b) noexcept
 {
     for (const auto & i : b)
         if (a == i)
@@ -1121,6 +1145,24 @@ class Virus;
 template<typename TSeq>
 class UserData;
 
+// template<typename TSeq>
+// class VirusPtr;
+
+template<typename TSeq>
+class ToolPtr;
+
+template<typename TSeq>
+inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
+
 /**
  * @brief Statistical data about the process
  * 
@@ -1129,29 +1171,35 @@ class UserData;
 template<typename TSeq>
 class DataBase {
     friend class Model<TSeq>;
+    friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
 
     // Variants information 
     MapVec_type<int,int> variant_id; ///< The squence is the key
-    std::vector< TSeq> sequence;
-    std::vector< int > origin_date;
-    std::vector< int > parent_id;
+    std::vector< TSeq> variant_sequence;
+    std::vector< int > variant_origin_date;
+    std::vector< int > variant_parent_id;
+
+    MapVec_type<int,int> tool_id; ///< The squence is the key
+    std::vector< TSeq> tool_sequence;
+    std::vector< int > tool_origin_date;
+    std::vector< int > tool_origin_date;
 
     std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
     std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
 
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_variant;
-    
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...} to update
-    std::vector< std::vector<int> > today_variant_next;
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    std::vector< std::vector<int> > today_tool;
 
     // {Susceptible, Infected, etc.}
     std::vector< int > today_total;
-
-    // {Susceptible, Infected, etc.} to update
-    std::vector< int > today_total_next;
 
     // Totals
     int today_total_nvariants_active = 0;
@@ -1163,6 +1211,12 @@ private:
     std::vector< int > hist_variant_id;
     std::vector< epiworld_fast_uint > hist_variant_status;
     std::vector< int > hist_variant_counts;
+
+    // Tools history
+    std::vector< int > hist_tool_date;
+    std::vector< int > hist_tool_id;
+    std::vector< epiworld_fast_uint > hist_tool_status;
+    std::vector< int > hist_tool_counts;
 
     // Overall hist
     std::vector< int > hist_total_date;
@@ -1178,9 +1232,27 @@ private:
     std::vector< int > transmission_variant;
 
     std::vector< int > transition_matrix;
-    std::vector< int > transition_matrix_next;
 
     UserData<TSeq> user_data;
+
+    void update_state(
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+    );
+
+    void update_virus(
+        epiworld_fast_uint virus_id,
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+    );
+
+    void update_tool(
+        epiworld_fast_uint tool_id,
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+    );
+
+    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
 
 public:
 
@@ -1195,6 +1267,7 @@ public:
      * does not change.
      */
     void record_variant(VirusPtr<TSeq> v); 
+    void record_tool(ToolPtr<TSeq> t); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void set_model(Model<TSeq> & m);
     Model<TSeq> * get_model();
@@ -1203,23 +1276,6 @@ public:
     const std::vector< TSeq > & get_sequence() const;
     const std::vector< int > & get_nexposed() const;
     size_t size() const;
-
-    void up_exposed(
-        VirusPtr<TSeq> v,
-        epiworld_fast_uint new_status
-        );
-
-    void down_exposed(
-        VirusPtr<TSeq> v,
-        epiworld_fast_uint prev_status
-        );
-
-    void state_change(
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
-    );
-
-    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
 
     /**
      * @name Get recorded information from the model
@@ -1264,6 +1320,8 @@ public:
     void write_data(
         std::string fn_variant_info,
         std::string fn_variant_hist,
+        std::string fn_tool_info,
+        std::string fn_tool_hist,
         std::string fn_total_hist,
         std::string fn_transmission,
         std::string fn_transition
@@ -1321,14 +1379,9 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     for (auto & p : *m.get_population())
         ++today_total[p.get_status()];
     
-    today_total_next.resize(m.nstatus);
-    std::fill(today_total_next.begin(), today_total_next.end(), 0);
-
     transition_matrix.resize(m.nstatus * m.nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
 
-    transition_matrix_next.resize(m.nstatus * m.nstatus);
-    std::fill(transition_matrix_next.begin(), transition_matrix_next.end(), 0);
 
     return;
 
@@ -1341,19 +1394,12 @@ inline Model<TSeq> * DataBase<TSeq>::get_model() {
 
 template<typename TSeq>
 inline const std::vector< TSeq > & DataBase<TSeq>::get_sequence() const {
-    return sequence;
+    return variant_sequence;
 }
 
 template<typename TSeq>
 inline void DataBase<TSeq>::record() 
 {
-
-    // Updating values according to today's changes
-    for (auto i = 0u; i < model->nstatus; ++i)
-    {
-        today_total[i] += today_total_next[i];
-        today_total_next[i] = 0;
-    }
 
     ////////////////////////////////////////////////////////////////////////////
     // DEBUGGING BLOCK
@@ -1370,23 +1416,6 @@ inline void DataBase<TSeq>::record()
     EPI_DEBUG_VECTOR_MATCH_INT(_today_total_cp, today_total)
     #endif
     ////////////////////////////////////////////////////////////////////////////
-
-    for (auto v = 0u; v < today_variant.size(); ++v)
-    {
-
-        for (auto i = 0u; i < model->nstatus; ++i)
-        {
-            today_variant[v][i] += today_variant_next[v][i];
-            today_variant_next[v][i] = 0;
-        }
-
-    }
-    
-    for (auto i = 0u; i < transition_matrix.size(); ++i)
-    {
-        transition_matrix[i] += transition_matrix_next[i];
-        transition_matrix_next[i] = 0;
-    }
 
     // Only store every now and then
     if ((model->today() % sampling_freq) == 0)
@@ -1437,21 +1466,14 @@ inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
 
         new_id = variant_id.size();
         variant_id[hash] = new_id;
-        sequence.push_back(*v->get_sequence());
-        origin_date.push_back(model->today());
+        variant_sequence.push_back(*v->get_sequence());
+        variant_origin_date.push_back(model->today());
         
-        parent_id.push_back(old_id);
+        variant_parent_id.push_back(old_id);
         
         today_variant.push_back({});
-        today_variant[new_id].resize(
-            model->status_susceptible.size() +
-            model->status_exposed.size() +
-            model->status_removed.size(),
-            0
-        );
-
-        today_variant_next.push_back(today_variant[new_id]);
-        
+        today_variant[new_id].resize(model->nstatus, 0);
+       
         // Updating the variant
         v->set_id(new_id);
         v->set_date(model->today());
@@ -1465,7 +1487,7 @@ inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
 
         // Reflecting the change
         v->set_id(new_id);
-        v->set_date(origin_date[new_id]);
+        v->set_date(variant_origin_date[new_id]);
 
     }
 
@@ -1474,8 +1496,57 @@ inline void DataBase<TSeq>::record_variant(VirusPtr<TSeq> v)
     {
         // Correcting math
         epiworld_fast_uint tmp_status = v->get_host()->get_status();
-        today_variant_next[old_id][tmp_status]--;
-        today_variant_next[new_id][tmp_status]++;
+        today_variant[old_id][tmp_status]--;
+        today_variant[new_id][tmp_status]++;
+
+    }
+    
+    return;
+} 
+
+template<typename TSeq>
+inline void DataBase<TSeq>::record_tool(ToolPtr<TSeq> t)
+{
+
+    // Updating registry
+    std::vector< int > hash = seq_hasher(*t->get_sequence());
+    unsigned int old_id = t->get_id();
+    unsigned int new_id;
+    if (tool_id.find(hash) == tool_id.end())
+    {
+
+        new_id = tool_id.size();
+        tool_id[hash] = new_id;
+        tool_sequence.push_back(*t->get_sequence());
+        tool_origin_date.push_back(model->today());
+        
+        tool_parent_id.push_back(old_id);
+        
+        today_tool.push_back({});
+        today_tool[new_id].resize(model->nstatus, 0);
+       
+        // Updating the tool
+        t->set_id(new_id);
+        t->set_date(model->today());
+
+    } else {
+
+        // Finding the id
+        new_id = tool_id[hash];
+
+        // Reflecting the change
+        t->set_id(new_id);
+        t->set_date(tool_origin_date[new_id]);
+
+    }
+
+    // Moving statistics (only if we are affecting an individual)
+    if (t->get_person() != nullptr)
+    {
+        // Correcting math
+        epiworld_fast_uint tmp_status = t->get_person()->get_status();
+        today_tool[old_id][tmp_status]--;
+        today_tool[new_id][tmp_status]++;
 
     }
     
@@ -1489,32 +1560,37 @@ inline size_t DataBase<TSeq>::size() const
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::up_exposed(
-    VirusPtr<TSeq> v,
-    epiworld_fast_uint new_status
-) {
-
-    today_variant_next[v->get_id()][new_status]++;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::down_exposed( 
-    VirusPtr<TSeq> v,
-    epiworld_fast_uint prev_status
-) {
-
-    today_variant_next[v->get_id()][prev_status]--;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::state_change(
+inline void DataBase<TSeq>::update_state(
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
 ) {
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
+
+    today_total[prev_status]--;
+    today_total[new_status]++;
+    return;
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::update_virus(
+        epiworld_fast_uint virus_id,
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+
+    today_variant[virus_id][prev_status]--;
+    today_variant[virus_id][new_status]++;
+    return;
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::update_tool(
+        epiworld_fast_uint tool_id,
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+
+    today_tool[tool_id][prev_status]--;
+    today_tool[tool_id][new_status]++;
     return;
 }
 
@@ -1524,31 +1600,19 @@ inline void DataBase<TSeq>::record_transition(
     epiworld_fast_uint to
 ) {
 
-    transition_matrix_next[to * model->nstatus + from]++;
+    transition_matrix[to * model->nstatus + from]++;
 
 }
-
-#define EPIWORLD_GET_STATUS_LABELS(stdstrvec) \
-    stdstrvec.resize(model->nstatus); \
-    for (epiworld_fast_uint i = 0u; i < model->status_susceptible.size(); ++i) \
-        stdstrvec[model->status_susceptible[i]] = model->status_susceptible_labels[i]; \
-    for (epiworld_fast_uint i = 0u; i < model->status_exposed.size(); ++i) \
-        stdstrvec[model->status_exposed[i]] = model->status_exposed_labels[i]; \
-    for (epiworld_fast_uint i = 0u; i < model->status_removed.size(); ++i) \
-        stdstrvec[model->status_removed[i]] = model->status_removed_labels[i];
-
 
 template<typename TSeq>
 inline int DataBase<TSeq>::get_today_total(
     std::string what
 ) const
 {
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
 
-    for (auto i = 0u; i < labels.size(); ++i)
+    for (auto i = 0u; i < model->status_labels.size(); ++i)
     {
-        if (labels[i] == what)
+        if (model->status_labels[i] == what)
             return today_total[i];
     }
 
@@ -1563,9 +1627,7 @@ inline void DataBase<TSeq>::get_today_total(
 ) const
 {
     if (status != nullptr)
-    {
-        EPIWORLD_GET_STATUS_LABELS((*status))
-    }
+        (*status) = model->status_labels;
 
     if (counts != nullptr)
         *counts = today_total;
@@ -1579,18 +1641,16 @@ inline void DataBase<TSeq>::get_today_variant(
     std::vector< int > & counts
     ) const
 {
-    
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)    
+      
     status.resize(today_variant.size(), "");
     id.resize(today_variant.size(), 0);
     counts.resize(today_variant.size(),0);
 
     int n = 0u;
     for (unsigned int v = 0u; v < today_variant.size(); ++v)
-        for (unsigned int s = 0u; s < labels.size(); ++s)
+        for (unsigned int s = 0u; s < model->status_labels.size(); ++s)
         {
-            status[n]   = labels[s];
+            status[n]   = model->status_labels[s];
             id[n]       = static_cast<int>(v);
             counts[n++] = today_variant[v][s];
 
@@ -1609,14 +1669,11 @@ inline void DataBase<TSeq>::get_hist_total(
     if (date != nullptr)
         *date = hist_total_date;
 
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
-
     if (status != nullptr)
     {
         status->resize(hist_total_status.size(), "");
         for (unsigned int i = 0u; i < hist_total_status.size(); ++i)
-            status->operator[](i) = labels[hist_total_status[i]];
+            status->operator[](i) = model->status_labels[hist_total_status[i]];
     }
 
     if (counts != nullptr)
@@ -1636,7 +1693,8 @@ inline void DataBase<TSeq>::get_hist_variant(
 
     date = hist_variant_date;
     std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
+    labels = model->status_labels;
+    
     id = hist_variant_id;
     status.resize(hist_variant_status.size(), "");
     for (unsigned int i = 0u; i < hist_variant_status.size(); ++i)
@@ -1648,12 +1706,12 @@ inline void DataBase<TSeq>::get_hist_variant(
 
 }
 
-#undef EPIWORLD_GET_STATUS_LABELS
-
 template<typename TSeq>
 inline void DataBase<TSeq>::write_data(
     std::string fn_variant_info,
     std::string fn_variant_hist,
+    std::string fn_tool_info,
+    std::string fn_tool_hist,
     std::string fn_total_hist,
     std::string fn_transmission,
     std::string fn_transition
@@ -1665,34 +1723,20 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
-            "id " << "sequence " << "date " << "parent " << "patiente\n";
+            "id " << "variant_sequence " << "date " << "parent " << "patiente\n";
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_variant_info <<
                 id << " " <<
-                seq_writer(sequence[id]) << " " <<
-                origin_date[id] << " " <<
-                parent_id[id] << " " <<
-                parent_id[id] << "\n";
+                seq_writer(variant_sequence[id]) << " " <<
+                variant_origin_date[id] << " " <<
+                variant_parent_id[id] << " " <<
+                variant_parent_id[id] << "\n";
         }
 
     }
-
-    // Preparing labels
-    std::vector< std::string > labels(model->nstatus);
-    for (unsigned int i = 0u; i < model->status_susceptible.size(); ++i)
-        labels[model->status_susceptible[i]] =
-            model->status_susceptible_labels[i];
-    
-    for (unsigned int i = 0u; i < model->status_exposed.size(); ++i)
-        labels[model->status_exposed[i]] =
-            model->status_exposed_labels[i];
-
-    for (unsigned int i = 0u; i < model->status_removed.size(); ++i)
-        labels[model->status_removed[i]] =
-            model->status_removed_labels[i];
 
     if (fn_variant_hist != "")
     {
@@ -1705,7 +1749,42 @@ inline void DataBase<TSeq>::write_data(
             file_variant <<
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
-                labels[hist_variant_status[i]] << " " <<
+                model->status_labels[hist_variant_status[i]] << " " <<
+                hist_variant_counts[i] << "\n";
+    }
+
+    if (fn_tool_info != "")
+    {
+        std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
+
+        file_tool_info <<
+            "id " << "variant_sequence " << "date " << "parent " << "patiente\n";
+
+        for (const auto & v : variant_id)
+        {
+            int id = v.second;
+            file_tool_info <<
+                id << " " <<
+                seq_writer(variant_sequence[id]) << " " <<
+                variant_origin_date[id] << " " <<
+                variant_parent_id[id] << " " <<
+                variant_parent_id[id] << "\n";
+        }
+
+    }
+
+    if (fn_tool_hist != "")
+    {
+        std::ofstream file_tool_hist(fn_tool_hist, std::ios_base::out);
+        
+        file_tool_hist <<
+            "date " << "id " << "status " << "n\n";
+
+        for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
+            file_tool_hist <<
+                hist_variant_date[i] << " " <<
+                hist_variant_id[i] << " " <<
+                model->status_labels[hist_variant_status[i]] << " " <<
                 hist_variant_counts[i] << "\n";
     }
 
@@ -1720,7 +1799,7 @@ inline void DataBase<TSeq>::write_data(
             file_total <<
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
-                labels[hist_total_status[i]] << "\" " << 
+                model->status_labels[hist_total_status[i]] << "\" " << 
                 hist_total_counts[i] << "\n";
     }
 
@@ -1754,8 +1833,8 @@ inline void DataBase<TSeq>::write_data(
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
                         i << " " <<
-                        labels[from] << " " <<
-                        labels[to] << " " <<
+                        model->status_labels[from] << " " <<
+                        model->status_labels[to] << " " <<
                         hist_transition_matrix[i * (ns * ns) + to * ns + from] << "\n";
                 
         }
@@ -1789,14 +1868,19 @@ inline void DataBase<TSeq>::reset()
 {
 
     variant_id.clear();
-    sequence.clear();
-    origin_date.clear();
-    parent_id.clear();
+    variant_sequence.clear();
+    variant_origin_date.clear();
+    variant_parent_id.clear();
     
     hist_variant_date.clear();
     hist_variant_id.clear();
     hist_variant_status.clear();
     hist_variant_counts.clear();
+
+    hist_tool_date.clear();
+    hist_tool_id.clear();
+    hist_tool_status.clear();
+    hist_tool_counts.clear();
     
     hist_total_date.clear();
     hist_total_nvariants_active.clear();
@@ -1811,10 +1895,10 @@ inline void DataBase<TSeq>::reset()
     today_total_nvariants_active = 0;
 
     today_total.clear();
-    today_total_next.clear();
     
     today_variant.clear();
-    today_variant_next.clear();
+
+    today_tool.clear();
 
 }
 
@@ -2684,7 +2768,6 @@ private:
      * @brief Count of ego's neighbors in queue (including ego)
      */
     std::vector< epiworld_fast_int > active;
-    std::vector< epiworld_fast_int > active_next;
     Model<TSeq> * model = nullptr;
 
     // Auxiliary variable that checks how many steps
@@ -2701,19 +2784,15 @@ public:
     // void initialize(Model<TSeq> * m, Person<TSeq> * p);
     void set_model(Model<TSeq> * m);
 
-    // unsigned int size();
-    
-    void update();
-
 };
 
 template<typename TSeq>
 inline void Queue<TSeq>::operator+=(Person<TSeq> * p)
 {
 
-    active_next[p->index]++;
+    active[p->index]++;
     for (auto * n : p->neighbors)
-        active_next[n->index]++;
+        active[n->index]++;
 
 }
 
@@ -2721,22 +2800,10 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator-=(Person<TSeq> * p)
 {
 
-    active_next[p->index]--;
+    active[p->index]--;
     for (auto * n : p->neighbors)
-        active_next[n->index]--;
+        active[n->index]--;
 
-}
-
-template<typename TSeq>
-inline void Queue<TSeq>::update()
-{
-    for (unsigned int i = 0u; i < active_next.size(); ++i)
-    {
-        active[i] += active_next[i];
-        active_next[i] = 0;
-    }
-
-    EPI_DEBUG_ALL_NON_NEGATIVE(active);
 }
 
 template<typename TSeq>
@@ -2751,7 +2818,6 @@ inline void Queue<TSeq>::set_model(Model<TSeq> * m)
 
     model = m;
     active.resize(m->size(), 0);
-    active_next.resize(m->size(), 0);
 
 }
 
@@ -2795,6 +2861,15 @@ class DataBase;
 template<typename TSeq>
 class Queue;
 
+template<typename TSeq>
+struct Action;
+
+// template<typename TSeq>
+// class VirusPtr;
+
+// template<typename TSeq>
+// class ToolPtr;
+
 /**
  * @brief Core class of epiworld.
  * 
@@ -2817,11 +2892,11 @@ private:
     std::map< int,int >         population_ids;
     bool directed;
     
-    std::vector< Virus<TSeq> > viruses;
+    std::vector< VirusPtr<TSeq> > viruses;
     std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
     std::vector< bool > prevalence_virus_as_proportion;
     
-    std::vector< Tool<TSeq> > tools;
+    std::vector< ToolPtr<TSeq> > tools;
     std::vector< epiworld_double > prevalence_tool;
     std::vector< bool > prevalence_tool_as_proportion;
 
@@ -2844,19 +2919,10 @@ private:
     unsigned int ndays;
     Progress pb;
 
-    std::vector< epiworld_fast_uint > status_susceptible = {STATUS::SUSCEPTIBLE};
-    std::vector< std::string > status_susceptible_labels = {"susceptible"};
-
-    std::vector< epiworld_fast_uint > status_exposed = {STATUS::EXPOSED};
-    std::vector< std::string > status_exposed_labels = {"exposed"};
-
-    std::vector< epiworld_fast_uint > status_removed = {STATUS::REMOVED};
-    std::vector< std::string > status_removed_labels = {"removed"};
-
-    epiworld_fast_uint nstatus = 3u;
-    epiworld_fast_uint baseline_status_susceptible = STATUS::SUSCEPTIBLE;
-    epiworld_fast_uint baseline_status_exposed     = STATUS::EXPOSED;
-    epiworld_fast_uint baseline_status_removed     = STATUS::REMOVED;
+    std::vector< epiworld_fast_uint > status(0u);
+    std::vector< UpdateFun<TSeq> >    status_fun(0u);
+    std::vector< std::string >        status_labels(0u);
+    epiworld_fast_uint nstatus = 0u;
     
     bool verbose     = true;
     bool initialized = false;
@@ -2877,10 +2943,6 @@ private:
 
     std::unique_ptr< Model<TSeq> > backup = nullptr;
 
-    UpdateFun<TSeq> update_susceptible = nullptr;
-    UpdateFun<TSeq> update_exposed     = nullptr;
-    UpdateFun<TSeq> update_removed     = nullptr;
-
     std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
     std::vector< int > global_action_dates;
 
@@ -2888,19 +2950,52 @@ private:
     bool use_queuing   = true;
 
     /**
-     * @name Variables used to keep track of the actions
+     * @brief Variables used to keep track of the actions
      * to be made regarding viruses.
      */
-    ///@{
-    std::vector< VirusPtr<TSeq> >  virus_to_remove;
-    std::vector< VirusPtr<TSeq> >  virus_to_add;
-    std::vector< Person<TSeq> * > virus_to_add_person;
-    ///@}
+    std::vector< Action<TSeq> > actions(0u);
+    epiworld_fast_uint nactions = 0u;
+
+    /**
+     * @brief Construct a new Action object
+     * 
+     * @param person_ Person over which the action will be called
+     * @param new_status_ New state of the person
+     * @param call_ Function the action will call
+     * @param queue_ Change in the queue
+     */
+    void actions_add(
+        Person<TSeq> * person_,
+        epiworld_fast_uint new_status_,
+        ActionFun<TSeq> call_,
+        epiworld_fast_int queue_
+        );
+
+    /**
+     * @brief Executes the stored action
+     * 
+     * @param model_ Model over which it will be executed.
+     */
+    void actions_run();
+
+    /**
+     * @name Tool Mixers
+     * 
+     * These functions combine the effects tools have to deliver
+     * a single effect. For example, wearing a mask, been vaccinated,
+     * and the immune system combine together to jointly reduce
+     * the susceptibility for a given virus.
+     * 
+     */
+    MixerFun<TSeq> susceptibility_reduction_mixer;
+    MixerFun<TSeq> transmission_reduction_mixer;
+    MixerFun<TSeq> recovery_enhancer_mixer;
+    MixerFun<TSeq> death_reduction_mixer;
 
 public:
 
     std::vector<epiworld_double> array_double_tmp;
-    std::vector<VirusPtr<TSeq>> array_virus_tmp;
+    std::vector<VirusPtr<TSeq>*> array_virus_tmp;
 
     Model() {};
     Model(const Model<TSeq> & m);
@@ -2938,7 +3033,8 @@ public:
     /**
      * @name Random number generation
      * 
-     * @param eng 
+     * @param eng Random number generator
+     * @param s Seed
      */
     ///@{
     void set_rand_engine(std::mt19937 & eng);
@@ -2952,10 +3048,23 @@ public:
     epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
     ///@}
 
+    /**
+     * @name Add Virus/Tool to the model
+     * 
+     * This is done before the model has been initialized.
+     * 
+     * @param v Virus to be added
+     * @param t Tool to be added
+     * @param preval Initial prevalence (initial state.) It can be
+     * specified as a proportion (between zero and one,) or an integer
+     * indicating number of individuals.
+     */
+    ///@{
     void add_virus(Virus<TSeq> v, epiworld_double preval);
     void add_virus_n(Virus<TSeq> v, unsigned int preval);
     void add_tool(Tool<TSeq> t, epiworld_double preval);
     void add_tool_n(Tool<TSeq> t, unsigned int preval);
+    ///@}
 
     /**
      * @name Accessing population of the model
@@ -3040,14 +3149,13 @@ public:
     void rewire();
     ///@}
 
-    inline void set_update_susceptible(UpdateFun<TSeq> fun);
-    inline void set_update_exposed(UpdateFun<TSeq> fun);
-    inline void set_update_removed(UpdateFun<TSeq> fun);
     /**
      * @brief Wrapper of `DataBase::write_data`
      * 
      * @param fn_variant_info Filename. Information about the variant.
      * @param fn_variant_hist Filename. History of the variant.
+     * @param fn_tool_info Filename. Information about the tool.
+     * @param fn_tool_hist Filename. History of the tool.
      * @param fn_total_hist   Filename. Aggregated history (status)
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
@@ -3055,6 +3163,8 @@ public:
     void write_data(
         std::string fn_variant_info,
         std::string fn_variant_hist,
+        std::string fn_tool_info,
+        std::string fn_tool_hist,
         std::string fn_total_hist,
         std::string fn_transmission,
         std::string fn_transition
@@ -3103,13 +3213,10 @@ public:
      * @name Manage status (states) in the model
      * 
      * @details
-     * Adding values of `s` that are already present in the model will
-     * result in an error.
      * 
-     * The functions `get_status_*` return the current values for the 
+     * The functions `get_status` return the current values for the 
      * statuses included in the model.
      * 
-     * @param s `unsigned int` Code of the status
      * @param lab `std::string` Name of the status.
      * 
      * @return `add_status*` returns nothing.
@@ -3117,39 +3224,11 @@ public:
      * statuses and their labels.
      */
     ///@{
-    void add_status_susceptible(epiworld_fast_uint s, std::string lab);
-    void add_status_exposed(epiworld_fast_uint s, std::string lab);
-    void add_status_removed(epiworld_fast_uint s, std::string lab);
-    void add_status_susceptible(std::string lab);
-    void add_status_exposed(std::string lab);
-    void add_status_removed(std::string lab);
-    const std::vector< epiworld_fast_uint > & get_status_susceptible() const;
-    const std::vector< epiworld_fast_uint > & get_status_exposed() const;
-    const std::vector< epiworld_fast_uint > & get_status_removed() const;
-    const std::vector< std::string > & get_status_susceptible_labels() const;
-    const std::vector< std::string > & get_status_exposed_labels() const;
-    const std::vector< std::string > & get_status_removed_labels() const;
+    void add_status(std::string lab, UpdateFun<TSeq> fun = nullptr);
+    const std::vector< std::string > & get_status() const;
+    const std::vector< UpdateFun<TSeq> > & get_status_fun() const;
     void print_status_codes() const;
-    epiworld_fast_uint get_default_susceptible() const;
-    epiworld_fast_uint get_default_exposed() const;
-    epiworld_fast_uint get_default_removed() const;
     ///@}
-
-    /**
-     * @brief Reset all the status codes of the model
-     * 
-     * @details 
-     * The default values are those specified in the enum STATUS.
-     * 
-     * @param codes In the following order: Susceptible, Infected, Removed
-     * @param names Names matching the codes
-     * @param verbose When `true`, it will print the new mappings.
-     */
-    void reset_status_codes(
-        std::vector< epiworld_fast_uint > codes,
-        std::vector< std::string > names,
-        bool verbose = true
-    );
 
     /**
      * @name Setting and accessing parameters from the model
@@ -3241,6 +3320,19 @@ public:
     Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
     ///@}
 
+    /**
+     * @name Get the susceptibility reduction object
+     * 
+     * @param v 
+     * @return epiworld_double 
+     */
+    ///@{
+    void set_susceptibility_reduction_mixer(MixerFun<TSeq> fun);
+    void set_transmission_reduction_mixer(MixerFun<TSeq> fun);
+    void set_recovery_enhancer_mixer(MixerFun<TSeq> fun);
+    void set_death_reduction_mixer(MixerFun<TSeq> fun);
+    ///@}
+
 };
 
 #endif
@@ -3268,60 +3360,167 @@ public:
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
 
-#define ADD_VIRUSES() \
-    for (size_t v = 0u; v < virus_to_add.size(); ++v) \
-    { \
-        \
-        VirusPtr<TSeq> virus   = virus_to_add[v]; \
-        Person<TSeq> * person = virus_to_add_person[v]; \
-        \
-        /* Recording transmission */ \
-        if (virus->get_host() != nullptr) \
-            db.record_transmission( \
-                virus->get_host()->get_id(),\
-                person->get_id(),\
-                virus->get_id()\
-            );\
-        \
-        /*Accounting for the transmission */ \
-        db.up_exposed(virus, person->status_next); \
-        \
-        /* Adding the virus */ \
-        person->get_viruses().add_virus(person->status_next, *virus); \
-        \
-    } \
-    virus_to_add.clear();virus_to_add_person.clear();
+template<typename TSeq>
+inline void Model<TSeq>::actions_add(
+    Person<TSeq> * person_,
+    epiworld_fast_uint new_status_,
+    ActionFun<TSeq> call_,
+    epiworld_fast_int queue_
+) {
+    
+    if (person->locked)
+        throw std::logic_error(
+            "The person with id " + std::to_string(person->id) + 
+            " has already an action in progress. Only one action per agent" +
+            " per iteration is allowed."
+            );
 
-#define RM_VIRUSES() \
-    for (auto v : virus_to_remove) \
-    { \
-        \
-        if (IN(v->get_host()->get_status(), status_susceptible)) \
-            v->post_recovery(); \
-        \
-        /* Accounting for the improve */ \
-        db.down_exposed(v, v->get_host()->status); \
-        \
-        /* Removing the virus (THIS SHOULD BE DEACTIVATE INSTEAD) */ \
-        v->get_host()->get_viruses().reset(); \
-        \
-    } \
-    \
-    virus_to_remove.clear(); 
+    // Locking the agent
+    person_->locked = true;
 
-#define UPDATE_QUEUE() \
-    if (use_queuing) \
-        queue.update(); 
+    nactions++;
 
-#define UPDATE_STATUS() \
-    for (auto & p : population) \
-    { \
-        if (p.status_next != p.status) \
-        {\
-            db.state_change(p.status, p.status_next); \
-            p.status = p.status_next; \
-        }\
+    if (nactions > actions.size())
+    {
+
+        actions.push_back(Action<TSeq>(person_, new_status_, call_, queue_));
+
     }
+    else 
+    {
+        actions[nactions] = Action<TSeq>(person_, new_status_, call_, queue_);
+    }
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::actions_run()
+{
+    // Making the call
+    size_t nactions_ = nactions;
+    for (size_t i = 0u; i < nactions_; ++i)
+    {
+
+        Action<TSeq> & a = dat[i];
+        Person<TSeq> * p = a.person;
+
+        // Applying function
+        if (a.call)
+        {
+            a.call(p, this);
+        }
+
+        // Updating status
+        if (p->status != a.new_status)
+        {
+
+            if (a.new_status >= nstatus)
+                throw std::range_error(
+                    "The proposed status " + std::to_string(a.new_status) + " is out of range. " +
+                    "The model currently has " + std::to_string(nstatus - 1) + " statuses.");
+
+            // Updating accounting
+            db.update_accounting(p->status, a.new_status);
+
+            for (size_t v = 0u; v < p->n_viruses; ++v)
+                db.update_virus(p->viruses[v]->id, p->status, a.new_status);
+
+            for (size_t t = 0u; t < p->n_tools; ++t)
+                db.update_tool(p->tools[t]->id, p->status, a.new_status);
+
+            p->status = a.new_status;
+        }
+
+        // Reduce the counter
+        nactions--;
+
+        // Updating queue
+        if (a.queue > 0)
+            queue += p;
+        else if (a.queue < 0)
+            queue -= p;
+
+        // Unlocking person
+        a.person->locked = false;
+
+    }
+
+    return;
+    
+}
+
+/**
+ * @name Default function for combining susceptibility_reduction levels
+ * 
+ * @tparam TSeq 
+ * @param pt 
+ * @return epiworld_double 
+ */
+///@{
+template<typename TSeq>
+inline epiworld_double susceptibility_reduction_mixer_default(
+    Person<TSeq>* p,
+    VirusPtr<TSeq> v,
+    Model<TSeq> * m
+)
+{
+    epiworld_double total = 1.0;
+    for (auto & tool : p->get_tools())
+        total *= (1.0 - tool->get_susceptibility_reduction(v));
+
+    return 1.0 - total;
+    
+}
+
+template<typename TSeq>
+inline epiworld_double transmission_reduction_mixer_default(
+    Person<TSeq>* p,
+    VirusPtr<TSeq> v,
+    Model<TSeq>* m
+)
+{
+    epiworld_double total = 1.0;
+    for (auto & tool : p->get_tools())
+        total *= (1.0 - tool->get_transmission_reduction(v));
+
+    return (1.0 - total);
+    
+}
+
+template<typename TSeq>
+inline epiworld_double recovery_enhancer_mixer_default(
+    Person<TSeq>* p,
+    VirusPtr<TSeq> v,
+    Model<TSeq>* m
+)
+{
+    epiworld_double total = 1.0;
+    for (auto & tool : p->get_tools())
+        total *= (1.0 - tool->get_recovery_enhancer(v));
+
+    return 1.0 - total;
+    
+}
+
+template<typename TSeq>
+inline epiworld_double death_reduction_mixer_default(
+    Person<TSeq>* p,
+    VirusPtr<TSeq> v,
+    Model<TSeq>* m
+)
+{
+    epiworld_double total = 1.0;
+    for (auto & tool : p->get_tools())
+    {
+        total *= (1.0 - tool->get_death_reduction(v));
+    } 
+
+    return 1.0 - total;
+    
+}
+///@}
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
@@ -3541,10 +3740,7 @@ inline void Model<TSeq>::init(
 
     // Initializing population
     for (auto & p : population)
-    {
         p.model = this;
-        p.init(baseline_status_susceptible);
-    }
 
     engine->seed(seed);
     array_double_tmp.resize(size()/2, 0.0);
@@ -3553,6 +3749,45 @@ inline void Model<TSeq>::init(
     initialized = true;
 
     queue.set_model(this);
+
+    // Checking whether the proposed status in/out/removed
+    // are valid
+    int _init, _end, _removed;
+    for (auto & v : viruses)
+    {
+        v->get_status(&_init, &_end, &_removed)
+        
+        // Negative unspecified status
+        if (((_init != -99) && (_init < 0)) || (_init >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        // Negative unspecified status
+        if (((_end != -99) && (_end < 0)) || (_end >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        if (((_removed != -99) && (_removed < 0)) || (_removed >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+        
+    }
+
+    for (auto & t : tools)
+    {
+        t->get_status(&_init, &_end)
+        
+        // Negative unspecified status
+        if (((_init != -99) && (_init < 0)) || (_init >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        // Negative unspecified status
+        if (((_end != -99) && (_end < 0)) || (_end >= nstatus))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+    }
 
     // Starting first infection and tools
     reset();
@@ -3568,6 +3803,7 @@ inline void Model<TSeq>::dist_virus()
 
     // Starting first infection
     int n = size();
+    std::vector< size_t > idx(n);
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
         // Picking how many
@@ -3585,39 +3821,31 @@ inline void Model<TSeq>::dist_virus()
             throw std::range_error("There are only " + std::to_string(size()) + 
             " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
 
-        std::vector < bool > sampled(size(), false);
+
+        VirusPtr<TSeq> virus = viruses[v];
+        
+        int n_left = n;
+        std::iota(idx.begin(), idx.end(), 0);
         while (nsampled > 0)
         {
 
+            int loc = static_cast<unsigned int>(floor(runif() * (n_left--)));
 
-            int loc = static_cast<unsigned int>(floor(runif() * n));
-
-            if (sampled[loc])
-                continue;
-
-            sampled[loc] = true;
-
-            Person<TSeq> & person = population[loc];
+            Person<TSeq> & person = population[idx[loc]];
             
-            person.add_virus(&viruses[v]);
-            person.status_next = baseline_status_exposed;
+            // Adding action
+            person.add_virus(virus, virus->status_init, virus->queue_init);
 
+            // Adjusting sample
             nsampled--;
+            std::switch(idx[loc], idx[n_left]);
+
 
         }
     }      
 
-    // Adding the next viruses
-    ADD_VIRUSES()
-
-    // Removing and deactivating viruses
-    RM_VIRUSES()
-
-    // Updating the queuing sequence
-    UPDATE_QUEUE()
-
-    // Moving to the next assigned status
-    UPDATE_STATUS()
+    // Apply the actions
+    actions_run();
 
 }
 
@@ -3627,6 +3855,7 @@ inline void Model<TSeq>::dist_tools()
 
     // Starting first infection
     int n = size();
+    std::vector< size_t > idx(n);
     for (unsigned int t = 0; t < tools.size(); ++t)
     {
         // Picking how many
@@ -3644,17 +3873,25 @@ inline void Model<TSeq>::dist_tools()
             throw std::range_error("There are only " + std::to_string(size()) + 
             " individuals in the population. Cannot add the tool to " + std::to_string(nsampled));
         
+        ToolPtr<TSeq> tool = tools[t];
+
+        int n_left = n;
+        std::iota(idx.begin(), idx.end(), 0);
         while (nsampled > 0)
         {
-            int loc = static_cast<unsigned int>(floor(runif() * n));
-            if (population[loc].has_tool(tools[t].get_id()))
-                continue;
+            int loc = static_cast<unsigned int>(floor(runif() * n_left--));
             
-            population[loc].add_tool(today(), tools[t]);
+            population[idx[loc]].add_tool(tool, tool->state_init, tool->queue_init);
+            
             nsampled--;
+
+            std::switch(idx[loc], idx[n_left]);
 
         }
     }
+
+    // Apply the actions
+    actions_run();
 
 }
 
@@ -3751,7 +3988,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
     v.set_id(viruses.size());
     
     // Adding new virus
-    viruses.push_back(v);
+    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
     prevalence_virus.push_back(preval);
     prevalence_virus_as_proportion.push_back(true);
 
@@ -3765,7 +4002,7 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
     v.set_id(viruses.size());
 
     // Adding new virus
-    viruses.push_back(v);
+    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
     prevalence_virus.push_back(preval);
     prevalence_virus_as_proportion.push_back(false);
 
@@ -3782,7 +4019,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
         throw std::range_error("Prevalence of tool cannot be negative");
 
     t.id = tools.size();
-    tools.push_back(t);
+    tools.push_back(std::make_shared< Tool<TSeq> >(t));
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(true);
 
@@ -3872,18 +4109,6 @@ inline int Model<TSeq>::today() const {
 template<typename TSeq>
 inline void Model<TSeq>::next() {
 
-    // Adding the next viruses
-    ADD_VIRUSES()
-
-    // Removing and deactivating viruses
-    RM_VIRUSES()
-
-    // Updating the queuing sequence
-    UPDATE_QUEUE()
-
-    // Moving to the next assigned status
-    UPDATE_STATUS()
-
     ++this->current_date;
     db.record();
     
@@ -3892,13 +4117,7 @@ inline void Model<TSeq>::next() {
         pb.next();
 
     #ifdef EPI_DEBUG
-    // Checking that all individuals in EXPOSED have a virus
-    for (auto & p : population)
-    {
-        if (IN(p.get_status(), status_exposed))
-            if (p.get_viruses().size() == 0u)
-                throw std::logic_error("Individual with no virus is part of the exposed group.");
-    }
+    // A possible check here
     #endif
 
     return ;
@@ -4001,16 +4220,22 @@ inline void Model<TSeq>::update_status() {
         
         for (unsigned int p = 0u; p < size(); ++p)
             if (queue[p] > 0)
-                population[p].update_status();            
+            {
+                if (status_fun[population[p]->status])
+                    status_fun[population[p]->status](&population[p], this);
+            }
 
     }
     else
     {
 
         for (auto & p: population)
-            p.update_status();
+            if (status_fun[population[p]->status])
+                    status_fun[population[p]->status](&population[p], this);
 
     }
+
+    actions_run();
     
 }
 
@@ -4019,8 +4244,10 @@ inline void Model<TSeq>::mutate_variant() {
 
     for (auto & p: population)
     {
-        if (IN(p.get_status(), status_exposed))
-            p.mutate_variant();
+
+        if (p.n_viruses > 0u)
+            for (auto & v : p.viruses)
+                v->mutate();
 
     }
 
@@ -4528,163 +4755,41 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
 
 }
 
-#define EPIWORLD_CHECK_STATUS(a, b) \
-    for (auto & i : b) \
-        if (a == i) \
-            throw std::logic_error("The status " + std::to_string(i) + " already exists."); 
-#define EPIWORLD_CHECK_ALL_STATUSES(a) \
-    EPIWORLD_CHECK_STATUS(a, status_susceptible) \
-    EPIWORLD_CHECK_STATUS(a, status_exposed) \
-    EPIWORLD_CHECK_STATUS(a, status_removed)
+
 
 template<typename TSeq>
-inline void Model<TSeq>::add_status_susceptible(
-    epiworld_fast_uint s,
-    std::string lab
+inline void Model<TSeq>::add_status(
+    std::string lab, 
+    UpdateFun<TSeq> fun
 )
 {
+    if (this->initialized)
+        throw std::logic_error("Cannot add status once the model has been initialized.");
 
-    EPIWORLD_CHECK_ALL_STATUSES(s)
-    status_susceptible.push_back(s);
-    status_susceptible_labels.push_back(lab);
+    // Checking it doesn't match
+    for (auto & s : status_labels)
+        if (s == lab)
+            throw std::logic_error("Status \"" + s + "\" already registered.");
+
+    status_labels.push_back(lab);
+    status_fun(fun);
     nstatus++;
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::add_status_exposed(
-    epiworld_fast_uint s,
-    std::string lab
-)
-{
-
-    EPIWORLD_CHECK_ALL_STATUSES(s)
-    status_exposed.push_back(s);
-    status_exposed_labels.push_back(lab);
-    nstatus++;
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_status_removed(
-    epiworld_fast_uint s,
-    std::string lab
-)
-{
-
-    EPIWORLD_CHECK_ALL_STATUSES(s)
-    status_removed.push_back(s);
-    status_removed_labels.push_back(lab);
-    nstatus++;
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_status_susceptible(std::string lab)
-{
-    status_susceptible.push_back(nstatus++);
-    status_susceptible_labels.push_back(lab);
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_status_exposed(std::string lab)
-{
-    status_exposed.push_back(nstatus++);
-    status_exposed_labels.push_back(lab);
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_status_removed(std::string lab)
-{
-    status_removed.push_back(nstatus++);
-    status_removed_labels.push_back(lab);
-}
-
-#define EPIWORLD_COLLECT_STATUSES(out,id,lab) \
-    std::vector< std::pair<epiworld_fast_uint, std::string> > out; \
-    for (unsigned int i = 0; i < id.size(); ++i) \
-        out.push_back( \
-            std::pair<int,std::string>( \
-                id[i], lab[i] \
-            ) \
-        );
-
-template<typename TSeq>
-inline const std::vector< epiworld_fast_uint > &
-Model<TSeq>::get_status_susceptible() const
-{
-    return status_susceptible;
-}
-
-template<typename TSeq>
-inline const std::vector< epiworld_fast_uint > &
-Model<TSeq>::get_status_exposed() const
-{
-    return status_exposed;
-}
-
-template<typename TSeq>
-inline const std::vector< epiworld_fast_uint > &
-Model<TSeq>::get_status_removed() const
-{
-    return status_removed;
-}
 
 template<typename TSeq>
 inline const std::vector< std::string > &
-Model<TSeq>::get_status_susceptible_labels() const
+Model<TSeq>::get_status() const
 {
-    return status_susceptible_labels;
+    return status;
 }
 
 template<typename TSeq>
-inline const std::vector< std::string > &
-Model<TSeq>::get_status_exposed_labels() const
+inline const std::vector< UpdateFun<TSeq> > &
+Model<TSeq>::get_status_fun() const
 {
-    return status_exposed_labels;
-}
-
-template<typename TSeq>
-inline const std::vector< std::string > &
-Model<TSeq>::get_status_removed_labels() const
-{
-    return status_removed_labels;
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::reset_status_codes(
-    std::vector< epiworld_fast_uint > codes,
-    std::vector< std::string > names,
-    bool verbose
-)
-{
-
-    if (codes.size() != 3u)
-        throw std::length_error("The vector of codes should be of length 3.");
-
-    if (names.size() != 3u)
-        throw std::length_error("The vector of names should be of length 3.");
-
-    status_susceptible.clear();
-    status_susceptible_labels.clear();
-    status_exposed.clear();
-    status_exposed_labels.clear();
-    status_removed.clear();
-    status_removed_labels.clear();
-    nstatus = 0u;
-
-    baseline_status_susceptible = codes[0u];
-    baseline_status_exposed     = codes[1u];
-    baseline_status_removed     = codes[2u];
-
-    add_status_susceptible(codes[0u], names[0u]);
-    add_status_exposed(codes[1u], names[1u]);
-    add_status_removed(codes[2u], names[2u]);
-
-    if (verbose)
-        print_status_codes();    
-
-
+    return status_fun;
 }
 
 template<typename TSeq>
@@ -4696,84 +4801,26 @@ inline void Model<TSeq>::print_status_codes() const
     for (unsigned int i = 0u; i < 80u; ++i)
         line += "_";
 
-    printf_epiworld("\n%s\nDEFAULT STATUS CODES\n\n", line.c_str());
+    printf_epiworld("\n%s\nSTATUS CODES\n\n", line.c_str());
 
     unsigned int nchar = 0u;
-    for (auto & p : status_susceptible_labels)
+    for (auto & p : status_labels)
         if (p.length() > nchar)
             nchar = p.length();
     
-    for (auto & p : status_exposed_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-
-    for (auto & p : status_removed_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-
-    std::string fmt = " %2i = %-" + std::to_string(nchar + 1 + 4) + "s %s\n";
-    for (unsigned int i = 0u; i < status_susceptible.size(); ++i)
+    std::string fmt = " %2i = %-" + std::to_string(nchar + 1 + 4) + "s\n";
+    for (unsigned int i = 0u; i < status.size(); ++i)
     {
 
         printf_epiworld(
             fmt.c_str(),
-            status_susceptible[i],
-            (status_susceptible_labels[i] + " (S)").c_str(),
-            (status_susceptible[i] == baseline_status_susceptible) ? " *" : ""
+            status[i],
+            (status_labels[i] + " (S)").c_str()
         );
 
     }
 
-    for (unsigned int i = 0u; i < status_exposed.size(); ++i)
-    {
-
-        printf_epiworld(
-            fmt.c_str(),
-            status_exposed[i],
-            (status_exposed_labels[i] + " (E)").c_str(),
-            status_exposed[i] == baseline_status_exposed ? " *" : ""
-        );
-
-    }
-
-    for (unsigned int i = 0u; i < status_removed.size(); ++i)
-    {
-
-        printf_epiworld(
-            fmt.c_str(),
-            status_removed[i],
-            (status_removed_labels[i] + " (R)").c_str(),
-            status_removed[i] == baseline_status_removed ? " *" : ""
-        );
-
-    }
-
-    printf_epiworld(
-        "\n(S): Susceptible, (E): Exposed, (R): Removed\n * : Baseline status (default)\n%s\n\n",
-        line.c_str()
-        );
-
-
 }
-
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_susceptible() const
-{
-    return baseline_status_susceptible;
-}
-
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_exposed() const
-{
-    return baseline_status_exposed;
-}
-
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_default_removed() const
-{
-    return baseline_status_removed;
-}
-
 
 #define CASE_PAR(a,b) case a: b = &(parameters[pname]);break;
 #define CASES_PAR(a) \
@@ -4918,28 +4965,6 @@ inline void Model<TSeq>::get_elapsed(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_update_susceptible(UpdateFun<TSeq> fun) {
-    
-    update_susceptible = fun;
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::set_update_exposed(UpdateFun<TSeq> fun) {
-    
-    update_exposed = fun;
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::set_update_removed(UpdateFun<TSeq> fun) {
-    
-    update_removed = fun;
-
-}
-
-
-template<typename TSeq>
 inline void Model<TSeq>::set_user_data(std::vector< std::string > names)
 {
     db.set_user_data(names);
@@ -4995,6 +5020,8 @@ inline void Model<TSeq>::run_global_actions()
 
         }
 
+        actions_run();
+
     }
 
 }
@@ -5027,15 +5054,6 @@ inline Queue<TSeq> & Model<TSeq>::get_queue()
 
 #undef CASES_PAR
 #undef CASE_PAR
-
-#undef EPIWORLD_CHECK_STATE
-#undef EPIWORLD_CHECK_ALL_STATES
-#undef EPIWORLD_COLLECT_STATUSES
-
-#undef ADD_VIRUSES
-#undef RM_VIRUSES
-#undef UPDATE_QUEUE
-#undef UPDATE_STATUS
 
 #undef CHECK_INIT
 #endif
@@ -5098,7 +5116,7 @@ private:
     int id   = -99;
     bool active = true;
     MutFun<TSeq>          mutation_fun                 = nullptr;
-    PostRecoveryFun<TSeq> post_recovery_fun                = nullptr;
+    PostRecoveryFun<TSeq> post_recovery_fun            = nullptr;
     VirusFun<TSeq>        probability_of_infecting_fun = nullptr;
     VirusFun<TSeq>        probability_of_recovery_fun  = nullptr;
     VirusFun<TSeq>        probability_of_death_fun     = nullptr;
@@ -5107,21 +5125,31 @@ private:
     std::vector< epiworld_double * > params;
     std::vector< epiworld_double > data;
 
+    epiworld_fast_int status_init    = -99; ///< Change of status when added to host.
+    epiworld_fast_int status_post    = -99; ///< Change of status when removed from host.
+    epiworld_fast_int status_removed = -99; ///< Change of status when host is removed
+
+    epiworld_fast_int queue_init    = 1; ///< Change of status when added to host.
+    epiworld_fast_int queue_post    = -1; ///< Change of status when removed from host.
+    epiworld_fast_int queue_removed = -99; ///< Change of status when host is removed
+
 public:
     Virus(std::string name = "unknown virus");
 
     void mutate();
     void set_mutation(MutFun<TSeq> fun);
+    
     const TSeq* get_sequence();
     void set_sequence(TSeq sequence);
+    
     Person<TSeq> * get_host();
     Model<TSeq> * get_model();
+    
     void set_date(int d);
     int get_date() const;
+
     void set_id(int idx);
     int get_id() const;
-    bool is_active() const;
-    void deactivate();
 
     /**
      * @name Get and set the tool functions
@@ -5159,6 +5187,44 @@ public:
     std::string get_name() const;
 
     std::vector< epiworld_double > & get_data();
+
+    /**
+     * @name Get and set the status and queue
+     * 
+     * After applied, viruses can change the status and affect
+     * the queue of agents. These function sets the default values,
+     * which are retrieved when adding or removing a virus does not
+     * specify a change in status or in queue.
+     * 
+     * @param init After the virus/tool is added to the host.
+     * @param end After the virus/tool is removed.
+     * @param removed After the host (Person) is removed.
+     */
+    ///@{
+    void set_status(
+        epiworld_fast_int init,
+        epiworld_fast_int end,
+        epiworld_fast_int removed
+        );
+        
+    void set_queue(
+        epiworld_fast_int init,
+        epiworld_fast_int end,
+        epiworld_fast_int removed
+        );
+
+    void get_status(
+        epiworld_fast_int * init,
+        epiworld_fast_int * end,
+        epiworld_fast_int * removed
+        );
+
+    void get_queue(
+        epiworld_fast_int * init,
+        epiworld_fast_int * end,
+        epiworld_fast_int * removed
+        );
+    ///@}
 
 };
 
@@ -5256,22 +5322,6 @@ inline int Virus<TSeq>::get_date() const {
     
     return date;
 }
-
-template<typename TSeq>
-inline bool Virus<TSeq>::is_active() const {
-    return active;
-}
-
-template<typename TSeq>
-inline void Virus<TSeq>::deactivate()
-{
-
-    active = false;
-    host->get_viruses().nactive--;
-
-}
-
-
 
 template<typename TSeq>
 inline epiworld_double Virus<TSeq>::get_prob_infecting()
@@ -5539,6 +5589,70 @@ inline std::vector< epiworld_double > & Virus<TSeq>::get_data() {
     return data;
 }
 
+template<typename TSeq>
+inline void Virus<TSeq>::set_status(
+    epiworld_fast_int init,
+    epiworld_fast_int end,
+    epiworld_fast_int removed
+)
+{
+    status_init    = init;
+    status_end     = end;
+    status_removed = removed;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_queue(
+    epiworld_fast_int init,
+    epiworld_fast_int end,
+    epiworld_fast_int removed
+)
+{
+
+    queue_init    = init;
+    queue_end     = end;
+    queue_removed = removed;
+
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::get_status(
+    epiworld_fast_int * init,
+    epiworld_fast_int * end,
+    epiworld_fast_int * removed
+)
+{
+
+    if (init != nullptr)
+        *init = status_init;
+
+    if (end != nullptr)
+        *end = status_end;
+
+    if (removed != nullptr)
+        *removed = status_removed;
+
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::get_queue(
+    epiworld_fast_int * init,
+    epiworld_fast_int * end,
+    epiworld_fast_int * removed
+)
+{
+
+    if (init != nullptr)
+        *init = queue_init;
+
+    if (end != nullptr)
+        *end = queue_end;
+
+    if (removed != nullptr)
+        *removed = queue_removed;
+        
+}
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -5549,172 +5663,8 @@ inline std::vector< epiworld_double > & Virus<TSeq>::get_data() {
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/personviruses-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_PERSONVIRUSES_BONES_HPP
-#define EPIWORLD_PERSONVIRUSES_BONES_HPP
-
-/**
- * @brief Set of viruses in host
- * 
- * @tparam TSeq Type of sequence
- */
-template<typename TSeq = bool>
-class PersonViruses {
-    friend class Person<TSeq>;
-    friend class Model<TSeq>;
-
-private:
-    Person<TSeq> * host;
-    std::vector< Virus<TSeq> > viruses;
-    int nactive = 0;
-
-public:
-    void add_virus(epiworld_fast_uint new_status, Virus<TSeq> v);
-    size_t size() const;
-    int size_active() const;
-    Virus<TSeq> & operator()(int i);
-    void mutate();
-    void reset();
-    void deactivate(Virus<TSeq> & v);
-    Person<TSeq> * get_host();
-    bool has_virus(unsigned int v) const;
-    bool has_virus(std::string vname) const;
-
-};
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/personviruses-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/personviruses-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_PERSONVIRUSES_MEAT_HPP
-#define EPIWORLD_PERSONVIRUSES_MEAT_HPP
-
-template<typename TSeq>
-inline void PersonViruses<TSeq>::add_virus(
-    epiworld_fast_uint new_status,
-    Virus<TSeq> v
-) {
-
-    // This will make an independent copy of the virus.
-    // Will keep the original sequence and will point to the
-    // mutation and transmisibility functions.
-    viruses.push_back(v);
-    int vloc = viruses.size() - 1u;
-    viruses[vloc].host = host;
-    viruses[vloc].date = host->get_model()->today();
-
-    nactive++;
-
-}
-
-template<typename TSeq>
-inline size_t PersonViruses<TSeq>::size() const {
-    return viruses.size();
-}
-
-template<typename TSeq>
-inline int PersonViruses<TSeq>::size_active() const {
-    return nactive;
-}
-
-
-template<typename TSeq>
-inline Virus<TSeq> & PersonViruses<TSeq>::operator()(
-    int i
-) {
-
-    return viruses.at(i);
-
-}
-
-template<typename TSeq>
-inline void PersonViruses<TSeq>::mutate()
-{
-    for (auto & v : viruses)
-        v.mutate();
-}
-
-template<typename TSeq>
-inline void PersonViruses<TSeq>::reset()
-{
-
-    this->viruses.clear();
-    nactive = 0;
-
-}
-
-template<typename TSeq>
-inline void PersonViruses<TSeq>::deactivate(Virus<TSeq> & v)
-{
-
-    if (v.get_host()->id != host->id)
-        throw std::logic_error("A host cannot deactivate someone else's virus.");
-
-    v.deactivate();
-
-}
-
-template<typename TSeq>
-inline Person<TSeq> * PersonViruses<TSeq>::get_host() {
-    return host;
-}
-
-template<typename TSeq>
-inline bool PersonViruses<TSeq>::has_virus(unsigned int v) const
-{
-    int v2 = static_cast<int>(v);
-    for (auto & virus : viruses)
-        if (v2 == virus.get_id())
-            return true;
-
-    return false;
-}
-
-template<typename TSeq>
-inline bool PersonViruses<TSeq>::has_virus(std::string vname) const
-{
-    for (auto & virus : viruses)
-        if (vname == virus.get_name())
-            return true;
-            
-    return false;
-}
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/personviruses-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
+    // #include "personviruses-bones.hpp"
+    // #include "personviruses-meat.hpp"
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -5756,7 +5706,8 @@ class Tool {
 private:
 
     Person<TSeq> * person;
-    unsigned int id = 0u;
+    int date = -99;
+    int id   = -99;
     std::shared_ptr<std::string> tool_name = nullptr;
     std::shared_ptr<TSeq> sequence = nullptr;
     TSeq sequence_unique  = default_sequence<TSeq>();
@@ -5767,6 +5718,12 @@ private:
 
     // Setup parameters
     std::vector< epiworld_double * > params;  
+
+    epiworld_fast_int status_init = -1;
+    epiworld_fast_int status_end = -1;
+
+    epiworld_fast_int queue_init = 1; ///< Change of status when added to host.
+    epiworld_fast_int queue_post = -1; ///< Change of status when removed from host.
 
 public:
     Tool(std::string name = "unknown tool");
@@ -5791,14 +5748,17 @@ public:
     epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
     epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
     epiworld_double get_death_reduction(VirusPtr<TSeq> v);
+    
     void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
     void set_transmission_reduction_fun(ToolFun<TSeq> fun);
     void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
     void set_death_reduction_fun(ToolFun<TSeq> fun);
+
     void set_susceptibility_reduction(epiworld_double * prob);
     void set_transmission_reduction(epiworld_double * prob);
     void set_recovery_enhancer(epiworld_double * prob);
     void set_death_reduction(epiworld_double * prob);
+
     void set_susceptibility_reduction(epiworld_double prob);
     void set_transmission_reduction(epiworld_double prob);
     void set_recovery_enhancer(epiworld_double prob);
@@ -5810,7 +5770,11 @@ public:
 
     Person<TSeq> * get_person();
     unsigned int get_id() const;
+    void set_id(int id);
+    void set_date(int d);
 
+    void set_status(epiworld_fast_int init, epiworld_fast_int end);
+    void set_queue(epiworld_fast_int init, epiworld_fast_int end);
 
 };
 
@@ -6104,12 +6068,45 @@ inline std::string Tool<TSeq>::get_name() const {
 template<typename TSeq>
 inline Person<TSeq> * Tool<TSeq>::get_person()
 {
-    return person;
+    return this->person;
 }
 
 template<typename TSeq>
 inline unsigned int Tool<TSeq>::get_id() const {
     return id;
+}
+
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_id(int id)
+{
+    this->id = id;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_date(int d)
+{
+    this->date = d;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_status(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    status_init = init;
+    status_end = end;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_queue(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    queue_init = init;
+    queue_end = end;
 }
 
 #endif
@@ -6122,309 +6119,8 @@ inline unsigned int Tool<TSeq>::get_id() const {
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/persontools-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_PERSONTOOLS_BONES_HPP
-#define EPIWORLD_PERSONTOOLS_BONES_HPP
-
-/**
- * @brief List of tools available for the individual to 
- * 
- * @tparam TSeq 
- */
-template<typename TSeq = bool>
-class PersonTools {
-    friend class Person<TSeq>;
-    friend class Model<TSeq>;
-
-private:
-    Person<TSeq> * person; 
-    std::vector<Tool<TSeq>> tools;
-    std::vector< int > dates;
-    MixerFun<TSeq> susceptibility_reduction_mixer;
-    MixerFun<TSeq> transmission_reduction_mixer;
-    MixerFun<TSeq> recovery_enhancer_mixer;
-    MixerFun<TSeq> death_reduction_mixer;
-
-public:
-    PersonTools() {};
-    void add_tool(int date, Tool<TSeq> tool);
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
-
-    void set_susceptibility_reduction_mixer(MixerFun<TSeq> fun);
-    void set_transmission_reduction_mixer(MixerFun<TSeq> fun);
-    void set_recovery_enhancer_mixer(MixerFun<TSeq> fun);
-    void set_death_reduction_mixer(MixerFun<TSeq> fun);
-
-    size_t size() const;
-    Tool<TSeq> & operator()(int i);
-
-    Person<TSeq> * get_person();
-    Model<TSeq> * get_model();
-    void reset();
-    bool has_tool(unsigned int t) const;
-    bool has_tool(std::string name) const;
-
-};
-
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/persontools-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/persontools-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_PERSONTOOLS_MEAT_HPP
-#define EPIWORLD_PERSONTOOLS_MEAT_HPP
-
-/**
- * @name Default function for combining susceptibility_reduction levels
- * 
- * @tparam TSeq 
- * @param pt 
- * @return epiworld_double 
- */
-///@{
-template<typename TSeq>
-inline epiworld_double susceptibility_reduction_mixer_default(
-    PersonTools<TSeq>* pt,
-    Person<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-)
-{
-    epiworld_double total = 1.0;
-    for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_susceptibility_reduction(v));
-
-    return 1.0 - total;
-    
-}
-
-template<typename TSeq>
-inline epiworld_double transmission_reduction_mixer_default(
-    PersonTools<TSeq>* pt,
-    Person<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-)
-{
-    epiworld_double total = 1.0;
-    for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_transmission_reduction(v));
-
-    return (1.0 - total);
-    
-}
-
-template<typename TSeq>
-inline epiworld_double recovery_enhancer_mixer_default(
-    PersonTools<TSeq>* pt,
-    Person<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-)
-{
-    epiworld_double total = 1.0;
-    for (unsigned int i = 0; i < pt->size(); ++i)
-        total *= (1.0 - pt->operator()(i).get_recovery_enhancer(v));
-
-    return 1.0 - total;
-    
-}
-
-template<typename TSeq>
-inline epiworld_double death_reduction_mixer_default(
-    PersonTools<TSeq>* pt,
-    Person<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-)
-{
-    epiworld_double total = 1.0;
-    for (unsigned int i = 0; i < pt->size(); ++i)
-    {
-        total *= (1.0 - pt->operator()(i).get_death_reduction(v));
-    } 
-
-    return 1.0 - total;
-    
-}
-///@}
-
-template<typename TSeq>
-inline void PersonTools<TSeq>::add_tool(
-    int date,
-    Tool<TSeq> tool
-) {
-    tools.push_back(tool);
-    tools[tools.size() - 1].person = this->person;
-    dates.push_back(date);
-}
-
-template<typename TSeq>
-inline epiworld_double PersonTools<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> v
-) {
-
-    if (!susceptibility_reduction_mixer)
-        set_susceptibility_reduction_mixer(susceptibility_reduction_mixer_default<TSeq>);
-
-    return susceptibility_reduction_mixer(this, person, v, person->get_model());
-
-}
-
-template<typename TSeq>
-inline epiworld_double PersonTools<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> v
-) {
-
-    if (!transmission_reduction_mixer)
-        set_transmission_reduction_mixer(transmission_reduction_mixer_default<TSeq>);
-
-    return transmission_reduction_mixer(this, person, v, person->get_model());
-
-}
-
-template<typename TSeq>
-inline epiworld_double PersonTools<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> v
-) {
-
-    if (!recovery_enhancer_mixer)
-        set_recovery_enhancer_mixer(recovery_enhancer_mixer_default<TSeq>);
-
-    return recovery_enhancer_mixer(this, person, v, person->get_model());
-
-}
-
-
-template<typename TSeq>
-inline epiworld_double PersonTools<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> v
-) {
-
-    if (!death_reduction_mixer)
-        set_death_reduction_mixer(death_reduction_mixer_default<TSeq>);
-
-    return death_reduction_mixer(this, person, v, person->get_model());
-
-}
-
-template<typename TSeq>
-inline void PersonTools<TSeq>::set_susceptibility_reduction_mixer(
-    MixerFun<TSeq> fun
-) {
-    susceptibility_reduction_mixer = MixerFun<TSeq>(fun);
-}
-
-template<typename TSeq>
-inline void PersonTools<TSeq>::set_transmission_reduction_mixer(
-    MixerFun<TSeq> fun
-) {
-    transmission_reduction_mixer = MixerFun<TSeq>(fun);
-}
-
-template<typename TSeq>
-inline void PersonTools<TSeq>::set_recovery_enhancer_mixer(
-    MixerFun<TSeq> fun
-) {
-    recovery_enhancer_mixer = MixerFun<TSeq>(fun);
-}
-
-template<typename TSeq>
-inline void PersonTools<TSeq>::set_death_reduction_mixer(
-    MixerFun<TSeq> fun
-) {
-    death_reduction_mixer = MixerFun<TSeq>(fun);
-}
-
-
-template<typename TSeq>
-inline size_t PersonTools<TSeq>::size() const {
-    return tools.size();
-}
-
-template<typename TSeq>
-inline Tool<TSeq> & PersonTools<TSeq>::operator()(int i) {
-    return tools.at(i);
-}
-
-template<typename TSeq>
-inline Person<TSeq> * PersonTools<TSeq>::get_person() {
-    return person;
-}
-
-template<typename TSeq>
-inline Model<TSeq> * PersonTools<TSeq>::get_model() {
-    return person->get_model();
-}
-
-template<typename TSeq>
-inline void PersonTools<TSeq>::reset()
-{
-    
-    this->tools.clear();
-    this->dates.clear();
-
-}
-
-template<typename TSeq>
-inline bool PersonTools<TSeq>::has_tool(unsigned int t) const {
-
-    for (auto & tool : tools)
-        if (tool.get_id() == t)
-            return true;
-
-    return false;
-
-}
-
-template<typename TSeq>
-inline bool PersonTools<TSeq>::has_tool(std::string name) const {
-
-    for (auto * tool : tools)
-        if (tool->get_name() == name)
-            return true;
-
-    return false;
-    
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/persontools-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
+    // #include "persontools-bones.hpp"
+    // #include "persontools-meat.hpp"
     
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -6444,38 +6140,8 @@ class Model;
 template<typename TSeq>
 class Person;
 
-
-#define EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants) \
-    /* Step 1: Compute the individual efficcacy */ \
-    std::vector< epiworld_double > probs; \
-    std::vector< epiworld::VirusPtr<TSeq> > variants; \
-    /* Computing the susceptibility_reduction */ \
-    for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) \
-    { \
-        epiworld::Person<TSeq> * neighbor = p->get_neighbors()[n]; \
-        /* Non-infected individuals make no difference */ \
-        if (!epiworld::IN(neighbor->get_status(), m->get_status_exposed())) \
-            continue; \
-        epiworld::PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); \
-        /* Now over the neighbor's viruses */ \
-        epiworld_double tmp_transmission; \
-        for (unsigned int v = 0; v < nviruses.size(); ++v) \
-        { \
-            /* Computing the corresponding susceptibility_reduction */ \
-            epiworld::VirusPtr<TSeq> tmp_v = &(nviruses(v)); \
-            /* And it is a function of susceptibility_reduction as well */ \
-            tmp_transmission = \
-                (1.0 - p->get_susceptibility_reduction(tmp_v)) * \
-                tmp_v->get_prob_infecting() * \
-                (1.0 - neighbor->get_transmission_reduction(tmp_v)) \
-                ; \
-            probs.push_back(tmp_transmission); \
-            variants.push_back(tmp_v); \
-        } \
-    }
-
 template<typename TSeq>
-inline epiworld_fast_uint default_update_susceptible(
+inline void default_update_susceptible(
     Person<TSeq> * p,
     Model<TSeq> * m
     )
@@ -6483,79 +6149,96 @@ inline epiworld_fast_uint default_update_susceptible(
 
     // This computes the prob of getting any neighbor variant
     unsigned int nvariants_tmp = 0u;
-    for (unsigned int n = 0; n < p->get_neighbors().size(); ++n) 
-    { 
-
-        Person<TSeq> * neighbor = p->get_neighbors()[n]; 
-        
-        /* Non-infected individuals make no difference */ 
-        if (!IN(neighbor->get_status(), m->get_status_exposed())) 
-            continue; 
-        
-        PersonViruses<TSeq> & nviruses = neighbor->get_viruses(); 
-        /* Now over the neighbor's viruses */ 
-        
-        epiworld_double tmp_transmission; 
-        for (unsigned int v = 0; v < nviruses.size(); ++v) 
+    for (auto & neighbor: p->get_neighbors()) 
+    {
+                 
+        for (auto & v : nviruses) 
         { 
-        
-            /* Computing the corresponding susceptibility_reduction */ 
-            VirusPtr<TSeq> tmp_v = &(nviruses(v)); 
-        
+                
             /* And it is a function of susceptibility_reduction as well */ 
-            tmp_transmission = 
-                (1.0 - p->get_susceptibility_reduction(tmp_v)) * 
-                tmp_v->get_prob_infecting() * 
-                (1.0 - neighbor->get_transmission_reduction(tmp_v)) 
+            m->array_double_tmp[nvariants_tmp] =
+                (1.0 - p->get_susceptibility_reduction(v)) * 
+                v->get_prob_infecting() * 
+                (1.0 - neighbor->get_transmission_reduction(v)) 
                 ; 
         
-            m->array_double_tmp[nvariants_tmp]  = tmp_transmission;
-            m->array_virus_tmp[nvariants_tmp++] = tmp_v;
+            m->array_virus_tmp[nvariants_tmp++] = &v;
             
         } 
     }
 
     // No virus to compute
     if (nvariants_tmp == 0u)
-        return p->get_status();
+        return;
 
     // Running the roulette
     int which = roulette(nvariants_tmp, m);
 
     if (which < 0)
-        return p->get_status();
+        return;
 
-    p->add_virus(m->array_virus_tmp[which]); 
+    p->add_virus(*m->array_virus_tmp[which]); 
 
-    return m->get_default_exposed();
+    return;
 
 }
 
 template<typename TSeq>
-inline epiworld_fast_uint default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
+inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 
-    epiworld::VirusPtr<TSeq> v = &(p->get_virus(0u)); 
-    epiworld_double p_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
-    epiworld_double p_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
-    
-    epiworld_double r = EPI_RUNIF();
-    epiworld_double cumsum = p_die * (1 - p_rec) / (1.0 - p_die * p_rec); 
-
-    if (r < cumsum)
+    // Odd: Die, Even: Recover
+    epiworld_fast_uint n_events = 0u;
+    for (auto & v : p->get_viruses())
     {
-        p->rm_virus(v);
-        return m->get_default_removed();
+        // Die
+        m->array_double_tmp[n_events] = 
+            v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
+
+        // Recover
+        m->array_double_tmp[n_events++] = 
+            v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
+
     }
     
-    cumsum += p_rec * (1 - p_die) / (1.0 - p_die * p_rec);
-    
-    if (r < cumsum)
+    if (n_events == 0u)
+        return;
+
+    // Running the roulette
+    int which = roulette(nvariants_tmp, m);
+
+    if (which < 0)
+        return;
+
+    // Which roulette happen?
+    if ((which % 2) == 0) // If odd
     {
-        p->rm_virus(v);
-        return m->get_default_removed();
+
+        size_t which_v = std::ceil(which / 2);
+        
+        // Retrieving the default values of the virus
+        epiworld::VirusPtr & v = p->get_viruses()[which_v];
+        int dead_status, dead_queue;
+        v->get_status(nullptr, nullptr, &dead_status);
+        v->get_queue(nullptr, nullptr, &dead_queue);
+
+        // Applying change of status
+        p->change_status(
+            // Either preserve the current status or apply a new one
+            (dead_status < 0) ? p->get_status() : static_cast<epiworld_fast_uint>(dead_status),
+
+            // By default, it will be removed from the queue... unless the user
+            // says the contrary!
+            (dead_queue == -99) ? -m->get_queue()[p->get_index()] : dead_queue
+            );
+
+    } else {
+
+        size_t which_v = std::floor(which / 2);
+        p->rm_virus(which)
+
     }
 
-    return p->get_status();
+    return ;
 
 }
 
@@ -6587,14 +6270,29 @@ class Virus;
 template<typename TSeq>
 class Tool;
 
-template<typename TSeq>
-class PersonViruses;
+// template<typename TSeq>
+// class VirusPtr;
 
-template<typename TSeq>
-class PersonTools;
+// template<typename TSeq>
+// class ToolPtr;
 
 template<typename TSeq>
 class Queue;
+
+template<typename TSeq>
+struct Action;
+
+template<typename TSeq>
+inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
 
 /**
  * @brief Person (agents)
@@ -6606,30 +6304,80 @@ class Person {
     friend class Model<TSeq>;
     friend class Tool<TSeq>;
     friend class Queue<TSeq>;
+    friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_person<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
-    PersonViruses<TSeq> viruses;
-    PersonTools<TSeq> tools;
+    
     std::vector< Person<TSeq> * > neighbors;
-    unsigned int index; ///< Location in the Model
-    epiworld_fast_uint status_next; // Placeholder
-    epiworld_fast_uint status;
-    int id          = -1;
-    UpdateFun<TSeq> update_susceptible = default_update_susceptible<TSeq>;
-    UpdateFun<TSeq> update_exposed     = default_update_exposed<TSeq>;
-    UpdateFun<TSeq> update_removed     = nullptr;
 
-    bool in_queue       = false;
+    unsigned int index; ///< Location in the Model
+    epiworld_fast_uint status = 0u;
+    int id = -1;
+    
+    bool in_queue = false;
+    bool locked   = false;
+    
+    std::vector< VirusPtr<TSeq> > viruses;
+    VirusPtr<TSeq> virus_tmp;
+    epiworld_fast_int virus_to_remove_idx;
+    epiworld_fast_uint n_viruses;
+
+    std::vector< ToolPtr<TSeq> > tools;
+    ToolPtr<TSeq> tool_tmp;
+    epiworld_fast_int tool_to_remove_idx;
+    epiworld_fast_uint n_tools;
+
+    ActionFun<TSeq> add_virus_ = default_add_virus<TSeq>;
+    ActionFun<TSeq> add_tool_ = default_add_tools<TSeq>;
+    ActionFun<TSeq> rm_virus_ = default_rm_virus<TSeq>;
+    ActionFun<TSeq> rm_tool_ = default_rm_tools<TSeq>;
 
 public:
 
     Person();
-    void init(epiworld_fast_uint baseline_status);
 
-    void add_tool(int d, Tool<TSeq> tool);
-    void add_virus(VirusPtr<TSeq> virus);
-    void rm_virus(VirusPtr<TSeq> virus);
+    /**
+     * @name Add/Remove Virus/Tool
+     * 
+     * Calling any of these functions will lock the agent (person)
+     * until the action is applied at the end of the iteration. Calling
+     * any of this functions when the agent is locked will cause an 
+     * error.
+     * 
+     * @param tool Tool to add
+     * @param virus Virus to add
+     * @param status_new Status after the change
+     * @param queue 
+     */
+    ///@{
+    void add_tool(
+        ToolPtr<TSeq> tool,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+        );
 
+    void add_virus(
+        VirusPtr<TSeq> virus,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+        );
+
+    void rm_tool(
+        epiworld_fast_uint tool_idx,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    );
+
+    void rm_virus(
+        epiworld_fast_uint virus_idx,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    );
+    ///@}
+    
     /**
      * @name Get the rates (multipliers) for the agent
      * 
@@ -6649,11 +6397,13 @@ public:
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
 
-    Virus<TSeq> & get_virus(int i);
-    PersonViruses<TSeq> & get_viruses();
+    VirusPtr<TSeq> & get_virus(int i);
+    std::vector< VirusPtr<TSeq> > & get_viruses();
+    size_t get_n_viruses() const noexcept;
 
-    Tool<TSeq> & get_tool(int i);
-    PersonTools<TSeq> & get_tools();
+    ToolPtr<TSeq> & get_tool(int i);
+    std::vector< ToolPtr<TSeq>> & get_tools();
+    size_t get_n_tools() const noexcept;
 
     void mutate_variant();
     void add_neighbor(
@@ -6664,28 +6414,21 @@ public:
 
     std::vector< Person<TSeq> * > & get_neighbors();
 
-    void update_status();
-    void change_status(epiworld_fast_uint new_status);
+    void change_status(
+        epiworld_fast_uint new_status,
+        epiworld_fast_int queue = 0
+        );
+
     const epiworld_fast_uint & get_status() const;
-    const epiworld_fast_uint & get_status_next() const;
 
     void reset();
-
-    /**
-     * @brief Set the update functions
-     * 
-     * @param fun 
-     */
-    ///@{
-    void set_update_susceptible(UpdateFun<TSeq> fun);
-    void set_update_exposed(UpdateFun<TSeq> fun);
-    void set_update_removed(UpdateFun<TSeq> fun);
-    ///@}
 
     bool has_tool(unsigned int t) const;
     bool has_tool(std::string name) const;
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
+
+    bool is_locked() const noexcept;
 
 };
 
@@ -6717,82 +6460,213 @@ public:
 // inline bool IN(Ta & a, std::vector< Ta > & b);
 
 template<typename TSeq>
+inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
+{
+
+    Person<TSeq> * p = a.person;
+    VirusPtr<TSeq> v = p->virus_tmp;
+
+    // Has a host? If so, we need to register the transmission
+    if (v->get_host())
+    {
+
+        // ... only if not the same person
+        if (v->get_host()->get_id() != v->get_id())
+            m->get_db().record_transmission(
+                v->get_host()->get_id(), p->get_id(), v->get_id() 
+            );
+
+    }
+    
+    // Update virus accounting
+    p->n_viruses++;
+    size_t n_viruses = p->n_viruses;
+
+    if (n_viruses-- >= p->viruses.size())
+        p->viruses[n_viruses] = std::make_shared< Virus<TSeq> >(*v);
+    else
+        p->viruses.push_back(std::make_shared< Virus<TSeq> >(*v));
+
+    // Notice that both host and date can be changed in this case
+    // as only the sequence is a shared_ptr itself.
+    p->viruses[n_viruses].host = p;
+    p->viruses[n_viruses].date = m->today();
+
+
+}
+
+template<typename TSeq>
+inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
+{
+
+    Person<TSeq> * p = a.person;
+    ToolPtr<TSeq> t = p->tool_tmp;
+    
+    // Update tool accounting
+    p->n_tools++;
+    size_t n_tools = p->n_tools;
+
+    if (n_tools-- >= p->tools.size())
+        p->tools[n_tools] = std::make_shared< Tool<TSeq> >(*t);
+    else
+        p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
+
+    p->tools[n_tools].date = m->today();
+
+}
+
+template<typename TSeq>
+inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
+{
+
+    Person<TSeq> * p = a.person;    
+
+    if (--p->n_viruses > 0)
+        std::swap(p->viruses[p->virus_to_remove_idx], p->viruses[p->n_viruses - 1]);
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
+{
+
+    Person<TSeq> * p = a.person;    
+
+    if (--p->n_viruses > 0)
+        std::swap(p->viruses[p->virus_to_remove_idx], p->viruses[p->n_viruses - 1]);
+
+    return;
+
+}
+
+template<typename TSeq>
 inline Person<TSeq>::Person()
 {
     
 }
 
-template<typename TSeq>
-inline void Person<TSeq>::init(epiworld_fast_uint baseline_status)
-{
-    tools.person = this;
-    viruses.host = this;
-    status       = baseline_status;
-    status_next  = baseline_status;
-}
-    
+#define CHECK_COALESCE_(storage_, proposed_, virus_tool_, alt_) \
+    epiworld_fast_uint (storage_); \
+    if ((proposed_) == -99) {\
+        if ((virus_tool_) == -99) \
+            (storage_) = (alt_);\
+        else (storage_) = static_cast<epiworld_fast_uint>((virus_tool_));\
+    } else (storage_) = static_cast<epiworld_fast_uint>((proposed_));
+
 
 template<typename TSeq>
 inline void Person<TSeq>::add_tool(
-    int d,
-    Tool<TSeq> tool
+    ToolPtr<TSeq> tool,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
 ) {
-    tools.add_tool(d, tool);
+    
+    CHECK_COALESCE_(status_new_, status_new, tool->status_init, status)
+    CHECK_COALESCE_(queue_, queue, tool->queue_init, 0)
+
+    tool_tmp = tool;
+
+    model->actions_add(this, status_new_, add_tool_, queue_);
+
 }
 
 template<typename TSeq>
 inline void Person<TSeq>::add_virus(
-    VirusPtr<TSeq> virus
+    VirusPtr<TSeq> virus,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
 )
 {
 
-    model->virus_to_add.push_back(virus);
-    model->virus_to_add_person.push_back(this);
+    // Checking the virus exists
+    if (virus->get_id() >= model->get_nvariants())
+        throw std::range_error("The virus with id: " + std::to_string(virus->get_id()) + 
+            " has not been registered. There are only " + std::to_string(model->get_nvariants()) + 
+            " included in the model.");
 
-    if (model->is_queuing_on())
-        model->get_queue() += this;
+    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
+    CHECK_COALESCE_(queue_, queue, virus->queue_init, 1)
+            
+    virus_tmp = virus;
+
+    model->actions_add(this, status_new_, add_virus_, queue_new_);
+
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_tool(
+    epiworld_fast_uint tool_idx,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (tool_idx >= n_tools)
+        throw std::range_error(
+            "The Tool you want to remove is out of range. This Person only has " +
+            std::to_string(n_tools) + " tools."
+        )
+
+    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
+    CHECK_COALESCE_(queue_, queue, virus->queue_init, 0)
+
+    tool_to_remove_idx = tool_idx;
+
+    model->actions_add(this, status_new_, rm_virus_, queue_new_);
 
 }
 
 template<typename TSeq>
 inline void Person<TSeq>::rm_virus(
-    VirusPtr<TSeq> virus
+    epiworld_fast_uint virus_idx,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
 )
 {
+    if (tool_idx >= n_viruses)
+        throw std::range_error(
+            "The Virus you want to remove is out of range. This Person only has " +
+            std::to_string(n_viruses) + " viruses."
+        )
 
-    model->virus_to_remove.push_back(virus);
+    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
+    CHECK_COALESCE_(queue_, queue, virus->queue_init, -1)
 
-    if (model->is_queuing_on())
-        model->get_queue() -= this;
+    virus_to_remove_idx = virus_idx;
 
+    model->actions_add(this, status_new_, rm_virus_, queue_new_);
+    
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_susceptibility_reduction(
     VirusPtr<TSeq> v
 ) {
-    return tools.get_susceptibility_reduction(v);
+
+    return model->susceptibility_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_transmission_reduction(
     VirusPtr<TSeq> v
 ) {
-    return tools.get_transmission_reduction(v);
+    return model->transmission_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_recovery_enhancer(
     VirusPtr<TSeq> v
 ) {
-    return tools.get_recovery_enhancer(v);
+    return model->recovery_enhancer_mixer(this, v, model);
 }
 
 template<typename TSeq>
 inline epiworld_double Person<TSeq>::get_death_reduction(
     VirusPtr<TSeq> v
 ) {
-    return tools.get_death_reduction(v);
+    return model->death_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
@@ -6818,28 +6692,45 @@ inline Model<TSeq> * Person<TSeq>::get_model() {
 }
 
 template<typename TSeq>
-inline PersonViruses<TSeq> & Person<TSeq>::get_viruses() {
+inline std::vector< VirusPtr<TSeq> > & Person<TSeq>::get_viruses() {
     return viruses;
 }
 
 template<typename TSeq>
-inline Virus<TSeq> & Person<TSeq>::get_virus(int i) {
-    return viruses(i);
+inline VirusPtr<TSeq> & Person<TSeq>::get_virus(int i) {
+    return viruses.at(i);
 }
 
 template<typename TSeq>
-inline PersonTools<TSeq> & Person<TSeq>::get_tools() {
+inline size_t Person<TSeq>::get_n_viruses() const noexcept
+{
+    return viruses.size();
+}
+
+template<typename TSeq>
+inline std::vector< ToolPtr<TSeq> > & Person<TSeq>::get_tools() {
     return tools;
 }
 
 template<typename TSeq>
-inline Tool<TSeq> & Person<TSeq>::get_tool(int i) {
-    return tools(i);
+inline ToolPtr<TSeq> & Person<TSeq>::get_tool(int i)
+{
+    return tools.at(i);
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::mutate_variant() {
-    viruses.mutate();
+inline size_t Person<TSeq>::get_n_tools() const noexcept
+{
+    return tools.size();
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::mutate_variant()
+{
+
+    for (auto & v : viruses)
+        v->mutate();
+
 }
 
 template<typename TSeq>
@@ -6893,48 +6784,15 @@ inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::update_status()
+inline void Person<TSeq>::change_status(
+    epiworld_fast_uint new_status,
+    epiworld_fast_int queue
+    )
 {
 
-    // No change if removed
-    if (IN(status, model->status_removed))
-    {
-        if (update_removed)
-            status_next = update_removed(this, model);
-
-    } else if (IN(status, model->status_susceptible)) {
-        
-        if (!update_susceptible)
-            throw std::logic_error("No update_susceptible function?!");
-
-        if (update_susceptible)
-            status_next = update_susceptible(this, model);
-
-    } else if (IN(status, model->status_exposed)) {
-
-        if (update_exposed)
-            status_next = update_exposed(this, model);
-
-    } else
-        throw std::range_error(
-            "The reported status " + std::to_string(status) + " is not valid.");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline void Person<TSeq>::change_status(epiworld_fast_uint new_status)
-{
-
-    if (new_status == status)
-        return;
-
-    if (new_status >= model->nstatus)
-        throw std::range_error(
-            "The reported status " + std::to_string(new_status) + " is not valid.");
-
-    status_next = new_status;
+    model->actions_add(
+        this, new_status, nullptr, queue
+    );
     
     return;
 
@@ -6946,54 +6804,72 @@ inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
 }
 
 template<typename TSeq>
-inline const epiworld_fast_uint & Person<TSeq>::get_status_next() const {
-    return status_next;
+inline void Person<TSeq>::reset()
+{
+
+    this->viruses.clear();
+    n_viruses = 0u;
+
+    this->tools.clear();
+    n_tools = 0u;
+
+    this->status = 0u;
+    
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::reset() {
+inline bool Person<TSeq>::has_tool(unsigned int t) const
+{
 
-    this->viruses.reset();
-    this->tools.reset();
-    this->status      = model->baseline_status_susceptible;
-    this->status_next = model->baseline_status_susceptible;
+    for (auto & tool : tools)
+        if (tool->get_id() == t)
+            return true;
+
+    return false;
 
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::set_update_susceptible(UpdateFun<TSeq> fun) {
-    update_susceptible = fun;
+inline bool Person<TSeq>::has_tool(std::string name) const
+{
+
+    for (auto & tool : tools)
+        if (tool->get_name() == t)
+            return true;
+
+    return false;
+
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::set_update_exposed(UpdateFun<TSeq> fun) {
-    update_exposed = fun;
+inline bool Person<TSeq>::has_virus(unsigned int t) const
+{
+    for (auto & v : viruses)
+        if (v->get_id() == t)
+            return true;
+
+    return false;
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::set_update_removed(UpdateFun<TSeq> fun) {
-    update_removed = fun;
+inline bool Person<TSeq>::has_virus(std::string name) const
+{
+    
+    for (auto & v : viruses)
+        if (v->get_name() == name)
+            return true;
+
+    return false;
+
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_tool(unsigned int t) const {
-    return tools.has_tool(t);
+inline bool Person<TSeq>::is_locked() const noexcept 
+{
+    return locked;
 }
 
-template<typename TSeq>
-inline bool Person<TSeq>::has_tool(std::string name) const {
-    return tools.has_tool(name);
-}
-
-template<typename TSeq>
-inline bool Person<TSeq>::has_virus(unsigned int t) const {
-    return viruses.has_virus(t);
-}
-
-template<typename TSeq>
-inline bool Person<TSeq>::has_virus(std::string name) const {
-    return viruses.has_virus(name);
-}
+#undef CHECK_COALESCE_
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////

@@ -50,12 +50,6 @@ inline void default_update_susceptible(
 
 }
 
-#define EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(prob_rec, prob_die) \
-    epiworld::VirusPtr<TSeq> & v = p->get_virus(0u); \
-    epiworld_double prob_rec = v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); \
-    epiworld_double prob_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
-
-
 template<typename TSeq>
 inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 

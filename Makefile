@@ -3,4 +3,7 @@ examples:
 all-examples:
 	cd examples && $(MAKE) all-examples
 
-.PHONY: examples all-examples
+epiworld.hpp:
+	Rscript --vanilla --verbose epiworld-hpp.R
+
+.PHONY: examples all-examples epiworld.hpp
