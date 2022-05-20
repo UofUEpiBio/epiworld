@@ -149,12 +149,12 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
 }
 
 #define CHECK_COALESCE_(storage_, proposed_, virus_tool_, alt_) \
-    epiworld_fast_uint storage_; \
-    if ((proposed_) == -99) {\
-        if ((virus_tool_) == -99) \
+    epiworld_fast_int storage_; \
+    if (static_cast<int>(proposed_) == -99) {\
+        if (static_cast<int>(virus_tool_) == -99) \
             (storage_) = (alt_);\
-        else (storage_) = static_cast<epiworld_fast_uint>((virus_tool_));\
-    } else (storage_) = static_cast<epiworld_fast_uint>((proposed_));
+        else (storage_) = (virus_tool_);\
+    } else (storage_) = (proposed_);
 
 
 template<typename TSeq>

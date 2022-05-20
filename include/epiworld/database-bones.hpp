@@ -52,7 +52,6 @@ private:
     MapVec_type<int,int> tool_id; ///< The squence is the key
     std::vector< TSeq> tool_sequence;
     std::vector< int > tool_origin_date;
-    std::vector< int > tool_parent_id;
 
     std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
     std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;

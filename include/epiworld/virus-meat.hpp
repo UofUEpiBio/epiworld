@@ -254,32 +254,27 @@ inline void Virus<TSeq>::set_post_immunity(
         
     }
 
-    std::shared_ptr< TSeq > _immune_id = -99;
+    // To make sure that we keep registering the virus
+    ToolPtr<TSeq> __no_reinfect = std::make_shared<Tool<TSeq>>(
+        "Immunity (" + *virus_name + ")"
+    );
+
+    __no_reinfect->set_susceptibility_reduction(prob);
+    __no_reinfect->set_death_reduction(0.0);
+    __no_reinfect->set_transmission_reduction(0.0);
+    __no_reinfect->set_recovery_enhancer(0.0);
 
     PostRecoveryFun<TSeq> tmpfun = 
-        [prob,_immune_id](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [__no_reinfect](
+            Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m
+            )
         {
-            Tool<TSeq> no_reinfect(
-                "No reinfect virus " +
-                std::to_string(v.get_id())
-                );
-
-            // if (_immune_id < 0)
-            // {
-            //     // Generating a random sequence
-            //     TSeq static_cast< TSeq >(m->runif())
-
-            //     no_reinfect.set_sequence(
-                    
-            //         );
-            // }
             
-            no_reinfect.set_susceptibility_reduction(prob);
-            no_reinfect.set_death_reduction(0.0);
-            no_reinfect.set_transmission_reduction(0.0);
-            no_reinfect.set_recovery_enhancer(0.0);
+            // Have we registered the tool?
+            if (__no_reinfect->get_id() == -99)
+                m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(no_reinfect);
+            p->add_tool(__no_reinfect);
 
             return;
 
@@ -310,20 +305,25 @@ inline void Virus<TSeq>::set_post_immunity(
 
     }
 
-    PostRecoveryFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
-        {
-            Tool<TSeq> no_reinfect(
-                "No reinfect virus " +
-                std::to_string(v->get_id())
-                );
-            
-            no_reinfect.set_susceptibility_reduction(*prob);
-            no_reinfect.set_death_reduction(0.0);
-            no_reinfect.set_transmission_reduction(0.0);
-            no_reinfect.set_recovery_enhancer(0.0);
+    // To make sure that we keep registering the virus
+    ToolPtr<TSeq> __no_reinfect = std::make_shared<Tool<TSeq>>(
+        "Immunity (" + *virus_name + ")"
+    );
 
-            p->add_tool(no_reinfect);
+    __no_reinfect->set_susceptibility_reduction(prob);
+    __no_reinfect->set_death_reduction(0.0);
+    __no_reinfect->set_transmission_reduction(0.0);
+    __no_reinfect->set_recovery_enhancer(0.0);
+
+    PostRecoveryFun<TSeq> tmpfun = 
+        [__no_reinfect](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        {
+
+            // Have we registered the tool?
+            if (__no_reinfect->get_id() == -99)
+                m->get_db().record_tool(*__no_reinfect);
+
+            p->add_tool(__no_reinfect);
 
             return;
 

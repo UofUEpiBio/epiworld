@@ -18,8 +18,9 @@ int main()
 
     // Adding the tool and virus
     epiworld::Virus<int> virus("covid 19");
-    // virus.set_post_immunity(1.0);
+    virus.set_post_immunity(1.0);
     virus.set_status(1,2,3);
+    virus.set_prob_death(.01);
     model.add_virus_n(virus, 50);
     
     epiworld::Tool<int> tool("vaccine");

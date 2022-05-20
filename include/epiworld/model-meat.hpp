@@ -67,7 +67,7 @@ inline void Model<TSeq>::actions_run()
     while (nactions != 0u)
     {
 
-        Action<TSeq> & a = actions[--nactions];
+        Action<TSeq>   a = actions[--nactions];
         Person<TSeq> * p = a.person;
 
         // Unlocking person right away (in case the new)

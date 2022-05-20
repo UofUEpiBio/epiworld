@@ -171,9 +171,7 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
         tool_id[hash] = new_id;
         tool_sequence.push_back(*t.get_sequence());
         tool_origin_date.push_back(model->today());
-        
-        tool_parent_id.push_back(old_id);
-        
+                
         today_tool.push_back({});
         today_tool[new_id].resize(model->nstatus, 0);
        
@@ -414,7 +412,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
 
         file_tool_info <<
-            "id " << "tool_sequence " << "date " << "parent\n";
+            "id " << "tool_sequence " << "date\n";
 
         for (const auto & v : variant_id)
         {
@@ -422,8 +420,7 @@ inline void DataBase<TSeq>::write_data(
             file_tool_info <<
                 id << " " <<
                 seq_writer(tool_sequence[id]) << " " <<
-                tool_origin_date[id] << " " <<
-                tool_parent_id[id] << "\n";
+                tool_origin_date[id] << "\n";
         }
 
     }
