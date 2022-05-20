@@ -131,20 +131,26 @@ inline void Model<TSeq>::print() const
         if (p.length() > nchar)
             nchar = p.length();
 
+    
+
     if (initialized) 
     {
         
         if (today() != 0)
-            fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %7i -> %i\n";
+            fmt = " - (%" + std::to_string(nstatus).length() +
+                std::string("d) Total %-") + std::to_string(nchar) + "s : %" +
+                std::to_string(std::to_string(size()).length()) + "i -> %i\n";
         else
-            fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %i\n";
+            fmt = " - (%" + std::to_string(nstatus).length() +
+                std::string("d) Total %-") + std::to_string(nchar) + "s : %i\n";
 
     }
     else
-        fmt = " - Total %-" + std::to_string(nchar + 1 + 4) + "s: %s\n";
+        fmt = " - (%" + std::to_string(nstatus).length() +
+            std::string("d) Total %-") + std::to_string(nchar) + "s : %s\n";
         
     printf_epiworld("\nDistribution of the population at time %i:\n", today());
-    for (unsigned int s = 0u; s < nstatus; ++s)
+    for (size_t s = 0u; s < nstatus; ++s)
     {
         if (initialized)
         {
@@ -154,7 +160,8 @@ inline void Model<TSeq>::print() const
 
                 printf_epiworld(
                     fmt.c_str(),
-                    (status_labels[s] + " (S)").c_str(),
+                    s,
+                    status_labels[s].c_str(),
                     db.hist_total_counts[s],
                     db.today_total[ s ]
                     );

@@ -35,7 +35,8 @@ inline void set_up_sir(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-
+    virus.set_status(1,2,2);
+    
     EPI_NEW_POSTRECOVERYFUN_LAMBDA(add_immunity,TSeq) {
 
         epiworld::Tool<TSeq> immune;
@@ -44,6 +45,7 @@ inline void set_up_sir(
         return;
 
     };
+
     virus.set_prob_infecting(&model("Infectiousness"));
     virus.set_post_recovery(add_immunity);
     

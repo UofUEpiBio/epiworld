@@ -60,6 +60,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
         p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
 
     p->tools[n_tools - 1]->set_date(m->today());
+    p->tools[n_tools - 1]->set_person(p);
 
     m->get_db().today_tool[t->get_id()][p->status]++;
 
