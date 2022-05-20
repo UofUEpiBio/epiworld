@@ -122,7 +122,9 @@ inline void Model<TSeq>::print() const
     }
 
     if (parameters.size() == 0u)
+    {
         printf_epiworld(" (none)\n");
+    }
 
     nchar = 0u;
     for (auto & p : status_labels)

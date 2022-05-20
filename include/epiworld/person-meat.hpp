@@ -138,7 +138,7 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
 }
 
 #define CHECK_COALESCE_(storage_, proposed_, virus_tool_, alt_) \
-    epiworld_fast_uint (storage_); \
+    epiworld_fast_uint storage_; \
     if ((proposed_) == -99) {\
         if ((virus_tool_) == -99) \
             (storage_) = (alt_);\

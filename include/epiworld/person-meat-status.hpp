@@ -101,7 +101,7 @@ inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
     } else {
 
         size_t which_v = std::floor(which / 2);
-        p->rm_virus(which);
+        p->rm_virus(which_v);
 
     }
 

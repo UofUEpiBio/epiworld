@@ -22,7 +22,7 @@
 #endif
 
 #ifndef epiworld_fast_uint
-    #define epiworld_fast_uint std::uint_fast8_t
+    #define epiworld_fast_uint std::uint_fast16_t
 #endif
 
 #endif

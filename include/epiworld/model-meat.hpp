@@ -22,7 +22,12 @@ inline void Model<TSeq>::actions_add(
     // Locking the agent
     person_->locked = true;
 
-    nactions++;
+    ++nactions;
+
+    #ifdef EPI_DEBUG
+    if (nactions == 0)
+        throw std::logic_error("Actions cannot be zero!!");
+    #endif
 
     if (nactions > actions.size())
     {
@@ -32,7 +37,11 @@ inline void Model<TSeq>::actions_add(
     }
     else 
     {
-        actions[nactions - 1] = Action<TSeq>(person_, new_status_, call_, queue_);
+        Action<TSeq> & A = actions.at(nactions - 1u);
+        A.person = person_;
+        A.new_status = new_status_;
+        A.call = call_;
+        A.queue = queue_;
     }
 
     return;
@@ -75,10 +84,11 @@ inline void Model<TSeq>::actions_run()
                 db.update_tool(p->tools[t]->id, p->status, a.new_status);
 
             p->status = a.new_status;
+            
         }
 
         // Reduce the counter
-        nactions--;
+        --nactions;
 
         // Updating queue
         if (a.queue > 0)
@@ -383,21 +393,22 @@ inline void Model<TSeq>::init(
     // Checking whether the proposed status in/out/removed
     // are valid
     epiworld_fast_int _init, _end, _removed;
+    int nstatus_int = static_cast<int>(nstatus);
     for (auto & v : viruses)
     {
         v->get_status(&_init, &_end, &_removed);
         
         // Negative unspecified status
-        if (((_init != -99) && (_init < 0)) || (_init >= nstatus))
+        if (((_init != -99) && (_init < 0)) || (_init >= nstatus_int))
             throw std::range_error("Statuses must be between 0 and " +
                 std::to_string(nstatus - 1));
 
         // Negative unspecified status
-        if (((_end != -99) && (_end < 0)) || (_end >= nstatus))
+        if (((_end != -99) && (_end < 0)) || (_end >= nstatus_int))
             throw std::range_error("Statuses must be between 0 and " +
                 std::to_string(nstatus - 1));
 
-        if (((_removed != -99) && (_removed < 0)) || (_removed >= nstatus))
+        if (((_removed != -99) && (_removed < 0)) || (_removed >= nstatus_int))
             throw std::range_error("Statuses must be between 0 and " +
                 std::to_string(nstatus - 1));
         
@@ -408,12 +419,12 @@ inline void Model<TSeq>::init(
         t->get_status(&_init, &_end);
         
         // Negative unspecified status
-        if (((_init != -99) && (_init < 0)) || (_init >= nstatus))
+        if (((_init != -99) && (_init < 0)) || (_init >= nstatus_int))
             throw std::range_error("Statuses must be between 0 and " +
                 std::to_string(nstatus - 1));
 
         // Negative unspecified status
-        if (((_end != -99) && (_end < 0)) || (_end >= nstatus))
+        if (((_end != -99) && (_end < 0)) || (_end >= nstatus_int))
             throw std::range_error("Statuses must be between 0 and " +
                 std::to_string(nstatus - 1));
 

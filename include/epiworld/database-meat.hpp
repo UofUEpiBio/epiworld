@@ -73,6 +73,22 @@ inline void DataBase<TSeq>::record()
 
         }
 
+        // Recording tool's history
+        for (auto & p : tool_id)
+        {
+
+            for (unsigned int s = 0u; s < model->nstatus; ++s)
+            {
+
+                hist_tool_date.push_back(model->today());
+                hist_tool_id.push_back(p.second);
+                hist_tool_status.push_back(s);
+                hist_tool_counts.push_back(today_tool[p.second][s]);
+
+            }
+
+        }
+
         // Recording the overall history
         for (unsigned int s = 0u; s < model->nstatus; ++s)
         {
@@ -213,7 +229,9 @@ inline void DataBase<TSeq>::update_virus(
         epiworld_fast_uint new_status
 ) {
 
-    today_variant[virus_id][prev_status]--;
+    if (prev_status > 0u)
+        today_variant[virus_id][prev_status]--;
+
     today_variant[virus_id][new_status]++;
     return;
 }
@@ -225,7 +243,9 @@ inline void DataBase<TSeq>::update_tool(
         epiworld_fast_uint new_status
 ) {
 
-    today_tool[tool_id][prev_status]--;
+    if (prev_status > 0u)
+        today_tool[tool_id][prev_status]--;
+        
     today_tool[tool_id][new_status]++;
     return;
 }
@@ -359,7 +379,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
-            "id " << "variant_sequence " << "date " << "parent " << "patiente\n";
+            "id " << "variant_sequence " << "date " << "parent\n";
 
         for (const auto & v : variant_id)
         {
@@ -368,7 +388,6 @@ inline void DataBase<TSeq>::write_data(
                 id << " " <<
                 seq_writer(variant_sequence[id]) << " " <<
                 variant_origin_date[id] << " " <<
-                variant_parent_id[id] << " " <<
                 variant_parent_id[id] << "\n";
         }
 
@@ -394,17 +413,16 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
 
         file_tool_info <<
-            "id " << "variant_sequence " << "date " << "parent " << "patiente\n";
+            "id " << "tool_sequence " << "date " << "parent\n";
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_tool_info <<
                 id << " " <<
-                seq_writer(variant_sequence[id]) << " " <<
-                variant_origin_date[id] << " " <<
-                variant_parent_id[id] << " " <<
-                variant_parent_id[id] << "\n";
+                seq_writer(tool_sequence[id]) << " " <<
+                tool_origin_date[id] << " " <<
+                tool_parent_id[id] << "\n";
         }
 
     }
@@ -416,12 +434,12 @@ inline void DataBase<TSeq>::write_data(
         file_tool_hist <<
             "date " << "id " << "status " << "n\n";
 
-        for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
+        for (unsigned int i = 0; i < hist_tool_id.size(); ++i)
             file_tool_hist <<
-                hist_variant_date[i] << " " <<
-                hist_variant_id[i] << " " <<
-                model->status_labels[hist_variant_status[i]] << " " <<
-                hist_variant_counts[i] << "\n";
+                hist_tool_date[i] << " " <<
+                hist_tool_id[i] << " " <<
+                model->status_labels[hist_tool_status[i]] << " " <<
+                hist_tool_counts[i] << "\n";
     }
 
     if (fn_total_hist != "")
