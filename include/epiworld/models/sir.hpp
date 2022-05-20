@@ -22,6 +22,11 @@ inline void set_up_sir(
     )
 {
 
+    // Adding statuses
+    model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
+    model.add_status("Infected", epiworld::default_update_exposed<TSeq>);
+    model.add_status("Removed");
+
     // Setting up parameters
     model.add_param(post_immunity, "Post immunity");
     model.add_param(susceptibility_reduction, "Immune suscept. redux.");
@@ -35,7 +40,7 @@ inline void set_up_sir(
 
         epiworld::Tool<TSeq> immune;
         immune.set_susceptibility_reduction(&MPAR(0));
-        p->add_tool(m->today(), immune);
+        p->add_tool(immune);
         return;
 
     };

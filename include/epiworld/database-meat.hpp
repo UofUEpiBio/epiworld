@@ -229,11 +229,11 @@ inline void DataBase<TSeq>::update_virus(
         epiworld_fast_uint new_status
 ) {
 
-    if (prev_status > 0u)
-        today_variant[virus_id][prev_status]--;
-
+    today_variant[virus_id][prev_status]--;
     today_variant[virus_id][new_status]++;
+
     return;
+    
 }
 
 template<typename TSeq>
@@ -243,11 +243,12 @@ inline void DataBase<TSeq>::update_tool(
         epiworld_fast_uint new_status
 ) {
 
-    if (prev_status > 0u)
-        today_tool[tool_id][prev_status]--;
-        
+
+    today_tool[tool_id][prev_status]--;    
     today_tool[tool_id][new_status]++;
+
     return;
+
 }
 
 template<typename TSeq>

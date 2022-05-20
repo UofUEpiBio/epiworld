@@ -39,6 +39,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     p->viruses[n_viruses]->set_host(p);
     p->viruses[n_viruses]->set_date(m->today());
 
+    m->get_db().today_variant[v->get_id()][p->status]++;
 
 }
 
@@ -59,6 +60,8 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
         p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
 
     p->tools[n_tools - 1]->set_date(m->today());
+
+    m->get_db().today_tool[t->get_id()][p->status]++;
 
 }
 
