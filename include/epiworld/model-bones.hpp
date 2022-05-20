@@ -147,9 +147,13 @@ private:
      */
     void actions_add(
         Person<TSeq> * person_,
+        VirusPtr<TSeq> virus_,
+        ToolPtr<TSeq> tool_,
+        epiworld_fast_uint virus_idx_,
+        epiworld_fast_uint tool_idx_,
         epiworld_fast_uint new_status_,
-        ActionFun<TSeq> call_,
-        epiworld_fast_int queue_
+        epiworld_fast_int queue_,
+        ActionFun<TSeq> call_
         );
 
     /**

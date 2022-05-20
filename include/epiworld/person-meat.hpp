@@ -9,7 +9,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p = a.person;
-    VirusPtr<TSeq> v = p->virus_tmp;
+    VirusPtr<TSeq> v = a.virus;
 
     // Has a host? If so, we need to register the transmission
     if (v->get_host())
@@ -48,7 +48,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p = a.person;
-    ToolPtr<TSeq> t = p->tool_tmp;
+    ToolPtr<TSeq> t = a.tool;
     
     // Update tool accounting
     p->n_tools++;
@@ -73,7 +73,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
     Person<TSeq> * p = a.person;    
 
     if (--p->n_viruses > 0)
-        std::swap(p->viruses[p->virus_to_remove_idx], p->viruses[p->n_viruses - 1]);
+        std::swap(p->viruses[a.virus_idx], p->viruses[p->n_viruses - 1]);
 
     return;
 
@@ -85,8 +85,8 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 
     Person<TSeq> * p = a.person;    
 
-    if (--p->n_viruses > 0)
-        std::swap(p->viruses[p->virus_to_remove_idx], p->viruses[p->n_viruses - 1]);
+    if (--p->n_tools > 0)
+        std::swap(p->tools[a.tool_idx], p->tools[p->n_tools - 1]);
 
     return;
 
@@ -160,9 +160,9 @@ inline void Person<TSeq>::add_tool(
     CHECK_COALESCE_(status_new_, status_new, tool->status_init, status)
     CHECK_COALESCE_(queue_, queue, tool->queue_init, 0)
 
-    tool_tmp = tool;
-
-    model->actions_add(this, status_new_, add_tool_, queue_);
+    model->actions_add(
+        this, nullptr, tool, 0u, 0u, status_new_, queue_, add_tool_
+        );
 
 }
 
@@ -193,10 +193,10 @@ inline void Person<TSeq>::add_virus(
 
     CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
     CHECK_COALESCE_(queue_, queue, virus->queue_init, 1)
-            
-    virus_tmp = virus;
 
-    model->actions_add(this, status_new_, add_virus_, queue_);
+    model->actions_add(
+        this, virus, nullptr, 0, 0, status_new_, queue_, add_virus_
+        );
 
 }
 
@@ -230,9 +230,9 @@ inline void Person<TSeq>::rm_tool(
     CHECK_COALESCE_(status_new_, status_new, tool->status_post, status)
     CHECK_COALESCE_(queue_, queue, tool->queue_post, 0)
 
-    tool_to_remove_idx = tool_idx;
-
-    model->actions_add(this, status_new_, rm_virus_, queue_);
+    model->actions_add(
+        this, nullptr, nullptr, 0u, tool_idx, status_new_, queue_, rm_tool_
+        );
 
 }
 
@@ -254,9 +254,9 @@ inline void Person<TSeq>::rm_virus(
     CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
     CHECK_COALESCE_(queue_, queue, virus->queue_init, -1)
 
-    virus_to_remove_idx = virus_idx;
-
-    model->actions_add(this, status_new_, rm_virus_, queue_);
+    model->actions_add(
+        this, nullptr, nullptr, virus_idx, 0u, status_new_, queue_, rm_virus_
+        );
     
 }
 
@@ -411,7 +411,7 @@ inline void Person<TSeq>::change_status(
 {
 
     model->actions_add(
-        this, new_status, nullptr, queue
+        this, nullptr, nullptr, 0u, 0u, new_status, queue, nullptr
     );
     
     return;

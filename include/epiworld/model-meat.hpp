@@ -7,9 +7,13 @@
 template<typename TSeq>
 inline void Model<TSeq>::actions_add(
     Person<TSeq> * person_,
+    VirusPtr<TSeq> virus_,
+    ToolPtr<TSeq> tool_,
+    epiworld_fast_uint virus_idx_,
+    epiworld_fast_uint tool_idx_,
     epiworld_fast_uint new_status_,
-    ActionFun<TSeq> call_,
-    epiworld_fast_int queue_
+    epiworld_fast_int queue_,
+    ActionFun<TSeq> call_
 ) {
     
     if (person_->locked)
@@ -32,16 +36,24 @@ inline void Model<TSeq>::actions_add(
     if (nactions > actions.size())
     {
 
-        actions.push_back(Action<TSeq>(person_, new_status_, call_, queue_));
+        actions.push_back(
+            Action<TSeq>(
+                person_, virus_, tool_, virus_idx_, tool_idx_,
+                new_status_, queue_, call_
+            ));
 
     }
     else 
     {
         Action<TSeq> & A = actions.at(nactions - 1u);
         A.person = person_;
+        A.virus = virus_;
+        A.tool = tool_;
+        A.virus_idx = virus_idx_;
+        A.tool_idx = tool_idx_;
         A.new_status = new_status_;
-        A.call = call_;
         A.queue = queue_;
+        A.call = call_;
     }
 
     return;

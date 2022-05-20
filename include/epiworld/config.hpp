@@ -75,19 +75,47 @@ struct Action;
 template<typename TSeq>
 using ActionFun = std::function<void(Action<TSeq>&,Model<TSeq>*)>;
 
+/**
+ * @brief Action data for update an agent
+ * 
+ * @tparam TSeq 
+ */
 template<typename TSeq>
 struct Action {
     Person<TSeq> * person;
+    VirusPtr<TSeq> virus;
+    ToolPtr<TSeq> tool;
+    epiworld_fast_uint virus_idx;
+    epiworld_fast_uint tool_idx;
     epiworld_fast_uint new_status;
-    ActionFun<TSeq> call;
     epiworld_fast_int queue;
+    ActionFun<TSeq> call;
 public:
+/**
+     * @brief Construct a new Action object
+     * 
+     * All the parameters are rather optional.
+     * 
+     * @param person_ Person over who the action will happen
+     * @param virus_ Virus to add
+     * @param tool_ Tool to add
+     * @param virus_idx Index of virus to be removed (if needed)
+     * @param tool_idx Index of tool to be removed (if needed)
+     * @param new_status_ Next status
+     * @param queue_ Efect on the queue
+     * @param call_ The action call (if needed)
+     */
     Action(
         Person<TSeq> * person_,
+        VirusPtr<TSeq> virus_,
+        ToolPtr<TSeq> tool_,
+        epiworld_fast_uint virus_idx_,
+        epiworld_fast_uint tool_idx_,
         epiworld_fast_uint new_status_,
-        ActionFun<TSeq> call_,
-        epiworld_fast_int queue_
-    ) : person(person_), new_status(new_status_), call(call_), queue(queue_) {};
+        epiworld_fast_int queue_,
+        ActionFun<TSeq> call_
+    ) : person(person_), virus(virus_), tool(tool_), virus_idx(virus_idx_),
+        tool_idx(tool_idx_), new_status(new_status_), queue(queue_), call(call_) {};
 };
 
 /**
