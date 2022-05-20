@@ -26,7 +26,7 @@ inline void set_up_sir(
     model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
     model.add_status("Infected", epiworld::default_update_exposed<TSeq>);
     model.add_status("Recovered");
-    model.add_status("Removed");
+    model.add_status("Gained Immunity");
 
     // Setting up parameters
     model.add_param(post_immunity, "Post immunity");
@@ -36,19 +36,24 @@ inline void set_up_sir(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(1,2,3);
+    virus.set_status(1,2,2);
+
+    epiworld::Tool<TSeq> immune("Immunity (" + vname + ")");
+    immune.set_susceptibility_reduction(&model("Post immunity"));
+
+    model.add_tool_n(immune, 0u);
     
     EPI_NEW_POSTRECOVERYFUN_LAMBDA(add_immunity,TSeq) {
 
-        epiworld::Tool<TSeq> immune;
-        immune.set_susceptibility_reduction(&MPAR(0));
-        p->add_tool(immune);
+        if (m->runif() > .5)
+            p->add_tool(m->get_tools()[0u], 3);
+
         return;
 
     };
 
     virus.set_prob_infecting(&model("Infectiousness"));
-    // virus.set_post_recovery(add_immunity);
+    virus.set_post_recovery(add_immunity);
     
     // Preparing the immune system -----------------------------------
     epiworld::Tool<TSeq> immune_sys("Immune system");

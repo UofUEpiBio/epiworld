@@ -680,7 +680,7 @@ template<typename TSeq>
 inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
 {
     t.id = tools.size();
-    tools.push_back(t);
+    tools.push_back(std::make_shared<Tool<TSeq> >(t));
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(false);
 }
@@ -1414,6 +1414,18 @@ template<typename TSeq>
 inline Queue<TSeq> & Model<TSeq>::get_queue()
 {
     return queue;
+}
+
+template<typename TSeq>
+inline const std::vector< VirusPtr<TSeq> > & Model<TSeq>::get_viruses() const
+{
+    return viruses;
+}
+
+template<typename TSeq>
+const std::vector< ToolPtr<TSeq> > & Model<TSeq>::get_tools() const
+{
+    return tools;
 }
 
 #undef DURCAST

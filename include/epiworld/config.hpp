@@ -87,7 +87,7 @@ struct Action {
     ToolPtr<TSeq> tool;
     epiworld_fast_uint virus_idx;
     epiworld_fast_uint tool_idx;
-    epiworld_fast_uint new_status;
+    epiworld_fast_int new_status;
     epiworld_fast_int queue;
     ActionFun<TSeq> call;
 public:
@@ -111,7 +111,7 @@ public:
         ToolPtr<TSeq> tool_,
         epiworld_fast_uint virus_idx_,
         epiworld_fast_uint tool_idx_,
-        epiworld_fast_uint new_status_,
+        epiworld_fast_int new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
     ) : person(person_), virus(virus_), tool(tool_), virus_idx(virus_idx_),

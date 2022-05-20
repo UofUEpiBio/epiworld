@@ -57,14 +57,14 @@ inline void tracked_agents_check_init(epiworld::Model<TSeq> * m)
 
 }
 
-EPI_NEW_UPDATEFUN(update_susceptible, bool)
+EPI_NEW_UPDATEFUN(update_susceptible, int)
 {
 
     tracked_agents_check_init(m);
 
     // No infected individual?
     if (tracked_ninfected == 0)
-        return p->get_status();
+        return;
 
     if (m->runif() < tracked_current_infect_prob)
     {
@@ -80,18 +80,18 @@ EPI_NEW_UPDATEFUN(update_susceptible, bool)
 
         // Infecting the individual
         p->add_virus(
-            &tracked_agents_infected[which]->get_virus(0u)
+            tracked_agents_infected[which]->get_virus(0u)
             ); 
 
-        return SIRCONSTATUS::INFECTED;
+        return;
 
     }
 
-    return p->get_status();
+    return;
 
 }
 
-EPI_NEW_UPDATEFUN(update_infected, bool)
+EPI_NEW_UPDATEFUN(update_infected, int)
 {
 
     tracked_agents_check_init(m);
@@ -101,20 +101,20 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
     {
 
         tracked_ninfected_next--;
-        epiworld::Virus<> * v = &p->get_virus(0u);
-        p->rm_virus(v);
-        return SIRCONSTATUS::RECOVERED;
+        epiworld::VirusPtr<int> v = p->get_virus(0u);
+        p->rm_virus(0);
+        return;
 
     }
 
     // Will be present next
     tracked_agents_infected_next.push_back(p);
 
-    return p->get_status();
+    return;
 
 }
 
-EPI_NEW_GLOBALFUN(global_accounting, bool)
+EPI_NEW_GLOBALFUN(global_accounting, int)
 {
 
     // On the last day, also reset tracked agents and
@@ -169,30 +169,21 @@ inline void set_up_sir_connected(
     )
 {
 
+    // Status
+    model.add_status("Susceptible", update_susceptible);
+    model.add_status("Infected", update_infected);
+    model.add_status("Recovered");
+
     // Setting up parameters
     model.add_param(reproductive_number, "Beta");
     model.add_param(prob_transmission, "Prob. Transmission");
     model.add_param(prob_recovery, "Prob. Recovery");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
-    // Status
-    std::vector< epiworld_fast_uint > new_status =
-    {
-        SIRCONSTATUS::SUSCEPTIBLE, SIRCONSTATUS::INFECTED,
-        SIRCONSTATUS::RECOVERED
-    };
-
-    model.reset_status_codes(
-        new_status,
-        {"susceptible", "infected", "recovered"},
-        false
-    );
-
-    model.set_update_exposed(update_infected);
-    model.set_update_susceptible(update_susceptible);
-
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
+    virus.set_status(1, 2, 2);
+
     model.add_virus(virus, prevalence);
 
     // Adding updating function

@@ -5,9 +5,9 @@
 int main() {
 
     epiworld::Model<> model;
-
+    
     set_up_sir(
-        model,     // Model object
+        model,
         "a virus", // Name of the virus
         0.01,      // Initial prevalence
         1.0,       // Infectiousness

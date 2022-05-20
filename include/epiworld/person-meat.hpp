@@ -4,12 +4,21 @@
 // template<typename Ta>
 // inline bool IN(Ta & a, std::vector< Ta > & b);
 
+#define CHECK_COALESCE_(proposed_, virus_tool_, alt_) \
+    if (static_cast<int>(proposed_) == -99) {\
+        if (static_cast<int>(virus_tool_) == -99) \
+            (proposed_) = (alt_);\
+        else (proposed_) = (virus_tool_);}
+
 template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p = a.person;
     VirusPtr<TSeq> v = a.virus;
+
+    CHECK_COALESCE_(a.new_status, v->status_init, p->get_status())
+    CHECK_COALESCE_(a.queue, v->queue_init, 1)
 
     // Has a host? If so, we need to register the transmission
     if (v->get_host())
@@ -49,6 +58,9 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 
     Person<TSeq> * p = a.person;
     ToolPtr<TSeq> t = a.tool;
+
+    CHECK_COALESCE_(a.new_status, t->status_init, p->get_status())
+    CHECK_COALESCE_(a.queue, t->queue_init, 0)
     
     // Update tool accounting
     p->n_tools++;
@@ -70,10 +82,14 @@ template<typename TSeq>
 inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    Person<TSeq> * p = a.person;    
+    Person<TSeq> * p   = a.person;    
+    VirusPtr<TSeq> & v = a.person->viruses[a.virus_idx];
+    
+    CHECK_COALESCE_(a.new_status, v->status_post, p->get_status())
+    CHECK_COALESCE_(a.queue, v->queue_post, -1)
 
     if (--p->n_viruses > 0)
-        std::swap(p->viruses[a.virus_idx], p->viruses[p->n_viruses]);
+        std::swap(v, p->viruses[p->n_viruses]);
     
     // Calling the virus action over the removed virus
     p->viruses[p->n_viruses]->post_recovery();
@@ -86,10 +102,14 @@ template<typename TSeq>
 inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    Person<TSeq> * p = a.person;    
+    Person<TSeq> * p  = a.person;    
+    ToolPtr<TSeq> & t = p->tools[a.tool_idx];
+
+    CHECK_COALESCE_(a.new_status, t->status_post, p->get_status())
+    CHECK_COALESCE_(a.queue, t->queue_post, 0)
 
     if (--p->n_tools > 0)
-        std::swap(p->tools[a.tool_idx], p->tools[p->n_tools - 1]);
+        std::swap(t, p->tools[p->n_tools - 1]);
 
     return;
 
@@ -148,15 +168,6 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
     
 }
 
-#define CHECK_COALESCE_(storage_, proposed_, virus_tool_, alt_) \
-    epiworld_fast_int storage_; \
-    if (static_cast<int>(proposed_) == -99) {\
-        if (static_cast<int>(virus_tool_) == -99) \
-            (storage_) = (alt_);\
-        else (storage_) = (virus_tool_);\
-    } else (storage_) = (proposed_);
-
-
 template<typename TSeq>
 inline void Person<TSeq>::add_tool(
     ToolPtr<TSeq> tool,
@@ -164,11 +175,9 @@ inline void Person<TSeq>::add_tool(
     epiworld_fast_int queue
 ) {
     
-    CHECK_COALESCE_(status_new_, status_new, tool->status_init, status)
-    CHECK_COALESCE_(queue_, queue, tool->queue_init, 0)
 
     model->actions_add(
-        this, nullptr, tool, 0u, 0u, status_new_, queue_, add_tool_
+        this, nullptr, tool, 0u, 0u, status_new, queue, add_tool_
         );
 
 }
@@ -198,11 +207,11 @@ inline void Person<TSeq>::add_virus(
             " has not been registered. There are only " + std::to_string(model->get_nvariants()) + 
             " included in the model.");
 
-    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
-    CHECK_COALESCE_(queue_, queue, virus->queue_init, 1)
+    // CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
+    // CHECK_COALESCE_(queue_, queue, virus->queue_init, 1)
 
     model->actions_add(
-        this, virus, nullptr, 0, 0, status_new_, queue_, add_virus_
+        this, virus, nullptr, 0, 0, status_new, queue, add_virus_
         );
 
 }
@@ -234,11 +243,11 @@ inline void Person<TSeq>::rm_tool(
 
     ToolPtr<TSeq> & tool = tools[tool_idx];
 
-    CHECK_COALESCE_(status_new_, status_new, tool->status_post, status)
-    CHECK_COALESCE_(queue_, queue, tool->queue_post, 0)
+    // CHECK_COALESCE_(status_new_, status_new, tool->status_post, status)
+    // CHECK_COALESCE_(queue_, queue, tool->queue_post, 0)
 
     model->actions_add(
-        this, nullptr, nullptr, 0u, tool_idx, status_new_, queue_, rm_tool_
+        this, nullptr, nullptr, 0u, tool_idx, status_new, queue, rm_tool_
         );
 
 }
@@ -262,11 +271,11 @@ inline void Person<TSeq>::rm_virus(
 
     VirusPtr<TSeq> & virus = viruses[virus_idx];
 
-    CHECK_COALESCE_(status_new_, status_new, virus->status_post, status)
-    CHECK_COALESCE_(queue_, queue, virus->queue_post, -1)
+    // CHECK_COALESCE_(status_new_, status_new, virus->status_post, status)
+    // CHECK_COALESCE_(queue_, queue, virus->queue_post, -1)
 
     model->actions_add(
-        this, nullptr, nullptr, virus_idx, 0u, status_new_, queue_, default_rm_virus<TSeq>
+        this, nullptr, nullptr, virus_idx, 0u, status_new, queue, default_rm_virus<TSeq>
         );
     
 }

@@ -519,6 +519,9 @@ public:
     void set_death_reduction_mixer(MixerFun<TSeq> fun);
     ///@}
 
+    const std::vector< VirusPtr<TSeq> > & get_viruses() const;
+    const std::vector< ToolPtr<TSeq> > & get_tools() const;
+
 };
 
 #endif

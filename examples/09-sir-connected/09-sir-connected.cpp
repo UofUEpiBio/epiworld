@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     unsigned int nreplica = 0u;
 
     auto record =
-        [&results,&dates,&nreplica,&labels](epiworld::Model<bool> * m)
+        [&results,&dates,&nreplica,&labels](epiworld::Model<> * m)
         {
 
             if (nreplica == 0)
@@ -74,9 +74,9 @@ int main(int argc, char* argv[]) {
     // Running and checking the results
     model.run_multiple(
         nexperiments, // How many experiments
-        record,           // Function to call after each experiment
-        true,             // Whether to reset the population
-        true              // Whether to print a progress bar
+        record,       // Function to call after each experiment
+        true,         // Whether to reset the population
+        true          // Whether to print a progress bar
     );
 
     model.print();

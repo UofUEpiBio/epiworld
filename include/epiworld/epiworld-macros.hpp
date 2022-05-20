@@ -85,12 +85,12 @@
 #define EPI_TOKENPASTE(a,b) a ## b
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
 
-#define EPI_NEW_UPDATEFUN(funname,tseq) inline epiworld_fast_uint \
+#define EPI_NEW_UPDATEFUN(funname,tseq) inline void \
     (funname)(epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
 
-#define EPI_NEW_UPDATEFUN_LAMBDA(funname,tseq) inline epiworld_fast_uint \
+#define EPI_NEW_UPDATEFUN_LAMBDA(funname,tseq) \
     epiworld::UpdateFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
+    [](epiworld::Person<tseq> * p, epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_GLOBALFUN(funname,tseq) inline void \
     (funname)(epiworld::Model<tseq>* m)
