@@ -61,7 +61,7 @@ inline epiworld_double death_reduction_mixer_default(
  * @tparam TSeq Type of sequence. In principle, users can build models in which
  * virus and human sequence is represented as numeric vectors (if needed.)
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 class Model {
     friend class Person<TSeq>;
     friend class DataBase<TSeq>;

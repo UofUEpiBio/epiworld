@@ -6,7 +6,7 @@
  * 
  * @tparam TSeq Type of sequence
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 class PersonViruses {
     friend class Person<TSeq>;
     friend class Model<TSeq>;

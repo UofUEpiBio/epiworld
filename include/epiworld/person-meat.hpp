@@ -73,7 +73,10 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
     Person<TSeq> * p = a.person;    
 
     if (--p->n_viruses > 0)
-        std::swap(p->viruses[a.virus_idx], p->viruses[p->n_viruses - 1]);
+        std::swap(p->viruses[a.virus_idx], p->viruses[p->n_viruses]);
+    
+    // Calling the virus action over the removed virus
+    p->viruses[p->n_viruses]->post_recovery();
 
     return;
 
@@ -125,6 +128,8 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
 
     }
 
+    n_viruses = p.n_viruses;
+
     tools.reserve(p.n_tools);
     for (auto & t : p.tools)
     {
@@ -134,6 +139,8 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
 
     }
     
+    n_tools = p.n_tools;
+
     add_virus_ = p.add_virus_;
     add_tool_ = p.add_tool_;
     rm_virus_ = p.rm_virus_;
@@ -248,14 +255,18 @@ inline void Person<TSeq>::rm_virus(
             "The Virus you want to remove is out of range. This Person only has " +
             std::to_string(n_viruses) + " viruses."
         );
+    else if (n_viruses == 0u)
+        throw std::logic_error(
+            "There is no virus to remove here!"
+        );
 
     VirusPtr<TSeq> & virus = viruses[virus_idx];
 
-    CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
-    CHECK_COALESCE_(queue_, queue, virus->queue_init, -1)
+    CHECK_COALESCE_(status_new_, status_new, virus->status_post, status)
+    CHECK_COALESCE_(queue_, queue, virus->queue_post, -1)
 
     model->actions_add(
-        this, nullptr, nullptr, virus_idx, 0u, status_new_, queue_, rm_virus_
+        this, nullptr, nullptr, virus_idx, 0u, status_new_, queue_, default_rm_virus<TSeq>
         );
     
 }
@@ -324,7 +335,7 @@ inline VirusPtr<TSeq> & Person<TSeq>::get_virus(int i) {
 template<typename TSeq>
 inline size_t Person<TSeq>::get_n_viruses() const noexcept
 {
-    return viruses.size();
+    return n_viruses;
 }
 
 template<typename TSeq>
@@ -341,7 +352,7 @@ inline ToolPtr<TSeq> & Person<TSeq>::get_tool(int i)
 template<typename TSeq>
 inline size_t Person<TSeq>::get_n_tools() const noexcept
 {
-    return tools.size();
+    return n_tools;
 }
 
 template<typename TSeq>

@@ -49,34 +49,44 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
 template<typename TSeq>
 inline TSeq default_sequence();
 
+int _n_sequences_created = 0;
+
 template<>
 inline bool default_sequence() {
-    return false;
+
+    if (_n_sequences_created == 2)
+        throw std::logic_error("Maximum number of sequence created.");
+
+    return _n_sequences_created++ ? false : true;
 }
 
 template<>
 inline int default_sequence() {
-    return 0;
+    return _n_sequences_created++;
 }
 
 template<>
 inline epiworld_double default_sequence() {
-    return 0.0;
+    return static_cast<epiworld_double>(_n_sequences_created++);
 }
 
 template<>
 inline std::vector<bool> default_sequence() {
-    return {false};
+
+    if (_n_sequences_created == 2)
+        throw std::logic_error("Maximum number of sequence created.");
+
+    return {_n_sequences_created++ ? false : true};
 }
 
 template<>
 inline std::vector<int> default_sequence() {
-    return {0};
+    return {_n_sequences_created++};
 }
 
 template<>
 inline std::vector<epiworld_double> default_sequence() {
-    return {0.0};
+    return {static_cast<epiworld_double>(_n_sequences_created++)};
 }
 ///@}
 

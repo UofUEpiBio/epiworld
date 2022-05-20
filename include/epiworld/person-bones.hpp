@@ -36,7 +36,7 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 class Person {
     friend class Model<TSeq>;
     friend class Tool<TSeq>;
@@ -64,9 +64,11 @@ private:
     epiworld_fast_uint n_tools = 0u;
 
     ActionFun<TSeq> add_virus_ = default_add_virus<TSeq>;
-    ActionFun<TSeq> add_tool_ = default_add_tool<TSeq>;
-    ActionFun<TSeq> rm_virus_ = default_rm_virus<TSeq>;
-    ActionFun<TSeq> rm_tool_ = default_rm_tool<TSeq>;
+    ActionFun<TSeq> add_tool_  = default_add_tool<TSeq>;
+    ActionFun<TSeq> rm_virus_  = default_rm_virus<TSeq>;
+    ActionFun<TSeq> rm_tool_   = default_rm_tool<TSeq>;
+
+    epiworld_fast_uint action_counter = 0u;
 
 public:
 

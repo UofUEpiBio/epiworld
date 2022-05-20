@@ -11,7 +11,7 @@
  * 
  * @tparam TSeq 
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 class Queue
 {
 

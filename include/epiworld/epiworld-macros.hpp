@@ -38,27 +38,27 @@
 #define EPI_NEW_MUTFUN(funname,tseq) inline bool \
     (funname)(\
     epiworld::Person<tseq> * p, \
-    std::shared_ptr<epiworld::Virus<tseq>> v, \
+    epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m )
 
 #define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
     epiworld::MutFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    std::shared_ptr<epiworld::Virus<tseq>> v, \
-    epiworld::Model<tseq> * m)
+    epiworld::Virus<tseq> & v, \
+    epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
     (funname)( \
     epiworld::Person<tseq> * p, \
-    std::shared_ptr<epiworld::Virus<tseq>> v, \
+    epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
     epiworld::PostRecoveryFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    std::shared_ptr<epiworld::Virus<tseq>> v, \
-    epiworld::Model<tseq> * m)
+    epiworld::Virus<tseq> & v , \
+    epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
     (funname)( \

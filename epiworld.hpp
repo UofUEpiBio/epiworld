@@ -1102,7 +1102,7 @@ inline std::vector<int> default_seq_hasher<bool>(const bool & x) {
  * @param seq 
  * @return std::string 
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 inline std::string default_seq_writer(const TSeq & seq);
 
 template<>
@@ -2402,7 +2402,7 @@ inline void rewire_degseq(
     epiworld_double proportion
     );
 
-template<typename TSeq = bool>
+template<typename TSeq = int>
 inline void rewire_degseq(
     std::vector< Person<TSeq> > * persons,
     Model<TSeq> * model,
@@ -2815,7 +2815,7 @@ inline AdjList rgraph_smallworld(
  * 
  * @tparam TSeq 
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 class Queue
 {
 
@@ -2961,7 +2961,7 @@ inline epiworld_double death_reduction_mixer_default(
  * @tparam TSeq Type of sequence. In principle, users can build models in which
  * virus and human sequence is represented as numeric vectors (if needed.)
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 class Model {
     friend class Person<TSeq>;
     friend class DataBase<TSeq>;
@@ -5128,7 +5128,7 @@ class Model;
  * having one or more tools to fight the virus. Because of this, transmisibility
  * should be a function of the host.
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 class Virus {
     friend class Person<TSeq>;
     friend class Model<TSeq>;
@@ -6370,7 +6370,7 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 class Person {
     friend class Model<TSeq>;
     friend class Tool<TSeq>;

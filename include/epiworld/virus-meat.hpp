@@ -16,8 +16,10 @@ template<typename TSeq>
 inline void Virus<TSeq>::mutate() {
 
     if (mutation_fun)
-        if (mutation_fun(host, this, this->get_model()))
+        if (mutation_fun(host, *this, this->get_model()))
+        {
             host->get_model()->record_variant(*this);
+        }
 
     return;
     
@@ -225,7 +227,7 @@ inline void Virus<TSeq>::post_recovery()
 {
 
     if (post_recovery_fun)
-        return post_recovery_fun(host, this, host->get_model());    
+        post_recovery_fun(host, *this, host->get_model());    
 
     return;
         
@@ -252,13 +254,25 @@ inline void Virus<TSeq>::set_post_immunity(
         
     }
 
+    std::shared_ptr< TSeq > _immune_id = -99;
+
     PostRecoveryFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob,_immune_id](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             Tool<TSeq> no_reinfect(
                 "No reinfect virus " +
-                std::to_string(v->get_id())
+                std::to_string(v.get_id())
                 );
+
+            // if (_immune_id < 0)
+            // {
+            //     // Generating a random sequence
+            //     TSeq static_cast< TSeq >(m->runif())
+
+            //     no_reinfect.set_sequence(
+                    
+            //         );
+            // }
             
             no_reinfect.set_susceptibility_reduction(prob);
             no_reinfect.set_death_reduction(0.0);
@@ -309,7 +323,7 @@ inline void Virus<TSeq>::set_post_immunity(
             no_reinfect.set_transmission_reduction(0.0);
             no_reinfect.set_recovery_enhancer(0.0);
 
-            p->add_tool(m->today(), no_reinfect);
+            p->add_tool(no_reinfect);
 
             return;
 

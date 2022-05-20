@@ -64,12 +64,16 @@ template<typename TSeq>
 inline void Model<TSeq>::actions_run()
 {
     // Making the call
-    size_t nactions_ = nactions;
-    for (size_t i = 0u; i < nactions_; ++i)
+    while (nactions != 0u)
     {
 
-        Action<TSeq> & a = actions[i];
+        Action<TSeq> & a = actions[--nactions];
         Person<TSeq> * p = a.person;
+
+        // Unlocking person right away (in case the new)
+        // action adds an action, in which case we will iterate
+        // back to the user
+        p->locked = false;
 
         // Applying function
         if (a.call)
@@ -99,17 +103,11 @@ inline void Model<TSeq>::actions_run()
             
         }
 
-        // Reduce the counter
-        --nactions;
-
         // Updating queue
         if (a.queue > 0)
             queue += p;
         else if (a.queue < 0)
             queue -= p;
-
-        // Unlocking person
-        p->locked = false;
 
     }
 

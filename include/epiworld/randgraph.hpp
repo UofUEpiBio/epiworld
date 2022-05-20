@@ -17,7 +17,7 @@ inline void rewire_degseq(
     epiworld_double proportion
     );
 
-template<typename TSeq = bool>
+template<typename TSeq = int>
 inline void rewire_degseq(
     std::vector< Person<TSeq> > * persons,
     Model<TSeq> * model,

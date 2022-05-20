@@ -10,7 +10,7 @@
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
-template<typename TSeq = bool>
+template<typename TSeq = int>
 inline void set_up_sir(
     epiworld::Model<TSeq> & model,
     std::string vname,
@@ -25,6 +25,7 @@ inline void set_up_sir(
     // Adding statuses
     model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
     model.add_status("Infected", epiworld::default_update_exposed<TSeq>);
+    model.add_status("Recovered");
     model.add_status("Removed");
 
     // Setting up parameters
@@ -35,7 +36,7 @@ inline void set_up_sir(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(1,2,2);
+    virus.set_status(1,2,3);
     
     EPI_NEW_POSTRECOVERYFUN_LAMBDA(add_immunity,TSeq) {
 
@@ -47,7 +48,7 @@ inline void set_up_sir(
     };
 
     virus.set_prob_infecting(&model("Infectiousness"));
-    virus.set_post_recovery(add_immunity);
+    // virus.set_post_recovery(add_immunity);
     
     // Preparing the immune system -----------------------------------
     epiworld::Tool<TSeq> immune_sys("Immune system");
