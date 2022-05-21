@@ -22,7 +22,7 @@ class Tool;
  * 
  * @tparam TSeq Type of sequence
  */
-template<typename TSeq=bool> 
+template<typename TSeq = int> 
 class Tool {
     friend class PersonTools<TSeq>;
     friend class Person<TSeq>;
@@ -98,7 +98,7 @@ public:
 
     Person<TSeq> * get_person();
     void set_person(Person<TSeq> * p);
-    unsigned int get_id() const;
+    int get_id() const;
     void set_id(int id);
     void set_date(int d);
 

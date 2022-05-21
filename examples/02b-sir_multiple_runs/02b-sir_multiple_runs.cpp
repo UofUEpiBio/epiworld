@@ -33,7 +33,7 @@ int main() {
     unsigned int nreplica = 0u;
 
     auto record =
-        [&results,&nreplica,&labels](epiworld::Model<bool> * m)
+        [&results,&nreplica,&labels](epiworld::Model<> * m)
         {
 
             if (nreplica == 0u)

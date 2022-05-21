@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
         std::logic_error("What is the surveillance prob?");
 
 
-    epiworld::Model<bool> surveillance;
+    epiworld::Model<> surveillance;
     set_up_surveillance(
         surveillance,    // Model object
         "a virus", // Name of the virus

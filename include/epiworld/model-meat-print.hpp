@@ -172,7 +172,8 @@ inline void Model<TSeq>::print() const
 
                 printf_epiworld(
                     fmt.c_str(),
-                    (status_labels[s] + " (S)").c_str(),
+                    s,
+                    status_labels[s].c_str(),
                     db.today_total[ s ]
                     );
 
@@ -185,7 +186,8 @@ inline void Model<TSeq>::print() const
 
             printf_epiworld(
                 fmt.c_str(),
-                (status_labels[s] + " (S)").c_str(),
+                s,
+                status_labels[s].c_str(),
                 " - "
                 );
 

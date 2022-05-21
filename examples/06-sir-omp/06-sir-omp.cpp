@@ -7,7 +7,7 @@ int main() {
 
     unsigned int nthreads = 4u;
     omp_set_num_threads(nthreads);
-    std::vector< epiworld::Model<bool> > models(nthreads);
+    std::vector< epiworld::Model<> > models(nthreads);
 
     for (unsigned int i = 0u; i < nthreads; ++i)
         set_up_sir(

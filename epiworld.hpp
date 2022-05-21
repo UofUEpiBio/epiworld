@@ -5732,7 +5732,7 @@ class Tool;
  * 
  * @tparam TSeq Type of sequence
  */
-template<typename TSeq=bool> 
+template<typename TSeq = int> 
 class Tool {
     friend class PersonTools<TSeq>;
     friend class Person<TSeq>;

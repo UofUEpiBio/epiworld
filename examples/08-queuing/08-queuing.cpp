@@ -19,8 +19,8 @@ int main(int argc, char* argv[]) {
         std::logic_error("What is the surveillance prob?");
 
 
-    epiworld::Model<bool> surveillance1;
-    epiworld::Model<bool> surveillance2;
+    epiworld::Model<> surveillance1;
+    epiworld::Model<> surveillance2;
 
     set_up_surveillance(surveillance1, "covid19");    
     set_up_surveillance(surveillance2, "covid19");

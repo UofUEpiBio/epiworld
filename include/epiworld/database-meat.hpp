@@ -529,6 +529,10 @@ inline void DataBase<TSeq>::reset()
     hist_variant_status.clear();
     hist_variant_counts.clear();
 
+    tool_id.clear();
+    tool_sequence.clear();
+    tool_origin_date.clear();
+
     hist_tool_date.clear();
     hist_tool_id.clear();
     hist_tool_status.clear();

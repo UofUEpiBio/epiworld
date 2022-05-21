@@ -269,10 +269,6 @@ inline void Person<TSeq>::rm_virus(
             "There is no virus to remove here!"
         );
 
-    VirusPtr<TSeq> & virus = viruses[virus_idx];
-
-    // CHECK_COALESCE_(status_new_, status_new, virus->status_post, status)
-    // CHECK_COALESCE_(queue_, queue, virus->queue_post, -1)
 
     model->actions_add(
         this, nullptr, nullptr, virus_idx, 0u, status_new, queue, default_rm_virus<TSeq>

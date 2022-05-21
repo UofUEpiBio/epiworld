@@ -60,18 +60,18 @@
     epiworld::Virus<tseq> & v , \
     epiworld::Model<tseq> * m) -> void
 
-#define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
+#define EPI_NEW_VIRUSFUN(funname,tseq) inline epiworld_double \
     (funname)( \
     epiworld::Person<tseq> * p, \
-    std::shared_ptr<epiworld::Virus<tseq>> v, \
+    epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_VIRUSFUN_LAMBDA(funname,tseq) \
     epiworld::VirusFun<tseq> funname = \
     [](epiworld::Person<tseq> * p, \
-    std::shared_ptr<epiworld::Virus<tseq>> v, \
-    epiworld::Model<tseq> * m)
+    epiworld::Virus<tseq> & v, \
+    epiworld::Model<tseq> * m) -> epiworld_double
 
 #define EPI_RUNIF() m->runif()
 

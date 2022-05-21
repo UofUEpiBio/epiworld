@@ -82,10 +82,10 @@ inline void Model<TSeq>::actions_run()
         }
 
         // Updating status
-        if (p->status != a.new_status)
+        if (static_cast<epiworld_fast_int>(p->status) != a.new_status)
         {
 
-            if (a.new_status >= nstatus)
+            if (a.new_status >= static_cast<epiworld_fast_int>(nstatus))
                 throw std::range_error(
                     "The proposed status " + std::to_string(a.new_status) + " is out of range. " +
                     "The model currently has " + std::to_string(nstatus - 1) + " statuses.");
@@ -493,10 +493,10 @@ inline void Model<TSeq>::dist_virus()
 
 
         }
-    }      
 
-    // Apply the actions
-    actions_run();
+        // Apply the actions
+        actions_run();
+    }      
 
 }
 
@@ -539,10 +539,11 @@ inline void Model<TSeq>::dist_tools()
             std::swap(idx[loc], idx[n_left]);
 
         }
-    }
 
-    // Apply the actions
-    actions_run();
+        // Apply the actions
+        actions_run();
+
+    }
 
 }
 

@@ -7,7 +7,7 @@ class Model;
 template<typename TSeq>
 class Person;
 
-template<typename TSeq>
+template<typename TSeq = int>
 inline void default_update_susceptible(
     Person<TSeq> * p,
     Model<TSeq> * m
@@ -50,7 +50,7 @@ inline void default_update_susceptible(
 
 }
 
-template<typename TSeq>
+template<typename TSeq = int>
 inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 
     // Odd: Die, Even: Recover

@@ -279,7 +279,7 @@ inline void Tool<TSeq>::set_person(Person<TSeq> * p)
 }
 
 template<typename TSeq>
-inline unsigned int Tool<TSeq>::get_id() const {
+inline int Tool<TSeq>::get_id() const {
     return id;
 }
 
