@@ -72,7 +72,7 @@ private:
 
     std::vector< Person<TSeq> > population;
     std::map< int,int >         population_ids;
-    bool directed;
+    bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses;
     std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
