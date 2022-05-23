@@ -374,7 +374,7 @@ inline void Model<TSeq>::init(
 
     engine->seed(seed);
     array_double_tmp.resize(size()/2, 0.0);
-    array_virus_tmp.resize(size());
+    array_virus_tmp.resize(size()/2);
 
     initialized = true;
 
@@ -435,6 +435,10 @@ inline void Model<TSeq>::dist_virus()
     // Starting first infection
     int n = size();
     std::vector< size_t > idx(n);
+
+    int n_left = n;
+    std::iota(idx.begin(), idx.end(), 0);
+
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
         // Picking how many
@@ -455,8 +459,6 @@ inline void Model<TSeq>::dist_virus()
 
         VirusPtr<TSeq> virus = viruses[v];
         
-        int n_left = n;
-        std::iota(idx.begin(), idx.end(), 0);
         while (nsampled > 0)
         {
 

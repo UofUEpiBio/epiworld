@@ -178,7 +178,7 @@ private:
 public:
 
     std::vector<epiworld_double> array_double_tmp;
-    std::vector<VirusPtr<TSeq>*> array_virus_tmp;
+    std::vector<Virus<TSeq> * > array_virus_tmp;
 
     Model() {};
     Model(const Model<TSeq> & m);

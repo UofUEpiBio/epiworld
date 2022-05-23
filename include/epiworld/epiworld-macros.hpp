@@ -67,11 +67,11 @@
     epiworld::Model<tseq> * m\
     )
 
-#define EPI_NEW_VIRUSFUN_LAMBDA(funname,tseq) \
-    epiworld::VirusFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> & v, \
-    epiworld::Model<tseq> * m) -> epiworld_double
+#define EPI_NEW_VIRUSFUN_LAMBDA(funname,TSeq) \
+    epiworld::VirusFun<TSeq> funname = \
+    [](epiworld::Person<TSeq> * p, \
+    epiworld::Virus<TSeq> & v, \
+    epiworld::Model<TSeq> * m) -> epiworld_double
 
 #define EPI_RUNIF() m->runif()
 

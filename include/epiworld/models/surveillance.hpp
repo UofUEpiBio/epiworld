@@ -38,7 +38,7 @@ EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {
                 ; 
         
             m->array_double_tmp[nvariants_tmp]  = tmp_transmission;
-            m->array_virus_tmp[nvariants_tmp++] = &v;
+            m->array_virus_tmp[nvariants_tmp++] = &(*v);
             
         } 
     }

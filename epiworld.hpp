@@ -3831,7 +3831,7 @@ inline void Model<TSeq>::init(
 
     engine->seed(seed);
     array_double_tmp.resize(size()/2, 0.0);
-    array_virus_tmp.resize(size());
+    array_virus_tmp.resize(size(), nullptr);
 
     initialized = true;
 

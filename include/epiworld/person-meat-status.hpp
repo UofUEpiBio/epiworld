@@ -15,12 +15,18 @@ inline void default_update_susceptible(
 {
 
     // This computes the prob of getting any neighbor variant
-    unsigned int nvariants_tmp = 0u;
+    size_t nvariants_tmp = 0u;
     for (auto & neighbor: p->get_neighbors()) 
     {
                  
-        for (auto & v : neighbor->get_viruses()) 
+        for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
         { 
+
+            #ifdef EPI_DEBUG
+            if (nvariants_tmp >= m->array_virus_tmp.size())
+                throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                // printf_epiworld("N used %d\n", v.use_count());
+            #endif
                 
             /* And it is a function of susceptibility_reduction as well */ 
             m->array_double_tmp[nvariants_tmp] =
@@ -29,7 +35,7 @@ inline void default_update_susceptible(
                 (1.0 - neighbor->get_transmission_reduction(v)) 
                 ; 
         
-            m->array_virus_tmp[nvariants_tmp++] = &v;
+            m->array_virus_tmp[nvariants_tmp++] = &(*v);
             
         } 
     }
