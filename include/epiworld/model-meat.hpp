@@ -9,23 +9,11 @@ inline void Model<TSeq>::actions_add(
     Person<TSeq> * person_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
-    epiworld_fast_uint virus_idx_,
-    epiworld_fast_uint tool_idx_,
     epiworld_fast_uint new_status_,
     epiworld_fast_int queue_,
     ActionFun<TSeq> call_
 ) {
     
-    if (person_->locked)
-        throw std::logic_error(
-            std::string("The person with id ") + std::to_string(person_->id) + 
-            std::string(" has already an action in progress. Only one action per agent") +
-            std::string(" per iteration is allowed.")
-            );
-
-    // Locking the agent
-    person_->locked = true;
-
     ++nactions;
 
     #ifdef EPI_DEBUG
@@ -38,8 +26,7 @@ inline void Model<TSeq>::actions_add(
 
         actions.push_back(
             Action<TSeq>(
-                person_, virus_, tool_, virus_idx_, tool_idx_,
-                new_status_, queue_, call_
+                person_, virus_, tool_, new_status_, queue_, call_
             ));
 
     }
@@ -49,8 +36,6 @@ inline void Model<TSeq>::actions_add(
         A.person = person_;
         A.virus = virus_;
         A.tool = tool_;
-        A.virus_idx = virus_idx_;
-        A.tool_idx = tool_idx_;
         A.new_status = new_status_;
         A.queue = queue_;
         A.call = call_;
@@ -69,11 +54,6 @@ inline void Model<TSeq>::actions_run()
 
         Action<TSeq>   a = actions[--nactions];
         Person<TSeq> * p = a.person;
-
-        // Unlocking person right away (in case the new)
-        // action adds an action, in which case we will iterate
-        // back to the user
-        p->locked = false;
 
         // Applying function
         if (a.call)
@@ -670,7 +650,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
     if (preval < 0.0)
         throw std::range_error("Prevalence of tool cannot be negative");
 
-    t.id = tools.size();
+    // Adding the tool to the model (and database.)
     tools.push_back(std::make_shared< Tool<TSeq> >(t));
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(true);
@@ -906,26 +886,13 @@ inline void Model<TSeq>::mutate_variant() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::record_variant(Virus<TSeq> & v) {
-
-    // Updating registry
-    db.record_variant(v);
-    return;
-    
-} 
-
-template<typename TSeq>
-inline void Model<TSeq>::record_tool(Tool<TSeq> & t) {
-
-    // Updating registry
-    db.record_tool(t);
-    return;
-    
-} 
-
-template<typename TSeq>
-inline int Model<TSeq>::get_nvariants() const {
+inline size_t Model<TSeq>::get_n_variants() const {
     return db.size();
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_n_tools() const {
+    return tools.size();
 }
 
 template<typename TSeq>
@@ -1058,11 +1025,11 @@ inline void Model<TSeq>::reset() {
 
     // Recording variants
     for (auto & v : viruses)
-        record_variant(*v);
+        db.record_variant(*v);
 
     // Recording tools
     for (auto & t : tools)
-        record_tool(*t);
+        db.record_tool(*t);
 
     if (use_queuing)
         queue.set_model(this);

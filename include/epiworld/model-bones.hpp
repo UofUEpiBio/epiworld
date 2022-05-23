@@ -68,7 +68,7 @@ class Model {
     friend class Queue<TSeq>;
 private:
 
-    DataBase<TSeq> db;
+    DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Person<TSeq> > population;
     std::map< int,int >         population_ids;
@@ -149,8 +149,6 @@ private:
         Person<TSeq> * person_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
-        epiworld_fast_uint virus_idx_,
-        epiworld_fast_uint tool_idx_,
         epiworld_fast_uint new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
@@ -305,10 +303,8 @@ public:
         );
     ///@}
 
-    void record_variant(Virus<TSeq> & v);
-    void record_tool(Tool<TSeq> & t);
-
-    int get_nvariants() const;
+    size_t get_n_variants() const;
+    size_t get_n_tools() const;
     unsigned int get_ndays() const;
     unsigned int get_n_replicates() const;
     void set_ndays(unsigned int ndays);

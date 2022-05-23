@@ -18,7 +18,7 @@ inline void Virus<TSeq>::mutate() {
     if (mutation_fun)
         if (mutation_fun(host, *this, this->get_model()))
         {
-            host->get_model()->record_variant(*this);
+            host->get_model()->get_db().record_variant(*this);
         }
 
     return;
@@ -49,8 +49,9 @@ inline Person<TSeq> * Virus<TSeq>::get_host() {
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_host(Person<TSeq> * p) {
+inline void Virus<TSeq>::set_host(Person<TSeq> * p, epiworld_fast_uint idx) {
     host = p;
+    host_idx = static_cast<int>(idx);
 }
 
 template<typename TSeq>

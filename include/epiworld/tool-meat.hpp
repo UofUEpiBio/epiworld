@@ -273,9 +273,10 @@ inline Person<TSeq> * Tool<TSeq>::get_person()
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_person(Person<TSeq> * p)
+inline void Tool<TSeq>::set_person(Person<TSeq> * p, size_t idx)
 {
     person = p;
+    person_idx = static_cast<int>(idx);
 }
 
 template<typename TSeq>

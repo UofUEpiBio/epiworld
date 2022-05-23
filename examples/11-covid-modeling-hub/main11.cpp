@@ -48,12 +48,14 @@ int main()
         // Will get infected?
         size_t n_iters = 0u;
         for (const auto & v : p->get_viruses())
-                m->array_double_tmp[n_iters++] = 1.0 - p->get_recovery_enhancer(v);
+            if (p->get_recovery_enhancer(v) > m->runif())
+                p->rm_virus()
 
         // Sampling between states
         int which = epiworld::roulette(n_iters, m);
 
-               
+        if (which < 0)
+
         
     }
 

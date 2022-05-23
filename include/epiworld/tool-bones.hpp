@@ -30,6 +30,8 @@ class Tool {
 private:
 
     Person<TSeq> * person = nullptr;
+    int person_idx        = -99;
+
     int date = -99;
     int id   = -99;
     std::shared_ptr<std::string> tool_name = nullptr;
@@ -48,6 +50,8 @@ private:
 
     epiworld_fast_int queue_init = 0; ///< Change of status when added to host.
     epiworld_fast_int queue_post = 0; ///< Change of status when removed from host.
+
+    void set_person(Person<TSeq> * p, size_t idx);
 
 public:
     Tool(std::string name = "unknown tool");
@@ -93,7 +97,6 @@ public:
     std::string get_name() const;
 
     Person<TSeq> * get_person();
-    void set_person(Person<TSeq> * p);
     int get_id() const;
     void set_id(int id);
     void set_date(int d);

@@ -4,7 +4,7 @@
 template<typename TSeq>
 inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 {
-    model = &m;
+    model           = &m;
     user_data.model = &m;
 
     reset();
@@ -174,7 +174,7 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
                 
         today_tool.push_back({});
         today_tool[new_id].resize(model->nstatus, 0);
-       
+
         // Updating the tool
         t.set_id(new_id);
         t.set_date(model->today());
@@ -510,9 +510,15 @@ inline void DataBase<TSeq>::record_transmission(
 }
 
 template<typename TSeq>
-inline size_t DataBase<TSeq>::get_nvariants() const
+inline size_t DataBase<TSeq>::get_n_variants() const
 {
     return variant_id.size();
+}
+
+template<typename TSeq>
+inline size_t DataBase<TSeq>::get_n_tools() const
+{
+    return tool_id.size();
 }
 
 template<typename TSeq>

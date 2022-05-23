@@ -17,6 +17,9 @@ template<typename TSeq>
 class Tools;
 
 template<typename TSeq>
+class Tools_const;
+
+template<typename TSeq>
 class Queue;
 
 template<typename TSeq>
@@ -62,7 +65,7 @@ private:
     int id = -1;
     
     bool in_queue = false;
-    bool locked   = false;
+    // size_t actions_queued = 0u;
     
     std::vector< VirusPtr<TSeq> > viruses;
     epiworld_fast_uint n_viruses = 0u;
@@ -85,10 +88,7 @@ public:
     /**
      * @name Add/Remove Virus/Tool
      * 
-     * Calling any of these functions will lock the agent (person)
-     * until the action is applied at the end of the iteration. Calling
-     * any of this functions when the agent is locked will cause an 
-     * error.
+     * Any of these is ultimately reflected at the end of the iteration.
      * 
      * @param tool Tool to add
      * @param virus Virus to add
@@ -126,8 +126,20 @@ public:
         epiworld_fast_int queue = -99
     );
 
+    void rm_tool(
+        ToolPtr<TSeq> & tool,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    );
+
     void rm_virus(
         epiworld_fast_uint virus_idx,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    );
+
+    void rm_virus(
+        VirusPtr<TSeq> & virus,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
@@ -184,8 +196,6 @@ public:
     bool has_tool(std::string name) const;
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
-
-    bool is_locked() const noexcept;
 
 };
 

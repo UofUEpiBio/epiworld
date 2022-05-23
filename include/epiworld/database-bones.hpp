@@ -68,7 +68,7 @@ private:
     // Totals
     int today_total_nvariants_active = 0;
     
-    int sampling_freq;
+    int sampling_freq = 1;
 
     // Variants history
     std::vector< int > hist_variant_date;
@@ -120,7 +120,9 @@ private:
 
 public:
 
-    DataBase(int freq = 1) : sampling_freq(freq) {};
+
+    DataBase() = delete;
+    DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
 
     /**
      * @brief Registering a new variant
@@ -193,7 +195,8 @@ public:
     
     void record_transmission(int i, int j, int variant);
 
-    size_t get_nvariants() const;
+    size_t get_n_variants() const;
+    size_t get_n_tools() const;
 
     void reset();
 

@@ -45,7 +45,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 
     // Notice that both host and date can be changed in this case
     // as only the sequence is a shared_ptr itself.
-    p->viruses[n_viruses]->set_host(p);
+    p->viruses[n_viruses]->set_host(p, n_viruses);
     p->viruses[n_viruses]->set_date(m->today());
 
     m->get_db().today_variant[v->get_id()][p->status]++;
@@ -71,8 +71,10 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
     else
         p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
 
-    p->tools[n_tools - 1]->set_date(m->today());
-    p->tools[n_tools - 1]->set_person(p);
+    n_tools--;
+
+    p->tools[n_tools]->set_date(m->today());
+    p->tools[n_tools]->set_person(p, n_tools);
 
     m->get_db().today_tool[t->get_id()][p->status]++;
 
@@ -83,16 +85,20 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p   = a.person;    
-    VirusPtr<TSeq> & v = a.person->viruses[a.virus_idx];
+    VirusPtr<TSeq> & v = a.person->viruses[a.virus->host_idx];
     
     CHECK_COALESCE_(a.new_status, v->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, v->queue_post, -1)
 
     if (--p->n_viruses > 0)
+    {
+        // The new virus will change positions
+        p->viruses[p->n_viruses]->host_idx = v->host_idx;
         std::swap(v, p->viruses[p->n_viruses]);
+    }
     
     // Calling the virus action over the removed virus
-    p->viruses[p->n_viruses]->post_recovery();
+    v->post_recovery();
 
     return;
 
@@ -103,13 +109,16 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p  = a.person;    
-    ToolPtr<TSeq> & t = p->tools[a.tool_idx];
+    ToolPtr<TSeq> & t = a.person->tools[a.tool->person_idx];
 
     CHECK_COALESCE_(a.new_status, t->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, t->queue_post, 0)
 
     if (--p->n_tools > 0)
+    {
+        p->tools[p->n_tools]->person_idx = t->person_idx;
         std::swap(t, p->tools[p->n_tools - 1]);
+    }
 
     return;
 
@@ -135,7 +144,6 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
     id     = p.id;
     
     in_queue = p.in_queue;
-    locked   = p.locked;
 
     // Dealing with the virus
     viruses.reserve(p.n_viruses);
@@ -174,10 +182,16 @@ inline void Person<TSeq>::add_tool(
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 ) {
+
+    // Checking the virus exists
+    if (tool->get_id() >= static_cast<int>(model->get_db().get_n_tools()))
+        throw std::range_error("The tool with id: " + std::to_string(tool->get_id()) + 
+            " has not been registered. There are only " + std::to_string(model->get_n_tools()) + 
+            " included in the model.");
     
 
     model->actions_add(
-        this, nullptr, tool, 0u, 0u, status_new, queue, add_tool_
+        this, nullptr, tool, status_new, queue, add_tool_
         );
 
 }
@@ -202,16 +216,13 @@ inline void Person<TSeq>::add_virus(
 {
 
     // Checking the virus exists
-    if (virus->get_id() >= model->get_nvariants())
+    if (virus->get_id() >= static_cast<int>(model->get_db().get_n_variants()))
         throw std::range_error("The virus with id: " + std::to_string(virus->get_id()) + 
-            " has not been registered. There are only " + std::to_string(model->get_nvariants()) + 
+            " has not been registered. There are only " + std::to_string(model->get_n_variants()) + 
             " included in the model.");
 
-    // CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
-    // CHECK_COALESCE_(queue_, queue, virus->queue_init, 1)
-
     model->actions_add(
-        this, virus, nullptr, 0, 0, status_new, queue, add_virus_
+        this, virus, nullptr, status_new, queue, add_virus_
         );
 
 }
@@ -241,13 +252,25 @@ inline void Person<TSeq>::rm_tool(
             std::to_string(n_tools) + " tools."
         );
 
-    ToolPtr<TSeq> & tool = tools[tool_idx];
+    model->actions_add(
+        this, tools[tool_idx], nullptr , status_new, queue, rm_tool_
+        );
 
-    // CHECK_COALESCE_(status_new_, status_new, tool->status_post, status)
-    // CHECK_COALESCE_(queue_, queue, tool->queue_post, 0)
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_tool(
+    ToolPtr<TSeq> & tool,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (tool->person != this)
+        throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, nullptr, nullptr, 0u, tool_idx, status_new, queue, rm_tool_
+        this, tool, nullptr , status_new, queue, rm_tool_
         );
 
 }
@@ -271,9 +294,27 @@ inline void Person<TSeq>::rm_virus(
 
 
     model->actions_add(
-        this, nullptr, nullptr, virus_idx, 0u, status_new, queue, default_rm_virus<TSeq>
+        this, viruses[virus_idx], nullptr, status_new, queue, default_rm_virus<TSeq>
         );
     
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_virus(
+    VirusPtr<TSeq> & virus,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (virus->host != this)
+        throw std::logic_error("Cannot remove a virus from another agent!");
+
+    model->actions_add(
+        this, virus, nullptr, status_new, queue, default_rm_virus<TSeq>
+        );
+
+
 }
 
 template<typename TSeq>
@@ -441,7 +482,7 @@ inline void Person<TSeq>::change_status(
 {
 
     model->actions_add(
-        this, nullptr, nullptr, 0u, 0u, new_status, queue, nullptr
+        this, nullptr, nullptr, new_status, queue, nullptr
     );
     
     return;
@@ -511,12 +552,6 @@ inline bool Person<TSeq>::has_virus(std::string name) const
 
     return false;
 
-}
-
-template<typename TSeq>
-inline bool Person<TSeq>::is_locked() const noexcept 
-{
-    return locked;
 }
 
 #undef CHECK_COALESCE_

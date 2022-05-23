@@ -112,8 +112,6 @@ struct Action {
     Person<TSeq> * person;
     VirusPtr<TSeq> virus;
     ToolPtr<TSeq> tool;
-    epiworld_fast_uint virus_idx;
-    epiworld_fast_uint tool_idx;
     epiworld_fast_int new_status;
     epiworld_fast_int queue;
     ActionFun<TSeq> call;
@@ -136,13 +134,11 @@ public:
         Person<TSeq> * person_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
-        epiworld_fast_uint virus_idx_,
-        epiworld_fast_uint tool_idx_,
         epiworld_fast_int new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
-    ) : person(person_), virus(virus_), tool(tool_), virus_idx(virus_idx_),
-        tool_idx(tool_idx_), new_status(new_status_), queue(queue_), call(call_) {};
+    ) : person(person_), virus(virus_), tool(tool_), new_status(new_status_),
+        queue(queue_), call(call_) {};
 };
 
 /**
@@ -751,7 +747,8 @@ private:
 
 public:
 
-    UserData() {};
+    UserData() = delete;
+    UserData(Model<TSeq> & m) : model(&m) {};
 
     /**
      * @brief Construct a new User Data object
@@ -1251,7 +1248,7 @@ private:
     // Totals
     int today_total_nvariants_active = 0;
     
-    int sampling_freq;
+    int sampling_freq = 1;
 
     // Variants history
     std::vector< int > hist_variant_date;
@@ -1303,7 +1300,9 @@ private:
 
 public:
 
-    DataBase(int freq = 1) : sampling_freq(freq) {};
+
+    DataBase() = delete;
+    DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
 
     /**
      * @brief Registering a new variant
@@ -1376,7 +1375,8 @@ public:
     
     void record_transmission(int i, int j, int variant);
 
-    size_t get_nvariants() const;
+    size_t get_n_variants() const;
+    size_t get_n_tools() const;
 
     void reset();
 
@@ -1415,7 +1415,7 @@ public:
 template<typename TSeq>
 inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 {
-    model = &m;
+    model           = &m;
     user_data.model = &m;
 
     reset();
@@ -1585,7 +1585,7 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
                 
         today_tool.push_back({});
         today_tool[new_id].resize(model->nstatus, 0);
-       
+
         // Updating the tool
         t.set_id(new_id);
         t.set_date(model->today());
@@ -1921,9 +1921,15 @@ inline void DataBase<TSeq>::record_transmission(
 }
 
 template<typename TSeq>
-inline size_t DataBase<TSeq>::get_nvariants() const
+inline size_t DataBase<TSeq>::get_n_variants() const
 {
     return variant_id.size();
+}
+
+template<typename TSeq>
+inline size_t DataBase<TSeq>::get_n_tools() const
+{
+    return tool_id.size();
 }
 
 template<typename TSeq>
@@ -2978,7 +2984,7 @@ class Model {
     friend class Queue<TSeq>;
 private:
 
-    DataBase<TSeq> db;
+    DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Person<TSeq> > population;
     std::map< int,int >         population_ids;
@@ -3059,8 +3065,6 @@ private:
         Person<TSeq> * person_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
-        epiworld_fast_uint virus_idx_,
-        epiworld_fast_uint tool_idx_,
         epiworld_fast_uint new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
@@ -3215,10 +3219,8 @@ public:
         );
     ///@}
 
-    void record_variant(Virus<TSeq> & v);
-    void record_tool(Tool<TSeq> & t);
-
-    int get_nvariants() const;
+    size_t get_n_variants() const;
+    size_t get_n_tools() const;
     unsigned int get_ndays() const;
     unsigned int get_n_replicates() const;
     void set_ndays(unsigned int ndays);
@@ -3464,23 +3466,11 @@ inline void Model<TSeq>::actions_add(
     Person<TSeq> * person_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
-    epiworld_fast_uint virus_idx_,
-    epiworld_fast_uint tool_idx_,
     epiworld_fast_uint new_status_,
     epiworld_fast_int queue_,
     ActionFun<TSeq> call_
 ) {
     
-    if (person_->locked)
-        throw std::logic_error(
-            std::string("The person with id ") + std::to_string(person_->id) + 
-            std::string(" has already an action in progress. Only one action per agent") +
-            std::string(" per iteration is allowed.")
-            );
-
-    // Locking the agent
-    person_->locked = true;
-
     ++nactions;
 
     #ifdef EPI_DEBUG
@@ -3493,8 +3483,7 @@ inline void Model<TSeq>::actions_add(
 
         actions.push_back(
             Action<TSeq>(
-                person_, virus_, tool_, virus_idx_, tool_idx_,
-                new_status_, queue_, call_
+                person_, virus_, tool_, new_status_, queue_, call_
             ));
 
     }
@@ -3504,8 +3493,6 @@ inline void Model<TSeq>::actions_add(
         A.person = person_;
         A.virus = virus_;
         A.tool = tool_;
-        A.virus_idx = virus_idx_;
-        A.tool_idx = tool_idx_;
         A.new_status = new_status_;
         A.queue = queue_;
         A.call = call_;
@@ -3524,11 +3511,6 @@ inline void Model<TSeq>::actions_run()
 
         Action<TSeq>   a = actions[--nactions];
         Person<TSeq> * p = a.person;
-
-        // Unlocking person right away (in case the new)
-        // action adds an action, in which case we will iterate
-        // back to the user
-        p->locked = false;
 
         // Applying function
         if (a.call)
@@ -4125,7 +4107,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
     if (preval < 0.0)
         throw std::range_error("Prevalence of tool cannot be negative");
 
-    t.id = tools.size();
+    // Adding the tool to the model (and database.)
     tools.push_back(std::make_shared< Tool<TSeq> >(t));
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(true);
@@ -4361,26 +4343,13 @@ inline void Model<TSeq>::mutate_variant() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::record_variant(Virus<TSeq> & v) {
-
-    // Updating registry
-    db.record_variant(v);
-    return;
-    
-} 
-
-template<typename TSeq>
-inline void Model<TSeq>::record_tool(Tool<TSeq> & t) {
-
-    // Updating registry
-    db.record_tool(t);
-    return;
-    
-} 
-
-template<typename TSeq>
-inline int Model<TSeq>::get_nvariants() const {
+inline size_t Model<TSeq>::get_n_variants() const {
     return db.size();
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_n_tools() const {
+    return tools.size();
 }
 
 template<typename TSeq>
@@ -4513,11 +4482,11 @@ inline void Model<TSeq>::reset() {
 
     // Recording variants
     for (auto & v : viruses)
-        record_variant(*v);
+        db.record_variant(*v);
 
     // Recording tools
     for (auto & t : tools)
-        record_tool(*t);
+        db.record_tool(*t);
 
     if (use_queuing)
         queue.set_model(this);
@@ -4559,7 +4528,7 @@ inline void Model<TSeq>::print() const
     printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
     printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
     printf_epiworld("Days (duration)    : %i (of %i)\n", today(), ndays);
-    printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_nvariants()));
+    printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_n_variants()));
     if (n_replicates > 0u)
     {
         std::string abbr;
@@ -5335,6 +5304,7 @@ class Virus {
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     Person<TSeq> * host = nullptr;
+    int        host_idx = -99;
     std::shared_ptr<TSeq> baseline_sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
@@ -5368,8 +5338,7 @@ public:
     void set_sequence(TSeq sequence);
     
     Person<TSeq> * get_host();
-    void set_host(Person<TSeq> * p);
-
+    void set_host(Person<TSeq> * p, epiworld_fast_uint idx);
     Model<TSeq> * get_model();
     
     void set_date(int d);
@@ -5494,7 +5463,7 @@ inline void Virus<TSeq>::mutate() {
     if (mutation_fun)
         if (mutation_fun(host, *this, this->get_model()))
         {
-            host->get_model()->record_variant(*this);
+            host->get_model()->get_db().record_variant(*this);
         }
 
     return;
@@ -5525,8 +5494,9 @@ inline Person<TSeq> * Virus<TSeq>::get_host() {
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_host(Person<TSeq> * p) {
+inline void Virus<TSeq>::set_host(Person<TSeq> * p, epiworld_fast_uint idx) {
     host = p;
+    host_idx = static_cast<int>(idx);
 }
 
 template<typename TSeq>
@@ -6125,6 +6095,8 @@ class Tool {
 private:
 
     Person<TSeq> * person = nullptr;
+    int person_idx        = -99;
+
     int date = -99;
     int id   = -99;
     std::shared_ptr<std::string> tool_name = nullptr;
@@ -6143,6 +6115,8 @@ private:
 
     epiworld_fast_int queue_init = 0; ///< Change of status when added to host.
     epiworld_fast_int queue_post = 0; ///< Change of status when removed from host.
+
+    void set_person(Person<TSeq> * p, size_t idx);
 
 public:
     Tool(std::string name = "unknown tool");
@@ -6188,7 +6162,6 @@ public:
     std::string get_name() const;
 
     Person<TSeq> * get_person();
-    void set_person(Person<TSeq> * p);
     int get_id() const;
     void set_id(int id);
     void set_date(int d);
@@ -6494,9 +6467,10 @@ inline Person<TSeq> * Tool<TSeq>::get_person()
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_person(Person<TSeq> * p)
+inline void Tool<TSeq>::set_person(Person<TSeq> * p, size_t idx)
 {
     person = p;
+    person_idx = static_cast<int>(idx);
 }
 
 template<typename TSeq>
@@ -6735,6 +6709,9 @@ template<typename TSeq>
 class Tools;
 
 template<typename TSeq>
+class Tools_const;
+
+template<typename TSeq>
 class Queue;
 
 template<typename TSeq>
@@ -6780,7 +6757,7 @@ private:
     int id = -1;
     
     bool in_queue = false;
-    bool locked   = false;
+    // size_t actions_queued = 0u;
     
     std::vector< VirusPtr<TSeq> > viruses;
     epiworld_fast_uint n_viruses = 0u;
@@ -6803,10 +6780,7 @@ public:
     /**
      * @name Add/Remove Virus/Tool
      * 
-     * Calling any of these functions will lock the agent (person)
-     * until the action is applied at the end of the iteration. Calling
-     * any of this functions when the agent is locked will cause an 
-     * error.
+     * Any of these is ultimately reflected at the end of the iteration.
      * 
      * @param tool Tool to add
      * @param virus Virus to add
@@ -6844,8 +6818,20 @@ public:
         epiworld_fast_int queue = -99
     );
 
+    void rm_tool(
+        ToolPtr<TSeq> & tool,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    );
+
     void rm_virus(
         epiworld_fast_uint virus_idx,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    );
+
+    void rm_virus(
+        VirusPtr<TSeq> & virus,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
@@ -6902,8 +6888,6 @@ public:
     bool has_tool(std::string name) const;
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
-
-    bool is_locked() const noexcept;
 
 };
 
@@ -6975,7 +6959,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 
     // Notice that both host and date can be changed in this case
     // as only the sequence is a shared_ptr itself.
-    p->viruses[n_viruses]->set_host(p);
+    p->viruses[n_viruses]->set_host(p, n_viruses);
     p->viruses[n_viruses]->set_date(m->today());
 
     m->get_db().today_variant[v->get_id()][p->status]++;
@@ -7001,8 +6985,10 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
     else
         p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
 
-    p->tools[n_tools - 1]->set_date(m->today());
-    p->tools[n_tools - 1]->set_person(p);
+    n_tools--;
+
+    p->tools[n_tools]->set_date(m->today());
+    p->tools[n_tools]->set_person(p, n_tools);
 
     m->get_db().today_tool[t->get_id()][p->status]++;
 
@@ -7013,16 +6999,20 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p   = a.person;    
-    VirusPtr<TSeq> & v = a.person->viruses[a.virus_idx];
+    VirusPtr<TSeq> & v = a.person->viruses[a.virus->host_idx];
     
     CHECK_COALESCE_(a.new_status, v->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, v->queue_post, -1)
 
     if (--p->n_viruses > 0)
+    {
+        // The new virus will change positions
+        p->viruses[p->n_viruses]->host_idx = v->host_idx;
         std::swap(v, p->viruses[p->n_viruses]);
+    }
     
     // Calling the virus action over the removed virus
-    p->viruses[p->n_viruses]->post_recovery();
+    v->post_recovery();
 
     return;
 
@@ -7033,13 +7023,16 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Person<TSeq> * p  = a.person;    
-    ToolPtr<TSeq> & t = p->tools[a.tool_idx];
+    ToolPtr<TSeq> & t = a.person->tools[a.tool->person_idx];
 
     CHECK_COALESCE_(a.new_status, t->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, t->queue_post, 0)
 
     if (--p->n_tools > 0)
+    {
+        p->tools[p->n_tools]->person_idx = t->person_idx;
         std::swap(t, p->tools[p->n_tools - 1]);
+    }
 
     return;
 
@@ -7065,7 +7058,6 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
     id     = p.id;
     
     in_queue = p.in_queue;
-    locked   = p.locked;
 
     // Dealing with the virus
     viruses.reserve(p.n_viruses);
@@ -7104,10 +7096,16 @@ inline void Person<TSeq>::add_tool(
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 ) {
+
+    // Checking the virus exists
+    if (tool->get_id() >= static_cast<int>(model->get_db().get_n_tools()))
+        throw std::range_error("The tool with id: " + std::to_string(tool->get_id()) + 
+            " has not been registered. There are only " + std::to_string(model->get_n_tools()) + 
+            " included in the model.");
     
 
     model->actions_add(
-        this, nullptr, tool, 0u, 0u, status_new, queue, add_tool_
+        this, nullptr, tool, status_new, queue, add_tool_
         );
 
 }
@@ -7132,16 +7130,13 @@ inline void Person<TSeq>::add_virus(
 {
 
     // Checking the virus exists
-    if (virus->get_id() >= model->get_nvariants())
+    if (virus->get_id() >= static_cast<int>(model->get_db().get_n_variants()))
         throw std::range_error("The virus with id: " + std::to_string(virus->get_id()) + 
-            " has not been registered. There are only " + std::to_string(model->get_nvariants()) + 
+            " has not been registered. There are only " + std::to_string(model->get_n_variants()) + 
             " included in the model.");
 
-    // CHECK_COALESCE_(status_new_, status_new, virus->status_init, status)
-    // CHECK_COALESCE_(queue_, queue, virus->queue_init, 1)
-
     model->actions_add(
-        this, virus, nullptr, 0, 0, status_new, queue, add_virus_
+        this, virus, nullptr, status_new, queue, add_virus_
         );
 
 }
@@ -7171,13 +7166,25 @@ inline void Person<TSeq>::rm_tool(
             std::to_string(n_tools) + " tools."
         );
 
-    ToolPtr<TSeq> & tool = tools[tool_idx];
+    model->actions_add(
+        this, tools[tool_idx], nullptr , status_new, queue, rm_tool_
+        );
 
-    // CHECK_COALESCE_(status_new_, status_new, tool->status_post, status)
-    // CHECK_COALESCE_(queue_, queue, tool->queue_post, 0)
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_tool(
+    ToolPtr<TSeq> & tool,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (tool->person != this)
+        throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, nullptr, nullptr, 0u, tool_idx, status_new, queue, rm_tool_
+        this, tool, nullptr , status_new, queue, rm_tool_
         );
 
 }
@@ -7201,9 +7208,27 @@ inline void Person<TSeq>::rm_virus(
 
 
     model->actions_add(
-        this, nullptr, nullptr, virus_idx, 0u, status_new, queue, default_rm_virus<TSeq>
+        this, viruses[virus_idx], nullptr, status_new, queue, default_rm_virus<TSeq>
         );
     
+}
+
+template<typename TSeq>
+inline void Person<TSeq>::rm_virus(
+    VirusPtr<TSeq> & virus,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (virus->host != this)
+        throw std::logic_error("Cannot remove a virus from another agent!");
+
+    model->actions_add(
+        this, virus, nullptr, status_new, queue, default_rm_virus<TSeq>
+        );
+
+
 }
 
 template<typename TSeq>
@@ -7371,7 +7396,7 @@ inline void Person<TSeq>::change_status(
 {
 
     model->actions_add(
-        this, nullptr, nullptr, 0u, 0u, new_status, queue, nullptr
+        this, nullptr, nullptr, new_status, queue, nullptr
     );
     
     return;
@@ -7441,12 +7466,6 @@ inline bool Person<TSeq>::has_virus(std::string name) const
 
     return false;
 
-}
-
-template<typename TSeq>
-inline bool Person<TSeq>::is_locked() const noexcept 
-{
-    return locked;
 }
 
 #undef CHECK_COALESCE_

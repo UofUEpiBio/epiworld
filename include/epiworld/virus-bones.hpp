@@ -32,6 +32,7 @@ class Virus {
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     Person<TSeq> * host = nullptr;
+    int        host_idx = -99;
     std::shared_ptr<TSeq> baseline_sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
@@ -65,8 +66,7 @@ public:
     void set_sequence(TSeq sequence);
     
     Person<TSeq> * get_host();
-    void set_host(Person<TSeq> * p);
-
+    void set_host(Person<TSeq> * p, epiworld_fast_uint idx);
     Model<TSeq> * get_model();
     
     void set_date(int d);

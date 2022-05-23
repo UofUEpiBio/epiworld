@@ -16,7 +16,7 @@ inline void Model<TSeq>::print() const
     printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
     printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
     printf_epiworld("Days (duration)    : %i (of %i)\n", today(), ndays);
-    printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_nvariants()));
+    printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_n_variants()));
     if (n_replicates > 0u)
     {
         std::string abbr;
