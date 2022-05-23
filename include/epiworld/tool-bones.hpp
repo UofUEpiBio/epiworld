@@ -1,6 +1,6 @@
 
-#ifndef EPIWORLD_TOOLS_BONES_HPP
-#define EPIWORLD_TOOLS_BONES_HPP
+#ifndef EPIWORLD_TOOL_BONES_HPP
+#define EPIWORLD_TOOL_BONES_HPP
 
 template<typename TSeq>
 class Virus;
@@ -12,9 +12,6 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class PersonTools;
-
-template<typename TSeq>
 class Tool;
 
 /**
@@ -24,7 +21,6 @@ class Tool;
  */
 template<typename TSeq = int> 
 class Tool {
-    friend class PersonTools<TSeq>;
     friend class Person<TSeq>;
     friend class Model<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);

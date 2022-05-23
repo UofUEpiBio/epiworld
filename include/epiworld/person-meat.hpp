@@ -328,8 +328,17 @@ inline Model<TSeq> * Person<TSeq>::get_model() {
 }
 
 template<typename TSeq>
-inline std::vector< VirusPtr<TSeq> > & Person<TSeq>::get_viruses() {
-    return viruses;
+inline Viruses<TSeq> Person<TSeq>::get_viruses() {
+
+    return Viruses<TSeq>(*this);
+
+}
+
+template<typename TSeq>
+inline const Viruses_const<TSeq> Person<TSeq>::get_viruses() const {
+
+    return Viruses_const<TSeq>(*this);
+    
 }
 
 template<typename TSeq>
@@ -344,8 +353,13 @@ inline size_t Person<TSeq>::get_n_viruses() const noexcept
 }
 
 template<typename TSeq>
-inline std::vector< ToolPtr<TSeq> > & Person<TSeq>::get_tools() {
-    return tools;
+inline Tools<TSeq> Person<TSeq>::get_tools() {
+    return Tools<TSeq>(*this);
+}
+
+template<typename TSeq>
+inline const Tools_const<TSeq> Person<TSeq>::get_tools() const {
+    return Tools_const<TSeq>(*this);
 }
 
 template<typename TSeq>

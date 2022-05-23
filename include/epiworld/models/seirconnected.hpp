@@ -42,7 +42,7 @@ inline void tracked_agents_check_init(epiworld::Model<TSeq> * m)
 
         for (auto & p: tracked_agents_infected)
         {
-            if (p->get_viruses().size() == 0)
+            if (p->get_n_viruses() == 0)
                 throw std::logic_error("Cannot be infected and have no viruses.");
         }
         
@@ -78,7 +78,7 @@ EPI_NEW_UPDATEFUN(update_susceptible, int)
 
         // Infecting the individual
         #ifdef EPI_DEBUG
-        if (tracked_agents_infected[which]->get_viruses().size() == 0)
+        if (tracked_agents_infected[which]->get_n_viruses() == 0)
         {
 
             printf_epiworld("[epiworld-debug] date: %i\n", m->today());

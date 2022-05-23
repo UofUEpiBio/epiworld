@@ -7,8 +7,6 @@ class Person;
 template<typename TSeq>
 class Virus;
 
-template<typename TSeq>
-class PersonViruses;
 
 template<typename TSeq>
 class Model;
@@ -27,7 +25,6 @@ template<typename TSeq = int>
 class Virus {
     friend class Person<TSeq>;
     friend class Model<TSeq>;
-    friend class PersonViruses<TSeq>;
     friend class DataBase<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);

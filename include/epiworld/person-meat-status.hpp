@@ -55,18 +55,16 @@ inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 
     // Odd: Die, Even: Recover
     epiworld_fast_uint n_events = 0u;
-    for (size_t v = 0u; v < p->get_n_viruses(); ++v)
+    for (const auto & v : p->get_viruses())
     {
-
-        VirusPtr<TSeq> V = p->get_virus(v);
 
         // Die
         m->array_double_tmp[n_events++] = 
-            V->get_prob_death() * (1.0 - p->get_death_reduction(V)); 
+            v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
 
         // Recover
         m->array_double_tmp[n_events++] = 
-            V->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(V)); 
+            v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
 
     }
     

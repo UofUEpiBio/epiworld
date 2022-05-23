@@ -5,13 +5,16 @@ template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
+class Viruses;
+
+template<typename TSeq>
+class Viruses_const;
+
+template<typename TSeq>
 class Tool;
 
-// template<typename TSeq>
-// class VirusPtr;
-
-// template<typename TSeq>
-// class ToolPtr;
+template<typename TSeq>
+class Tools;
 
 template<typename TSeq>
 class Queue;
@@ -39,7 +42,11 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
 template<typename TSeq = int>
 class Person {
     friend class Model<TSeq>;
+    friend class Virus<TSeq>;
+    friend class Viruses<TSeq>;
+    friend class Viruses_const<TSeq>;
     friend class Tool<TSeq>;
+    friend class Tools<TSeq>;
     friend class Queue<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
@@ -146,11 +153,13 @@ public:
     Model<TSeq> * get_model(); 
 
     VirusPtr<TSeq> & get_virus(int i);
-    std::vector< VirusPtr<TSeq> > & get_viruses();
+    Viruses<TSeq> get_viruses();
+    const Viruses_const<TSeq> get_viruses() const;
     size_t get_n_viruses() const noexcept;
 
     ToolPtr<TSeq> & get_tool(int i);
-    std::vector< ToolPtr<TSeq>> & get_tools();
+    Tools<TSeq> get_tools();
+    const Tools_const<TSeq> get_tools() const;
     size_t get_n_tools() const noexcept;
 
     void mutate_variant();

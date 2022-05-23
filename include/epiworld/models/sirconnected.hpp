@@ -41,7 +41,7 @@ inline void tracked_agents_check_init(epiworld::Model<TSeq> * m)
 
         for (auto & p: tracked_agents_infected)
         {
-            if (p->get_viruses().size() == 0)
+            if (p->get_n_viruses() == 0)
                 throw std::logic_error("Cannot be infected and have no viruses.");
         }
         
