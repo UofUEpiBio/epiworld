@@ -144,10 +144,10 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
     }
 
     // Moving statistics (only if we are affecting an individual)
-    if (v.get_host() != nullptr)
+    if (v.get_agent() != nullptr)
     {
         // Correcting math
-        epiworld_fast_uint tmp_status = v.get_host()->get_status();
+        epiworld_fast_uint tmp_status = v.get_agent()->get_status();
         today_variant[old_id][tmp_status]--;
         today_variant[new_id][tmp_status]++;
 
@@ -191,10 +191,10 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
     }
 
     // Moving statistics (only if we are affecting an individual)
-    if (t.get_person() != nullptr)
+    if (t.get_agent() != nullptr)
     {
         // Correcting math
-        epiworld_fast_uint tmp_status = t.get_person()->get_status();
+        epiworld_fast_uint tmp_status = t.get_agent()->get_status();
         today_tool[old_id][tmp_status]--;
         today_tool[new_id][tmp_status]++;
 

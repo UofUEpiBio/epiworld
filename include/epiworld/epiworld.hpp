@@ -49,9 +49,9 @@ namespace epiworld {
     #include "tool-bones.hpp"
     #include "tool-meat.hpp"
     
-    #include "person-meat-status.hpp"
-    #include "person-bones.hpp"
-    #include "person-meat.hpp"
+    #include "agent-meat-status.hpp"
+    #include "agent-bones.hpp"
+    #include "agent-meat.hpp"
 
 }
 

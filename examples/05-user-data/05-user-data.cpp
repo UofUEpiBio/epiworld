@@ -11,7 +11,7 @@ int main()
     model.add_status("Removed");
 
 
-    model.set_user_data({"person_id", "virus_id"});
+    model.set_user_data({"agent_id", "virus_id"});
     
     model.population_from_adjlist(
         epiworld::rgraph_smallworld(200, 5, .1, false, model)

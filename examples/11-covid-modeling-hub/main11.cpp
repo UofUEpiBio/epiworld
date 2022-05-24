@@ -120,15 +120,15 @@ int main()
     //     for (size_t i = 0u; i < m->size(); ++i)
     //         if (queue[i] > 0u)
     //         {
-    //             // Is this person infected
-    //             auto & person = population[i];
+    //             // Is this agent infected
+    //             auto & agent = population[i];
                 
-    //             if (person.has_virus("Omicron"))
+    //             if (agent.has_virus("Omicron"))
     //             {
     //                 if (++cum_counts == who)
     //                 {
     //                     // Replacing the virus
-    //                     person.get_virus(0) = variant_x;
+    //                     agent.get_virus(0) = variant_x;
     //                     break;
     //                 }
     //             }

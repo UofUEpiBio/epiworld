@@ -6,7 +6,7 @@
 
 template<typename TSeq>
 inline void Model<TSeq>::actions_add(
-    Person<TSeq> * person_,
+    Agent<TSeq> * agent_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
     epiworld_fast_uint new_status_,
@@ -26,14 +26,14 @@ inline void Model<TSeq>::actions_add(
 
         actions.push_back(
             Action<TSeq>(
-                person_, virus_, tool_, new_status_, queue_, call_
+                agent_, virus_, tool_, new_status_, queue_, call_
             ));
 
     }
     else 
     {
         Action<TSeq> & A = actions.at(nactions - 1u);
-        A.person = person_;
+        A.agent = agent_;
         A.virus = virus_;
         A.tool = tool_;
         A.new_status = new_status_;
@@ -53,7 +53,7 @@ inline void Model<TSeq>::actions_run()
     {
 
         Action<TSeq>   a = actions[--nactions];
-        Person<TSeq> * p = a.person;
+        Agent<TSeq> * p = a.agent;
 
         // Applying function
         if (a.call)
@@ -105,7 +105,7 @@ inline void Model<TSeq>::actions_run()
 ///@{
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq> * m
 )
@@ -120,7 +120,7 @@ inline epiworld_double susceptibility_reduction_mixer_default(
 
 template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
@@ -135,7 +135,7 @@ inline epiworld_double transmission_reduction_mixer_default(
 
 template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
@@ -150,7 +150,7 @@ inline epiworld_double recovery_enhancer_mixer_default(
 
 template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
@@ -253,7 +253,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
-    std::vector< Person<TSeq> > & p,
+    std::vector< Agent<TSeq> > & p,
     std::map<int,int> & p_ids,
     bool & d,
     Model<TSeq> * model
@@ -271,16 +271,16 @@ inline void Model<TSeq>::clone_population(
     for (unsigned int i = 0u; i < size(); ++i)
     {
         // Making room
-        const Person<TSeq> & person_this = population[i];
-        Person<TSeq> & person_res        = p[i];
+        const Agent<TSeq> & agent_this = population[i];
+        Agent<TSeq> & agent_res        = p[i];
 
         // Readding
-        std::vector< Person<TSeq> * > neigh = person_this.neighbors;
+        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
             int loc = p_ids[neigh[n]->get_id()];
-            person_res.add_neighbor(&p[loc], true, true);
+            agent_res.add_neighbor(&p[loc], true, true);
 
         }
 
@@ -305,7 +305,7 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
-inline std::vector<Person<TSeq>> * Model<TSeq>::get_population()
+inline std::vector<Agent<TSeq>> * Model<TSeq>::get_population()
 {
     return &population;
 }
@@ -464,10 +464,10 @@ inline void Model<TSeq>::dist_virus()
 
             int loc = static_cast<unsigned int>(floor(runif() * (n_left--)));
 
-            Person<TSeq> & person = population[idx[loc]];
+            Agent<TSeq> & agent = population[idx[loc]];
             
             // Adding action
-            person.add_virus(virus, virus->status_init, virus->queue_init);
+            agent.add_virus(virus, virus->status_init, virus->queue_init);
 
             // Adjusting sample
             nsampled--;
@@ -724,7 +724,7 @@ inline void Model<TSeq>::population_from_adjlist(AdjList al) {
     // Resizing the people
     population.clear();
     population_ids.clear();
-    population.resize(al.vcount(), Person<TSeq>());
+    population.resize(al.vcount(), Agent<TSeq>());
 
     const auto & tmpdat = al.get_dat();
     
@@ -965,7 +965,7 @@ inline void Model<TSeq>::verbose_off() {
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rewire_fun(
-    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun
+    std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> fun
     ) {
     rewire_fun = fun;
 }
@@ -1102,21 +1102,21 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     for (unsigned int p = 0u; p < size(); ++p)
     {
         // Making room
-        const Person<TSeq> & person_this = population[p];
-        Person<TSeq> & person_res  = res.population[p];
+        const Agent<TSeq> & agent_this = population[p];
+        Agent<TSeq> & agent_res  = res.population[p];
 
-        // Person pointing to the right model and person
-        person_res.model        = &res;
-        person_res.viruses.host = &person_res;
-        person_res.tools.person = &person_res;
+        // Agent pointing to the right model and agent
+        agent_res.model        = &res;
+        agent_res.viruses.agent = &agent_res;
+        agent_res.tools.agent = &agent_res;
 
         // Readding
-        std::vector< Person<TSeq> * > neigh = person_this.neighbors;
+        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
             int loc = res.population_ids[neigh[n]->get_id()];
-            person_res.add_neighbor(&res.population[loc], true, true);
+            agent_res.add_neighbor(&res.population[loc], true, true);
 
         }
 

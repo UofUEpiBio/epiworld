@@ -8,7 +8,7 @@ inline epiworld_double (a) (const Tnet & Array, uint i, uint j, NetCounterData *
 /**Lambda function for definition of a network counter function*/
 #define EPI_NEW_TOOL_LAMBDA(funname,TSeq) \
 epiworld::ToolFun<TSeq> funname = \
-    [](ToolPtr<TSeq> t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+    [](ToolPtr<TSeq> t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
 
 template<typename TSeq>
 inline void factory_tool_simple_immunesys(

@@ -46,7 +46,7 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 {
 
     if (susceptibility_reduction_fun)
-        return susceptibility_reduction_fun(*this, this->person, v, person->get_model());
+        return susceptibility_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_CONTAGION_REDUCTION;
 
@@ -59,7 +59,7 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 {
 
     if (transmission_reduction_fun)
-        return transmission_reduction_fun(*this, this->person, v, person->get_model());
+        return transmission_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_TRANSMISSION_REDUCTION;
 
@@ -72,7 +72,7 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 {
 
     if (recovery_enhancer_fun)
-        return recovery_enhancer_fun(*this, this->person, v, person->get_model());
+        return recovery_enhancer_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_RECOVERY_ENHANCER;
 
@@ -85,7 +85,7 @@ inline epiworld_double Tool<TSeq>::get_death_reduction(
 {
 
     if (death_reduction_fun)
-        return death_reduction_fun(*this, this->person, v, person->get_model());
+        return death_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_DEATH_REDUCTION;
 
@@ -128,7 +128,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -143,7 +143,7 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 {
     
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -158,7 +158,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> & t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> & t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -173,7 +173,7 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -192,7 +192,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -208,7 +208,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -224,7 +224,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -240,7 +240,7 @@ inline void Tool<TSeq>::set_death_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> & t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> & t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -267,16 +267,16 @@ inline std::string Tool<TSeq>::get_name() const {
 }
 
 template<typename TSeq>
-inline Person<TSeq> * Tool<TSeq>::get_person()
+inline Agent<TSeq> * Tool<TSeq>::get_agent()
 {
-    return this->person;
+    return this->agent;
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_person(Person<TSeq> * p, size_t idx)
+inline void Tool<TSeq>::set_agent(Agent<TSeq> * p, size_t idx)
 {
-    person = p;
-    person_idx = static_cast<int>(idx);
+    agent = p;
+    agent_idx = static_cast<int>(idx);
 }
 
 template<typename TSeq>

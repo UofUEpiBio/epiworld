@@ -2,7 +2,7 @@
 #define EPIWORLD_MODEL_HPP
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class Virus;
@@ -23,25 +23,25 @@ struct Action;
 
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
     );
 template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
     );
 template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
     );
 template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
     );
@@ -55,7 +55,7 @@ inline epiworld_double death_reduction_mixer_default(
 /**
  * @brief Core class of epiworld.
  * 
- * The model class provides the wrapper that puts together `Person`, `Virus`, and
+ * The model class provides the wrapper that puts together `Agent`, `Virus`, and
  * `Tools`.
  * 
  * @tparam TSeq Type of sequence. In principle, users can build models in which
@@ -63,14 +63,14 @@ inline epiworld_double death_reduction_mixer_default(
  */
 template<typename TSeq = int>
 class Model {
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
 private:
 
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
-    std::vector< Person<TSeq> > population;
+    std::vector< Agent<TSeq> > population;
     std::map< int,int >         population_ids;
     bool directed = false;
     
@@ -94,7 +94,7 @@ private:
     std::shared_ptr< std::gamma_distribution<> > rgammad = 
         std::make_shared< std::gamma_distribution<> >();
 
-    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
+    std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop;
         
     std::map<std::string, epiworld_double > parameters;
@@ -140,13 +140,13 @@ private:
     /**
      * @brief Construct a new Action object
      * 
-     * @param person_ Person over which the action will be called
-     * @param new_status_ New state of the person
+     * @param agent_ Agent over which the action will be called
+     * @param new_status_ New state of the agent
      * @param call_ Function the action will call
      * @param queue_ Change in the queue
      */
     void actions_add(
-        Person<TSeq> * person_,
+        Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         epiworld_fast_uint new_status_,
@@ -186,7 +186,7 @@ public:
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
     void clone_population(
-        std::vector< Person<TSeq> > & p,
+        std::vector< Agent<TSeq> > & p,
         std::map<int,int> & p_ids,
         bool & d,
         Model<TSeq> * m = nullptr
@@ -271,7 +271,7 @@ public:
         );
     void population_from_adjlist(AdjList al);
     bool is_directed() const;
-    std::vector< Person<TSeq> > * get_population();
+    std::vector< Agent<TSeq> > * get_population();
     void population_smallworld(
         unsigned int n = 1000,
         unsigned int k = 5,
@@ -325,7 +325,7 @@ public:
      * @result A rewired version of the network.
      */
     ///@{
-    void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
+    void set_rewire_fun(std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
     void set_rewire_prop(epiworld_double prop);
     epiworld_double get_rewire_prop() const;
     void rewire();

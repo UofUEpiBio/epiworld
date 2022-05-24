@@ -2,7 +2,7 @@
 #define EPIWORLD_LOCATION_BONES_HPP
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class Location {
@@ -12,7 +12,7 @@ private:
     std::string location_name;
     int id;
 
-    std::vector< Person<TSeq> * >;
+    std::vector< Agent<TSeq> * >;
 
     /**
      * @brief Spatial location parameters
@@ -25,8 +25,8 @@ private:
     ///@}
 
 public:
-    add_person(Person<TSeq> & p);
-    add_person(Person<TSeq> * p);
+    add_agent(Agent<TSeq> & p);
+    add_agent(Agent<TSeq> * p);
     size_t count() const;
     void reset();
 

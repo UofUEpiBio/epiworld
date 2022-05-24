@@ -8,8 +8,8 @@ enum SIRCONSTATUS {
 };
 
 // Tracking who is infected and who is not
-std::vector< epiworld::Person<>* > tracked_agents_infected(0u);
-std::vector< epiworld::Person<>* > tracked_agents_infected_next(0u);
+std::vector< epiworld::Agent<>* > tracked_agents_infected(0u);
+std::vector< epiworld::Agent<>* > tracked_agents_infected_next(0u);
 
 bool tracked_started = false;
 int tracked_ninfected = 0;

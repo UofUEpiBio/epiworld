@@ -2,7 +2,7 @@
 #define EPIWORLD_VIRUS_HPP
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class Virus;
@@ -19,11 +19,11 @@ class Model;
  * Raw transmisibility of a virus should be a function of its genetic
  * sequence. Nonetheless, transmisibility can be reduced as a result of
  * having one or more tools to fight the virus. Because of this, transmisibility
- * should be a function of the host.
+ * should be a function of the agent.
  */
 template<typename TSeq = int>
 class Virus {
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
     friend class Model<TSeq>;
     friend class DataBase<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
@@ -31,8 +31,8 @@ class Virus {
     friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
-    Person<TSeq> * host = nullptr;
-    int        host_idx = -99;
+    Agent<TSeq> * agent = nullptr;
+    int        agent_idx = -99;
     std::shared_ptr<TSeq> baseline_sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
@@ -48,13 +48,13 @@ private:
     std::vector< epiworld_double * > params;
     std::vector< epiworld_double > data;
 
-    epiworld_fast_int status_init    = -99; ///< Change of status when added to host.
-    epiworld_fast_int status_post    = -99; ///< Change of status when removed from host.
-    epiworld_fast_int status_removed = -99; ///< Change of status when host is removed
+    epiworld_fast_int status_init    = -99; ///< Change of status when added to agent.
+    epiworld_fast_int status_post    = -99; ///< Change of status when removed from agent.
+    epiworld_fast_int status_removed = -99; ///< Change of status when agent is removed
 
-    epiworld_fast_int queue_init    = 1; ///< Change of status when added to host.
-    epiworld_fast_int queue_post    = -1; ///< Change of status when removed from host.
-    epiworld_fast_int queue_removed = -99; ///< Change of status when host is removed
+    epiworld_fast_int queue_init    = 1; ///< Change of status when added to agent.
+    epiworld_fast_int queue_post    = -1; ///< Change of status when removed from agent.
+    epiworld_fast_int queue_removed = -99; ///< Change of status when agent is removed
 
 public:
     Virus(std::string name = "unknown virus");
@@ -65,8 +65,8 @@ public:
     const TSeq* get_sequence();
     void set_sequence(TSeq sequence);
     
-    Person<TSeq> * get_host();
-    void set_host(Person<TSeq> * p, epiworld_fast_uint idx);
+    Agent<TSeq> * get_agent();
+    void set_agent(Agent<TSeq> * p, epiworld_fast_uint idx);
     Model<TSeq> * get_model();
     
     void set_date(int d);
@@ -120,9 +120,9 @@ public:
      * which are retrieved when adding or removing a virus does not
      * specify a change in status or in queue.
      * 
-     * @param init After the virus/tool is added to the host.
+     * @param init After the virus/tool is added to the agent.
      * @param end After the virus/tool is removed.
-     * @param removed After the host (Person) is removed.
+     * @param removed After the agent (Agent) is removed.
      */
     ///@{
     void set_status(

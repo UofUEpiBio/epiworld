@@ -5,7 +5,7 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 // Relevant for anything using vecHasher function ------------------------------
 /**
@@ -39,7 +39,7 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
  * 
  * @details 
  * If the user does not provide a default sequence, this function is used when
- * a sequence needs to be initialized. Some examples: `Person`, `Virus`, and
+ * a sequence needs to be initialized. Some examples: `Agent`, `Virus`, and
  * `Tool` need a default sequence.
  * 
  * @tparam TSeq 

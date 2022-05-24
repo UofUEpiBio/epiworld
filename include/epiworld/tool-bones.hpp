@@ -6,7 +6,7 @@ template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class Model;
@@ -15,13 +15,13 @@ template<typename TSeq>
 class Tool;
 
 /**
- * @brief Tools for defending the host against the virus
+ * @brief Tools for defending the agent against the virus
  * 
  * @tparam TSeq Type of sequence
  */
 template<typename TSeq = int> 
 class Tool {
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
     friend class Model<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
@@ -29,8 +29,8 @@ class Tool {
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
 
-    Person<TSeq> * person = nullptr;
-    int person_idx        = -99;
+    Agent<TSeq> * agent = nullptr;
+    int agent_idx        = -99;
 
     int date = -99;
     int id   = -99;
@@ -48,10 +48,10 @@ private:
     epiworld_fast_int status_init = -99;
     epiworld_fast_int status_post = -99;
 
-    epiworld_fast_int queue_init = 0; ///< Change of status when added to host.
-    epiworld_fast_int queue_post = 0; ///< Change of status when removed from host.
+    epiworld_fast_int queue_init = 0; ///< Change of status when added to agent.
+    epiworld_fast_int queue_post = 0; ///< Change of status when removed from agent.
 
-    void set_person(Person<TSeq> * p, size_t idx);
+    void set_agent(Agent<TSeq> * p, size_t idx);
 
 public:
     Tool(std::string name = "unknown tool");
@@ -96,7 +96,7 @@ public:
     void set_name(std::string name);
     std::string get_name() const;
 
-    Person<TSeq> * get_person();
+    Agent<TSeq> * get_agent();
     int get_id() const;
     void set_id(int id);
     void set_date(int d);

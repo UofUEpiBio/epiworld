@@ -30,17 +30,17 @@ private:
 
 public:
 
-    void operator+=(Person<TSeq> * p);
-    void operator-=(Person<TSeq> * p);
+    void operator+=(Agent<TSeq> * p);
+    void operator-=(Agent<TSeq> * p);
     epiworld_fast_int operator[](unsigned int i) const;
 
-    // void initialize(Model<TSeq> * m, Person<TSeq> * p);
+    // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
     void set_model(Model<TSeq> * m);
 
 };
 
 template<typename TSeq>
-inline void Queue<TSeq>::operator+=(Person<TSeq> * p)
+inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 {
 
     active[p->index]++;
@@ -50,7 +50,7 @@ inline void Queue<TSeq>::operator+=(Person<TSeq> * p)
 }
 
 template<typename TSeq>
-inline void Queue<TSeq>::operator-=(Person<TSeq> * p)
+inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 {
 
     active[p->index]--;

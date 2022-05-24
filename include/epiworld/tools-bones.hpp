@@ -5,7 +5,7 @@ template<typename TSeq>
 class Tool;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 #define TOOLPTR std::shared_ptr< Tool<TSeq> >
 
@@ -17,7 +17,7 @@ class Person;
 template<typename TSeq>
 class Tools {
     friend class Tool<TSeq>;
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
 private:
     std::vector< TOOLPTR > * dat;
     const epiworld_fast_uint * n_tools;
@@ -25,7 +25,7 @@ private:
 public:
 
     Tools() = delete;
-    Tools(Person<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
+    Tools(Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
     typename std::vector< TOOLPTR >::iterator begin();
     typename std::vector< TOOLPTR >::iterator end();
@@ -87,7 +87,7 @@ inline size_t Tools<TSeq>::size() const noexcept
 template<typename TSeq>
 class Tools_const {
     friend class Tool<TSeq>;
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
 private:
     const std::vector< TOOLPTR > * dat;
     const epiworld_fast_uint * n_tools;
@@ -95,7 +95,7 @@ private:
 public:
 
     Tools_const() = delete;
-    Tools_const(const Person<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
+    Tools_const(const Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
     typename std::vector< TOOLPTR >::const_iterator begin();
     typename std::vector< TOOLPTR >::const_iterator end();

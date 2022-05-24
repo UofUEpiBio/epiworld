@@ -58,7 +58,7 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class PersonTools;
@@ -76,22 +76,22 @@ template<typename TSeq>
 using ToolPtr = std::shared_ptr< Tool< TSeq > >;
 
 template<typename TSeq>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MixerFun = std::function<epiworld_double(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
-using PostRecoveryFun = std::function<void(Person<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using PostRecoveryFun = std::function<void(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
-using VirusFun = std::function<epiworld_double(Person<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using VirusFun = std::function<epiworld_double(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
-using UpdateFun = std::function<void(Person<TSeq>*,Model<TSeq>*)>;
+using UpdateFun = std::function<void(Agent<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
@@ -109,7 +109,7 @@ using ActionFun = std::function<void(Action<TSeq>&,Model<TSeq>*)>;
  */
 template<typename TSeq>
 struct Action {
-    Person<TSeq> * person;
+    Agent<TSeq> * agent;
     VirusPtr<TSeq> virus;
     ToolPtr<TSeq> tool;
     epiworld_fast_int new_status;
@@ -121,7 +121,7 @@ public:
      * 
      * All the parameters are rather optional.
      * 
-     * @param person_ Person over who the action will happen
+     * @param person_ Agent over who the action will happen
      * @param virus_ Virus to add
      * @param tool_ Tool to add
      * @param virus_idx Index of virus to be removed (if needed)
@@ -131,13 +131,13 @@ public:
      * @param call_ The action call (if needed)
      */
     Action(
-        Person<TSeq> * person_,
+        Agent<TSeq> * person_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         epiworld_fast_int new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
-    ) : person(person_), virus(virus_), tool(tool_), new_status(new_status_),
+    ) : agent(person_), virus(virus_), tool(tool_), new_status(new_status_),
         queue(queue_), call(call_) {};
 };
 
@@ -259,7 +259,7 @@ enum STATUS {
 #define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
     std::shared_ptr<epiworld::Tool< tseq >> t, \
-    epiworld::Person< tseq > * p, \
+    epiworld::Agent< tseq > * p, \
     std::shared_ptr<epiworld::Virus< tseq >> v, \
     epiworld::Model< tseq > * m\
     )
@@ -271,7 +271,7 @@ enum STATUS {
 #define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
     epiworld::ToolFun<tseq> funname = \
     [](std::shared_ptr<epiworld::Tool<tseq>> t, \
-    epiworld::Person<tseq> * p, \
+    epiworld::Agent<tseq> * p, \
     std::shared_ptr<epiworld::Virus<tseq>> v, \
     epiworld::Model<tseq> * m)
 
@@ -287,39 +287,39 @@ enum STATUS {
  */
 #define EPI_NEW_MUTFUN(funname,tseq) inline bool \
     (funname)(\
-    epiworld::Person<tseq> * p, \
+    epiworld::Agent<tseq> * p, \
     epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m )
 
 #define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
     epiworld::MutFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, \
+    [](epiworld::Agent<tseq> * p, \
     epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
     (funname)( \
-    epiworld::Person<tseq> * p, \
+    epiworld::Agent<tseq> * p, \
     epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
     epiworld::PostRecoveryFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, \
+    [](epiworld::Agent<tseq> * p, \
     epiworld::Virus<tseq> & v , \
     epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_VIRUSFUN(funname,tseq) inline epiworld_double \
     (funname)( \
-    epiworld::Person<tseq> * p, \
+    epiworld::Agent<tseq> * p, \
     epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_VIRUSFUN_LAMBDA(funname,TSeq) \
     epiworld::VirusFun<TSeq> funname = \
-    [](epiworld::Person<TSeq> * p, \
+    [](epiworld::Agent<TSeq> * p, \
     epiworld::Virus<TSeq> & v, \
     epiworld::Model<TSeq> * m) -> epiworld_double
 
@@ -336,11 +336,11 @@ enum STATUS {
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
 
 #define EPI_NEW_UPDATEFUN(funname,tseq) inline void \
-    (funname)(epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
+    (funname)(epiworld::Agent<tseq> * p, epiworld::Model<tseq> * m)
 
 #define EPI_NEW_UPDATEFUN_LAMBDA(funname,tseq) \
     epiworld::UpdateFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, epiworld::Model<tseq> * m) -> void
+    [](epiworld::Agent<tseq> * p, epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_GLOBALFUN(funname,tseq) inline void \
     (funname)(epiworld::Model<tseq>* m)
@@ -376,7 +376,7 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 // Relevant for anything using vecHasher function ------------------------------
 /**
@@ -410,7 +410,7 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
  * 
  * @details 
  * If the user does not provide a default sequence, this function is used when
- * a sequence needs to be initialized. Some examples: `Person`, `Virus`, and
+ * a sequence needs to be initialized. Some examples: `Agent`, `Virus`, and
  * `Tool` need a default sequence.
  * 
  * @tparam TSeq 
@@ -1313,7 +1313,7 @@ public:
      * @brief Registering a new variant
      * 
      * @param v Pointer to the new variant.
-     * Since variants are originated in the host, the numbers simply move around.
+     * Since variants are originated in the agent, the numbers simply move around.
      * From the parent variant to the new variant. And the total number of infected
      * does not change.
      */
@@ -1560,10 +1560,10 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
     }
 
     // Moving statistics (only if we are affecting an individual)
-    if (v.get_host() != nullptr)
+    if (v.get_agent() != nullptr)
     {
         // Correcting math
-        epiworld_fast_uint tmp_status = v.get_host()->get_status();
+        epiworld_fast_uint tmp_status = v.get_agent()->get_status();
         today_variant[old_id][tmp_status]--;
         today_variant[new_id][tmp_status]++;
 
@@ -2411,7 +2411,7 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 class AdjList;
 
@@ -2425,7 +2425,7 @@ inline void rewire_degseq(
 
 template<typename TSeq = int>
 inline void rewire_degseq(
-    std::vector< Person<TSeq> > * persons,
+    std::vector< Agent<TSeq> > * persons,
     Model<TSeq> * model,
     epiworld_double proportion
     )
@@ -2435,7 +2435,7 @@ inline void rewire_degseq(
     std::vector< unsigned int > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    // std::vector< Person<TSeq> > * persons = model->get_population();
+    // std::vector< Agent<TSeq> > * persons = model->get_population();
     for (unsigned int i = 0u; i < persons->size(); ++i)
     {
         if (persons->operator[](i).get_neighbors().size() > 0u)
@@ -2491,8 +2491,8 @@ inline void rewire_degseq(
         if (id1 >= static_cast<int>(N))
             id1 = 0;
 
-        Person<TSeq> & p0 = persons->operator[](non_isolates[id0]);
-        Person<TSeq> & p1 = persons->operator[](non_isolates[id1]);
+        Agent<TSeq> & p0 = persons->operator[](non_isolates[id0]);
+        Agent<TSeq> & p1 = persons->operator[](non_isolates[id1]);
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
@@ -2506,14 +2506,14 @@ inline void rewire_degseq(
         if (!model->is_directed())
         {
             unsigned int n0,n1;
-            Person<TSeq> & p01 = persons->operator[](p0.get_neighbors()[id01]->get_index());
+            Agent<TSeq> & p01 = persons->operator[](p0.get_neighbors()[id01]->get_index());
             for (n0 = 0; n0 < p01.get_neighbors().size(); ++n0)
             {
                 if (p0.get_id() == p01.get_neighbors()[n0]->get_id())
                     break;            
             }
 
-            Person<TSeq> & p11 = persons->operator[](p1.get_neighbors()[id11]->get_index());
+            Agent<TSeq> & p11 = persons->operator[](p1.get_neighbors()[id11]->get_index());
             for (n1 = 0; n1 < p11.get_neighbors().size(); ++n1)
             {
                 if (p1.get_id() == p11.get_neighbors()[n1]->get_id())
@@ -2546,7 +2546,7 @@ inline void rewire_degseq(
     std::vector< unsigned int > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    // std::vector< Person<TSeq> > * persons = model->get_population();
+    // std::vector< Agent<TSeq> > * persons = model->get_population();
     for (auto & p : persons->get_dat())
     {
         
@@ -2855,17 +2855,17 @@ private:
 
 public:
 
-    void operator+=(Person<TSeq> * p);
-    void operator-=(Person<TSeq> * p);
+    void operator+=(Agent<TSeq> * p);
+    void operator-=(Agent<TSeq> * p);
     epiworld_fast_int operator[](unsigned int i) const;
 
-    // void initialize(Model<TSeq> * m, Person<TSeq> * p);
+    // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
     void set_model(Model<TSeq> * m);
 
 };
 
 template<typename TSeq>
-inline void Queue<TSeq>::operator+=(Person<TSeq> * p)
+inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 {
 
     active[p->index]++;
@@ -2875,7 +2875,7 @@ inline void Queue<TSeq>::operator+=(Person<TSeq> * p)
 }
 
 template<typename TSeq>
-inline void Queue<TSeq>::operator-=(Person<TSeq> * p)
+inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 {
 
     active[p->index]--;
@@ -2923,7 +2923,7 @@ inline void Queue<TSeq>::set_model(Model<TSeq> * m)
 #define EPIWORLD_MODEL_HPP
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class Virus;
@@ -2944,25 +2944,25 @@ struct Action;
 
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
     );
 template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
     );
 template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
     );
 template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
     );
@@ -2976,7 +2976,7 @@ inline epiworld_double death_reduction_mixer_default(
 /**
  * @brief Core class of epiworld.
  * 
- * The model class provides the wrapper that puts together `Person`, `Virus`, and
+ * The model class provides the wrapper that puts together `Agent`, `Virus`, and
  * `Tools`.
  * 
  * @tparam TSeq Type of sequence. In principle, users can build models in which
@@ -2984,14 +2984,14 @@ inline epiworld_double death_reduction_mixer_default(
  */
 template<typename TSeq = int>
 class Model {
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
 private:
 
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
-    std::vector< Person<TSeq> > population;
+    std::vector< Agent<TSeq> > population;
     std::map< int,int >         population_ids;
     bool directed = false;
     
@@ -3015,7 +3015,7 @@ private:
     std::shared_ptr< std::gamma_distribution<> > rgammad = 
         std::make_shared< std::gamma_distribution<> >();
 
-    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
+    std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop;
         
     std::map<std::string, epiworld_double > parameters;
@@ -3061,13 +3061,13 @@ private:
     /**
      * @brief Construct a new Action object
      * 
-     * @param person_ Person over which the action will be called
-     * @param new_status_ New state of the person
+     * @param person_ Agent over which the action will be called
+     * @param new_status_ New state of the agent
      * @param call_ Function the action will call
      * @param queue_ Change in the queue
      */
     void actions_add(
-        Person<TSeq> * person_,
+        Agent<TSeq> * person_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         epiworld_fast_uint new_status_,
@@ -3107,7 +3107,7 @@ public:
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
     void clone_population(
-        std::vector< Person<TSeq> > & p,
+        std::vector< Agent<TSeq> > & p,
         std::map<int,int> & p_ids,
         bool & d,
         Model<TSeq> * m = nullptr
@@ -3192,7 +3192,7 @@ public:
         );
     void population_from_adjlist(AdjList al);
     bool is_directed() const;
-    std::vector< Person<TSeq> > * get_population();
+    std::vector< Agent<TSeq> > * get_population();
     void population_smallworld(
         unsigned int n = 1000,
         unsigned int k = 5,
@@ -3246,7 +3246,7 @@ public:
      * @result A rewired version of the network.
      */
     ///@{
-    void set_rewire_fun(std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
+    void set_rewire_fun(std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
     void set_rewire_prop(epiworld_double prop);
     epiworld_double get_rewire_prop() const;
     void rewire();
@@ -3468,7 +3468,7 @@ public:
 
 template<typename TSeq>
 inline void Model<TSeq>::actions_add(
-    Person<TSeq> * person_,
+    Agent<TSeq> * person_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
     epiworld_fast_uint new_status_,
@@ -3495,7 +3495,7 @@ inline void Model<TSeq>::actions_add(
     else 
     {
         Action<TSeq> & A = actions.at(nactions - 1u);
-        A.person = person_;
+        A.agent = person_;
         A.virus = virus_;
         A.tool = tool_;
         A.new_status = new_status_;
@@ -3515,7 +3515,7 @@ inline void Model<TSeq>::actions_run()
     {
 
         Action<TSeq>   a = actions[--nactions];
-        Person<TSeq> * p = a.person;
+        Agent<TSeq> * p = a.agent;
 
         // Applying function
         if (a.call)
@@ -3567,7 +3567,7 @@ inline void Model<TSeq>::actions_run()
 ///@{
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq> * m
 )
@@ -3582,7 +3582,7 @@ inline epiworld_double susceptibility_reduction_mixer_default(
 
 template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
@@ -3597,7 +3597,7 @@ inline epiworld_double transmission_reduction_mixer_default(
 
 template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
@@ -3612,7 +3612,7 @@ inline epiworld_double recovery_enhancer_mixer_default(
 
 template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
-    Person<TSeq>* p,
+    Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
 )
@@ -3715,7 +3715,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
-    std::vector< Person<TSeq> > & p,
+    std::vector< Agent<TSeq> > & p,
     std::map<int,int> & p_ids,
     bool & d,
     Model<TSeq> * model
@@ -3733,11 +3733,11 @@ inline void Model<TSeq>::clone_population(
     for (unsigned int i = 0u; i < size(); ++i)
     {
         // Making room
-        const Person<TSeq> & person_this = population[i];
-        Person<TSeq> & person_res        = p[i];
+        const Agent<TSeq> & person_this = population[i];
+        Agent<TSeq> & person_res        = p[i];
 
         // Readding
-        std::vector< Person<TSeq> * > neigh = person_this.neighbors;
+        std::vector< Agent<TSeq> * > neigh = person_this.neighbors;
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
@@ -3767,7 +3767,7 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
-inline std::vector<Person<TSeq>> * Model<TSeq>::get_population()
+inline std::vector<Agent<TSeq>> * Model<TSeq>::get_population()
 {
     return &population;
 }
@@ -3926,10 +3926,10 @@ inline void Model<TSeq>::dist_virus()
 
             int loc = static_cast<unsigned int>(floor(runif() * (n_left--)));
 
-            Person<TSeq> & person = population[idx[loc]];
+            Agent<TSeq> & agent = population[idx[loc]];
             
             // Adding action
-            person.add_virus(virus, virus->status_init, virus->queue_init);
+            agent.add_virus(virus, virus->status_init, virus->queue_init);
 
             // Adjusting sample
             nsampled--;
@@ -4186,7 +4186,7 @@ inline void Model<TSeq>::population_from_adjlist(AdjList al) {
     // Resizing the people
     population.clear();
     population_ids.clear();
-    population.resize(al.vcount(), Person<TSeq>());
+    population.resize(al.vcount(), Agent<TSeq>());
 
     const auto & tmpdat = al.get_dat();
     
@@ -4427,7 +4427,7 @@ inline void Model<TSeq>::verbose_off() {
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rewire_fun(
-    std::function<void(std::vector<Person<TSeq>>*,Model<TSeq>*,epiworld_double)> fun
+    std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> fun
     ) {
     rewire_fun = fun;
 }
@@ -4787,16 +4787,16 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     for (unsigned int p = 0u; p < size(); ++p)
     {
         // Making room
-        const Person<TSeq> & person_this = population[p];
-        Person<TSeq> & person_res  = res.population[p];
+        const Agent<TSeq> & person_this = population[p];
+        Agent<TSeq> & person_res  = res.population[p];
 
-        // Person pointing to the right model and person
+        // Agent pointing to the right model and agent
         person_res.model        = &res;
-        person_res.viruses.host = &person_res;
-        person_res.tools.person = &person_res;
+        person_res.viruses.agent = &person_res;
+        person_res.tools.agent = &person_res;
 
         // Readding
-        std::vector< Person<TSeq> * > neigh = person_this.neighbors;
+        std::vector< Agent<TSeq> * > neigh = person_this.neighbors;
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
@@ -5151,7 +5151,7 @@ template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 #define VIRUSPTR std::shared_ptr< Virus<TSeq> >
 
@@ -5163,7 +5163,7 @@ class Person;
 template<typename TSeq>
 class Viruses {
     friend class Virus<TSeq>;
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
 private:
     std::vector< VIRUSPTR > * dat;
     const epiworld_fast_uint * n_viruses;
@@ -5171,7 +5171,7 @@ private:
 public:
 
     Viruses() = delete;
-    Viruses(Person<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
+    Viruses(Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
     typename std::vector< VIRUSPTR >::iterator begin();
     typename std::vector< VIRUSPTR >::iterator end();
@@ -5233,7 +5233,7 @@ inline size_t Viruses<TSeq>::size() const noexcept
 template<typename TSeq>
 class Viruses_const {
     friend class Virus<TSeq>;
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
 private:
     const std::vector< VIRUSPTR > * dat;
     const epiworld_fast_uint * n_viruses;
@@ -5241,7 +5241,7 @@ private:
 public:
 
     Viruses_const() = delete;
-    Viruses_const(const Person<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
+    Viruses_const(const Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
     typename std::vector< VIRUSPTR >::const_iterator begin();
     typename std::vector< VIRUSPTR >::const_iterator end();
@@ -5321,7 +5321,7 @@ inline size_t Viruses_const<TSeq>::size() const noexcept
 #define EPIWORLD_VIRUS_HPP
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class Virus;
@@ -5338,11 +5338,11 @@ class Model;
  * Raw transmisibility of a virus should be a function of its genetic
  * sequence. Nonetheless, transmisibility can be reduced as a result of
  * having one or more tools to fight the virus. Because of this, transmisibility
- * should be a function of the host.
+ * should be a function of the agent.
  */
 template<typename TSeq = int>
 class Virus {
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
     friend class Model<TSeq>;
     friend class DataBase<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
@@ -5350,8 +5350,8 @@ class Virus {
     friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
-    Person<TSeq> * host = nullptr;
-    int        host_idx = -99;
+    Agent<TSeq> * agent = nullptr;
+    int        agent_idx = -99;
     std::shared_ptr<TSeq> baseline_sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
@@ -5367,13 +5367,13 @@ private:
     std::vector< epiworld_double * > params;
     std::vector< epiworld_double > data;
 
-    epiworld_fast_int status_init    = -99; ///< Change of status when added to host.
-    epiworld_fast_int status_post    = -99; ///< Change of status when removed from host.
-    epiworld_fast_int status_removed = -99; ///< Change of status when host is removed
+    epiworld_fast_int status_init    = -99; ///< Change of status when added to agent.
+    epiworld_fast_int status_post    = -99; ///< Change of status when removed from agent.
+    epiworld_fast_int status_removed = -99; ///< Change of status when agent is removed
 
-    epiworld_fast_int queue_init    = 1; ///< Change of status when added to host.
-    epiworld_fast_int queue_post    = -1; ///< Change of status when removed from host.
-    epiworld_fast_int queue_removed = -99; ///< Change of status when host is removed
+    epiworld_fast_int queue_init    = 1; ///< Change of status when added to agent.
+    epiworld_fast_int queue_post    = -1; ///< Change of status when removed from agent.
+    epiworld_fast_int queue_removed = -99; ///< Change of status when agent is removed
 
 public:
     Virus(std::string name = "unknown virus");
@@ -5384,8 +5384,8 @@ public:
     const TSeq* get_sequence();
     void set_sequence(TSeq sequence);
     
-    Person<TSeq> * get_host();
-    void set_host(Person<TSeq> * p, epiworld_fast_uint idx);
+    Agent<TSeq> * get_agent();
+    void set_agent(Agent<TSeq> * p, epiworld_fast_uint idx);
     Model<TSeq> * get_model();
     
     void set_date(int d);
@@ -5439,9 +5439,9 @@ public:
      * which are retrieved when adding or removing a virus does not
      * specify a change in status or in queue.
      * 
-     * @param init After the virus/tool is added to the host.
+     * @param init After the virus/tool is added to the agent.
      * @param end After the virus/tool is removed.
-     * @param removed After the host (Person) is removed.
+     * @param removed After the agent (Agent) is removed.
      */
     ///@{
     void set_status(
@@ -5508,9 +5508,9 @@ template<typename TSeq>
 inline void Virus<TSeq>::mutate() {
 
     if (mutation_fun)
-        if (mutation_fun(host, *this, this->get_model()))
+        if (mutation_fun(agent, *this, this->get_model()))
         {
-            host->get_model()->get_db().record_variant(*this);
+            agent->get_model()->get_db().record_variant(*this);
         }
 
     return;
@@ -5536,19 +5536,19 @@ inline void Virus<TSeq>::set_sequence(TSeq sequence) {
 }
 
 template<typename TSeq>
-inline Person<TSeq> * Virus<TSeq>::get_host() {
-    return host;
+inline Agent<TSeq> * Virus<TSeq>::get_agent() {
+    return agent;
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_host(Person<TSeq> * p, epiworld_fast_uint idx) {
-    host = p;
-    host_idx = static_cast<int>(idx);
+inline void Virus<TSeq>::set_agent(Agent<TSeq> * p, epiworld_fast_uint idx) {
+    agent = p;
+    agent_idx = static_cast<int>(idx);
 }
 
 template<typename TSeq>
 inline Model<TSeq> * Virus<TSeq>::get_model() {
-    return host->get_model();
+    return agent->get_model();
 }
 
 template<typename TSeq>
@@ -5580,7 +5580,7 @@ inline epiworld_double Virus<TSeq>::get_prob_infecting()
 {
 
     if (probability_of_infecting_fun)
-        return probability_of_infecting_fun(host, *this, host->get_model());
+        return probability_of_infecting_fun(agent, *this, agent->get_model());
         
     return EPI_DEFAULT_VIRUS_PROB_INFECTION;
 
@@ -5593,7 +5593,7 @@ inline epiworld_double Virus<TSeq>::get_prob_recovery()
 {
 
     if (probability_of_recovery_fun)
-        return probability_of_recovery_fun(host, *this, host->get_model());
+        return probability_of_recovery_fun(agent, *this, agent->get_model());
         
     return EPI_DEFAULT_VIRUS_PROB_RECOVERY;
 
@@ -5606,7 +5606,7 @@ inline epiworld_double Virus<TSeq>::get_prob_death()
 {
 
     if (probability_of_death_fun)
-        return probability_of_death_fun(host, *this, host->get_model());
+        return probability_of_death_fun(agent, *this, agent->get_model());
         
     return EPI_DEFAULT_VIRUS_PROB_DEATH;
 
@@ -5634,7 +5634,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -5646,7 +5646,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -5658,7 +5658,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -5670,7 +5670,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -5682,7 +5682,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -5694,7 +5694,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -5720,7 +5720,7 @@ inline void Virus<TSeq>::post_recovery()
 {
 
     if (post_recovery_fun)
-        post_recovery_fun(host, *this, host->get_model());    
+        post_recovery_fun(agent, *this, agent->get_model());    
 
     return;
         
@@ -5759,7 +5759,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
     PostRecoveryFun<TSeq> tmpfun = 
         [__no_reinfect](
-            Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m
+            Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m
             )
         {
             
@@ -5809,7 +5809,7 @@ inline void Virus<TSeq>::set_post_immunity(
     __no_reinfect->set_recovery_enhancer(0.0);
 
     PostRecoveryFun<TSeq> tmpfun = 
-        [__no_reinfect](Person<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [__no_reinfect](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
         {
 
             // Have we registered the tool?
@@ -5944,7 +5944,7 @@ template<typename TSeq>
 class Tool;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 #define TOOLPTR std::shared_ptr< Tool<TSeq> >
 
@@ -5956,7 +5956,7 @@ class Person;
 template<typename TSeq>
 class Tools {
     friend class Tool<TSeq>;
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
 private:
     std::vector< TOOLPTR > * dat;
     const epiworld_fast_uint * n_tools;
@@ -5964,7 +5964,7 @@ private:
 public:
 
     Tools() = delete;
-    Tools(Person<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
+    Tools(Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
     typename std::vector< TOOLPTR >::iterator begin();
     typename std::vector< TOOLPTR >::iterator end();
@@ -6026,7 +6026,7 @@ inline size_t Tools<TSeq>::size() const noexcept
 template<typename TSeq>
 class Tools_const {
     friend class Tool<TSeq>;
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
 private:
     const std::vector< TOOLPTR > * dat;
     const epiworld_fast_uint * n_tools;
@@ -6034,7 +6034,7 @@ private:
 public:
 
     Tools_const() = delete;
-    Tools_const(const Person<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
+    Tools_const(const Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
     typename std::vector< TOOLPTR >::const_iterator begin();
     typename std::vector< TOOLPTR >::const_iterator end();
@@ -6118,7 +6118,7 @@ template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class Model;
@@ -6127,13 +6127,13 @@ template<typename TSeq>
 class Tool;
 
 /**
- * @brief Tools for defending the host against the virus
+ * @brief Tools for defending the agent against the virus
  * 
  * @tparam TSeq Type of sequence
  */
 template<typename TSeq = int> 
 class Tool {
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
     friend class Model<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
@@ -6141,7 +6141,7 @@ class Tool {
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
 
-    Person<TSeq> * person = nullptr;
+    Agent<TSeq> * agent = nullptr;
     int person_idx        = -99;
 
     int date = -99;
@@ -6160,10 +6160,10 @@ private:
     epiworld_fast_int status_init = -99;
     epiworld_fast_int status_post = -99;
 
-    epiworld_fast_int queue_init = 0; ///< Change of status when added to host.
-    epiworld_fast_int queue_post = 0; ///< Change of status when removed from host.
+    epiworld_fast_int queue_init = 0; ///< Change of status when added to agent.
+    epiworld_fast_int queue_post = 0; ///< Change of status when removed from agent.
 
-    void set_person(Person<TSeq> * p, size_t idx);
+    void set_person(Agent<TSeq> * p, size_t idx);
 
 public:
     Tool(std::string name = "unknown tool");
@@ -6208,7 +6208,7 @@ public:
     void set_name(std::string name);
     std::string get_name() const;
 
-    Person<TSeq> * get_person();
+    Agent<TSeq> * get_person();
     int get_id() const;
     void set_id(int id);
     void set_date(int d);
@@ -6287,7 +6287,7 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 {
 
     if (susceptibility_reduction_fun)
-        return susceptibility_reduction_fun(*this, this->person, v, person->get_model());
+        return susceptibility_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_CONTAGION_REDUCTION;
 
@@ -6300,7 +6300,7 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 {
 
     if (transmission_reduction_fun)
-        return transmission_reduction_fun(*this, this->person, v, person->get_model());
+        return transmission_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_TRANSMISSION_REDUCTION;
 
@@ -6313,7 +6313,7 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 {
 
     if (recovery_enhancer_fun)
-        return recovery_enhancer_fun(*this, this->person, v, person->get_model());
+        return recovery_enhancer_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_RECOVERY_ENHANCER;
 
@@ -6326,7 +6326,7 @@ inline epiworld_double Tool<TSeq>::get_death_reduction(
 {
 
     if (death_reduction_fun)
-        return death_reduction_fun(*this, this->person, v, person->get_model());
+        return death_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_DEATH_REDUCTION;
 
@@ -6369,7 +6369,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -6384,7 +6384,7 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 {
     
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -6399,7 +6399,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> & t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> & t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -6414,7 +6414,7 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -6433,7 +6433,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -6449,7 +6449,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -6465,7 +6465,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &  t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -6481,7 +6481,7 @@ inline void Tool<TSeq>::set_death_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> & t, Person<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
+        [prob](Tool<TSeq> & t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -6508,15 +6508,15 @@ inline std::string Tool<TSeq>::get_name() const {
 }
 
 template<typename TSeq>
-inline Person<TSeq> * Tool<TSeq>::get_person()
+inline Agent<TSeq> * Tool<TSeq>::get_person()
 {
-    return this->person;
+    return this->agent;
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_person(Person<TSeq> * p, size_t idx)
+inline void Tool<TSeq>::set_person(Agent<TSeq> * p, size_t idx)
 {
-    person = p;
+    agent = p;
     person_idx = static_cast<int>(idx);
 }
 
@@ -6600,7 +6600,7 @@ inline void Tool<TSeq>::get_queue(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/person-meat-status.hpp-
+ Start of -include/epiworld/agent-meat-status.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6613,11 +6613,11 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq = int>
 inline void default_update_susceptible(
-    Person<TSeq> * p,
+    Agent<TSeq> * p,
     Model<TSeq> * m
     )
 {
@@ -6673,7 +6673,7 @@ inline void default_update_susceptible(
 }
 
 template<typename TSeq = int>
-inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
+inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 
     if (p->get_n_viruses() == 0u)
         throw std::logic_error(
@@ -6742,7 +6742,7 @@ inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/person-meat-status.hpp-
+ End of -include/epiworld/agent-meat-status.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6751,7 +6751,7 @@ inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/person-bones.hpp-
+ Start of -include/epiworld/agent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6797,12 +6797,12 @@ template<typename TSeq>
 inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
 
 /**
- * @brief Person (agents)
+ * @brief Agent (agents)
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  */
 template<typename TSeq = int>
-class Person {
+class Agent {
     friend class Model<TSeq>;
     friend class Virus<TSeq>;
     friend class Viruses<TSeq>;
@@ -6817,7 +6817,7 @@ class Person {
 private:
     Model<TSeq> * model;
     
-    std::vector< Person<TSeq> * > neighbors;
+    std::vector< Agent<TSeq> * > neighbors;
 
     unsigned int index; ///< Location in the Model
     epiworld_fast_uint status = 0u;
@@ -6841,8 +6841,8 @@ private:
 
 public:
 
-    Person();
-    Person(const Person<TSeq> & p);
+    Agent();
+    Agent(const Agent<TSeq> & p);
 
     /**
      * @name Add/Remove Virus/Tool
@@ -6935,12 +6935,12 @@ public:
 
     void mutate_variant();
     void add_neighbor(
-        Person<TSeq> * p,
+        Agent<TSeq> * p,
         bool check_source = true,
         bool check_target = true
         );
 
-    std::vector< Person<TSeq> * > & get_neighbors();
+    std::vector< Agent<TSeq> * > & get_neighbors();
 
     void change_status(
         epiworld_fast_uint new_status,
@@ -6964,7 +6964,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/person-bones.hpp-
+ End of -include/epiworld/agent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6973,7 +6973,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/person-meat.hpp-
+ Start of -include/epiworld/agent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6995,20 +6995,20 @@ template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    Person<TSeq> * p = a.person;
+    Agent<TSeq> * p = a.agent;
     VirusPtr<TSeq> v = a.virus;
 
     CHECK_COALESCE_(a.new_status, v->status_init, p->get_status())
     CHECK_COALESCE_(a.queue, v->queue_init, 1)
 
-    // Has a host? If so, we need to register the transmission
-    if (v->get_host())
+    // Has a agent? If so, we need to register the transmission
+    if (v->get_agent())
     {
 
-        // ... only if not the same person
-        if (v->get_host()->get_id() != v->get_id())
+        // ... only if not the same agent
+        if (v->get_agent()->get_id() != v->get_id())
             m->get_db().record_transmission(
-                v->get_host()->get_id(), p->get_id(), v->get_id() 
+                v->get_agent()->get_id(), p->get_id(), v->get_id() 
             );
 
     }
@@ -7024,9 +7024,9 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 
     n_viruses--;
 
-    // Notice that both host and date can be changed in this case
+    // Notice that both agent and date can be changed in this case
     // as only the sequence is a shared_ptr itself.
-    p->viruses[n_viruses]->set_host(p, n_viruses);
+    p->viruses[n_viruses]->set_agent(p, n_viruses);
     p->viruses[n_viruses]->set_date(m->today());
 
     m->get_db().today_variant[v->get_id()][p->status]++;
@@ -7037,7 +7037,7 @@ template<typename TSeq>
 inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    Person<TSeq> * p = a.person;
+    Agent<TSeq> * p = a.agent;
     ToolPtr<TSeq> t = a.tool;
 
     CHECK_COALESCE_(a.new_status, t->status_init, p->get_status())
@@ -7065,8 +7065,8 @@ template<typename TSeq>
 inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    Person<TSeq> * p   = a.person;    
-    VirusPtr<TSeq> & v = a.person->viruses[a.virus->host_idx];
+    Agent<TSeq> * p   = a.agent;    
+    VirusPtr<TSeq> & v = a.agent->viruses[a.virus->agent_idx];
     
     CHECK_COALESCE_(a.new_status, v->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, v->queue_post, -1)
@@ -7074,7 +7074,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
     if (--p->n_viruses > 0)
     {
         // The new virus will change positions
-        p->viruses[p->n_viruses]->host_idx = v->host_idx;
+        p->viruses[p->n_viruses]->agent_idx = v->agent_idx;
         std::swap(v, p->viruses[p->n_viruses]);
     }
     
@@ -7089,8 +7089,8 @@ template<typename TSeq>
 inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    Person<TSeq> * p  = a.person;    
-    ToolPtr<TSeq> & t = a.person->tools[a.tool->person_idx];
+    Agent<TSeq> * p  = a.agent;    
+    ToolPtr<TSeq> & t = a.agent->tools[a.tool->person_idx];
 
     CHECK_COALESCE_(a.new_status, t->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, t->queue_post, 0)
@@ -7106,13 +7106,13 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline Person<TSeq>::Person()
+inline Agent<TSeq>::Agent()
 {
     
 }
 
 template<typename TSeq>
-inline Person<TSeq>::Person(const Person<TSeq> & p)
+inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 {
 
     model = p.model;
@@ -7133,7 +7133,7 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
         // Will create a copy of the virus, with the exeption of
         // the virus code
         viruses.push_back(std::make_shared<Virus<TSeq>>(*v));
-        viruses[n_viruses++]->host = this;
+        viruses[n_viruses++]->agent = this;
 
     }
 
@@ -7158,7 +7158,7 @@ inline Person<TSeq>::Person(const Person<TSeq> & p)
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::add_tool(
+inline void Agent<TSeq>::add_tool(
     ToolPtr<TSeq> tool,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
@@ -7178,7 +7178,7 @@ inline void Person<TSeq>::add_tool(
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::add_tool(
+inline void Agent<TSeq>::add_tool(
     Tool<TSeq> tool,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
@@ -7189,7 +7189,7 @@ inline void Person<TSeq>::add_tool(
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::add_virus(
+inline void Agent<TSeq>::add_virus(
     VirusPtr<TSeq> virus,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
@@ -7209,7 +7209,7 @@ inline void Person<TSeq>::add_virus(
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::add_virus(
+inline void Agent<TSeq>::add_virus(
     Virus<TSeq> virus,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
@@ -7220,7 +7220,7 @@ inline void Person<TSeq>::add_virus(
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::rm_tool(
+inline void Agent<TSeq>::rm_tool(
     epiworld_fast_uint tool_idx,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
@@ -7229,7 +7229,7 @@ inline void Person<TSeq>::rm_tool(
 
     if (tool_idx >= n_tools)
         throw std::range_error(
-            "The Tool you want to remove is out of range. This Person only has " +
+            "The Tool you want to remove is out of range. This Agent only has " +
             std::to_string(n_tools) + " tools."
         );
 
@@ -7240,14 +7240,14 @@ inline void Person<TSeq>::rm_tool(
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::rm_tool(
+inline void Agent<TSeq>::rm_tool(
     ToolPtr<TSeq> & tool,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
 {
 
-    if (tool->person != this)
+    if (tool->agent != this)
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
@@ -7257,7 +7257,7 @@ inline void Person<TSeq>::rm_tool(
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::rm_virus(
+inline void Agent<TSeq>::rm_virus(
     epiworld_fast_uint virus_idx,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
@@ -7265,7 +7265,7 @@ inline void Person<TSeq>::rm_virus(
 {
     if (virus_idx >= n_viruses)
         throw std::range_error(
-            "The Virus you want to remove is out of range. This Person only has " +
+            "The Virus you want to remove is out of range. This Agent only has " +
             std::to_string(n_viruses) + " viruses."
         );
     else if (n_viruses == 0u)
@@ -7281,14 +7281,14 @@ inline void Person<TSeq>::rm_virus(
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::rm_virus(
+inline void Agent<TSeq>::rm_virus(
     VirusPtr<TSeq> & virus,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
 {
 
-    if (virus->host != this)
+    if (virus->agent != this)
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
@@ -7299,7 +7299,7 @@ inline void Person<TSeq>::rm_virus(
 }
 
 template<typename TSeq>
-inline epiworld_double Person<TSeq>::get_susceptibility_reduction(
+inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
     VirusPtr<TSeq> v
 ) {
 
@@ -7307,97 +7307,97 @@ inline epiworld_double Person<TSeq>::get_susceptibility_reduction(
 }
 
 template<typename TSeq>
-inline epiworld_double Person<TSeq>::get_transmission_reduction(
+inline epiworld_double Agent<TSeq>::get_transmission_reduction(
     VirusPtr<TSeq> v
 ) {
     return model->transmission_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
-inline epiworld_double Person<TSeq>::get_recovery_enhancer(
+inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
     VirusPtr<TSeq> v
 ) {
     return model->recovery_enhancer_mixer(this, v, model);
 }
 
 template<typename TSeq>
-inline epiworld_double Person<TSeq>::get_death_reduction(
+inline epiworld_double Agent<TSeq>::get_death_reduction(
     VirusPtr<TSeq> v
 ) {
     return model->death_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
-inline int Person<TSeq>::get_id() const
+inline int Agent<TSeq>::get_id() const
 {
     return id;
 }
 
 template<typename TSeq>
-inline unsigned int Person<TSeq>::get_index() const
+inline unsigned int Agent<TSeq>::get_index() const
 {
     return index;
 }
 
 template<typename TSeq>
-inline std::mt19937 * Person<TSeq>::get_rand_endgine() {
+inline std::mt19937 * Agent<TSeq>::get_rand_endgine() {
     return model->get_rand_endgine();
 }
 
 template<typename TSeq>
-inline Model<TSeq> * Person<TSeq>::get_model() {
+inline Model<TSeq> * Agent<TSeq>::get_model() {
     return model;
 }
 
 template<typename TSeq>
-inline Viruses<TSeq> Person<TSeq>::get_viruses() {
+inline Viruses<TSeq> Agent<TSeq>::get_viruses() {
 
     return Viruses<TSeq>(*this);
 
 }
 
 template<typename TSeq>
-inline const Viruses_const<TSeq> Person<TSeq>::get_viruses() const {
+inline const Viruses_const<TSeq> Agent<TSeq>::get_viruses() const {
 
     return Viruses_const<TSeq>(*this);
     
 }
 
 template<typename TSeq>
-inline VirusPtr<TSeq> & Person<TSeq>::get_virus(int i) {
+inline VirusPtr<TSeq> & Agent<TSeq>::get_virus(int i) {
     return viruses.at(i);
 }
 
 template<typename TSeq>
-inline size_t Person<TSeq>::get_n_viruses() const noexcept
+inline size_t Agent<TSeq>::get_n_viruses() const noexcept
 {
     return n_viruses;
 }
 
 template<typename TSeq>
-inline Tools<TSeq> Person<TSeq>::get_tools() {
+inline Tools<TSeq> Agent<TSeq>::get_tools() {
     return Tools<TSeq>(*this);
 }
 
 template<typename TSeq>
-inline const Tools_const<TSeq> Person<TSeq>::get_tools() const {
+inline const Tools_const<TSeq> Agent<TSeq>::get_tools() const {
     return Tools_const<TSeq>(*this);
 }
 
 template<typename TSeq>
-inline ToolPtr<TSeq> & Person<TSeq>::get_tool(int i)
+inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(int i)
 {
     return tools.at(i);
 }
 
 template<typename TSeq>
-inline size_t Person<TSeq>::get_n_tools() const noexcept
+inline size_t Agent<TSeq>::get_n_tools() const noexcept
 {
     return n_tools;
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::mutate_variant()
+inline void Agent<TSeq>::mutate_variant()
 {
 
     for (auto & v : viruses)
@@ -7406,8 +7406,8 @@ inline void Person<TSeq>::mutate_variant()
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::add_neighbor(
-    Person<TSeq> * p,
+inline void Agent<TSeq>::add_neighbor(
+    Agent<TSeq> * p,
     bool check_source,
     bool check_target
 ) {
@@ -7450,13 +7450,13 @@ inline void Person<TSeq>::add_neighbor(
 }
 
 template<typename TSeq>
-inline std::vector< Person<TSeq> *> & Person<TSeq>::get_neighbors()
+inline std::vector< Agent<TSeq> *> & Agent<TSeq>::get_neighbors()
 {
     return neighbors;
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::change_status(
+inline void Agent<TSeq>::change_status(
     epiworld_fast_uint new_status,
     epiworld_fast_int queue
     )
@@ -7471,12 +7471,12 @@ inline void Person<TSeq>::change_status(
 }
 
 template<typename TSeq>
-inline const epiworld_fast_uint & Person<TSeq>::get_status() const {
+inline const epiworld_fast_uint & Agent<TSeq>::get_status() const {
     return status;
 }
 
 template<typename TSeq>
-inline void Person<TSeq>::reset()
+inline void Agent<TSeq>::reset()
 {
 
     this->viruses.clear();
@@ -7490,7 +7490,7 @@ inline void Person<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_tool(unsigned int t) const
+inline bool Agent<TSeq>::has_tool(unsigned int t) const
 {
 
     for (auto & tool : tools)
@@ -7502,7 +7502,7 @@ inline bool Person<TSeq>::has_tool(unsigned int t) const
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_tool(std::string name) const
+inline bool Agent<TSeq>::has_tool(std::string name) const
 {
 
     for (auto & tool : tools)
@@ -7514,7 +7514,7 @@ inline bool Person<TSeq>::has_tool(std::string name) const
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_virus(unsigned int t) const
+inline bool Agent<TSeq>::has_virus(unsigned int t) const
 {
     for (auto & v : viruses)
         if (v->get_id() == t)
@@ -7524,7 +7524,7 @@ inline bool Person<TSeq>::has_virus(unsigned int t) const
 }
 
 template<typename TSeq>
-inline bool Person<TSeq>::has_virus(std::string name) const
+inline bool Agent<TSeq>::has_virus(std::string name) const
 {
     
     for (auto & v : viruses)
@@ -7541,7 +7541,7 @@ inline bool Person<TSeq>::has_virus(std::string name) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/person-meat.hpp-
+ End of -include/epiworld/agent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/

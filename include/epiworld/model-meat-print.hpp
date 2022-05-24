@@ -143,16 +143,16 @@ inline void Model<TSeq>::print() const
         
         if (today() != 0)
             fmt = " - (%" + std::to_string(nstatus).length() +
-                std::string("d) Total %-") + std::to_string(nchar) + "s : %" +
+                std::string("d) %-") + std::to_string(nchar) + "s : %" +
                 std::to_string(std::to_string(size()).length()) + "i -> %i\n";
         else
             fmt = " - (%" + std::to_string(nstatus).length() +
-                std::string("d) Total %-") + std::to_string(nchar) + "s : %i\n";
+                std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
 
     }
     else
         fmt = " - (%" + std::to_string(nstatus).length() +
-            std::string("d) Total %-") + std::to_string(nchar) + "s : %s\n";
+            std::string("d) %-") + std::to_string(nchar) + "s : %s\n";
         
     printf_epiworld("\nDistribution of the population at time %i:\n", today());
     for (size_t s = 0u; s < nstatus; ++s)

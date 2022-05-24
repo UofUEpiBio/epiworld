@@ -31,7 +31,7 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class PersonTools;
@@ -49,22 +49,22 @@ template<typename TSeq>
 using ToolPtr = std::shared_ptr< Tool< TSeq > >;
 
 template<typename TSeq>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MixerFun = std::function<epiworld_double(Person<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
-using PostRecoveryFun = std::function<void(Person<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using PostRecoveryFun = std::function<void(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
-using VirusFun = std::function<epiworld_double(Person<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using VirusFun = std::function<epiworld_double(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
-using UpdateFun = std::function<void(Person<TSeq>*,Model<TSeq>*)>;
+using UpdateFun = std::function<void(Agent<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
@@ -82,7 +82,7 @@ using ActionFun = std::function<void(Action<TSeq>&,Model<TSeq>*)>;
  */
 template<typename TSeq>
 struct Action {
-    Person<TSeq> * person;
+    Agent<TSeq> * agent;
     VirusPtr<TSeq> virus;
     ToolPtr<TSeq> tool;
     epiworld_fast_int new_status;
@@ -94,7 +94,7 @@ public:
      * 
      * All the parameters are rather optional.
      * 
-     * @param person_ Person over who the action will happen
+     * @param agent_ Agent over who the action will happen
      * @param virus_ Virus to add
      * @param tool_ Tool to add
      * @param virus_idx Index of virus to be removed (if needed)
@@ -104,13 +104,13 @@ public:
      * @param call_ The action call (if needed)
      */
     Action(
-        Person<TSeq> * person_,
+        Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         epiworld_fast_int new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
-    ) : person(person_), virus(virus_), tool(tool_), new_status(new_status_),
+    ) : agent(agent_), virus(virus_), tool(tool_), new_status(new_status_),
         queue(queue_), call(call_) {};
 };
 

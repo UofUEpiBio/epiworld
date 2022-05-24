@@ -5,7 +5,7 @@ template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 #define VIRUSPTR std::shared_ptr< Virus<TSeq> >
 
@@ -17,7 +17,7 @@ class Person;
 template<typename TSeq>
 class Viruses {
     friend class Virus<TSeq>;
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
 private:
     std::vector< VIRUSPTR > * dat;
     const epiworld_fast_uint * n_viruses;
@@ -25,7 +25,7 @@ private:
 public:
 
     Viruses() = delete;
-    Viruses(Person<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
+    Viruses(Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
     typename std::vector< VIRUSPTR >::iterator begin();
     typename std::vector< VIRUSPTR >::iterator end();
@@ -87,7 +87,7 @@ inline size_t Viruses<TSeq>::size() const noexcept
 template<typename TSeq>
 class Viruses_const {
     friend class Virus<TSeq>;
-    friend class Person<TSeq>;
+    friend class Agent<TSeq>;
 private:
     const std::vector< VIRUSPTR > * dat;
     const epiworld_fast_uint * n_viruses;
@@ -95,7 +95,7 @@ private:
 public:
 
     Viruses_const() = delete;
-    Viruses_const(const Person<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
+    Viruses_const(const Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
     typename std::vector< VIRUSPTR >::const_iterator begin();
     typename std::vector< VIRUSPTR >::const_iterator end();

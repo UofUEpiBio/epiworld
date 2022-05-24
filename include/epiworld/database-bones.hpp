@@ -128,7 +128,7 @@ public:
      * @brief Registering a new variant
      * 
      * @param v Pointer to the new variant.
-     * Since variants are originated in the host, the numbers simply move around.
+     * Since variants are originated in the agent, the numbers simply move around.
      * From the parent variant to the new variant. And the total number of infected
      * does not change.
      */

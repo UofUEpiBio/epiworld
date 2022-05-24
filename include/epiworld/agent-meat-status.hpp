@@ -5,11 +5,11 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq = int>
 inline void default_update_susceptible(
-    Person<TSeq> * p,
+    Agent<TSeq> * p,
     Model<TSeq> * m
     )
 {
@@ -65,7 +65,7 @@ inline void default_update_susceptible(
 }
 
 template<typename TSeq = int>
-inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
+inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 
     if (p->get_n_viruses() == 0u)
         throw std::logic_error(

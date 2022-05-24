@@ -150,7 +150,7 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
             continue;
 
         sampled[i] = true;
-        epiworld::Person<TSeq> * p = &pop[i];
+        epiworld::Agent<TSeq> * p = &pop[i];
         
         // If still exposed for the next term
         if (epiworld::IN(p->get_status(), exposed_status ))

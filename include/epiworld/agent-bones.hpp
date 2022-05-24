@@ -38,12 +38,12 @@ template<typename TSeq>
 inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
 
 /**
- * @brief Person (agents)
+ * @brief Agent (agents)
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  */
 template<typename TSeq = int>
-class Person {
+class Agent {
     friend class Model<TSeq>;
     friend class Virus<TSeq>;
     friend class Viruses<TSeq>;
@@ -58,7 +58,7 @@ class Person {
 private:
     Model<TSeq> * model;
     
-    std::vector< Person<TSeq> * > neighbors;
+    std::vector< Agent<TSeq> * > neighbors;
 
     unsigned int index; ///< Location in the Model
     epiworld_fast_uint status = 0u;
@@ -82,8 +82,8 @@ private:
 
 public:
 
-    Person();
-    Person(const Person<TSeq> & p);
+    Agent();
+    Agent(const Agent<TSeq> & p);
 
     /**
      * @name Add/Remove Virus/Tool
@@ -176,12 +176,12 @@ public:
 
     void mutate_variant();
     void add_neighbor(
-        Person<TSeq> * p,
+        Agent<TSeq> * p,
         bool check_source = true,
         bool check_target = true
         );
 
-    std::vector< Person<TSeq> * > & get_neighbors();
+    std::vector< Agent<TSeq> * > & get_neighbors();
 
     void change_status(
         epiworld_fast_uint new_status,
