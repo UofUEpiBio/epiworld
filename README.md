@@ -2,43 +2,65 @@
 
 # epiworld
 
-This C++ template-header-only library provides a general framework for epidemiologic simulation. The main features of the library are:
+This C++ library provides a general framework for epidemiologic simulation. The
+core principle of `epiworld` is fast epidemiological prototyping for 
+building complex models quickly. Here are some of its main features:
 
-  1. Four key classes: `Model`, `Person`, `Tool`, and `Virus`.
-  2. The model features a social networks of `Persons`.
-  3. `Persons` can have multiple `Tools` as a defense system.
-  4. `Tools` can reduce contagion rate, transmissibility, death rates, and improve recovery rates.
-  5. `Viruses` can mutate (generating new variants).
-  6. `Models` can feature multiple states, e.g., `HEALTHY`, `SUSCEPTIBLE`, etc.
-  7. `Models` can have an arbitrary number of parameters.
-  8. **REALLY FAST** About 6.5 Million person/day simulations per second.
+  - It only depends on the standard library (C++11 required.)
+  - It is a template library.
+  - It is header-only ([single file](epiworld.hpp)).
+  - Models can have an arbitrary set of states.
+  - Viruses and tools (e.g., vaccines, mask-wearing) can be designed to have arbitrary features.
+  - Multiple tools and viruses can live in the same simulation.
+  - It is *FAST*: About 7.5 Million person/day simulations per second (see example below).
 
-<img src="contents.svg">
+Various examples can be found in the [examples](examples) folder.
 
 # Hello world
 
-Here is a simple SIRS model implemented with 
+Here is a simple SIR model implemented with `epiworld`. The source code
+can be found [here](readme.cpp), and you can compile the code as follows:
+
+```bash
+g++ -std=c++17 -O2 readme.cpp -o readme.o
+```
+
+As you can see in [readme.cpp](readme.cpp), to use epiworld you only need
+to incorporate the single header file [epiworld.hpp](epiworld.hpp):
 
 ```cpp
-#include "../include/epiworld/epiworld.hpp"
+#include "epiworld.hpp"
 
 using namespace epiworld;
 
 int main()
 {
 
-        // Creating a model
+    // Creating a model with three statuses:
+    // - Susceptible: Status 0
+    // - Infected: Status 1
+    // - Recovered: Status 2
     Model<> model;
+    model.add_status("Susceptible", default_update_susceptible<>);
+    model.add_status("Infected", default_update_exposed<>);
+    model.add_status("Recovered");
 
-    // Adding the tool and virus
+    // Desgining a virus: This virus will:
+    // - Have a 90% transmission rate
+    // - Have a 50% recovery rate
+    // - Infected individuals become "Infected" (status 1)
+    // - Recovered individuals become "Recovered" (status 2)
+    // Only five individuals will have the virus from the beginning.
     Virus<> virus("covid 19");
-    virus.set_post_immunity(1.0);
+
+    virus.set_prob_infecting(.9);
+    virus.set_prob_recover(.5);
+    
+    virus.set_status(1, 2);
+
     model.add_virus_n(virus, 5);
     
-    Tool<> tool("vaccine");
-    model.add_tool(tool, .5);
-
-    // Generating a random pop 
+    // Generating a random pop from a smallworld network
     model.population_smallworld(100000);
 
     // Initializing setting days and seed
@@ -64,27 +86,25 @@ SIMULATION STUDY
 Population size    : 100000
 Days (duration)    : 100 (of 100)
 Number of variants : 1
-Last run elapsed t : 280.00ms
+Last run elapsed t : 134.00ms
 Rewiring           : off
 
 Virus(es):
  - covid 19 (baseline prevalence: 5 seeds)
+
 Tool(s):
- - vaccine (baseline prevalence: 50.00%)
+ (none)
 
 Model parameters:
+ (none)
 
 Distribution of the population at time 100:
- - Total healthy (S)   :   99995 -> 97390
- - Total recovered (S) :       0 -> 2554
- - Total infected (I)  :       5 -> 56
- - Total removed (R)   :       0 -> 0
-
-(S): Susceptible, (I): Infected, (R): Recovered
-________________________________________________________________________________
+- (0) Total Susceptible :  99995 -> 95466
+- (1) Total Infected    :      5 -> 70
+- (2) Total Recovered   :      0 -> 4464
 ```
 
-Which took about 0.280 seconds.
+Which took about 0.134 seconds (~ 7.5 million ppl x day / second).
 
 ## Tools
 

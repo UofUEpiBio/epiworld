@@ -14,6 +14,14 @@ inline void default_update_susceptible(
     )
 {
 
+    if (p->get_n_viruses() > 0u)
+        throw std::logic_error(
+            std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
+            std::string("Agent id ") + std::to_string(p->get_id()) +
+            std::string(" has ") + std::to_string(p->get_n_viruses()) +
+            std::string(" viruses.")
+            );
+
     // This computes the prob of getting any neighbor variant
     size_t nvariants_tmp = 0u;
     for (auto & neighbor: p->get_neighbors()) 
@@ -58,6 +66,12 @@ inline void default_update_susceptible(
 
 template<typename TSeq = int>
 inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
+
+    if (p->get_n_viruses() == 0u)
+        throw std::logic_error(
+            std::string("Using the -default_update_exposed- on agents WITHOUT viruses makes no sense! ") +
+            std::string("Agent id ") + std::to_string(p->get_id()) + std::string(" has no virus registered.")
+            );
 
     // Odd: Die, Even: Recover
     epiworld_fast_uint n_events = 0u;

@@ -317,11 +317,11 @@ enum STATUS {
     epiworld::Model<tseq> * m\
     )
 
-#define EPI_NEW_VIRUSFUN_LAMBDA(funname,tseq) \
-    epiworld::VirusFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> & v, \
-    epiworld::Model<tseq> * m) -> epiworld_double
+#define EPI_NEW_VIRUSFUN_LAMBDA(funname,TSeq) \
+    epiworld::VirusFun<TSeq> funname = \
+    [](epiworld::Person<TSeq> * p, \
+    epiworld::Virus<TSeq> & v, \
+    epiworld::Model<TSeq> * m) -> epiworld_double
 
 #define EPI_RUNIF() m->runif()
 
@@ -550,6 +550,11 @@ inline int roulette(
     Model<TSeq> * m
     )
 {
+
+    #ifdef EPI_DEBUG
+    if (nelements > m->array_double_tmp.size())
+        throw std::logic_error("Trying to sample from more data than there is in roulette!");
+    #endif
 
     // Step 1: Computing the prob on none 
     epiworld_double p_none = 1.0;
@@ -3094,7 +3099,7 @@ private:
 public:
 
     std::vector<epiworld_double> array_double_tmp;
-    std::vector<VirusPtr<TSeq>*> array_virus_tmp;
+    std::vector<Virus<TSeq> * > array_virus_tmp;
 
     Model() {};
     Model(const Model<TSeq> & m);
@@ -3831,7 +3836,7 @@ inline void Model<TSeq>::init(
 
     engine->seed(seed);
     array_double_tmp.resize(size()/2, 0.0);
-    array_virus_tmp.resize(size(), nullptr);
+    array_virus_tmp.resize(size()/2);
 
     initialized = true;
 
@@ -3892,6 +3897,10 @@ inline void Model<TSeq>::dist_virus()
     // Starting first infection
     int n = size();
     std::vector< size_t > idx(n);
+
+    int n_left = n;
+    std::iota(idx.begin(), idx.end(), 0);
+
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
         // Picking how many
@@ -3912,8 +3921,6 @@ inline void Model<TSeq>::dist_virus()
 
         VirusPtr<TSeq> virus = viruses[v];
         
-        int n_left = n;
-        std::iota(idx.begin(), idx.end(), 0);
         while (nsampled > 0)
         {
 
@@ -4073,6 +4080,23 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
     if (preval < 0.0)
         throw std::range_error("Prevalence of virus cannot be negative");
 
+    // Checking the status
+    epiworld_fast_int init_, post_, rm_;
+    v.get_status(&init_, &post_, &rm_);
+
+    if (init_ == -99)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" has no -init- status."
+            );
+    else if (post_ == -99)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" has no -post- status."
+            );
+    // else if (rm_ == -99)
+    //     throw std::logic_error(
+    //         "The virus \"" + v.get_name() + "\" has no -rm- status."
+    //         );
+
     // Setting the id
     v.set_id(viruses.size());
     
@@ -4086,6 +4110,24 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
 template<typename TSeq>
 inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
 {
+
+    // Checking the ids
+    epiworld_fast_int init_, post_, rm_;
+    v.get_status(&init_, &post_, &rm_);
+
+    if (init_ == -99)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" has no -init- status."
+            );
+    else if (post_ == -99)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" has no -post- status."
+            );
+    // else if (rm_ == -99)
+    //     throw std::logic_error(
+    //         "The virus \"" + v.get_name() + "\" has no -rm- status."
+    //         );
+
 
     // Setting the id
     v.set_id(viruses.size());
@@ -4580,7 +4622,7 @@ inline void Model<TSeq>::print() const
 
     }
 
-    printf_epiworld("Tool(s):\n");
+    printf_epiworld("\nTool(s):\n");
     i = 0;
     for (auto & t : tools)
     {   
@@ -4607,6 +4649,11 @@ inline void Model<TSeq>::print() const
         }
         
 
+    }
+
+    if (tools.size() == 0u)
+    {
+        printf_epiworld(" (none)\n");
     }
 
     // Information about the parameters included
@@ -5400,25 +5447,25 @@ public:
     void set_status(
         epiworld_fast_int init,
         epiworld_fast_int end,
-        epiworld_fast_int removed
+        epiworld_fast_int removed = -99
         );
         
     void set_queue(
         epiworld_fast_int init,
         epiworld_fast_int end,
-        epiworld_fast_int removed
+        epiworld_fast_int removed = -99
         );
 
     void get_status(
         epiworld_fast_int * init,
         epiworld_fast_int * end,
-        epiworld_fast_int * removed
+        epiworld_fast_int * removed = -99
         );
 
     void get_queue(
         epiworld_fast_int * init,
         epiworld_fast_int * end,
-        epiworld_fast_int * removed
+        epiworld_fast_int * removed = -99
         );
     ///@}
 
@@ -6575,13 +6622,27 @@ inline void default_update_susceptible(
     )
 {
 
+    if (p->get_n_viruses() > 0u)
+        throw std::logic_error(
+            std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
+            std::string("Agent id ") + std::to_string(p->get_id()) +
+            std::string(" has ") + std::to_string(p->get_n_viruses()) +
+            std::string(" viruses.")
+            );
+
     // This computes the prob of getting any neighbor variant
-    unsigned int nvariants_tmp = 0u;
+    size_t nvariants_tmp = 0u;
     for (auto & neighbor: p->get_neighbors()) 
     {
                  
-        for (auto & v : neighbor->get_viruses()) 
+        for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
         { 
+
+            #ifdef EPI_DEBUG
+            if (nvariants_tmp >= m->array_virus_tmp.size())
+                throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                // printf_epiworld("N used %d\n", v.use_count());
+            #endif
                 
             /* And it is a function of susceptibility_reduction as well */ 
             m->array_double_tmp[nvariants_tmp] =
@@ -6590,7 +6651,7 @@ inline void default_update_susceptible(
                 (1.0 - neighbor->get_transmission_reduction(v)) 
                 ; 
         
-            m->array_virus_tmp[nvariants_tmp++] = &v;
+            m->array_virus_tmp[nvariants_tmp++] = &(*v);
             
         } 
     }
@@ -6613,6 +6674,12 @@ inline void default_update_susceptible(
 
 template<typename TSeq = int>
 inline void default_update_exposed(Person<TSeq> * p, Model<TSeq> * m) {
+
+    if (p->get_n_viruses() == 0u)
+        throw std::logic_error(
+            std::string("Using the -default_update_exposed- on agents WITHOUT viruses makes no sense! ") +
+            std::string("Agent id ") + std::to_string(p->get_id()) + std::string(" has no virus registered.")
+            );
 
     // Odd: Die, Even: Recover
     epiworld_fast_uint n_events = 0u;

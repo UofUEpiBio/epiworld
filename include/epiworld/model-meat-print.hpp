@@ -68,7 +68,7 @@ inline void Model<TSeq>::print() const
 
     }
 
-    printf_epiworld("Tool(s):\n");
+    printf_epiworld("\nTool(s):\n");
     i = 0;
     for (auto & t : tools)
     {   
@@ -95,6 +95,11 @@ inline void Model<TSeq>::print() const
         }
         
 
+    }
+
+    if (tools.size() == 0u)
+    {
+        printf_epiworld(" (none)\n");
     }
 
     // Information about the parameters included

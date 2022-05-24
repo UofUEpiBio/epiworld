@@ -128,25 +128,25 @@ public:
     void set_status(
         epiworld_fast_int init,
         epiworld_fast_int end,
-        epiworld_fast_int removed
+        epiworld_fast_int removed = -99
         );
         
     void set_queue(
         epiworld_fast_int init,
         epiworld_fast_int end,
-        epiworld_fast_int removed
+        epiworld_fast_int removed = -99
         );
 
     void get_status(
         epiworld_fast_int * init,
         epiworld_fast_int * end,
-        epiworld_fast_int * removed
+        epiworld_fast_int * removed = -99
         );
 
     void get_queue(
         epiworld_fast_int * init,
         epiworld_fast_int * end,
-        epiworld_fast_int * removed
+        epiworld_fast_int * removed = -99
         );
     ///@}
 

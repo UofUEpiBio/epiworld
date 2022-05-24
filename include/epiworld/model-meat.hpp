@@ -618,23 +618,22 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
     if (preval < 0.0)
         throw std::range_error("Prevalence of virus cannot be negative");
 
-    // Checking the ids
-
+    // Checking the status
     epiworld_fast_int init_, post_, rm_;
     v.get_status(&init_, &post_, &rm_);
 
     if (init_ == -99)
         throw std::logic_error(
-            "The virus " + v.get_name() + " has no init status."
+            "The virus \"" + v.get_name() + "\" has no -init- status."
             );
     else if (post_ == -99)
         throw std::logic_error(
-            "The virus " + v.get_name() + " has no post status."
+            "The virus \"" + v.get_name() + "\" has no -post- status."
             );
-    else if (rm_ == -99)
-        throw std::logic_error(
-            "The virus " + v.get_name() + " has no rm status."
-            );
+    // else if (rm_ == -99)
+    //     throw std::logic_error(
+    //         "The virus \"" + v.get_name() + "\" has no -rm- status."
+    //         );
 
     // Setting the id
     v.set_id(viruses.size());
@@ -656,16 +655,16 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
 
     if (init_ == -99)
         throw std::logic_error(
-            "The virus " + v.get_name() + " has no init status."
+            "The virus \"" + v.get_name() + "\" has no -init- status."
             );
     else if (post_ == -99)
         throw std::logic_error(
-            "The virus " + v.get_name() + " has no post status."
+            "The virus \"" + v.get_name() + "\" has no -post- status."
             );
-    else if (rm_ == -99)
-        throw std::logic_error(
-            "The virus " + v.get_name() + " has no rm status."
-            );
+    // else if (rm_ == -99)
+    //     throw std::logic_error(
+    //         "The virus \"" + v.get_name() + "\" has no -rm- status."
+    //         );
 
 
     // Setting the id
