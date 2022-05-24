@@ -179,7 +179,7 @@ enum STATUS {
 #endif
 
 #ifndef EPI_DEFAULT_VIRUS_PROB_RECOVERY
-    #define EPI_DEFAULT_VIRUS_PROB_RECOVERY     0.5
+    #define EPI_DEFAULT_VIRUS_PROB_RECOVERY     0.1428
 #endif
 
 #ifndef EPI_DEFAULT_VIRUS_PROB_DEATH
@@ -347,7 +347,7 @@ enum STATUS {
 
 #define EPI_NEW_GLOBALFUN_LAMBDA(funname,tseq) inline void \
     epiworld::GlobalFun<tseq> funname = \
-    [](epiworld::Model<tseq>* m)
+    [](epiworld::Model<tseq>* m) -> void
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -1224,13 +1224,13 @@ private:
 
     // Variants information 
     MapVec_type<int,int> variant_id; ///< The squence is the key
-    std::vector< string > variant_name;
+    std::vector< std::string > variant_name;
     std::vector< TSeq> variant_sequence;
     std::vector< int > variant_origin_date;
     std::vector< int > variant_parent_id;
 
     MapVec_type<int,int> tool_id; ///< The squence is the key
-    std::vector< string > tool_name;
+    std::vector< std::string > tool_name;
     std::vector< TSeq> tool_sequence;
     std::vector< int > tool_origin_date;
 
@@ -1513,6 +1513,8 @@ inline void DataBase<TSeq>::record()
         for (auto cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
 
+        std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
+
     }
 
 }
@@ -1631,6 +1633,9 @@ inline void DataBase<TSeq>::update_state(
 
     today_total[prev_status]--;
     today_total[new_status]++;
+
+    record_transition(prev_status, new_status);
+    
     return;
 }
 
@@ -1792,14 +1797,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
-            "id " << "variant_name " << "variant_sequence " << "date " << "parent\n";
+            "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_variant_info <<
-                id << " " <<
-                variant_name[id] << " " <<
+                id << " \"" <<
+                variant_name[id] << "\" " <<
                 seq_writer(variant_sequence[id]) << " " <<
                 variant_origin_date[id] << " " <<
                 variant_parent_id[id] << "\n";
@@ -1827,14 +1832,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
 
         file_tool_info <<
-            "id " << "tool_name " << "tool_sequence " << "date\n";
+            "id " << "tool_name " << "tool_sequence " << "date_recorded\n";
 
-        for (const auto & v : variant_id)
+        for (const auto & t : tool_id)
         {
-            int id = v.second;
+            int id = t.second;
             file_tool_info <<
-                id << " " <<
-                tool_name[id] << " " <<
+                id << " \"" <<
+                tool_name[id] << "\" " <<
                 seq_writer(tool_sequence[id]) << " " <<
                 tool_origin_date[id] << "\n";
         }
@@ -3404,7 +3409,7 @@ public:
      */
     void add_global_action(
         std::function<void(Model<TSeq>*)> fun,
-        int date
+        int date = -99
         );
 
     void run_global_actions();
@@ -4603,7 +4608,7 @@ inline void Model<TSeq>::print() const
 
         if ((n_variants_model > 10) && (i >= 10))
         {
-            printf_epiworld(" ...and %l more variants...\n", n_variants_model - i);
+            printf_epiworld(" ...and %li more variants...\n", n_variants_model - i);
             break;
         }
 
@@ -4634,9 +4639,9 @@ inline void Model<TSeq>::print() const
         } else {
 
             printf_epiworld(
-                " - %s (originated in the model...)",
-                db.variant_name[i].c_str();
-            )
+                " - %s (originated in the model...)\n",
+                db.variant_name[i].c_str()
+            );
 
         }
 
@@ -4649,11 +4654,11 @@ inline void Model<TSeq>::print() const
 
         if ((n_tools_model > 10) && (i >= 10))
         {
-            printf_epiworld(" ...and %l more tools...\n", n_tools_model - i);
+            printf_epiworld(" ...and %li more tools...\n", n_tools_model - i);
             break;
         }
 
-        if ()
+        if (i < n_tools_model)
         {
             if (prevalence_tool_as_proportion[i])
             {
@@ -4678,15 +4683,15 @@ inline void Model<TSeq>::print() const
 
         } else {
             printf_epiworld(
-                " - %s (originated in the model...)",
-                db.tool_name[i].c_str();
-            )
+                " - %s (originated in the model...)\n",
+                db.tool_name[i].c_str()
+            );
         }
         
 
     }
 
-    if (tools.size() == 0u)
+    if (db.tool_id.size() == 0u)
     {
         printf_epiworld(" (none)\n");
     }
@@ -5544,9 +5549,7 @@ inline void Virus<TSeq>::mutate() {
 
     if (mutation_fun)
         if (mutation_fun(agent, *this, this->get_model()))
-        {
             agent->get_model()->get_db().record_variant(*this);
-        }
 
     return;
     
