@@ -41,17 +41,26 @@ inline void Model<TSeq>::print() const
     }
 
     printf_epiworld("Virus(es):\n");
-    int i = 0;
-    for (auto & v : viruses)
+    size_t n_variants_model = viruses.size();
+    for (size_t i = 0u; i < db.get_n_variants(); ++i)
     {    
+
+        if ((n_variants_model > 10) && (i >= 10))
+        {
+            printf_epiworld(" ...and %li more variants...\n", n_variants_model - i);
+            break;
+        }
+
+        if (i < n_variants_model)
+        {
 
         if (prevalence_virus_as_proportion[i])
         {
 
             printf_epiworld(
                 " - %s (baseline prevalence: %.2f%%)\n",
-                v->get_name().c_str(),
-                prevalence_virus[i++] * 100.00
+                db.variant_name[i].c_str(),
+                prevalence_virus[i] * 100.00
             );
 
         }
@@ -60,8 +69,17 @@ inline void Model<TSeq>::print() const
 
             printf_epiworld(
                 " - %s (baseline prevalence: %i seeds)\n",
-                v->get_name().c_str(),
-                static_cast<int>(prevalence_virus[i++])
+                db.variant_name[i].c_str(),
+                static_cast<int>(prevalence_virus[i])
+            );
+
+        }
+
+        } else {
+
+            printf_epiworld(
+                " - %s (originated in the model...)\n",
+                db.variant_name[i].c_str()
             );
 
         }
@@ -69,35 +87,50 @@ inline void Model<TSeq>::print() const
     }
 
     printf_epiworld("\nTool(s):\n");
-    i = 0;
-    for (auto & t : tools)
+    size_t n_tools_model = tools.size();
+    for (size_t i = 0u; i < db.tool_id.size(); ++i)
     {   
 
-        if (prevalence_tool_as_proportion[i])
+        if ((n_tools_model > 10) && (i >= 10))
         {
-
-            printf_epiworld(
-                " - %s (baseline prevalence: %.2f%%)\n",
-                t->get_name().c_str(),
-                prevalence_tool[i++] * 100.0
-                );
-
+            printf_epiworld(" ...and %li more tools...\n", n_tools_model - i);
+            break;
         }
-        else
+
+        if (i < n_tools_model)
         {
+            if (prevalence_tool_as_proportion[i])
+            {
 
+                printf_epiworld(
+                    " - %s (baseline prevalence: %.2f%%)\n",
+                    db.tool_name[i].c_str(),
+                    prevalence_tool[i] * 100.0
+                    );
+
+            }
+            else
+            {
+
+                printf_epiworld(
+                    " - %s (baseline prevalence: %i seeds)\n",
+                    db.tool_name[i].c_str(),
+                    static_cast<int>(prevalence_tool[i])
+                    );
+
+            }
+
+        } else {
             printf_epiworld(
-                " - %s (baseline prevalence: %i seeds)\n",
-                t->get_name().c_str(),
-                static_cast<int>(prevalence_tool[i++])
-                );
-
+                " - %s (originated in the model...)\n",
+                db.tool_name[i].c_str()
+            );
         }
         
 
     }
 
-    if (tools.size() == 0u)
+    if (db.tool_id.size() == 0u)
     {
         printf_epiworld(" (none)\n");
     }

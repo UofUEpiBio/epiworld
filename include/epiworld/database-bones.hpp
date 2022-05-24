@@ -10,12 +10,6 @@ class Virus;
 template<typename TSeq>
 class UserData;
 
-// template<typename TSeq>
-// class VirusPtr;
-
-// template<typename TSeq>
-// class ToolPtr;
-
 template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
 
@@ -45,11 +39,13 @@ private:
 
     // Variants information 
     MapVec_type<int,int> variant_id; ///< The squence is the key
+    std::vector< std::string > variant_name;
     std::vector< TSeq> variant_sequence;
     std::vector< int > variant_origin_date;
     std::vector< int > variant_parent_id;
 
     MapVec_type<int,int> tool_id; ///< The squence is the key
+    std::vector< std::string > tool_name;
     std::vector< TSeq> tool_sequence;
     std::vector< int > tool_origin_date;
 

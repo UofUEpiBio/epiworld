@@ -101,6 +101,8 @@ inline void DataBase<TSeq>::record()
         for (auto cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
 
+        std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
+
     }
 
 }
@@ -118,6 +120,7 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
 
         new_id = variant_id.size();
         variant_id[hash] = new_id;
+        variant_name.push_back(v.get_name());
         variant_sequence.push_back(*v.get_sequence());
         variant_origin_date.push_back(model->today());
         
@@ -169,6 +172,7 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 
         new_id = tool_id.size();
         tool_id[hash] = new_id;
+        tool_name.push_back(t.get_name());
         tool_sequence.push_back(*t.get_sequence());
         tool_origin_date.push_back(model->today());
                 
@@ -217,6 +221,9 @@ inline void DataBase<TSeq>::update_state(
 
     today_total[prev_status]--;
     today_total[new_status]++;
+
+    record_transition(prev_status, new_status);
+    
     return;
 }
 
@@ -378,13 +385,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
-            "id " << "variant_sequence " << "date " << "parent\n";
+            "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_variant_info <<
-                id << " " <<
+                id << " \"" <<
+                variant_name[id] << "\" " <<
                 seq_writer(variant_sequence[id]) << " " <<
                 variant_origin_date[id] << " " <<
                 variant_parent_id[id] << "\n";
@@ -412,13 +420,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
 
         file_tool_info <<
-            "id " << "tool_sequence " << "date\n";
+            "id " << "tool_name " << "tool_sequence " << "date_recorded\n";
 
-        for (const auto & v : variant_id)
+        for (const auto & t : tool_id)
         {
-            int id = v.second;
+            int id = t.second;
             file_tool_info <<
-                id << " " <<
+                id << " \"" <<
+                tool_name[id] << "\" " <<
                 seq_writer(tool_sequence[id]) << " " <<
                 tool_origin_date[id] << "\n";
         }
@@ -526,6 +535,7 @@ inline void DataBase<TSeq>::reset()
 {
 
     variant_id.clear();
+    variant_name.clear();
     variant_sequence.clear();
     variant_origin_date.clear();
     variant_parent_id.clear();
@@ -536,6 +546,7 @@ inline void DataBase<TSeq>::reset()
     hist_variant_counts.clear();
 
     tool_id.clear();
+    tool_name.clear();
     tool_sequence.clear();
     tool_origin_date.clear();
 

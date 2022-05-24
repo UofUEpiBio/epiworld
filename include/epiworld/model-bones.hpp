@@ -481,7 +481,7 @@ public:
      */
     void add_global_action(
         std::function<void(Model<TSeq>*)> fun,
-        int date
+        int date = -99
         );
 
     void run_global_actions();

@@ -97,6 +97,6 @@
 
 #define EPI_NEW_GLOBALFUN_LAMBDA(funname,tseq) inline void \
     epiworld::GlobalFun<tseq> funname = \
-    [](epiworld::Model<tseq>* m)
+    [](epiworld::Model<tseq>* m) -> void
 
 #endif

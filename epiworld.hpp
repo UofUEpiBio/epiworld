@@ -1195,12 +1195,6 @@ class Virus;
 template<typename TSeq>
 class UserData;
 
-// template<typename TSeq>
-// class VirusPtr;
-
-// template<typename TSeq>
-// class ToolPtr;
-
 template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
 
@@ -1230,11 +1224,13 @@ private:
 
     // Variants information 
     MapVec_type<int,int> variant_id; ///< The squence is the key
+    std::vector< string > variant_name;
     std::vector< TSeq> variant_sequence;
     std::vector< int > variant_origin_date;
     std::vector< int > variant_parent_id;
 
     MapVec_type<int,int> tool_id; ///< The squence is the key
+    std::vector< string > tool_name;
     std::vector< TSeq> tool_sequence;
     std::vector< int > tool_origin_date;
 
@@ -1534,6 +1530,7 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
 
         new_id = variant_id.size();
         variant_id[hash] = new_id;
+        variant_name.push_back(v.get_name());
         variant_sequence.push_back(*v.get_sequence());
         variant_origin_date.push_back(model->today());
         
@@ -1585,6 +1582,7 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 
         new_id = tool_id.size();
         tool_id[hash] = new_id;
+        tool_name.push_back(t.get_name());
         tool_sequence.push_back(*t.get_sequence());
         tool_origin_date.push_back(model->today());
                 
@@ -1794,13 +1792,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
-            "id " << "variant_sequence " << "date " << "parent\n";
+            "id " << "variant_name " << "variant_sequence " << "date " << "parent\n";
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_variant_info <<
                 id << " " <<
+                variant_name[id] << " " <<
                 seq_writer(variant_sequence[id]) << " " <<
                 variant_origin_date[id] << " " <<
                 variant_parent_id[id] << "\n";
@@ -1828,13 +1827,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
 
         file_tool_info <<
-            "id " << "tool_sequence " << "date\n";
+            "id " << "tool_name " << "tool_sequence " << "date\n";
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_tool_info <<
                 id << " " <<
+                tool_name[id] << " " <<
                 seq_writer(tool_sequence[id]) << " " <<
                 tool_origin_date[id] << "\n";
         }
@@ -1942,6 +1942,7 @@ inline void DataBase<TSeq>::reset()
 {
 
     variant_id.clear();
+    variant_name.clear();
     variant_sequence.clear();
     variant_origin_date.clear();
     variant_parent_id.clear();
@@ -1952,6 +1953,7 @@ inline void DataBase<TSeq>::reset()
     hist_variant_counts.clear();
 
     tool_id.clear();
+    tool_name.clear();
     tool_sequence.clear();
     tool_origin_date.clear();
 
@@ -4595,17 +4597,26 @@ inline void Model<TSeq>::print() const
     }
 
     printf_epiworld("Virus(es):\n");
-    int i = 0;
-    for (auto & v : viruses)
+    size_t n_variants_model = viruses.size();
+    for (size_t i = 0u; i < db.get_n_variants(); ++i)
     {    
+
+        if ((n_variants_model > 10) && (i >= 10))
+        {
+            printf_epiworld(" ...and %l more variants...\n", n_variants_model - i);
+            break;
+        }
+
+        if (i < n_variants_model)
+        {
 
         if (prevalence_virus_as_proportion[i])
         {
 
             printf_epiworld(
                 " - %s (baseline prevalence: %.2f%%)\n",
-                v->get_name().c_str(),
-                prevalence_virus[i++] * 100.00
+                db.variant_name[i].c_str(),
+                prevalence_virus[i] * 100.00
             );
 
         }
@@ -4614,38 +4625,62 @@ inline void Model<TSeq>::print() const
 
             printf_epiworld(
                 " - %s (baseline prevalence: %i seeds)\n",
-                v->get_name().c_str(),
-                static_cast<int>(prevalence_virus[i++])
+                db.variant_name[i].c_str(),
+                static_cast<int>(prevalence_virus[i])
             );
+
+        }
+
+        } else {
+
+            printf_epiworld(
+                " - %s (originated in the model...)",
+                db.variant_name[i].c_str();
+            )
 
         }
 
     }
 
     printf_epiworld("\nTool(s):\n");
-    i = 0;
-    for (auto & t : tools)
+    size_t n_tools_model = tools.size();
+    for (size_t i = 0u; i < db.tool_id.size(); ++i)
     {   
 
-        if (prevalence_tool_as_proportion[i])
+        if ((n_tools_model > 10) && (i >= 10))
         {
-
-            printf_epiworld(
-                " - %s (baseline prevalence: %.2f%%)\n",
-                t->get_name().c_str(),
-                prevalence_tool[i++] * 100.0
-                );
-
+            printf_epiworld(" ...and %l more tools...\n", n_tools_model - i);
+            break;
         }
-        else
+
+        if ()
         {
+            if (prevalence_tool_as_proportion[i])
+            {
 
+                printf_epiworld(
+                    " - %s (baseline prevalence: %.2f%%)\n",
+                    db.tool_name[i].c_str(),
+                    prevalence_tool[i] * 100.0
+                    );
+
+            }
+            else
+            {
+
+                printf_epiworld(
+                    " - %s (baseline prevalence: %i seeds)\n",
+                    db.tool_name[i].c_str(),
+                    static_cast<int>(prevalence_tool[i])
+                    );
+
+            }
+
+        } else {
             printf_epiworld(
-                " - %s (baseline prevalence: %i seeds)\n",
-                t->get_name().c_str(),
-                static_cast<int>(prevalence_tool[i++])
-                );
-
+                " - %s (originated in the model...)",
+                db.tool_name[i].c_str();
+            )
         }
         
 
