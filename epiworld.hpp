@@ -121,7 +121,7 @@ public:
      * 
      * All the parameters are rather optional.
      * 
-     * @param person_ Agent over who the action will happen
+     * @param agent_ Agent over who the action will happen
      * @param virus_ Virus to add
      * @param tool_ Tool to add
      * @param virus_idx Index of virus to be removed (if needed)
@@ -131,13 +131,13 @@ public:
      * @param call_ The action call (if needed)
      */
     Action(
-        Agent<TSeq> * person_,
+        Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         epiworld_fast_int new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
-    ) : agent(person_), virus(virus_), tool(tool_), new_status(new_status_),
+    ) : agent(agent_), virus(virus_), tool(tool_), new_status(new_status_),
         queue(queue_), call(call_) {};
 };
 
@@ -1607,10 +1607,10 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
     }
 
     // Moving statistics (only if we are affecting an individual)
-    if (t.get_person() != nullptr)
+    if (t.get_agent() != nullptr)
     {
         // Correcting math
-        epiworld_fast_uint tmp_status = t.get_person()->get_status();
+        epiworld_fast_uint tmp_status = t.get_agent()->get_status();
         today_tool[old_id][tmp_status]--;
         today_tool[new_id][tmp_status]++;
 
@@ -2418,14 +2418,14 @@ class AdjList;
 
 template<typename TSeq, typename TDat>
 inline void rewire_degseq(
-    TDat * persons,
+    TDat * agents,
     Model<TSeq> * model,
     epiworld_double proportion
     );
 
 template<typename TSeq = int>
 inline void rewire_degseq(
-    std::vector< Agent<TSeq> > * persons,
+    std::vector< Agent<TSeq> > * agents,
     Model<TSeq> * model,
     epiworld_double proportion
     )
@@ -2435,13 +2435,13 @@ inline void rewire_degseq(
     std::vector< unsigned int > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    // std::vector< Agent<TSeq> > * persons = model->get_population();
-    for (unsigned int i = 0u; i < persons->size(); ++i)
+    // std::vector< Agent<TSeq> > * agents = model->get_population();
+    for (unsigned int i = 0u; i < agents->size(); ++i)
     {
-        if (persons->operator[](i).get_neighbors().size() > 0u)
+        if (agents->operator[](i).get_neighbors().size() > 0u)
         {
             non_isolates.push_back(i);
-            epiworld_double wtemp = static_cast<epiworld_double>(persons->operator[](i).get_neighbors().size());
+            epiworld_double wtemp = static_cast<epiworld_double>(agents->operator[](i).get_neighbors().size());
             weights.push_back(wtemp);
             nedges += wtemp;
         }
@@ -2491,8 +2491,8 @@ inline void rewire_degseq(
         if (id1 >= static_cast<int>(N))
             id1 = 0;
 
-        Agent<TSeq> & p0 = persons->operator[](non_isolates[id0]);
-        Agent<TSeq> & p1 = persons->operator[](non_isolates[id1]);
+        Agent<TSeq> & p0 = agents->operator[](non_isolates[id0]);
+        Agent<TSeq> & p1 = agents->operator[](non_isolates[id1]);
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
@@ -2506,14 +2506,14 @@ inline void rewire_degseq(
         if (!model->is_directed())
         {
             unsigned int n0,n1;
-            Agent<TSeq> & p01 = persons->operator[](p0.get_neighbors()[id01]->get_index());
+            Agent<TSeq> & p01 = agents->operator[](p0.get_neighbors()[id01]->get_index());
             for (n0 = 0; n0 < p01.get_neighbors().size(); ++n0)
             {
                 if (p0.get_id() == p01.get_neighbors()[n0]->get_id())
                     break;            
             }
 
-            Agent<TSeq> & p11 = persons->operator[](p1.get_neighbors()[id11]->get_index());
+            Agent<TSeq> & p11 = agents->operator[](p1.get_neighbors()[id11]->get_index());
             for (n1 = 0; n1 < p11.get_neighbors().size(); ++n1)
             {
                 if (p1.get_id() == p11.get_neighbors()[n1]->get_id())
@@ -2536,7 +2536,7 @@ inline void rewire_degseq(
 
 template<typename TSeq>
 inline void rewire_degseq(
-    AdjList * persons,
+    AdjList * agents,
     Model<TSeq> * model,
     epiworld_double proportion
     )
@@ -2546,8 +2546,8 @@ inline void rewire_degseq(
     std::vector< unsigned int > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    // std::vector< Agent<TSeq> > * persons = model->get_population();
-    for (auto & p : persons->get_dat())
+    // std::vector< Agent<TSeq> > * agents = model->get_population();
+    for (auto & p : agents->get_dat())
     {
         
         non_isolates.push_back(p.first);
@@ -2573,7 +2573,7 @@ inline void rewire_degseq(
     unsigned int N = non_isolates.size();
     epiworld_double prob;
     int nrewires = floor(proportion * nedges / (
-        persons->is_directed() ? 1.0 : 2.0
+        agents->is_directed() ? 1.0 : 2.0
     ));
     while (nrewires-- > 0)
     {
@@ -2604,8 +2604,8 @@ inline void rewire_degseq(
         if (id1 >= static_cast<int>(N))
             id1 = 0;
 
-        std::map<unsigned int,unsigned int> & p0 = persons->get_dat()[non_isolates[id0]];
-        std::map<unsigned int,unsigned int> & p1 = persons->get_dat()[non_isolates[id1]];
+        std::map<unsigned int,unsigned int> & p0 = agents->get_dat()[non_isolates[id0]];
+        std::map<unsigned int,unsigned int> & p1 = agents->get_dat()[non_isolates[id1]];
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
@@ -2628,11 +2628,11 @@ inline void rewire_degseq(
         // end as well, since we are dealing withi an undirected graph
         
         // Finding what neighbour is id0
-        if (!persons->is_directed())
+        if (!agents->is_directed())
         {
 
-            std::map<unsigned int,unsigned int> & p01 = persons->get_dat()[id01];
-            std::map<unsigned int,unsigned int> & p11 = persons->get_dat()[id11];
+            std::map<unsigned int,unsigned int> & p01 = agents->get_dat()[id01];
+            std::map<unsigned int,unsigned int> & p11 = agents->get_dat()[id11];
 
             std::swap(p01[id0], p11[id1]);
             
@@ -3061,13 +3061,13 @@ private:
     /**
      * @brief Construct a new Action object
      * 
-     * @param person_ Agent over which the action will be called
+     * @param agent_ Agent over which the action will be called
      * @param new_status_ New state of the agent
      * @param call_ Function the action will call
      * @param queue_ Change in the queue
      */
     void actions_add(
-        Agent<TSeq> * person_,
+        Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         epiworld_fast_uint new_status_,
@@ -3468,7 +3468,7 @@ public:
 
 template<typename TSeq>
 inline void Model<TSeq>::actions_add(
-    Agent<TSeq> * person_,
+    Agent<TSeq> * agent_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
     epiworld_fast_uint new_status_,
@@ -3488,14 +3488,14 @@ inline void Model<TSeq>::actions_add(
 
         actions.push_back(
             Action<TSeq>(
-                person_, virus_, tool_, new_status_, queue_, call_
+                agent_, virus_, tool_, new_status_, queue_, call_
             ));
 
     }
     else 
     {
         Action<TSeq> & A = actions.at(nactions - 1u);
-        A.agent = person_;
+        A.agent = agent_;
         A.virus = virus_;
         A.tool = tool_;
         A.new_status = new_status_;
@@ -3733,16 +3733,16 @@ inline void Model<TSeq>::clone_population(
     for (unsigned int i = 0u; i < size(); ++i)
     {
         // Making room
-        const Agent<TSeq> & person_this = population[i];
-        Agent<TSeq> & person_res        = p[i];
+        const Agent<TSeq> & agent_this = population[i];
+        Agent<TSeq> & agent_res        = p[i];
 
         // Readding
-        std::vector< Agent<TSeq> * > neigh = person_this.neighbors;
+        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
             int loc = p_ids[neigh[n]->get_id()];
-            person_res.add_neighbor(&p[loc], true, true);
+            agent_res.add_neighbor(&p[loc], true, true);
 
         }
 
@@ -4697,16 +4697,16 @@ inline void Model<TSeq>::print() const
         
         if (today() != 0)
             fmt = " - (%" + std::to_string(nstatus).length() +
-                std::string("d) Total %-") + std::to_string(nchar) + "s : %" +
+                std::string("d) %-") + std::to_string(nchar) + "s : %" +
                 std::to_string(std::to_string(size()).length()) + "i -> %i\n";
         else
             fmt = " - (%" + std::to_string(nstatus).length() +
-                std::string("d) Total %-") + std::to_string(nchar) + "s : %i\n";
+                std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
 
     }
     else
         fmt = " - (%" + std::to_string(nstatus).length() +
-            std::string("d) Total %-") + std::to_string(nchar) + "s : %s\n";
+            std::string("d) %-") + std::to_string(nchar) + "s : %s\n";
         
     printf_epiworld("\nDistribution of the population at time %i:\n", today());
     for (size_t s = 0u; s < nstatus; ++s)
@@ -4787,21 +4787,21 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     for (unsigned int p = 0u; p < size(); ++p)
     {
         // Making room
-        const Agent<TSeq> & person_this = population[p];
-        Agent<TSeq> & person_res  = res.population[p];
+        const Agent<TSeq> & agent_this = population[p];
+        Agent<TSeq> & agent_res  = res.population[p];
 
         // Agent pointing to the right model and agent
-        person_res.model        = &res;
-        person_res.viruses.agent = &person_res;
-        person_res.tools.agent = &person_res;
+        agent_res.model        = &res;
+        agent_res.viruses.agent = &agent_res;
+        agent_res.tools.agent = &agent_res;
 
         // Readding
-        std::vector< Agent<TSeq> * > neigh = person_this.neighbors;
+        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
             int loc = res.population_ids[neigh[n]->get_id()];
-            person_res.add_neighbor(&res.population[loc], true, true);
+            agent_res.add_neighbor(&res.population[loc], true, true);
 
         }
 
@@ -6142,7 +6142,7 @@ class Tool {
 private:
 
     Agent<TSeq> * agent = nullptr;
-    int person_idx        = -99;
+    int agent_idx        = -99;
 
     int date = -99;
     int id   = -99;
@@ -6163,7 +6163,7 @@ private:
     epiworld_fast_int queue_init = 0; ///< Change of status when added to agent.
     epiworld_fast_int queue_post = 0; ///< Change of status when removed from agent.
 
-    void set_person(Agent<TSeq> * p, size_t idx);
+    void set_agent(Agent<TSeq> * p, size_t idx);
 
 public:
     Tool(std::string name = "unknown tool");
@@ -6208,7 +6208,7 @@ public:
     void set_name(std::string name);
     std::string get_name() const;
 
-    Agent<TSeq> * get_person();
+    Agent<TSeq> * get_agent();
     int get_id() const;
     void set_id(int id);
     void set_date(int d);
@@ -6508,16 +6508,16 @@ inline std::string Tool<TSeq>::get_name() const {
 }
 
 template<typename TSeq>
-inline Agent<TSeq> * Tool<TSeq>::get_person()
+inline Agent<TSeq> * Tool<TSeq>::get_agent()
 {
     return this->agent;
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_person(Agent<TSeq> * p, size_t idx)
+inline void Tool<TSeq>::set_agent(Agent<TSeq> * p, size_t idx)
 {
     agent = p;
-    person_idx = static_cast<int>(idx);
+    agent_idx = static_cast<int>(idx);
 }
 
 template<typename TSeq>
@@ -7055,7 +7055,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
     n_tools--;
 
     p->tools[n_tools]->set_date(m->today());
-    p->tools[n_tools]->set_person(p, n_tools);
+    p->tools[n_tools]->set_agent(p, n_tools);
 
     m->get_db().today_tool[t->get_id()][p->status]++;
 
@@ -7090,14 +7090,14 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p  = a.agent;    
-    ToolPtr<TSeq> & t = a.agent->tools[a.tool->person_idx];
+    ToolPtr<TSeq> & t = a.agent->tools[a.tool->agent_idx];
 
     CHECK_COALESCE_(a.new_status, t->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, t->queue_post, 0)
 
     if (--p->n_tools > 0)
     {
-        p->tools[p->n_tools]->person_idx = t->person_idx;
+        p->tools[p->n_tools]->agent_idx = t->agent_idx;
         std::swap(t, p->tools[p->n_tools - 1]);
     }
 
