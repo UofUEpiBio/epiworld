@@ -140,7 +140,7 @@ int main()
     // Setup
     model.population_smallworld();
     model.add_virus(epiworld::Virus<>(), 0.1);
-    model.add_tool(epiworld::Tool<>(), 1.0);
+    // model.add_tool(epiworld::Tool<>(), 1.0);
 
     // Initializing and running the model
     model.init(100, 226);
