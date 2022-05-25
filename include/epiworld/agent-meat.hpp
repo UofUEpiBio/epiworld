@@ -253,7 +253,7 @@ inline void Agent<TSeq>::rm_tool(
         );
 
     model->actions_add(
-        this, tools[tool_idx], nullptr , status_new, queue, rm_tool_
+        this, nullptr, tools[tool_idx] , status_new, queue, rm_tool_
         );
 
 }

@@ -8,7 +8,7 @@
  */
 #define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
-    std::shared_ptr<epiworld::Tool< tseq >> t, \
+    epiworld::Tool< tseq > & t, \
     epiworld::Agent< tseq > * p, \
     std::shared_ptr<epiworld::Virus< tseq >> v, \
     epiworld::Model< tseq > * m\
@@ -20,10 +20,10 @@
  */
 #define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
     epiworld::ToolFun<tseq> funname = \
-    [](std::shared_ptr<epiworld::Tool<tseq>> t, \
+    [](epiworld::Tool<tseq> & t, \
     epiworld::Agent<tseq> * p, \
     std::shared_ptr<epiworld::Virus<tseq>> v, \
-    epiworld::Model<tseq> * m)
+    epiworld::Model<tseq> * m) -> epiworld_double
 
 /**
  * @brief Helper macro for accessing model parameters

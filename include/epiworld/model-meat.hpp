@@ -803,7 +803,7 @@ inline void Model<TSeq>::run()
 
         // We can execute these components in whatever order the
         // user needs.
-        this->update_status();       
+        this->update_status();
     
         // We start with the global actions
         this->run_global_actions();

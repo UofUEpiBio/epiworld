@@ -298,6 +298,12 @@ inline void Tool<TSeq>::set_date(int d)
 }
 
 template<typename TSeq>
+inline int Tool<TSeq>::get_date() const
+{
+    return date;
+}
+
+template<typename TSeq>
 inline void Tool<TSeq>::set_status(
     epiworld_fast_int init,
     epiworld_fast_int end

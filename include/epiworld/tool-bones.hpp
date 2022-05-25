@@ -100,6 +100,7 @@ public:
     int get_id() const;
     void set_id(int id);
     void set_date(int d);
+    int get_date() const;
 
     void set_status(epiworld_fast_int init, epiworld_fast_int post);
     void set_queue(epiworld_fast_int init, epiworld_fast_int post);
