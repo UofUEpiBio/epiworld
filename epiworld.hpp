@@ -4590,14 +4590,17 @@ inline void Model<TSeq>::print() const
             printf_epiworld("Total elapsed t    : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
         }
 
-    } else 
+    } else {
         printf_epiworld("Last run elapsed t : -\n");
+    }
     
     
     if (rewire_fun)
+    {
         printf_epiworld("Rewiring           : on (%.2f)\n\n", rewire_prop);
-    else 
+    } else {
         printf_epiworld("Rewiring           : off\n\n");
+    }
     
 
     printf_epiworld("Virus(es):\n");
