@@ -29,16 +29,15 @@ inline void Model<TSeq>::print() const
             printf_epiworld("Total elapsed t    : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
         }
 
-    } else {
+    } else 
         printf_epiworld("Last run elapsed t : -\n");
-    }
+    
     
     if (rewire_fun)
-    {
         printf_epiworld("Rewiring           : on (%.2f)\n\n", rewire_prop);
-    } else {
+    else 
         printf_epiworld("Rewiring           : off\n\n");
-    }
+    
 
     printf_epiworld("Virus(es):\n");
     size_t n_variants_model = viruses.size();
@@ -54,26 +53,26 @@ inline void Model<TSeq>::print() const
         if (i < n_variants_model)
         {
 
-        if (prevalence_virus_as_proportion[i])
-        {
+            if (prevalence_virus_as_proportion[i])
+            {
 
-            printf_epiworld(
-                " - %s (baseline prevalence: %.2f%%)\n",
-                db.variant_name[i].c_str(),
-                prevalence_virus[i] * 100.00
-            );
+                printf_epiworld(
+                    " - %s (baseline prevalence: %.2f%%)\n",
+                    db.variant_name[i].c_str(),
+                    prevalence_virus[i] * 100.00
+                );
 
-        }
-        else
-        {
+            }
+            else
+            {
 
-            printf_epiworld(
-                " - %s (baseline prevalence: %i seeds)\n",
-                db.variant_name[i].c_str(),
-                static_cast<int>(prevalence_virus[i])
-            );
+                printf_epiworld(
+                    " - %s (baseline prevalence: %i seeds)\n",
+                    db.variant_name[i].c_str(),
+                    static_cast<int>(prevalence_virus[i])
+                );
 
-        }
+            }
 
         } else {
 

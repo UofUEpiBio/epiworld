@@ -401,7 +401,7 @@ inline void Model<TSeq>::init(
         if (((_removed != -99) && (_removed < 0)) || (_removed >= nstatus_int))
             throw std::range_error("Statuses must be between 0 and " +
                 std::to_string(nstatus - 1));
-        
+
     }
 
     for (auto & t : tools)

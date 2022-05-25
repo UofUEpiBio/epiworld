@@ -258,7 +258,7 @@ enum STATUS {
  */
 #define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
-    std::shared_ptr<epiworld::Tool< tseq >> t, \
+    epiworld::Tool< tseq > & t, \
     epiworld::Agent< tseq > * p, \
     std::shared_ptr<epiworld::Virus< tseq >> v, \
     epiworld::Model< tseq > * m\
@@ -270,10 +270,10 @@ enum STATUS {
  */
 #define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
     epiworld::ToolFun<tseq> funname = \
-    [](std::shared_ptr<epiworld::Tool<tseq>> t, \
+    [](epiworld::Tool<tseq> & t, \
     epiworld::Agent<tseq> * p, \
     std::shared_ptr<epiworld::Virus<tseq>> v, \
-    epiworld::Model<tseq> * m)
+    epiworld::Model<tseq> * m) -> epiworld_double
 
 /**
  * @brief Helper macro for accessing model parameters
@@ -3870,7 +3870,7 @@ inline void Model<TSeq>::init(
         if (((_removed != -99) && (_removed < 0)) || (_removed >= nstatus_int))
             throw std::range_error("Statuses must be between 0 and " +
                 std::to_string(nstatus - 1));
-        
+
     }
 
     for (auto & t : tools)
@@ -4272,7 +4272,7 @@ inline void Model<TSeq>::run()
 
         // We can execute these components in whatever order the
         // user needs.
-        this->update_status();       
+        this->update_status();
     
         // We start with the global actions
         this->run_global_actions();
@@ -4590,16 +4590,15 @@ inline void Model<TSeq>::print() const
             printf_epiworld("Total elapsed t    : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
         }
 
-    } else {
+    } else 
         printf_epiworld("Last run elapsed t : -\n");
-    }
+    
     
     if (rewire_fun)
-    {
         printf_epiworld("Rewiring           : on (%.2f)\n\n", rewire_prop);
-    } else {
+    else 
         printf_epiworld("Rewiring           : off\n\n");
-    }
+    
 
     printf_epiworld("Virus(es):\n");
     size_t n_variants_model = viruses.size();
@@ -4615,26 +4614,26 @@ inline void Model<TSeq>::print() const
         if (i < n_variants_model)
         {
 
-        if (prevalence_virus_as_proportion[i])
-        {
+            if (prevalence_virus_as_proportion[i])
+            {
 
-            printf_epiworld(
-                " - %s (baseline prevalence: %.2f%%)\n",
-                db.variant_name[i].c_str(),
-                prevalence_virus[i] * 100.00
-            );
+                printf_epiworld(
+                    " - %s (baseline prevalence: %.2f%%)\n",
+                    db.variant_name[i].c_str(),
+                    prevalence_virus[i] * 100.00
+                );
 
-        }
-        else
-        {
+            }
+            else
+            {
 
-            printf_epiworld(
-                " - %s (baseline prevalence: %i seeds)\n",
-                db.variant_name[i].c_str(),
-                static_cast<int>(prevalence_virus[i])
-            );
+                printf_epiworld(
+                    " - %s (baseline prevalence: %i seeds)\n",
+                    db.variant_name[i].c_str(),
+                    static_cast<int>(prevalence_virus[i])
+                );
 
-        }
+            }
 
         } else {
 
@@ -6250,6 +6249,7 @@ public:
     int get_id() const;
     void set_id(int id);
     void set_date(int d);
+    int get_date() const;
 
     void set_status(epiworld_fast_int init, epiworld_fast_int post);
     void set_queue(epiworld_fast_int init, epiworld_fast_int post);
@@ -6574,6 +6574,12 @@ template<typename TSeq>
 inline void Tool<TSeq>::set_date(int d)
 {
     this->date = d;
+}
+
+template<typename TSeq>
+inline int Tool<TSeq>::get_date() const
+{
+    return date;
 }
 
 template<typename TSeq>
@@ -7272,7 +7278,7 @@ inline void Agent<TSeq>::rm_tool(
         );
 
     model->actions_add(
-        this, tools[tool_idx], nullptr , status_new, queue, rm_tool_
+        this, nullptr, tools[tool_idx] , status_new, queue, rm_tool_
         );
 
 }

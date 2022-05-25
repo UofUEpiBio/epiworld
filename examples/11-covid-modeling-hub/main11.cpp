@@ -152,7 +152,8 @@ int main()
     model.add_param(.3, "Variant X scaped immunity"); // will be recorded as p4
     model.add_param(.2, "Infection Prob");
 
-    // Post immune tool
+    // After recovering from an infection, individuals gain immunity
+    // that waters off with time.
     epiworld::Tool<int> immunity("Immunity");
     EPI_NEW_TOOL_LAMBDA(suscept_redux_, int)
     {
