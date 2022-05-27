@@ -137,7 +137,7 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
     epiworld_double ndetected        = 0.0;
     epiworld_double ndetected_asympt = 0.0;
     
-    auto & pop = *(m->get_population());
+    auto & pop = *(m->get_agents());
     std::vector< bool > sampled(m->size(), false);
     
     while (to_go-- > 0)

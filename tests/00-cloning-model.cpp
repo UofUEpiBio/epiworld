@@ -11,7 +11,7 @@ int main() {
     epiworld::Virus<bool> v;
     epiworld::Tool<bool> t;
 
-    m.population_from_adjlist("../examples/edgelist.txt");
+    m.agents_from_adjlist("../examples/edgelist.txt");
 
     m.add_virus(v, .5);
     m.add_tool(t, .5);
@@ -28,23 +28,23 @@ int main() {
 
     // Looking at people
     std::cout << "Neighbors agent[0] in m : " ;
-    for (auto & n : m.get_population()->at(0u).get_neighbors())
+    for (auto & n : m.get_agents()->at(0u).get_neighbors())
         std::cout << n << ", ";
     std::cout << std::endl;
 
 
     std::cout << "Neighbors agent[0] in m2 : " ;
-    for (auto & n : m2.get_population()->at(0u).get_neighbors())
+    for (auto & n : m2.get_agents()->at(0u).get_neighbors())
         std::cout << n << ", ";
     std::cout << std::endl;
 
     std::cout << "Agent[0] in m viruses and tools  : " <<
-        m.get_population()->at(0u).get_viruses().get_agent() << ", " <<
-        m.get_population()->at(0u).get_tools().get_agent() << std::endl;
+        m.get_agents()->at(0u).get_viruses().get_agent() << ", " <<
+        m.get_agents()->at(0u).get_tools().get_agent() << std::endl;
 
     std::cout << "Agent[0] in m2 viruses and tools : " <<
-        m2.get_population()->at(0u).get_viruses().get_agent() << ", " <<
-        m2.get_population()->at(0u).get_tools().get_agent() << std::endl;
+        m2.get_agents()->at(0u).get_viruses().get_agent() << ", " <<
+        m2.get_agents()->at(0u).get_tools().get_agent() << std::endl;
             
 
     return 0;

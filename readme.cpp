@@ -30,7 +30,7 @@ int main()
     model.add_virus_n(virus, 5);
     
     // Generating a random pop from a smallworld network
-    model.population_smallworld(100000);
+    model.agents_smallworld(100000);
 
     // Initializing setting days and seed
     model.init(100, 123);

@@ -262,17 +262,17 @@ public:
      * @param al AdjList to read into the model.
      */
     ///@{
-    void population_from_adjlist(
+    void agents_from_adjlist(
         std::string fn,
         int skip = 0,
         bool directed = false,
         int min_id = -1,
         int max_id = -1
         );
-    void population_from_adjlist(AdjList al);
+    void agents_from_adjlist(AdjList al);
     bool is_directed() const;
-    std::vector< Agent<TSeq> > * get_population();
-    void population_smallworld(
+    std::vector< Agent<TSeq> > * get_agents();
+    void agents_smallworld(
         unsigned int n = 1000,
         unsigned int k = 5,
         bool d = false,

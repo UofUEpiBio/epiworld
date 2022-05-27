@@ -305,20 +305,20 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
-inline std::vector<Agent<TSeq>> * Model<TSeq>::get_population()
+inline std::vector<Agent<TSeq>> * Model<TSeq>::get_agents()
 {
     return &population;
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::population_smallworld(
+inline void Model<TSeq>::agents_smallworld(
     unsigned int n,
     unsigned int k,
     bool d,
     epiworld_double p
 )
 {
-    population_from_adjlist(
+    agents_from_adjlist(
         rgraph_smallworld(n, k, p, d, *this)
     );
 }
@@ -704,7 +704,7 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::population_from_adjlist(
+inline void Model<TSeq>::agents_from_adjlist(
     std::string fn,
     int skip,
     bool directed,
@@ -714,12 +714,12 @@ inline void Model<TSeq>::population_from_adjlist(
 
     AdjList al;
     al.read_edgelist(fn, skip, directed, min_id, max_id);
-    this->population_from_adjlist(al);
+    this->agents_from_adjlist(al);
 
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::population_from_adjlist(AdjList al) {
+inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
 
     // Resizing the people
     population.clear();

@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     );
 
     // Adding a bernoulli graph as step 0
-    surveillance.population_from_adjlist(
+    surveillance.agents_from_adjlist(
         epiworld::rgraph_smallworld(popsize, 5, .01, false, surveillance)
     );
 

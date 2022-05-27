@@ -196,7 +196,7 @@ int main()
     model.add_global_action(reset_x_counter);
 
     // Setup
-    model.population_smallworld(20000);
+    model.agents_smallworld(20000);
 
     // Initializing and running the model
     model.init(100, 226);

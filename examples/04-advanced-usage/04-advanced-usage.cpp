@@ -45,7 +45,7 @@ int main() {
     model.add_status("Recovered");
     model.add_status("Removed");
 
-    model.population_from_adjlist("edgelist.txt", 0, false);
+    model.agents_from_adjlist("edgelist.txt", 0, false);
 
     // Setting up the model parameters 
     model.add_param(0.001, "Mutation rate");

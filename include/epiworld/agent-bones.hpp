@@ -59,6 +59,7 @@ private:
     Model<TSeq> * model;
     
     std::vector< Agent<TSeq> * > neighbors;
+    std::vector< Location<TSeq> *> locations;
 
     unsigned int index; ///< Location in the Model
     epiworld_fast_uint status = 0u;

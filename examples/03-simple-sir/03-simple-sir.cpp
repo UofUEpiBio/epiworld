@@ -26,7 +26,7 @@ int main()
   model.add_tool(vax, .5);
 
   // Generating a random pop
-  model.population_from_adjlist(
+  model.agents_from_adjlist(
     epiworld::rgraph_smallworld(1000,5,.1,false,model)
   );
 

@@ -28,7 +28,7 @@ inline void tracked_agents_check_init(epiworld::Model<TSeq> * m)
     { 
         
         /* Listing who is infected */ 
-        for (auto & p : *(m->get_population()))
+        for (auto & p : *(m->get_agents()))
         {
             if (p.get_status() == SIRCONSTATUS::INFECTED)
             {

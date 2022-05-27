@@ -29,8 +29,8 @@ int main(int argc, char* argv[]) {
 
     // Adding a bernoulli graph as step 0
     epiworld::AdjList rgraph = epiworld::rgraph_smallworld(popsize, 3, .01, false, surveillance1);
-    surveillance1.population_from_adjlist(rgraph);
-    surveillance2.population_from_adjlist(rgraph);
+    surveillance1.agents_from_adjlist(rgraph);
+    surveillance2.agents_from_adjlist(rgraph);
 
     // Setting up queuing or not
     surveillance1.queuing_off();

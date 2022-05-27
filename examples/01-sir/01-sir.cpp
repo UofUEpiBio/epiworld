@@ -17,7 +17,7 @@ int main() {
     );
 
     // Adding a bernoulli graph as step 0
-    model.population_from_adjlist(
+    model.agents_from_adjlist(
         epiworld::rgraph_smallworld(10000, 5, .001, false, model)
     );
 
