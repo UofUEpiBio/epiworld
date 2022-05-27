@@ -10,8 +10,8 @@ enum SEIRCONSTATUS {
 };
 
 // Tracking who is infected and who is not
-std::vector< epiworld::Person<>* > tracked_agents_infected(0u);
-std::vector< epiworld::Person<>* > tracked_agents_infected_next(0u);
+std::vector< epiworld::Agent<>* > tracked_agents_infected(0u);
+std::vector< epiworld::Agent<>* > tracked_agents_infected_next(0u);
 
 bool tracked_started = false;
 int tracked_ninfected = 0;
@@ -42,7 +42,7 @@ inline void tracked_agents_check_init(epiworld::Model<TSeq> * m)
 
         for (auto & p: tracked_agents_infected)
         {
-            if (p->get_viruses().size() == 0)
+            if (p->get_n_viruses() == 0)
                 throw std::logic_error("Cannot be infected and have no viruses.");
         }
         
@@ -52,14 +52,14 @@ inline void tracked_agents_check_init(epiworld::Model<TSeq> * m)
 
 }
 
-EPI_NEW_UPDATEFUN(update_susceptible, bool)
+EPI_NEW_UPDATEFUN(update_susceptible, int)
 {
 
     tracked_agents_check_init(m);
 
     // No infected individual?
     if (tracked_ninfected == 0)
-        return p->get_status();
+        return;
 
     // Computing probability of contagion
     // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
@@ -78,7 +78,7 @@ EPI_NEW_UPDATEFUN(update_susceptible, bool)
 
         // Infecting the individual
         #ifdef EPI_DEBUG
-        if (tracked_agents_infected[which]->get_viruses().size() == 0)
+        if (tracked_agents_infected[which]->get_n_viruses() == 0)
         {
 
             printf_epiworld("[epiworld-debug] date: %i\n", m->today());
@@ -92,18 +92,19 @@ EPI_NEW_UPDATEFUN(update_susceptible, bool)
         }
         #endif
         p->add_virus(
-            &tracked_agents_infected[which]->get_virus(0u)
+            tracked_agents_infected[which]->get_virus(0u),
+            SEIRCONSTATUS::EXPOSED
             ); 
 
-        return SEIRCONSTATUS::EXPOSED;
+        return;
 
     }
 
-    return p->get_status();
+    return;
 
 }
 
-EPI_NEW_UPDATEFUN(update_infected, bool)
+EPI_NEW_UPDATEFUN(update_infected, int)
 {
 
     tracked_agents_check_init(m);
@@ -119,7 +120,9 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
             tracked_agents_infected_next.push_back(p);
             tracked_ninfected_next++;
 
-            return SEIRCONSTATUS::INFECTED;
+            p->change_status(SEIRCONSTATUS::INFECTED);
+
+            return;
 
         }
 
@@ -131,8 +134,8 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
         {
 
             tracked_ninfected_next--;
-            p->rm_virus(&p->get_virus(0u));
-            return SEIRCONSTATUS::RECOVERED;
+            p->rm_virus(0);
+            return;
 
         }
 
@@ -140,11 +143,11 @@ EPI_NEW_UPDATEFUN(update_infected, bool)
 
     } 
 
-    return status;
+    return;
 
 }
 
-EPI_NEW_GLOBALFUN(global_accounting, bool)
+EPI_NEW_GLOBALFUN(global_accounting, int)
 {
 
     // On the last day, also reset tracked agents and
@@ -201,26 +204,15 @@ inline void set_up_seir_connected(
     model.add_param(incubation_days, "Avg. Incubation days");
     
     // Status
-    std::vector< epiworld_fast_uint > new_status =
-    {
-        SEIRCONSTATUS::SUSCEPTIBLE, SEIRCONSTATUS::EXPOSED,
-        SEIRCONSTATUS::RECOVERED
-    };
-
-    model.reset_status_codes(
-        new_status,
-        {"susceptible", "exposed", "recovered"},
-        true
-    );
-
-    model.add_status_exposed(SEIRCONSTATUS::INFECTED, "infected");
-    model.print_status_codes();
-    model.set_update_exposed(update_infected);
-    model.set_update_susceptible(update_susceptible);
+    model.add_status("Susceptible", update_susceptible);
+    model.add_status("Exposed", update_infected);
+    model.add_status("Infected", update_infected);
+    model.add_status("Recovered");
 
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
+    virus.set_status(1,3,3);
     model.add_virus(virus, prevalence);
 
     // Adding updating function

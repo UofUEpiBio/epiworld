@@ -22,7 +22,7 @@
 #endif
 
 #ifndef epiworld_fast_uint
-    #define epiworld_fast_uint std::uint_fast8_t
+    #define epiworld_fast_uint std::uint_fast16_t
 #endif
 
 #endif
@@ -31,7 +31,7 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 template<typename TSeq>
 class PersonTools;
@@ -42,27 +42,77 @@ class Virus;
 template<typename TSeq>
 class Tool;
 
+template<typename TSeq>
+using VirusPtr = std::shared_ptr< Virus< TSeq > >;
 
 template<typename TSeq>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using ToolPtr = std::shared_ptr< Tool< TSeq > >;
 
 template<typename TSeq>
-using MixerFun = std::function<epiworld_double(PersonTools<TSeq>*,Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using MutFun = std::function<bool(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
 
 template<typename TSeq>
-using PostRecoveryFun = std::function<void(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
-using VirusFun = std::function<epiworld_double(Person<TSeq>*,Virus<TSeq>*,Model<TSeq>*)>;
+using PostRecoveryFun = std::function<void(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq>
-using UpdateFun = std::function<epiworld_fast_uint(Person<TSeq>*,Model<TSeq>*)>;
+using VirusFun = std::function<epiworld_double(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+
+template<typename TSeq>
+using UpdateFun = std::function<void(Agent<TSeq>*,Model<TSeq>*)>;
 
 template<typename TSeq>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
+
+template<typename TSeq>
+struct Action;
+
+template<typename TSeq>
+using ActionFun = std::function<void(Action<TSeq>&,Model<TSeq>*)>;
+
+/**
+ * @brief Action data for update an agent
+ * 
+ * @tparam TSeq 
+ */
+template<typename TSeq>
+struct Action {
+    Agent<TSeq> * agent;
+    VirusPtr<TSeq> virus;
+    ToolPtr<TSeq> tool;
+    epiworld_fast_int new_status;
+    epiworld_fast_int queue;
+    ActionFun<TSeq> call;
+public:
+/**
+     * @brief Construct a new Action object
+     * 
+     * All the parameters are rather optional.
+     * 
+     * @param agent_ Agent over who the action will happen
+     * @param virus_ Virus to add
+     * @param tool_ Tool to add
+     * @param virus_idx Index of virus to be removed (if needed)
+     * @param tool_idx Index of tool to be removed (if needed)
+     * @param new_status_ Next status
+     * @param queue_ Efect on the queue
+     * @param call_ The action call (if needed)
+     */
+    Action(
+        Agent<TSeq> * agent_,
+        VirusPtr<TSeq> virus_,
+        ToolPtr<TSeq> tool_,
+        epiworld_fast_int new_status_,
+        epiworld_fast_int queue_,
+        ActionFun<TSeq> call_
+    ) : agent(agent_), virus(virus_), tool(tool_), new_status(new_status_),
+        queue(queue_), call(call_) {};
+};
 
 /**
  * @brief List of possible states in the model
@@ -102,7 +152,7 @@ enum STATUS {
 #endif
 
 #ifndef EPI_DEFAULT_VIRUS_PROB_RECOVERY
-    #define EPI_DEFAULT_VIRUS_PROB_RECOVERY     0.5
+    #define EPI_DEFAULT_VIRUS_PROB_RECOVERY     0.1428
 #endif
 
 #ifndef EPI_DEFAULT_VIRUS_PROB_DEATH

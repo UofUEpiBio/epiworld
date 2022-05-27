@@ -71,9 +71,9 @@ start <- c(S = EPI_N * (1 - EPI_0), I = EPI_N * EPI_0, R = 0)
 out <- ode(y = start, times = times, func = sirmod, parms= parms)
 out <- as.data.frame(out)
 out <- rbind(
-    with(out, data.table(date = time, status = "susceptible", counts = S)),
-    with(out, data.table(date = time, status = "infected", counts = I)),
-    with(out, data.table(date = time, status = "recovered", counts = R))
+    with(out, data.table(date = time, status = "Susceptible", counts = S)),
+    with(out, data.table(date = time, status = "Infected", counts = I)),
+    with(out, data.table(date = time, status = "Recovered", counts = R))
 )
 ```
 
@@ -131,10 +131,10 @@ start <- c(S = EPI_N * (1 - EPI_0), E = EPI_N * EPI_0, I = 0, R = 0)
 out_seir <- ode(y = start, times = times, func = seirmod, parms = parms)
 out_seir <- as.data.frame(out_seir)
 out_seir <- rbind(
-    with(out_seir, data.table(date = time, status = "susceptible", counts = S)),
-    with(out_seir, data.table(date = time, status = "exposed", counts = E)),
-    with(out_seir, data.table(date = time, status = "infected", counts = I)),
-    with(out_seir, data.table(date = time, status = "recovered", counts = R))
+    with(out_seir, data.table(date = time, status = "Susceptible", counts = S)),
+    with(out_seir, data.table(date = time, status = "Exposed", counts = E)),
+    with(out_seir, data.table(date = time, status = "Infected", counts = I)),
+    with(out_seir, data.table(date = time, status = "Recovered", counts = R))
 )
 ```
 

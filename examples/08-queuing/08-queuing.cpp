@@ -19,8 +19,8 @@ int main(int argc, char* argv[]) {
         std::logic_error("What is the surveillance prob?");
 
 
-    epiworld::Model<bool> surveillance1;
-    epiworld::Model<bool> surveillance2;
+    epiworld::Model<> surveillance1;
+    epiworld::Model<> surveillance2;
 
     set_up_surveillance(surveillance1, "covid19");    
     set_up_surveillance(surveillance2, "covid19");
@@ -29,8 +29,8 @@ int main(int argc, char* argv[]) {
 
     // Adding a bernoulli graph as step 0
     epiworld::AdjList rgraph = epiworld::rgraph_smallworld(popsize, 3, .01, false, surveillance1);
-    surveillance1.pop_from_adjlist(rgraph);
-    surveillance2.pop_from_adjlist(rgraph);
+    surveillance1.population_from_adjlist(rgraph);
+    surveillance2.population_from_adjlist(rgraph);
 
     // Setting up queuing or not
     surveillance1.queuing_off();

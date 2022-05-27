@@ -5,21 +5,21 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 class AdjList;
 
 
 template<typename TSeq, typename TDat>
 inline void rewire_degseq(
-    TDat * persons,
+    TDat * agents,
     Model<TSeq> * model,
     epiworld_double proportion
     );
 
-template<typename TSeq = bool>
+template<typename TSeq = int>
 inline void rewire_degseq(
-    std::vector< Person<TSeq> > * persons,
+    std::vector< Agent<TSeq> > * agents,
     Model<TSeq> * model,
     epiworld_double proportion
     )
@@ -29,13 +29,13 @@ inline void rewire_degseq(
     std::vector< unsigned int > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    // std::vector< Person<TSeq> > * persons = model->get_population();
-    for (unsigned int i = 0u; i < persons->size(); ++i)
+    // std::vector< Agent<TSeq> > * agents = model->get_population();
+    for (unsigned int i = 0u; i < agents->size(); ++i)
     {
-        if (persons->operator[](i).get_neighbors().size() > 0u)
+        if (agents->operator[](i).get_neighbors().size() > 0u)
         {
             non_isolates.push_back(i);
-            epiworld_double wtemp = static_cast<epiworld_double>(persons->operator[](i).get_neighbors().size());
+            epiworld_double wtemp = static_cast<epiworld_double>(agents->operator[](i).get_neighbors().size());
             weights.push_back(wtemp);
             nedges += wtemp;
         }
@@ -85,8 +85,8 @@ inline void rewire_degseq(
         if (id1 >= static_cast<int>(N))
             id1 = 0;
 
-        Person<TSeq> & p0 = persons->operator[](non_isolates[id0]);
-        Person<TSeq> & p1 = persons->operator[](non_isolates[id1]);
+        Agent<TSeq> & p0 = agents->operator[](non_isolates[id0]);
+        Agent<TSeq> & p1 = agents->operator[](non_isolates[id1]);
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
@@ -100,14 +100,14 @@ inline void rewire_degseq(
         if (!model->is_directed())
         {
             unsigned int n0,n1;
-            Person<TSeq> & p01 = persons->operator[](p0.get_neighbors()[id01]->get_index());
+            Agent<TSeq> & p01 = agents->operator[](p0.get_neighbors()[id01]->get_index());
             for (n0 = 0; n0 < p01.get_neighbors().size(); ++n0)
             {
                 if (p0.get_id() == p01.get_neighbors()[n0]->get_id())
                     break;            
             }
 
-            Person<TSeq> & p11 = persons->operator[](p1.get_neighbors()[id11]->get_index());
+            Agent<TSeq> & p11 = agents->operator[](p1.get_neighbors()[id11]->get_index());
             for (n1 = 0; n1 < p11.get_neighbors().size(); ++n1)
             {
                 if (p1.get_id() == p11.get_neighbors()[n1]->get_id())
@@ -130,7 +130,7 @@ inline void rewire_degseq(
 
 template<typename TSeq>
 inline void rewire_degseq(
-    AdjList * persons,
+    AdjList * agents,
     Model<TSeq> * model,
     epiworld_double proportion
     )
@@ -140,8 +140,8 @@ inline void rewire_degseq(
     std::vector< unsigned int > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    // std::vector< Person<TSeq> > * persons = model->get_population();
-    for (auto & p : persons->get_dat())
+    // std::vector< Agent<TSeq> > * agents = model->get_population();
+    for (auto & p : agents->get_dat())
     {
         
         non_isolates.push_back(p.first);
@@ -167,7 +167,7 @@ inline void rewire_degseq(
     unsigned int N = non_isolates.size();
     epiworld_double prob;
     int nrewires = floor(proportion * nedges / (
-        persons->is_directed() ? 1.0 : 2.0
+        agents->is_directed() ? 1.0 : 2.0
     ));
     while (nrewires-- > 0)
     {
@@ -198,8 +198,8 @@ inline void rewire_degseq(
         if (id1 >= static_cast<int>(N))
             id1 = 0;
 
-        std::map<unsigned int,unsigned int> & p0 = persons->get_dat()[non_isolates[id0]];
-        std::map<unsigned int,unsigned int> & p1 = persons->get_dat()[non_isolates[id1]];
+        std::map<unsigned int,unsigned int> & p0 = agents->get_dat()[non_isolates[id0]];
+        std::map<unsigned int,unsigned int> & p1 = agents->get_dat()[non_isolates[id1]];
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
@@ -222,11 +222,11 @@ inline void rewire_degseq(
         // end as well, since we are dealing withi an undirected graph
         
         // Finding what neighbour is id0
-        if (!persons->is_directed())
+        if (!agents->is_directed())
         {
 
-            std::map<unsigned int,unsigned int> & p01 = persons->get_dat()[id01];
-            std::map<unsigned int,unsigned int> & p11 = persons->get_dat()[id11];
+            std::map<unsigned int,unsigned int> & p01 = agents->get_dat()[id01];
+            std::map<unsigned int,unsigned int> & p11 = agents->get_dat()[id11];
 
             std::swap(p01[id0], p11[id1]);
             

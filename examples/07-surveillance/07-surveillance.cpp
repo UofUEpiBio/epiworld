@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
         std::logic_error("What is the surveillance prob?");
 
 
-    epiworld::Model<bool> surveillance;
+    epiworld::Model<> surveillance;
     set_up_surveillance(
         surveillance,    // Model object
         "a virus", // Name of the virus
@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     );
 
     // Adding a bernoulli graph as step 0
-    surveillance.pop_from_adjlist(
+    surveillance.population_from_adjlist(
         epiworld::rgraph_smallworld(popsize, 5, .01, false, surveillance)
     );
 
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     surveillance.print();
 
     surveillance.write_data(
-        "","", "07-surveillance_hist.txt", "", ""
+        "","", "", "", "07-surveillance_hist.txt", "", ""
     );
 
     surveillance.get_user_data().write("07-surveillance_user_data.txt");

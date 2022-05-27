@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     );
 
     // Adding a bernoulli graph as step 0
-    model.pop_from_random(popsize, 1, false, .0);
+    model.population_smallworld(popsize, 1, false, .0);
 
     model.init(ndays, result["seed"].as<int>());
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     unsigned int nreplica = 0u;
 
     auto record =
-        [&results,&dates,&nreplica,&labels](epiworld::Model<bool> * m)
+        [&results,&dates,&nreplica,&labels](epiworld::Model<> * m)
         {
 
             if (nreplica == 0)
@@ -74,9 +74,9 @@ int main(int argc, char* argv[]) {
     // Running and checking the results
     model.run_multiple(
         nexperiments, // How many experiments
-        record,           // Function to call after each experiment
-        true,             // Whether to reset the population
-        true              // Whether to print a progress bar
+        record,       // Function to call after each experiment
+        true,         // Whether to reset the population
+        true          // Whether to print a progress bar
     );
 
     model.print();
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
                 
     }
 
-    model.write_data("","","total_hist.txt", "transmission.txt", "transition.txt");
+    model.write_data("","","","","total_hist.txt", "transmission.txt", "transition.txt");
 
     return 0;
 

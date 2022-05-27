@@ -2,7 +2,7 @@
 #include "../../include/epiworld/epiworld.hpp"
 
 // Original data will be an integer vector
-#define DAT std::vector<bool>
+#define DAT std::vector<int>
 static DAT base_seq = {true, false, false, true, true, false, true, false, true, false, false};
 
 // Defining mutation and transmission functions
@@ -11,12 +11,12 @@ EPI_NEW_MUTFUN(covid19_mut, DAT) {
     if (EPI_RUNIF() < MPAR(0))
     {
         // Picking a location at random
-        int idx = std::floor(EPI_RUNIF() * v->get_sequence()->size());
-        DAT tmp_seq = *v->get_sequence();
-        tmp_seq[idx] = !v->get_sequence()->at(idx); 
+        int idx = std::floor(EPI_RUNIF() * v.get_sequence()->size());
+        DAT tmp_seq = *v.get_sequence();
+        tmp_seq[idx] = !v.get_sequence()->at(idx); 
 
         // Updating its sequence
-        v->set_sequence(tmp_seq);
+        v.set_sequence(tmp_seq);
 
         return true;
     }
@@ -26,13 +26,12 @@ EPI_NEW_MUTFUN(covid19_mut, DAT) {
 }
 
 // Post covid recovery
-EPI_NEW_VIRUSFUN(post_covid, DAT) {
+EPI_NEW_POSTRECOVERYFUN(post_covid, DAT) {
 
-    epiworld::Tool<DAT> immunity;
-    immunity.set_sequence(*v->get_sequence());
+    auto Tptr = m->get_tools()[3u];
 
-    immunity.set_susceptibility_reduction(1.0);
-    p->add_tool(m->today(), immunity);
+    Tptr->set_sequence(*v.get_sequence());
+    p->add_tool(Tptr);
 
 }
 
@@ -41,7 +40,12 @@ int main() {
     // Initializing the model and reading population --------------------------
     epiworld::Model<DAT> model;
 
-    model.pop_from_adjlist("edgelist.txt", 0, false);
+    model.add_status("Susceptible", epiworld::default_update_susceptible<DAT>);
+    model.add_status("Exposed", epiworld::default_update_exposed<DAT>);
+    model.add_status("Recovered");
+    model.add_status("Removed");
+
+    model.population_from_adjlist("edgelist.txt", 0, false);
 
     // Setting up the model parameters 
     model.add_param(0.001, "Mutation rate");
@@ -51,12 +55,16 @@ int main() {
     model.add_param(0.10, "imm recovery");
     model.add_param(0.001, "imm death");
     model.add_param(0.90, "imm trans");
+    model.add_param(0.01, "virus death");
 
     // Initializing disease ---------------------------------------------------
     epiworld::Virus<DAT> covid19("COVID19");
     covid19.set_sequence(base_seq);
     covid19.set_mutation(covid19_mut);
-    covid19.set_post_recovery(post_covid);  
+    covid19.set_post_recovery(post_covid); 
+    covid19.set_prob_death(&model("virus death"));
+
+    covid19.set_status(1,2,3);
 
     // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine");
@@ -77,12 +85,16 @@ int main() {
     DAT seq0(base_seq.size(), false);
     immune.set_sequence_unique(seq0);
 
+    epiworld::Tool<DAT> post_immunity("Post Immune");
+    post_immunity.set_susceptibility_reduction(1.0);
+
     // Adding the virus and the tools to the model ----------------------------
     model.add_virus(covid19, 0.01); 
 
+    model.add_tool(immune, 1.0);
     model.add_tool(vaccine, 0.5);
     model.add_tool(mask, 0.5);
-    model.add_tool(immune, 1.0);
+    model.add_tool_n(post_immunity, 0);
     
     // Initializing and printing information about the model ------------------
     model.init(60, 1231);
@@ -100,6 +112,8 @@ int main() {
     model.write_data(
         "variants_info.txt",
         "variants.txt",
+        "tool_info.txt",
+        "tool_hist.txt",
         "total.txt",
         "transmisions.txt",
         "transition.txt"

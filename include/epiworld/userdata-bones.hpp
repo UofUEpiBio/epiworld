@@ -32,7 +32,8 @@ private:
 
 public:
 
-    UserData() {};
+    UserData() = delete;
+    UserData(Model<TSeq> & m) : model(&m) {};
 
     /**
      * @brief Construct a new User Data object

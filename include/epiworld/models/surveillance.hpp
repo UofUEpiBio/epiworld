@@ -21,20 +21,40 @@ template<typename TSeq>
 EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {
 
     // This computes the prob of getting any neighbor variant
-    EPIWORLD_UPDATE_SUSCEPTIBLE_CALC_PROBS(probs,variants)
+    unsigned int nvariants_tmp = 0u;
+    for (auto & neighbor: p->get_neighbors()) 
+    {
+                 
+        for (size_t i = 0u; i < neighbor->get_n_viruses(); ++i) 
+        { 
+
+            auto & v = neighbor->get_virus(i);
+                
+            /* And it is a function of susceptibility_reduction as well */ 
+            epiworld_double tmp_transmission = 
+                (1.0 - p->get_susceptibility_reduction(v)) * 
+                v->get_prob_infecting() * 
+                (1.0 - neighbor->get_transmission_reduction(v)) 
+                ; 
+        
+            m->array_double_tmp[nvariants_tmp]  = tmp_transmission;
+            m->array_virus_tmp[nvariants_tmp++] = &(*v);
+            
+        } 
+    }
 
     // No virus to compute on
-    if (probs.size() == 0)
-        return p->get_status();
+    if (nvariants_tmp == 0)
+        return;
 
     // Running the roulette
-    int which = roulette(probs, m);
+    int which = roulette(nvariants_tmp, m);
 
     if (which < 0)
-        return p->get_status();
+        return;
 
-    p->add_virus(variants[which]); 
-    return m->get_default_exposed();
+    p->add_virus(*m->array_virus_tmp[which]); 
+    return;
 
 }
 
@@ -42,8 +62,8 @@ template<typename TSeq>
 EPI_NEW_UPDATEFUN(surveillance_update_exposed,TSeq)
 {
 
-    EPIWORLD_UPDATE_EXPOSED_CALC_PROBS(p_rec, p_die)
-    (void) p_rec;
+    epiworld::VirusPtr<TSeq> & v = p->get_virus(0u); 
+    epiworld_double p_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
     
     unsigned int days_since_exposed = m->today() - v->get_date();
     epiworld_fast_uint status = p->get_status();
@@ -61,13 +81,13 @@ EPI_NEW_UPDATEFUN(surveillance_update_exposed,TSeq)
     
     // If still latent, nothing happens
     if (days_since_exposed <= v->get_data()[0u])
-        return status;
+        return;
 
     // If past days infected + latent, then bye.
     if (days_since_exposed >= v->get_data()[1u])
     {
-        p->rm_virus(v);
-        return SURVSTATUS::RECOVERED;
+        p->rm_virus(0);
+        return;
     }
 
     // If it is infected, then it can be asymptomatic or symptomatic
@@ -76,38 +96,32 @@ EPI_NEW_UPDATEFUN(surveillance_update_exposed,TSeq)
 
         // Will be symptomatic?
         if (EPI_RUNIF() < MPAR(2))
-        {
-            // If you are symptomatic, then you may be catched
-            return static_cast<epiworld_fast_uint>(SURVSTATUS::SYMPTOMATIC);
-
-        }
+            p->change_status(SURVSTATUS::SYMPTOMATIC);
+        else
+            p->change_status(SURVSTATUS::ASYMPTOMATIC);
         
-        return static_cast<epiworld_fast_uint>(SURVSTATUS::ASYMPTOMATIC);
+        return;
 
     }
     
     // Otherwise, it can be removed
     if (EPI_RUNIF() < p_die)
     {
-        p->rm_virus(v);
-        return SURVSTATUS::REMOVED;
+        p->change_status(SURVSTATUS::REMOVED, -1);
+        return;
     }
     
-    return p->get_status();
+    return;
 
 }
 
-template<typename TSeq>
-EPI_NEW_POSTRECOVERYFUN(post_covid, TSeq)
-{
-
-    epiworld::Tool<TSeq> immunity;
-
-    immunity.set_susceptibility_reduction(1.0 - MPAR(8));
-
-    p->add_tool(m->today(), immunity);
-
-}
+std::vector< epiworld_fast_uint > exposed_status = {
+    SURVSTATUS::SYMPTOMATIC,
+    SURVSTATUS::SYMPTOMATIC_ISOLATED,
+    SURVSTATUS::ASYMPTOMATIC,
+    SURVSTATUS::ASYMPTOMATIC_ISOLATED,
+    SURVSTATUS::LATENT
+};
 
 // Surveilance function
 template<typename TSeq>
@@ -136,21 +150,21 @@ EPI_NEW_GLOBALFUN(surveilance, TSeq)
             continue;
 
         sampled[i] = true;
-        epiworld::Person<TSeq> * p = &pop[i];
+        epiworld::Agent<TSeq> * p = &pop[i];
         
         // If still exposed for the next term
-        if (epiworld::IN(p->get_status_next(), m->get_status_exposed()))
+        if (epiworld::IN(p->get_status(), exposed_status ))
         {
 
             ndetected += 1.0;
             if (p->get_status() == SURVSTATUS::ASYMPTOMATIC)
             {
                 ndetected_asympt += 1.0;
-                p->update_status(SURVSTATUS::ASYMPTOMATIC_ISOLATED);
+                p->change_status(SURVSTATUS::ASYMPTOMATIC_ISOLATED);
             }
             else 
             {
-                p->update_status(SURVSTATUS::SYMPTOMATIC_ISOLATED);
+                p->change_status(SURVSTATUS::SYMPTOMATIC_ISOLATED);
             }
 
             
@@ -199,9 +213,18 @@ inline void set_up_surveillance(
     epiworld_double surveillance_prob     = 0.001,
     epiworld_double prob_transmission     = 1.0,
     epiworld_double prob_death            = 0.001,
-    epiworld_double prob_reinfect         = 0.1
+    epiworld_double prob_noreinfect       = 0.9
     )
 {
+
+    model.add_status("Susceptible", surveillance_update_susceptible<TSeq>);
+    model.add_status("Latent", surveillance_update_exposed<TSeq>);
+    model.add_status("Symptomatic", surveillance_update_exposed<TSeq>);
+    model.add_status("Symptomatic isolated", surveillance_update_exposed<TSeq>);
+    model.add_status("Asymptomatic", surveillance_update_exposed<TSeq>);
+    model.add_status("Asymptomatic isolated", surveillance_update_exposed<TSeq>);
+    model.add_status("Recovered");
+    model.add_status("Removed");
 
     // General model parameters
     model.add_param(latent_period, "Latent period");
@@ -212,11 +235,12 @@ inline void set_up_surveillance(
     model.add_param(prop_vax_redux_transm, "Vax redux transmission");
     model.add_param(prob_transmission, "Prob of transmission");
     model.add_param(prob_death, "Prob. death");
-    model.add_param(prob_reinfect, "Prob. reinfect");
+    model.add_param(prob_noreinfect, "Prob. no reinfect");
 
     // Virus ------------------------------------------------------------------
     epiworld::Virus<TSeq> covid("Covid19");
-    covid.set_post_recovery(post_covid<TSeq>);
+    covid.set_status(1,6,7);
+    covid.set_post_immunity(&model("Prob. no reinfect"));
     covid.set_prob_death(&model("Prob. death"));
 
     EPI_NEW_VIRUSFUN_LAMBDA(ptransmitfun, TSeq)
@@ -248,25 +272,6 @@ inline void set_up_surveillance(
     
     model.add_tool(vax, prop_vaccinated);
 
-    std::vector< epiworld_fast_uint > new_status =
-        {
-            SURVSTATUS::SUSCEPTIBLE, SURVSTATUS::LATENT, SURVSTATUS::RECOVERED
-        };
-
-    model.reset_status_codes(
-        new_status,
-        {"susceptible", "latent", "recovered"},
-        false
-    );
-
-    model.add_status_exposed(SURVSTATUS::SYMPTOMATIC, "symptomatic");
-    model.add_status_exposed(SURVSTATUS::SYMPTOMATIC_ISOLATED, "symptomatic isolated");
-    model.add_status_exposed(SURVSTATUS::ASYMPTOMATIC, "asymptomatic");
-    model.add_status_exposed(SURVSTATUS::ASYMPTOMATIC_ISOLATED, "asymptomatic isolated");
-    model.add_status_removed(SURVSTATUS::REMOVED, "removed");
-
-    model.set_update_exposed(surveillance_update_exposed<TSeq>);
-    model.set_update_susceptible(surveillance_update_susceptible<TSeq>);
 
     return;
 

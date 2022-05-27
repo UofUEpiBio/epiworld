@@ -7,7 +7,7 @@ int main() {
 
     unsigned int nthreads = 4u;
     omp_set_num_threads(nthreads);
-    std::vector< epiworld::Model<bool> > models(nthreads);
+    std::vector< epiworld::Model<> > models(nthreads);
 
     for (unsigned int i = 0u; i < nthreads; ++i)
         set_up_sir(
@@ -22,7 +22,7 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     printf("Generating random graph... ");fflush(stdout);
-    models[0u].pop_from_adjlist(
+    models[0u].population_from_adjlist(
         epiworld::rgraph_smallworld(250000, 5, .01, false, models[0u])
     );
 

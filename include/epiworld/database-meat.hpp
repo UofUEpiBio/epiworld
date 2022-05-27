@@ -4,7 +4,7 @@
 template<typename TSeq>
 inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 {
-    model = &m;
+    model           = &m;
     user_data.model = &m;
 
     reset();
@@ -15,14 +15,9 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     for (auto & p : *m.get_population())
         ++today_total[p.get_status()];
     
-    today_total_next.resize(m.nstatus);
-    std::fill(today_total_next.begin(), today_total_next.end(), 0);
-
     transition_matrix.resize(m.nstatus * m.nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
 
-    transition_matrix_next.resize(m.nstatus * m.nstatus);
-    std::fill(transition_matrix_next.begin(), transition_matrix_next.end(), 0);
 
     return;
 
@@ -35,19 +30,12 @@ inline Model<TSeq> * DataBase<TSeq>::get_model() {
 
 template<typename TSeq>
 inline const std::vector< TSeq > & DataBase<TSeq>::get_sequence() const {
-    return sequence;
+    return variant_sequence;
 }
 
 template<typename TSeq>
 inline void DataBase<TSeq>::record() 
 {
-
-    // Updating values according to today's changes
-    for (auto i = 0u; i < model->nstatus; ++i)
-    {
-        today_total[i] += today_total_next[i];
-        today_total_next[i] = 0;
-    }
 
     ////////////////////////////////////////////////////////////////////////////
     // DEBUGGING BLOCK
@@ -64,23 +52,6 @@ inline void DataBase<TSeq>::record()
     EPI_DEBUG_VECTOR_MATCH_INT(_today_total_cp, today_total)
     #endif
     ////////////////////////////////////////////////////////////////////////////
-
-    for (auto v = 0u; v < today_variant.size(); ++v)
-    {
-
-        for (auto i = 0u; i < model->nstatus; ++i)
-        {
-            today_variant[v][i] += today_variant_next[v][i];
-            today_variant_next[v][i] = 0;
-        }
-
-    }
-    
-    for (auto i = 0u; i < transition_matrix.size(); ++i)
-    {
-        transition_matrix[i] += transition_matrix_next[i];
-        transition_matrix_next[i] = 0;
-    }
 
     // Only store every now and then
     if ((model->today() % sampling_freq) == 0)
@@ -102,6 +73,22 @@ inline void DataBase<TSeq>::record()
 
         }
 
+        // Recording tool's history
+        for (auto & p : tool_id)
+        {
+
+            for (unsigned int s = 0u; s < model->nstatus; ++s)
+            {
+
+                hist_tool_date.push_back(model->today());
+                hist_tool_id.push_back(p.second);
+                hist_tool_status.push_back(s);
+                hist_tool_counts.push_back(today_tool[p.second][s]);
+
+            }
+
+        }
+
         // Recording the overall history
         for (unsigned int s = 0u; s < model->nstatus; ++s)
         {
@@ -114,41 +101,37 @@ inline void DataBase<TSeq>::record()
         for (auto cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
 
+        std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
+
     }
 
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
+inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
 {
 
     // Updating registry
-    std::vector< int > hash = seq_hasher(*v->get_sequence());
-    unsigned int old_id = v->get_id();
+    std::vector< int > hash = seq_hasher(*v.get_sequence());
+    unsigned int old_id = v.get_id();
     unsigned int new_id;
     if (variant_id.find(hash) == variant_id.end())
     {
 
         new_id = variant_id.size();
         variant_id[hash] = new_id;
-        sequence.push_back(*v->get_sequence());
-        origin_date.push_back(model->today());
+        variant_name.push_back(v.get_name());
+        variant_sequence.push_back(*v.get_sequence());
+        variant_origin_date.push_back(model->today());
         
-        parent_id.push_back(old_id);
+        variant_parent_id.push_back(old_id);
         
         today_variant.push_back({});
-        today_variant[new_id].resize(
-            model->status_susceptible.size() +
-            model->status_exposed.size() +
-            model->status_removed.size(),
-            0
-        );
-
-        today_variant_next.push_back(today_variant[new_id]);
-        
+        today_variant[new_id].resize(model->nstatus, 0);
+       
         // Updating the variant
-        v->set_id(new_id);
-        v->set_date(model->today());
+        v.set_id(new_id);
+        v.set_date(model->today());
 
         today_total_nvariants_active++;
 
@@ -158,18 +141,66 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> * v)
         new_id = variant_id[hash];
 
         // Reflecting the change
-        v->set_id(new_id);
-        v->set_date(origin_date[new_id]);
+        v.set_id(new_id);
+        v.set_date(variant_origin_date[new_id]);
 
     }
 
     // Moving statistics (only if we are affecting an individual)
-    if (v->get_host() != nullptr)
+    if (v.get_agent() != nullptr)
     {
         // Correcting math
-        epiworld_fast_uint tmp_status = v->get_host()->get_status();
-        today_variant_next[old_id][tmp_status]--;
-        today_variant_next[new_id][tmp_status]++;
+        epiworld_fast_uint tmp_status = v.get_agent()->get_status();
+        today_variant[old_id][tmp_status]--;
+        today_variant[new_id][tmp_status]++;
+
+    }
+    
+    return;
+} 
+
+template<typename TSeq>
+inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
+{
+
+    // Updating registry
+    std::vector< int > hash = seq_hasher(*t.get_sequence());
+    unsigned int old_id = t.get_id();
+    unsigned int new_id;
+    if (tool_id.find(hash) == tool_id.end())
+    {
+
+        new_id = tool_id.size();
+        tool_id[hash] = new_id;
+        tool_name.push_back(t.get_name());
+        tool_sequence.push_back(*t.get_sequence());
+        tool_origin_date.push_back(model->today());
+                
+        today_tool.push_back({});
+        today_tool[new_id].resize(model->nstatus, 0);
+
+        // Updating the tool
+        t.set_id(new_id);
+        t.set_date(model->today());
+
+    } else {
+
+        // Finding the id
+        new_id = tool_id[hash];
+
+        // Reflecting the change
+        t.set_id(new_id);
+        t.set_date(tool_origin_date[new_id]);
+
+    }
+
+    // Moving statistics (only if we are affecting an individual)
+    if (t.get_agent() != nullptr)
+    {
+        // Correcting math
+        epiworld_fast_uint tmp_status = t.get_agent()->get_status();
+        today_tool[old_id][tmp_status]--;
+        today_tool[new_id][tmp_status]++;
 
     }
     
@@ -183,33 +214,46 @@ inline size_t DataBase<TSeq>::size() const
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::up_exposed(
-    Virus<TSeq> * v,
-    epiworld_fast_uint new_status
-) {
-
-    today_variant_next[v->get_id()][new_status]++;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::down_exposed( 
-    Virus<TSeq> * v,
-    epiworld_fast_uint prev_status
-) {
-
-    today_variant_next[v->get_id()][prev_status]--;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::state_change(
+inline void DataBase<TSeq>::update_state(
         epiworld_fast_uint prev_status,
         epiworld_fast_uint new_status
 ) {
-    today_total_next[prev_status]--;
-    today_total_next[new_status]++;
+
+    today_total[prev_status]--;
+    today_total[new_status]++;
+
+    record_transition(prev_status, new_status);
+    
     return;
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::update_virus(
+        epiworld_fast_uint virus_id,
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+
+    today_variant[virus_id][prev_status]--;
+    today_variant[virus_id][new_status]++;
+
+    return;
+    
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::update_tool(
+        epiworld_fast_uint tool_id,
+        epiworld_fast_uint prev_status,
+        epiworld_fast_uint new_status
+) {
+
+
+    today_tool[tool_id][prev_status]--;    
+    today_tool[tool_id][new_status]++;
+
+    return;
+
 }
 
 template<typename TSeq>
@@ -218,31 +262,19 @@ inline void DataBase<TSeq>::record_transition(
     epiworld_fast_uint to
 ) {
 
-    transition_matrix_next[to * model->nstatus + from]++;
+    transition_matrix[to * model->nstatus + from]++;
 
 }
-
-#define EPIWORLD_GET_STATUS_LABELS(stdstrvec) \
-    stdstrvec.resize(model->nstatus); \
-    for (epiworld_fast_uint i = 0u; i < model->status_susceptible.size(); ++i) \
-        stdstrvec[model->status_susceptible[i]] = model->status_susceptible_labels[i]; \
-    for (epiworld_fast_uint i = 0u; i < model->status_exposed.size(); ++i) \
-        stdstrvec[model->status_exposed[i]] = model->status_exposed_labels[i]; \
-    for (epiworld_fast_uint i = 0u; i < model->status_removed.size(); ++i) \
-        stdstrvec[model->status_removed[i]] = model->status_removed_labels[i];
-
 
 template<typename TSeq>
 inline int DataBase<TSeq>::get_today_total(
     std::string what
 ) const
 {
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
 
-    for (auto i = 0u; i < labels.size(); ++i)
+    for (auto i = 0u; i < model->status_labels.size(); ++i)
     {
-        if (labels[i] == what)
+        if (model->status_labels[i] == what)
             return today_total[i];
     }
 
@@ -257,9 +289,7 @@ inline void DataBase<TSeq>::get_today_total(
 ) const
 {
     if (status != nullptr)
-    {
-        EPIWORLD_GET_STATUS_LABELS((*status))
-    }
+        (*status) = model->status_labels;
 
     if (counts != nullptr)
         *counts = today_total;
@@ -273,18 +303,16 @@ inline void DataBase<TSeq>::get_today_variant(
     std::vector< int > & counts
     ) const
 {
-    
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)    
+      
     status.resize(today_variant.size(), "");
     id.resize(today_variant.size(), 0);
     counts.resize(today_variant.size(),0);
 
     int n = 0u;
     for (unsigned int v = 0u; v < today_variant.size(); ++v)
-        for (unsigned int s = 0u; s < labels.size(); ++s)
+        for (unsigned int s = 0u; s < model->status_labels.size(); ++s)
         {
-            status[n]   = labels[s];
+            status[n]   = model->status_labels[s];
             id[n]       = static_cast<int>(v);
             counts[n++] = today_variant[v][s];
 
@@ -303,14 +331,11 @@ inline void DataBase<TSeq>::get_hist_total(
     if (date != nullptr)
         *date = hist_total_date;
 
-    std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
-
     if (status != nullptr)
     {
         status->resize(hist_total_status.size(), "");
         for (unsigned int i = 0u; i < hist_total_status.size(); ++i)
-            status->operator[](i) = labels[hist_total_status[i]];
+            status->operator[](i) = model->status_labels[hist_total_status[i]];
     }
 
     if (counts != nullptr)
@@ -330,7 +355,8 @@ inline void DataBase<TSeq>::get_hist_variant(
 
     date = hist_variant_date;
     std::vector< std::string > labels;
-    EPIWORLD_GET_STATUS_LABELS(labels)
+    labels = model->status_labels;
+    
     id = hist_variant_id;
     status.resize(hist_variant_status.size(), "");
     for (unsigned int i = 0u; i < hist_variant_status.size(); ++i)
@@ -342,12 +368,12 @@ inline void DataBase<TSeq>::get_hist_variant(
 
 }
 
-#undef EPIWORLD_GET_STATUS_LABELS
-
 template<typename TSeq>
 inline void DataBase<TSeq>::write_data(
     std::string fn_variant_info,
     std::string fn_variant_hist,
+    std::string fn_tool_info,
+    std::string fn_tool_hist,
     std::string fn_total_hist,
     std::string fn_transmission,
     std::string fn_transition
@@ -359,34 +385,20 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
-            "id " << "sequence " << "date " << "parent " << "patiente\n";
+            "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_variant_info <<
-                id << " " <<
-                seq_writer(sequence[id]) << " " <<
-                origin_date[id] << " " <<
-                parent_id[id] << " " <<
-                parent_id[id] << "\n";
+                id << " \"" <<
+                variant_name[id] << "\" " <<
+                seq_writer(variant_sequence[id]) << " " <<
+                variant_origin_date[id] << " " <<
+                variant_parent_id[id] << "\n";
         }
 
     }
-
-    // Preparing labels
-    std::vector< std::string > labels(model->nstatus);
-    for (unsigned int i = 0u; i < model->status_susceptible.size(); ++i)
-        labels[model->status_susceptible[i]] =
-            model->status_susceptible_labels[i];
-    
-    for (unsigned int i = 0u; i < model->status_exposed.size(); ++i)
-        labels[model->status_exposed[i]] =
-            model->status_exposed_labels[i];
-
-    for (unsigned int i = 0u; i < model->status_removed.size(); ++i)
-        labels[model->status_removed[i]] =
-            model->status_removed_labels[i];
 
     if (fn_variant_hist != "")
     {
@@ -399,8 +411,42 @@ inline void DataBase<TSeq>::write_data(
             file_variant <<
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
-                labels[hist_variant_status[i]] << " " <<
+                model->status_labels[hist_variant_status[i]] << " " <<
                 hist_variant_counts[i] << "\n";
+    }
+
+    if (fn_tool_info != "")
+    {
+        std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
+
+        file_tool_info <<
+            "id " << "tool_name " << "tool_sequence " << "date_recorded\n";
+
+        for (const auto & t : tool_id)
+        {
+            int id = t.second;
+            file_tool_info <<
+                id << " \"" <<
+                tool_name[id] << "\" " <<
+                seq_writer(tool_sequence[id]) << " " <<
+                tool_origin_date[id] << "\n";
+        }
+
+    }
+
+    if (fn_tool_hist != "")
+    {
+        std::ofstream file_tool_hist(fn_tool_hist, std::ios_base::out);
+        
+        file_tool_hist <<
+            "date " << "id " << "status " << "n\n";
+
+        for (unsigned int i = 0; i < hist_tool_id.size(); ++i)
+            file_tool_hist <<
+                hist_tool_date[i] << " " <<
+                hist_tool_id[i] << " " <<
+                model->status_labels[hist_tool_status[i]] << " " <<
+                hist_tool_counts[i] << "\n";
     }
 
     if (fn_total_hist != "")
@@ -414,7 +460,7 @@ inline void DataBase<TSeq>::write_data(
             file_total <<
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
-                labels[hist_total_status[i]] << "\" " << 
+                model->status_labels[hist_total_status[i]] << "\" " << 
                 hist_total_counts[i] << "\n";
     }
 
@@ -448,8 +494,8 @@ inline void DataBase<TSeq>::write_data(
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
                         i << " " <<
-                        labels[from] << " " <<
-                        labels[to] << " " <<
+                        model->status_labels[from] << " " <<
+                        model->status_labels[to] << " " <<
                         hist_transition_matrix[i * (ns * ns) + to * ns + from] << "\n";
                 
         }
@@ -473,9 +519,15 @@ inline void DataBase<TSeq>::record_transmission(
 }
 
 template<typename TSeq>
-inline size_t DataBase<TSeq>::get_nvariants() const
+inline size_t DataBase<TSeq>::get_n_variants() const
 {
     return variant_id.size();
+}
+
+template<typename TSeq>
+inline size_t DataBase<TSeq>::get_n_tools() const
+{
+    return tool_id.size();
 }
 
 template<typename TSeq>
@@ -483,14 +535,25 @@ inline void DataBase<TSeq>::reset()
 {
 
     variant_id.clear();
-    sequence.clear();
-    origin_date.clear();
-    parent_id.clear();
+    variant_name.clear();
+    variant_sequence.clear();
+    variant_origin_date.clear();
+    variant_parent_id.clear();
     
     hist_variant_date.clear();
     hist_variant_id.clear();
     hist_variant_status.clear();
     hist_variant_counts.clear();
+
+    tool_id.clear();
+    tool_name.clear();
+    tool_sequence.clear();
+    tool_origin_date.clear();
+
+    hist_tool_date.clear();
+    hist_tool_id.clear();
+    hist_tool_status.clear();
+    hist_tool_counts.clear();
     
     hist_total_date.clear();
     hist_total_nvariants_active.clear();
@@ -505,10 +568,10 @@ inline void DataBase<TSeq>::reset()
     today_total_nvariants_active = 0;
 
     today_total.clear();
-    today_total_next.clear();
     
     today_variant.clear();
-    today_variant_next.clear();
+
+    today_tool.clear();
 
 }
 

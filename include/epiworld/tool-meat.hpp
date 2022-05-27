@@ -41,12 +41,12 @@ inline TSeq & Tool<TSeq>::get_sequence_unique() {
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 )
 {
 
     if (susceptibility_reduction_fun)
-        return susceptibility_reduction_fun(this, this->person, v, person->get_model());
+        return susceptibility_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_CONTAGION_REDUCTION;
 
@@ -54,12 +54,12 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_transmission_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 )
 {
 
     if (transmission_reduction_fun)
-        return transmission_reduction_fun(this, this->person, v, person->get_model());
+        return transmission_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_TRANSMISSION_REDUCTION;
 
@@ -67,12 +67,12 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 )
 {
 
     if (recovery_enhancer_fun)
-        return recovery_enhancer_fun(this, this->person, v, person->get_model());
+        return recovery_enhancer_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_RECOVERY_ENHANCER;
 
@@ -80,12 +80,12 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_death_reduction(
-    Virus<TSeq> * v
+    VirusPtr<TSeq> v
 )
 {
 
     if (death_reduction_fun)
-        return death_reduction_fun(this, this->person, v, person->get_model());
+        return death_reduction_fun(*this, this->agent, v, agent->get_model());
 
     return DEFAULT_TOOL_DEATH_REDUCTION;
 
@@ -128,7 +128,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -143,7 +143,7 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 {
     
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -158,7 +158,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Tool<TSeq> & t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -173,7 +173,7 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return *prob;
         };
@@ -192,7 +192,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -208,7 +208,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -224,7 +224,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Tool<TSeq> &  t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -240,7 +240,7 @@ inline void Tool<TSeq>::set_death_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> * t, Person<TSeq> * p, Virus<TSeq> * v, Model<TSeq> * m)
+        [prob](Tool<TSeq> & t, Agent<TSeq> * p, VirusPtr<TSeq> v, Model<TSeq> * m)
         {
             return prob;
         };
@@ -267,14 +267,88 @@ inline std::string Tool<TSeq>::get_name() const {
 }
 
 template<typename TSeq>
-inline Person<TSeq> * Tool<TSeq>::get_person()
+inline Agent<TSeq> * Tool<TSeq>::get_agent()
 {
-    return person;
+    return this->agent;
 }
 
 template<typename TSeq>
-inline unsigned int Tool<TSeq>::get_id() const {
+inline void Tool<TSeq>::set_agent(Agent<TSeq> * p, size_t idx)
+{
+    agent = p;
+    agent_idx = static_cast<int>(idx);
+}
+
+template<typename TSeq>
+inline int Tool<TSeq>::get_id() const {
     return id;
+}
+
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_id(int id)
+{
+    this->id = id;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_date(int d)
+{
+    this->date = d;
+}
+
+template<typename TSeq>
+inline int Tool<TSeq>::get_date() const
+{
+    return date;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_status(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    status_init = init;
+    status_post = end;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_queue(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    queue_init = init;
+    queue_post = end;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::get_status(
+    epiworld_fast_int * init,
+    epiworld_fast_int * post
+)
+{
+    if (init != nullptr)
+        *init = status_init;
+
+    if (post != nullptr)
+        *post = status_post;
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::get_queue(
+    epiworld_fast_int * init,
+    epiworld_fast_int * post
+)
+{
+    if (init != nullptr)
+        *init = queue_init;
+
+    if (post != nullptr)
+        *post = queue_post;
+
 }
 
 #endif

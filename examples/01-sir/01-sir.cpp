@@ -1,13 +1,13 @@
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/models/sir.hpp"
 
 int main() {
 
     epiworld::Model<> model;
-
+    
     set_up_sir(
-        model,     // Model object
+        model,
         "a virus", // Name of the virus
         0.01,      // Initial prevalence
         1.0,       // Infectiousness
@@ -17,8 +17,8 @@ int main() {
     );
 
     // Adding a bernoulli graph as step 0
-    model.pop_from_adjlist(
-        epiworld::rgraph_smallworld(100000, 5, .001, false, model)
+    model.population_from_adjlist(
+        epiworld::rgraph_smallworld(10000, 5, .001, false, model)
     );
 
     model.init(100, 123);

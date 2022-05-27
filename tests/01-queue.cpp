@@ -6,7 +6,7 @@ int main()
 {
 
     Model<> model;
-    model.pop_from_random(100, 2);
+    model.population_smallworld(100, 2);
 
     Virus<> v("covid");
     

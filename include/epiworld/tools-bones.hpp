@@ -1,91 +1,154 @@
-
 #ifndef EPIWORLD_TOOLS_BONES_HPP
 #define EPIWORLD_TOOLS_BONES_HPP
 
 template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Person;
-
-template<typename TSeq>
-class Model;
-
-template<typename TSeq>
-class PersonTools;
-
-template<typename TSeq>
 class Tool;
 
+template<typename TSeq>
+class Agent;
+
+#define TOOLPTR std::shared_ptr< Tool<TSeq> >
+
 /**
- * @brief Tools for defending the host against the virus
+ * @brief Set of tools (useful for building iterators)
  * 
- * @tparam TSeq Type of sequence
+ * @tparam TSeq 
  */
-template<typename TSeq=bool> 
-class Tool {
-    friend class PersonTools<TSeq>;
-    friend class Person<TSeq>;
-    friend class Model<TSeq>;
+template<typename TSeq>
+class Tools {
+    friend class Tool<TSeq>;
+    friend class Agent<TSeq>;
 private:
-
-    Person<TSeq> * person;
-    unsigned int id = 0u;
-    std::shared_ptr<std::string> tool_name = nullptr;
-    std::shared_ptr<TSeq> sequence = nullptr;
-    TSeq sequence_unique  = default_sequence<TSeq>();
-    ToolFun<TSeq> susceptibility_reduction_fun = nullptr;
-    ToolFun<TSeq> transmission_reduction_fun   = nullptr;
-    ToolFun<TSeq> recovery_enhancer_fun        = nullptr;
-    ToolFun<TSeq> death_reduction_fun          = nullptr;
-
-    // Setup parameters
-    std::vector< epiworld_double * > params;  
+    std::vector< TOOLPTR > * dat;
+    const epiworld_fast_uint * n_tools;
 
 public:
-    Tool(std::string name = "unknown tool");
-    // Tool(TSeq d, std::string name = "unknown tool");
 
-    void set_sequence(TSeq d);
-    void set_sequence_unique(TSeq d);
-    void set_sequence(std::shared_ptr<TSeq> d);
-    std::shared_ptr<TSeq> get_sequence();
-    TSeq & get_sequence_unique();
+    Tools() = delete;
+    Tools(Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
-    /**
-     * @name Get and set the tool functions
-     * 
-     * @param v The virus over which to operate
-     * @param fun the function to be used
-     * 
-     * @return epiworld_double 
-     */
-    ///@{
-    epiworld_double get_susceptibility_reduction(Virus<TSeq> * v);
-    epiworld_double get_transmission_reduction(Virus<TSeq> * v);
-    epiworld_double get_recovery_enhancer(Virus<TSeq> * v);
-    epiworld_double get_death_reduction(Virus<TSeq> * v);
-    void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
-    void set_transmission_reduction_fun(ToolFun<TSeq> fun);
-    void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
-    void set_death_reduction_fun(ToolFun<TSeq> fun);
-    void set_susceptibility_reduction(epiworld_double * prob);
-    void set_transmission_reduction(epiworld_double * prob);
-    void set_recovery_enhancer(epiworld_double * prob);
-    void set_death_reduction(epiworld_double * prob);
-    void set_susceptibility_reduction(epiworld_double prob);
-    void set_transmission_reduction(epiworld_double prob);
-    void set_recovery_enhancer(epiworld_double prob);
-    void set_death_reduction(epiworld_double prob);
-    ///@}
+    typename std::vector< TOOLPTR >::iterator begin();
+    typename std::vector< TOOLPTR >::iterator end();
 
-    void set_name(std::string name);
-    std::string get_name() const;
+    TOOLPTR & operator()(size_t i);
+    TOOLPTR & operator[](size_t i);
 
-    Person<TSeq> * get_person();
-    unsigned int get_id() const;
-
+    size_t size() const noexcept;
 
 };
+
+template<typename TSeq>
+inline typename std::vector< TOOLPTR >::iterator Tools<TSeq>::begin()
+{
+
+    if (*n_tools == 0u)
+        return dat->end();
+    
+    return dat->begin();
+}
+
+template<typename TSeq>
+inline typename std::vector< TOOLPTR >::iterator Tools<TSeq>::end()
+{
+     
+    return begin() + *n_tools;
+}
+
+template<typename TSeq>
+inline TOOLPTR & Tools<TSeq>::operator()(size_t i)
+{
+
+    if (i >= *n_tools)
+        throw std::range_error("Tool index out of range.");
+
+    return dat->operator[](i);
+
+}
+
+template<typename TSeq>
+inline TOOLPTR & Tools<TSeq>::operator[](size_t i)
+{
+
+    return dat->operator[](i);
+
+}
+
+template<typename TSeq>
+inline size_t Tools<TSeq>::size() const noexcept 
+{
+    return *n_tools;
+}
+
+/**
+ * @brief Set of Tools (const) (useful for iterators)
+ * 
+ * @tparam TSeq 
+ */
+template<typename TSeq>
+class Tools_const {
+    friend class Tool<TSeq>;
+    friend class Agent<TSeq>;
+private:
+    const std::vector< TOOLPTR > * dat;
+    const epiworld_fast_uint * n_tools;
+
+public:
+
+    Tools_const() = delete;
+    Tools_const(const Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
+
+    typename std::vector< TOOLPTR >::const_iterator begin();
+    typename std::vector< TOOLPTR >::const_iterator end();
+
+    const TOOLPTR & operator()(size_t i);
+    const TOOLPTR & operator[](size_t i);
+
+    size_t size() const noexcept;
+
+};
+
+template<typename TSeq>
+inline typename std::vector< TOOLPTR >::const_iterator Tools_const<TSeq>::begin() {
+
+    if (*n_tools == 0u)
+        return dat->end();
+    
+    return dat->begin();
+}
+
+template<typename TSeq>
+inline typename std::vector< TOOLPTR >::const_iterator Tools_const<TSeq>::end() {
+     
+    return begin() + *n_tools;
+}
+
+template<typename TSeq>
+inline const TOOLPTR & Tools_const<TSeq>::operator()(size_t i)
+{
+
+    if (i >= *n_tools)
+        throw std::range_error("Tool index out of range.");
+
+    return dat->operator[](i);
+
+}
+
+template<typename TSeq>
+inline const TOOLPTR & Tools_const<TSeq>::operator[](size_t i)
+{
+
+    return dat->operator[](i);
+
+}
+
+template<typename TSeq>
+inline size_t Tools_const<TSeq>::size() const noexcept 
+{
+    return *n_tools;
+}
+
+#undef TOOLPTR
+
+
 
 #endif

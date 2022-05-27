@@ -8,9 +8,9 @@
  */
 #define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
 (fname)(\
-    epiworld::Tool< tseq > * t, \
-    epiworld::Person< tseq > * p, \
-    epiworld::Virus< tseq > * v, \
+    epiworld::Tool< tseq > & t, \
+    epiworld::Agent< tseq > * p, \
+    std::shared_ptr<epiworld::Virus< tseq >> v, \
     epiworld::Model< tseq > * m\
     )
 
@@ -20,10 +20,10 @@
  */
 #define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
     epiworld::ToolFun<tseq> funname = \
-    [](epiworld::Tool<tseq> * t, \
-    epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
-    epiworld::Model<tseq> * m)
+    [](epiworld::Tool<tseq> & t, \
+    epiworld::Agent<tseq> * p, \
+    std::shared_ptr<epiworld::Virus<tseq>> v, \
+    epiworld::Model<tseq> * m) -> epiworld_double
 
 /**
  * @brief Helper macro for accessing model parameters
@@ -37,41 +37,41 @@
  */
 #define EPI_NEW_MUTFUN(funname,tseq) inline bool \
     (funname)(\
-    epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
+    epiworld::Agent<tseq> * p, \
+    epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m )
 
 #define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
     epiworld::MutFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq> * v, \
-    epiworld::Model<tseq> * m)
+    [](epiworld::Agent<tseq> * p, \
+    epiworld::Virus<tseq> & v, \
+    epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
     (funname)( \
-    epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    epiworld::Agent<tseq> * p, \
+    epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m\
     )
 
 #define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
     epiworld::PostRecoveryFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
-    epiworld::Model<tseq> * m)
+    [](epiworld::Agent<tseq> * p, \
+    epiworld::Virus<tseq> & v , \
+    epiworld::Model<tseq> * m) -> void
 
-#define EPI_NEW_VIRUSFUN(funname,tseq) inline void \
+#define EPI_NEW_VIRUSFUN(funname,tseq) inline epiworld_double \
     (funname)( \
-    epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
+    epiworld::Agent<tseq> * p, \
+    epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m\
     )
 
-#define EPI_NEW_VIRUSFUN_LAMBDA(funname,tseq) \
-    epiworld::VirusFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, \
-    epiworld::Virus<tseq>* v, \
-    epiworld::Model<tseq> * m)
+#define EPI_NEW_VIRUSFUN_LAMBDA(funname,TSeq) \
+    epiworld::VirusFun<TSeq> funname = \
+    [](epiworld::Agent<TSeq> * p, \
+    epiworld::Virus<TSeq> & v, \
+    epiworld::Model<TSeq> * m) -> epiworld_double
 
 #define EPI_RUNIF() m->runif()
 
@@ -85,18 +85,18 @@
 #define EPI_TOKENPASTE(a,b) a ## b
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
 
-#define EPI_NEW_UPDATEFUN(funname,tseq) inline epiworld_fast_uint \
-    (funname)(epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
+#define EPI_NEW_UPDATEFUN(funname,tseq) inline void \
+    (funname)(epiworld::Agent<tseq> * p, epiworld::Model<tseq> * m)
 
-#define EPI_NEW_UPDATEFUN_LAMBDA(funname,tseq) inline epiworld_fast_uint \
+#define EPI_NEW_UPDATEFUN_LAMBDA(funname,tseq) \
     epiworld::UpdateFun<tseq> funname = \
-    [](epiworld::Person<tseq> * p, epiworld::Model<tseq> * m)
+    [](epiworld::Agent<tseq> * p, epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_GLOBALFUN(funname,tseq) inline void \
     (funname)(epiworld::Model<tseq>* m)
 
 #define EPI_NEW_GLOBALFUN_LAMBDA(funname,tseq) inline void \
     epiworld::GlobalFun<tseq> funname = \
-    [](epiworld::Model<tseq>* m)
+    [](epiworld::Model<tseq>* m) -> void
 
 #endif

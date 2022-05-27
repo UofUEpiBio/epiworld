@@ -5,7 +5,7 @@ template<typename TSeq>
 class Model;
 
 template<typename TSeq>
-class Person;
+class Agent;
 
 // Relevant for anything using vecHasher function ------------------------------
 /**
@@ -39,44 +39,54 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
  * 
  * @details 
  * If the user does not provide a default sequence, this function is used when
- * a sequence needs to be initialized. Some examples: `Person`, `Virus`, and
+ * a sequence needs to be initialized. Some examples: `Agent`, `Virus`, and
  * `Tool` need a default sequence.
  * 
  * @tparam TSeq 
  * @return TSeq 
  */
 ///@{
-template<typename TSeq>
+template<typename TSeq = int>
 inline TSeq default_sequence();
+
+int _n_sequences_created = 0;
 
 template<>
 inline bool default_sequence() {
-    return false;
+
+    if (_n_sequences_created == 2)
+        throw std::logic_error("Maximum number of sequence created.");
+
+    return _n_sequences_created++ ? false : true;
 }
 
 template<>
 inline int default_sequence() {
-    return 0;
+    return _n_sequences_created++;
 }
 
 template<>
 inline epiworld_double default_sequence() {
-    return 0.0;
+    return static_cast<epiworld_double>(_n_sequences_created++);
 }
 
 template<>
 inline std::vector<bool> default_sequence() {
-    return {false};
+
+    if (_n_sequences_created == 2)
+        throw std::logic_error("Maximum number of sequence created.");
+
+    return {_n_sequences_created++ ? false : true};
 }
 
 template<>
 inline std::vector<int> default_sequence() {
-    return {0};
+    return {_n_sequences_created++};
 }
 
 template<>
 inline std::vector<epiworld_double> default_sequence() {
-    return {0.0};
+    return {static_cast<epiworld_double>(_n_sequences_created++)};
 }
 ///@}
 
@@ -169,6 +179,11 @@ inline int roulette(
     Model<TSeq> * m
     )
 {
+
+    #ifdef EPI_DEBUG
+    if (nelements > m->array_double_tmp.size())
+        throw std::logic_error("Trying to sample from more data than there is in roulette!");
+    #endif
 
     // Step 1: Computing the prob on none 
     epiworld_double p_none = 1.0;

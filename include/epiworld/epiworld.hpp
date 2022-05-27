@@ -38,18 +38,20 @@ namespace epiworld {
 
     #include "model-bones.hpp"
     #include "model-meat.hpp"
+
+    #include "viruses-bones.hpp"
+
     #include "virus-bones.hpp"
     #include "virus-meat.hpp"
-    #include "personviruses-bones.hpp"
-    #include "personviruses-meat.hpp"
-    #include "tools-bones.hpp"
-    #include "tools-meat.hpp"
-    #include "persontools-bones.hpp"
-    #include "persontools-meat.hpp"
     
-    #include "person-meat-status.hpp"
-    #include "person-bones.hpp"
-    #include "person-meat.hpp"
+    #include "tools-bones.hpp"
+
+    #include "tool-bones.hpp"
+    #include "tool-meat.hpp"
+    
+    #include "agent-meat-status.hpp"
+    #include "agent-bones.hpp"
+    #include "agent-meat.hpp"
 
 }
 

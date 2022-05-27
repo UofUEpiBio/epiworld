@@ -1,12 +1,13 @@
 #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/models/sir.hpp"
+#include <iostream>
 
 int main() {
 
     int total_replicates = 100;
 
-    epiworld::Model<bool> sir;
+    epiworld::Model<> sir;
     set_up_sir(
         sir,       // Model object
         "a virus", // Name of the virus
@@ -18,7 +19,7 @@ int main() {
     );
 
     // Adding a bernoulli graph as step 0
-    sir.pop_from_adjlist(
+    sir.population_from_adjlist(
         epiworld::rgraph_smallworld(1000, 5, .01, false, sir)
     );
 
@@ -37,6 +38,7 @@ int main() {
         sir.run();
         sir.get_db().get_today_total(&labels, &results[r]);
         sir.reset();
+        std::cout << "Replicate " << r << " done" << std::endl;
     }
     
     sir.get_elapsed();
