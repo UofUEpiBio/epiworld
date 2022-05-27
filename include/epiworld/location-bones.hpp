@@ -69,7 +69,7 @@ inline void Location<TSeq>::rm_agent(size_t idx)
     if (--n_agents > 0)
         std::swap(agents[idx], agents[n_agents]);
 
-    return
+    return;
 }
 
 template<typename TSeq>
@@ -79,7 +79,7 @@ inline size_t Location<TSeq>::size() const noexcept
 }
 
 template<typename TSeq>
-inline void Location<TSeq>::set_location(int lon, int lat, int alt = 0)
+inline void Location<TSeq>::set_location(int lon, int lat, int alt)
 {
     longitude = lon;
     latitude  = lat;

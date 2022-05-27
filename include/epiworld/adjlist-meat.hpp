@@ -125,7 +125,7 @@ inline void AdjList::read_edgelist(
     while (!filei.eof())
     {
 
-        if (linenum < skip)
+        if (linenum++ < skip)
             continue;
 
         filei >> i >> j;
@@ -169,11 +169,11 @@ inline void AdjList::read_edgelist(
 
     }
 
-    if (!filei.eof())
-        throw std::logic_error(
-            "Wrong format found in the AdjList file " +
-            fn + " in line " + std::to_string(linenum)
-        );
+    // if (!filei.eof())
+    //     throw std::logic_error(
+    //         "Wrong format found in the AdjList file " +
+    //         fn + " in line " + std::to_string(linenum)
+    //     );
     
     // Now using the right constructor
     *this = AdjList(source_,target_,directed,min_id,max_id);

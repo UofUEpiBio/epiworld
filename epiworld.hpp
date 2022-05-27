@@ -2255,7 +2255,7 @@ inline void AdjList::read_edgelist(
     while (!filei.eof())
     {
 
-        if (linenum < skip)
+        if (linenum++ < skip)
             continue;
 
         filei >> i >> j;
@@ -2299,11 +2299,11 @@ inline void AdjList::read_edgelist(
 
     }
 
-    if (!filei.eof())
-        throw std::logic_error(
-            "Wrong format found in the AdjList file " +
-            fn + " in line " + std::to_string(linenum)
-        );
+    // if (!filei.eof())
+    //     throw std::logic_error(
+    //         "Wrong format found in the AdjList file " +
+    //         fn + " in line " + std::to_string(linenum)
+    //     );
     
     // Now using the right constructor
     *this = AdjList(source_,target_,directed,min_id,max_id);
@@ -6643,6 +6643,132 @@ inline void Tool<TSeq>::get_queue(
 //////////////////////////////////////////////////////////////////////////////*/
 
 
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/location-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_LOCATION_BONES_HPP
+#define EPIWORLD_LOCATION_BONES_HPP
+
+template<typename TSeq>
+class Agent;
+
+template<typename TSeq>
+class Location {
+private:
+    
+    int capacity = 0;
+    std::string location_name = "Unknown Location";
+
+    std::vector< Agent<TSeq> * > agents;
+    size_t n_agents = 0u;
+
+    /**
+     * @brief Spatial location parameters
+     * 
+     */
+    ///@{
+    epiworld_double longitude = 0.0;
+    epiworld_double latitude  = 0.0;
+    epiworld_double altitude  = 0.0;
+    ///@}
+
+public:
+
+    Location() {};
+
+    void add_agent(Agent<TSeq> & p);
+    void add_agent(Agent<TSeq> * p);
+    void rm_agent(size_t idx);
+    size_t size() const noexcept;
+    void set_location(int lon, int lat, int alt = 0);
+
+    typename std::vector< Agent<TSeq> * >::iterator begin();
+    typename std::vector< Agent<TSeq> * >::iterator end();
+
+};
+
+template<typename TSeq>
+inline void Location<TSeq>::add_agent(Agent<TSeq> & p)
+{
+    if (++n_agents <= agents.size())
+        agents.push_back(&p);
+    else
+        agents[n_agents - 1] = &p;
+}
+
+template<typename TSeq>
+inline void Location<TSeq>::add_agent(Agent<TSeq> * p)
+{
+    if (++n_agents <= agents.size())
+        agents.push_back(p);
+    else
+        agents[n_agents - 1] = p;
+}
+
+template<typename TSeq>
+inline void Location<TSeq>::rm_agent(size_t idx)
+{
+    if (idx >= n_agents)
+        throw std::out_of_range(
+            "Trying to remove agent "+ std::to_string(idx) +
+            " out of " + std::to_string(n_agents)
+            );
+
+    if (--n_agents > 0)
+        std::swap(agents[idx], agents[n_agents]);
+
+    return;
+}
+
+template<typename TSeq>
+inline size_t Location<TSeq>::size() const noexcept
+{
+    return n_agents;
+}
+
+template<typename TSeq>
+inline void Location<TSeq>::set_location(int lon, int lat, int alt)
+{
+    longitude = lon;
+    latitude  = lat;
+    altitude  = alt;
+}
+
+template<typename TSeq>
+inline typename std::vector< Agent<TSeq> * >::iterator Location<TSeq>::begin()
+{
+
+    if (n_agents == 0)
+        return agents.end();
+
+    return agents.begin();
+
+}
+
+template<typename TSeq>
+inline typename std::vector< Agent<TSeq> * >::iterator Location<TSeq>::end()
+{
+    return agents.begin() + n_agents;
+}
+
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/location-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
     
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -6865,8 +6991,9 @@ private:
     Model<TSeq> * model;
     
     std::vector< Agent<TSeq> * > neighbors;
+    std::vector< Location<TSeq> *> locations;
 
-    unsigned int index; ///< Location in the Model
+    int index; ///< Location in the Model
     epiworld_fast_uint status = 0u;
     int id = -1;
     
@@ -7170,6 +7297,11 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     index  = p.index;
     status = p.status;
     id     = p.id;
+
+    #ifdef EPI_DEBUG
+    if (index < 0)
+        throw std::logic_error("Index in agents cannot be negative.");
+    #endif
     
     in_queue = p.in_queue;
 
@@ -7198,9 +7330,9 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     n_tools = p.n_tools;
 
     add_virus_ = p.add_virus_;
-    add_tool_ = p.add_tool_;
-    rm_virus_ = p.rm_virus_;
-    rm_tool_ = p.rm_tool_;
+    add_tool_  = p.add_tool_;
+    rm_virus_  = p.rm_virus_;
+    rm_tool_   = p.rm_tool_;
     
 }
 

@@ -142,6 +142,11 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     index  = p.index;
     status = p.status;
     id     = p.id;
+
+    #ifdef EPI_DEBUG
+    if (index < 0)
+        throw std::logic_error("Index in agents cannot be negative.");
+    #endif
     
     in_queue = p.in_queue;
 
@@ -170,9 +175,9 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     n_tools = p.n_tools;
 
     add_virus_ = p.add_virus_;
-    add_tool_ = p.add_tool_;
-    rm_virus_ = p.rm_virus_;
-    rm_tool_ = p.rm_tool_;
+    add_tool_  = p.add_tool_;
+    rm_virus_  = p.rm_virus_;
+    rm_tool_   = p.rm_tool_;
     
 }
 
