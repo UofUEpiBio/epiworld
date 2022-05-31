@@ -87,7 +87,7 @@ inline void default_update_susceptible(
     Virus<TSeq> * virus = sample_virus_single<TSeq>(p, m);
     
     if (virus == nullptr)
-        return
+        return;
 
     p->add_virus(*virus); 
 
