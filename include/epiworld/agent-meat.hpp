@@ -139,14 +139,13 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     // We can't do anything with the neighbors
     neighbors.reserve(p.neighbors.size());
 
-    index  = p.index;
     status = p.status;
     id     = p.id;
 
-    #ifdef EPI_DEBUG
-    if (index < 0)
-        throw std::logic_error("Index in agents cannot be negative.");
-    #endif
+    // #ifdef EPI_DEBUG
+    // if (id < 0)
+    //     throw std::logic_error("Ids in agents cannot be negative.");
+    // #endif
     
     in_queue = p.in_queue;
 
@@ -355,12 +354,6 @@ template<typename TSeq>
 inline int Agent<TSeq>::get_id() const
 {
     return id;
-}
-
-template<typename TSeq>
-inline unsigned int Agent<TSeq>::get_index() const
-{
-    return index;
 }
 
 template<typename TSeq>

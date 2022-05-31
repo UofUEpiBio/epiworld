@@ -61,7 +61,6 @@ private:
     std::vector< Agent<TSeq> * > neighbors;
     std::vector< Location<TSeq> *> locations;
 
-    int index; ///< Location in the Model
     epiworld_fast_uint status = 0u;
     int id = -1;
     
@@ -160,7 +159,6 @@ public:
     ///@}
 
     int get_id() const; ///< Id of the individual
-    unsigned int get_index() const; ///< Location (0, ..., n-1).
     
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 

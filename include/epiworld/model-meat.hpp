@@ -196,7 +196,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // Removing old neighbors
     model.clone_population(
         population,
-        population_ids,
         directed,
         this
         );
@@ -227,7 +226,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     initialized(std::move(model.initialized)),
     current_date(std::move(model.current_date)),
     population(std::move(model.population)),
-    population_ids(std::move(model.population_ids)),
     directed(std::move(model.directed)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
@@ -254,14 +252,12 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
     std::vector< Agent<TSeq> > & p,
-    std::map<int,int> & p_ids,
     bool & d,
     Model<TSeq> * model
 ) const {
 
     // Copy and clean
     p     = population;
-    p_ids = population_ids;
     d     = directed;
 
     for (auto & p: p)
@@ -279,7 +275,7 @@ inline void Model<TSeq>::clone_population(
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
-            int loc = p_ids[neigh[n]->get_id()];
+            int loc = p[neigh[n]->get_id()].get_id();
             agent_res.add_neighbor(&p[loc], true, true);
 
         }
@@ -292,7 +288,6 @@ inline void Model<TSeq>::clone_population(const Model<TSeq> & m)
 {
     m.clone_population(
         population,
-        population_ids,
         directed,
         this
     );
@@ -706,14 +701,13 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
 template<typename TSeq>
 inline void Model<TSeq>::agents_from_adjlist(
     std::string fn,
+    int size,
     int skip,
-    bool directed,
-    int min_id,
-    int max_id
+    bool directed
     ) {
 
     AdjList al;
-    al.read_edgelist(fn, skip, directed, min_id, max_id);
+    al.read_edgelist(fn, size, skip, directed);
     this->agents_from_adjlist(al);
 
 }
@@ -723,41 +717,50 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
 
     // Resizing the people
     population.clear();
-    population_ids.clear();
     population.resize(al.vcount(), Agent<TSeq>());
 
     const auto & tmpdat = al.get_dat();
-    
-    int loc;
-    for (const auto & n : tmpdat)
+
+    // Filling the model and ids
+    size_t i = 0u;
+    for (auto & p : population)
     {
-        if (population_ids.find(n.first) == population_ids.end())
-            population_ids[n.first] = population_ids.size();
+        p.model = this;
+        p.id    = i++;
+    }
+    
+    for (size_t i = 0u; i < tmpdat.size(); ++i)
+    {
 
-        loc = population_ids[n.first];
+        population[i].id    = i;
+        population[i].model = this;
 
-        population[loc].model = this;
-        population[loc].id    = n.first;
-        population[loc].index = loc;
-
-        for (const auto & link: n.second)
+        for (const auto & link: tmpdat[i])
         {
 
-            if (population_ids.find(link.first) == population_ids.end())
-                population_ids[link.first] = population_ids.size();
-
-            unsigned int loc_link   = population_ids[link.first];
-            population[loc_link].id    = link.first;
-            population[loc_link].index = loc_link;
-
-            population[loc].add_neighbor(
-                &population[population_ids[link.first]],
+            population[i].add_neighbor(
+                &population[link.first],
                 true, true
                 );
 
         }
 
     }
+
+    #ifdef EPI_DEBUG
+    for (auto & p: population)
+    {
+        if (p.id >= static_cast<int>(al.vcount()))
+            throw std::logic_error(
+                "Agent's id cannot be negative above or equal to the number of agents!");
+
+        for (const auto & n : p.neighbors)
+        {
+            if (n == nullptr)
+                throw std::logic_error("A neighbor cannot be nullptr!");
+        }
+    }
+    #endif
 
 }
 
@@ -1021,12 +1024,31 @@ inline void Model<TSeq>::write_edgelist(
     ) const
 {
 
+    // Figuring out the writing sequence
+    std::vector< const Agent<TSeq> * > wseq(size());
+    for (const auto & p: population)
+        wseq[p.id] = &p;
+
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
-    for (const auto & p : population)
+    if (this->is_directed())
     {
-        for (auto & n : p.neighbors)
-            efile << p.id << " " << n->id << "\n";
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors)
+                efile << p->id << " " << n->id << "\n";
+        }
+
+    } else {
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors)
+                if (p->id <= n->id)
+                    efile << p->id << " " << n->id << "\n";
+        }
+
     }
 
 }
@@ -1047,7 +1069,6 @@ inline void Model<TSeq>::reset() {
     {
         backup->clone_population(
             population,
-            population_ids,
             directed,
             this
         );

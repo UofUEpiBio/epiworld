@@ -71,7 +71,6 @@ private:
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Agent<TSeq> > population;
-    std::map< int,int >         population_ids;
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses;
@@ -187,7 +186,6 @@ public:
 
     void clone_population(
         std::vector< Agent<TSeq> > & p,
-        std::map<int,int> & p_ids,
         bool & d,
         Model<TSeq> * m = nullptr
     ) const ;
@@ -255,19 +253,15 @@ public:
      * @param fn std::string Filename of the edgelist file.
      * @param skip int Number of lines to skip in `fn`.
      * @param directed bool Whether the graph is directed or not.
-     * @param min_id int Minimum id number (if negative, the program will
-     * try to guess from the data.)
-     * @param max_id int Maximum id number (if negative, the program will
-     * try to guess from the data.)
+     * @param size Size of the network.
      * @param al AdjList to read into the model.
      */
     ///@{
     void agents_from_adjlist(
         std::string fn,
+        int size,
         int skip = 0,
-        bool directed = false,
-        int min_id = -1,
-        int max_id = -1
+        bool directed = false
         );
     void agents_from_adjlist(AdjList al);
     bool is_directed() const;

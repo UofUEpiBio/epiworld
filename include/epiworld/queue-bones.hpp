@@ -43,9 +43,9 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 {
 
-    active[p->index]++;
+    active[p->id]++;
     for (auto * n : p->neighbors)
-        active[n->index]++;
+        active[n->id]++;
 
 }
 
@@ -53,9 +53,9 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 {
 
-    active[p->index]--;
+    active[p->id]--;
     for (auto * n : p->neighbors)
-        active[n->index]--;
+        active[n->id]--;
 
 }
 

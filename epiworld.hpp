@@ -2048,9 +2048,8 @@ inline UserData<TSeq> & DataBase<TSeq>::get_user_data()
 class AdjList {
 private:
 
-    std::map<unsigned int,std::map<unsigned int, unsigned int>> dat;
+    std::vector<std::map<unsigned int, unsigned int>> dat;
     bool directed;
-    unsigned int id_min,id_max;
     unsigned int N = 0;
     unsigned int E = 0;
 
@@ -2062,31 +2061,35 @@ public:
      * @brief Construct a new Adj List object
      * 
      * @details 
-     * It will create an adjacency list object with `maxid - minid + 1`
-     * nodes. If min_id and max_id are not specified (both < 0), then the program will
-     * try to figure them out automatically by looking at the range of the observed
-     * ids.
+     * Ids in the network are assume to range from `0` to `size - 1`.
      * 
      * @param source Unsigned int vector with the source
      * @param target Unsigned int vector with the target
+     * @param size Number of vertices in the network.
      * @param directed Bool true if the network is directed
-     * @param min_id int min id.
-     * @param max_id int max id.
      */
     AdjList(
         const std::vector< unsigned int > & source,
         const std::vector< unsigned int > & target,
-        bool directed,
-        int min_id = -1,
-        int max_id = -1
+        int size,
+        bool directed
         );
 
+    /**
+     * @brief Read an edgelist
+     * 
+     * Ids in the network are assume to range from `0` to `size - 1`.
+     * 
+     * @param fn Path to the file
+     * @param skip Number of lines to skip (e.g., 1 if there's a header)
+     * @param directed `true` if the network is directed
+     * @param size Number of vertices in the network.
+     */
     void read_edgelist(
         std::string fn,
+        int size,
         int skip = 0,
-        bool directed = true,
-        int min_id = -1,
-        int max_id = -1
+        bool directed = true
         );
 
     std::map<unsigned int, unsigned int> operator()(
@@ -2094,16 +2097,14 @@ public:
         ) const;
         
     void print(unsigned int limit = 20u) const;
-    unsigned int get_id_max() const;
-    unsigned int get_id_min() const;
-    size_t vcount() const;
-    size_t ecount() const;
+    size_t vcount() const; ///< Number of vertices/nodes in the network.
+    size_t ecount() const; ///< Number of edges/arcs/ties in the network.
     
-    std::map<unsigned int,std::map<unsigned int,unsigned int>> & get_dat() {
+    std::vector<std::map<unsigned int,unsigned int>> & get_dat() {
         return dat;
     };
 
-    bool is_directed() const;
+    bool is_directed() const; ///< `true` if the network is directed.
 
 };
 
@@ -2134,13 +2135,13 @@ public:
 inline AdjList::AdjList(
     const std::vector< unsigned int > & source,
     const std::vector< unsigned int > & target,
-    bool directed,
-    int min_id,
-    int max_id
+    int size,
+    bool directed
 ) : directed(directed) {
 
-    id_min = static_cast<unsigned int>(INT_MAX);
-    id_max = 0u;
+
+    dat.resize(size, std::map<unsigned int,unsigned int>({}));
+    int max_id = size - 1;
 
     int i,j;
     for (unsigned int m = 0; m < source.size(); ++m)
@@ -2149,83 +2150,39 @@ inline AdjList::AdjList(
         i = source[m];
         j = target[m];
 
-        if ((max_id > 0) && (i > max_id))
+        if (i > max_id)
             throw std::range_error(
                 "The source["+std::to_string(m)+"] = " + std::to_string(i) +
                 " is above the max_id " + std::to_string(max_id)
                 );
 
-        if ((min_id > 0) && (i < min_id))
-            throw std::range_error(
-                "The source["+std::to_string(m)+"] = " + std::to_string(i) + 
-                " is below the min_id " + std::to_string(min_id)
-                );
-
-        if ((max_id > 0) && (j > max_id))
+        if (j > max_id)
             throw std::range_error(
                 "The target["+std::to_string(m)+"] = " + std::to_string(j) +
                 " is above the max_id " + std::to_string(max_id)
                 );
 
-        if ((min_id > 0) && (j < min_id))
-            throw std::range_error(
-                "The target["+std::to_string(m)+"] = " + std::to_string(i) +
-                " is below the min_id " + std::to_string(min_id)
-                );
-
         // Adding nodes
-        if (dat.find(i) == dat.end())
+        if (dat[i].find(j) == dat[i].end())
             dat[i].insert(std::pair<unsigned int, unsigned int>(j, 1u));
-        else { // Or simply increasing the counter
-
-            auto & dat_i = dat[i];
-            if (dat_i.find(j) == dat_i.end())
-                dat_i[j] = 1u;
-            else
-                dat_i[j]++;
-
-        }
-
-        if (dat.find(j) == dat.end())
-            dat[j] = std::map<unsigned int, unsigned int>();            
+        else
+            dat[i][j]++; 
         
         if (!directed)
         {
 
             if (dat[j].find(i) == dat[j].end())
-            {
-                dat[j][i] = 1u;
-                
-            } else
+                dat[j].insert(std::pair<unsigned int, unsigned int>(j, 1u));
+            else
                 dat[j][i]++;
 
         }
-
-        // Recalculating the limits
-        if (i < static_cast<int>(id_min))
-            id_min = static_cast<unsigned int>(i);
-
-        if (j < static_cast<int>(id_min))
-            id_min = static_cast<unsigned int>(j);
-
-        if (i > static_cast<int>(id_max))
-            id_max = static_cast<unsigned int>(i);
-
-        if (j > static_cast<int>(id_max))
-            id_max = static_cast<unsigned int>(j);
 
         E++;
 
     }
 
-    // Checking if the max found matches the max identified
-    if (max_id >= 0)
-        id_max = static_cast<unsigned int>(max_id);
-
-    if (min_id >= 0)
-        id_min = static_cast<unsigned int>(min_id);
-
-    N = id_max - id_min + 1u;
+    N = size;
 
     return;
 
@@ -2233,10 +2190,9 @@ inline AdjList::AdjList(
 
 inline void AdjList::read_edgelist(
     std::string fn,
+    int size,
     int skip,
-    bool directed,
-    int min_id,
-    int max_id
+    bool directed
 ) {
 
     int i,j;
@@ -2245,12 +2201,11 @@ inline void AdjList::read_edgelist(
     if (!filei)
         throw std::logic_error("The file " + fn + " was not found.");
 
-    id_min = INT_MAX;
-    id_max = INT_MIN;
-
     int linenum = 0;
     std::vector< unsigned int > source_;
     std::vector< unsigned int > target_;
+
+    int max_id = size - 1;
 
     while (!filei.eof())
     {
@@ -2270,28 +2225,16 @@ inline void AdjList::read_edgelist(
         if (filei.fail())
             break;
 
-        if ((max_id > 0) && (i > max_id))
+        if (i > max_id)
             throw std::range_error(
                 "The source["+std::to_string(linenum)+"] = " + std::to_string(i) +
                 " is above the max_id " + std::to_string(max_id)
                 );
 
-        if ((min_id > 0) && (i < min_id))
-            throw std::range_error(
-                "The source["+std::to_string(linenum)+"] = " + std::to_string(i) + 
-                " is below the min_id " + std::to_string(min_id)
-                );
-
-        if ((max_id > 0) && (j > max_id))
+        if (j > max_id)
             throw std::range_error(
                 "The target["+std::to_string(linenum)+"] = " + std::to_string(j) +
                 " is above the max_id " + std::to_string(max_id)
-                );
-
-        if ((min_id > 0) && (j < min_id))
-            throw std::range_error(
-                "The target["+std::to_string(linenum)+"] = " + std::to_string(i) +
-                " is below the min_id " + std::to_string(min_id)
                 );
 
         source_.push_back(i);
@@ -2299,14 +2242,8 @@ inline void AdjList::read_edgelist(
 
     }
 
-    // if (!filei.eof())
-    //     throw std::logic_error(
-    //         "Wrong format found in the AdjList file " +
-    //         fn + " in line " + std::to_string(linenum)
-    //     );
-    
     // Now using the right constructor
-    *this = AdjList(source_,target_,directed,min_id,max_id);
+    *this = AdjList(source_, target_, size, directed);
 
     return;
 
@@ -2316,15 +2253,12 @@ inline std::map<unsigned int,unsigned int> AdjList::operator()(
     unsigned int i
     ) const {
 
-    if ((i < id_min) | (i > id_max))
+    if (i >= N)
         throw std::range_error(
             "The vertex id " + std::to_string(i) + " is not in the network."
             );
 
-    if (dat.find(i) == dat.end())
-        return std::map<unsigned int,unsigned int>();
-    else
-        return dat.find(i)->second;
+    dat[i];
 
 }
 inline void AdjList::print(unsigned int limit) const {
@@ -2332,18 +2266,17 @@ inline void AdjList::print(unsigned int limit) const {
 
     unsigned int counter = 0;
     printf_epiworld("Nodeset:\n");
+    int i = -1;
     for (auto & n : dat)
     {
 
         if (counter++ > limit)
             break;
 
-        int n_neighbors = n.second.size();
-
-        printf_epiworld("  % 3i: {", n.first);
+        printf_epiworld("  % 3i: {", ++i);
         int niter = 0;
-        for (auto n_n : n.second)
-            if (++niter < n_neighbors)
+        for (auto n_n : n)
+            if (++niter < n.size())
             {    
                 printf_epiworld("%i, ", n_n.first);
             }
@@ -2360,16 +2293,6 @@ inline void AdjList::print(unsigned int limit) const {
             );
     }
 
-}
-
-inline unsigned int AdjList::get_id_max() const 
-{
-    return id_max;
-}
-
-inline unsigned int AdjList::get_id_min() const 
-{
-    return id_min;
 }
 
 inline size_t AdjList::vcount() const 
@@ -2512,21 +2435,28 @@ inline void rewire_degseq(
         // Finding what neighbour is id0
         if (!model->is_directed())
         {
+            // Picking 0's alter
             unsigned int n0,n1;
-            Agent<TSeq> & p01 = agents->operator[](p0.get_neighbors()[id01]->get_index());
+            Agent<TSeq> & p01 = agents->operator[](p0.get_neighbors()[id01]->get_id());
             for (n0 = 0; n0 < p01.get_neighbors().size(); ++n0)
             {
+
+                // And getting the id of ego 0
                 if (p0.get_id() == p01.get_neighbors()[n0]->get_id())
                     break;            
             }
 
-            Agent<TSeq> & p11 = agents->operator[](p1.get_neighbors()[id11]->get_index());
+            // Picking 1's alter
+            Agent<TSeq> & p11 = agents->operator[](p1.get_neighbors()[id11]->get_id());
             for (n1 = 0; n1 < p11.get_neighbors().size(); ++n1)
             {
+
+                // And getting the id of ego 1
                 if (p1.get_id() == p11.get_neighbors()[n1]->get_id())
                     break;            
             }
 
+            // Swapping alter's endpoints
             std::swap(p01.get_neighbors()[n0], p11.get_neighbors()[n1]);    
             
         }
@@ -2550,19 +2480,36 @@ inline void rewire_degseq(
 {
 
     // Identifying individuals with degree > 0
+    std::vector< int > nties(agents->vcount(), 0); 
     std::vector< unsigned int > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
     // std::vector< Agent<TSeq> > * agents = model->get_agents();
-    for (auto & p : agents->get_dat())
+    auto & dat = agents->get_dat();
+
+    for (size_t i = 0u; i < dat.size(); ++i)
+        nties[i] += dat[i].size();
+    
+    bool directed = agents->is_directed();
+    for (size_t i = 0u; i < dat.size(); ++i)
     {
-        
-        non_isolates.push_back(p.first);
-        epiworld_double wtemp = static_cast<epiworld_double>(p.second.size());
-        weights.push_back(wtemp);
-
-        nedges += wtemp;
-
+        if (nties[i] > 0)
+        {
+            non_isolates.push_back(i);
+            if (directed)
+            {
+                weights.push_back( 
+                    static_cast<epiworld_double>(nties[i])
+                );
+                nedges += static_cast<epiworld_double>(nties[i]);
+            }
+            else {
+                weights.push_back( 
+                    static_cast<epiworld_double>(nties[i])/2.0
+                );
+                nedges += static_cast<epiworld_double>(nties[i]) / 2.0;
+            }
+        }
     }
 
     if (non_isolates.size() == 0u)
@@ -2786,7 +2733,7 @@ inline AdjList rgraph_ring_lattice(
 
     }
 
-    return AdjList(source, target, directed, 0u, n - 1);
+    return AdjList(source, target, n, directed);
 
 }
 
@@ -2875,9 +2822,9 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 {
 
-    active[p->index]++;
+    active[p->id]++;
     for (auto * n : p->neighbors)
-        active[n->index]++;
+        active[n->id]++;
 
 }
 
@@ -2885,9 +2832,9 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 {
 
-    active[p->index]--;
+    active[p->id]--;
     for (auto * n : p->neighbors)
-        active[n->index]--;
+        active[n->id]--;
 
 }
 
@@ -2999,7 +2946,6 @@ private:
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Agent<TSeq> > population;
-    std::map< int,int >         population_ids;
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses;
@@ -3115,7 +3061,6 @@ public:
 
     void clone_population(
         std::vector< Agent<TSeq> > & p,
-        std::map<int,int> & p_ids,
         bool & d,
         Model<TSeq> * m = nullptr
     ) const ;
@@ -3183,19 +3128,15 @@ public:
      * @param fn std::string Filename of the edgelist file.
      * @param skip int Number of lines to skip in `fn`.
      * @param directed bool Whether the graph is directed or not.
-     * @param min_id int Minimum id number (if negative, the program will
-     * try to guess from the data.)
-     * @param max_id int Maximum id number (if negative, the program will
-     * try to guess from the data.)
+     * @param size Size of the network.
      * @param al AdjList to read into the model.
      */
     ///@{
     void agents_from_adjlist(
         std::string fn,
+        int size,
         int skip = 0,
-        bool directed = false,
-        int min_id = -1,
-        int max_id = -1
+        bool directed = false
         );
     void agents_from_adjlist(AdjList al);
     bool is_directed() const;
@@ -3665,7 +3606,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // Removing old neighbors
     model.clone_population(
         population,
-        population_ids,
         directed,
         this
         );
@@ -3696,7 +3636,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     initialized(std::move(model.initialized)),
     current_date(std::move(model.current_date)),
     population(std::move(model.population)),
-    population_ids(std::move(model.population_ids)),
     directed(std::move(model.directed)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
@@ -3723,14 +3662,12 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
     std::vector< Agent<TSeq> > & p,
-    std::map<int,int> & p_ids,
     bool & d,
     Model<TSeq> * model
 ) const {
 
     // Copy and clean
     p     = population;
-    p_ids = population_ids;
     d     = directed;
 
     for (auto & p: p)
@@ -3748,7 +3685,7 @@ inline void Model<TSeq>::clone_population(
         for (unsigned int n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
-            int loc = p_ids[neigh[n]->get_id()];
+            int loc = p[neigh[n]->get_id()].get_id();
             agent_res.add_neighbor(&p[loc], true, true);
 
         }
@@ -3761,7 +3698,6 @@ inline void Model<TSeq>::clone_population(const Model<TSeq> & m)
 {
     m.clone_population(
         population,
-        population_ids,
         directed,
         this
     );
@@ -4175,14 +4111,13 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
 template<typename TSeq>
 inline void Model<TSeq>::agents_from_adjlist(
     std::string fn,
+    int size,
     int skip,
-    bool directed,
-    int min_id,
-    int max_id
+    bool directed
     ) {
 
     AdjList al;
-    al.read_edgelist(fn, skip, directed, min_id, max_id);
+    al.read_edgelist(fn, size, skip, directed);
     this->agents_from_adjlist(al);
 
 }
@@ -4192,41 +4127,50 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
 
     // Resizing the people
     population.clear();
-    population_ids.clear();
     population.resize(al.vcount(), Agent<TSeq>());
 
     const auto & tmpdat = al.get_dat();
-    
-    int loc;
-    for (const auto & n : tmpdat)
+
+    // Filling the model and ids
+    size_t i = 0u;
+    for (auto & p : population)
     {
-        if (population_ids.find(n.first) == population_ids.end())
-            population_ids[n.first] = population_ids.size();
+        p.model = this;
+        p.id    = i++;
+    }
+    
+    for (size_t i = 0u; i < tmpdat.size(); ++i)
+    {
 
-        loc = population_ids[n.first];
+        population[i].id    = i;
+        population[i].model = this;
 
-        population[loc].model = this;
-        population[loc].id    = n.first;
-        population[loc].index = loc;
-
-        for (const auto & link: n.second)
+        for (const auto & link: tmpdat[i])
         {
 
-            if (population_ids.find(link.first) == population_ids.end())
-                population_ids[link.first] = population_ids.size();
-
-            unsigned int loc_link   = population_ids[link.first];
-            population[loc_link].id    = link.first;
-            population[loc_link].index = loc_link;
-
-            population[loc].add_neighbor(
-                &population[population_ids[link.first]],
+            population[i].add_neighbor(
+                &population[link.first],
                 true, true
                 );
 
         }
 
     }
+
+    #ifdef EPI_DEBUG
+    for (auto & p: population)
+    {
+        if (p.id >= static_cast<int>(al.vcount()))
+            throw std::logic_error(
+                "Agent's id cannot be negative above or equal to the number of agents!");
+
+        for (const auto & n : p.neighbors)
+        {
+            if (n == nullptr)
+                throw std::logic_error("A neighbor cannot be nullptr!");
+        }
+    }
+    #endif
 
 }
 
@@ -4490,12 +4434,31 @@ inline void Model<TSeq>::write_edgelist(
     ) const
 {
 
+    // Figuring out the writing sequence
+    std::vector< const Agent<TSeq> * > wseq(size());
+    for (const auto & p: population)
+        wseq[p.id] = &p;
+
     std::ofstream efile(fn, std::ios_base::out);
     efile << "source target\n";
-    for (const auto & p : population)
+    if (this->is_directed())
     {
-        for (auto & n : p.neighbors)
-            efile << p.id << " " << n->id << "\n";
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors)
+                efile << p->id << " " << n->id << "\n";
+        }
+
+    } else {
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors)
+                if (p->id <= n->id)
+                    efile << p->id << " " << n->id << "\n";
+        }
+
     }
 
 }
@@ -4516,7 +4479,6 @@ inline void Model<TSeq>::reset() {
     {
         backup->clone_population(
             population,
-            population_ids,
             directed,
             this
         );
@@ -6897,7 +6859,7 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 
             // By default, it will be removed from the queue... unless the user
             // says the contrary!
-            (dead_queue == -99) ? -m->get_queue()[p->get_index()] : dead_queue
+            (dead_queue == -99) ? -m->get_queue()[p->get_id()] : dead_queue
             );
 
     } else {
@@ -6993,7 +6955,6 @@ private:
     std::vector< Agent<TSeq> * > neighbors;
     std::vector< Location<TSeq> *> locations;
 
-    int index; ///< Location in the Model
     epiworld_fast_uint status = 0u;
     int id = -1;
     
@@ -7092,7 +7053,6 @@ public:
     ///@}
 
     int get_id() const; ///< Id of the individual
-    unsigned int get_index() const; ///< Location (0, ..., n-1).
     
     std::mt19937 * get_rand_endgine();
     Model<TSeq> * get_model(); 
@@ -7294,14 +7254,13 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     // We can't do anything with the neighbors
     neighbors.reserve(p.neighbors.size());
 
-    index  = p.index;
     status = p.status;
     id     = p.id;
 
-    #ifdef EPI_DEBUG
-    if (index < 0)
-        throw std::logic_error("Index in agents cannot be negative.");
-    #endif
+    // #ifdef EPI_DEBUG
+    // if (id < 0)
+    //     throw std::logic_error("Ids in agents cannot be negative.");
+    // #endif
     
     in_queue = p.in_queue;
 
@@ -7510,12 +7469,6 @@ template<typename TSeq>
 inline int Agent<TSeq>::get_id() const
 {
     return id;
-}
-
-template<typename TSeq>
-inline unsigned int Agent<TSeq>::get_index() const
-{
-    return index;
 }
 
 template<typename TSeq>

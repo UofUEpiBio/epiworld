@@ -116,7 +116,7 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 
             // By default, it will be removed from the queue... unless the user
             // says the contrary!
-            (dead_queue == -99) ? -m->get_queue()[p->get_index()] : dead_queue
+            (dead_queue == -99) ? -m->get_queue()[p->get_id()] : dead_queue
             );
 
     } else {

@@ -99,21 +99,28 @@ inline void rewire_degseq(
         // Finding what neighbour is id0
         if (!model->is_directed())
         {
+            // Picking 0's alter
             unsigned int n0,n1;
-            Agent<TSeq> & p01 = agents->operator[](p0.get_neighbors()[id01]->get_index());
+            Agent<TSeq> & p01 = agents->operator[](p0.get_neighbors()[id01]->get_id());
             for (n0 = 0; n0 < p01.get_neighbors().size(); ++n0)
             {
+
+                // And getting the id of ego 0
                 if (p0.get_id() == p01.get_neighbors()[n0]->get_id())
                     break;            
             }
 
-            Agent<TSeq> & p11 = agents->operator[](p1.get_neighbors()[id11]->get_index());
+            // Picking 1's alter
+            Agent<TSeq> & p11 = agents->operator[](p1.get_neighbors()[id11]->get_id());
             for (n1 = 0; n1 < p11.get_neighbors().size(); ++n1)
             {
+
+                // And getting the id of ego 1
                 if (p1.get_id() == p11.get_neighbors()[n1]->get_id())
                     break;            
             }
 
+            // Swapping alter's endpoints
             std::swap(p01.get_neighbors()[n0], p11.get_neighbors()[n1]);    
             
         }
@@ -137,19 +144,36 @@ inline void rewire_degseq(
 {
 
     // Identifying individuals with degree > 0
+    std::vector< int > nties(agents->vcount(), 0); 
     std::vector< unsigned int > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
     // std::vector< Agent<TSeq> > * agents = model->get_agents();
-    for (auto & p : agents->get_dat())
+    auto & dat = agents->get_dat();
+
+    for (size_t i = 0u; i < dat.size(); ++i)
+        nties[i] += dat[i].size();
+    
+    bool directed = agents->is_directed();
+    for (size_t i = 0u; i < dat.size(); ++i)
     {
-        
-        non_isolates.push_back(p.first);
-        epiworld_double wtemp = static_cast<epiworld_double>(p.second.size());
-        weights.push_back(wtemp);
-
-        nedges += wtemp;
-
+        if (nties[i] > 0)
+        {
+            non_isolates.push_back(i);
+            if (directed)
+            {
+                weights.push_back( 
+                    static_cast<epiworld_double>(nties[i])
+                );
+                nedges += static_cast<epiworld_double>(nties[i]);
+            }
+            else {
+                weights.push_back( 
+                    static_cast<epiworld_double>(nties[i])/2.0
+                );
+                nedges += static_cast<epiworld_double>(nties[i]) / 2.0;
+            }
+        }
     }
 
     if (non_isolates.size() == 0u)
@@ -373,7 +397,7 @@ inline AdjList rgraph_ring_lattice(
 
     }
 
-    return AdjList(source, target, directed, 0u, n - 1);
+    return AdjList(source, target, n, directed);
 
 }
 

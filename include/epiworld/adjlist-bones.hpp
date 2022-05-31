@@ -4,9 +4,8 @@
 class AdjList {
 private:
 
-    std::map<unsigned int,std::map<unsigned int, unsigned int>> dat;
+    std::vector<std::map<unsigned int, unsigned int>> dat;
     bool directed;
-    unsigned int id_min,id_max;
     unsigned int N = 0;
     unsigned int E = 0;
 
@@ -18,31 +17,35 @@ public:
      * @brief Construct a new Adj List object
      * 
      * @details 
-     * It will create an adjacency list object with `maxid - minid + 1`
-     * nodes. If min_id and max_id are not specified (both < 0), then the program will
-     * try to figure them out automatically by looking at the range of the observed
-     * ids.
+     * Ids in the network are assume to range from `0` to `size - 1`.
      * 
      * @param source Unsigned int vector with the source
      * @param target Unsigned int vector with the target
+     * @param size Number of vertices in the network.
      * @param directed Bool true if the network is directed
-     * @param min_id int min id.
-     * @param max_id int max id.
      */
     AdjList(
         const std::vector< unsigned int > & source,
         const std::vector< unsigned int > & target,
-        bool directed,
-        int min_id = -1,
-        int max_id = -1
+        int size,
+        bool directed
         );
 
+    /**
+     * @brief Read an edgelist
+     * 
+     * Ids in the network are assume to range from `0` to `size - 1`.
+     * 
+     * @param fn Path to the file
+     * @param skip Number of lines to skip (e.g., 1 if there's a header)
+     * @param directed `true` if the network is directed
+     * @param size Number of vertices in the network.
+     */
     void read_edgelist(
         std::string fn,
+        int size,
         int skip = 0,
-        bool directed = true,
-        int min_id = -1,
-        int max_id = -1
+        bool directed = true
         );
 
     std::map<unsigned int, unsigned int> operator()(
@@ -50,16 +53,14 @@ public:
         ) const;
         
     void print(unsigned int limit = 20u) const;
-    unsigned int get_id_max() const;
-    unsigned int get_id_min() const;
-    size_t vcount() const;
-    size_t ecount() const;
+    size_t vcount() const; ///< Number of vertices/nodes in the network.
+    size_t ecount() const; ///< Number of edges/arcs/ties in the network.
     
-    std::map<unsigned int,std::map<unsigned int,unsigned int>> & get_dat() {
+    std::vector<std::map<unsigned int,unsigned int>> & get_dat() {
         return dat;
     };
 
-    bool is_directed() const;
+    bool is_directed() const; ///< `true` if the network is directed.
 
 };
 

@@ -45,7 +45,12 @@ int main() {
     model.add_status("Recovered");
     model.add_status("Removed");
 
-    model.agents_from_adjlist("edgelist.txt", 0, false);
+    model.agents_from_adjlist(
+        "edgelist.txt", // Filepath
+        1000,           // Vertex count
+        0,              // Lines to skip
+        false           // Directed?
+        );
 
     // Setting up the model parameters 
     model.add_param(0.001, "Mutation rate");
