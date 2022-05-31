@@ -7,11 +7,24 @@ class Model;
 template<typename TSeq>
 class Agent;
 
+/**
+ * @brief Sample from neighbors pool of viruses (at most one)
+ * 
+ * This function samples at most one virus from the pool of
+ * viruses from its neighbors. If no virus is selected, the function
+ * returns a `nullptr`, otherwise it returns a pointer to the
+ * selected virus.
+ * 
+ * This can be used to build a new update function (EPI_NEW_UPDATEFUN.)
+ * 
+ * @tparam TSeq 
+ * @param p Pointer to person 
+ * @param m Pointer to the model
+ * @return Virus<TSeq>* of the selected virus. If none selected (or none
+ * available,) returns a nullptr;
+ */
 template<typename TSeq = int>
-inline void default_update_susceptible(
-    Agent<TSeq> * p,
-    Model<TSeq> * m
-    )
+inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 {
 
     if (p->get_n_viruses() > 0u)
@@ -50,15 +63,33 @@ inline void default_update_susceptible(
 
     // No virus to compute
     if (nvariants_tmp == 0u)
-        return;
+        return nullptr;
 
     // Running the roulette
     int which = roulette(nvariants_tmp, m);
 
     if (which < 0)
-        return;
+        return nullptr;
 
-    p->add_virus(*m->array_virus_tmp[which]); 
+    return m->array_virus_tmp[which]; 
+    
+}
+
+
+
+template<typename TSeq = int>
+inline void default_update_susceptible(
+    Agent<TSeq> * p,
+    Model<TSeq> * m
+    )
+{
+
+    Virus<TSeq> * virus = sample_virus_single<TSeq>(p, m);
+    
+    if (virus == nullptr)
+        return
+
+    p->add_virus(*virus); 
 
     return;
 
