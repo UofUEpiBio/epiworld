@@ -145,7 +145,7 @@ inline void AdjList::print(unsigned int limit) const {
         printf_epiworld("  % 3i: {", ++i);
         int niter = 0;
         for (auto n_n : n)
-            if (++niter < n.size())
+            if (++niter < static_cast<int>(n.size()))
             {    
                 printf_epiworld("%i, ", n_n.first);
             }
