@@ -1,4 +1,5 @@
 // #include "../../include/epiworld/epiworld.hpp"
+#include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/models/sir.hpp"
 #include "../../include/epiworld/math/lfmcmc.hpp"
 
@@ -18,7 +19,7 @@ std::vector< int > simfun(
 
     model.reset();
     model.run();
-       
+           
     std::vector< int > res;
     model.get_db().get_today_total(nullptr, &res);
 
@@ -48,19 +49,23 @@ int main()
 {
     
     set_up_sir(model, "covid", .1, .9, 0, .5, 1.0);
+    model.agents_smallworld(500);
 
     // Creating a new LFMCMC model
     LFMCMC<std::vector< int >> lfmcmc;
 
     lfmcmc.set_simulation_fun(simfun);
     lfmcmc.set_summary_fun(sumfun);
-    lfmcmc.set_proposal_fun(default_proposal_fun_unif<std::vector<int>>);
+    // lfmcmc.set_proposal_fun(default_proposal_fun_unif<std::vector<int>>);
+    lfmcmc.set_proposal_fun(make_proposal_norm_reflective<std::vector<int>>(.5, 0, 1));
+    lfmcmc.set_kernel_fun(default_kernel_fun_gaussian<std::vector<int>>);
 
     // Simulating some data
     model.init(50, 122);
     model.set_backup();
     model.verbose_off();
     model.run();
+    model.print();
 
     std::vector< int > obs_dat;
     model.get_db().get_today_total(nullptr, &obs_dat);
@@ -69,10 +74,12 @@ int main()
 
     std::vector< epiworld_double > par0 = {.5, .5};
 
-    lfmcmc.run(par0, 1000, .01);
+    lfmcmc.run(par0, 1000, 1);
 
+    auto res = lfmcmc.get_params_now();
 
-    printf("True: {%.2f, .%2f}\n", .9, .5);
+    printf("True      : {%.2f, .%2f}\n", .9, .5);
+    printf("Recovered : {%.2f, .%2f}\n", res[0], res[1]);
 
   
 }

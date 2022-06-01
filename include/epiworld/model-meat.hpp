@@ -923,6 +923,9 @@ template<typename TSeq>
 inline void Model<TSeq>::run() 
 {
 
+    if (size() == 0u)
+        throw std::logic_error("There's no agents in this model!");
+
     // Initializing the simulation
     chrono_start();
     EPIWORLD_RUN((*this))

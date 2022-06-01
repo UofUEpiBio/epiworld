@@ -21,6 +21,59 @@ inline void default_proposal_fun(
 }
 
 template<typename TData>
+inline std::function<void(VEC( epiworld_double )&,LFMCMC<TData>*)> make_proposal_norm_reflective(
+    epiworld_double scale,
+    epiworld_double lb = std::numeric_limits<epiworld_double>::min(),
+    epiworld_double ub = std::numeric_limits<epiworld_double>::max()
+) {
+
+    std::function<void(VEC( epiworld_double )&,LFMCMC<TData>*)> fun =
+        [scale,lb,ub](
+            VEC( epiworld_double )& params_now,
+            LFMCMC<TData>* m
+        ) {
+
+        // Making the proposal
+        const std::vector< epiworld_double > & params_prev = m->get_params_prev();
+        for (size_t p = 0u; p < m->get_n_parameters(); ++p)
+            params_now[p] = params_prev[p] + m->rnorm() * scale;
+
+        // Checking boundaries
+        epiworld_double d = ub - lb;
+        int odd;
+        epiworld_double d_above, d_below;
+        for (auto & p : params_now)
+        {
+
+            if (p > ub)
+            {
+                d_above = p - ub;
+                odd     = static_cast<int>(std::floor(d_above / d)) % 2;
+                d_above = d_above - std::floor(d_above / d) * d;
+
+                p = (lb + d_above) * odd +
+                    (ub - d_above) * (1 - odd);
+
+            } else if (p < lb)
+            {
+                d_below = lb - p;
+                int odd = static_cast<int>(std::floor(d_below / d)) % 2;
+                d_below = d_below - std::floor(d_below / d) * d;
+
+                p = (ub - d_below) * odd +
+                    (lb + d_above) * (1 - odd);
+            }
+
+        }
+
+        return;
+
+    };
+
+    return fun;
+}
+
+template<typename TData>
 inline void default_proposal_fun_unif(
     VEC( epiworld_double )& params_now,
     LFMCMC<TData>* m
@@ -56,6 +109,24 @@ inline epiworld_double default_kernel_fun(
     return std::sqrt(ans) < epsilon ? 1.0 : 0.0;
 
 }
+
+template<typename TData>
+inline epiworld_double default_kernel_fun_gaussian(
+    VEC( epiworld_double )& stats_now,
+    epiworld_double epsilon,
+    LFMCMC<TData>* m
+) {
+
+    epiworld_double ans = 0.0;
+    const VEC(epiworld_double) & stats_obs = m->get_statistics_obs();
+    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
+        ans += std::pow(stats_obs[p] - stats_now[p], 2.0);
+
+    return std::exp(-.5 * (ans/std::pow(1 + std::pow(epsilon, 2.0)/3.0, 2.0)))/std::sqrt(2.0 * 3.141593);
+
+}
+
+
 
 /**
  * @brief Likelihood-Free Markov Chain Monte Carlo
@@ -217,7 +288,7 @@ inline void LFMCMC<TData>::run(
     if (sampled_data != nullptr)
         sampled_data->resize(n_samples);
 
-    std::swap(params_now, params_init);
+    params_now = params_init;
     TData data_i = simulation_fun(params_now, this);
 
     VEC( epiworld_double ) stats_i = summary_fun(data_i, this);
@@ -245,7 +316,6 @@ inline void LFMCMC<TData>::run(
 
         // Step 4: Compute the hastings ratio using the kernel function
         double hr = kernel_fun(stats_i, epsilon, this);
-        posterior_lf_prob[i] = hr;     
 
         hr = std::min(1.0, hr / posterior_lf_prob[i - 1u]);
 
@@ -262,9 +332,13 @@ inline void LFMCMC<TData>::run(
         // Step 5: Update if likely
         if (r < hr)
         {
+            posterior_lf_prob[i] = hr;
             statistics_accepted[i] = true;
-            std::swap(params_prev, params_now);
+            params_prev = params_now;
 
+        } else {
+            posterior_lf_prob[i-1] = posterior_lf_prob[i];
+            params_now = params_prev;
         }
 
         for (size_t k = 0u; k < n_parameters; ++k)
