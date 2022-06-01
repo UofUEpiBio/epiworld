@@ -4,6 +4,130 @@
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
 
+/**
+ * @brief Function factory for saving model runs
+ * 
+ * @details This function is the default behavior of the `run_multiple`
+ * member of `Model<TSeq>`. By default only the total history (
+ * case counts by unit of time.)
+ * 
+ * @tparam TSeq 
+ * @param fmt 
+ * @param total_hist 
+ * @param variant_info 
+ * @param variant_hist 
+ * @param tool_info 
+ * @param tool_hist 
+ * @param transmission 
+ * @param transition 
+ * @return std::function<void(size_t,Model<TSeq>*)> 
+ */
+template<typename TSeq>
+inline std::function<void(size_t,Model<TSeq>*)> save_run(
+    std::string fmt,
+    bool total_hist,
+    bool variant_info,
+    bool variant_hist,
+    bool tool_info,
+    bool tool_hist,
+    bool transmission,
+    bool transition
+    )
+{
+
+    // Counting number of %
+    int n_fmt = 0;
+    for (auto & f : fmt)
+        if (f == '%')
+            n_fmt++;
+
+    if (n_fmt != 1)
+        throw std::logic_error("The -fmt- argument must have only one \"%\" symbol.");
+
+    // Listting things to save
+    std::vector< bool > what_to_save = {
+        variant_info,
+        variant_hist,
+        tool_info,
+        tool_hist,
+        total_hist,
+        transmission,
+        transition
+    };
+
+    std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
+        size_t niter, Model<TSeq> * m
+    ) -> void {
+    //     std::string fn_variant_info,
+
+
+        std::string variant_info = "";
+        std::string variant_hist = "";
+        std::string tool_info = "";
+        std::string tool_hist = "";
+        std::string total_hist = "";
+        std::string transmission = "";
+        std::string transition = "";
+
+        char buff[128];
+        if (what_to_save[0u])
+        {
+            variant_info = fmt + std::string("_variant_info.csv");
+            snprintf(buff, sizeof(buff), variant_info.c_str(), niter);
+            variant_info = buff;
+        } 
+        if (what_to_save[1u])
+        {
+            variant_hist = fmt + std::string("_variant_hist.csv");
+            snprintf(buff, sizeof(buff), variant_hist.c_str(), niter);
+            variant_hist = buff;
+        } 
+        if (what_to_save[2u])
+        {
+            tool_info = fmt + std::string("_tool_info.csv");
+            snprintf(buff, sizeof(buff), tool_info.c_str(), niter);
+            tool_info = buff;
+        } 
+        if (what_to_save[3u])
+        {
+            tool_hist = fmt + std::string("_tool_hist.csv");
+            snprintf(buff, sizeof(buff), tool_hist.c_str(), niter);
+            tool_hist = buff;
+        } 
+        if (what_to_save[4u])
+        {
+            total_hist = fmt + std::string("_total_hist.csv");
+            snprintf(buff, sizeof(buff), total_hist.c_str(), niter);
+            total_hist = buff;
+        } 
+        if (what_to_save[5u])
+        {
+            transmission = fmt + std::string("_transmission.csv");
+            snprintf(buff, sizeof(buff), transmission.c_str(), niter);
+            transmission = buff;
+        } 
+        if (what_to_save[6u])
+        {
+            transition = fmt + std::string("_transition.csv");
+            snprintf(buff, sizeof(buff), transition.c_str(), niter);
+            transition = buff;
+        } 
+    
+        m->write_data(
+            variant_info,
+            variant_hist,
+            tool_info,
+            tool_hist,
+            total_hist,
+            transmission,
+            transition
+        );
+
+    };
+
+    return saver;
+}
+
 template<typename TSeq>
 inline void Model<TSeq>::actions_add(
     Agent<TSeq> * agent_,
@@ -829,7 +953,7 @@ inline void Model<TSeq>::run()
 template<typename TSeq>
 inline void Model<TSeq>::run_multiple(
     unsigned int nexperiments,
-    std::function<void(Model<TSeq>*)> fun,
+    std::function<void(size_t,Model<TSeq>*)> fun,
     bool reset,
     bool verbose
 )
@@ -863,9 +987,10 @@ inline void Model<TSeq>::run_multiple(
         
         run();
 
-        fun(this);
+        if (fun)
+            fun(n, this);
 
-        if (n < (nexperiments - 1u) && reset)
+        if ((n < (nexperiments - 1u)) && reset)
             this->reset();
 
         if (verbose)

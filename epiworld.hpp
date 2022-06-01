@@ -2921,6 +2921,18 @@ inline epiworld_double death_reduction_mixer_default(
     Model<TSeq>* m
     );
 
+template<typename TSeq = int>
+inline std::function<void(size_t,Model<TSeq>*)> save_run(
+    std::string fmt = "%03lu-episimulation.csv",
+    bool total_hist = true,
+    bool variant_info = false,
+    bool variant_hist = false,
+    bool tool_info = false,
+    bool tool_hist = false,
+    bool transmission = false,
+    bool transition = false
+    );
+
 // template<typename TSeq>
 // class VirusPtr;
 
@@ -2946,6 +2958,8 @@ private:
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Agent<TSeq> > population;
+    double * population_data = nullptr;
+    size_t population_data_n_features = 0u;
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses;
@@ -3166,9 +3180,9 @@ public:
     void run(); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
         unsigned int nexperiments,
-        std::function<void(Model<TSeq>*)> fun,
-        bool reset,
-        bool verbose
+        std::function<void(size_t,Model<TSeq>*)> fun = save_run<TSeq>(),
+        bool reset = true,
+        bool verbose = true
         );
     ///@}
 
@@ -3413,6 +3427,130 @@ public:
 
 #define CHECK_INIT() if (!initialized) \
         throw std::logic_error("Model not initialized.");
+
+/**
+ * @brief Function factory for saving model runs
+ * 
+ * @details This function is the default behavior of the `run_multiple`
+ * member of `Model<TSeq>`. By default only the total history (
+ * case counts by unit of time.)
+ * 
+ * @tparam TSeq 
+ * @param fmt 
+ * @param total_hist 
+ * @param variant_info 
+ * @param variant_hist 
+ * @param tool_info 
+ * @param tool_hist 
+ * @param transmission 
+ * @param transition 
+ * @return std::function<void(size_t,Model<TSeq>*)> 
+ */
+template<typename TSeq>
+inline std::function<void(size_t,Model<TSeq>*)> save_run(
+    std::string fmt,
+    bool total_hist,
+    bool variant_info,
+    bool variant_hist,
+    bool tool_info,
+    bool tool_hist,
+    bool transmission,
+    bool transition
+    )
+{
+
+    // Counting number of %
+    int n_fmt = 0;
+    for (auto & f : fmt)
+        if (f == '%')
+            n_fmt++;
+
+    if (n_fmt != 1)
+        throw std::logic_error("The -fmt- argument must have only one \"%\" symbol.");
+
+    // Listting things to save
+    std::vector< bool > what_to_save = {
+        variant_info,
+        variant_hist,
+        tool_info,
+        tool_hist,
+        total_hist,
+        transmission,
+        transition
+    };
+
+    std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
+        size_t niter, Model<TSeq> * m
+    ) -> void {
+    //     std::string fn_variant_info,
+
+
+        std::string variant_info = "";
+        std::string variant_hist = "";
+        std::string tool_info = "";
+        std::string tool_hist = "";
+        std::string total_hist = "";
+        std::string transmission = "";
+        std::string transition = "";
+
+        char buff[128];
+        if (what_to_save[0u])
+        {
+            variant_info = fmt + std::string("_variant_info.csv");
+            snprintf(buff, sizeof(buff), variant_info.c_str(), niter);
+            variant_info = buff;
+        } 
+        if (what_to_save[1u])
+        {
+            variant_hist = fmt + std::string("_variant_hist.csv");
+            snprintf(buff, sizeof(buff), variant_hist.c_str(), niter);
+            variant_hist = buff;
+        } 
+        if (what_to_save[2u])
+        {
+            tool_info = fmt + std::string("_tool_info.csv");
+            snprintf(buff, sizeof(buff), tool_info.c_str(), niter);
+            tool_info = buff;
+        } 
+        if (what_to_save[3u])
+        {
+            tool_hist = fmt + std::string("_tool_hist.csv");
+            snprintf(buff, sizeof(buff), tool_hist.c_str(), niter);
+            tool_hist = buff;
+        } 
+        if (what_to_save[4u])
+        {
+            total_hist = fmt + std::string("_total_hist.csv");
+            snprintf(buff, sizeof(buff), total_hist.c_str(), niter);
+            total_hist = buff;
+        } 
+        if (what_to_save[5u])
+        {
+            transmission = fmt + std::string("_transmission.csv");
+            snprintf(buff, sizeof(buff), transmission.c_str(), niter);
+            transmission = buff;
+        } 
+        if (what_to_save[6u])
+        {
+            transition = fmt + std::string("_transition.csv");
+            snprintf(buff, sizeof(buff), transition.c_str(), niter);
+            transition = buff;
+        } 
+    
+        m->write_data(
+            variant_info,
+            variant_hist,
+            tool_info,
+            tool_hist,
+            total_hist,
+            transmission,
+            transition
+        );
+
+    };
+
+    return saver;
+}
 
 template<typename TSeq>
 inline void Model<TSeq>::actions_add(
@@ -4239,7 +4377,7 @@ inline void Model<TSeq>::run()
 template<typename TSeq>
 inline void Model<TSeq>::run_multiple(
     unsigned int nexperiments,
-    std::function<void(Model<TSeq>*)> fun,
+    std::function<void(size_t,Model<TSeq>*)> fun,
     bool reset,
     bool verbose
 )
@@ -4273,9 +4411,10 @@ inline void Model<TSeq>::run_multiple(
         
         run();
 
-        fun(this);
+        if (fun)
+            fun(n, this);
 
-        if (n < (nexperiments - 1u) && reset)
+        if ((n < (nexperiments - 1u)) && reset)
             this->reset();
 
         if (verbose)
@@ -5329,7 +5468,6 @@ class Agent;
 
 template<typename TSeq>
 class Virus;
-
 
 template<typename TSeq>
 class Model;
@@ -6609,55 +6747,52 @@ inline void Tool<TSeq>::get_queue(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/location-bones.hpp-
+ Start of -include/epiworld/entity-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_LOCATION_BONES_HPP
-#define EPIWORLD_LOCATION_BONES_HPP
+#ifndef EPIWORLD_ENTITY_BONES_HPP
+#define EPIWORLD_ENTITY_BONES_HPP
 
 template<typename TSeq>
 class Agent;
 
 template<typename TSeq>
-class Location {
+class Entity {
 private:
     
-    int capacity = 0;
-    std::string location_name = "Unknown Location";
-
     std::vector< Agent<TSeq> * > agents;
     size_t n_agents = 0u;
 
-    /**
-     * @brief Spatial location parameters
-     * 
-     */
-    ///@{
-    epiworld_double longitude = 0.0;
-    epiworld_double latitude  = 0.0;
-    epiworld_double altitude  = 0.0;
-    ///@}
+    int max_capacity = -1;
+    std::string entity_name = "Unknown entity";
+
+    std::vector< epiworld_double > location = {0.0}; ///< An arbitrary vector for location
+    
 
 public:
 
-    Location() {};
+    Entity() {};
 
     void add_agent(Agent<TSeq> & p);
     void add_agent(Agent<TSeq> * p);
     void rm_agent(size_t idx);
     size_t size() const noexcept;
-    void set_location(int lon, int lat, int alt = 0);
+    void set_location(std::vector< epiworld_double > loc);
+    std::vector< epiworld_double > & get_location();
 
     typename std::vector< Agent<TSeq> * >::iterator begin();
     typename std::vector< Agent<TSeq> * >::iterator end();
 
+    typename std::vector< Agent<TSeq> * >::const_iterator begin() const;
+    typename std::vector< Agent<TSeq> * >::const_iterator end() const;
+
 };
 
 template<typename TSeq>
-inline void Location<TSeq>::add_agent(Agent<TSeq> & p)
+inline void Entity<TSeq>::add_agent(Agent<TSeq> & p)
 {
     if (++n_agents <= agents.size())
         agents.push_back(&p);
@@ -6666,7 +6801,7 @@ inline void Location<TSeq>::add_agent(Agent<TSeq> & p)
 }
 
 template<typename TSeq>
-inline void Location<TSeq>::add_agent(Agent<TSeq> * p)
+inline void Entity<TSeq>::add_agent(Agent<TSeq> * p)
 {
     if (++n_agents <= agents.size())
         agents.push_back(p);
@@ -6675,7 +6810,7 @@ inline void Location<TSeq>::add_agent(Agent<TSeq> * p)
 }
 
 template<typename TSeq>
-inline void Location<TSeq>::rm_agent(size_t idx)
+inline void Entity<TSeq>::rm_agent(size_t idx)
 {
     if (idx >= n_agents)
         throw std::out_of_range(
@@ -6690,21 +6825,25 @@ inline void Location<TSeq>::rm_agent(size_t idx)
 }
 
 template<typename TSeq>
-inline size_t Location<TSeq>::size() const noexcept
+inline size_t Entity<TSeq>::size() const noexcept
 {
     return n_agents;
 }
 
 template<typename TSeq>
-inline void Location<TSeq>::set_location(int lon, int lat, int alt)
+inline void Entity<TSeq>::set_location(std::vector< epiworld_double > loc)
 {
-    longitude = lon;
-    latitude  = lat;
-    altitude  = alt;
+    location = loc;
 }
 
 template<typename TSeq>
-inline typename std::vector< Agent<TSeq> * >::iterator Location<TSeq>::begin()
+inline std::vector< epiworld_double > & Entity<TSeq>::get_location()
+{
+    return location;
+}
+
+template<typename TSeq>
+inline typename std::vector< Agent<TSeq> * >::iterator Entity<TSeq>::begin()
 {
 
     if (n_agents == 0)
@@ -6715,7 +6854,24 @@ inline typename std::vector< Agent<TSeq> * >::iterator Location<TSeq>::begin()
 }
 
 template<typename TSeq>
-inline typename std::vector< Agent<TSeq> * >::iterator Location<TSeq>::end()
+inline typename std::vector< Agent<TSeq> * >::iterator Entity<TSeq>::end()
+{
+    return agents.begin() + n_agents;
+}
+
+template<typename TSeq>
+inline typename std::vector< Agent<TSeq> * >::const_iterator Entity<TSeq>::begin() const
+{
+
+    if (n_agents == 0)
+        return agents.end();
+
+    return agents.begin();
+
+}
+
+template<typename TSeq>
+inline typename std::vector< Agent<TSeq> * >::const_iterator Entity<TSeq>::end() const
 {
     return agents.begin() + n_agents;
 }
@@ -6725,7 +6881,7 @@ inline typename std::vector< Agent<TSeq> * >::iterator Location<TSeq>::end()
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/location-bones.hpp-
+ End of -include/epiworld/entity-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6750,11 +6906,24 @@ class Model;
 template<typename TSeq>
 class Agent;
 
+/**
+ * @brief Sample from neighbors pool of viruses (at most one)
+ * 
+ * This function samples at most one virus from the pool of
+ * viruses from its neighbors. If no virus is selected, the function
+ * returns a `nullptr`, otherwise it returns a pointer to the
+ * selected virus.
+ * 
+ * This can be used to build a new update function (EPI_NEW_UPDATEFUN.)
+ * 
+ * @tparam TSeq 
+ * @param p Pointer to person 
+ * @param m Pointer to the model
+ * @return Virus<TSeq>* of the selected virus. If none selected (or none
+ * available,) returns a nullptr;
+ */
 template<typename TSeq = int>
-inline void default_update_susceptible(
-    Agent<TSeq> * p,
-    Model<TSeq> * m
-    )
+inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 {
 
     if (p->get_n_viruses() > 0u)
@@ -6793,15 +6962,33 @@ inline void default_update_susceptible(
 
     // No virus to compute
     if (nvariants_tmp == 0u)
-        return;
+        return nullptr;
 
     // Running the roulette
     int which = roulette(nvariants_tmp, m);
 
     if (which < 0)
+        return nullptr;
+
+    return m->array_virus_tmp[which]; 
+    
+}
+
+
+
+template<typename TSeq = int>
+inline void default_update_susceptible(
+    Agent<TSeq> * p,
+    Model<TSeq> * m
+    )
+{
+
+    Virus<TSeq> * virus = sample_virus_single<TSeq>(p, m);
+    
+    if (virus == nullptr)
         return;
 
-    p->add_virus(*m->array_virus_tmp[which]); 
+    p->add_virus(*virus); 
 
     return;
 
@@ -6845,23 +7032,8 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
     {
 
         size_t which_v = std::ceil(which / 2);
+        p->rm_agent_by_virus(which_v);
         
-        // Retrieving the default values of the virus
-        epiworld::VirusPtr<TSeq> & v = p->get_viruses()[which_v];
-        epiworld_fast_int dead_status, dead_queue;
-        v->get_status(nullptr, nullptr, &dead_status);
-        v->get_queue(nullptr, nullptr, &dead_queue);
-
-        // Applying change of status
-        p->change_status(
-            // Either preserve the current status or apply a new one
-            (dead_status < 0) ? p->get_status() : static_cast<epiworld_fast_uint>(dead_status),
-
-            // By default, it will be removed from the queue... unless the user
-            // says the contrary!
-            (dead_queue == -99) ? -m->get_queue()[p->get_id()] : dead_queue
-            );
-
     } else {
 
         size_t which_v = std::floor(which / 2);
@@ -6953,7 +7125,7 @@ private:
     Model<TSeq> * model;
     
     std::vector< Agent<TSeq> * > neighbors;
-    std::vector< Location<TSeq> *> locations;
+    std::vector< Entity<TSeq> *> entities;
 
     epiworld_fast_uint status = 0u;
     int id = -1;
@@ -7037,6 +7209,18 @@ public:
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
+
+    void rm_agent_by_virus(
+        epiworld_fast_uint virus_idx,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    ); ///< Agent removed by virus
+
+    void rm_agent_by_virus(
+        VirusPtr<TSeq> & virus,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    ); ///< Agent removed by virus
     ///@}
     
     /**
@@ -7433,6 +7617,74 @@ inline void Agent<TSeq>::rm_virus(
         this, virus, nullptr, status_new, queue, default_rm_virus<TSeq>
         );
 
+
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::rm_agent_by_virus(
+    epiworld_fast_uint virus_idx,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (status_new == -99)
+        status_new = status;
+
+    if (virus_idx >= n_viruses)
+        throw std::range_error(
+            std::string("The virus trying to remove the agent is out of range. ") +
+            std::string("This agent has only ") + std::to_string(n_viruses) + 
+            std::string(" and you are trying to remove virus # ") +
+            std::to_string(virus_idx) + std::string(".")
+            );
+
+    // Removing viruses
+    for (size_t i = 0u; i < n_viruses; ++i)
+    {
+        if (i != virus_idx)
+            rm_virus(i);
+    }
+
+    // Changing status to new_status
+    VirusPtr<TSeq> & v = viruses[virus_idx];
+    epiworld_fast_int dead_status, dead_queue;
+    v->get_status(nullptr, nullptr, &dead_status);
+    v->get_queue(nullptr, nullptr, &dead_queue);
+
+    if (queue != -99)
+        dead_queue = queue;
+
+    change_status(
+        // Either preserve the current status or apply a new one
+        (dead_status < 0) ? status : static_cast<epiworld_fast_uint>(dead_status),
+
+        // By default, it will be removed from the queue... unless the user
+        // says the contrary!
+        (dead_queue == -99) ? -model->get_queue()[id] : dead_queue
+    );
+
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::rm_agent_by_virus(
+    VirusPtr<TSeq> & virus,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (virus->get_host() == nullptr)
+        throw std::logic_error("The virus trying to remove the agent has no host.");
+
+    if (virus->get_agent()->id != id)
+        throw std::logic_error("Viruses can only remove their hosts'.");
+
+    rm_agent_by_virus(
+        virus->agent_idx,
+        status_new,
+        queue
+    );
 
 }
 

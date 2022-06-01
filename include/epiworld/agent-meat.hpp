@@ -322,6 +322,74 @@ inline void Agent<TSeq>::rm_virus(
 }
 
 template<typename TSeq>
+inline void Agent<TSeq>::rm_agent_by_virus(
+    epiworld_fast_uint virus_idx,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (status_new == -99)
+        status_new = status;
+
+    if (virus_idx >= n_viruses)
+        throw std::range_error(
+            std::string("The virus trying to remove the agent is out of range. ") +
+            std::string("This agent has only ") + std::to_string(n_viruses) + 
+            std::string(" and you are trying to remove virus # ") +
+            std::to_string(virus_idx) + std::string(".")
+            );
+
+    // Removing viruses
+    for (size_t i = 0u; i < n_viruses; ++i)
+    {
+        if (i != virus_idx)
+            rm_virus(i);
+    }
+
+    // Changing status to new_status
+    VirusPtr<TSeq> & v = viruses[virus_idx];
+    epiworld_fast_int dead_status, dead_queue;
+    v->get_status(nullptr, nullptr, &dead_status);
+    v->get_queue(nullptr, nullptr, &dead_queue);
+
+    if (queue != -99)
+        dead_queue = queue;
+
+    change_status(
+        // Either preserve the current status or apply a new one
+        (dead_status < 0) ? status : static_cast<epiworld_fast_uint>(dead_status),
+
+        // By default, it will be removed from the queue... unless the user
+        // says the contrary!
+        (dead_queue == -99) ? -model->get_queue()[id] : dead_queue
+    );
+
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::rm_agent_by_virus(
+    VirusPtr<TSeq> & virus,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (virus->get_host() == nullptr)
+        throw std::logic_error("The virus trying to remove the agent has no host.");
+
+    if (virus->get_agent()->id != id)
+        throw std::logic_error("Viruses can only remove their hosts'.");
+
+    rm_agent_by_virus(
+        virus->agent_idx,
+        status_new,
+        queue
+    );
+
+}
+
+template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
     VirusPtr<TSeq> v
 ) {

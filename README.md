@@ -16,7 +16,7 @@ building complex models quickly. Here are some of its main features:
 
 Various examples can be found in the [examples](examples) folder.
 
-# Hello world
+## Hello world
 
 Here is a simple SIR model implemented with `epiworld`. The source code
 can be found [here](readme.cpp), and you can compile the code as follows:
@@ -106,7 +106,67 @@ Distribution of the population at time 100:
 
 Which took about 0.134 seconds (~ 7.5 million ppl x day / second).
 
-## Tools
+## Simulation Steps
+
+The core logic of the model relies on user-defined statuses and their corresponding
+update functions. In particular, the model does not have a predefined set of statuses,
+e.g., susceptible, infected, recovered; it is the user who establishes them. This
+provides a great deal of flexibility as models in `epiworld` can have an arbitrary
+set of statuses.
+
+Like most other ABM, `epiworld` simulates the evolution of a system in discrete steps.
+Each step represents a day in the system, and changes are reflected at the beginning
+of the following day. Therefore, agents can become recovered and transmit a virus
+on the same day. A single step of `epiworld` features the following procedures:
+
+1. **Status update**: Agents are updated according to the status they are at.
+
+2. (optional) **Execute global actions**: A call of user-defined functions affecting
+the system. These can make any type of change in the system.
+
+3. (optional) **Apply rewiring algorithm**: When specified, the network is rewired
+according to a user-defined function.
+
+4. **Lock the results**: The current date is incremented in one unit and
+  the changes (exposition, new infections, recoveries, etc.) are recorded
+  in the database. 
+
+5. (optional) **Mutate Variants**: When defined, variants can mutate, with the new
+variants appearing the next day.
+
+To speed up computations, `epiworld` uses by default a queuing system that decides which
+agents will be active during each step and which will not. Agents are active when either
+they or at least one of their neighbors has a virus active. Agents' updates are triggered
+only for those who are in the queue, which in most cases accelerates the completion of
+the current step.
+
+## Agents
+
+Agents carry two sets of important information: viruses and tools. Each agent
+can have multiple instances of them, meaning that multiple viruses and tools can
+coexist in a model. At each step of the simulation, an agent can face the following
+changes:
+
+- **Acquire a virus (`add_virus()`)**: Become exposed to a particular virus+host.
+
+- **Lose a virus (`rm_virus()`)**: Removing a virus from the agent. Losing a virus
+triggers a call to the virus's `postrecovery()` function, which can, for example,
+result in gaining immunity to that variant. 
+
+- **Change status (`change_status()`)**: An arbitrary change in the status of the
+agent. Examples of this are moving from "exposed" to "infected," from "infected"
+to "ICU," etc.
+
+- **Become removed (`rm_agent_by_virus()`)**: An agent becomes inactive after its
+condition becoming worse. In such a case, all viruses attached to the agent are
+removed as well.
+
+Any action in the model can trigger a change in its queuing system. By default,
+becoming exposed makes the agent (and its neighbors) active in the queuing system.
+Likewise, losing all viruses could make the agent and its neighbors inactive.
+
+<!-- 
+## Tools -->
 
 ## Contagion
 

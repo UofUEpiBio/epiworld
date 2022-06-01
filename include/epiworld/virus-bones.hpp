@@ -7,7 +7,6 @@ class Agent;
 template<typename TSeq>
 class Virus;
 
-
 template<typename TSeq>
 class Model;
 

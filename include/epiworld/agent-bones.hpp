@@ -59,7 +59,7 @@ private:
     Model<TSeq> * model;
     
     std::vector< Agent<TSeq> * > neighbors;
-    std::vector< Location<TSeq> *> locations;
+    std::vector< Entity<TSeq> *> entities;
 
     epiworld_fast_uint status = 0u;
     int id = -1;
@@ -143,6 +143,18 @@ public:
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
+
+    void rm_agent_by_virus(
+        epiworld_fast_uint virus_idx,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    ); ///< Agent removed by virus
+
+    void rm_agent_by_virus(
+        VirusPtr<TSeq> & virus,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    ); ///< Agent removed by virus
     ///@}
     
     /**

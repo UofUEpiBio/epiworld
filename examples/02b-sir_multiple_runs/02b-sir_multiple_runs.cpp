@@ -30,16 +30,15 @@ int main() {
     // Function to record each replicate results 
     std::vector< std::vector< int > > results(total_replicates);
     std::vector< std::string > labels;
-    unsigned int nreplica = 0u;
 
     auto record =
-        [&results,&nreplica,&labels](epiworld::Model<> * m)
+        [&results,&labels](size_t iternum, epiworld::Model<> * m)
         {
 
-            if (nreplica == 0u)
-                m->get_db().get_today_total(nullptr, &results[nreplica++]);
+            if (iternum == 0u)
+                m->get_db().get_today_total(nullptr, &results[iternum]);
             else
-                m->get_db().get_today_total(&labels, &results[nreplica++]);
+                m->get_db().get_today_total(&labels, &results[iternum]);
 
             return;
 

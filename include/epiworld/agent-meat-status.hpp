@@ -133,23 +133,8 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
     {
 
         size_t which_v = std::ceil(which / 2);
+        p->rm_agent_by_virus(which_v);
         
-        // Retrieving the default values of the virus
-        epiworld::VirusPtr<TSeq> & v = p->get_viruses()[which_v];
-        epiworld_fast_int dead_status, dead_queue;
-        v->get_status(nullptr, nullptr, &dead_status);
-        v->get_queue(nullptr, nullptr, &dead_queue);
-
-        // Applying change of status
-        p->change_status(
-            // Either preserve the current status or apply a new one
-            (dead_status < 0) ? p->get_status() : static_cast<epiworld_fast_uint>(dead_status),
-
-            // By default, it will be removed from the queue... unless the user
-            // says the contrary!
-            (dead_queue == -99) ? -m->get_queue()[p->get_id()] : dead_queue
-            );
-
     } else {
 
         size_t which_v = std::floor(which / 2);

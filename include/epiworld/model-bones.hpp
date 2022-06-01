@@ -46,6 +46,18 @@ inline epiworld_double death_reduction_mixer_default(
     Model<TSeq>* m
     );
 
+template<typename TSeq = int>
+inline std::function<void(size_t,Model<TSeq>*)> save_run(
+    std::string fmt = "%03lu-episimulation.csv",
+    bool total_hist = true,
+    bool variant_info = false,
+    bool variant_hist = false,
+    bool tool_info = false,
+    bool tool_hist = false,
+    bool transmission = false,
+    bool transition = false
+    );
+
 // template<typename TSeq>
 // class VirusPtr;
 
@@ -71,6 +83,8 @@ private:
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Agent<TSeq> > population;
+    double * population_data = nullptr;
+    size_t population_data_n_features = 0u;
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses;
@@ -291,9 +305,9 @@ public:
     void run(); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
         unsigned int nexperiments,
-        std::function<void(Model<TSeq>*)> fun,
-        bool reset,
-        bool verbose
+        std::function<void(size_t,Model<TSeq>*)> fun = save_run<TSeq>(),
+        bool reset = true,
+        bool verbose = true
         );
     ///@}
 

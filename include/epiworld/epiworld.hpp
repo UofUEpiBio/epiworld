@@ -49,7 +49,7 @@ namespace epiworld {
     #include "tool-bones.hpp"
     #include "tool-meat.hpp"
 
-    #include "location-bones.hpp"
+    #include "entity-bones.hpp"
     
     #include "agent-meat-status.hpp"
     #include "agent-bones.hpp"
