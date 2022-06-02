@@ -202,6 +202,9 @@ inline void LFMCMC<TData>::run(
     )
 {
 
+    // Starting timing
+    chrono_start();
+
     // Setting the baseline parameters of the model
     n_samples    = n_samples_;
     epsilon      = epsilon_;
@@ -299,6 +302,9 @@ inline void LFMCMC<TData>::run(
 
     }
 
+    // End timing
+    chrono_end();
+
 }
 
 
@@ -390,95 +396,101 @@ inline std::mt19937 * LFMCMC<TData>::get_rand_endgine()
 
 // Step 4: Accept/reject, and go back to step 1
 
+#define DURCAST(tunit,txtunit) {\
+        elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
+            time_end - time_start).count(); \
+        abbr_unit     = txtunit;}
+
 template<typename TData>
-inline void LFMCMC<TData>::summary() const
-{
-    std::vector< epiworld_double > summ_params(n_parameters * 3, 0.0);
-    std::vector< epiworld_double > summ_stats(n_statistics * 3, 0.0);
+inline void LFMCMC<TData>::get_elapsed(
+    std::string unit,
+    epiworld_double * last_elapsed,
+    std::string * unit_abbr,
+    bool print
+) {
 
-    for (size_t k = 0u; k < n_parameters; ++k)
+    // Preparing the result
+    epiworld_double elapsed;
+    std::string abbr_unit;
+
+    // Figuring out the length
+    if (unit == "auto")
     {
 
-        // Retrieving the relevant parameter
-        std::vector< epiworld_double > par_i(n_samples);
-        for (size_t i = 0u; i < n_samples; ++i)
-        {
-            par_i[i] = accepted_params[i * n_parameters + k];
-            summ_params[k * 3] += par_i[i]/n_samples;
-        }
-
-        // Computing the 95% Credible interval
-        std::sort(par_i.begin(), par_i.end());
-
-        summ_params[k * 3 + 1u] = 
-            par_i[std::floor(.025 * static_cast<epiworld_double>(n_samples))];
-        summ_params[k * 3 + 2u] = 
-            par_i[std::floor(.975 * static_cast<epiworld_double>(n_samples))];
+        size_t tlength = std::to_string(
+            static_cast<int>(floor(time_elapsed.count()))
+            ).length();
+        
+        if (tlength <= 1)
+            unit = "nanoseconds";
+        else if (tlength <= 3)
+            unit = "microseconds";
+        else if (tlength <= 6)
+            unit = "milliseconds";
+        else if (tlength <= 8)
+            unit = "seconds";
+        else if (tlength <= 9)
+            unit = "minutes";
+        else 
+            unit = "hours";
 
     }
 
-    for (size_t k = 0u; k < n_statistics; ++k)
-    {
+    if (unit == "nanoseconds")       DURCAST(nanoseconds,"ns")
+    else if (unit == "microseconds") DURCAST(microseconds,"\xC2\xB5s")
+    else if (unit == "milliseconds") DURCAST(milliseconds,"ms")
+    else if (unit == "seconds")      DURCAST(seconds,"s")
+    else if (unit == "minutes")      DURCAST(minutes,"m")
+    else if (unit == "hours")        DURCAST(hours,"h")
+    else
+        throw std::range_error("The time unit " + unit + " is not supported.");
 
-        // Retrieving the relevant parameter
-        std::vector< epiworld_double > stat_k(n_samples);
-        for (size_t i = 0u; i < n_samples; ++i)
-        {
-            stat_k[i] = accepted_stats[i * n_statistics + k];
-            summ_stats[k * 3] += stat_k[i]/n_samples;
-        }
 
-        // Computing the 95% Credible interval
-        std::sort(stat_k.begin(), stat_k.end());
+    if (last_elapsed != nullptr)
+        *last_elapsed = elapsed;
+    if (unit_abbr != nullptr)
+        *unit_abbr = abbr_unit;
 
-        summ_stats[k * 3 + 1u] = 
-            stat_k[std::floor(.025 * static_cast<epiworld_double>(n_samples))];
-        summ_stats[k * 3 + 2u] = 
-            stat_k[std::floor(.975 * static_cast<epiworld_double>(n_samples))];
+    if (!print)
+        return;
 
-    }
+    printf_epiworld("Elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());
+}
 
-    printf_epiworld("___________________________________________\n\n");
-    printf_epiworld("LIKELIHOOD-FREE MARKOV CHAIN MONTE CARLO\n\n");
+#undef DURCAST
 
-    printf_epiworld("Parameters:\n");
-    for (size_t k = 0u; k < n_parameters; ++k)
-    {
-        printf_epiworld(
-            "  [%-2ld]: % 4.2f [% 4.2f, % 4.2f] (initial : % 4.2f)\n",
-            k,
-            summ_params[k * 3],
-            summ_params[k * 3 + 1u],
-            summ_params[k * 3 + 2u],
-            params_init[k]
-            );
-    }
+#include "lfmcmc-meat-print.hpp"
 
-    printf_epiworld("\nStatistics:\n");
-    for (size_t k = 0u; k < n_statistics; ++k)
-    {
-        printf_epiworld(
-            "  [%-2ld]: % 4.2f [% 4.2f, % 4.2f] (Observed: % 4.2f)\n",
-            k,
-            summ_stats[k * 3],
-            summ_stats[k * 3 + 1u],
-            summ_stats[k * 3 + 2u],
-            observed_stats[k]
-            );
-    }
+template<typename TData>
+inline void LFMCMC<TData>::chrono_start() {
+    time_start = std::chrono::steady_clock::now();
+}
 
-    printf_epiworld("___________________________________________\n\n");
+template<typename TData>
+inline void LFMCMC<TData>::chrono_end() {
+    time_end = std::chrono::steady_clock::now();
+    time_elapsed += (time_end - time_start);
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_par_names(std::vector< std::string > names)
 {
 
+    if (names.size() != n_parameters)
+        throw std::length_error("The number of names to add differs from the number of parameters in the model.");
+
+    names_parameters = names;
+
 }
 template<typename TData>
 inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
 {
-    
+
+    if (names.size() != n_statistics)
+        throw std::length_error("The number of names to add differs from the number of statistics in the model.");
+
+    names_statistics = names;
+
 }
 
 #endif

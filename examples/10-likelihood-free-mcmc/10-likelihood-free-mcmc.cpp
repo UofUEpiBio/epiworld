@@ -25,7 +25,7 @@ std::vector< int > simfun(
 
     return res;
 
-};
+}
 
 
 void sumfun(
@@ -43,7 +43,7 @@ void sumfun(
 
     return;
 
-};
+}
 
 // FUN<VEC( epiworld_double )(TData&, LFMCMC<TData>*)> summary_fun;
 
@@ -86,10 +86,11 @@ int main()
     std::vector< epiworld_double > par0 = {.5, .5};
 
     lfmcmc.run(par0, 1000, 1);
+    
+    lfmcmc.set_par_names({"Immune recovery", "Infectiousness"});
+    lfmcmc.set_stats_names(model.get_status());
 
-    auto res = lfmcmc.get_params_now();
-
-    lfmcmc.summary();
+    lfmcmc.print();
 
   
 }

@@ -60,6 +60,6 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
 
     model.run({1,1}, 10000, .5);
 
-    model.summary();
+    model.print();
 
 }

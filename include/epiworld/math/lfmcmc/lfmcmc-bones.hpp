@@ -165,6 +165,23 @@ private:
     // Misc
     std::vector< std::string > names_parameters;
     std::vector< std::string > names_statistics;
+
+    std::chrono::time_point<std::chrono::steady_clock> time_start;
+    std::chrono::time_point<std::chrono::steady_clock> time_end;
+
+    // std::chrono::milliseconds
+    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+        std::chrono::duration<epiworld_double,std::micro>::zero();
+
+    inline void get_elapsed(
+        std::string unit,
+        epiworld_double * last_elapsed,
+        std::string * unit_abbr,
+        bool print
+    );
+
+    void chrono_start();
+    void chrono_end();
     
 public:
 
@@ -218,7 +235,7 @@ public:
     void set_par_names(std::vector< std::string > names);
     void set_stats_names(std::vector< std::string > names);
 
-    void summary() const;
+    void print() ;
 
 };
 
