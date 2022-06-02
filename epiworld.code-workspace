@@ -69,7 +69,8 @@
 			"concepts": "cpp",
 			"ranges": "cpp",
 			"stop_token": "cpp",
-			"list": "cpp"
+			"list": "cpp",
+			"variant": "cpp"
 		}
 	}
 }

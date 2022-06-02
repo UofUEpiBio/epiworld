@@ -23,23 +23,25 @@ std::vector< int > simfun(
     std::vector< int > res;
     model.get_db().get_today_total(nullptr, &res);
 
-    auto prev = m->get_params_prev();
-    printf("Iteration N %3li: {%.2f, .%2f}\n", niter++, prev[0u], prev[1u]);
-
     return res;
+
 };
 
 
-std::vector< epiworld_double > sumfun(
-    std::vector< int > & dat,
+void sumfun(
+    std::vector< epiworld_double > & res,
+    const std::vector< int > & dat,
     LFMCMC< std::vector<int> > * m
 ) {
 
-    std::vector< epiworld_double > res(0u);
-    for (auto & v : dat)
-        res.push_back(static_cast< epiworld_double >(v));
+    if (res.size() == 0u)
+        res.resize(dat.size());
 
-    return res;
+    
+    for (size_t i = 0u; i < dat.size(); ++i)
+        res[i] = static_cast< epiworld_double >(dat[i]);
+
+    return;
 
 };
 
@@ -47,8 +49,17 @@ std::vector< epiworld_double > sumfun(
 
 int main()
 {
-    
-    set_up_sir(model, "covid", .1, .9, 0, .5, 1.0);
+
+    set_up_sir(
+        model,   // Model
+        "covid", // Name of the virus
+        .1,      // Initial prevalence
+        .9,      // Infectiousness (par[1])
+        0,       // Susceptibility reduction
+        .5,      // Immune Recovery (par[0])
+        1.0      // Post immunity
+        );
+
     model.agents_smallworld(500);
 
     // Creating a new LFMCMC model
@@ -78,8 +89,7 @@ int main()
 
     auto res = lfmcmc.get_params_now();
 
-    printf("True      : {%.2f, .%2f}\n", .9, .5);
-    printf("Recovered : {%.2f, .%2f}\n", res[0], res[1]);
+    lfmcmc.summary();
 
   
 }

@@ -153,6 +153,10 @@ changes:
 triggers a call to the virus's `postrecovery()` function, which can, for example,
 result in gaining immunity to that variant. 
 
+- **Acquire a tool (`add_tool()`)**: For example, mask-wearing, vaccines, etc.
+
+- **Lose a tool (`rm_tool()`)**: For example, stop wearing masks, lose immunity, etc.
+
 - **Change status (`change_status()`)**: An arbitrary change in the status of the
 agent. Examples of this are moving from "exposed" to "infected," from "infected"
 to "ICU," etc.

@@ -7,7 +7,7 @@ vec_double simfun(const vec_double & p, LFMCMC<vec_double> * m)
 {
 
     vec_double res;
-    for (size_t i = 0; i < 10000; ++i)
+    for (size_t i = 0; i < 1000; ++i)
         res.push_back(m->rnorm(p[0], p[1]));
 
     return res;
@@ -47,7 +47,7 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     std::normal_distribution<float> rnorm(5, 1.5);
 
     vec_double obsdata;
-    for (size_t i = 0u; i < 10000; ++i)
+    for (size_t i = 0u; i < 1000; ++i)
         obsdata.push_back(rnorm(rand));
 
     LFMCMC< vec_double > model(obsdata);
@@ -59,5 +59,7 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     model.set_kernel_fun(kernel_fun_gaussian<vec_double>);
 
     model.run({1,1}, 10000, .5);
+
+    model.summary();
 
 }

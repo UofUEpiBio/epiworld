@@ -10,6 +10,7 @@
 #include <chrono>
 #include <climits>
 #include <cstdint>
+#include <algorithm>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
