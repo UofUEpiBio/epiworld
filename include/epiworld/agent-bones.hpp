@@ -69,6 +69,7 @@ private:
     
     std::vector< VirusPtr<TSeq> > viruses;
     epiworld_fast_uint n_viruses = 0u;
+    epiworld_fast_uint n_exposures = 0u;
 
     std::vector< ToolPtr<TSeq> > tools;
     epiworld_fast_uint n_tools = 0u;

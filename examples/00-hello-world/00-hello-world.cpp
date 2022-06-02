@@ -46,5 +46,9 @@ int main()
         "transmissions.txt",
         "transitions.txt"
         );
+
+    model.get_db().reproductive_number(
+        "reproductive_number.txt"
+    );
   
 }

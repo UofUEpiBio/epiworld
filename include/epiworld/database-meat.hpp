@@ -468,12 +468,13 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_transmission(fn_transmission, std::ios_base::out);
         file_transmission <<
-            "date " << "variant " << "source " << "target\n";
+            "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
         for (unsigned int i = 0; i < transmission_target.size(); ++i)
             file_transmission <<
                 transmission_date[i] << " " <<
                 transmission_variant[i] << " " <<
+                transmission_source_exposure_date[i] << " " <<
                 transmission_source[i] << " " <<
                 transmission_target[i] << "\n";
                 
@@ -508,13 +509,15 @@ template<typename TSeq>
 inline void DataBase<TSeq>::record_transmission(
     int i,
     int j,
-    int variant
+    int variant,
+    int i_expo_date
 ) {
 
     transmission_date.push_back(model->today());
     transmission_source.push_back(i);
     transmission_target.push_back(j);
     transmission_variant.push_back(variant);
+    transmission_source_exposure_date.push_back(i_expo_date);
 
 }
 
@@ -564,6 +567,7 @@ inline void DataBase<TSeq>::reset()
     transmission_source.clear();
     transmission_target.clear();
     transmission_variant.clear();
+    transmission_source_exposure_date.clear();
 
     today_total_nvariants_active = 0;
 
@@ -609,6 +613,57 @@ template<typename TSeq>
 inline UserData<TSeq> & DataBase<TSeq>::get_user_data()
 {
     return user_data;
+}
+
+template<typename TSeq>
+inline MapVec_type<int,int> DataBase<TSeq>::reproductive_number()
+const {
+
+    // Checking size
+    MapVec_type<int,int> map;
+
+    // Number of digits of maxid
+    for (size_t i = 0u; i < transmission_date.size(); ++i)
+    {
+        // Fabricating id
+        std::vector< int > h = {
+            transmission_variant[i],
+            transmission_source[i],
+            transmission_source_exposure_date[i]
+        };
+
+        // Adding to counter
+        if (map.find(h) == map.end())
+            map[h] = 1;
+        else
+            map[h]++;
+    }
+
+    return map;
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::reproductive_number(
+    std::string fn
+) const {
+
+
+    auto map = reproductive_number();
+
+    std::ofstream fn_file(fn, std::ios_base::out);
+
+    fn_file << "variant source exposure_id rt\n";
+
+    for (auto & m : map)
+        fn_file <<
+            m.first[0u] << " " <<
+            m.first[1u] << " " <<
+            m.first[2u] << " " <<
+            m.second << "\n";
+
+    return;
+
 }
 
 #endif

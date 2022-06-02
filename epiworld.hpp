@@ -1271,10 +1271,11 @@ private:
     std::vector< int > hist_transition_matrix;
 
     // Transmission network
-    std::vector< int > transmission_date;
-    std::vector< int > transmission_source;
-    std::vector< int > transmission_target;
-    std::vector< int > transmission_variant;
+    std::vector< int > transmission_date;                 ///< Date of the transmission event
+    std::vector< int > transmission_source;               ///< Id of the source
+    std::vector< int > transmission_target;               ///< Id of the target
+    std::vector< int > transmission_variant;              ///< Id of the variant
+    std::vector< int > transmission_source_exposure_date; ///< Date when the source acquired the variant
 
     std::vector< int > transition_matrix;
 
@@ -1374,7 +1375,7 @@ public:
         std::string fn_transition
         ) const;
     
-    void record_transmission(int i, int j, int variant);
+    void record_transmission(int i, int j, int variant, int i_expo_date);
 
     size_t get_n_variants() const;
     size_t get_n_tools() const;
@@ -1387,6 +1388,19 @@ public:
     void add_user_data(unsigned int j, epiworld_double x);
     UserData<TSeq> & get_user_data();
 
+
+    /**
+     * @brief Computes the reproductive number of each case
+     * 
+     * @param fn File where to write out the reproductive number.
+     */
+    ///@{
+    MapVec_type<int,int> reproductive_number() const;
+
+    void reproductive_number(
+        std::string fn
+        ) const;
+    ///@}
 
 };
 
@@ -1880,12 +1894,13 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_transmission(fn_transmission, std::ios_base::out);
         file_transmission <<
-            "date " << "variant " << "source " << "target\n";
+            "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
         for (unsigned int i = 0; i < transmission_target.size(); ++i)
             file_transmission <<
                 transmission_date[i] << " " <<
                 transmission_variant[i] << " " <<
+                transmission_source_exposure_date[i] << " " <<
                 transmission_source[i] << " " <<
                 transmission_target[i] << "\n";
                 
@@ -1920,13 +1935,15 @@ template<typename TSeq>
 inline void DataBase<TSeq>::record_transmission(
     int i,
     int j,
-    int variant
+    int variant,
+    int i_expo_date
 ) {
 
     transmission_date.push_back(model->today());
     transmission_source.push_back(i);
     transmission_target.push_back(j);
     transmission_variant.push_back(variant);
+    transmission_source_exposure_date.push_back(i_expo_date);
 
 }
 
@@ -1976,6 +1993,7 @@ inline void DataBase<TSeq>::reset()
     transmission_source.clear();
     transmission_target.clear();
     transmission_variant.clear();
+    transmission_source_exposure_date.clear();
 
     today_total_nvariants_active = 0;
 
@@ -2021,6 +2039,57 @@ template<typename TSeq>
 inline UserData<TSeq> & DataBase<TSeq>::get_user_data()
 {
     return user_data;
+}
+
+template<typename TSeq>
+inline MapVec_type<int,int> DataBase<TSeq>::reproductive_number()
+const {
+
+    // Checking size
+    MapVec_type<int,int> map;
+
+    // Number of digits of maxid
+    for (size_t i = 0u; i < transmission_date.size(); ++i)
+    {
+        // Fabricating id
+        std::vector< int > h = {
+            transmission_variant[i],
+            transmission_source[i],
+            transmission_source_exposure_date[i]
+        };
+
+        // Adding to counter
+        if (map.find(h) == map.end())
+            map[h] = 1;
+        else
+            map[h]++;
+    }
+
+    return map;
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::reproductive_number(
+    std::string fn
+) const {
+
+
+    auto map = reproductive_number();
+
+    std::ofstream fn_file(fn, std::ios_base::out);
+
+    fn_file << "variant source exposure_id rt\n";
+
+    for (auto & m : map)
+        fn_file <<
+            m.first[0u] << " " <<
+            m.first[1u] << " " <<
+            m.first[2u] << " " <<
+            m.second << "\n";
+
+    return;
+
 }
 
 #endif
@@ -4347,6 +4416,9 @@ template<typename TSeq>
 inline void Model<TSeq>::run() 
 {
 
+    if (size() == 0u)
+        throw std::logic_error("There's no agents in this model!");
+
     // Initializing the simulation
     chrono_start();
     EPIWORLD_RUN((*this))
@@ -5492,8 +5564,11 @@ class Virus {
     friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
-    Agent<TSeq> * agent = nullptr;
-    int        agent_idx = -99;
+    
+    Agent<TSeq> * agent       = nullptr;
+    int       agent_idx       = -99;
+    int agent_exposure_number = -99;
+
     std::shared_ptr<TSeq> baseline_sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
@@ -7135,6 +7210,7 @@ private:
     
     std::vector< VirusPtr<TSeq> > viruses;
     epiworld_fast_uint n_viruses = 0u;
+    epiworld_fast_uint n_exposures = 0u;
 
     std::vector< ToolPtr<TSeq> > tools;
     epiworld_fast_uint n_tools = 0u;
@@ -7326,7 +7402,8 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
         // ... only if not the same agent
         if (v->get_agent()->get_id() != v->get_id())
             m->get_db().record_transmission(
-                v->get_agent()->get_id(), p->get_id(), v->get_id() 
+                v->get_agent()->get_id(), p->get_id(), v->get_id(),
+                v->get_date() 
             );
 
     }
@@ -7346,6 +7423,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     // as only the sequence is a shared_ptr itself.
     p->viruses[n_viruses]->set_agent(p, n_viruses);
     p->viruses[n_viruses]->set_date(m->today());
+    p->viruses[n_viruses]->agent_exposure_number = ++p->n_exposures;
 
     m->get_db().today_variant[v->get_id()][p->status]++;
 

@@ -27,7 +27,8 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
         // ... only if not the same agent
         if (v->get_agent()->get_id() != v->get_id())
             m->get_db().record_transmission(
-                v->get_agent()->get_id(), p->get_id(), v->get_id() 
+                v->get_agent()->get_id(), p->get_id(), v->get_id(),
+                v->get_date() 
             );
 
     }
@@ -47,6 +48,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     // as only the sequence is a shared_ptr itself.
     p->viruses[n_viruses]->set_agent(p, n_viruses);
     p->viruses[n_viruses]->set_date(m->today());
+    p->viruses[n_viruses]->agent_exposure_number = ++p->n_exposures;
 
     m->get_db().today_variant[v->get_id()][p->status]++;
 

@@ -86,10 +86,11 @@ private:
     std::vector< int > hist_transition_matrix;
 
     // Transmission network
-    std::vector< int > transmission_date;
-    std::vector< int > transmission_source;
-    std::vector< int > transmission_target;
-    std::vector< int > transmission_variant;
+    std::vector< int > transmission_date;                 ///< Date of the transmission event
+    std::vector< int > transmission_source;               ///< Id of the source
+    std::vector< int > transmission_target;               ///< Id of the target
+    std::vector< int > transmission_variant;              ///< Id of the variant
+    std::vector< int > transmission_source_exposure_date; ///< Date when the source acquired the variant
 
     std::vector< int > transition_matrix;
 
@@ -189,7 +190,7 @@ public:
         std::string fn_transition
         ) const;
     
-    void record_transmission(int i, int j, int variant);
+    void record_transmission(int i, int j, int variant, int i_expo_date);
 
     size_t get_n_variants() const;
     size_t get_n_tools() const;
@@ -202,6 +203,19 @@ public:
     void add_user_data(unsigned int j, epiworld_double x);
     UserData<TSeq> & get_user_data();
 
+
+    /**
+     * @brief Computes the reproductive number of each case
+     * 
+     * @param fn File where to write out the reproductive number.
+     */
+    ///@{
+    MapVec_type<int,int> reproductive_number() const;
+
+    void reproductive_number(
+        std::string fn
+        ) const;
+    ///@}
 
 };
 
