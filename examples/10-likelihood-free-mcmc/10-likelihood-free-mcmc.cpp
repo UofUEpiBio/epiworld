@@ -56,9 +56,9 @@ int main()
 
     lfmcmc.set_simulation_fun(simfun);
     lfmcmc.set_summary_fun(sumfun);
-    // lfmcmc.set_proposal_fun(default_proposal_fun_unif<std::vector<int>>);
+    // lfmcmc.set_proposal_fun(proposal_fun_unif<std::vector<int>>);
     lfmcmc.set_proposal_fun(make_proposal_norm_reflective<std::vector<int>>(.5, 0, 1));
-    lfmcmc.set_kernel_fun(default_kernel_fun_gaussian<std::vector<int>>);
+    lfmcmc.set_kernel_fun(kernel_fun_gaussian<std::vector<int>>);
 
     // Simulating some data
     model.init(50, 122);
