@@ -23,6 +23,10 @@ namespace epiworld {
     #include "misc.hpp"
     #include "progress.hpp"
 
+    // #include "math/summary-stats.hpp"
+
+    #include "math/lfmcmc.hpp"
+
     #include "userdata-bones.hpp"
     #include "userdata-meat.hpp"
 

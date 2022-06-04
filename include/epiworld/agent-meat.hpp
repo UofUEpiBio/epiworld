@@ -377,7 +377,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 )
 {
 
-    if (virus->get_host() == nullptr)
+    if (virus->get_agent() == nullptr)
         throw std::logic_error("The virus trying to remove the agent has no host.");
 
     if (virus->get_agent()->id != id)

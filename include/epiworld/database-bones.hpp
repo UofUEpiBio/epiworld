@@ -217,6 +217,15 @@ public:
         ) const;
     ///@}
 
+    /**
+     * @brief Calculates the transition probabilities
+     * 
+     * @return std::vector< epiworld_double > 
+     */
+    std::vector< epiworld_double > transition_probability(
+        bool print = true
+    ) const;
+
 };
 
 

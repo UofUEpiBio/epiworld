@@ -1392,7 +1392,7 @@ inline epiworld_double Model<TSeq>::set_param(
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::get_param(std::string pname)
+inline constexpr epiworld_double Model<TSeq>::get_param(std::string pname)
 {
     if (parameters.find(pname) == parameters.end())
         throw std::logic_error("The parameter " + pname + " does not exists.");
@@ -1401,7 +1401,7 @@ inline epiworld_double Model<TSeq>::get_param(std::string pname)
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::par(std::string pname)
+inline constexpr epiworld_double Model<TSeq>::par(std::string pname)
 {
     return parameters[pname];
 }

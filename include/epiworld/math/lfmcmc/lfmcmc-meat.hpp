@@ -144,6 +144,8 @@ inline epiworld_double kernel_fun_uniform(
 
 }
 
+constexpr epiworld_double sqrt2pi() {return std::sqrt(2.0 * M_PI);}
+
 /**
  * @brief Gaussian kernel
  * 
@@ -164,7 +166,9 @@ inline epiworld_double kernel_fun_gaussian(
     for (size_t p = 0u; p < m->get_n_parameters(); ++p)
         ans += std::pow(stats_obs[p] - stats_now[p], 2.0);
 
-    return std::exp(-.5 * (ans/std::pow(1 + std::pow(epsilon, 2.0)/3.0, 2.0)))/std::sqrt(2.0 * 3.141593);
+    return std::exp(
+        -.5 * (ans/std::pow(1 + std::pow(epsilon, 2.0)/3.0, 2.0))
+        ) / sqrt2pi() ;
 
 }
 

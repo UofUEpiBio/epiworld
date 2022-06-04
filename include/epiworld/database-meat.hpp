@@ -17,6 +17,8 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     
     transition_matrix.resize(m.nstatus * m.nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
+    for (size_t s = 0u; s < m.nstatus; ++s)
+        transition_matrix[s + s*m.nstatus] = today_total[s];
 
 
     return;
@@ -101,7 +103,30 @@ inline void DataBase<TSeq>::record()
         for (auto cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
 
-        std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
+        // Now the diagonal must reflect the state
+        for (size_t s_i = 0u; s_i < model->nstatus; ++s_i)
+        {
+            for (size_t s_j = 0u; s_j < model->nstatus; ++s_j)
+            {
+                if ((s_i != s_j) && (transition_matrix[s_i + s_j * model->nstatus] > 0))
+                {
+                    transition_matrix[s_j + s_j * model->nstatus] +=
+                        transition_matrix[s_i + s_j * model->nstatus];
+
+                    transition_matrix[s_i + s_j * model->nstatus] = 0;
+                }
+         
+            }
+
+            #ifdef EPI_DEBUG
+            if (transition_matrix[s_i + s_i * model->nstatus] != 
+                today_total[s_i])
+                throw std::logic_error(
+                    "The diagonal of the updated transition Matrix should match the daily totals"
+                    );
+            #endif
+        }
+
 
     }
 
@@ -263,6 +288,12 @@ inline void DataBase<TSeq>::record_transition(
 ) {
 
     transition_matrix[to * model->nstatus + from]++;
+    transition_matrix[from * model->nstatus + from]--;
+
+    #ifdef EPI_DEBUG
+    if (transition_matrix[from * model->nstatus + from] < 0)
+        throw std::logic_error("An entry in transition matrix is negative.");
+    #endif
 
 }
 
@@ -569,6 +600,9 @@ inline void DataBase<TSeq>::reset()
     transmission_variant.clear();
     transmission_source_exposure_date.clear();
 
+    transition_matrix.clear();
+    hist_transition_matrix.clear();
+
     today_total_nvariants_active = 0;
 
     today_total.clear();
@@ -665,5 +699,97 @@ inline void DataBase<TSeq>::reproductive_number(
     return;
 
 }
+
+template<typename TSeq>
+inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
+    bool print
+) const {
+
+    auto status_labels = model->get_status();
+    size_t n_status = status_labels.size();
+    size_t n_days   = model->get_ndays();
+    std::vector< epiworld_double > res(n_status * n_status, 0.0);
+    std::vector< epiworld_double > days_to_include(n_status, 0.0);
+
+    for (size_t t = 1; t < n_days; ++t)
+    {
+
+        for (size_t s_i = 0; s_i < n_status; ++s_i)
+        {
+            epiworld_double daily_total = hist_total_counts[(t - 1) * n_status + s_i];
+
+            if (daily_total == 0)
+                continue;
+
+            days_to_include[s_i] += 1.0; 
+
+            for (size_t s_j = 0u; s_j < n_status; ++s_j)
+            {
+                #ifdef EPI_DEBUG
+                epiworld_double entry = hist_transition_matrix[
+                    s_i + s_j * n_status +
+                    t * (n_status * n_status)
+                    ];
+
+                if (entry > daily_total)
+                    throw std::logic_error(
+                        "The entry in hist_transition_matrix cannot have more elememnts than the total"
+                        );
+
+                res[s_i + s_j * n_status] += (entry / daily_total);
+                #else
+                    res[s_i + s_j * n_status] += (
+                        hist_transition_matrix[
+                            s_i + s_j * n_status +
+                            t * (n_status * n_status)
+                        ] / daily_total
+                    );
+                #endif
+            }
+
+        }
+
+    }
+
+    for (size_t s_i = 0; s_i < n_status; ++s_i)
+    {
+        for (size_t s_j = 0; s_j < n_status; ++s_j)
+            res[s_i + s_j * n_status] /= days_to_include[s_i];
+    }
+
+    if (print)
+    {   
+
+        size_t nchar = 0u;
+        for (auto & l : status_labels)
+            if (l.length() > nchar)
+                nchar = l.length();
+
+        std::string fmt = " - %" + std::to_string(nchar) + "s";
+        
+        printf_epiworld("\nTransition Probabilities:\n");
+        for (size_t s_i = 0u; s_i < n_status; ++s_i)
+        {
+            printf_epiworld(fmt.c_str(), status_labels[s_i].c_str());
+            for (size_t s_j = 0u; s_j < n_status; ++s_j)
+            {
+                if (std::isnan(res[s_i + s_j * n_status]))
+                {
+                    printf_epiworld("   - ");
+                } else {
+                    printf_epiworld(" % 4.2f", res[s_i + s_j * n_status]);
+                }
+            }
+            printf_epiworld("\n");
+        }
+
+        printf_epiworld("\n");
+
+    }
+
+    return res;
+
+
+} 
 
 #endif

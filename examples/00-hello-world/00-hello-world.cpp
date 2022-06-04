@@ -50,5 +50,7 @@ int main()
     model.get_db().reproductive_number(
         "reproductive_number.txt"
     );
+
+    (void) model.get_db().transition_probability();
   
 }
