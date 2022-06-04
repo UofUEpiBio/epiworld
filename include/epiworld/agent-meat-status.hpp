@@ -115,7 +115,7 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 
         // Recover
         m->array_double_tmp[n_events++] = 
-            v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
+            1.0 - (1.0 - v->get_prob_recovery()) * (1.0 - p->get_recovery_enhancer(v)); 
 
     }
     
