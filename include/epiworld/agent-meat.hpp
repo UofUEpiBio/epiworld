@@ -622,6 +622,29 @@ inline bool Agent<TSeq>::has_virus(std::string name) const
 
 }
 
+template<typename TSeq>
+inline void Agent<TSeq>::print(bool compressed) const
+{
+
+    if (compressed)
+    {
+        printf_epiworld(
+            "Agent: %i, Status: %s (%lu), Nvirus: %lu, NTools: %lu, NNeigh: %lu\n",
+            id, model->status_labels[status].c_str(), status, n_tools, n_viruses, neighbors.size()
+        );
+    }
+    else {
+        printf_epiworld("Information about agent id %i\n", this->id);
+        printf_epiworld("  Status       : %s (%lu)\n", model->status_labels[status].c_str(), status);
+        printf_epiworld("  Tool count   : %lu\n", n_tools);
+        printf_epiworld("  Virus count  : %lu\n", n_viruses);
+        printf_epiworld("  Neigh. count : %lu\n", neighbors.size());
+    }
+
+    return;
+
+}
+
 #undef CHECK_COALESCE_
 
 #endif

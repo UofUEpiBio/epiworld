@@ -209,6 +209,8 @@ public:
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
 
+    void print(bool compressed = false) const;
+
 };
 
 

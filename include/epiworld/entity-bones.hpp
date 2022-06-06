@@ -43,8 +43,6 @@ public:
     typename std::vector< Agent<TSeq> * >::const_iterator begin() const;
     typename std::vector< Agent<TSeq> * >::const_iterator end() const;
 
-    typename std::vector< Agent<TSeq> * >::iterator begin_sample
-
 };
 
 template<typename TSeq>
