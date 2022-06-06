@@ -59,7 +59,7 @@ private:
     Model<TSeq> * model;
     
     std::vector< Agent<TSeq> * > neighbors;
-    std::vector< Entity<TSeq> *> entities;
+    std::vector< Entity<TSeq> * > entities;
 
     epiworld_fast_uint status = 0u;
     int id = -1;

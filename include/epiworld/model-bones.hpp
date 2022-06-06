@@ -5,6 +5,9 @@ template<typename TSeq>
 class Agent;
 
 template<typename TSeq>
+class Agents;
+
+template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
@@ -76,6 +79,7 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
 template<typename TSeq = int>
 class Model {
     friend class Agent<TSeq>;
+    friend class Agents<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
 private:

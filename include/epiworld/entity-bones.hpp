@@ -2,10 +2,19 @@
 #define EPIWORLD_ENTITY_BONES_HPP
 
 template<typename TSeq>
+class Model;
+
+template<typename TSeq>
 class Agent;
 
 template<typename TSeq>
+class Agents;
+
+template<typename TSeq>
 class Entity {
+    friend class Agent<TSeq>;
+    friend class Agents<TSeq>;
+    friend class Model<TSeq>;
 private:
     
     std::vector< Agent<TSeq> * > agents;
@@ -15,7 +24,7 @@ private:
     std::string entity_name = "Unknown entity";
 
     std::vector< epiworld_double > location = {0.0}; ///< An arbitrary vector for location
-    
+    Model<TSeq> * model = nullptr;
 
 public:
 
@@ -33,6 +42,8 @@ public:
 
     typename std::vector< Agent<TSeq> * >::const_iterator begin() const;
     typename std::vector< Agent<TSeq> * >::const_iterator end() const;
+
+    typename std::vector< Agent<TSeq> * >::iterator begin_sample
 
 };
 
