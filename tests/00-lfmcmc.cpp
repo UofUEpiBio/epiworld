@@ -3,6 +3,8 @@
 
 typedef std::vector<float> vec_double;
 
+using namespace epiworld;
+
 vec_double simfun(const vec_double & p, LFMCMC<vec_double> * m)
 {
 
@@ -35,8 +37,8 @@ void summary_fun(vec_double & res, const vec_double & p, LFMCMC<vec_double> * m)
 
     auto params = m->get_params_now();
 
-    printf("{mu, sigma} = {% 4.2f, % 4.2f}; ", params[0u], params[1u]);
-    printf("{mean, sd} =  {% 4.2f, % 4.2f}\n", *mean, *sd);
+    // printf("{mu, sigma} = {% 4.2f, % 4.2f}; ", params[0u], params[1u]);
+    // printf("{mean, sd} =  {% 4.2f, % 4.2f}\n", *mean, *sd);
 
 }
 
