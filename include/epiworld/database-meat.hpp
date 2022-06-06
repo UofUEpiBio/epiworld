@@ -765,7 +765,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
             if (l.length() > nchar)
                 nchar = l.length();
 
-        std::string fmt = " - %" + std::to_string(nchar) + "s";
+        std::string fmt = " - %-" + std::to_string(nchar) + "s";
         
         printf_epiworld("\nTransition Probabilities:\n");
         for (size_t s_i = 0u; s_i < n_status; ++s_i)
@@ -775,7 +775,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
             {
                 if (std::isnan(res[s_i + s_j * n_status]))
                 {
-                    printf_epiworld("   - ");
+                    printf_epiworld("     -");
                 } else {
                     printf_epiworld(" % 4.2f", res[s_i + s_j * n_status]);
                 }

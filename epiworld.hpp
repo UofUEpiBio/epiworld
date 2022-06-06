@@ -3467,7 +3467,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
             if (l.length() > nchar)
                 nchar = l.length();
 
-        std::string fmt = " - %" + std::to_string(nchar) + "s";
+        std::string fmt = " - %-" + std::to_string(nchar) + "s";
         
         printf_epiworld("\nTransition Probabilities:\n");
         for (size_t s_i = 0u; s_i < n_status; ++s_i)
@@ -3477,7 +3477,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
             {
                 if (std::isnan(res[s_i + s_j * n_status]))
                 {
-                    printf_epiworld("   - ");
+                    printf_epiworld("     -");
                 } else {
                     printf_epiworld(" % 4.2f", res[s_i + s_j * n_status]);
                 }
@@ -4777,9 +4777,6 @@ public:
      * involves searching the parameter directly in the std::map<> member
      * of the model (so it is not recommended.)
      * 
-     * The function `set_param()` can be used when the parameter already
-     * exists in the model.
-     * 
      * The `par()` function members are aliases for `get_param()`.
      * 
      * @param initial_val 
@@ -4790,11 +4787,10 @@ public:
      */
     ///@{
     epiworld_double add_param(epiworld_double initial_val, std::string pname);
-    epiworld_double set_param(std::string pname);
-    constexpr epiworld_double get_param(unsigned int k);
-    constexpr epiworld_double get_param(std::string pname);
-    constexpr epiworld_double par(unsigned int k);
-    constexpr epiworld_double par(std::string pname);
+    epiworld_double get_param(unsigned int k);
+    epiworld_double get_param(std::string pname);
+    epiworld_double par(unsigned int k);
+    epiworld_double par(std::string pname);
     epiworld_double 
         *p0,*p1,*p2,*p3,*p4,*p5,*p6,*p7,*p8,*p9,
         *p10,*p11,*p12,*p13,*p14,*p15,*p16,*p17,*p18,*p19,
@@ -6531,21 +6527,7 @@ inline epiworld_double Model<TSeq>::add_param(
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::set_param(
-    std::string pname
-    ) {
-
-    if (parameters.find(pname) == parameters.end())
-        throw std::logic_error("The parameter " + pname + " does not exists.");
-
-    CASES_PAR(npar_used++)
-
-    return parameters[pname];
-    
-}
-
-template<typename TSeq>
-inline constexpr epiworld_double Model<TSeq>::get_param(std::string pname)
+inline epiworld_double Model<TSeq>::get_param(std::string pname)
 {
     if (parameters.find(pname) == parameters.end())
         throw std::logic_error("The parameter " + pname + " does not exists.");
@@ -6554,7 +6536,7 @@ inline constexpr epiworld_double Model<TSeq>::get_param(std::string pname)
 }
 
 template<typename TSeq>
-inline constexpr epiworld_double Model<TSeq>::par(std::string pname)
+inline epiworld_double Model<TSeq>::par(std::string pname)
 {
     return parameters[pname];
 }
@@ -7563,7 +7545,7 @@ class Tool;
 template<typename TSeq>
 class Agent;
 
-#define TOOLPTR std::shared_ptr< Tool<TSeq> >
+// #define ToolPtr<TSeq> std::shared_ptr< Tool<TSeq> >
 
 /**
  * @brief Set of tools (useful for building iterators)
@@ -7575,7 +7557,7 @@ class Tools {
     friend class Tool<TSeq>;
     friend class Agent<TSeq>;
 private:
-    std::vector< TOOLPTR > * dat;
+    std::vector< ToolPtr<TSeq> > * dat;
     const epiworld_fast_uint * n_tools;
 
 public:
@@ -7583,18 +7565,18 @@ public:
     Tools() = delete;
     Tools(Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
-    typename std::vector< TOOLPTR >::iterator begin();
-    typename std::vector< TOOLPTR >::iterator end();
+    typename std::vector< ToolPtr<TSeq> >::iterator begin();
+    typename std::vector< ToolPtr<TSeq> >::iterator end();
 
-    TOOLPTR & operator()(size_t i);
-    TOOLPTR & operator[](size_t i);
+    ToolPtr<TSeq> & operator()(size_t i);
+    ToolPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
-inline typename std::vector< TOOLPTR >::iterator Tools<TSeq>::begin()
+inline typename std::vector< ToolPtr<TSeq> >::iterator Tools<TSeq>::begin()
 {
 
     if (*n_tools == 0u)
@@ -7604,14 +7586,14 @@ inline typename std::vector< TOOLPTR >::iterator Tools<TSeq>::begin()
 }
 
 template<typename TSeq>
-inline typename std::vector< TOOLPTR >::iterator Tools<TSeq>::end()
+inline typename std::vector< ToolPtr<TSeq> >::iterator Tools<TSeq>::end()
 {
      
     return begin() + *n_tools;
 }
 
 template<typename TSeq>
-inline TOOLPTR & Tools<TSeq>::operator()(size_t i)
+inline ToolPtr<TSeq> & Tools<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_tools)
@@ -7622,7 +7604,7 @@ inline TOOLPTR & Tools<TSeq>::operator()(size_t i)
 }
 
 template<typename TSeq>
-inline TOOLPTR & Tools<TSeq>::operator[](size_t i)
+inline ToolPtr<TSeq> & Tools<TSeq>::operator[](size_t i)
 {
 
     return dat->operator[](i);
@@ -7645,7 +7627,7 @@ class Tools_const {
     friend class Tool<TSeq>;
     friend class Agent<TSeq>;
 private:
-    const std::vector< TOOLPTR > * dat;
+    const std::vector< ToolPtr<TSeq> > * dat;
     const epiworld_fast_uint * n_tools;
 
 public:
@@ -7653,18 +7635,18 @@ public:
     Tools_const() = delete;
     Tools_const(const Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
-    typename std::vector< TOOLPTR >::const_iterator begin();
-    typename std::vector< TOOLPTR >::const_iterator end();
+    typename std::vector< ToolPtr<TSeq> >::const_iterator begin();
+    typename std::vector< ToolPtr<TSeq> >::const_iterator end();
 
-    const TOOLPTR & operator()(size_t i);
-    const TOOLPTR & operator[](size_t i);
+    const ToolPtr<TSeq> & operator()(size_t i);
+    const ToolPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
-inline typename std::vector< TOOLPTR >::const_iterator Tools_const<TSeq>::begin() {
+inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::begin() {
 
     if (*n_tools == 0u)
         return dat->end();
@@ -7673,13 +7655,13 @@ inline typename std::vector< TOOLPTR >::const_iterator Tools_const<TSeq>::begin(
 }
 
 template<typename TSeq>
-inline typename std::vector< TOOLPTR >::const_iterator Tools_const<TSeq>::end() {
+inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::end() {
      
     return begin() + *n_tools;
 }
 
 template<typename TSeq>
-inline const TOOLPTR & Tools_const<TSeq>::operator()(size_t i)
+inline const ToolPtr<TSeq> & Tools_const<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_tools)
@@ -7690,7 +7672,7 @@ inline const TOOLPTR & Tools_const<TSeq>::operator()(size_t i)
 }
 
 template<typename TSeq>
-inline const TOOLPTR & Tools_const<TSeq>::operator[](size_t i)
+inline const ToolPtr<TSeq> & Tools_const<TSeq>::operator[](size_t i)
 {
 
     return dat->operator[](i);
@@ -7702,8 +7684,6 @@ inline size_t Tools_const<TSeq>::size() const noexcept
 {
     return *n_tools;
 }
-
-#undef TOOLPTR
 
 
 
@@ -8491,7 +8471,7 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 
         // Recover
         m->array_double_tmp[n_events++] = 
-            v->get_prob_recovery() * (1.0 - p->get_recovery_enhancer(v)); 
+            1.0 - (1.0 - v->get_prob_recovery()) * (1.0 - p->get_recovery_enhancer(v)); 
 
     }
     

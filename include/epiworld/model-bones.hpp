@@ -431,9 +431,6 @@ public:
      * involves searching the parameter directly in the std::map<> member
      * of the model (so it is not recommended.)
      * 
-     * The function `set_param()` can be used when the parameter already
-     * exists in the model.
-     * 
      * The `par()` function members are aliases for `get_param()`.
      * 
      * @param initial_val 
@@ -444,11 +441,10 @@ public:
      */
     ///@{
     epiworld_double add_param(epiworld_double initial_val, std::string pname);
-    epiworld_double set_param(std::string pname);
-    constexpr epiworld_double get_param(unsigned int k);
-    constexpr epiworld_double get_param(std::string pname);
-    constexpr epiworld_double par(unsigned int k);
-    constexpr epiworld_double par(std::string pname);
+    epiworld_double get_param(unsigned int k);
+    epiworld_double get_param(std::string pname);
+    epiworld_double par(unsigned int k);
+    epiworld_double par(std::string pname);
     epiworld_double 
         *p0,*p1,*p2,*p3,*p4,*p5,*p6,*p7,*p8,*p9,
         *p10,*p11,*p12,*p13,*p14,*p15,*p16,*p17,*p18,*p19,

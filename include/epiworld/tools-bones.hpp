@@ -7,7 +7,7 @@ class Tool;
 template<typename TSeq>
 class Agent;
 
-#define TOOLPTR std::shared_ptr< Tool<TSeq> >
+// #define ToolPtr<TSeq> std::shared_ptr< Tool<TSeq> >
 
 /**
  * @brief Set of tools (useful for building iterators)
@@ -19,7 +19,7 @@ class Tools {
     friend class Tool<TSeq>;
     friend class Agent<TSeq>;
 private:
-    std::vector< TOOLPTR > * dat;
+    std::vector< ToolPtr<TSeq> > * dat;
     const epiworld_fast_uint * n_tools;
 
 public:
@@ -27,18 +27,18 @@ public:
     Tools() = delete;
     Tools(Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
-    typename std::vector< TOOLPTR >::iterator begin();
-    typename std::vector< TOOLPTR >::iterator end();
+    typename std::vector< ToolPtr<TSeq> >::iterator begin();
+    typename std::vector< ToolPtr<TSeq> >::iterator end();
 
-    TOOLPTR & operator()(size_t i);
-    TOOLPTR & operator[](size_t i);
+    ToolPtr<TSeq> & operator()(size_t i);
+    ToolPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
-inline typename std::vector< TOOLPTR >::iterator Tools<TSeq>::begin()
+inline typename std::vector< ToolPtr<TSeq> >::iterator Tools<TSeq>::begin()
 {
 
     if (*n_tools == 0u)
@@ -48,14 +48,14 @@ inline typename std::vector< TOOLPTR >::iterator Tools<TSeq>::begin()
 }
 
 template<typename TSeq>
-inline typename std::vector< TOOLPTR >::iterator Tools<TSeq>::end()
+inline typename std::vector< ToolPtr<TSeq> >::iterator Tools<TSeq>::end()
 {
      
     return begin() + *n_tools;
 }
 
 template<typename TSeq>
-inline TOOLPTR & Tools<TSeq>::operator()(size_t i)
+inline ToolPtr<TSeq> & Tools<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_tools)
@@ -66,7 +66,7 @@ inline TOOLPTR & Tools<TSeq>::operator()(size_t i)
 }
 
 template<typename TSeq>
-inline TOOLPTR & Tools<TSeq>::operator[](size_t i)
+inline ToolPtr<TSeq> & Tools<TSeq>::operator[](size_t i)
 {
 
     return dat->operator[](i);
@@ -89,7 +89,7 @@ class Tools_const {
     friend class Tool<TSeq>;
     friend class Agent<TSeq>;
 private:
-    const std::vector< TOOLPTR > * dat;
+    const std::vector< ToolPtr<TSeq> > * dat;
     const epiworld_fast_uint * n_tools;
 
 public:
@@ -97,18 +97,18 @@ public:
     Tools_const() = delete;
     Tools_const(const Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
-    typename std::vector< TOOLPTR >::const_iterator begin();
-    typename std::vector< TOOLPTR >::const_iterator end();
+    typename std::vector< ToolPtr<TSeq> >::const_iterator begin();
+    typename std::vector< ToolPtr<TSeq> >::const_iterator end();
 
-    const TOOLPTR & operator()(size_t i);
-    const TOOLPTR & operator[](size_t i);
+    const ToolPtr<TSeq> & operator()(size_t i);
+    const ToolPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
-inline typename std::vector< TOOLPTR >::const_iterator Tools_const<TSeq>::begin() {
+inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::begin() {
 
     if (*n_tools == 0u)
         return dat->end();
@@ -117,13 +117,13 @@ inline typename std::vector< TOOLPTR >::const_iterator Tools_const<TSeq>::begin(
 }
 
 template<typename TSeq>
-inline typename std::vector< TOOLPTR >::const_iterator Tools_const<TSeq>::end() {
+inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::end() {
      
     return begin() + *n_tools;
 }
 
 template<typename TSeq>
-inline const TOOLPTR & Tools_const<TSeq>::operator()(size_t i)
+inline const ToolPtr<TSeq> & Tools_const<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_tools)
@@ -134,7 +134,7 @@ inline const TOOLPTR & Tools_const<TSeq>::operator()(size_t i)
 }
 
 template<typename TSeq>
-inline const TOOLPTR & Tools_const<TSeq>::operator[](size_t i)
+inline const ToolPtr<TSeq> & Tools_const<TSeq>::operator[](size_t i)
 {
 
     return dat->operator[](i);
@@ -146,8 +146,6 @@ inline size_t Tools_const<TSeq>::size() const noexcept
 {
     return *n_tools;
 }
-
-#undef TOOLPTR
 
 
 
