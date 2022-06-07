@@ -241,13 +241,24 @@ inline size_t DataBase<TSeq>::size() const
 template<typename TSeq>
 inline void DataBase<TSeq>::update_state(
         epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
+        epiworld_fast_uint new_status,
+        bool undo
 ) {
 
-    today_total[prev_status]--;
-    today_total[new_status]++;
+    if (undo)
+    {
 
-    record_transition(prev_status, new_status);
+        today_total[prev_status]++;
+        today_total[new_status]--;
+        
+    } else {
+
+        today_total[prev_status]--;
+        today_total[new_status]++;
+
+    }
+
+    record_transition(prev_status, new_status, undo);
     
     return;
 }
@@ -284,11 +295,22 @@ inline void DataBase<TSeq>::update_tool(
 template<typename TSeq>
 inline void DataBase<TSeq>::record_transition(
     epiworld_fast_uint from,
-    epiworld_fast_uint to
+    epiworld_fast_uint to,
+    bool undo
 ) {
 
-    transition_matrix[to * model->nstatus + from]++;
-    transition_matrix[from * model->nstatus + from]--;
+    if (undo)
+    {   
+
+        transition_matrix[to * model->nstatus + from]--;
+        transition_matrix[from * model->nstatus + from]++;
+
+    } else {
+
+        transition_matrix[to * model->nstatus + from]++;
+        transition_matrix[from * model->nstatus + from]--;
+
+    }
 
     #ifdef EPI_DEBUG
     if (transition_matrix[from * model->nstatus + from] < 0)

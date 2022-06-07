@@ -647,6 +647,23 @@ inline void Agent<TSeq>::print(bool compressed) const
 
 }
 
+template<typename TSeq>
+inline double & Agent<TSeq>::operator()(size_t j)
+{
+
+    if (model->population_data_n_features <= j)
+        throw std::logic_error("The requested feature of the agent is out of range.");
+
+    return *(model->population_data + j * model->size() + id);
+
+}
+
+template<typename TSeq>
+inline double & Agent<TSeq>::operator[](size_t j)
+{
+    return *(model->population_data + j * model->size() + id);
+}
+
 #undef CHECK_COALESCE_
 
 #endif

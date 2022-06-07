@@ -2550,7 +2550,8 @@ private:
 
     void update_state(
         epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
+        epiworld_fast_uint new_status,
+        bool undo = false
     );
 
     void update_virus(
@@ -2565,7 +2566,7 @@ private:
         epiworld_fast_uint new_status
     );
 
-    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
+    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
 
 public:
 
@@ -2943,13 +2944,24 @@ inline size_t DataBase<TSeq>::size() const
 template<typename TSeq>
 inline void DataBase<TSeq>::update_state(
         epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
+        epiworld_fast_uint new_status,
+        bool undo
 ) {
 
-    today_total[prev_status]--;
-    today_total[new_status]++;
+    if (undo)
+    {
 
-    record_transition(prev_status, new_status);
+        today_total[prev_status]++;
+        today_total[new_status]--;
+        
+    } else {
+
+        today_total[prev_status]--;
+        today_total[new_status]++;
+
+    }
+
+    record_transition(prev_status, new_status, undo);
     
     return;
 }
@@ -2986,11 +2998,22 @@ inline void DataBase<TSeq>::update_tool(
 template<typename TSeq>
 inline void DataBase<TSeq>::record_transition(
     epiworld_fast_uint from,
-    epiworld_fast_uint to
+    epiworld_fast_uint to,
+    bool undo
 ) {
 
-    transition_matrix[to * model->nstatus + from]++;
-    transition_matrix[from * model->nstatus + from]--;
+    if (undo)
+    {   
+
+        transition_matrix[to * model->nstatus + from]--;
+        transition_matrix[from * model->nstatus + from]++;
+
+    } else {
+
+        transition_matrix[to * model->nstatus + from]++;
+        transition_matrix[from * model->nstatus + from]--;
+
+    }
 
     #ifdef EPI_DEBUG
     if (transition_matrix[from * model->nstatus + from] < 0)
@@ -4351,6 +4374,9 @@ template<typename TSeq>
 class Agent;
 
 template<typename TSeq>
+class AgentsSample;
+
+template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
@@ -4422,6 +4448,7 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
 template<typename TSeq = int>
 class Model {
     friend class Agent<TSeq>;
+    friend class AgentsSample<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
 private:
@@ -4429,8 +4456,35 @@ private:
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Agent<TSeq> > population;
+
+    /**
+     * @name Auxiliary variables for AgentsSample<TSeq> iterators
+     * 
+     * @details These variables+objects are used by the AgentsSample<TSeq>
+     * class for building efficient iterators over agents. The idea is to
+     * reduce the memory allocation, so only during the first call of
+     * AgentsSample<TSeq>::AgentsSample(Model<TSeq>) these vectors are allocated.
+     */
+    ///@{
+    std::vector< Agent<TSeq> * > sampled_population;
+    size_t sampled_population_n = 0u;
+    std::vector< size_t > population_left;
+    size_t population_left_n = 0u;
+    ///@}
+
+    /**
+     * @name Agents features
+     * 
+     * @details Optionally, a model can include an external data source
+     * pointing to agents information. The data can then be access through
+     * the `Agent::operator()` method.
+     * 
+     */
+    ///@{
     double * population_data = nullptr;
     size_t population_data_n_features = 0u;
+    ///@}
+
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses;
@@ -4868,6 +4922,19 @@ public:
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
 
+    /**
+     * @brief Set the agents data object
+     * 
+     * @details The data should be an array with the data stored in a
+     * column major order, i.e., by column.
+     * 
+     * @param data_ Pointer to the first element of an array of size
+     * `size() * ncols_`.
+     * @param ncols_ Number of features included in the data.
+     * 
+     */
+    void set_agents_data(double * data_, size_t ncols_);
+
 };
 
 #endif
@@ -5085,16 +5152,53 @@ inline void Model<TSeq>::actions_run()
                     "The proposed status " + std::to_string(a.new_status) + " is out of range. " +
                     "The model currently has " + std::to_string(nstatus - 1) + " statuses.");
 
-            // Updating accounting
-            db.update_state(p->status, a.new_status);
+            // Figuring out if we need to undo a change
+            // If the agent has made a change in the status recently, then we
+            // need to undo the accounting, e.g., if A->B was made, we need to
+            // undo it and set B->A so that the daily accounting is right.
+            if (p->status_last_changed == today())
+            {
 
-            for (size_t v = 0u; v < p->n_viruses; ++v)
-                db.update_virus(p->viruses[v]->id, p->status, a.new_status);
+                // Updating accounting
+                db.update_state(p->status_prev, p->status, true);
+                db.update_state(p->status_prev, a.new_status);
 
-            for (size_t t = 0u; t < p->n_tools; ++t)
-                db.update_tool(p->tools[t]->id, p->status, a.new_status);
+                for (size_t v = 0u; v < p->n_viruses; ++v)
+                {
+                    db.update_virus(p->viruses[v]->id, p->status, p->status_prev);
+                    db.update_virus(p->viruses[v]->id, p->status_prev, a.new_status);
+                }
 
-            p->status = a.new_status;
+                for (size_t t = 0u; t < p->n_tools; ++t)
+                {
+                    db.update_tool(p->tools[t]->id, p->status, p->status_prev);
+                    db.update_tool(p->tools[t]->id, p->status_prev, a.new_status);
+                }
+
+                // Changing to the new status, we won't update the
+                // previous status in case we need to undo the change
+                p->status = a.new_status;
+
+            } else {
+
+                // Updating accounting
+                db.update_state(p->status, a.new_status);
+
+                for (size_t v = 0u; v < p->n_viruses; ++v)
+                    db.update_virus(p->viruses[v]->id, p->status, a.new_status);
+
+                for (size_t t = 0u; t < p->n_tools; ++t)
+                    db.update_tool(p->tools[t]->id, p->status, a.new_status);
+
+
+                // Saving the last status and setting the new one
+                p->status_prev = p->status;
+                p->status      = a.new_status;
+
+                // It used to be a day before, but we still
+                p->status_last_changed = today();
+
+            }
             
         }
 
@@ -5103,6 +5207,8 @@ inline void Model<TSeq>::actions_run()
             queue += p;
         else if (a.queue < 0)
             queue -= p;
+
+    
 
     }
 
@@ -5671,11 +5777,6 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
         throw std::logic_error(
             "The virus \"" + v.get_name() + "\" has no -post- status."
             );
-    // else if (rm_ == -99)
-    //     throw std::logic_error(
-    //         "The virus \"" + v.get_name() + "\" has no -rm- status."
-    //         );
-
 
     // Setting the id
     v.set_id(viruses.size());
@@ -6715,6 +6816,13 @@ template<typename TSeq>
 const std::vector< ToolPtr<TSeq> > & Model<TSeq>::get_tools() const
 {
     return tools;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_agents_data(double * data_, size_t ncols_)
+{
+    population_data = data_;
+    population_data_n_features = ncols_;
 }
 
 #undef DURCAST
@@ -8214,20 +8322,44 @@ inline void Tool<TSeq>::get_queue(
 #define EPIWORLD_ENTITY_BONES_HPP
 
 template<typename TSeq>
+class Model;
+
+template<typename TSeq>
 class Agent;
 
 template<typename TSeq>
+class AgentsSample;
+
+template<typename TSeq>
 class Entity {
+    friend class Agent<TSeq>;
+    friend class AgentsSample<TSeq>;
+    friend class Model<TSeq>;
 private:
     
     std::vector< Agent<TSeq> * > agents;
     size_t n_agents = 0u;
 
+    /**
+     * @name Auxiliary variables for AgentsSample<TSeq> iterators
+     * 
+     * @details These variables+objects are used by the AgentsSample<TSeq>
+     * class for building efficient iterators over agents. The idea is to
+     * reduce the memory allocation, so only during the first call of
+     * AgentsSample<TSeq>::AgentsSample(Entity<TSeq>) these vectors are allocated.
+     */
+    ///@{
+    std::vector< Agent<TSeq> * > sampled_agents;
+    size_t sampled_agents_n = 0u;
+    std::vector< size_t > sampled_agents_left;
+    size_t sampled_agents_left_n = 0u;
+    ///@}
+
     int max_capacity = -1;
     std::string entity_name = "Unknown entity";
 
     std::vector< epiworld_double > location = {0.0}; ///< An arbitrary vector for location
-    
+    Model<TSeq> * model = nullptr;
 
 public:
 
@@ -8582,9 +8714,12 @@ private:
     Model<TSeq> * model;
     
     std::vector< Agent<TSeq> * > neighbors;
-    std::vector< Entity<TSeq> *> entities;
+    std::vector< Entity<TSeq> * > entities;
 
     epiworld_fast_uint status = 0u;
+    epiworld_fast_uint status_prev = 0u; ///< For accounting, if need to undo a change.
+    
+    int status_last_changed = -1; ///< Last time the agent was updated.
     int id = -1;
     
     bool in_queue = false;
@@ -8731,6 +8866,28 @@ public:
     bool has_tool(std::string name) const;
     bool has_virus(unsigned int t) const;
     bool has_virus(std::string name) const;
+
+    void print(bool compressed = false) const;
+
+    /**
+     * @brief Access the j-th column of the agent
+     * 
+     * If an external array has been specified, then these two
+     * functions can be used to access additional agent's features 
+     * not included in the model.
+     * 
+     * The `operator[]` method is with no boundary check, whereas
+     * the `operator()` method checks boundaries. The former can result
+     * in a segfault.
+     * 
+     * 
+     * @param j 
+     * @return double& 
+     */
+    ///@{
+    double & operator()(size_t j);
+    double & operator[](size_t j);
+    ///@}
 
 };
 
@@ -9379,6 +9536,48 @@ inline bool Agent<TSeq>::has_virus(std::string name) const
 
 }
 
+template<typename TSeq>
+inline void Agent<TSeq>::print(bool compressed) const
+{
+
+    if (compressed)
+    {
+        printf_epiworld(
+            "Agent: %i, Status: %s (%lu), Nvirus: %lu, NTools: %lu, NNeigh: %lu\n",
+            id, model->status_labels[status].c_str(), status, n_viruses, n_tools, neighbors.size()
+        );
+    }
+    else {
+
+        printf_epiworld("Information about agent id %i\n", this->id);
+        printf_epiworld("  Status       : %s (%lu)\n", model->status_labels[status].c_str(), status);
+        printf_epiworld("  Virus count  : %lu\n", n_viruses);
+        printf_epiworld("  Tool count   : %lu\n", n_tools);
+        printf_epiworld("  Neigh. count : %lu\n", neighbors.size());
+
+    }
+
+    return;
+
+}
+
+template<typename TSeq>
+inline double & Agent<TSeq>::operator()(size_t j)
+{
+
+    if (model->population_data_n_features <= j)
+        throw std::logic_error("The requested feature of the agent is out of range.");
+
+    return *(model->population_data + j * model->size() + id);
+
+}
+
+template<typename TSeq>
+inline double & Agent<TSeq>::operator[](size_t j)
+{
+    return *(model->population_data + j * model->size() + id);
+}
+
 #undef CHECK_COALESCE_
 
 #endif
@@ -9386,6 +9585,249 @@ inline bool Agent<TSeq>::has_virus(std::string name) const
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -include/epiworld/agent-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/agentssample-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_AGENTS_BONES_HPP
+#define EPIWORLD_AGENTS_BONES_HPP
+
+template<typename TSeq>
+class Agent;
+
+template<typename TSeq>
+class Model;
+
+template<typename TSeq>
+class Entity;
+
+/**
+ * @brief Sample of agents
+ * 
+ * This class allows sampling agents from Entity<TSeq> and Model<TSeq>.
+ * 
+ * @tparam TSeq 
+ */
+template<typename TSeq>
+class AgentsSample {
+private:
+
+    size_t sample_size = 0u;
+
+    std::vector< Agent<TSeq>* > * agents = nullptr; ///< Pointer to sample of agents
+    size_t * agents_n = nullptr;                    ///< Size of sample of agents
+    
+    std::vector< size_t > * agents_left = nullptr;  ///< Pointer to agents left (iota)
+    size_t * agents_left_n = nullptr;               ///< Size of agents left
+
+    Model<TSeq> * model = nullptr;   ///< Extracts runif() and (if the case) population.
+    Entity<TSeq> * entity = nullptr; ///
+    
+    bool is_model = false;
+
+    void sample_n(size_t n); ///< Backbone function for sampling
+
+
+public:
+
+    // Not available (for now)
+    AgentsSample() = delete;                       ///< Default constructor
+    AgentsSample(const AgentsSample<TSeq> & a) = delete; ///< Copy constructor
+    AgentsSample(AgentsSample<TSeq> && a) = delete;      ///< Move constructor
+
+    AgentsSample(Model<TSeq> & model_, size_t n);
+    AgentsSample(Entity<TSeq> & entity_, size_t n);
+
+    ~AgentsSample();
+
+    typename std::vector< Agent<TSeq> * >::iterator begin();
+    typename std::vector< Agent<TSeq> * >::iterator end();
+
+    Agent<TSeq> * operator[](size_t n);
+    Agent<TSeq> * operator()(size_t n);
+    const size_t size() const noexcept;
+
+};
+
+template<typename TSeq>
+inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n) {
+
+    if (n > model_.size())
+        throw std::logic_error(
+            "There are only " + std::to_string(model_.size()) + " agents. You cannot " +
+            "sample " + std::to_string(n));
+
+    sample_size = n;
+    is_model    = true;
+    
+    model    = &model_;
+
+    agents   = &model_.sampled_population;
+    agents_n = &model_.sampled_population_n;
+
+    agents_left   = &model_.population_left;
+    agents_left_n = &model_.population_left_n;
+
+    sample_n(n);
+    
+    return; 
+
+}
+
+template<typename TSeq>
+inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n) {
+
+    if (n > entity_.size())
+        throw std::logic_error(
+            "There are only " + std::to_string(entity_.size()) + " agents. You cannot " +
+            "sample " + std::to_string(n));
+
+    model    = &entity_.model;
+
+    is_model = false;
+
+    agents   = &entity_.sampled_agents;
+    agents_n = &entity_.sampled_agents_n;
+
+    agents_left   = &entity_.sampled_agents_left;
+    agents_left_n = &entity_.sampled_agents_left_n;
+
+    sample_n(n);
+
+    return; 
+
+}
+
+template<typename TSeq>
+inline AgentsSample<TSeq>::~AgentsSample() {}
+
+template<typename TSeq>
+inline const size_t AgentsSample<TSeq>::size() const noexcept
+{ 
+    return this->sample_size;
+}
+
+template<typename TSeq>
+inline Agent<TSeq> * AgentsSample<TSeq>::operator[](size_t i)
+{
+
+    return agents->operator[](i);
+
+}
+
+template<typename TSeq>
+inline Agent<TSeq> * AgentsSample<TSeq>::operator()(size_t i)
+{
+
+    if (i >= this->sample_size)
+        throw std::range_error("The requested agent is out of range.");
+
+    return agents->operator[](i);
+
+}
+
+template<typename TSeq>
+inline typename std::vector< Agent<TSeq> * >::iterator AgentsSample<TSeq>::begin()
+{
+
+    if (sample_size > 0u)
+        return agents->begin();
+    else
+        return agents->end();
+
+}
+
+template<typename TSeq>
+inline typename std::vector< Agent<TSeq> * >::iterator AgentsSample<TSeq>::end()
+{
+
+    return agents->begin() + sample_size;
+
+}
+
+template<typename TSeq>
+inline void AgentsSample<TSeq>::sample_n(size_t n)
+{
+
+    // Checking if the size of the entity has changed (or hasn't been initialized)
+    if (is_model)
+    {
+
+        if (model->size() != agents_left->size())
+        {
+            agents_left->resize(model->size(), 0u);
+            std::iota(agents_left->begin(), agents_left->end(), 0u);
+        }
+
+
+    } else {
+
+        if (entity->size() != agents_left->size())
+        {
+
+            agents_left->resize(entity->size(), 0u);
+            std::iota(agents_left->begin(), agents_left->end(), 0u);
+
+        }
+
+    }
+
+    // Restart the counter of agents left
+    *agents_left_n = agents_left->size();
+
+    size_t idx = 0;
+    if (agents->size() < sample_size)
+        agents->resize(sample_size, nullptr);
+
+    if (is_model)
+    {
+
+        for (size_t i = 0u; i < n; ++i)
+        {
+
+            size_t ith = agents_left->operator[](model->runif() * ((*agents_left_n)--));
+            agents->operator[](i) = &model->population[ith];
+
+            // Updating list
+            std::swap(agents_left->operator[](ith), agents_left->operator[](*agents_left_n));
+
+        }
+
+    } else {
+
+        for (size_t i = 0u; i < n; ++i)
+        {
+
+            size_t ith = agents_left->operator[](model->runif() * (--(*agents_left_n)));
+            agents->operator[](i) = entity->agents[ith];
+
+            // Updating list
+            std::swap(agents_left->operator[](ith), agents_left->operator[](*agents_left_n));
+
+        }
+
+    }
+
+    return;
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/agentssample-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/

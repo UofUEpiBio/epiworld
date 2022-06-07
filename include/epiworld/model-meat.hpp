@@ -194,16 +194,53 @@ inline void Model<TSeq>::actions_run()
                     "The proposed status " + std::to_string(a.new_status) + " is out of range. " +
                     "The model currently has " + std::to_string(nstatus - 1) + " statuses.");
 
-            // Updating accounting
-            db.update_state(p->status, a.new_status);
+            // Figuring out if we need to undo a change
+            // If the agent has made a change in the status recently, then we
+            // need to undo the accounting, e.g., if A->B was made, we need to
+            // undo it and set B->A so that the daily accounting is right.
+            if (p->status_last_changed == today())
+            {
 
-            for (size_t v = 0u; v < p->n_viruses; ++v)
-                db.update_virus(p->viruses[v]->id, p->status, a.new_status);
+                // Updating accounting
+                db.update_state(p->status_prev, p->status, true);
+                db.update_state(p->status_prev, a.new_status);
 
-            for (size_t t = 0u; t < p->n_tools; ++t)
-                db.update_tool(p->tools[t]->id, p->status, a.new_status);
+                for (size_t v = 0u; v < p->n_viruses; ++v)
+                {
+                    db.update_virus(p->viruses[v]->id, p->status, p->status_prev);
+                    db.update_virus(p->viruses[v]->id, p->status_prev, a.new_status);
+                }
 
-            p->status = a.new_status;
+                for (size_t t = 0u; t < p->n_tools; ++t)
+                {
+                    db.update_tool(p->tools[t]->id, p->status, p->status_prev);
+                    db.update_tool(p->tools[t]->id, p->status_prev, a.new_status);
+                }
+
+                // Changing to the new status, we won't update the
+                // previous status in case we need to undo the change
+                p->status = a.new_status;
+
+            } else {
+
+                // Updating accounting
+                db.update_state(p->status, a.new_status);
+
+                for (size_t v = 0u; v < p->n_viruses; ++v)
+                    db.update_virus(p->viruses[v]->id, p->status, a.new_status);
+
+                for (size_t t = 0u; t < p->n_tools; ++t)
+                    db.update_tool(p->tools[t]->id, p->status, a.new_status);
+
+
+                // Saving the last status and setting the new one
+                p->status_prev = p->status;
+                p->status      = a.new_status;
+
+                // It used to be a day before, but we still
+                p->status_last_changed = today();
+
+            }
             
         }
 
@@ -212,6 +249,8 @@ inline void Model<TSeq>::actions_run()
             queue += p;
         else if (a.queue < 0)
             queue -= p;
+
+    
 
     }
 
@@ -1561,6 +1600,13 @@ template<typename TSeq>
 const std::vector< ToolPtr<TSeq> > & Model<TSeq>::get_tools() const
 {
     return tools;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_agents_data(double * data_, size_t ncols_)
+{
+    population_data = data_;
+    population_data_n_features = ncols_;
 }
 
 #undef DURCAST

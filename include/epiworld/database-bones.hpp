@@ -98,7 +98,8 @@ private:
 
     void update_state(
         epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
+        epiworld_fast_uint new_status,
+        bool undo = false
     );
 
     void update_virus(
@@ -113,7 +114,7 @@ private:
         epiworld_fast_uint new_status
     );
 
-    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to);
+    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
 
 public:
 

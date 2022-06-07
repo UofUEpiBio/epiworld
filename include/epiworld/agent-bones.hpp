@@ -62,6 +62,9 @@ private:
     std::vector< Entity<TSeq> * > entities;
 
     epiworld_fast_uint status = 0u;
+    epiworld_fast_uint status_prev = 0u; ///< For accounting, if need to undo a change.
+    
+    int status_last_changed = -1; ///< Last time the agent was updated.
     int id = -1;
     
     bool in_queue = false;
@@ -210,6 +213,26 @@ public:
     bool has_virus(std::string name) const;
 
     void print(bool compressed = false) const;
+
+    /**
+     * @brief Access the j-th column of the agent
+     * 
+     * If an external array has been specified, then these two
+     * functions can be used to access additional agent's features 
+     * not included in the model.
+     * 
+     * The `operator[]` method is with no boundary check, whereas
+     * the `operator()` method checks boundaries. The former can result
+     * in a segfault.
+     * 
+     * 
+     * @param j 
+     * @return double& 
+     */
+    ///@{
+    double & operator()(size_t j);
+    double & operator[](size_t j);
+    ///@}
 
 };
 

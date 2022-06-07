@@ -103,8 +103,19 @@ private:
     size_t population_left_n = 0u;
     ///@}
 
+    /**
+     * @name Agents features
+     * 
+     * @details Optionally, a model can include an external data source
+     * pointing to agents information. The data can then be access through
+     * the `Agent::operator()` method.
+     * 
+     */
+    ///@{
     double * population_data = nullptr;
     size_t population_data_n_features = 0u;
+    ///@}
+
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses;
@@ -541,6 +552,19 @@ public:
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
+
+    /**
+     * @brief Set the agents data object
+     * 
+     * @details The data should be an array with the data stored in a
+     * column major order, i.e., by column.
+     * 
+     * @param data_ Pointer to the first element of an array of size
+     * `size() * ncols_`.
+     * @param ncols_ Number of features included in the data.
+     * 
+     */
+    void set_agents_data(double * data_, size_t ncols_);
 
 };
 
