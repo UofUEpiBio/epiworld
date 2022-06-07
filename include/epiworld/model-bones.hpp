@@ -58,7 +58,8 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
     bool tool_info = false,
     bool tool_hist = false,
     bool transmission = false,
-    bool transition = false
+    bool transition = false,
+    bool reproductive = false
     );
 
 // template<typename TSeq>
