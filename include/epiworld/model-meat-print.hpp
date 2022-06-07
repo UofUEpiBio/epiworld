@@ -234,6 +234,9 @@ inline void Model<TSeq>::print() const
         }
     }
 
+    if (initialized && (today() != 0))
+        (void) db.transition_probability(true);
+
     return;
 
 }

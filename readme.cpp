@@ -19,15 +19,15 @@ int main()
     // - Have a 50% recovery rate
     // - Infected individuals become "Infected" (status 1)
     // - Recovered individuals become "Recovered" (status 2)
-    // Only five individuals will have the virus from the beginning.
+    // 100 individuals will have the virus from the beginning.
     Virus<> virus("covid 19");
 
-    virus.set_prob_infecting(.9);
-    virus.set_prob_recovery(.5);
+    virus.set_prob_infecting(.95);
+    virus.set_prob_recovery(.14);
     
     virus.set_status(1, 2);
 
-    model.add_virus_n(virus, 5);
+    model.add_virus_n(virus, 100);
     
     // Generating a random pop from a smallworld network
     model.agents_smallworld(100000);

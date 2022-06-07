@@ -12,7 +12,7 @@ building complex models quickly. Here are some of its main features:
   - Models can have an arbitrary set of states.
   - Viruses and tools (e.g., vaccines, mask-wearing) can be designed to have arbitrary features.
   - Multiple tools and viruses can live in the same simulation.
-  - It is *FAST*: About 7.5 Million person/day simulations per second (see example below).
+  - It is *FAST*: About 30 Million person/day simulations per second (see example below).
 
 Various examples can be found in the [examples](examples) folder.
 
@@ -47,18 +47,18 @@ int main()
 
     // Desgining a virus: This virus will:
     // - Have a 90% transmission rate
-    // - Have a 50% recovery rate
+    // - Have a 20% recovery rate
     // - Infected individuals become "Infected" (status 1)
     // - Recovered individuals become "Recovered" (status 2)
-    // Only five individuals will have the virus from the beginning.
+    // Only twenty individuals will have the virus from the beginning.
     Virus<> virus("covid 19");
 
     virus.set_prob_infecting(.9);
-    virus.set_prob_recover(.5);
+    virus.set_prob_recover(.2);
     
     virus.set_status(1, 2);
 
-    model.add_virus_n(virus, 5);
+    model.add_virus_n(virus, 20);
     
     // Generating a random pop from a smallworld network
     model.population_smallworld(100000);
@@ -86,11 +86,11 @@ SIMULATION STUDY
 Population size    : 100000
 Days (duration)    : 100 (of 100)
 Number of variants : 1
-Last run elapsed t : 134.00ms
+Last run elapsed t : 323.00ms
 Rewiring           : off
 
 Virus(es):
- - covid 19 (baseline prevalence: 5 seeds)
+ - covid 19 (baseline prevalence: 100 seeds)
 
 Tool(s):
  (none)
@@ -99,12 +99,17 @@ Model parameters:
  (none)
 
 Distribution of the population at time 100:
-- (0) Total Susceptible :  99995 -> 95466
-- (1) Total Infected    :      5 -> 70
-- (2) Total Recovered   :      0 -> 4464
+ - (0) Susceptible :  99900 -> 34655
+ - (1) Infected    :    100 -> 3159
+ - (2) Recovered   :      0 -> 62186
+
+Transition Probabilities:
+ - Susceptible  0.99  0.01  0.00
+ - Infected     0.00  0.86  0.14
+ - Recovered    0.00  0.00  1.00
 ```
 
-Which took about 0.134 seconds (~ 7.5 million ppl x day / second).
+Which took about 0.323 seconds (~ 30 million ppl x day / second).
 
 ## Simulation Steps
 

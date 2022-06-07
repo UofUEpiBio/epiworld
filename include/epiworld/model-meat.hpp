@@ -31,7 +31,8 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
     bool tool_info,
     bool tool_hist,
     bool transmission,
-    bool transition
+    bool transition,
+    bool reproductive
     )
 {
 
@@ -52,7 +53,8 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
         tool_hist,
         total_hist,
         transmission,
-        transition
+        transition,
+        reproductive
     };
 
     std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
@@ -68,6 +70,7 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
         std::string total_hist = "";
         std::string transmission = "";
         std::string transition = "";
+        std::string reproductive = "";
 
         char buff[128];
         if (what_to_save[0u])
@@ -112,6 +115,14 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
             snprintf(buff, sizeof(buff), transition.c_str(), niter);
             transition = buff;
         } 
+        if (what_to_save[7u])
+        {
+
+            reproductive = fmt + std::string("_reproductive.csv");
+            snprintf(buff, sizeof(buff), reproductive.c_str(), niter);
+            reproductive = buff;
+
+        }
     
         m->write_data(
             variant_info,
@@ -120,7 +131,8 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
             tool_hist,
             total_hist,
             transmission,
-            transition
+            transition,
+            reproductive
         );
 
     };
@@ -202,18 +214,18 @@ inline void Model<TSeq>::actions_run()
             {
 
                 // Updating accounting
-                db.update_state(p->status_prev, p->status, true);
+                db.update_state(p->status_prev, p->status, true); // Undoing
                 db.update_state(p->status_prev, a.new_status);
 
                 for (size_t v = 0u; v < p->n_viruses; ++v)
                 {
-                    db.update_virus(p->viruses[v]->id, p->status, p->status_prev);
+                    db.update_virus(p->viruses[v]->id, p->status, p->status_prev); // Undoing
                     db.update_virus(p->viruses[v]->id, p->status_prev, a.new_status);
                 }
 
                 for (size_t t = 0u; t < p->n_tools; ++t)
                 {
-                    db.update_tool(p->tools[t]->id, p->status, p->status_prev);
+                    db.update_tool(p->tools[t]->id, p->status, p->status_prev); // Undoing
                     db.update_tool(p->tools[t]->id, p->status_prev, a.new_status);
                 }
 
@@ -249,8 +261,6 @@ inline void Model<TSeq>::actions_run()
             queue += p;
         else if (a.queue < 0)
             queue -= p;
-
-    
 
     }
 
@@ -1169,14 +1179,17 @@ inline void Model<TSeq>::write_data(
     std::string fn_tool_hist,
     std::string fn_total_hist,
     std::string fn_transmission,
-    std::string fn_transition
+    std::string fn_transition,
+    std::string fn_reproductive_number
     ) const
 {
 
     db.write_data(
         fn_variant_info, fn_variant_hist,
         fn_tool_info, fn_tool_hist,
-        fn_total_hist, fn_transmission, fn_transition);
+        fn_total_hist, fn_transmission, fn_transition,
+        fn_reproductive_number
+        );
 
 }
 

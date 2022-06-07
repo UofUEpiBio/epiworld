@@ -121,7 +121,8 @@ int main() {
         "tool_hist.txt",
         "total.txt",
         "transmisions.txt",
-        "transition.txt"
+        "transition.txt",
+        "reproductive.txt"
     );
 
     model.write_edgelist("simple-world-edgelist.txt");

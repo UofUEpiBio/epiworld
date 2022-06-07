@@ -380,6 +380,7 @@ public:
      * @param fn_total_hist   Filename. Aggregated history (status)
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
+     * @param fn_reproductive_number Filename. Case by case reproductive number
      */
     void write_data(
         std::string fn_variant_info,
@@ -388,7 +389,8 @@ public:
         std::string fn_tool_hist,
         std::string fn_total_hist,
         std::string fn_transmission,
-        std::string fn_transition
+        std::string fn_transition,
+        std::string fn_reproductive_number
         ) const;
 
     /**

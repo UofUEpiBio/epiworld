@@ -44,13 +44,8 @@ int main()
         "tool_hist.txt",
         "total_hist.txt",
         "transmissions.txt",
-        "transitions.txt"
+        "transitions.txt",
+        "reproductive.txt"
         );
-
-    model.get_db().reproductive_number(
-        "reproductive_number.txt"
-    );
-
-    (void) model.get_db().transition_probability();
   
 }

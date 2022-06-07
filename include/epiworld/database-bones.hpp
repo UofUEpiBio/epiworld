@@ -188,7 +188,8 @@ public:
         std::string fn_tool_hist,
         std::string fn_total_hist,
         std::string fn_transmission,
-        std::string fn_transition
+        std::string fn_transition,
+        std::string fn_reproductive_number
         ) const;
     
     void record_transmission(int i, int j, int variant, int i_expo_date);
