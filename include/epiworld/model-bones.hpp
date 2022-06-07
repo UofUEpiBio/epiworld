@@ -5,7 +5,7 @@ template<typename TSeq>
 class Agent;
 
 template<typename TSeq>
-class Agents;
+class AgentsSample;
 
 template<typename TSeq>
 class Virus;
@@ -79,7 +79,7 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
 template<typename TSeq = int>
 class Model {
     friend class Agent<TSeq>;
-    friend class Agents<TSeq>;
+    friend class AgentsSample<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
 private:
@@ -87,6 +87,22 @@ private:
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Agent<TSeq> > population;
+
+    /**
+     * @name Auxiliary variables for AgentsSample<TSeq> iterators
+     * 
+     * @details These variables+objects are used by the AgentsSample<TSeq>
+     * class for building efficient iterators over agents. The idea is to
+     * reduce the memory allocation, so only during the first call of
+     * AgentsSample<TSeq>::AgentsSample(Model<TSeq>) these vectors are allocated.
+     */
+    ///@{
+    std::vector< Agent<TSeq> * > sampled_population;
+    size_t sampled_population_n = 0u;
+    std::vector< size_t > population_left;
+    size_t population_left_n = 0u;
+    ///@}
+
     double * population_data = nullptr;
     size_t population_data_n_features = 0u;
     bool directed = false;

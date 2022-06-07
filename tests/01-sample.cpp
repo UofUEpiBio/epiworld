@@ -38,8 +38,7 @@ int main()
 
     (void) model.get_db().transition_probability();
 
-    Agents<int> agents(model);
-    agents.sample(.05);
+    AgentsSample<int> agents(model, .05 * 10000);
 
 
     printf_epiworld("Total sampled: %lu\n", agents.size());

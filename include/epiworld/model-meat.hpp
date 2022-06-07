@@ -780,11 +780,6 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
         throw std::logic_error(
             "The virus \"" + v.get_name() + "\" has no -post- status."
             );
-    // else if (rm_ == -99)
-    //     throw std::logic_error(
-    //         "The virus \"" + v.get_name() + "\" has no -rm- status."
-    //         );
-
 
     // Setting the id
     v.set_id(viruses.size());

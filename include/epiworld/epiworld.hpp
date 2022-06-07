@@ -60,7 +60,7 @@ namespace epiworld {
     #include "agent-bones.hpp"
     #include "agent-meat.hpp"
 
-    #include "agents-bones.hpp"
+    #include "agentssample-bones.hpp"
 
 }
 
