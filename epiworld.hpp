@@ -9139,7 +9139,7 @@ inline void Agent<TSeq>::add_tool(
     
 
     model->actions_add(
-        this, nullptr, tool, status_new, queue, add_tool_
+        this, nullptr, tool, status_new, queue, add_tool_, -1
         );
 
 }
@@ -9170,7 +9170,7 @@ inline void Agent<TSeq>::add_virus(
             " included in the model.");
 
     model->actions_add(
-        this, virus, nullptr, status_new, queue, add_virus_
+        this, virus, nullptr, status_new, queue, add_virus_, -1
         );
 
 }
@@ -9201,7 +9201,7 @@ inline void Agent<TSeq>::rm_tool(
         );
 
     model->actions_add(
-        this, nullptr, tools[tool_idx] , status_new, queue, rm_tool_
+        this, nullptr, tools[tool_idx] , status_new, queue, rm_tool_, -1
         );
 
 }
@@ -9218,7 +9218,7 @@ inline void Agent<TSeq>::rm_tool(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, tool, nullptr , status_new, queue, rm_tool_
+        this, tool, nullptr , status_new, queue, rm_tool_, -1
         );
 
 }
@@ -9242,7 +9242,7 @@ inline void Agent<TSeq>::rm_virus(
 
 
     model->actions_add(
-        this, viruses[virus_idx], nullptr, status_new, queue, default_rm_virus<TSeq>
+        this, viruses[virus_idx], nullptr, status_new, queue, default_rm_virus<TSeq>, -1
         );
     
 }

@@ -175,7 +175,7 @@ public:
     );
 
     void rm_entity(
-        Entity<TSeq> & virus,
+        Entity<TSeq> & entity,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
@@ -267,8 +267,6 @@ public:
     ///@}
 
     const std::vector< Entity<TSeq> * > get_entities();
-    void add_entity(Entity<TSeq> & e);
-    void rm_entity(size_t idx);
 
 };
 

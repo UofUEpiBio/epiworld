@@ -133,38 +133,33 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
     Agent<TSeq> * p  = a.agent;
     Entity<TSeq> * e = a.entity;
 
-    // Checking if the agent isn't it already in the entity
-    if (p->n_entities++ == 0u)
+    // Adding the entity to the agent
+    if (++p->n_entities <= p->entities.size())
     {
-        size_t n_entities = p->n_entities;
 
-        if (n_entities <= p->entities.size())
-        {
+        p->entities[p->n_entities - 1]           = e;
+        p->entities_locations[p->n_entities - 1] = e->n_agents;
 
-            p->entities[n_entities - 1]           = e;
-            p->entities_locations[n_entities - 1] = e->n_agents;
-
-        } else
-        {
-            p->entities.push_back(e);
-            p->entities_locations.push_back(e->n_agents);
-        }
-
-    } else {
-
-        int a_id = p->id;
-        
-        for (const auto & a_e : e->agents)
-            if (a_e->id == a_id)
-                throw std::logic_error(
-                    "Agent "+ std::to_string(a_id) +" already added to the entity \"" +
-                    e->get_name() + "\""
-                    );
-
-        
-
+    } else
+    {
+        p->entities.push_back(e);
+        p->entities_locations.push_back(e->n_agents);
     }
 
+    // Adding the agent to the entity
+    // Adding the entity to the agent
+    if (++e->n_agents <= e->agents.size())
+    {
+
+        e->agents[e->n_agents - 1]          = p;
+        // Adjusted by '-1' since the list of entities in the agent just grew.
+        e->agents_location[e->n_agents - 1] = p->n_entities - 1;
+
+    } else
+    {
+        e->agents.push_back(p);
+        e->agents_location.push_back(p->n_entities - 1);
+    }
     
 }
 
@@ -172,6 +167,56 @@ template<typename TSeq>
 inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
 {
     
+    Agent<TSeq> *  p = a.agent;    
+    Entity<TSeq> * e = a.entity;
+    size_t idx_agent_in_entity = a.idx_agent;
+    size_t idx_entity_in_agent = a.idx_object;
+
+    CHECK_COALESCE_(a.new_status, e->status_post, p->get_status())
+    CHECK_COALESCE_(a.queue, e->queue_post, 0)
+
+    if (--p->n_entities > 0)
+    {
+
+        // When we move the end entity to the new location, the 
+        // moved entity needs to reflect the change, i.e., where the
+        // entity will now be located in the agent
+        size_t agent_in_end_entity  = p->entities_locations[p->n_entities];
+        Entity<TSeq> * moved_entity = p->entities[p->n_entities];
+
+        // The end entity will be located where the removed was
+        moved_entity->agents_location[agent_in_end_entity] = idx_entity_in_agent;
+
+        // We now make the swap
+        std::swap(
+            p->entities[p->n_entities],
+            p->entities[idx_entity_in_agent]
+        );
+
+    }
+
+    if (--e->n_agents > 0)
+    {
+
+        // When we move the end entity to the new location, the 
+        // moved entity needs to reflect the change, i.e., where the
+        // entity will now be located in the agent
+        size_t entity_in_end_agent = e->agents_location[e->n_agents];
+        Agent<TSeq> * moved_agent  = e->agents[e->n_agents];
+
+        // The end entity will be located where the removed was
+        moved_agent->entities_locations[entity_in_end_agent] = idx_agent_in_entity;
+
+        // We now make the swap
+        std::swap(
+            e->agents[e->n_entities],
+            e->agents[idx_agent_in_entity]
+        );
+
+    }
+
+    return;
+
 }
 
 template<typename TSeq>
@@ -245,7 +290,7 @@ inline void Agent<TSeq>::add_tool(
     
 
     model->actions_add(
-        this, nullptr, tool, nullptr, status_new, queue, add_tool_
+        this, nullptr, tool, nullptr, status_new, queue, add_tool_, -1, -1
         );
 
 }
@@ -276,7 +321,7 @@ inline void Agent<TSeq>::add_virus(
             " included in the model.");
 
     model->actions_add(
-        this, virus, nullptr, nullptr, status_new, queue, add_virus_
+        this, virus, nullptr, nullptr, status_new, queue, add_virus_, -1, -1
         );
 
 }
@@ -290,6 +335,20 @@ inline void Agent<TSeq>::add_virus(
 {
     VirusPtr<TSeq> virus_ptr = std::make_shared< Virus<TSeq> >(virus);
     add_virus(virus_ptr, status_new, queue);
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::add_entity(
+    Entity<TSeq> & entity,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    model->actions_add(
+        this, nullptr, nullptr, &entity, status_new, queue, add_entity_, -1, -1
+    );
+
 }
 
 template<typename TSeq>
@@ -307,7 +366,7 @@ inline void Agent<TSeq>::rm_tool(
         );
 
     model->actions_add(
-        this, nullptr, tools[tool_idx], nullptr, status_new, queue, rm_tool_
+        this, nullptr, tools[tool_idx], nullptr, status_new, queue, rm_tool_, -1, -1
         );
 
 }
@@ -324,7 +383,7 @@ inline void Agent<TSeq>::rm_tool(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, nullptr, tool, nullptr, status_new, queue, rm_tool_
+        this, nullptr, tool, nullptr, status_new, queue, rm_tool_, -1, -1
         );
 
 }
@@ -348,7 +407,8 @@ inline void Agent<TSeq>::rm_virus(
 
 
     model->actions_add(
-        this, viruses[virus_idx], nullptr, nullptr, status_new, queue, default_rm_virus<TSeq>
+        this, viruses[virus_idx], nullptr, nullptr, status_new, queue,
+        default_rm_virus<TSeq>, -1, -1
         );
     
 }
@@ -365,10 +425,68 @@ inline void Agent<TSeq>::rm_virus(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, virus, nullptr, nullptr, status_new, queue, default_rm_virus<TSeq>
+        this, virus, nullptr, nullptr, status_new, queue,
+        default_rm_virus<TSeq>, -1, -1
         );
 
 
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::rm_entity(
+    epiworld_fast_uint entity_idx,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    if (entity_idx >= n_entities)
+        throw std::range_error(
+            "The Entity you want to remove is out of range. This Agent only has " +
+            std::to_string(n_entities) + " entitites."
+        );
+    else if (n_entities == 0u)
+        throw std::logic_error(
+            "There is entity to remove here!"
+        );
+
+    model->actions_add(
+        this, nullptr, nullptr, entities[entity_idx], status_new, queue, 
+        default_rm_entity, entities_locations[entity_idx], entity_idx
+    );
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::rm_entity(
+    Entity<TSeq> & entity,
+    epiworld_fast_int status_new,
+    epiworld_fast_int queue
+)
+{
+
+    // Looking for entity location in the agent
+    int entity_idx = -1;
+    for (size_t i = 0u; i < n_entities; ++i)
+    {
+        if (entities[i]->get_id() == entity->get_id())
+            entity_idx = i;
+    }
+
+    if (entity_idx == -1)
+        throw std::logic_error(
+            "The agent " + std::to_string(id) + " is not associated with entity \"" +
+            entity.get_name() + "\"."
+            );
+
+    if (n_entities == 0u)
+        throw std::logic_error(
+            "There is entity to remove here!"
+        );
+
+    model->actions_add(
+        this, nullptr, nullptr, entities[entity_idx], status_new, queue, 
+        default_rm_entity, entities_locations[entity_idx], entity_idx
+    );
 }
 
 template<typename TSeq>
@@ -598,7 +716,7 @@ inline void Agent<TSeq>::change_status(
 {
 
     model->actions_add(
-        this, nullptr, nullptr, nullptr, new_status, queue, nullptr
+        this, nullptr, nullptr, nullptr, new_status, queue, nullptr, -1, -1
     );
     
     return;

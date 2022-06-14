@@ -43,6 +43,12 @@ private:
     std::vector< epiworld_double > location = {0.0}; ///< An arbitrary vector for location
     Model<TSeq> * model = nullptr;
 
+    epiworld_fast_int status_init = -99;
+    epiworld_fast_int status_post = -99;
+
+    epiworld_fast_int queue_init = 0; ///< Change of status when added to agent.
+    epiworld_fast_int queue_post = 0; ///< Change of status when removed from agent.
+
 public:
 
     Entity() = delete;
@@ -66,29 +72,26 @@ public:
     int get_id() const noexcept;
     const std::string & get_name() const noexcept;
 
+    void set_status(epiworld_fast_int init, epiworld_fast_int post);
+    void set_queue(epiworld_fast_int init, epiworld_fast_int post);
+    void get_status(epiworld_fast_int * init, epiworld_fast_int * post);
+    void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
+
 };
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(Agent<TSeq> & p)
 {
 
-    if (++n_agents <= agents.size())
-        agents.push_back(&p);
-    else
-        agents[n_agents - 1] = &p;
-
-    // Adding to the agent
-    
+    // Need to add it to the actions, through the individual
+    p.add_entity(*this);    
 
 }
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(Agent<TSeq> * p)
 {
-    if (++n_agents <= agents.size())
-        agents.push_back(p);
-    else
-        agents[n_agents - 1] = p;
+    p->add_entity(*this);
 }
 
 template<typename TSeq>
@@ -168,6 +171,54 @@ template<typename TSeq>
 inline const std::string & Entity<TSeq>::get_name() const noexcept
 {
     return name;
+}
+
+template<typename TSeq>
+inline void Entity<TSeq>::set_status(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    status_init = init;
+    status_post = end;
+}
+
+template<typename TSeq>
+inline void Entity<TSeq>::set_queue(
+    epiworld_fast_int init,
+    epiworld_fast_int end
+)
+{
+    queue_init = init;
+    queue_post = end;
+}
+
+template<typename TSeq>
+inline void Entity<TSeq>::get_status(
+    epiworld_fast_int * init,
+    epiworld_fast_int * post
+)
+{
+    if (init != nullptr)
+        *init = status_init;
+
+    if (post != nullptr)
+        *post = status_post;
+
+}
+
+template<typename TSeq>
+inline void Entity<TSeq>::get_queue(
+    epiworld_fast_int * init,
+    epiworld_fast_int * post
+)
+{
+    if (init != nullptr)
+        *init = queue_init;
+
+    if (post != nullptr)
+        *post = queue_post;
+
 }
 
 #endif

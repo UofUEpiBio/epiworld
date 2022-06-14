@@ -200,6 +200,8 @@ std::shared_ptr< std::normal_distribution<> > rnormd =
      * @param new_status_ New state of the agent
      * @param call_ Function the action will call
      * @param queue_ Change in the queue
+     * @param idx_agent_ Location of agent in object.
+     * @param idx_object_ Location of object in agent.
      */
     void actions_add(
         Agent<TSeq> * agent_,
@@ -208,7 +210,9 @@ std::shared_ptr< std::normal_distribution<> > rnormd =
         Entity<TSeq> * entity_,
         epiworld_fast_uint new_status_,
         epiworld_fast_int queue_,
-        ActionFun<TSeq> call_
+        ActionFun<TSeq> call_,
+        int idx_agent_,
+        int idx_object_
         );
 
     /**

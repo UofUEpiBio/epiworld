@@ -146,7 +146,9 @@ inline void Model<TSeq>::actions_add(
     Entity<TSeq> * entity_,
     epiworld_fast_uint new_status_,
     epiworld_fast_int queue_,
-    ActionFun<TSeq> call_
+    ActionFun<TSeq> call_,
+    int idx_agent_,
+    int idx_object_
 ) {
     
     ++nactions;
@@ -161,12 +163,14 @@ inline void Model<TSeq>::actions_add(
 
         actions.push_back(
             Action<TSeq>(
-                agent_, virus_, tool_, entity_, new_status_, queue_, call_
+                agent_, virus_, tool_, entity_, new_status_, queue_, call_,
+                idx_agent_, idx_object_
             ));
 
     }
     else 
     {
+
         Action<TSeq> & A = actions.at(nactions - 1u);
         A.agent = agent_;
         A.virus = virus_;
@@ -175,6 +179,9 @@ inline void Model<TSeq>::actions_add(
         A.new_status = new_status_;
         A.queue = queue_;
         A.call = call_;
+        A.idx_agent = idx_agent_;
+        A.idx_object = idx_object_;
+
     }
 
     return;
@@ -189,7 +196,7 @@ inline void Model<TSeq>::actions_run()
     {
 
         Action<TSeq>   a = actions[--nactions];
-        Agent<TSeq> * p = a.agent;
+        Agent<TSeq> * p  = a.agent;
 
         // Applying function
         if (a.call)
@@ -947,6 +954,8 @@ inline void Model<TSeq>::add_entity(Entity<TSeq> e, epiworld_double preval)
 
     if (preval < 0.0)
         throw std::range_error("Prevalence of entity cannot be negative");
+
+    e.model = this;
 
     e.id = entities.size();
     entities.push_back(e);
