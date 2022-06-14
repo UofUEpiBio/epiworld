@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     unsigned int nreplica = 0u;
 
     auto record =
-        [&results,&dates,&nreplica,&labels](epiworld::Model<> * m)
+        [&results,&dates,&nreplica,&labels](size_t s, epiworld::Model<> * m)
         {
 
             if (nreplica == 0)

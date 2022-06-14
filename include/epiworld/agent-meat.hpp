@@ -209,7 +209,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
 
         // We now make the swap
         std::swap(
-            e->agents[e->n_entities],
+            e->agents[e->n_agents],
             e->agents[idx_agent_in_entity]
         );
 
@@ -478,10 +478,6 @@ inline void Agent<TSeq>::rm_entity(
             entity.get_name() + "\"."
             );
 
-    if (n_entities == 0u)
-        throw std::logic_error(
-            "There is entity to remove here!"
-        );
 
     model->actions_add(
         this, nullptr, nullptr, entities[entity_idx], status_new, queue, 

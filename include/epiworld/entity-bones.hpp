@@ -11,10 +11,18 @@ template<typename TSeq>
 class AgentsSample;
 
 template<typename TSeq>
+inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
 class Entity {
     friend class Agent<TSeq>;
     friend class AgentsSample<TSeq>;
     friend class Model<TSeq>;
+    friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     
     int id = -1;
@@ -52,8 +60,8 @@ private:
 public:
 
     Entity() = delete;
-    Entity(const Entity & e) = delete;
-    Entity(Entity && e) = delete;
+    // Entity(const Entity<TSeq> & e);
+    Entity(Entity<TSeq> && e) = delete;
     Entity(std::string name) : entity_name(name) {};
 
     void add_agent(Agent<TSeq> & p);
@@ -78,6 +86,14 @@ public:
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
 
 };
+
+// template<typename TSeq>
+// inline Entity<TSeq>::Entity(const Entity<TSeq> & e)
+// {
+
+
+
+// }
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(Agent<TSeq> & p)
@@ -170,7 +186,7 @@ inline int Entity<TSeq>::get_id() const noexcept
 template<typename TSeq>
 inline const std::string & Entity<TSeq>::get_name() const noexcept
 {
-    return name;
+    return entity_name;
 }
 
 template<typename TSeq>

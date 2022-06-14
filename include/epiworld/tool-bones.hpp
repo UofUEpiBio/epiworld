@@ -23,9 +23,7 @@ template<typename TSeq = int>
 class Tool {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;
-    friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
 

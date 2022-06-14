@@ -618,7 +618,7 @@ inline void Model<TSeq>::dist_virus()
 
         if (viruses_dist_funs[v])
         {
-            viruses_dist_funs[v](viruses[v], this);
+            viruses_dist_funs[v](*viruses[v], this);
             continue;
         }
 
@@ -675,7 +675,7 @@ inline void Model<TSeq>::dist_tools()
 
         if (tools_dist_funs[t])
         {
-            tools_dist_funs[t](tools[t], this);
+            tools_dist_funs[t](*tools[t], this);
             continue;
         }
 
@@ -724,7 +724,7 @@ inline void Model<TSeq>::dist_entities()
     // Starting first infection
     int n = size();
     std::vector< size_t > idx(n);
-    for (unsigned int e = 0; e < entities.size(); ++t)
+    for (unsigned int e = 0; e < entities.size(); ++e)
     {
 
         if (entities_dist_funs[e])
@@ -756,7 +756,7 @@ inline void Model<TSeq>::dist_entities()
         {
             int loc = static_cast<unsigned int>(floor(runif() * n_left--));
             
-            population[idx[loc]].add_entity(entity, tool->status_init, tool->queue_init);
+            population[idx[loc]].add_entity(entity, entity.status_init, entity.queue_init);
             
             nsampled--;
 
@@ -1393,6 +1393,7 @@ inline void Model<TSeq>::reset() {
     // Re distributing tools and virus
     dist_virus();
     dist_tools();
+    dist_entities();
 
     // Recording the original state
     db.record();
