@@ -17,7 +17,9 @@ class Entity {
     friend class Model<TSeq>;
 private:
     
-    std::vector< Agent<TSeq> * > agents;
+    int id = -1;
+    std::vector< Agent<TSeq> * > agents;   ///< Vector of agents
+    std::vector< size_t > agents_location; ///< Location where the entity is stored in the agent
     size_t n_agents = 0u;
 
     /**
@@ -43,7 +45,10 @@ private:
 
 public:
 
-    Entity() {};
+    Entity() = delete;
+    Entity(const Entity & e) = delete;
+    Entity(Entity && e) = delete;
+    Entity(std::string name) : entity_name(name) {};
 
     void add_agent(Agent<TSeq> & p);
     void add_agent(Agent<TSeq> * p);
@@ -58,15 +63,23 @@ public:
     typename std::vector< Agent<TSeq> * >::const_iterator begin() const;
     typename std::vector< Agent<TSeq> * >::const_iterator end() const;
 
+    int get_id() const noexcept;
+    const std::string & get_name() const noexcept;
+
 };
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(Agent<TSeq> & p)
 {
+
     if (++n_agents <= agents.size())
         agents.push_back(&p);
     else
         agents[n_agents - 1] = &p;
+
+    // Adding to the agent
+    
+
 }
 
 template<typename TSeq>
@@ -145,5 +158,16 @@ inline typename std::vector< Agent<TSeq> * >::const_iterator Entity<TSeq>::end()
     return agents.begin() + n_agents;
 }
 
+template<typename TSeq>
+inline int Entity<TSeq>::get_id() const noexcept
+{
+    return id;
+}
+
+template<typename TSeq>
+inline const std::string & Entity<TSeq>::get_name() const noexcept
+{
+    return name;
+}
 
 #endif

@@ -60,8 +60,6 @@ inline std::function<void(size_t,Model<TSeq>*)> save_run(
     std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
         size_t niter, Model<TSeq> * m
     ) -> void {
-    //     std::string fn_variant_info,
-
 
         std::string variant_info = "";
         std::string variant_hist = "";
@@ -145,6 +143,7 @@ inline void Model<TSeq>::actions_add(
     Agent<TSeq> * agent_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
+    Entity<TSeq> * entity_,
     epiworld_fast_uint new_status_,
     epiworld_fast_int queue_,
     ActionFun<TSeq> call_
@@ -162,7 +161,7 @@ inline void Model<TSeq>::actions_add(
 
         actions.push_back(
             Action<TSeq>(
-                agent_, virus_, tool_, new_status_, queue_, call_
+                agent_, virus_, tool_, entity_, new_status_, queue_, call_
             ));
 
     }
@@ -172,6 +171,7 @@ inline void Model<TSeq>::actions_add(
         A.agent = agent_;
         A.virus = virus_;
         A.tool = tool_;
+        A.entity = entity_;
         A.new_status = new_status_;
         A.queue = queue_;
         A.call = call_;
@@ -599,7 +599,6 @@ template<typename TSeq>
 inline void Model<TSeq>::dist_virus()
 {
 
-
     // Starting first infection
     int n = size();
     std::vector< size_t > idx(n);
@@ -609,6 +608,13 @@ inline void Model<TSeq>::dist_virus()
 
     for (unsigned int v = 0; v < viruses.size(); ++v)
     {
+
+        if (viruses_dist_funs[v])
+        {
+            viruses_dist_funs[v](viruses[v], this);
+            continue;
+        }
+
         // Picking how many
         int nsampled;
         if (prevalence_virus_as_proportion[v])
@@ -646,7 +652,7 @@ inline void Model<TSeq>::dist_virus()
 
         // Apply the actions
         actions_run();
-    }      
+    }
 
 }
 
@@ -659,6 +665,13 @@ inline void Model<TSeq>::dist_tools()
     std::vector< size_t > idx(n);
     for (unsigned int t = 0; t < tools.size(); ++t)
     {
+
+        if (tools_dist_funs[t])
+        {
+            tools_dist_funs[t](tools[t], this);
+            continue;
+        }
+
         // Picking how many
         int nsampled;
         if (prevalence_tool_as_proportion[t])
@@ -683,6 +696,60 @@ inline void Model<TSeq>::dist_tools()
             int loc = static_cast<unsigned int>(floor(runif() * n_left--));
             
             population[idx[loc]].add_tool(tool, tool->status_init, tool->queue_init);
+            
+            nsampled--;
+
+            std::swap(idx[loc], idx[n_left]);
+
+        }
+
+        // Apply the actions
+        actions_run();
+
+    }
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::dist_entities()
+{
+
+    // Starting first infection
+    int n = size();
+    std::vector< size_t > idx(n);
+    for (unsigned int e = 0; e < entities.size(); ++t)
+    {
+
+        if (entities_dist_funs[e])
+        {
+            entities_dist_funs[e](entities[e], this);
+            continue;
+        }
+
+        // Picking how many
+        int nsampled;
+        if (prevalence_entity_as_proportion[e])
+        {
+            nsampled = static_cast<int>(std::floor(prevalence_entity[e] * size()));
+        }
+        else
+        {
+            nsampled = static_cast<int>(prevalence_entity[e]);
+        }
+
+        if (nsampled > static_cast<int>(size()))
+            throw std::range_error("There are only " + std::to_string(size()) + 
+            " individuals in the population. Cannot add the entity to " + std::to_string(nsampled));
+        
+        Entity<TSeq> & entity = entities[e];
+
+        int n_left = n;
+        std::iota(idx.begin(), idx.end(), 0);
+        while (nsampled > 0)
+        {
+            int loc = static_cast<unsigned int>(floor(runif() * n_left--));
+            
+            population[idx[loc]].add_entity(entity, tool->status_init, tool->queue_init);
             
             nsampled--;
 
@@ -810,6 +877,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
     prevalence_virus.push_back(preval);
     prevalence_virus_as_proportion.push_back(true);
+    viruses_dist_funs.push_back(nullptr);
 
 }
 
@@ -837,6 +905,7 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
     prevalence_virus.push_back(preval);
     prevalence_virus_as_proportion.push_back(false);
+    viruses_dist_funs.push_back(nullptr);
 
 }
 
@@ -854,6 +923,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
     tools.push_back(std::make_shared< Tool<TSeq> >(t));
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(true);
+    tools_dist_funs.push_back(nullptr);
 
 }
 
@@ -864,6 +934,50 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
     tools.push_back(std::make_shared<Tool<TSeq> >(t));
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(false);
+    tools_dist_funs.push_back(nullptr);
+}
+
+
+template<typename TSeq>
+inline void Model<TSeq>::add_entity(Entity<TSeq> e, epiworld_double preval)
+{
+
+    if (preval > 1.0)
+        throw std::range_error("Prevalence of entity cannot be above 1.0");
+
+    if (preval < 0.0)
+        throw std::range_error("Prevalence of entity cannot be negative");
+
+    e.id = entities.size();
+    entities.push_back(e);
+    prevalence_entity.push_back(preval);
+    prevalence_entity_as_proportion.push_back(false);
+    entities_dist_funs.push_back(nullptr);
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, unsigned int preval)
+{
+
+    e.id = entities.size();
+    entities.push_back(e);
+    prevalence_entity.push_back(preval);
+    prevalence_entity_as_proportion.push_back(false);
+    entities_dist_funs.push_back(nullptr);
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun)
+{
+
+    e.id = entities.size();
+    entities.push_back(e);
+    prevalence_entity.push_back(0.0);
+    prevalence_entity_as_proportion.push_back(false);
+    entities_dist_funs.push_back(fun);
+
 }
 
 template<typename TSeq>

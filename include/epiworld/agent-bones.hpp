@@ -32,10 +32,16 @@ template<typename TSeq>
 inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
+inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
 inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
 inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
+
+template<typename TSeq>
+inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m);
 
 /**
  * @brief Agent (agents)
@@ -53,13 +59,17 @@ class Agent {
     friend class Queue<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
     
     std::vector< Agent<TSeq> * > neighbors;
     std::vector< Entity<TSeq> * > entities;
+    std::vector< size_t > entities_locations;
+    epiworld_fast_uint n_entities = 0u;
 
     epiworld_fast_uint status = 0u;
     epiworld_fast_uint status_prev = 0u; ///< For accounting, if need to undo a change.
@@ -77,10 +87,14 @@ private:
     std::vector< ToolPtr<TSeq> > tools;
     epiworld_fast_uint n_tools = 0u;
 
-    ActionFun<TSeq> add_virus_ = default_add_virus<TSeq>;
-    ActionFun<TSeq> add_tool_  = default_add_tool<TSeq>;
+    ActionFun<TSeq> add_virus_  = default_add_virus<TSeq>;
+    ActionFun<TSeq> add_tool_   = default_add_tool<TSeq>;
+    ActionFun<TSeq> add_entity_ = default_add_entity<TSeq>;
+
     ActionFun<TSeq> rm_virus_  = default_rm_virus<TSeq>;
     ActionFun<TSeq> rm_tool_   = default_rm_tool<TSeq>;
+    ActionFun<TSeq> rm_entity_ = default_rm_entity<TSeq>;
+    
 
     epiworld_fast_uint action_counter = 0u;
 
@@ -124,6 +138,12 @@ public:
         epiworld_fast_int queue = -99
         );
 
+    void add_entity(
+        Entity<TSeq> & entity,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+        );
+
     void rm_tool(
         epiworld_fast_uint tool_idx,
         epiworld_fast_int status_new = -99,
@@ -144,6 +164,18 @@ public:
 
     void rm_virus(
         VirusPtr<TSeq> & virus,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    );
+
+    void rm_entity(
+        epiworld_fast_uint entity_idx,
+        epiworld_fast_int status_new = -99,
+        epiworld_fast_int queue = -99
+    );
+
+    void rm_entity(
+        Entity<TSeq> & virus,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
@@ -233,6 +265,10 @@ public:
     double & operator()(size_t j);
     double & operator[](size_t j);
     ///@}
+
+    const std::vector< Entity<TSeq> * > get_entities();
+    void add_entity(Entity<TSeq> & e);
+    void rm_entity(size_t idx);
 
 };
 

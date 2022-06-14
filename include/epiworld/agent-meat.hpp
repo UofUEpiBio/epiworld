@@ -127,6 +127,54 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
+inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
+{
+
+    Agent<TSeq> * p  = a.agent;
+    Entity<TSeq> * e = a.entity;
+
+    // Checking if the agent isn't it already in the entity
+    if (p->n_entities++ == 0u)
+    {
+        size_t n_entities = p->n_entities;
+
+        if (n_entities <= p->entities.size())
+        {
+
+            p->entities[n_entities - 1]           = e;
+            p->entities_locations[n_entities - 1] = e->n_agents;
+
+        } else
+        {
+            p->entities.push_back(e);
+            p->entities_locations.push_back(e->n_agents);
+        }
+
+    } else {
+
+        int a_id = p->id;
+        
+        for (const auto & a_e : e->agents)
+            if (a_e->id == a_id)
+                throw std::logic_error(
+                    "Agent "+ std::to_string(a_id) +" already added to the entity \"" +
+                    e->get_name() + "\""
+                    );
+
+        
+
+    }
+
+    
+}
+
+template<typename TSeq>
+inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
+{
+    
+}
+
+template<typename TSeq>
 inline Agent<TSeq>::Agent()
 {
     
@@ -197,7 +245,7 @@ inline void Agent<TSeq>::add_tool(
     
 
     model->actions_add(
-        this, nullptr, tool, status_new, queue, add_tool_
+        this, nullptr, tool, nullptr, status_new, queue, add_tool_
         );
 
 }
@@ -228,7 +276,7 @@ inline void Agent<TSeq>::add_virus(
             " included in the model.");
 
     model->actions_add(
-        this, virus, nullptr, status_new, queue, add_virus_
+        this, virus, nullptr, nullptr, status_new, queue, add_virus_
         );
 
 }
@@ -259,7 +307,7 @@ inline void Agent<TSeq>::rm_tool(
         );
 
     model->actions_add(
-        this, nullptr, tools[tool_idx] , status_new, queue, rm_tool_
+        this, nullptr, tools[tool_idx], nullptr, status_new, queue, rm_tool_
         );
 
 }
@@ -276,7 +324,7 @@ inline void Agent<TSeq>::rm_tool(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, tool, nullptr , status_new, queue, rm_tool_
+        this, nullptr, tool, nullptr, status_new, queue, rm_tool_
         );
 
 }
@@ -300,7 +348,7 @@ inline void Agent<TSeq>::rm_virus(
 
 
     model->actions_add(
-        this, viruses[virus_idx], nullptr, status_new, queue, default_rm_virus<TSeq>
+        this, viruses[virus_idx], nullptr, nullptr, status_new, queue, default_rm_virus<TSeq>
         );
     
 }
@@ -317,7 +365,7 @@ inline void Agent<TSeq>::rm_virus(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, virus, nullptr, status_new, queue, default_rm_virus<TSeq>
+        this, virus, nullptr, nullptr, status_new, queue, default_rm_virus<TSeq>
         );
 
 
@@ -550,7 +598,7 @@ inline void Agent<TSeq>::change_status(
 {
 
     model->actions_add(
-        this, nullptr, nullptr, new_status, queue, nullptr
+        this, nullptr, nullptr, nullptr, new_status, queue, nullptr
     );
     
     return;

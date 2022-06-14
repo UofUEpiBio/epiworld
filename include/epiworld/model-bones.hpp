@@ -122,10 +122,17 @@ private:
     std::vector< VirusPtr<TSeq> > viruses;
     std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
     std::vector< bool > prevalence_virus_as_proportion;
+    std::vector< VirusToAgentFun<TSeq> > viruses_dist_funs;
     
     std::vector< ToolPtr<TSeq> > tools;
     std::vector< epiworld_double > prevalence_tool;
     std::vector< bool > prevalence_tool_as_proportion;
+    std::vector< ToolToAgentFun<TSeq> > tools_dist_funs;
+
+    std::vector< Entity<TSeq> > entities; 
+    std::vector< epiworld_double > prevalence_entity;
+    std::vector< bool > prevalence_entity_as_proportion;
+    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs;
 
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
@@ -156,6 +163,7 @@ std::shared_ptr< std::normal_distribution<> > rnormd =
 
     void dist_tools();
     void dist_virus();
+    void dist_entities();
 
     std::chrono::time_point<std::chrono::steady_clock> time_start;
     std::chrono::time_point<std::chrono::steady_clock> time_end;
@@ -186,6 +194,9 @@ std::shared_ptr< std::normal_distribution<> > rnormd =
      * @brief Construct a new Action object
      * 
      * @param agent_ Agent over which the action will be called
+     * @param virus_ Virus pointer included in the action
+     * @param tool_ Tool pointer included in the action
+     * @param entity_ Entity pointer included in the action
      * @param new_status_ New state of the agent
      * @param call_ Function the action will call
      * @param queue_ Change in the queue
@@ -194,6 +205,7 @@ std::shared_ptr< std::normal_distribution<> > rnormd =
         Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
+        Entity<TSeq> * entity_,
         epiworld_fast_uint new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
@@ -291,6 +303,9 @@ public:
     void add_virus_n(Virus<TSeq> v, unsigned int preval);
     void add_tool(Tool<TSeq> t, epiworld_double preval);
     void add_tool_n(Tool<TSeq> t, unsigned int preval);
+    void add_entity(Entity<TSeq> e, epiworld_double preval);
+    void add_entity_n(Entity<TSeq> e, unsigned int preval);
+    void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
     ///@}
 
     /**

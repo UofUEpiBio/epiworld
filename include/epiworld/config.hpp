@@ -43,6 +43,9 @@ template<typename TSeq>
 class Tool;
 
 template<typename TSeq>
+class Entity;
+
+template<typename TSeq>
 using VirusPtr = std::shared_ptr< Virus< TSeq > >;
 
 template<typename TSeq>
@@ -76,6 +79,24 @@ template<typename TSeq>
 using ActionFun = std::function<void(Action<TSeq>&,Model<TSeq>*)>;
 
 /**
+ * @brief Decides how to distribute viruses at initialization
+ */
+template<typename TSeq>
+using VirusToAgentFun = std::function<void(Virus<TSeq>&,Model<TSeq>*)>;
+
+/**
+ * @brief Decides how to distribute tools at initialization
+ */
+template<typename TSeq>
+using ToolToAgentFun = std::function<void(Tool<TSeq>&,Model<TSeq>*)>;
+
+/**
+ * @brief Decides how to distribute entities at initialization
+ */
+template<typename TSeq>
+using EntityToAgentFun = std::function<void(Entity<TSeq>&,Model<TSeq>*)>;
+
+/**
  * @brief Action data for update an agent
  * 
  * @tparam TSeq 
@@ -85,6 +106,7 @@ struct Action {
     Agent<TSeq> * agent;
     VirusPtr<TSeq> virus;
     ToolPtr<TSeq> tool;
+    Entity<TSeq> * entity;
     epiworld_fast_int new_status;
     epiworld_fast_int queue;
     ActionFun<TSeq> call;
@@ -107,10 +129,12 @@ public:
         Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
+        Entity<TSeq> * entity_,
         epiworld_fast_int new_status_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_
-    ) : agent(agent_), virus(virus_), tool(tool_), new_status(new_status_),
+    ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
+        new_status(new_status_),
         queue(queue_), call(call_) {};
 };
 

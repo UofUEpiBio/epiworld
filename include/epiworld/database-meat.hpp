@@ -713,7 +713,7 @@ inline void DataBase<TSeq>::reproductive_number(
 
     std::ofstream fn_file(fn, std::ios_base::out);
 
-    fn_file << "variant source exposure_id rt\n";
+    fn_file << "variant source source_exposure_date rt\n";
 
     for (auto & m : map)
         fn_file <<
