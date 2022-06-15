@@ -82,6 +82,15 @@ inline typename std::vector< Agent<TSeq> * >::const_iterator Entity<TSeq>::end()
 }
 
 template<typename TSeq>
+inline Agent<TSeq> * Entity<TSeq>::operator[](size_t i)
+{
+    if (n_agents <= i)
+        throw std::logic_error("There are not that many agents in this entity.");
+
+    return agents[i];
+}
+
+template<typename TSeq>
 inline int Entity<TSeq>::get_id() const noexcept
 {
     return id;

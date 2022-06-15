@@ -69,6 +69,7 @@ class Agent {
     friend class Tools<TSeq>;
     friend class Queue<TSeq>;
     friend class Entities<TSeq>;
+    friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);

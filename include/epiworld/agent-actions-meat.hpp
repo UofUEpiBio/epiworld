@@ -217,7 +217,6 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
     }
 
     // Setting the date of the last removal
-    p->date_last_add_or_removed_entity = m->today();
     e->date_last_add_or_remove = m->today();
 
     return;

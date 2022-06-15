@@ -8572,6 +8572,7 @@ private:
     size_t sampled_agents_n = 0u;
     std::vector< size_t > sampled_agents_left;
     size_t sampled_agents_left_n = 0u;
+    int date_last_add_or_remove = -99; ///< Last time the entity added or removed an agent
     ///@}
 
     int max_capacity = -1;
@@ -8606,6 +8607,8 @@ public:
     typename std::vector< Agent<TSeq> * >::const_iterator begin() const;
     typename std::vector< Agent<TSeq> * >::const_iterator end() const;
 
+    Agent<TSeq> * operator[](size_t i);
+
     int get_id() const noexcept;
     const std::string & get_name() const noexcept;
 
@@ -8616,6 +8619,28 @@ public:
 
 };
 
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/entity-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/entity-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_ENTITY_MEAT_HPP
+#define EPIWORLD_ENTITY_MEAT_HPP
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(Agent<TSeq> & p)
 {
@@ -8640,8 +8665,7 @@ inline void Entity<TSeq>::rm_agent(size_t idx)
             " out of " + std::to_string(n_agents)
             );
 
-    if (--n_agents > 0)
-        std::swap(agents[idx], agents[n_agents]);
+    agents[idx]->rm_entity(*this);
 
     return;
 }
@@ -8696,6 +8720,15 @@ template<typename TSeq>
 inline typename std::vector< Agent<TSeq> * >::const_iterator Entity<TSeq>::end() const
 {
     return agents.begin() + n_agents;
+}
+
+template<typename TSeq>
+inline Agent<TSeq> * Entity<TSeq>::operator[](size_t i)
+{
+    if (n_agents <= i)
+        throw std::logic_error("There are not that many agents in this entity.");
+
+    return agents[i];
 }
 
 template<typename TSeq>
@@ -8762,7 +8795,176 @@ inline void Entity<TSeq>::get_queue(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/entity-bones.hpp-
+ End of -include/epiworld/entity-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/entities-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_ENTITIES_BONES_HPP
+#define EPIWORLD_ENTITIES_BONES_HPP
+
+template<typename TSeq>
+class Virus;
+
+template<typename TSeq>
+class Agent;
+
+
+/**
+ * @brief Set of Entities (useful for building iterators)
+ * 
+ * @tparam TSeq 
+ */
+template<typename TSeq>
+class Entities {
+    friend class Entity<TSeq>;
+    friend class Agent<TSeq>;
+private:
+    std::vector< Entity<TSeq>* > * dat;
+    const epiworld_fast_uint * n_entities;
+
+public:
+
+    Entities() = delete;
+    Entities(Agent<TSeq> & p) : dat(&p.entities), n_entities(&p.n_entities) {};
+
+    typename std::vector< Entity<TSeq>* >::iterator begin();
+    typename std::vector< Entity<TSeq>* >::iterator end();
+
+    Entity<TSeq>* & operator()(size_t i);
+    Entity<TSeq>* & operator[](size_t i);
+
+    size_t size() const noexcept;
+
+};
+
+template<typename TSeq>
+inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::begin()
+{
+
+    if (*n_entities == 0u)
+        return dat->end();
+    
+    return dat->begin();
+}
+
+template<typename TSeq>
+inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::end()
+{
+     
+    return begin() + *n_entities;
+}
+
+template<typename TSeq>
+inline Entity<TSeq>* & Entities<TSeq>::operator()(size_t i)
+{
+
+    if (i >= *n_entities)
+        throw std::range_error("Entity index out of range.");
+
+    return dat->operator[](i);
+
+}
+
+template<typename TSeq>
+inline Entity<TSeq>* & Entities<TSeq>::operator[](size_t i)
+{
+
+    return dat->operator[](i);
+
+}
+
+template<typename TSeq>
+inline size_t Entities<TSeq>::size() const noexcept 
+{
+    return *n_entities;
+}
+
+/**
+ * @brief Set of Entities (const) (useful for iterators)
+ * 
+ * @tparam TSeq 
+ */
+template<typename TSeq>
+class Entities_const {
+    friend class Virus<TSeq>;
+    friend class Agent<TSeq>;
+private:
+    const std::vector< Entity<TSeq>* > * dat;
+    const epiworld_fast_uint * n_entities;
+
+public:
+
+    Entities_const() = delete;
+    Entities_const(const Agent<TSeq> & p) : dat(&p.entities), n_entities(&p.n_entities) {};
+
+    typename std::vector< Entity<TSeq>* >::const_iterator begin();
+    typename std::vector< Entity<TSeq>* >::const_iterator end();
+
+    const Entity<TSeq>* & operator()(size_t i);
+    const Entity<TSeq>* & operator[](size_t i);
+
+    size_t size() const noexcept;
+
+};
+
+template<typename TSeq>
+inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::begin() {
+
+    if (*n_entities == 0u)
+        return dat->end();
+    
+    return dat->begin();
+}
+
+template<typename TSeq>
+inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::end() {
+     
+    return begin() + *n_entities;
+}
+
+template<typename TSeq>
+inline const Entity<TSeq>* & Entities_const<TSeq>::operator()(size_t i)
+{
+
+    if (i >= *n_entities)
+        throw std::range_error("Entity index out of range.");
+
+    return dat->operator[](i);
+
+}
+
+template<typename TSeq>
+inline const Entity<TSeq>* & Entities_const<TSeq>::operator[](size_t i)
+{
+
+    return dat->operator[](i);
+
+}
+
+template<typename TSeq>
+inline size_t Entities_const<TSeq>::size() const noexcept 
+{
+    return *n_entities;
+}
+
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/entities-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8949,6 +9151,9 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 #define EPIWORLD_PERSON_BONES_HPP
 
 template<typename TSeq>
+class Model;
+
+template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
@@ -8973,6 +9178,12 @@ template<typename TSeq>
 struct Action;
 
 template<typename TSeq>
+class Entity;
+
+template<typename TSeq>
+class Entities;
+
+template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
@@ -8990,6 +9201,8 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
 template<typename TSeq>
 inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m);
 
+
+
 /**
  * @brief Agent (agents)
  * 
@@ -9004,6 +9217,8 @@ class Agent {
     friend class Tool<TSeq>;
     friend class Tools<TSeq>;
     friend class Queue<TSeq>;
+    friend class Entities<TSeq>;
+    friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
@@ -9042,8 +9257,13 @@ private:
     ActionFun<TSeq> rm_tool_   = default_rm_tool<TSeq>;
     ActionFun<TSeq> rm_entity_ = default_rm_entity<TSeq>;
     
-
     epiworld_fast_uint action_counter = 0u;
+
+    std::vector< Agent<TSeq> * > sampled_agents;
+    size_t sampled_agents_n = 0u;
+    std::vector< size_t > sampled_agents_left;
+    size_t sampled_agents_left_n = 0u;
+    int date_last_build_sample = -99;
 
 public:
 
@@ -9213,7 +9433,8 @@ public:
     double & operator[](size_t j);
     ///@}
 
-    const std::vector< Entity<TSeq> * > get_entities();
+    Entities<TSeq> get_entities();
+    const Entities_const<TSeq> get_entities() const;
 
 };
 
@@ -9249,6 +9470,19 @@ public:
         if (static_cast<int>(virus_tool_) == -99) \
             (proposed_) = (alt_);\
         else (proposed_) = (virus_tool_);}
+
+// To large to add directly here
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld//agent-actions-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_AGENT_ACTIONS_MEAT_HPP
+#define EPIWORLD_AGENT_ACTIONS_MEAT_HPP
 
 template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
@@ -9407,6 +9641,9 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
         e->agents.push_back(p);
         e->agents_location.push_back(p->n_entities - 1);
     }
+
+    // Today was the last modification
+    e->date_last_add_or_remove = m->today();
     
 }
 
@@ -9462,9 +9699,22 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
 
     }
 
+    // Setting the date of the last removal
+    e->date_last_add_or_remove = m->today();
+
     return;
 
 }
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld//agent-actions-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
 
 template<typename TSeq>
 inline Agent<TSeq>::Agent()
@@ -9483,11 +9733,6 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 
     status = p.status;
     id     = p.id;
-
-    // #ifdef EPI_DEBUG
-    // if (id < 0)
-    //     throw std::logic_error("Ids in agents cannot be negative.");
-    // #endif
     
     in_queue = p.in_queue;
 
@@ -10073,6 +10318,18 @@ inline double & Agent<TSeq>::operator[](size_t j)
     return *(model->population_data + j * model->size() + id);
 }
 
+template<typename TSeq>
+inline Entities<TSeq> Agent<TSeq>::get_entities()
+{
+    return Entities<TSeq>(*this);
+}
+
+template<typename TSeq>
+inline const Entities_const<TSeq> Agent<TSeq>::get_entities() const
+{
+    return Entities_const<TSeq>(*this);
+}
+
 #undef CHECK_COALESCE_
 
 #endif
@@ -10097,6 +10354,12 @@ inline double & Agent<TSeq>::operator[](size_t j)
 
 #ifndef EPIWORLD_AGENTS_BONES_HPP
 #define EPIWORLD_AGENTS_BONES_HPP
+
+enum SAMPLETYPE {
+    MODEL,
+    ENTITY,
+    AGENT
+};
 
 template<typename TSeq>
 class Agent;
@@ -10128,8 +10391,9 @@ private:
 
     Model<TSeq> * model = nullptr;   ///< Extracts runif() and (if the case) population.
     Entity<TSeq> * entity = nullptr; ///
+    Agent<TSeq> * agent = nullptr;
     
-    bool is_model = false;
+    int sample_type = SAMPLETYPE::AGENT;
 
     void sample_n(size_t n); ///< Backbone function for sampling
 
@@ -10141,8 +10405,9 @@ public:
     AgentsSample(const AgentsSample<TSeq> & a) = delete; ///< Copy constructor
     AgentsSample(AgentsSample<TSeq> && a) = delete;      ///< Move constructor
 
-    AgentsSample(Model<TSeq> & model_, size_t n);
-    AgentsSample(Entity<TSeq> & entity_, size_t n);
+    AgentsSample(Model<TSeq> & model_, size_t n, bool truncate = false);
+    AgentsSample(Entity<TSeq> & entity_, size_t n, bool truncate = false);
+    AgentsSample(Agent<TSeq> & agent_, size_t n, bool truncate = false);
 
     ~AgentsSample();
 
@@ -10156,17 +10421,22 @@ public:
 };
 
 template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n) {
+inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n, bool truncate) {
 
-    if (n > model_.size())
+    if (truncate)
+    {
+        
+        if (n > model_.size())
+            n = model_.size();
+
+    } else if (n > model_.size())
         throw std::logic_error(
             "There are only " + std::to_string(model_.size()) + " agents. You cannot " +
             "sample " + std::to_string(n));
 
     sample_size = n;
-    is_model    = true;
-    
-    model    = &model_;
+    model       = &model_;
+    sample_type = SAMPLETYPE::MODEL;
 
     agents   = &model_.sampled_population;
     agents_n = &model_.sampled_population_n;
@@ -10181,16 +10451,22 @@ inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n) {
 }
 
 template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n) {
+inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n, bool truncate) {
 
-    if (n > entity_.size())
+    if (truncate)
+    {
+
+        if (n > entity_.size())
+            n = entity_.size();
+
+    } else if (n > entity_.size())
         throw std::logic_error(
             "There are only " + std::to_string(entity_.size()) + " agents. You cannot " +
             "sample " + std::to_string(n));
 
-    model    = &entity_.model;
-
-    is_model = false;
+    sample_size = n;
+    model       = &entity_.model;
+    sample_type = SAMPLETYPE::ENTITY;
 
     agents   = &entity_.sampled_agents;
     agents_n = &entity_.sampled_agents_n;
@@ -10199,6 +10475,77 @@ inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n) {
     agents_left_n = &entity_.sampled_agents_left_n;
 
     sample_n(n);
+
+    return; 
+
+}
+
+template<typename TSeq>
+inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n, bool truncate)
+{
+
+    sample_size = n;
+    model       = agent_.model;
+    sample_type = SAMPLETYPE::AGENT;
+    
+    agent = &agent_;
+
+    agents   = &agent_.sampled_agents;
+    agents_n = &agent_.sampled_agents_n;
+
+    agents_left   = &agent_.sampled_agents_left;
+    agents_left_n = &agent_.sampled_agents_left_n;
+
+    size_t agents_in_entities = 0;
+    Entities<TSeq> entities_a = agent->get_entities();
+
+    std::vector< size_t > cum_agents_count(entities_a.size(), 0);
+    int idx = -1;
+    for (auto & e : entities_a)
+    {
+        if (++idx == 0)
+            cum_agents_count[idx] = (e->size() - 1u);
+        else
+            cum_agents_count[idx] = (
+                (e->size() - 1u) + 
+                cum_agents_count[idx - 1]
+            );
+
+        agents_in_entities += (e->size() - 1u);
+    }
+
+    if (truncate)
+    {
+        
+        if (n > agents_in_entities)
+            n = agents_in_entities;
+
+    } else if (n > agents_in_entities)
+        throw std::logic_error(
+            "There are only " + std::to_string(agents_in_entities) + " agents. You cannot " +
+            "sample " + std::to_string(n));
+
+    if (agents->size() < n)
+        agents->resize(n);
+
+    for (size_t i = 0u; i < n; ++i)
+    {
+        int jth = std::floor(model->runif() * agents_in_entities);
+        for (size_t e = 0u; e < cum_agents_count.size(); ++e)
+        {
+            // Are we in the limit?
+            if (jth <= cum_agents_count[e])
+            {
+                if (e == 0) // From the first group
+                    agents->operator[](i) = entities_a[e]->operator[](jth);
+                else
+                    agents->operator[](i) = entities_a[e]->operator[](jth - cum_agents_count[e - 1]);
+                
+                break;
+            }
+
+        }
+    }
 
     return; 
 
@@ -10256,7 +10603,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 {
 
     // Checking if the size of the entity has changed (or hasn't been initialized)
-    if (is_model)
+    if (sample_type == SAMPLETYPE::MODEL)
     {
 
         if (model->size() != agents_left->size())
@@ -10266,7 +10613,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
         }
 
 
-    } else {
+    } else if (sample_type == SAMPLETYPE::ENTITY) {
 
         if (entity->size() != agents_left->size())
         {
@@ -10276,16 +10623,15 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 
         }
 
-    }
+    } 
 
     // Restart the counter of agents left
     *agents_left_n = agents_left->size();
 
-    size_t idx = 0;
     if (agents->size() < sample_size)
         agents->resize(sample_size, nullptr);
 
-    if (is_model)
+    if (sample_type == SAMPLETYPE::MODEL)
     {
 
         for (size_t i = 0u; i < n; ++i)
@@ -10299,7 +10645,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 
         }
 
-    } else {
+    } else if (sample_type == SAMPLETYPE::ENTITY) {
 
         for (size_t i = 0u; i < n; ++i)
         {

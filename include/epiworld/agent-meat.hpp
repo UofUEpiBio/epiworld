@@ -616,15 +616,15 @@ inline double & Agent<TSeq>::operator[](size_t j)
 }
 
 template<typename TSeq>
-inline Entities Agent<TSeq>::get_entities()
+inline Entities<TSeq> Agent<TSeq>::get_entities()
 {
-    return Entitites<TSeq>(*this);
+    return Entities<TSeq>(*this);
 }
 
 template<typename TSeq>
-inline const Entities_const Agent<TSeq>::get_entities() const
+inline const Entities_const<TSeq> Agent<TSeq>::get_entities() const
 {
-    return Entitites_const<TSeq>(*this);
+    return Entities_const<TSeq>(*this);
 }
 
 #undef CHECK_COALESCE_

@@ -51,9 +51,9 @@ public:
     AgentsSample(const AgentsSample<TSeq> & a) = delete; ///< Copy constructor
     AgentsSample(AgentsSample<TSeq> && a) = delete;      ///< Move constructor
 
-    AgentsSample(Model<TSeq> & model_, size_t n);
-    AgentsSample(Entity<TSeq> & entity_, size_t n);
-    AgentsSample(Agent<TSeq> & agent_, size_t n);
+    AgentsSample(Model<TSeq> & model_, size_t n, bool truncate = false);
+    AgentsSample(Entity<TSeq> & entity_, size_t n, bool truncate = false);
+    AgentsSample(Agent<TSeq> & agent_, size_t n, bool truncate = false);
 
     ~AgentsSample();
 
@@ -67,9 +67,15 @@ public:
 };
 
 template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n) {
+inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n, bool truncate) {
 
-    if (n > model_.size())
+    if (truncate)
+    {
+        
+        if (n > model_.size())
+            n = model_.size();
+
+    } else if (n > model_.size())
         throw std::logic_error(
             "There are only " + std::to_string(model_.size()) + " agents. You cannot " +
             "sample " + std::to_string(n));
@@ -91,9 +97,15 @@ inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n) {
 }
 
 template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n) {
+inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n, bool truncate) {
 
-    if (n > entity_.size())
+    if (truncate)
+    {
+
+        if (n > entity_.size())
+            n = entity_.size();
+
+    } else if (n > entity_.size())
         throw std::logic_error(
             "There are only " + std::to_string(entity_.size()) + " agents. You cannot " +
             "sample " + std::to_string(n));
@@ -115,14 +127,14 @@ inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n) {
 }
 
 template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n)
+inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n, bool truncate)
 {
 
     sample_size = n;
-    model       = &agent_.model;
+    model       = agent_.model;
     sample_type = SAMPLETYPE::AGENT;
     
-    agent = &agent;
+    agent = &agent_;
 
     agents   = &agent_.sampled_agents;
     agents_n = &agent_.sampled_agents_n;
@@ -130,65 +142,56 @@ inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n)
     agents_left   = &agent_.sampled_agents_left;
     agents_left_n = &agent_.sampled_agents_left_n;
 
-    bool up_to_date = true;
     size_t agents_in_entities = 0;
+    Entities<TSeq> entities_a = agent->get_entities();
 
-    for (const auto & e : agent->get_entities())
+    std::vector< size_t > cum_agents_count(entities_a.size(), 0);
+    int idx = -1;
+    for (auto & e : entities_a)
     {
-        agents_in_entities += (e->size() - 1u);
-        if (e->date_last_add_or_remove >= agent->date_last_build_sample)
-            up_to_date = false;
+        if (++idx == 0)
+            cum_agents_count[idx] = (e->size() - 1u);
+        else
+            cum_agents_count[idx] = (
+                (e->size() - 1u) + 
+                cum_agents_count[idx - 1]
+            );
 
+        agents_in_entities += (e->size() - 1u);
     }
 
-    if (n > agents_in_entities)
+    if (truncate)
+    {
+        
+        if (n > agents_in_entities)
+            n = agents_in_entities;
+
+    } else if (n > agents_in_entities)
         throw std::logic_error(
             "There are only " + std::to_string(agents_in_entities) + " agents. You cannot " +
             "sample " + std::to_string(n));
 
-    // Checking if we need to redo the list, listing the agents that
-    // user can access
-    if (!up_to_date)
-    {
-        if (agents->size() < agents_in_entities)
-            agents->resize(agents_in_entities);
-
-        size_t locator = 0u;
-        for (auto & e: agent->get_entities())
-        {
-            for (auto & a_e : *e)
-            {
-                // Adding agent to the queue of available agents
-                if (a_e->get_id() != agent->get_id())
-                    agents->operator[](locator++) = a_e;
-            }
-        }
-
-        // We modify the iota right away
-        agents_left->resize(agents_in_entities, 0);
-        std::iota(agents_left->begin(), agents_left->end(), 0);
-
-        // So in the future we may not need to rebuild the list
-        agent->date_last_build_sample = model->today();
-        
-    }
-
-    // We now have full space
-    *agents_left_n = agents_in_entities;
+    if (agents->size() < n)
+        agents->resize(n);
 
     for (size_t i = 0u; i < n; ++i)
     {
+        int jth = std::floor(model->runif() * agents_in_entities);
+        for (size_t e = 0u; e < cum_agents_count.size(); ++e)
+        {
+            // Are we in the limit?
+            if (jth <= cum_agents_count[e])
+            {
+                if (e == 0) // From the first group
+                    agents->operator[](i) = entities_a[e]->operator[](jth);
+                else
+                    agents->operator[](i) = entities_a[e]->operator[](jth - cum_agents_count[e - 1]);
+                
+                break;
+            }
 
-        size_t ith = agents_left->operator[](model->runif() * ((*agents_left_n)--)) + i;
-
-        // Only make the change if we are dealing with the same
-        // The move is:
-        // i <-> j : j in (i + 1, nleft)
-        std::swap(agents->operator[](i), agents->operator[](ith));
-
+        }
     }
-
-    *agents_n = n;
 
     return; 
 

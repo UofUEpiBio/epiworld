@@ -78,6 +78,8 @@ public:
     typename std::vector< Agent<TSeq> * >::const_iterator begin() const;
     typename std::vector< Agent<TSeq> * >::const_iterator end() const;
 
+    Agent<TSeq> * operator[](size_t i);
+
     int get_id() const noexcept;
     const std::string & get_name() const noexcept;
 

@@ -1,7 +1,7 @@
 line78 <- paste(rep("/", 78), collapse = "")
 
 N_CALLS   <- 0L
-MAX_CALLS <- 5L
+MAX_CALLS <- 10L
 
 unfolder <- function(txt, rel = "include/epiworld/") {
 
