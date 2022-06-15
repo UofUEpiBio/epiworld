@@ -2,6 +2,9 @@
 #define EPIWORLD_PERSON_BONES_HPP
 
 template<typename TSeq>
+class Model;
+
+template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
@@ -26,6 +29,12 @@ template<typename TSeq>
 struct Action;
 
 template<typename TSeq>
+class Entity;
+
+template<typename TSeq>
+class Entities;
+
+template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
@@ -43,6 +52,8 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
 template<typename TSeq>
 inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m);
 
+
+
 /**
  * @brief Agent (agents)
  * 
@@ -57,6 +68,7 @@ class Agent {
     friend class Tool<TSeq>;
     friend class Tools<TSeq>;
     friend class Queue<TSeq>;
+    friend class Entities<TSeq>;
     friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
@@ -95,8 +107,13 @@ private:
     ActionFun<TSeq> rm_tool_   = default_rm_tool<TSeq>;
     ActionFun<TSeq> rm_entity_ = default_rm_entity<TSeq>;
     
-
     epiworld_fast_uint action_counter = 0u;
+
+    std::vector< Agent<TSeq> * > sampled_agents;
+    size_t sampled_agents_n = 0u;
+    std::vector< size_t > sampled_agents_left;
+    size_t sampled_agents_left_n = 0u;
+    int date_last_build_sample = -99;
 
 public:
 
@@ -266,7 +283,8 @@ public:
     double & operator[](size_t j);
     ///@}
 
-    const std::vector< Entity<TSeq> * > get_entities();
+    Entities<TSeq> get_entities();
+    const Entities_const<TSeq> get_entities() const;
 
 };
 

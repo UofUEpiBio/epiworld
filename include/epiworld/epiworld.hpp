@@ -55,6 +55,9 @@ namespace epiworld {
     #include "tool-meat.hpp"
 
     #include "entity-bones.hpp"
+    #include "entity-meat.hpp"
+
+    #include "entities-bones.hpp"
     
     #include "agent-meat-status.hpp"
     #include "agent-bones.hpp"
