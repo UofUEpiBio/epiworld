@@ -2,7 +2,7 @@
 #define EPIWORLD_QUEUE_BONES_HPP
 
 enum QueueValues {
-    NoChange,
+    NoOne,
     OnlySelf,
     Everyone
 };
@@ -38,7 +38,7 @@ public:
 
     void operator+=(Agent<TSeq> * p);
     void operator-=(Agent<TSeq> * p);
-    epiworld_fast_int operator[](unsigned int i) const;
+    epiworld_fast_int & operator[](unsigned int i);
 
     // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
     void set_model(Model<TSeq> * m);
@@ -66,7 +66,7 @@ inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 }
 
 template<typename TSeq>
-inline epiworld_fast_int Queue<TSeq>::operator[](unsigned int i) const
+inline epiworld_fast_int & Queue<TSeq>::operator[](unsigned int i)
 {
     return active[i];
 }

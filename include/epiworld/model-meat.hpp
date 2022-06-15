@@ -271,10 +271,18 @@ inline void Model<TSeq>::actions_run()
         #endif
 
         // Updating queue
-        if (a.queue > 0)
+        if (a.queue == QueueValues::Everyone)
             queue += p;
-        else if (a.queue < 0)
+        else if (a.queue == -QueueValues::Everyone)
             queue -= p;
+        else if (a.queue == QueueValues::OnlySelf)
+            queue[p->get_id()]++;
+        else if (a.queue == -QueueValues::OnlySelf)
+            queue[p->get_id()]--;
+        else if (a.queue != QueueValues::NoOne)
+            throw std::logic_error(
+                "The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}."
+                );
 
     }
 

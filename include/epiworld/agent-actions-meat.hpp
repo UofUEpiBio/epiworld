@@ -59,7 +59,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
     ToolPtr<TSeq> t = a.tool;
 
     CHECK_COALESCE_(a.new_status, t->status_init, p->get_status())
-    CHECK_COALESCE_(a.queue, t->queue_init, 0)
+    CHECK_COALESCE_(a.queue, t->queue_init, QueueValues::NoOne)
     
     // Update tool accounting
     p->n_tools++;
@@ -87,7 +87,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
     VirusPtr<TSeq> & v = a.agent->viruses[a.virus->agent_idx];
     
     CHECK_COALESCE_(a.new_status, v->status_post, p->get_status())
-    CHECK_COALESCE_(a.queue, v->queue_post, -1)
+    CHECK_COALESCE_(a.queue, v->queue_post, -QueueValues::Everyone)
 
     if (--p->n_viruses > 0)
     {
@@ -111,7 +111,7 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
     ToolPtr<TSeq> & t = a.agent->tools[a.tool->agent_idx];
 
     CHECK_COALESCE_(a.new_status, t->status_post, p->get_status())
-    CHECK_COALESCE_(a.queue, t->queue_post, 0)
+    CHECK_COALESCE_(a.queue, t->queue_post, QueueValues::NoOne)
 
     if (--p->n_tools > 0)
     {
@@ -131,7 +131,7 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
     Entity<TSeq> * e = a.entity;
 
     CHECK_COALESCE_(a.new_status, e->status_post, p->get_status())
-    CHECK_COALESCE_(a.queue, e->queue_post, 0)
+    CHECK_COALESCE_(a.queue, e->queue_post, QueueValues::NoOne)
 
     // Adding the entity to the agent
     if (++p->n_entities <= p->entities.size())
@@ -176,7 +176,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
     size_t idx_entity_in_agent = a.idx_object;
 
     CHECK_COALESCE_(a.new_status, e->status_post, p->get_status())
-    CHECK_COALESCE_(a.queue, e->queue_post, 0)
+    CHECK_COALESCE_(a.queue, e->queue_post, QueueValues::NoOne)
 
     if (--p->n_entities > 0)
     {

@@ -141,17 +141,9 @@ public:
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
         new_status(new_status_),
-        queue(queue_), call(call_), idx_agent(idx_agent_), idx_object(idx_object_) {};
-};
-
-/**
- * @brief List of possible states in the model
- *  
- */
-enum STATUS {
-    SUSCEPTIBLE,
-    EXPOSED,
-    REMOVED
+        queue(queue_), call(call_), idx_agent(idx_agent_), idx_object(idx_object_) {
+            return;
+        };
 };
 
 /**

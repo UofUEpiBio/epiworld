@@ -46,8 +46,8 @@ private:
     epiworld_fast_int status_init = -99;
     epiworld_fast_int status_post = -99;
 
-    epiworld_fast_int queue_init = 0; ///< Change of status when added to agent.
-    epiworld_fast_int queue_post = 0; ///< Change of status when removed from agent.
+    epiworld_fast_int queue_init = QueueValues::NoOne; ///< Change of status when added to agent.
+    epiworld_fast_int queue_post = QueueValues::NoOne; ///< Change of status when removed from agent.
 
     void set_agent(Agent<TSeq> * p, size_t idx);
 
