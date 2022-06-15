@@ -263,6 +263,13 @@ inline void Model<TSeq>::actions_run()
             
         }
 
+        #ifdef EPI_DEBUG
+        if (p->status >= static_cast<epiworld_fast_int>(nstatus))
+                throw std::range_error(
+                    "The new status " + std::to_string(p->status) + " is out of range. " +
+                    "The model currently has " + std::to_string(nstatus - 1) + " statuses.");
+        #endif
+
         // Updating queue
         if (a.queue > 0)
             queue += p;
@@ -351,8 +358,16 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     db(model.db),
     viruses(model.viruses),
     prevalence_virus(model.prevalence_virus),
+    prevalence_virus_as_proportion(model.prevalence_virus_as_proportion),
+    viruses_dist_funs(model.viruses_dist_funs),
     tools(model.tools),
     prevalence_tool(model.prevalence_tool),
+    prevalence_tool_as_proportion(model.prevalence_tool_as_proportion),
+    tools_dist_funs(model.tools_dist_funs),
+    entities(model.entities),
+    prevalence_entity(model.prevalence_entity),
+    prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
+    entities_dist_funs(model.entities_dist_funs),
     engine(model.engine),
     runifd(model.runifd),
     parameters(model.parameters),
@@ -395,8 +410,16 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     db(std::move(model.db)),
     viruses(std::move(model.viruses)),
     prevalence_virus(std::move(model.prevalence_virus)),
+    prevalence_virus_as_proportion(std::move(model.prevalence_virus_as_proportion)),
+    viruses_dist_funs(std::move(model.viruses_dist_funs)),
     tools(std::move(model.tools)),
     prevalence_tool(std::move(model.prevalence_tool)),
+    prevalence_tool_as_proportion(std::move(model.prevalence_tool_as_proportion)),
+    tools_dist_funs(std::move(model.tools_dist_funs)),
+    entities(std::move(model.entities)),
+    prevalence_entity(std::move(model.prevalence_entity)),
+    prevalence_entity_as_proportion(std::move(model.prevalence_entity_as_proportion)),
+    entities_dist_funs(std::move(model.entities_dist_funs)),
     engine(std::move(model.engine)),
     runifd(std::move(model.runifd)),
     parameters(std::move(model.parameters)),
@@ -415,17 +438,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing)
 {
-
-    // // Pointing to the right place
-    // db.set_model(*this);
-
-    // // Removing old neighbors
-    // model.clone_population(
-    //     population,
-    //     population_ids,
-    //     directed,
-    //     this
-    //     );
 
 }
 
@@ -956,7 +968,6 @@ inline void Model<TSeq>::add_entity(Entity<TSeq> e, epiworld_double preval)
         throw std::range_error("Prevalence of entity cannot be negative");
 
     e.model = this;
-
     e.id = entities.size();
     entities.push_back(e);
     prevalence_entity.push_back(preval);
@@ -969,6 +980,7 @@ template<typename TSeq>
 inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, unsigned int preval)
 {
 
+    e.model = this;
     e.id = entities.size();
     entities.push_back(e);
     prevalence_entity.push_back(preval);
@@ -1391,9 +1403,9 @@ inline void Model<TSeq>::reset() {
         queue.set_model(this);
 
     // Re distributing tools and virus
+    dist_entities();
     dist_virus();
     dist_tools();
-    dist_entities();
 
     // Recording the original state
     db.record();

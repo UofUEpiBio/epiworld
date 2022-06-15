@@ -50,7 +50,11 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     p->viruses[n_viruses]->set_date(m->today());
     p->viruses[n_viruses]->agent_exposure_number = ++p->n_exposures;
 
+    #ifdef EPI_DEBUG
+    m->get_db().today_variant.at(v->get_id()).at(p->status)++;
+    #else
     m->get_db().today_variant[v->get_id()][p->status]++;
+    #endif
 
 }
 
@@ -132,6 +136,9 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
 
     Agent<TSeq> * p  = a.agent;
     Entity<TSeq> * e = a.entity;
+
+    CHECK_COALESCE_(a.new_status, e->status_post, p->get_status())
+    CHECK_COALESCE_(a.queue, e->queue_post, 0)
 
     // Adding the entity to the agent
     if (++p->n_entities <= p->entities.size())
