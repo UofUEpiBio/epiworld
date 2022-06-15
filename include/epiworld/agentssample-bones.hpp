@@ -130,7 +130,6 @@ template<typename TSeq>
 inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n, bool truncate)
 {
 
-    sample_size = n;
     model       = agent_.model;
     sample_type = SAMPLETYPE::AGENT;
     
@@ -145,7 +144,7 @@ inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n, bool tru
     size_t agents_in_entities = 0;
     Entities<TSeq> entities_a = agent->get_entities();
 
-    std::vector< size_t > cum_agents_count(entities_a.size(), 0);
+    std::vector< int > cum_agents_count(entities_a.size(), 0);
     int idx = -1;
     for (auto & e : entities_a)
     {
@@ -170,6 +169,8 @@ inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n, bool tru
         throw std::logic_error(
             "There are only " + std::to_string(agents_in_entities) + " agents. You cannot " +
             "sample " + std::to_string(n));
+
+    sample_size = n;
 
     if (agents->size() < n)
         agents->resize(n);

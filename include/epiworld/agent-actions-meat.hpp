@@ -16,9 +16,11 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     {
 
         // ... only if not the same agent
-        if (v->get_agent()->get_id() != v->get_id())
+        if (v->get_agent()->get_id() != p->get_id())
             m->get_db().record_transmission(
-                v->get_agent()->get_id(), p->get_id(), v->get_id(),
+                v->get_agent()->get_id(),
+                p->get_id(),
+                v->get_id(),
                 v->get_date() 
             );
 
