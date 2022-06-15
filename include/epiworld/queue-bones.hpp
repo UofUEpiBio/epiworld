@@ -1,6 +1,12 @@
 #ifndef EPIWORLD_QUEUE_BONES_HPP
 #define EPIWORLD_QUEUE_BONES_HPP
 
+enum QueueValues {
+    NoChange,
+    OnlySelf,
+    Everyone
+};
+
 /**
  * @brief Controls which agents are verified at each step
  * 

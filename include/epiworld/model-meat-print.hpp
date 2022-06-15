@@ -14,31 +14,32 @@ inline void Model<TSeq>::print() const
     EPI_DEBUG_NOTIFY_ACTIVE()
 
     printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
-    printf_epiworld("Population size    : %i\n", static_cast<int>(size()));
-    printf_epiworld("Days (duration)    : %i (of %i)\n", today(), ndays);
-    printf_epiworld("Number of variants : %i\n", static_cast<int>(db.get_n_variants()));
+    printf_epiworld("Population size     : %i\n", static_cast<int>(size()));
+    printf_epiworld("Number of entitites : %i\n", static_cast<int>(entities.size()));
+    printf_epiworld("Days (duration)     : %i (of %i)\n", today(), ndays);
+    printf_epiworld("Number of variants  : %i\n", static_cast<int>(db.get_n_variants()));
     if (n_replicates > 0u)
     {
         std::string abbr;
         epiworld_double elapsed;
         epiworld_double total;
         get_elapsed("auto", &elapsed, &total, &abbr, false);
-        printf_epiworld("Last run elapsed t : %.2f%s\n", elapsed, abbr.c_str());
+        printf_epiworld("Last run elapsed t  : %.2f%s\n", elapsed, abbr.c_str());
         if (n_replicates > 1u)
         {
-            printf_epiworld("Total elapsed t    : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
+            printf_epiworld("Total elapsed t     : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
         }
 
     } else {
-        printf_epiworld("Last run elapsed t : -\n");
+        printf_epiworld("Last run elapsed t  : -\n");
     }
     
     
     if (rewire_fun)
     {
-        printf_epiworld("Rewiring           : on (%.2f)\n\n", rewire_prop);
+        printf_epiworld("Rewiring            : on (%.2f)\n\n", rewire_prop);
     } else {
-        printf_epiworld("Rewiring           : off\n\n");
+        printf_epiworld("Rewiring            : off\n\n");
     }
     
 
