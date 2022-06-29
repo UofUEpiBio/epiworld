@@ -50,7 +50,7 @@ inline epiworld_double death_reduction_mixer_default(
     );
 
 template<typename TSeq = int>
-inline std::function<void(size_t,Model<TSeq>*)> save_run(
+inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
     bool total_hist = true,
     bool variant_info = false,
@@ -305,8 +305,10 @@ public:
     ///@{
     void add_virus(Virus<TSeq> v, epiworld_double preval);
     void add_virus_n(Virus<TSeq> v, unsigned int preval);
+    void add_virus_fun(Virus<TSeq> v, VirusToAgentFun<TSeq> fun);
     void add_tool(Tool<TSeq> t, epiworld_double preval);
     void add_tool_n(Tool<TSeq> t, unsigned int preval);
+    void add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun);
     void add_entity(Entity<TSeq> e, epiworld_double preval);
     void add_entity_n(Entity<TSeq> e, unsigned int preval);
     void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
@@ -356,7 +358,7 @@ public:
     void run(); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
         unsigned int nexperiments,
-        std::function<void(size_t,Model<TSeq>*)> fun = save_run<TSeq>(),
+        std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
         bool reset = true,
         bool verbose = true
         );
@@ -486,14 +488,30 @@ public:
      * 
      * The `par()` function members are aliases for `get_param()`.
      * 
+     * In the case of the function `read_params`, users can pass a file
+     * listing parameters to be included in the model. Each line in the
+     * file should have the following structure:
+     * 
+     * ```
+     * [name of parameter 1]: [value in double]
+     * [name of parameter 2]: [value in double]
+     * ...
+     * ```
+     * 
+     * The only condition for parameter names is that these do not include
+     * a colon.
+     * 
+     * 
      * @param initial_val 
      * @param pname Name of the parameter to add or to fetch
+     * @param fn Path to the file containing parameters
      * @return The current value of the parameter
      * in the model.
      * 
      */
     ///@{
     epiworld_double add_param(epiworld_double initial_val, std::string pname);
+    void read_params(std::string fn);
     epiworld_double get_param(unsigned int k);
     epiworld_double get_param(std::string pname);
     epiworld_double par(unsigned int k);

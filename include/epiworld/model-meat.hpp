@@ -23,7 +23,7 @@
  * @return std::function<void(size_t,Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(size_t,Model<TSeq>*)> save_run(
+inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt,
     bool total_hist,
     bool variant_info,
@@ -638,42 +638,44 @@ inline void Model<TSeq>::dist_virus()
 
         if (viruses_dist_funs[v])
         {
+
             viruses_dist_funs[v](*viruses[v], this);
-            continue;
-        }
 
-        // Picking how many
-        int nsampled;
-        if (prevalence_virus_as_proportion[v])
-        {
-            nsampled = static_cast<int>(std::floor(prevalence_virus[v] * size()));
-        }
-        else
-        {
-            nsampled = static_cast<int>(prevalence_virus[v]);
-        }
+        } else {
 
-        if (nsampled > static_cast<int>(size()))
-            throw std::range_error("There are only " + std::to_string(size()) + 
-            " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
+            // Picking how many
+            int nsampled;
+            if (prevalence_virus_as_proportion[v])
+            {
+                nsampled = static_cast<int>(std::floor(prevalence_virus[v] * size()));
+            }
+            else
+            {
+                nsampled = static_cast<int>(prevalence_virus[v]);
+            }
+
+            if (nsampled > static_cast<int>(size()))
+                throw std::range_error("There are only " + std::to_string(size()) + 
+                " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
 
 
-        VirusPtr<TSeq> virus = viruses[v];
-        
-        while (nsampled > 0)
-        {
-
-            int loc = static_cast<unsigned int>(floor(runif() * (n_left--)));
-
-            Agent<TSeq> & agent = population[idx[loc]];
+            VirusPtr<TSeq> virus = viruses[v];
             
-            // Adding action
-            agent.add_virus(virus, virus->status_init, virus->queue_init);
+            while (nsampled > 0)
+            {
 
-            // Adjusting sample
-            nsampled--;
-            std::swap(idx[loc], idx[n_left]);
+                int loc = static_cast<unsigned int>(floor(runif() * (n_left--)));
 
+                Agent<TSeq> & agent = population[idx[loc]];
+                
+                // Adding action
+                agent.add_virus(virus, virus->status_init, virus->queue_init);
+
+                // Adjusting sample
+                nsampled--;
+                std::swap(idx[loc], idx[n_left]);
+
+            }
 
         }
 
@@ -695,38 +697,41 @@ inline void Model<TSeq>::dist_tools()
 
         if (tools_dist_funs[t])
         {
+
             tools_dist_funs[t](*tools[t], this);
-            continue;
-        }
 
-        // Picking how many
-        int nsampled;
-        if (prevalence_tool_as_proportion[t])
-        {
-            nsampled = static_cast<int>(std::floor(prevalence_tool[t] * size()));
-        }
-        else
-        {
-            nsampled = static_cast<int>(prevalence_tool[t]);
-        }
+        } else {
 
-        if (nsampled > static_cast<int>(size()))
-            throw std::range_error("There are only " + std::to_string(size()) + 
-            " individuals in the population. Cannot add the tool to " + std::to_string(nsampled));
-        
-        ToolPtr<TSeq> tool = tools[t];
+            // Picking how many
+            int nsampled;
+            if (prevalence_tool_as_proportion[t])
+            {
+                nsampled = static_cast<int>(std::floor(prevalence_tool[t] * size()));
+            }
+            else
+            {
+                nsampled = static_cast<int>(prevalence_tool[t]);
+            }
 
-        int n_left = n;
-        std::iota(idx.begin(), idx.end(), 0);
-        while (nsampled > 0)
-        {
-            int loc = static_cast<unsigned int>(floor(runif() * n_left--));
+            if (nsampled > static_cast<int>(size()))
+                throw std::range_error("There are only " + std::to_string(size()) + 
+                " individuals in the population. Cannot add the tool to " + std::to_string(nsampled));
             
-            population[idx[loc]].add_tool(tool, tool->status_init, tool->queue_init);
-            
-            nsampled--;
+            ToolPtr<TSeq> tool = tools[t];
 
-            std::swap(idx[loc], idx[n_left]);
+            int n_left = n;
+            std::iota(idx.begin(), idx.end(), 0);
+            while (nsampled > 0)
+            {
+                int loc = static_cast<unsigned int>(floor(runif() * n_left--));
+                
+                population[idx[loc]].add_tool(tool, tool->status_init, tool->queue_init);
+                
+                nsampled--;
+
+                std::swap(idx[loc], idx[n_left]);
+
+            }
 
         }
 
@@ -749,38 +754,41 @@ inline void Model<TSeq>::dist_entities()
 
         if (entities_dist_funs[e])
         {
+
             entities_dist_funs[e](entities[e], this);
-            continue;
-        }
 
-        // Picking how many
-        int nsampled;
-        if (prevalence_entity_as_proportion[e])
-        {
-            nsampled = static_cast<int>(std::floor(prevalence_entity[e] * size()));
-        }
-        else
-        {
-            nsampled = static_cast<int>(prevalence_entity[e]);
-        }
+        } else {
 
-        if (nsampled > static_cast<int>(size()))
-            throw std::range_error("There are only " + std::to_string(size()) + 
-            " individuals in the population. Cannot add the entity to " + std::to_string(nsampled));
-        
-        Entity<TSeq> & entity = entities[e];
+            // Picking how many
+            int nsampled;
+            if (prevalence_entity_as_proportion[e])
+            {
+                nsampled = static_cast<int>(std::floor(prevalence_entity[e] * size()));
+            }
+            else
+            {
+                nsampled = static_cast<int>(prevalence_entity[e]);
+            }
 
-        int n_left = n;
-        std::iota(idx.begin(), idx.end(), 0);
-        while (nsampled > 0)
-        {
-            int loc = static_cast<unsigned int>(floor(runif() * n_left--));
+            if (nsampled > static_cast<int>(size()))
+                throw std::range_error("There are only " + std::to_string(size()) + 
+                " individuals in the population. Cannot add the entity to " + std::to_string(nsampled));
             
-            population[idx[loc]].add_entity(entity, entity.status_init, entity.queue_init);
-            
-            nsampled--;
+            Entity<TSeq> & entity = entities[e];
 
-            std::swap(idx[loc], idx[n_left]);
+            int n_left = n;
+            std::iota(idx.begin(), idx.end(), 0);
+            while (nsampled > 0)
+            {
+                int loc = static_cast<unsigned int>(floor(runif() * n_left--));
+                
+                population[idx[loc]].add_entity(entity, entity.status_init, entity.queue_init);
+                
+                nsampled--;
+
+                std::swap(idx[loc], idx[n_left]);
+
+            }
 
         }
 
@@ -937,6 +945,34 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::add_virus_fun(Virus<TSeq> v, VirusToAgentFun<TSeq> fun)
+{
+
+    // Checking the ids
+    epiworld_fast_int init_, post_, rm_;
+    v.get_status(&init_, &post_, &rm_);
+
+    if (init_ == -99)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" has no -init- status."
+            );
+    else if (post_ == -99)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" has no -post- status."
+            );
+
+    // Setting the id
+    v.set_id(viruses.size());
+
+    // Adding new virus
+    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
+    prevalence_virus.push_back(0.0);
+    prevalence_virus_as_proportion.push_back(false);
+    viruses_dist_funs.push_back(fun);
+
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
 {
 
@@ -962,6 +998,16 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(false);
     tools_dist_funs.push_back(nullptr);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun)
+{
+    t.id = tools.size();
+    tools.push_back(std::make_shared<Tool<TSeq> >(t));
+    prevalence_tool.push_back(0.0);
+    prevalence_tool_as_proportion.push_back(false);
+    tools_dist_funs.push_back(fun);
 }
 
 
@@ -1565,6 +1611,55 @@ inline epiworld_double Model<TSeq>::add_param(
     CASES_PAR(npar_used++)
     
     return initial_value;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::read_params(std::string fn)
+{
+
+    std::ifstream paramsfile(fn);
+
+    if (!paramsfile)
+        throw std::logic_error("The file " + fn + " was not found.");
+
+    std::regex pattern("^([^:]+)\\s*[:]\\s*([0-9]+)(\\.[0-9]+)?\\s*$");
+
+    std::string line;
+    std::smatch match;
+    auto empty = std::sregex_iterator();
+
+    while (std::getline(paramsfile, line))
+    {
+
+        // Is it a comment or an empty line?
+        if (std::regex_match(line, std::regex("^([*].+|//.+|#.+|\\s*)$")))
+            continue;
+
+        // Finding the patter, if it doesn't match, then error
+        std::regex_match(line, match, pattern);
+
+        if (match.empty())
+            throw std::logic_error("The line does not match parameters:\n" + line);
+
+        // Capturing the number
+        std::string anumber = match[2u].str() + match[3u].str();
+        epiworld_double tmp_num = static_cast<epiworld_double>(
+            std::strtod(anumber.c_str(), nullptr)
+            );
+
+        // Trimming text
+        
+
+        add_param(
+            tmp_num,
+            std::regex_replace(
+                match[1u].str(),
+                std::regex("^\\s+|\\s+$"),
+                "")
+        );
+
+    }
 
 }
 

@@ -11,6 +11,7 @@
 #include <climits>
 #include <cstdint>
 #include <algorithm>
+#include <regex>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
