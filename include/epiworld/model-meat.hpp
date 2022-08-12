@@ -264,7 +264,7 @@ inline void Model<TSeq>::actions_run()
         }
 
         #ifdef EPI_DEBUG
-        if (p->status >= static_cast<epiworld_fast_int>(nstatus))
+        if (static_cast<int>(p->status) >= static_cast<int>(nstatus))
                 throw std::range_error(
                     "The new status " + std::to_string(p->status) + " is out of range. " +
                     "The model currently has " + std::to_string(nstatus - 1) + " statuses.");
@@ -433,6 +433,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     parameters(std::move(model.parameters)),
     ndays(std::move(model.ndays)),
     pb(std::move(model.pb)),
+    status_labels(std::move(model.status_labels)),
+    status_fun(std::move(model.status_fun)),
     verbose(std::move(model.verbose)),
     initialized(std::move(model.initialized)),
     current_date(std::move(model.current_date)),
@@ -440,8 +442,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     directed(std::move(model.directed)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
-    status_fun(std::move(model.status_fun)),
-    status_labels(std::move(model.status_labels)),
     nstatus(model.nstatus),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing)
@@ -528,6 +528,30 @@ template<typename TSeq>
 inline void Model<TSeq>::set_rand_gamma(epiworld_double alpha, epiworld_double beta)
 {
     rgammad = std::make_shared<std::gamma_distribution<>>(alpha,beta);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_rand_norm(epiworld_double mean, epiworld_double sd)
+{ 
+    rnormd  = std::make_shared<std::normal_distribution<>>(mean, sd);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_rand_unif(epiworld_double a, epiworld_double b)
+{ 
+    runifd  = std::make_shared<std::uniform_real_distribution<>>(a, b);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_rand_lognormal(epiworld_double mean, epiworld_double shape)
+{ 
+    rlognormald  = std::make_shared<std::lognormal_distribution<>>(mean, shape);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_rand_exp(epiworld_double lambda)
+{ 
+    rexpd  = std::make_shared<std::exponential_distribution<>>(lambda);
 }
 
 template<typename TSeq>
@@ -848,6 +872,12 @@ inline epiworld_double Model<TSeq>::runif() {
 }
 
 template<typename TSeq>
+inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
+    // CHECK_INIT()
+    return (runifd->operator()(*engine) * (b - a) + a);
+}
+
+template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm() {
     // CHECK_INIT()
     return (rnormd->operator()(*engine));
@@ -870,6 +900,34 @@ inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_doubl
     rgammad->param(std::gamma_distribution<>::param_type(alpha, beta));
     epiworld_double ans = rgammad->operator()(*engine);
     rgammad->param(old_param);
+    return ans;
+}
+
+template<typename TSeq>
+inline epiworld_double Model<TSeq>::rexp() {
+    return rexp->operator()(*engine);
+}
+
+template<typename TSeq>
+inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
+    auto old_param = rexpd->param();
+    rexpd->param(std::exponential_distribution<>::param_type(lambda));
+    epiworld_double ans = rexpd->operator()(*engine);
+    rexpd->param(old_param);
+    return ans;
+}
+
+template<typename TSeq>
+inline epiworld_double Model<TSeq>::rlognormal() {
+    return rlognormald->operator()(*engine);
+}
+
+template<typename TSeq>
+inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
+    auto old_param = rlognormald->param();
+    rlognormald->param(std::lognormal_distribution<>::param_type(mean, shape));
+    epiworld_double ans = rlognormald->operator()(*engine);
+    rlognormald->param(old_param);
     return ans;
 }
 

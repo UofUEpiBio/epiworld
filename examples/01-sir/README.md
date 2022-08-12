@@ -10,15 +10,18 @@ _________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
-Population size    : 100000
-Days (duration)    : 100 (of 100)
-Number of variants : 1
-Last run elapsed t : 928.00ms
-Rewiring           : off
+Population size     : 10000
+Number of entitites : 0
+Days (duration)     : 100 (of 100)
+Number of variants  : 1
+Last run elapsed t  : 24.00ms
+Rewiring            : off
 
 Virus(es):
  - a virus (baseline prevalence: 1.00%)
+
 Tool(s):
+ - Immunity (a virus) (baseline prevalence: 0 seeds)
  - Immune system (baseline prevalence: 100.00%)
 
 Model parameters:
@@ -28,12 +31,15 @@ Model parameters:
  - Post immunity          : 0.9500
 
 Distribution of the population at time 100:
- - Total healthy (S)   :   99000 -> 415
- - Total recovered (S) :       0 -> 99535
- - Total infected (I)  :    1000 -> 50
- - Total removed (R)   :       0 -> 0
+ - (0) Susceptible     :  9900 -> 18
+ - (1) Infected        :   100 -> 0
+ - (2) Recovered       :     0 -> 4927
+ - (3) Gained Immunity :     0 -> 5055
 
-(S): Susceptible, (I): Infected, (R): Recovered
-________________________________________________________________________________
+Transition Probabilities:
+ - Susceptible      0.94  0.06  0.00  0.00
+ - Infected         0.00  0.43  0.29  0.28
+ - Recovered        0.00  0.00  1.00  0.00
+ - Gained Immunity  0.00  0.00  0.00  1.00
 
 ```

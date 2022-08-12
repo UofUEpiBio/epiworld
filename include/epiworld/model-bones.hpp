@@ -146,6 +146,12 @@ private:
     std::shared_ptr< std::gamma_distribution<> > rgammad = 
         std::make_shared< std::gamma_distribution<> >();
 
+    std::shared_ptr< std::lognormal_distribution<> > rlognormald =
+        std::make_shared< std::lognormal_distribution<> >();
+
+    std::shared_ptr< std::exponential_distribution<> > rexpd =
+        std::make_shared< std::exponential_distribution<> >();
+
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop;
         
@@ -283,12 +289,21 @@ public:
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
     void seed(unsigned int s);
+    void set_rand_norm(epiworld_double mean, epiworld_double sd);
+    void set_rand_unif(epiworld_double a, epiworld_double b);
+    void set_rand_exp(epiworld_double lambda);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
+    void set_rand_lognormal(epiworld_double mean, epiworld_double shape);
     epiworld_double runif();
+    epiworld_double runif(epiworld_double a, epiworld_double b);
     epiworld_double rnorm();
     epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
     epiworld_double rgamma();
     epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
+    epiworld_double rexp();
+    epiworld_double rexp(epiworld_double lambda);
+    epiworld_double rlognormal();
+    epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
     ///@}
 
     /**

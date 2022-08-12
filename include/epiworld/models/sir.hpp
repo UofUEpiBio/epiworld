@@ -11,8 +11,8 @@
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
 template<typename TSeq = int>
-inline void set_up_sir(
-    epiworld::Model<TSeq> & model,
+inline void sir(
+    epiworld::Model<TSeq> model,
     std::string vname,
     epiworld_double prevalence,
     epiworld_double infectiousness,
@@ -21,6 +21,21 @@ inline void set_up_sir(
     epiworld_double post_immunity
     )
 {
+    
+}
+
+template<typename TSeq = int>
+inline epiworld::Model<TSeq> sir(
+    std::string vname,
+    epiworld_double prevalence,
+    epiworld_double infectiousness,
+    epiworld_double susceptibility_reduction,
+    epiworld_double recovery,
+    epiworld_double post_immunity
+    )
+{
+
+    epiworld::Model<TSeq> model;
 
     // Adding statuses
     model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
@@ -65,7 +80,7 @@ inline void set_up_sir(
     model.add_tool(immune_sys, 1.0);
     model.add_virus(virus, prevalence);
 
-    return;
+    return model;
 
 }
 

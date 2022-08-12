@@ -1,24 +1,19 @@
-// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
-#include "../../include/epiworld/models/sir.hpp"
+
+using namespace epiworld;
 
 int main() {
 
-    epiworld::Model<> model;
-    
-    set_up_sir(
-        model,
+    Model<> model = models::sis(
         "a virus", // Name of the virus
         0.01,      // Initial prevalence
-        1.0,       // Infectiousness
-        0.5,       // Efficacy rate
-        0.5,       // Recovery rate
-        0.95       // Post immunity
+        0.9,       // Infectiousness
+        0.5        // Recovery rate
     );
 
     // Adding a bernoulli graph as step 0
     model.agents_from_adjlist(
-        epiworld::rgraph_smallworld(10000, 5, .001, false, model)
+        rgraph_smallworld(10000, 5, .001, false, model)
     );
 
     model.init(100, 123);
