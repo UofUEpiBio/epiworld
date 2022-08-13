@@ -1,6 +1,5 @@
 // #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/epiworld.hpp"
-#include "../../include/epiworld/models/sir.hpp"
 #include "../../include/epiworld/math/lfmcmc.hpp"
 
 using namespace epiworld;
@@ -50,7 +49,7 @@ void sumfun(
 int main()
 {
 
-    set_up_sir(
+    models::sir(
         model,   // Model
         "covid", // Name of the virus
         .1,      // Initial prevalence

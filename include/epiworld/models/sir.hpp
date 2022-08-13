@@ -12,7 +12,7 @@
  */
 template<typename TSeq = int>
 inline void sir(
-    epiworld::Model<TSeq> model,
+    epiworld::Model<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
     epiworld_double infectiousness,
@@ -21,21 +21,6 @@ inline void sir(
     epiworld_double post_immunity
     )
 {
-    
-}
-
-template<typename TSeq = int>
-inline epiworld::Model<TSeq> sir(
-    std::string vname,
-    epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double susceptibility_reduction,
-    epiworld_double recovery,
-    epiworld_double post_immunity
-    )
-{
-
-    epiworld::Model<TSeq> model;
 
     // Adding statuses
     model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
@@ -79,6 +64,33 @@ inline epiworld::Model<TSeq> sir(
     // Adding the tool and the virus
     model.add_tool(immune_sys, 1.0);
     model.add_virus(virus, prevalence);
+   
+}
+
+template<typename TSeq = int>
+inline epiworld::Model<TSeq> sir(
+    std::string vname,
+    epiworld_double prevalence,
+    epiworld_double infectiousness,
+    epiworld_double susceptibility_reduction,
+    epiworld_double recovery,
+    epiworld_double post_immunity
+    )
+{
+
+    epiworld::Model<TSeq> model;
+
+    sir(
+        model,
+        vname,
+        prevalence,
+        infectiousness,
+        susceptibility_reduction,
+        recovery,
+        post_immunity
+        );
+
+
 
     return model;
 
