@@ -1,6 +1,7 @@
 #include "../../include/epiworld/epiworld.hpp"
-#include "../../include/epiworld/models/seirconnected.hpp"
 #include "../../include/cxxopts/cxxopts.hpp"
+
+using namespace epiworld;
 
 int main(int argc, char* argv[]) {
 
@@ -36,10 +37,7 @@ int main(int argc, char* argv[]) {
     epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
     unsigned int nexperiments       = result["experiments"].as<int>();
     
-    epiworld::Model<> model;
-
-    set_up_seir_connected(
-        model,           // Model object
+    Model<> model = models::seir_connected(
         "a virus",       // Name of the virus
         preval,          // Initial prevalence
         beta,            // Reproductive number

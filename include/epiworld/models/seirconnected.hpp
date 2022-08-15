@@ -1,8 +1,7 @@
-#define EPI_DEBUG
 #ifndef EPIWORLD_MODELS_SEIRCONNECTED_HPP
 #define EPIWORLD_MODELS_SEIRCONNECTED_HPP
 
-namespace SEIRCONST {
+namespace SEIRCONN {
 
     static const int SUSCEPTIBLE = 0;
     static const int EXPOSED     = 1;
@@ -31,7 +30,7 @@ namespace SEIRCONST {
             /* Listing who is infected */ 
             for (auto & p : *(m->get_agents()))
             {
-                if (p.get_status() == SEIRCONST::INFECTED)
+                if (p.get_status() == SEIRCONN::INFECTED)
                 {
                 
                     tracked_agents_infected.push_back(&p);
@@ -93,7 +92,7 @@ namespace SEIRCONST {
             #endif
             p->add_virus(
                 tracked_agents_infected[which]->get_virus(0u),
-                SEIRCONST::EXPOSED
+                SEIRCONN::EXPOSED
                 ); 
 
             return;
@@ -110,7 +109,7 @@ namespace SEIRCONST {
         tracked_agents_check_init(m);
         auto status = p->get_status();
 
-        if (status == SEIRCONST::EXPOSED)
+        if (status == SEIRCONN::EXPOSED)
         {
 
             // Does the agent become infected?
@@ -120,14 +119,14 @@ namespace SEIRCONST {
                 tracked_agents_infected_next.push_back(p);
                 tracked_ninfected_next++;
 
-                p->change_status(SEIRCONST::INFECTED);
+                p->change_status(SEIRCONN::INFECTED);
 
                 return;
 
             }
 
 
-        } else if (status == SEIRCONST::INFECTED)
+        } else if (status == SEIRCONN::INFECTED)
         {
 
             if (m->runif() < (*m->p2))
@@ -185,8 +184,8 @@ namespace SEIRCONST {
  * @param prob_transmission Probability of transmission
  * @param prob_recovery Probability of recovery
  */
-template<typename TSeq>
-inline void set_up_seir_connected(
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline void seir_connected(
     epiworld::Model<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
@@ -205,9 +204,9 @@ inline void set_up_seir_connected(
     model.add_param(incubation_days, "Avg. Incubation days");
     
     // Status
-    model.add_status("Susceptible", update_susceptible);
-    model.add_status("Exposed", update_infected);
-    model.add_status("Infected", update_infected);
+    model.add_status("Susceptible", SEIRCONN::update_susceptible);
+    model.add_status("Exposed", SEIRCONN::update_infected);
+    model.add_status("Infected", SEIRCONN::update_infected);
     model.add_status("Recovered");
 
 
@@ -217,11 +216,38 @@ inline void set_up_seir_connected(
     model.add_virus(virus, prevalence);
 
     // Adding updating function
-    model.add_global_action(global_accounting, -1);
+    model.add_global_action(SEIRCONN::global_accounting, -1);
 
     model.queuing_off(); // No queuing need
 
     return;
+
+}
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline epiworld::Model<TSeq> seir_connected(
+    std::string vname,
+    epiworld_double prevalence,
+    epiworld_double reproductive_number,
+    epiworld_double prob_transmission,
+    epiworld_double incubation_days,
+    epiworld_double prob_recovery
+    )
+{
+
+    epiworld::Model<TSeq> model;
+
+    seir_connected(
+        model,
+        vname,
+        prevalence,
+        reproductive_number,
+        prob_transmission,
+        incubation_days,
+        prob_recovery
+    );
+
+    return model;
 
 }
 
