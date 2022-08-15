@@ -1,177 +1,178 @@
 #define EPI_DEBUG
-#ifndef EPIWORLD_SEIR_H 
-#define EPIWORLD_SEIR_H
+#ifndef EPIWORLD_MODELS_SEIRCONNECTED_HPP
+#define EPIWORLD_MODELS_SEIRCONNECTED_HPP
 
-enum SEIRCONSTATUS {
-    SUSCEPTIBLE,
-    EXPOSED,
-    INFECTED,
-    RECOVERED
-};
+namespace SEIRCONST {
 
-// Tracking who is infected and who is not
-std::vector< epiworld::Agent<>* > tracked_agents_infected(0u);
-std::vector< epiworld::Agent<>* > tracked_agents_infected_next(0u);
+    static const int SUSCEPTIBLE = 0;
+    static const int EXPOSED     = 1;
+    static const int INFECTED    = 2;
+    static const int RECOVERE    = 3;
 
-bool tracked_started = false;
-int tracked_ninfected = 0;
-int tracked_ninfected_next = 0;
+    // Tracking who is infected and who is not
+    std::vector< epiworld::Agent<>* > tracked_agents_infected(0u);
+    std::vector< epiworld::Agent<>* > tracked_agents_infected_next(0u);
 
-template<typename TSeq>
-inline void tracked_agents_check_init(epiworld::Model<TSeq> * m) 
-{
+    bool tracked_started = false;
+    int tracked_ninfected = 0;
+    int tracked_ninfected_next = 0;
 
-    if (tracked_started)
-        return;
+    template<typename TSeq>
+    inline void tracked_agents_check_init(epiworld::Model<TSeq> * m) 
+    {
 
-    /* Checking first if it hasn't  */ 
-    if (!tracked_started) 
-    { 
-        
-        /* Listing who is infected */ 
-        for (auto & p : *(m->get_agents()))
-        {
-            if (p.get_status() == SEIRCONSTATUS::INFECTED)
+        if (tracked_started)
+            return;
+
+        /* Checking first if it hasn't  */ 
+        if (!tracked_started) 
+        { 
+            
+            /* Listing who is infected */ 
+            for (auto & p : *(m->get_agents()))
             {
-            
-                tracked_agents_infected.push_back(&p);
-                tracked_ninfected++;
-            
+                if (p.get_status() == SEIRCONST::INFECTED)
+                {
+                
+                    tracked_agents_infected.push_back(&p);
+                    tracked_ninfected++;
+                
+                }
             }
+
+            for (auto & p: tracked_agents_infected)
+            {
+                if (p->get_n_viruses() == 0)
+                    throw std::logic_error("Cannot be infected and have no viruses.");
+            }
+            
+            tracked_started = true;
+            
         }
 
-        for (auto & p: tracked_agents_infected)
-        {
-            if (p->get_n_viruses() == 0)
-                throw std::logic_error("Cannot be infected and have no viruses.");
-        }
-        
-        tracked_started = true;
-        
     }
 
-}
-
-EPI_NEW_UPDATEFUN(update_susceptible, int)
-{
-
-    tracked_agents_check_init(m);
-
-    // No infected individual?
-    if (tracked_ninfected == 0)
-        return;
-
-    // Computing probability of contagion
-    // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
-    epiworld_double prob_infect = 1.0 - std::pow(
-        1.0 - (*m->p0) * (*m->p1) / m->size(),
-        tracked_ninfected
-        );
-
-    if (m->runif() < prob_infect)
+    EPI_NEW_UPDATEFUN(update_susceptible, int)
     {
 
-        // Now selecting who is transmitting the disease
-        epiworld_fast_uint which = static_cast<epiworld_fast_uint>(
-            std::floor(tracked_ninfected * m->runif())
-        );
+        tracked_agents_check_init(m);
 
-        // Infecting the individual
-        #ifdef EPI_DEBUG
-        if (tracked_agents_infected[which]->get_n_viruses() == 0)
-        {
+        // No infected individual?
+        if (tracked_ninfected == 0)
+            return;
 
-            printf_epiworld("[epiworld-debug] date: %i\n", m->today());
-            printf_epiworld("[epiworld-debug] sim#: %i\n", m->get_n_replicates());
-
-            throw std::logic_error(
-                "[epiworld-debug] The agent " + std::to_string(which) + " has no "+
-                "virus to share. The agent's status is: " +
-                std::to_string(tracked_agents_infected[which]->get_status())
+        // Computing probability of contagion
+        // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
+        epiworld_double prob_infect = 1.0 - std::pow(
+            1.0 - (*m->p0) * (*m->p1) / m->size(),
+            tracked_ninfected
             );
+
+        if (m->runif() < prob_infect)
+        {
+
+            // Now selecting who is transmitting the disease
+            epiworld_fast_uint which = static_cast<epiworld_fast_uint>(
+                std::floor(tracked_ninfected * m->runif())
+            );
+
+            // Infecting the individual
+            #ifdef EPI_DEBUG
+            if (tracked_agents_infected[which]->get_n_viruses() == 0)
+            {
+
+                printf_epiworld("[epiworld-debug] date: %i\n", m->today());
+                printf_epiworld("[epiworld-debug] sim#: %i\n", m->get_n_replicates());
+
+                throw std::logic_error(
+                    "[epiworld-debug] The agent " + std::to_string(which) + " has no "+
+                    "virus to share. The agent's status is: " +
+                    std::to_string(tracked_agents_infected[which]->get_status())
+                );
+            }
+            #endif
+            p->add_virus(
+                tracked_agents_infected[which]->get_virus(0u),
+                SEIRCONST::EXPOSED
+                ); 
+
+            return;
+
         }
-        #endif
-        p->add_virus(
-            tracked_agents_infected[which]->get_virus(0u),
-            SEIRCONSTATUS::EXPOSED
-            ); 
 
         return;
 
     }
 
-    return;
-
-}
-
-EPI_NEW_UPDATEFUN(update_infected, int)
-{
-
-    tracked_agents_check_init(m);
-    auto status = p->get_status();
-
-    if (status == SEIRCONSTATUS::EXPOSED)
+    EPI_NEW_UPDATEFUN(update_infected, int)
     {
 
-        // Does the agent become infected?
-        if (m->runif() < 1.0/(*m->p3))
+        tracked_agents_check_init(m);
+        auto status = p->get_status();
+
+        if (status == SEIRCONST::EXPOSED)
         {
-            // Adding the individual to the queue
+
+            // Does the agent become infected?
+            if (m->runif() < 1.0/(*m->p3))
+            {
+                // Adding the individual to the queue
+                tracked_agents_infected_next.push_back(p);
+                tracked_ninfected_next++;
+
+                p->change_status(SEIRCONST::INFECTED);
+
+                return;
+
+            }
+
+
+        } else if (status == SEIRCONST::INFECTED)
+        {
+
+            if (m->runif() < (*m->p2))
+            {
+
+                tracked_ninfected_next--;
+                p->rm_virus(0);
+                return;
+
+            }
+
             tracked_agents_infected_next.push_back(p);
-            tracked_ninfected_next++;
 
-            p->change_status(SEIRCONSTATUS::INFECTED);
-
-            return;
-
-        }
-
-
-    } else if (status == SEIRCONSTATUS::INFECTED)
-    {
-
-        if (m->runif() < (*m->p2))
-        {
-
-            tracked_ninfected_next--;
-            p->rm_virus(0);
-            return;
-
-        }
-
-        tracked_agents_infected_next.push_back(p);
-
-    } 
-
-    return;
-
-}
-
-EPI_NEW_GLOBALFUN(global_accounting, int)
-{
-
-    // On the last day, also reset tracked agents and
-    // set the initialized value to false
-    if (static_cast<unsigned int>(m->today()) == (m->get_ndays() - 1))
-    {
-
-        tracked_started = false;
-        tracked_agents_infected.clear();
-        tracked_agents_infected_next.clear();
-        tracked_ninfected = 0;
-        tracked_ninfected_next = 0;    
+        } 
 
         return;
+
     }
 
-    std::swap(tracked_agents_infected, tracked_agents_infected_next);
-    tracked_agents_infected_next.clear();
+    EPI_NEW_GLOBALFUN(global_accounting, int)
+    {
 
-    tracked_ninfected += tracked_ninfected_next;
-    tracked_ninfected_next = 0;
+        // On the last day, also reset tracked agents and
+        // set the initialized value to false
+        if (static_cast<unsigned int>(m->today()) == (m->get_ndays() - 1))
+        {
+
+            tracked_started = false;
+            tracked_agents_infected.clear();
+            tracked_agents_infected_next.clear();
+            tracked_ninfected = 0;
+            tracked_ninfected_next = 0;    
+
+            return;
+        }
+
+        std::swap(tracked_agents_infected, tracked_agents_infected_next);
+        tracked_agents_infected_next.clear();
+
+        tracked_ninfected += tracked_ninfected_next;
+        tracked_ninfected_next = 0;
+
+    }
 
 }
-
 
 
 /**

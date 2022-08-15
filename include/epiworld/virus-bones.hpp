@@ -20,7 +20,7 @@ class Model;
  * having one or more tools to fight the virus. Because of this, transmisibility
  * should be a function of the agent.
  */
-template<typename TSeq = int>
+template<typename TSeq>
 class Virus {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;

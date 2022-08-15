@@ -20,7 +20,7 @@ namespace sampler {
  * @return Virus<TSeq>* of the selected virus. If none selected (or none
  * available,) returns a nullptr;
  */
-template<typename TSeq = int>
+template<typename TSeq>
 inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
     std::vector< epiworld_fast_uint > exclude = {}
     )

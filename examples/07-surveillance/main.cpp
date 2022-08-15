@@ -1,9 +1,9 @@
 #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
-#include "../../include/epiworld/models/surveillance.hpp"
+
+using namespace epiworld;
 
 int main(int argc, char* argv[]) {
-
 
     unsigned int ndays       = 100;
     unsigned int popsize     = 10000;
@@ -19,10 +19,7 @@ int main(int argc, char* argv[]) {
     else if (argc != 1)
         std::logic_error("What is the surveillance prob?");
 
-
-    epiworld::Model<> surveillance;
-    set_up_surveillance(
-        surveillance,    // Model object
+    epiworld::Model<> model = models::surveillance(
         "a virus", // Name of the virus
         preval, // prevalence
         0.9,  // efficacy_vax
@@ -39,22 +36,23 @@ int main(int argc, char* argv[]) {
     );
 
     // Adding a bernoulli graph as step 0
-    surveillance.agents_from_adjlist(
-        epiworld::rgraph_smallworld(popsize, 5, .01, false, surveillance)
+    model.agents_from_adjlist(
+        epiworld::rgraph_smallworld(popsize, 5, .01, false, model)
     );
 
     // Initializing and printing
-    surveillance.init(ndays, 123);
+    model.init(ndays, 123);
 
     // Running and checking the results
-    surveillance.run();
-    surveillance.print();
+    model.print();
+    model.run();
+    model.print();
 
-    surveillance.write_data(
+    model.write_data(
         "","", "", "", "07-surveillance_hist.txt", "", "", ""
     );
 
-    surveillance.get_user_data().write("07-surveillance_user_data.txt");
+    model.get_user_data().write("07-surveillance_user_data.txt");
 
     return 0;
 

@@ -59,7 +59,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m);
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  */
-template<typename TSeq = int>
+template<typename TSeq>
 class Agent {
     friend class Model<TSeq>;
     friend class Virus<TSeq>;

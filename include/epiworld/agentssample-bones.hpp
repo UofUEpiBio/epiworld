@@ -1,20 +1,21 @@
 #ifndef EPIWORLD_AGENTS_BONES_HPP
 #define EPIWORLD_AGENTS_BONES_HPP
 
-enum SAMPLETYPE {
-    MODEL,
-    ENTITY,
-    AGENT
+class SAMPLETYPE {
+public:
+    static const int MODEL  = 0;
+    static const int ENTITY = 1;
+    static const int AGENT  = 2;
 };
 
-template<typename TSeq>
-class Agent;
+// template<typename TSeq>
+// class Agent;
 
-template<typename TSeq>
-class Model;
+// template<typename TSeq>
+// class Model;
 
-template<typename TSeq>
-class Entity;
+// template<typename TSeq>
+// class Entity;
 
 /**
  * @brief Sample of agents

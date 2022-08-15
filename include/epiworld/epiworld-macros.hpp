@@ -2,6 +2,7 @@
 #define EPIWORLD_MACROS_HPP
 
 
+
 /**
  * @brief Helper macro to define a new tool
  * 
@@ -98,5 +99,13 @@
 #define EPI_NEW_GLOBALFUN_LAMBDA(funname,tseq) inline void \
     epiworld::GlobalFun<tseq> funname = \
     [](epiworld::Model<tseq>* m) -> void
+
+class QueueValues {
+public:
+    static const int NoOne    = 0;
+    static const int OnlySelf = 1;
+    static const int Everyone = 2;
+};
+
 
 #endif

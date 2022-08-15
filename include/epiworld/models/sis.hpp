@@ -9,17 +9,15 @@
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
-template<typename TSeq = int>
-inline epiworld::Model<TSeq> sis(
+template<typename TSeq>
+inline void sis(
+    epiworld::Model<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
     epiworld_double infectiousness,
     epiworld_double recovery
     )
 {
-
-    epiworld::Model<TSeq> model;
-
     // Adding statuses
     model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
     model.add_status("Infected", epiworld::default_update_exposed<TSeq>);
@@ -37,6 +35,26 @@ inline epiworld::Model<TSeq> sis(
     virus.set_prob_death(0.0);
     
     model.add_virus(virus, prevalence);
+}
+
+template<typename TSeq = int>
+inline epiworld::Model<TSeq> sis(
+    std::string vname,
+    epiworld_double prevalence,
+    epiworld_double infectiousness,
+    epiworld_double recovery
+    )
+{
+
+    epiworld::Model<TSeq> model;
+
+    sis(
+        model,
+        vname,
+        prevalence,
+        infectiousness,
+        recovery
+    );    
 
     return model;
 

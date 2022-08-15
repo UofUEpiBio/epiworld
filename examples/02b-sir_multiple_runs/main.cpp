@@ -10,10 +10,8 @@ int main() {
     epiworld::Model<> sir = models::sir(
         "a virus", // Name of the virus
         0.01,      // Initial prevalence
-        1.0,       // Infectiousness
-        0.5,       // Efficacy rate
-        0.5,       // Recovery rate
-        0.95       // Post immunity
+        0.9,       // Infectiousness
+        0.3        // Recovery rate
     );
 
     // Adding a bernoulli graph as step 0

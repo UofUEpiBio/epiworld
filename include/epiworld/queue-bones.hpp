@@ -1,12 +1,6 @@
 #ifndef EPIWORLD_QUEUE_BONES_HPP
 #define EPIWORLD_QUEUE_BONES_HPP
 
-enum QueueValues {
-    NoOne,
-    OnlySelf,
-    Everyone
-};
-
 /**
  * @brief Controls which agents are verified at each step
  * 
@@ -17,7 +11,7 @@ enum QueueValues {
  * 
  * @tparam TSeq 
  */
-template<typename TSeq = int>
+template<typename TSeq>
 class Queue
 {
 

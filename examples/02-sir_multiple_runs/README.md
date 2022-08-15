@@ -18,20 +18,16 @@ Virus(es):
  - a virus (baseline prevalence: 1.00%)
 
 Tool(s):
- - Immunity (a virus) (baseline prevalence: 0 seeds)
- - Immune system (baseline prevalence: 100.00%)
+ (none)
 
 Model parameters:
- - Immune recovery        : 0.5000
- - Immune suscept. redux. : 0.5000
- - Infectiousness         : 1.0000
- - Post immunity          : 0.9500
+ - Infectiousness    : 0.9000
+ - Prob. of Recovery : 0.3000
 
 Distribution of the population at time 0:
- - (0) Susceptible     : 990
- - (1) Infected        : 10
- - (2) Recovered       : 0
- - (3) Gained Immunity : 0
+ - (0) Susceptible : 990
+ - (1) Infected    : 10
+ - (2) Recovered   : 0
 Replicate 0 done
 Replicate 1 done
 Replicate 2 done
@@ -132,19 +128,19 @@ Replicate 96 done
 Replicate 97 done
 Replicate 98 done
 Replicate 99 done
-last run elapsed time : 1.00ms
-total elapsed time    : 126.00ms
+last run elapsed time : 0.00ms
+total elapsed time    : 101.00ms
 total runs            : 100
-mean run elapsed time : 1.26ms
-Susceptible, Infected, Recovered, Gained Immunity, 
-0, 0, 496, 504, 
-2, 0, 506, 492, 
-1, 0, 480, 519, 
-3, 0, 487, 510, 
-4, 0, 497, 499, 
-2, 0, 499, 499, 
-1, 0, 486, 513, 
-1, 0, 504, 495, 
-1, 0, 483, 516, 
-0, 0, 527, 473, 
+mean run elapsed time : 1.01ms
+Susceptible, Infected, Recovered, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
 ```

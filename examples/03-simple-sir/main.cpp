@@ -1,4 +1,3 @@
-#define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 int main()

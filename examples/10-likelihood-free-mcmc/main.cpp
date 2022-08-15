@@ -13,7 +13,7 @@ std::vector< int > simfun(
     LFMCMC<std::vector<int>> * m
 ) {
 
-    model("Immune recovery") = params[0u];
+    model("Prob. of Recovery") = params[0u];
     model("Infectiousness")  = params[1u];
 
     model.reset();
@@ -54,12 +54,10 @@ int main()
         "covid", // Name of the virus
         .1,      // Initial prevalence
         .9,      // Infectiousness (par[1])
-        0,       // Susceptibility reduction
-        .5,      // Immune Recovery (par[0])
-        1.0      // Post immunity
+        .3       // Immune Recovery (par[0])
         );
 
-    model.agents_smallworld(500);
+    model.agents_smallworld(1000);
 
     // Creating a new LFMCMC model
     LFMCMC<std::vector< int >> lfmcmc;

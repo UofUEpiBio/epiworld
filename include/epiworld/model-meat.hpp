@@ -416,33 +416,47 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 template<typename TSeq>
 inline Model<TSeq>::Model(Model<TSeq> && model) :
     db(std::move(model.db)),
+    population(std::move(model.population)),
+    population_data(std::move(model.population_data)),
+    population_data_n_features(std::move(model.population_data_n_features)),
+    directed(std::move(model.directed)),
+    // Virus
     viruses(std::move(model.viruses)),
     prevalence_virus(std::move(model.prevalence_virus)),
     prevalence_virus_as_proportion(std::move(model.prevalence_virus_as_proportion)),
     viruses_dist_funs(std::move(model.viruses_dist_funs)),
+    // Tools
     tools(std::move(model.tools)),
     prevalence_tool(std::move(model.prevalence_tool)),
     prevalence_tool_as_proportion(std::move(model.prevalence_tool_as_proportion)),
     tools_dist_funs(std::move(model.tools_dist_funs)),
+    // Entities
     entities(std::move(model.entities)),
     prevalence_entity(std::move(model.prevalence_entity)),
     prevalence_entity_as_proportion(std::move(model.prevalence_entity_as_proportion)),
     entities_dist_funs(std::move(model.entities_dist_funs)),
+    // Pseudo-RNG
     engine(std::move(model.engine)),
     runifd(std::move(model.runifd)),
+    rnormd(std::move(model.rnormd)),
+    rgammad(std::move(model.rgammad)),
+    rlognormald(std::move(model.rlognormald)),
+    rexpd(std::move(model.rexpd)),
+    // Rewiring
+    rewire_fun(std::move(model.rewire_fun)),
+    rewire_prop(std::move(model.rewire_prop)),
     parameters(std::move(model.parameters)),
+    // Others
     ndays(std::move(model.ndays)),
     pb(std::move(model.pb)),
-    status_labels(std::move(model.status_labels)),
     status_fun(std::move(model.status_fun)),
+    status_labels(std::move(model.status_labels)),
+    nstatus(model.nstatus),
     verbose(std::move(model.verbose)),
     initialized(std::move(model.initialized)),
     current_date(std::move(model.current_date)),
-    population(std::move(model.population)),
-    directed(std::move(model.directed)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
-    nstatus(model.nstatus),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing)
 {

@@ -19,7 +19,7 @@ class Tool;
  * 
  * @tparam TSeq Type of sequence
  */
-template<typename TSeq = int> 
+template<typename TSeq> 
 class Tool {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;

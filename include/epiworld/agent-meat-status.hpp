@@ -1,11 +1,11 @@
 #ifndef EPIWORLD_PERSON_MEAT_STATUS_HPP 
 #define EPIWORLD_PERSON_MEAT_STATUS_HPP
 
-template<typename TSeq>
-class Model;
+// template<typename TSeq>
+// class Model;
 
-template<typename TSeq>
-class Agent;
+// template<typename TSeq>
+// class Agent;
 
 
 /**
@@ -21,7 +21,7 @@ class Agent;
 #include "agent-meat-virus-sampling.hpp"
 
 
-template<typename TSeq = int>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline void default_update_susceptible(
     Agent<TSeq> * p,
     Model<TSeq> * m
@@ -39,7 +39,7 @@ inline void default_update_susceptible(
 
 }
 
-template<typename TSeq = int>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 
     if (p->get_n_viruses() == 0u)

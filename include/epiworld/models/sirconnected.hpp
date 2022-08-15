@@ -1,10 +1,11 @@
-#ifndef EPIWORLD_SIR_H 
-#define EPIWORLD_SIR_H
+#ifndef EPIWORLD_MODELS_SIRCONNECTED_HPP 
+#define EPIWORLD_MODELS_SIRCONNECTED_HPP
 
-enum SIRCONSTATUS {
-    SUSCEPTIBLE,
-    INFECTED,
-    RECOVERED
+class SIRCONSTATUS {
+public:
+    static const int SUSCEPTIBLE = 0;
+    static const int INFECTED    = 1;
+    static const int RECOVERED   = 2;
 };
 
 // Tracking who is infected and who is not

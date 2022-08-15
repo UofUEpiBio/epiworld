@@ -12,69 +12,28 @@ Population size     : 250000
 Number of entitites : 0
 Days (duration)     : 100 (of 100)
 Number of variants  : 1
-Last run elapsed t  : 325.00ms
+Last run elapsed t  : 1.00s
 Rewiring            : off
 
 Virus(es):
  - a virus (baseline prevalence: 1.00%)
 
 Tool(s):
- - Immunity (a virus) (baseline prevalence: 0 seeds)
- - Immune system (baseline prevalence: 100.00%)
+ (none)
 
 Model parameters:
- - Immune recovery        : 0.5000
- - Immune suscept. redux. : 0.5000
- - Infectiousness         : 1.0000
- - Post immunity          : 0.9500
+ - Infectiousness    : 0.9000
+ - Prob. of Recovery : 0.3000
 
 Distribution of the population at time 100:
- - (0) Susceptible     : 247500 -> 247500
- - (1) Infected        :   2500 -> 0
- - (2) Recovered       :      0 -> 1259
- - (3) Gained Immunity :      0 -> 1241
+ - (0) Susceptible : 247500 -> 0
+ - (1) Infected    :   2500 -> 0
+ - (2) Recovered   :      0 -> 250000
 
 Transition Probabilities:
- - Susceptible      1.00 -0.01  0.00  0.00
- - Infected         0.00  214.26  0.22  0.33
- - Recovered        0.00  0.00  1.00  0.00
- - Gained Immunity  0.00  0.00  0.00  1.00
-
-
-________________________________________________________________________________
-SIMULATION STUDY
-
-Population size     : 250000
-Number of entitites : 0
-Days (duration)     : 100 (of 100)
-Number of variants  : 1
-Last run elapsed t  : 382.00ms
-Rewiring            : off
-
-Virus(es):
- - a virus (baseline prevalence: 1.00%)
-
-Tool(s):
- - Immunity (a virus) (baseline prevalence: 0 seeds)
- - Immune system (baseline prevalence: 100.00%)
-
-Model parameters:
- - Immune recovery        : 0.5000
- - Immune suscept. redux. : 0.5000
- - Infectiousness         : 1.0000
- - Post immunity          : 0.9500
-
-Distribution of the population at time 100:
- - (0) Susceptible     : 247500 -> 247500
- - (1) Infected        :   2500 -> 0
- - (2) Recovered       :      0 -> 1286
- - (3) Gained Immunity :      0 -> 1214
-
-Transition Probabilities:
- - Susceptible      1.00 -0.01  0.00  0.00
- - Infected         0.00  1.00  0.00  0.00
- - Recovered        0.00  0.00  1.00  0.00
- - Gained Immunity  0.00  0.00  0.00  1.00
+ - Susceptible  0.87  0.13  0.00
+ - Infected     0.00  0.71  0.29
+ - Recovered    0.00  0.00  1.00
 
 
 ________________________________________________________________________________
@@ -91,26 +50,21 @@ Virus(es):
  - a virus (baseline prevalence: 1.00%)
 
 Tool(s):
- - Immunity (a virus) (baseline prevalence: 0 seeds)
- - Immune system (baseline prevalence: 100.00%)
+ (none)
 
 Model parameters:
- - Immune recovery        : 0.5000
- - Immune suscept. redux. : 0.5000
- - Infectiousness         : 1.0000
- - Post immunity          : 0.9500
+ - Infectiousness    : 0.9000
+ - Prob. of Recovery : 0.3000
 
 Distribution of the population at time 100:
- - (0) Susceptible     : 247500 -> 279
- - (1) Infected        :   2500 -> 0
- - (2) Recovered       :      0 -> 124624
- - (3) Gained Immunity :      0 -> 125097
+ - (0) Susceptible : 247500 -> 0
+ - (1) Infected    :   2500 -> 0
+ - (2) Recovered   :      0 -> 250000
 
 Transition Probabilities:
- - Susceptible      0.93  0.07  0.00  0.00
- - Infected         0.00  0.44  0.28  0.28
- - Recovered        0.00  0.00  1.00  0.00
- - Gained Immunity  0.00  0.00  0.00  1.00
+ - Susceptible  0.87  0.13  0.00
+ - Infected     0.00  0.70  0.30
+ - Recovered    0.00  0.00  1.00
 
 
 ________________________________________________________________________________
@@ -127,30 +81,56 @@ Virus(es):
  - a virus (baseline prevalence: 1.00%)
 
 Tool(s):
- - Immunity (a virus) (baseline prevalence: 0 seeds)
- - Immune system (baseline prevalence: 100.00%)
+ (none)
 
 Model parameters:
- - Immune recovery        : 0.5000
- - Immune suscept. redux. : 0.5000
- - Infectiousness         : 1.0000
- - Post immunity          : 0.9500
+ - Infectiousness    : 0.9000
+ - Prob. of Recovery : 0.3000
 
 Distribution of the population at time 100:
- - (0) Susceptible     : 247500 -> 292
- - (1) Infected        :   2500 -> 2
- - (2) Recovered       :      0 -> 124421
- - (3) Gained Immunity :      0 -> 125285
+ - (0) Susceptible : 247500 -> 0
+ - (1) Infected    :   2500 -> 0
+ - (2) Recovered   :      0 -> 250000
 
 Transition Probabilities:
- - Susceptible      0.93  0.07  0.00  0.00
- - Infected         0.00  0.43  0.28  0.28
- - Recovered        0.00  0.00  1.00  0.00
- - Gained Immunity  0.00  0.00  0.00  1.00
+ - Susceptible  0.86  0.14  0.00
+ - Infected     0.00  0.71  0.29
+ - Recovered    0.00  0.00  1.00
 
-last run elapsed time : 325.00ms.
-last run elapsed time : 382.00ms.
-last run elapsed time : 1494.00ms.
-last run elapsed time : 1515.00ms.
-Elapsed time: 2151 milliseconds
+
+________________________________________________________________________________
+SIMULATION STUDY
+
+Population size     : 250000
+Number of entitites : 0
+Days (duration)     : 100 (of 100)
+Number of variants  : 1
+Last run elapsed t  : 1.00s
+Rewiring            : off
+
+Virus(es):
+ - a virus (baseline prevalence: 1.00%)
+
+Tool(s):
+ (none)
+
+Model parameters:
+ - Infectiousness    : 0.9000
+ - Prob. of Recovery : 0.3000
+
+Distribution of the population at time 100:
+ - (0) Susceptible : 247500 -> 0
+ - (1) Infected    :   2500 -> 0
+ - (2) Recovered   :      0 -> 250000
+
+Transition Probabilities:
+ - Susceptible  0.87  0.12  0.00
+ - Infected     0.00  0.69  0.31
+ - Recovered    0.00  0.00  1.00
+
+last run elapsed time : 1040.00ms.
+last run elapsed time : 1056.00ms.
+last run elapsed time : 1101.00ms.
+last run elapsed time : 1053.00ms.
+Elapsed time: 1125 milliseconds
 ```

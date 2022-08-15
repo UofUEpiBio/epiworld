@@ -12,7 +12,7 @@ ALL_EXAMPLES=00-hello-world 01-sir 02-sir_multiple_runs 02b-sir_multiple_runs \
 
 all-examples:
 	for f in $(ALL_EXAMPLES); do \
-		cd $$f && $(MAKE) $$f.o && ./$$f.o && cd .. ;\
+		cd $$f && $(MAKE) main.o && ./main.o && cd .. ;\
 	done
 
 all-readme:

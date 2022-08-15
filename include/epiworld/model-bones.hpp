@@ -49,7 +49,7 @@ inline epiworld_double death_reduction_mixer_default(
     Model<TSeq>* m
     );
 
-template<typename TSeq = int>
+template<typename TSeq>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
     bool total_hist = true,
@@ -77,7 +77,7 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
  * @tparam TSeq Type of sequence. In principle, users can build models in which
  * virus and human sequence is represented as numeric vectors (if needed.)
  */
-template<typename TSeq = int>
+template<typename TSeq>
 class Model {
     friend class Agent<TSeq>;
     friend class AgentsSample<TSeq>;

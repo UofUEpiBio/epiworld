@@ -27,22 +27,24 @@
 
 #endif
 
-template<typename TSeq>
+#define EPI_DEFAULT_TSEQ int
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
 
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Agent;
 
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 class PersonTools;
 
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Virus;
 
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Tool;
 
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Entity;
 
 template<typename TSeq>

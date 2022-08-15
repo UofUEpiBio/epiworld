@@ -4306,10 +4306,11 @@ inline AdjList rgraph_smallworld(
 #ifndef EPIWORLD_QUEUE_BONES_HPP
 #define EPIWORLD_QUEUE_BONES_HPP
 
-enum QueueValues {
-    NoOne,
-    OnlySelf,
-    Everyone
+class QueueValues {
+public:
+    static const int NoOne    = 0;
+    static const int OnlySelf = 1;
+    static const int Everyone = 2;
 };
 
 /**
