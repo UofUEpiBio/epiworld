@@ -19,14 +19,91 @@ Various examples can be found in the [examples](examples) folder.
 ## Hello world
 
 Here is a simple SIR model implemented with `epiworld`. The source code
-can be found [here](readme.cpp), and you can compile the code as follows:
+can be found [here](helloworld.cpp), and you can compile the code as follows:
 
 ```bash
 g++ -std=c++17 -O2 readme.cpp -o readme.o
 ```
 
-As you can see in [readme.cpp](readme.cpp), to use epiworld you only need
+As you can see in [helloworld.cpp](helloworld.cpp), to use epiworld you only need
 to incorporate the single header file [epiworld.hpp](epiworld.hpp):
+
+```cpp
+#include "epiworld.hpp"
+
+using namespace epiworld;
+
+int main()
+{
+
+    // epiworld already comes with a couple
+    // of models, like the SIR
+    Model<> hello = models::sir(
+        "COVID-19", // Name of the virus
+        0.1,        // Initial prevalence
+        0.9,        // Transmission probability
+        0.3         // Recovery probability
+        );
+
+    // We can simulate agents using a smallworld network
+    // with 10,000 individuals, in this case
+    hello.agents_smallworld(10000);
+
+    // Setting the number of days (100) and seed (122)
+    hello.init(100, 122);
+
+    // Running the model and printing the results
+    hello.run();
+    hello.print();
+
+    return 0;
+
+}
+```
+
+Compiling (with `make helloworld.o`) and running the problem yields the following result:
+
+```bash
+Running the model...
+_________________________________________________________________________
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+
+________________________________________________________________________________
+SIMULATION STUDY
+
+Population size     : 10000
+Number of entitites : 0
+Days (duration)     : 100 (of 100)
+Number of variants  : 1
+Last run elapsed t  : 19.00ms
+Rewiring            : off
+
+Virus(es):
+ - COVID-19 (baseline prevalence: 10.00%)
+
+Tool(s):
+ (none)
+
+Model parameters:
+ - Infectiousness    : 0.9000
+ - Prob. of Recovery : 0.3000
+
+Distribution of the population at time 100:
+ - (0) Susceptible :  9000 -> 0
+ - (1) Infected    :  1000 -> 0
+ - (2) Recovered   :     0 -> 10000
+
+Transition Probabilities:
+ - Susceptible  0.28  0.71  0.00
+ - Infected     0.00  0.69  0.31
+ - Recovered    0.00  0.00  1.00
+```
+
+
+## Building from scratch
+
+One of the best things about epiworld is that models can be built from scratch, like
+in the following example:
 
 ```cpp
 #include "epiworld.hpp"
