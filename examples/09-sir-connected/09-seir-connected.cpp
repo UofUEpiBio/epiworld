@@ -36,8 +36,8 @@ int main(int argc, char* argv[]) {
     epiworld_double incubation_days = result["latency"].as<epiworld_double>();
     epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
     unsigned int nexperiments       = result["experiments"].as<int>();
-    
-    Model<> model = epimodels::seir_connected(
+
+    epiworld::epimodels::ModelSEIRCONN<> model(
         "a virus",       // Name of the virus
         preval,          // Initial prevalence
         beta,            // Reproductive number
