@@ -4,7 +4,7 @@
 
 using namespace epiworld;
 
-models::ModelSIR<> model;
+epimodels::ModelSIR<> model;
 
 size_t niter = 0;
 
@@ -49,7 +49,7 @@ void sumfun(
 int main()
 {
 
-    models::ModelSIR<>(
+    epimodels::ModelSIR<>(
         model,   // Model
         "covid", // Name of the virus
         .1,      // Initial prevalence

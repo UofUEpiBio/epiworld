@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
     unsigned int nexperiments       = result["experiments"].as<int>();
     
-    Model<> model = models::seir_connected(
+    Model<> model = epimodels::seir_connected(
         "a virus",       // Name of the virus
         preval,          // Initial prevalence
         beta,            // Reproductive number
