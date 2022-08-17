@@ -4,7 +4,7 @@ using namespace epiworld;
 
 int main() {
 
-    Model<> model = models::sis(
+    models::ModelSIS<> model(
         "a virus", // Name of the virus
         0.01,      // Initial prevalence
         0.9,       // Infectiousness

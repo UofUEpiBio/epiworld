@@ -10,9 +10,33 @@
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
+template<typename TSeq = int>
+class ModelSIR : public epiworld::Model<TSeq>
+{
+public:
+
+    ModelSIR() {};
+
+    ModelSIR(
+        ModelSIR<TSeq> & model,
+        std::string vname,
+        epiworld_double prevalence,
+        epiworld_double infectiousness,
+        epiworld_double recovery
+    );
+
+    ModelSIR(
+        std::string vname,
+        epiworld_double prevalence,
+        epiworld_double infectiousness,
+        epiworld_double recovery
+    );
+    
+};
+
 template<typename TSeq>
-inline void sir(
-    epiworld::Model<TSeq> & model,
+inline ModelSIR<TSeq>::ModelSIR(
+    ModelSIR<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
     epiworld_double infectiousness,
@@ -37,11 +61,13 @@ inline void sir(
     virus.set_prob_infecting(&model("Infectiousness"));
     
     model.add_virus(virus, prevalence);
+
+    return;
    
 }
 
-template<typename TSeq = int>
-inline epiworld::Model<TSeq> sir(
+template<typename TSeq>
+inline ModelSIR<TSeq>::ModelSIR(
     std::string vname,
     epiworld_double prevalence,
     epiworld_double infectiousness,
@@ -49,17 +75,15 @@ inline epiworld::Model<TSeq> sir(
     )
 {
 
-    epiworld::Model<TSeq> model;
-
-    sir(
-        model,
+    ModelSIR<TSeq>(
+        *this,
         vname,
         prevalence,
         infectiousness,
         recovery
         );
 
-    return model;
+    return;
 
 }
 

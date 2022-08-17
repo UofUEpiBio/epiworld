@@ -8,10 +8,10 @@ int main() {
 
     unsigned int nthreads = 4u;
     omp_set_num_threads(nthreads);
-    std::vector< Model<> > Models;
+    std::vector< models::ModelSIR<> > Models;
 
     for (unsigned int i = 0u; i < nthreads; ++i)
-        Models.push_back(models::sir(
+        Models.push_back(models::ModelSIR<>(
             "a virus", // Name of the virus
             0.01,      // Initial prevalence
             0.9,       // Infectiousness

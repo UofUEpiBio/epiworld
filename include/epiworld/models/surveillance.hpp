@@ -1,8 +1,10 @@
 #ifndef EPIWORLD_MODELS_SURVEILLANCE_HPP
 #define EPIWORLD_MODELS_SURVEILLANCE_HPP
 
-namespace SURVSTATUS {
+template<typename TSeq>
+class ModelSURV : public epiworld::Model<TSeq> {
 
+private:
     // Status
     static const int SUSCEPTIBLE           = 0;
     static const int LATENT                = 1;
@@ -12,6 +14,14 @@ namespace SURVSTATUS {
     static const int ASYMPTOMATIC_ISOLATED = 5;
     static const int RECOVERED             = 6;
     static const int REMOVED               = 7;
+
+public:
+
+};
+
+namespace SURVSTATUS {
+
+
 
     template<typename TSeq>
     EPI_NEW_UPDATEFUN(surveillance_update_susceptible, TSeq) {

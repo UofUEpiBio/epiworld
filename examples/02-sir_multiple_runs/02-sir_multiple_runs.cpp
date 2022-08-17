@@ -7,7 +7,7 @@ int main() {
 
     int total_replicates = 100;
 
-    Model<> sir = models::sir(
+    models::ModelSIR<> sir(
         "a virus", // Name of the virus
         0.01,      // Initial prevalence
         0.9,       // Infectiousness
