@@ -12356,7 +12356,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     throw std::logic_error(
                         "[epiworld-debug] The agent " + std::to_string(which) + " has no "+
                         "virus to share. The agent's status is: " +
-                        std::to_string(_tracked_agents_infected->operatorp[](which)->get_status())
+                        std::to_string(_tracked_agents_infected->operator[](which)->get_status())
                     );
                 }
                 #endif
