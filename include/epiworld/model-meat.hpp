@@ -363,6 +363,7 @@ inline epiworld_double death_reduction_mixer_default(
 
 template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
+    name(model.name),
     db(model.db),
     viruses(model.viruses),
     prevalence_virus(model.prevalence_virus),
@@ -415,6 +416,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
 template<typename TSeq>
 inline Model<TSeq>::Model(Model<TSeq> && model) :
+    name(std::move(model.name)),
     db(std::move(model.db)),
     population(std::move(model.population)),
     population_data(std::move(model.population_data)),
@@ -1931,6 +1933,12 @@ inline void Model<TSeq>::set_agents_data(double * data_, size_t ncols_)
 {
     population_data = data_;
     population_data_n_features = ncols_;
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_name(std::string name)
+{
+    this->name = name;
 }
 
 #undef DURCAST

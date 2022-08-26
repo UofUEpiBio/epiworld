@@ -4,96 +4,128 @@
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
  * 
- * @param model A Model<TSeq> object where to set up the SEIR.
+ * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param initial_prevalence epiworld_double Initial prevalence
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline void seir(
-    epiworld::Model<TSeq> & model,
+template<typename TSeq = int>
+class ModelSEIR : public epiworld::Model<TSeq>
+{
+private:
+    static const int SUSCEPTIBLE = 0;
+    static const int EXPOSED     = 1;
+    static const int INFECTED    = 2;
+    static const int REMOVED     = 3;
+
+public:
+
+    ModelSEIR() {};
+
+    ModelSEIR(
+        ModelSEIR<TSeq> & model,
+        std::string vname,
+        epiworld_double prevalence,
+        epiworld_double infectiousness,
+        epiworld_double incubation_days,
+        epiworld_double recovery
+    );
+
+    ModelSEIR(
+        std::string vname,
+        epiworld_double prevalence,
+        epiworld_double infectiousness,
+        epiworld_double incubation_days,
+        epiworld_double recovery
+    );
+    
+    epiworld::UpdateFun<TSeq> update_exposed_seir = [](
+        epiworld::Agent<TSeq> * p,
+        epiworld::Model<TSeq> * m
+    ) -> void {
+        // Does the agent become infected?
+        if (m->runif() < 1.0/(*m->p1))
+            p->change_status(ModelSEIR<TSeq>::INFECTED);
+
+        return;    
+    };
+      
+
+    epiworld::UpdateFun<TSeq> update_infected_seir = [](
+        epiworld::Agent<TSeq> * p,
+        epiworld::Model<TSeq> * m
+    ) -> void {
+        // Does the agent recover?
+        if (m->runif() < (*m->p2))
+            p->rm_virus(0);
+
+        return;    
+    };
+
+};
+
+
+template<typename TSeq>
+inline ModelSEIR<TSeq>::ModelSEIR(
+    ModelSEIR<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
     epiworld_double infectiousness,
-    epiworld_double susceptibility_reduction,
-    epiworld_double recovery,
-    epiworld_double post_immunity
+    epiworld_double incubation_days,
+    epiworld_double recovery
     )
 {
 
     // Adding statuses
     model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_status("Infected", epiworld::default_update_exposed<TSeq>);
-    model.add_status("Recovered");
-    model.add_status("Gained Immunity");
+    model.add_status("Exposed", model.update_exposed_seir);
+    model.add_status("Infected", model.update_infected_seir);
+    model.add_status("Removed");
 
     // Setting up parameters
-    model.add_param(post_immunity, "Post immunity");
-    model.add_param(susceptibility_reduction, "Immune suscept. redux.");
-    model.add_param(recovery, "Immune recovery");
     model.add_param(infectiousness, "Infectiousness");
+    model.add_param(incubation_days, "Incubation days");
+    model.add_param(recovery, "Immune recovery");
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(1,2,2);
-
-    epiworld::Tool<TSeq> immune("Immunity (" + vname + ")");
-    immune.set_susceptibility_reduction(&model("Post immunity"));
-
-    model.add_tool_n(immune, 0u);
-    
-    EPI_NEW_POSTRECOVERYFUN_LAMBDA(add_immunity,TSeq) {
-
-        if (m->runif() > .5)
-            p->add_tool(m->get_tools()[0u], 3);
-
-        return;
-
-    };
+    virus.set_status(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
 
     virus.set_prob_infecting(&model("Infectiousness"));
-    virus.set_post_recovery(add_immunity);
     
-    // Preparing the immune system -----------------------------------
-    epiworld::Tool<TSeq> immune_sys("Immune system");
-    
-    immune_sys.set_susceptibility_reduction(&model("Immune suscept. redux."));
-    immune_sys.set_recovery_enhancer(&model("Immune recovery"));
-   
     // Adding the tool and the virus
-    model.add_tool(immune_sys, 1.0);
     model.add_virus(virus, prevalence);
+    
+    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
+
+    return;
    
 }
 
-template<typename TSeq = int>
-inline epiworld::Model<TSeq> seir(
+template<typename TSeq>
+inline ModelSEIR<TSeq>::ModelSEIR(
     std::string vname,
     epiworld_double prevalence,
     epiworld_double infectiousness,
-    epiworld_double susceptibility_reduction,
-    epiworld_double recovery,
-    epiworld_double post_immunity
+    epiworld_double incubation_days,
+    epiworld_double recovery
     )
 {
 
-    epiworld::Model<TSeq> model;
-
-    seir(
-        model,
+    ModelSEIR<TSeq>(
+        *this,
         vname,
         prevalence,
         infectiousness,
-        susceptibility_reduction,
-        recovery,
-        post_immunity
+        incubation_days,
+        recovery
         );
 
-
-
-    return model;
+    return;
 
 }
+
+
 
 #endif

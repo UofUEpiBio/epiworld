@@ -44,6 +44,8 @@ inline ModelSIS<TSeq>::ModelSIS(
     )
 {
 
+    model.set_name("Susceptible-Infected-Susceptible (SIS)");
+
     // Adding statuses
     model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
     model.add_status("Infected", epiworld::default_update_exposed<TSeq>);

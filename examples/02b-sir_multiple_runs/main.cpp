@@ -48,6 +48,8 @@ int main() {
         true              // Whether to print a progress bar
     );
 
+    sir.print();
+
     // How long did it took?
     sir.get_elapsed();
 

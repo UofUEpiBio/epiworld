@@ -14,6 +14,8 @@ inline void Model<TSeq>::print() const
     EPI_DEBUG_NOTIFY_ACTIVE()
 
     printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
+
+    printf_epiworld("Name of the model   : %s\n", (this->name == "") ? std::string("(none)").c_str() : name.c_str());
     printf_epiworld("Population size     : %i\n", static_cast<int>(size()));
     printf_epiworld("Number of entitites : %i\n", static_cast<int>(entities.size()));
     printf_epiworld("Days (duration)     : %i (of %i)\n", today(), ndays);
@@ -28,6 +30,23 @@ inline void Model<TSeq>::print() const
         if (n_replicates > 1u)
         {
             printf_epiworld("Total elapsed t     : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
+        }
+
+        // Elapsed time in speed
+        get_elapsed("microseconds", &elapsed, &total, &abbr, false);
+        printf_epiworld("Last run speed      : %.2f million agents x day / second\n",
+            static_cast<double>(this->size()) *
+            static_cast<double>(this->get_ndays()) /
+            static_cast<double>(elapsed)
+            );
+        if (n_replicates > 1u)
+        {
+            printf_epiworld("Average run speed   : %.2f million agents x day / second\n",
+                static_cast<double>(this->size()) *
+                static_cast<double>(this->get_ndays()) *
+                static_cast<double>(n_replicates) /
+                static_cast<double>(total)
+            );
         }
 
     } else {

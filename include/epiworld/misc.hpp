@@ -49,7 +49,10 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
 template<typename TSeq = int>
 inline TSeq default_sequence();
 
-int _n_sequences_created = 0;
+// Making it 'static' so that we don't have problems when including the
+// header. This is important during the linkage, e.g., in R.
+// See https://en.cppreference.com/w/cpp/language/storage_duration#Linkage
+static int _n_sequences_created = 0;
 
 template<>
 inline bool default_sequence() {

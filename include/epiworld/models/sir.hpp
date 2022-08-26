@@ -62,6 +62,8 @@ inline ModelSIR<TSeq>::ModelSIR(
     
     model.add_virus(virus, prevalence);
 
+    model.set_name("Susceptible-Infected-Recovered (SIR)");
+
     return;
    
 }

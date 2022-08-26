@@ -85,6 +85,8 @@ class Model {
     friend class Queue<TSeq>;
 private:
 
+    std::string name = ""; ///< Name of the model
+
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
     std::vector< Agent<TSeq> > population;
@@ -620,6 +622,13 @@ public:
      * 
      */
     void set_agents_data(double * data_, size_t ncols_);
+
+    /**
+     * @brief Set the name object
+     * 
+     * @param name 
+     */
+    void set_name(std::string name);
 
 };
 
