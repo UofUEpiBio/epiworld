@@ -9,11 +9,13 @@ namespace is:
 
 The following models are included:
 
-1. `models::sir` 
+1. `models::ModelSIS` SIS 
 
-2. `models::seir`
+2. `models::ModelSIR` SIR
 
-1. `models::sir_compartmental` 
+3. `models::ModelSIRCONN` SIR connected graph
 
-2. `models::seir_compartmental`
+4. `models::ModelSEIRCONN` SEIR connected graph
+
+5. `models::ModelSURV` Surveillance
 
