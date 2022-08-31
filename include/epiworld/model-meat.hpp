@@ -535,6 +535,26 @@ inline void Model<TSeq>::agents_smallworld(
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::agents_empty_graph(
+    unsigned int n
+) 
+{
+
+    // Resizing the people
+    population.clear();
+    population.resize(n, Agent<TSeq>());
+
+    // Filling the model and ids
+    size_t i = 0u;
+    for (auto & p : population)
+    {
+        p.model = this;
+        p.id    = i++;
+    }
+
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
 {
     engine = std::make_shared< std::mt19937 >(eng);
@@ -1147,24 +1167,15 @@ template<typename TSeq>
 inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
 
     // Resizing the people
-    population.clear();
-    population.resize(al.vcount(), Agent<TSeq>());
-
+    agents_empty_graph(al.vcount());
+    
     const auto & tmpdat = al.get_dat();
-
-    // Filling the model and ids
-    size_t i = 0u;
-    for (auto & p : population)
-    {
-        p.model = this;
-        p.id    = i++;
-    }
     
     for (size_t i = 0u; i < tmpdat.size(); ++i)
     {
 
-        population[i].id    = i;
-        population[i].model = this;
+        // population[i].id    = i;
+        // population[i].model = this;
 
         for (const auto & link: tmpdat[i])
         {

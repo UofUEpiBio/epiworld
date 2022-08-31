@@ -356,6 +356,7 @@ public:
         bool d = false,
         epiworld_double p = .01
         );
+    void agents_empty_graph(unsigned int n = 1000);
     ///@}
 
     /**

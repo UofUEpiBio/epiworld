@@ -1,23 +1,6 @@
 #ifndef EPIWORLD_MODELS_SIRCONNECTED_HPP 
 #define EPIWORLD_MODELS_SIRCONNECTED_HPP
 
-// namespace SIRCONN {
-
-//     static const int SUSCEPTIBLE = 0;
-//     static const int INFECTED    = 1;
-//     static const int RECOVERED   = 2;
-
-
-
-//     bool tracked_started = false;
-//     int tracked_ninfected = 0;
-//     int tracked_ninfected_next = 0;
-//     epiworld_double tracked_current_infect_prob = 0.0;
-
-    
-
-// }
-
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSIRCONN : public epiworld::Model<TSeq>
 {
@@ -33,6 +16,7 @@ public:
     ModelSIRCONN(
         ModelSIRCONN<TSeq> & model,
         std::string vname,
+        unsigned int n,
         epiworld_double prevalence,
         epiworld_double reproductive_number,
         epiworld_double prob_transmission,
@@ -41,6 +25,7 @@ public:
 
     ModelSIRCONN(
         std::string vname,
+        unsigned int n,
         epiworld_double prevalence,
         epiworld_double reproductive_number,
         epiworld_double prob_transmission,
@@ -73,6 +58,7 @@ template<typename TSeq>
 inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     ModelSIRCONN<TSeq> & model,
     std::string vname,
+    unsigned int n,
     epiworld_double prevalence,
     epiworld_double reproductive_number,
     epiworld_double prob_transmission,
@@ -268,6 +254,10 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
     model.queuing_off(); // No queuing need
 
+    model.agents_empty_graph(n);
+
+    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) (connected)");
+
     return;
 
 }
@@ -275,6 +265,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 template<typename TSeq>
 inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     std::string vname,
+    unsigned int n,
     epiworld_double prevalence,
     epiworld_double reproductive_number,
     epiworld_double prob_transmission,
@@ -285,6 +276,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     ModelSIRCONN(
         *this,
         vname,
+        n,
         prevalence,
         reproductive_number,
         prob_transmission,

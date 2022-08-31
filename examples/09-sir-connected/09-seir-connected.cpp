@@ -39,15 +39,13 @@ int main(int argc, char* argv[]) {
 
     epiworld::epimodels::ModelSEIRCONN<> model(
         "a virus",       // Name of the virus
+        popsize,
         preval,          // Initial prevalence
         beta,            // Reproductive number
         prob_infect,     // Prob of transmission
         incubation_days, // Number of incubation days
         prob_recovery    // Prob of recovery
     );
-
-    // Adding a bernoulli graph as step 0
-    model.agents_smallworld(popsize, 1, false, .0);
 
     model.init(ndays, result["seed"].as<int>());
 
