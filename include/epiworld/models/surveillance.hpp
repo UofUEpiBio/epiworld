@@ -312,6 +312,8 @@ inline ModelSURV<TSeq>::ModelSURV(
     
     model.add_tool(vax, prop_vaccinated);
 
+    model.set_name("Surveillance");
+
     return;
 
 }

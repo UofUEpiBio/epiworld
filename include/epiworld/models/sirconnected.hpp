@@ -256,7 +256,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
     model.agents_empty_graph(n);
 
-    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) (connected)");
+    model.set_name("Susceptible-Infected-Removed (SIR) (connected)");
 
     return;
 
