@@ -12,7 +12,10 @@ private:
 
 public:
 
-    ModelSEIRCONNLogit() {};
+    ModelSEIRCONNLogit() {
+        tracked_agents_infected.reserve(1e4);
+        tracked_agents_infected_next.reserve(1e4);
+    };
 
     ModelSEIRCONNLogit(
         ModelSEIRCONNLogit<TSeq> & model,

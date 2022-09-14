@@ -12137,7 +12137,12 @@ private:
 
 public:
 
-    ModelSIRCONN() {};
+    ModelSIRCONN() {
+        
+        tracked_agents_infected.reserve(1e4);
+        tracked_agents_infected_next.reserve(1e4);
+
+    };
 
     ModelSIRCONN(
         ModelSIRCONN<TSeq> & model,
@@ -12447,7 +12452,12 @@ private:
 
 public:
 
-    ModelSEIRCONN() {};
+    ModelSEIRCONN() {
+
+        tracked_agents_infected.reserve(1e4);
+        tracked_agents_infected_next.reserve(1e4);
+        
+    };
 
     ModelSEIRCONN(
         ModelSEIRCONN<TSeq> & model,
