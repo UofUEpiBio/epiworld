@@ -2397,9 +2397,10 @@ inline std::vector<int> default_seq_hasher<std::vector<int>>(const std::vector<i
 
 template<>
 inline std::vector<int> default_seq_hasher<std::vector<bool>>(const std::vector<bool> & x) {
-    std::vector<int> ans;
+    std::vector<int> ans(x.size());
+    size_t j = 0;
     for (const auto & i : x)
-        ans.push_back(i? 1 : 0);
+        ans[j++] = i? 1 : 0;
     return ans;
 }
 
@@ -9890,6 +9891,7 @@ class Agent {
     friend class Viruses_const<TSeq>;
     friend class Tool<TSeq>;
     friend class Tools<TSeq>;
+    friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
     friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;
