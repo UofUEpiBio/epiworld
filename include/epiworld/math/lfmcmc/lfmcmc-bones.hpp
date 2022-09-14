@@ -217,10 +217,10 @@ public:
     ///@}
 
     // Accessing parameters of the function
-    const size_t get_n_samples() {return n_samples;};
-    const size_t get_n_statistics() {return n_statistics;};
-    const size_t get_n_parameters() {return n_parameters;};
-    const epiworld_double get_epsilon() {return epsilon;};
+    size_t get_n_samples() const {return n_samples;};
+    size_t get_n_statistics() const {return n_statistics;};
+    size_t get_n_parameters() const {return n_parameters;};
+    epiworld_double get_epsilon() const {return epsilon;};
 
     const std::vector< epiworld_double > & get_params_now() {return params_now;};
     const std::vector< epiworld_double > & get_params_prev() {return params_prev;};
