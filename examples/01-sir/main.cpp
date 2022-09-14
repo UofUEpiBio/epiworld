@@ -13,10 +13,10 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     model.agents_from_adjlist(
-        rgraph_smallworld(10000, 5, .001, false, model)
+        rgraph_smallworld(100000, 5, .001, false, model)
     );
 
-    model.init(100, 123);
+    model.init(50, 123);
 
     // Running and checking the results
     model.run();

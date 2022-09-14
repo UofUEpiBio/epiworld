@@ -2,8 +2,8 @@
 #define EPIWORLD_ADJLIST_MEAT_HPP
 
 inline AdjList::AdjList(
-    const std::vector< unsigned int > & source,
-    const std::vector< unsigned int > & target,
+    const std::vector< epiworld_fast_uint > & source,
+    const std::vector< epiworld_fast_uint > & target,
     int size,
     bool directed
 ) : directed(directed) {
@@ -71,8 +71,11 @@ inline void AdjList::read_edgelist(
         throw std::logic_error("The file " + fn + " was not found.");
 
     int linenum = 0;
-    std::vector< unsigned int > source_;
-    std::vector< unsigned int > target_;
+    std::vector< epiworld_fast_uint > source_;
+    std::vector< epiworld_fast_uint > target_;
+
+    source_.reserve(1e5);
+    target_.reserve(1e5);
 
     int max_id = size - 1;
 

@@ -994,10 +994,6 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
         throw std::logic_error(
             "The virus \"" + v.get_name() + "\" has no -post- status."
             );
-    // else if (rm_ == -99)
-    //     throw std::logic_error(
-    //         "The virus \"" + v.get_name() + "\" has no -rm- status."
-    //         );
 
     // Setting the id
     v.set_id(viruses.size());
@@ -1360,14 +1356,37 @@ inline void Model<TSeq>::update_status() {
 template<typename TSeq>
 inline void Model<TSeq>::mutate_variant() {
 
-    for (auto & p: population)
+    if (use_queuing)
     {
 
-        if (p.n_viruses > 0u)
-            for (auto & v : p.viruses)
-                v->mutate();
+        int i = -1;
+        for (auto & p: population)
+        {
+
+            if (queue[++i] == 0)
+                continue;
+
+            if (p.n_viruses > 0u)
+                for (auto & v : p.get_viruses())
+                    v->mutate();
+
+        }
 
     }
+    else 
+    {
+
+        for (auto & p: population)
+        {
+
+            if (p.n_viruses > 0u)
+                for (auto & v : p.get_viruses())
+                    v->mutate();
+
+        }
+
+    }
+    
 
 }
 

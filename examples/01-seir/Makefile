@@ -1,5 +1,5 @@
 main.o: main.cpp
-	g++ -std=c++11 -Wall -pedantic -g -O2 -ftree-vectorize  main.cpp -o main.o
+	g++ -std=c++11 -Wall -pedantic -g -O2 -mtune=native main.cpp -o main.o
 README.md: main.o
 	echo "## Example: 01-sir" > README.md && \
 	echo "" >> README.md && \

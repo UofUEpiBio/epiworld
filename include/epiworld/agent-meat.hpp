@@ -34,8 +34,8 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     in_queue = p.in_queue;
 
     // Dealing with the virus
-    viruses.reserve(p.n_viruses);
-    for (auto & v : p.viruses)
+    viruses.reserve(p.get_n_viruses());
+    for (const auto & v : p.get_viruses())
     {
         // Will create a copy of the virus, with the exeption of
         // the virus code
@@ -46,8 +46,8 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 
     n_viruses = p.n_viruses;
 
-    tools.reserve(p.n_tools);
-    for (auto & t : p.tools)
+    tools.reserve(p.get_n_tools());
+    for (const auto & t : p.get_tools())
     {
         // Will create a copy of the virus, with the exeption of
         // the virus code

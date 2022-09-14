@@ -18,9 +18,10 @@ inline std::vector<int> default_seq_hasher<std::vector<int>>(const std::vector<i
 
 template<>
 inline std::vector<int> default_seq_hasher<std::vector<bool>>(const std::vector<bool> & x) {
-    std::vector<int> ans;
+    std::vector<int> ans(x.size());
+    size_t j = 0;
     for (const auto & i : x)
-        ans.push_back(i? 1 : 0);
+        ans[j++] = i? 1 : 0;
     return ans;
 }
 

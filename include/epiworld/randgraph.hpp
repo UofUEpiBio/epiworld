@@ -144,9 +144,14 @@ inline void rewire_degseq(
 {
 
     // Identifying individuals with degree > 0
-    std::vector< int > nties(agents->vcount(), 0); 
-    std::vector< unsigned int > non_isolates;
+    std::vector< epiworld_fast_int > nties(agents->vcount(), 0); 
+    
+    std::vector< epiworld_fast_uint > non_isolates;
+    non_isolates.reserve(nties.size());
+
     std::vector< epiworld_double > weights;
+    weights.reserve(nties.size());
+
     epiworld_double nedges = 0.0;
     // std::vector< Agent<TSeq> > * agents = model->get_agents();
     auto & dat = agents->get_dat();
@@ -193,6 +198,7 @@ inline void rewire_degseq(
     int nrewires = floor(proportion * nedges / (
         agents->is_directed() ? 1.0 : 2.0
     ));
+
     while (nrewires-- > 0)
     {
 
@@ -374,8 +380,8 @@ inline AdjList rgraph_ring_lattice(
     if ((n - 1u) < k)
         throw std::logic_error("k can be at most n - 1.");
 
-    std::vector< unsigned int > source;
-    std::vector< unsigned int > target;
+    std::vector< epiworld_fast_uint > source;
+    std::vector< epiworld_fast_uint > target;
 
     // if (!directed)
     //     if (k > 1u) k = static_cast< unsigned int >(floor(k / 2.0));

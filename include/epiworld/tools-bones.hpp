@@ -97,8 +97,8 @@ public:
     Tools_const() = delete;
     Tools_const(const Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
-    typename std::vector< ToolPtr<TSeq> >::const_iterator begin();
-    typename std::vector< ToolPtr<TSeq> >::const_iterator end();
+    typename std::vector< ToolPtr<TSeq> >::const_iterator begin() const;
+    typename std::vector< ToolPtr<TSeq> >::const_iterator end() const;
 
     const ToolPtr<TSeq> & operator()(size_t i);
     const ToolPtr<TSeq> & operator[](size_t i);
@@ -108,7 +108,7 @@ public:
 };
 
 template<typename TSeq>
-inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::begin() {
+inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::begin() const {
 
     if (*n_tools == 0u)
         return dat->end();
@@ -117,7 +117,7 @@ inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::
 }
 
 template<typename TSeq>
-inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::end() {
+inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::end() const {
      
     return begin() + *n_tools;
 }

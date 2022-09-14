@@ -134,6 +134,8 @@ inline int roulette(
     // Step 1: Computing the prob on none 
     epiworld_double p_none = 1.0;
     std::vector< int > certain_infection;
+    certain_infection.reserve(probs.size());
+
     for (unsigned int p = 0u; p < probs.size(); ++p)
     {
         p_none *= (1.0 - probs[p]);
@@ -150,11 +152,11 @@ inline int roulette(
         return certain_infection[std::floor(r * certain_infection.size())];
 
     // Step 2: Calculating the prob of none or single
-    std::vector< epiworld_double > probs_only_p;
+    std::vector< epiworld_double > probs_only_p(probs.size());
     epiworld_double p_none_or_single = p_none;
     for (unsigned int p = 0u; p < probs.size(); ++p)
     {
-        probs_only_p.push_back(probs[p] * (p_none / (1.0 - probs[p])));
+        probs_only_p[p] = probs[p] * (p_none / (1.0 - probs[p]));
         p_none_or_single += probs_only_p[p];
     }
 

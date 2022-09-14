@@ -67,6 +67,7 @@ class Agent {
     friend class Viruses_const<TSeq>;
     friend class Tool<TSeq>;
     friend class Tools<TSeq>;
+    friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
     friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;

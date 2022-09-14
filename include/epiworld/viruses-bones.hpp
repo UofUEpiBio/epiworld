@@ -97,8 +97,8 @@ public:
     Viruses_const() = delete;
     Viruses_const(const Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
-    typename std::vector< VIRUSPTR >::const_iterator begin();
-    typename std::vector< VIRUSPTR >::const_iterator end();
+    typename std::vector< VIRUSPTR >::const_iterator begin() const;
+    typename std::vector< VIRUSPTR >::const_iterator end() const;
 
     const VIRUSPTR & operator()(size_t i);
     const VIRUSPTR & operator[](size_t i);
@@ -108,7 +108,7 @@ public:
 };
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::begin() {
+inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::begin() const {
 
     if (*n_viruses == 0u)
         return dat->end();
@@ -117,7 +117,7 @@ inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::beg
 }
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::end() {
+inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::end() const {
      
     return begin() + *n_viruses;
 }

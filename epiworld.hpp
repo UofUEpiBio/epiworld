@@ -540,6 +540,8 @@ inline int roulette(
     // Step 1: Computing the prob on none 
     epiworld_double p_none = 1.0;
     std::vector< int > certain_infection;
+    certain_infection.reserve(probs.size());
+
     for (unsigned int p = 0u; p < probs.size(); ++p)
     {
         p_none *= (1.0 - probs[p]);
@@ -556,11 +558,11 @@ inline int roulette(
         return certain_infection[std::floor(r * certain_infection.size())];
 
     // Step 2: Calculating the prob of none or single
-    std::vector< epiworld_double > probs_only_p;
+    std::vector< epiworld_double > probs_only_p(probs.size());
     epiworld_double p_none_or_single = p_none;
     for (unsigned int p = 0u; p < probs.size(); ++p)
     {
-        probs_only_p.push_back(probs[p] * (p_none / (1.0 - probs[p])));
+        probs_only_p[p] = probs[p] * (p_none / (1.0 - probs[p]));
         p_none_or_single += probs_only_p[p];
     }
 
@@ -3609,8 +3611,8 @@ public:
      * @param directed Bool true if the network is directed
      */
     AdjList(
-        const std::vector< unsigned int > & source,
-        const std::vector< unsigned int > & target,
+        const std::vector< epiworld_fast_uint > & source,
+        const std::vector< epiworld_fast_uint > & target,
         int size,
         bool directed
         );
@@ -3673,8 +3675,8 @@ public:
 #define EPIWORLD_ADJLIST_MEAT_HPP
 
 inline AdjList::AdjList(
-    const std::vector< unsigned int > & source,
-    const std::vector< unsigned int > & target,
+    const std::vector< epiworld_fast_uint > & source,
+    const std::vector< epiworld_fast_uint > & target,
     int size,
     bool directed
 ) : directed(directed) {
@@ -3742,8 +3744,11 @@ inline void AdjList::read_edgelist(
         throw std::logic_error("The file " + fn + " was not found.");
 
     int linenum = 0;
-    std::vector< unsigned int > source_;
-    std::vector< unsigned int > target_;
+    std::vector< epiworld_fast_uint > source_;
+    std::vector< epiworld_fast_uint > target_;
+
+    source_.reserve(1e5);
+    target_.reserve(1e5);
 
     int max_id = size - 1;
 
@@ -4020,9 +4025,14 @@ inline void rewire_degseq(
 {
 
     // Identifying individuals with degree > 0
-    std::vector< int > nties(agents->vcount(), 0); 
-    std::vector< unsigned int > non_isolates;
+    std::vector< epiworld_fast_int > nties(agents->vcount(), 0); 
+    
+    std::vector< epiworld_fast_uint > non_isolates;
+    non_isolates.reserve(nties.size());
+
     std::vector< epiworld_double > weights;
+    weights.reserve(nties.size());
+
     epiworld_double nedges = 0.0;
     // std::vector< Agent<TSeq> > * agents = model->get_agents();
     auto & dat = agents->get_dat();
@@ -4069,6 +4079,7 @@ inline void rewire_degseq(
     int nrewires = floor(proportion * nedges / (
         agents->is_directed() ? 1.0 : 2.0
     ));
+
     while (nrewires-- > 0)
     {
 
@@ -4250,8 +4261,8 @@ inline AdjList rgraph_ring_lattice(
     if ((n - 1u) < k)
         throw std::logic_error("k can be at most n - 1.");
 
-    std::vector< unsigned int > source;
-    std::vector< unsigned int > target;
+    std::vector< epiworld_fast_uint > source;
+    std::vector< epiworld_fast_uint > target;
 
     // if (!directed)
     //     if (k > 1u) k = static_cast< unsigned int >(floor(k / 2.0));
@@ -6063,10 +6074,6 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
         throw std::logic_error(
             "The virus \"" + v.get_name() + "\" has no -post- status."
             );
-    // else if (rm_ == -99)
-    //     throw std::logic_error(
-    //         "The virus \"" + v.get_name() + "\" has no -rm- status."
-    //         );
 
     // Setting the id
     v.set_id(viruses.size());
@@ -6429,14 +6436,37 @@ inline void Model<TSeq>::update_status() {
 template<typename TSeq>
 inline void Model<TSeq>::mutate_variant() {
 
-    for (auto & p: population)
+    if (use_queuing)
     {
 
-        if (p.n_viruses > 0u)
-            for (auto & v : p.viruses)
-                v->mutate();
+        int i = -1;
+        for (auto & p: population)
+        {
+
+            if (queue[++i] == 0)
+                continue;
+
+            if (p.n_viruses > 0u)
+                for (auto & v : p.get_viruses())
+                    v->mutate();
+
+        }
 
     }
+    else 
+    {
+
+        for (auto & p: population)
+        {
+
+            if (p.n_viruses > 0u)
+                for (auto & v : p.get_viruses())
+                    v->mutate();
+
+        }
+
+    }
+    
 
 }
 
@@ -7427,8 +7457,8 @@ public:
     Viruses_const() = delete;
     Viruses_const(const Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
-    typename std::vector< VIRUSPTR >::const_iterator begin();
-    typename std::vector< VIRUSPTR >::const_iterator end();
+    typename std::vector< VIRUSPTR >::const_iterator begin() const;
+    typename std::vector< VIRUSPTR >::const_iterator end() const;
 
     const VIRUSPTR & operator()(size_t i);
     const VIRUSPTR & operator[](size_t i);
@@ -7438,7 +7468,7 @@ public:
 };
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::begin() {
+inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::begin() const {
 
     if (*n_viruses == 0u)
         return dat->end();
@@ -7447,7 +7477,7 @@ inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::beg
 }
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::end() {
+inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::end() const {
      
     return begin() + *n_viruses;
 }
@@ -8218,8 +8248,8 @@ public:
     Tools_const() = delete;
     Tools_const(const Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
 
-    typename std::vector< ToolPtr<TSeq> >::const_iterator begin();
-    typename std::vector< ToolPtr<TSeq> >::const_iterator end();
+    typename std::vector< ToolPtr<TSeq> >::const_iterator begin() const;
+    typename std::vector< ToolPtr<TSeq> >::const_iterator end() const;
 
     const ToolPtr<TSeq> & operator()(size_t i);
     const ToolPtr<TSeq> & operator[](size_t i);
@@ -8229,7 +8259,7 @@ public:
 };
 
 template<typename TSeq>
-inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::begin() {
+inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::begin() const {
 
     if (*n_tools == 0u)
         return dat->end();
@@ -8238,7 +8268,7 @@ inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::
 }
 
 template<typename TSeq>
-inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::end() {
+inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::end() const {
      
     return begin() + *n_tools;
 }
@@ -10383,8 +10413,8 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     in_queue = p.in_queue;
 
     // Dealing with the virus
-    viruses.reserve(p.n_viruses);
-    for (auto & v : p.viruses)
+    viruses.reserve(p.get_n_viruses());
+    for (const auto & v : p.get_viruses())
     {
         // Will create a copy of the virus, with the exeption of
         // the virus code
@@ -10395,8 +10425,8 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 
     n_viruses = p.n_viruses;
 
-    tools.reserve(p.n_tools);
-    for (auto & t : p.tools)
+    tools.reserve(p.get_n_tools());
+    for (const auto & t : p.get_tools())
     {
         // Will create a copy of the virus, with the exeption of
         // the virus code

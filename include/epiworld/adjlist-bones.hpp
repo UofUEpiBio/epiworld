@@ -25,8 +25,8 @@ public:
      * @param directed Bool true if the network is directed
      */
     AdjList(
-        const std::vector< unsigned int > & source,
-        const std::vector< unsigned int > & target,
+        const std::vector< epiworld_fast_uint > & source,
+        const std::vector< epiworld_fast_uint > & target,
         int size,
         bool directed
         );
