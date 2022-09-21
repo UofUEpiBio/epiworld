@@ -315,7 +315,7 @@ inline AdjList rgraph_bernoulli(
 
     }
 
-    AdjList al(source, target, directed, 0, static_cast<int>(n) - 1);
+    AdjList al(source, target, static_cast<int>(n), directed);
 
     return al;
     
@@ -365,7 +365,7 @@ inline AdjList rgraph_bernoulli2(
 
     }
 
-    AdjList al(source, target, directed, 0, static_cast<int>(n) - 1);
+    AdjList al(source, target, static_cast<int>(n), directed);
 
     return al;
     
