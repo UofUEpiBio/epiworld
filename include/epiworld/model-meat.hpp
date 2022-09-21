@@ -904,19 +904,19 @@ inline std::mt19937 * Model<TSeq>::get_rand_endgine()
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return runifd->operator()(*engine);
+    return (runifd->operator())(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return (runifd->operator()(*engine) * (b - a) + a);
+    return ((runifd->operator())(*engine) * (b - a) + a);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm() {
     // CHECK_INIT()
-    return (rnormd->operator()(*engine));
+    return (rnormd->operator())(*engine);
 }
 
 template<typename TSeq>
@@ -927,42 +927,42 @@ inline epiworld_double Model<TSeq>::rnorm(epiworld_double mean, epiworld_double 
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma() {
-    return rgammad->operator()(*engine);
+    return (rgammad->operator())(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
     auto old_param = rgammad->param();
     rgammad->param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = rgammad->operator()(*engine);
+    epiworld_double ans = (rgammad->operator())(*engine);
     rgammad->param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp() {
-    return rexp->operator()(*engine);
+    return (rexp->operator())(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
     auto old_param = rexpd->param();
     rexpd->param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = rexpd->operator()(*engine);
+    epiworld_double ans = (rexpd->operator())(*engine);
     rexpd->param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal() {
-    return rlognormald->operator()(*engine);
+    return (rlognormald->operator())(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
     auto old_param = rlognormald->param();
     rlognormald->param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = rlognormald->operator()(*engine);
+    epiworld_double ans = (rlognormald->operator())(*engine);
     rlognormald->param(old_param);
     return ans;
 }

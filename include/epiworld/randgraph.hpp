@@ -329,8 +329,8 @@ inline AdjList rgraph_bernoulli2(
     Model<TSeq> & model
 ) {
 
-    std::vector< unsigned int > source;
-    std::vector< unsigned int > target;
+    std::vector< epiworld_fast_uint > source;
+    std::vector< epiworld_fast_uint > target;
 
     // Checking the density (how many)
     std::binomial_distribution<> d(

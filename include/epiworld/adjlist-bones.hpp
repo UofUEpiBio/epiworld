@@ -31,6 +31,9 @@ public:
         bool directed
         );
 
+    AdjList(AdjList && a); // Move constructor
+    AdjList(const AdjList & a); // Copy constructor
+
     /**
      * @brief Read an edgelist
      * 

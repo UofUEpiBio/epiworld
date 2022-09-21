@@ -57,6 +57,25 @@ inline AdjList::AdjList(
 
 }
 
+
+inline AdjList::AdjList(AdjList && a) :
+    dat(std::move(a.dat)),
+    bool(a.bool),
+    N(a.N),
+    E(a.E)
+{
+
+}
+
+inline AdjList::AdjList(const AdjList & a) :
+    dat(a.dat),
+    bool(a.bool),
+    N(a.N),
+    E(a.E)
+{
+
+}
+
 inline void AdjList::read_edgelist(
     std::string fn,
     int size,
@@ -130,9 +149,10 @@ inline std::map<unsigned int,unsigned int> AdjList::operator()(
             "The vertex id " + std::to_string(i) + " is not in the network."
             );
 
-    dat[i];
+    return dat[i];
 
 }
+
 inline void AdjList::print(unsigned int limit) const {
 
 

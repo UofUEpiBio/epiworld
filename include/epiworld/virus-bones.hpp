@@ -140,13 +140,13 @@ public:
     void get_status(
         epiworld_fast_int * init,
         epiworld_fast_int * end,
-        epiworld_fast_int * removed = -99
+        epiworld_fast_int * removed = nullptr
         );
 
     void get_queue(
         epiworld_fast_int * init,
         epiworld_fast_int * end,
-        epiworld_fast_int * removed = -99
+        epiworld_fast_int * removed = nullptr
         );
     ///@}
 
