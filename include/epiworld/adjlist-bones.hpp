@@ -33,6 +33,8 @@ public:
 
     AdjList(AdjList && a); // Move constructor
     AdjList(const AdjList & a); // Copy constructor
+    AdjList& AdjList::operator=(const AdjList& a);
+
 
     /**
      * @brief Read an edgelist

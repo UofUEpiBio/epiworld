@@ -60,7 +60,7 @@ inline AdjList::AdjList(
 
 inline AdjList::AdjList(AdjList && a) :
     dat(std::move(a.dat)),
-    bool(a.bool),
+    directed(a.directed),
     N(a.N),
     E(a.E)
 {
@@ -69,11 +69,24 @@ inline AdjList::AdjList(AdjList && a) :
 
 inline AdjList::AdjList(const AdjList & a) :
     dat(a.dat),
-    bool(a.bool),
+    directed(a.directed),
     N(a.N),
     E(a.E)
 {
 
+}
+
+inline AdjList& AdjList::operator=(const AdjList& a)
+{
+    if (this == &a)
+        return *this;
+
+    this->dat = a.dat;
+    this->directed = a.directed;
+    this->N = a.N;
+    this->M = a.M;
+
+    return *this;
 }
 
 inline void AdjList::read_edgelist(

@@ -3620,6 +3620,8 @@ public:
 
     AdjList(AdjList && a); // Move constructor
     AdjList(const AdjList & a); // Copy constructor
+    AdjList& AdjList::operator=(const AdjList& a);
+
 
     /**
      * @brief Read an edgelist
@@ -3737,7 +3739,7 @@ inline AdjList::AdjList(
 
 inline AdjList::AdjList(AdjList && a) :
     dat(std::move(a.dat)),
-    bool(a.bool),
+    directed(a.directed),
     N(a.N),
     E(a.E)
 {
@@ -3746,11 +3748,24 @@ inline AdjList::AdjList(AdjList && a) :
 
 inline AdjList::AdjList(const AdjList & a) :
     dat(a.dat),
-    bool(a.bool),
+    directed(a.directed),
     N(a.N),
     E(a.E)
 {
 
+}
+
+inline AdjList& AdjList::operator=(const AdjList& a)
+{
+    if (this == &a)
+        return *this;
+
+    this->dat = a.dat;
+    this->directed = a.directed;
+    this->N = a.N;
+    this->M = a.M;
+
+    return *this;
 }
 
 inline void AdjList::read_edgelist(
@@ -4184,8 +4199,8 @@ inline AdjList rgraph_bernoulli(
     Model<TSeq> & model
 ) {
 
-    std::vector< unsigned int > source;
-    std::vector< unsigned int > target;
+    std::vector< epiworld_fast_uint > source;
+    std::vector< epiworld_fast_uint > target;
 
     // Checking the density (how many)
     std::binomial_distribution<> d(
