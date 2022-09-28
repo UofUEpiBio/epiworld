@@ -3620,7 +3620,7 @@ public:
 
     AdjList(AdjList && a); // Move constructor
     AdjList(const AdjList & a); // Copy constructor
-    AdjList& AdjList::operator=(const AdjList& a);
+    AdjList& operator=(const AdjList& a);
 
 
     /**
@@ -3763,7 +3763,7 @@ inline AdjList& AdjList::operator=(const AdjList& a)
     this->dat = a.dat;
     this->directed = a.directed;
     this->N = a.N;
-    this->M = a.M;
+    this->E = a.E;
 
     return *this;
 }
@@ -6060,7 +6060,7 @@ inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_doubl
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp() {
-    return (rexp->operator())(*engine);
+    return (rexpd->operator())(*engine);
 }
 
 template<typename TSeq>

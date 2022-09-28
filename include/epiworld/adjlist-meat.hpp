@@ -84,7 +84,7 @@ inline AdjList& AdjList::operator=(const AdjList& a)
     this->dat = a.dat;
     this->directed = a.directed;
     this->N = a.N;
-    this->M = a.M;
+    this->E = a.E;
 
     return *this;
 }
