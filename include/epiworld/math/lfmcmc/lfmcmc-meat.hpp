@@ -3,10 +3,6 @@
 
 #include "lfmcmc-bones.hpp"
 
-#ifndef epiworld_double
-    #define epiworld_double float
-#endif
-
 /**
  * @brief Proposal function
  * @param params_now Vector where to save the new parameters.
