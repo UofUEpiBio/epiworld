@@ -14,7 +14,7 @@ env:
   cntr: gvegayon/epiworld:latest
 
 jobs:
-  build:
+  test-ubuntu:
     runs-on: Ubuntu-latest
 
     steps:
@@ -27,3 +27,33 @@ jobs:
         run: |
           docker run --rm -i -v ${PWD}:/home/tests -w /home/tests ${cntr} \
             make all-examples
+  
+  test-osx:
+    rus-on: macOS-latest
+
+    steps:
+      - uses: actions.checkout@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: latest
+
+      - name: Check
+        run: |
+          cd tests && make main.a && ./main.a
+
+  test-ubuntu2:
+    rus-on: Ubuntu-latest
+
+    steps:
+      - uses: actions.checkout@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: latest
+
+      - name: Check
+        run: |
+          cd tests && make main.o && ./main.o
+
+          
