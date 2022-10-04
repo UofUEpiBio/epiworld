@@ -18,11 +18,11 @@
 #endif
 
 #ifndef epiworld_fast_int
-    #define epiworld_fast_int std::int_fast16_t
+    #define epiworld_fast_int long long int
 #endif
 
 #ifndef epiworld_fast_uint
-    #define epiworld_fast_uint std::uint_fast16_t
+    #define epiworld_fast_uint unsigned long long int
 #endif
 
 #endif
