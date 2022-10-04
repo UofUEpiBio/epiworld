@@ -27,9 +27,8 @@ jobs:
         run: |
           docker run --rm -i -v ${PWD}:/home/tests -w /home/tests ${cntr} \
             make all-examples
-  
-  test-osx:
-    rus-on: macOS-latest
+  test-macos:
+    runs-on: macos-latest
 
     steps:
       - uses: actions.checkout@v2
@@ -43,7 +42,7 @@ jobs:
           cd tests && make main.a && ./main.a
 
   test-ubuntu2:
-    rus-on: Ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions.checkout@v2
