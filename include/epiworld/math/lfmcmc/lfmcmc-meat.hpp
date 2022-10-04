@@ -267,7 +267,7 @@ inline void LFMCMC<TData>::run(
         summary_fun(proposed_stats_i, data_i, this);
 
         // Step 4: Compute the hastings ratio using the kernel function
-        double hr = kernel_fun(proposed_stats_i, observed_stats, epsilon, this);
+        epiworld_double hr = kernel_fun(proposed_stats_i, observed_stats, epsilon, this);
         sampled_stats_prob[i] = hr;
 
         // Storing data
@@ -275,11 +275,11 @@ inline void LFMCMC<TData>::run(
             sampled_stats[i * n_statistics + k] = proposed_stats_i[k];
         
         // Running Hastings ratio
-        double r      = runif();
+        epiworld_double r      = runif();
         drawn_prob[i] = r;
 
         // Step 5: Update if likely
-        if (r < std::min(1.0, hr / accepted_params_prob[i - 1u]))
+        if (r < std::min(static_cast<epiworld_double>(1.0), hr / accepted_params_prob[i - 1u]))
         {
             accepted_params_prob[i] = hr;
             sampled_accepted[i]     = true;

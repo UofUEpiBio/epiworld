@@ -1,7 +1,7 @@
 #include "tests.hpp"
 #include "../include/epiworld/math/lfmcmc.hpp"
 
-typedef std::vector<float> vec_double;
+typedef std::vector<epiworld_double> vec_double;
 
 using namespace epiworld;
 
@@ -21,9 +21,9 @@ void summary_fun(vec_double & res, const vec_double & p, LFMCMC<vec_double> * m)
     if (res.size() == 0u)
         res.resize(2u);
 
-    float * mean = &res[0u];
-    float * sd   = &res[1u];
-    float n      = static_cast<float>(p.size());
+    epiworld_double * mean = &res[0u];
+    epiworld_double * sd   = &res[1u];
+    epiworld_double n      = static_cast<epiworld_double>(p.size());
 
     *mean = 0.0;
     for (auto & v : p)
@@ -46,7 +46,7 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
 
     std::mt19937 rand;
     rand.seed(91231);
-    std::normal_distribution<float> rnorm(5, 1.5);
+    std::normal_distribution<epiworld_double> rnorm(5, 1.5);
 
     vec_double obsdata;
     for (size_t i = 0u; i < 1000; ++i)
@@ -62,6 +62,15 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
 
     model.run({1,1}, 10000, .5);
 
-    model.print();
+    std::vector<epiworld_double> fitted_params = model.get_params_now();
+    
+    #ifdef CATCH_CONFIG_MAIN
+    std::vector<epiworld_double> expected = {4.831, 0.794};
+    REQUIRE_THAT(fitted_params, Catch::Approx(expected).margin(0.01));
+    #endif 
+
+    #ifndef CATCH_CONFIG_MAIN
+    return 0;
+    #endif
 
 }
