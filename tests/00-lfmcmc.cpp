@@ -60,7 +60,7 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     model.set_proposal_fun(make_proposal_norm_reflective<vec_double>(.1, .0000001, 20));
     model.set_kernel_fun(kernel_fun_gaussian<vec_double>);
 
-    model.run({1,1}, 10000, .5);
+    model.run({1,1}, 50000, .5);
 
     
     model.print();
