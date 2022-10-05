@@ -49,7 +49,7 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     std::normal_distribution<epiworld_double> rnorm(5, 1.5);
 
     vec_double obsdata;
-    for (size_t i = 0u; i < 1000; ++i)
+    for (size_t i = 0u; i < 10000; ++i)
         obsdata.push_back(rnorm(rand));
 
     LFMCMC< vec_double > model(obsdata);
@@ -62,13 +62,16 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
 
     model.run({1,1}, 10000, .5);
 
-    std::vector<epiworld_double> fitted_params = model.get_params_now();
     
     model.print();
 
+    auto params_means = model.get_params_mean();
+    auto stats_means  = model.get_stats_mean();
+
     #ifdef CATCH_CONFIG_MAIN
-    std::vector<epiworld_double> expected = {4.7260, 0.6721};
-    REQUIRE_THAT(fitted_params, Catch::Approx(expected).margin(0.01));
+    std::vector<epiworld_double> expected = {5.0, 1.5};
+    REQUIRE_THAT(params_means, Catch::Approx(expected).margin(0.1));
+    REQUIRE_THAT(stats_means, Catch::Approx(expected).margin(0.1));
     #endif 
 
     #ifndef CATCH_CONFIG_MAIN

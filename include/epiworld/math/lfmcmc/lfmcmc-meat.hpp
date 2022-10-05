@@ -493,4 +493,36 @@ inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
 
 }
 
+template<typename TData>
+inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
+{
+    std::vector< epiworld_double > res(this->n_parameters, 0.0);
+    
+    for (size_t k = 0u; k < n_parameters; ++k)
+    {
+        for (size_t i = 0u; i < n_samples; ++i)
+            res[k] += (this->accepted_params[k + n_parameters * i])/
+                static_cast< epiworld_double >(n_samples);
+    }
+
+    return res;
+
+}
+
+template<typename TData>
+inline std::vector< epiworld_double > LFMCMC<TData>::get_stats_mean()
+{
+    std::vector< epiworld_double > res(this->n_statistics, 0.0);
+    
+    for (size_t k = 0u; k < n_statistics; ++k)
+    {
+        for (size_t i = 0u; i < n_samples; ++i)
+            res[k] += (this->accepted_stats[k + n_statistics * i])/
+                static_cast< epiworld_double >(n_samples);
+    }
+
+    return res;
+
+}
+
 #endif

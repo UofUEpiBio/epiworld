@@ -293,7 +293,7 @@ inline AdjList rgraph_bernoulli(
     source.resize(m);
     target.resize(m);
 
-    int a,b;
+    epiworld_fast_uint a,b;
     for (epiworld_fast_uint i = 0u; i < m; ++i)
     {
         a = floor(model.runif() * n);

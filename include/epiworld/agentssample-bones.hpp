@@ -63,7 +63,7 @@ public:
 
     Agent<TSeq> * operator[](size_t n);
     Agent<TSeq> * operator()(size_t n);
-    const size_t size() const noexcept;
+    size_t size() const noexcept;
 
 };
 
@@ -203,7 +203,7 @@ template<typename TSeq>
 inline AgentsSample<TSeq>::~AgentsSample() {}
 
 template<typename TSeq>
-inline const size_t AgentsSample<TSeq>::size() const noexcept
+inline size_t AgentsSample<TSeq>::size() const noexcept
 { 
     return this->sample_size;
 }

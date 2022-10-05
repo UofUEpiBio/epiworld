@@ -235,6 +235,9 @@ public:
     void set_par_names(std::vector< std::string > names);
     void set_stats_names(std::vector< std::string > names);
 
+    std::vector< epiworld_double > get_params_mean();
+    std::vector< epiworld_double > get_stats_mean();
+
     void print() ;
 
 };
