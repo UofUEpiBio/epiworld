@@ -33,7 +33,7 @@ inline void UserData<TSeq>::add(std::vector<epiworld_double> x)
 }
 
 template<typename TSeq>
-inline void UserData<TSeq>::add(unsigned int j, epiworld_double x)
+inline void UserData<TSeq>::add(epiworld_fast_uint j, epiworld_double x)
 {
 
     // Starting with a new day?
@@ -95,8 +95,8 @@ inline void UserData<TSeq>::get_all(
 
 template<typename TSeq>
 inline epiworld_double & UserData<TSeq>::operator()(
-    unsigned int i,
-    unsigned int j
+    epiworld_fast_uint i,
+    epiworld_fast_uint j
 )
 {
 
@@ -112,12 +112,12 @@ inline epiworld_double & UserData<TSeq>::operator()(
 
 template<typename TSeq>
 inline epiworld_double & UserData<TSeq>::operator()(
-    unsigned int i,
+    epiworld_fast_uint i,
     std::string name
 )
 {
     int loc = -1;
-    for (unsigned int l = 0u; l < k; ++l)
+    for (epiworld_fast_uint l = 0u; l < k; ++l)
     {
 
         if (name == data_names[l])
@@ -136,18 +136,18 @@ inline epiworld_double & UserData<TSeq>::operator()(
             "in the user UserData database."
         );
 
-    return operator()(i, static_cast<unsigned int>(loc));
+    return operator()(i, static_cast<epiworld_fast_uint>(loc));
 
 }
 
 template<typename TSeq>
-inline unsigned int UserData<TSeq>::nrow() const
+inline epiworld_fast_uint UserData<TSeq>::nrow() const
 {
     return n;
 }
 
 template<typename TSeq>
-inline unsigned int UserData<TSeq>::ncol() const
+inline epiworld_fast_uint UserData<TSeq>::ncol() const
 {
     return k;
 }
@@ -163,12 +163,12 @@ inline void UserData<TSeq>::write(std::string fn)
         file_ud << " \"" + cn + "\"";
     file_ud << "\n";
     
-    unsigned int ndata = 0u;
-    for (unsigned int i = 0u; i < n; ++i)
+    epiworld_fast_uint ndata = 0u;
+    for (epiworld_fast_uint i = 0u; i < n; ++i)
     {
         file_ud << data_dates[i];
 
-        for (unsigned int j = 0u; j < k; ++j)
+        for (epiworld_fast_uint j = 0u; j < k; ++j)
             file_ud << " " << data_data[ndata++];
 
         file_ud << "\n";
@@ -193,14 +193,14 @@ inline void UserData<TSeq>::print() const
 
     printf_epiworld("\n");
     
-    unsigned int ndata = 0u;
+    epiworld_fast_uint ndata = 0u;
     
-    for (unsigned int i = 0u; i < n; ++i)
+    for (epiworld_fast_uint i = 0u; i < n; ++i)
     {
 
         printf_epiworld("%i", data_dates[i]);
 
-        for (unsigned int j = 0u; j < k; ++j)
+        for (epiworld_fast_uint j = 0u; j < k; ++j)
         {
 
             printf_epiworld(" %.2f", data_data[ndata++]);

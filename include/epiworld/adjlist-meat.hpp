@@ -9,11 +9,11 @@ inline AdjList::AdjList(
 ) : directed(directed) {
 
 
-    dat.resize(size, std::map<unsigned int,unsigned int>({}));
+    dat.resize(size, std::map<epiworld_fast_uint,epiworld_fast_uint>({}));
     int max_id = size - 1;
 
     int i,j;
-    for (unsigned int m = 0; m < source.size(); ++m)
+    for (epiworld_fast_uint m = 0; m < source.size(); ++m)
     {
 
         i = source[m];
@@ -33,7 +33,7 @@ inline AdjList::AdjList(
 
         // Adding nodes
         if (dat[i].find(j) == dat[i].end())
-            dat[i].insert(std::pair<unsigned int, unsigned int>(j, 1u));
+            dat[i].insert(std::pair<epiworld_fast_uint, epiworld_fast_uint>(j, 1u));
         else
             dat[i][j]++; 
         
@@ -41,7 +41,7 @@ inline AdjList::AdjList(
         {
 
             if (dat[j].find(i) == dat[j].end())
-                dat[j].insert(std::pair<unsigned int, unsigned int>(j, 1u));
+                dat[j].insert(std::pair<epiworld_fast_uint, epiworld_fast_uint>(j, 1u));
             else
                 dat[j][i]++;
 
@@ -153,8 +153,8 @@ inline void AdjList::read_edgelist(
 
 }
 
-inline std::map<unsigned int,unsigned int> AdjList::operator()(
-    unsigned int i
+inline std::map<epiworld_fast_uint,epiworld_fast_uint> AdjList::operator()(
+    epiworld_fast_uint i
     ) const {
 
     if (i >= N)
@@ -166,10 +166,10 @@ inline std::map<unsigned int,unsigned int> AdjList::operator()(
 
 }
 
-inline void AdjList::print(unsigned int limit) const {
+inline void AdjList::print(epiworld_fast_uint limit) const {
 
 
-    unsigned int counter = 0;
+    epiworld_fast_uint counter = 0;
     printf_epiworld("Nodeset:\n");
     int i = -1;
     for (auto & n : dat)

@@ -63,7 +63,7 @@ inline void DataBase<TSeq>::record()
         for (auto & p : variant_id)
         {
 
-            for (unsigned int s = 0u; s < model->nstatus; ++s)
+            for (epiworld_fast_uint s = 0u; s < model->nstatus; ++s)
             {
 
                 hist_variant_date.push_back(model->today());
@@ -79,7 +79,7 @@ inline void DataBase<TSeq>::record()
         for (auto & p : tool_id)
         {
 
-            for (unsigned int s = 0u; s < model->nstatus; ++s)
+            for (epiworld_fast_uint s = 0u; s < model->nstatus; ++s)
             {
 
                 hist_tool_date.push_back(model->today());
@@ -92,7 +92,7 @@ inline void DataBase<TSeq>::record()
         }
 
         // Recording the overall history
-        for (unsigned int s = 0u; s < model->nstatus; ++s)
+        for (epiworld_fast_uint s = 0u; s < model->nstatus; ++s)
         {
             hist_total_date.push_back(model->today());
             hist_total_nvariants_active.push_back(today_total_nvariants_active);
@@ -138,8 +138,8 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
 
     // Updating registry
     std::vector< int > hash = seq_hasher(*v.get_sequence());
-    unsigned int old_id = v.get_id();
-    unsigned int new_id;
+    epiworld_fast_uint old_id = v.get_id();
+    epiworld_fast_uint new_id;
     if (variant_id.find(hash) == variant_id.end())
     {
 
@@ -190,8 +190,8 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 
     // Updating registry
     std::vector< int > hash = seq_hasher(*t.get_sequence());
-    unsigned int old_id = t.get_id();
-    unsigned int new_id;
+    epiworld_fast_uint old_id = t.get_id();
+    epiworld_fast_uint new_id;
     if (tool_id.find(hash) == tool_id.end())
     {
 
@@ -362,8 +362,8 @@ inline void DataBase<TSeq>::get_today_variant(
     counts.resize(today_variant.size(),0);
 
     int n = 0u;
-    for (unsigned int v = 0u; v < today_variant.size(); ++v)
-        for (unsigned int s = 0u; s < model->status_labels.size(); ++s)
+    for (epiworld_fast_uint v = 0u; v < today_variant.size(); ++v)
+        for (epiworld_fast_uint s = 0u; s < model->status_labels.size(); ++s)
         {
             status[n]   = model->status_labels[s];
             id[n]       = static_cast<int>(v);
@@ -387,7 +387,7 @@ inline void DataBase<TSeq>::get_hist_total(
     if (status != nullptr)
     {
         status->resize(hist_total_status.size(), "");
-        for (unsigned int i = 0u; i < hist_total_status.size(); ++i)
+        for (epiworld_fast_uint i = 0u; i < hist_total_status.size(); ++i)
             status->operator[](i) = model->status_labels[hist_total_status[i]];
     }
 
@@ -412,7 +412,7 @@ inline void DataBase<TSeq>::get_hist_variant(
     
     id = hist_variant_id;
     status.resize(hist_variant_status.size(), "");
-    for (unsigned int i = 0u; i < hist_variant_status.size(); ++i)
+    for (epiworld_fast_uint i = 0u; i < hist_variant_status.size(); ++i)
         status[i] = labels[hist_variant_status[i]];
 
     counts = hist_variant_counts;
@@ -461,7 +461,7 @@ inline void DataBase<TSeq>::write_data(
         file_variant <<
             "date " << "id " << "status " << "n\n";
 
-        for (unsigned int i = 0; i < hist_variant_id.size(); ++i)
+        for (epiworld_fast_uint i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
@@ -495,7 +495,7 @@ inline void DataBase<TSeq>::write_data(
         file_tool_hist <<
             "date " << "id " << "status " << "n\n";
 
-        for (unsigned int i = 0; i < hist_tool_id.size(); ++i)
+        for (epiworld_fast_uint i = 0; i < hist_tool_id.size(); ++i)
             file_tool_hist <<
                 hist_tool_date[i] << " " <<
                 hist_tool_id[i] << " " <<
@@ -510,7 +510,7 @@ inline void DataBase<TSeq>::write_data(
         file_total <<
             "date " << "nvariants " << "status " << "counts\n";
 
-        for (unsigned int i = 0; i < hist_total_date.size(); ++i)
+        for (epiworld_fast_uint i = 0; i < hist_total_date.size(); ++i)
             file_total <<
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
@@ -524,7 +524,7 @@ inline void DataBase<TSeq>::write_data(
         file_transmission <<
             "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
-        for (unsigned int i = 0; i < transmission_target.size(); ++i)
+        for (epiworld_fast_uint i = 0; i < transmission_target.size(); ++i)
             file_transmission <<
                 transmission_date[i] << " " <<
                 transmission_variant[i] << " " <<
@@ -660,7 +660,7 @@ inline void DataBase<TSeq>::add_user_data(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::add_user_data(
-    unsigned int k,
+    epiworld_fast_uint k,
     epiworld_double x
 )
 {

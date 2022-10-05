@@ -27,13 +27,13 @@ int main(int argc, char* argv[]) {
       exit(0);
     }
 
-    unsigned int ndays            = result["days"].as<int>();
-    unsigned int popsize          = result["nagents"].as<int>();
+    epiworld_fast_uint ndays            = result["days"].as<int>();
+    epiworld_fast_uint popsize          = result["nagents"].as<int>();
     epiworld_double preval        = result["preval"].as<epiworld_double>();
     epiworld_double prob_infect   = result["infectprob"].as<epiworld_double>();
     epiworld_double beta          = result["beta"].as<epiworld_double>();
     epiworld_double prob_recovery = result["recprob"].as<epiworld_double>();
-    unsigned int nexperiments     = result["experiments"].as<int>(); 
+    epiworld_fast_uint nexperiments     = result["experiments"].as<int>(); 
 
     epiworld::epimodels::ModelSIRCONN<> model(
         "a virus",    // Name of the virus
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
     std::vector< std::vector< int > > results(nexperiments);
     std::vector< std::vector< int > > dates(nexperiments);
     std::vector< std::string > labels;
-    unsigned int nreplica = 0u;
+    epiworld_fast_uint nreplica = 0u;
 
     auto record =
         [&results,&dates,&nreplica,&labels](size_t s, epiworld::Model<> * m)
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     
     for (int r = 0; r < static_cast<int>(nexperiments); ++r)
     {
-        for (unsigned int s = 0u; s < labels.size(); ++s)
+        for (epiworld_fast_uint s = 0u; s < labels.size(); ++s)
             fn << 
                 r << "," << 
                 dates[r][s] << "," << 

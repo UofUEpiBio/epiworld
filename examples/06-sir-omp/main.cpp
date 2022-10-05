@@ -6,11 +6,11 @@ using namespace epiworld;
 
 int main() {
 
-    unsigned int nthreads = 4u;
+    epiworld_fast_uint nthreads = 4u;
     omp_set_num_threads(nthreads);
     std::vector< epimodels::ModelSIR<> > Models;
 
-    for (unsigned int i = 0u; i < nthreads; ++i)
+    for (epiworld_fast_uint i = 0u; i < nthreads; ++i)
         Models.push_back(epimodels::ModelSIR<>(
             "a virus", // Name of the virus
             0.01,      // Initial prevalence

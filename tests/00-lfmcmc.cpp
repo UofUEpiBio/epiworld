@@ -65,7 +65,7 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     std::vector<epiworld_double> fitted_params = model.get_params_now();
     
     #ifdef CATCH_CONFIG_MAIN
-    std::vector<epiworld_double> expected = {4.831, 0.794};
+    std::vector<epiworld_double> expected = {4.7260, 0.6721};
     REQUIRE_THAT(fitted_params, Catch::Approx(expected).margin(0.01));
     #endif 
 

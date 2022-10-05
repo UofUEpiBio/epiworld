@@ -206,7 +206,7 @@ public:
     ///@{
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
-    void seed(unsigned int s);
+    void seed(epiworld_fast_uint s);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
     epiworld_double rnorm();

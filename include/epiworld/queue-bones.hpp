@@ -32,7 +32,7 @@ public:
 
     void operator+=(Agent<TSeq> * p);
     void operator-=(Agent<TSeq> * p);
-    epiworld_fast_int & operator[](unsigned int i);
+    epiworld_fast_int & operator[](epiworld_fast_uint i);
 
     // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
     void set_model(Model<TSeq> * m);
@@ -60,7 +60,7 @@ inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 }
 
 template<typename TSeq>
-inline epiworld_fast_int & Queue<TSeq>::operator[](unsigned int i)
+inline epiworld_fast_int & Queue<TSeq>::operator[](epiworld_fast_uint i)
 {
     return active[i];
 }

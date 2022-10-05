@@ -4,10 +4,10 @@
 class AdjList {
 private:
 
-    std::vector<std::map<unsigned int, unsigned int>> dat;
+    std::vector<std::map<epiworld_fast_uint, epiworld_fast_uint>> dat;
     bool directed;
-    unsigned int N = 0;
-    unsigned int E = 0;
+    epiworld_fast_uint N = 0;
+    epiworld_fast_uint E = 0;
 
 public:
 
@@ -53,15 +53,15 @@ public:
         bool directed = true
         );
 
-    std::map<unsigned int, unsigned int> operator()(
-        unsigned int i
+    std::map<epiworld_fast_uint, epiworld_fast_uint> operator()(
+        epiworld_fast_uint i
         ) const;
         
-    void print(unsigned int limit = 20u) const;
+    void print(epiworld_fast_uint limit = 20u) const;
     size_t vcount() const; ///< Number of vertices/nodes in the network.
     size_t ecount() const; ///< Number of edges/arcs/ties in the network.
     
-    std::vector<std::map<unsigned int,unsigned int>> & get_dat() {
+    std::vector<std::map<epiworld_fast_uint,epiworld_fast_uint>> & get_dat() {
         return dat;
     };
 

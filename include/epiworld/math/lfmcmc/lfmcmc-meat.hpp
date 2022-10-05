@@ -364,7 +364,7 @@ inline epiworld_double LFMCMC<TData>::rgamma(
 }
 
 template<typename TData>
-inline void LFMCMC<TData>::seed(unsigned int s) {
+inline void LFMCMC<TData>::seed(epiworld_fast_uint s) {
 
     this->engine->seed(s);
 

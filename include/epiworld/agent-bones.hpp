@@ -258,9 +258,9 @@ public:
 
     void reset();
 
-    bool has_tool(unsigned int t) const;
+    bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
-    bool has_virus(unsigned int t) const;
+    bool has_virus(epiworld_fast_uint t) const;
     bool has_virus(std::string name) const;
 
     void print(bool compressed = false) const;

@@ -25,8 +25,8 @@ private:
     std::vector< int > data_dates;
     std::vector< epiworld_double > data_data;
 
-    unsigned int k = 0u;
-    unsigned int n = 0u;
+    epiworld_fast_uint k = 0u;
+    epiworld_fast_uint n = 0u;
 
     int last_day = -1;
 
@@ -52,7 +52,7 @@ public:
     ///@{
     void add(std::vector<epiworld_double> x);
     void add(
-        unsigned int j,
+        epiworld_fast_uint j,
         epiworld_double x
         );
     ///@}
@@ -66,12 +66,12 @@ public:
      */
     ///@{
     epiworld_double & operator()(
-        unsigned int i,
-        unsigned int j
+        epiworld_fast_uint i,
+        epiworld_fast_uint j
         );
 
     epiworld_double & operator()(
-        unsigned int i,
+        epiworld_fast_uint i,
         std::string name
         );
     ///@}
@@ -88,8 +88,8 @@ public:
         std::vector< epiworld_double > * data = nullptr
     );
 
-    unsigned int nrow() const;
-    unsigned int ncol() const;
+    epiworld_fast_uint nrow() const;
+    epiworld_fast_uint ncol() const;
 
     void write(std::string fn);
     void print() const;

@@ -7,7 +7,7 @@ inline void Model<TSeq>::print() const
 
     // Horizontal line
     std::string line = "";
-    for (unsigned int i = 0u; i < 80u; ++i)
+    for (epiworld_fast_uint i = 0u; i < 80u; ++i)
         line += "_";
 
     // Prints a message if debugging is on
@@ -159,7 +159,7 @@ inline void Model<TSeq>::print() const
 
     // Information about the parameters included
     printf_epiworld("\nModel parameters:\n");
-    unsigned int nchar = 0u;
+    epiworld_fast_uint nchar = 0u;
     for (auto & p : parameters)
         if (p.first.length() > nchar)
             nchar = p.first.length();

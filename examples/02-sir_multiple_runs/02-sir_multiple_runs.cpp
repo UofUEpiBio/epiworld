@@ -39,13 +39,13 @@ int main() {
     
     sir.get_elapsed();
 
-    for (unsigned int s = 0u; s < labels.size(); ++s)
+    for (epiworld_fast_uint s = 0u; s < labels.size(); ++s)
         printf("%s, ",labels[s].c_str());
     printf("\n");
 
-    for (unsigned int r = 0u; r < 10; ++r)
+    for (epiworld_fast_uint r = 0u; r < 10; ++r)
     {
-        for (unsigned int s = 0u; s < labels.size(); ++s)
+        for (epiworld_fast_uint s = 0u; s < labels.size(); ++s)
             printf("%i, ", results[r][s]);
 
         printf("\n");

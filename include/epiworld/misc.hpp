@@ -23,7 +23,7 @@ struct vecHasher {
         // 0x9e3779b9 is a 32 bit constant (comes from the golden ratio)
         // << is a shift operator, something like lhs * 2^(rhs)
         if (dat.size() > 1u)
-            for (unsigned int i = 1u; i < dat.size(); ++i)
+            for (epiworld_fast_uint i = 1u; i < dat.size(); ++i)
                 hash ^= hasher(dat[i]) + 0x9e3779b9 + (hash<<6) + (hash>>2);
         
         return hash;
@@ -31,7 +31,7 @@ struct vecHasher {
     }
 };
 
-template<typename Ta = epiworld_double, typename Tb = unsigned int> 
+template<typename Ta = epiworld_double, typename Tb = epiworld_fast_uint> 
 using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
 
 /**
@@ -136,7 +136,7 @@ inline int roulette(
     std::vector< int > certain_infection;
     certain_infection.reserve(probs.size());
 
-    for (unsigned int p = 0u; p < probs.size(); ++p)
+    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
     {
         p_none *= (1.0 - probs[p]);
 
@@ -154,7 +154,7 @@ inline int roulette(
     // Step 2: Calculating the prob of none or single
     std::vector< epiworld_double > probs_only_p(probs.size());
     epiworld_double p_none_or_single = p_none;
-    for (unsigned int p = 0u; p < probs.size(); ++p)
+    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
     {
         probs_only_p[p] = probs[p] * (p_none / (1.0 - probs[p]));
         p_none_or_single += probs_only_p[p];
@@ -165,7 +165,7 @@ inline int roulette(
     if (r < cumsum)
         return -1;
 
-    for (unsigned int p = 0u; p < probs.size(); ++p)
+    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
     {
         // If it yield here, then bingo, the individual will acquire the disease
         cumsum += probs_only_p[p]/(p_none_or_single);
@@ -180,7 +180,7 @@ inline int roulette(
 
 template<typename TSeq>
 inline int roulette(
-    unsigned int nelements,
+    epiworld_fast_uint nelements,
     Model<TSeq> * m
     )
 {
@@ -192,9 +192,9 @@ inline int roulette(
 
     // Step 1: Computing the prob on none 
     epiworld_double p_none = 1.0;
-    unsigned int ncertain = 0u;
+    epiworld_fast_uint ncertain = 0u;
     // std::vector< int > certain_infection;
-    for (unsigned int p = 0u; p < nelements; ++p)
+    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
     {
         p_none *= (1.0 - m->array_double_tmp[p]);
 
@@ -213,7 +213,7 @@ inline int roulette(
     // Step 2: Calculating the prob of none or single
     // std::vector< epiworld_double > probs_only_p;
     epiworld_double p_none_or_single = p_none;
-    for (unsigned int p = 0u; p < nelements; ++p)
+    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
     {
         m->array_double_tmp[nelements + p] = 
             m->array_double_tmp[p] * (p_none / (1.0 - m->array_double_tmp[p]));
@@ -225,7 +225,7 @@ inline int roulette(
     if (r < cumsum)
         return -1;
 
-    for (unsigned int p = 0u; p < nelements; ++p)
+    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
     {
         // If it yield here, then bingo, the individual will acquire the disease
         cumsum += m->array_double_tmp[nelements + p]/(p_none_or_single);

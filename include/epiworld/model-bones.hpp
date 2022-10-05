@@ -158,7 +158,7 @@ private:
     epiworld_double rewire_prop;
         
     std::map<std::string, epiworld_double > parameters;
-    unsigned int ndays;
+    epiworld_fast_uint ndays;
     Progress pb;
 
     std::vector< UpdateFun<TSeq> >    status_fun = {};
@@ -179,7 +179,7 @@ private:
     // std::chrono::milliseconds
     std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
-    unsigned int n_replicates = 0u;
+    epiworld_fast_uint n_replicates = 0u;
     void chrono_start();
     void chrono_end();
 
@@ -290,7 +290,7 @@ public:
     ///@{
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 * get_rand_endgine();
-    void seed(unsigned int s);
+    void seed(epiworld_fast_uint s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
     void set_rand_exp(epiworld_double lambda);
@@ -321,13 +321,13 @@ public:
      */
     ///@{
     void add_virus(Virus<TSeq> v, epiworld_double preval);
-    void add_virus_n(Virus<TSeq> v, unsigned int preval);
+    void add_virus_n(Virus<TSeq> v, epiworld_fast_uint preval);
     void add_virus_fun(Virus<TSeq> v, VirusToAgentFun<TSeq> fun);
     void add_tool(Tool<TSeq> t, epiworld_double preval);
-    void add_tool_n(Tool<TSeq> t, unsigned int preval);
+    void add_tool_n(Tool<TSeq> t, epiworld_fast_uint preval);
     void add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun);
     void add_entity(Entity<TSeq> e, epiworld_double preval);
-    void add_entity_n(Entity<TSeq> e, unsigned int preval);
+    void add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval);
     void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
     ///@}
 
@@ -351,12 +351,12 @@ public:
     bool is_directed() const;
     std::vector< Agent<TSeq> > * get_agents();
     void agents_smallworld(
-        unsigned int n = 1000,
-        unsigned int k = 5,
+        epiworld_fast_uint n = 1000,
+        epiworld_fast_uint k = 5,
         bool d = false,
         epiworld_double p = .01
         );
-    void agents_empty_graph(unsigned int n = 1000);
+    void agents_empty_graph(epiworld_fast_uint n = 1000);
     ///@}
 
     /**
@@ -369,13 +369,13 @@ public:
      * 
      */
     ///@{
-    void init(unsigned int ndays, unsigned int seed);
+    void init(epiworld_fast_uint ndays, epiworld_fast_uint seed);
     void update_status();
     void mutate_variant();
     void next();
     void run(); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
-        unsigned int nexperiments,
+        epiworld_fast_uint nexperiments,
         std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
         bool reset = true,
         bool verbose = true
@@ -384,9 +384,9 @@ public:
 
     size_t get_n_variants() const;
     size_t get_n_tools() const;
-    unsigned int get_ndays() const;
-    unsigned int get_n_replicates() const;
-    void set_ndays(unsigned int ndays);
+    epiworld_fast_uint get_ndays() const;
+    epiworld_fast_uint get_n_replicates() const;
+    void set_ndays(epiworld_fast_uint ndays);
     bool get_verbose() const;
     void verbose_off();
     void verbose_on();
@@ -449,8 +449,8 @@ public:
         ) const;
 
     void write_edgelist(
-        std::vector< unsigned int > & source,
-        std::vector< unsigned int > & target
+        std::vector< epiworld_fast_uint > & source,
+        std::vector< epiworld_fast_uint > & target
         ) const;
     ///@}
 
@@ -498,7 +498,7 @@ public:
      * 
      * @details Tools can incorporate parameters included in the model.
      * Internally, parameters in the tool are stored as pointers to
-     * an std::map<> of parameters in the model. Using the `unsigned int`
+     * an std::map<> of parameters in the model. Using the `epiworld_fast_uint`
      * method directly fetches the parameters in the order these were
      * added to the tool. Accessing parameters via the `std::string` method
      * involves searching the parameter directly in the std::map<> member
@@ -530,16 +530,16 @@ public:
     ///@{
     epiworld_double add_param(epiworld_double initial_val, std::string pname);
     void read_params(std::string fn);
-    epiworld_double get_param(unsigned int k);
+    epiworld_double get_param(epiworld_fast_uint k);
     epiworld_double get_param(std::string pname);
-    epiworld_double par(unsigned int k);
+    epiworld_double par(epiworld_fast_uint k);
     epiworld_double par(std::string pname);
     epiworld_double 
         *p0,*p1,*p2,*p3,*p4,*p5,*p6,*p7,*p8,*p9,
         *p10,*p11,*p12,*p13,*p14,*p15,*p16,*p17,*p18,*p19,
         *p20,*p21,*p22,*p23,*p24,*p25,*p26,*p27,*p28,*p29,
         *p30,*p31,*p32,*p33,*p34,*p35,*p36,*p37,*p38,*p39;
-    unsigned int npar_used = 0u;
+    epiworld_fast_uint npar_used = 0u;
     ///@}
 
     void get_elapsed(
@@ -557,7 +557,7 @@ public:
      */
     ///[@
     void set_user_data(std::vector< std::string > names);
-    void add_user_data(unsigned int j, epiworld_double x);
+    void add_user_data(epiworld_fast_uint j, epiworld_double x);
     void add_user_data(std::vector< epiworld_double > x);
     UserData<TSeq> & get_user_data();
     ///@}

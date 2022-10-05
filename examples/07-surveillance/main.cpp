@@ -5,9 +5,9 @@ using namespace epiworld;
 
 int main(int argc, char* argv[]) {
 
-    unsigned int ndays       = 100;
-    unsigned int popsize     = 10000;
-    unsigned int preval      = 10;
+    epiworld_fast_uint ndays       = 100;
+    epiworld_fast_uint popsize     = 10000;
+    epiworld_fast_uint preval      = 10;
     epiworld_double sur_prob = 0.001;
     if (argc == 5)
     {

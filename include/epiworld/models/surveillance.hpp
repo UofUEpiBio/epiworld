@@ -21,7 +21,7 @@ public:
     ModelSURV(
         ModelSURV<TSeq> & model,
         std::string vname,
-        unsigned int prevalence               = 50,
+        epiworld_fast_uint prevalence               = 50,
         epiworld_double efficacy_vax          = 0.9,
         epiworld_double latent_period         = 3u,
         epiworld_double infect_period         = 6u,
@@ -37,7 +37,7 @@ public:
 
     ModelSURV(
         std::string vname,
-        unsigned int prevalence               = 50,
+        epiworld_fast_uint prevalence               = 50,
         epiworld_double efficacy_vax          = 0.9,
         epiworld_double latent_period         = 3u,
         epiworld_double infect_period         = 6u,
@@ -66,7 +66,7 @@ template<typename TSeq>
 inline ModelSURV<TSeq>::ModelSURV(
     ModelSURV<TSeq> & model,
     std::string vname,
-    unsigned int prevalence,
+    epiworld_fast_uint prevalence,
     epiworld_double efficacy_vax,
     epiworld_double latent_period,
     epiworld_double infect_period,
@@ -84,7 +84,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     EPI_NEW_UPDATEFUN_LAMBDA(surveillance_update_susceptible, TSeq) {
 
         // This computes the prob of getting any neighbor variant
-        unsigned int nvariants_tmp = 0u;
+        epiworld_fast_uint nvariants_tmp = 0u;
         for (auto & neighbor: p->get_neighbors()) 
         {
                     
@@ -129,7 +129,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         epiworld::VirusPtr<TSeq> & v = p->get_virus(0u); 
         epiworld_double p_die = v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
         
-        unsigned int days_since_exposed = m->today() - v->get_date();
+        epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
         epiworld_fast_uint status = p->get_status();
 
         // Figuring out latent period
@@ -209,7 +209,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         {
 
             // Who is the lucky one
-            unsigned int i = static_cast<unsigned int>(std::floor(EPI_RUNIF() * m->size()));
+            epiworld_fast_uint i = static_cast<epiworld_fast_uint>(std::floor(EPI_RUNIF() * m->size()));
 
             if (sampled[i])
                 continue;
@@ -321,7 +321,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 template<typename TSeq>
 inline ModelSURV<TSeq>::ModelSURV(
     std::string vname,
-    unsigned int prevalence,
+    epiworld_fast_uint prevalence,
     epiworld_double efficacy_vax,
     epiworld_double latent_period,
     epiworld_double infect_period,

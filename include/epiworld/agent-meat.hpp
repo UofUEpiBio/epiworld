@@ -530,7 +530,7 @@ inline void Agent<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline bool Agent<TSeq>::has_tool(unsigned int t) const
+inline bool Agent<TSeq>::has_tool(epiworld_fast_uint t) const
 {
 
     for (auto & tool : tools)
@@ -554,7 +554,7 @@ inline bool Agent<TSeq>::has_tool(std::string name) const
 }
 
 template<typename TSeq>
-inline bool Agent<TSeq>::has_virus(unsigned int t) const
+inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
 {
     for (auto & v : viruses)
         if (v->get_id() == t)

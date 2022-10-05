@@ -81,7 +81,7 @@
     { \
         printf_epiworld("Running the model...\n");\
     } \
-    for (unsigned int niter = 0; niter < a.get_ndays(); ++niter)
+    for (epiworld_fast_uint niter = 0; niter < a.get_ndays(); ++niter)
 
 #define EPI_TOKENPASTE(a,b) a ## b
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))

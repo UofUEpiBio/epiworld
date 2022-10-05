@@ -22,7 +22,7 @@ public:
     ModelSEIRCONN(
         ModelSEIRCONN<TSeq> & model,
         std::string vname,
-        unsigned int n,
+        epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double reproductive_number,
         epiworld_double prob_transmission,
@@ -32,7 +32,7 @@ public:
     
     ModelSEIRCONN(
         std::string vname,
-        unsigned int n,
+        epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double reproductive_number,
         epiworld_double prob_transmission,
@@ -64,7 +64,7 @@ template<typename TSeq>
 inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     ModelSEIRCONN<TSeq> & model,
     std::string vname,
-    unsigned int n,
+    epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double reproductive_number,
     epiworld_double prob_transmission,
@@ -237,7 +237,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
             // On the last day, also reset tracked agents and
             // set the initialized value to false
-            if (static_cast<unsigned int>(m->today()) == (m->get_ndays() - 1))
+            if (static_cast<epiworld_fast_uint>(m->today()) == (m->get_ndays() - 1))
             {
 
                 *_tracked_started = false;
@@ -292,7 +292,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 template<typename TSeq>
 inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     std::string vname,
-    unsigned int n,
+    epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double reproductive_number,
     epiworld_double prob_transmission,

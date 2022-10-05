@@ -480,7 +480,7 @@ inline void Model<TSeq>::clone_population(
         p.neighbors.clear();
     
     // Relinking individuals
-    for (unsigned int i = 0u; i < size(); ++i)
+    for (epiworld_fast_uint i = 0u; i < size(); ++i)
     {
         // Making room
         const Agent<TSeq> & agent_this = population[i];
@@ -488,7 +488,7 @@ inline void Model<TSeq>::clone_population(
 
         // Readding
         std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
-        for (unsigned int n = 0u; n < neigh.size(); ++n)
+        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
             int loc = p[neigh[n]->get_id()].get_id();
@@ -523,8 +523,8 @@ inline std::vector<Agent<TSeq>> * Model<TSeq>::get_agents()
 
 template<typename TSeq>
 inline void Model<TSeq>::agents_smallworld(
-    unsigned int n,
-    unsigned int k,
+    epiworld_fast_uint n,
+    epiworld_fast_uint k,
     bool d,
     epiworld_double p
 )
@@ -536,7 +536,7 @@ inline void Model<TSeq>::agents_smallworld(
 
 template<typename TSeq>
 inline void Model<TSeq>::agents_empty_graph(
-    unsigned int n
+    epiworld_fast_uint n
 ) 
 {
 
@@ -607,8 +607,8 @@ inline size_t Model<TSeq>::size() const {
 
 template<typename TSeq>
 inline void Model<TSeq>::init(
-    unsigned int ndays,
-    unsigned int seed
+    epiworld_fast_uint ndays,
+    epiworld_fast_uint seed
     ) {
 
     if (initialized) 
@@ -693,7 +693,7 @@ inline void Model<TSeq>::dist_virus()
     int n_left = n;
     std::iota(idx.begin(), idx.end(), 0);
 
-    for (unsigned int v = 0; v < viruses.size(); ++v)
+    for (epiworld_fast_uint v = 0; v < viruses.size(); ++v)
     {
 
         if (viruses_dist_funs[v])
@@ -724,7 +724,7 @@ inline void Model<TSeq>::dist_virus()
             while (nsampled > 0)
             {
 
-                int loc = static_cast<unsigned int>(floor(runif() * (n_left--)));
+                int loc = static_cast<epiworld_fast_uint>(floor(runif() * (n_left--)));
 
                 Agent<TSeq> & agent = population[idx[loc]];
                 
@@ -752,7 +752,7 @@ inline void Model<TSeq>::dist_tools()
     // Starting first infection
     int n = size();
     std::vector< size_t > idx(n);
-    for (unsigned int t = 0; t < tools.size(); ++t)
+    for (epiworld_fast_uint t = 0; t < tools.size(); ++t)
     {
 
         if (tools_dist_funs[t])
@@ -783,7 +783,7 @@ inline void Model<TSeq>::dist_tools()
             std::iota(idx.begin(), idx.end(), 0);
             while (nsampled > 0)
             {
-                int loc = static_cast<unsigned int>(floor(runif() * n_left--));
+                int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
                 
                 population[idx[loc]].add_tool(tool, tool->status_init, tool->queue_init);
                 
@@ -809,7 +809,7 @@ inline void Model<TSeq>::dist_entities()
     // Starting first infection
     int n = size();
     std::vector< size_t > idx(n);
-    for (unsigned int e = 0; e < entities.size(); ++e)
+    for (epiworld_fast_uint e = 0; e < entities.size(); ++e)
     {
 
         if (entities_dist_funs[e])
@@ -840,7 +840,7 @@ inline void Model<TSeq>::dist_entities()
             std::iota(idx.begin(), idx.end(), 0);
             while (nsampled > 0)
             {
-                int loc = static_cast<unsigned int>(floor(runif() * n_left--));
+                int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
                 
                 population[idx[loc]].add_entity(entity, entity.status_init, entity.queue_init);
                 
@@ -968,7 +968,7 @@ inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_do
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::seed(unsigned int s) {
+inline void Model<TSeq>::seed(epiworld_fast_uint s) {
     this->engine->seed(s);
 }
 
@@ -1007,7 +1007,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, unsigned int preval)
+inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, epiworld_fast_uint preval)
 {
 
     // Checking the ids
@@ -1081,7 +1081,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, unsigned int preval)
+inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, epiworld_fast_uint preval)
 {
     t.id = tools.size();
     tools.push_back(std::make_shared<Tool<TSeq> >(t));
@@ -1121,7 +1121,7 @@ inline void Model<TSeq>::add_entity(Entity<TSeq> e, epiworld_double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, unsigned int preval)
+inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval)
 {
 
     e.model = this;
@@ -1269,7 +1269,7 @@ inline void Model<TSeq>::run()
 
 template<typename TSeq>
 inline void Model<TSeq>::run_multiple(
-    unsigned int nexperiments,
+    epiworld_fast_uint nexperiments,
     std::function<void(size_t,Model<TSeq>*)> fun,
     bool reset,
     bool verbose
@@ -1299,7 +1299,7 @@ inline void Model<TSeq>::run_multiple(
 
     }
 
-    for (unsigned int n = 0u; n < nexperiments; ++n)
+    for (epiworld_fast_uint n = 0u; n < nexperiments; ++n)
     {
         
         run();
@@ -1401,18 +1401,18 @@ inline size_t Model<TSeq>::get_n_tools() const {
 }
 
 template<typename TSeq>
-inline unsigned int Model<TSeq>::get_ndays() const {
+inline epiworld_fast_uint Model<TSeq>::get_ndays() const {
     return ndays;
 }
 
 template<typename TSeq>
-inline unsigned int Model<TSeq>::get_n_replicates() const
+inline epiworld_fast_uint Model<TSeq>::get_n_replicates() const
 {
     return n_replicates;
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_ndays(unsigned int ndays) {
+inline void Model<TSeq>::set_ndays(epiworld_fast_uint ndays) {
     this->ndays = ndays;
 }
 
@@ -1589,7 +1589,7 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
         p.neighbors.clear();
     
     // Rechecking individuals
-    for (unsigned int p = 0u; p < size(); ++p)
+    for (epiworld_fast_uint p = 0u; p < size(); ++p)
     {
         // Making room
         const Agent<TSeq> & agent_this = population[p];
@@ -1602,7 +1602,7 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
 
         // Readding
         std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
-        for (unsigned int n = 0u; n < neigh.size(); ++n)
+        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
             int loc = res.population_ids[neigh[n]->get_id()];
@@ -1659,18 +1659,18 @@ inline void Model<TSeq>::print_status_codes() const
 
     // Horizontal line
     std::string line = "";
-    for (unsigned int i = 0u; i < 80u; ++i)
+    for (epiworld_fast_uint i = 0u; i < 80u; ++i)
         line += "_";
 
     printf_epiworld("\n%s\nSTATUS CODES\n\n", line.c_str());
 
-    unsigned int nchar = 0u;
+    epiworld_fast_uint nchar = 0u;
     for (auto & p : status_labels)
         if (p.length() > nchar)
             nchar = p.length();
     
     std::string fmt = " %2i = %-" + std::to_string(nchar + 1 + 4) + "s\n";
-    for (unsigned int i = 0u; i < nstatus; ++i)
+    for (epiworld_fast_uint i = 0u; i < nstatus; ++i)
     {
 
         printf_epiworld(
@@ -1867,7 +1867,7 @@ inline void Model<TSeq>::set_user_data(std::vector< std::string > names)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_user_data(unsigned int j, epiworld_double x)
+inline void Model<TSeq>::add_user_data(epiworld_fast_uint j, epiworld_double x)
 {
     db.add_user_data(j, x);
 }
@@ -1900,7 +1900,7 @@ template<typename TSeq>
 inline void Model<TSeq>::run_global_actions()
 {
 
-    for (unsigned int i = 0u; i < global_action_dates.size(); ++i)
+    for (epiworld_fast_uint i = 0u; i < global_action_dates.size(); ++i)
     {
 
         if (global_action_dates[i] < 0)

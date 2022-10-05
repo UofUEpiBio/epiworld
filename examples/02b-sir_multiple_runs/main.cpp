@@ -56,7 +56,7 @@ int main() {
     // Writing the results to the disk
     std::ofstream fn("02b-sir-multiple-runs.csv", std::ios_base::out);
     fn << "run_id";
-    for (unsigned int s = 0u; s < labels.size(); ++s)
+    for (epiworld_fast_uint s = 0u; s < labels.size(); ++s)
         fn << "," << labels[s];
     
     fn << "\n";
@@ -64,7 +64,7 @@ int main() {
     for (int r = 0; r < total_replicates; ++r)
     {
         fn << r;
-        for (unsigned int s = 0u; s < labels.size(); ++s)
+        for (epiworld_fast_uint s = 0u; s < labels.size(); ++s)
             fn << "," << results[r][s];
 
         fn << "\n";
