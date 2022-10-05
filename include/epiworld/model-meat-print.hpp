@@ -18,7 +18,7 @@ inline void Model<TSeq>::print() const
     printf_epiworld("Name of the model   : %s\n", (this->name == "") ? std::string("(none)").c_str() : name.c_str());
     printf_epiworld("Population size     : %i\n", static_cast<int>(size()));
     printf_epiworld("Number of entitites : %i\n", static_cast<int>(entities.size()));
-    printf_epiworld("Days (duration)     : %i (of %i)\n", today(), ndays);
+    printf_epiworld("Days (duration)     : %i (of %i)\n", today(), static_cast<int>(ndays));
     printf_epiworld("Number of variants  : %i\n", static_cast<int>(db.get_n_variants()));
     if (n_replicates > 0u)
     {
@@ -29,7 +29,7 @@ inline void Model<TSeq>::print() const
         printf_epiworld("Last run elapsed t  : %.2f%s\n", elapsed, abbr.c_str());
         if (n_replicates > 1u)
         {
-            printf_epiworld("Total elapsed t     : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
+            printf_epiworld("Total elapsed t     : %.2f%s (%i runs)\n", total, abbr.c_str(), static_cast<int>(n_replicates));
         }
 
         // Elapsed time in speed

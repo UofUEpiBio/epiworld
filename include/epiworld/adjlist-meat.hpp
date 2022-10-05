@@ -183,10 +183,10 @@ inline void AdjList::print(epiworld_fast_uint limit) const {
         for (auto n_n : n)
             if (++niter < static_cast<int>(n.size()))
             {    
-                printf_epiworld("%i, ", n_n.first);
+                printf_epiworld("%i, ", static_cast<int>(n_n.first));
             }
             else {
-                printf_epiworld("%i}\n", n_n.first);
+                printf_epiworld("%i}\n", static_cast<int>(n_n.first));
             }
     }
 
