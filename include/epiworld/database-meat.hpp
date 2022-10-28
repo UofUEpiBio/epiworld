@@ -697,6 +697,16 @@ const {
             map[h] = 1;
         else
             map[h]++;
+
+        // The target is added
+        std::vector< int > h_target = {
+            transmission_variant[i],
+            transmission_target[i],
+            transmission_date[i]
+        };
+
+        map[h_target] = 0;
+        
     }
 
     return map;

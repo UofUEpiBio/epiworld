@@ -166,7 +166,7 @@ inline void LFMCMC<TData>::print()
                 nchar_char + ".2f, % " + 
                 nchar_char + ".2f] (Observed: % 4.2f)\n";
 
-        for (size_t k = 0u; k < n_parameters; ++k)
+        for (size_t k = 0u; k < n_statistics; ++k)
         {
             printf_epiworld(
                 fmt_stats.c_str(),

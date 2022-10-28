@@ -1009,6 +1009,9 @@ public:
     void set_par_names(std::vector< std::string > names);
     void set_stats_names(std::vector< std::string > names);
 
+    std::vector< epiworld_double > get_params_mean();
+    std::vector< epiworld_double > get_stats_mean();
+
     void print() ;
 
 };
@@ -1280,6 +1283,9 @@ public:
 
     void set_par_names(std::vector< std::string > names);
     void set_stats_names(std::vector< std::string > names);
+
+    std::vector< epiworld_double > get_params_mean();
+    std::vector< epiworld_double > get_stats_mean();
 
     void print() ;
 
@@ -1929,7 +1935,7 @@ inline void LFMCMC<TData>::print()
                 nchar_char + ".2f, % " + 
                 nchar_char + ".2f] (Observed: % 4.2f)\n";
 
-        for (size_t k = 0u; k < n_parameters; ++k)
+        for (size_t k = 0u; k < n_statistics; ++k)
         {
             printf_epiworld(
                 fmt_stats.c_str(),
@@ -1986,6 +1992,38 @@ inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
         throw std::length_error("The number of names to add differs from the number of statistics in the model.");
 
     names_statistics = names;
+
+}
+
+template<typename TData>
+inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
+{
+    std::vector< epiworld_double > res(this->n_parameters, 0.0);
+    
+    for (size_t k = 0u; k < n_parameters; ++k)
+    {
+        for (size_t i = 0u; i < n_samples; ++i)
+            res[k] += (this->accepted_params[k + n_parameters * i])/
+                static_cast< epiworld_double >(n_samples);
+    }
+
+    return res;
+
+}
+
+template<typename TData>
+inline std::vector< epiworld_double > LFMCMC<TData>::get_stats_mean()
+{
+    std::vector< epiworld_double > res(this->n_statistics, 0.0);
+    
+    for (size_t k = 0u; k < n_statistics; ++k)
+    {
+        for (size_t i = 0u; i < n_samples; ++i)
+            res[k] += (this->accepted_stats[k + n_statistics * i])/
+                static_cast< epiworld_double >(n_samples);
+    }
+
+    return res;
 
 }
 
@@ -3441,6 +3479,15 @@ const {
             map[h] = 1;
         else
             map[h]++;
+
+        std::vector< int > h_target = {
+            transmission_variant[i],
+            transmission_target[i],
+            transmission_date[i]
+        };
+        
+        map[h_target] = 0;
+        
     }
 
     return map;
@@ -3858,10 +3905,10 @@ inline void AdjList::print(epiworld_fast_uint limit) const {
         for (auto n_n : n)
             if (++niter < static_cast<int>(n.size()))
             {    
-                printf_epiworld("%i, ", n_n.first);
+                printf_epiworld("%i, ", static_cast<int>(n_n.first));
             }
             else {
-                printf_epiworld("%i}\n", n_n.first);
+                printf_epiworld("%i}\n", static_cast<int>(n_n.first));
             }
     }
 
@@ -4209,7 +4256,7 @@ inline AdjList rgraph_bernoulli(
     source.resize(m);
     target.resize(m);
 
-    int a,b;
+    epiworld_fast_uint a,b;
     for (epiworld_fast_uint i = 0u; i < m; ++i)
     {
         a = floor(model.runif() * n);
@@ -6715,7 +6762,7 @@ inline void Model<TSeq>::print() const
     printf_epiworld("Name of the model   : %s\n", (this->name == "") ? std::string("(none)").c_str() : name.c_str());
     printf_epiworld("Population size     : %i\n", static_cast<int>(size()));
     printf_epiworld("Number of entitites : %i\n", static_cast<int>(entities.size()));
-    printf_epiworld("Days (duration)     : %i (of %i)\n", today(), ndays);
+    printf_epiworld("Days (duration)     : %i (of %i)\n", today(), static_cast<int>(ndays));
     printf_epiworld("Number of variants  : %i\n", static_cast<int>(db.get_n_variants()));
     if (n_replicates > 0u)
     {
@@ -6726,7 +6773,7 @@ inline void Model<TSeq>::print() const
         printf_epiworld("Last run elapsed t  : %.2f%s\n", elapsed, abbr.c_str());
         if (n_replicates > 1u)
         {
-            printf_epiworld("Total elapsed t     : %.2f%s (%i runs)\n", total, abbr.c_str(), n_replicates);
+            printf_epiworld("Total elapsed t     : %.2f%s (%i runs)\n", total, abbr.c_str(), static_cast<int>(n_replicates));
         }
 
         // Elapsed time in speed
@@ -11131,7 +11178,7 @@ public:
 
     Agent<TSeq> * operator[](size_t n);
     Agent<TSeq> * operator()(size_t n);
-    const size_t size() const noexcept;
+    size_t size() const noexcept;
 
 };
 
@@ -11271,7 +11318,7 @@ template<typename TSeq>
 inline AgentsSample<TSeq>::~AgentsSample() {}
 
 template<typename TSeq>
-inline const size_t AgentsSample<TSeq>::size() const noexcept
+inline size_t AgentsSample<TSeq>::size() const noexcept
 { 
     return this->sample_size;
 }
