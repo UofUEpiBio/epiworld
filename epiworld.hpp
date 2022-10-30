@@ -916,7 +916,7 @@ private:
     std::vector< epiworld_double > params_prev;
     std::vector< epiworld_double > params_init;
 
-    std::vector< epiworld_double > observed_stats;   ///< Observed statistics
+    std::vector< epiworld_double > observed_stats; ///< Observed statistics
 
     std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
     std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
@@ -960,7 +960,10 @@ private:
 public:
 
     void run(
-        std::vector< epiworld_double > param_init, size_t n_samples_, epiworld_double epsilon_);
+        std::vector< epiworld_double > param_init,
+        size_t n_samples_,
+        epiworld_double epsilon_
+        );
 
     LFMCMC() {};
     LFMCMC(TData & observed_data_) : observed_data(&observed_data_) {};
@@ -1191,7 +1194,7 @@ private:
     std::vector< epiworld_double > params_prev;
     std::vector< epiworld_double > params_init;
 
-    std::vector< epiworld_double > observed_stats;   ///< Observed statistics
+    std::vector< epiworld_double > observed_stats; ///< Observed statistics
 
     std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
     std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
@@ -1235,7 +1238,10 @@ private:
 public:
 
     void run(
-        std::vector< epiworld_double > param_init, size_t n_samples_, epiworld_double epsilon_);
+        std::vector< epiworld_double > param_init,
+        size_t n_samples_,
+        epiworld_double epsilon_
+        );
 
     LFMCMC() {};
     LFMCMC(TData & observed_data_) : observed_data(&observed_data_) {};
@@ -1835,6 +1841,18 @@ inline void LFMCMC<TData>::print()
 
     // Figuring out format
     std::string fmt_params;
+    
+    int nchar_par_num = 0;
+    for (auto & n : summ_params)
+    {
+        
+        int tmp_nchar = std::floor(std::log10(std::abs(n)));
+        if (nchar_par_num < tmp_nchar)
+            nchar_par_num = tmp_nchar;
+    }
+    nchar_par_num += 5; // 1 for neg padd, 2 for decimals, 1 the decimal point, and one b/c log(<10) < 1.
+    std::string charlen = std::to_string(nchar_par_num);
+
     if (names_parameters.size() != 0u)
     {
         int nchar_par = 0;
@@ -1845,9 +1863,13 @@ inline void LFMCMC<TData>::print()
                 nchar_par = tmp_nchar;
         }
 
-        fmt_params = "  -%-" +
+        fmt_params = std::string("  -%-") +
             std::to_string(nchar_par) +
-            "s : % 4.2f [% 4.2f, % 4.2f] (initial : % 4.2f)\n";
+            std::string("s : % ") + charlen  + 
+            std::string(".2f [% ") + charlen + 
+            std::string(".2f, % ") + charlen +
+            std::string(".2f] (initial : % ") +
+            charlen + std::string(".2f)\n");
 
         for (size_t k = 0u; k < n_parameters; ++k)
         {
@@ -1864,10 +1886,17 @@ inline void LFMCMC<TData>::print()
         
     } else {
 
+        fmt_params = std::string("  [%-2ld]: % ") + charlen + 
+            std::string(".2f [% ") + charlen +
+            std::string(".2f, % ") + charlen + 
+            std::string(".2f] (initial : % ") + charlen +
+            std::string(".2f)\n");
+
         for (size_t k = 0u; k < n_parameters; ++k)
         {
+            
             printf_epiworld(
-                "  [%-2ld]: % 4.2f [% 4.2f, % 4.2f] (initial : % 4.2f)\n",
+                fmt_params.c_str(),
                 k,
                 summ_params[k * 3],
                 summ_params[k * 3 + 1u],
@@ -1885,13 +1914,12 @@ inline void LFMCMC<TData>::print()
     int nchar = 0;
     for (auto & s : summ_stats)
     {
-        int tmp_nchar = std::to_string(s).length();
+        int tmp_nchar = std::floor(std::log10(std::abs(s)));
         if (nchar < tmp_nchar)
             nchar = tmp_nchar;
     }
 
-    if (nchar >= 3)
-        nchar -= 3;
+    nchar += 5; // See above
 
     std::string nchar_char = std::to_string(nchar);
 
@@ -1907,12 +1935,13 @@ inline void LFMCMC<TData>::print()
                 nchar_stats = tmp_nchar;
         }
 
-        fmt_stats = "  -%-" +
-            std::to_string(nchar_stats) + "s : % " + 
-            nchar_char +
-            ".2f [% " +
-                nchar_char + ".2f, % " + 
-                nchar_char + ".2f] (Observed: % 4.2f)\n";
+        fmt_stats = std::string("  -%-") +
+            std::to_string(nchar_stats) +
+            std::string("s : % ") + nchar_char +
+            std::string(".2f [% ") + nchar_char +
+            std::string(".2f, % ") + nchar_char +
+            std::string(".2f] (Observed: % ") + nchar_char +
+            std::string(".2f)\n");
 
         for (size_t k = 0u; k < n_statistics; ++k)
         {
@@ -1929,11 +1958,12 @@ inline void LFMCMC<TData>::print()
         
     } else {
 
-        fmt_stats = "  [%-2ld] : % " + 
+        fmt_stats = std::string("  [%-2ld] : % ") + 
             nchar_char +
-            ".2f [% " +
-                nchar_char + ".2f, % " + 
-                nchar_char + ".2f] (Observed: % 4.2f)\n";
+            std::string(".2f [% ") + nchar_char +
+            std::string(".2f, % ") + nchar_char +
+            std::string(".2f] (Observed: % ") + nchar_char +
+            std::string(".2f)\n");
 
         for (size_t k = 0u; k < n_statistics; ++k)
         {
@@ -3480,12 +3510,13 @@ const {
         else
             map[h]++;
 
+        // The target is added
         std::vector< int > h_target = {
             transmission_variant[i],
             transmission_target[i],
             transmission_date[i]
         };
-        
+
         map[h_target] = 0;
         
     }

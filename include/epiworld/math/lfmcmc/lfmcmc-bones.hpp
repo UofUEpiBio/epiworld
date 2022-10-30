@@ -142,7 +142,7 @@ private:
     std::vector< epiworld_double > params_prev;
     std::vector< epiworld_double > params_init;
 
-    std::vector< epiworld_double > observed_stats;   ///< Observed statistics
+    std::vector< epiworld_double > observed_stats; ///< Observed statistics
 
     std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
     std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
@@ -186,7 +186,10 @@ private:
 public:
 
     void run(
-        std::vector< epiworld_double > param_init, size_t n_samples_, epiworld_double epsilon_);
+        std::vector< epiworld_double > param_init,
+        size_t n_samples_,
+        epiworld_double epsilon_
+        );
 
     LFMCMC() {};
     LFMCMC(TData & observed_data_) : observed_data(&observed_data_) {};
