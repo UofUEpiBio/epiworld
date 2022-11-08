@@ -383,8 +383,8 @@ inline AdjList rgraph_ring_lattice(
     std::vector< epiworld_fast_uint > source;
     std::vector< epiworld_fast_uint > target;
 
-    // if (!directed)
-    //     if (k > 1u) k = static_cast< epiworld_fast_uint >(floor(k / 2.0));
+    if (!directed)
+        if (k > 1u) k = static_cast< epiworld_fast_uint >(floor(k / 2.0));
 
     for (epiworld_fast_uint i = 0; i < n; ++i)
     {

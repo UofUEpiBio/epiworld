@@ -41,7 +41,7 @@ inline AdjList::AdjList(
         {
 
             if (dat[j].find(i) == dat[j].end())
-                dat[j].insert(std::pair<epiworld_fast_uint, epiworld_fast_uint>(j, 1u));
+                dat[j].insert(std::pair<epiworld_fast_uint, epiworld_fast_uint>(i, 1u));
             else
                 dat[j][i]++;
 

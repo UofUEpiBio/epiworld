@@ -3794,7 +3794,7 @@ inline AdjList::AdjList(
         {
 
             if (dat[j].find(i) == dat[j].end())
-                dat[j].insert(std::pair<epiworld_fast_uint, epiworld_fast_uint>(j, 1u));
+                dat[j].insert(std::pair<epiworld_fast_uint, epiworld_fast_uint>(i, 1u));
             else
                 dat[j][i]++;
 
@@ -4377,8 +4377,8 @@ inline AdjList rgraph_ring_lattice(
     std::vector< epiworld_fast_uint > source;
     std::vector< epiworld_fast_uint > target;
 
-    // if (!directed)
-    //     if (k > 1u) k = static_cast< epiworld_fast_uint >(floor(k / 2.0));
+    if (!directed)
+        if (k > 1u) k = static_cast< epiworld_fast_uint >(floor(k / 2.0));
 
     for (epiworld_fast_uint i = 0; i < n; ++i)
     {
