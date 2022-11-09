@@ -5,7 +5,7 @@ template<typename TSeq>
 inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 {
 
-    Agent<TSeq> * p = a.agent;
+    Agent<TSeq> *  p = a.agent;
     VirusPtr<TSeq> v = a.virus;
 
     CHECK_COALESCE_(a.new_status, v->status_init, p->get_status())

@@ -407,6 +407,17 @@ inline AdjList rgraph_ring_lattice(
 
 }
 
+/**
+ * @brief Smallworld network (Watts-Strogatz)
+ * 
+ * @tparam TSeq 
+ * @param n 
+ * @param k 
+ * @param p 
+ * @param directed 
+ * @param model 
+ * @return AdjList 
+ */
 template<typename TSeq>
 inline AdjList rgraph_smallworld(
     epiworld_fast_uint n,
@@ -424,6 +435,83 @@ inline AdjList rgraph_smallworld(
         rewire_degseq(&ring, &model, p);
         
     return ring;
+
+}
+
+/**
+ * @brief Generates a blocked network
+ * 
+ * Since block sizes and number of connections between blocks are fixed,
+ * this routine is fully deterministic.
+ * 
+ * @tparam TSeq 
+ * @param n Size of the network
+ * @param blocksize Size of the block.
+ * @param ncons Number of connections between blocks
+ * @param model A model
+ * @return AdjList 
+ */
+template<typename TSeq>
+inline AdjList rgraph_blocked(
+    epiworld_fast_uint n,
+    epiworld_fast_uint blocksize,
+    epiworld_fast_uint ncons,
+    Model<TSeq> & model
+) {
+
+    std::vector< epiworld_fast_uint > source_;
+    std::vector< epiworld_fast_uint > target_;
+
+    size_t i = 0u;
+    size_t cum_node_count = 0u;
+    while (i < n)
+    {
+
+        for (size_t j = 0; j < blocksize; ++j)
+        {
+
+            for (size_t k = 0; k < j; ++k)
+            {
+                // No loops
+                if (k == j)
+                    continue;
+
+                // Exists the loop in case there are no more 
+                // nodes available
+                if ((i + k) >= n)
+                    break;
+
+                source_.push_back(j + i);
+                target_.push_back(k + i);
+            }
+
+            // No more nodes left to build connections
+            if (++cum_node_count >= n)
+                break;
+            
+        }
+
+        // Connections between this and the previou sone
+        if (i != 0)
+        {
+
+            size_t max_cons = std::min(ncons, n - cum_node_count);
+
+            // Generating the connections
+            for (size_t j = 0u; j < max_cons; ++j)
+            {
+
+                source_.push_back(i + j - blocksize);
+                target_.push_back(i + j);
+
+            }
+        }
+
+        i += blocksize;
+        
+    }
+        
+    return AdjList(source_, target_, n, false);
 
 }
 
