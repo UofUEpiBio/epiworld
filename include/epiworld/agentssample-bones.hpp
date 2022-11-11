@@ -127,6 +127,18 @@ inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n, bool t
 
 }
 
+/**
+ * @brief Sample from the agent's entities
+ * 
+ * For example, how many individuals the agent contacts in a given point in time.
+ * 
+ * @tparam TSeq 
+ * @param agent_ 
+ * @param n Sample size
+ * @param truncate If the agent has fewer than `n` connections, then truncate = true
+ * will automatically reduce the number of possible samples. Otherwise, if false, then
+ * it returns an error.
+ */
 template<typename TSeq>
 inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n, bool truncate)
 {
@@ -142,6 +154,7 @@ inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n, bool tru
     agents_left   = &agent_.sampled_agents_left;
     agents_left_n = &agent_.sampled_agents_left_n;
 
+    // Computing the cumulative sum of counts across entities
     size_t agents_in_entities = 0;
     Entities<TSeq> entities_a = agent->get_entities();
 

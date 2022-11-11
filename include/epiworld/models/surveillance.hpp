@@ -16,6 +16,48 @@ private:
     static const int REMOVED               = 7;
 
 public:
+
+    /**
+     * @name Construct a new ModelSURV object
+     * 
+     * The ModelSURV class simulates a survaillence model where agents can be
+     * isolated, even if asyptomatic.
+     * 
+     * @param vname String. Name of the virus
+     * @param prevalence Integer. Number of initial cases of the virus.
+     * @param efficacy_vax Double. Efficacy of the vaccine (1 - P(acquire the disease)).
+     * @param latent_period Double. Shape parameter of a `Gamma(latent_period, 1)`
+     *   distribution. This coincides with the expected number of latent days.
+     * @param infect_period Double. Shape parameter of a `Gamma(infected_period, 1)`
+     *   distribution. This coincides with the expected number of infectious days.
+     * @param prob_symptoms Double. Probability of generating symptoms.
+     * @param prop_vaccinated Double. Probability of vaccination. Coincides with
+     *   the initial prevalence of vaccinated individuals.
+     * @param prop_vax_redux_transm Double. Factor by which the vaccine reduces
+     *   transmissibility.
+     * @param prop_vax_redux_infect Double. Factor by which the vaccine reduces
+     *   the chances of becoming infected.
+     * @param surveillance_prob Double. Probability of testing an agent.
+     * @param prob_transmission Double. Raw transmission probability.
+     * @param prob_death Double. Raw probability of death for symptomatic individuals.
+     * @param prob_noreinfect Double. Probability of no re-infection.
+     * 
+     * @details
+     * This model features the following states:
+     * 
+     * - Susceptible
+     * - Latent
+     * - Symptomatic
+     * - Symptomatic isolated
+     * - Asymptomatic
+     * - Asymptomatic isolated
+     * - Recovered
+     * - Removed    
+     * 
+     * @returns An object of class `epiworld_surv`
+     * 
+     */
+    ///@{
     ModelSURV() {};
 
     ModelSURV(
@@ -37,7 +79,7 @@ public:
 
     ModelSURV(
         std::string vname,
-        epiworld_fast_uint prevalence               = 50,
+        epiworld_fast_uint prevalence         = 50,
         epiworld_double efficacy_vax          = 0.9,
         epiworld_double latent_period         = 3u,
         epiworld_double infect_period         = 6u,
@@ -50,18 +92,10 @@ public:
         epiworld_double prob_death            = 0.001,
         epiworld_double prob_noreinfect       = 0.9
     );
+    ///@}
 
 };
 
-/**
- * @brief Template for a Susceptible-Infected-Removed (SIR) model
- * 
- * @param model A Model<TSeq> object where to set up the SIR.
- * @param vname std::string Name of the virus
- * @param initial_prevalence epiworld_double Initial prevalence
- * @param initial_susceptibility_reduction epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery rate of the immune system
- */
 template<typename TSeq>
 inline ModelSURV<TSeq>::ModelSURV(
     ModelSURV<TSeq> & model,
@@ -135,11 +169,11 @@ inline ModelSURV<TSeq>::ModelSURV(
         // Figuring out latent period
         if (v->get_data().size() == 0u)
         {
-            epiworld_double latent_days = m->rgamma(MPAR(0), 1.0);
+            epiworld_double latent_days = m->rgamma(m->p0, 1.0);
             v->get_data().push_back(latent_days);
 
             v->get_data().push_back(
-                m->rgamma(MPAR(1), 1.0) + latent_days
+                m->rgamma(m->p1, 1.0) + latent_days
             );
         }
         
@@ -231,8 +265,6 @@ inline ModelSURV<TSeq>::ModelSURV(
                 {
                     p->change_status(ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED);
                 }
-
-                
 
             }
 
