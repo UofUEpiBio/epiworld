@@ -169,11 +169,11 @@ inline ModelSURV<TSeq>::ModelSURV(
         // Figuring out latent period
         if (v->get_data().size() == 0u)
         {
-            epiworld_double latent_days = m->rgamma(m->p0, 1.0);
+            epiworld_double latent_days = m->rgamma(*m->p0, 1.0);
             v->get_data().push_back(latent_days);
 
             v->get_data().push_back(
-                m->rgamma(m->p1, 1.0) + latent_days
+                m->rgamma(*m->p1, 1.0) + latent_days
             );
         }
         

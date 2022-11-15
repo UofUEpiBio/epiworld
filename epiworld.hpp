@@ -7289,7 +7289,7 @@ inline void Model<TSeq>::read_params(std::string fn)
     if (!paramsfile)
         throw std::logic_error("The file " + fn + " was not found.");
 
-    std::regex pattern("^([^:]+)\\s*[:]\\s*([0-9]+)(\\.[0-9]+)?\\s*$");
+    std::regex pattern("^([^:]+)\\s*[:]\\s*([0-9]+|[0-9]*\\.[0-9]+)?\\s*$");
 
     std::string line;
     std::smatch match;
@@ -7313,9 +7313,6 @@ inline void Model<TSeq>::read_params(std::string fn)
         epiworld_double tmp_num = static_cast<epiworld_double>(
             std::strtod(anumber.c_str(), nullptr)
             );
-
-        // Trimming text
-        
 
         add_param(
             tmp_num,
@@ -12132,11 +12129,11 @@ inline ModelSURV<TSeq>::ModelSURV(
         // Figuring out latent period
         if (v->get_data().size() == 0u)
         {
-            epiworld_double latent_days = m->rgamma(m->p0, 1.0);
+            epiworld_double latent_days = m->rgamma(*m->p0, 1.0);
             v->get_data().push_back(latent_days);
 
             v->get_data().push_back(
-                m->rgamma(m->p1, 1.0) + latent_days
+                m->rgamma(*m->p1, 1.0) + latent_days
             );
         }
         
