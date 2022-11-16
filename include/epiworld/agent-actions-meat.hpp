@@ -80,7 +80,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * /*m*/)
 {
 
     Agent<TSeq> * p   = a.agent;    
@@ -104,7 +104,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
 {
 
     Agent<TSeq> * p  = a.agent;    

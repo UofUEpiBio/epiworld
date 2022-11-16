@@ -347,9 +347,9 @@ template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>* m
-)
-{
+    Model<TSeq>* /*m*/
+) {
+
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
     {
