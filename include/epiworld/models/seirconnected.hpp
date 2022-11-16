@@ -4,13 +4,13 @@
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRCONN : public epiworld::Model<TSeq> 
 {
-private:
+public:
+
     static const int SUSCEPTIBLE = 0;
     static const int EXPOSED     = 1;
     static const int INFECTED    = 2;
-    static const int RECOVERE    = 3;
+    static const int RECOVERED   = 3;
 
-public:
 
     ModelSEIRCONN() {
 
@@ -272,7 +272,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(1,3,3);
+    virus.set_status(ModelSEIRCONN<TSeq>::EXPOSED, ModelSEIRCONN<TSeq>::RECOVERED, ModelSEIRCONN<TSeq>::RECOVERED);
     model.add_virus(virus, prevalence);
 
     // Adding updating function

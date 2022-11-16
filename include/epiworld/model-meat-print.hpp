@@ -108,6 +108,11 @@ inline void Model<TSeq>::print() const
 
     }
 
+    if (db.variant_id.size() == 0u)
+    {
+        printf_epiworld(" (none)\n");
+    }
+
     printf_epiworld("\nTool(s):\n");
     size_t n_tools_model = tools.size();
     for (size_t i = 0u; i < db.tool_id.size(); ++i)

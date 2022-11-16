@@ -33,7 +33,7 @@ private:
     int       agent_idx       = -99;
     int agent_exposure_number = -99;
 
-    std::shared_ptr<TSeq> baseline_sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
+    std::shared_ptr<TSeq> baseline_sequence = nullptr;
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
     int id   = -99;
