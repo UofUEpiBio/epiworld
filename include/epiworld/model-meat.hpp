@@ -302,7 +302,7 @@ template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq> * m
+    Model<TSeq> *
 )
 {
     epiworld_double total = 1.0;
@@ -317,7 +317,7 @@ template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>* m
+    Model<TSeq>*
 )
 {
     epiworld_double total = 1.0;
@@ -332,7 +332,7 @@ template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>* m
+    Model<TSeq>*
 )
 {
     epiworld_double total = 1.0;
