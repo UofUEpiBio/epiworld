@@ -995,14 +995,16 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
             "The virus \"" + v.get_name() + "\" has no -post- status."
             );
 
-    // Setting the id
-    v.set_id(viruses.size());
+    // Setting sequence (if missing)
+    if (v.get_sequence() == nullptr)
+        v.set_sequence(default_sequence<TSeq>());    
     
     // Adding new virus
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
     prevalence_virus.push_back(preval);
     prevalence_virus_as_proportion.push_back(true);
     viruses_dist_funs.push_back(nullptr);
+    db.record_variant(*viruses[viruses.size() - 1u]);
 
 }
 
