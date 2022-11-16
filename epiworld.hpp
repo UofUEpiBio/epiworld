@@ -5583,7 +5583,7 @@ template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq> * m
+    Model<TSeq> *
 )
 {
     epiworld_double total = 1.0;
@@ -5598,7 +5598,7 @@ template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>* m
+    Model<TSeq>*
 )
 {
     epiworld_double total = 1.0;
@@ -5613,7 +5613,7 @@ template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>* m
+    Model<TSeq>*
 )
 {
     epiworld_double total = 1.0;
@@ -5628,9 +5628,9 @@ template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>* m
-)
-{
+    Model<TSeq>* /*m*/
+) {
+
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
     {
@@ -8051,7 +8051,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
         {
             return *prob;
         };
@@ -8063,7 +8063,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
         {
             return *prob;
         };
@@ -10443,7 +10443,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * /*m*/)
 {
 
     Agent<TSeq> * p   = a.agent;    
@@ -10467,7 +10467,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
 {
 
     Agent<TSeq> * p  = a.agent;    
