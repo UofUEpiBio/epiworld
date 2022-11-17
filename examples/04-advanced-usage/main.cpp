@@ -80,7 +80,7 @@ int main() {
     
     epiworld::Tool<DAT> mask("Face masks");
     mask.set_susceptibility_reduction(0.8);
-    mask.set_transmission_reduction(0.05);
+    mask.set_transmission_reduction(0.05);seq0
 
     epiworld::Tool<DAT> immune("Immune system");
     immune.set_susceptibility_reduction(&model("imm efficacy"));
@@ -88,7 +88,7 @@ int main() {
     immune.set_death_reduction(&model("imm death"));
     immune.set_transmission_reduction(&model("imm trans"));
     DAT seq0(base_seq.size(), false);
-    immune.set_sequence_unique(seq0);
+    immune.set_sequence(seq0);
 
     epiworld::Tool<DAT> post_immunity("Post Immune");
     post_immunity.set_susceptibility_reduction(1.0);

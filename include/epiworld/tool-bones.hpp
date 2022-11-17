@@ -33,8 +33,7 @@ private:
     int date = -99;
     int id   = -99;
     std::shared_ptr<std::string> tool_name = nullptr;
-    std::shared_ptr<TSeq> sequence = std::make_shared<TSeq>(default_sequence<TSeq>());
-    TSeq sequence_unique  = default_sequence<TSeq>();
+    std::shared_ptr<TSeq> sequence         = nullptr;
     ToolFun<TSeq> susceptibility_reduction_fun = nullptr;
     ToolFun<TSeq> transmission_reduction_fun   = nullptr;
     ToolFun<TSeq> recovery_enhancer_fun        = nullptr;
@@ -56,10 +55,8 @@ public:
     // Tool(TSeq d, std::string name = "unknown tool");
 
     void set_sequence(TSeq d);
-    void set_sequence_unique(TSeq d);
     void set_sequence(std::shared_ptr<TSeq> d);
     std::shared_ptr<TSeq> get_sequence();
-    TSeq & get_sequence_unique();
 
     /**
      * @name Get and set the tool functions

@@ -20,11 +20,6 @@ inline void Tool<TSeq>::set_sequence(TSeq d) {
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_sequence_unique(TSeq d) {
-    sequence_unique = d;
-}
-
-template<typename TSeq>
 inline void Tool<TSeq>::set_sequence(std::shared_ptr<TSeq> d) {
     sequence = d;
 }
@@ -32,11 +27,6 @@ inline void Tool<TSeq>::set_sequence(std::shared_ptr<TSeq> d) {
 template<typename TSeq>
 inline std::shared_ptr<TSeq> Tool<TSeq>::get_sequence() {
     return sequence;
-}
-
-template<typename TSeq>
-inline TSeq & Tool<TSeq>::get_sequence_unique() {
-    return sequence_unique;
 }
 
 template<typename TSeq>
