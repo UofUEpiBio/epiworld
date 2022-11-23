@@ -265,7 +265,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
     PostRecoveryFun<TSeq> tmpfun = 
         [__no_reinfect](
-            Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m
+            Agent<TSeq> * p, Virus<TSeq> &, Model<TSeq> * m
             )
         {
             
@@ -315,7 +315,7 @@ inline void Virus<TSeq>::set_post_immunity(
     __no_reinfect->set_recovery_enhancer(0.0);
 
     PostRecoveryFun<TSeq> tmpfun = 
-        [__no_reinfect](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [__no_reinfect](Agent<TSeq> * p, Virus<TSeq> &, Model<TSeq> * m)
         {
 
             // Have we registered the tool?
