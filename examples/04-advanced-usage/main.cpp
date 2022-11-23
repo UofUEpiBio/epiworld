@@ -80,7 +80,7 @@ int main() {
     
     epiworld::Tool<DAT> mask("Face masks");
     mask.set_susceptibility_reduction(0.8);
-    mask.set_transmission_reduction(0.05);seq0
+    mask.set_transmission_reduction(0.05);
 
     epiworld::Tool<DAT> immune("Immune system");
     immune.set_susceptibility_reduction(&model("imm efficacy"));

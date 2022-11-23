@@ -1212,8 +1212,9 @@ inline void Model<TSeq>::load_agents_entities_ties(
             prevalence_entity_as_proportion[e] = false;
 
             // Generating the assignment function
+            auto who = target_[e];
             entities_dist_funs[e] =
-                [who = target_[e]](Entity<TSeq> & e, Model<TSeq>* m) -> void {
+                [who](Entity<TSeq> & e, Model<TSeq>* m) -> void {
 
                     for (auto w : who)
                         m->population[w].add_entity(e, e.status_init, e.queue_init);
