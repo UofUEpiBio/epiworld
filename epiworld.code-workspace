@@ -71,7 +71,8 @@
 			"stop_token": "cpp",
 			"list": "cpp",
 			"variant": "cpp",
-			"future": "cpp"
+			"future": "cpp",
+			"iomanip": "cpp"
 		}
 	}
 }

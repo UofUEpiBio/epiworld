@@ -332,6 +332,18 @@ public:
     ///@}
 
     /**
+     * @brief Associate agents-entities from a file
+     * 
+     * The structure of the file should be two columns separated by 
+     * space. The first column indexing between 0 and nagents-1, and the
+     * second column between 0 and nentities - 1.
+     * 
+     * @param fn Path to the file.
+     * @param skip How many rows to skip.
+     */
+    void load_agents_entities_ties(std::string fn, int skip);
+
+    /**
      * @name Accessing population of the model
      * 
      * @param fn std::string Filename of the edgelist file.
@@ -630,6 +642,7 @@ public:
      * @param name 
      */
     void set_name(std::string name);
+    std::string get_name() const;
 
 };
 
