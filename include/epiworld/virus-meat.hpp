@@ -164,7 +164,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
         {
             return *prob;
         };
@@ -176,7 +176,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
         {
             return prob;
         };
@@ -188,7 +188,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
         {
             return prob;
         };
@@ -200,7 +200,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> * p, Virus<TSeq> & v, Model<TSeq> * m)
+        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
         {
             return prob;
         };

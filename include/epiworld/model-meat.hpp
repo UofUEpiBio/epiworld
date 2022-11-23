@@ -469,7 +469,7 @@ template<typename TSeq>
 inline void Model<TSeq>::clone_population(
     std::vector< Agent<TSeq> > & p,
     bool & d,
-    Model<TSeq> * model
+    Model<TSeq> *
 ) const {
 
     // Copy and clean

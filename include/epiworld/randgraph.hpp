@@ -456,7 +456,7 @@ inline AdjList rgraph_blocked(
     epiworld_fast_uint n,
     epiworld_fast_uint blocksize,
     epiworld_fast_uint ncons,
-    Model<TSeq> & model
+    Model<TSeq>&
 ) {
 
     std::vector< epiworld_fast_uint > source_;
