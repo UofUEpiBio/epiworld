@@ -7329,9 +7329,9 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
         Agent<TSeq> & agent_res  = res.population[p];
 
         // Agent pointing to the right model and agent
-        agent_res.model        = &res;
+        agent_res.model         = &res;
         agent_res.viruses.agent = &agent_res;
-        agent_res.tools.agent = &agent_res;
+        agent_res.tools.agent   = &agent_res;
 
         // Readding
         std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;

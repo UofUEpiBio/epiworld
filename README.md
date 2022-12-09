@@ -40,14 +40,14 @@ int main()
     // of models, like the SIR
     epimodels::ModelSIR<> hello(
         "COVID-19", // Name of the virus
-        0.1,        // Initial prevalence
+        0.01,        // Initial prevalence
         0.9,        // Transmission probability
         0.3         // Recovery probability
         );
 
     // We can simulate agents using a smallworld network
-    // with 10,000 individuals, in this case
-    hello.agents_smallworld(10000);
+    // with 100,000 individuals, in this case
+    hello.agents_smallworld(100000, 4L, false, .01);
 
     // Setting the number of days (100) and seed (122)
     hello.init(100, 122);
@@ -71,15 +71,17 @@ _________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
-Population size     : 10000
+Name of the model   : Susceptible-Infected-Recovered (SIR)
+Population size     : 100000
 Number of entitites : 0
 Days (duration)     : 100 (of 100)
 Number of variants  : 1
-Last run elapsed t  : 19.00ms
+Last run elapsed t  : 211.00ms
+Last run speed      : 47.28 million agents x day / second
 Rewiring            : off
 
 Virus(es):
- - COVID-19 (baseline prevalence: 10.00%)
+ - COVID-19 (baseline prevalence: 1.00%)
 
 Tool(s):
  (none)
@@ -89,13 +91,13 @@ Model parameters:
  - Prob. of Recovery : 0.3000
 
 Distribution of the population at time 100:
- - (0) Susceptible :  9000 -> 0
- - (1) Infected    :  1000 -> 0
- - (2) Recovered   :     0 -> 10000
+ - (0) Susceptible :  99000 -> 2565
+ - (1) Infected    :   1000 -> 366
+ - (2) Recovered   :      0 -> 97069
 
 Transition Probabilities:
- - Susceptible  0.28  0.71  0.00
- - Infected     0.00  0.69  0.31
+ - Susceptible  0.96  0.04  0.00
+ - Infected     0.00  0.70  0.30
  - Recovered    0.00  0.00  1.00
 ```
 
@@ -103,7 +105,7 @@ Transition Probabilities:
 ## Building from scratch
 
 One of the best things about epiworld is that models can be built from scratch, like
-in the following example:
+in the following example ([readme.cpp](readme.cpp)):
 
 ```cpp
 #include "epiworld.hpp"
@@ -124,24 +126,24 @@ int main()
 
     // Desgining a virus: This virus will:
     // - Have a 90% transmission rate
-    // - Have a 20% recovery rate
+    // - Have a 30% recovery rate
     // - Infected individuals become "Infected" (status 1)
     // - Recovered individuals become "Recovered" (status 2)
-    // Only twenty individuals will have the virus from the beginning.
+    // 100 individuals will have the virus from the beginning.
     Virus<> virus("covid 19");
 
-    virus.set_prob_infecting(.9);
-    virus.set_prob_recover(.2);
+    virus.set_prob_infecting(.90);
+    virus.set_prob_recovery(.30);
     
     virus.set_status(1, 2);
 
-    model.add_virus_n(virus, 20);
+    model.add_virus_n(virus, 1000);
     
     // Generating a random pop from a smallworld network
-    model.population_smallworld(100000);
+    model.agents_smallworld(100000, 4L, false, .01);
 
     // Initializing setting days and seed
-    model.init(100, 123);
+    model.init(100, 122);
 
     // Running the model
     model.run();
@@ -160,14 +162,17 @@ _________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
-Population size    : 100000
-Days (duration)    : 100 (of 100)
-Number of variants : 1
-Last run elapsed t : 323.00ms
-Rewiring           : off
+Name of the model   : (none)
+Population size     : 100000
+Number of entitites : 0
+Days (duration)     : 100 (of 100)
+Number of variants  : 1
+Last run elapsed t  : 209.00ms
+Last run speed      : 47.64 million agents x day / second
+Rewiring            : off
 
 Virus(es):
- - covid 19 (baseline prevalence: 100 seeds)
+ - covid 19 (baseline prevalence: 1000 seeds)
 
 Tool(s):
  (none)
@@ -176,17 +181,17 @@ Model parameters:
  (none)
 
 Distribution of the population at time 100:
- - (0) Susceptible :  99900 -> 34655
- - (1) Infected    :    100 -> 3159
- - (2) Recovered   :      0 -> 62186
+ - (0) Susceptible :  99000 -> 2565
+ - (1) Infected    :   1000 -> 366
+ - (2) Recovered   :      0 -> 97069
 
 Transition Probabilities:
- - Susceptible  0.99  0.01  0.00
- - Infected     0.00  0.86  0.14
+ - Susceptible  0.96  0.04  0.00
+ - Infected     0.00  0.70  0.30
  - Recovered    0.00  0.00  1.00
 ```
 
-Which took about 0.323 seconds (~ 30 million ppl x day / second).
+Which took about 0.209 seconds (~ 47 million ppl x day / second).
 
 ## Simulation Steps
 
