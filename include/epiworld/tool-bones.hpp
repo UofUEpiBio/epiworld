@@ -32,8 +32,8 @@ private:
 
     int date = -99;
     int id   = -99;
-    std::shared_ptr<std::string> tool_name = nullptr;
-    std::shared_ptr<TSeq> sequence         = nullptr;
+    std::shared_ptr<std::string> tool_name     = nullptr;
+    std::shared_ptr<TSeq> sequence             = nullptr;
     ToolFun<TSeq> susceptibility_reduction_fun = nullptr;
     ToolFun<TSeq> transmission_reduction_fun   = nullptr;
     ToolFun<TSeq> recovery_enhancer_fun        = nullptr;

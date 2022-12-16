@@ -390,7 +390,8 @@ public:
         epiworld_fast_uint nexperiments,
         std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
         bool reset = true,
-        bool verbose = true
+        bool verbose = true,
+        int nthreads = 1
         );
     ///@}
 

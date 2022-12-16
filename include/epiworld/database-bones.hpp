@@ -121,6 +121,7 @@ public:
 
     DataBase() = delete;
     DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
+    DataBase(const DataBase<TSeq> & db);
 
     /**
      * @brief Registering a new variant

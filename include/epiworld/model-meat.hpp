@@ -22,7 +22,7 @@
  * @param transition 
  * @return std::function<void(size_t,Model<TSeq>*)> 
  */
-template<typename TSeq>
+template<typename TSeq = int>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt,
     bool total_hist,
@@ -365,6 +365,7 @@ template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     name(model.name),
     db(model.db),
+    directed(model.directed),
     viruses(model.viruses),
     prevalence_virus(model.prevalence_virus),
     prevalence_virus_as_proportion(model.prevalence_virus_as_proportion),
@@ -391,7 +392,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     global_action_functions(model.global_action_functions),
     global_action_dates(model.global_action_dates),
     queue(model.queue),
-    use_queuing(model.use_queuing)
+    use_queuing(model.use_queuing),
+    array_double_tmp(model.array_double_tmp.size()),
+    array_virus_tmp(model.array_virus_tmp.size())
 {
 
     // Pointing to the right place
@@ -403,6 +406,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         directed,
         this
         );
+
+    population_data = model.population_data;
+    population_data_n_features = model.population_data_n_features;
 
     // Figure out the queuing
     if (use_queuing)
@@ -460,7 +466,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
     queue(std::move(model.queue)),
-    use_queuing(model.use_queuing)
+    use_queuing(model.use_queuing),
+    array_double_tmp(model.array_double_tmp.size()),
+    array_virus_tmp(model.array_virus_tmp.size())
 {
 
 }
@@ -469,7 +477,7 @@ template<typename TSeq>
 inline void Model<TSeq>::clone_population(
     std::vector< Agent<TSeq> > & p,
     bool & d,
-    Model<TSeq> *
+    Model<TSeq> * model
 ) const {
 
     // Copy and clean
@@ -493,6 +501,7 @@ inline void Model<TSeq>::clone_population(
             // Point to the right neighbors
             int loc = p[neigh[n]->get_id()].get_id();
             agent_res.add_neighbor(&p[loc], true, true);
+            agent_res.model = model;
 
         }
 
@@ -1361,7 +1370,8 @@ inline void Model<TSeq>::run_multiple(
     epiworld_fast_uint nexperiments,
     std::function<void(size_t,Model<TSeq>*)> fun,
     bool reset,
-    bool verbose
+    bool verbose,
+    int nthreads
 )
 {
 
@@ -1371,6 +1381,103 @@ inline void Model<TSeq>::run_multiple(
     bool old_verb = this->verbose;
     verbose_off();
 
+    #ifdef _OPENMP
+    // Generating copies of the model
+    std::vector< Model<TSeq> > these(std::max(nthreads - 1, 0), *this);
+    for (auto & m : these)
+    {
+        m.clone_population(*this);
+
+        // Setting a separate seed to each one
+        m.initialized = false;
+        m.init(
+            this->ndays,
+            std::floor(this->runif() * std::numeric_limits<size_t>::max())
+            );
+    }
+
+    // Figuring out how many replicates
+    std::vector< size_t > nreplicates(nthreads, 0);
+    std::vector< size_t > nreplicates_csum(nthreads, 0);
+    size_t sums = 0u;
+    for (int i = 0; i < nthreads; ++i)
+    {
+        nreplicates[i] = static_cast<epiworld_fast_uint>(
+            std::floor(nexperiments/nthreads)
+            );
+        
+        // This takes the cumsum
+        nreplicates_csum[i] = sums;
+
+        sums += nreplicates[i];
+    }
+
+    if (sums < nexperiments)
+        nreplicates[nthreads - 1] += (nexperiments - sums);
+
+    Progress pb_multiple(
+        nreplicates[0u],
+        EPIWORLD_PROGRESS_BAR_WIDTH
+        );
+
+    if (verbose)
+    {
+
+        printf_epiworld(
+            "Starting multiple runs (%i) using %i threads\n", 
+            static_cast<int>(nexperiments),
+            static_cast<int>(nthreads)
+        );
+
+        pb_multiple.start();
+
+    }
+
+    #pragma omp parallel shared(these, nreplicates, nreplicates_csum) \
+        firstprivate(nexperiments, nthreads, fun)
+    {
+
+        auto iam = omp_get_thread_num();
+        for (epiworld_fast_uint n = 0u; n < nreplicates[iam]; ++n)
+        {
+            
+            if (iam == 0)
+            {
+
+                run();
+
+                if (fun)
+                    fun(n, this);
+
+                if ((n < (nreplicates[iam] - 1u)) && reset)
+                    this->reset();
+
+                // Only the first one prints
+                if (verbose)
+                    pb_multiple.next();
+
+            } else {
+
+                these[iam - 1].run();
+
+                if (fun)
+                    fun(
+                        n + nreplicates_csum[iam],
+                        &these[iam - 1]
+                        );
+
+                if ((n < (nreplicates[iam] - 1u)) && reset)
+                    these[iam - 1].reset();
+
+            }
+        
+        }
+    }
+
+    // Adjusting the number of replicates
+    n_replicates += (nexperiments - nreplicates[0u]);
+
+    #else
     Progress pb_multiple(
         nexperiments,
         EPIWORLD_PROGRESS_BAR_WIDTH
@@ -1403,6 +1510,7 @@ inline void Model<TSeq>::run_multiple(
             pb_multiple.next();
     
     }
+    #endif
 
     if (verbose)
         pb_multiple.end();

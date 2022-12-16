@@ -26,6 +26,54 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
 }
 
 template<typename TSeq>
+inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
+    variant_id(db.variant_id),
+    variant_name(db.variant_name),
+    variant_sequence(db.variant_sequence),
+    variant_origin_date(db.variant_origin_date),
+    variant_parent_id(db.variant_parent_id),
+    tool_id(db.tool_id),
+    tool_name(db.tool_name),
+    tool_sequence(db.tool_sequence),
+    tool_origin_date(db.tool_origin_date),
+    seq_hasher(db.seq_hasher),
+    seq_writer(db.seq_writer),
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    today_variant(db.today_variant),
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    today_tool(db.today_tool),
+    // {Susceptible, Infected, etc.}
+    today_total(db.today_total),
+    // Totals
+    today_total_nvariants_active(db.today_total_nvariants_active),
+    sampling_freq(db.sampling_freq),
+    // Variants history
+    hist_variant_date(db.hist_variant_date),
+    hist_variant_id(db.hist_variant_id),
+    hist_variant_status(db.hist_variant_status),
+    hist_variant_counts(db.hist_variant_counts),
+    // Tools history
+    hist_tool_date(db.hist_tool_date),
+    hist_tool_id(db.hist_tool_id),
+    hist_tool_status(db.hist_tool_status),
+    hist_tool_counts(db.hist_tool_counts),
+    // Overall hist
+    hist_total_date(db.hist_total_date),
+    hist_total_nvariants_active(db.hist_total_nvariants_active),
+    hist_total_status(db.hist_total_status),
+    hist_total_counts(db.hist_total_counts),
+    hist_transition_matrix(db.hist_transition_matrix),
+    // Transmission network
+    transmission_date(db.transmission_date),
+    transmission_source(db.transmission_source),
+    transmission_target(db.transmission_target),
+    transmission_variant(db.transmission_variant),
+    transmission_source_exposure_date(db.transmission_source_exposure_date),
+    transition_matrix(db.transition_matrix),
+    user_data(nullptr)
+{}
+
+template<typename TSeq>
 inline Model<TSeq> * DataBase<TSeq>::get_model() {
     return model;
 }
