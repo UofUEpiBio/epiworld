@@ -139,20 +139,11 @@ private:
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
     
-    std::shared_ptr< std::uniform_real_distribution<> > runifd =
-        std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
-
-    std::shared_ptr< std::normal_distribution<> > rnormd =
-        std::make_shared< std::normal_distribution<> >(0.0);
-
-    std::shared_ptr< std::gamma_distribution<> > rgammad = 
-        std::make_shared< std::gamma_distribution<> >();
-
-    std::shared_ptr< std::lognormal_distribution<> > rlognormald =
-        std::make_shared< std::lognormal_distribution<> >();
-
-    std::shared_ptr< std::exponential_distribution<> > rexpd =
-        std::make_shared< std::exponential_distribution<> >();
+    std::uniform_real_distribution<> runifd      = std::uniform_real_distribution<> (0.0, 1.0);
+    std::normal_distribution<>       rnormd      = std::normal_distribution<>(0.0);
+    std::gamma_distribution<>        rgammad     = std::gamma_distribution<>();
+    std::lognormal_distribution<>    rlognormald = std::lognormal_distribution<>();
+    std::exponential_distribution<>  rexpd       = std::exponential_distribution<>();
 
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop;
@@ -255,13 +246,13 @@ public:
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
     void clone_population(
-        std::vector< Agent<TSeq> > & p,
-        bool & d,
-        Model<TSeq> * m = nullptr
+        std::vector< Agent<TSeq> > & other_population,
+        bool & other_directed,
+        Model<TSeq> * other_model = nullptr
     ) const ;
 
     void clone_population(
-        const Model<TSeq> & m
+        const Model<TSeq> & other_model
     );
 
     /**

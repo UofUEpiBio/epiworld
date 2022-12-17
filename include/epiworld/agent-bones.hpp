@@ -91,9 +91,6 @@ private:
     int status_last_changed = -1; ///< Last time the agent was updated.
     int id = -1;
     
-    bool in_queue = false;
-    // size_t actions_queued = 0u;
-    
     std::vector< VirusPtr<TSeq> > viruses;
     epiworld_fast_uint n_viruses = 0u;
     epiworld_fast_uint n_exposures = 0u;

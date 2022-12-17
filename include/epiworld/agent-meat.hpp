@@ -31,8 +31,6 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     status = p.status;
     id     = p.id;
     
-    in_queue = p.in_queue;
-
     // Dealing with the virus
     viruses.reserve(p.get_n_viruses());
     const auto & viruses_ = p.get_viruses();
@@ -526,6 +524,9 @@ inline void Agent<TSeq>::reset()
     n_tools = 0u;
 
     this->status = 0u;
+    this->status_prev = 0u;
+
+    this->status_last_changed = -1;
     
 }
 

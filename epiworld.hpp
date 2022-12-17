@@ -2124,6 +2124,7 @@ public:
 
     UserData() = delete;
     UserData(Model<TSeq> & m) : model(&m) {};
+    UserData(Model<TSeq> * m) : model(m) {};
 
     /**
      * @brief Construct a new User Data object
@@ -2677,6 +2678,7 @@ public:
 
     DataBase() = delete;
     DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
+    DataBase(const DataBase<TSeq> & db);
 
     /**
      * @brief Registering a new variant
@@ -2836,6 +2838,54 @@ inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
     return;
 
 }
+
+template<typename TSeq>
+inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
+    variant_id(db.variant_id),
+    variant_name(db.variant_name),
+    variant_sequence(db.variant_sequence),
+    variant_origin_date(db.variant_origin_date),
+    variant_parent_id(db.variant_parent_id),
+    tool_id(db.tool_id),
+    tool_name(db.tool_name),
+    tool_sequence(db.tool_sequence),
+    tool_origin_date(db.tool_origin_date),
+    seq_hasher(db.seq_hasher),
+    seq_writer(db.seq_writer),
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    today_variant(db.today_variant),
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    today_tool(db.today_tool),
+    // {Susceptible, Infected, etc.}
+    today_total(db.today_total),
+    // Totals
+    today_total_nvariants_active(db.today_total_nvariants_active),
+    sampling_freq(db.sampling_freq),
+    // Variants history
+    hist_variant_date(db.hist_variant_date),
+    hist_variant_id(db.hist_variant_id),
+    hist_variant_status(db.hist_variant_status),
+    hist_variant_counts(db.hist_variant_counts),
+    // Tools history
+    hist_tool_date(db.hist_tool_date),
+    hist_tool_id(db.hist_tool_id),
+    hist_tool_status(db.hist_tool_status),
+    hist_tool_counts(db.hist_tool_counts),
+    // Overall hist
+    hist_total_date(db.hist_total_date),
+    hist_total_nvariants_active(db.hist_total_nvariants_active),
+    hist_total_status(db.hist_total_status),
+    hist_total_counts(db.hist_total_counts),
+    hist_transition_matrix(db.hist_transition_matrix),
+    // Transmission network
+    transmission_date(db.transmission_date),
+    transmission_source(db.transmission_source),
+    transmission_target(db.transmission_target),
+    transmission_variant(db.transmission_variant),
+    transmission_source_exposure_date(db.transmission_source_exposure_date),
+    transition_matrix(db.transition_matrix),
+    user_data(nullptr)
+{}
 
 template<typename TSeq>
 inline Model<TSeq> * DataBase<TSeq>::get_model() {
@@ -3315,12 +3365,19 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
+        #ifdef _OPENMP
+            "thread" << "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
+        #else
             "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
+        #endif
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_variant_info <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 id << " \"" <<
                 variant_name[id] << "\" " <<
                 seq_writer(variant_sequence[id]) << " " <<
@@ -3335,10 +3392,17 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant(fn_variant_hist, std::ios_base::out);
         
         file_variant <<
+            #ifdef _OPENMP
+            "thread "<< "date " << "id " << "status " << "n\n";
+            #else
             "date " << "id " << "status " << "n\n";
+            #endif
 
         for (epiworld_fast_uint i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
                 model->status_labels[hist_variant_status[i]] << " " <<
@@ -3350,12 +3414,18 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
 
         file_tool_info <<
+            #ifdef _OPENMP
+            "thread " << 
+            #endif
             "id " << "tool_name " << "tool_sequence " << "date_recorded\n";
 
         for (const auto & t : tool_id)
         {
             int id = t.second;
             file_tool_info <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 id << " \"" <<
                 tool_name[id] << "\" " <<
                 seq_writer(tool_sequence[id]) << " " <<
@@ -3369,10 +3439,16 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_hist(fn_tool_hist, std::ios_base::out);
         
         file_tool_hist <<
+            #ifdef _OPENMP
+            "thread " << 
+            #endif
             "date " << "id " << "status " << "n\n";
 
         for (epiworld_fast_uint i = 0; i < hist_tool_id.size(); ++i)
             file_tool_hist <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 hist_tool_date[i] << " " <<
                 hist_tool_id[i] << " " <<
                 model->status_labels[hist_tool_status[i]] << " " <<
@@ -3384,10 +3460,16 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_total(fn_total_hist, std::ios_base::out);
 
         file_total <<
+            #ifdef _OPENMP
+            "thread " << 
+            #endif
             "date " << "nvariants " << "status " << "counts\n";
 
         for (epiworld_fast_uint i = 0; i < hist_total_date.size(); ++i)
             file_total <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
                 model->status_labels[hist_total_status[i]] << "\" " << 
@@ -3398,10 +3480,16 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_transmission(fn_transmission, std::ios_base::out);
         file_transmission <<
+            #ifdef _OPENMP
+            omp_get_thread_num() << " " <<
+            #endif
             "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
         for (epiworld_fast_uint i = 0; i < transmission_target.size(); ++i)
             file_transmission <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 transmission_date[i] << " " <<
                 transmission_variant[i] << " " <<
                 transmission_source_exposure_date[i] << " " <<
@@ -3414,6 +3502,9 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_transition(fn_transition, std::ios_base::out);
         file_transition <<
+            #ifdef _OPENMP
+            omp_get_thread_num() << " " <<
+            #endif
             "date " << "from " << "to " << "counts\n";
 
         int ns = model->nstatus;
@@ -3424,6 +3515,9 @@ inline void DataBase<TSeq>::write_data(
             for (int from = 0u; from < ns; ++from)
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
+                        #ifdef _OPENMP
+                        omp_get_thread_num() << " " <<
+                        #endif
                         i << " " <<
                         model->status_labels[from] << " " <<
                         model->status_labels[to] << " " <<
@@ -3506,11 +3600,8 @@ inline void DataBase<TSeq>::reset()
     hist_transition_matrix.clear();
 
     today_total_nvariants_active = 0;
-
     today_total.clear();
-    
     today_variant.clear();
-
     today_tool.clear();
 
 }
@@ -3599,10 +3690,17 @@ inline void DataBase<TSeq>::reproductive_number(
 
     std::ofstream fn_file(fn, std::ios_base::out);
 
-    fn_file << "variant source source_exposure_date rt\n";
+    fn_file << 
+        #ifdef _OPENMP
+        "thread " <<
+        #endif
+        "variant source source_exposure_date rt\n";
 
     for (auto & m : map)
         fn_file <<
+            #ifdef _OPENMP
+            omp_get_thread_num() << " " <<
+            #endif
             m.first[0u] << " " <<
             m.first[1u] << " " <<
             m.first[2u] << " " <<
@@ -4830,20 +4928,11 @@ private:
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
     
-    std::shared_ptr< std::uniform_real_distribution<> > runifd =
-        std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
-
-    std::shared_ptr< std::normal_distribution<> > rnormd =
-        std::make_shared< std::normal_distribution<> >(0.0);
-
-    std::shared_ptr< std::gamma_distribution<> > rgammad = 
-        std::make_shared< std::gamma_distribution<> >();
-
-    std::shared_ptr< std::lognormal_distribution<> > rlognormald =
-        std::make_shared< std::lognormal_distribution<> >();
-
-    std::shared_ptr< std::exponential_distribution<> > rexpd =
-        std::make_shared< std::exponential_distribution<> >();
+    std::uniform_real_distribution<> runifd      = std::uniform_real_distribution<> (0.0, 1.0);
+    std::normal_distribution<>       rnormd      = std::normal_distribution<>(0.0);
+    std::gamma_distribution<>        rgammad     = std::gamma_distribution<>();
+    std::lognormal_distribution<>    rlognormald = std::lognormal_distribution<>();
+    std::exponential_distribution<>  rexpd       = std::exponential_distribution<>();
 
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop;
@@ -4946,13 +5035,13 @@ public:
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
     void clone_population(
-        std::vector< Agent<TSeq> > & p,
-        bool & d,
-        Model<TSeq> * m = nullptr
+        std::vector< Agent<TSeq> > & other_population,
+        bool & other_directed,
+        Model<TSeq> * other_model = nullptr
     ) const ;
 
     void clone_population(
-        const Model<TSeq> & m
+        const Model<TSeq> & other_model
     );
 
     /**
@@ -5081,7 +5170,8 @@ public:
         epiworld_fast_uint nexperiments,
         std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
         bool reset = true,
-        bool verbose = true
+        bool verbose = true,
+        int nthreads = 1
         );
     ///@}
 
@@ -5380,7 +5470,7 @@ public:
  * @param transition 
  * @return std::function<void(size_t,Model<TSeq>*)> 
  */
-template<typename TSeq>
+template<typename TSeq = int>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt,
     bool total_hist,
@@ -5723,6 +5813,7 @@ template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     name(model.name),
     db(model.db),
+    directed(model.directed),
     viruses(model.viruses),
     prevalence_virus(model.prevalence_virus),
     prevalence_virus_as_proportion(model.prevalence_virus_as_proportion),
@@ -5735,8 +5826,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     prevalence_entity(model.prevalence_entity),
     prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
     entities_dist_funs(model.entities_dist_funs),
-    engine(model.engine),
-    runifd(model.runifd),
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
@@ -5749,7 +5838,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     global_action_functions(model.global_action_functions),
     global_action_dates(model.global_action_dates),
     queue(model.queue),
-    use_queuing(model.use_queuing)
+    use_queuing(model.use_queuing),
+    array_double_tmp(model.array_double_tmp.size()),
+    array_virus_tmp(model.array_virus_tmp.size())
 {
 
     // Pointing to the right place
@@ -5761,6 +5852,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         directed,
         this
         );
+
+    population_data = model.population_data;
+    population_data_n_features = model.population_data_n_features;
 
     // Figure out the queuing
     if (use_queuing)
@@ -5807,34 +5901,36 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     rewire_prop(std::move(model.rewire_prop)),
     parameters(std::move(model.parameters)),
     // Others
-    ndays(std::move(model.ndays)),
+    ndays(model.ndays),
     pb(std::move(model.pb)),
     status_fun(std::move(model.status_fun)),
     status_labels(std::move(model.status_labels)),
     nstatus(model.nstatus),
-    verbose(std::move(model.verbose)),
-    initialized(std::move(model.initialized)),
+    verbose(model.verbose),
+    initialized(model.initialized),
     current_date(std::move(model.current_date)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
     queue(std::move(model.queue)),
-    use_queuing(model.use_queuing)
+    use_queuing(model.use_queuing),
+    array_double_tmp(model.array_double_tmp.size()),
+    array_virus_tmp(model.array_virus_tmp.size())
 {
 
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
-    std::vector< Agent<TSeq> > & p,
-    bool & d,
-    Model<TSeq> *
+    std::vector< Agent<TSeq> > & other_population,
+    bool & other_directed,
+    Model<TSeq> * other_model
 ) const {
 
     // Copy and clean
-    p     = population;
-    d     = directed;
+    other_population = population;
+    other_directed   = directed;
 
-    for (auto & p: p)
+    for (auto & p: other_population)
         p.neighbors.clear();
     
     // Relinking individuals
@@ -5842,15 +5938,16 @@ inline void Model<TSeq>::clone_population(
     {
         // Making room
         const Agent<TSeq> & agent_this = population[i];
-        Agent<TSeq> & agent_res        = p[i];
+        Agent<TSeq> & agent_res        = other_population[i];
 
-        // Readding
+        // Re-adding: The agent_this.neighbors has the neighbors in the other model.
         std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
         for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
-            int loc = p[neigh[n]->get_id()].get_id();
-            agent_res.add_neighbor(&p[loc], true, true);
+            int loc = other_population[neigh[n]->get_id()].get_id();
+            agent_res.add_neighbor(&other_population[loc], true, true);
+            agent_res.model = other_model;
 
         }
 
@@ -5858,11 +5955,11 @@ inline void Model<TSeq>::clone_population(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::clone_population(const Model<TSeq> & m)
+inline void Model<TSeq>::clone_population(const Model<TSeq> & other_model)
 {
-    m.clone_population(
-        population,
-        directed,
+    other_model.clone_population(
+        this->population,
+        this->directed,
         this
     );
 }
@@ -5991,6 +6088,7 @@ inline void Model<TSeq>::init(
 
     initialized = true;
 
+    // This also clears the queue
     queue.set_model(this);
 
     // Checking whether the proposed status in/out/removed
@@ -6035,8 +6133,6 @@ inline void Model<TSeq>::init(
 
     // Starting first infection and tools
     reset();
-
-
 
 }
 
@@ -6262,66 +6358,66 @@ inline std::mt19937 * Model<TSeq>::get_rand_endgine()
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return (runifd->operator())(*engine);
+    return runifd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return ((runifd->operator())(*engine) * (b - a) + a);
+    return runifd(*engine) * (b - a) + a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm() {
     // CHECK_INIT()
-    return (rnormd->operator())(*engine);
+    return rnormd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm(epiworld_double mean, epiworld_double sd) {
     // CHECK_INIT()
-    return (rnormd->operator()(*engine)) * sd + mean;
+    return rnormd(*engine) * sd + mean;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma() {
-    return (rgammad->operator())(*engine);
+    return rgammad(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
-    auto old_param = rgammad->param();
-    rgammad->param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = (rgammad->operator())(*engine);
-    rgammad->param(old_param);
+    auto old_param = rgammad.param();
+    rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
+    epiworld_double ans = rgammad(*engine);
+    rgammad.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp() {
-    return (rexpd->operator())(*engine);
+    return rexpd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
-    auto old_param = rexpd->param();
-    rexpd->param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = (rexpd->operator())(*engine);
-    rexpd->param(old_param);
+    auto old_param = rexpd.param();
+    rexpd.param(std::exponential_distribution<>::param_type(lambda));
+    epiworld_double ans = rexpd(*engine);
+    rexpd.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal() {
-    return (rlognormald->operator())(*engine);
+    return rlognormald(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
-    auto old_param = rlognormald->param();
-    rlognormald->param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = (rlognormald->operator())(*engine);
-    rlognormald->param(old_param);
+    auto old_param = rlognormald.param();
+    rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
+    epiworld_double ans = rlognormald(*engine);
+    rlognormald.param(old_param);
     return ans;
 }
 
@@ -6719,7 +6815,8 @@ inline void Model<TSeq>::run_multiple(
     epiworld_fast_uint nexperiments,
     std::function<void(size_t,Model<TSeq>*)> fun,
     bool reset,
-    bool verbose
+    bool verbose,
+    int nthreads
 )
 {
 
@@ -6729,6 +6826,92 @@ inline void Model<TSeq>::run_multiple(
     bool old_verb = this->verbose;
     verbose_off();
 
+    #ifdef _OPENMP
+    // Generating copies of the model
+    std::vector< Model<TSeq> > these(std::max(nthreads - 1, 0), *this);
+
+    // Figuring out how many replicates
+    std::vector< size_t > nreplicates(nthreads, 0);
+    std::vector< size_t > nreplicates_csum(nthreads, 0);
+    size_t sums = 0u;
+    for (int i = 0; i < nthreads; ++i)
+    {
+        nreplicates[i] = static_cast<epiworld_fast_uint>(
+            std::floor(nexperiments/nthreads)
+            );
+        
+        // This takes the cumsum
+        nreplicates_csum[i] = sums;
+
+        sums += nreplicates[i];
+    }
+
+    if (sums < nexperiments)
+        nreplicates[nthreads - 1] += (nexperiments - sums);
+
+    Progress pb_multiple(
+        nreplicates[0u],
+        EPIWORLD_PROGRESS_BAR_WIDTH
+        );
+
+    if (verbose)
+    {
+
+        printf_epiworld(
+            "Starting multiple runs (%i) using %i thread(s)\n", 
+            static_cast<int>(nexperiments),
+            static_cast<int>(nthreads)
+        );
+
+        pb_multiple.start();
+
+    }
+
+    #pragma omp parallel shared(these, nreplicates, nreplicates_csum) \
+        firstprivate(nexperiments, nthreads, fun, reset)
+    {
+
+        auto iam = omp_get_thread_num();
+        for (epiworld_fast_uint n = 0u; n < nreplicates[iam]; ++n)
+        {
+            
+            if (iam == 0)
+            {
+
+                run();
+
+                if (fun)
+                    fun(n, this);
+
+                if ((n < (nreplicates[iam] - 1u)) && reset)
+                    this->reset();
+
+                // Only the first one prints
+                if (verbose)
+                    pb_multiple.next();
+
+            } else {
+
+                these[iam - 1].run();
+
+                if (fun)
+                    fun(
+                        n + nreplicates_csum[iam],
+                        &these[iam - 1]
+                        );
+
+                if ((n < (nreplicates[iam] - 1u)) && reset)
+                    these[iam - 1].reset();
+
+            }
+        
+        }
+    }
+
+    // Adjusting the number of replicates
+    n_replicates += (nexperiments - nreplicates[0u]);
+
+    #else
     Progress pb_multiple(
         nexperiments,
         EPIWORLD_PROGRESS_BAR_WIDTH
@@ -6761,6 +6944,7 @@ inline void Model<TSeq>::run_multiple(
             pb_multiple.next();
     
     }
+    #endif
 
     if (verbose)
         pb_multiple.end();
@@ -8729,8 +8913,8 @@ private:
 
     int date = -99;
     int id   = -99;
-    std::shared_ptr<std::string> tool_name = nullptr;
-    std::shared_ptr<TSeq> sequence         = nullptr;
+    std::shared_ptr<std::string> tool_name     = nullptr;
+    std::shared_ptr<TSeq> sequence             = nullptr;
     ToolFun<TSeq> susceptibility_reduction_fun = nullptr;
     ToolFun<TSeq> transmission_reduction_fun   = nullptr;
     ToolFun<TSeq> recovery_enhancer_fun        = nullptr;
@@ -10276,9 +10460,6 @@ private:
     int status_last_changed = -1; ///< Last time the agent was updated.
     int id = -1;
     
-    bool in_queue = false;
-    // size_t actions_queued = 0u;
-    
     std::vector< VirusPtr<TSeq> > viruses;
     epiworld_fast_uint n_viruses = 0u;
     epiworld_fast_uint n_exposures = 0u;
@@ -10773,8 +10954,6 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     status = p.status;
     id     = p.id;
     
-    in_queue = p.in_queue;
-
     // Dealing with the virus
     viruses.reserve(p.get_n_viruses());
     const auto & viruses_ = p.get_viruses();
@@ -11268,6 +11447,9 @@ inline void Agent<TSeq>::reset()
     n_tools = 0u;
 
     this->status = 0u;
+    this->status_prev = 0u;
+
+    this->status_last_changed = -1;
     
 }
 

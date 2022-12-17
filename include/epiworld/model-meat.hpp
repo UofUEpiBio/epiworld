@@ -378,8 +378,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     prevalence_entity(model.prevalence_entity),
     prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
     entities_dist_funs(model.entities_dist_funs),
-    engine(model.engine),
-    runifd(model.runifd),
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
@@ -455,13 +453,13 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     rewire_prop(std::move(model.rewire_prop)),
     parameters(std::move(model.parameters)),
     // Others
-    ndays(std::move(model.ndays)),
+    ndays(model.ndays),
     pb(std::move(model.pb)),
     status_fun(std::move(model.status_fun)),
     status_labels(std::move(model.status_labels)),
     nstatus(model.nstatus),
-    verbose(std::move(model.verbose)),
-    initialized(std::move(model.initialized)),
+    verbose(model.verbose),
+    initialized(model.initialized),
     current_date(std::move(model.current_date)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
@@ -475,16 +473,16 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
-    std::vector< Agent<TSeq> > & p,
-    bool & d,
-    Model<TSeq> * model
+    std::vector< Agent<TSeq> > & other_population,
+    bool & other_directed,
+    Model<TSeq> * other_model
 ) const {
 
     // Copy and clean
-    p     = population;
-    d     = directed;
+    other_population = population;
+    other_directed   = directed;
 
-    for (auto & p: p)
+    for (auto & p: other_population)
         p.neighbors.clear();
     
     // Relinking individuals
@@ -492,16 +490,16 @@ inline void Model<TSeq>::clone_population(
     {
         // Making room
         const Agent<TSeq> & agent_this = population[i];
-        Agent<TSeq> & agent_res        = p[i];
+        Agent<TSeq> & agent_res        = other_population[i];
 
-        // Readding
+        // Re-adding: The agent_this.neighbors has the neighbors in the other model.
         std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
         for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
         {
             // Point to the right neighbors
-            int loc = p[neigh[n]->get_id()].get_id();
-            agent_res.add_neighbor(&p[loc], true, true);
-            agent_res.model = model;
+            int loc = other_population[neigh[n]->get_id()].get_id();
+            agent_res.add_neighbor(&other_population[loc], true, true);
+            agent_res.model = other_model;
 
         }
 
@@ -509,11 +507,11 @@ inline void Model<TSeq>::clone_population(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::clone_population(const Model<TSeq> & m)
+inline void Model<TSeq>::clone_population(const Model<TSeq> & other_model)
 {
-    m.clone_population(
-        population,
-        directed,
+    other_model.clone_population(
+        this->population,
+        this->directed,
         this
     );
 }
@@ -642,6 +640,7 @@ inline void Model<TSeq>::init(
 
     initialized = true;
 
+    // This also clears the queue
     queue.set_model(this);
 
     // Checking whether the proposed status in/out/removed
@@ -686,8 +685,6 @@ inline void Model<TSeq>::init(
 
     // Starting first infection and tools
     reset();
-
-
 
 }
 
@@ -913,66 +910,66 @@ inline std::mt19937 * Model<TSeq>::get_rand_endgine()
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return (runifd->operator())(*engine);
+    return runifd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return ((runifd->operator())(*engine) * (b - a) + a);
+    return runifd(*engine) * (b - a) + a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm() {
     // CHECK_INIT()
-    return (rnormd->operator())(*engine);
+    return rnormd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm(epiworld_double mean, epiworld_double sd) {
     // CHECK_INIT()
-    return (rnormd->operator()(*engine)) * sd + mean;
+    return rnormd(*engine) * sd + mean;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma() {
-    return (rgammad->operator())(*engine);
+    return rgammad(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
-    auto old_param = rgammad->param();
-    rgammad->param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = (rgammad->operator())(*engine);
-    rgammad->param(old_param);
+    auto old_param = rgammad.param();
+    rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
+    epiworld_double ans = rgammad(*engine);
+    rgammad.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp() {
-    return (rexpd->operator())(*engine);
+    return rexpd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
-    auto old_param = rexpd->param();
-    rexpd->param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = (rexpd->operator())(*engine);
-    rexpd->param(old_param);
+    auto old_param = rexpd.param();
+    rexpd.param(std::exponential_distribution<>::param_type(lambda));
+    epiworld_double ans = rexpd(*engine);
+    rexpd.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal() {
-    return (rlognormald->operator())(*engine);
+    return rlognormald(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
-    auto old_param = rlognormald->param();
-    rlognormald->param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = (rlognormald->operator())(*engine);
-    rlognormald->param(old_param);
+    auto old_param = rlognormald.param();
+    rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
+    epiworld_double ans = rlognormald(*engine);
+    rlognormald.param(old_param);
     return ans;
 }
 
@@ -1384,17 +1381,6 @@ inline void Model<TSeq>::run_multiple(
     #ifdef _OPENMP
     // Generating copies of the model
     std::vector< Model<TSeq> > these(std::max(nthreads - 1, 0), *this);
-    for (auto & m : these)
-    {
-        m.clone_population(*this);
-
-        // Setting a separate seed to each one
-        m.initialized = false;
-        m.init(
-            this->ndays,
-            std::floor(this->runif() * std::numeric_limits<size_t>::max())
-            );
-    }
 
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
@@ -1424,7 +1410,7 @@ inline void Model<TSeq>::run_multiple(
     {
 
         printf_epiworld(
-            "Starting multiple runs (%i) using %i threads\n", 
+            "Starting multiple runs (%i) using %i thread(s)\n", 
             static_cast<int>(nexperiments),
             static_cast<int>(nthreads)
         );
@@ -1434,7 +1420,7 @@ inline void Model<TSeq>::run_multiple(
     }
 
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum) \
-        firstprivate(nexperiments, nthreads, fun)
+        firstprivate(nexperiments, nthreads, fun, reset)
     {
 
         auto iam = omp_get_thread_num();

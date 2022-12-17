@@ -551,12 +551,19 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
+        #ifdef _OPENMP
+            "thread" << "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
+        #else
             "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
+        #endif
 
         for (const auto & v : variant_id)
         {
             int id = v.second;
             file_variant_info <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 id << " \"" <<
                 variant_name[id] << "\" " <<
                 seq_writer(variant_sequence[id]) << " " <<
@@ -571,10 +578,17 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant(fn_variant_hist, std::ios_base::out);
         
         file_variant <<
+            #ifdef _OPENMP
+            "thread "<< "date " << "id " << "status " << "n\n";
+            #else
             "date " << "id " << "status " << "n\n";
+            #endif
 
         for (epiworld_fast_uint i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
                 model->status_labels[hist_variant_status[i]] << " " <<
@@ -586,12 +600,18 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
 
         file_tool_info <<
+            #ifdef _OPENMP
+            "thread " << 
+            #endif
             "id " << "tool_name " << "tool_sequence " << "date_recorded\n";
 
         for (const auto & t : tool_id)
         {
             int id = t.second;
             file_tool_info <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 id << " \"" <<
                 tool_name[id] << "\" " <<
                 seq_writer(tool_sequence[id]) << " " <<
@@ -605,10 +625,16 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_tool_hist(fn_tool_hist, std::ios_base::out);
         
         file_tool_hist <<
+            #ifdef _OPENMP
+            "thread " << 
+            #endif
             "date " << "id " << "status " << "n\n";
 
         for (epiworld_fast_uint i = 0; i < hist_tool_id.size(); ++i)
             file_tool_hist <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 hist_tool_date[i] << " " <<
                 hist_tool_id[i] << " " <<
                 model->status_labels[hist_tool_status[i]] << " " <<
@@ -620,10 +646,16 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_total(fn_total_hist, std::ios_base::out);
 
         file_total <<
+            #ifdef _OPENMP
+            "thread " << 
+            #endif
             "date " << "nvariants " << "status " << "counts\n";
 
         for (epiworld_fast_uint i = 0; i < hist_total_date.size(); ++i)
             file_total <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
                 model->status_labels[hist_total_status[i]] << "\" " << 
@@ -634,10 +666,16 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_transmission(fn_transmission, std::ios_base::out);
         file_transmission <<
+            #ifdef _OPENMP
+            omp_get_thread_num() << " " <<
+            #endif
             "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
         for (epiworld_fast_uint i = 0; i < transmission_target.size(); ++i)
             file_transmission <<
+                #ifdef _OPENMP
+                omp_get_thread_num() << " " <<
+                #endif
                 transmission_date[i] << " " <<
                 transmission_variant[i] << " " <<
                 transmission_source_exposure_date[i] << " " <<
@@ -650,6 +688,9 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_transition(fn_transition, std::ios_base::out);
         file_transition <<
+            #ifdef _OPENMP
+            omp_get_thread_num() << " " <<
+            #endif
             "date " << "from " << "to " << "counts\n";
 
         int ns = model->nstatus;
@@ -660,6 +701,9 @@ inline void DataBase<TSeq>::write_data(
             for (int from = 0u; from < ns; ++from)
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
+                        #ifdef _OPENMP
+                        omp_get_thread_num() << " " <<
+                        #endif
                         i << " " <<
                         model->status_labels[from] << " " <<
                         model->status_labels[to] << " " <<
@@ -742,11 +786,8 @@ inline void DataBase<TSeq>::reset()
     hist_transition_matrix.clear();
 
     today_total_nvariants_active = 0;
-
     today_total.clear();
-    
     today_variant.clear();
-
     today_tool.clear();
 
 }
@@ -835,10 +876,17 @@ inline void DataBase<TSeq>::reproductive_number(
 
     std::ofstream fn_file(fn, std::ios_base::out);
 
-    fn_file << "variant source source_exposure_date rt\n";
+    fn_file << 
+        #ifdef _OPENMP
+        "thread " <<
+        #endif
+        "variant source source_exposure_date rt\n";
 
     for (auto & m : map)
         fn_file <<
+            #ifdef _OPENMP
+            omp_get_thread_num() << " " <<
+            #endif
             m.first[0u] << " " <<
             m.first[1u] << " " <<
             m.first[2u] << " " <<

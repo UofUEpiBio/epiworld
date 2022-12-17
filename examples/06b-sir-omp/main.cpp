@@ -6,8 +6,13 @@ using namespace epiworld;
 
 int main(int argc, char * argv[]) {
 
-    auto nthreads = strtol(argv[1], nullptr, 0);
-    auto nsims    = strtol(argv[2], nullptr, 0);
+    auto nthreads = 2;
+    auto nsims    = 10;
+    if (argc == 3)
+    {
+        nthreads = strtol(argv[1], nullptr, 0);
+        nsims    = strtol(argv[2], nullptr, 0);
+    }
 
     omp_set_num_threads(nthreads);
     epimodels::ModelSIR<> model(
@@ -18,7 +23,7 @@ int main(int argc, char * argv[]) {
     );
 
     model.agents_from_adjlist(
-        rgraph_smallworld(100000, 4, .01, false, model)
+        rgraph_smallworld(10000, 4, .01, false, model)
     );
 
     auto sav = make_save_run<int>(std::string("%03lu-episim.txt"));
