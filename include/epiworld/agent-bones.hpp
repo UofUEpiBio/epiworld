@@ -78,7 +78,6 @@ class Agent {
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
-    Model<TSeq> * model;
     
     std::vector< Agent<TSeq> * > neighbors;
     std::vector< Entity<TSeq> * > entities;
@@ -93,7 +92,6 @@ private:
     
     std::vector< VirusPtr<TSeq> > viruses;
     epiworld_fast_uint n_viruses = 0u;
-    epiworld_fast_uint n_exposures = 0u;
 
     std::vector< ToolPtr<TSeq> > tools;
     epiworld_fast_uint n_tools = 0u;
@@ -117,7 +115,9 @@ private:
 public:
 
     Agent();
+    Agent(Agent<TSeq> && p);
     Agent(const Agent<TSeq> & p);
+    Agent<TSeq> & operator=(const Agent<TSeq> & other_agent);
 
     /**
      * @name Add/Remove Virus/Tool
@@ -132,78 +132,91 @@ public:
     ///@{
     void add_tool(
         ToolPtr<TSeq> tool,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
         Tool<TSeq> tool,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_virus(
         VirusPtr<TSeq> virus,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_virus(
         Virus<TSeq> virus,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_entity(
         Entity<TSeq> & entity,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void rm_tool(
         epiworld_fast_uint tool_idx,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_tool(
         ToolPtr<TSeq> & tool,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_virus(
         epiworld_fast_uint virus_idx,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_virus(
         VirusPtr<TSeq> & virus,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         epiworld_fast_uint entity_idx,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         Entity<TSeq> & entity,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_agent_by_virus(
         epiworld_fast_uint virus_idx,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     ); ///< Agent removed by virus
 
     void rm_agent_by_virus(
         VirusPtr<TSeq> & virus,
+        Model<TSeq> * model,
         epiworld_fast_int status_new = -99,
         epiworld_fast_int queue = -99
     ); ///< Agent removed by virus
@@ -216,16 +229,13 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
     ///@}
 
     int get_id() const; ///< Id of the individual
-    
-    std::mt19937 * get_rand_endgine();
-    Model<TSeq> * get_model(); 
 
     VirusPtr<TSeq> & get_virus(int i);
     Viruses<TSeq> get_viruses();
@@ -247,6 +257,7 @@ public:
     std::vector< Agent<TSeq> * > & get_neighbors();
 
     void change_status(
+        Model<TSeq> * model,
         epiworld_fast_uint new_status,
         epiworld_fast_int queue = 0
         );
@@ -260,7 +271,7 @@ public:
     bool has_virus(epiworld_fast_uint t) const;
     bool has_virus(std::string name) const;
 
-    void print(bool compressed = false) const;
+    void print(Model<TSeq> * model, bool compressed = false) const;
 
     /**
      * @brief Access the j-th column of the agent
@@ -278,8 +289,8 @@ public:
      * @return double& 
      */
     ///@{
-    double & operator()(size_t j);
-    double & operator[](size_t j);
+    // double & operator()(size_t j);
+    // double & operator[](size_t j);
     ///@}
 
     Entities<TSeq> get_entities();

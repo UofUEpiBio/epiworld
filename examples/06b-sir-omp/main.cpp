@@ -27,16 +27,8 @@ int main(int argc, char * argv[]) {
     );
 
     auto sav = make_save_run<int>(std::string("%03lu-episim.txt"));
-    auto start = std::chrono::high_resolution_clock::now();
     model.init(100, 222);
     model.run_multiple(nsims, sav, true, true, nthreads);
-    auto end = std::chrono::high_resolution_clock::now();
-
-    
-    printf(
-        "Elapsed time: %ld milliseconds\n",
-        (std::chrono::duration_cast<std::chrono::milliseconds>(end - start)).count()
-    );
 
     model.print();
 

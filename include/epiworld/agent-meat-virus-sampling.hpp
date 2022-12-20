@@ -58,9 +58,9 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                             
                         /* And it is a function of susceptibility_reduction as well */ 
                         m->array_double_tmp[nvariants_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v)) * 
-                            v->get_prob_infecting() * 
-                            (1.0 - neighbor->get_transmission_reduction(v)) 
+                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                            v->get_prob_infecting(m) * 
+                            (1.0 - neighbor->get_transmission_reduction(v, m)) 
                             ; 
                     
                         m->array_virus_tmp[nvariants_tmp++] = &(*v);
@@ -78,7 +78,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 if (which < 0)
                     return;
 
-                p->add_virus(*m->array_virus_tmp[which]);
+                p->add_virus(*m->array_virus_tmp[which], m);
 
                 return; 
             };
@@ -147,9 +147,9 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                             
                         /* And it is a function of susceptibility_reduction as well */ 
                         m->array_double_tmp[nvariants_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v)) * 
-                            v->get_prob_infecting() * 
-                            (1.0 - neighbor->get_transmission_reduction(v)) 
+                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                            v->get_prob_infecting(m) * 
+                            (1.0 - neighbor->get_transmission_reduction(v, m)) 
                             ; 
                     
                         m->array_virus_tmp[nvariants_tmp++] = &(*v);
@@ -167,7 +167,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 if (which < 0)
                     return;
 
-                p->add_virus(*m->array_virus_tmp[which]); 
+                p->add_virus(*m->array_virus_tmp[which], m); 
 
                 return;
 
@@ -227,9 +227,9 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                             
                         /* And it is a function of susceptibility_reduction as well */ 
                         m->array_double_tmp[nvariants_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v)) * 
-                            v->get_prob_infecting() * 
-                            (1.0 - neighbor->get_transmission_reduction(v)) 
+                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                            v->get_prob_infecting(m) * 
+                            (1.0 - neighbor->get_transmission_reduction(v, m)) 
                             ; 
                     
                         m->array_virus_tmp[nvariants_tmp++] = &(*v);
@@ -316,9 +316,9 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                             
                         /* And it is a function of susceptibility_reduction as well */ 
                         m->array_double_tmp[nvariants_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v)) * 
-                            v->get_prob_infecting() * 
-                            (1.0 - neighbor->get_transmission_reduction(v)) 
+                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                            v->get_prob_infecting(m) * 
+                            (1.0 - neighbor->get_transmission_reduction(v, m)) 
                             ; 
                     
                         m->array_virus_tmp[nvariants_tmp++] = &(*v);
@@ -390,9 +390,9 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
                 
             /* And it is a function of susceptibility_reduction as well */ 
             m->array_double_tmp[nvariants_tmp] =
-                (1.0 - p->get_susceptibility_reduction(v)) * 
-                v->get_prob_infecting() * 
-                (1.0 - neighbor->get_transmission_reduction(v)) 
+                (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                v->get_prob_infecting(m) * 
+                (1.0 - neighbor->get_transmission_reduction(v, m)) 
                 ; 
         
             m->array_virus_tmp[nvariants_tmp++] = &(*v);

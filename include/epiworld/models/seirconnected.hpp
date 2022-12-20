@@ -198,7 +198,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     _tracked_agents_infected_next->push_back(p);
                     *_tracked_ninfected_next += 1;
 
-                    p->change_status(ModelSEIRCONN<TSeq>::INFECTED);
+                    p->change_status(m, ModelSEIRCONN<TSeq>::INFECTED);
 
                     return;
 
@@ -212,7 +212,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 {
 
                     *_tracked_ninfected_next -= 1;
-                    p->rm_virus(0);
+                    p->rm_virus(0, m);
                     return;
 
                 }

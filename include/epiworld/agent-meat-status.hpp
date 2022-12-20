@@ -33,7 +33,7 @@ inline void default_update_susceptible(
     if (virus == nullptr)
         return;
 
-    p->add_virus(*virus); 
+    p->add_virus(*virus, m); 
 
     return;
 
@@ -55,11 +55,11 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 
         // Die
         m->array_double_tmp[n_events++] = 
-            v->get_prob_death() * (1.0 - p->get_death_reduction(v)); 
+            v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
 
         // Recover
         m->array_double_tmp[n_events++] = 
-            1.0 - (1.0 - v->get_prob_recovery()) * (1.0 - p->get_recovery_enhancer(v)); 
+            1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
 
     }
     
@@ -77,12 +77,12 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
     {
 
         size_t which_v = std::ceil(which / 2);
-        p->rm_agent_by_virus(which_v);
+        p->rm_agent_by_virus(which_v, m);
         
     } else {
 
         size_t which_v = std::floor(which / 2);
-        p->rm_virus(which_v);
+        p->rm_virus(which_v, m);
 
     }
 

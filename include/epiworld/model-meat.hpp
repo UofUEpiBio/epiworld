@@ -302,12 +302,12 @@ template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq> *
+    Model<TSeq> * m
 )
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
-        total *= (1.0 - tool->get_susceptibility_reduction(v));
+        total *= (1.0 - tool->get_susceptibility_reduction(v, m));
 
     return 1.0 - total;
     
@@ -317,12 +317,12 @@ template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>*
+    Model<TSeq>* m
 )
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
-        total *= (1.0 - tool->get_transmission_reduction(v));
+        total *= (1.0 - tool->get_transmission_reduction(v, m));
 
     return (1.0 - total);
     
@@ -332,12 +332,12 @@ template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>*
+    Model<TSeq>* m
 )
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
-        total *= (1.0 - tool->get_recovery_enhancer(v));
+        total *= (1.0 - tool->get_recovery_enhancer(v, m));
 
     return 1.0 - total;
     
@@ -347,13 +347,13 @@ template<typename TSeq>
 inline epiworld_double death_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
-    Model<TSeq>* /*m*/
+    Model<TSeq>* m
 ) {
 
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
     {
-        total *= (1.0 - tool->get_death_reduction(v));
+        total *= (1.0 - tool->get_death_reduction(v, m));
     } 
 
     return 1.0 - total;
@@ -395,14 +395,16 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
+    (void) std::string("Copy-copy");
+
     // Pointing to the right place
     db.set_model(*this);
 
     // Removing old neighbors
     model.clone_population(
-        population,
-        directed,
-        this
+        this->population,
+        this->entities,
+        this->directed
         );
 
     population_data = model.population_data;
@@ -469,21 +471,34 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
+    (void) std::string("Copy-move");
+    db.set_model(*this);
+
 }
+
+
 
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
     std::vector< Agent<TSeq> > & other_population,
-    bool & other_directed,
-    Model<TSeq> * other_model
+    std::vector< Entity<TSeq> > & other_entities,
+    bool & other_directed
 ) const {
 
     // Copy and clean
     other_population = population;
+    other_entities   = entities;
     other_directed   = directed;
 
     for (auto & p: other_population)
+    {
+
         p.neighbors.clear();
+        p.entities.clear();
+        p.entities_locations.clear();
+        p.n_entities = 0u;
+
+    }
     
     // Relinking individuals
     for (epiworld_fast_uint i = 0u; i < size(); ++i)
@@ -499,8 +514,25 @@ inline void Model<TSeq>::clone_population(
             // Point to the right neighbors
             int loc = other_population[neigh[n]->get_id()].get_id();
             agent_res.add_neighbor(&other_population[loc], true, true);
-            agent_res.model = other_model;
 
+        }      
+
+    }
+
+    for (size_t i = 0u; i < other_entities.size(); ++i)
+    {
+
+        // Making room
+        const Entity<TSeq> & entity_this  = entities[i];
+        Entity<TSeq> &       entity_other = other_entities[i];
+
+        // Iterating
+        for (const auto & a : entity_this.agents)
+        {
+            entity_other.add_agent(
+                other_population[a->get_id()],
+                const_cast<Model<TSeq> * >(this)
+                );
         }
 
     }
@@ -511,8 +543,8 @@ inline void Model<TSeq>::clone_population(const Model<TSeq> & other_model)
 {
     other_model.clone_population(
         this->population,
-        this->directed,
-        this
+        this->entities,
+        this->directed
     );
 }
 
@@ -554,10 +586,8 @@ inline void Model<TSeq>::agents_empty_graph(
     // Filling the model and ids
     size_t i = 0u;
     for (auto & p : population)
-    {
-        p.model = this;
         p.id    = i++;
-    }
+    
 
 }
 
@@ -629,10 +659,6 @@ inline void Model<TSeq>::init(
 
     // Setting up the number of steps
     this->ndays = ndays;
-
-    // Initializing population
-    for (auto & p : population)
-        p.model = this;
 
     engine->seed(seed);
     array_double_tmp.resize(size()/2, 0.0);
@@ -735,7 +761,12 @@ inline void Model<TSeq>::dist_virus()
                 Agent<TSeq> & agent = population[idx[loc]];
                 
                 // Adding action
-                agent.add_virus(virus, virus->status_init, virus->queue_init);
+                agent.add_virus(
+                    virus,
+                    const_cast<Model<TSeq> * >(this),
+                    virus->status_init,
+                    virus->queue_init
+                    );
 
                 // Adjusting sample
                 nsampled--;
@@ -791,7 +822,11 @@ inline void Model<TSeq>::dist_tools()
             {
                 int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
                 
-                population[idx[loc]].add_tool(tool, tool->status_init, tool->queue_init);
+                population[idx[loc]].add_tool(
+                    tool,
+                    const_cast< Model<TSeq> * >(this),
+                    tool->status_init, tool->queue_init
+                    );
                 
                 nsampled--;
 
@@ -848,7 +883,7 @@ inline void Model<TSeq>::dist_entities()
             {
                 int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
                 
-                population[idx[loc]].add_entity(entity, entity.status_init, entity.queue_init);
+                population[idx[loc]].add_entity(entity, this, entity.status_init, entity.queue_init);
                 
                 nsampled--;
 
@@ -1130,7 +1165,6 @@ template<typename TSeq>
 inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval)
 {
 
-    e.model = this;
     e.id = entities.size();
     entities.push_back(e);
     prevalence_entity.push_back(preval);
@@ -1226,7 +1260,7 @@ inline void Model<TSeq>::load_agents_entities_ties(
                 [who](Entity<TSeq> & e, Model<TSeq>* m) -> void {
 
                     for (auto w : who)
-                        m->population[w].add_entity(e, e.status_init, e.queue_init);
+                        m->population[w].add_entity(e, m, e.status_init, e.queue_init);
                     
                     return;
                     
@@ -1551,7 +1585,7 @@ inline void Model<TSeq>::mutate_variant() {
 
             if (p.n_viruses > 0u)
                 for (auto & v : p.get_viruses())
-                    v->mutate();
+                    v->mutate(this);
 
         }
 
@@ -1564,7 +1598,7 @@ inline void Model<TSeq>::mutate_variant() {
 
             if (p.n_viruses > 0u)
                 for (auto & v : p.get_viruses())
-                    v->mutate();
+                    v->mutate(this);
 
         }
 
@@ -1719,9 +1753,9 @@ inline void Model<TSeq>::reset() {
     if (backup != nullptr)
     {
         backup->clone_population(
-            population,
-            directed,
-            this
+            this->population,
+            this->entities,
+            this->directed
         );
     }
 

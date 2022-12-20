@@ -186,7 +186,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
                 *_tracked_ninfected_next -= 1;
                 epiworld::VirusPtr<int> v = p->get_virus(0u);
-                p->rm_virus(0);
+                p->rm_virus(0, m);
                 return;
 
             }

@@ -31,12 +31,13 @@ inline std::shared_ptr<TSeq> Tool<TSeq>::get_sequence() {
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
 )
 {
 
     if (susceptibility_reduction_fun)
-        return susceptibility_reduction_fun(*this, this->agent, v, agent->get_model());
+        return susceptibility_reduction_fun(*this, this->agent, v, model);
 
     return DEFAULT_TOOL_CONTAGION_REDUCTION;
 
@@ -44,12 +45,13 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
 )
 {
 
     if (transmission_reduction_fun)
-        return transmission_reduction_fun(*this, this->agent, v, agent->get_model());
+        return transmission_reduction_fun(*this, this->agent, v, model);
 
     return DEFAULT_TOOL_TRANSMISSION_REDUCTION;
 
@@ -57,12 +59,13 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
 )
 {
 
     if (recovery_enhancer_fun)
-        return recovery_enhancer_fun(*this, this->agent, v, agent->get_model());
+        return recovery_enhancer_fun(*this, this->agent, v, model);
 
     return DEFAULT_TOOL_RECOVERY_ENHANCER;
 
@@ -70,12 +73,13 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
 )
 {
 
     if (death_reduction_fun)
-        return death_reduction_fun(*this, this->agent, v, agent->get_model());
+        return death_reduction_fun(*this, this->agent, v, model);
 
     return DEFAULT_TOOL_DEATH_REDUCTION;
 

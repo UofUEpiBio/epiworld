@@ -41,7 +41,6 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     // as only the sequence is a shared_ptr itself.
     p->viruses[n_viruses]->set_agent(p, n_viruses);
     p->viruses[n_viruses]->set_date(m->today());
-    p->viruses[n_viruses]->agent_exposure_number = ++p->n_exposures;
 
     #ifdef EPI_DEBUG
     m->get_db().today_variant.at(v->get_id()).at(p->status)++;
@@ -80,7 +79,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * /*m*/)
+inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
 {
 
     Agent<TSeq> * p   = a.agent;    
@@ -97,7 +96,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * /*m*/)
     }
     
     // Calling the virus action over the removed virus
-    v->post_recovery();
+    v->post_recovery(model);
 
     return;
 

@@ -59,7 +59,7 @@ private:
 public:
     Virus(std::string name = "unknown virus");
 
-    void mutate();
+    void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
     const TSeq* get_sequence();
@@ -67,7 +67,6 @@ public:
     
     Agent<TSeq> * get_agent();
     void set_agent(Agent<TSeq> * p, epiworld_fast_uint idx);
-    Model<TSeq> * get_model();
     
     void set_date(int d);
     int get_date() const;
@@ -84,11 +83,11 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_prob_infecting();
-    epiworld_double get_prob_recovery();
-    epiworld_double get_prob_death();
+    epiworld_double get_prob_infecting(Model<TSeq> * model);
+    epiworld_double get_prob_recovery(Model<TSeq> * model);
+    epiworld_double get_prob_death(Model<TSeq> * model);
     
-    void post_recovery();
+    void post_recovery(Model<TSeq> * model);
     void set_post_recovery(PostRecoveryFun<TSeq> fun);
     void set_post_immunity(epiworld_double prob);
     void set_post_immunity(epiworld_double * prob);

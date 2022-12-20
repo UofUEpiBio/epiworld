@@ -1,18 +1,24 @@
 #ifndef EPIWORLD_ENTITY_MEAT_HPP
 #define EPIWORLD_ENTITY_MEAT_HPP
 template<typename TSeq>
-inline void Entity<TSeq>::add_agent(Agent<TSeq> & p)
+inline void Entity<TSeq>::add_agent(
+    Agent<TSeq> & p,
+    Model<TSeq> * model
+    )
 {
 
     // Need to add it to the actions, through the individual
-    p.add_entity(*this);    
+    p.add_entity(*this, model);    
 
 }
 
 template<typename TSeq>
-inline void Entity<TSeq>::add_agent(Agent<TSeq> * p)
+inline void Entity<TSeq>::add_agent(
+    Agent<TSeq> * p,
+    Model<TSeq> * model
+    )
 {
-    p->add_entity(*this);
+    p->add_entity(*this, model);
 }
 
 template<typename TSeq>

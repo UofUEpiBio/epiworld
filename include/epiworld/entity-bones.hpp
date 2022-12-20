@@ -50,7 +50,6 @@ private:
     std::string entity_name = "Unknown entity";
 
     std::vector< epiworld_double > location = {0.0}; ///< An arbitrary vector for location
-    Model<TSeq> * model = nullptr;
 
     epiworld_fast_int status_init = -99;
     epiworld_fast_int status_post = -99;
@@ -65,8 +64,8 @@ public:
     // Entity(Entity && e);
     Entity(std::string name) : entity_name(name) {};
 
-    void add_agent(Agent<TSeq> & p);
-    void add_agent(Agent<TSeq> * p);
+    void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
+    void add_agent(Agent<TSeq> * p, Model<TSeq> * model);
     void rm_agent(size_t idx);
     size_t size() const noexcept;
     void set_location(std::vector< epiworld_double > loc);

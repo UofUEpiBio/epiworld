@@ -53,8 +53,8 @@ public:
     AgentsSample(AgentsSample<TSeq> && a) = delete;      ///< Move constructor
 
     AgentsSample(Model<TSeq> & model_, size_t n, bool truncate = false);
-    AgentsSample(Entity<TSeq> & entity_, size_t n, bool truncate = false);
-    AgentsSample(Agent<TSeq> & agent_, size_t n, bool truncate = false);
+    AgentsSample(Model<TSeq> * model, Entity<TSeq> & entity_, size_t n, bool truncate = false);
+    AgentsSample(Model<TSeq> * model, Agent<TSeq> & agent_, size_t n, bool truncate = false);
 
     ~AgentsSample();
 
@@ -68,7 +68,11 @@ public:
 };
 
 template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n, bool truncate) {
+inline AgentsSample<TSeq>::AgentsSample(
+    Model<TSeq> & model_,
+    size_t n,
+    bool truncate
+    ) {
 
     if (truncate)
     {
@@ -98,7 +102,11 @@ inline AgentsSample<TSeq>::AgentsSample(Model<TSeq> & model_, size_t n, bool tru
 }
 
 template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n, bool truncate) {
+inline AgentsSample<TSeq>::AgentsSample(
+    Model<TSeq> * model,
+    Entity<TSeq> & entity_,
+    size_t n, bool truncate
+    ) {
 
     if (truncate)
     {
@@ -140,10 +148,14 @@ inline AgentsSample<TSeq>::AgentsSample(Entity<TSeq> & entity_, size_t n, bool t
  * it returns an error.
  */
 template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(Agent<TSeq> & agent_, size_t n, bool truncate)
+inline AgentsSample<TSeq>::AgentsSample(
+    Model<TSeq> * model,
+    Agent<TSeq> & agent_,
+    size_t n,
+    bool truncate
+    )
 {
 
-    model       = agent_.model;
     sample_type = SAMPLETYPE::AGENT;
     
     agent = &agent_;

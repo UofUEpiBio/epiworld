@@ -83,16 +83,16 @@ EPI_NEW_UPDATEFUN(update_infected, int)
     epiworld::VirusPtr<int> & v = p->get_virus(0);
     
     // Probability of infection
-    m->array_double_tmp[0u] = p->get_recovery_enhancer(v);
+    m->array_double_tmp[0u] = p->get_recovery_enhancer(v, m);
     m->array_double_tmp[1u] = m->par("Infection Prob");
     
     int which = epiworld::roulette(2, m);
 
     // Becomes recovered
     if (which == 0)
-        p->rm_virus(v);
+        p->rm_virus(v, m);
     else // Becomes infected
-        p->change_status(2);
+        p->change_status(m, 2);
 
     // Nothing happens
     return;
@@ -112,8 +112,8 @@ EPI_NEW_UPDATEFUN(update_susceptible, int)
             {
 
                 m->array_double_tmp[tmpcount] =
-                    v->get_prob_infecting() *
-                    (1.0 - p->get_susceptibility_reduction(v));
+                    v->get_prob_infecting(m) *
+                    (1.0 - p->get_susceptibility_reduction(v, m));
 
                 m->array_virus_tmp[tmpcount++] = &(*v);
 
@@ -166,9 +166,9 @@ int main()
     {
 
         if (p->get_n_tools() > 0)
-            p->rm_tool(0);
+            p->rm_tool(0, m);
 
-        p->add_tool(m->get_tools()[0u]);
+        p->add_tool(m->get_tools()[0u], m);
 
     };
     

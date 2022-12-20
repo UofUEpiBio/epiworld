@@ -14,16 +14,60 @@
 #include "agent-actions-meat.hpp"
 
 template<typename TSeq>
-inline Agent<TSeq>::Agent()
+inline Agent<TSeq>::Agent() {}
+
+template<typename TSeq>
+inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
+    neighbors(std::move(p.neighbors)),
+    entities(std::move(p.entities)),
+    entities_locations(std::move(p.entities_locations)),
+    n_entities(p.n_entities),
+    status(p.status),
+    status_prev(p.status_prev), 
+    status_last_changed(p.status_last_changed),
+    id(p.id),
+    viruses(std::move(p.viruses)),  /// Needs to be adjusted
+    n_viruses(p.n_viruses),
+    tools(std::move(p.tools)), /// Needs to be adjusted
+    n_tools(p.n_tools),
+    add_virus_(std::move(p.add_virus_)),
+    add_tool_(std::move(p.add_tool_)),
+    add_entity_(std::move(p.add_entity_)),
+    rm_virus_(std::move(p.rm_virus_)),
+    rm_tool_(std::move(p.rm_tool_)),
+    rm_entity_(std::move(p.rm_entity_)),
+    action_counter(p.action_counter)
 {
+
+    status = p.status;
+    id     = p.id;
+    
+    // Dealing with the virus
+    for (auto & v : viruses)
+    {
+        
+        // Will create a copy of the virus, with the exeption of
+        // the virus code
+        v->agent = this;
+        v->agent_idx = id;
+
+    }
+
+    for (auto & t : tools)
+    {
+        
+        // Will create a copy of the virus, with the exeption of
+        // the virus code
+        t->agent     = this;
+        t->agent_idx = id;
+
+    }
     
 }
 
 template<typename TSeq>
 inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 {
-
-    model = p.model;
     
     // We can't do anything with the neighbors
     neighbors.reserve(p.neighbors.size());
@@ -34,12 +78,15 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     // Dealing with the virus
     viruses.reserve(p.get_n_viruses());
     const auto & viruses_ = p.get_viruses();
+    n_viruses = 0;
     for (const auto & v : viruses_)
     {
+
         // Will create a copy of the virus, with the exeption of
         // the virus code
         viruses.push_back(std::make_shared<Virus<TSeq>>(*v));
-        viruses[n_viruses++]->agent = this;
+        viruses[n_viruses]->agent = this;
+        viruses[n_viruses++]->agent_idx = id;
 
     }
 
@@ -47,11 +94,15 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 
     tools.reserve(p.get_n_tools());
     const auto & tools_ = p.get_tools();
+    n_tools = 0;
     for (const auto & t : tools_)
     {
+        
         // Will create a copy of the virus, with the exeption of
         // the virus code
         tools.push_back(std::make_shared<Tool<TSeq>>(*t));
+        tools[n_tools]->agent = this;
+        tools[n_tools++]->agent_idx = id;
 
     }
     
@@ -65,8 +116,60 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 }
 
 template<typename TSeq>
+inline Agent<TSeq> & Agent<TSeq>::operator=(
+    const Agent<TSeq> & other_agent
+) {
+
+    // neighbors           = other_agent.neighbors;
+    // entities            = other_agent.entities;
+    // entities_locations  = other_agent.entities_locations;
+    // n_entities          = other_agent.n_entities;
+    status              = other_agent.status;
+    status_prev         = other_agent.status_prev;
+    status_last_changed = other_agent.status_last_changed;
+    id                  = other_agent.id;
+    
+    viruses             = other_agent.viruses;
+    n_viruses           = other_agent.n_viruses;
+    
+    tools               = other_agent.tools;
+    n_tools             = other_agent.n_tools;
+
+    add_virus_          = other_agent.add_virus_;
+    add_tool_           = other_agent.add_tool_;
+    add_entity_         = other_agent.add_entity_;
+    rm_virus_           = other_agent.rm_virus_;
+    rm_tool_            = other_agent.rm_tool_;
+    rm_entity_          = other_agent.rm_entity_;
+    action_counter      = other_agent.action_counter;
+    
+    // Dealing with the virus
+    for (auto & v : viruses)
+    {
+        
+        // Will create a copy of the virus, with the exeption of
+        // the virus code
+        v->agent = this;
+        v->agent_idx = id;
+
+    }
+
+    for (auto & t : tools)
+    {
+        
+        // Will create a copy of the virus, with the exeption of
+        // the virus code
+        t->agent     = this;
+        t->agent_idx = id;
+
+    }
+    
+}
+
+template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
     ToolPtr<TSeq> tool,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 ) {
@@ -87,17 +190,19 @@ inline void Agent<TSeq>::add_tool(
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
     Tool<TSeq> tool,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
 {
     ToolPtr<TSeq> tool_ptr = std::make_shared< Tool<TSeq> >(tool);
-    add_tool(tool_ptr, status_new, queue);
+    add_tool(tool_ptr, model, status_new, queue);
 }
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_virus(
     VirusPtr<TSeq> virus,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -118,17 +223,19 @@ inline void Agent<TSeq>::add_virus(
 template<typename TSeq>
 inline void Agent<TSeq>::add_virus(
     Virus<TSeq> virus,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
 {
     VirusPtr<TSeq> virus_ptr = std::make_shared< Virus<TSeq> >(virus);
-    add_virus(virus_ptr, status_new, queue);
+    add_virus(virus_ptr, model, status_new, queue);
 }
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_entity(
     Entity<TSeq> & entity,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -143,6 +250,7 @@ inline void Agent<TSeq>::add_entity(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_tool(
     epiworld_fast_uint tool_idx,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -163,6 +271,7 @@ inline void Agent<TSeq>::rm_tool(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_tool(
     ToolPtr<TSeq> & tool,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -180,6 +289,7 @@ inline void Agent<TSeq>::rm_tool(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_virus(
     epiworld_fast_uint virus_idx,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -205,6 +315,7 @@ inline void Agent<TSeq>::rm_virus(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_virus(
     VirusPtr<TSeq> & virus,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -224,6 +335,7 @@ inline void Agent<TSeq>::rm_virus(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_entity(
     epiworld_fast_uint entity_idx,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -248,6 +360,7 @@ inline void Agent<TSeq>::rm_entity(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_entity(
     Entity<TSeq> & entity,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -277,6 +390,7 @@ inline void Agent<TSeq>::rm_entity(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_agent_by_virus(
     epiworld_fast_uint virus_idx,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -297,7 +411,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
     for (size_t i = 0u; i < n_viruses; ++i)
     {
         if (i != virus_idx)
-            rm_virus(i);
+            rm_virus(i, model);
     }
 
     // Changing status to new_status
@@ -310,6 +424,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
         dead_queue = queue;
 
     change_status(
+        model,
         // Either preserve the current status or apply a new one
         (dead_status < 0) ? status : static_cast<epiworld_fast_uint>(dead_status),
 
@@ -323,6 +438,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_agent_by_virus(
     VirusPtr<TSeq> & virus,
+    Model<TSeq> * model,
     epiworld_fast_int status_new,
     epiworld_fast_int queue
 )
@@ -336,6 +452,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 
     rm_agent_by_virus(
         virus->agent_idx,
+        model,
         status_new,
         queue
     );
@@ -344,7 +461,8 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
 ) {
 
     return model->susceptibility_reduction_mixer(this, v, model);
@@ -352,21 +470,24 @@ inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
 ) {
     return model->transmission_reduction_mixer(this, v, model);
 }
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
 ) {
     return model->recovery_enhancer_mixer(this, v, model);
 }
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
 ) {
     return model->death_reduction_mixer(this, v, model);
 }
@@ -375,16 +496,6 @@ template<typename TSeq>
 inline int Agent<TSeq>::get_id() const
 {
     return id;
-}
-
-template<typename TSeq>
-inline std::mt19937 * Agent<TSeq>::get_rand_endgine() {
-    return model->get_rand_endgine();
-}
-
-template<typename TSeq>
-inline Model<TSeq> * Agent<TSeq>::get_model() {
-    return model;
 }
 
 template<typename TSeq>
@@ -495,6 +606,7 @@ inline std::vector< Agent<TSeq> *> & Agent<TSeq>::get_neighbors()
 
 template<typename TSeq>
 inline void Agent<TSeq>::change_status(
+    Model<TSeq> * model,
     epiworld_fast_uint new_status,
     epiworld_fast_int queue
     )
@@ -577,7 +689,10 @@ inline bool Agent<TSeq>::has_virus(std::string name) const
 }
 
 template<typename TSeq>
-inline void Agent<TSeq>::print(bool compressed) const
+inline void Agent<TSeq>::print(
+    Model<TSeq> * model,
+    bool compressed
+    ) const
 {
 
     if (compressed)
@@ -601,22 +716,22 @@ inline void Agent<TSeq>::print(bool compressed) const
 
 }
 
-template<typename TSeq>
-inline double & Agent<TSeq>::operator()(size_t j)
-{
+// template<typename TSeq>
+// inline double & Agent<TSeq>::operator()(size_t j)
+// {
 
-    if (model->population_data_n_features <= j)
-        throw std::logic_error("The requested feature of the agent is out of range.");
+//     if (model->population_data_n_features <= j)
+//         throw std::logic_error("The requested feature of the agent is out of range.");
 
-    return *(model->population_data + j * model->size() + id);
+//     return *(model->population_data + j * model->size() + id);
 
-}
+// }
 
-template<typename TSeq>
-inline double & Agent<TSeq>::operator[](size_t j)
-{
-    return *(model->population_data + j * model->size() + id);
-}
+// template<typename TSeq>
+// inline double & Agent<TSeq>::operator[](size_t j)
+// {
+//     return *(model->population_data + j * model->size() + id);
+// }
 
 template<typename TSeq>
 inline Entities<TSeq> Agent<TSeq>::get_entities()

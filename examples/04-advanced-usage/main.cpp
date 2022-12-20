@@ -31,7 +31,7 @@ EPI_NEW_POSTRECOVERYFUN(post_covid, DAT) {
     auto Tptr = m->get_tools()[3u];
 
     Tptr->set_sequence(*v.get_sequence());
-    p->add_tool(Tptr);
+    p->add_tool(Tptr, m);
 
 }
 

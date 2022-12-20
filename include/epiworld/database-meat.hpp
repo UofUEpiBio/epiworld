@@ -2,12 +2,13 @@
 #define EPIWORLD_DATABASE_MEAT_HPP
 
 template<typename TSeq>
-inline void DataBase<TSeq>::set_model(Model<TSeq> & m)
+inline void DataBase<TSeq>::set_model(
+    Model<TSeq> & m)
 {
     model           = &m;
     user_data.model = &m;
 
-    reset();
+    // reset();
 
     // Initializing the counts
     today_total.resize(m.nstatus);

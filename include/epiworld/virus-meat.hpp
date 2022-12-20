@@ -13,11 +13,13 @@ inline Virus<TSeq>::Virus(std::string name) {
 // }
 
 template<typename TSeq>
-inline void Virus<TSeq>::mutate() {
+inline void Virus<TSeq>::mutate(
+    Model<TSeq> * model
+) {
 
     if (mutation_fun)
-        if (mutation_fun(agent, *this, this->get_model()))
-            agent->get_model()->get_db().record_variant(*this);
+        if (mutation_fun(agent, *this, model))
+            model->get_db().record_variant(*this);
 
     return;
     
@@ -53,11 +55,6 @@ inline void Virus<TSeq>::set_agent(Agent<TSeq> * p, epiworld_fast_uint idx) {
 }
 
 template<typename TSeq>
-inline Model<TSeq> * Virus<TSeq>::get_model() {
-    return agent->get_model();
-}
-
-template<typename TSeq>
 inline void Virus<TSeq>::set_id(int idx) {
     id = idx;
     return;
@@ -82,11 +79,13 @@ inline int Virus<TSeq>::get_date() const {
 }
 
 template<typename TSeq>
-inline epiworld_double Virus<TSeq>::get_prob_infecting()
+inline epiworld_double Virus<TSeq>::get_prob_infecting(
+    Model<TSeq> * model
+)
 {
 
     if (probability_of_infecting_fun)
-        return probability_of_infecting_fun(agent, *this, agent->get_model());
+        return probability_of_infecting_fun(agent, *this, model);
         
     return EPI_DEFAULT_VIRUS_PROB_INFECTION;
 
@@ -95,11 +94,13 @@ inline epiworld_double Virus<TSeq>::get_prob_infecting()
 
 
 template<typename TSeq>
-inline epiworld_double Virus<TSeq>::get_prob_recovery()
+inline epiworld_double Virus<TSeq>::get_prob_recovery(
+    Model<TSeq> * model
+)
 {
 
     if (probability_of_recovery_fun)
-        return probability_of_recovery_fun(agent, *this, agent->get_model());
+        return probability_of_recovery_fun(agent, *this, model);
         
     return EPI_DEFAULT_VIRUS_PROB_RECOVERY;
 
@@ -108,11 +109,13 @@ inline epiworld_double Virus<TSeq>::get_prob_recovery()
 
 
 template<typename TSeq>
-inline epiworld_double Virus<TSeq>::get_prob_death()
+inline epiworld_double Virus<TSeq>::get_prob_death(
+    Model<TSeq> * model
+)
 {
 
     if (probability_of_death_fun)
-        return probability_of_death_fun(agent, *this, agent->get_model());
+        return probability_of_death_fun(agent, *this, model);
         
     return EPI_DEFAULT_VIRUS_PROB_DEATH;
 
@@ -222,11 +225,13 @@ inline void Virus<TSeq>::set_post_recovery(PostRecoveryFun<TSeq> fun)
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::post_recovery()
+inline void Virus<TSeq>::post_recovery(
+    Model<TSeq> * model
+)
 {
 
     if (post_recovery_fun)
-        post_recovery_fun(agent, *this, agent->get_model());    
+        post_recovery_fun(agent, *this, model);    
 
     return;
         
@@ -273,7 +278,7 @@ inline void Virus<TSeq>::set_post_immunity(
             if (__no_reinfect->get_id() == -99)
                 m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(__no_reinfect);
+            p->add_tool(__no_reinfect, m);
 
             return;
 
@@ -322,7 +327,7 @@ inline void Virus<TSeq>::set_post_immunity(
             if (__no_reinfect->get_id() == -99)
                 m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(__no_reinfect);
+            p->add_tool(__no_reinfect, m);
 
             return;
 
