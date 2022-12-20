@@ -5038,6 +5038,7 @@ public:
     void clone_population(
         std::vector< Agent<TSeq> > & other_population,
         std::vector< Entity<TSeq> > & other_entities,
+        Model<TSeq> * other_model,
         bool & other_directed
     ) const ;
 
@@ -5844,8 +5845,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    (void) std::string("Copy-copy");
-
     // Pointing to the right place
     db.set_model(*this);
 
@@ -5853,6 +5852,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     model.clone_population(
         this->population,
         this->entities,
+        const_cast<Model<TSeq> * >(this),
         this->directed
         );
 
@@ -5925,12 +5925,85 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 
 }
 
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
+{
+    name = m.name;
+    db   = m.db;
+
+    directed = m.directed;
+    
+    viruses  = m.viruses;
+    prevalence_virus = m.prevalence_virus;
+    prevalence_virus_as_proportion = m.prevalence_virus_as_proportion;
+    viruses_dist_funs = m.viruses_dist_funs;
+
+    tools = m.tools;
+    prevalence_tool = m.prevalence_tool;
+    prevalence_tool_as_proportion = m.prevalence_tool_as_proportion;
+    tools_dist_funs = m.tools_dist_funs;
+    
+    entities = m.entities;
+    prevalence_entity = m.prevalence_entity;
+    prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
+    entities_dist_funs = m.entities_dist_funs;
+    
+    parameters = m.parameters;
+    ndays      = m.ndays;
+    pb         = m.pb;
+
+    status_fun = m.status_fun;
+    status_labels = m.status_labels;
+    nstatus = m.nstatus;
+
+    verbose = m.verbose;
+    initialized = m.initialized;
+
+    current_date = m.current_date;
+
+    global_action_functions = m.global_action_functions;
+    global_action_dates = m.global_action_dates;
+
+    queue = m.queue;
+    queue.set_model(this);
+    use_queuing = m.use_queuing;
+
+    // Making sure population is passed correctly
+    // Pointing to the right place
+    db.set_model(*this);
+
+    // Removing old neighbors
+    m.clone_population(
+        this->population,
+        this->entities,
+        const_cast<Model<TSeq> * >(this),
+        this->directed
+        );
+
+    population_data = m.population_data;
+    population_data_n_features = m.population_data_n_features;
+
+    // Figure out the queuing
+    if (use_queuing)
+        queue.set_model(this);
+
+    // Finally, seeds are resetted automatically based on the original
+    // engine
+    seed(floor(runif() * UINT_MAX));
+
+    array_double_tmp.resize(m.array_double_tmp.size());
+    array_virus_tmp.resize(m.array_virus_tmp.size());
+
+    return *this;
+
+}
 
 
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
     std::vector< Agent<TSeq> > & other_population,
     std::vector< Entity<TSeq> > & other_entities,
+    Model< TSeq > * other_model,
     bool & other_directed
 ) const {
 
@@ -5964,7 +6037,7 @@ inline void Model<TSeq>::clone_population(
             int loc = other_population[neigh[n]->get_id()].get_id();
             agent_res.add_neighbor(&other_population[loc], true, true);
 
-        }      
+        }
 
     }
 
@@ -5980,11 +6053,15 @@ inline void Model<TSeq>::clone_population(
         {
             entity_other.add_agent(
                 other_population[a->get_id()],
-                const_cast<Model<TSeq> * >(this)
+                other_model
                 );
         }
 
     }
+
+    // Running actions
+    other_model->actions_run();
+
 }
 
 template<typename TSeq>
@@ -5993,6 +6070,7 @@ inline void Model<TSeq>::clone_population(const Model<TSeq> & other_model)
     other_model.clone_population(
         this->population,
         this->entities,
+        const_cast<Model<TSeq> * >(this),
         this->directed
     );
 }
@@ -6855,9 +6933,6 @@ inline void Model<TSeq>::run_multiple(
 )
 {
 
-    if (reset)
-        set_backup();
-
     bool old_verb = this->verbose;
     verbose_off();
 
@@ -6903,10 +6978,21 @@ inline void Model<TSeq>::run_multiple(
     }
 
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum) \
-        firstprivate(nexperiments, nthreads, fun, reset)
+        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple) \
+        default(none)
     {
 
         auto iam = omp_get_thread_num();
+
+        if (reset)
+        {
+            if (iam == 0u)
+                set_backup();
+            else
+                these[iam - 1].set_backup();
+        }
+
+
         for (epiworld_fast_uint n = 0u; n < nreplicates[iam]; ++n)
         {
             
@@ -6947,6 +7033,9 @@ inline void Model<TSeq>::run_multiple(
     n_replicates += (nexperiments - nreplicates[0u]);
 
     #else
+    if (reset)
+        set_backup();
+
     Progress pb_multiple(
         nexperiments,
         EPIWORLD_PROGRESS_BAR_WIDTH
@@ -7018,6 +7107,8 @@ inline void Model<TSeq>::update_status() {
     actions_run();
     
 }
+
+
 
 template<typename TSeq>
 inline void Model<TSeq>::mutate_variant() {
@@ -7204,6 +7295,7 @@ inline void Model<TSeq>::reset() {
         backup->clone_population(
             this->population,
             this->entities,
+            const_cast<Model<TSeq> * >(this),
             this->directed
         );
     }
@@ -8157,7 +8249,7 @@ class Virus {
 private:
     
     Agent<TSeq> * agent       = nullptr;
-    int       agent_idx       = -99;
+    int       agent_idx       = -99; ///< Location in the agent
     int agent_exposure_number = -99;
 
     std::shared_ptr<TSeq> baseline_sequence = nullptr;
@@ -8948,7 +9040,7 @@ class Tool {
 private:
 
     Agent<TSeq> * agent = nullptr;
-    int agent_idx        = -99;
+    int agent_idx        = -99; ///< Location in the agent
 
     int date = -99;
     int id   = -99;
@@ -11024,23 +11116,26 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     id     = p.id;
     
     // Dealing with the virus
+
+    int loc = 0;
     for (auto & v : viruses)
     {
         
         // Will create a copy of the virus, with the exeption of
         // the virus code
         v->agent = this;
-        v->agent_idx = id;
+        v->agent_idx = loc++;
 
     }
 
+    loc = 0;
     for (auto & t : tools)
     {
         
         // Will create a copy of the virus, with the exeption of
         // the virus code
         t->agent     = this;
-        t->agent_idx = id;
+        t->agent_idx = loc++;
 
     }
     
@@ -11057,37 +11152,30 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     id     = p.id;
     
     // Dealing with the virus
-    viruses.reserve(p.get_n_viruses());
-    const auto & viruses_ = p.get_viruses();
-    n_viruses = 0;
-    for (const auto & v : viruses_)
+    viruses.resize(p.get_n_viruses());
+    n_viruses = viruses.size();
+    for (size_t i = 0u; i < viruses.size(); ++i)
     {
 
         // Will create a copy of the virus, with the exeption of
         // the virus code
-        viruses.push_back(std::make_shared<Virus<TSeq>>(*v));
-        viruses[n_viruses]->agent = this;
-        viruses[n_viruses++]->agent_idx = id;
+        viruses[i] = std::make_shared<Virus<TSeq>>(*p.viruses[i]);
+        viruses[i]->agent = this;
+        viruses[i]->agent_idx = i;
 
     }
 
-    n_viruses = p.n_viruses;
-
-    tools.reserve(p.get_n_tools());
-    const auto & tools_ = p.get_tools();
-    n_tools = 0;
-    for (const auto & t : tools_)
+    tools.resize(p.get_n_tools());
+    for (size_t i = 0u; i < tools.size(); ++i)
     {
         
         // Will create a copy of the virus, with the exeption of
         // the virus code
-        tools.push_back(std::make_shared<Tool<TSeq>>(*t));
-        tools[n_tools]->agent = this;
-        tools[n_tools++]->agent_idx = id;
+        tools[i] = std::make_shared<Tool<TSeq>>(*p.tools[i]);
+        tools[i]->agent = this;
+        tools[i]->agent_idx = i;
 
     }
-    
-    n_tools = p.n_tools;
 
     add_virus_ = p.add_virus_;
     add_tool_  = p.add_tool_;
@@ -11144,6 +11232,8 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
         t->agent_idx = id;
 
     }
+
+    return *this;
     
 }
 

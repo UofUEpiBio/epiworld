@@ -248,6 +248,7 @@ public:
     void clone_population(
         std::vector< Agent<TSeq> > & other_population,
         std::vector< Entity<TSeq> > & other_entities,
+        Model<TSeq> * other_model,
         bool & other_directed
     ) const ;
 

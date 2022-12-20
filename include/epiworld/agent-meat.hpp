@@ -43,23 +43,26 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     id     = p.id;
     
     // Dealing with the virus
+
+    int loc = 0;
     for (auto & v : viruses)
     {
         
         // Will create a copy of the virus, with the exeption of
         // the virus code
         v->agent = this;
-        v->agent_idx = id;
+        v->agent_idx = loc++;
 
     }
 
+    loc = 0;
     for (auto & t : tools)
     {
         
         // Will create a copy of the virus, with the exeption of
         // the virus code
         t->agent     = this;
-        t->agent_idx = id;
+        t->agent_idx = loc++;
 
     }
     
@@ -76,37 +79,30 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     id     = p.id;
     
     // Dealing with the virus
-    viruses.reserve(p.get_n_viruses());
-    const auto & viruses_ = p.get_viruses();
-    n_viruses = 0;
-    for (const auto & v : viruses_)
+    viruses.resize(p.get_n_viruses());
+    n_viruses = viruses.size();
+    for (size_t i = 0u; i < viruses.size(); ++i)
     {
 
         // Will create a copy of the virus, with the exeption of
         // the virus code
-        viruses.push_back(std::make_shared<Virus<TSeq>>(*v));
-        viruses[n_viruses]->agent = this;
-        viruses[n_viruses++]->agent_idx = id;
+        viruses[i] = std::make_shared<Virus<TSeq>>(*p.viruses[i]);
+        viruses[i]->agent = this;
+        viruses[i]->agent_idx = i;
 
     }
 
-    n_viruses = p.n_viruses;
-
-    tools.reserve(p.get_n_tools());
-    const auto & tools_ = p.get_tools();
-    n_tools = 0;
-    for (const auto & t : tools_)
+    tools.resize(p.get_n_tools());
+    for (size_t i = 0u; i < tools.size(); ++i)
     {
         
         // Will create a copy of the virus, with the exeption of
         // the virus code
-        tools.push_back(std::make_shared<Tool<TSeq>>(*t));
-        tools[n_tools]->agent = this;
-        tools[n_tools++]->agent_idx = id;
+        tools[i] = std::make_shared<Tool<TSeq>>(*p.tools[i]);
+        tools[i]->agent = this;
+        tools[i]->agent_idx = i;
 
     }
-    
-    n_tools = p.n_tools;
 
     add_virus_ = p.add_virus_;
     add_tool_  = p.add_tool_;
@@ -163,6 +159,8 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
         t->agent_idx = id;
 
     }
+
+    return *this;
     
 }
 

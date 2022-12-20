@@ -395,8 +395,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    (void) std::string("Copy-copy");
-
     // Pointing to the right place
     db.set_model(*this);
 
@@ -404,6 +402,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     model.clone_population(
         this->population,
         this->entities,
+        const_cast<Model<TSeq> * >(this),
         this->directed
         );
 
@@ -474,14 +473,90 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     (void) std::string("Copy-move");
     db.set_model(*this);
 
+    if (use_queuing)
+        queue.set_model(this);
+
 }
 
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
+{
+    name = m.name;
+    db   = m.db;
+
+    directed = m.directed;
+    
+    viruses  = m.viruses;
+    prevalence_virus = m.prevalence_virus;
+    prevalence_virus_as_proportion = m.prevalence_virus_as_proportion;
+    viruses_dist_funs = m.viruses_dist_funs;
+
+    tools = m.tools;
+    prevalence_tool = m.prevalence_tool;
+    prevalence_tool_as_proportion = m.prevalence_tool_as_proportion;
+    tools_dist_funs = m.tools_dist_funs;
+    
+    entities = m.entities;
+    prevalence_entity = m.prevalence_entity;
+    prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
+    entities_dist_funs = m.entities_dist_funs;
+    
+    parameters = m.parameters;
+    ndays      = m.ndays;
+    pb         = m.pb;
+
+    status_fun = m.status_fun;
+    status_labels = m.status_labels;
+    nstatus = m.nstatus;
+
+    verbose = m.verbose;
+    initialized = m.initialized;
+
+    current_date = m.current_date;
+
+    global_action_functions = m.global_action_functions;
+    global_action_dates = m.global_action_dates;
+
+    queue = m.queue;
+    queue.set_model(this);
+    use_queuing = m.use_queuing;
+
+    // Making sure population is passed correctly
+    // Pointing to the right place
+    db.set_model(*this);
+
+    // Removing old neighbors
+    m.clone_population(
+        this->population,
+        this->entities,
+        const_cast<Model<TSeq> * >(this),
+        this->directed
+        );
+
+    population_data = m.population_data;
+    population_data_n_features = m.population_data_n_features;
+
+    // Figure out the queuing
+    if (use_queuing)
+        queue.set_model(this);
+
+    // Finally, seeds are resetted automatically based on the original
+    // engine
+    seed(floor(runif() * UINT_MAX));
+
+    array_double_tmp.resize(m.array_double_tmp.size());
+    array_virus_tmp.resize(m.array_virus_tmp.size());
+
+    return *this;
+
+}
 
 
 template<typename TSeq>
 inline void Model<TSeq>::clone_population(
     std::vector< Agent<TSeq> > & other_population,
     std::vector< Entity<TSeq> > & other_entities,
+    Model< TSeq > * other_model,
     bool & other_directed
 ) const {
 
@@ -515,7 +590,7 @@ inline void Model<TSeq>::clone_population(
             int loc = other_population[neigh[n]->get_id()].get_id();
             agent_res.add_neighbor(&other_population[loc], true, true);
 
-        }      
+        }
 
     }
 
@@ -531,11 +606,15 @@ inline void Model<TSeq>::clone_population(
         {
             entity_other.add_agent(
                 other_population[a->get_id()],
-                const_cast<Model<TSeq> * >(this)
+                other_model
                 );
         }
 
     }
+
+    // Running actions
+    other_model->actions_run();
+
 }
 
 template<typename TSeq>
@@ -544,6 +623,7 @@ inline void Model<TSeq>::clone_population(const Model<TSeq> & other_model)
     other_model.clone_population(
         this->population,
         this->entities,
+        const_cast<Model<TSeq> * >(this),
         this->directed
     );
 }
@@ -1406,9 +1486,6 @@ inline void Model<TSeq>::run_multiple(
 )
 {
 
-    if (reset)
-        set_backup();
-
     bool old_verb = this->verbose;
     verbose_off();
 
@@ -1454,10 +1531,21 @@ inline void Model<TSeq>::run_multiple(
     }
 
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum) \
-        firstprivate(nexperiments, nthreads, fun, reset)
+        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple) \
+        default(none)
     {
 
         auto iam = omp_get_thread_num();
+
+        if (reset)
+        {
+            if (iam == 0u)
+                set_backup();
+            else
+                these[iam - 1].set_backup();
+        }
+
+
         for (epiworld_fast_uint n = 0u; n < nreplicates[iam]; ++n)
         {
             
@@ -1498,6 +1586,9 @@ inline void Model<TSeq>::run_multiple(
     n_replicates += (nexperiments - nreplicates[0u]);
 
     #else
+    if (reset)
+        set_backup();
+
     Progress pb_multiple(
         nexperiments,
         EPIWORLD_PROGRESS_BAR_WIDTH
@@ -1569,6 +1660,8 @@ inline void Model<TSeq>::update_status() {
     actions_run();
     
 }
+
+
 
 template<typename TSeq>
 inline void Model<TSeq>::mutate_variant() {
@@ -1755,6 +1848,7 @@ inline void Model<TSeq>::reset() {
         backup->clone_population(
             this->population,
             this->entities,
+            const_cast<Model<TSeq> * >(this),
             this->directed
         );
     }
