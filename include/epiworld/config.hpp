@@ -9,9 +9,12 @@
     #define EPIWORLD_MAXNEIGHBORS 100000
 #endif
 
-#ifdef EPIWORLD_USE_OMP
+#ifdef _OPENMP
     #include <omp.h>
 #else
+    #define omp_get_thread_num() 0
+    #define omp_set_num_threads() 1
+#endif
 
 #ifndef epiworld_double
     #define epiworld_double float
@@ -23,8 +26,6 @@
 
 #ifndef epiworld_fast_uint
     #define epiworld_fast_uint unsigned long long int
-#endif
-
 #endif
 
 #define EPI_DEFAULT_TSEQ int

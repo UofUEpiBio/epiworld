@@ -1428,11 +1428,11 @@ inline int Model<TSeq>::today() const {
 template<typename TSeq>
 inline void Model<TSeq>::next() {
 
-    ++this->current_date;
     db.record();
+    ++this->current_date;
     
     // Advancing the progress bar
-    if (verbose)
+    if ((this->current_date >= 1) && verbose)
         pb.next();
 
     #ifdef EPI_DEBUG
@@ -1876,8 +1876,10 @@ inline void Model<TSeq>::reset() {
     dist_virus();
     dist_tools();
 
-    // Recording the original state
-    db.record();
+    // Recording the original state (at time 0) and advancing
+    // to time 1
+    next();
+
 
 }
 
