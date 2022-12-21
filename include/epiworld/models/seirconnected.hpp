@@ -136,7 +136,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             // Computing probability of contagion
             // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
             epiworld_double prob_infect = 1.0 - std::pow(
-                1.0 - (*m->p0) * (*m->p1) / m->size(),
+                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
                 *_tracked_ninfected
                 );
 
@@ -192,7 +192,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             {
 
                 // Does the agent become infected?
-                if (m->runif() < 1.0/(*m->p3))
+                if (m->runif() < 1.0/(m->par("Avg. Incubation days")))
                 {
                     // Adding the individual to the queue
                     _tracked_agents_infected_next->push_back(p);
@@ -208,7 +208,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             } else if (status == ModelSEIRCONN<TSeq>::INFECTED)
             {
 
-                if (m->runif() < (*m->p2))
+                if (m->runif() < (m->par("Prob. Recovery")))
                 {
 
                     *_tracked_ninfected_next -= 1;

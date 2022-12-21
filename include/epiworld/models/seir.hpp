@@ -45,7 +45,7 @@ public:
         epiworld::Model<TSeq> * m
     ) -> void {
         // Does the agent become infected?
-        if (m->runif() < 1.0/(*m->p1))
+        if (m->runif() < 1.0/(m->par("Incubation days")))
             p->change_status(m, ModelSEIR<TSeq>::INFECTED);
 
         return;    
@@ -57,7 +57,7 @@ public:
         epiworld::Model<TSeq> * m
     ) -> void {
         // Does the agent recover?
-        if (m->runif() < (*m->p2))
+        if (m->runif() < (m->par("Immune recovery")))
             p->rm_virus(0, m);
 
         return;    

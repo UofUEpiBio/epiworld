@@ -1,17 +1,19 @@
-#include <iostream>
-#include <memory>
-#include <vector>
-#include <random>
+#include "tests.hpp"
 
-#include "../include/epiworld/epiworld.hpp"
+using namespace epiworld;
 
-int main() {
+EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
     epiworld::Model<bool> m;
+
+    m.add_status("Susceptible", default_update_susceptible<bool>);
+    m.add_status("Recovered");
+
     epiworld::Virus<bool> v;
     epiworld::Tool<bool> t;
+    v.set_status(0, 1);
 
-    m.agents_from_adjlist("../examples/edgelist.txt");
+    m.agents_from_adjlist("edgelist.txt", 1000);
 
     m.add_virus(v, .5);
     m.add_tool(t, .5);
@@ -39,13 +41,16 @@ int main() {
     std::cout << std::endl;
 
     std::cout << "Agent[0] in m viruses and tools  : " <<
-        m.get_agents()->at(0u).get_viruses().get_agent() << ", " <<
-        m.get_agents()->at(0u).get_tools().get_agent() << std::endl;
+        m.get_agents()->at(0u).get_virus(0u)->get_agent() << ", " <<
+        m.get_agents()->at(0u).get_tool(0u)->get_agent() << std::endl;
 
     std::cout << "Agent[0] in m2 viruses and tools : " <<
-        m2.get_agents()->at(0u).get_viruses().get_agent() << ", " <<
-        m2.get_agents()->at(0u).get_tools().get_agent() << std::endl;
+        m2.get_agents()->at(0u).get_virus(0u)->get_agent() << ", " <<
+        m2.get_agents()->at(0u).get_tool(0u)->get_agent() << std::endl;
             
 
+    #ifndef CATCH_CONFIG_MAIN
     return 0;
+    #endif
+
 }

@@ -8,7 +8,7 @@ static DAT base_seq = {true, false, false, true, true, false, true, false, true,
 // Defining mutation and transmission functions
 EPI_NEW_MUTFUN(covid19_mut, DAT) {
     
-    if (EPI_RUNIF() < MPAR(0))
+    if (EPI_RUNIF() < m->par("Mutation rate"))
     {
         // Picking a location at random
         int idx = std::floor(EPI_RUNIF() * v.get_sequence()->size());

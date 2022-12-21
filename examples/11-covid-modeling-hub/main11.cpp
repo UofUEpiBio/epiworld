@@ -157,7 +157,7 @@ int main()
     epiworld::Tool<int> immunity("Immunity");
     EPI_NEW_TOOL_LAMBDA(suscept_redux_, int)
     {
-        return (*m->p0) / static_cast<epiworld_double>(m->today() - t.get_date() + 1);
+        return (m->par("Post Immunity")) / static_cast<epiworld_double>(m->today() - t.get_date() + 1);
     };
 
     immunity.set_susceptibility_reduction_fun(suscept_redux_);

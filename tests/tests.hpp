@@ -1,12 +1,13 @@
 #ifndef EPIWORLD_TESTS_HPP
 #define EPIWORLD_TESTS_HPP
 
-#include "../include/epiworld/epiworld.hpp"
 
 #include <vector>
 #include <iostream>
 #include <type_traits>
 #include <exception>
+#include <omp.h>
+#include "../include/epiworld/epiworld.hpp"
 
 #ifndef CATCH_CONFIG_MAIN
 

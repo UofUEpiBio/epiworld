@@ -116,7 +116,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
                 // Computing infection probability
                 *_tracked_current_infect_prob =  1.0 - std::pow(
-                    1.0 - (*m->p0) * (*m->p1) / m->size(),
+                    1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
                     *_tracked_ninfected
                 );
                 
@@ -157,7 +157,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
                 // Infecting the individual
                 p->add_virus(
-                    _tracked_agents_infected->operator[](which)->get_virus(0u)
+                    _tracked_agents_infected->operator[](which)->get_virus(0u),
+                    m
                     ); 
 
                 return;
@@ -181,7 +182,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             tracked_agents_check_init(m);
 
             // Is recovering
-            if (m->runif() < (*m->p2))
+            if (m->runif() < (m->par("Prob. Recovery")))
             {
 
                 *_tracked_ninfected_next -= 1;
@@ -231,7 +232,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             *_tracked_ninfected_next = 0;
 
             *_tracked_current_infect_prob = 1.0 - std::pow(
-                1.0 - (*m->p0) * (*m->p1) / m->size(),
+                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
                 *_tracked_ninfected
                 );
 

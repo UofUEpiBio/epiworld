@@ -5329,12 +5329,6 @@ public:
     epiworld_double get_param(std::string pname);
     epiworld_double par(epiworld_fast_uint k);
     epiworld_double par(std::string pname);
-    epiworld_double 
-        *p0,*p1,*p2,*p3,*p4,*p5,*p6,*p7,*p8,*p9,
-        *p10,*p11,*p12,*p13,*p14,*p15,*p16,*p17,*p18,*p19,
-        *p20,*p21,*p22,*p23,*p24,*p25,*p26,*p27,*p28,*p29,
-        *p30,*p31,*p32,*p33,*p34,*p35,*p36,*p37,*p38,*p39;
-    epiworld_fast_uint npar_used = 0u;
     ///@}
 
     void get_elapsed(
@@ -5922,6 +5916,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 
     (void) std::string("Copy-move");
     db.set_model(*this);
+
+    if (use_queuing)
+        queue.set_model(this);
 
 }
 
@@ -7755,8 +7752,6 @@ inline epiworld_double Model<TSeq>::add_param(
 
     if (parameters.find(pname) == parameters.end())
         parameters[pname] = initial_value;
-
-    CASES_PAR(npar_used++)
     
     return initial_value;
 
@@ -12477,7 +12472,7 @@ public:
         epiworld::Model<TSeq> * m
     ) -> void {
         // Does the agent become infected?
-        if (m->runif() < 1.0/(*m->p1))
+        if (m->runif() < 1.0/(m->par("Incubation days")))
             p->change_status(m, ModelSEIR<TSeq>::INFECTED);
 
         return;    
@@ -12489,7 +12484,7 @@ public:
         epiworld::Model<TSeq> * m
     ) -> void {
         // Does the agent recover?
-        if (m->runif() < (*m->p2))
+        if (m->runif() < (m->par("Immune recovery")))
             p->rm_virus(0, m);
 
         return;    
@@ -12750,11 +12745,11 @@ inline ModelSURV<TSeq>::ModelSURV(
         // Figuring out latent period
         if (v->get_data().size() == 0u)
         {
-            epiworld_double latent_days = m->rgamma(*m->p0, 1.0);
+            epiworld_double latent_days = m->rgamma(m->par("Latent period"), 1.0);
             v->get_data().push_back(latent_days);
 
             v->get_data().push_back(
-                m->rgamma(*m->p1, 1.0) + latent_days
+                m->rgamma(m->par("Infect period"), 1.0) + latent_days
             );
         }
         
@@ -12774,7 +12769,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         {
 
             // Will be symptomatic?
-            if (EPI_RUNIF() < MPAR(2))
+            if (EPI_RUNIF() < m->par("Prob of symptoms"))
                 p->change_status(m, ModelSURV<TSeq>::SYMPTOMATIC);
             else
                 p->change_status(m, ModelSURV<TSeq>::ASYMPTOMATIC);
@@ -12908,7 +12903,7 @@ inline ModelSURV<TSeq>::ModelSURV(
             return static_cast<epiworld_double>(0.0);
 
         // Otherwise
-        return MPAR(6);
+        return m->par("Prob of transmission");
     };
 
     covid.set_prob_infecting_fun(ptransmitfun);
@@ -13107,7 +13102,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
                 // Computing infection probability
                 *_tracked_current_infect_prob =  1.0 - std::pow(
-                    1.0 - (*m->p0) * (*m->p1) / m->size(),
+                    1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
                     *_tracked_ninfected
                 );
                 
@@ -13172,7 +13167,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             tracked_agents_check_init(m);
 
             // Is recovering
-            if (m->runif() < (*m->p2))
+            if (m->runif() < (m->par("Prob. Recovery")))
             {
 
                 *_tracked_ninfected_next -= 1;
@@ -13222,7 +13217,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             *_tracked_ninfected_next = 0;
 
             *_tracked_current_infect_prob = 1.0 - std::pow(
-                1.0 - (*m->p0) * (*m->p1) / m->size(),
+                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
                 *_tracked_ninfected
                 );
 
@@ -13441,7 +13436,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             // Computing probability of contagion
             // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
             epiworld_double prob_infect = 1.0 - std::pow(
-                1.0 - (*m->p0) * (*m->p1) / m->size(),
+                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
                 *_tracked_ninfected
                 );
 
@@ -13497,7 +13492,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             {
 
                 // Does the agent become infected?
-                if (m->runif() < 1.0/(*m->p3))
+                if (m->runif() < 1.0/(m->par("Avg. Incubation days")))
                 {
                     // Adding the individual to the queue
                     _tracked_agents_infected_next->push_back(p);
@@ -13513,7 +13508,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             } else if (status == ModelSEIRCONN<TSeq>::INFECTED)
             {
 
-                if (m->runif() < (*m->p2))
+                if (m->runif() < (m->par("Prob. Recovery")))
                 {
 
                     *_tracked_ninfected_next -= 1;

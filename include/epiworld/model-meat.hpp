@@ -1994,25 +1994,7 @@ inline void Model<TSeq>::print_status_codes() const
 
 }
 
-#define CASE_PAR(a,b) case a: b = &(parameters[pname]);break;
-#define CASES_PAR(a) \
-    switch (a) \
-    { \
-    CASE_PAR(0u, p0) CASE_PAR(1u, p1) CASE_PAR(2u, p2) CASE_PAR(3u, p3) \
-    CASE_PAR(4u, p4) CASE_PAR(5u, p5) CASE_PAR(6u, p6) CASE_PAR(7u, p7) \
-    CASE_PAR(8u, p8) CASE_PAR(9u, p9) \
-    CASE_PAR(10u, p10) CASE_PAR(11u, p11) CASE_PAR(12u, p12) CASE_PAR(13u, p13) \
-    CASE_PAR(14u, p14) CASE_PAR(15u, p15) CASE_PAR(16u, p16) CASE_PAR(17u, p17) \
-    CASE_PAR(18u, p18) CASE_PAR(19u, p19) \
-    CASE_PAR(20u, p20) CASE_PAR(21u, p21) CASE_PAR(22u, p22) CASE_PAR(23u, p23) \
-    CASE_PAR(24u, p24) CASE_PAR(25u, p25) CASE_PAR(26u, p26) CASE_PAR(27u, p27) \
-    CASE_PAR(28u, p28) CASE_PAR(29u, p29) \
-    CASE_PAR(30u, p30) CASE_PAR(31u, p31) CASE_PAR(32u, p22) CASE_PAR(33u, p23) \
-    CASE_PAR(34u, p34) CASE_PAR(35u, p35) CASE_PAR(36u, p26) CASE_PAR(37u, p27) \
-    CASE_PAR(38u, p38) CASE_PAR(39u, p39) \
-    default: \
-        break; \
-    }
+
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::add_param(
@@ -2022,8 +2004,6 @@ inline epiworld_double Model<TSeq>::add_param(
 
     if (parameters.find(pname) == parameters.end())
         parameters[pname] = initial_value;
-
-    CASES_PAR(npar_used++)
     
     return initial_value;
 

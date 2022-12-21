@@ -169,11 +169,11 @@ inline ModelSURV<TSeq>::ModelSURV(
         // Figuring out latent period
         if (v->get_data().size() == 0u)
         {
-            epiworld_double latent_days = m->rgamma(*m->p0, 1.0);
+            epiworld_double latent_days = m->rgamma(m->par("Latent period"), 1.0);
             v->get_data().push_back(latent_days);
 
             v->get_data().push_back(
-                m->rgamma(*m->p1, 1.0) + latent_days
+                m->rgamma(m->par("Infect period"), 1.0) + latent_days
             );
         }
         
@@ -193,7 +193,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         {
 
             // Will be symptomatic?
-            if (EPI_RUNIF() < MPAR(2))
+            if (EPI_RUNIF() < m->par("Prob of symptoms"))
                 p->change_status(m, ModelSURV<TSeq>::SYMPTOMATIC);
             else
                 p->change_status(m, ModelSURV<TSeq>::ASYMPTOMATIC);
@@ -327,7 +327,7 @@ inline ModelSURV<TSeq>::ModelSURV(
             return static_cast<epiworld_double>(0.0);
 
         // Otherwise
-        return MPAR(6);
+        return m->par("Prob of transmission");
     };
 
     covid.set_prob_infecting_fun(ptransmitfun);
