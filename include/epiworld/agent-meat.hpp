@@ -69,11 +69,16 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
 }
 
 template<typename TSeq>
-inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
+inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
+    neighbors(0u),
+    entities(0u),
+    entities_locations(0u),
+    n_entities(0u),
+    sampled_agents(0u),
+    sampled_agents_n(0u),
+    sampled_agents_left_n(0u),
+    date_last_build_sample(-99)
 {
-    
-    // We can't do anything with the neighbors
-    neighbors.reserve(p.neighbors.size());
 
     status = p.status;
     id     = p.id;
@@ -114,7 +119,17 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 template<typename TSeq>
 inline Agent<TSeq> & Agent<TSeq>::operator=(
     const Agent<TSeq> & other_agent
-) {
+) 
+{
+
+    neighbors.clear();
+    entities.clear();
+    entities_locations.clear();
+    n_entities = 0;
+    sampled_agents.clear();
+    sampled_agents_n = 0;
+    sampled_agents_left_n = 0;
+    date_last_build_sample = -99;
 
     // neighbors           = other_agent.neighbors;
     // entities            = other_agent.entities;
@@ -239,9 +254,26 @@ inline void Agent<TSeq>::add_entity(
 )
 {
 
-    model->actions_add(
-        this, nullptr, nullptr, &entity, status_new, queue, add_entity_, -1, -1
-    );
+    if (model != nullptr)
+    {
+
+        model->actions_add(
+            this, nullptr, nullptr, &entity, status_new, queue, add_entity_, -1, -1
+        );
+
+    }
+    else // If no model is passed, then we assume that we only need to add the
+         // model entity
+    {
+
+        Action<TSeq> a(
+                this, nullptr, nullptr, &entity, status_new, queue, add_entity_,
+                -1, -1
+            );
+
+        default_add_entity(a, model); /* passing model makes nothing */
+
+    }
 
 }
 

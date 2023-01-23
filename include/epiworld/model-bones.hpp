@@ -91,6 +91,10 @@ private:
 
     std::vector< Agent<TSeq> > population;
 
+    bool usign_backup = true;
+    std::vector< Agent<TSeq> > population_backup;
+
+
     /**
      * @name Auxiliary variables for AgentsSample<TSeq> iterators
      * 
@@ -132,6 +136,7 @@ private:
     std::vector< ToolToAgentFun<TSeq> > tools_dist_funs;
 
     std::vector< Entity<TSeq> > entities; 
+    std::vector< Entity<TSeq> > entities_backup;
     std::vector< epiworld_double > prevalence_entity;
     std::vector< bool > prevalence_entity_as_proportion;
     std::vector< EntityToAgentFun<TSeq> > entities_dist_funs;
@@ -242,6 +247,7 @@ public:
 
     Model() {};
     Model(const Model<TSeq> & m);
+    Model(Model<TSeq> & m) = delete;
     Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m);
 

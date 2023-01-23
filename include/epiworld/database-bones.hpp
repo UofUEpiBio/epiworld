@@ -197,9 +197,6 @@ public:
 
     size_t get_n_variants() const;
     size_t get_n_tools() const;
-
-    void reset();
-
     
     void set_user_data(std::vector< std::string > names);
     void add_user_data(std::vector< epiworld_double > x);

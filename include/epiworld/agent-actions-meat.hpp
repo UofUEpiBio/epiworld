@@ -123,7 +123,7 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
 }
 
 template<typename TSeq>
-inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
 {
 
     Agent<TSeq> * p  = a.agent;
@@ -161,12 +161,12 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
     }
 
     // Today was the last modification
-    e->date_last_add_or_remove = m->today();
+    // e->date_last_add_or_remove = m->today();
     
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
 {
     
     Agent<TSeq> *  p = a.agent;    
@@ -218,7 +218,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
     }
 
     // Setting the date of the last removal
-    e->date_last_add_or_remove = m->today();
+    // e->date_last_add_or_remove = m->today();
 
     return;
 

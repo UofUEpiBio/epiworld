@@ -172,14 +172,15 @@ inline void Model<TSeq>::actions_add(
     {
 
         Action<TSeq> & A = actions.at(nactions - 1u);
-        A.agent = agent_;
-        A.virus = virus_;
-        A.tool = tool_;
-        A.entity = entity_;
+
+        A.agent      = agent_;
+        A.virus      = virus_;
+        A.tool       = tool_;
+        A.entity     = entity_;
         A.new_status = new_status_;
-        A.queue = queue_;
-        A.call = call_;
-        A.idx_agent = idx_agent_;
+        A.queue      = queue_;
+        A.call       = call_;
+        A.idx_agent  = idx_agent_;
         A.idx_object = idx_object_;
 
     }
@@ -395,8 +396,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    // Pointing to the right place
-    db.set_model(*this);
 
     // Removing old neighbors
     model.clone_population(
@@ -405,6 +404,11 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         const_cast<Model<TSeq> * >(this),
         this->directed
         );
+
+    // Pointing to the right place. This needs
+    // to be done afterwards since the state zero is set as a function
+    // of the population.
+    db.set_model(*this);
 
     population_data = model.population_data;
     population_data_n_features = model.population_data_n_features;
@@ -564,16 +568,6 @@ inline void Model<TSeq>::clone_population(
     other_population = population;
     other_entities   = entities;
     other_directed   = directed;
-
-    for (auto & p: other_population)
-    {
-
-        p.neighbors.clear();
-        p.entities.clear();
-        p.entities_locations.clear();
-        p.n_entities = 0u;
-
-    }
     
     // Relinking individuals
     for (epiworld_fast_uint i = 0u; i < size(); ++i)
@@ -996,7 +990,58 @@ template<typename TSeq>
 inline void Model<TSeq>::set_backup()
 {
 
-    backup = std::unique_ptr<Model<TSeq>>(new Model<TSeq>(*this));
+    population_backup = population;
+
+    // Generating the ties between the individuals
+    for (auto & p: population_backup)
+    {
+
+        p.neighbors.clear();
+        p.entities.clear();
+        p.entities_locations.clear();
+        p.n_entities = 0u;
+
+    }
+    
+    // Relinking individuals
+    for (epiworld_fast_uint i = 0u; i < size(); ++i)
+    {
+        // Making room
+        const Agent<TSeq> & agent_this = population[i];
+        Agent<TSeq> & agent_res        = population_backup[i];
+
+        // Re-adding: The agent_this.neighbors has the neighbors in the other model.
+        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
+        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
+        {
+            // Point to the right neighbors
+            int loc = population_backup[neigh[n]->get_id()].get_id();
+            agent_res.add_neighbor(&population_backup[loc], true, true);
+
+        }
+
+    }
+
+    entities_backup = entities;
+    for (size_t i = 0u; i < entities_backup.size(); ++i)
+    {
+
+        // Making room
+        const Entity<TSeq> & entity_this  = entities[i];
+        Entity<TSeq> &       entity_other = entities_backup[i];
+
+        // Iterating
+        for (const auto & a : entity_this.agents)
+        {
+            entity_other.add_agent(
+                population_backup[a->get_id()],
+                nullptr
+                );
+        }
+
+    }
+
+
 
 }
 
@@ -1486,12 +1531,24 @@ inline void Model<TSeq>::run_multiple(
 )
 {
 
+    EPI_DEBUG_NOTIFY_ACTIVE()
+
     bool old_verb = this->verbose;
     verbose_off();
 
     #ifdef _OPENMP
+
+    omp_set_num_threads(nthreads);
+
     // Generating copies of the model
     std::vector< Model<TSeq> > these(std::max(nthreads - 1, 0), *this);
+
+    #ifdef EPI_DEBUG
+    for (auto & m: these)
+        m.seed(0);
+
+    this->seed(0);
+    #endif
 
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
@@ -1557,9 +1614,6 @@ inline void Model<TSeq>::run_multiple(
                 if (fun)
                     fun(n, this);
 
-                if ((n < (nreplicates[iam] - 1u)) && reset)
-                    this->reset();
-
                 // Only the first one prints
                 if (verbose)
                     pb_multiple.next();
@@ -1574,9 +1628,36 @@ inline void Model<TSeq>::run_multiple(
                         &these[iam - 1]
                         );
 
+            }
+
+            #ifdef EPI_DEBUG
+            #pragma omp barrier
+            #pragma omp master 
+            {
+                this->print();
+                
+                // The output should be consistent
+                std::vector<int> _dates0_, _dates1_, _val0_, _val1_;
+                db.get_hist_total(&_dates0_, nullptr, &_val0_);
+
+                for (auto & m: these)
+                {
+
+                    m.get_db().get_hist_total(&_dates1_, nullptr, &_val1_);
+                    EPI_DEBUG_VECTOR_MATCH_INT(_val0_, _val1_);
+                    
+                }
+
+            }
+            #endif
+
+            if (iam == 0) 
+            {
+                if ((n < (nreplicates[iam] - 1u)) && reset)
+                    this->reset();
+            } else {
                 if ((n < (nreplicates[iam] - 1u)) && reset)
                     these[iam - 1].reset();
-
             }
         
         }

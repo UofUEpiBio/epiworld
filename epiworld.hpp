@@ -241,11 +241,18 @@ public:
         }
 
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b) \
-        if (a.size() != b.size())  \
+        if (a.size() != b.size())  {\
+            printf("Size of vector a: %lu\n", a.size());\
+            printf("Size of vector b: %lu\n", b.size());\
             throw std::length_error("[epiworld-debug] The vectors do not match size."); \
+        }\
         for (size_t _i = 0u; _i < a.size(); ++_i) \
-            if (a[_i] != b[_i]) \
-                throw std::logic_error("[epiworld-debug] The vectors do not match.");
+            if (a[_i] != b[_i]) {\
+                printf("Iterating the last 5 values:\n"); \
+                for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
+                    printf("a[%i]: %i; b[%i]: %i\n", _j, a[_j], _j, b[_j]); \
+                throw std::logic_error("[epiworld-debug] The vectors do not match."); \
+            }
 
 
 #else
@@ -2755,9 +2762,6 @@ public:
 
     size_t get_n_variants() const;
     size_t get_n_tools() const;
-
-    void reset();
-
     
     void set_user_data(std::vector< std::string > names);
     void add_user_data(std::vector< epiworld_double > x);
@@ -2822,8 +2826,6 @@ inline void DataBase<TSeq>::set_model(
 {
     model           = &m;
     user_data.model = &m;
-
-    // reset();
 
     // Initializing the counts
     today_total.resize(m.nstatus);
@@ -3562,51 +3564,6 @@ inline size_t DataBase<TSeq>::get_n_tools() const
     return tool_id.size();
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::reset()
-{
-
-    variant_id.clear();
-    variant_name.clear();
-    variant_sequence.clear();
-    variant_origin_date.clear();
-    variant_parent_id.clear();
-    
-    hist_variant_date.clear();
-    hist_variant_id.clear();
-    hist_variant_status.clear();
-    hist_variant_counts.clear();
-
-    tool_id.clear();
-    tool_name.clear();
-    tool_sequence.clear();
-    tool_origin_date.clear();
-
-    hist_tool_date.clear();
-    hist_tool_id.clear();
-    hist_tool_status.clear();
-    hist_tool_counts.clear();
-    
-    hist_total_date.clear();
-    hist_total_nvariants_active.clear();
-    hist_total_status.clear();
-    hist_total_counts.clear();
-    
-    transmission_date.clear();
-    transmission_source.clear();
-    transmission_target.clear();
-    transmission_variant.clear();
-    transmission_source_exposure_date.clear();
-
-    transition_matrix.clear();
-    hist_transition_matrix.clear();
-
-    today_total_nvariants_active = 0;
-    today_total.clear();
-    today_variant.clear();
-    today_tool.clear();
-
-}
 
 template<typename TSeq>
 inline void DataBase<TSeq>::set_user_data(
@@ -4882,6 +4839,10 @@ private:
 
     std::vector< Agent<TSeq> > population;
 
+    bool usign_backup = true;
+    std::vector< Agent<TSeq> > population_backup;
+
+
     /**
      * @name Auxiliary variables for AgentsSample<TSeq> iterators
      * 
@@ -4923,6 +4884,7 @@ private:
     std::vector< ToolToAgentFun<TSeq> > tools_dist_funs;
 
     std::vector< Entity<TSeq> > entities; 
+    std::vector< Entity<TSeq> > entities_backup;
     std::vector< epiworld_double > prevalence_entity;
     std::vector< bool > prevalence_entity_as_proportion;
     std::vector< EntityToAgentFun<TSeq> > entities_dist_funs;
@@ -5033,6 +4995,7 @@ public:
 
     Model() {};
     Model(const Model<TSeq> & m);
+    Model(Model<TSeq> & m) = delete;
     Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
@@ -5617,14 +5580,15 @@ inline void Model<TSeq>::actions_add(
     {
 
         Action<TSeq> & A = actions.at(nactions - 1u);
-        A.agent = agent_;
-        A.virus = virus_;
-        A.tool = tool_;
-        A.entity = entity_;
+
+        A.agent      = agent_;
+        A.virus      = virus_;
+        A.tool       = tool_;
+        A.entity     = entity_;
         A.new_status = new_status_;
-        A.queue = queue_;
-        A.call = call_;
-        A.idx_agent = idx_agent_;
+        A.queue      = queue_;
+        A.call       = call_;
+        A.idx_agent  = idx_agent_;
         A.idx_object = idx_object_;
 
     }
@@ -5840,8 +5804,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    // Pointing to the right place
-    db.set_model(*this);
 
     // Removing old neighbors
     model.clone_population(
@@ -5850,6 +5812,11 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         const_cast<Model<TSeq> * >(this),
         this->directed
         );
+
+    // Pointing to the right place. This needs
+    // to be done afterwards since the state zero is set as a function
+    // of the population.
+    db.set_model(*this);
 
     population_data = model.population_data;
     population_data_n_features = model.population_data_n_features;
@@ -6441,7 +6408,58 @@ template<typename TSeq>
 inline void Model<TSeq>::set_backup()
 {
 
-    backup = std::unique_ptr<Model<TSeq>>(new Model<TSeq>(*this));
+    population_backup = population;
+
+    // Generating the ties between the individuals
+    for (auto & p: population_backup)
+    {
+
+        p.neighbors.clear();
+        p.entities.clear();
+        p.entities_locations.clear();
+        p.n_entities = 0u;
+
+    }
+    
+    // Relinking individuals
+    for (epiworld_fast_uint i = 0u; i < size(); ++i)
+    {
+        // Making room
+        const Agent<TSeq> & agent_this = population[i];
+        Agent<TSeq> & agent_res        = population_backup[i];
+
+        // Re-adding: The agent_this.neighbors has the neighbors in the other model.
+        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
+        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
+        {
+            // Point to the right neighbors
+            int loc = population_backup[neigh[n]->get_id()].get_id();
+            agent_res.add_neighbor(&population_backup[loc], true, true);
+
+        }
+
+    }
+
+    entities_backup = entities;
+    for (size_t i = 0u; i < entities_backup.size(); ++i)
+    {
+
+        // Making room
+        const Entity<TSeq> & entity_this  = entities[i];
+        Entity<TSeq> &       entity_other = entities_backup[i];
+
+        // Iterating
+        for (const auto & a : entity_this.agents)
+        {
+            entity_other.add_agent(
+                population_backup[a->get_id()],
+                nullptr
+                );
+        }
+
+    }
+
+
 
 }
 
@@ -6931,12 +6949,24 @@ inline void Model<TSeq>::run_multiple(
 )
 {
 
+    EPI_DEBUG_NOTIFY_ACTIVE()
+
     bool old_verb = this->verbose;
     verbose_off();
 
     #ifdef _OPENMP
+
+    omp_set_num_threads(nthreads);
+
     // Generating copies of the model
     std::vector< Model<TSeq> > these(std::max(nthreads - 1, 0), *this);
+
+    #ifdef EPI_DEBUG
+    for (auto & m: these)
+        m.seed(0);
+
+    this->seed(0);
+    #endif
 
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
@@ -7002,9 +7032,6 @@ inline void Model<TSeq>::run_multiple(
                 if (fun)
                     fun(n, this);
 
-                if ((n < (nreplicates[iam] - 1u)) && reset)
-                    this->reset();
-
                 // Only the first one prints
                 if (verbose)
                     pb_multiple.next();
@@ -7019,9 +7046,36 @@ inline void Model<TSeq>::run_multiple(
                         &these[iam - 1]
                         );
 
+            }
+
+            #ifdef EPI_DEBUG
+            #pragma omp barrier
+            #pragma omp master 
+            {
+                this->print();
+                
+                // The output should be consistent
+                std::vector<int> _dates0_, _dates1_, _val0_, _val1_;
+                db.get_hist_total(&_dates0_, nullptr, &_val0_);
+
+                for (auto & m: these)
+                {
+
+                    m.get_db().get_hist_total(&_dates1_, nullptr, &_val1_);
+                    EPI_DEBUG_VECTOR_MATCH_INT(_val0_, _val1_);
+                    
+                }
+
+            }
+            #endif
+
+            if (iam == 0) 
+            {
+                if ((n < (nreplicates[iam] - 1u)) && reset)
+                    this->reset();
+            } else {
                 if ((n < (nreplicates[iam] - 1u)) && reset)
                     these[iam - 1].reset();
-
             }
         
         }
@@ -9527,7 +9581,7 @@ private:
     size_t sampled_agents_n = 0u;
     std::vector< size_t > sampled_agents_left;
     size_t sampled_agents_left_n = 0u;
-    int date_last_add_or_remove = -99; ///< Last time the entity added or removed an agent
+    // int date_last_add_or_remove = -99; ///< Last time the entity added or removed an agent
     ///@}
 
     int max_capacity = -1;
@@ -9544,7 +9598,8 @@ private:
 public:
 
     Entity() = delete;
-    // Entity(const Entity & e) = delete;
+    Entity(Entity<TSeq> & e) = delete;
+    Entity(const Entity<TSeq> & e);
     // Entity(Entity && e);
     Entity(std::string name) : entity_name(name) {};
 
@@ -9595,6 +9650,28 @@ public:
 
 #ifndef EPIWORLD_ENTITY_MEAT_HPP
 #define EPIWORLD_ENTITY_MEAT_HPP
+
+template<typename TSeq>
+inline Entity<TSeq>::Entity(const Entity<TSeq> & e) :
+    id(e.id),
+    agents(0u),
+    angents_location(0u),
+    n_agents(0),
+    sampled_agents(0u),
+    sampled_agents_n(0u),
+    sampled_agents_left(0u),
+    sampled_agents_left_n(0u),
+    max_capacity(e.max_capacity),
+    entity_name(e.entity_name),
+    location(e.location),
+    status_init(e.status_init),
+    status_post(e.status_post),
+    queue_init(e.queue_init),
+    queue_post(e.queue_post),
+{
+
+}
+
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(
     Agent<TSeq> & p,
@@ -10955,7 +11032,7 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
 }
 
 template<typename TSeq>
-inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
 {
 
     Agent<TSeq> * p  = a.agent;
@@ -10993,12 +11070,12 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m)
     }
 
     // Today was the last modification
-    e->date_last_add_or_remove = m->today();
+    // e->date_last_add_or_remove = m->today();
     
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
 {
     
     Agent<TSeq> *  p = a.agent;    
@@ -11050,7 +11127,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
     }
 
     // Setting the date of the last removal
-    e->date_last_add_or_remove = m->today();
+    // e->date_last_add_or_remove = m->today();
 
     return;
 
@@ -11122,11 +11199,16 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
 }
 
 template<typename TSeq>
-inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
+inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
+    neighbors(0u),
+    entities(0u),
+    entities_locations(0u),
+    n_entities(0u),
+    sampled_agents(0u),
+    sampled_agents_n(0u),
+    sampled_agents_left_n(0u),
+    date_last_build_sample(-99)
 {
-    
-    // We can't do anything with the neighbors
-    neighbors.reserve(p.neighbors.size());
 
     status = p.status;
     id     = p.id;
@@ -11167,7 +11249,16 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
 template<typename TSeq>
 inline Agent<TSeq> & Agent<TSeq>::operator=(
     const Agent<TSeq> & other_agent
-) {
+) :
+    neighbors(0u),
+    entities(0u),
+    entities_locations(0u),
+    n_entities(0u),
+    sampled_agents(0u),
+    sampled_agents_n(0u),
+    sampled_agents_left_n(0u),
+    date_last_build_sample(-99)
+{
 
     // neighbors           = other_agent.neighbors;
     // entities            = other_agent.entities;
@@ -11292,9 +11383,26 @@ inline void Agent<TSeq>::add_entity(
 )
 {
 
-    model->actions_add(
-        this, nullptr, nullptr, &entity, status_new, queue, add_entity_, -1, -1
-    );
+    if (model != nullptr)
+    {
+
+        model->actions_add(
+            this, nullptr, nullptr, &entity, status_new, queue, add_entity_, -1, -1
+        );
+
+    }
+    else // If no model is passed, then we assume that we only need to add the
+         // model entity
+    {
+
+        Action<TSeq> a(
+                this, nullptr, nullptr, &entity, status_new, queue, add_entity_,
+                -1, -1
+            );
+
+        default_add_entity(a, model); /* passing model makes nothing */
+
+    }
 
 }
 

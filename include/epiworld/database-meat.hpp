@@ -8,8 +8,6 @@ inline void DataBase<TSeq>::set_model(
     model           = &m;
     user_data.model = &m;
 
-    // reset();
-
     // Initializing the counts
     today_total.resize(m.nstatus);
     std::fill(today_total.begin(), today_total.end(), 0);
@@ -747,51 +745,6 @@ inline size_t DataBase<TSeq>::get_n_tools() const
     return tool_id.size();
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::reset()
-{
-
-    variant_id.clear();
-    variant_name.clear();
-    variant_sequence.clear();
-    variant_origin_date.clear();
-    variant_parent_id.clear();
-    
-    hist_variant_date.clear();
-    hist_variant_id.clear();
-    hist_variant_status.clear();
-    hist_variant_counts.clear();
-
-    tool_id.clear();
-    tool_name.clear();
-    tool_sequence.clear();
-    tool_origin_date.clear();
-
-    hist_tool_date.clear();
-    hist_tool_id.clear();
-    hist_tool_status.clear();
-    hist_tool_counts.clear();
-    
-    hist_total_date.clear();
-    hist_total_nvariants_active.clear();
-    hist_total_status.clear();
-    hist_total_counts.clear();
-    
-    transmission_date.clear();
-    transmission_source.clear();
-    transmission_target.clear();
-    transmission_variant.clear();
-    transmission_source_exposure_date.clear();
-
-    transition_matrix.clear();
-    hist_transition_matrix.clear();
-
-    today_total_nvariants_active = 0;
-    today_total.clear();
-    today_variant.clear();
-    today_tool.clear();
-
-}
 
 template<typename TSeq>
 inline void DataBase<TSeq>::set_user_data(

@@ -43,7 +43,7 @@ private:
     size_t sampled_agents_n = 0u;
     std::vector< size_t > sampled_agents_left;
     size_t sampled_agents_left_n = 0u;
-    int date_last_add_or_remove = -99; ///< Last time the entity added or removed an agent
+    // int date_last_add_or_remove = -99; ///< Last time the entity added or removed an agent
     ///@}
 
     int max_capacity = -1;
@@ -60,9 +60,11 @@ private:
 public:
 
     Entity() = delete;
-    // Entity(const Entity & e) = delete;
+    Entity(Entity<TSeq> & e) = delete;
+    Entity(const Entity<TSeq> & e);
     // Entity(Entity && e);
     Entity(std::string name) : entity_name(name) {};
+    Entity<TSeq> & operator=(const Entity<TSeq> & e);
 
     void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
     void add_agent(Agent<TSeq> * p, Model<TSeq> * model);

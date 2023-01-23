@@ -11,9 +11,9 @@
 
 #ifdef _OPENMP
     #include <omp.h>
-#else
-    #define omp_get_thread_num() 0
-    #define omp_set_num_threads() 1
+// #else
+//     #define omp_get_thread_num() 0
+//     #define omp_set_num_threads() 1
 #endif
 
 #ifndef epiworld_double
@@ -212,11 +212,18 @@ public:
         }
 
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b) \
-        if (a.size() != b.size())  \
+        if (a.size() != b.size())  {\
+            printf("Size of vector a: %lu\n", a.size());\
+            printf("Size of vector b: %lu\n", b.size());\
             throw std::length_error("[epiworld-debug] The vectors do not match size."); \
+        }\
         for (size_t _i = 0u; _i < a.size(); ++_i) \
-            if (a[_i] != b[_i]) \
-                throw std::logic_error("[epiworld-debug] The vectors do not match.");
+            if (a[_i] != b[_i]) {\
+                printf("Iterating the last 5 values:\n"); \
+                for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
+                    printf("a[%i]: %i; b[%i]: %i\n", _j, a[_j], _j, b[_j]); \
+                throw std::logic_error("[epiworld-debug] The vectors do not match."); \
+            }
 
 
 #else
