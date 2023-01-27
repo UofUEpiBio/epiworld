@@ -18,7 +18,10 @@ inline Agent<TSeq>::Agent() {}
 
 template<typename TSeq>
 inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
+    model(p.model),
     neighbors(std::move(p.neighbors)),
+    neighbors_locations(std::move(p.neighbors_locations)),
+    n_neighbors(p.n_neighbors),
     entities(std::move(p.entities)),
     entities_locations(std::move(p.entities_locations)),
     n_entities(p.n_entities),
@@ -70,10 +73,13 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
 
 template<typename TSeq>
 inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
-    neighbors(0u),
-    entities(0u),
-    entities_locations(0u),
-    n_entities(0u),
+    model(p.model),
+    neighbors(p.neighbors),
+    neighbors_locations(p.neighbors_locations),
+    n_neighbors(p.n_neighbors),
+    entities(p.entities),
+    entities_locations(p.entities_locations),
+    n_entities(p.n_entities),
     sampled_agents(0u),
     sampled_agents_n(0u),
     sampled_agents_left_n(0u),
@@ -122,10 +128,16 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
 ) 
 {
 
-    neighbors.clear();
-    entities.clear();
-    entities_locations.clear();
-    n_entities = 0;
+    model = other_agent.model;
+
+    neighbors = other_agent.neighbors;
+    neighbors_locations = other_agent.neighbors_locations;
+    n_neighbors = other_agent.n_neighbors;
+
+    entities = other_agent.entities;
+    entities_locations = other_agent.entities_locations;
+    n_entities = other_agent.n_entities;
+
     sampled_agents.clear();
     sampled_agents_n = 0;
     sampled_agents_left_n = 0;
@@ -382,7 +394,7 @@ inline void Agent<TSeq>::rm_entity(
         );
 
     model->actions_add(
-        this, nullptr, nullptr, entities[entity_idx], status_new, queue, 
+        this, nullptr, nullptr, model->entities[entity_idx], status_new, queue, 
         default_rm_entity, entities_locations[entity_idx], entity_idx
     );
 }
@@ -773,6 +785,30 @@ template<typename TSeq>
 inline const Entities_const<TSeq> Agent<TSeq>::get_entities() const
 {
     return Entities_const<TSeq>(*this);
+}
+
+template<typename TSeq>
+inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i) const
+{
+    if (i >= n_entities)
+        throw std::range_error("Trying to get to an agent's entity outside of the range.");
+
+    return model->entities[i];
+}
+
+template<typename TSeq>
+inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i)
+{
+    if (i >= n_entities)
+        throw std::range_error("Trying to get to an agent's entity outside of the range.");
+
+    return model->entities[i];
+}
+
+template<typename TSeq>
+inline size_t Agent<TSeq>::get_n_entities() const
+{
+    return n_entities;
 }
 
 #undef CHECK_COALESCE_

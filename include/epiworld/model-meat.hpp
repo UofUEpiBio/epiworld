@@ -366,6 +366,8 @@ template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     name(model.name),
     db(model.db),
+    population(model.population),
+    population_backup(model.population_backup),
     directed(model.directed),
     viruses(model.viruses),
     prevalence_virus(model.prevalence_virus),
@@ -376,6 +378,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     prevalence_tool_as_proportion(model.prevalence_tool_as_proportion),
     tools_dist_funs(model.tools_dist_funs),
     entities(model.entities),
+    entities_backup(model.entities_backup),
     prevalence_entity(model.prevalence_entity),
     prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
     entities_dist_funs(model.entities_dist_funs),
@@ -398,12 +401,12 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
 
     // Removing old neighbors
-    model.clone_population(
-        this->population,
-        this->entities,
-        const_cast<Model<TSeq> * >(this),
-        this->directed
-        );
+    for (auto & p : population)
+        p.model = this;
+
+    if (population_backup != nullptr)
+        for (auto & p : *population_backup)
+            p.model = this;
 
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
@@ -443,6 +446,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     tools_dist_funs(std::move(model.tools_dist_funs)),
     // Entities
     entities(std::move(model.entities)),
+    entities_backup(std::move(model.entities_backup)),
     prevalence_entity(std::move(model.prevalence_entity)),
     prevalence_entity_as_proportion(std::move(model.prevalence_entity_as_proportion)),
     entities_dist_funs(std::move(model.entities_dist_funs)),
@@ -486,6 +490,17 @@ template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 {
     name = m.name;
+
+    population = m.population;
+    population_backup = m.population_backup;
+
+    for (auto & p : population)
+        p.model = this;
+
+    if (population_backup != nullptr)
+        for (auto & p : *population_backup)
+            p.model = this;
+
     db   = m.db;
 
     directed = m.directed;
@@ -501,6 +516,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     tools_dist_funs = m.tools_dist_funs;
     
     entities = m.entities;
+    entities_backup = m.entities_backup;
     prevalence_entity = m.prevalence_entity;
     prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
     entities_dist_funs = m.entities_dist_funs;
@@ -529,14 +545,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     // Pointing to the right place
     db.set_model(*this);
 
-    // Removing old neighbors
-    m.clone_population(
-        this->population,
-        this->entities,
-        const_cast<Model<TSeq> * >(this),
-        this->directed
-        );
-
     population_data = m.population_data;
     population_data_n_features = m.population_data_n_features;
 
@@ -553,73 +561,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     return *this;
 
-}
-
-
-template<typename TSeq>
-inline void Model<TSeq>::clone_population(
-    std::vector< Agent<TSeq> > & other_population,
-    std::vector< Entity<TSeq> > & other_entities,
-    Model< TSeq > * other_model,
-    bool & other_directed
-) const {
-
-    // Copy and clean
-    other_population = population;
-    other_entities   = entities;
-    other_directed   = directed;
-    
-    // Relinking individuals
-    for (epiworld_fast_uint i = 0u; i < size(); ++i)
-    {
-        // Making room
-        const Agent<TSeq> & agent_this = population[i];
-        Agent<TSeq> & agent_res        = other_population[i];
-
-        // Re-adding: The agent_this.neighbors has the neighbors in the other model.
-        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
-        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
-        {
-            // Point to the right neighbors
-            int loc = other_population[neigh[n]->get_id()].get_id();
-            agent_res.add_neighbor(&other_population[loc], true, true);
-
-        }
-
-    }
-
-    for (size_t i = 0u; i < other_entities.size(); ++i)
-    {
-
-        // Making room
-        const Entity<TSeq> & entity_this  = entities[i];
-        Entity<TSeq> &       entity_other = other_entities[i];
-
-        // Iterating
-        for (const auto & a : entity_this.agents)
-        {
-            entity_other.add_agent(
-                other_population[a->get_id()],
-                other_model
-                );
-        }
-
-    }
-
-    // Running actions
-    other_model->actions_run();
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::clone_population(const Model<TSeq> & other_model)
-{
-    other_model.clone_population(
-        this->population,
-        this->entities,
-        const_cast<Model<TSeq> * >(this),
-        this->directed
-    );
 }
 
 template<typename TSeq>
@@ -990,58 +931,11 @@ template<typename TSeq>
 inline void Model<TSeq>::set_backup()
 {
 
-    population_backup = population;
+    population_backup =
+        std::make_shared< std::vector< Agent<TSeq> > >(population);
 
-    // Generating the ties between the individuals
-    for (auto & p: population_backup)
-    {
-
-        p.neighbors.clear();
-        p.entities.clear();
-        p.entities_locations.clear();
-        p.n_entities = 0u;
-
-    }
-    
-    // Relinking individuals
-    for (epiworld_fast_uint i = 0u; i < size(); ++i)
-    {
-        // Making room
-        const Agent<TSeq> & agent_this = population[i];
-        Agent<TSeq> & agent_res        = population_backup[i];
-
-        // Re-adding: The agent_this.neighbors has the neighbors in the other model.
-        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
-        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
-        {
-            // Point to the right neighbors
-            int loc = population_backup[neigh[n]->get_id()].get_id();
-            agent_res.add_neighbor(&population_backup[loc], true, true);
-
-        }
-
-    }
-
-    entities_backup = entities;
-    for (size_t i = 0u; i < entities_backup.size(); ++i)
-    {
-
-        // Making room
-        const Entity<TSeq> & entity_this  = entities[i];
-        Entity<TSeq> &       entity_other = entities_backup[i];
-
-        // Iterating
-        for (const auto & a : entity_this.agents)
-        {
-            entity_other.add_agent(
-                population_backup[a->get_id()],
-                nullptr
-                );
-        }
-
-    }
-
-
+    entities_backup =
+        std::make_shared< std::vector< Entity<TSeq> > >(entities);
 
 }
 
@@ -1049,15 +943,8 @@ template<typename TSeq>
 inline void Model<TSeq>::restore_backup()
 {
 
-    if (backup != nullptr)
-    {
-
-        clone_population(*backup);
-
-        db = backup->db;
-        db.set_model(*this);
-
-    }
+    population = *population_backup;
+    entities   = *entities_backup;
 
 }
 

@@ -92,7 +92,7 @@ private:
     std::vector< Agent<TSeq> > population;
 
     bool usign_backup = true;
-    std::vector< Agent<TSeq> > population_backup;
+    std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = nullptr;
 
 
     /**
@@ -136,7 +136,7 @@ private:
     std::vector< ToolToAgentFun<TSeq> > tools_dist_funs;
 
     std::vector< Entity<TSeq> > entities; 
-    std::vector< Entity<TSeq> > entities_backup;
+    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup;
     std::vector< epiworld_double > prevalence_entity;
     std::vector< bool > prevalence_entity_as_proportion;
     std::vector< EntityToAgentFun<TSeq> > entities_dist_funs;

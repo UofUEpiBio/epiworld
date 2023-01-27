@@ -79,10 +79,15 @@ class Agent {
     friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     
-    std::vector< Agent<TSeq> * > neighbors;
-    std::vector< Entity<TSeq> * > entities;
+    Model<TSeq> * model;
+
+    std::vector< size_t > neighbors;
+    std::vector< size_t > neighbors_locations;
+    size_t n_neighbors = 0u;
+
+    std::vector< size_t > entities;
     std::vector< size_t > entities_locations;
-    epiworld_fast_uint n_entities = 0u;
+    size_t n_entities = 0u;
 
     epiworld_fast_uint status = 0u;
     epiworld_fast_uint status_prev = 0u; ///< For accounting, if need to undo a change.
@@ -295,6 +300,9 @@ public:
 
     Entities<TSeq> get_entities();
     const Entities_const<TSeq> get_entities() const;
+    const Entity<TSeq> & get_entity(size_t i) const;
+    Entity<TSeq> & get_entity(size_t i);
+    size_t get_n_entities() const;
 
 };
 

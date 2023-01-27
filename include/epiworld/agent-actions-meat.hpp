@@ -126,22 +126,44 @@ template<typename TSeq>
 inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
 {
 
-    Agent<TSeq> * p  = a.agent;
+    Agent<TSeq> *  p = a.agent;
     Entity<TSeq> * e = a.entity;
 
     CHECK_COALESCE_(a.new_status, e->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, e->queue_post, QueueValues::NoOne)
 
+    // Checking the agent and the entity are not linked
+    if ((p->get_n_entities() > 0) && (e->size() > 0))
+    {
+
+        if (p->get_n_entities() > e->size()) // Slower search through the agent
+        {
+            for (size_t i = 0u; i < e->size(); ++i)
+                if(e->operator[](i)->get_id() == p->get_id())
+                    throw std::logic_error("An entity cannot be reassigned to an agent.");
+        }
+        else                                 // Slower search through the entity
+        {
+            for (size_t i = 0u; i < p->n_entities(); ++i)
+                if(p->get_entity(i)->get_id() == e->get_id())
+                    throw std::logic_error("An entity cannot be reassigned to an agent.");
+        }
+
+        // It means that agent and entity were not associated.
+
+    }
+
+
     // Adding the entity to the agent
     if (++p->n_entities <= p->entities.size())
     {
 
-        p->entities[p->n_entities - 1]           = e;
+        p->entities[p->n_entities - 1]           = e->get_id();
         p->entities_locations[p->n_entities - 1] = e->n_agents;
 
     } else
     {
-        p->entities.push_back(e);
+        p->entities.push_back(e->get_id());
         p->entities_locations.push_back(e->n_agents);
     }
 
@@ -150,13 +172,13 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
     if (++e->n_agents <= e->agents.size())
     {
 
-        e->agents[e->n_agents - 1]          = p;
+        e->agents[e->n_agents - 1]          = p->get_id();
         // Adjusted by '-1' since the list of entities in the agent just grew.
         e->agents_location[e->n_agents - 1] = p->n_entities - 1;
 
     } else
     {
-        e->agents.push_back(p);
+        e->agents.push_back(p->get_id());
         e->agents_location.push_back(p->n_entities - 1);
     }
 
@@ -183,11 +205,11 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
         // When we move the end entity to the new location, the 
         // moved entity needs to reflect the change, i.e., where the
         // entity will now be located in the agent
-        size_t agent_in_end_entity  = p->entities_locations[p->n_entities];
-        Entity<TSeq> * moved_entity = p->entities[p->n_entities];
+        size_t agent_location_in_last_entity  = p->entities_locations[p->n_entities];
+        Entity<TSeq> * last_entity = &model->entities[p->entities[p->n_entities]]; ///< Last entity of the agent
 
         // The end entity will be located where the removed was
-        moved_entity->agents_location[agent_in_end_entity] = idx_entity_in_agent;
+        last_entity->agents_location[agent_location_in_last_entity] = idx_entity_in_agent;
 
         // We now make the swap
         std::swap(
@@ -200,14 +222,14 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
     if (--e->n_agents > 0)
     {
 
-        // When we move the end entity to the new location, the 
-        // moved entity needs to reflect the change, i.e., where the
-        // entity will now be located in the agent
-        size_t entity_in_end_agent = e->agents_location[e->n_agents];
-        Agent<TSeq> * moved_agent  = e->agents[e->n_agents];
+        // When we move the end agent to the new location, the 
+        // moved agent needs to reflect the change, i.e., where the
+        // agent will now be located in the entity
+        size_t entity_location_in_last_agent = e->agents_location[e->n_agents];
+        Agent<TSeq> * last_agent  = &model->agents[e->agents[e->n_agents]]; ///< Last agent of the entity
 
         // The end entity will be located where the removed was
-        moved_agent->entities_locations[entity_in_end_agent] = idx_agent_in_entity;
+        last_agent->entities_locations[entity_location_in_last_agent] = idx_agent_in_entity;
 
         // We now make the swap
         std::swap(

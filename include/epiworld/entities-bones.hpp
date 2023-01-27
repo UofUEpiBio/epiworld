@@ -18,32 +18,43 @@ class Entities {
     friend class Entity<TSeq>;
     friend class Agent<TSeq>;
 private:
-    std::vector< Entity<TSeq>* > * dat;
-    const epiworld_fast_uint * n_entities;
+    std::vector< Entity<TSeq> * >  dat;
+    const size_t * n_entities;
 
 public:
 
     Entities() = delete;
-    Entities(Agent<TSeq> & p) : dat(&p.entities), n_entities(&p.n_entities) {};
+    Entities(Agent<TSeq> & p);
 
-    typename std::vector< Entity<TSeq>* >::iterator begin();
-    typename std::vector< Entity<TSeq>* >::iterator end();
+    typename std::vector< Entity<TSeq> * >::iterator begin();
+    typename std::vector< Entity<TSeq> * >::iterator end();
 
-    Entity<TSeq>* & operator()(size_t i);
-    Entity<TSeq>* & operator[](size_t i);
+    Entity<TSeq> & operator()(size_t i);
+    Entity<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
+inline Entities<TSeq>::Entities(Agent<TSeq> & p)
+{
+
+    size_t n = p.get_n_entities();
+    dat.reserve(n);
+    for (size_t i = 0u; i < n; ++i)
+        dat.push_back(&p.get_entity(i));
+
+}
+
+template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::begin()
 {
 
     if (*n_entities == 0u)
-        return dat->end();
+        return dat.end();
     
-    return dat->begin();
+    return dat.begin();
 }
 
 template<typename TSeq>
@@ -54,21 +65,21 @@ inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::end()
 }
 
 template<typename TSeq>
-inline Entity<TSeq>* & Entities<TSeq>::operator()(size_t i)
+inline Entity<TSeq> & Entities<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_entities)
         throw std::range_error("Entity index out of range.");
 
-    return dat->operator[](i);
+    return *dat[i];
 
 }
 
 template<typename TSeq>
-inline Entity<TSeq>* & Entities<TSeq>::operator[](size_t i)
+inline Entity<TSeq> & Entities<TSeq>::operator[](size_t i)
 {
 
-    return dat->operator[](i);
+    return *dat[i];
 
 }
 
@@ -88,31 +99,42 @@ class Entities_const {
     friend class Virus<TSeq>;
     friend class Agent<TSeq>;
 private:
-    const std::vector< Entity<TSeq>* > * dat;
-    const epiworld_fast_uint * n_entities;
+    const std::vector< Entity<TSeq>* > dat;
+    const size_t * n_entities;
 
 public:
 
     Entities_const() = delete;
-    Entities_const(const Agent<TSeq> & p) : dat(&p.entities), n_entities(&p.n_entities) {};
+    Entities_const(const Agent<TSeq> & p);
 
     typename std::vector< Entity<TSeq>* >::const_iterator begin();
     typename std::vector< Entity<TSeq>* >::const_iterator end();
 
-    const Entity<TSeq>* & operator()(size_t i);
-    const Entity<TSeq>* & operator[](size_t i);
+    const Entity<TSeq> & operator()(size_t i);
+    const Entity<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
+inline Entities_const<TSeq>::Entities(const Agent<TSeq> & p)
+{
+
+    size_t n = p.get_n_entities();
+    dat.reserve(n);
+    for (size_t i = 0u; i < n; ++i)
+        dat.push_back(&p.get_entity(i));
+
+}
+
+template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::begin() {
 
     if (*n_entities == 0u)
-        return dat->end();
+        return dat.end();
     
-    return dat->begin();
+    return dat.begin();
 }
 
 template<typename TSeq>
@@ -122,21 +144,21 @@ inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq
 }
 
 template<typename TSeq>
-inline const Entity<TSeq>* & Entities_const<TSeq>::operator()(size_t i)
+inline const Entity<TSeq> & Entities_const<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_entities)
         throw std::range_error("Entity index out of range.");
 
-    return dat->operator[](i);
+    return *dat[i];
 
 }
 
 template<typename TSeq>
-inline const Entity<TSeq>* & Entities_const<TSeq>::operator[](size_t i)
+inline const Entity<TSeq> & Entities_const<TSeq>::operator[](size_t i)
 {
 
-    return dat->operator[](i);
+    return *dat[i];
 
 }
 
