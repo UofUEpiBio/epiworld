@@ -259,7 +259,21 @@ public:
         bool check_target = true
         );
 
+    /**
+     * @brief Swaps neighbors between the current agent and agent `other`
+     * 
+     * @param other 
+     * @param n_this 
+     * @param n_other 
+     */
+    void swap_neighbors(
+        Agent<TSeq> & other,
+        size_t n_this,
+        size_t n_other
+    );
+
     std::vector< Agent<TSeq> * > get_neighbors();
+    size_t get_n_neighbors() const;
 
     void change_status(
         Model<TSeq> * model,

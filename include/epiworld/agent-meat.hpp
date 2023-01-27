@@ -603,10 +603,10 @@ inline void Agent<TSeq>::add_neighbor(
     bool check_target
 ) {
     // Can we find the neighbor?
+    bool found = false;
     if (check_source)
     {
 
-        bool found = false;
         for (auto & n: neighbors)    
             if (n == p.get_id())
             {
@@ -614,39 +614,82 @@ inline void Agent<TSeq>::add_neighbor(
                 break;
             }
 
-        if (!found)
-        {
-            neighbors.push_back(p.get_id());
-            n_neighbors++;
-        }
+    }
 
-    } else 
+    // Three things going on here:
+    // - Where in the neighbor will this be
+    // - What is the neighbor's id
+    // - Increasing the number of neighbors
+    if (!found)
+    {
+
+        neighbors_locations.push_back(p.get_n_neighbors());
         neighbors.push_back(p.get_id());
+        n_neighbors++;
 
+    }
+
+
+    found = false;
     if (check_target)
     {
 
-        bool found = false;
         for (auto & n: p.neighbors)
             if (n == id)
             {
                 found = true;
                 break;
             }
-
-        if (!found)
-        {
-            p.neighbors.push_back(id);
-            p.n_neighbors++;
-        }
     
     }
-    else 
+
+    if (!found)
     {
+
+        p.neighbors_locations.push_back(n_neighbors - 1);
         p.neighbors.push_back(id);
         p.n_neighbors++;
+        
     }
     
+
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::swap_neighbors(
+    Agent<TSeq> & other,
+    size_t n_this,
+    size_t n_other
+)
+{
+
+    // Getting the agents
+    auto & pop = model->population;
+    auto & neigh_this  = pop[neighbors[n_this]];
+    auto & neigh_other = pop[other.neighbors[n_other]];
+
+    // Getting the locations in the neighbors
+    size_t loc_this_in_neigh = neighbors_locations[n_this];
+    size_t loc_other_in_neigh = other.neighbors_locations[n_other];
+
+    // Changing ids
+    std::swap(neighbors[n_this], other.neighbors[n_other]);
+
+    if (!model->directed)
+    {
+        std::swap(
+            neigh_this.neighbors[loc_this_in_neigh],
+            neigh_other.neighbors[loc_other_in_neigh]
+            );
+
+        // Changing the locations
+        std::swap(neighbors_locations[n_this], other.neighbors_locations[n_other]);
+        
+        std::swap(
+            neigh_this.neighbors_locations[loc_this_in_neigh],
+            neigh_other.neighbors_locations[loc_other_in_neigh]
+            );
+    }
 
 }
 
@@ -658,6 +701,12 @@ inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors()
         res[i] = &model->population[neighbors[i]];
 
     return res;
+}
+
+template<typename TSeq>
+inline size_t Agent<TSeq>::get_n_neighbors() const
+{
+    return n_neighbors;
 }
 
 template<typename TSeq>

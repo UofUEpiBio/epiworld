@@ -25,6 +25,12 @@ inline void rewire_degseq(
     )
 {
 
+    #ifdef EPI_DEBUG
+    std::vector< int > degree0(agents.size(), 0);
+    for (size_t i = 0u; i < degree0.size(); ++i)
+        degree0[i] = model->population[i].get_neighbors().size();
+    #endif
+
     // Identifying individuals with degree > 0
     std::vector< epiworld_fast_uint > non_isolates;
     std::vector< epiworld_double > weights;
@@ -35,7 +41,9 @@ inline void rewire_degseq(
         if (agents->operator[](i).get_neighbors().size() > 0u)
         {
             non_isolates.push_back(i);
-            epiworld_double wtemp = static_cast<epiworld_double>(agents->operator[](i).get_neighbors().size());
+            epiworld_double wtemp = static_cast<epiworld_double>(
+                agents->operator[](i).get_neighbors().size()
+                );
             weights.push_back(wtemp);
             nedges += wtemp;
         }
@@ -90,43 +98,18 @@ inline void rewire_degseq(
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
-        int id01 = std::floor(p0.get_neighbors().size() * model->runif());
-        int id11 = std::floor(p1.get_neighbors().size() * model->runif());
+        int id01 = std::floor(p0.get_n_neighbors() * model->runif());
+        int id11 = std::floor(p1.get_n_neighbors() * model->runif());
 
         // When rewiring, we need to flip the individuals from the other
         // end as well, since we are dealing withi an undirected graph
         
         // Finding what neighbour is id0
-        if (!model->is_directed())
-        {
-            // Picking 0's alter
-            epiworld_fast_uint n0,n1;
-            Agent<TSeq> & p01 = agents->operator[](p0.get_neighbors()[id01]->get_id());
-            for (n0 = 0; n0 < p01.get_neighbors().size(); ++n0)
-            {
-
-                // And getting the id of ego 0
-                if (p0.get_id() == p01.get_neighbors()[n0]->get_id())
-                    break;            
-            }
-
-            // Picking 1's alter
-            Agent<TSeq> & p11 = agents->operator[](p1.get_neighbors()[id11]->get_id());
-            for (n1 = 0; n1 < p11.get_neighbors().size(); ++n1)
-            {
-
-                // And getting the id of ego 1
-                if (p1.get_id() == p11.get_neighbors()[n1]->get_id())
-                    break;            
-            }
-
-            // Swapping alter's endpoints
-            std::swap(p01.get_neighbors()[n0], p11.get_neighbors()[n1]);    
-            
-        }
-
-        // Moving alter first
-        std::swap(p0.get_neighbors()[id01], p1.get_neighbors()[id11]);
+        model->population[id0].swap_neighbors(
+            model->population[id1],
+            id01,
+            id11
+            );
         
 
     }

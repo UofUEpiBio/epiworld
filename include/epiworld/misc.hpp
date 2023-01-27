@@ -163,7 +163,9 @@ inline int roulette(
     // Step 3: Roulette
     epiworld_double cumsum = p_none/p_none_or_single;
     if (r < cumsum)
+    {
         return -1;
+    }
 
     for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
     {
@@ -174,9 +176,15 @@ inline int roulette(
         
     }
 
+
+    #ifdef EPI_DEBUG
+    printf_epiworld("[epiworld-debug] roulette::cumsum = %.4f\n", cumsum);
+    #endif
+
     return static_cast<int>(probs.size() - 1u);
 
 }
+
 
 template<typename TSeq>
 inline int roulette(

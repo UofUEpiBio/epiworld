@@ -62,6 +62,14 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
             1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
 
     }
+
+    #ifdef EPI_DEBUG
+    printf_epiworld(
+        "[epiworld-debug] agent %i has %i possible events.\n",
+        static_cast<int>(p->get_id()),
+        static_cast<int>(n_events)
+        );
+    #endif
     
     if (n_events == 0u)
         return;
