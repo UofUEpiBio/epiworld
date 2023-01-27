@@ -44,8 +44,8 @@ inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 {
 
     active[p->id]++;
-    for (auto * n : p->neighbors)
-        active[n->id]++;
+    for (auto n : p->neighbors)
+        active[n]++;
 
 }
 
@@ -54,8 +54,8 @@ inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 {
 
     active[p->id]--;
-    for (auto * n : p->neighbors)
-        active[n->id]--;
+    for (auto n : p->neighbors)
+        active[n]--;
 
 }
 

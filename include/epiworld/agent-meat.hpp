@@ -412,7 +412,7 @@ inline void Agent<TSeq>::rm_entity(
     int entity_idx = -1;
     for (size_t i = 0u; i < n_entities; ++i)
     {
-        if (entities[i]->get_id() == entity->get_id())
+        if (entities[i] == entity->get_id())
             entity_idx = i;
     }
 
@@ -598,7 +598,7 @@ inline void Agent<TSeq>::mutate_variant()
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_neighbor(
-    Agent<TSeq> * p,
+    Agent<TSeq> & p,
     bool check_source,
     bool check_target
 ) {
@@ -608,42 +608,56 @@ inline void Agent<TSeq>::add_neighbor(
 
         bool found = false;
         for (auto & n: neighbors)    
-            if (n->get_id() == p->get_id())
+            if (n == p.get_id())
             {
                 found = true;
                 break;
             }
 
         if (!found)
-            neighbors.push_back(p);
+        {
+            neighbors.push_back(p.get_id());
+            n_neighbors++;
+        }
 
     } else 
-        neighbors.push_back(p);
+        neighbors.push_back(p.get_id());
 
     if (check_target)
     {
 
         bool found = false;
-        for (auto & n: p->neighbors)
-            if (n->get_id() == id)
+        for (auto & n: p.neighbors)
+            if (n == id)
             {
                 found = true;
                 break;
             }
 
         if (!found)
-            p->neighbors.push_back(this);
+        {
+            p.neighbors.push_back(id);
+            p.n_neighbors++;
+        }
     
-    } else 
-        p->neighbors.push_back(this);
+    }
+    else 
+    {
+        p.neighbors.push_back(id);
+        p.n_neighbors++;
+    }
     
 
 }
 
 template<typename TSeq>
-inline std::vector< Agent<TSeq> *> & Agent<TSeq>::get_neighbors()
+inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors()
 {
-    return neighbors;
+    std::vector< Agent<TSeq> * > res(n_neighbors, nullptr);
+    for (size_t i = 0u; i < n_neighbors; ++i)
+        res[i] = &model->population[neighbors[i]];
+
+    return res;
 }
 
 template<typename TSeq>

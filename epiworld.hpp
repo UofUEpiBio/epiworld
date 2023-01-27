@@ -40,9 +40,9 @@ namespace epiworld {
 
 #ifdef _OPENMP
     #include <omp.h>
-#else
-    #define omp_get_thread_num() 0
-    #define omp_set_num_threads() 1
+// #else
+//     #define omp_get_thread_num() 0
+//     #define omp_set_num_threads() 1
 #endif
 
 #ifndef epiworld_double
@@ -2830,7 +2830,7 @@ inline void DataBase<TSeq>::set_model(
     // Initializing the counts
     today_total.resize(m.nstatus);
     std::fill(today_total.begin(), today_total.end(), 0);
-    for (auto & p : *m.get_agents())
+    for (auto & p : m.get_agents())
         ++today_total[p.get_status()];
     
     transition_matrix.resize(m.nstatus * m.nstatus);
@@ -4144,7 +4144,7 @@ inline void rewire_degseq(
     std::vector< epiworld_fast_uint > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    // std::vector< Agent<TSeq> > * agents = model->get_agents();
+    
     for (epiworld_fast_uint i = 0u; i < agents->size(); ++i)
     {
         if (agents->operator[](i).get_neighbors().size() > 0u)
@@ -4268,7 +4268,6 @@ inline void rewire_degseq(
     weights.reserve(nties.size());
 
     epiworld_double nedges = 0.0;
-    // std::vector< Agent<TSeq> > * agents = model->get_agents();
     auto & dat = agents->get_dat();
 
     for (size_t i = 0u; i < dat.size(); ++i)
@@ -4696,8 +4695,8 @@ inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 {
 
     active[p->id]++;
-    for (auto * n : p->neighbors)
-        active[n->id]++;
+    for (auto n : p->neighbors)
+        active[n]++;
 
 }
 
@@ -4706,8 +4705,8 @@ inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 {
 
     active[p->id]--;
-    for (auto * n : p->neighbors)
-        active[n->id]--;
+    for (auto n : p->neighbors)
+        active[n]--;
 
 }
 
@@ -4840,7 +4839,7 @@ private:
     std::vector< Agent<TSeq> > population;
 
     bool usign_backup = true;
-    std::vector< Agent<TSeq> > population_backup;
+    std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = nullptr;
 
 
     /**
@@ -4884,7 +4883,7 @@ private:
     std::vector< ToolToAgentFun<TSeq> > tools_dist_funs;
 
     std::vector< Entity<TSeq> > entities; 
-    std::vector< Entity<TSeq> > entities_backup;
+    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup;
     std::vector< epiworld_double > prevalence_entity;
     std::vector< bool > prevalence_entity_as_proportion;
     std::vector< EntityToAgentFun<TSeq> > entities_dist_funs;
@@ -5107,7 +5106,8 @@ public:
         );
     void agents_from_adjlist(AdjList al);
     bool is_directed() const;
-    std::vector< Agent<TSeq> > * get_agents();
+    std::vector< Agent<TSeq> > & get_agents();
+    std::vector< Entity<TSeq> > & get_entities();
     void agents_smallworld(
         epiworld_fast_uint n = 1000,
         epiworld_fast_uint k = 5,
@@ -5774,6 +5774,8 @@ template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     name(model.name),
     db(model.db),
+    population(model.population),
+    population_backup(model.population_backup),
     directed(model.directed),
     viruses(model.viruses),
     prevalence_virus(model.prevalence_virus),
@@ -5784,6 +5786,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     prevalence_tool_as_proportion(model.prevalence_tool_as_proportion),
     tools_dist_funs(model.tools_dist_funs),
     entities(model.entities),
+    entities_backup(model.entities_backup),
     prevalence_entity(model.prevalence_entity),
     prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
     entities_dist_funs(model.entities_dist_funs),
@@ -5806,12 +5809,19 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
 
     // Removing old neighbors
-    model.clone_population(
-        this->population,
-        this->entities,
-        const_cast<Model<TSeq> * >(this),
-        this->directed
-        );
+    for (auto & p : population)
+        p.model = this;
+
+    if (population_backup != nullptr)
+        for (auto & p : *population_backup)
+            p.model = this;
+
+    for (auto & e : entities)
+        e.model = this;
+
+    if (entities_backup != nullptr)
+        for (auto & e : *entities_backup)
+            e.model = this;
 
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
@@ -5851,6 +5861,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     tools_dist_funs(std::move(model.tools_dist_funs)),
     // Entities
     entities(std::move(model.entities)),
+    entities_backup(std::move(model.entities_backup)),
     prevalence_entity(std::move(model.prevalence_entity)),
     prevalence_entity_as_proportion(std::move(model.prevalence_entity_as_proportion)),
     entities_dist_funs(std::move(model.entities_dist_funs)),
@@ -5894,6 +5905,24 @@ template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 {
     name = m.name;
+
+    population = m.population;
+    population_backup = m.population_backup;
+
+    for (auto & p : population)
+        p.model = this;
+
+    if (population_backup != nullptr)
+        for (auto & p : *population_backup)
+            p.model = this;
+
+    for (auto & e : entities)
+        e.model = this;
+
+    if (entities_backup != nullptr)
+        for (auto & e : *entities_backup)
+            e.model = this;
+
     db   = m.db;
 
     directed = m.directed;
@@ -5909,6 +5938,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     tools_dist_funs = m.tools_dist_funs;
     
     entities = m.entities;
+    entities_backup = m.entities_backup;
     prevalence_entity = m.prevalence_entity;
     prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
     entities_dist_funs = m.entities_dist_funs;
@@ -5937,14 +5967,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     // Pointing to the right place
     db.set_model(*this);
 
-    // Removing old neighbors
-    m.clone_population(
-        this->population,
-        this->entities,
-        const_cast<Model<TSeq> * >(this),
-        this->directed
-        );
-
     population_data = m.population_data;
     population_data_n_features = m.population_data_n_features;
 
@@ -5963,83 +5985,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
 }
 
-
-template<typename TSeq>
-inline void Model<TSeq>::clone_population(
-    std::vector< Agent<TSeq> > & other_population,
-    std::vector< Entity<TSeq> > & other_entities,
-    Model< TSeq > * other_model,
-    bool & other_directed
-) const {
-
-    // Copy and clean
-    other_population = population;
-    other_entities   = entities;
-    other_directed   = directed;
-
-    for (auto & p: other_population)
-    {
-
-        p.neighbors.clear();
-        p.entities.clear();
-        p.entities_locations.clear();
-        p.n_entities = 0u;
-
-    }
-    
-    // Relinking individuals
-    for (epiworld_fast_uint i = 0u; i < size(); ++i)
-    {
-        // Making room
-        const Agent<TSeq> & agent_this = population[i];
-        Agent<TSeq> & agent_res        = other_population[i];
-
-        // Re-adding: The agent_this.neighbors has the neighbors in the other model.
-        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
-        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
-        {
-            // Point to the right neighbors
-            int loc = other_population[neigh[n]->get_id()].get_id();
-            agent_res.add_neighbor(&other_population[loc], true, true);
-
-        }
-
-    }
-
-    for (size_t i = 0u; i < other_entities.size(); ++i)
-    {
-
-        // Making room
-        const Entity<TSeq> & entity_this  = entities[i];
-        Entity<TSeq> &       entity_other = other_entities[i];
-
-        // Iterating
-        for (const auto & a : entity_this.agents)
-        {
-            entity_other.add_agent(
-                other_population[a->get_id()],
-                other_model
-                );
-        }
-
-    }
-
-    // Running actions
-    other_model->actions_run();
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::clone_population(const Model<TSeq> & other_model)
-{
-    other_model.clone_population(
-        this->population,
-        this->entities,
-        const_cast<Model<TSeq> * >(this),
-        this->directed
-    );
-}
-
 template<typename TSeq>
 inline DataBase<TSeq> & Model<TSeq>::get_db()
 {
@@ -6047,9 +5992,15 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
-inline std::vector<Agent<TSeq>> * Model<TSeq>::get_agents()
+inline std::vector<Agent<TSeq>> Model<TSeq>::get_agents()
 {
-    return &population;
+    return population;
+}
+
+template<typename TSeq>
+inline std::vector<Entity<TSeq>> & Model<TSeq>::get_entities()
+{
+    return entities;
 }
 
 template<typename TSeq>
@@ -6078,7 +6029,10 @@ inline void Model<TSeq>::agents_empty_graph(
     // Filling the model and ids
     size_t i = 0u;
     for (auto & p : population)
-        p.id    = i++;
+    {
+        p.id = i++;
+        p.model = this;
+    }
     
 
 }
@@ -6408,58 +6362,11 @@ template<typename TSeq>
 inline void Model<TSeq>::set_backup()
 {
 
-    population_backup = population;
+    population_backup =
+        std::make_shared< std::vector< Agent<TSeq> > >(population);
 
-    // Generating the ties between the individuals
-    for (auto & p: population_backup)
-    {
-
-        p.neighbors.clear();
-        p.entities.clear();
-        p.entities_locations.clear();
-        p.n_entities = 0u;
-
-    }
-    
-    // Relinking individuals
-    for (epiworld_fast_uint i = 0u; i < size(); ++i)
-    {
-        // Making room
-        const Agent<TSeq> & agent_this = population[i];
-        Agent<TSeq> & agent_res        = population_backup[i];
-
-        // Re-adding: The agent_this.neighbors has the neighbors in the other model.
-        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
-        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
-        {
-            // Point to the right neighbors
-            int loc = population_backup[neigh[n]->get_id()].get_id();
-            agent_res.add_neighbor(&population_backup[loc], true, true);
-
-        }
-
-    }
-
-    entities_backup = entities;
-    for (size_t i = 0u; i < entities_backup.size(); ++i)
-    {
-
-        // Making room
-        const Entity<TSeq> & entity_this  = entities[i];
-        Entity<TSeq> &       entity_other = entities_backup[i];
-
-        // Iterating
-        for (const auto & a : entity_this.agents)
-        {
-            entity_other.add_agent(
-                population_backup[a->get_id()],
-                nullptr
-                );
-        }
-
-    }
-
-
+    entities_backup =
+        std::make_shared< std::vector< Entity<TSeq> > >(entities);
 
 }
 
@@ -6467,15 +6374,8 @@ template<typename TSeq>
 inline void Model<TSeq>::restore_backup()
 {
 
-    if (backup != nullptr)
-    {
-
-        clone_population(*backup);
-
-        db = backup->db;
-        db.set_model(*this);
-
-    }
+    population = *population_backup;
+    entities   = *entities_backup;
 
 }
 
@@ -6843,13 +6743,13 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
     {
 
         // population[i].id    = i;
-        // population[i].model = this;
+        population[i].model = this;
 
         for (const auto & link: tmpdat[i])
         {
 
             population[i].add_neighbor(
-                &population[link.first],
+                population[link.first],
                 true, true
                 );
 
@@ -6863,12 +6763,6 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
         if (p.id >= static_cast<int>(al.vcount()))
             throw std::logic_error(
                 "Agent's id cannot be negative above or equal to the number of agents!");
-
-        for (const auto & n : p.neighbors)
-        {
-            if (n == nullptr)
-                throw std::logic_error("A neighbor cannot be nullptr!");
-        }
     }
     #endif
 
@@ -7704,7 +7598,7 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
         {
             // Point to the right neighbors
             int loc = res.population_ids[neigh[n]->get_id()];
-            agent_res.add_neighbor(&res.population[loc], true, true);
+            agent_res.add_neighbor(res.population[loc], true, true);
 
         }
 
@@ -9562,9 +9456,11 @@ class Entity {
     friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
+
+    Model<TSeq> * model;
     
     int id = -1;
-    std::vector< Agent<TSeq> * > agents;   ///< Vector of agents
+    std::vector< size_t > agents;   ///< Vector of agents
     std::vector< size_t > agents_location; ///< Location where the entity is stored in the agent
     size_t n_agents = 0u;
 
@@ -9602,6 +9498,7 @@ public:
     Entity(const Entity<TSeq> & e);
     // Entity(Entity && e);
     Entity(std::string name) : entity_name(name) {};
+    Entity<TSeq> & operator=(const Entity<TSeq> & e);
 
     void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
     void add_agent(Agent<TSeq> * p, Model<TSeq> * model);
@@ -9653,9 +9550,10 @@ public:
 
 template<typename TSeq>
 inline Entity<TSeq>::Entity(const Entity<TSeq> & e) :
+    model(e.model),
     id(e.id),
     agents(0u),
-    angents_location(0u),
+    agents_location(0u),
     n_agents(0),
     sampled_agents(0u),
     sampled_agents_n(0u),
@@ -9667,7 +9565,7 @@ inline Entity<TSeq>::Entity(const Entity<TSeq> & e) :
     status_init(e.status_init),
     status_post(e.status_post),
     queue_init(e.queue_init),
-    queue_post(e.queue_post),
+    queue_post(e.queue_post)
 {
 
 }
@@ -9702,7 +9600,7 @@ inline void Entity<TSeq>::rm_agent(size_t idx)
             " out of " + std::to_string(n_agents)
             );
 
-    agents[idx]->rm_entity(*this);
+    model->population[idx].rm_entity(*this);
 
     return;
 }
@@ -9868,32 +9766,43 @@ class Entities {
     friend class Entity<TSeq>;
     friend class Agent<TSeq>;
 private:
-    std::vector< Entity<TSeq>* > * dat;
-    const epiworld_fast_uint * n_entities;
+    std::vector< Entity<TSeq> * >  dat;
+    const size_t * n_entities;
 
 public:
 
     Entities() = delete;
-    Entities(Agent<TSeq> & p) : dat(&p.entities), n_entities(&p.n_entities) {};
+    Entities(Agent<TSeq> & p);
 
-    typename std::vector< Entity<TSeq>* >::iterator begin();
-    typename std::vector< Entity<TSeq>* >::iterator end();
+    typename std::vector< Entity<TSeq> * >::iterator begin();
+    typename std::vector< Entity<TSeq> * >::iterator end();
 
-    Entity<TSeq>* & operator()(size_t i);
-    Entity<TSeq>* & operator[](size_t i);
+    Entity<TSeq> & operator()(size_t i);
+    Entity<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
+inline Entities<TSeq>::Entities(Agent<TSeq> & p)
+{
+
+    size_t n = p.get_n_entities();
+    dat.reserve(n);
+    for (size_t i = 0u; i < n; ++i)
+        dat.push_back(&p.get_entity(i));
+
+}
+
+template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::begin()
 {
 
     if (*n_entities == 0u)
-        return dat->end();
+        return dat.end();
     
-    return dat->begin();
+    return dat.begin();
 }
 
 template<typename TSeq>
@@ -9904,21 +9813,21 @@ inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::end()
 }
 
 template<typename TSeq>
-inline Entity<TSeq>* & Entities<TSeq>::operator()(size_t i)
+inline Entity<TSeq> & Entities<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_entities)
         throw std::range_error("Entity index out of range.");
 
-    return dat->operator[](i);
+    return *dat[i];
 
 }
 
 template<typename TSeq>
-inline Entity<TSeq>* & Entities<TSeq>::operator[](size_t i)
+inline Entity<TSeq> & Entities<TSeq>::operator[](size_t i)
 {
 
-    return dat->operator[](i);
+    return *dat[i];
 
 }
 
@@ -9938,31 +9847,42 @@ class Entities_const {
     friend class Virus<TSeq>;
     friend class Agent<TSeq>;
 private:
-    const std::vector< Entity<TSeq>* > * dat;
-    const epiworld_fast_uint * n_entities;
+    const std::vector< Entity<TSeq>* > dat;
+    const size_t * n_entities;
 
 public:
 
     Entities_const() = delete;
-    Entities_const(const Agent<TSeq> & p) : dat(&p.entities), n_entities(&p.n_entities) {};
+    Entities_const(const Agent<TSeq> & p);
 
     typename std::vector< Entity<TSeq>* >::const_iterator begin();
     typename std::vector< Entity<TSeq>* >::const_iterator end();
 
-    const Entity<TSeq>* & operator()(size_t i);
-    const Entity<TSeq>* & operator[](size_t i);
+    const Entity<TSeq> & operator()(size_t i);
+    const Entity<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
+inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p)
+{
+
+    size_t n = p.get_n_entities();
+    dat.reserve(n);
+    for (size_t i = 0u; i < n; ++i)
+        dat.push_back(&p.get_entity(i));
+
+}
+
+template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::begin() {
 
     if (*n_entities == 0u)
-        return dat->end();
+        return dat.end();
     
-    return dat->begin();
+    return dat.begin();
 }
 
 template<typename TSeq>
@@ -9972,21 +9892,21 @@ inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq
 }
 
 template<typename TSeq>
-inline const Entity<TSeq>* & Entities_const<TSeq>::operator()(size_t i)
+inline const Entity<TSeq> & Entities_const<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_entities)
         throw std::range_error("Entity index out of range.");
 
-    return dat->operator[](i);
+    return *dat[i];
 
 }
 
 template<typename TSeq>
-inline const Entity<TSeq>* & Entities_const<TSeq>::operator[](size_t i)
+inline const Entity<TSeq> & Entities_const<TSeq>::operator[](size_t i)
 {
 
-    return dat->operator[](i);
+    return *dat[i];
 
 }
 
@@ -10645,10 +10565,15 @@ class Agent {
     friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     
-    std::vector< Agent<TSeq> * > neighbors;
-    std::vector< Entity<TSeq> * > entities;
+    Model<TSeq> * model;
+
+    std::vector< size_t > neighbors;
+    std::vector< size_t > neighbors_locations;
+    size_t n_neighbors = 0u;
+
+    std::vector< size_t > entities;
     std::vector< size_t > entities_locations;
-    epiworld_fast_uint n_entities = 0u;
+    size_t n_entities = 0u;
 
     epiworld_fast_uint status = 0u;
     epiworld_fast_uint status_prev = 0u; ///< For accounting, if need to undo a change.
@@ -10815,12 +10740,12 @@ public:
 
     void mutate_variant();
     void add_neighbor(
-        Agent<TSeq> * p,
+        Agent<TSeq> & p,
         bool check_source = true,
         bool check_target = true
         );
 
-    std::vector< Agent<TSeq> * > & get_neighbors();
+    std::vector< Agent<TSeq> * > get_neighbors();
 
     void change_status(
         Model<TSeq> * model,
@@ -10861,6 +10786,9 @@ public:
 
     Entities<TSeq> get_entities();
     const Entities_const<TSeq> get_entities() const;
+    const Entity<TSeq> & get_entity(size_t i) const;
+    Entity<TSeq> & get_entity(size_t i);
+    size_t get_n_entities() const;
 
 };
 
@@ -11035,22 +10963,44 @@ template<typename TSeq>
 inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
 {
 
-    Agent<TSeq> * p  = a.agent;
+    Agent<TSeq> *  p = a.agent;
     Entity<TSeq> * e = a.entity;
 
     CHECK_COALESCE_(a.new_status, e->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, e->queue_post, QueueValues::NoOne)
 
+    // Checking the agent and the entity are not linked
+    if ((p->get_n_entities() > 0) && (e->size() > 0))
+    {
+
+        if (p->get_n_entities() > e->size()) // Slower search through the agent
+        {
+            for (size_t i = 0u; i < e->size(); ++i)
+                if(e->operator[](i)->get_id() == p->get_id())
+                    throw std::logic_error("An entity cannot be reassigned to an agent.");
+        }
+        else                                 // Slower search through the entity
+        {
+            for (size_t i = 0u; i < p->get_n_entities(); ++i)
+                if(p->get_entity(i).get_id() == e->get_id())
+                    throw std::logic_error("An entity cannot be reassigned to an agent.");
+        }
+
+        // It means that agent and entity were not associated.
+
+    }
+
+
     // Adding the entity to the agent
     if (++p->n_entities <= p->entities.size())
     {
 
-        p->entities[p->n_entities - 1]           = e;
+        p->entities[p->n_entities - 1]           = e->get_id();
         p->entities_locations[p->n_entities - 1] = e->n_agents;
 
     } else
     {
-        p->entities.push_back(e);
+        p->entities.push_back(e->get_id());
         p->entities_locations.push_back(e->n_agents);
     }
 
@@ -11059,13 +11009,13 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
     if (++e->n_agents <= e->agents.size())
     {
 
-        e->agents[e->n_agents - 1]          = p;
+        e->agents[e->n_agents - 1]          = p->get_id();
         // Adjusted by '-1' since the list of entities in the agent just grew.
         e->agents_location[e->n_agents - 1] = p->n_entities - 1;
 
     } else
     {
-        e->agents.push_back(p);
+        e->agents.push_back(p->get_id());
         e->agents_location.push_back(p->n_entities - 1);
     }
 
@@ -11075,7 +11025,7 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
+inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
 {
     
     Agent<TSeq> *  p = a.agent;    
@@ -11092,11 +11042,11 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
         // When we move the end entity to the new location, the 
         // moved entity needs to reflect the change, i.e., where the
         // entity will now be located in the agent
-        size_t agent_in_end_entity  = p->entities_locations[p->n_entities];
-        Entity<TSeq> * moved_entity = p->entities[p->n_entities];
+        size_t agent_location_in_last_entity  = p->entities_locations[p->n_entities];
+        Entity<TSeq> * last_entity = &m->get_entities()[p->entities[p->n_entities]]; ///< Last entity of the agent
 
         // The end entity will be located where the removed was
-        moved_entity->agents_location[agent_in_end_entity] = idx_entity_in_agent;
+        last_entity->agents_location[agent_location_in_last_entity] = idx_entity_in_agent;
 
         // We now make the swap
         std::swap(
@@ -11109,14 +11059,14 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
     if (--e->n_agents > 0)
     {
 
-        // When we move the end entity to the new location, the 
-        // moved entity needs to reflect the change, i.e., where the
-        // entity will now be located in the agent
-        size_t entity_in_end_agent = e->agents_location[e->n_agents];
-        Agent<TSeq> * moved_agent  = e->agents[e->n_agents];
+        // When we move the end agent to the new location, the 
+        // moved agent needs to reflect the change, i.e., where the
+        // agent will now be located in the entity
+        size_t entity_location_in_last_agent = e->agents_location[e->n_agents];
+        Agent<TSeq> * last_agent  = &m->agents[e->agents[e->n_agents]]; ///< Last agent of the entity
 
         // The end entity will be located where the removed was
-        moved_agent->entities_locations[entity_in_end_agent] = idx_agent_in_entity;
+        last_agent->entities_locations[entity_location_in_last_agent] = idx_agent_in_entity;
 
         // We now make the swap
         std::swap(
@@ -11148,7 +11098,10 @@ inline Agent<TSeq>::Agent() {}
 
 template<typename TSeq>
 inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
+    model(p.model),
     neighbors(std::move(p.neighbors)),
+    neighbors_locations(std::move(p.neighbors_locations)),
+    n_neighbors(p.n_neighbors),
     entities(std::move(p.entities)),
     entities_locations(std::move(p.entities_locations)),
     n_entities(p.n_entities),
@@ -11200,10 +11153,13 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
 
 template<typename TSeq>
 inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
-    neighbors(0u),
-    entities(0u),
-    entities_locations(0u),
-    n_entities(0u),
+    model(p.model),
+    neighbors(p.neighbors),
+    neighbors_locations(p.neighbors_locations),
+    n_neighbors(p.n_neighbors),
+    entities(p.entities),
+    entities_locations(p.entities_locations),
+    n_entities(p.n_entities),
     sampled_agents(0u),
     sampled_agents_n(0u),
     sampled_agents_left_n(0u),
@@ -11249,16 +11205,23 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
 template<typename TSeq>
 inline Agent<TSeq> & Agent<TSeq>::operator=(
     const Agent<TSeq> & other_agent
-) :
-    neighbors(0u),
-    entities(0u),
-    entities_locations(0u),
-    n_entities(0u),
-    sampled_agents(0u),
-    sampled_agents_n(0u),
-    sampled_agents_left_n(0u),
-    date_last_build_sample(-99)
+) 
 {
+
+    model = other_agent.model;
+
+    neighbors = other_agent.neighbors;
+    neighbors_locations = other_agent.neighbors_locations;
+    n_neighbors = other_agent.n_neighbors;
+
+    entities = other_agent.entities;
+    entities_locations = other_agent.entities_locations;
+    n_entities = other_agent.n_entities;
+
+    sampled_agents.clear();
+    sampled_agents_n = 0;
+    sampled_agents_left_n = 0;
+    date_last_build_sample = -99;
 
     // neighbors           = other_agent.neighbors;
     // entities            = other_agent.entities;
@@ -11511,7 +11474,7 @@ inline void Agent<TSeq>::rm_entity(
         );
 
     model->actions_add(
-        this, nullptr, nullptr, entities[entity_idx], status_new, queue, 
+        this, nullptr, nullptr, model->entities[entity_idx], status_new, queue, 
         default_rm_entity, entities_locations[entity_idx], entity_idx
     );
 }
@@ -11529,7 +11492,7 @@ inline void Agent<TSeq>::rm_entity(
     int entity_idx = -1;
     for (size_t i = 0u; i < n_entities; ++i)
     {
-        if (entities[i]->get_id() == entity->get_id())
+        if (entities[i] == entity->get_id())
             entity_idx = i;
     }
 
@@ -11715,7 +11678,7 @@ inline void Agent<TSeq>::mutate_variant()
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_neighbor(
-    Agent<TSeq> * p,
+    Agent<TSeq> & p,
     bool check_source,
     bool check_target
 ) {
@@ -11725,42 +11688,46 @@ inline void Agent<TSeq>::add_neighbor(
 
         bool found = false;
         for (auto & n: neighbors)    
-            if (n->get_id() == p->get_id())
+            if (n == p.get_id())
             {
                 found = true;
                 break;
             }
 
         if (!found)
-            neighbors.push_back(p);
+            neighbors.push_back(p.get_id());
 
     } else 
-        neighbors.push_back(p);
+        neighbors.push_back(p.get_id());
 
     if (check_target)
     {
 
         bool found = false;
-        for (auto & n: p->neighbors)
-            if (n->get_id() == id)
+        for (auto & n: p.neighbors)
+            if (n == id)
             {
                 found = true;
                 break;
             }
 
         if (!found)
-            p->neighbors.push_back(this);
+            p.neighbors.push_back(id);
     
     } else 
-        p->neighbors.push_back(this);
+        p.neighbors.push_back(id);
     
 
 }
 
 template<typename TSeq>
-inline std::vector< Agent<TSeq> *> & Agent<TSeq>::get_neighbors()
+inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors()
 {
-    return neighbors;
+    std::vector< Agent<TSeq> * > res(n_neighbors, nullptr);
+    for (size_t i = 0u; i < n_neighbors; ++i)
+        res[i] = &model->population[neighbors[i]];
+
+    return res;
 }
 
 template<typename TSeq>
@@ -11902,6 +11869,30 @@ template<typename TSeq>
 inline const Entities_const<TSeq> Agent<TSeq>::get_entities() const
 {
     return Entities_const<TSeq>(*this);
+}
+
+template<typename TSeq>
+inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i) const
+{
+    if (i >= n_entities)
+        throw std::range_error("Trying to get to an agent's entity outside of the range.");
+
+    return model->entities[i];
+}
+
+template<typename TSeq>
+inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i)
+{
+    if (i >= n_entities)
+        throw std::range_error("Trying to get to an agent's entity outside of the range.");
+
+    return model->entities[i];
+}
+
+template<typename TSeq>
+inline size_t Agent<TSeq>::get_n_entities() const
+{
+    return n_entities;
 }
 
 #undef CHECK_COALESCE_
@@ -12905,7 +12896,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         epiworld_double ndetected        = 0.0;
         epiworld_double ndetected_asympt = 0.0;
         
-        auto & pop = *(m->get_agents());
+        auto & pop = m->get_agents();
         std::vector< bool > sampled(m->size(), false);
         
         while (to_go-- > 0)
@@ -13174,7 +13165,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             { 
                 
                 /* Listing who is infected */ 
-                for (auto & p : *(m->get_agents()))
+                for (auto & p : m->get_agents())
                 {
                     if (p.get_status() == ModelSIRCONN<TSeq>::INFECTED)
                     {
@@ -13490,7 +13481,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             { 
                 
                 /* Listing who is infected */ 
-                for (auto & p : *(m->get_agents()))
+                for (auto & p : m->get_agents())
                 {
                     if (p.get_status() == ModelSEIRCONN<TSeq>::INFECTED)
                     {

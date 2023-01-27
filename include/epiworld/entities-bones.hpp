@@ -118,7 +118,7 @@ public:
 };
 
 template<typename TSeq>
-inline Entities_const<TSeq>::Entities(const Agent<TSeq> & p)
+inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p)
 {
 
     size_t n = p.get_n_entities();

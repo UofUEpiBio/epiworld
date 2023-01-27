@@ -30,23 +30,23 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
     // Looking at people
     std::cout << "Neighbors agent[0] in m : " ;
-    for (auto & n : m.get_agents()->at(0u).get_neighbors())
+    for (auto & n : m.get_agents()[0u].get_neighbors())
         std::cout << n << ", ";
     std::cout << std::endl;
 
 
     std::cout << "Neighbors agent[0] in m2 : " ;
-    for (auto & n : m2.get_agents()->at(0u).get_neighbors())
+    for (auto & n : m2.get_agents()[0u].get_neighbors())
         std::cout << n << ", ";
     std::cout << std::endl;
 
     std::cout << "Agent[0] in m viruses and tools  : " <<
-        m.get_agents()->at(0u).get_virus(0u)->get_agent() << ", " <<
-        m.get_agents()->at(0u).get_tool(0u)->get_agent() << std::endl;
+        m.get_agents()[0u].get_virus(0u)->get_agent() << ", " <<
+        m.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
 
     std::cout << "Agent[0] in m2 viruses and tools : " <<
-        m2.get_agents()->at(0u).get_virus(0u)->get_agent() << ", " <<
-        m2.get_agents()->at(0u).get_tool(0u)->get_agent() << std::endl;
+        m2.get_agents()[0u].get_virus(0u)->get_agent() << ", " <<
+        m2.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
             
 
     #ifndef CATCH_CONFIG_MAIN

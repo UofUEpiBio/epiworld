@@ -236,7 +236,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         epiworld_double ndetected        = 0.0;
         epiworld_double ndetected_asympt = 0.0;
         
-        auto & pop = *(m->get_agents());
+        auto & pop = m->get_agents();
         std::vector< bool > sampled(m->size(), false);
         
         while (to_go-- > 0)

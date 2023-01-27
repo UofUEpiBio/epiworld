@@ -144,8 +144,8 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
         }
         else                                 // Slower search through the entity
         {
-            for (size_t i = 0u; i < p->n_entities(); ++i)
-                if(p->get_entity(i)->get_id() == e->get_id())
+            for (size_t i = 0u; i < p->get_n_entities(); ++i)
+                if(p->get_entity(i).get_id() == e->get_id())
                     throw std::logic_error("An entity cannot be reassigned to an agent.");
         }
 
@@ -188,7 +188,7 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
+inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
 {
     
     Agent<TSeq> *  p = a.agent;    
@@ -206,7 +206,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
         // moved entity needs to reflect the change, i.e., where the
         // entity will now be located in the agent
         size_t agent_location_in_last_entity  = p->entities_locations[p->n_entities];
-        Entity<TSeq> * last_entity = &model->entities[p->entities[p->n_entities]]; ///< Last entity of the agent
+        Entity<TSeq> * last_entity = &m->get_entities()[p->entities[p->n_entities]]; ///< Last entity of the agent
 
         // The end entity will be located where the removed was
         last_entity->agents_location[agent_location_in_last_entity] = idx_entity_in_agent;
@@ -226,7 +226,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> *)
         // moved agent needs to reflect the change, i.e., where the
         // agent will now be located in the entity
         size_t entity_location_in_last_agent = e->agents_location[e->n_agents];
-        Agent<TSeq> * last_agent  = &model->agents[e->agents[e->n_agents]]; ///< Last agent of the entity
+        Agent<TSeq> * last_agent  = &m->get_agents()[e->agents[e->n_agents]]; ///< Last agent of the entity
 
         // The end entity will be located where the removed was
         last_agent->entities_locations[entity_location_in_last_agent] = idx_agent_in_entity;

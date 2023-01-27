@@ -100,7 +100,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
             { 
                 
                 /* Listing who is infected */ 
-                for (auto & p : *(m->get_agents()))
+                for (auto & p : m->get_agents())
                 {
                     if (p.get_status() == ModelSEIRCONNLogit<TSeq>::INFECTED)
                     {

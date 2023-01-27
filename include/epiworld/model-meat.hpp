@@ -408,6 +408,13 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         for (auto & p : *population_backup)
             p.model = this;
 
+    for (auto & e : entities)
+        e.model = this;
+
+    if (entities_backup != nullptr)
+        for (auto & e : *entities_backup)
+            e.model = this;
+
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
     // of the population.
@@ -501,6 +508,13 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
         for (auto & p : *population_backup)
             p.model = this;
 
+    for (auto & e : entities)
+        e.model = this;
+
+    if (entities_backup != nullptr)
+        for (auto & e : *entities_backup)
+            e.model = this;
+
     db   = m.db;
 
     directed = m.directed;
@@ -570,9 +584,15 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
-inline std::vector<Agent<TSeq>> * Model<TSeq>::get_agents()
+inline std::vector<Agent<TSeq>> & Model<TSeq>::get_agents()
 {
-    return &population;
+    return population;
+}
+
+template<typename TSeq>
+inline std::vector<Entity<TSeq>> & Model<TSeq>::get_entities()
+{
+    return entities;
 }
 
 template<typename TSeq>
@@ -601,7 +621,10 @@ inline void Model<TSeq>::agents_empty_graph(
     // Filling the model and ids
     size_t i = 0u;
     for (auto & p : population)
-        p.id    = i++;
+    {
+        p.id = i++;
+        p.model = this;
+    }
     
 
 }
@@ -1312,13 +1335,13 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
     {
 
         // population[i].id    = i;
-        // population[i].model = this;
+        population[i].model = this;
 
         for (const auto & link: tmpdat[i])
         {
 
             population[i].add_neighbor(
-                &population[link.first],
+                population[link.first],
                 true, true
                 );
 
@@ -1332,12 +1355,6 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
         if (p.id >= static_cast<int>(al.vcount()))
             throw std::logic_error(
                 "Agent's id cannot be negative above or equal to the number of agents!");
-
-        for (const auto & n : p.neighbors)
-        {
-            if (n == nullptr)
-                throw std::logic_error("A neighbor cannot be nullptr!");
-        }
     }
     #endif
 
@@ -1811,18 +1828,14 @@ inline void Model<TSeq>::reset() {
     // Restablishing people
     pb = Progress(ndays, 80);
 
-    if (backup != nullptr)
-    {
-        backup->clone_population(
-            this->population,
-            this->entities,
-            const_cast<Model<TSeq> * >(this),
-            this->directed
-        );
-    }
-
-    for (auto & p : population)
-        p.reset();
+    if (population_backup != nullptr)
+        population = *this->population_backup;
+    else
+        for (auto & p : population)
+            p.reset();
+        
+    if (entities_backup != nullptr)
+        entities = *this->entities_backup;
     
     current_date = 0;
 
@@ -1887,7 +1900,7 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
         {
             // Point to the right neighbors
             int loc = res.population_ids[neigh[n]->get_id()];
-            agent_res.add_neighbor(&res.population[loc], true, true);
+            agent_res.add_neighbor(res.population[loc], true, true);
 
         }
 

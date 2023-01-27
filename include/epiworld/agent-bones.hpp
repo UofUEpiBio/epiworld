@@ -254,12 +254,12 @@ public:
 
     void mutate_variant();
     void add_neighbor(
-        Agent<TSeq> * p,
+        Agent<TSeq> & p,
         bool check_source = true,
         bool check_target = true
         );
 
-    std::vector< Agent<TSeq> * > & get_neighbors();
+    std::vector< Agent<TSeq> * > get_neighbors();
 
     void change_status(
         Model<TSeq> * model,

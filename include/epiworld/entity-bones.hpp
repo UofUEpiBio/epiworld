@@ -24,9 +24,11 @@ class Entity {
     friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
+
+    Model<TSeq> * model;
     
     int id = -1;
-    std::vector< Agent<TSeq> * > agents;   ///< Vector of agents
+    std::vector< size_t > agents;   ///< Vector of agents
     std::vector< size_t > agents_location; ///< Location where the entity is stored in the agent
     size_t n_agents = 0u;
 
@@ -59,12 +61,12 @@ private:
 
 public:
 
-    Entity() = delete;
-    Entity(Entity<TSeq> & e) = delete;
-    Entity(const Entity<TSeq> & e);
+    // Entity() = delete;
+    // Entity(Entity<TSeq> & e) = delete;
+    // Entity(const Entity<TSeq> & e);
     // Entity(Entity && e);
     Entity(std::string name) : entity_name(name) {};
-    Entity<TSeq> & operator=(const Entity<TSeq> & e);
+    // Entity<TSeq> & operator=(const Entity<TSeq> & e);
 
     void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
     void add_agent(Agent<TSeq> * p, Model<TSeq> * model);

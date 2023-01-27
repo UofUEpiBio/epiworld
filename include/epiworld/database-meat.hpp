@@ -11,7 +11,7 @@ inline void DataBase<TSeq>::set_model(
     // Initializing the counts
     today_total.resize(m.nstatus);
     std::fill(today_total.begin(), today_total.end(), 0);
-    for (auto & p : *m.get_agents())
+    for (auto & p : m.get_agents())
         ++today_total[p.get_status()];
     
     transition_matrix.resize(m.nstatus * m.nstatus);

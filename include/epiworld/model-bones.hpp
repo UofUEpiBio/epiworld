@@ -89,7 +89,7 @@ private:
 
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
-    std::vector< Agent<TSeq> > population;
+    std::vector< Agent<TSeq> > population = {};
 
     bool usign_backup = true;
     std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = nullptr;
@@ -125,21 +125,21 @@ private:
 
     bool directed = false;
     
-    std::vector< VirusPtr<TSeq> > viruses;
-    std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
-    std::vector< bool > prevalence_virus_as_proportion;
-    std::vector< VirusToAgentFun<TSeq> > viruses_dist_funs;
+    std::vector< VirusPtr<TSeq> > viruses = {};
+    std::vector< epiworld_double > prevalence_virus = {}; ///< Initial prevalence_virus of each virus
+    std::vector< bool > prevalence_virus_as_proportion = {};
+    std::vector< VirusToAgentFun<TSeq> > viruses_dist_funs = {};
     
-    std::vector< ToolPtr<TSeq> > tools;
-    std::vector< epiworld_double > prevalence_tool;
-    std::vector< bool > prevalence_tool_as_proportion;
-    std::vector< ToolToAgentFun<TSeq> > tools_dist_funs;
+    std::vector< ToolPtr<TSeq> > tools = {};
+    std::vector< epiworld_double > prevalence_tool = {};
+    std::vector< bool > prevalence_tool_as_proportion = {};
+    std::vector< ToolToAgentFun<TSeq> > tools_dist_funs = {};
 
-    std::vector< Entity<TSeq> > entities; 
-    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup;
-    std::vector< epiworld_double > prevalence_entity;
-    std::vector< bool > prevalence_entity_as_proportion;
-    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs;
+    std::vector< Entity<TSeq> > entities = {}; 
+    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = nullptr;
+    std::vector< epiworld_double > prevalence_entity = {};
+    std::vector< bool > prevalence_entity_as_proportion = {};
+    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
 
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
@@ -359,7 +359,8 @@ public:
         );
     void agents_from_adjlist(AdjList al);
     bool is_directed() const;
-    std::vector< Agent<TSeq> > * get_agents();
+    std::vector< Agent<TSeq> > & get_agents();
+    std::vector< Entity<TSeq> > & get_entities();
     void agents_smallworld(
         epiworld_fast_uint n = 1000,
         epiworld_fast_uint k = 5,

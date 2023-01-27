@@ -29,7 +29,7 @@ inline void rewire_degseq(
     std::vector< epiworld_fast_uint > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    // std::vector< Agent<TSeq> > * agents = model->get_agents();
+    
     for (epiworld_fast_uint i = 0u; i < agents->size(); ++i)
     {
         if (agents->operator[](i).get_neighbors().size() > 0u)
@@ -153,7 +153,6 @@ inline void rewire_degseq(
     weights.reserve(nties.size());
 
     epiworld_double nedges = 0.0;
-    // std::vector< Agent<TSeq> > * agents = model->get_agents();
     auto & dat = agents->get_dat();
 
     for (size_t i = 0u; i < dat.size(); ++i)

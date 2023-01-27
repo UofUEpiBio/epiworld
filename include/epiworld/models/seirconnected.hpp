@@ -96,7 +96,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             { 
                 
                 /* Listing who is infected */ 
-                for (auto & p : *(m->get_agents()))
+                for (auto & p : m->get_agents())
                 {
                     if (p.get_status() == ModelSEIRCONN<TSeq>::INFECTED)
                     {
