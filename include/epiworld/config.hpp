@@ -187,7 +187,7 @@ public:
 
 #ifdef EPI_DEBUG
     #define EPI_DEBUG_NOTIFY_ACTIVE() \
-        printf_epiworld("[epiworld-debug] DEBUGGING ON (compiled with EPI_DEBUG defined)\n");
+        printf_epiworld("[[epi-debug]] DEBUGGING ON (compiled with EPI_DEBUG defined)\n");
     #define EPI_DEBUG_ALL_NON_NEGATIVE(vect) \
         for (auto & v : vect) \
             if (static_cast<double>(v) < 0.0) \
@@ -199,7 +199,7 @@ public:
         {   \
             _epi_debug_sum += static_cast<double>(v);\
             if (_epi_debug_sum > static_cast<double>(num)) \
-                throw std::logic_error("[epiworld-debug] The sum of elements not reached."); \
+                throw std::logic_error("[[epi-debug]] The sum of elements not reached."); \
         }
 
     #define EPI_DEBUG_SUM_INT(vect, num) \
@@ -208,21 +208,21 @@ public:
         {   \
             _epi_debug_sum += static_cast<int>(v);\
             if (_epi_debug_sum > static_cast<int>(num)) \
-                throw std::logic_error("[epiworld-debug] The sum of elements not reached."); \
+                throw std::logic_error("[[epi-debug]] The sum of elements not reached."); \
         }
 
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b) \
         if (a.size() != b.size())  {\
             printf("Size of vector a: %lu\n", a.size());\
             printf("Size of vector b: %lu\n", b.size());\
-            throw std::length_error("[epiworld-debug] The vectors do not match size."); \
+            throw std::length_error("[[epi-debug]] The vectors do not match size."); \
         }\
         for (size_t _i = 0u; _i < a.size(); ++_i) \
             if (a[_i] != b[_i]) {\
                 printf("Iterating the last 5 values:\n"); \
                 for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
                     printf("a[%i]: %i; b[%i]: %i\n", _j, a[_j], _j, b[_j]); \
-                throw std::logic_error("[epiworld-debug] The vectors do not match."); \
+                throw std::logic_error("[[epi-debug]] The vectors do not match."); \
             }
 
 

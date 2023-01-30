@@ -116,8 +116,13 @@ private:
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
 
+
 public:
 
+    #ifdef EPI_DEBUG
+    int n_transmissions_potential = 0;
+    int n_transmissions_today     = 0;
+    #endif
 
     DataBase() = delete;
     DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};

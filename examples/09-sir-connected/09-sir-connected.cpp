@@ -1,6 +1,6 @@
+// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/cxxopts/cxxopts.hpp"
-
 using namespace epiworld;
 
 int main(int argc, char* argv[]) {

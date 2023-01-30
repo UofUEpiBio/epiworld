@@ -178,7 +178,7 @@ inline int roulette(
 
 
     #ifdef EPI_DEBUG
-    printf_epiworld("[epiworld-debug] roulette::cumsum = %.4f\n", cumsum);
+    printf_epiworld("[epi-debug] roulette::cumsum = %.4f\n", cumsum);
     #endif
 
     return static_cast<int>(probs.size() - 1u);

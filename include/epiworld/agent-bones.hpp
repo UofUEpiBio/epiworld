@@ -112,10 +112,10 @@ private:
     epiworld_fast_uint action_counter = 0u;
 
     std::vector< Agent<TSeq> * > sampled_agents;
-    size_t sampled_agents_n = 0u;
+    size_t sampled_agents_n      = 0u;
     std::vector< size_t > sampled_agents_left;
     size_t sampled_agents_left_n = 0u;
-    int date_last_build_sample = -99;
+    int date_last_build_sample   = -99;
 
 public:
 

@@ -54,7 +54,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
         // Will create a copy of the virus, with the exeption of
         // the virus code
         v->agent = this;
-        v->agent_idx = loc++;
+        v->pos_in_agent = loc++;
 
     }
 
@@ -65,7 +65,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
         // Will create a copy of the virus, with the exeption of
         // the virus code
         t->agent     = this;
-        t->agent_idx = loc++;
+        t->pos_in_agent = loc++;
 
     }
     
@@ -90,28 +90,27 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     id     = p.id;
     
     // Dealing with the virus
-    viruses.resize(p.get_n_viruses());
+    viruses.resize(p.get_n_viruses(), nullptr);
     n_viruses = viruses.size();
-    for (size_t i = 0u; i < viruses.size(); ++i)
+    for (size_t i = 0u; i < n_viruses; ++i)
     {
 
         // Will create a copy of the virus, with the exeption of
         // the virus code
         viruses[i] = std::make_shared<Virus<TSeq>>(*p.viruses[i]);
-        viruses[i]->agent = this;
-        viruses[i]->agent_idx = i;
+        viruses[i]->set_agent(this, i);
 
     }
 
-    tools.resize(p.get_n_tools());
-    for (size_t i = 0u; i < tools.size(); ++i)
+    tools.resize(p.get_n_tools(), nullptr);
+    n_tools = tools.size();
+    for (size_t i = 0u; i < n_tools; ++i)
     {
         
         // Will create a copy of the virus, with the exeption of
         // the virus code
         tools[i] = std::make_shared<Tool<TSeq>>(*p.tools[i]);
-        tools[i]->agent = this;
-        tools[i]->agent_idx = i;
+        tools[i]->set_agent(this, i);
 
     }
 
@@ -152,11 +151,22 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     status_last_changed = other_agent.status_last_changed;
     id                  = other_agent.id;
     
-    viruses             = other_agent.viruses;
+    // viruses             = other_agent.viruses;
     n_viruses           = other_agent.n_viruses;
+    viruses.resize(n_viruses, nullptr);
+    for (size_t i = 0u; i < n_viruses; ++i)
+    {
+        viruses[i] = std::make_shared<Virus<TSeq>>(*other_agent.viruses[i]);
+        viruses[i]->set_agent(this, i);
+    }
     
-    tools               = other_agent.tools;
+    // tools               = other_agent.tools;
     n_tools             = other_agent.n_tools;
+    for (size_t i = 0u; i < n_tools; ++i)
+    {
+        tools[i] = std::make_shared<Tool<TSeq>>(*other_agent.tools[i]);
+        tools[i]->set_agent(this, i);
+    }
 
     add_virus_          = other_agent.add_virus_;
     add_tool_           = other_agent.add_tool_;
@@ -166,27 +176,6 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     rm_entity_          = other_agent.rm_entity_;
     action_counter      = other_agent.action_counter;
     
-    // Dealing with the virus
-    for (auto & v : viruses)
-    {
-        
-        // Will create a copy of the virus, with the exeption of
-        // the virus code
-        v->agent = this;
-        v->agent_idx = id;
-
-    }
-
-    for (auto & t : tools)
-    {
-        
-        // Will create a copy of the virus, with the exeption of
-        // the virus code
-        t->agent     = this;
-        t->agent_idx = id;
-
-    }
-
     return *this;
     
 }
@@ -346,6 +335,14 @@ inline void Agent<TSeq>::rm_virus(
             "There is no virus to remove here!"
         );
 
+    #ifdef EPI_DEBUG
+    if (viruses[virus_idx]->pos_in_agent >= n_viruses)
+    {
+        throw std::logic_error(
+            "[epi-debug]::rm_virus the position in the agent is wrong."
+            );
+    }
+    #endif
 
     model->actions_add(
         this, viruses[virus_idx], nullptr, nullptr, status_new, queue,
@@ -493,7 +490,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
         throw std::logic_error("Viruses can only remove their hosts'.");
 
     rm_agent_by_virus(
-        virus->agent_idx,
+        virus->pos_in_agent,
         model,
         status_new,
         queue

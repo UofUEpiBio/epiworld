@@ -153,11 +153,11 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (_tracked_agents_infected->operator[](which)->get_n_viruses() == 0)
                 {
 
-                    printf_epiworld("[epiworld-debug] date: %i\n", m->today());
-                    printf_epiworld("[epiworld-debug] sim#: %i\n", m->get_n_replicates());
+                    printf_epiworld("[epi-debug] date: %i\n", m->today());
+                    printf_epiworld("[epi-debug] sim#: %i\n", m->get_n_replicates());
 
                     throw std::logic_error(
-                        "[epiworld-debug] The agent " + std::to_string(which) + " has no "+
+                        "[epi-debug] The agent " + std::to_string(which) + " has no "+
                         "virus to share. The agent's status is: " +
                         std::to_string(_tracked_agents_infected->operator[](which)->get_status())
                     );
@@ -165,6 +165,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 #endif
                 p->add_virus(
                     _tracked_agents_infected->operator[](which)->get_virus(0u),
+                    m,
                     ModelSEIRCONN<TSeq>::EXPOSED
                     ); 
 

@@ -30,7 +30,7 @@ class Virus {
 private:
     
     Agent<TSeq> * agent       = nullptr;
-    int       agent_idx       = -99; ///< Location in the agent
+    int       pos_in_agent    = -99; ///< Location in the agent
     int agent_exposure_number = -99;
 
     std::shared_ptr<TSeq> baseline_sequence = nullptr;

@@ -216,7 +216,7 @@ public:
 
 #ifdef EPI_DEBUG
     #define EPI_DEBUG_NOTIFY_ACTIVE() \
-        printf_epiworld("[epiworld-debug] DEBUGGING ON (compiled with EPI_DEBUG defined)\n");
+        printf_epiworld("[[epi-debug]] DEBUGGING ON (compiled with EPI_DEBUG defined)\n");
     #define EPI_DEBUG_ALL_NON_NEGATIVE(vect) \
         for (auto & v : vect) \
             if (static_cast<double>(v) < 0.0) \
@@ -228,7 +228,7 @@ public:
         {   \
             _epi_debug_sum += static_cast<double>(v);\
             if (_epi_debug_sum > static_cast<double>(num)) \
-                throw std::logic_error("[epiworld-debug] The sum of elements not reached."); \
+                throw std::logic_error("[[epi-debug]] The sum of elements not reached."); \
         }
 
     #define EPI_DEBUG_SUM_INT(vect, num) \
@@ -237,21 +237,21 @@ public:
         {   \
             _epi_debug_sum += static_cast<int>(v);\
             if (_epi_debug_sum > static_cast<int>(num)) \
-                throw std::logic_error("[epiworld-debug] The sum of elements not reached."); \
+                throw std::logic_error("[[epi-debug]] The sum of elements not reached."); \
         }
 
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b) \
         if (a.size() != b.size())  {\
             printf("Size of vector a: %lu\n", a.size());\
             printf("Size of vector b: %lu\n", b.size());\
-            throw std::length_error("[epiworld-debug] The vectors do not match size."); \
+            throw std::length_error("[[epi-debug]] The vectors do not match size."); \
         }\
         for (size_t _i = 0u; _i < a.size(); ++_i) \
             if (a[_i] != b[_i]) {\
                 printf("Iterating the last 5 values:\n"); \
                 for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
                     printf("a[%i]: %i; b[%i]: %i\n", _j, a[_j], _j, b[_j]); \
-                throw std::logic_error("[epiworld-debug] The vectors do not match."); \
+                throw std::logic_error("[[epi-debug]] The vectors do not match."); \
             }
 
 
@@ -577,7 +577,9 @@ inline int roulette(
     // Step 3: Roulette
     epiworld_double cumsum = p_none/p_none_or_single;
     if (r < cumsum)
+    {
         return -1;
+    }
 
     for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
     {
@@ -588,9 +590,15 @@ inline int roulette(
         
     }
 
+
+    #ifdef EPI_DEBUG
+    printf_epiworld("[epi-debug] roulette::cumsum = %.4f\n", cumsum);
+    #endif
+
     return static_cast<int>(probs.size() - 1u);
 
 }
+
 
 template<typename TSeq>
 inline int roulette(
@@ -714,11 +722,14 @@ inline Progress::Progress(int n_, int width_) {
 
 inline void Progress::start()
 {
+
+    #ifndef EPI_DEBUG
     for (int j = 0; j < (width); ++j)
     {
         printf_epiworld("_");
     }
     printf_epiworld("\n");
+    #endif
 }
 
 inline void Progress::next() {
@@ -729,10 +740,13 @@ inline void Progress::next() {
     cur_loc = std::floor((++i) * step_size);
 
 
+    #ifndef EPI_DEBUG
     for (int j = 0; j < (cur_loc - last_loc); ++j)
     {
         printf_epiworld("|");
     }
+    #endif
+
     if (i >= n)
         end();
 
@@ -742,7 +756,9 @@ inline void Progress::next() {
 
 inline void Progress::end() {
 
+    #ifndef EPI_DEBUG
     printf_epiworld(" done.\n");
+    #endif
 
 }
 
@@ -2681,8 +2697,13 @@ private:
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
 
+
 public:
 
+    #ifdef EPI_DEBUG
+    int n_transmissions_potential = 0;
+    int n_transmissions_today     = 0;
+    #endif
 
     DataBase() = delete;
     DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
@@ -2918,6 +2939,24 @@ inline void DataBase<TSeq>::record()
         _today_total_cp[p.get_status()]++;
     
     EPI_DEBUG_VECTOR_MATCH_INT(_today_total_cp, today_total)
+    printf_epiworld(
+        "[epi-debug] Day % 3i totals [",
+        static_cast<int>(model->today())
+        );
+        for (const auto & tname : this->model->status_labels)
+        {
+            printf_epiworld(" %s", tname.substr(0u, 3u).c_str());
+        }
+        printf_epiworld(" ]: [");
+        for (const auto & tval : today_total)
+        {
+            printf_epiworld(" %i", static_cast<int>(tval));
+        }
+        printf_epiworld(
+            "] empirical transm-prob: %.4f\n",
+            static_cast<double>(n_transmissions_today)/
+                static_cast<double>(n_transmissions_potential)
+            );
     #endif
     ////////////////////////////////////////////////////////////////////////////
 
@@ -4140,6 +4179,12 @@ inline void rewire_degseq(
     )
 {
 
+    #ifdef EPI_DEBUG
+    std::vector< int > _degree0(agents.size(), 0);
+    for (size_t i = 0u; i < _degree0.size(); ++i)
+        _degree0[i] = model->population[i].get_neighbors().size();
+    #endif
+
     // Identifying individuals with degree > 0
     std::vector< epiworld_fast_uint > non_isolates;
     std::vector< epiworld_double > weights;
@@ -4150,7 +4195,9 @@ inline void rewire_degseq(
         if (agents->operator[](i).get_neighbors().size() > 0u)
         {
             non_isolates.push_back(i);
-            epiworld_double wtemp = static_cast<epiworld_double>(agents->operator[](i).get_neighbors().size());
+            epiworld_double wtemp = static_cast<epiworld_double>(
+                agents->operator[](i).get_neighbors().size()
+                );
             weights.push_back(wtemp);
             nedges += wtemp;
         }
@@ -4205,46 +4252,29 @@ inline void rewire_degseq(
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
-        int id01 = std::floor(p0.get_neighbors().size() * model->runif());
-        int id11 = std::floor(p1.get_neighbors().size() * model->runif());
+        int id01 = std::floor(p0.get_n_neighbors() * model->runif());
+        int id11 = std::floor(p1.get_n_neighbors() * model->runif());
 
         // When rewiring, we need to flip the individuals from the other
         // end as well, since we are dealing withi an undirected graph
         
         // Finding what neighbour is id0
-        if (!model->is_directed())
-        {
-            // Picking 0's alter
-            epiworld_fast_uint n0,n1;
-            Agent<TSeq> & p01 = agents->operator[](p0.get_neighbors()[id01]->get_id());
-            for (n0 = 0; n0 < p01.get_neighbors().size(); ++n0)
-            {
-
-                // And getting the id of ego 0
-                if (p0.get_id() == p01.get_neighbors()[n0]->get_id())
-                    break;            
-            }
-
-            // Picking 1's alter
-            Agent<TSeq> & p11 = agents->operator[](p1.get_neighbors()[id11]->get_id());
-            for (n1 = 0; n1 < p11.get_neighbors().size(); ++n1)
-            {
-
-                // And getting the id of ego 1
-                if (p1.get_id() == p11.get_neighbors()[n1]->get_id())
-                    break;            
-            }
-
-            // Swapping alter's endpoints
-            std::swap(p01.get_neighbors()[n0], p11.get_neighbors()[n1]);    
-            
-        }
-
-        // Moving alter first
-        std::swap(p0.get_neighbors()[id01], p1.get_neighbors()[id11]);
+        model->population[id0].swap_neighbors(
+            model->population[id1],
+            id01,
+            id11
+            );
         
 
     }
+
+    #ifdef EPI_DEBUG
+    for (size_t _i = 0u; _i < _degree0.size(); ++_i)
+    {
+        if (_degree0[_i] != model->population[_i].n_neighbors)
+            throw std::logic_error("[epi-debug] Degree does not match afted rewire_degseq.");
+    }
+    #endif
 
     return;
 
@@ -4260,6 +4290,12 @@ inline void rewire_degseq(
 
     // Identifying individuals with degree > 0
     std::vector< epiworld_fast_int > nties(agents->vcount(), 0); 
+
+    #ifdef EPI_DEBUG
+    std::vector< int > _degree0(agents->vcount(), 0);
+    for (size_t i = 0u; i < _degree0.size(); ++i)
+        _degree0[i] = agents->get_dat()[i].size();
+    #endif
     
     std::vector< epiworld_fast_uint > non_isolates;
     non_isolates.reserve(nties.size());
@@ -4380,6 +4416,21 @@ inline void rewire_degseq(
         std::swap(p0[id01], p1[id11]);
 
     }
+
+    #ifdef EPI_DEBUG
+    for (size_t _i = 0u; _i < _degree0.size(); ++_i)
+    {
+        if (_degree0[_i] != agents->get_dat()[_i].size())
+            throw std::logic_error(
+                "[epi-debug] Degree does not match afted rewire_degseq. " +
+                std::string("Expected: ") + 
+                std::to_string(_degree0[_i]) + 
+                std::string(", observed: ") +
+                std::to_string(agents->get_dat()[_i].size())
+                );
+    }
+    #endif
+
 
     return;
 
@@ -4673,6 +4724,7 @@ private:
      */
     std::vector< epiworld_fast_int > active;
     Model<TSeq> * model = nullptr;
+    int n_in_queue = 0;
 
     // Auxiliary variable that checks how many steps
     // left are there
@@ -4694,9 +4746,16 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 {
 
-    active[p->id]++;
+    if (++active[p->id] == 1)
+        n_in_queue++;
+
     for (auto n : p->neighbors)
-        active[n]++;
+    {
+
+        if (++active[n] == 1)
+            n_in_queue++;
+
+    }
 
 }
 
@@ -4704,9 +4763,14 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 {
 
-    active[p->id]--;
+    if (--active[p->id] == 0)
+        n_in_queue--;
+
     for (auto n : p->neighbors)
-        active[n]--;
+    {
+        if (--active[n] == 0)
+            n_in_queue--;
+    }
 
 }
 
@@ -4721,6 +4785,16 @@ inline void Queue<TSeq>::set_model(Model<TSeq> * m)
 {
 
     model = m;
+    if (n_in_queue)
+    {
+
+        for (auto & q : this->active)
+            q = 0;
+
+        n_in_queue = 0;
+        
+    }
+
     active.resize(m->size(), 0);
 
 }
@@ -4836,7 +4910,7 @@ private:
 
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
-    std::vector< Agent<TSeq> > population;
+    std::vector< Agent<TSeq> > population = {};
 
     bool usign_backup = true;
     std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = nullptr;
@@ -4872,21 +4946,21 @@ private:
 
     bool directed = false;
     
-    std::vector< VirusPtr<TSeq> > viruses;
-    std::vector< epiworld_double > prevalence_virus; ///< Initial prevalence_virus of each virus
-    std::vector< bool > prevalence_virus_as_proportion;
-    std::vector< VirusToAgentFun<TSeq> > viruses_dist_funs;
+    std::vector< VirusPtr<TSeq> > viruses = {};
+    std::vector< epiworld_double > prevalence_virus = {}; ///< Initial prevalence_virus of each virus
+    std::vector< bool > prevalence_virus_as_proportion = {};
+    std::vector< VirusToAgentFun<TSeq> > viruses_dist_funs = {};
     
-    std::vector< ToolPtr<TSeq> > tools;
-    std::vector< epiworld_double > prevalence_tool;
-    std::vector< bool > prevalence_tool_as_proportion;
-    std::vector< ToolToAgentFun<TSeq> > tools_dist_funs;
+    std::vector< ToolPtr<TSeq> > tools = {};
+    std::vector< epiworld_double > prevalence_tool = {};
+    std::vector< bool > prevalence_tool_as_proportion = {};
+    std::vector< ToolToAgentFun<TSeq> > tools_dist_funs = {};
 
-    std::vector< Entity<TSeq> > entities; 
-    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup;
-    std::vector< epiworld_double > prevalence_entity;
-    std::vector< bool > prevalence_entity_as_proportion;
-    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs;
+    std::vector< Entity<TSeq> > entities = {}; 
+    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = nullptr;
+    std::vector< epiworld_double > prevalence_entity = {};
+    std::vector< bool > prevalence_entity_as_proportion = {};
+    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
 
     std::shared_ptr< std::mt19937 > engine =
         std::make_shared< std::mt19937 >();
@@ -5564,6 +5638,14 @@ inline void Model<TSeq>::actions_add(
     #ifdef EPI_DEBUG
     if (nactions == 0)
         throw std::logic_error("Actions cannot be zero!!");
+
+    if ((virus_ != nullptr) && idx_agent_ >= 0)
+    {
+        if (idx_agent_ >= (virus_->get_agent()->get_n_viruses()))
+            throw std::logic_error(
+                "The virus to add is out of range in the host agent."
+                );
+    }
     #endif
 
     if (nactions > actions.size())
@@ -5992,7 +6074,7 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
-inline std::vector<Agent<TSeq>> Model<TSeq>::get_agents()
+inline std::vector<Agent<TSeq>> & Model<TSeq>::get_agents()
 {
     return population;
 }
@@ -6811,6 +6893,11 @@ inline void Model<TSeq>::run()
     EPIWORLD_RUN((*this))
     {
 
+        #ifdef EPI_DEBUG
+        db.n_transmissions_potential = 0;
+        db.n_transmissions_today = 0;
+        #endif
+
         // We can execute these components in whatever order the
         // user needs.
         this->update_status();
@@ -7036,6 +7123,21 @@ inline void Model<TSeq>::update_status() {
         for (auto & p: population)
             if (queue[++i] > 0)
             {
+
+                #ifdef EPI_DEBUG
+                // Checking that queue of agent i is all active
+                for (auto n_idx : p.neighbors)
+                {
+                    if ((queue[n_idx] == 0) && (p.n_viruses > 0))
+                    {
+                        printf_epiworld(
+                            "[epi-debug] Queue in agent %i is zero.\n",
+                            static_cast<int>(n_idx)
+                            );
+                    }
+                }
+                #endif
+
                 if (status_fun[p.status])
                     status_fun[p.status](&p, this);
             }
@@ -7236,18 +7338,14 @@ inline void Model<TSeq>::reset() {
     // Restablishing people
     pb = Progress(ndays, 80);
 
-    if (backup != nullptr)
-    {
-        backup->clone_population(
-            this->population,
-            this->entities,
-            const_cast<Model<TSeq> * >(this),
-            this->directed
-        );
-    }
-
-    for (auto & p : population)
-        p.reset();
+    if (population_backup != nullptr)
+        population = *this->population_backup;
+    else
+        for (auto & p : population)
+            p.reset();
+        
+    if (entities_backup != nullptr)
+        entities = *this->entities_backup;
     
     current_date = 0;
 
@@ -8177,7 +8275,7 @@ class Virus {
 private:
     
     Agent<TSeq> * agent       = nullptr;
-    int       agent_idx       = -99; ///< Location in the agent
+    int       pos_in_agent    = -99; ///< Location in the agent
     int agent_exposure_number = -99;
 
     std::shared_ptr<TSeq> baseline_sequence = nullptr;
@@ -8352,49 +8450,80 @@ inline void Virus<TSeq>::set_mutation(
 }
 
 template<typename TSeq>
-inline const TSeq * Virus<TSeq>::get_sequence() {
+inline const TSeq * Virus<TSeq>::get_sequence()
+{
+
     return &(*baseline_sequence);
+
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_sequence(TSeq sequence) {
+inline void Virus<TSeq>::set_sequence(TSeq sequence)
+{
+
     baseline_sequence = std::make_shared<TSeq>(sequence);
     return;
+
 }
 
 template<typename TSeq>
-inline Agent<TSeq> * Virus<TSeq>::get_agent() {
+inline Agent<TSeq> * Virus<TSeq>::get_agent()
+{
+
     return agent;
+
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_agent(Agent<TSeq> * p, epiworld_fast_uint idx) {
-    agent = p;
-    agent_idx = static_cast<int>(idx);
+inline void Virus<TSeq>::set_agent(Agent<TSeq> * p, epiworld_fast_uint idx)
+{
+
+    #ifdef EPI_DEBUG
+    if (idx >= p->viruses.size())
+    {
+        printf_epiworld(
+            "[epi-debug]Virus::set_agent id to set up is outside of range."
+            );
+    }
+    #endif
+
+    agent        = p;
+    pos_in_agent = static_cast<int>(idx);
+
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_id(int idx) {
+inline void Virus<TSeq>::set_id(int idx)
+{
+
     id = idx;
     return;
+
 }
 
 template<typename TSeq>
-inline int Virus<TSeq>::get_id() const {
+inline int Virus<TSeq>::get_id() const
+{
     
     return id;
+
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_date(int d) {
+inline void Virus<TSeq>::set_date(int d) 
+{
+
     date = d;
     return;
+
 }
 
 template<typename TSeq>
-inline int Virus<TSeq>::get_date() const {
+inline int Virus<TSeq>::get_date() const
+{
     
     return date;
+    
 }
 
 template<typename TSeq>
@@ -8968,7 +9097,7 @@ class Tool {
 private:
 
     Agent<TSeq> * agent = nullptr;
-    int agent_idx        = -99; ///< Location in the agent
+    int pos_in_agent        = -99; ///< Location in the agent
 
     int date = -99;
     int id   = -99;
@@ -9334,8 +9463,8 @@ inline Agent<TSeq> * Tool<TSeq>::get_agent()
 template<typename TSeq>
 inline void Tool<TSeq>::set_agent(Agent<TSeq> * p, size_t idx)
 {
-    agent = p;
-    agent_idx = static_cast<int>(idx);
+    agent        = p;
+    pos_in_agent = static_cast<int>(idx);
 }
 
 template<typename TSeq>
@@ -9493,12 +9622,12 @@ private:
 
 public:
 
-    Entity() = delete;
-    Entity(Entity<TSeq> & e) = delete;
-    Entity(const Entity<TSeq> & e);
+    // Entity() = delete;
+    // Entity(Entity<TSeq> & e) = delete;
+    // Entity(const Entity<TSeq> & e);
     // Entity(Entity && e);
     Entity(std::string name) : entity_name(name) {};
-    Entity<TSeq> & operator=(const Entity<TSeq> & e);
+    // Entity<TSeq> & operator=(const Entity<TSeq> & e);
 
     void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
     void add_agent(Agent<TSeq> * p, Model<TSeq> * model);
@@ -9548,27 +9677,27 @@ public:
 #ifndef EPIWORLD_ENTITY_MEAT_HPP
 #define EPIWORLD_ENTITY_MEAT_HPP
 
-template<typename TSeq>
-inline Entity<TSeq>::Entity(const Entity<TSeq> & e) :
-    model(e.model),
-    id(e.id),
-    agents(0u),
-    agents_location(0u),
-    n_agents(0),
-    sampled_agents(0u),
-    sampled_agents_n(0u),
-    sampled_agents_left(0u),
-    sampled_agents_left_n(0u),
-    max_capacity(e.max_capacity),
-    entity_name(e.entity_name),
-    location(e.location),
-    status_init(e.status_init),
-    status_post(e.status_post),
-    queue_init(e.queue_init),
-    queue_post(e.queue_post)
-{
+// template<typename TSeq>
+// inline Entity<TSeq>::Entity(const Entity<TSeq> & e) :
+//     model(e.model),
+//     id(e.id),
+//     agents(0u),
+//     agents_location(0u),
+//     n_agents(0),
+//     sampled_agents(0u),
+//     sampled_agents_n(0u),
+//     sampled_agents_left(0u),
+//     sampled_agents_left_n(0u),
+//     max_capacity(e.max_capacity),
+//     entity_name(e.entity_name),
+//     location(e.location),
+//     status_init(e.status_init),
+//     status_post(e.status_post),
+//     queue_init(e.queue_init),
+//     queue_post(e.queue_post)
+// {
 
-}
+// }
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(
@@ -9663,7 +9792,7 @@ inline Agent<TSeq> * Entity<TSeq>::operator[](size_t i)
     if (n_agents <= i)
         throw std::logic_error("There are not that many agents in this entity.");
 
-    return agents[i];
+    return &model->get_agents()[i];
 }
 
 template<typename TSeq>
@@ -10345,8 +10474,10 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
     // This computes the prob of getting any neighbor variant
     size_t nvariants_tmp = 0u;
     for (auto & neighbor: p->get_neighbors()) 
-    {
-                 
+    {   
+        #ifdef EPI_DEBUG
+        int _vcount_neigh = 0;
+        #endif                 
         for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
         { 
 
@@ -10364,19 +10495,43 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
                 ; 
         
             m->array_virus_tmp[nvariants_tmp++] = &(*v);
+
+            #ifdef EPI_DEBUG
+            if (
+                (m->array_double_tmp[nvariants_tmp - 1] < 0.0) |
+                (m->array_double_tmp[nvariants_tmp - 1] > 1.0)
+                )
+            {
+                printf_epiworld(
+                    "[epi-debug] Agent %i's virus %i has transmission prob outside of [0, 1]: %.4f!\n",
+                    static_cast<int>(neighbor->get_id()),
+                    static_cast<int>(_vcount_neigh++),
+                    m->array_double_tmp[nvariants_tmp - 1]
+                    );
+            }
+            #endif
             
         } 
     }
 
+
     // No virus to compute
     if (nvariants_tmp == 0u)
         return nullptr;
+
+    #ifdef EPI_DEBUG
+    m->get_db().n_transmissions_potential++;
+    #endif
 
     // Running the roulette
     int which = roulette(nvariants_tmp, m);
 
     if (which < 0)
         return nullptr;
+
+    #ifdef EPI_DEBUG
+    m->get_db().n_transmissions_today++;
+    #endif
 
     return m->array_virus_tmp[which]; 
     
@@ -10437,9 +10592,21 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
             1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
 
     }
-    
+
+    #ifdef EPI_DEBUG
+    if (n_events == 0u)
+    {
+        printf_epiworld(
+            "[epi-debug] agent %i has 0 possible events!!\n",
+            static_cast<int>(p->get_id())
+            );
+        throw std::logic_error("Zero events in exposed.");
+    }
+    #else
     if (n_events == 0u)
         return;
+    #endif
+    
 
     // Running the roulette
     int which = roulette(n_events, m);
@@ -10598,10 +10765,10 @@ private:
     epiworld_fast_uint action_counter = 0u;
 
     std::vector< Agent<TSeq> * > sampled_agents;
-    size_t sampled_agents_n = 0u;
+    size_t sampled_agents_n      = 0u;
     std::vector< size_t > sampled_agents_left;
     size_t sampled_agents_left_n = 0u;
-    int date_last_build_sample = -99;
+    int date_last_build_sample   = -99;
 
 public:
 
@@ -10745,7 +10912,21 @@ public:
         bool check_target = true
         );
 
+    /**
+     * @brief Swaps neighbors between the current agent and agent `other`
+     * 
+     * @param other 
+     * @param n_this 
+     * @param n_other 
+     */
+    void swap_neighbors(
+        Agent<TSeq> & other,
+        size_t n_this,
+        size_t n_other
+    );
+
     std::vector< Agent<TSeq> * > get_neighbors();
+    size_t get_n_neighbors() const;
 
     void change_status(
         Model<TSeq> * model,
@@ -10876,6 +11057,14 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 
     // Notice that both agent and date can be changed in this case
     // as only the sequence is a shared_ptr itself.
+    #ifdef EPI_DEBUG
+    if (n_viruses >= p->viruses.size())
+    {
+        throw std::logic_error(
+            "[epi-debug]::default_add_virus Index for new virus out of range."
+            );
+    }
+    #endif
     p->viruses[n_viruses]->set_agent(p, n_viruses);
     p->viruses[n_viruses]->set_date(m->today());
 
@@ -10919,8 +11108,8 @@ template<typename TSeq>
 inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
 {
 
-    Agent<TSeq> * p   = a.agent;    
-    VirusPtr<TSeq> & v = a.agent->viruses[a.virus->agent_idx];
+    Agent<TSeq> * p    = a.agent;    
+    VirusPtr<TSeq> & v = a.agent->viruses[a.virus->pos_in_agent];
     
     CHECK_COALESCE_(a.new_status, v->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, v->queue_post, -QueueValues::Everyone)
@@ -10928,8 +11117,11 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
     if (--p->n_viruses > 0)
     {
         // The new virus will change positions
-        p->viruses[p->n_viruses]->agent_idx = v->agent_idx;
-        std::swap(v, p->viruses[p->n_viruses]);
+        p->viruses[p->n_viruses]->pos_in_agent = v->pos_in_agent;
+        std::swap(
+            p->viruses[p->n_viruses],   // Moving to the end
+            p->viruses[v->pos_in_agent] // Moving to the beginning
+            );
     }
     
     // Calling the virus action over the removed virus
@@ -10943,16 +11135,19 @@ template<typename TSeq>
 inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
 {
 
-    Agent<TSeq> * p  = a.agent;    
-    ToolPtr<TSeq> & t = a.agent->tools[a.tool->agent_idx];
+    Agent<TSeq> * p   = a.agent;    
+    ToolPtr<TSeq> & t = a.agent->tools[a.tool->pos_in_agent];
 
     CHECK_COALESCE_(a.new_status, t->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, t->queue_post, QueueValues::NoOne)
 
     if (--p->n_tools > 0)
     {
-        p->tools[p->n_tools]->agent_idx = t->agent_idx;
-        std::swap(t, p->tools[p->n_tools - 1]);
+        p->tools[p->n_tools]->pos_in_agent = t->pos_in_agent;
+        std::swap(
+            p->tools[t->pos_in_agent],
+            p->tools[p->n_tools]
+            );
     }
 
     return;
@@ -11063,7 +11258,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
         // moved agent needs to reflect the change, i.e., where the
         // agent will now be located in the entity
         size_t entity_location_in_last_agent = e->agents_location[e->n_agents];
-        Agent<TSeq> * last_agent  = &m->agents[e->agents[e->n_agents]]; ///< Last agent of the entity
+        Agent<TSeq> * last_agent  = &m->get_agents()[e->agents[e->n_agents]]; ///< Last agent of the entity
 
         // The end entity will be located where the removed was
         last_agent->entities_locations[entity_location_in_last_agent] = idx_agent_in_entity;
@@ -11134,7 +11329,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
         // Will create a copy of the virus, with the exeption of
         // the virus code
         v->agent = this;
-        v->agent_idx = loc++;
+        v->pos_in_agent = loc++;
 
     }
 
@@ -11145,7 +11340,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
         // Will create a copy of the virus, with the exeption of
         // the virus code
         t->agent     = this;
-        t->agent_idx = loc++;
+        t->pos_in_agent = loc++;
 
     }
     
@@ -11170,28 +11365,27 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     id     = p.id;
     
     // Dealing with the virus
-    viruses.resize(p.get_n_viruses());
+    viruses.resize(p.get_n_viruses(), nullptr);
     n_viruses = viruses.size();
-    for (size_t i = 0u; i < viruses.size(); ++i)
+    for (size_t i = 0u; i < n_viruses; ++i)
     {
 
         // Will create a copy of the virus, with the exeption of
         // the virus code
         viruses[i] = std::make_shared<Virus<TSeq>>(*p.viruses[i]);
-        viruses[i]->agent = this;
-        viruses[i]->agent_idx = i;
+        viruses[i]->set_agent(this, i);
 
     }
 
-    tools.resize(p.get_n_tools());
-    for (size_t i = 0u; i < tools.size(); ++i)
+    tools.resize(p.get_n_tools(), nullptr);
+    n_tools = tools.size();
+    for (size_t i = 0u; i < n_tools; ++i)
     {
         
         // Will create a copy of the virus, with the exeption of
         // the virus code
         tools[i] = std::make_shared<Tool<TSeq>>(*p.tools[i]);
-        tools[i]->agent = this;
-        tools[i]->agent_idx = i;
+        tools[i]->set_agent(this, i);
 
     }
 
@@ -11232,11 +11426,22 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     status_last_changed = other_agent.status_last_changed;
     id                  = other_agent.id;
     
-    viruses             = other_agent.viruses;
+    // viruses             = other_agent.viruses;
     n_viruses           = other_agent.n_viruses;
+    viruses.resize(n_viruses, nullptr);
+    for (size_t i = 0u; i < n_viruses; ++i)
+    {
+        viruses[i] = std::make_shared<Virus<TSeq>>(*other_agent.viruses[i]);
+        viruses[i]->set_agent(this, i);
+    }
     
-    tools               = other_agent.tools;
+    // tools               = other_agent.tools;
     n_tools             = other_agent.n_tools;
+    for (size_t i = 0u; i < n_tools; ++i)
+    {
+        tools[i] = std::make_shared<Tool<TSeq>>(*other_agent.tools[i]);
+        tools[i]->set_agent(this, i);
+    }
 
     add_virus_          = other_agent.add_virus_;
     add_tool_           = other_agent.add_tool_;
@@ -11246,27 +11451,6 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     rm_entity_          = other_agent.rm_entity_;
     action_counter      = other_agent.action_counter;
     
-    // Dealing with the virus
-    for (auto & v : viruses)
-    {
-        
-        // Will create a copy of the virus, with the exeption of
-        // the virus code
-        v->agent = this;
-        v->agent_idx = id;
-
-    }
-
-    for (auto & t : tools)
-    {
-        
-        // Will create a copy of the virus, with the exeption of
-        // the virus code
-        t->agent     = this;
-        t->agent_idx = id;
-
-    }
-
     return *this;
     
 }
@@ -11426,6 +11610,14 @@ inline void Agent<TSeq>::rm_virus(
             "There is no virus to remove here!"
         );
 
+    #ifdef EPI_DEBUG
+    if (viruses[virus_idx]->pos_in_agent >= n_viruses)
+    {
+        throw std::logic_error(
+            "[epi-debug]::rm_virus the position in the agent is wrong."
+            );
+    }
+    #endif
 
     model->actions_add(
         this, viruses[virus_idx], nullptr, nullptr, status_new, queue,
@@ -11573,7 +11765,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
         throw std::logic_error("Viruses can only remove their hosts'.");
 
     rm_agent_by_virus(
-        virus->agent_idx,
+        virus->pos_in_agent,
         model,
         status_new,
         queue
@@ -11683,10 +11875,10 @@ inline void Agent<TSeq>::add_neighbor(
     bool check_target
 ) {
     // Can we find the neighbor?
+    bool found = false;
     if (check_source)
     {
 
-        bool found = false;
         for (auto & n: neighbors)    
             if (n == p.get_id())
             {
@@ -11694,29 +11886,82 @@ inline void Agent<TSeq>::add_neighbor(
                 break;
             }
 
-        if (!found)
-            neighbors.push_back(p.get_id());
+    }
 
-    } else 
+    // Three things going on here:
+    // - Where in the neighbor will this be
+    // - What is the neighbor's id
+    // - Increasing the number of neighbors
+    if (!found)
+    {
+
+        neighbors_locations.push_back(p.get_n_neighbors());
         neighbors.push_back(p.get_id());
+        n_neighbors++;
 
+    }
+
+
+    found = false;
     if (check_target)
     {
 
-        bool found = false;
         for (auto & n: p.neighbors)
             if (n == id)
             {
                 found = true;
                 break;
             }
+    
+    }
 
-        if (!found)
-            p.neighbors.push_back(id);
-    
-    } else 
+    if (!found)
+    {
+
+        p.neighbors_locations.push_back(n_neighbors - 1);
         p.neighbors.push_back(id);
+        p.n_neighbors++;
+        
+    }
     
+
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::swap_neighbors(
+    Agent<TSeq> & other,
+    size_t n_this,
+    size_t n_other
+)
+{
+
+    // Getting the agents
+    auto & pop = model->population;
+    auto & neigh_this  = pop[neighbors[n_this]];
+    auto & neigh_other = pop[other.neighbors[n_other]];
+
+    // Getting the locations in the neighbors
+    size_t loc_this_in_neigh = neighbors_locations[n_this];
+    size_t loc_other_in_neigh = other.neighbors_locations[n_other];
+
+    // Changing ids
+    std::swap(neighbors[n_this], other.neighbors[n_other]);
+
+    if (!model->directed)
+    {
+        std::swap(
+            neigh_this.neighbors[loc_this_in_neigh],
+            neigh_other.neighbors[loc_other_in_neigh]
+            );
+
+        // Changing the locations
+        std::swap(neighbors_locations[n_this], other.neighbors_locations[n_other]);
+        
+        std::swap(
+            neigh_this.neighbors_locations[loc_this_in_neigh],
+            neigh_other.neighbors_locations[loc_other_in_neigh]
+            );
+    }
 
 }
 
@@ -11728,6 +11973,12 @@ inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors()
         res[i] = &model->population[neighbors[i]];
 
     return res;
+}
+
+template<typename TSeq>
+inline size_t Agent<TSeq>::get_n_neighbors() const
+{
+    return n_neighbors;
 }
 
 template<typename TSeq>
@@ -13538,11 +13789,11 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (_tracked_agents_infected->operator[](which)->get_n_viruses() == 0)
                 {
 
-                    printf_epiworld("[epiworld-debug] date: %i\n", m->today());
-                    printf_epiworld("[epiworld-debug] sim#: %i\n", m->get_n_replicates());
+                    printf_epiworld("[epi-debug] date: %i\n", m->today());
+                    printf_epiworld("[epi-debug] sim#: %i\n", m->get_n_replicates());
 
                     throw std::logic_error(
-                        "[epiworld-debug] The agent " + std::to_string(which) + " has no "+
+                        "[epi-debug] The agent " + std::to_string(which) + " has no "+
                         "virus to share. The agent's status is: " +
                         std::to_string(_tracked_agents_infected->operator[](which)->get_status())
                     );
@@ -13550,6 +13801,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 #endif
                 p->add_virus(
                     _tracked_agents_infected->operator[](which)->get_virus(0u),
+                    m,
                     ModelSEIRCONN<TSeq>::EXPOSED
                     ); 
 

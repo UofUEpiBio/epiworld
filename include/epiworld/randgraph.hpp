@@ -26,9 +26,9 @@ inline void rewire_degseq(
 {
 
     #ifdef EPI_DEBUG
-    std::vector< int > degree0(agents.size(), 0);
-    for (size_t i = 0u; i < degree0.size(); ++i)
-        degree0[i] = model->population[i].get_neighbors().size();
+    std::vector< int > _degree0(agents.size(), 0);
+    for (size_t i = 0u; i < _degree0.size(); ++i)
+        _degree0[i] = model->population[i].get_neighbors().size();
     #endif
 
     // Identifying individuals with degree > 0
@@ -114,6 +114,14 @@ inline void rewire_degseq(
 
     }
 
+    #ifdef EPI_DEBUG
+    for (size_t _i = 0u; _i < _degree0.size(); ++_i)
+    {
+        if (_degree0[_i] != model->population[_i].n_neighbors)
+            throw std::logic_error("[epi-debug] Degree does not match afted rewire_degseq.");
+    }
+    #endif
+
     return;
 
 }
@@ -128,6 +136,12 @@ inline void rewire_degseq(
 
     // Identifying individuals with degree > 0
     std::vector< epiworld_fast_int > nties(agents->vcount(), 0); 
+
+    #ifdef EPI_DEBUG
+    std::vector< int > _degree0(agents->vcount(), 0);
+    for (size_t i = 0u; i < _degree0.size(); ++i)
+        _degree0[i] = agents->get_dat()[i].size();
+    #endif
     
     std::vector< epiworld_fast_uint > non_isolates;
     non_isolates.reserve(nties.size());
@@ -248,6 +262,21 @@ inline void rewire_degseq(
         std::swap(p0[id01], p1[id11]);
 
     }
+
+    #ifdef EPI_DEBUG
+    for (size_t _i = 0u; _i < _degree0.size(); ++_i)
+    {
+        if (_degree0[_i] != agents->get_dat()[_i].size())
+            throw std::logic_error(
+                "[epi-debug] Degree does not match afted rewire_degseq. " +
+                std::string("Expected: ") + 
+                std::to_string(_degree0[_i]) + 
+                std::string(", observed: ") +
+                std::to_string(agents->get_dat()[_i].size())
+                );
+    }
+    #endif
+
 
     return;
 

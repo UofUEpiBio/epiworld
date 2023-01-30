@@ -22,6 +22,7 @@ private:
      */
     std::vector< epiworld_fast_int > active;
     Model<TSeq> * model = nullptr;
+    int n_in_queue = 0;
 
     // Auxiliary variable that checks how many steps
     // left are there
@@ -43,9 +44,16 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 {
 
-    active[p->id]++;
+    if (++active[p->id] == 1)
+        n_in_queue++;
+
     for (auto n : p->neighbors)
-        active[n]++;
+    {
+
+        if (++active[n] == 1)
+            n_in_queue++;
+
+    }
 
 }
 
@@ -53,9 +61,14 @@ template<typename TSeq>
 inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 {
 
-    active[p->id]--;
+    if (--active[p->id] == 0)
+        n_in_queue--;
+
     for (auto n : p->neighbors)
-        active[n]--;
+    {
+        if (--active[n] == 0)
+            n_in_queue--;
+    }
 
 }
 
@@ -70,6 +83,16 @@ inline void Queue<TSeq>::set_model(Model<TSeq> * m)
 {
 
     model = m;
+    if (n_in_queue)
+    {
+
+        for (auto & q : this->active)
+            q = 0;
+
+        n_in_queue = 0;
+        
+    }
+
     active.resize(m->size(), 0);
 
 }

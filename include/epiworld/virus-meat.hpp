@@ -33,49 +33,80 @@ inline void Virus<TSeq>::set_mutation(
 }
 
 template<typename TSeq>
-inline const TSeq * Virus<TSeq>::get_sequence() {
+inline const TSeq * Virus<TSeq>::get_sequence()
+{
+
     return &(*baseline_sequence);
+
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_sequence(TSeq sequence) {
+inline void Virus<TSeq>::set_sequence(TSeq sequence)
+{
+
     baseline_sequence = std::make_shared<TSeq>(sequence);
     return;
+
 }
 
 template<typename TSeq>
-inline Agent<TSeq> * Virus<TSeq>::get_agent() {
+inline Agent<TSeq> * Virus<TSeq>::get_agent()
+{
+
     return agent;
+
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_agent(Agent<TSeq> * p, epiworld_fast_uint idx) {
-    agent = p;
-    agent_idx = static_cast<int>(idx);
+inline void Virus<TSeq>::set_agent(Agent<TSeq> * p, epiworld_fast_uint idx)
+{
+
+    #ifdef EPI_DEBUG
+    if (idx >= p->viruses.size())
+    {
+        printf_epiworld(
+            "[epi-debug]Virus::set_agent id to set up is outside of range."
+            );
+    }
+    #endif
+
+    agent        = p;
+    pos_in_agent = static_cast<int>(idx);
+
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_id(int idx) {
+inline void Virus<TSeq>::set_id(int idx)
+{
+
     id = idx;
     return;
+
 }
 
 template<typename TSeq>
-inline int Virus<TSeq>::get_id() const {
+inline int Virus<TSeq>::get_id() const
+{
     
     return id;
+
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_date(int d) {
+inline void Virus<TSeq>::set_date(int d) 
+{
+
     date = d;
     return;
+
 }
 
 template<typename TSeq>
-inline int Virus<TSeq>::get_date() const {
+inline int Virus<TSeq>::get_date() const
+{
     
     return date;
+    
 }
 
 template<typename TSeq>

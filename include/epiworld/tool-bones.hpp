@@ -28,7 +28,7 @@ class Tool {
 private:
 
     Agent<TSeq> * agent = nullptr;
-    int agent_idx        = -99; ///< Location in the agent
+    int pos_in_agent        = -99; ///< Location in the agent
 
     int date = -99;
     int id   = -99;

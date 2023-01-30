@@ -39,6 +39,14 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 
     // Notice that both agent and date can be changed in this case
     // as only the sequence is a shared_ptr itself.
+    #ifdef EPI_DEBUG
+    if (n_viruses >= p->viruses.size())
+    {
+        throw std::logic_error(
+            "[epi-debug]::default_add_virus Index for new virus out of range."
+            );
+    }
+    #endif
     p->viruses[n_viruses]->set_agent(p, n_viruses);
     p->viruses[n_viruses]->set_date(m->today());
 
@@ -82,8 +90,8 @@ template<typename TSeq>
 inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
 {
 
-    Agent<TSeq> * p   = a.agent;    
-    VirusPtr<TSeq> & v = a.agent->viruses[a.virus->agent_idx];
+    Agent<TSeq> * p    = a.agent;    
+    VirusPtr<TSeq> & v = a.agent->viruses[a.virus->pos_in_agent];
     
     CHECK_COALESCE_(a.new_status, v->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, v->queue_post, -QueueValues::Everyone)
@@ -91,8 +99,11 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
     if (--p->n_viruses > 0)
     {
         // The new virus will change positions
-        p->viruses[p->n_viruses]->agent_idx = v->agent_idx;
-        std::swap(v, p->viruses[p->n_viruses]);
+        p->viruses[p->n_viruses]->pos_in_agent = v->pos_in_agent;
+        std::swap(
+            p->viruses[p->n_viruses],   // Moving to the end
+            p->viruses[v->pos_in_agent] // Moving to the beginning
+            );
     }
     
     // Calling the virus action over the removed virus
@@ -106,16 +117,19 @@ template<typename TSeq>
 inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
 {
 
-    Agent<TSeq> * p  = a.agent;    
-    ToolPtr<TSeq> & t = a.agent->tools[a.tool->agent_idx];
+    Agent<TSeq> * p   = a.agent;    
+    ToolPtr<TSeq> & t = a.agent->tools[a.tool->pos_in_agent];
 
     CHECK_COALESCE_(a.new_status, t->status_post, p->get_status())
     CHECK_COALESCE_(a.queue, t->queue_post, QueueValues::NoOne)
 
     if (--p->n_tools > 0)
     {
-        p->tools[p->n_tools]->agent_idx = t->agent_idx;
-        std::swap(t, p->tools[p->n_tools - 1]);
+        p->tools[p->n_tools]->pos_in_agent = t->pos_in_agent;
+        std::swap(
+            p->tools[t->pos_in_agent],
+            p->tools[p->n_tools]
+            );
     }
 
     return;

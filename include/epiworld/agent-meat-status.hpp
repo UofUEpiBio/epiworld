@@ -64,15 +64,19 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
     }
 
     #ifdef EPI_DEBUG
-    printf_epiworld(
-        "[epiworld-debug] agent %i has %i possible events.\n",
-        static_cast<int>(p->get_id()),
-        static_cast<int>(n_events)
-        );
-    #endif
-    
+    if (n_events == 0u)
+    {
+        printf_epiworld(
+            "[epi-debug] agent %i has 0 possible events!!\n",
+            static_cast<int>(p->get_id())
+            );
+        throw std::logic_error("Zero events in exposed.");
+    }
+    #else
     if (n_events == 0u)
         return;
+    #endif
+    
 
     // Running the roulette
     int which = roulette(n_events, m);

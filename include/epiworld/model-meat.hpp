@@ -156,6 +156,14 @@ inline void Model<TSeq>::actions_add(
     #ifdef EPI_DEBUG
     if (nactions == 0)
         throw std::logic_error("Actions cannot be zero!!");
+
+    if ((virus_ != nullptr) && idx_agent_ >= 0)
+    {
+        if (idx_agent_ >= (virus_->get_agent()->get_n_viruses()))
+            throw std::logic_error(
+                "The virus to add is out of range in the host agent."
+                );
+    }
     #endif
 
     if (nactions > actions.size())
@@ -1403,6 +1411,11 @@ inline void Model<TSeq>::run()
     EPIWORLD_RUN((*this))
     {
 
+        #ifdef EPI_DEBUG
+        db.n_transmissions_potential = 0;
+        db.n_transmissions_today = 0;
+        #endif
+
         // We can execute these components in whatever order the
         // user needs.
         this->update_status();
@@ -1628,6 +1641,21 @@ inline void Model<TSeq>::update_status() {
         for (auto & p: population)
             if (queue[++i] > 0)
             {
+
+                #ifdef EPI_DEBUG
+                // Checking that queue of agent i is all active
+                for (auto n_idx : p.neighbors)
+                {
+                    if ((queue[n_idx] == 0) && (p.n_viruses > 0))
+                    {
+                        printf_epiworld(
+                            "[epi-debug] Queue in agent %i is zero.\n",
+                            static_cast<int>(n_idx)
+                            );
+                    }
+                }
+                #endif
+
                 if (status_fun[p.status])
                     status_fun[p.status](&p, this);
             }

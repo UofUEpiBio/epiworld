@@ -41,11 +41,14 @@ inline Progress::Progress(int n_, int width_) {
 
 inline void Progress::start()
 {
+
+    #ifndef EPI_DEBUG
     for (int j = 0; j < (width); ++j)
     {
         printf_epiworld("_");
     }
     printf_epiworld("\n");
+    #endif
 }
 
 inline void Progress::next() {
@@ -56,10 +59,13 @@ inline void Progress::next() {
     cur_loc = std::floor((++i) * step_size);
 
 
+    #ifndef EPI_DEBUG
     for (int j = 0; j < (cur_loc - last_loc); ++j)
     {
         printf_epiworld("|");
     }
+    #endif
+
     if (i >= n)
         end();
 
@@ -69,7 +75,9 @@ inline void Progress::next() {
 
 inline void Progress::end() {
 
+    #ifndef EPI_DEBUG
     printf_epiworld(" done.\n");
+    #endif
 
 }
 

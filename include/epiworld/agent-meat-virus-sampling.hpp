@@ -377,8 +377,10 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
     // This computes the prob of getting any neighbor variant
     size_t nvariants_tmp = 0u;
     for (auto & neighbor: p->get_neighbors()) 
-    {
-                 
+    {   
+        #ifdef EPI_DEBUG
+        int _vcount_neigh = 0;
+        #endif                 
         for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
         { 
 
@@ -396,19 +398,43 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
                 ; 
         
             m->array_virus_tmp[nvariants_tmp++] = &(*v);
+
+            #ifdef EPI_DEBUG
+            if (
+                (m->array_double_tmp[nvariants_tmp - 1] < 0.0) |
+                (m->array_double_tmp[nvariants_tmp - 1] > 1.0)
+                )
+            {
+                printf_epiworld(
+                    "[epi-debug] Agent %i's virus %i has transmission prob outside of [0, 1]: %.4f!\n",
+                    static_cast<int>(neighbor->get_id()),
+                    static_cast<int>(_vcount_neigh++),
+                    m->array_double_tmp[nvariants_tmp - 1]
+                    );
+            }
+            #endif
             
         } 
     }
 
+
     // No virus to compute
     if (nvariants_tmp == 0u)
         return nullptr;
+
+    #ifdef EPI_DEBUG
+    m->get_db().n_transmissions_potential++;
+    #endif
 
     // Running the roulette
     int which = roulette(nvariants_tmp, m);
 
     if (which < 0)
         return nullptr;
+
+    #ifdef EPI_DEBUG
+    m->get_db().n_transmissions_today++;
+    #endif
 
     return m->array_virus_tmp[which]; 
     

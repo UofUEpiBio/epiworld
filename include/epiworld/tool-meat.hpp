@@ -269,8 +269,8 @@ inline Agent<TSeq> * Tool<TSeq>::get_agent()
 template<typename TSeq>
 inline void Tool<TSeq>::set_agent(Agent<TSeq> * p, size_t idx)
 {
-    agent = p;
-    agent_idx = static_cast<int>(idx);
+    agent        = p;
+    pos_in_agent = static_cast<int>(idx);
 }
 
 template<typename TSeq>
