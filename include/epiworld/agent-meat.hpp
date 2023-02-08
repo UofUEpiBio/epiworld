@@ -336,7 +336,7 @@ inline void Agent<TSeq>::rm_virus(
         );
 
     #ifdef EPI_DEBUG
-    if (viruses[virus_idx]->pos_in_agent >= n_viruses)
+    if (viruses[virus_idx]->pos_in_agent >= static_cast<int>(n_viruses))
     {
         throw std::logic_error(
             "[epi-debug]::rm_virus the position in the agent is wrong."

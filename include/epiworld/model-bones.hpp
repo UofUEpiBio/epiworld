@@ -380,11 +380,11 @@ public:
      * 
      */
     ///@{
-    void init(epiworld_fast_uint ndays, epiworld_fast_uint seed);
+    virtual void init(epiworld_fast_uint ndays, epiworld_fast_uint seed);
     void update_status();
     void mutate_variant();
     void next();
-    void run(); ///< Runs the simulation (after initialization)
+    virtual void run(); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
         epiworld_fast_uint nexperiments,
         std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),

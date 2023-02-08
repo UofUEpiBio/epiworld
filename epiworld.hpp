@@ -246,7 +246,7 @@ public:
             printf("Size of vector b: %lu\n", b.size());\
             throw std::length_error("[[epi-debug]] The vectors do not match size."); \
         }\
-        for (size_t _i = 0u; _i < a.size(); ++_i) \
+        for (int _i = 0; _i < static_cast<int>(a.size()); ++_i) \
             if (a[_i] != b[_i]) {\
                 printf("Iterating the last 5 values:\n"); \
                 for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
@@ -5201,11 +5201,11 @@ public:
      * 
      */
     ///@{
-    void init(epiworld_fast_uint ndays, epiworld_fast_uint seed);
+    virtual void init(epiworld_fast_uint ndays, epiworld_fast_uint seed);
     void update_status();
     void mutate_variant();
     void next();
-    void run(); ///< Runs the simulation (after initialization)
+    virtual void run(); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
         epiworld_fast_uint nexperiments,
         std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
@@ -5641,7 +5641,7 @@ inline void Model<TSeq>::actions_add(
 
     if ((virus_ != nullptr) && idx_agent_ >= 0)
     {
-        if (idx_agent_ >= (virus_->get_agent()->get_n_viruses()))
+        if (idx_agent_ >= static_cast<int>(virus_->get_agent()->get_n_viruses()))
             throw std::logic_error(
                 "The virus to add is out of range in the host agent."
                 );
@@ -5762,18 +5762,23 @@ inline void Model<TSeq>::actions_run()
         #endif
 
         // Updating queue
-        if (a.queue == QueueValues::Everyone)
-            queue += p;
-        else if (a.queue == -QueueValues::Everyone)
-            queue -= p;
-        else if (a.queue == QueueValues::OnlySelf)
-            queue[p->get_id()]++;
-        else if (a.queue == -QueueValues::OnlySelf)
-            queue[p->get_id()]--;
-        else if (a.queue != QueueValues::NoOne)
-            throw std::logic_error(
-                "The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}."
-                );
+        if (use_queuing)
+        {
+
+            if (a.queue == QueueValues::Everyone)
+                queue += p;
+            else if (a.queue == -QueueValues::Everyone)
+                queue -= p;
+            else if (a.queue == QueueValues::OnlySelf)
+                queue[p->get_id()]++;
+            else if (a.queue == -QueueValues::OnlySelf)
+                queue[p->get_id()]--;
+            else if (a.queue != QueueValues::NoOne)
+                throw std::logic_error(
+                    "The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}."
+                    );
+                    
+        }
 
     }
 
@@ -6193,9 +6198,6 @@ inline void Model<TSeq>::init(
     array_virus_tmp.resize(size()/2);
 
     initialized = true;
-
-    // This also clears the queue
-    queue.set_model(this);
 
     // Checking whether the proposed status in/out/removed
     // are valid
@@ -7335,6 +7337,10 @@ inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 template<typename TSeq>
 inline void Model<TSeq>::reset() {
     
+    // This also clears the queue
+    if (use_queuing)
+        queue.set_model(this);
+
     // Restablishing people
     pb = Progress(ndays, 80);
 
@@ -11611,7 +11617,7 @@ inline void Agent<TSeq>::rm_virus(
         );
 
     #ifdef EPI_DEBUG
-    if (viruses[virus_idx]->pos_in_agent >= n_viruses)
+    if (viruses[virus_idx]->pos_in_agent >= static_cast<int>(n_viruses))
     {
         throw std::logic_error(
             "[epi-debug]::rm_virus the position in the agent is wrong."
@@ -13367,8 +13373,24 @@ public:
     int tracked_ninfected_next = 0;
     epiworld_double tracked_current_infect_prob = 0.0;
 
+    void run();
+
 };
 
+template<typename TSeq>
+inline void ModelSIRCONN<TSeq>::run()
+{
+    tracked_agents_infected.clear();
+    tracked_agents_infected_next.clear();
+
+    tracked_started = false;
+    tracked_ninfected = 0;
+    tracked_ninfected_next = 0;
+    tracked_current_infect_prob = 0.0;
+
+    Model<TSeq>::run();
+
+}
 
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
@@ -13408,40 +13430,36 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         ](epiworld::Model<TSeq> * m) -> void
         {
 
+            /* Checking first if it hasn't  */ 
             if (*_tracked_started)
                 return;
-
-            /* Checking first if it hasn't  */ 
-            if (!*_tracked_started) 
-            { 
-                
-                /* Listing who is infected */ 
-                for (auto & p : m->get_agents())
+    
+            /* Listing who is infected */ 
+            for (auto & p : m->get_agents())
+            {
+                if (p.get_status() == ModelSIRCONN<TSeq>::INFECTED)
                 {
-                    if (p.get_status() == ModelSIRCONN<TSeq>::INFECTED)
-                    {
-                    
-                        _tracked_agents_infected->push_back(&p);
-                        *_tracked_ninfected = *_tracked_ninfected + 1;
-                    
-                    }
-                }
-
-                for (auto & p: *_tracked_agents_infected)
-                {
-                    if (p->get_n_viruses() == 0)
-                        throw std::logic_error("Cannot be infected and have no viruses.");
-                }
                 
-                *_tracked_started = true;
-
-                // Computing infection probability
-                *_tracked_current_infect_prob =  1.0 - std::pow(
-                    1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
-                    *_tracked_ninfected
-                );
+                    _tracked_agents_infected->push_back(&p);
+                    *_tracked_ninfected = *_tracked_ninfected + 1;
                 
+                }
             }
+
+            for (auto & p: *_tracked_agents_infected)
+            {
+                if (p->get_n_viruses() == 0)
+                    throw std::logic_error("Cannot be infected and have no viruses.");
+            }
+            
+            *_tracked_started = true;
+
+            // Computing infection probability
+            *_tracked_current_infect_prob =  1.0 - std::pow(
+                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
+                *_tracked_ninfected
+            );
+             
 
         };
 
@@ -13684,7 +13702,24 @@ public:
     int tracked_ninfected = 0;
     int tracked_ninfected_next = 0;
 
+    void run();
+
 };
+
+template<typename TSeq>
+inline void ModelSEIRCONN<TSeq>::run()
+{
+
+    tracked_agents_infected.clear();
+    tracked_agents_infected_next.clear();
+
+    tracked_started = false;
+    tracked_ninfected = 0;
+    tracked_ninfected_next = 0;
+
+    Model<TSeq>::run();
+
+}
 
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
@@ -13724,35 +13759,30 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     ](epiworld::Model<TSeq> * m) 
         {
 
+            /* Checking first if it hasn't  */ 
             if (*_tracked_started)
                 return;
 
-            /* Checking first if it hasn't  */ 
-            if (!*_tracked_started) 
-            { 
-                
-                /* Listing who is infected */ 
-                for (auto & p : m->get_agents())
+            /* Listing who is infected */ 
+            for (auto & p : m->get_agents())
+            {
+                if (p.get_status() == ModelSEIRCONN<TSeq>::INFECTED)
                 {
-                    if (p.get_status() == ModelSEIRCONN<TSeq>::INFECTED)
-                    {
-                    
-                        _tracked_agents_infected->push_back(&p);
-                        *_tracked_ninfected += 1;
-                    
-                    }
-                }
-
-                for (auto & p: *_tracked_agents_infected)
-                {
-                    if (p->get_n_viruses() == 0)
-                        throw std::logic_error("Cannot be infected and have no viruses.");
-                }
                 
-                *_tracked_started = true;
+                    _tracked_agents_infected->push_back(&p);
+                    *_tracked_ninfected += 1;
                 
+                }
             }
 
+            for (auto & p: *_tracked_agents_infected)
+            {
+                if (p->get_n_viruses() == 0)
+                    throw std::logic_error("Cannot be infected and have no viruses.");
+            }
+            
+            *_tracked_started = true;
+                
         };
 
     epiworld::UpdateFun<TSeq> update_susceptible = 

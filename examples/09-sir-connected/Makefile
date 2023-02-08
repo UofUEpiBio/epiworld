@@ -1,5 +1,5 @@
 09-sir-connected.o: 09-sir-connected.cpp
-	g++ -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize  09-sir-connected.cpp -o 09-sir-connected.o
+	g++ -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize -DEPI_DEBUG 09-sir-connected.cpp -o 09-sir-connected.o
 09-seir-connected.o: 09-seir-connected.cpp
 	g++ -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize  09-seir-connected.cpp -o 09-seir-connected.o
 

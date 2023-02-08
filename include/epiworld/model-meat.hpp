@@ -159,7 +159,7 @@ inline void Model<TSeq>::actions_add(
 
     if ((virus_ != nullptr) && idx_agent_ >= 0)
     {
-        if (idx_agent_ >= (virus_->get_agent()->get_n_viruses()))
+        if (idx_agent_ >= static_cast<int>(virus_->get_agent()->get_n_viruses()))
             throw std::logic_error(
                 "The virus to add is out of range in the host agent."
                 );
@@ -280,18 +280,23 @@ inline void Model<TSeq>::actions_run()
         #endif
 
         // Updating queue
-        if (a.queue == QueueValues::Everyone)
-            queue += p;
-        else if (a.queue == -QueueValues::Everyone)
-            queue -= p;
-        else if (a.queue == QueueValues::OnlySelf)
-            queue[p->get_id()]++;
-        else if (a.queue == -QueueValues::OnlySelf)
-            queue[p->get_id()]--;
-        else if (a.queue != QueueValues::NoOne)
-            throw std::logic_error(
-                "The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}."
-                );
+        if (use_queuing)
+        {
+
+            if (a.queue == QueueValues::Everyone)
+                queue += p;
+            else if (a.queue == -QueueValues::Everyone)
+                queue -= p;
+            else if (a.queue == QueueValues::OnlySelf)
+                queue[p->get_id()]++;
+            else if (a.queue == -QueueValues::OnlySelf)
+                queue[p->get_id()]--;
+            else if (a.queue != QueueValues::NoOne)
+                throw std::logic_error(
+                    "The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}."
+                    );
+                    
+        }
 
     }
 
@@ -711,9 +716,6 @@ inline void Model<TSeq>::init(
     array_virus_tmp.resize(size()/2);
 
     initialized = true;
-
-    // This also clears the queue
-    queue.set_model(this);
 
     // Checking whether the proposed status in/out/removed
     // are valid
@@ -1853,6 +1855,10 @@ inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 template<typename TSeq>
 inline void Model<TSeq>::reset() {
     
+    // This also clears the queue
+    if (use_queuing)
+        queue.set_model(this);
+
     // Restablishing people
     pb = Progress(ndays, 80);
 

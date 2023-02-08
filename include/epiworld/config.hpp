@@ -217,7 +217,7 @@ public:
             printf("Size of vector b: %lu\n", b.size());\
             throw std::length_error("[[epi-debug]] The vectors do not match size."); \
         }\
-        for (size_t _i = 0u; _i < a.size(); ++_i) \
+        for (int _i = 0; _i < static_cast<int>(a.size()); ++_i) \
             if (a[_i] != b[_i]) {\
                 printf("Iterating the last 5 values:\n"); \
                 for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \

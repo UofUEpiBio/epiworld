@@ -48,7 +48,24 @@ public:
     int tracked_ninfected = 0;
     int tracked_ninfected_next = 0;
 
+    void run();
+
 };
+
+template<typename TSeq>
+inline void ModelSEIRCONN<TSeq>::run()
+{
+
+    tracked_agents_infected.clear();
+    tracked_agents_infected_next.clear();
+
+    tracked_started = false;
+    tracked_ninfected = 0;
+    tracked_ninfected_next = 0;
+
+    Model<TSeq>::run();
+
+}
 
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
@@ -88,35 +105,30 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     ](epiworld::Model<TSeq> * m) 
         {
 
+            /* Checking first if it hasn't  */ 
             if (*_tracked_started)
                 return;
 
-            /* Checking first if it hasn't  */ 
-            if (!*_tracked_started) 
-            { 
-                
-                /* Listing who is infected */ 
-                for (auto & p : m->get_agents())
+            /* Listing who is infected */ 
+            for (auto & p : m->get_agents())
+            {
+                if (p.get_status() == ModelSEIRCONN<TSeq>::INFECTED)
                 {
-                    if (p.get_status() == ModelSEIRCONN<TSeq>::INFECTED)
-                    {
-                    
-                        _tracked_agents_infected->push_back(&p);
-                        *_tracked_ninfected += 1;
-                    
-                    }
-                }
-
-                for (auto & p: *_tracked_agents_infected)
-                {
-                    if (p->get_n_viruses() == 0)
-                        throw std::logic_error("Cannot be infected and have no viruses.");
-                }
                 
-                *_tracked_started = true;
+                    _tracked_agents_infected->push_back(&p);
+                    *_tracked_ninfected += 1;
                 
+                }
             }
 
+            for (auto & p: *_tracked_agents_infected)
+            {
+                if (p->get_n_viruses() == 0)
+                    throw std::logic_error("Cannot be infected and have no viruses.");
+            }
+            
+            *_tracked_started = true;
+                
         };
 
     epiworld::UpdateFun<TSeq> update_susceptible = 
