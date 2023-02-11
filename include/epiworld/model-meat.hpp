@@ -1614,6 +1614,14 @@ inline void Model<TSeq>::run_multiple(
         if (fun)
             fun(n, this);
 
+        printf(
+            "This is a random number %.2f for repetition %i\n",
+            runif(),
+            static_cast<int>(n)
+            );
+
+        // this->print();
+
         if ((n < (nexperiments - 1u)) && reset)
             this->reset();
 
