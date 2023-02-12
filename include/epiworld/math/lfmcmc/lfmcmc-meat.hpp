@@ -373,7 +373,7 @@ inline void LFMCMC<TData>::seed(epiworld_fast_uint s) {
 template<typename TData>
 inline void LFMCMC<TData>::set_rand_engine(std::mt19937 & eng)
 {
-    engine = std::make_shared< std::mt19937 >(eng);
+    engine = &eng;
 }
 
 template<typename TData>
@@ -383,9 +383,9 @@ inline void LFMCMC<TData>::set_rand_gamma(epiworld_double alpha, epiworld_double
 }
 
 template<typename TData>
-inline std::mt19937 * LFMCMC<TData>::get_rand_endgine()
+inline std::mt19937 & LFMCMC<TData>::get_rand_endgine()
 {
-    return engine.get();
+    return *engine;
 }
 
 // Step 1: Simulate data

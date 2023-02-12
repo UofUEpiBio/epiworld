@@ -442,7 +442,11 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
     // Finally, seeds are resetted automatically based on the original
     // engine
-    seed(floor(runif() * UINT_MAX));
+    seed(
+        static_cast<size_t>(
+                std::floor(runif() * std::numeric_limits<size_t>::max())
+            )
+    );
 
 }
 
@@ -498,7 +502,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    (void) std::string("Copy-move");
     db.set_model(*this);
 
     if (use_queuing)
@@ -581,7 +584,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     // Finally, seeds are resetted automatically based on the original
     // engine
-    seed(floor(runif() * UINT_MAX));
+    seed(
+        static_cast<size_t>(
+                std::floor(runif() * std::numeric_limits<size_t>::max())
+            )
+    );
 
     array_double_tmp.resize(m.array_double_tmp.size());
     array_virus_tmp.resize(m.array_virus_tmp.size());
@@ -642,11 +649,11 @@ inline void Model<TSeq>::agents_empty_graph(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
-{
-    engine = std::make_shared< std::mt19937 >(eng);
-}
+// template<typename TSeq>
+// inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
+// {
+//     engine = std::make_shared< std::mt19937 >(eng);
+// }
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_gamma(epiworld_double alpha, epiworld_double beta)
@@ -711,7 +718,7 @@ inline void Model<TSeq>::init(
     // Setting up the number of steps
     this->ndays = ndays;
 
-    engine->seed(seed);
+    engine.seed(seed);
     array_double_tmp.resize(size()/2, 0.0);
     array_virus_tmp.resize(size()/2);
 
@@ -982,80 +989,80 @@ inline void Model<TSeq>::restore_backup()
 }
 
 template<typename TSeq>
-inline std::mt19937 * Model<TSeq>::get_rand_endgine()
+inline std::mt19937 & Model<TSeq>::get_rand_endgine()
 {
-    return engine.get();
+    return engine;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return runifd(*engine);
+    return runifd(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return runifd(*engine) * (b - a) + a;
+    return runifd(engine) * (b - a) + a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm() {
     // CHECK_INIT()
-    return rnormd(*engine);
+    return rnormd(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm(epiworld_double mean, epiworld_double sd) {
     // CHECK_INIT()
-    return rnormd(*engine) * sd + mean;
+    return rnormd(engine) * sd + mean;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma() {
-    return rgammad(*engine);
+    return rgammad(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
     auto old_param = rgammad.param();
     rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = rgammad(*engine);
+    epiworld_double ans = rgammad(engine);
     rgammad.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp() {
-    return rexpd(*engine);
+    return rexpd(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
     auto old_param = rexpd.param();
     rexpd.param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = rexpd(*engine);
+    epiworld_double ans = rexpd(engine);
     rexpd.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal() {
-    return rlognormald(*engine);
+    return rlognormald(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
     auto old_param = rlognormald.param();
     rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = rlognormald(*engine);
+    epiworld_double ans = rlognormald(engine);
     rlognormald.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::seed(epiworld_fast_uint s) {
-    this->engine->seed(s);
+    this->engine.seed(s);
 }
 
 template<typename TSeq>
@@ -1462,13 +1469,6 @@ inline void Model<TSeq>::run_multiple(
     // Generating copies of the model
     std::vector< Model<TSeq> > these(std::max(nthreads - 1, 0), *this);
 
-    #ifdef EPI_DEBUG
-    for (auto & m: these)
-        m.seed(0);
-
-    this->seed(0);
-    #endif
-
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
     std::vector< size_t > nreplicates_csum(nthreads, 0);
@@ -1483,6 +1483,7 @@ inline void Model<TSeq>::run_multiple(
         nreplicates_csum[i] = sums;
 
         sums += nreplicates[i];
+
     }
 
     if (sums < nexperiments)
@@ -1522,9 +1523,11 @@ inline void Model<TSeq>::run_multiple(
         }
 
 
-        for (epiworld_fast_uint n = 0u; n < nreplicates[iam]; ++n)
+        for (size_t n = 0u; n < nreplicates[iam]; ++n)
         {
             
+            printf("Runif %.04f (%4i)\n", runif(), (int) n);
+
             if (iam == 0)
             {
 
@@ -1606,21 +1609,13 @@ inline void Model<TSeq>::run_multiple(
 
     }
 
-    for (epiworld_fast_uint n = 0u; n < nexperiments; ++n)
+    for (size_t n = 0u; n < nexperiments; ++n)
     {
         
         run();
 
         if (fun)
             fun(n, this);
-
-        printf(
-            "This is a random number %.2f for repetition %i\n",
-            runif(),
-            static_cast<int>(n)
-            );
-
-        // this->print();
 
         if ((n < (nexperiments - 1u)) && reset)
             this->reset();

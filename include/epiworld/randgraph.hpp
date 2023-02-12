@@ -299,7 +299,7 @@ inline AdjList rgraph_bernoulli(
         p
     );
 
-    epiworld_fast_uint m = d(*model.get_rand_endgine());
+    epiworld_fast_uint m = d(model.get_rand_endgine());
 
     source.resize(m);
     target.resize(m);
@@ -353,7 +353,7 @@ inline AdjList rgraph_bernoulli2(
     // elements sampled. If n * n, then each diag element has
     // 1/(n^2) chance of sampling
 
-    epiworld_fast_uint m = d(*model.get_rand_endgine());
+    epiworld_fast_uint m = d(model.get_rand_endgine());
 
     source.resize(m);
     target.resize(m);

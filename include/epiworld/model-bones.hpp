@@ -141,8 +141,7 @@ private:
     std::vector< bool > prevalence_entity_as_proportion = {};
     std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
 
-    std::shared_ptr< std::mt19937 > engine =
-        std::make_shared< std::mt19937 >();
+    std::mt19937 engine;
     
     std::uniform_real_distribution<> runifd      = std::uniform_real_distribution<> (0.0, 1.0);
     std::normal_distribution<>       rnormd      = std::normal_distribution<>(0.0);
@@ -287,7 +286,7 @@ public:
      */
     ///@{
     void set_rand_engine(std::mt19937 & eng);
-    std::mt19937 * get_rand_endgine();
+    std::mt19937 & get_rand_endgine();
     void seed(epiworld_fast_uint s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);

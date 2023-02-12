@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
         ("b,beta", "Instantaneous contagion rate (beta)", cxxopts::value<epiworld_double>()->default_value("1.5"))
         ("r,recprob", "Probability of recovery", cxxopts::value<epiworld_double>()->default_value(".1428"))
         ("s,seed", "Pseudo-RNG seed", cxxopts::value<int>()->default_value("123"))
-        ("e,experiments", "Number of experiments", cxxopts::value<int>()->default_value("2"))
+        ("e,experiments", "Number of experiments", cxxopts::value<int>()->default_value("4"))
         ("h,help", "Print usage")
         ;
 
@@ -27,13 +27,13 @@ int main(int argc, char* argv[]) {
       exit(0);
     }
 
-    epiworld_fast_uint ndays      = result["days"].as<int>();
-    epiworld_fast_uint popsize    = result["nagents"].as<int>();
-    epiworld_double preval        = result["preval"].as<epiworld_double>();
-    epiworld_double prob_infect   = result["infectprob"].as<epiworld_double>();
-    epiworld_double beta          = result["beta"].as<epiworld_double>();
-    epiworld_double prob_recovery = result["recprob"].as<epiworld_double>();
-    epiworld_fast_uint nexperiments     = result["experiments"].as<int>(); 
+    epiworld_fast_uint ndays        = result["days"].as<int>();
+    epiworld_fast_uint popsize      = result["nagents"].as<int>();
+    epiworld_double preval          = result["preval"].as<epiworld_double>();
+    epiworld_double prob_infect     = result["infectprob"].as<epiworld_double>();
+    epiworld_double beta            = result["beta"].as<epiworld_double>();
+    epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
+    epiworld_fast_uint nexperiments = result["experiments"].as<int>(); 
 
     epiworld::epimodels::ModelSIRCONN<> model(
         "a virus",    // Name of the virus
