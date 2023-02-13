@@ -72,7 +72,10 @@ template<typename TSeq>
 inline Model<TSeq> * ModelSIRCONN<TSeq>::clone_ptr()
 {
     
-    ModelSIRCONN<TSeq> * ptr = new ModelSIRCONN<TSeq>(*dynamic_cast<const ModelSIRCONN<TSeq>*>(this));
+    ModelSIRCONN<TSeq> * ptr = new ModelSIRCONN<TSeq>(
+        *dynamic_cast<const ModelSIRCONN<TSeq>*>(this)
+        );
+
     return dynamic_cast< Model<TSeq> *>(ptr);
 
 }
@@ -106,11 +109,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         ) -> void
         {
 
-            // Getting the right type
-            ModelSIRCONN<TSeq> * _m = dynamic_cast<ModelSIRCONN<TSeq>*>(m);
-
             /* Checking first if it hasn't  */ 
-            if (_m->tracked_started)
+            if (m->tracked_started)
                 return;
     
             /* Listing who is infected */ 
@@ -119,24 +119,24 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 if (p.get_status() == ModelSIRCONN<TSeq>::INFECTED)
                 {
                 
-                    _m->tracked_agents_infected.push_back(&p);
-                    _m->tracked_ninfected++;
+                    m->tracked_agents_infected.push_back(&p);
+                    m->tracked_ninfected++;
                 
                 }
             }
 
-            for (auto & p: _m->tracked_agents_infected)
+            for (auto & p: m->tracked_agents_infected)
             {
                 if (p->get_n_viruses() == 0)
                     throw std::logic_error("Cannot be infected and have no viruses.");
             }
             
-            _m->tracked_started = true;
+            m->tracked_started = true;
 
             // Computing infection probability
-            _m->tracked_current_infect_prob =  1.0 - std::pow(
+            m->tracked_current_infect_prob =  1.0 - std::pow(
                 1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
-                _m->tracked_ninfected
+                m->tracked_ninfected
             );
              
 

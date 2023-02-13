@@ -17,6 +17,7 @@ int main(int argc, char* argv[]) {
         ("l,latency", "Avg. incubation (latency) days", cxxopts::value<epiworld_double>()->default_value("7.0"))
         ("s,seed", "Pseudo-RNG seed", cxxopts::value<int>()->default_value("123"))
         ("e,experiments", "Number of experiments", cxxopts::value<int>()->default_value("2"))
+        ("t,threads", "Number of threads", cxxopts::value<int>()->default_value("2"))
         ("h,help", "Print usage")
         ;
 
@@ -36,6 +37,7 @@ int main(int argc, char* argv[]) {
     epiworld_double incubation_days = result["latency"].as<epiworld_double>();
     epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
     epiworld_fast_uint nexperiments       = result["experiments"].as<int>();
+    int threads = result["threads"].as<int>();
 
     epiworld::epimodels::ModelSEIRCONN<> model(
         "a virus",       // Name of the virus
@@ -76,6 +78,9 @@ int main(int argc, char* argv[]) {
         record,           // Function to call after each experiment
         true,             // Whether to reset the population
         true              // Whether to print a progress bar
+        #ifdef _OPENMP
+        ,threads
+        #endif
     );
 
     model.print();

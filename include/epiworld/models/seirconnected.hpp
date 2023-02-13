@@ -50,6 +50,8 @@ public:
 
     void run();
 
+    Model<TSeq> * clone_ptr();
+
 };
 
 template<typename TSeq>
@@ -64,6 +66,18 @@ inline void ModelSEIRCONN<TSeq>::run()
     tracked_ninfected_next = 0;
 
     Model<TSeq>::run();
+
+}
+
+template<typename TSeq>
+inline Model<TSeq> * ModelSEIRCONN<TSeq>::clone_ptr()
+{
+    
+    ModelSEIRCONN<TSeq> * ptr = new ModelSEIRCONN<TSeq>(
+        *dynamic_cast<const ModelSEIRCONN<TSeq>*>(this)
+        );
+
+    return dynamic_cast< Model<TSeq> *>(ptr);
 
 }
 
@@ -91,22 +105,12 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     )
 {
 
-    auto * _tracked_agents_infected = &model.tracked_agents_infected;
-    auto * _tracked_agents_infected_next = &model.tracked_agents_infected_next;
-    auto * _tracked_started = &model.tracked_started;
-    auto * _tracked_ninfected = &model.tracked_ninfected;
-    auto * _tracked_ninfected_next = &model.tracked_ninfected_next;
-
-    std::function<void(epiworld::Model<TSeq> *)> tracked_agents_check_init = 
-    [
-        _tracked_started,
-        _tracked_agents_infected,
-        _tracked_ninfected
-    ](epiworld::Model<TSeq> * m) 
+    std::function<void(ModelSEIRCONN<TSeq> *)> tracked_agents_check_init = 
+    [](ModelSEIRCONN<TSeq> * m) 
         {
 
             /* Checking first if it hasn't  */ 
-            if (*_tracked_started)
+            if (m->tracked_started)
                 return;
 
             /* Listing who is infected */ 
@@ -115,41 +119,40 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (p.get_status() == ModelSEIRCONN<TSeq>::INFECTED)
                 {
                 
-                    _tracked_agents_infected->push_back(&p);
-                    *_tracked_ninfected += 1;
+                    m->tracked_agents_infected.push_back(&p);
+                    m->tracked_ninfected++;
                 
                 }
             }
 
-            for (auto & p: *_tracked_agents_infected)
+            for (auto & p: m->tracked_agents_infected)
             {
                 if (p->get_n_viruses() == 0)
                     throw std::logic_error("Cannot be infected and have no viruses.");
             }
             
-            *_tracked_started = true;
+            m->tracked_started = true;
                 
         };
 
     epiworld::UpdateFun<TSeq> update_susceptible = 
-    [
-        tracked_agents_check_init,
-        _tracked_ninfected,
-        _tracked_agents_infected
-    ](epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m) -> void
+    [tracked_agents_check_init](epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m) -> void
         {
 
-            tracked_agents_check_init(m);
+            // Getting the right type
+            ModelSEIRCONN<TSeq> * _m = dynamic_cast<ModelSEIRCONN<TSeq>*>(m);
+
+            tracked_agents_check_init(_m);
 
             // No infected individual?
-            if (*_tracked_ninfected == 0)
+            if (_m->tracked_ninfected == 0)
                 return;
 
             // Computing probability of contagion
             // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
             epiworld_double prob_infect = 1.0 - std::pow(
                 1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
-                *_tracked_ninfected
+                _m->tracked_ninfected
                 );
 
             if (m->runif() < prob_infect)
@@ -157,7 +160,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
                 // Now selecting who is transmitting the disease
                 epiworld_fast_uint which = static_cast<epiworld_fast_uint>(
-                    std::floor(*_tracked_ninfected * m->runif())
+                    std::floor(_m->tracked_ninfected * m->runif())
                 );
 
                 // Infecting the individual
@@ -171,12 +174,12 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     throw std::logic_error(
                         "[epi-debug] The agent " + std::to_string(which) + " has no "+
                         "virus to share. The agent's status is: " +
-                        std::to_string(_tracked_agents_infected->operator[](which)->get_status())
+                        std::to_string(_m->tracked_agents_infected[which]->get_status())
                     );
                 }
                 #endif
                 p->add_virus(
-                    _tracked_agents_infected->operator[](which)->get_virus(0u),
+                    _m->tracked_agents_infected[which]->get_virus(0u),
                     m,
                     ModelSEIRCONN<TSeq>::EXPOSED
                     ); 
@@ -190,15 +193,14 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         };
 
     epiworld::UpdateFun<TSeq> update_infected = 
-    [
-        tracked_agents_check_init,
-        _tracked_agents_infected_next,
-        _tracked_ninfected_next
-
-    ](epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m) -> void
+    [tracked_agents_check_init](epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m) -> void
         {
 
-            tracked_agents_check_init(m);
+            // Getting the right type
+            ModelSEIRCONN<TSeq> * _m = dynamic_cast<ModelSEIRCONN<TSeq>*>(m);
+
+            tracked_agents_check_init(_m);
+
             auto status = p->get_status();
 
             if (status == ModelSEIRCONN<TSeq>::EXPOSED)
@@ -208,8 +210,8 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (m->runif() < 1.0/(m->par("Avg. Incubation days")))
                 {
                     // Adding the individual to the queue
-                    _tracked_agents_infected_next->push_back(p);
-                    *_tracked_ninfected_next += 1;
+                    _m->tracked_agents_infected_next.push_back(p);
+                    _m->tracked_ninfected_next++;
 
                     p->change_status(m, ModelSEIRCONN<TSeq>::INFECTED);
 
@@ -224,13 +226,13 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (m->runif() < (m->par("Prob. Recovery")))
                 {
 
-                    *_tracked_ninfected_next -= 1;
+                    _m->tracked_ninfected_next--;
                     p->rm_virus(0, m);
                     return;
 
                 }
 
-                _tracked_agents_infected_next->push_back(p);
+                _m->tracked_agents_infected_next.push_back(p);
 
             } 
 
@@ -239,34 +241,31 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         };
 
     epiworld::GlobalFun<TSeq> global_accounting = 
-    [
-        _tracked_started,
-        _tracked_agents_infected,
-        _tracked_agents_infected_next,
-        _tracked_ninfected,
-        _tracked_ninfected_next
-    ](epiworld::Model<TSeq>* m) -> void
+    [](epiworld::Model<TSeq>* m) -> void
         {
+
+            // Getting the right type
+            ModelSEIRCONN<TSeq> * _m = dynamic_cast<ModelSEIRCONN<TSeq>*>(m);
 
             // On the last day, also reset tracked agents and
             // set the initialized value to false
             if (static_cast<epiworld_fast_uint>(m->today()) == (m->get_ndays() - 1))
             {
 
-                *_tracked_started = false;
-                _tracked_agents_infected->clear();
-                _tracked_agents_infected_next->clear();
-                *_tracked_ninfected = 0;
-                *_tracked_ninfected_next = 0;    
+                _m->tracked_started = false;
+                _m->tracked_agents_infected.clear();
+                _m->tracked_agents_infected_next.clear();
+                _m->tracked_ninfected = 0;
+                _m->tracked_ninfected_next = 0;    
 
                 return;
             }
 
-            std::swap(*_tracked_agents_infected, *_tracked_agents_infected_next);
-            _tracked_agents_infected_next->clear();
+            std::swap(_m->tracked_agents_infected, _m->tracked_agents_infected_next);
+            _m->tracked_agents_infected_next.clear();
 
-            *_tracked_ninfected += *_tracked_ninfected_next;
-            *_tracked_ninfected_next = 0;
+            _m->tracked_ninfected += _m->tracked_ninfected_next;
+            _m->tracked_ninfected_next = 0;
 
         };
 

@@ -17,6 +17,7 @@ int main(int argc, char* argv[]) {
         ("r,recprob", "Probability of recovery", cxxopts::value<epiworld_double>()->default_value(".1428"))
         ("s,seed", "Pseudo-RNG seed", cxxopts::value<int>()->default_value("123"))
         ("e,experiments", "Number of experiments", cxxopts::value<int>()->default_value("4"))
+        ("t,threads", "Number of threads", cxxopts::value<int>()->default_value("2"))
         ("h,help", "Print usage")
         ;
 
@@ -34,6 +35,7 @@ int main(int argc, char* argv[]) {
     epiworld_double prob_infect     = result["infectprob"].as<epiworld_double>();
     epiworld_double beta            = result["beta"].as<epiworld_double>();
     epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
+    int threads = result["threads"].as<int>();
     epiworld_fast_uint nexperiments = result["experiments"].as<int>(); 
 
     epiworld::epimodels::ModelSIRCONN<> model(
@@ -76,8 +78,10 @@ int main(int argc, char* argv[]) {
         nexperiments, // How many experiments
         record,       // Function to call after each experiment
         true,         // Whether to reset the population
-        true,         // Whether to print a progress bar
-        2
+        true         // Whether to print a progress bar
+        #ifdef _OPENMP
+        ,threads 
+        #endif
     );
 
     model.print();

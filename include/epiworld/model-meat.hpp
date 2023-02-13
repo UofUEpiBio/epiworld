@@ -1475,7 +1475,7 @@ inline void Model<TSeq>::run_multiple(
 
     // Generating copies of the model
     std::vector< Model<TSeq> * > these;
-    for (size_t i = 0; i < (std::max(nthreads - 1, 0)); ++i);
+    for (size_t i = 0; i < static_cast<size_t>(std::max(nthreads - 1, 0)); ++i)
         these.push_back(clone_ptr());
 
     // Figuring out how many replicates

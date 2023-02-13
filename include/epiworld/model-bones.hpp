@@ -257,6 +257,8 @@ public:
     Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
+    virtual ~Model() {};
+
     void clone_population(
         std::vector< Agent<TSeq> > & other_population,
         std::vector< Entity<TSeq> > & other_entities,
