@@ -914,8 +914,7 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::shared_ptr< std::mt19937 > engine =
-        std::make_shared< std::mt19937 >();
+    std::mt19937 * engine = nullptr;
     
     std::shared_ptr< std::uniform_real_distribution<> > runifd =
         std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
@@ -1006,7 +1005,7 @@ public:
      */
     ///@{
     void set_rand_engine(std::mt19937 & eng);
-    std::mt19937 * get_rand_endgine();
+    std::mt19937 & get_rand_endgine();
     void seed(epiworld_fast_uint s);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
@@ -1192,8 +1191,7 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::shared_ptr< std::mt19937 > engine =
-        std::make_shared< std::mt19937 >();
+    std::mt19937 * engine = nullptr;
     
     std::shared_ptr< std::uniform_real_distribution<> > runifd =
         std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
@@ -1284,7 +1282,7 @@ public:
      */
     ///@{
     void set_rand_engine(std::mt19937 & eng);
-    std::mt19937 * get_rand_endgine();
+    std::mt19937 & get_rand_endgine();
     void seed(epiworld_fast_uint s);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
@@ -1702,7 +1700,7 @@ inline void LFMCMC<TData>::seed(epiworld_fast_uint s) {
 template<typename TData>
 inline void LFMCMC<TData>::set_rand_engine(std::mt19937 & eng)
 {
-    engine = std::make_shared< std::mt19937 >(eng);
+    engine = &eng;
 }
 
 template<typename TData>
@@ -1712,9 +1710,9 @@ inline void LFMCMC<TData>::set_rand_gamma(epiworld_double alpha, epiworld_double
 }
 
 template<typename TData>
-inline std::mt19937 * LFMCMC<TData>::get_rand_endgine()
+inline std::mt19937 & LFMCMC<TData>::get_rand_endgine()
 {
-    return engine.get();
+    return *engine;
 }
 
 // Step 1: Simulate data
@@ -4453,7 +4451,7 @@ inline AdjList rgraph_bernoulli(
         p
     );
 
-    epiworld_fast_uint m = d(*model.get_rand_endgine());
+    epiworld_fast_uint m = d(model.get_rand_endgine());
 
     source.resize(m);
     target.resize(m);
@@ -4507,7 +4505,7 @@ inline AdjList rgraph_bernoulli2(
     // elements sampled. If n * n, then each diag element has
     // 1/(n^2) chance of sampling
 
-    epiworld_fast_uint m = d(*model.get_rand_endgine());
+    epiworld_fast_uint m = d(model.get_rand_endgine());
 
     source.resize(m);
     target.resize(m);
@@ -4962,8 +4960,7 @@ private:
     std::vector< bool > prevalence_entity_as_proportion = {};
     std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
 
-    std::shared_ptr< std::mt19937 > engine =
-        std::make_shared< std::mt19937 >();
+    std::mt19937 engine;
     
     std::uniform_real_distribution<> runifd      = std::uniform_real_distribution<> (0.0, 1.0);
     std::normal_distribution<>       rnormd      = std::normal_distribution<>(0.0);
@@ -4988,7 +4985,7 @@ private:
 
     void dist_tools();
     void dist_virus();
-    void dist_entities();
+    // void dist_entities();
 
     std::chrono::time_point<std::chrono::steady_clock> time_start;
     std::chrono::time_point<std::chrono::steady_clock> time_end;
@@ -5108,7 +5105,7 @@ public:
      */
     ///@{
     void set_rand_engine(std::mt19937 & eng);
-    std::mt19937 * get_rand_endgine();
+    std::mt19937 & get_rand_endgine();
     void seed(epiworld_fast_uint s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
@@ -5924,7 +5921,11 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
     // Finally, seeds are resetted automatically based on the original
     // engine
-    seed(floor(runif() * UINT_MAX));
+    seed(
+        static_cast<size_t>(
+                std::floor(runif() * std::numeric_limits<size_t>::max())
+            )
+    );
 
 }
 
@@ -5980,7 +5981,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    (void) std::string("Copy-move");
     db.set_model(*this);
 
     if (use_queuing)
@@ -6063,7 +6063,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     // Finally, seeds are resetted automatically based on the original
     // engine
-    seed(floor(runif() * UINT_MAX));
+    seed(
+        static_cast<size_t>(
+                std::floor(runif() * std::numeric_limits<size_t>::max())
+            )
+    );
 
     array_double_tmp.resize(m.array_double_tmp.size());
     array_virus_tmp.resize(m.array_virus_tmp.size());
@@ -6124,11 +6128,11 @@ inline void Model<TSeq>::agents_empty_graph(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
-{
-    engine = std::make_shared< std::mt19937 >(eng);
-}
+// template<typename TSeq>
+// inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
+// {
+//     engine = std::make_shared< std::mt19937 >(eng);
+// }
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_gamma(epiworld_double alpha, epiworld_double beta)
@@ -6193,7 +6197,7 @@ inline void Model<TSeq>::init(
     // Setting up the number of steps
     this->ndays = ndays;
 
-    engine->seed(seed);
+    engine.seed(seed);
     array_double_tmp.resize(size()/2, 0.0);
     array_virus_tmp.resize(size()/2);
 
@@ -6373,62 +6377,62 @@ inline void Model<TSeq>::dist_tools()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::dist_entities()
-{
+// template<typename TSeq>
+// inline void Model<TSeq>::dist_entities()
+// {
 
-    // Starting first infection
-    int n = size();
-    std::vector< size_t > idx(n);
-    for (epiworld_fast_uint e = 0; e < entities.size(); ++e)
-    {
+//     // Starting first infection
+//     int n = size();
+//     std::vector< size_t > idx(n);
+//     for (epiworld_fast_uint e = 0; e < entities.size(); ++e)
+//     {
 
-        if (entities_dist_funs[e])
-        {
+//         if (entities_dist_funs[e])
+//         {
 
-            entities_dist_funs[e](entities[e], this);
+//             entities_dist_funs[e](entities[e], this);
 
-        } else {
+//         } else {
 
-            // Picking how many
-            int nsampled;
-            if (prevalence_entity_as_proportion[e])
-            {
-                nsampled = static_cast<int>(std::floor(prevalence_entity[e] * size()));
-            }
-            else
-            {
-                nsampled = static_cast<int>(prevalence_entity[e]);
-            }
+//             // Picking how many
+//             int nsampled;
+//             if (prevalence_entity_as_proportion[e])
+//             {
+//                 nsampled = static_cast<int>(std::floor(prevalence_entity[e] * size()));
+//             }
+//             else
+//             {
+//                 nsampled = static_cast<int>(prevalence_entity[e]);
+//             }
 
-            if (nsampled > static_cast<int>(size()))
-                throw std::range_error("There are only " + std::to_string(size()) + 
-                " individuals in the population. Cannot add the entity to " + std::to_string(nsampled));
+//             if (nsampled > static_cast<int>(size()))
+//                 throw std::range_error("There are only " + std::to_string(size()) + 
+//                 " individuals in the population. Cannot add the entity to " + std::to_string(nsampled));
             
-            Entity<TSeq> & entity = entities[e];
+//             Entity<TSeq> & entity = entities[e];
 
-            int n_left = n;
-            std::iota(idx.begin(), idx.end(), 0);
-            while (nsampled > 0)
-            {
-                int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
+//             int n_left = n;
+//             std::iota(idx.begin(), idx.end(), 0);
+//             while (nsampled > 0)
+//             {
+//                 int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
                 
-                population[idx[loc]].add_entity(entity, this, entity.status_init, entity.queue_init);
+//                 population[idx[loc]].add_entity(entity, this, entity.status_init, entity.queue_init);
                 
-                nsampled--;
+//                 nsampled--;
 
-                std::swap(idx[loc], idx[n_left]);
+//                 std::swap(idx[loc], idx[n_left]);
 
-            }
+//             }
 
-        }
+//         }
 
-        // Apply the actions
-        actions_run();
+//         // Apply the actions
+//         actions_run();
 
-    }
+//     }
 
-}
+// }
 
 template<typename TSeq>
 inline void Model<TSeq>::chrono_start() {
@@ -6464,80 +6468,80 @@ inline void Model<TSeq>::restore_backup()
 }
 
 template<typename TSeq>
-inline std::mt19937 * Model<TSeq>::get_rand_endgine()
+inline std::mt19937 & Model<TSeq>::get_rand_endgine()
 {
-    return engine.get();
+    return engine;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return runifd(*engine);
+    return runifd(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return runifd(*engine) * (b - a) + a;
+    return runifd(engine) * (b - a) + a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm() {
     // CHECK_INIT()
-    return rnormd(*engine);
+    return rnormd(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm(epiworld_double mean, epiworld_double sd) {
     // CHECK_INIT()
-    return rnormd(*engine) * sd + mean;
+    return rnormd(engine) * sd + mean;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma() {
-    return rgammad(*engine);
+    return rgammad(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
     auto old_param = rgammad.param();
     rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = rgammad(*engine);
+    epiworld_double ans = rgammad(engine);
     rgammad.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp() {
-    return rexpd(*engine);
+    return rexpd(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
     auto old_param = rexpd.param();
     rexpd.param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = rexpd(*engine);
+    epiworld_double ans = rexpd(engine);
     rexpd.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal() {
-    return rlognormald(*engine);
+    return rlognormald(engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
     auto old_param = rlognormald.param();
     rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = rlognormald(*engine);
+    epiworld_double ans = rlognormald(engine);
     rlognormald.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::seed(epiworld_fast_uint s) {
-    this->engine->seed(s);
+    this->engine.seed(s);
 }
 
 template<typename TSeq>
@@ -6944,13 +6948,6 @@ inline void Model<TSeq>::run_multiple(
     // Generating copies of the model
     std::vector< Model<TSeq> > these(std::max(nthreads - 1, 0), *this);
 
-    #ifdef EPI_DEBUG
-    for (auto & m: these)
-        m.seed(0);
-
-    this->seed(0);
-    #endif
-
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
     std::vector< size_t > nreplicates_csum(nthreads, 0);
@@ -6965,6 +6962,7 @@ inline void Model<TSeq>::run_multiple(
         nreplicates_csum[i] = sums;
 
         sums += nreplicates[i];
+
     }
 
     if (sums < nexperiments)
@@ -7004,9 +7002,11 @@ inline void Model<TSeq>::run_multiple(
         }
 
 
-        for (epiworld_fast_uint n = 0u; n < nreplicates[iam]; ++n)
+        for (size_t n = 0u; n < nreplicates[iam]; ++n)
         {
             
+            printf("Runif %.04f (%4i)\n", runif(), (int) n);
+
             if (iam == 0)
             {
 
@@ -7088,7 +7088,7 @@ inline void Model<TSeq>::run_multiple(
 
     }
 
-    for (epiworld_fast_uint n = 0u; n < nexperiments; ++n)
+    for (size_t n = 0u; n < nexperiments; ++n)
     {
         
         run();
@@ -7369,7 +7369,7 @@ inline void Model<TSeq>::reset() {
         queue.set_model(this);
 
     // Re distributing tools and virus
-    dist_entities();
+    // dist_entities();
     dist_virus();
     dist_tools();
 
@@ -12386,9 +12386,9 @@ inline AgentsSample<TSeq>::AgentsSample(
             if (jth <= cum_agents_count[e])
             {
                 if (e == 0) // From the first group
-                    agents->operator[](i) = entities_a[e]->operator[](jth);
+                    agents->operator[](i) = entities_a[e][jth];
                 else
-                    agents->operator[](i) = entities_a[e]->operator[](jth - cum_agents_count[e - 1]);
+                    agents->operator[](i) = entities_a[e][jth - cum_agents_count[e - 1]];
                 
                 break;
             }
@@ -13146,7 +13146,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
         // How many will we find
         std::binomial_distribution<> bdist(m->size(), m->par("Surveilance prob."));
-        int nsampled = bdist(*m->get_rand_endgine());
+        int nsampled = bdist(m->get_rand_endgine());
 
         int to_go = nsampled + 1;
 

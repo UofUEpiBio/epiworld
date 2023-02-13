@@ -210,9 +210,9 @@ inline AgentsSample<TSeq>::AgentsSample(
             if (jth <= cum_agents_count[e])
             {
                 if (e == 0) // From the first group
-                    agents->operator[](i) = entities_a[e]->operator[](jth);
+                    agents->operator[](i) = entities_a[e][jth];
                 else
-                    agents->operator[](i) = entities_a[e]->operator[](jth - cum_agents_count[e - 1]);
+                    agents->operator[](i) = entities_a[e][jth - cum_agents_count[e - 1]];
                 
                 break;
             }

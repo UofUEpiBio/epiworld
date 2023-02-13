@@ -75,7 +75,8 @@ int main(int argc, char* argv[]) {
         nexperiments, // How many experiments
         record,       // Function to call after each experiment
         true,         // Whether to reset the population
-        true          // Whether to print a progress bar
+        true,         // Whether to print a progress bar
+        2
     );
 
     model.print();

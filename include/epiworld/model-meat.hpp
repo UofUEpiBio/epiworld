@@ -898,62 +898,62 @@ inline void Model<TSeq>::dist_tools()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::dist_entities()
-{
+// template<typename TSeq>
+// inline void Model<TSeq>::dist_entities()
+// {
 
-    // Starting first infection
-    int n = size();
-    std::vector< size_t > idx(n);
-    for (epiworld_fast_uint e = 0; e < entities.size(); ++e)
-    {
+//     // Starting first infection
+//     int n = size();
+//     std::vector< size_t > idx(n);
+//     for (epiworld_fast_uint e = 0; e < entities.size(); ++e)
+//     {
 
-        if (entities_dist_funs[e])
-        {
+//         if (entities_dist_funs[e])
+//         {
 
-            entities_dist_funs[e](entities[e], this);
+//             entities_dist_funs[e](entities[e], this);
 
-        } else {
+//         } else {
 
-            // Picking how many
-            int nsampled;
-            if (prevalence_entity_as_proportion[e])
-            {
-                nsampled = static_cast<int>(std::floor(prevalence_entity[e] * size()));
-            }
-            else
-            {
-                nsampled = static_cast<int>(prevalence_entity[e]);
-            }
+//             // Picking how many
+//             int nsampled;
+//             if (prevalence_entity_as_proportion[e])
+//             {
+//                 nsampled = static_cast<int>(std::floor(prevalence_entity[e] * size()));
+//             }
+//             else
+//             {
+//                 nsampled = static_cast<int>(prevalence_entity[e]);
+//             }
 
-            if (nsampled > static_cast<int>(size()))
-                throw std::range_error("There are only " + std::to_string(size()) + 
-                " individuals in the population. Cannot add the entity to " + std::to_string(nsampled));
+//             if (nsampled > static_cast<int>(size()))
+//                 throw std::range_error("There are only " + std::to_string(size()) + 
+//                 " individuals in the population. Cannot add the entity to " + std::to_string(nsampled));
             
-            Entity<TSeq> & entity = entities[e];
+//             Entity<TSeq> & entity = entities[e];
 
-            int n_left = n;
-            std::iota(idx.begin(), idx.end(), 0);
-            while (nsampled > 0)
-            {
-                int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
+//             int n_left = n;
+//             std::iota(idx.begin(), idx.end(), 0);
+//             while (nsampled > 0)
+//             {
+//                 int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
                 
-                population[idx[loc]].add_entity(entity, this, entity.status_init, entity.queue_init);
+//                 population[idx[loc]].add_entity(entity, this, entity.status_init, entity.queue_init);
                 
-                nsampled--;
+//                 nsampled--;
 
-                std::swap(idx[loc], idx[n_left]);
+//                 std::swap(idx[loc], idx[n_left]);
 
-            }
+//             }
 
-        }
+//         }
 
-        // Apply the actions
-        actions_run();
+//         // Apply the actions
+//         actions_run();
 
-    }
+//     }
 
-}
+// }
 
 template<typename TSeq>
 inline void Model<TSeq>::chrono_start() {
@@ -1890,7 +1890,7 @@ inline void Model<TSeq>::reset() {
         queue.set_model(this);
 
     // Re distributing tools and virus
-    dist_entities();
+    // dist_entities();
     dist_virus();
     dist_tools();
 

@@ -166,7 +166,7 @@ private:
 
     void dist_tools();
     void dist_virus();
-    void dist_entities();
+    // void dist_entities();
 
     std::chrono::time_point<std::chrono::steady_clock> time_start;
     std::chrono::time_point<std::chrono::steady_clock> time_end;
