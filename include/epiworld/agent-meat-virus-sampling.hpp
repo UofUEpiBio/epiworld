@@ -53,7 +53,6 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                         #ifdef EPI_DEBUG
                         if (nvariants_tmp >= m->array_virus_tmp.size())
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                            // printf_epiworld("N used %d\n", v.use_count());
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
@@ -142,7 +141,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                         #ifdef EPI_DEBUG
                         if (nvariants_tmp >= m->array_virus_tmp.size())
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                            // printf_epiworld("N used %d\n", v.use_count());
+                            
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
@@ -222,7 +221,6 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                         #ifdef EPI_DEBUG
                         if (nvariants_tmp >= m->array_virus_tmp.size())
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                            // printf_epiworld("N used %d\n", v.use_count());
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
@@ -311,7 +309,6 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                         #ifdef EPI_DEBUG
                         if (nvariants_tmp >= m->array_virus_tmp.size())
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                            // printf_epiworld("N used %d\n", v.use_count());
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
@@ -387,7 +384,6 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
             #ifdef EPI_DEBUG
             if (nvariants_tmp >= m->array_virus_tmp.size())
                 throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                // printf_epiworld("N used %d\n", v.use_count());
             #endif
                 
             /* And it is a function of susceptibility_reduction as well */ 

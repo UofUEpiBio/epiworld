@@ -376,6 +376,13 @@ inline epiworld_double death_reduction_mixer_default(
 ///@}
 
 template<typename TSeq>
+inline Model<TSeq> * Model<TSeq>::clone_ptr()
+{
+    Model<TSeq> * ptr = new Model<TSeq>(*dynamic_cast<const Model<TSeq>*>(this));
+    return ptr;
+}
+
+template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     name(model.name),
     db(model.db),
@@ -1467,7 +1474,9 @@ inline void Model<TSeq>::run_multiple(
     omp_set_num_threads(nthreads);
 
     // Generating copies of the model
-    std::vector< Model<TSeq> > these(std::max(nthreads - 1, 0), *this);
+    std::vector< Model<TSeq> * > these;
+    for (size_t i = 0; i < (std::max(nthreads - 1, 0)); ++i);
+        these.push_back(clone_ptr());
 
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
@@ -1519,15 +1528,13 @@ inline void Model<TSeq>::run_multiple(
             if (iam == 0u)
                 set_backup();
             else
-                these[iam - 1].set_backup();
+                these[iam - 1]->set_backup();
         }
 
 
         for (size_t n = 0u; n < nreplicates[iam]; ++n)
         {
             
-            printf("Runif %.04f (%4i)\n", runif(), (int) n);
-
             if (iam == 0)
             {
 
@@ -1542,12 +1549,12 @@ inline void Model<TSeq>::run_multiple(
 
             } else {
 
-                these[iam - 1].run();
+                these[iam - 1]->run();
 
                 if (fun)
                     fun(
                         n + nreplicates_csum[iam],
-                        &these[iam - 1]
+                        these[iam - 1]
                         );
 
             }
@@ -1579,7 +1586,7 @@ inline void Model<TSeq>::run_multiple(
                     this->reset();
             } else {
                 if ((n < (nreplicates[iam] - 1u)) && reset)
-                    these[iam - 1].reset();
+                    these[iam - 1]->reset();
             }
         
         }
@@ -1587,6 +1594,9 @@ inline void Model<TSeq>::run_multiple(
 
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
+
+    for (auto & ptr : these)
+        delete ptr;
 
     #else
     if (reset)
@@ -1890,7 +1900,6 @@ inline void Model<TSeq>::reset() {
         queue.set_model(this);
 
     // Re distributing tools and virus
-    // dist_entities();
     dist_virus();
     dist_tools();
 

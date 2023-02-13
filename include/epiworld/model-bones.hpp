@@ -239,6 +239,13 @@ private:
     MixerFun<TSeq> recovery_enhancer_mixer = recovery_enhancer_mixer_default<TSeq>;
     MixerFun<TSeq> death_reduction_mixer = death_reduction_mixer_default<TSeq>;
 
+    /**
+     * @brief Advanced usage: Makes a copy of data and returns it as undeleted pointer
+     * 
+     * @param copy 
+     */
+    virtual Model<TSeq> * clone_ptr();
+
 public:
 
     std::vector<epiworld_double> array_double_tmp;

@@ -1,4 +1,5 @@
 // #define EPI_DEBUG
+#include <iostream>
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/cxxopts/cxxopts.hpp"
 using namespace epiworld;
