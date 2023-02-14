@@ -179,4 +179,13 @@ inline void Entity<TSeq>::get_queue(
 
 }
 
+template<typename TSeq>
+inline void Entity<TSeq>::reset()
+{
+    sampled_agents.clear();
+    sampled_agents_n = 0u;
+    sampled_agents_left.clear();
+    sampled_agents_left_n = 0u;
+}
+
 #endif

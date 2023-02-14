@@ -984,16 +984,31 @@ inline void Model<TSeq>::set_backup()
     entities_backup =
         std::make_shared< std::vector< Entity<TSeq> > >(entities);
 
-}
+        // And correcting the pointer
+    for (auto & p : *population_backup)
+        p.model = this;
 
-template<typename TSeq>
-inline void Model<TSeq>::restore_backup()
-{
-
-    population = *population_backup;
-    entities   = *entities_backup;
+    for (auto & e : *entities_backup)
+        e.model = this;
 
 }
+
+// template<typename TSeq>
+// inline void Model<TSeq>::restore_backup()
+// {
+
+//     // Restoring the data
+//     population = *population_backup;
+//     entities   = *entities_backup;
+
+//     // And correcting the pointer
+//     for (auto & p : population)
+//         p.model = this;
+
+//     for (auto & e : entities)
+//         e.model = this;
+
+// }
 
 template<typename TSeq>
 inline std::mt19937 & Model<TSeq>::get_rand_endgine()
@@ -1851,6 +1866,9 @@ inline void Model<TSeq>::reset() {
         
     if (entities_backup != nullptr)
         entities = *this->entities_backup;
+    else 
+        for (auto & e: entities)
+            e.reset();
     
     current_date = 0;
 

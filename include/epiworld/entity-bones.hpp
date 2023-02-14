@@ -91,6 +91,8 @@ public:
     void get_status(epiworld_fast_int * init, epiworld_fast_int * post);
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
 
+    void reset();
+
 };
 
 

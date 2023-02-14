@@ -279,7 +279,7 @@ public:
      */
     ///@{
     void set_backup();
-    void restore_backup();
+    // void restore_backup();
     ///@}
 
     DataBase<TSeq> & get_db();
