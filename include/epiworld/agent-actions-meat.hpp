@@ -164,9 +164,7 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
         }
 
         // It means that agent and entity were not associated.
-
     }
-
 
     // Adding the entity to the agent
     if (++p->n_entities <= p->entities.size())

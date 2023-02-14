@@ -137,9 +137,9 @@ private:
 
     std::vector< Entity<TSeq> > entities = {}; 
     std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = nullptr;
-    std::vector< epiworld_double > prevalence_entity = {};
-    std::vector< bool > prevalence_entity_as_proportion = {};
-    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
+    // std::vector< epiworld_double > prevalence_entity = {};
+    // std::vector< bool > prevalence_entity_as_proportion = {};
+    // std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
 
     std::mt19937 engine;
     
@@ -332,9 +332,8 @@ public:
     void add_tool(Tool<TSeq> t, epiworld_double preval);
     void add_tool_n(Tool<TSeq> t, epiworld_fast_uint preval);
     void add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun);
-    void add_entity(Entity<TSeq> e, epiworld_double preval);
-    void add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval);
-    void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
+    
+    void add_entity(Entity<TSeq> e);
     ///@}
 
     /**

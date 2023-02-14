@@ -36,9 +36,9 @@ private:
     std::vector< size_t > * agents_left = nullptr;  ///< Pointer to agents left (iota)
     size_t * agents_left_n = nullptr;               ///< Size of agents left
 
-    Model<TSeq> * model = nullptr;   ///< Extracts runif() and (if the case) population.
+    Model<TSeq> * model   = nullptr;   ///< Extracts runif() and (if the case) population.
     Entity<TSeq> * entity = nullptr; ///
-    Agent<TSeq> * agent = nullptr;
+    Agent<TSeq> * agent   = nullptr;
     
     int sample_type = SAMPLETYPE::AGENT;
 

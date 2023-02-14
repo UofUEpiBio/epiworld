@@ -19,7 +19,7 @@ class Entities {
     friend class Agent<TSeq>;
 private:
     std::vector< Entity<TSeq> * >  dat;
-    const size_t * n_entities;
+    const size_t n_entities;
 
 public:
 
@@ -37,12 +37,12 @@ public:
 };
 
 template<typename TSeq>
-inline Entities<TSeq>::Entities(Agent<TSeq> & p)
+inline Entities<TSeq>::Entities(Agent<TSeq> & p) :
+    n_entities(p.get_n_entities())
 {
 
-    size_t n = p.get_n_entities();
-    dat.reserve(n);
-    for (size_t i = 0u; i < n; ++i)
+    dat.reserve(n_entities);
+    for (size_t i = 0u; i < n_entities; ++i)
         dat.push_back(&p.get_entity(i));
 
 }
@@ -51,7 +51,7 @@ template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::begin()
 {
 
-    if (*n_entities == 0u)
+    if (n_entities == 0u)
         return dat.end();
     
     return dat.begin();
@@ -61,14 +61,14 @@ template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::end()
 {
      
-    return begin() + *n_entities;
+    return begin() + n_entities;
 }
 
 template<typename TSeq>
 inline Entity<TSeq> & Entities<TSeq>::operator()(size_t i)
 {
 
-    if (i >= *n_entities)
+    if (i >= n_entities)
         throw std::range_error("Entity index out of range.");
 
     return *dat[i];
@@ -86,7 +86,7 @@ inline Entity<TSeq> & Entities<TSeq>::operator[](size_t i)
 template<typename TSeq>
 inline size_t Entities<TSeq>::size() const noexcept 
 {
-    return *n_entities;
+    return n_entities;
 }
 
 /**
@@ -100,7 +100,7 @@ class Entities_const {
     friend class Agent<TSeq>;
 private:
     const std::vector< Entity<TSeq>* > dat;
-    const size_t * n_entities;
+    const size_t n_entities;
 
 public:
 
@@ -118,12 +118,12 @@ public:
 };
 
 template<typename TSeq>
-inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p)
+inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p) :
+    n_entities(p.get_n_entities())
 {
 
-    size_t n = p.get_n_entities();
-    dat.reserve(n);
-    for (size_t i = 0u; i < n; ++i)
+    dat.reserve(n_entities);
+    for (size_t i = 0u; i < n_entities; ++i)
         dat.push_back(&p.get_entity(i));
 
 }
@@ -131,7 +131,7 @@ inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p)
 template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::begin() {
 
-    if (*n_entities == 0u)
+    if (n_entities == 0u)
         return dat.end();
     
     return dat.begin();
@@ -140,14 +140,14 @@ inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq
 template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::end() {
      
-    return begin() + *n_entities;
+    return begin() + n_entities;
 }
 
 template<typename TSeq>
 inline const Entity<TSeq> & Entities_const<TSeq>::operator()(size_t i)
 {
 
-    if (i >= *n_entities)
+    if (i >= n_entities)
         throw std::range_error("Entity index out of range.");
 
     return *dat[i];
@@ -165,7 +165,7 @@ inline const Entity<TSeq> & Entities_const<TSeq>::operator[](size_t i)
 template<typename TSeq>
 inline size_t Entities_const<TSeq>::size() const noexcept 
 {
-    return *n_entities;
+    return n_entities;
 }
 
 

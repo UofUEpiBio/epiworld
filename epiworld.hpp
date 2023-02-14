@@ -4956,9 +4956,9 @@ private:
 
     std::vector< Entity<TSeq> > entities = {}; 
     std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = nullptr;
-    std::vector< epiworld_double > prevalence_entity = {};
-    std::vector< bool > prevalence_entity_as_proportion = {};
-    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
+    // std::vector< epiworld_double > prevalence_entity = {};
+    // std::vector< bool > prevalence_entity_as_proportion = {};
+    // std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
 
     std::mt19937 engine;
     
@@ -5151,9 +5151,8 @@ public:
     void add_tool(Tool<TSeq> t, epiworld_double preval);
     void add_tool_n(Tool<TSeq> t, epiworld_fast_uint preval);
     void add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun);
-    void add_entity(Entity<TSeq> e, epiworld_double preval);
-    void add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval);
-    void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
+    
+    void add_entity(Entity<TSeq> e);
     ///@}
 
     /**
@@ -5887,9 +5886,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     tools_dist_funs(model.tools_dist_funs),
     entities(model.entities),
     entities_backup(model.entities_backup),
-    prevalence_entity(model.prevalence_entity),
-    prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
-    entities_dist_funs(model.entities_dist_funs),
+    // prevalence_entity(model.prevalence_entity),
+    // prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
+    // entities_dist_funs(model.entities_dist_funs),
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
@@ -5966,9 +5965,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     // Entities
     entities(std::move(model.entities)),
     entities_backup(std::move(model.entities_backup)),
-    prevalence_entity(std::move(model.prevalence_entity)),
-    prevalence_entity_as_proportion(std::move(model.prevalence_entity_as_proportion)),
-    entities_dist_funs(std::move(model.entities_dist_funs)),
+    // prevalence_entity(std::move(model.prevalence_entity)),
+    // prevalence_entity_as_proportion(std::move(model.prevalence_entity_as_proportion)),
+    // entities_dist_funs(std::move(model.entities_dist_funs)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
     runifd(std::move(model.runifd)),
@@ -6042,9 +6041,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     
     entities = m.entities;
     entities_backup = m.entities_backup;
-    prevalence_entity = m.prevalence_entity;
-    prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
-    entities_dist_funs = m.entities_dist_funs;
+    // prevalence_entity = m.prevalence_entity;
+    // prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
+    // entities_dist_funs = m.entities_dist_funs;
     
     parameters = m.parameters;
     ndays      = m.ndays;
@@ -6690,45 +6689,12 @@ inline void Model<TSeq>::add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun)
 
 
 template<typename TSeq>
-inline void Model<TSeq>::add_entity(Entity<TSeq> e, epiworld_double preval)
+inline void Model<TSeq>::add_entity(Entity<TSeq> e)
 {
-
-    if (preval > 1.0)
-        throw std::range_error("Prevalence of entity cannot be above 1.0");
-
-    if (preval < 0.0)
-        throw std::range_error("Prevalence of entity cannot be negative");
 
     e.model = this;
     e.id = entities.size();
     entities.push_back(e);
-    prevalence_entity.push_back(preval);
-    prevalence_entity_as_proportion.push_back(false);
-    entities_dist_funs.push_back(nullptr);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval)
-{
-
-    e.id = entities.size();
-    entities.push_back(e);
-    prevalence_entity.push_back(preval);
-    prevalence_entity_as_proportion.push_back(false);
-    entities_dist_funs.push_back(nullptr);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun)
-{
-
-    e.id = entities.size();
-    entities.push_back(e);
-    prevalence_entity.push_back(0.0);
-    prevalence_entity_as_proportion.push_back(false);
-    entities_dist_funs.push_back(fun);
 
 }
 
@@ -6786,36 +6752,37 @@ inline void Model<TSeq>::load_agents_entities_ties(
 
         target_[j].push_back(i);
 
+        population[i].add_entity(entities[j], nullptr);
 
     }
 
-    // Iterating over entities
-    for (size_t e = 0u; e < entities.size(); ++e)
-    {
+    // // Iterating over entities
+    // for (size_t e = 0u; e < entities.size(); ++e)
+    // {
 
-        // This entity will have individuals assigned to it, so we add it
-        if (target_[e].size() > 0u)
-        {
+    //     // This entity will have individuals assigned to it, so we add it
+    //     if (target_[e].size() > 0u)
+    //     {
 
-            // Filling in the gaps
-            prevalence_entity[e] = static_cast<epiworld_double>(target_[e].size());
-            prevalence_entity_as_proportion[e] = false;
+    //         // Filling in the gaps
+    //         prevalence_entity[e] = static_cast<epiworld_double>(target_[e].size());
+    //         prevalence_entity_as_proportion[e] = false;
 
-            // Generating the assignment function
-            auto who = target_[e];
-            entities_dist_funs[e] =
-                [who](Entity<TSeq> & e, Model<TSeq>* m) -> void {
+    //         // Generating the assignment function
+    //         auto who = target_[e];
+    //         entities_dist_funs[e] =
+    //             [who](Entity<TSeq> & e, Model<TSeq>* m) -> void {
 
-                    for (auto w : who)
-                        m->population[w].add_entity(e, m, e.status_init, e.queue_init);
+    //                 for (auto w : who)
+    //                     m->population[w].add_entity(e, m, e.status_init, e.queue_init);
                     
-                    return;
+    //                 return;
                     
-                };
+    //             };
 
-        }
+    //     }
 
-    }
+    // }
 
     return;
 
@@ -9920,7 +9887,7 @@ class Entities {
     friend class Agent<TSeq>;
 private:
     std::vector< Entity<TSeq> * >  dat;
-    const size_t * n_entities;
+    const size_t n_entities;
 
 public:
 
@@ -9938,12 +9905,12 @@ public:
 };
 
 template<typename TSeq>
-inline Entities<TSeq>::Entities(Agent<TSeq> & p)
+inline Entities<TSeq>::Entities(Agent<TSeq> & p) :
+    n_entities(p.get_n_entities())
 {
 
-    size_t n = p.get_n_entities();
-    dat.reserve(n);
-    for (size_t i = 0u; i < n; ++i)
+    dat.reserve(n_entities);
+    for (size_t i = 0u; i < n_entities; ++i)
         dat.push_back(&p.get_entity(i));
 
 }
@@ -9952,7 +9919,7 @@ template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::begin()
 {
 
-    if (*n_entities == 0u)
+    if (n_entities == 0u)
         return dat.end();
     
     return dat.begin();
@@ -9962,14 +9929,14 @@ template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::end()
 {
      
-    return begin() + *n_entities;
+    return begin() + n_entities;
 }
 
 template<typename TSeq>
 inline Entity<TSeq> & Entities<TSeq>::operator()(size_t i)
 {
 
-    if (i >= *n_entities)
+    if (i >= n_entities)
         throw std::range_error("Entity index out of range.");
 
     return *dat[i];
@@ -9987,7 +9954,7 @@ inline Entity<TSeq> & Entities<TSeq>::operator[](size_t i)
 template<typename TSeq>
 inline size_t Entities<TSeq>::size() const noexcept 
 {
-    return *n_entities;
+    return n_entities;
 }
 
 /**
@@ -10001,7 +9968,7 @@ class Entities_const {
     friend class Agent<TSeq>;
 private:
     const std::vector< Entity<TSeq>* > dat;
-    const size_t * n_entities;
+    const size_t n_entities;
 
 public:
 
@@ -10019,12 +9986,12 @@ public:
 };
 
 template<typename TSeq>
-inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p)
+inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p) :
+    n_entities(p.get_n_entities())
 {
 
-    size_t n = p.get_n_entities();
-    dat.reserve(n);
-    for (size_t i = 0u; i < n; ++i)
+    dat.reserve(n_entities);
+    for (size_t i = 0u; i < n_entities; ++i)
         dat.push_back(&p.get_entity(i));
 
 }
@@ -10032,7 +9999,7 @@ inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p)
 template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::begin() {
 
-    if (*n_entities == 0u)
+    if (n_entities == 0u)
         return dat.end();
     
     return dat.begin();
@@ -10041,14 +10008,14 @@ inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq
 template<typename TSeq>
 inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::end() {
      
-    return begin() + *n_entities;
+    return begin() + n_entities;
 }
 
 template<typename TSeq>
 inline const Entity<TSeq> & Entities_const<TSeq>::operator()(size_t i)
 {
 
-    if (i >= *n_entities)
+    if (i >= n_entities)
         throw std::range_error("Entity index out of range.");
 
     return *dat[i];
@@ -10066,7 +10033,7 @@ inline const Entity<TSeq> & Entities_const<TSeq>::operator[](size_t i)
 template<typename TSeq>
 inline size_t Entities_const<TSeq>::size() const noexcept 
 {
-    return *n_entities;
+    return n_entities;
 }
 
 
@@ -11202,9 +11169,7 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
         }
 
         // It means that agent and entity were not associated.
-
     }
-
 
     // Adding the entity to the agent
     if (++p->n_entities <= p->entities.size())
@@ -12226,9 +12191,9 @@ private:
     std::vector< size_t > * agents_left = nullptr;  ///< Pointer to agents left (iota)
     size_t * agents_left_n = nullptr;               ///< Size of agents left
 
-    Model<TSeq> * model = nullptr;   ///< Extracts runif() and (if the case) population.
+    Model<TSeq> * model   = nullptr;   ///< Extracts runif() and (if the case) population.
     Entity<TSeq> * entity = nullptr; ///
-    Agent<TSeq> * agent = nullptr;
+    Agent<TSeq> * agent   = nullptr;
     
     int sample_type = SAMPLETYPE::AGENT;
 

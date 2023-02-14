@@ -399,9 +399,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     tools_dist_funs(model.tools_dist_funs),
     entities(model.entities),
     entities_backup(model.entities_backup),
-    prevalence_entity(model.prevalence_entity),
-    prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
-    entities_dist_funs(model.entities_dist_funs),
+    // prevalence_entity(model.prevalence_entity),
+    // prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
+    // entities_dist_funs(model.entities_dist_funs),
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
@@ -478,9 +478,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     // Entities
     entities(std::move(model.entities)),
     entities_backup(std::move(model.entities_backup)),
-    prevalence_entity(std::move(model.prevalence_entity)),
-    prevalence_entity_as_proportion(std::move(model.prevalence_entity_as_proportion)),
-    entities_dist_funs(std::move(model.entities_dist_funs)),
+    // prevalence_entity(std::move(model.prevalence_entity)),
+    // prevalence_entity_as_proportion(std::move(model.prevalence_entity_as_proportion)),
+    // entities_dist_funs(std::move(model.entities_dist_funs)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
     runifd(std::move(model.runifd)),
@@ -554,9 +554,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     
     entities = m.entities;
     entities_backup = m.entities_backup;
-    prevalence_entity = m.prevalence_entity;
-    prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
-    entities_dist_funs = m.entities_dist_funs;
+    // prevalence_entity = m.prevalence_entity;
+    // prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
+    // entities_dist_funs = m.entities_dist_funs;
     
     parameters = m.parameters;
     ndays      = m.ndays;
@@ -1202,45 +1202,12 @@ inline void Model<TSeq>::add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun)
 
 
 template<typename TSeq>
-inline void Model<TSeq>::add_entity(Entity<TSeq> e, epiworld_double preval)
+inline void Model<TSeq>::add_entity(Entity<TSeq> e)
 {
-
-    if (preval > 1.0)
-        throw std::range_error("Prevalence of entity cannot be above 1.0");
-
-    if (preval < 0.0)
-        throw std::range_error("Prevalence of entity cannot be negative");
 
     e.model = this;
     e.id = entities.size();
     entities.push_back(e);
-    prevalence_entity.push_back(preval);
-    prevalence_entity_as_proportion.push_back(false);
-    entities_dist_funs.push_back(nullptr);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval)
-{
-
-    e.id = entities.size();
-    entities.push_back(e);
-    prevalence_entity.push_back(preval);
-    prevalence_entity_as_proportion.push_back(false);
-    entities_dist_funs.push_back(nullptr);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun)
-{
-
-    e.id = entities.size();
-    entities.push_back(e);
-    prevalence_entity.push_back(0.0);
-    prevalence_entity_as_proportion.push_back(false);
-    entities_dist_funs.push_back(fun);
 
 }
 
@@ -1298,36 +1265,37 @@ inline void Model<TSeq>::load_agents_entities_ties(
 
         target_[j].push_back(i);
 
+        population[i].add_entity(entities[j], nullptr);
 
     }
 
-    // Iterating over entities
-    for (size_t e = 0u; e < entities.size(); ++e)
-    {
+    // // Iterating over entities
+    // for (size_t e = 0u; e < entities.size(); ++e)
+    // {
 
-        // This entity will have individuals assigned to it, so we add it
-        if (target_[e].size() > 0u)
-        {
+    //     // This entity will have individuals assigned to it, so we add it
+    //     if (target_[e].size() > 0u)
+    //     {
 
-            // Filling in the gaps
-            prevalence_entity[e] = static_cast<epiworld_double>(target_[e].size());
-            prevalence_entity_as_proportion[e] = false;
+    //         // Filling in the gaps
+    //         prevalence_entity[e] = static_cast<epiworld_double>(target_[e].size());
+    //         prevalence_entity_as_proportion[e] = false;
 
-            // Generating the assignment function
-            auto who = target_[e];
-            entities_dist_funs[e] =
-                [who](Entity<TSeq> & e, Model<TSeq>* m) -> void {
+    //         // Generating the assignment function
+    //         auto who = target_[e];
+    //         entities_dist_funs[e] =
+    //             [who](Entity<TSeq> & e, Model<TSeq>* m) -> void {
 
-                    for (auto w : who)
-                        m->population[w].add_entity(e, m, e.status_init, e.queue_init);
+    //                 for (auto w : who)
+    //                     m->population[w].add_entity(e, m, e.status_init, e.queue_init);
                     
-                    return;
+    //                 return;
                     
-                };
+    //             };
 
-        }
+    //     }
 
-    }
+    // }
 
     return;
 

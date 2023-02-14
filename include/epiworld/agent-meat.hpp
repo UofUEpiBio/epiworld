@@ -605,7 +605,7 @@ inline void Agent<TSeq>::add_neighbor(
     {
 
         for (auto & n: neighbors)    
-            if (n == p.get_id())
+            if (static_cast<int>(n) == p.get_id())
             {
                 found = true;
                 break;
