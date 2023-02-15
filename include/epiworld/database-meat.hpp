@@ -72,6 +72,11 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     user_data(nullptr)
 {}
 
+// DataBase<TSeq> & DataBase<TSeq>::operator=(const DataBase<TSeq> & m)
+// {
+
+// }
+
 template<typename TSeq>
 inline Model<TSeq> * DataBase<TSeq>::get_model() {
     return model;
@@ -99,24 +104,24 @@ inline void DataBase<TSeq>::record()
         _today_total_cp[p.get_status()]++;
     
     EPI_DEBUG_VECTOR_MATCH_INT(_today_total_cp, today_total)
-    printf_epiworld(
-        "[epi-debug] Day % 3i totals [",
-        static_cast<int>(model->today())
-        );
-        for (const auto & tname : this->model->status_labels)
-        {
-            printf_epiworld(" %s", tname.substr(0u, 3u).c_str());
-        }
-        printf_epiworld(" ]: [");
-        for (const auto & tval : today_total)
-        {
-            printf_epiworld(" %i", static_cast<int>(tval));
-        }
-        printf_epiworld(
-            "] empirical transm-prob: %.4f\n",
-            static_cast<double>(n_transmissions_today)/
-                static_cast<double>(n_transmissions_potential)
-            );
+    // printf_epiworld(
+    //     "[epi-debug] Day % 3i totals [",
+    //     static_cast<int>(model->today())
+    //     );
+    //     for (const auto & tname : this->model->status_labels)
+    //     {
+    //         printf_epiworld(" %s", tname.substr(0u, 3u).c_str());
+    //     }
+    //     printf_epiworld(" ]: [");
+    //     for (const auto & tval : today_total)
+    //     {
+    //         printf_epiworld(" %i", static_cast<int>(tval));
+    //     }
+    //     printf_epiworld(
+    //         "] empirical transm-prob: %.4f\n",
+    //         static_cast<double>(n_transmissions_today)/
+    //             static_cast<double>(n_transmissions_potential)
+    //         );
     #endif
     ////////////////////////////////////////////////////////////////////////////
 

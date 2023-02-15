@@ -165,7 +165,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
                 // Infecting the individual
                 #ifdef EPI_DEBUG
-                if (_tracked_agents_infected->operator[](which)->get_n_viruses() == 0)
+                if (_m->tracked_agents_infected[which]->get_n_viruses() == 0)
                 {
 
                     printf_epiworld("[epi-debug] date: %i\n", m->today());

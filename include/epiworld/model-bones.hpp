@@ -137,9 +137,6 @@ private:
 
     std::vector< Entity<TSeq> > entities = {}; 
     std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = nullptr;
-    // std::vector< epiworld_double > prevalence_entity = {};
-    // std::vector< bool > prevalence_entity_as_proportion = {};
-    // std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
 
     std::mt19937 engine;
     
@@ -296,7 +293,7 @@ public:
     ///@{
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 & get_rand_endgine();
-    void seed(epiworld_fast_uint s);
+    void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
     void set_rand_exp(epiworld_double lambda);

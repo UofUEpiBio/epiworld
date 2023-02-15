@@ -6,4 +6,7 @@ main.o: main.cpp
 main.a: main.cpp
 	clang++ -std=c++14 -Wall -Wextra -Wpedantic -O2 main.cpp -o main.a
 
+02.o: 02-reproducible.cpp
+	g++ -std=c++14 -Wall -Wextra -O2 -g -fopenmp -pedantic 02-reproducible.cpp -o 02.o
+
 .PHONY: all

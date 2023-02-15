@@ -2706,6 +2706,7 @@ public:
     DataBase() = delete;
     DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
     DataBase(const DataBase<TSeq> & db);
+    DataBase<TSeq> & operator=(const DataBase<TSeq> & m) = delete;
 
     /**
      * @brief Registering a new variant
@@ -2909,6 +2910,11 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     transition_matrix(db.transition_matrix),
     user_data(nullptr)
 {}
+
+// DataBase<TSeq> & DataBase<TSeq>::operator=(const DataBase<TSeq> & m)
+// {
+
+// }
 
 template<typename TSeq>
 inline Model<TSeq> * DataBase<TSeq>::get_model() {
@@ -4956,9 +4962,6 @@ private:
 
     std::vector< Entity<TSeq> > entities = {}; 
     std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = nullptr;
-    // std::vector< epiworld_double > prevalence_entity = {};
-    // std::vector< bool > prevalence_entity_as_proportion = {};
-    // std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
 
     std::mt19937 engine;
     
@@ -5115,7 +5118,7 @@ public:
     ///@{
     void set_rand_engine(std::mt19937 & eng);
     std::mt19937 & get_rand_endgine();
-    void seed(epiworld_fast_uint s);
+    void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
     void set_rand_exp(epiworld_double lambda);
@@ -6570,7 +6573,7 @@ inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_do
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::seed(epiworld_fast_uint s) {
+inline void Model<TSeq>::seed(size_t s) {
     this->engine.seed(s);
 }
 
@@ -6934,6 +6937,15 @@ inline void Model<TSeq>::run_multiple(
 )
 {
 
+    // Seeds will be reproducible by default
+    std::vector< size_t > seeds_n(nexperiments);
+    for (auto & s : seeds_n)
+        s = static_cast<size_t>(
+            std::floor(
+                runif() * static_cast<double>(std::numeric_limits<size_t>::max())
+                )
+        );
+
     EPI_DEBUG_NOTIFY_ACTIVE()
 
     bool old_verb = this->verbose;
@@ -6986,7 +6998,7 @@ inline void Model<TSeq>::run_multiple(
 
     }
 
-    #pragma omp parallel shared(these, nreplicates, nreplicates_csum) \
+    #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
         firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple) \
         default(none)
     {
@@ -7008,6 +7020,9 @@ inline void Model<TSeq>::run_multiple(
             if (iam == 0)
             {
 
+                // Initializing the seed
+                seed(seeds_n[n]);
+
                 run();
 
                 if (fun)
@@ -7018,6 +7033,9 @@ inline void Model<TSeq>::run_multiple(
                     pb_multiple.next();
 
             } else {
+
+                // Initializing the seed
+                these[iam - 1]->seed(seeds_n[n]);
 
                 these[iam - 1]->run();
 
@@ -7091,7 +7109,9 @@ inline void Model<TSeq>::run_multiple(
 
     for (size_t n = 0u; n < nexperiments; ++n)
     {
-        
+
+        seed(seeds_n[n]);
+           
         run();
 
         if (fun)

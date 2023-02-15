@@ -1083,7 +1083,7 @@ inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_do
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::seed(epiworld_fast_uint s) {
+inline void Model<TSeq>::seed(size_t s) {
     this->engine.seed(s);
 }
 
@@ -1447,6 +1447,15 @@ inline void Model<TSeq>::run_multiple(
 )
 {
 
+    // Seeds will be reproducible by default
+    std::vector< size_t > seeds_n(nexperiments);
+    for (auto & s : seeds_n)
+        s = static_cast<size_t>(
+            std::floor(
+                runif() * static_cast<double>(std::numeric_limits<size_t>::max())
+                )
+        );
+
     EPI_DEBUG_NOTIFY_ACTIVE()
 
     bool old_verb = this->verbose;
@@ -1499,7 +1508,7 @@ inline void Model<TSeq>::run_multiple(
 
     }
 
-    #pragma omp parallel shared(these, nreplicates, nreplicates_csum) \
+    #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
         firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple) \
         default(none)
     {
@@ -1521,6 +1530,9 @@ inline void Model<TSeq>::run_multiple(
             if (iam == 0)
             {
 
+                // Initializing the seed
+                seed(seeds_n[n]);
+
                 run();
 
                 if (fun)
@@ -1531,6 +1543,9 @@ inline void Model<TSeq>::run_multiple(
                     pb_multiple.next();
 
             } else {
+
+                // Initializing the seed
+                these[iam - 1]->seed(seeds_n[n]);
 
                 these[iam - 1]->run();
 
@@ -1555,7 +1570,7 @@ inline void Model<TSeq>::run_multiple(
                 for (auto & m: these)
                 {
 
-                    m.get_db().get_hist_total(&_dates1_, nullptr, &_val1_);
+                    m->get_db().get_hist_total(&_dates1_, nullptr, &_val1_);
                     EPI_DEBUG_VECTOR_MATCH_INT(_val0_, _val1_);
                     
                 }
@@ -1604,7 +1619,9 @@ inline void Model<TSeq>::run_multiple(
 
     for (size_t n = 0u; n < nexperiments; ++n)
     {
-        
+
+        seed(seeds_n[n]);
+
         run();
 
         if (fun)
@@ -1640,19 +1657,19 @@ inline void Model<TSeq>::update_status() {
             if (queue[++i] > 0)
             {
 
-                #ifdef EPI_DEBUG
-                // Checking that queue of agent i is all active
-                for (auto n_idx : p.neighbors)
-                {
-                    if ((queue[n_idx] == 0) && (p.n_viruses > 0))
-                    {
-                        printf_epiworld(
-                            "[epi-debug] Queue in agent %i is zero.\n",
-                            static_cast<int>(n_idx)
-                            );
-                    }
-                }
-                #endif
+                // #ifdef EPI_DEBUG
+                // // Checking that queue of agent i is all active
+                // for (auto n_idx : p.neighbors)
+                // {
+                //     if ((queue[n_idx] == 0) && (p.n_viruses > 0))
+                //     {
+                //         printf_epiworld(
+                //             "[epi-debug] Queue in agent %i is zero.\n",
+                //             static_cast<int>(n_idx)
+                //             );
+                //     }
+                // }
+                // #endif
 
                 if (status_fun[p.status])
                     status_fun[p.status](&p, this);

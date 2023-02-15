@@ -6,7 +6,33 @@
 
 using namespace epiworld;
 
-EPIWORLD_TEST_CASE("SIR", "[SIR]") {
+    // Adding multi-file write
+auto sav_0 = epiworld::make_save_run<int>(
+    "saves/main_out_%04li", // std::string fmt,
+    true,  // bool total_hist,
+    false, // bool variant_info,
+    false, // bool variant_hist,
+    false, // bool tool_info,
+    false, // bool tool_hist,
+    true , // bool transmission,
+    false, // bool transition,
+    true   // bool reproductive
+);
+
+auto sav_1 = epiworld::make_save_run<int>(
+    "saves/main_out_pll_%04li", // std::string fmt,
+    true,  // bool total_hist,
+    false, // bool variant_info,
+    false, // bool variant_hist,
+    false, // bool tool_info,
+    false, // bool tool_hist,
+    true , // bool transmission,
+    false, // bool transition,
+    true   // bool reproductive
+);
+
+
+EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
 
     // Queuing doesn't matter and get results that are meaningful
     epimodels::ModelSIR<> model_0(
@@ -18,7 +44,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     model_0.verbose_off();
 
     model_0.init(100, 1231);
-    model_0.run();
+    model_0.run_multiple(4, sav_0, true, true, 1);
 
     epimodels::ModelSIR<> model_1(
         "a virus", 0.01, .9, .3
@@ -26,32 +52,8 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     model_1.agents_smallworld(100000, 5, false, 0.01);
 
-    model_1.queuing_off();
-    model_1.verbose_off();
-    
     model_1.init(100, 1231);
-    model_1.run();
-
-    std::vector< int > h_0, h_1;
-    model_0.get_db().get_hist_total(nullptr, nullptr, &h_0);
-    model_1.get_db().get_hist_total(nullptr, nullptr, &h_1);
-
-    // Getting transition matrix
-    auto tmat_0 = model_0.get_db().transition_probability(false);
-    int out_of_range_0 = 0;
-
-    for (auto & v: tmat_0)
-        if (v < 0.0 | v > 1.0)
-            out_of_range_0++;
-    
-    auto tmat_1 = model_1.get_db().transition_probability(false);
-    int out_of_range_1 = 0;
-
-    for (auto & v: tmat_1)
-        if (v < 0.0 | v > 1.0)
-            out_of_range_1++;
-
-    std::vector< epiworld_double > tmat_expected = {0.962440431, 0.0, 0.0, 0.0386752182, 0.704328, 0.0, 3.3772063e-05, 0.298277199, 1.0};
+    model_1.run_multiple(4, sav_1, true, true, 2);
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(tmat_0, Catch::Approx(tmat_expected).margin(0.025));
