@@ -34,6 +34,8 @@ public:
 
     size_t size() const noexcept;
 
+    bool operator==(const Entities<TSeq> & other) const;
+
 };
 
 template<typename TSeq>
@@ -89,6 +91,22 @@ inline size_t Entities<TSeq>::size() const noexcept
     return n_entities;
 }
 
+template<typename TSeq>
+inline bool Entities<TSeq>::operator==(const Entities<TSeq> & other) const
+{
+
+    if (n_entities != other.n_entities)
+        return false;
+
+    for (size_t i = 0u; i < dat.size(); ++i)
+    {
+        if (dat[i] != other.dat[i])
+            return false;
+    }
+
+    return true;
+}
+
 /**
  * @brief Set of Entities (const) (useful for iterators)
  * 
@@ -114,6 +132,8 @@ public:
     const Entity<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
+
+    bool operator==(const Entities_const<TSeq> & other) const;
 
 };
 
@@ -166,6 +186,22 @@ template<typename TSeq>
 inline size_t Entities_const<TSeq>::size() const noexcept 
 {
     return n_entities;
+}
+
+template<typename TSeq>
+inline bool Entities_const<TSeq>::operator==(const Entities_const<TSeq> & other) const
+{
+    
+    if (n_entities != other.n_entities)
+        return false;
+
+    for (size_t i = 0u; i < dat.size(); ++i)
+    {
+        if (dat[i] != other.dat[i])
+            return false;
+    }
+
+    return true;
 }
 
 

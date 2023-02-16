@@ -38,6 +38,9 @@ public:
     // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
     void set_model(Model<TSeq> * m);
 
+    bool operator==(const Queue<TSeq> & other) const;
+    bool operator!=(const Queue<TSeq> & other) const {return !operator==(other);};
+
 };
 
 template<typename TSeq>
@@ -95,6 +98,21 @@ inline void Queue<TSeq>::set_model(Model<TSeq> * m)
 
     active.resize(m->size(), 0);
 
+}
+
+template<typename TSeq>
+inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const 
+{
+    if (active.size() != other.active.size())
+        return false;
+
+    for (size_t i = 0u; i < active.size(); ++i)
+    {
+        if (active[i] != other.active[i])
+            return false;
+    }
+
+    return true;
 }
 
 #endif

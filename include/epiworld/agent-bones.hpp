@@ -319,6 +319,7 @@ public:
     size_t get_n_entities() const;
 
     bool operator==(const Agent<TSeq> & other) const;
+    bool operator!=(const Agent<TSeq> & other) const {return !operator==(other);};
 
 };
 

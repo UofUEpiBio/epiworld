@@ -237,6 +237,7 @@ public:
     ) const;
 
     bool operator==(const DataBase<TSeq> & other) const;
+    bool operator!=(const DataBase<TSeq> & other) const {return !operator==(other);};
 
 };
 

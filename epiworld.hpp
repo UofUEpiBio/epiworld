@@ -2832,6 +2832,7 @@ public:
     ) const;
 
     bool operator==(const DataBase<TSeq> & other) const;
+    bool operator!=(const DataBase<TSeq> & other) const {return !operator==(other);};
 
 };
 
@@ -3828,9 +3829,9 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
 #define VECT_MATCH(a, b) \
     if (a.size() != b.size()) \
         return false; \
-    for (size_t i = 0u; i < a.size(); ++i) \
+    for (size_t __i = 0u; __i < a.size(); ++__i) \
     {\
-        if (a[i] != b[i]) \
+        if (a[__i] != b[__i]) \
             return false; \
     }
 
@@ -4926,6 +4927,9 @@ public:
     // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
     void set_model(Model<TSeq> * m);
 
+    bool operator==(const Queue<TSeq> & other) const;
+    bool operator!=(const Queue<TSeq> & other) const {return !operator==(other);};
+
 };
 
 template<typename TSeq>
@@ -4983,6 +4987,21 @@ inline void Queue<TSeq>::set_model(Model<TSeq> * m)
 
     active.resize(m->size(), 0);
 
+}
+
+template<typename TSeq>
+inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const 
+{
+    if (active.size() != other.active.size())
+        return false;
+
+    for (size_t i = 0u; i < active.size(); ++i)
+    {
+        if (active[i] != other.active[i])
+            return false;
+    }
+
+    return true;
 }
 
 #endif
@@ -5098,7 +5117,7 @@ private:
 
     std::vector< Agent<TSeq> > population = {};
 
-    bool usign_backup = true;
+    bool using_backup = true;
     std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = nullptr;
 
 
@@ -5181,8 +5200,6 @@ private:
     epiworld_fast_uint n_replicates = 0u;
     void chrono_start();
     void chrono_end();
-
-    std::unique_ptr< Model<TSeq> > backup = nullptr;
 
     std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
     std::vector< int > global_action_dates;
@@ -5648,6 +5665,9 @@ public:
      */
     void set_name(std::string name);
     std::string get_name() const;
+
+    bool operator==(const Model<TSeq> & other) const;
+    bool operator!=(const Model<TSeq> & other) const {return !operator==(other);};
 
 };
 
@@ -7123,15 +7143,11 @@ inline void Model<TSeq>::run_multiple(
     std::vector< size_t > seeds_n(nexperiments);
     for (auto & s : seeds_n)
     {
-        #ifndef EPI_DEBUG
         s = static_cast<size_t>(
             std::floor(
                 runif() * static_cast<double>(std::numeric_limits<size_t>::max())
                 )
         );
-        #else
-        s = 1234;
-        #endif
     }
 
     EPI_DEBUG_NOTIFY_ACTIVE()
@@ -7147,6 +7163,14 @@ inline void Model<TSeq>::run_multiple(
     std::vector< Model<TSeq> * > these;
     for (size_t i = 0; i < static_cast<size_t>(std::max(nthreads - 1, 0)); ++i)
         these.push_back(clone_ptr());
+
+    #ifdef EPI_DEBUG
+    for (auto & other : these)
+    {
+        if (*this != *other)
+            throw std::logic_error("The copy does not match.");
+    }
+    #endif
 
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
@@ -8262,6 +8286,137 @@ inline std::string Model<TSeq>::get_name() const
     return this->name;
 }
 
+#define VECT_MATCH(a, b) \
+    if (a.size() != b.size()) \
+        return false; \
+    for (size_t __i = 0u; __i < a.size(); ++__i) \
+    {\
+        if (a[__i] != b[__i]) \
+            return false; \
+    }
+
+template<typename TSeq>
+inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
+{
+    if (name != other.name)
+        return false;
+
+    if (db != other.db)
+        return false;
+
+    VECT_MATCH(population, other.population);
+
+    if (using_backup != other.using_backup)
+        return false;
+    
+    if ((population_backup != nullptr) & (other.population_backup != nullptr))
+    {
+        for (size_t i = 0u; i < population_backup->size(); ++i)
+        {
+            if ((*population_backup)[i] != (*other.population_backup)[i])
+                return false;
+        }
+        
+    } else if ((population_backup == nullptr) & (other.population_backup != nullptr)) {
+        return false;
+    } else if ((population_backup != nullptr) & (other.population_backup == nullptr))
+    {
+        return false;
+    }
+
+    if (population_data != other.population_data)
+        return false;
+
+    if (population_data_n_features != other.population_data_n_features)
+        return false;
+
+    if (directed != other.directed)
+        return false;
+    
+    // Viruses -----------------------------------------------------------------
+    if (viruses.size() != other.viruses.size())
+        return false;
+
+    for (size_t i = 0u; i < viruses.size(); ++i)
+    {
+        if (*viruses[i] != *other.viruses[i])
+            return false;
+    }
+
+    VECT_MATCH(prevalence_virus, other.prevalence_virus);
+    VECT_MATCH(prevalence_virus_as_proportion, other.prevalence_virus_as_proportion);
+    
+    // Tools -------------------------------------------------------------------
+    if (tools.size() != other.tools.size())
+        return false;
+
+    for (size_t i = 0u; i < tools.size(); ++i)
+    {
+        if (*tools[i] != *other.tools[i])
+            return false;
+    }
+
+    VECT_MATCH(prevalence_tool, other.prevalence_tool);
+    VECT_MATCH(prevalence_tool_as_proportion, other.prevalence_tool_as_proportion);
+    
+    VECT_MATCH(entities, other.entities);
+
+    if ((entities_backup != nullptr) & (other.entities_backup != nullptr))
+    {
+        
+        for (size_t i = 0u; i < entities_backup->size(); ++i)
+        {
+            if ((*entities_backup)[i] != (*other.entities_backup)[i])
+                return false;
+        }
+        
+    } else if ((entities_backup == nullptr) & (other.entities_backup != nullptr)) {
+        return false;
+    } else if ((entities_backup != nullptr) & (other.entities_backup == nullptr))
+    {
+        return false;
+    }
+
+    if (rewire_prop != other.rewire_prop)
+        return false;
+        
+    if (parameters.size() != other.parameters.size())
+        return false;
+
+    if (parameters != other.parameters)
+        return false;
+
+    if (ndays != other.ndays)
+        return false;
+    
+    VECT_MATCH(status_labels, other.status_labels);
+
+    if (nstatus != other.nstatus)
+        return false;
+    
+    if (verbose != other.verbose)
+        return false;
+
+    if (initialized != other.initialized)
+        return false;
+
+    if (current_date != other.current_date)
+        return false;
+
+    VECT_MATCH(global_action_dates, other.global_action_dates);
+
+    if (queue != other.queue)
+        return false;
+
+    if (use_queuing != other.use_queuing)
+        return false;
+
+    return true;
+
+}
+
+#undef VECT_MATCH
+
 #undef DURCAST
 
 #undef CASES_PAR
@@ -8613,6 +8768,7 @@ public:
     ///@}
 
     bool operator==(const Virus<TSeq> & other) const;
+    bool operator!=(const Virus<TSeq> & other) const {return !operator==(other);};
 
 };
 
@@ -9463,6 +9619,7 @@ public:
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
 
     bool operator==(const Tool<TSeq> & other) const;
+    bool operator!=(const Tool<TSeq> & other) const {return !operator==(other);};
 
 };
 
@@ -10008,6 +10165,9 @@ public:
 
     void reset();
 
+    bool operator==(const Entity<TSeq> & other) const;
+    bool operator!=(const Entity<TSeq> & other) const {return !operator==(other);};
+
 };
 
 
@@ -10220,6 +10380,56 @@ inline void Entity<TSeq>::reset()
     sampled_agents_left_n = 0u;
 }
 
+template<typename TSeq>
+inline bool Entity<TSeq>::operator==(const Entity<TSeq> & other) const
+{
+
+    if (id != other.id)
+        return false;
+
+    if (n_agents != other.n_agents)
+        return false;
+
+    for (size_t i = 0u; i < n_agents; ++i)
+    {
+        if (agents[i] != other.agents[i])
+            return false;
+    }
+
+
+    if (max_capacity != other.max_capacity)
+        return false;
+
+    if (entity_name != other.entity_name)
+        return false;
+
+    if (location.size() != other.location.size())
+        return false;
+
+    for (size_t i = 0u; i < location.size(); ++i)
+    {
+
+        if (location[i] != other.location[i])
+            return false;
+
+    }
+
+    if (status_init != other.status_init)
+        return false;
+
+    if (status_post != other.status_post)
+        return false;
+
+    if (queue_init != other.queue_init)
+        return false;
+
+    if (queue_post != other.queue_post)
+        return false;
+
+    return true;
+
+}
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -10276,6 +10486,8 @@ public:
 
     size_t size() const noexcept;
 
+    bool operator==(const Entities<TSeq> & other) const;
+
 };
 
 template<typename TSeq>
@@ -10331,6 +10543,22 @@ inline size_t Entities<TSeq>::size() const noexcept
     return n_entities;
 }
 
+template<typename TSeq>
+inline bool Entities<TSeq>::operator==(const Entities<TSeq> & other) const
+{
+
+    if (n_entities != other.n_entities)
+        return false;
+
+    for (size_t i = 0u; i < dat.size(); ++i)
+    {
+        if (dat[i] != other.dat[i])
+            return false;
+    }
+
+    return true;
+}
+
 /**
  * @brief Set of Entities (const) (useful for iterators)
  * 
@@ -10356,6 +10584,8 @@ public:
     const Entity<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
+
+    bool operator==(const Entities_const<TSeq> & other) const;
 
 };
 
@@ -10408,6 +10638,22 @@ template<typename TSeq>
 inline size_t Entities_const<TSeq>::size() const noexcept 
 {
     return n_entities;
+}
+
+template<typename TSeq>
+inline bool Entities_const<TSeq>::operator==(const Entities_const<TSeq> & other) const
+{
+    
+    if (n_entities != other.n_entities)
+        return false;
+
+    for (size_t i = 0u; i < dat.size(); ++i)
+    {
+        if (dat[i] != other.dat[i])
+            return false;
+    }
+
+    return true;
 }
 
 
@@ -11333,6 +11579,7 @@ public:
     size_t get_n_entities() const;
 
     bool operator==(const Agent<TSeq> & other) const;
+    bool operator!=(const Agent<TSeq> & other) const {return !operator==(other);};
 
 };
 

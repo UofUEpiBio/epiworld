@@ -91,7 +91,7 @@ private:
 
     std::vector< Agent<TSeq> > population = {};
 
-    bool usign_backup = true;
+    bool using_backup = true;
     std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = nullptr;
 
 
@@ -174,8 +174,6 @@ private:
     epiworld_fast_uint n_replicates = 0u;
     void chrono_start();
     void chrono_end();
-
-    std::unique_ptr< Model<TSeq> > backup = nullptr;
 
     std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
     std::vector< int > global_action_dates;
@@ -641,6 +639,9 @@ public:
      */
     void set_name(std::string name);
     std::string get_name() const;
+
+    bool operator==(const Model<TSeq> & other) const;
+    bool operator!=(const Model<TSeq> & other) const {return !operator==(other);};
 
 };
 

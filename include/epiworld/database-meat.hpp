@@ -971,9 +971,9 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
 #define VECT_MATCH(a, b) \
     if (a.size() != b.size()) \
         return false; \
-    for (size_t i = 0u; i < a.size(); ++i) \
+    for (size_t __i = 0u; __i < a.size(); ++__i) \
     {\
-        if (a[i] != b[i]) \
+        if (a[__i] != b[__i]) \
             return false; \
     }
 

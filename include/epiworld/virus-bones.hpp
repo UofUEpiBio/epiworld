@@ -150,6 +150,7 @@ public:
     ///@}
 
     bool operator==(const Virus<TSeq> & other) const;
+    bool operator!=(const Virus<TSeq> & other) const {return !operator==(other);};
 
 };
 

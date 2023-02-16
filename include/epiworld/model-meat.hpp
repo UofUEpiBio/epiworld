@@ -1451,15 +1451,11 @@ inline void Model<TSeq>::run_multiple(
     std::vector< size_t > seeds_n(nexperiments);
     for (auto & s : seeds_n)
     {
-        #ifndef EPI_DEBUG
         s = static_cast<size_t>(
             std::floor(
                 runif() * static_cast<double>(std::numeric_limits<size_t>::max())
                 )
         );
-        #else
-        s = 1234;
-        #endif
     }
 
     EPI_DEBUG_NOTIFY_ACTIVE()
@@ -1475,6 +1471,14 @@ inline void Model<TSeq>::run_multiple(
     std::vector< Model<TSeq> * > these;
     for (size_t i = 0; i < static_cast<size_t>(std::max(nthreads - 1, 0)); ++i)
         these.push_back(clone_ptr());
+
+    #ifdef EPI_DEBUG
+    for (auto & other : these)
+    {
+        if (*this != *other)
+            throw std::logic_error("The copy does not match.");
+    }
+    #endif
 
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
@@ -2303,6 +2307,137 @@ inline std::string Model<TSeq>::get_name() const
 {
     return this->name;
 }
+
+#define VECT_MATCH(a, b) \
+    if (a.size() != b.size()) \
+        return false; \
+    for (size_t __i = 0u; __i < a.size(); ++__i) \
+    {\
+        if (a[__i] != b[__i]) \
+            return false; \
+    }
+
+template<typename TSeq>
+inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
+{
+    if (name != other.name)
+        return false;
+
+    if (db != other.db)
+        return false;
+
+    VECT_MATCH(population, other.population);
+
+    if (using_backup != other.using_backup)
+        return false;
+    
+    if ((population_backup != nullptr) & (other.population_backup != nullptr))
+    {
+        for (size_t i = 0u; i < population_backup->size(); ++i)
+        {
+            if ((*population_backup)[i] != (*other.population_backup)[i])
+                return false;
+        }
+        
+    } else if ((population_backup == nullptr) & (other.population_backup != nullptr)) {
+        return false;
+    } else if ((population_backup != nullptr) & (other.population_backup == nullptr))
+    {
+        return false;
+    }
+
+    if (population_data != other.population_data)
+        return false;
+
+    if (population_data_n_features != other.population_data_n_features)
+        return false;
+
+    if (directed != other.directed)
+        return false;
+    
+    // Viruses -----------------------------------------------------------------
+    if (viruses.size() != other.viruses.size())
+        return false;
+
+    for (size_t i = 0u; i < viruses.size(); ++i)
+    {
+        if (*viruses[i] != *other.viruses[i])
+            return false;
+    }
+
+    VECT_MATCH(prevalence_virus, other.prevalence_virus);
+    VECT_MATCH(prevalence_virus_as_proportion, other.prevalence_virus_as_proportion);
+    
+    // Tools -------------------------------------------------------------------
+    if (tools.size() != other.tools.size())
+        return false;
+
+    for (size_t i = 0u; i < tools.size(); ++i)
+    {
+        if (*tools[i] != *other.tools[i])
+            return false;
+    }
+
+    VECT_MATCH(prevalence_tool, other.prevalence_tool);
+    VECT_MATCH(prevalence_tool_as_proportion, other.prevalence_tool_as_proportion);
+    
+    VECT_MATCH(entities, other.entities);
+
+    if ((entities_backup != nullptr) & (other.entities_backup != nullptr))
+    {
+        
+        for (size_t i = 0u; i < entities_backup->size(); ++i)
+        {
+            if ((*entities_backup)[i] != (*other.entities_backup)[i])
+                return false;
+        }
+        
+    } else if ((entities_backup == nullptr) & (other.entities_backup != nullptr)) {
+        return false;
+    } else if ((entities_backup != nullptr) & (other.entities_backup == nullptr))
+    {
+        return false;
+    }
+
+    if (rewire_prop != other.rewire_prop)
+        return false;
+        
+    if (parameters.size() != other.parameters.size())
+        return false;
+
+    if (parameters != other.parameters)
+        return false;
+
+    if (ndays != other.ndays)
+        return false;
+    
+    VECT_MATCH(status_labels, other.status_labels);
+
+    if (nstatus != other.nstatus)
+        return false;
+    
+    if (verbose != other.verbose)
+        return false;
+
+    if (initialized != other.initialized)
+        return false;
+
+    if (current_date != other.current_date)
+        return false;
+
+    VECT_MATCH(global_action_dates, other.global_action_dates);
+
+    if (queue != other.queue)
+        return false;
+
+    if (use_queuing != other.use_queuing)
+        return false;
+
+    return true;
+
+}
+
+#undef VECT_MATCH
 
 #undef DURCAST
 

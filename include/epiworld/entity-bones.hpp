@@ -93,6 +93,9 @@ public:
 
     void reset();
 
+    bool operator==(const Entity<TSeq> & other) const;
+    bool operator!=(const Entity<TSeq> & other) const {return !operator==(other);};
+
 };
 
 

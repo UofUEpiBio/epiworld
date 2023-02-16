@@ -188,4 +188,54 @@ inline void Entity<TSeq>::reset()
     sampled_agents_left_n = 0u;
 }
 
+template<typename TSeq>
+inline bool Entity<TSeq>::operator==(const Entity<TSeq> & other) const
+{
+
+    if (id != other.id)
+        return false;
+
+    if (n_agents != other.n_agents)
+        return false;
+
+    for (size_t i = 0u; i < n_agents; ++i)
+    {
+        if (agents[i] != other.agents[i])
+            return false;
+    }
+
+
+    if (max_capacity != other.max_capacity)
+        return false;
+
+    if (entity_name != other.entity_name)
+        return false;
+
+    if (location.size() != other.location.size())
+        return false;
+
+    for (size_t i = 0u; i < location.size(); ++i)
+    {
+
+        if (location[i] != other.location[i])
+            return false;
+
+    }
+
+    if (status_init != other.status_init)
+        return false;
+
+    if (status_post != other.status_post)
+        return false;
+
+    if (queue_init != other.queue_init)
+        return false;
+
+    if (queue_post != other.queue_post)
+        return false;
+
+    return true;
+
+}
+
 #endif
