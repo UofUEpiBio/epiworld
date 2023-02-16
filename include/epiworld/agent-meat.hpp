@@ -871,6 +871,59 @@ inline size_t Agent<TSeq>::get_n_entities() const
     return n_entities;
 }
 
+template<typename TSeq>
+inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
+{
+
+    if (n_neighbors != other.n_neighbors)
+        return false;
+
+    for (size_t i = 0u; i < n_neighbors; ++i)
+    {
+        if (neighbors[i] != other.neighbors[i])
+            return false;
+    }
+    
+    if (n_entities != other.n_entities)
+        return false;
+
+    for (size_t i = 0u; i < n_entities; ++i)
+    {
+        if (entities[i] != other.entities[i])
+            return false;
+    }
+
+    if (status != other.status)
+        return false;
+
+    if (status_prev != other.status_prev)
+        return false;
+
+    if (status_last_changed != other.status_last_changed) ///< Last time the agent was updated.
+        return false;
+    
+    if (n_viruses != other.n_viruses)
+        return false;
+
+    for (size_t i = 0u; i < n_viruses; ++i)
+    {
+        if (viruses[i] != other.viruses[i])
+            return false;
+    }
+
+    if (n_tools != other.n_tools)
+        return false;
+
+    for (size_t i = 0u; i < n_tools; ++i)
+    {
+        if (tools[i] != other.tools[i])
+            return false;
+    }   
+    
+    return true;
+    
+}
+
 #undef CHECK_COALESCE_
 
 #endif

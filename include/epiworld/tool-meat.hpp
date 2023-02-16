@@ -345,4 +345,65 @@ inline void Tool<TSeq>::get_queue(
 
 }
 
+template<>
+inline bool Tool<std::vector<int>>::operator==(
+    const Tool<std::vector<int>> & other
+    ) const
+{
+    
+    if (sequence->size() != other.sequence->size())
+        return false;
+
+    for (size_t i = 0u; i < sequence->size(); ++i)
+    {
+        if (sequence->operator[](i) != other.sequence->operator[](i))
+            return false;
+    }
+
+    if (tool_name != other.tool_name)
+        return false;
+    
+    if (status_init != other.status_init)
+        return false;
+
+    if (status_post != other.status_post)
+        return false;
+
+    if (queue_init != other.queue_init)
+        return false;
+
+    if (queue_post != other.queue_post)
+        return false;
+
+
+    return true;
+
+}
+
+template<typename TSeq>
+inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
+{
+    if (*sequence != *other.sequence)
+        return false;
+
+    if (tool_name != other.tool_name)
+        return false;
+    
+    if (status_init != other.status_init)
+        return false;
+
+    if (status_post != other.status_post)
+        return false;
+
+    if (queue_init != other.queue_init)
+        return false;
+
+    if (queue_post != other.queue_post)
+        return false;
+
+    return true;
+
+}
+
+
 #endif

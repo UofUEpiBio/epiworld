@@ -186,12 +186,18 @@ public:
 ///@}
 
 #ifdef EPI_DEBUG
+    #define EPI_DEBUG_PRINTF printf_epiworld
+
+    #define EPI_DEBUG_ERROR(etype, msg) \
+        (etype)("[[epi-debug]] (error)" + std::string(msg));
+
     #define EPI_DEBUG_NOTIFY_ACTIVE() \
-        printf_epiworld("[[epi-debug]] DEBUGGING ON (compiled with EPI_DEBUG defined)\n");
+        EPI_DEBUG_PRINTF("DEBUGGING ON (compiled with EPI_DEBUG defined)%s\n", "");
+
     #define EPI_DEBUG_ALL_NON_NEGATIVE(vect) \
         for (auto & v : vect) \
             if (static_cast<double>(v) < 0.0) \
-                throw std::logic_error("A negative value not allowed.");
+                throw EPI_DEBUG_ERROR(std::logic_error, "A negative value not allowed.");
 
     #define EPI_DEBUG_SUM_DBL(vect, num) \
         double _epi_debug_sum = 0.0; \
@@ -199,7 +205,7 @@ public:
         {   \
             _epi_debug_sum += static_cast<double>(v);\
             if (_epi_debug_sum > static_cast<double>(num)) \
-                throw std::logic_error("[[epi-debug]] The sum of elements not reached."); \
+                throw EPI_DEBUG_ERROR(std::logic_error, "The sum of elements not reached."); \
         }
 
     #define EPI_DEBUG_SUM_INT(vect, num) \
@@ -208,30 +214,40 @@ public:
         {   \
             _epi_debug_sum += static_cast<int>(v);\
             if (_epi_debug_sum > static_cast<int>(num)) \
-                throw std::logic_error("[[epi-debug]] The sum of elements not reached."); \
+                throw EPI_DEBUG_ERROR(std::logic_error, "The sum of elements not reached."); \
         }
 
-    #define EPI_DEBUG_VECTOR_MATCH_INT(a, b) \
+    #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c) \
         if (a.size() != b.size())  {\
-            printf("Size of vector a: %lu\n", a.size());\
-            printf("Size of vector b: %lu\n", b.size());\
-            throw std::length_error("[[epi-debug]] The vectors do not match size."); \
+            EPI_DEBUG_PRINTF("In %s", std::string(c).c_str()); \
+            EPI_DEBUG_PRINTF("Size of vector a: %lu\n", (a).size());\
+            EPI_DEBUG_PRINTF("Size of vector b: %lu\n", (b).size());\
+            throw EPI_DEBUG_ERROR(std::length_error, "The vectors do not match size."); \
         }\
         for (int _i = 0; _i < static_cast<int>(a.size()); ++_i) \
             if (a[_i] != b[_i]) {\
-                printf("Iterating the last 5 values:\n"); \
+                EPI_DEBUG_PRINTF("In %s", std::string(c).c_str()); \
+                EPI_DEBUG_PRINTF("Iterating the last 5 values%s:\n", ""); \
                 for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
-                    printf("a[%i]: %i; b[%i]: %i\n", _j, a[_j], _j, b[_j]); \
-                throw std::logic_error("[[epi-debug]] The vectors do not match."); \
+                { \
+                    EPI_DEBUG_PRINTF( \
+                        "a[%i]: %i; b[%i]: %i\n", \
+                        _j, \
+                        static_cast<int>(a[_j]), \
+                        _j, static_cast<int>(b[_j])); \
+                } \
+                throw EPI_DEBUG_ERROR(std::logic_error, "The vectors do not match."); \
             }
 
 
 #else
+    #define EPI_DEBUG_PRINTF(fmt, ...)
+    #define EPI_DEBUG_ERROR(fmt, ...)
     #define EPI_DEBUG_NOTIFY_ACTIVE()
     #define EPI_DEBUG_ALL_NON_NEGATIVE(vect)
     #define EPI_DEBUG_SUM_DBL(vect, num)
     #define EPI_DEBUG_SUM_INT(vect, num)
-    #define EPI_DEBUG_VECTOR_MATCH_INT(a, b)
+    #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c)
 #endif
 
 #endif

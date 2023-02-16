@@ -318,6 +318,8 @@ public:
     Entity<TSeq> & get_entity(size_t i);
     size_t get_n_entities() const;
 
+    bool operator==(const Agent<TSeq> & other) const;
+
 };
 
 

@@ -459,4 +459,75 @@ inline void Virus<TSeq>::get_queue(
         
 }
 
+template<>
+inline bool Virus<std::vector<int>>::operator==(
+    const Virus<std::vector<int>> & other
+    ) const
+{
+    
+    if (baseline_sequence->size() != other.baseline_sequence->size())
+        return false;
+
+    for (size_t i = 0u; i < baseline_sequence->size(); ++i)
+    {
+        if (baseline_sequence->operator[](i) != other.baseline_sequence->operator[](i))
+            return false;
+    }
+
+    if (virus_name != other.virus_name)
+        return false;
+    
+    if (status_init != other.status_init)
+        return false;
+
+    if (status_post != other.status_post)
+        return false;
+
+    if (status_removed != other.status_removed)
+        return false;
+
+    if (queue_init != other.queue_init)
+        return false;
+
+    if (queue_post != other.queue_post)
+        return false;
+
+    if (queue_removed != other.queue_removed)
+        return false;
+
+    return true;
+
+}
+
+template<typename TSeq>
+inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
+{
+    if (*baseline_sequence != *other.baseline_sequence)
+        return false;
+
+    if (virus_name != other.virus_name)
+        return false;
+    
+    if (status_init != other.status_init)
+        return false;
+
+    if (status_post != other.status_post)
+        return false;
+
+    if (status_removed != other.status_removed)
+        return false;
+
+    if (queue_init != other.queue_init)
+        return false;
+
+    if (queue_post != other.queue_post)
+        return false;
+
+    if (queue_removed != other.queue_removed)
+        return false;
+
+    return true;
+
+}
+
 #endif

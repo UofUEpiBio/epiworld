@@ -102,6 +102,8 @@ public:
     void get_status(epiworld_fast_int * init, epiworld_fast_int * post);
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
 
+    bool operator==(const Tool<TSeq> & other) const;
+
 };
 
 #endif

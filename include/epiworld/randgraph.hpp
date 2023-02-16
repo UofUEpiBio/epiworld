@@ -266,7 +266,7 @@ inline void rewire_degseq(
     #ifdef EPI_DEBUG
     for (size_t _i = 0u; _i < _degree0.size(); ++_i)
     {
-        if (_degree0[_i] != agents->get_dat()[_i].size())
+        if (_degree0[_i] != static_cast<int>(agents->get_dat()[_i].size()))
             throw std::logic_error(
                 "[epi-debug] Degree does not match afted rewire_degseq. " +
                 std::string("Expected: ") + 

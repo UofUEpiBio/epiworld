@@ -38,6 +38,8 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
     epimodels::ModelSIR<> model_0(
         "a virus", 0.01, .9, .3
         );
+    
+    model_0.seed(112);
 
     model_0.agents_smallworld(100000, 5, false, 0.01);
     
@@ -49,6 +51,8 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
     epimodels::ModelSIR<> model_1(
         "a virus", 0.01, .9, .3
         );
+
+    model_1.seed(112);
 
     model_1.agents_smallworld(100000, 5, false, 0.01);
 

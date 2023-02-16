@@ -149,6 +149,8 @@ public:
         );
     ///@}
 
+    bool operator==(const Virus<TSeq> & other) const;
+
 };
 
 #endif

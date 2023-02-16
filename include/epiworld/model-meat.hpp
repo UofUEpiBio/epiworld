@@ -1450,11 +1450,17 @@ inline void Model<TSeq>::run_multiple(
     // Seeds will be reproducible by default
     std::vector< size_t > seeds_n(nexperiments);
     for (auto & s : seeds_n)
+    {
+        #ifndef EPI_DEBUG
         s = static_cast<size_t>(
             std::floor(
                 runif() * static_cast<double>(std::numeric_limits<size_t>::max())
                 )
         );
+        #else
+        s = 1234;
+        #endif
+    }
 
     EPI_DEBUG_NOTIFY_ACTIVE()
 
@@ -1509,7 +1515,7 @@ inline void Model<TSeq>::run_multiple(
     }
 
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
-        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple) \
+        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, stdout) \
         default(none)
     {
 
@@ -1545,7 +1551,7 @@ inline void Model<TSeq>::run_multiple(
             } else {
 
                 // Initializing the seed
-                these[iam - 1]->seed(seeds_n[n]);
+                these[iam - 1]->seed(seeds_n[nreplicates_csum[n-1] + n]);
 
                 these[iam - 1]->run();
 
@@ -1571,7 +1577,8 @@ inline void Model<TSeq>::run_multiple(
                 {
 
                     m->get_db().get_hist_total(&_dates1_, nullptr, &_val1_);
-                    EPI_DEBUG_VECTOR_MATCH_INT(_val0_, _val1_);
+                    m->print();
+                    EPI_DEBUG_VECTOR_MATCH_INT(_val0_, _val1_, "consistent outputs\n");
                     
                 }
 

@@ -103,7 +103,10 @@ inline void DataBase<TSeq>::record()
     for (auto & p : model->population)
         _today_total_cp[p.get_status()]++;
     
-    EPI_DEBUG_VECTOR_MATCH_INT(_today_total_cp, today_total)
+    EPI_DEBUG_VECTOR_MATCH_INT(
+        _today_total_cp, today_total,
+        "Sums of __today_total_cp in database-meat.hpp"
+        )
     // printf_epiworld(
     //     "[epi-debug] Day % 3i totals [",
     //     static_cast<int>(model->today())
@@ -964,5 +967,166 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
 
 
 } 
+
+#define VECT_MATCH(a, b) \
+    if (a.size() != b.size()) \
+        return false; \
+    for (size_t i = 0u; i < a.size(); ++i) \
+    {\
+        if (a[i] != b[i]) \
+            return false; \
+    }
+
+template<>
+inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<int>> & other) const
+{
+    VECT_MATCH(variant_name, other.variant_name);
+
+    if (variant_sequence.size() != other.variant_sequence.size())
+        return false;
+
+    for (size_t i = 0u; i < variant_sequence.size(); ++i)
+    {
+        VECT_MATCH(variant_sequence[i], other.variant_sequence[i]);
+    }
+
+    VECT_MATCH(variant_origin_date, other.variant_origin_date);
+    VECT_MATCH(variant_parent_id, other.variant_parent_id);
+    VECT_MATCH(tool_name, other.tool_name);
+    VECT_MATCH(tool_sequence, other.tool_sequence);
+    VECT_MATCH(tool_origin_date, other.tool_origin_date);
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    if (today_variant.size() != other.today_variant.size())
+        return false;
+    
+    for (size_t i = 0u; i < today_variant.size(); ++i)
+    {
+        VECT_MATCH(today_variant[i], other.today_variant[i]);
+    }
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    if (today_tool.size() != other.today_tool.size())
+        return false;
+    
+    for (size_t i = 0u; i < today_tool.size(); ++i)
+    {
+        VECT_MATCH(today_tool[i], other.today_tool[i]);
+    }
+
+    // {Susceptible, Infected, etc.}
+    VECT_MATCH(today_total, other.today_total);
+
+    // Totals
+    if (today_total_nvariants_active != other.today_total_nvariants_active)
+        return false;
+    
+    if (sampling_freq != other.sampling_freq)
+        return false;
+
+    // Variants history
+    VECT_MATCH(hist_variant_date, other.hist_variant_date);
+    VECT_MATCH(hist_variant_id, other.hist_variant_id);
+    VECT_MATCH(hist_variant_status, other.hist_variant_status);
+    VECT_MATCH(hist_variant_counts, other.hist_variant_counts);
+
+    // Tools history
+    VECT_MATCH(hist_tool_date, other.hist_tool_date);
+    VECT_MATCH(hist_tool_id, other.hist_tool_id);
+    VECT_MATCH(hist_tool_status, other.hist_tool_status);
+    VECT_MATCH(hist_tool_counts, other.hist_tool_counts);
+
+    // Overall hist
+    VECT_MATCH(hist_total_date, other.hist_total_date);
+    VECT_MATCH(hist_total_nvariants_active, other.hist_total_nvariants_active);
+    VECT_MATCH(hist_total_status, other.hist_total_status);
+    VECT_MATCH(hist_total_counts, other.hist_total_counts);
+    VECT_MATCH(hist_transition_matrix, other.hist_transition_matrix);
+
+    // Transmission network
+    VECT_MATCH(transmission_date, other.transmission_date);                 ///< Date of the transmission event
+    VECT_MATCH(transmission_source, other.transmission_source);               ///< Id of the source
+    VECT_MATCH(transmission_target, other.transmission_target);               ///< Id of the target
+    VECT_MATCH(transmission_variant, other.transmission_variant);              ///< Id of the variant
+    VECT_MATCH(transmission_source_exposure_date, other.transmission_source_exposure_date); ///< Date when the source acquired the variant
+
+    VECT_MATCH(transition_matrix, other.transition_matrix);
+
+    return true;
+
+}
+
+template<typename TSeq>
+inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
+{
+    VECT_MATCH(variant_name, other.variant_name);
+    VECT_MATCH(variant_sequence, other.variant_sequence);
+    VECT_MATCH(variant_origin_date, other.variant_origin_date);
+    VECT_MATCH(variant_parent_id, other.variant_parent_id);
+    VECT_MATCH(tool_name, other.tool_name);
+    VECT_MATCH(tool_sequence, other.tool_sequence);
+    VECT_MATCH(tool_origin_date, other.tool_origin_date);
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    if (today_variant.size() != other.today_variant.size())
+        return false;
+    
+    for (size_t i = 0u; i < today_variant.size(); ++i)
+    {
+        VECT_MATCH(today_variant[i], other.today_variant[i]);
+    }
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    if (today_tool.size() != other.today_tool.size())
+        return false;
+    
+    for (size_t i = 0u; i < today_tool.size(); ++i)
+    {
+        VECT_MATCH(today_tool[i], other.today_tool[i]);
+    }
+
+    // {Susceptible, Infected, etc.}
+    VECT_MATCH(today_total, other.today_total);
+
+    // Totals
+    if (today_total_nvariants_active != other.today_total_nvariants_active)
+        return false;
+    
+    if (sampling_freq != other.sampling_freq)
+        return false;
+
+    // Variants history
+    VECT_MATCH(hist_variant_date, other.hist_variant_date);
+    VECT_MATCH(hist_variant_id, other.hist_variant_id);
+    VECT_MATCH(hist_variant_status, other.hist_variant_status);
+    VECT_MATCH(hist_variant_counts, other.hist_variant_counts);
+
+    // Tools history
+    VECT_MATCH(hist_tool_date, other.hist_tool_date);
+    VECT_MATCH(hist_tool_id, other.hist_tool_id);
+    VECT_MATCH(hist_tool_status, other.hist_tool_status);
+    VECT_MATCH(hist_tool_counts, other.hist_tool_counts);
+
+    // Overall hist
+    VECT_MATCH(hist_total_date, other.hist_total_date);
+    VECT_MATCH(hist_total_nvariants_active, other.hist_total_nvariants_active);
+    VECT_MATCH(hist_total_status, other.hist_total_status);
+    VECT_MATCH(hist_total_counts, other.hist_total_counts);
+    VECT_MATCH(hist_transition_matrix, other.hist_transition_matrix);
+
+    // Transmission network
+    VECT_MATCH(transmission_date, other.transmission_date);                 ///< Date of the transmission event
+    VECT_MATCH(transmission_source, other.transmission_source);               ///< Id of the source
+    VECT_MATCH(transmission_target, other.transmission_target);               ///< Id of the target
+    VECT_MATCH(transmission_variant, other.transmission_variant);              ///< Id of the variant
+    VECT_MATCH(transmission_source_exposure_date, other.transmission_source_exposure_date); ///< Date when the source acquired the variant
+
+    VECT_MATCH(transition_matrix, other.transition_matrix);
+
+    return true;
+
+}
+
+#undef VECT_MATCH
 
 #endif

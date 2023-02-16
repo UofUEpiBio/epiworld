@@ -236,6 +236,8 @@ public:
         bool print = true
     ) const;
 
+    bool operator==(const DataBase<TSeq> & other) const;
+
 };
 
 
