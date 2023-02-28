@@ -147,7 +147,7 @@ private:
     std::exponential_distribution<>  rexpd       = std::exponential_distribution<>();
 
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
-    epiworld_double rewire_prop;
+    epiworld_double rewire_prop = 0.0;
         
     std::map<std::string, epiworld_double > parameters;
     epiworld_fast_uint ndays;

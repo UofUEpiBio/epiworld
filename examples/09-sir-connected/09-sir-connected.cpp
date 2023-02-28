@@ -1,5 +1,6 @@
-// #define EPI_DEBUG
+#define EPI_DEBUG
 #include <iostream>
+#include <omp.h>
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/cxxopts/cxxopts.hpp"
 using namespace epiworld;
@@ -35,7 +36,7 @@ int main(int argc, char* argv[]) {
     epiworld_double prob_infect     = result["infectprob"].as<epiworld_double>();
     epiworld_double beta            = result["beta"].as<epiworld_double>();
     epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
-    int threads = result["threads"].as<int>();
+    int threads                     = result["threads"].as<int>();
     epiworld_fast_uint nexperiments = result["experiments"].as<int>(); 
 
     epiworld::epimodels::ModelSIRCONN<> model(

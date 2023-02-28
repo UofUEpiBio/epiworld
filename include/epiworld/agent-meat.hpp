@@ -875,49 +875,78 @@ template<typename TSeq>
 inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 {
 
-    if (n_neighbors != other.n_neighbors)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        n_neighbors != other.n_neighbors,
+        "Agent:: n_eighbors don't match"
+        )
 
+    
     for (size_t i = 0u; i < n_neighbors; ++i)
     {
-        if (neighbors[i] != other.neighbors[i])
-            return false;
+        EPI_DEBUG_FAIL_AT_TRUE(
+            neighbors[i] != other.neighbors[i],
+            "Agent:: neighbor[i] don't match"
+        )
     }
     
-    if (n_entities != other.n_entities)
-        return false;
-
+    EPI_DEBUG_FAIL_AT_TRUE(
+        n_entities != other.n_entities,
+        "Agent:: n_entities don't match"
+        )
+    
+    
     for (size_t i = 0u; i < n_entities; ++i)
     {
-        if (entities[i] != other.entities[i])
-            return false;
+        EPI_DEBUG_FAIL_AT_TRUE(
+            entities[i] != other.entities[i],
+            "Agent:: entities[i] don't match"
+        )
     }
 
-    if (status != other.status)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status != other.status,
+        "Agent:: status don't match"
+        )
+        
 
-    if (status_prev != other.status_prev)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_prev != other.status_prev,
+        "Agent:: status_prev don't match"
+        )
+        
 
-    if (status_last_changed != other.status_last_changed) ///< Last time the agent was updated.
-        return false;
+    // EPI_DEBUG_FAIL_AT_TRUE(
+    //     status_last_changed != other.status_last_changed,
+    //     "Agent:: status_last_changed don't match"
+    //     ) ///< Last time the agent was updated.
+        
     
-    if (n_viruses != other.n_viruses)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        n_viruses != other.n_viruses,
+        "Agent:: n_viruses don't match"
+        )
+        
 
     for (size_t i = 0u; i < n_viruses; ++i)
     {
-        if (viruses[i] != other.viruses[i])
-            return false;
+        
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *viruses[i] != *other.viruses[i],
+            "Agent:: viruses[i] don't match"
+        )
+         
     }
 
-    if (n_tools != other.n_tools)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(n_tools != other.n_tools, "Agent:: n_tools don't match")
 
     for (size_t i = 0u; i < n_tools; ++i)
     {
-        if (tools[i] != other.tools[i])
-            return false;
+        
+        EPI_DEBUG_FAIL_AT_TRUE(
+            tools[i] != other.tools[i],
+            "Agent:: tools[i] don't match"
+        )
+         
     }   
     
     return true;

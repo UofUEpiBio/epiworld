@@ -465,35 +465,56 @@ inline bool Virus<std::vector<int>>::operator==(
     ) const
 {
     
-    if (baseline_sequence->size() != other.baseline_sequence->size())
-        return false;
+
+    EPI_DEBUG_FAIL_AT_TRUE(
+        baseline_sequence->size() != other.baseline_sequence->size(),
+        "Virus:: baseline_sequence don't match"
+        )
 
     for (size_t i = 0u; i < baseline_sequence->size(); ++i)
     {
-        if (baseline_sequence->operator[](i) != other.baseline_sequence->operator[](i))
-            return false;
+
+        EPI_DEBUG_FAIL_AT_TRUE(
+            baseline_sequence->operator[](i) != other.baseline_sequence->operator[](i),
+            "Virus:: baseline_sequence[i] don't match"
+            )
+
     }
 
-    if (virus_name != other.virus_name)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        virus_name != other.virus_name,
+        "Virus:: virus_name don't match"
+        )
     
-    if (status_init != other.status_init)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_init != other.status_init,
+        "Virus:: status_init don't match"
+        )
 
-    if (status_post != other.status_post)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_post != other.status_post,
+        "Virus:: status_post don't match"
+        )
 
-    if (status_removed != other.status_removed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_removed != other.status_removed,
+        "Virus:: status_removed don't match"
+        )
 
-    if (queue_init != other.queue_init)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_init != other.queue_init,
+        "Virus:: queue_init don't match"
+        )
 
-    if (queue_post != other.queue_post)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_post != other.queue_post,
+        "Virus:: queue_post don't match"
+        )
 
-    if (queue_removed != other.queue_removed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_removed != other.queue_removed,
+        "Virus:: queue_removed don't match"
+        )
 
     return true;
 
@@ -502,29 +523,46 @@ inline bool Virus<std::vector<int>>::operator==(
 template<typename TSeq>
 inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 {
-    if (*baseline_sequence != *other.baseline_sequence)
-        return false;
-
-    if (virus_name != other.virus_name)
-        return false;
     
-    if (status_init != other.status_init)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        *baseline_sequence != *other.baseline_sequence,
+        "Virus:: baseline_sequence don't match"
+    )
 
-    if (status_post != other.status_post)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        virus_name != other.virus_name,
+        "Virus:: virus_name don't match"
+    )
+    
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_init != other.status_init,
+        "Virus:: status_init don't match"
+    )
 
-    if (status_removed != other.status_removed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_post != other.status_post,
+        "Virus:: status_post don't match"
+    )
 
-    if (queue_init != other.queue_init)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_removed != other.status_removed,
+        "Virus:: status_removed don't match"
+    )
 
-    if (queue_post != other.queue_post)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_init != other.queue_init,
+        "Virus:: queue_init don't match"
+    )
 
-    if (queue_removed != other.queue_removed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_post != other.queue_post,
+        "Virus:: queue_post don't match"
+    )
+
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_removed != other.queue_removed,
+        "Virus:: queue_removed don't match"
+    )
 
     return true;
 

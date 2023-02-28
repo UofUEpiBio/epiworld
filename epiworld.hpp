@@ -218,7 +218,7 @@ public:
     #define EPI_DEBUG_PRINTF printf_epiworld
 
     #define EPI_DEBUG_ERROR(etype, msg) \
-        (etype)("[[epi-debug]] (error)" + std::string(msg));
+        (etype)("[[epi-debug]] (error) " + std::string(msg));
 
     #define EPI_DEBUG_NOTIFY_ACTIVE() \
         EPI_DEBUG_PRINTF("DEBUGGING ON (compiled with EPI_DEBUG defined)%s\n", "");
@@ -248,14 +248,14 @@ public:
 
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c) \
         if (a.size() != b.size())  {\
-            EPI_DEBUG_PRINTF("In %s", std::string(c).c_str()); \
+            EPI_DEBUG_PRINTF("In '%s'", std::string(c).c_str()); \
             EPI_DEBUG_PRINTF("Size of vector a: %lu\n", (a).size());\
             EPI_DEBUG_PRINTF("Size of vector b: %lu\n", (b).size());\
             throw EPI_DEBUG_ERROR(std::length_error, "The vectors do not match size."); \
         }\
         for (int _i = 0; _i < static_cast<int>(a.size()); ++_i) \
             if (a[_i] != b[_i]) {\
-                EPI_DEBUG_PRINTF("In %s", std::string(c).c_str()); \
+                EPI_DEBUG_PRINTF("In '%s'", std::string(c).c_str()); \
                 EPI_DEBUG_PRINTF("Iterating the last 5 values%s:\n", ""); \
                 for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
                 { \
@@ -268,7 +268,11 @@ public:
                 throw EPI_DEBUG_ERROR(std::logic_error, "The vectors do not match."); \
             }
 
-
+    #define EPI_DEBUG_FAIL_AT_TRUE(a,b) \
+        if (a) \
+        {\
+            throw EPI_DEBUG_ERROR(std::logic_error, b); \
+        } 
 #else
     #define EPI_DEBUG_PRINTF(fmt, ...)
     #define EPI_DEBUG_ERROR(fmt, ...)
@@ -277,6 +281,9 @@ public:
     #define EPI_DEBUG_SUM_DBL(vect, num)
     #define EPI_DEBUG_SUM_INT(vect, num)
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c)
+    #define EPI_DEBUG_FAIL_AT_TRUE(a, b) \
+        if (a) \
+            return false;
 #endif
 
 #endif
@@ -3826,41 +3833,77 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
 
 } 
 
-#define VECT_MATCH(a, b) \
-    if (a.size() != b.size()) \
-        return false; \
+#define VECT_MATCH(a, b, c) \
+    EPI_DEBUG_FAIL_AT_TRUE(a.size() != b.size(), c) \
     for (size_t __i = 0u; __i < a.size(); ++__i) \
     {\
-        if (a[__i] != b[__i]) \
-            return false; \
+        EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
     }
 
 template<>
 inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<int>> & other) const
 {
-    VECT_MATCH(variant_name, other.variant_name);
+    VECT_MATCH(
+        variant_name, other.variant_name,
+        "DataBase:: variant_name don't match"
+        )
 
-    if (variant_sequence.size() != other.variant_sequence.size())
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        variant_sequence.size() != other.variant_sequence.size(),
+        "DataBase:: variant_sequence don't match."
+        )
 
     for (size_t i = 0u; i < variant_sequence.size(); ++i)
     {
-        VECT_MATCH(variant_sequence[i], other.variant_sequence[i]);
+        VECT_MATCH(
+            variant_sequence[i], other.variant_sequence[i],
+            "DataBase:: variant_sequence[i] don't match"
+            )
     }
 
-    VECT_MATCH(variant_origin_date, other.variant_origin_date);
-    VECT_MATCH(variant_parent_id, other.variant_parent_id);
-    VECT_MATCH(tool_name, other.tool_name);
-    VECT_MATCH(tool_sequence, other.tool_sequence);
-    VECT_MATCH(tool_origin_date, other.tool_origin_date);
+    VECT_MATCH(
+        variant_origin_date,
+        other.variant_origin_date,
+        "DataBase:: variant_origin_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        variant_parent_id,
+        other.variant_parent_id,
+        "DataBase:: variant_parent_id[i] don't match"
+    )
+
+    VECT_MATCH(
+        tool_name,
+        other.tool_name,
+        "DataBase:: tool_name[i] don't match"
+    )
+
+    VECT_MATCH(
+        tool_sequence,
+        other.tool_sequence,
+        "DataBase:: tool_sequence[i] don't match"
+    )
+
+    VECT_MATCH(
+        tool_origin_date,
+        other.tool_origin_date,
+        "DataBase:: tool_origin_date[i] don't match"
+    )
+
 
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    if (today_variant.size() != other.today_variant.size())
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_variant.size() != other.today_variant.size(),
+        "DataBase:: today_variant don't match."
+        )
     
     for (size_t i = 0u; i < today_variant.size(); ++i)
     {
-        VECT_MATCH(today_variant[i], other.today_variant[i]);
+        VECT_MATCH(
+            today_variant[i], other.today_variant[i],
+            "DataBase:: today_variant[i] don't match"
+            )
     }
 
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
@@ -3869,46 +3912,148 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
     
     for (size_t i = 0u; i < today_tool.size(); ++i)
     {
-        VECT_MATCH(today_tool[i], other.today_tool[i]);
+        VECT_MATCH(
+            today_tool[i], other.today_tool[i],
+            "DataBase:: today_tool[i] don't match"
+            )
     }
 
     // {Susceptible, Infected, etc.}
-    VECT_MATCH(today_total, other.today_total);
+    VECT_MATCH(
+        today_total, other.today_total,
+        "DataBase:: today_total don't match"
+        )
 
     // Totals
-    if (today_total_nvariants_active != other.today_total_nvariants_active)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_total_nvariants_active != other.today_total_nvariants_active,
+        "DataBase:: today_total_nvariants_active don't match."
+        )
     
-    if (sampling_freq != other.sampling_freq)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        sampling_freq != other.sampling_freq,
+        "DataBase:: sampling_freq don't match."
+        )
 
     // Variants history
-    VECT_MATCH(hist_variant_date, other.hist_variant_date);
-    VECT_MATCH(hist_variant_id, other.hist_variant_id);
-    VECT_MATCH(hist_variant_status, other.hist_variant_status);
-    VECT_MATCH(hist_variant_counts, other.hist_variant_counts);
+    VECT_MATCH(
+        hist_variant_date,
+        other.hist_variant_date,
+        "DataBase:: hist_variant_date[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_variant_id,
+        other.hist_variant_id,
+        "DataBase:: hist_variant_id[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_variant_status,
+        other.hist_variant_status,
+        "DataBase:: hist_variant_status[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_variant_counts,
+        other.hist_variant_counts,
+        "DataBase:: hist_variant_counts[i] don't match"
+        )
 
     // Tools history
-    VECT_MATCH(hist_tool_date, other.hist_tool_date);
-    VECT_MATCH(hist_tool_id, other.hist_tool_id);
-    VECT_MATCH(hist_tool_status, other.hist_tool_status);
-    VECT_MATCH(hist_tool_counts, other.hist_tool_counts);
+    VECT_MATCH(
+        hist_tool_date,
+        other.hist_tool_date,
+        "DataBase:: hist_tool_date[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_tool_id,
+        other.hist_tool_id,
+        "DataBase:: hist_tool_id[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_tool_status,
+        other.hist_tool_status,
+        "DataBase:: hist_tool_status[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_tool_counts,
+        other.hist_tool_counts,
+        "DataBase:: hist_tool_counts[i] don't match"
+        )
 
     // Overall hist
-    VECT_MATCH(hist_total_date, other.hist_total_date);
-    VECT_MATCH(hist_total_nvariants_active, other.hist_total_nvariants_active);
-    VECT_MATCH(hist_total_status, other.hist_total_status);
-    VECT_MATCH(hist_total_counts, other.hist_total_counts);
-    VECT_MATCH(hist_transition_matrix, other.hist_transition_matrix);
+    VECT_MATCH(
+        hist_total_date,
+        other.hist_total_date,
+        "DataBase:: hist_total_date[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_total_nvariants_active,
+        other.hist_total_nvariants_active,
+        "DataBase:: hist_total_nvariants_active[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_total_status,
+        other.hist_total_status,
+        "DataBase:: hist_total_status[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_total_counts,
+        other.hist_total_counts,
+        "DataBase:: hist_total_counts[i] don't match"
+        )
+
+    VECT_MATCH(
+        hist_transition_matrix,
+        other.hist_transition_matrix,
+        "DataBase:: hist_transition_matrix[i] don't match"
+        )
 
     // Transmission network
-    VECT_MATCH(transmission_date, other.transmission_date);                 ///< Date of the transmission event
-    VECT_MATCH(transmission_source, other.transmission_source);               ///< Id of the source
-    VECT_MATCH(transmission_target, other.transmission_target);               ///< Id of the target
-    VECT_MATCH(transmission_variant, other.transmission_variant);              ///< Id of the variant
-    VECT_MATCH(transmission_source_exposure_date, other.transmission_source_exposure_date); ///< Date when the source acquired the variant
+    VECT_MATCH(
+        transmission_date,
+        other.transmission_date,                 ///< Date of the transmission eve,
+        "DataBase:: transmission_date[i] don't match"
+        )
 
-    VECT_MATCH(transition_matrix, other.transition_matrix);
+    VECT_MATCH(
+        transmission_source,
+        other.transmission_source,               ///< Id of the sour,
+        "DataBase:: transmission_source[i] don't match"
+        )
+
+    VECT_MATCH(
+        transmission_target,
+        other.transmission_target,               ///< Id of the targ,
+        "DataBase:: transmission_target[i] don't match"
+        )
+
+    VECT_MATCH(
+        transmission_variant,
+        other.transmission_variant,              ///< Id of the varia,
+        "DataBase:: transmission_variant[i] don't match"
+        )
+
+    VECT_MATCH(
+        transmission_source_exposure_date,
+        other.transmission_source_exposure_date, ///< Date when the source acquired the varia,
+        "DataBase:: transmission_source_exposure_date[i] don't match"
+        )
+
+
+    VECT_MATCH(
+        transition_matrix,
+        other.transition_matrix,
+        "DataBase:: transition_matrix[i] don't match"
+        )
+
 
     return true;
 
@@ -3917,69 +4062,211 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
 template<typename TSeq>
 inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
 {
-    VECT_MATCH(variant_name, other.variant_name);
-    VECT_MATCH(variant_sequence, other.variant_sequence);
-    VECT_MATCH(variant_origin_date, other.variant_origin_date);
-    VECT_MATCH(variant_parent_id, other.variant_parent_id);
-    VECT_MATCH(tool_name, other.tool_name);
-    VECT_MATCH(tool_sequence, other.tool_sequence);
-    VECT_MATCH(tool_origin_date, other.tool_origin_date);
+    VECT_MATCH(
+        variant_name,
+        other.variant_name,
+        "DataBase:: variant_name[i] don't match"
+    )
+
+    VECT_MATCH(
+        variant_sequence,
+        other.variant_sequence,
+        "DataBase:: variant_sequence[i] don't match"
+    )
+
+    VECT_MATCH(
+        variant_origin_date,
+        other.variant_origin_date,
+        "DataBase:: variant_origin_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        variant_parent_id,
+        other.variant_parent_id,
+        "DataBase:: variant_parent_id[i] don't match"
+    )
+
+    VECT_MATCH(
+        tool_name,
+        other.tool_name,
+        "DataBase:: tool_name[i] don't match"
+    )
+
+    VECT_MATCH(
+        tool_sequence,
+        other.tool_sequence,
+        "DataBase:: tool_sequence[i] don't match"
+    )
+
+    VECT_MATCH(
+        tool_origin_date,
+        other.tool_origin_date,
+        "DataBase:: tool_origin_date[i] don't match"
+    )
+
 
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    if (today_variant.size() != other.today_variant.size())
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_variant.size() != other.today_variant.size(),
+        "DataBase:: today_variant.size() don't match."
+    )
     
     for (size_t i = 0u; i < today_variant.size(); ++i)
     {
-        VECT_MATCH(today_variant[i], other.today_variant[i]);
+        VECT_MATCH(
+            today_variant[i], other.today_variant[i],
+            "DataBase:: today_variant[i] don't match"
+            )
     }
 
     // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    if (today_tool.size() != other.today_tool.size())
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_tool.size() != other.today_tool.size(),
+        "DataBase:: today_tool.size() don't match."
+    )
     
     for (size_t i = 0u; i < today_tool.size(); ++i)
     {
-        VECT_MATCH(today_tool[i], other.today_tool[i]);
+        VECT_MATCH(
+            today_tool[i], other.today_tool[i],
+            "DataBase:: today_tool[i] don't match"
+            )
     }
 
     // {Susceptible, Infected, etc.}
-    VECT_MATCH(today_total, other.today_total);
+    VECT_MATCH(
+        today_total, other.today_total,
+        "DataBase:: today_total[i] don't match"
+        )
 
     // Totals
-    if (today_total_nvariants_active != other.today_total_nvariants_active)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_total_nvariants_active != other.today_total_nvariants_active,
+        "DataBase:: today_total_nvariants_active don't match."
+    )
     
-    if (sampling_freq != other.sampling_freq)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        sampling_freq != other.sampling_freq,
+        "DataBase:: sampling_freq don't match."
+    )
 
     // Variants history
-    VECT_MATCH(hist_variant_date, other.hist_variant_date);
-    VECT_MATCH(hist_variant_id, other.hist_variant_id);
-    VECT_MATCH(hist_variant_status, other.hist_variant_status);
-    VECT_MATCH(hist_variant_counts, other.hist_variant_counts);
+    VECT_MATCH(
+        hist_variant_date,
+        other.hist_variant_date,
+        "DataBase:: hist_variant_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_variant_id,
+        other.hist_variant_id,
+        "DataBase:: hist_variant_id[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_variant_status,
+        other.hist_variant_status,
+        "DataBase:: hist_variant_status[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_variant_counts,
+        other.hist_variant_counts,
+        "DataBase:: hist_variant_counts[i] don't match"
+    )
 
     // Tools history
-    VECT_MATCH(hist_tool_date, other.hist_tool_date);
-    VECT_MATCH(hist_tool_id, other.hist_tool_id);
-    VECT_MATCH(hist_tool_status, other.hist_tool_status);
-    VECT_MATCH(hist_tool_counts, other.hist_tool_counts);
+    VECT_MATCH(
+        hist_tool_date,
+        other.hist_tool_date,
+        "DataBase:: hist_tool_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_tool_id,
+        other.hist_tool_id,
+        "DataBase:: hist_tool_id[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_tool_status,
+        other.hist_tool_status,
+        "DataBase:: hist_tool_status[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_tool_counts,
+        other.hist_tool_counts,
+        "DataBase:: hist_tool_counts[i] don't match"
+    )
 
     // Overall hist
-    VECT_MATCH(hist_total_date, other.hist_total_date);
-    VECT_MATCH(hist_total_nvariants_active, other.hist_total_nvariants_active);
-    VECT_MATCH(hist_total_status, other.hist_total_status);
-    VECT_MATCH(hist_total_counts, other.hist_total_counts);
-    VECT_MATCH(hist_transition_matrix, other.hist_transition_matrix);
+    VECT_MATCH(
+        hist_total_date,
+        other.hist_total_date,
+        "DataBase:: hist_total_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_total_nvariants_active,
+        other.hist_total_nvariants_active,
+        "DataBase:: hist_total_nvariants_active[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_total_status,
+        other.hist_total_status,
+        "DataBase:: hist_total_status[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_total_counts,
+        other.hist_total_counts,
+        "DataBase:: hist_total_counts[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_transition_matrix,
+        other.hist_transition_matrix,
+        "DataBase:: hist_transition_matrix[i] don't match"
+    )
 
     // Transmission network
-    VECT_MATCH(transmission_date, other.transmission_date);                 ///< Date of the transmission event
-    VECT_MATCH(transmission_source, other.transmission_source);               ///< Id of the source
-    VECT_MATCH(transmission_target, other.transmission_target);               ///< Id of the target
-    VECT_MATCH(transmission_variant, other.transmission_variant);              ///< Id of the variant
-    VECT_MATCH(transmission_source_exposure_date, other.transmission_source_exposure_date); ///< Date when the source acquired the variant
+    VECT_MATCH( ///< Date of the transmission eve
+        transmission_date,
+        other.transmission_date,
+        "DataBase:: transmission_date[i] don't match"
+    )
 
-    VECT_MATCH(transition_matrix, other.transition_matrix);
+    VECT_MATCH( ///< Id of the sour
+        transmission_source,
+        other.transmission_source,
+        "DataBase:: transmission_source[i] don't match"
+    )
+
+    VECT_MATCH( ///< Id of the targ
+        transmission_target,
+        other.transmission_target,
+        "DataBase:: transmission_target[i] don't match"
+    )
+
+    VECT_MATCH( ///< Id of the varia
+        transmission_variant,
+        other.transmission_variant,
+        "DataBase:: transmission_variant[i] don't match"
+    )
+
+    VECT_MATCH( ///< Date when the source acquired the varia
+        transmission_source_exposure_date,
+        other.transmission_source_exposure_date,
+        "DataBase:: transmission_source_exposure_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        transition_matrix,
+        other.transition_matrix,
+        "DataBase:: transition_matrix[i] don't match"
+    )
 
     return true;
 
@@ -5173,7 +5460,7 @@ private:
     std::exponential_distribution<>  rexpd       = std::exponential_distribution<>();
 
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
-    epiworld_double rewire_prop;
+    epiworld_double rewire_prop = 0.0;
         
     std::map<std::string, epiworld_double > parameters;
     epiworld_fast_uint ndays;
@@ -6094,6 +6381,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // prevalence_entity(model.prevalence_entity),
     // prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
     // entities_dist_funs(model.entities_dist_funs),
+    rewire_fun(model.rewire_fun),
+    rewire_prop(model.rewire_prop),
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
@@ -6250,6 +6539,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     // prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
     // entities_dist_funs = m.entities_dist_funs;
     
+    rewire_fun  = m.rewire_fun;
+    rewire_prop = m.rewire_prop;
+
     parameters = m.parameters;
     ndays      = m.ndays;
     pb         = m.pb;
@@ -7264,17 +7556,14 @@ inline void Model<TSeq>::run_multiple(
             #pragma omp master 
             {
                 this->print();
-                
-                // The output should be consistent
-                std::vector<int> _dates0_, _dates1_, _val0_, _val1_;
-                db.get_hist_total(&_dates0_, nullptr, &_val0_);
 
                 for (auto & m: these)
                 {
 
-                    m->get_db().get_hist_total(&_dates1_, nullptr, &_val1_);
-                    m->print();
-                    EPI_DEBUG_VECTOR_MATCH_INT(_val0_, _val1_, "consistent outputs\n");
+                    EPI_DEBUG_FAIL_AT_TRUE(
+                        db != m->get_db(),
+                        "Databases master and child don't match"
+                    )
                     
                 }
 
@@ -8286,28 +8575,25 @@ inline std::string Model<TSeq>::get_name() const
     return this->name;
 }
 
-#define VECT_MATCH(a, b) \
-    if (a.size() != b.size()) \
-        return false; \
+#define VECT_MATCH(a, b, c) \
+    EPI_DEBUG_FAIL_AT_TRUE(a.size() != b.size(), c) \
     for (size_t __i = 0u; __i < a.size(); ++__i) \
     {\
-        if (a[__i] != b[__i]) \
-            return false; \
+        EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
     }
 
 template<typename TSeq>
 inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
 {
-    if (name != other.name)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(name != other.name, "names don't match")
+    EPI_DEBUG_FAIL_AT_TRUE(db != other.db, "database don't match")
 
-    if (db != other.db)
-        return false;
+    VECT_MATCH(population, other.population, "population doesn't match")
 
-    VECT_MATCH(population, other.population);
-
-    if (using_backup != other.using_backup)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        using_backup != other.using_backup,
+        "Model:: using_backup don't match"
+        )
     
     if ((population_backup != nullptr) & (other.population_backup != nullptr))
     {
@@ -8324,104 +8610,168 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         return false;
     }
 
-    if (population_data != other.population_data)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        population_data != other.population_data,
+        "Model:: population_data don't match"
+    )
 
-    if (population_data_n_features != other.population_data_n_features)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        population_data_n_features != other.population_data_n_features,
+        "Model:: population_data_n_features don't match"
+    )
 
-    if (directed != other.directed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        directed != other.directed,
+        "Model:: directed don't match"
+    )
     
     // Viruses -----------------------------------------------------------------
-    if (viruses.size() != other.viruses.size())
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        viruses.size() != other.viruses.size(),
+        "Model:: viruses.size() don't match"
+        )
 
     for (size_t i = 0u; i < viruses.size(); ++i)
     {
-        if (*viruses[i] != *other.viruses[i])
-            return false;
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *viruses[i] != *other.viruses[i],
+            "Model:: *viruses[i] don't match"
+        )
+            
     }
 
-    VECT_MATCH(prevalence_virus, other.prevalence_virus);
-    VECT_MATCH(prevalence_virus_as_proportion, other.prevalence_virus_as_proportion);
+    VECT_MATCH(
+        prevalence_virus,
+        other.prevalence_virus,
+        "virus prevalence don't match"
+    )
+
+    VECT_MATCH(
+        prevalence_virus_as_proportion,
+        other.prevalence_virus_as_proportion,
+        "virus prevalence as prop don't match"
+    )
     
     // Tools -------------------------------------------------------------------
-    if (tools.size() != other.tools.size())
-        return false;
-
+    EPI_DEBUG_FAIL_AT_TRUE(
+        tools.size() != other.tools.size(),
+        "Model:: tools.size() don't match"
+        )
+        
     for (size_t i = 0u; i < tools.size(); ++i)
     {
-        if (*tools[i] != *other.tools[i])
-            return false;
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *tools[i] != *other.tools[i],
+            "Model:: *tools[i] don't match"
+        )
+            
     }
 
-    VECT_MATCH(prevalence_tool, other.prevalence_tool);
-    VECT_MATCH(prevalence_tool_as_proportion, other.prevalence_tool_as_proportion);
+    VECT_MATCH(
+        prevalence_tool, 
+        other.prevalence_tool, 
+        "tools prevalence don't match"
+    )
+
+    VECT_MATCH(
+        prevalence_tool_as_proportion, 
+        other.prevalence_tool_as_proportion, 
+        "tools as prop don't match"
+    )
     
-    VECT_MATCH(entities, other.entities);
+    VECT_MATCH(
+        entities,
+        other.entities,
+        "entities don't match"
+    )
 
     if ((entities_backup != nullptr) & (other.entities_backup != nullptr))
     {
         
         for (size_t i = 0u; i < entities_backup->size(); ++i)
         {
-            if ((*entities_backup)[i] != (*other.entities_backup)[i])
-                return false;
+
+            EPI_DEBUG_FAIL_AT_TRUE(
+                (*entities_backup)[i] != (*other.entities_backup)[i],
+                "Model:: (*entities_backup)[i] don't match"
+            )
+
         }
         
     } else if ((entities_backup == nullptr) & (other.entities_backup != nullptr)) {
-        return false;
+        EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
     } else if ((entities_backup != nullptr) & (other.entities_backup == nullptr))
     {
-        return false;
+        EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
     }
 
-    if (rewire_prop != other.rewire_prop)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        rewire_prop != other.rewire_prop,
+        "Model:: rewire_prop don't match"
+    )
         
-    if (parameters.size() != other.parameters.size())
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        parameters.size() != other.parameters.size(),
+        "Model:: () don't match"
+    )
 
-    if (parameters != other.parameters)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        parameters != other.parameters,
+        "Model:: parameters don't match"
+    )
 
-    if (ndays != other.ndays)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        ndays != other.ndays,
+        "Model:: ndays don't match"
+    )
     
-    VECT_MATCH(status_labels, other.status_labels);
+    VECT_MATCH(
+        status_labels,
+        other.status_labels,
+        "status labels don't match"
+    )
 
-    if (nstatus != other.nstatus)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        nstatus != other.nstatus,
+        "Model:: nstatus don't match"
+    )
     
-    if (verbose != other.verbose)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        verbose != other.verbose,
+        "Model:: verbose don't match"
+    )
 
-    if (initialized != other.initialized)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        initialized != other.initialized,
+        "Model:: initialized don't match"
+    )
 
-    if (current_date != other.current_date)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        current_date != other.current_date,
+        "Model:: current_date don't match"
+    )
 
-    VECT_MATCH(global_action_dates, other.global_action_dates);
+    VECT_MATCH(global_action_dates, other.global_action_dates, "global action dates don't match");
 
-    if (queue != other.queue)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue != other.queue,
+        "Model:: queue don't match"
+    )
+    
 
-    if (use_queuing != other.use_queuing)
-        return false;
-
+    EPI_DEBUG_FAIL_AT_TRUE(
+        use_queuing != other.use_queuing,
+        "Model:: use_queuing don't match"
+    )
+    
     return true;
 
 }
 
 #undef VECT_MATCH
-
 #undef DURCAST
-
 #undef CASES_PAR
 #undef CASE_PAR
-
 #undef CHECK_INIT
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -9258,35 +9608,56 @@ inline bool Virus<std::vector<int>>::operator==(
     ) const
 {
     
-    if (baseline_sequence->size() != other.baseline_sequence->size())
-        return false;
+
+    EPI_DEBUG_FAIL_AT_TRUE(
+        baseline_sequence->size() != other.baseline_sequence->size(),
+        "Virus:: baseline_sequence don't match"
+        )
 
     for (size_t i = 0u; i < baseline_sequence->size(); ++i)
     {
-        if (baseline_sequence->operator[](i) != other.baseline_sequence->operator[](i))
-            return false;
+
+        EPI_DEBUG_FAIL_AT_TRUE(
+            baseline_sequence->operator[](i) != other.baseline_sequence->operator[](i),
+            "Virus:: baseline_sequence[i] don't match"
+            )
+
     }
 
-    if (virus_name != other.virus_name)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        virus_name != other.virus_name,
+        "Virus:: virus_name don't match"
+        )
     
-    if (status_init != other.status_init)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_init != other.status_init,
+        "Virus:: status_init don't match"
+        )
 
-    if (status_post != other.status_post)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_post != other.status_post,
+        "Virus:: status_post don't match"
+        )
 
-    if (status_removed != other.status_removed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_removed != other.status_removed,
+        "Virus:: status_removed don't match"
+        )
 
-    if (queue_init != other.queue_init)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_init != other.queue_init,
+        "Virus:: queue_init don't match"
+        )
 
-    if (queue_post != other.queue_post)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_post != other.queue_post,
+        "Virus:: queue_post don't match"
+        )
 
-    if (queue_removed != other.queue_removed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_removed != other.queue_removed,
+        "Virus:: queue_removed don't match"
+        )
 
     return true;
 
@@ -9295,29 +9666,46 @@ inline bool Virus<std::vector<int>>::operator==(
 template<typename TSeq>
 inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 {
-    if (*baseline_sequence != *other.baseline_sequence)
-        return false;
-
-    if (virus_name != other.virus_name)
-        return false;
     
-    if (status_init != other.status_init)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        *baseline_sequence != *other.baseline_sequence,
+        "Virus:: baseline_sequence don't match"
+    )
 
-    if (status_post != other.status_post)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        virus_name != other.virus_name,
+        "Virus:: virus_name don't match"
+    )
+    
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_init != other.status_init,
+        "Virus:: status_init don't match"
+    )
 
-    if (status_removed != other.status_removed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_post != other.status_post,
+        "Virus:: status_post don't match"
+    )
 
-    if (queue_init != other.queue_init)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_removed != other.status_removed,
+        "Virus:: status_removed don't match"
+    )
 
-    if (queue_post != other.queue_post)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_init != other.queue_init,
+        "Virus:: queue_init don't match"
+    )
 
-    if (queue_removed != other.queue_removed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_post != other.queue_post,
+        "Virus:: queue_post don't match"
+    )
+
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue_removed != other.queue_removed,
+        "Virus:: queue_removed don't match"
+    )
 
     return true;
 
@@ -12758,49 +13146,78 @@ template<typename TSeq>
 inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 {
 
-    if (n_neighbors != other.n_neighbors)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        n_neighbors != other.n_neighbors,
+        "Agent:: n_eighbors don't match"
+        )
 
+    
     for (size_t i = 0u; i < n_neighbors; ++i)
     {
-        if (neighbors[i] != other.neighbors[i])
-            return false;
+        EPI_DEBUG_FAIL_AT_TRUE(
+            neighbors[i] != other.neighbors[i],
+            "Agent:: neighbor[i] don't match"
+        )
     }
     
-    if (n_entities != other.n_entities)
-        return false;
-
+    EPI_DEBUG_FAIL_AT_TRUE(
+        n_entities != other.n_entities,
+        "Agent:: n_entities don't match"
+        )
+    
+    
     for (size_t i = 0u; i < n_entities; ++i)
     {
-        if (entities[i] != other.entities[i])
-            return false;
+        EPI_DEBUG_FAIL_AT_TRUE(
+            entities[i] != other.entities[i],
+            "Agent:: entities[i] don't match"
+        )
     }
 
-    if (status != other.status)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status != other.status,
+        "Agent:: status don't match"
+        )
+        
 
-    if (status_prev != other.status_prev)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        status_prev != other.status_prev,
+        "Agent:: status_prev don't match"
+        )
+        
 
-    if (status_last_changed != other.status_last_changed) ///< Last time the agent was updated.
-        return false;
+    // EPI_DEBUG_FAIL_AT_TRUE(
+    //     status_last_changed != other.status_last_changed,
+    //     "Agent:: status_last_changed don't match"
+    //     ) ///< Last time the agent was updated.
+        
     
-    if (n_viruses != other.n_viruses)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        n_viruses != other.n_viruses,
+        "Agent:: n_viruses don't match"
+        )
+        
 
     for (size_t i = 0u; i < n_viruses; ++i)
     {
-        if (viruses[i] != other.viruses[i])
-            return false;
+        
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *viruses[i] != *other.viruses[i],
+            "Agent:: viruses[i] don't match"
+        )
+         
     }
 
-    if (n_tools != other.n_tools)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(n_tools != other.n_tools, "Agent:: n_tools don't match")
 
     for (size_t i = 0u; i < n_tools; ++i)
     {
-        if (tools[i] != other.tools[i])
-            return false;
+        
+        EPI_DEBUG_FAIL_AT_TRUE(
+            tools[i] != other.tools[i],
+            "Agent:: tools[i] don't match"
+        )
+         
     }   
     
     return true;

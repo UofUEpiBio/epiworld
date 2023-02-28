@@ -189,7 +189,7 @@ public:
     #define EPI_DEBUG_PRINTF printf_epiworld
 
     #define EPI_DEBUG_ERROR(etype, msg) \
-        (etype)("[[epi-debug]] (error)" + std::string(msg));
+        (etype)("[[epi-debug]] (error) " + std::string(msg));
 
     #define EPI_DEBUG_NOTIFY_ACTIVE() \
         EPI_DEBUG_PRINTF("DEBUGGING ON (compiled with EPI_DEBUG defined)%s\n", "");
@@ -219,14 +219,14 @@ public:
 
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c) \
         if (a.size() != b.size())  {\
-            EPI_DEBUG_PRINTF("In %s", std::string(c).c_str()); \
+            EPI_DEBUG_PRINTF("In '%s'", std::string(c).c_str()); \
             EPI_DEBUG_PRINTF("Size of vector a: %lu\n", (a).size());\
             EPI_DEBUG_PRINTF("Size of vector b: %lu\n", (b).size());\
             throw EPI_DEBUG_ERROR(std::length_error, "The vectors do not match size."); \
         }\
         for (int _i = 0; _i < static_cast<int>(a.size()); ++_i) \
             if (a[_i] != b[_i]) {\
-                EPI_DEBUG_PRINTF("In %s", std::string(c).c_str()); \
+                EPI_DEBUG_PRINTF("In '%s'", std::string(c).c_str()); \
                 EPI_DEBUG_PRINTF("Iterating the last 5 values%s:\n", ""); \
                 for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
                 { \
@@ -239,7 +239,11 @@ public:
                 throw EPI_DEBUG_ERROR(std::logic_error, "The vectors do not match."); \
             }
 
-
+    #define EPI_DEBUG_FAIL_AT_TRUE(a,b) \
+        if (a) \
+        {\
+            throw EPI_DEBUG_ERROR(std::logic_error, b); \
+        } 
 #else
     #define EPI_DEBUG_PRINTF(fmt, ...)
     #define EPI_DEBUG_ERROR(fmt, ...)
@@ -248,6 +252,9 @@ public:
     #define EPI_DEBUG_SUM_DBL(vect, num)
     #define EPI_DEBUG_SUM_INT(vect, num)
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c)
+    #define EPI_DEBUG_FAIL_AT_TRUE(a, b) \
+        if (a) \
+            return false;
 #endif
 
 #endif

@@ -402,6 +402,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // prevalence_entity(model.prevalence_entity),
     // prevalence_entity_as_proportion(model.prevalence_entity_as_proportion),
     // entities_dist_funs(model.entities_dist_funs),
+    rewire_fun(model.rewire_fun),
+    rewire_prop(model.rewire_prop),
     parameters(model.parameters),
     ndays(model.ndays),
     pb(model.pb),
@@ -558,6 +560,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     // prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
     // entities_dist_funs = m.entities_dist_funs;
     
+    rewire_fun  = m.rewire_fun;
+    rewire_prop = m.rewire_prop;
+
     parameters = m.parameters;
     ndays      = m.ndays;
     pb         = m.pb;
@@ -1572,17 +1577,14 @@ inline void Model<TSeq>::run_multiple(
             #pragma omp master 
             {
                 this->print();
-                
-                // The output should be consistent
-                std::vector<int> _dates0_, _dates1_, _val0_, _val1_;
-                db.get_hist_total(&_dates0_, nullptr, &_val0_);
 
                 for (auto & m: these)
                 {
 
-                    m->get_db().get_hist_total(&_dates1_, nullptr, &_val1_);
-                    m->print();
-                    EPI_DEBUG_VECTOR_MATCH_INT(_val0_, _val1_, "consistent outputs\n");
+                    EPI_DEBUG_FAIL_AT_TRUE(
+                        db != m->get_db(),
+                        "Databases master and child don't match"
+                    )
                     
                 }
 
@@ -1667,21 +1669,6 @@ inline void Model<TSeq>::update_status() {
         for (auto & p: population)
             if (queue[++i] > 0)
             {
-
-                // #ifdef EPI_DEBUG
-                // // Checking that queue of agent i is all active
-                // for (auto n_idx : p.neighbors)
-                // {
-                //     if ((queue[n_idx] == 0) && (p.n_viruses > 0))
-                //     {
-                //         printf_epiworld(
-                //             "[epi-debug] Queue in agent %i is zero.\n",
-                //             static_cast<int>(n_idx)
-                //             );
-                //     }
-                // }
-                // #endif
-
                 if (status_fun[p.status])
                     status_fun[p.status](&p, this);
             }
@@ -2308,28 +2295,25 @@ inline std::string Model<TSeq>::get_name() const
     return this->name;
 }
 
-#define VECT_MATCH(a, b) \
-    if (a.size() != b.size()) \
-        return false; \
+#define VECT_MATCH(a, b, c) \
+    EPI_DEBUG_FAIL_AT_TRUE(a.size() != b.size(), c) \
     for (size_t __i = 0u; __i < a.size(); ++__i) \
     {\
-        if (a[__i] != b[__i]) \
-            return false; \
+        EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
     }
 
 template<typename TSeq>
 inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
 {
-    if (name != other.name)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(name != other.name, "names don't match")
+    EPI_DEBUG_FAIL_AT_TRUE(db != other.db, "database don't match")
 
-    if (db != other.db)
-        return false;
+    VECT_MATCH(population, other.population, "population doesn't match")
 
-    VECT_MATCH(population, other.population);
-
-    if (using_backup != other.using_backup)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        using_backup != other.using_backup,
+        "Model:: using_backup don't match"
+        )
     
     if ((population_backup != nullptr) & (other.population_backup != nullptr))
     {
@@ -2346,103 +2330,167 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         return false;
     }
 
-    if (population_data != other.population_data)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        population_data != other.population_data,
+        "Model:: population_data don't match"
+    )
 
-    if (population_data_n_features != other.population_data_n_features)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        population_data_n_features != other.population_data_n_features,
+        "Model:: population_data_n_features don't match"
+    )
 
-    if (directed != other.directed)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        directed != other.directed,
+        "Model:: directed don't match"
+    )
     
     // Viruses -----------------------------------------------------------------
-    if (viruses.size() != other.viruses.size())
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        viruses.size() != other.viruses.size(),
+        "Model:: viruses.size() don't match"
+        )
 
     for (size_t i = 0u; i < viruses.size(); ++i)
     {
-        if (*viruses[i] != *other.viruses[i])
-            return false;
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *viruses[i] != *other.viruses[i],
+            "Model:: *viruses[i] don't match"
+        )
+            
     }
 
-    VECT_MATCH(prevalence_virus, other.prevalence_virus);
-    VECT_MATCH(prevalence_virus_as_proportion, other.prevalence_virus_as_proportion);
+    VECT_MATCH(
+        prevalence_virus,
+        other.prevalence_virus,
+        "virus prevalence don't match"
+    )
+
+    VECT_MATCH(
+        prevalence_virus_as_proportion,
+        other.prevalence_virus_as_proportion,
+        "virus prevalence as prop don't match"
+    )
     
     // Tools -------------------------------------------------------------------
-    if (tools.size() != other.tools.size())
-        return false;
-
+    EPI_DEBUG_FAIL_AT_TRUE(
+        tools.size() != other.tools.size(),
+        "Model:: tools.size() don't match"
+        )
+        
     for (size_t i = 0u; i < tools.size(); ++i)
     {
-        if (*tools[i] != *other.tools[i])
-            return false;
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *tools[i] != *other.tools[i],
+            "Model:: *tools[i] don't match"
+        )
+            
     }
 
-    VECT_MATCH(prevalence_tool, other.prevalence_tool);
-    VECT_MATCH(prevalence_tool_as_proportion, other.prevalence_tool_as_proportion);
+    VECT_MATCH(
+        prevalence_tool, 
+        other.prevalence_tool, 
+        "tools prevalence don't match"
+    )
+
+    VECT_MATCH(
+        prevalence_tool_as_proportion, 
+        other.prevalence_tool_as_proportion, 
+        "tools as prop don't match"
+    )
     
-    VECT_MATCH(entities, other.entities);
+    VECT_MATCH(
+        entities,
+        other.entities,
+        "entities don't match"
+    )
 
     if ((entities_backup != nullptr) & (other.entities_backup != nullptr))
     {
         
         for (size_t i = 0u; i < entities_backup->size(); ++i)
         {
-            if ((*entities_backup)[i] != (*other.entities_backup)[i])
-                return false;
+
+            EPI_DEBUG_FAIL_AT_TRUE(
+                (*entities_backup)[i] != (*other.entities_backup)[i],
+                "Model:: (*entities_backup)[i] don't match"
+            )
+
         }
         
     } else if ((entities_backup == nullptr) & (other.entities_backup != nullptr)) {
-        return false;
+        EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
     } else if ((entities_backup != nullptr) & (other.entities_backup == nullptr))
     {
-        return false;
+        EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
     }
 
-    if (rewire_prop != other.rewire_prop)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        rewire_prop != other.rewire_prop,
+        "Model:: rewire_prop don't match"
+    )
         
-    if (parameters.size() != other.parameters.size())
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        parameters.size() != other.parameters.size(),
+        "Model:: () don't match"
+    )
 
-    if (parameters != other.parameters)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        parameters != other.parameters,
+        "Model:: parameters don't match"
+    )
 
-    if (ndays != other.ndays)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        ndays != other.ndays,
+        "Model:: ndays don't match"
+    )
     
-    VECT_MATCH(status_labels, other.status_labels);
+    VECT_MATCH(
+        status_labels,
+        other.status_labels,
+        "status labels don't match"
+    )
 
-    if (nstatus != other.nstatus)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        nstatus != other.nstatus,
+        "Model:: nstatus don't match"
+    )
     
-    if (verbose != other.verbose)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        verbose != other.verbose,
+        "Model:: verbose don't match"
+    )
 
-    if (initialized != other.initialized)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        initialized != other.initialized,
+        "Model:: initialized don't match"
+    )
 
-    if (current_date != other.current_date)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        current_date != other.current_date,
+        "Model:: current_date don't match"
+    )
 
-    VECT_MATCH(global_action_dates, other.global_action_dates);
+    VECT_MATCH(global_action_dates, other.global_action_dates, "global action dates don't match");
 
-    if (queue != other.queue)
-        return false;
+    EPI_DEBUG_FAIL_AT_TRUE(
+        queue != other.queue,
+        "Model:: queue don't match"
+    )
+    
 
-    if (use_queuing != other.use_queuing)
-        return false;
-
+    EPI_DEBUG_FAIL_AT_TRUE(
+        use_queuing != other.use_queuing,
+        "Model:: use_queuing don't match"
+    )
+    
     return true;
 
 }
 
 #undef VECT_MATCH
-
 #undef DURCAST
-
 #undef CASES_PAR
 #undef CASE_PAR
-
 #undef CHECK_INIT
 #endif
