@@ -3892,44 +3892,6 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
     )
 
 
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_variant.size() != other.today_variant.size(),
-        "DataBase:: today_variant don't match."
-        )
-    
-    for (size_t i = 0u; i < today_variant.size(); ++i)
-    {
-        VECT_MATCH(
-            today_variant[i], other.today_variant[i],
-            "DataBase:: today_variant[i] don't match"
-            )
-    }
-
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    if (today_tool.size() != other.today_tool.size())
-        return false;
-    
-    for (size_t i = 0u; i < today_tool.size(); ++i)
-    {
-        VECT_MATCH(
-            today_tool[i], other.today_tool[i],
-            "DataBase:: today_tool[i] don't match"
-            )
-    }
-
-    // {Susceptible, Infected, etc.}
-    VECT_MATCH(
-        today_total, other.today_total,
-        "DataBase:: today_total don't match"
-        )
-
-    // Totals
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_total_nvariants_active != other.today_total_nvariants_active,
-        "DataBase:: today_total_nvariants_active don't match."
-        )
-    
     EPI_DEBUG_FAIL_AT_TRUE(
         sampling_freq != other.sampling_freq,
         "DataBase:: sampling_freq don't match."
@@ -4014,6 +3976,44 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
         hist_transition_matrix,
         other.hist_transition_matrix,
         "DataBase:: hist_transition_matrix[i] don't match"
+        )
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_variant.size() != other.today_variant.size(),
+        "DataBase:: today_variant don't match."
+        )
+    
+    for (size_t i = 0u; i < today_variant.size(); ++i)
+    {
+        VECT_MATCH(
+            today_variant[i], other.today_variant[i],
+            "DataBase:: today_variant[i] don't match"
+            )
+    }
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    if (today_tool.size() != other.today_tool.size())
+        return false;
+    
+    for (size_t i = 0u; i < today_tool.size(); ++i)
+    {
+        VECT_MATCH(
+            today_tool[i], other.today_tool[i],
+            "DataBase:: today_tool[i] don't match"
+            )
+    }
+
+    // {Susceptible, Infected, etc.}
+    VECT_MATCH(
+        today_total, other.today_total,
+        "DataBase:: today_total don't match"
+        )
+
+    // Totals
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_total_nvariants_active != other.today_total_nvariants_active,
+        "DataBase:: today_total_nvariants_active don't match."
         )
 
     // Transmission network
@@ -4104,46 +4104,6 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
         "DataBase:: tool_origin_date[i] don't match"
     )
 
-
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_variant.size() != other.today_variant.size(),
-        "DataBase:: today_variant.size() don't match."
-    )
-    
-    for (size_t i = 0u; i < today_variant.size(); ++i)
-    {
-        VECT_MATCH(
-            today_variant[i], other.today_variant[i],
-            "DataBase:: today_variant[i] don't match"
-            )
-    }
-
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_tool.size() != other.today_tool.size(),
-        "DataBase:: today_tool.size() don't match."
-    )
-    
-    for (size_t i = 0u; i < today_tool.size(); ++i)
-    {
-        VECT_MATCH(
-            today_tool[i], other.today_tool[i],
-            "DataBase:: today_tool[i] don't match"
-            )
-    }
-
-    // {Susceptible, Infected, etc.}
-    VECT_MATCH(
-        today_total, other.today_total,
-        "DataBase:: today_total[i] don't match"
-        )
-
-    // Totals
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_total_nvariants_active != other.today_total_nvariants_active,
-        "DataBase:: today_total_nvariants_active don't match."
-    )
     
     EPI_DEBUG_FAIL_AT_TRUE(
         sampling_freq != other.sampling_freq,
@@ -4229,6 +4189,46 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
         hist_transition_matrix,
         other.hist_transition_matrix,
         "DataBase:: hist_transition_matrix[i] don't match"
+    )
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_variant.size() != other.today_variant.size(),
+        "DataBase:: today_variant.size() don't match."
+    )
+    
+    for (size_t i = 0u; i < today_variant.size(); ++i)
+    {
+        VECT_MATCH(
+            today_variant[i], other.today_variant[i],
+            "DataBase:: today_variant[i] don't match"
+            )
+    }
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_tool.size() != other.today_tool.size(),
+        "DataBase:: today_tool.size() don't match."
+    )
+    
+    for (size_t i = 0u; i < today_tool.size(); ++i)
+    {
+        VECT_MATCH(
+            today_tool[i], other.today_tool[i],
+            "DataBase:: today_tool[i] don't match"
+            )
+    }
+
+    // {Susceptible, Infected, etc.}
+    VECT_MATCH(
+        today_total, other.today_total,
+        "DataBase:: today_total[i] don't match"
+        )
+
+    // Totals
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_total_nvariants_active != other.today_total_nvariants_active,
+        "DataBase:: today_total_nvariants_active don't match."
     )
 
     // Transmission network
@@ -7433,6 +7433,15 @@ inline void Model<TSeq>::run_multiple(
 
     // Seeds will be reproducible by default
     std::vector< size_t > seeds_n(nexperiments);
+    #ifdef EPI_DEBUG
+    std::fill(
+        seeds_n.begin(),
+        seeds_n.end(),
+        std::floor(
+            runif() * static_cast<double>(std::numeric_limits<size_t>::max())
+        )
+        );
+    #else
     for (auto & s : seeds_n)
     {
         s = static_cast<size_t>(
@@ -7441,6 +7450,7 @@ inline void Model<TSeq>::run_multiple(
                 )
         );
     }
+    #endif
 
     EPI_DEBUG_NOTIFY_ACTIVE()
 
@@ -7460,7 +7470,7 @@ inline void Model<TSeq>::run_multiple(
     for (auto & other : these)
     {
         if (*this != *other)
-            throw std::logic_error("The copy does not match.");
+            throw std::logic_error("Model:: The copies of the model don't match.");
     }
     #endif
 
@@ -7539,7 +7549,7 @@ inline void Model<TSeq>::run_multiple(
             } else {
 
                 // Initializing the seed
-                these[iam - 1]->seed(seeds_n[nreplicates_csum[n-1] + n]);
+                these[iam - 1]->seed(seeds_n[nreplicates_csum[iam] + n]);
 
                 these[iam - 1]->run();
 
@@ -7562,7 +7572,7 @@ inline void Model<TSeq>::run_multiple(
 
                     EPI_DEBUG_FAIL_AT_TRUE(
                         db != m->get_db(),
-                        "Databases master and child don't match"
+                        "Model:: Databases master and child don't match"
                     )
                     
                 }
@@ -7572,12 +7582,30 @@ inline void Model<TSeq>::run_multiple(
 
             if (iam == 0) 
             {
-                if ((n < (nreplicates[iam] - 1u)) && reset)
+                if (reset)
                     this->reset();
             } else {
-                if ((n < (nreplicates[iam] - 1u)) && reset)
+                if (reset)
                     these[iam - 1]->reset();
             }
+
+            #ifdef EPI_DEBUG
+            #pragma omp barrier
+            #pragma omp master 
+            {
+
+                for (auto & m: these)
+                {
+
+                    EPI_DEBUG_FAIL_AT_TRUE(
+                        *this != *m,
+                        "Model:: Model objects should match after reset"
+                    )
+                    
+                }
+
+            }
+            #endif
         
         }
     }
@@ -7619,7 +7647,7 @@ inline void Model<TSeq>::run_multiple(
         if (fun)
             fun(n, this);
 
-        if ((n < (nexperiments - 1u)) && reset)
+        if (reset)
             this->reset();
 
         if (verbose)
@@ -7648,21 +7676,6 @@ inline void Model<TSeq>::update_status() {
         for (auto & p: population)
             if (queue[++i] > 0)
             {
-
-                // #ifdef EPI_DEBUG
-                // // Checking that queue of agent i is all active
-                // for (auto n_idx : p.neighbors)
-                // {
-                //     if ((queue[n_idx] == 0) && (p.n_viruses > 0))
-                //     {
-                //         printf_epiworld(
-                //             "[epi-debug] Queue in agent %i is zero.\n",
-                //             static_cast<int>(n_idx)
-                //             );
-                //     }
-                // }
-                // #endif
-
                 if (status_fun[p.status])
                     status_fun[p.status](&p, this);
             }
@@ -7868,16 +7881,43 @@ inline void Model<TSeq>::reset() {
     pb = Progress(ndays, 80);
 
     if (population_backup != nullptr)
+    {
         population = *this->population_backup;
-    else
+
+        #ifdef EPI_DEBUG
+        for (size_t i = 0; i < population.size(); ++i)
+        {
+
+            if (population[i] != (*population_backup)[i])
+                throw std::logic_error("Model::reset population doesn't match.");
+
+        }
+        #endif
+
+    } else
         for (auto & p : population)
             p.reset();
         
     if (entities_backup != nullptr)
+    {
         entities = *this->entities_backup;
-    else 
+
+        #ifdef EPI_DEBUG
+        for (size_t i = 0; i < entities.size(); ++i)
+        {
+
+            if (entities[i] != (*entities_backup)[i])
+                throw std::logic_error("Model::reset entities don't match.");
+
+        }
+        #endif
+        
+    }
+    else
+    {
         for (auto & e: entities)
             e.reset();
+    }
     
     current_date = 0;
 

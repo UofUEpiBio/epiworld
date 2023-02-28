@@ -1454,6 +1454,15 @@ inline void Model<TSeq>::run_multiple(
 
     // Seeds will be reproducible by default
     std::vector< size_t > seeds_n(nexperiments);
+    #ifdef EPI_DEBUG
+    std::fill(
+        seeds_n.begin(),
+        seeds_n.end(),
+        std::floor(
+            runif() * static_cast<double>(std::numeric_limits<size_t>::max())
+        )
+        );
+    #else
     for (auto & s : seeds_n)
     {
         s = static_cast<size_t>(
@@ -1462,6 +1471,7 @@ inline void Model<TSeq>::run_multiple(
                 )
         );
     }
+    #endif
 
     EPI_DEBUG_NOTIFY_ACTIVE()
 
@@ -1481,7 +1491,7 @@ inline void Model<TSeq>::run_multiple(
     for (auto & other : these)
     {
         if (*this != *other)
-            throw std::logic_error("The copy does not match.");
+            throw std::logic_error("Model:: The copies of the model don't match.");
     }
     #endif
 
@@ -1560,7 +1570,7 @@ inline void Model<TSeq>::run_multiple(
             } else {
 
                 // Initializing the seed
-                these[iam - 1]->seed(seeds_n[nreplicates_csum[n-1] + n]);
+                these[iam - 1]->seed(seeds_n[nreplicates_csum[iam] + n]);
 
                 these[iam - 1]->run();
 
@@ -1583,7 +1593,7 @@ inline void Model<TSeq>::run_multiple(
 
                     EPI_DEBUG_FAIL_AT_TRUE(
                         db != m->get_db(),
-                        "Databases master and child don't match"
+                        "Model:: Databases master and child don't match"
                     )
                     
                 }
@@ -1593,12 +1603,30 @@ inline void Model<TSeq>::run_multiple(
 
             if (iam == 0) 
             {
-                if ((n < (nreplicates[iam] - 1u)) && reset)
+                if (reset)
                     this->reset();
             } else {
-                if ((n < (nreplicates[iam] - 1u)) && reset)
+                if (reset)
                     these[iam - 1]->reset();
             }
+
+            #ifdef EPI_DEBUG
+            #pragma omp barrier
+            #pragma omp master 
+            {
+
+                for (auto & m: these)
+                {
+
+                    EPI_DEBUG_FAIL_AT_TRUE(
+                        *this != *m,
+                        "Model:: Model objects should match after reset"
+                    )
+                    
+                }
+
+            }
+            #endif
         
         }
     }
@@ -1640,7 +1668,7 @@ inline void Model<TSeq>::run_multiple(
         if (fun)
             fun(n, this);
 
-        if ((n < (nexperiments - 1u)) && reset)
+        if (reset)
             this->reset();
 
         if (verbose)
@@ -1874,16 +1902,43 @@ inline void Model<TSeq>::reset() {
     pb = Progress(ndays, 80);
 
     if (population_backup != nullptr)
+    {
         population = *this->population_backup;
-    else
+
+        #ifdef EPI_DEBUG
+        for (size_t i = 0; i < population.size(); ++i)
+        {
+
+            if (population[i] != (*population_backup)[i])
+                throw std::logic_error("Model::reset population doesn't match.");
+
+        }
+        #endif
+
+    } else
         for (auto & p : population)
             p.reset();
         
     if (entities_backup != nullptr)
+    {
         entities = *this->entities_backup;
-    else 
+
+        #ifdef EPI_DEBUG
+        for (size_t i = 0; i < entities.size(); ++i)
+        {
+
+            if (entities[i] != (*entities_backup)[i])
+                throw std::logic_error("Model::reset entities don't match.");
+
+        }
+        #endif
+        
+    }
+    else
+    {
         for (auto & e: entities)
             e.reset();
+    }
     
     current_date = 0;
 

@@ -1027,44 +1027,6 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
     )
 
 
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_variant.size() != other.today_variant.size(),
-        "DataBase:: today_variant don't match."
-        )
-    
-    for (size_t i = 0u; i < today_variant.size(); ++i)
-    {
-        VECT_MATCH(
-            today_variant[i], other.today_variant[i],
-            "DataBase:: today_variant[i] don't match"
-            )
-    }
-
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    if (today_tool.size() != other.today_tool.size())
-        return false;
-    
-    for (size_t i = 0u; i < today_tool.size(); ++i)
-    {
-        VECT_MATCH(
-            today_tool[i], other.today_tool[i],
-            "DataBase:: today_tool[i] don't match"
-            )
-    }
-
-    // {Susceptible, Infected, etc.}
-    VECT_MATCH(
-        today_total, other.today_total,
-        "DataBase:: today_total don't match"
-        )
-
-    // Totals
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_total_nvariants_active != other.today_total_nvariants_active,
-        "DataBase:: today_total_nvariants_active don't match."
-        )
-    
     EPI_DEBUG_FAIL_AT_TRUE(
         sampling_freq != other.sampling_freq,
         "DataBase:: sampling_freq don't match."
@@ -1149,6 +1111,44 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
         hist_transition_matrix,
         other.hist_transition_matrix,
         "DataBase:: hist_transition_matrix[i] don't match"
+        )
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_variant.size() != other.today_variant.size(),
+        "DataBase:: today_variant don't match."
+        )
+    
+    for (size_t i = 0u; i < today_variant.size(); ++i)
+    {
+        VECT_MATCH(
+            today_variant[i], other.today_variant[i],
+            "DataBase:: today_variant[i] don't match"
+            )
+    }
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    if (today_tool.size() != other.today_tool.size())
+        return false;
+    
+    for (size_t i = 0u; i < today_tool.size(); ++i)
+    {
+        VECT_MATCH(
+            today_tool[i], other.today_tool[i],
+            "DataBase:: today_tool[i] don't match"
+            )
+    }
+
+    // {Susceptible, Infected, etc.}
+    VECT_MATCH(
+        today_total, other.today_total,
+        "DataBase:: today_total don't match"
+        )
+
+    // Totals
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_total_nvariants_active != other.today_total_nvariants_active,
+        "DataBase:: today_total_nvariants_active don't match."
         )
 
     // Transmission network
@@ -1239,46 +1239,6 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
         "DataBase:: tool_origin_date[i] don't match"
     )
 
-
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_variant.size() != other.today_variant.size(),
-        "DataBase:: today_variant.size() don't match."
-    )
-    
-    for (size_t i = 0u; i < today_variant.size(); ++i)
-    {
-        VECT_MATCH(
-            today_variant[i], other.today_variant[i],
-            "DataBase:: today_variant[i] don't match"
-            )
-    }
-
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_tool.size() != other.today_tool.size(),
-        "DataBase:: today_tool.size() don't match."
-    )
-    
-    for (size_t i = 0u; i < today_tool.size(); ++i)
-    {
-        VECT_MATCH(
-            today_tool[i], other.today_tool[i],
-            "DataBase:: today_tool[i] don't match"
-            )
-    }
-
-    // {Susceptible, Infected, etc.}
-    VECT_MATCH(
-        today_total, other.today_total,
-        "DataBase:: today_total[i] don't match"
-        )
-
-    // Totals
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_total_nvariants_active != other.today_total_nvariants_active,
-        "DataBase:: today_total_nvariants_active don't match."
-    )
     
     EPI_DEBUG_FAIL_AT_TRUE(
         sampling_freq != other.sampling_freq,
@@ -1364,6 +1324,46 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
         hist_transition_matrix,
         other.hist_transition_matrix,
         "DataBase:: hist_transition_matrix[i] don't match"
+    )
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_variant.size() != other.today_variant.size(),
+        "DataBase:: today_variant.size() don't match."
+    )
+    
+    for (size_t i = 0u; i < today_variant.size(); ++i)
+    {
+        VECT_MATCH(
+            today_variant[i], other.today_variant[i],
+            "DataBase:: today_variant[i] don't match"
+            )
+    }
+
+    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_tool.size() != other.today_tool.size(),
+        "DataBase:: today_tool.size() don't match."
+    )
+    
+    for (size_t i = 0u; i < today_tool.size(); ++i)
+    {
+        VECT_MATCH(
+            today_tool[i], other.today_tool[i],
+            "DataBase:: today_tool[i] don't match"
+            )
+    }
+
+    // {Susceptible, Infected, etc.}
+    VECT_MATCH(
+        today_total, other.today_total,
+        "DataBase:: today_total[i] don't match"
+        )
+
+    // Totals
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_total_nvariants_active != other.today_total_nvariants_active,
+        "DataBase:: today_total_nvariants_active don't match."
     )
 
     // Transmission network
