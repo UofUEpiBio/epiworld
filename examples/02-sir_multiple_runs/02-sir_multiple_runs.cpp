@@ -19,19 +19,16 @@ int main() {
         rgraph_smallworld(1000, 5, .01, false, sir)
     );
 
-    // Initializing and printing
-    sir.init(60, 123);
-    sir.print();
-
     // Running and checking the results
     std::vector< std::vector< int > > results(total_replicates);
     std::vector< std::string > labels;
     sir.set_backup();
     sir.verbose_off();
 
+    sir.seed(123);
     for (int r = 0; r < total_replicates; ++r)
     {
-        sir.run();
+        sir.run(60);
         sir.get_db().get_today_total(&labels, &results[r]);
         sir.reset();
         std::cout << "Replicate " << r << " done" << std::endl;

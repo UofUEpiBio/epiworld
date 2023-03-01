@@ -48,14 +48,20 @@ public:
     int tracked_ninfected = 0;
     int tracked_ninfected_next = 0;
 
-    void run();
+    void run(
+        epiworld_fast_uint ndays,
+        int seed = -1
+    );
 
     Model<TSeq> * clone_ptr();
 
 };
 
 template<typename TSeq>
-inline void ModelSEIRCONN<TSeq>::run()
+inline void ModelSEIRCONN<TSeq>::run(
+    epiworld_fast_uint ndays,
+    int seed
+)
 {
 
     tracked_agents_infected.clear();
@@ -65,7 +71,7 @@ inline void ModelSEIRCONN<TSeq>::run()
     tracked_ninfected = 0;
     tracked_ninfected_next = 0;
 
-    Model<TSeq>::run();
+    Model<TSeq>::run(ndays, seed);
 
 }
 

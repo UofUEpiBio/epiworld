@@ -36,15 +36,11 @@ int main(int argc, char* argv[]) {
     surveillance1.queuing_off();
     surveillance2.queuing_on();
 
-    // Initializing and printing
-    surveillance1.init(ndays, 123);
-    surveillance2.init(ndays, 123);
-
     // Running and checking the results
-    surveillance1.run();
+    surveillance1.run(ndays, 123);
     surveillance1.print();
 
-    surveillance2.run();
+    surveillance2.run(ndays, 123);
     surveillance2.print();
 
     return 0;

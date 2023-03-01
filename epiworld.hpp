@@ -5405,7 +5405,7 @@ private:
     std::vector< Agent<TSeq> > population = {};
 
     bool using_backup = true;
-    std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = nullptr;
+    std::vector< Agent<TSeq> > population_backup = {};
 
 
     /**
@@ -5449,7 +5449,7 @@ private:
     std::vector< ToolToAgentFun<TSeq> > tools_dist_funs = {};
 
     std::vector< Entity<TSeq> > entities = {}; 
-    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = nullptr;
+    std::vector< Entity<TSeq> > entities_backup = {};
 
     std::mt19937 engine;
     
@@ -5471,7 +5471,6 @@ private:
     epiworld_fast_uint nstatus = 0u;
     
     bool verbose     = true;
-    bool initialized = false;
     int current_date = 0;
 
     void dist_tools();
@@ -5695,13 +5694,17 @@ public:
      * 
      */
     ///@{
-    virtual void init(epiworld_fast_uint ndays, epiworld_fast_uint seed);
     void update_status();
     void mutate_variant();
     void next();
-    virtual void run(); ///< Runs the simulation (after initialization)
+    virtual void run(
+        epiworld_fast_uint ndays,
+        int seed = -1
+    ); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
+        epiworld_fast_uint ndays,
         epiworld_fast_uint nexperiments,
+        int seed_ = -1,
         std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
         bool reset = true,
         bool verbose = true,
@@ -5795,7 +5798,7 @@ public:
      * 
      */
     void reset();
-    void print() const;
+    void print(bool lite = false) const;
 
     Model<TSeq> && clone() const;
 
@@ -5980,8 +5983,7 @@ public:
 #ifndef EPIWORLD_MODEL_MEAT_HPP
 #define EPIWORLD_MODEL_MEAT_HPP
 
-#define CHECK_INIT() if (!initialized) \
-        throw std::logic_error("Model not initialized.");
+
 
 /**
  * @brief Function factory for saving model runs
@@ -6390,7 +6392,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     status_labels(model.status_labels),
     nstatus(model.nstatus),
     verbose(model.verbose),
-    initialized(model.initialized),
     current_date(model.current_date),
     global_action_functions(model.global_action_functions),
     global_action_dates(model.global_action_dates),
@@ -6405,28 +6406,24 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     for (auto & p : population)
         p.model = this;
 
-    if (population_backup != nullptr)
-        for (auto & p : *population_backup)
+    if (population_backup.size() != 0u)
+        for (auto & p : population_backup)
             p.model = this;
 
     for (auto & e : entities)
         e.model = this;
 
-    if (entities_backup != nullptr)
-        for (auto & e : *entities_backup)
+    if (entities_backup.size() != 0u)
+        for (auto & e : entities_backup)
             e.model = this;
 
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
     // of the population.
-    db.set_model(*this);
+    db.model = this;
 
     population_data = model.population_data;
     population_data_n_features = model.population_data_n_features;
-
-    // Figure out the queuing
-    if (use_queuing)
-        queue.set_model(this);
 
     // Finally, seeds are resetted automatically based on the original
     // engine
@@ -6480,7 +6477,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     status_labels(std::move(model.status_labels)),
     nstatus(model.nstatus),
     verbose(model.verbose),
-    initialized(model.initialized),
     current_date(std::move(model.current_date)),
     global_action_functions(std::move(model.global_action_functions)),
     global_action_dates(std::move(model.global_action_dates)),
@@ -6502,38 +6498,38 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 {
     name = m.name;
 
-    population = m.population;
+    population        = m.population;
     population_backup = m.population_backup;
 
     for (auto & p : population)
         p.model = this;
 
     if (population_backup != nullptr)
-        for (auto & p : *population_backup)
+        for (auto & p : population_backup)
             p.model = this;
 
     for (auto & e : entities)
         e.model = this;
 
     if (entities_backup != nullptr)
-        for (auto & e : *entities_backup)
+        for (auto & e : entities_backup)
             e.model = this;
 
     db   = m.db;
 
     directed = m.directed;
     
-    viruses  = m.viruses;
-    prevalence_virus = m.prevalence_virus;
+    viruses                        = m.viruses;
+    prevalence_virus               = m.prevalence_virus;
     prevalence_virus_as_proportion = m.prevalence_virus_as_proportion;
-    viruses_dist_funs = m.viruses_dist_funs;
+    viruses_dist_funs              = m.viruses_dist_funs;
 
-    tools = m.tools;
-    prevalence_tool = m.prevalence_tool;
+    tools                         = m.tools;
+    prevalence_tool               = m.prevalence_tool;
     prevalence_tool_as_proportion = m.prevalence_tool_as_proportion;
-    tools_dist_funs = m.tools_dist_funs;
+    tools_dist_funs               = m.tools_dist_funs;
     
-    entities = m.entities;
+    entities        = m.entities;
     entities_backup = m.entities_backup;
     // prevalence_entity = m.prevalence_entity;
     // prevalence_entity_as_proportion = m.prevalence_entity_as_proportion;
@@ -6546,27 +6542,25 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     ndays      = m.ndays;
     pb         = m.pb;
 
-    status_fun = m.status_fun;
+    status_fun    = m.status_fun;
     status_labels = m.status_labels;
-    nstatus = m.nstatus;
+    nstatus       = m.nstatus;
 
-    verbose = m.verbose;
-    initialized = m.initialized;
+    verbose     = m.verbose;
 
     current_date = m.current_date;
 
     global_action_functions = m.global_action_functions;
-    global_action_dates = m.global_action_dates;
+    global_action_dates     = m.global_action_dates;
 
-    queue = m.queue;
-    queue.set_model(this);
+    queue       = m.queue;
     use_queuing = m.use_queuing;
 
     // Making sure population is passed correctly
     // Pointing to the right place
     db.set_model(*this);
 
-    population_data = m.population_data;
+    population_data            = m.population_data;
     population_data_n_features = m.population_data_n_features;
 
     // Figure out the queuing
@@ -6689,75 +6683,6 @@ inline epiworld_double & Model<TSeq>::operator()(std::string pname) {
 template<typename TSeq>
 inline size_t Model<TSeq>::size() const {
     return population.size();
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::init(
-    epiworld_fast_uint ndays,
-    epiworld_fast_uint seed
-    ) {
-
-    if (initialized) 
-        throw std::logic_error("Model already initialized.");
-
-    if (nstatus == 0u)
-        throw std::logic_error(
-            std::string("No statuses registered in this model. ") +
-            std::string("At least one status should be included. See the function -Model::add_status()-")
-            );
-
-    // Setting up the number of steps
-    this->ndays = ndays;
-
-    engine.seed(seed);
-    array_double_tmp.resize(size()/2, 0.0);
-    array_virus_tmp.resize(size()/2);
-
-    initialized = true;
-
-    // Checking whether the proposed status in/out/removed
-    // are valid
-    epiworld_fast_int _init, _end, _removed;
-    int nstatus_int = static_cast<int>(nstatus);
-    for (auto & v : viruses)
-    {
-        v->get_status(&_init, &_end, &_removed);
-        
-        // Negative unspecified status
-        if (((_init != -99) && (_init < 0)) || (_init >= nstatus_int))
-            throw std::range_error("Statuses must be between 0 and " +
-                std::to_string(nstatus - 1));
-
-        // Negative unspecified status
-        if (((_end != -99) && (_end < 0)) || (_end >= nstatus_int))
-            throw std::range_error("Statuses must be between 0 and " +
-                std::to_string(nstatus - 1));
-
-        if (((_removed != -99) && (_removed < 0)) || (_removed >= nstatus_int))
-            throw std::range_error("Statuses must be between 0 and " +
-                std::to_string(nstatus - 1));
-
-    }
-
-    for (auto & t : tools)
-    {
-        t->get_status(&_init, &_end);
-        
-        // Negative unspecified status
-        if (((_init != -99) && (_init < 0)) || (_init >= nstatus_int))
-            throw std::range_error("Statuses must be between 0 and " +
-                std::to_string(nstatus - 1));
-
-        // Negative unspecified status
-        if (((_end != -99) && (_end < 0)) || (_end >= nstatus_int))
-            throw std::range_error("Statuses must be between 0 and " +
-                std::to_string(nstatus - 1));
-
-    }
-
-    // Starting first infection and tools
-    reset();
-
 }
 
 template<typename TSeq>
@@ -6962,18 +6887,9 @@ template<typename TSeq>
 inline void Model<TSeq>::set_backup()
 {
 
-    population_backup =
-        std::make_shared< std::vector< Agent<TSeq> > >(population);
+    population_backup = population;
 
-    entities_backup =
-        std::make_shared< std::vector< Entity<TSeq> > >(entities);
-
-        // And correcting the pointer
-    for (auto & p : *population_backup)
-        p.model = this;
-
-    for (auto & e : *entities_backup)
-        e.model = this;
+    entities_backup = entities;
 
 }
 
@@ -7217,9 +7133,6 @@ inline void Model<TSeq>::load_agents_entities_ties(
     )
 {
 
-    if (this->initialized)
-        throw std::logic_error("Agent-entity ties cannot be added once init(...) has been called.");
-
     int i,j;
     std::ifstream filei(fn);
 
@@ -7383,11 +7296,72 @@ inline void Model<TSeq>::next() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::run() 
+inline void Model<TSeq>::run(
+    epiworld_fast_uint ndays,
+    int seed
+) 
 {
 
     if (size() == 0u)
         throw std::logic_error("There's no agents in this model!");
+
+    if (nstatus == 0u)
+        throw std::logic_error(
+            std::string("No statuses registered in this model. ") +
+            std::string("At least one status should be included. See the function -Model::add_status()-")
+            );
+
+    // Setting up the number of steps
+    this->ndays = ndays;
+
+    if (seed >= 0)
+        engine.seed(seed);
+
+    array_double_tmp.resize(size()/2, 0.0);
+    array_virus_tmp.resize(size()/2);
+
+    // Checking whether the proposed status in/out/removed
+    // are valid
+    epiworld_fast_int _init, _end, _removed;
+    int nstatus_int = static_cast<int>(nstatus);
+    for (auto & v : viruses)
+    {
+        v->get_status(&_init, &_end, &_removed);
+        
+        // Negative unspecified status
+        if (((_init != -99) && (_init < 0)) || (_init >= nstatus_int))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        // Negative unspecified status
+        if (((_end != -99) && (_end < 0)) || (_end >= nstatus_int))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        if (((_removed != -99) && (_removed < 0)) || (_removed >= nstatus_int))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+    }
+
+    for (auto & t : tools)
+    {
+        t->get_status(&_init, &_end);
+        
+        // Negative unspecified status
+        if (((_init != -99) && (_init < 0)) || (_init >= nstatus_int))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+        // Negative unspecified status
+        if (((_end != -99) && (_end < 0)) || (_end >= nstatus_int))
+            throw std::range_error("Statuses must be between 0 and " +
+                std::to_string(nstatus - 1));
+
+    }
+
+    // Starting first infection and tools
+    reset();
 
     // Initializing the simulation
     chrono_start();
@@ -7423,13 +7397,18 @@ inline void Model<TSeq>::run()
 
 template<typename TSeq>
 inline void Model<TSeq>::run_multiple(
+    epiworld_fast_uint ndays,
     epiworld_fast_uint nexperiments,
+    int seed_,
     std::function<void(size_t,Model<TSeq>*)> fun,
     bool reset,
     bool verbose,
     int nthreads
 )
 {
+
+    if (seed_ >= 0)
+        this->seed(seed_);
 
     // Seeds will be reproducible by default
     std::vector< size_t > seeds_n(nexperiments);
@@ -7456,6 +7435,10 @@ inline void Model<TSeq>::run_multiple(
 
     bool old_verb = this->verbose;
     verbose_off();
+
+    // Setting up backup
+    if (reset)
+        set_backup();
 
     #ifdef _OPENMP
 
@@ -7513,20 +7496,11 @@ inline void Model<TSeq>::run_multiple(
     }
 
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
-        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, stdout) \
+        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, stdout, ndays) \
         default(none)
     {
 
         auto iam = omp_get_thread_num();
-
-        if (reset)
-        {
-            if (iam == 0u)
-                set_backup();
-            else
-                these[iam - 1]->set_backup();
-        }
-
 
         for (size_t n = 0u; n < nreplicates[iam]; ++n)
         {
@@ -7535,9 +7509,7 @@ inline void Model<TSeq>::run_multiple(
             {
 
                 // Initializing the seed
-                seed(seeds_n[n]);
-
-                run();
+                run(ndays, seeds_n[n]);
 
                 if (fun)
                     fun(n, this);
@@ -7549,9 +7521,7 @@ inline void Model<TSeq>::run_multiple(
             } else {
 
                 // Initializing the seed
-                these[iam - 1]->seed(seeds_n[nreplicates_csum[iam] + n]);
-
-                these[iam - 1]->run();
+                these[iam - 1]->run(ndays, seeds_n[nreplicates_csum[iam] + n]);
 
                 if (fun)
                     fun(
@@ -7565,10 +7535,12 @@ inline void Model<TSeq>::run_multiple(
             #pragma omp barrier
             #pragma omp master 
             {
-                this->print();
+                this->print(true);
 
                 for (auto & m: these)
                 {
+
+                    m->print(true);
 
                     EPI_DEBUG_FAIL_AT_TRUE(
                         db != m->get_db(),
@@ -7578,35 +7550,7 @@ inline void Model<TSeq>::run_multiple(
                 }
 
             }
-            #endif
-
-            if (iam == 0) 
-            {
-                if (reset)
-                    this->reset();
-            } else {
-                if (reset)
-                    these[iam - 1]->reset();
-            }
-
-            #ifdef EPI_DEBUG
-            #pragma omp barrier
-            #pragma omp master 
-            {
-
-                for (auto & m: these)
-                {
-
-                    EPI_DEBUG_FAIL_AT_TRUE(
-                        *this != *m,
-                        "Model:: Model objects should match after reset"
-                    )
-                    
-                }
-
-            }
-            #endif
-        
+            #endif        
         }
     }
 
@@ -7640,15 +7584,10 @@ inline void Model<TSeq>::run_multiple(
     for (size_t n = 0u; n < nexperiments; ++n)
     {
 
-        seed(seeds_n[n]);
-
-        run();
+        run(ndays, seeds_n[n]);
 
         if (fun)
             fun(n, this);
-
-        if (reset)
-            this->reset();
 
         if (verbose)
             pb_multiple.next();
@@ -7880,33 +7819,36 @@ inline void Model<TSeq>::reset() {
     // Restablishing people
     pb = Progress(ndays, 80);
 
-    if (population_backup != nullptr)
+    if (population_backup.size() != 0u)
     {
-        population = *this->population_backup;
+        population = population_backup;
 
         #ifdef EPI_DEBUG
         for (size_t i = 0; i < population.size(); ++i)
         {
 
-            if (population[i] != (*population_backup)[i])
+            if (population[i] != population_backup[i])
                 throw std::logic_error("Model::reset population doesn't match.");
 
         }
         #endif
 
-    } else
+    } 
+    else
+    {
         for (auto & p : population)
             p.reset();
+    }
         
-    if (entities_backup != nullptr)
+    if (entities_backup.size() != 0)
     {
-        entities = *this->entities_backup;
+        entities = entities_backup;
 
         #ifdef EPI_DEBUG
         for (size_t i = 0; i < entities.size(); ++i)
         {
 
-            if (entities[i] != (*entities_backup)[i])
+            if (entities[i] != entities_backup[i])
                 throw std::logic_error("Model::reset entities don't match.");
 
         }
@@ -7959,8 +7901,56 @@ inline void Model<TSeq>::reset() {
 #define EPIWORLD_MODEL_MEAT_PRINT_HPP
 
 template<typename TSeq>
-inline void Model<TSeq>::print() const
+inline void Model<TSeq>::print(bool lite) const
 {
+
+    if (lite)
+    {
+        size_t nchar = 0u;
+        std::string fmt = " - %-" + std::to_string(nchar + 1) + "s: ";
+
+        for (auto & p : status_labels)
+            if (p.length() > nchar)
+                nchar = p.length();
+
+        if (today() != 0)
+            fmt = "  - (%" + std::to_string(nstatus).length() +
+                std::string("d) %-") + std::to_string(nchar) + "s : %" +
+                std::to_string(std::to_string(size()).length()) + "i -> %i\n";
+        else
+            fmt = "  - (%" + std::to_string(nstatus).length() +
+                std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
+
+        printf_epiworld("\nDistribution of the population at time %i:\n", today());
+        for (size_t s = 0u; s < nstatus; ++s)
+        {
+            if (today() != 0)
+            {
+
+                printf_epiworld(
+                    fmt.c_str(),
+                    s,
+                    status_labels[s].c_str(),
+                    db.hist_total_counts[s],
+                    db.today_total[ s ]
+                    );
+
+            }
+            else
+            {
+
+                printf_epiworld(
+                    fmt.c_str(),
+                    s,
+                    status_labels[s].c_str(),
+                    db.today_total[ s ]
+                    );
+
+            }
+        }
+
+        return;
+    }
 
     // Horizontal line
     std::string line = "";
@@ -8155,52 +8145,27 @@ inline void Model<TSeq>::print() const
 
     
 
-    if (initialized) 
-    {
-        
-        if (today() != 0)
-            fmt = "  - (%" + std::to_string(nstatus).length() +
-                std::string("d) %-") + std::to_string(nchar) + "s : %" +
-                std::to_string(std::to_string(size()).length()) + "i -> %i\n";
-        else
-            fmt = "  - (%" + std::to_string(nstatus).length() +
-                std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
-
-    }
+    if (today() != 0)
+        fmt = "  - (%" + std::to_string(nstatus).length() +
+            std::string("d) %-") + std::to_string(nchar) + "s : %" +
+            std::to_string(std::to_string(size()).length()) + "i -> %i\n";
     else
         fmt = "  - (%" + std::to_string(nstatus).length() +
-            std::string("d) %-") + std::to_string(nchar) + "s : %s\n";
+            std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
         
     printf_epiworld("\nDistribution of the population at time %i:\n", today());
     for (size_t s = 0u; s < nstatus; ++s)
     {
-        if (initialized)
+        if (today() != 0)
         {
-            
-            if (today() != 0)
-            {
 
-                printf_epiworld(
-                    fmt.c_str(),
-                    s,
-                    status_labels[s].c_str(),
-                    db.hist_total_counts[s],
-                    db.today_total[ s ]
-                    );
-
-            }
-            else
-            {
-
-                printf_epiworld(
-                    fmt.c_str(),
-                    s,
-                    status_labels[s].c_str(),
-                    db.today_total[ s ]
-                    );
-
-            }
-            
+            printf_epiworld(
+                fmt.c_str(),
+                s,
+                status_labels[s].c_str(),
+                db.hist_total_counts[s],
+                db.today_total[ s ]
+                );
 
         }
         else
@@ -8210,13 +8175,13 @@ inline void Model<TSeq>::print() const
                 fmt.c_str(),
                 s,
                 status_labels[s].c_str(),
-                " - "
+                db.today_total[ s ]
                 );
 
         }
     }
 
-    if (initialized && (today() != 0))
+    if (today() != 0)
         (void) db.transition_probability(true);
 
     return;
@@ -8285,8 +8250,6 @@ inline void Model<TSeq>::add_status(
     UpdateFun<TSeq> fun
 )
 {
-    if (this->initialized)
-        throw std::logic_error("Cannot add status once the model has been initialized.");
 
     // Checking it doesn't match
     for (auto & s : status_labels)
@@ -8635,17 +8598,17 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "Model:: using_backup don't match"
         )
     
-    if ((population_backup != nullptr) & (other.population_backup != nullptr))
+    if ((population_backup.size() != 0) & (other.population_backup.size() != 0))
     {
-        for (size_t i = 0u; i < population_backup->size(); ++i)
+        for (size_t i = 0u; i < population_backup.size(); ++i)
         {
-            if ((*population_backup)[i] != (*other.population_backup)[i])
+            if (population_backup[i] != other.population_backup[i])
                 return false;
         }
         
-    } else if ((population_backup == nullptr) & (other.population_backup != nullptr)) {
+    } else if ((population_backup.size() == 0) & (other.population_backup.size() != 0)) {
         return false;
-    } else if ((population_backup != nullptr) & (other.population_backup == nullptr))
+    } else if ((population_backup.size() != 0) & (other.population_backup.size() == 0))
     {
         return false;
     }
@@ -8725,22 +8688,22 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "entities don't match"
     )
 
-    if ((entities_backup != nullptr) & (other.entities_backup != nullptr))
+    if ((entities_backup.size() != 0) & (other.entities_backup.size() != 0))
     {
         
-        for (size_t i = 0u; i < entities_backup->size(); ++i)
+        for (size_t i = 0u; i < entities_backup.size(); ++i)
         {
 
             EPI_DEBUG_FAIL_AT_TRUE(
-                (*entities_backup)[i] != (*other.entities_backup)[i],
-                "Model:: (*entities_backup)[i] don't match"
+                entities_backup[i] != other.entities_backup[i],
+                "Model:: entities_backup[i] don't match"
             )
 
         }
         
-    } else if ((entities_backup == nullptr) & (other.entities_backup != nullptr)) {
+    } else if ((entities_backup.size() == 0) & (other.entities_backup.size() != 0)) {
         EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
-    } else if ((entities_backup != nullptr) & (other.entities_backup == nullptr))
+    } else if ((entities_backup.size() != 0) & (other.entities_backup.size() == 0))
     {
         EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
     }
@@ -8779,11 +8742,6 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     EPI_DEBUG_FAIL_AT_TRUE(
         verbose != other.verbose,
         "Model:: verbose don't match"
-    )
-
-    EPI_DEBUG_FAIL_AT_TRUE(
-        initialized != other.initialized,
-        "Model:: initialized don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
@@ -8842,8 +8800,6 @@ class Virus;
 template<typename TSeq>
 class Agent;
 
-#define VIRUSPTR std::shared_ptr< Virus<TSeq> >
-
 /**
  * @brief Set of viruses (useful for building iterators)
  * 
@@ -8854,7 +8810,7 @@ class Viruses {
     friend class Virus<TSeq>;
     friend class Agent<TSeq>;
 private:
-    std::vector< VIRUSPTR > * dat;
+    std::vector< VirusPtr<TSeq> > * dat;
     const epiworld_fast_uint * n_viruses;
 
 public:
@@ -8862,18 +8818,18 @@ public:
     Viruses() = delete;
     Viruses(Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
-    typename std::vector< VIRUSPTR >::iterator begin();
-    typename std::vector< VIRUSPTR >::iterator end();
+    typename std::vector< VirusPtr<TSeq> >::iterator begin();
+    typename std::vector< VirusPtr<TSeq> >::iterator end();
 
-    VIRUSPTR & operator()(size_t i);
-    VIRUSPTR & operator[](size_t i);
+    VirusPtr<TSeq> & operator()(size_t i);
+    VirusPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::iterator Viruses<TSeq>::begin()
+inline typename std::vector< VirusPtr<TSeq> >::iterator Viruses<TSeq>::begin()
 {
 
     if (*n_viruses == 0u)
@@ -8883,14 +8839,19 @@ inline typename std::vector< VIRUSPTR >::iterator Viruses<TSeq>::begin()
 }
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::iterator Viruses<TSeq>::end()
+inline typename std::vector< VirusPtr<TSeq> >::iterator Viruses<TSeq>::end()
 {
-     
+    
+    #ifdef EPI_DEBUG
+    if (dat->size() < *n_viruses)
+        throw EPI_DEBUG_ERROR(std::logic_error, "Viruses:: The end of the virus is out of range");
+    #endif 
+
     return begin() + *n_viruses;
 }
 
 template<typename TSeq>
-inline VIRUSPTR & Viruses<TSeq>::operator()(size_t i)
+inline VirusPtr<TSeq> & Viruses<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_viruses)
@@ -8901,7 +8862,7 @@ inline VIRUSPTR & Viruses<TSeq>::operator()(size_t i)
 }
 
 template<typename TSeq>
-inline VIRUSPTR & Viruses<TSeq>::operator[](size_t i)
+inline VirusPtr<TSeq> & Viruses<TSeq>::operator[](size_t i)
 {
 
     return dat->operator[](i);
@@ -8924,7 +8885,7 @@ class Viruses_const {
     friend class Virus<TSeq>;
     friend class Agent<TSeq>;
 private:
-    const std::vector< VIRUSPTR > * dat;
+    const std::vector< VirusPtr<TSeq> > * dat;
     const epiworld_fast_uint * n_viruses;
 
 public:
@@ -8932,18 +8893,18 @@ public:
     Viruses_const() = delete;
     Viruses_const(const Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
-    typename std::vector< VIRUSPTR >::const_iterator begin() const;
-    typename std::vector< VIRUSPTR >::const_iterator end() const;
+    typename std::vector< VirusPtr<TSeq> >::const_iterator begin() const;
+    typename std::vector< VirusPtr<TSeq> >::const_iterator end() const;
 
-    const VIRUSPTR & operator()(size_t i);
-    const VIRUSPTR & operator[](size_t i);
+    const VirusPtr<TSeq> & operator()(size_t i);
+    const VirusPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::begin() const {
+inline typename std::vector< VirusPtr<TSeq> >::const_iterator Viruses_const<TSeq>::begin() const {
 
     if (*n_viruses == 0u)
         return dat->end();
@@ -8952,13 +8913,17 @@ inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::beg
 }
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::end() const {
-     
+inline typename std::vector< VirusPtr<TSeq> >::const_iterator Viruses_const<TSeq>::end() const {
+
+    #ifdef EPI_DEBUG
+    if (dat->size() < *n_viruses)
+        throw EPI_DEBUG_ERROR(std::logic_error, "Viruses_const:: The end of the virus is out of range");
+    #endif 
     return begin() + *n_viruses;
 }
 
 template<typename TSeq>
-inline const VIRUSPTR & Viruses_const<TSeq>::operator()(size_t i)
+inline const VirusPtr<TSeq> & Viruses_const<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_viruses)
@@ -8969,7 +8934,7 @@ inline const VIRUSPTR & Viruses_const<TSeq>::operator()(size_t i)
 }
 
 template<typename TSeq>
-inline const VIRUSPTR & Viruses_const<TSeq>::operator[](size_t i)
+inline const VirusPtr<TSeq> & Viruses_const<TSeq>::operator[](size_t i)
 {
 
     return dat->operator[](i);
@@ -8981,8 +8946,6 @@ inline size_t Viruses_const<TSeq>::size() const noexcept
 {
     return *n_viruses;
 }
-
-#undef VIRUSPTR
 
 
 
@@ -14485,14 +14448,20 @@ public:
     int tracked_ninfected_next = 0;
     epiworld_double tracked_current_infect_prob = 0.0;
 
-    void run();
+    void run(
+        epiworld_fast_uint ndays,
+        int seed = -1
+    );
 
     Model<TSeq> * clone_ptr();
 
 };
 
 template<typename TSeq>
-inline void ModelSIRCONN<TSeq>::run()
+inline void ModelSIRCONN<TSeq>::run(
+    epiworld_fast_uint ndays,
+    int seed
+)
 {
 
     tracked_agents_infected.clear();
@@ -14503,7 +14472,7 @@ inline void ModelSIRCONN<TSeq>::run()
     tracked_ninfected_next = 0;
     tracked_current_infect_prob = 0.0;
 
-    Model<TSeq>::run();
+    Model<TSeq>::run(ndays, seed);
 
 }
 
@@ -14812,14 +14781,20 @@ public:
     int tracked_ninfected = 0;
     int tracked_ninfected_next = 0;
 
-    void run();
+    void run(
+        epiworld_fast_uint ndays,
+        int seed = -1
+    );
 
     Model<TSeq> * clone_ptr();
 
 };
 
 template<typename TSeq>
-inline void ModelSEIRCONN<TSeq>::run()
+inline void ModelSEIRCONN<TSeq>::run(
+    epiworld_fast_uint ndays,
+    int seed
+)
 {
 
     tracked_agents_infected.clear();
@@ -14829,7 +14804,7 @@ inline void ModelSEIRCONN<TSeq>::run()
     tracked_ninfected = 0;
     tracked_ninfected_next = 0;
 
-    Model<TSeq>::run();
+    Model<TSeq>::run(ndays, seed);
 
 }
 

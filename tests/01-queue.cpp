@@ -11,7 +11,6 @@ int main()
     Virus<> v("covid");
     
     model.add_virus_n(v, 10);
-    model.init(20, 20);
 
     Queue<> q;
     q.initialize(&model, nullptr);

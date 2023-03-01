@@ -18,11 +18,9 @@ int main()
     // with 100,000 individuals, in this case
     hello.agents_smallworld(100000, 4L, false, .01);
 
-    // Setting the number of days (100) and seed (122)
-    hello.init(100, 122);
-
     // Running the model and printing the results
-    hello.run();
+    // Setting the number of days (100) and seed (122)
+    hello.run(100, 122);
     hello.print();
 
     return 0;

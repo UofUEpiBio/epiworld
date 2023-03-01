@@ -52,10 +52,7 @@ int main()
     model.add_tool(is, 1.0);
     model.add_tool_n(postImm, 0u);
     model.add_virus_n(v, 5);
-
-    model.init(112, 30);
-
-    model.run();
+    model.run(112, 30);
     model.print();
 
     model.get_user_data().print();

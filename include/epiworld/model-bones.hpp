@@ -92,7 +92,7 @@ private:
     std::vector< Agent<TSeq> > population = {};
 
     bool using_backup = true;
-    std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = nullptr;
+    std::vector< Agent<TSeq> > population_backup = {};
 
 
     /**
@@ -136,7 +136,7 @@ private:
     std::vector< ToolToAgentFun<TSeq> > tools_dist_funs = {};
 
     std::vector< Entity<TSeq> > entities = {}; 
-    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = nullptr;
+    std::vector< Entity<TSeq> > entities_backup = {};
 
     std::mt19937 engine;
     
@@ -158,7 +158,6 @@ private:
     epiworld_fast_uint nstatus = 0u;
     
     bool verbose     = true;
-    bool initialized = false;
     int current_date = 0;
 
     void dist_tools();
@@ -382,13 +381,17 @@ public:
      * 
      */
     ///@{
-    virtual void init(epiworld_fast_uint ndays, epiworld_fast_uint seed);
     void update_status();
     void mutate_variant();
     void next();
-    virtual void run(); ///< Runs the simulation (after initialization)
+    virtual void run(
+        epiworld_fast_uint ndays,
+        int seed = -1
+    ); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
+        epiworld_fast_uint ndays,
         epiworld_fast_uint nexperiments,
+        int seed_ = -1,
         std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
         bool reset = true,
         bool verbose = true,
@@ -482,7 +485,7 @@ public:
      * 
      */
     void reset();
-    void print() const;
+    void print(bool lite = false) const;
 
     Model<TSeq> && clone() const;
 

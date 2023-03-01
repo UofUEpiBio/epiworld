@@ -69,10 +69,9 @@ int main()
     lfmcmc.set_kernel_fun(kernel_fun_gaussian<std::vector<int>>);
 
     // Simulating some data
-    model.init(50, 122);
     model.set_backup();
     model.verbose_off();
-    model.run();
+    model.run(50, 122);
     model.print();
 
     std::vector< int > obs_dat;

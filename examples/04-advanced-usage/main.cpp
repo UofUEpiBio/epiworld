@@ -102,7 +102,6 @@ int main() {
     model.add_tool_n(post_immunity, 0);
     
     // Initializing and printing information about the model ------------------
-    model.init(60, 1231);
     model.queuing_off(); // Not working with rewiring just yet.
     model.set_rewire_fun(epiworld::rewire_degseq<DAT>);  
     model.set_rewire_prop(0.10);
@@ -111,7 +110,7 @@ int main() {
     model.print();
 
     // Running the model
-    model.run();
+    model.run(60, 123);
 
     // Writing off the results
     model.write_data(

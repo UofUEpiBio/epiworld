@@ -199,8 +199,7 @@ int main()
     model.agents_smallworld(20000);
 
     // Initializing and running the model
-    model.init(100, 226);
-    model.run();
+    model.run(100, 226);
 
     // Printing the output
     model.print();

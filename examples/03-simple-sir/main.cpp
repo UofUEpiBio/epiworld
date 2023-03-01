@@ -30,11 +30,8 @@ int main()
     epiworld::rgraph_smallworld(1000, 5, 0.01, false, model)
   );
 
-  // Initializing setting days and seed
-  model.init(100, 123123);
-
   // Running the model
-  model.run();
+  model.run(100, 123123);
 
   model.print();
 

@@ -40,12 +40,9 @@ int main(int argc, char* argv[]) {
         epiworld::rgraph_smallworld(popsize, 5, .01, false, model)
     );
 
-    // Initializing and printing
-    model.init(ndays, 123);
-
     // Running and checking the results
     model.print();
-    model.run();
+    model.run(ndays, 123);
     model.print();
 
     model.write_data(

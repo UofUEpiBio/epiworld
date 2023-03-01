@@ -7,8 +7,6 @@ class Virus;
 template<typename TSeq>
 class Agent;
 
-#define VIRUSPTR std::shared_ptr< Virus<TSeq> >
-
 /**
  * @brief Set of viruses (useful for building iterators)
  * 
@@ -19,7 +17,7 @@ class Viruses {
     friend class Virus<TSeq>;
     friend class Agent<TSeq>;
 private:
-    std::vector< VIRUSPTR > * dat;
+    std::vector< VirusPtr<TSeq> > * dat;
     const epiworld_fast_uint * n_viruses;
 
 public:
@@ -27,18 +25,18 @@ public:
     Viruses() = delete;
     Viruses(Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
-    typename std::vector< VIRUSPTR >::iterator begin();
-    typename std::vector< VIRUSPTR >::iterator end();
+    typename std::vector< VirusPtr<TSeq> >::iterator begin();
+    typename std::vector< VirusPtr<TSeq> >::iterator end();
 
-    VIRUSPTR & operator()(size_t i);
-    VIRUSPTR & operator[](size_t i);
+    VirusPtr<TSeq> & operator()(size_t i);
+    VirusPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::iterator Viruses<TSeq>::begin()
+inline typename std::vector< VirusPtr<TSeq> >::iterator Viruses<TSeq>::begin()
 {
 
     if (*n_viruses == 0u)
@@ -48,14 +46,19 @@ inline typename std::vector< VIRUSPTR >::iterator Viruses<TSeq>::begin()
 }
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::iterator Viruses<TSeq>::end()
+inline typename std::vector< VirusPtr<TSeq> >::iterator Viruses<TSeq>::end()
 {
-     
+    
+    #ifdef EPI_DEBUG
+    if (dat->size() < *n_viruses)
+        throw EPI_DEBUG_ERROR(std::logic_error, "Viruses:: The end of the virus is out of range");
+    #endif 
+
     return begin() + *n_viruses;
 }
 
 template<typename TSeq>
-inline VIRUSPTR & Viruses<TSeq>::operator()(size_t i)
+inline VirusPtr<TSeq> & Viruses<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_viruses)
@@ -66,7 +69,7 @@ inline VIRUSPTR & Viruses<TSeq>::operator()(size_t i)
 }
 
 template<typename TSeq>
-inline VIRUSPTR & Viruses<TSeq>::operator[](size_t i)
+inline VirusPtr<TSeq> & Viruses<TSeq>::operator[](size_t i)
 {
 
     return dat->operator[](i);
@@ -89,7 +92,7 @@ class Viruses_const {
     friend class Virus<TSeq>;
     friend class Agent<TSeq>;
 private:
-    const std::vector< VIRUSPTR > * dat;
+    const std::vector< VirusPtr<TSeq> > * dat;
     const epiworld_fast_uint * n_viruses;
 
 public:
@@ -97,18 +100,18 @@ public:
     Viruses_const() = delete;
     Viruses_const(const Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
 
-    typename std::vector< VIRUSPTR >::const_iterator begin() const;
-    typename std::vector< VIRUSPTR >::const_iterator end() const;
+    typename std::vector< VirusPtr<TSeq> >::const_iterator begin() const;
+    typename std::vector< VirusPtr<TSeq> >::const_iterator end() const;
 
-    const VIRUSPTR & operator()(size_t i);
-    const VIRUSPTR & operator[](size_t i);
+    const VirusPtr<TSeq> & operator()(size_t i);
+    const VirusPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
 
 };
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::begin() const {
+inline typename std::vector< VirusPtr<TSeq> >::const_iterator Viruses_const<TSeq>::begin() const {
 
     if (*n_viruses == 0u)
         return dat->end();
@@ -117,13 +120,17 @@ inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::beg
 }
 
 template<typename TSeq>
-inline typename std::vector< VIRUSPTR >::const_iterator Viruses_const<TSeq>::end() const {
-     
+inline typename std::vector< VirusPtr<TSeq> >::const_iterator Viruses_const<TSeq>::end() const {
+
+    #ifdef EPI_DEBUG
+    if (dat->size() < *n_viruses)
+        throw EPI_DEBUG_ERROR(std::logic_error, "Viruses_const:: The end of the virus is out of range");
+    #endif 
     return begin() + *n_viruses;
 }
 
 template<typename TSeq>
-inline const VIRUSPTR & Viruses_const<TSeq>::operator()(size_t i)
+inline const VirusPtr<TSeq> & Viruses_const<TSeq>::operator()(size_t i)
 {
 
     if (i >= *n_viruses)
@@ -134,7 +141,7 @@ inline const VIRUSPTR & Viruses_const<TSeq>::operator()(size_t i)
 }
 
 template<typename TSeq>
-inline const VIRUSPTR & Viruses_const<TSeq>::operator[](size_t i)
+inline const VirusPtr<TSeq> & Viruses_const<TSeq>::operator[](size_t i)
 {
 
     return dat->operator[](i);
@@ -146,8 +153,6 @@ inline size_t Viruses_const<TSeq>::size() const noexcept
 {
     return *n_viruses;
 }
-
-#undef VIRUSPTR
 
 
 

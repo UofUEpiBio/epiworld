@@ -16,10 +16,8 @@ int main() {
         rgraph_smallworld(10000, 5, .001, false, model)
     );
 
-    model.init(100, 123);
-
     // Running and checking the results
-    model.run();
+    model.run(100, 123);
     model.print();
 
     return 0;

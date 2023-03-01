@@ -2,8 +2,56 @@
 #define EPIWORLD_MODEL_MEAT_PRINT_HPP
 
 template<typename TSeq>
-inline void Model<TSeq>::print() const
+inline void Model<TSeq>::print(bool lite) const
 {
+
+    if (lite)
+    {
+        size_t nchar = 0u;
+        std::string fmt = " - %-" + std::to_string(nchar + 1) + "s: ";
+
+        for (auto & p : status_labels)
+            if (p.length() > nchar)
+                nchar = p.length();
+
+        if (today() != 0)
+            fmt = "  - (%" + std::to_string(nstatus).length() +
+                std::string("d) %-") + std::to_string(nchar) + "s : %" +
+                std::to_string(std::to_string(size()).length()) + "i -> %i\n";
+        else
+            fmt = "  - (%" + std::to_string(nstatus).length() +
+                std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
+
+        printf_epiworld("\nDistribution of the population at time %i:\n", today());
+        for (size_t s = 0u; s < nstatus; ++s)
+        {
+            if (today() != 0)
+            {
+
+                printf_epiworld(
+                    fmt.c_str(),
+                    s,
+                    status_labels[s].c_str(),
+                    db.hist_total_counts[s],
+                    db.today_total[ s ]
+                    );
+
+            }
+            else
+            {
+
+                printf_epiworld(
+                    fmt.c_str(),
+                    s,
+                    status_labels[s].c_str(),
+                    db.today_total[ s ]
+                    );
+
+            }
+        }
+
+        return;
+    }
 
     // Horizontal line
     std::string line = "";
@@ -198,52 +246,27 @@ inline void Model<TSeq>::print() const
 
     
 
-    if (initialized) 
-    {
-        
-        if (today() != 0)
-            fmt = "  - (%" + std::to_string(nstatus).length() +
-                std::string("d) %-") + std::to_string(nchar) + "s : %" +
-                std::to_string(std::to_string(size()).length()) + "i -> %i\n";
-        else
-            fmt = "  - (%" + std::to_string(nstatus).length() +
-                std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
-
-    }
+    if (today() != 0)
+        fmt = "  - (%" + std::to_string(nstatus).length() +
+            std::string("d) %-") + std::to_string(nchar) + "s : %" +
+            std::to_string(std::to_string(size()).length()) + "i -> %i\n";
     else
         fmt = "  - (%" + std::to_string(nstatus).length() +
-            std::string("d) %-") + std::to_string(nchar) + "s : %s\n";
+            std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
         
     printf_epiworld("\nDistribution of the population at time %i:\n", today());
     for (size_t s = 0u; s < nstatus; ++s)
     {
-        if (initialized)
+        if (today() != 0)
         {
-            
-            if (today() != 0)
-            {
 
-                printf_epiworld(
-                    fmt.c_str(),
-                    s,
-                    status_labels[s].c_str(),
-                    db.hist_total_counts[s],
-                    db.today_total[ s ]
-                    );
-
-            }
-            else
-            {
-
-                printf_epiworld(
-                    fmt.c_str(),
-                    s,
-                    status_labels[s].c_str(),
-                    db.today_total[ s ]
-                    );
-
-            }
-            
+            printf_epiworld(
+                fmt.c_str(),
+                s,
+                status_labels[s].c_str(),
+                db.hist_total_counts[s],
+                db.today_total[ s ]
+                );
 
         }
         else
@@ -253,13 +276,13 @@ inline void Model<TSeq>::print() const
                 fmt.c_str(),
                 s,
                 status_labels[s].c_str(),
-                " - "
+                db.today_total[ s ]
                 );
 
         }
     }
 
-    if (initialized && (today() != 0))
+    if (today() != 0)
         (void) db.transition_probability(true);
 
     return;

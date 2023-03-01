@@ -29,11 +29,8 @@ int main()
     // Generating a random pop 
     model.agents_smallworld(10000);
 
-    // Initializing setting days and seed
-    model.init(100, 123);
-
     // Running the model
-    model.run();
+    model.run(100, 123);
     model.print();
 
     (void) model.get_db().transition_probability();

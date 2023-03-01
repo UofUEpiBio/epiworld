@@ -51,8 +51,6 @@ int main(int argc, char* argv[]) {
     // // Adding a bernoulli graph as step 0
     // model.agents_smallworld(popsize, 1, false, .0);
 
-    model.init(ndays, result["seed"].as<int>());
-
     // Setup
     std::vector< std::vector< int > > results(nexperiments);
     std::vector< std::vector< int > > dates(nexperiments);
@@ -76,7 +74,9 @@ int main(int argc, char* argv[]) {
 
     // Running and checking the results
     model.run_multiple(
+        ndays,
         nexperiments, // How many experiments
+        result["seed"].as<int>(),
         record,       // Function to call after each experiment
         true,         // Whether to reset the population
         true         // Whether to print a progress bar

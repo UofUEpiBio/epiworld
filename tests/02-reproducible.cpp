@@ -45,8 +45,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
     
     model_0.verbose_off();
 
-    model_0.init(100, 1231);
-    model_0.run_multiple(4, sav_0, true, true, 1);
+    model_0.run_multiple(100, 4, 1231, sav_0, true, true, 1);
 
     epimodels::ModelSIR<> model_1(
         "a virus", 0.01, .9, .3
@@ -56,8 +55,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
 
     model_1.agents_smallworld(100000, 5, false, 0.01);
 
-    model_1.init(100, 1231);
-    model_1.run_multiple(4, sav_1, true, true, 2);
+    model_1.run_multiple(100, 4, 1231, sav_1, true, true, 2);
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(tmat_0, Catch::Approx(tmat_expected).margin(0.025));

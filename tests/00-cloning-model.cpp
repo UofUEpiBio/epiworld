@@ -18,8 +18,6 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     m.add_virus(v, .5);
     m.add_tool(t, .5);
 
-    m.init(1123, 50);
-
     // Cloning
     epiworld::Model<bool>m2(m);
 

@@ -17,8 +17,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     
     model_0.verbose_off();
 
-    model_0.init(100, 1231);
-    model_0.run();
+    model_0.run(100, 1231);
 
     epimodels::ModelSIR<> model_1(
         "a virus", 0.01, .9, .3
@@ -29,8 +28,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     model_1.queuing_off();
     model_1.verbose_off();
     
-    model_1.init(100, 1231);
-    model_1.run();
+    model_1.run(100, 1231);
 
     std::vector< int > h_0, h_1;
     model_0.get_db().get_hist_total(nullptr, nullptr, &h_0);

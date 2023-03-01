@@ -19,10 +19,6 @@ int main() {
         rgraph_smallworld(pop_size, 5, .01, false, sir)
     );
 
-    // Initializing and printing
-    sir.init(60, 123);
-    sir.print();
-
     // Function to record each replicate results 
     std::vector< std::vector< int > > results(total_replicates);
     std::vector< std::string > labels;
@@ -42,7 +38,9 @@ int main() {
 
     // Running
     sir.run_multiple(
+        60,
         total_replicates, // How many experiments
+        123,
         record,           // Function to call after each experiment
         true,             // Whether to reset the population
         true              // Whether to print a progress bar

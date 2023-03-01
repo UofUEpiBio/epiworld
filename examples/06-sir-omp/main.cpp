@@ -34,12 +34,11 @@ int main() {
 
         // Initializing and printing
         int nthread = omp_get_thread_num();
-        Models[nthread].init(100, 123 * nthread);
         // sir.print();
         Models[nthread].verbose_off();
 
         // Running and checking the results
-        Models[nthread].run();
+        Models[nthread].run(100, 123 * nthread);
         
     }
     auto end = std::chrono::high_resolution_clock::now();
