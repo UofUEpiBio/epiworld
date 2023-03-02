@@ -1,3 +1,4 @@
+#include <omp.h>
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/cxxopts/cxxopts.hpp"
 

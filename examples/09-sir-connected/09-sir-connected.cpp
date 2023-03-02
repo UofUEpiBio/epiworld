@@ -1,4 +1,3 @@
-#define EPI_DEBUG
 #include <iostream>
 #include <omp.h>
 #include "../../include/epiworld/epiworld.hpp"
