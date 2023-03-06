@@ -211,7 +211,9 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
 
     // If no sequence, then need to add one. This is regardless of the case
     if (v.get_sequence() == nullptr)
-        v.set_sequence(default_sequence<TSeq>());
+        v.set_sequence(default_sequence<TSeq>(
+            static_cast<int>(variant_name.size())
+            ));
 
     // Negative id -> virus hasn't been recorded
     if (v.get_id() < 0)
@@ -299,7 +301,9 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 {
 
     if (t.get_sequence() == nullptr)
-        t.set_sequence(default_sequence<TSeq>());
+        t.set_sequence(default_sequence<TSeq>(
+            static_cast<int>(tool_name.size())
+        ));
 
     if (t.get_id() < 0) 
     {
@@ -587,7 +591,7 @@ inline void DataBase<TSeq>::write_data(
             int id = v.second;
             file_variant_info <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 id << " \"" <<
                 variant_name[id] << "\" " <<
@@ -612,7 +616,7 @@ inline void DataBase<TSeq>::write_data(
         for (epiworld_fast_uint i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
@@ -635,7 +639,7 @@ inline void DataBase<TSeq>::write_data(
             int id = t.second;
             file_tool_info <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 id << " \"" <<
                 tool_name[id] << "\" " <<
@@ -658,7 +662,7 @@ inline void DataBase<TSeq>::write_data(
         for (epiworld_fast_uint i = 0; i < hist_tool_id.size(); ++i)
             file_tool_hist <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_tool_date[i] << " " <<
                 hist_tool_id[i] << " " <<
@@ -679,7 +683,7 @@ inline void DataBase<TSeq>::write_data(
         for (epiworld_fast_uint i = 0; i < hist_total_date.size(); ++i)
             file_total <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
@@ -692,14 +696,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_transmission(fn_transmission, std::ios_base::out);
         file_transmission <<
             #ifdef _OPENMP
-            omp_get_thread_num() << " " <<
+            EPI_GET_THREAD_ID() << " " <<
             #endif
             "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
         for (epiworld_fast_uint i = 0; i < transmission_target.size(); ++i)
             file_transmission <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 transmission_date[i] << " " <<
                 transmission_variant[i] << " " <<
@@ -714,7 +718,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_transition(fn_transition, std::ios_base::out);
         file_transition <<
             #ifdef _OPENMP
-            omp_get_thread_num() << " " <<
+            EPI_GET_THREAD_ID() << " " <<
             #endif
             "date " << "from " << "to " << "counts\n";
 
@@ -727,7 +731,7 @@ inline void DataBase<TSeq>::write_data(
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
                         #ifdef _OPENMP
-                        omp_get_thread_num() << " " <<
+                        EPI_GET_THREAD_ID() << " " <<
                         #endif
                         i << " " <<
                         model->status_labels[from] << " " <<
@@ -865,7 +869,7 @@ inline void DataBase<TSeq>::reproductive_number(
     for (auto & m : map)
         fn_file <<
             #ifdef _OPENMP
-            omp_get_thread_num() << " " <<
+            EPI_GET_THREAD_ID() << " " <<
             #endif
             m.first[0u] << " " <<
             m.first[1u] << " " <<

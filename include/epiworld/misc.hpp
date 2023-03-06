@@ -47,49 +47,49 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
  */
 ///@{
 template<typename TSeq = int>
-inline TSeq default_sequence();
+inline TSeq default_sequence(int seq_count);
 
 // Making it 'static' so that we don't have problems when including the
 // header. This is important during the linkage, e.g., in R.
 // See https://en.cppreference.com/w/cpp/language/storage_duration#Linkage
-static int _n_sequences_created = 0;
+// static int _n_sequences_created = 0;
 
 template<>
-inline bool default_sequence() {
+inline bool default_sequence(int seq_count) {
 
-    if (_n_sequences_created == 2)
+    if (seq_count == 2)
         throw std::logic_error("Maximum number of sequence created.");
 
-    return _n_sequences_created++ ? false : true;
+    return seq_count++ ? false : true;
 }
 
 template<>
-inline int default_sequence() {
-    return _n_sequences_created++;
+inline int default_sequence(int seq_count) {
+    return seq_count++;
 }
 
 template<>
-inline epiworld_double default_sequence() {
-    return static_cast<epiworld_double>(_n_sequences_created++);
+inline epiworld_double default_sequence(int seq_count) {
+    return static_cast<epiworld_double>(seq_count++);
 }
 
 template<>
-inline std::vector<bool> default_sequence() {
+inline std::vector<bool> default_sequence(int seq_count) {
 
-    if (_n_sequences_created == 2)
+    if (seq_count == 2)
         throw std::logic_error("Maximum number of sequence created.");
 
-    return {_n_sequences_created++ ? false : true};
+    return {seq_count++ ? false : true};
 }
 
 template<>
-inline std::vector<int> default_sequence() {
-    return {_n_sequences_created++};
+inline std::vector<int> default_sequence(int seq_count) {
+    return {seq_count++};
 }
 
 template<>
-inline std::vector<epiworld_double> default_sequence() {
-    return {static_cast<epiworld_double>(_n_sequences_created++)};
+inline std::vector<epiworld_double> default_sequence(int seq_count) {
+    return {static_cast<epiworld_double>(seq_count++)};
 }
 ///@}
 

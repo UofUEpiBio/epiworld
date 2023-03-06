@@ -9,4 +9,9 @@ main.a: main.cpp
 02.o: 02-reproducible.cpp
 	g++ -std=c++14 -Wall -Wextra -O2 -g -fopenmp -pedantic 02-reproducible.cpp -o 02.o
 
+01c.o: 01c-sir.cpp
+	g++ -std=c++14 -Wall -Wextra -O2 -g -fopenmp -pedantic 01c-sir.cpp -o 01c.o
+
+
+
 .PHONY: all

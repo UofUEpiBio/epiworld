@@ -257,4 +257,10 @@ public:
             return false;
 #endif
 
+#ifdef EPI_DEBUG_NO_THREAD_ID
+    #define EPI_GET_THREAD_ID() 0
+#else
+    #define EPI_GET_THREAD_ID() omp_get_thread_num()
+#endif
+
 #endif
