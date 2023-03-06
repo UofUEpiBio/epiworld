@@ -19,6 +19,21 @@ inline void DataBase<TSeq>::set_model(
     for (size_t s = 0u; s < m.nstatus; ++s)
         transition_matrix[s + s*m.nstatus] = today_total[s];
 
+    hist_variant_date.clear();
+    hist_variant_id.clear();
+    hist_variant_status.clear();
+    hist_variant_counts.clear();
+    hist_tool_date.clear();
+    hist_tool_id.clear();
+    hist_tool_status.clear();
+    hist_tool_counts.clear();    
+
+    today_variant.resize(get_n_variants());
+    std::fill(today_variant.begin(), today_variant.begin(), std::vector<int>(m.nstatus, 0));
+
+    today_tool.resize(get_n_tools());
+    std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(m.nstatus, 0));
+    
 
     return;
 

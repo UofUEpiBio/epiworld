@@ -378,6 +378,12 @@ template<typename TSeq>
 inline Model<TSeq> * Model<TSeq>::clone_ptr()
 {
     Model<TSeq> * ptr = new Model<TSeq>(*dynamic_cast<const Model<TSeq>*>(this));
+
+    #ifdef EPI_DEBUG
+    if (*this != *ptr)
+        throw std::logic_error("Model::clone_ptr The copies of the model don't match.");
+    #endif
+
     return ptr;
 }
 
@@ -439,6 +445,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // to be done afterwards since the state zero is set as a function
     // of the population.
     db.model = this;
+
+    if (use_queuing)
+        queue.model = this;
 
     population_data = model.population_data;
     population_data_n_features = model.population_data_n_features;
@@ -504,10 +513,10 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    db.set_model(*this);
+    db.model = this;
 
     if (use_queuing)
-        queue.set_model(this);
+        queue.model = this;
 
 }
 
@@ -576,14 +585,14 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     // Making sure population is passed correctly
     // Pointing to the right place
-    db.set_model(*this);
+    db.model = this;
 
     population_data            = m.population_data;
     population_data_n_features = m.population_data_n_features;
 
     // Figure out the queuing
     if (use_queuing)
-        queue.set_model(this);
+        queue.model = this;
 
     // Finally, seeds are resetted automatically based on the original
     // engine
@@ -1467,14 +1476,6 @@ inline void Model<TSeq>::run_multiple(
     for (size_t i = 0; i < static_cast<size_t>(std::max(nthreads - 1, 0)); ++i)
         these.push_back(clone_ptr());
 
-    #ifdef EPI_DEBUG
-    for (auto & other : these)
-    {
-        if (*this != *other)
-            throw std::logic_error("Model:: The copies of the model don't match.");
-    }
-    #endif
-
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
     std::vector< size_t > nreplicates_csum(nthreads, 0);
@@ -1882,14 +1883,6 @@ inline void Model<TSeq>::reset() {
     current_date = 0;
 
     db.set_model(*this);
-
-    // Recording variants
-    for (auto & v : viruses)
-        db.record_variant(*v);
-
-    // Recording tools
-    for (auto & t : tools)
-        db.record_tool(*t);
 
     if (use_queuing)
         queue.set_model(this);
