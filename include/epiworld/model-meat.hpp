@@ -388,6 +388,15 @@ inline Model<TSeq> * Model<TSeq>::clone_ptr()
 }
 
 template<typename TSeq>
+inline Model<TSeq>::Model()
+{
+    db.model = this;
+    db.user_data = this;
+    if (use_queuing)
+        queue.model = this;
+}
+
+template<typename TSeq>
 inline Model<TSeq>::Model(const Model<TSeq> & model) :
     name(model.name),
     db(model.db),
@@ -445,6 +454,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // to be done afterwards since the state zero is set as a function
     // of the population.
     db.model = this;
+    db.user_data.model = this;
 
     if (use_queuing)
         queue.model = this;
@@ -514,6 +524,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 {
 
     db.model = this;
+    db.user_data.model = this;
 
     if (use_queuing)
         queue.model = this;
@@ -586,6 +597,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     // Making sure population is passed correctly
     // Pointing to the right place
     db.model = this;
+    db.user_data.model = this;
 
     population_data            = m.population_data;
     population_data_n_features = m.population_data_n_features;
@@ -1830,10 +1842,6 @@ inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 
 template<typename TSeq>
 inline void Model<TSeq>::reset() {
-    
-    // This also clears the queue
-    if (use_queuing)
-        queue.set_model(this);
 
     // Restablishing people
     pb = Progress(ndays, 80);
@@ -1882,10 +1890,11 @@ inline void Model<TSeq>::reset() {
     
     current_date = 0;
 
-    db.set_model(*this);
+    db.reset();
 
+    // This also clears the queue
     if (use_queuing)
-        queue.set_model(this);
+        queue.reset();
 
     // Re distributing tools and virus
     dist_virus();
@@ -1908,9 +1917,6 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     //  - Neighbors point to the right place
     //  - DB is pointing to the right place
     Model<TSeq> res(*this);
-
-    // Pointing to the right place
-    res.get_db().set_model(res);
 
     // Removing old neighbors
     for (auto & p: res.population)

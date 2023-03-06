@@ -2,38 +2,40 @@
 #define EPIWORLD_DATABASE_MEAT_HPP
 
 template<typename TSeq>
-inline void DataBase<TSeq>::set_model(
-    Model<TSeq> & m)
+inline void DataBase<TSeq>::reset()
 {
-    model           = &m;
-    user_data.model = &m;
 
     // Initializing the counts
-    today_total.resize(m.nstatus);
+    today_total.resize(model->nstatus);
     std::fill(today_total.begin(), today_total.end(), 0);
-    for (auto & p : m.get_agents())
+    for (auto & p : model->get_agents())
         ++today_total[p.get_status()];
     
-    transition_matrix.resize(m.nstatus * m.nstatus);
+    transition_matrix.resize(model->nstatus * model->nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
-    for (size_t s = 0u; s < m.nstatus; ++s)
-        transition_matrix[s + s*m.nstatus] = today_total[s];
+    for (size_t s = 0u; s < model->nstatus; ++s)
+        transition_matrix[s + s * model->nstatus] = today_total[s];
 
     hist_variant_date.clear();
     hist_variant_id.clear();
     hist_variant_status.clear();
     hist_variant_counts.clear();
+
     hist_tool_date.clear();
     hist_tool_id.clear();
     hist_tool_status.clear();
     hist_tool_counts.clear();    
 
     today_variant.resize(get_n_variants());
-    std::fill(today_variant.begin(), today_variant.begin(), std::vector<int>(m.nstatus, 0));
+    std::fill(today_variant.begin(), today_variant.begin(), std::vector<int>(model->nstatus, 0));
 
     today_tool.resize(get_n_tools());
-    std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(m.nstatus, 0));
-    
+    std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(model->nstatus, 0));
+
+    hist_total_date.clear();
+    hist_total_status.clear();
+    hist_total_nvariants_active.clear();
+    hist_total_counts.clear();
 
     return;
 
@@ -122,24 +124,34 @@ inline void DataBase<TSeq>::record()
         _today_total_cp, today_total,
         "Sums of __today_total_cp in database-meat.hpp"
         )
-    // printf_epiworld(
-    //     "[epi-debug] Day % 3i totals [",
-    //     static_cast<int>(model->today())
-    //     );
-    //     for (const auto & tname : this->model->status_labels)
-    //     {
-    //         printf_epiworld(" %s", tname.substr(0u, 3u).c_str());
-    //     }
-    //     printf_epiworld(" ]: [");
-    //     for (const auto & tval : today_total)
-    //     {
-    //         printf_epiworld(" %i", static_cast<int>(tval));
-    //     }
-    //     printf_epiworld(
-    //         "] empirical transm-prob: %.4f\n",
-    //         static_cast<double>(n_transmissions_today)/
-    //             static_cast<double>(n_transmissions_potential)
-    //         );
+
+    if (model->today() == 0)
+    {
+        if (hist_total_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_date should be of length 0.")
+        if (hist_total_nvariants_active.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_nvariants_active should be of length 0.")
+        if (hist_total_status.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_status should be of length 0.")
+        if (hist_total_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_counts should be of length 0.")
+        if (hist_variant_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_date should be of length 0.")
+        if (hist_variant_id.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_id should be of length 0.")
+        if (hist_variant_status.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_status should be of length 0.")
+        if (hist_variant_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_counts should be of length 0.")
+        if (hist_tool_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_date should be of length 0.")
+        if (hist_tool_id.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_id should be of length 0.")
+        if (hist_tool_status.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_status should be of length 0.")
+        if (hist_tool_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_counts should be of length 0.")
+    }
     #endif
     ////////////////////////////////////////////////////////////////////////////
 

@@ -14,6 +14,7 @@
 template<typename TSeq>
 class Queue
 {
+    friend class Model<TSeq>;
 
 private:
 
@@ -36,7 +37,7 @@ public:
     epiworld_fast_int & operator[](epiworld_fast_uint i);
 
     // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
-    void set_model(Model<TSeq> * m);
+    void reset();
 
     bool operator==(const Queue<TSeq> & other) const;
     bool operator!=(const Queue<TSeq> & other) const {return !operator==(other);};
@@ -82,10 +83,9 @@ inline epiworld_fast_int & Queue<TSeq>::operator[](epiworld_fast_uint i)
 }
 
 template<typename TSeq>
-inline void Queue<TSeq>::set_model(Model<TSeq> * m)
+inline void Queue<TSeq>::reset()
 {
 
-    model = m;
     if (n_in_queue)
     {
 
@@ -96,7 +96,7 @@ inline void Queue<TSeq>::set_model(Model<TSeq> * m)
         
     }
 
-    active.resize(m->size(), 0);
+    active.resize(model->size(), 0);
 
 }
 
