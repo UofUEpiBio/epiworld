@@ -37,6 +37,12 @@ inline void DataBase<TSeq>::reset()
     hist_total_nvariants_active.clear();
     hist_total_counts.clear();
 
+    transmission_date.clear();
+    transmission_variant.clear();
+    transmission_source.clear();
+    transmission_target.clear();
+    transmission_source_exposure_date.clear();
+
     return;
 
 }

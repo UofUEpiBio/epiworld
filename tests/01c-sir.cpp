@@ -70,8 +70,8 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         
     }
 
-    model_0.print();
-    model_1.print();
+    model_0.print(true);
+    model_1.print(true);
 
     // if (model_0.get_db() != model_1.get_db())
     //     printf("Models are not equal in db\n");
