@@ -4,3 +4,4 @@ examples/*/*
 !*.cpp
 .Rproj.user
 .Rhistory
+tests

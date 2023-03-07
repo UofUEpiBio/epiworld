@@ -286,6 +286,12 @@ public:
             return false;
 #endif
 
+#ifdef EPI_DEBUG_NO_THREAD_ID
+    #define EPI_GET_THREAD_ID() 0
+#else
+    #define EPI_GET_THREAD_ID() omp_get_thread_num()
+#endif
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -484,49 +490,49 @@ using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
  */
 ///@{
 template<typename TSeq = int>
-inline TSeq default_sequence();
+inline TSeq default_sequence(int seq_count);
 
 // Making it 'static' so that we don't have problems when including the
 // header. This is important during the linkage, e.g., in R.
 // See https://en.cppreference.com/w/cpp/language/storage_duration#Linkage
-static int _n_sequences_created = 0;
+// static int _n_sequences_created = 0;
 
 template<>
-inline bool default_sequence() {
+inline bool default_sequence(int seq_count) {
 
-    if (_n_sequences_created == 2)
+    if (seq_count == 2)
         throw std::logic_error("Maximum number of sequence created.");
 
-    return _n_sequences_created++ ? false : true;
+    return seq_count++ ? false : true;
 }
 
 template<>
-inline int default_sequence() {
-    return _n_sequences_created++;
+inline int default_sequence(int seq_count) {
+    return seq_count++;
 }
 
 template<>
-inline epiworld_double default_sequence() {
-    return static_cast<epiworld_double>(_n_sequences_created++);
+inline epiworld_double default_sequence(int seq_count) {
+    return static_cast<epiworld_double>(seq_count++);
 }
 
 template<>
-inline std::vector<bool> default_sequence() {
+inline std::vector<bool> default_sequence(int seq_count) {
 
-    if (_n_sequences_created == 2)
+    if (seq_count == 2)
         throw std::logic_error("Maximum number of sequence created.");
 
-    return {_n_sequences_created++ ? false : true};
+    return {seq_count++ ? false : true};
 }
 
 template<>
-inline std::vector<int> default_sequence() {
-    return {_n_sequences_created++};
+inline std::vector<int> default_sequence(int seq_count) {
+    return {seq_count++};
 }
 
 template<>
-inline std::vector<epiworld_double> default_sequence() {
-    return {static_cast<epiworld_double>(_n_sequences_created++)};
+inline std::vector<epiworld_double> default_sequence(int seq_count) {
+    return {static_cast<epiworld_double>(seq_count++)};
 }
 ///@}
 
@@ -2742,7 +2748,7 @@ public:
     void record_variant(Virus<TSeq> & v); 
     void record_tool(Tool<TSeq> & t); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
-    void set_model(Model<TSeq> & m);
+    void reset();
     Model<TSeq> * get_model();
     void record();
 
@@ -2867,23 +2873,46 @@ public:
 #define EPIWORLD_DATABASE_MEAT_HPP
 
 template<typename TSeq>
-inline void DataBase<TSeq>::set_model(
-    Model<TSeq> & m)
+inline void DataBase<TSeq>::reset()
 {
-    model           = &m;
-    user_data.model = &m;
 
     // Initializing the counts
-    today_total.resize(m.nstatus);
+    today_total.resize(model->nstatus);
     std::fill(today_total.begin(), today_total.end(), 0);
-    for (auto & p : m.get_agents())
+    for (auto & p : model->get_agents())
         ++today_total[p.get_status()];
     
-    transition_matrix.resize(m.nstatus * m.nstatus);
+    transition_matrix.resize(model->nstatus * model->nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
-    for (size_t s = 0u; s < m.nstatus; ++s)
-        transition_matrix[s + s*m.nstatus] = today_total[s];
+    for (size_t s = 0u; s < model->nstatus; ++s)
+        transition_matrix[s + s * model->nstatus] = today_total[s];
 
+    hist_variant_date.clear();
+    hist_variant_id.clear();
+    hist_variant_status.clear();
+    hist_variant_counts.clear();
+
+    hist_tool_date.clear();
+    hist_tool_id.clear();
+    hist_tool_status.clear();
+    hist_tool_counts.clear();    
+
+    today_variant.resize(get_n_variants());
+    std::fill(today_variant.begin(), today_variant.begin(), std::vector<int>(model->nstatus, 0));
+
+    today_tool.resize(get_n_tools());
+    std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(model->nstatus, 0));
+
+    hist_total_date.clear();
+    hist_total_status.clear();
+    hist_total_nvariants_active.clear();
+    hist_total_counts.clear();
+
+    transmission_date.clear();
+    transmission_variant.clear();
+    transmission_source.clear();
+    transmission_target.clear();
+    transmission_source_exposure_date.clear();
 
     return;
 
@@ -2972,24 +3001,34 @@ inline void DataBase<TSeq>::record()
         _today_total_cp, today_total,
         "Sums of __today_total_cp in database-meat.hpp"
         )
-    // printf_epiworld(
-    //     "[epi-debug] Day % 3i totals [",
-    //     static_cast<int>(model->today())
-    //     );
-    //     for (const auto & tname : this->model->status_labels)
-    //     {
-    //         printf_epiworld(" %s", tname.substr(0u, 3u).c_str());
-    //     }
-    //     printf_epiworld(" ]: [");
-    //     for (const auto & tval : today_total)
-    //     {
-    //         printf_epiworld(" %i", static_cast<int>(tval));
-    //     }
-    //     printf_epiworld(
-    //         "] empirical transm-prob: %.4f\n",
-    //         static_cast<double>(n_transmissions_today)/
-    //             static_cast<double>(n_transmissions_potential)
-    //         );
+
+    if (model->today() == 0)
+    {
+        if (hist_total_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_date should be of length 0.")
+        if (hist_total_nvariants_active.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_nvariants_active should be of length 0.")
+        if (hist_total_status.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_status should be of length 0.")
+        if (hist_total_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_counts should be of length 0.")
+        if (hist_variant_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_date should be of length 0.")
+        if (hist_variant_id.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_id should be of length 0.")
+        if (hist_variant_status.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_status should be of length 0.")
+        if (hist_variant_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_counts should be of length 0.")
+        if (hist_tool_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_date should be of length 0.")
+        if (hist_tool_id.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_id should be of length 0.")
+        if (hist_tool_status.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_status should be of length 0.")
+        if (hist_tool_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_counts should be of length 0.")
+    }
     #endif
     ////////////////////////////////////////////////////////////////////////////
 
@@ -3076,7 +3115,9 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
 
     // If no sequence, then need to add one. This is regardless of the case
     if (v.get_sequence() == nullptr)
-        v.set_sequence(default_sequence<TSeq>());
+        v.set_sequence(default_sequence<TSeq>(
+            static_cast<int>(variant_name.size())
+            ));
 
     // Negative id -> virus hasn't been recorded
     if (v.get_id() < 0)
@@ -3164,7 +3205,9 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 {
 
     if (t.get_sequence() == nullptr)
-        t.set_sequence(default_sequence<TSeq>());
+        t.set_sequence(default_sequence<TSeq>(
+            static_cast<int>(tool_name.size())
+        ));
 
     if (t.get_id() < 0) 
     {
@@ -3452,7 +3495,7 @@ inline void DataBase<TSeq>::write_data(
             int id = v.second;
             file_variant_info <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 id << " \"" <<
                 variant_name[id] << "\" " <<
@@ -3477,7 +3520,7 @@ inline void DataBase<TSeq>::write_data(
         for (epiworld_fast_uint i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
@@ -3500,7 +3543,7 @@ inline void DataBase<TSeq>::write_data(
             int id = t.second;
             file_tool_info <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 id << " \"" <<
                 tool_name[id] << "\" " <<
@@ -3523,7 +3566,7 @@ inline void DataBase<TSeq>::write_data(
         for (epiworld_fast_uint i = 0; i < hist_tool_id.size(); ++i)
             file_tool_hist <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_tool_date[i] << " " <<
                 hist_tool_id[i] << " " <<
@@ -3544,7 +3587,7 @@ inline void DataBase<TSeq>::write_data(
         for (epiworld_fast_uint i = 0; i < hist_total_date.size(); ++i)
             file_total <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
@@ -3557,14 +3600,14 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_transmission(fn_transmission, std::ios_base::out);
         file_transmission <<
             #ifdef _OPENMP
-            omp_get_thread_num() << " " <<
+            EPI_GET_THREAD_ID() << " " <<
             #endif
             "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
         for (epiworld_fast_uint i = 0; i < transmission_target.size(); ++i)
             file_transmission <<
                 #ifdef _OPENMP
-                omp_get_thread_num() << " " <<
+                EPI_GET_THREAD_ID() << " " <<
                 #endif
                 transmission_date[i] << " " <<
                 transmission_variant[i] << " " <<
@@ -3579,7 +3622,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_transition(fn_transition, std::ios_base::out);
         file_transition <<
             #ifdef _OPENMP
-            omp_get_thread_num() << " " <<
+            EPI_GET_THREAD_ID() << " " <<
             #endif
             "date " << "from " << "to " << "counts\n";
 
@@ -3592,7 +3635,7 @@ inline void DataBase<TSeq>::write_data(
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
                         #ifdef _OPENMP
-                        omp_get_thread_num() << " " <<
+                        EPI_GET_THREAD_ID() << " " <<
                         #endif
                         i << " " <<
                         model->status_labels[from] << " " <<
@@ -3730,7 +3773,7 @@ inline void DataBase<TSeq>::reproductive_number(
     for (auto & m : map)
         fn_file <<
             #ifdef _OPENMP
-            omp_get_thread_num() << " " <<
+            EPI_GET_THREAD_ID() << " " <<
             #endif
             m.first[0u] << " " <<
             m.first[1u] << " " <<
@@ -5190,6 +5233,7 @@ inline AdjList rgraph_blocked(
 template<typename TSeq>
 class Queue
 {
+    friend class Model<TSeq>;
 
 private:
 
@@ -5212,7 +5256,7 @@ public:
     epiworld_fast_int & operator[](epiworld_fast_uint i);
 
     // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
-    void set_model(Model<TSeq> * m);
+    void reset();
 
     bool operator==(const Queue<TSeq> & other) const;
     bool operator!=(const Queue<TSeq> & other) const {return !operator==(other);};
@@ -5258,10 +5302,9 @@ inline epiworld_fast_int & Queue<TSeq>::operator[](epiworld_fast_uint i)
 }
 
 template<typename TSeq>
-inline void Queue<TSeq>::set_model(Model<TSeq> * m)
+inline void Queue<TSeq>::reset()
 {
 
-    model = m;
     if (n_in_queue)
     {
 
@@ -5272,7 +5315,7 @@ inline void Queue<TSeq>::set_model(Model<TSeq> * m)
         
     }
 
-    active.resize(m->size(), 0);
+    active.resize(model->size(), 0);
 
 }
 
@@ -5558,7 +5601,7 @@ public:
     std::vector<epiworld_double> array_double_tmp;
     std::vector<Virus<TSeq> * > array_virus_tmp;
 
-    Model() {};
+    Model();
     Model(const Model<TSeq> & m);
     Model(Model<TSeq> & m) = delete;
     Model(Model<TSeq> && m);
@@ -6360,7 +6403,22 @@ template<typename TSeq>
 inline Model<TSeq> * Model<TSeq>::clone_ptr()
 {
     Model<TSeq> * ptr = new Model<TSeq>(*dynamic_cast<const Model<TSeq>*>(this));
+
+    #ifdef EPI_DEBUG
+    if (*this != *ptr)
+        throw std::logic_error("Model::clone_ptr The copies of the model don't match.");
+    #endif
+
     return ptr;
+}
+
+template<typename TSeq>
+inline Model<TSeq>::Model()
+{
+    db.model = this;
+    db.user_data = this;
+    if (use_queuing)
+        queue.model = this;
 }
 
 template<typename TSeq>
@@ -6421,6 +6479,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // to be done afterwards since the state zero is set as a function
     // of the population.
     db.model = this;
+    db.user_data.model = this;
+
+    if (use_queuing)
+        queue.model = this;
 
     population_data = model.population_data;
     population_data_n_features = model.population_data_n_features;
@@ -6486,10 +6548,11 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    db.set_model(*this);
+    db.model = this;
+    db.user_data.model = this;
 
     if (use_queuing)
-        queue.set_model(this);
+        queue.model = this;
 
 }
 
@@ -6558,14 +6621,15 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     // Making sure population is passed correctly
     // Pointing to the right place
-    db.set_model(*this);
+    db.model = this;
+    db.user_data.model = this;
 
     population_data            = m.population_data;
     population_data_n_features = m.population_data_n_features;
 
     // Figure out the queuing
     if (use_queuing)
-        queue.set_model(this);
+        queue.model = this;
 
     // Finally, seeds are resetted automatically based on the original
     // engine
@@ -7449,14 +7513,6 @@ inline void Model<TSeq>::run_multiple(
     for (size_t i = 0; i < static_cast<size_t>(std::max(nthreads - 1, 0)); ++i)
         these.push_back(clone_ptr());
 
-    #ifdef EPI_DEBUG
-    for (auto & other : these)
-    {
-        if (*this != *other)
-            throw std::logic_error("Model:: The copies of the model don't match.");
-    }
-    #endif
-
     // Figuring out how many replicates
     std::vector< size_t > nreplicates(nthreads, 0);
     std::vector< size_t > nreplicates_csum(nthreads, 0);
@@ -7811,10 +7867,6 @@ inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 
 template<typename TSeq>
 inline void Model<TSeq>::reset() {
-    
-    // This also clears the queue
-    if (use_queuing)
-        queue.set_model(this);
 
     // Restablishing people
     pb = Progress(ndays, 80);
@@ -7863,18 +7915,11 @@ inline void Model<TSeq>::reset() {
     
     current_date = 0;
 
-    db.set_model(*this);
+    db.reset();
 
-    // Recording variants
-    for (auto & v : viruses)
-        db.record_variant(*v);
-
-    // Recording tools
-    for (auto & t : tools)
-        db.record_tool(*t);
-
+    // This also clears the queue
     if (use_queuing)
-        queue.set_model(this);
+        queue.reset();
 
     // Re distributing tools and virus
     dist_virus();
@@ -8206,9 +8251,6 @@ inline Model<TSeq> && Model<TSeq>::clone() const {
     //  - Neighbors point to the right place
     //  - DB is pointing to the right place
     Model<TSeq> res(*this);
-
-    // Pointing to the right place
-    res.get_db().set_model(res);
 
     // Removing old neighbors
     for (auto & p: res.population)
