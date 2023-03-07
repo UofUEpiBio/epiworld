@@ -254,32 +254,32 @@ inline void Model<TSeq>::print(bool lite) const
         fmt = "  - (%" + std::to_string(nstatus).length() +
             std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
         
-    printf_epiworld("\nDistribution of the population at time %i:\n", today());
-    for (size_t s = 0u; s < nstatus; ++s)
+    if (today() != 0)
     {
-        if (today() != 0)
+        printf_epiworld("\nDistribution of the population at time %i:\n", today());
+        for (size_t s = 0u; s < nstatus; ++s)
         {
 
-            printf_epiworld(
-                fmt.c_str(),
-                s,
-                status_labels[s].c_str(),
-                db.hist_total_counts[s],
-                db.today_total[ s ]
-                );
+                printf_epiworld(
+                    fmt.c_str(),
+                    s,
+                    status_labels[s].c_str(),
+                    db.hist_total_counts[s],
+                    db.today_total[ s ]
+                    );
 
         }
-        else
-        {
+            // else
+            // {
 
-            printf_epiworld(
-                fmt.c_str(),
-                s,
-                status_labels[s].c_str(),
-                db.today_total[ s ]
-                );
+            //     printf_epiworld(
+            //         fmt.c_str(),
+            //         s,
+            //         status_labels[s].c_str(),
+            //         db.today_total[ s ]
+            //         );
 
-        }
+            // }
     }
 
     if (today() != 0)

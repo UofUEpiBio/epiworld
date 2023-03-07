@@ -127,7 +127,7 @@ public:
     DataBase() = delete;
     DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
     DataBase(const DataBase<TSeq> & db);
-    DataBase<TSeq> & operator=(const DataBase<TSeq> & m) = delete;
+    // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
 
     /**
      * @brief Registering a new variant

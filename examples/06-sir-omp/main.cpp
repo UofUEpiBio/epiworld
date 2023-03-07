@@ -25,7 +25,7 @@ int main() {
     );
 
     for (unsigned i = 1u; i < nthreads; ++i)
-        Models[i].clone_population(Models[0u]);
+        Models[i] = Models[0u];
     printf("done.\n");
 
     auto start = std::chrono::high_resolution_clock::now();

@@ -26,9 +26,9 @@ inline void rewire_degseq(
 {
 
     #ifdef EPI_DEBUG
-    std::vector< int > _degree0(agents.size(), 0);
+    std::vector< int > _degree0(agents->size(), 0);
     for (size_t i = 0u; i < _degree0.size(); ++i)
-        _degree0[i] = model->population[i].get_neighbors().size();
+        _degree0[i] = model->get_agents()[i].get_neighbors().size();
     #endif
 
     // Identifying individuals with degree > 0
@@ -105,8 +105,8 @@ inline void rewire_degseq(
         // end as well, since we are dealing withi an undirected graph
         
         // Finding what neighbour is id0
-        model->population[id0].swap_neighbors(
-            model->population[id1],
+        model->get_agents()[id0].swap_neighbors(
+            model->get_agents()[id1],
             id01,
             id11
             );
@@ -117,7 +117,7 @@ inline void rewire_degseq(
     #ifdef EPI_DEBUG
     for (size_t _i = 0u; _i < _degree0.size(); ++_i)
     {
-        if (_degree0[_i] != model->population[_i].n_neighbors)
+        if (_degree0[_i] != static_cast<int>(model->get_agents()[_i].get_n_neighbors()))
             throw std::logic_error("[epi-debug] Degree does not match afted rewire_degseq.");
     }
     #endif

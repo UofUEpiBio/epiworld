@@ -17,7 +17,7 @@ std::vector< int > simfun(
     model("Infectiousness")  = params[1u];
 
     model.reset();
-    model.run();
+    model.run(50);
            
     std::vector< int > res;
     model.get_db().get_today_total(nullptr, &res);
@@ -78,6 +78,7 @@ int main()
     model.get_db().get_today_total(nullptr, &obs_dat);
 
     lfmcmc.set_observed_data(obs_dat);
+    lfmcmc.set_rand_engine(model.get_rand_endgine());
 
     std::vector< epiworld_double > par0 = {.5, .5};
 
