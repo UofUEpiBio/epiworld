@@ -853,7 +853,7 @@ inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i) const
     if (i >= n_entities)
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return model->entities[i];
+    return model->entities[entities[i]];
 }
 
 template<typename TSeq>
@@ -862,7 +862,7 @@ inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i)
     if (i >= n_entities)
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return model->entities[i];
+    return model->entities[entities[i]];
 }
 
 template<typename TSeq>
