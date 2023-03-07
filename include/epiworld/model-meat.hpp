@@ -1571,27 +1571,8 @@ inline void Model<TSeq>::run_multiple(
 
             }
 
-            #ifdef EPI_DEBUG
-            #pragma omp barrier
-            #pragma omp master 
-            {
-                this->print(true);
-
-                for (auto & m: these)
-                {
-
-                    m->print(true);
-
-                    EPI_DEBUG_FAIL_AT_TRUE(
-                        db != m->get_db(),
-                        "Model:: Databases master and child don't match"
-                    )
-                    
-                }
-
-            }
-            #endif        
         }
+        
     }
 
     // Adjusting the number of replicates
