@@ -35,6 +35,7 @@ jobs:
 
       - name: Check
         run: |
+          brew install llvm@17 |
           cd tests && make main.a && ./main.a
 
   test-ubuntu2:
