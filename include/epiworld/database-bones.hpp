@@ -52,10 +52,10 @@ private:
     std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
     std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
 
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_variant;
 
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_tool;
 
     // {Susceptible, Infected, etc.}
@@ -69,19 +69,19 @@ private:
     // Variants history
     std::vector< int > hist_variant_date;
     std::vector< int > hist_variant_id;
-    std::vector< epiworld_fast_uint > hist_variant_status;
+    std::vector< epiworld_fast_uint > hist_variant_state;
     std::vector< int > hist_variant_counts;
 
     // Tools history
     std::vector< int > hist_tool_date;
     std::vector< int > hist_tool_id;
-    std::vector< epiworld_fast_uint > hist_tool_status;
+    std::vector< epiworld_fast_uint > hist_tool_state;
     std::vector< int > hist_tool_counts;
 
     // Overall hist
     std::vector< int > hist_total_date;
     std::vector< int > hist_total_nvariants_active;
-    std::vector< epiworld_fast_uint > hist_total_status;
+    std::vector< epiworld_fast_uint > hist_total_state;
     std::vector< int > hist_total_counts;
     std::vector< int > hist_transition_matrix;
 
@@ -97,21 +97,21 @@ private:
     UserData<TSeq> user_data;
 
     void update_state(
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status,
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state,
         bool undo = false
     );
 
     void update_virus(
         epiworld_fast_uint virus_id,
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state
     );
 
     void update_tool(
         epiworld_fast_uint tool_id,
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state
     );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
@@ -151,7 +151,7 @@ public:
     /**
      * @name Get recorded information from the model
      * 
-     * @param what std::string, The status, e.g., 0, 1, 2, ...
+     * @param what std::string, The state, e.g., 0, 1, 2, ...
      * @return In `get_today_total`, the current counts of `what`.
      * @return In `get_today_variant`, the current counts of `what` for
      * each variant.
@@ -164,26 +164,26 @@ public:
     int get_today_total(std::string what) const;
     int get_today_total(epiworld_fast_uint what) const;
     void get_today_total(
-        std::vector< std::string > * status = nullptr,
+        std::vector< std::string > * state = nullptr,
         std::vector< int > * counts = nullptr
     ) const;
 
     void get_today_variant(
-        std::vector< std::string > & status,
+        std::vector< std::string > & state,
         std::vector< int > & id,
         std::vector< int > & counts
     ) const;
 
     void get_hist_total(
         std::vector< int > * date,
-        std::vector< std::string > * status,
+        std::vector< std::string > * state,
         std::vector< int > * counts
     ) const;
 
     void get_hist_variant(
         std::vector< int > & date,
         std::vector< int > & id,
-        std::vector< std::string > & status,
+        std::vector< std::string > & state,
         std::vector< int > & counts
     ) const;
     ///@}

@@ -46,7 +46,7 @@ public:
     ) -> void {
         // Does the agent become infected?
         if (m->runif() < 1.0/(m->par("Incubation days")))
-            p->change_status(m, ModelSEIR<TSeq>::INFECTED);
+            p->change_state(m, ModelSEIR<TSeq>::INFECTED);
 
         return;    
     };
@@ -78,10 +78,10 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 {
 
     // Adding statuses
-    model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_status("Exposed", model.update_exposed_seir);
-    model.add_status("Infected", model.update_infected_seir);
-    model.add_status("Removed");
+    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
+    model.add_state("Exposed", model.update_exposed_seir);
+    model.add_state("Infected", model.update_infected_seir);
+    model.add_state("Removed");
 
     // Setting up parameters
     model.add_param(infectiousness, "Infectiousness");
@@ -90,7 +90,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
+    virus.set_state(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
 
     virus.set_prob_infecting(&model("Infectiousness"));
     

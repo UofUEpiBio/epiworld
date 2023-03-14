@@ -89,7 +89,7 @@ private:
     std::vector< size_t > entities_locations;
     size_t n_entities = 0u;
 
-    epiworld_fast_uint status = 0u;
+    epiworld_fast_uint state = 0u;
     epiworld_fast_uint status_prev = 0u; ///< For accounting, if need to undo a change.
     
     int status_last_changed = -1; ///< Last time the agent was updated.
@@ -131,7 +131,7 @@ public:
      * 
      * @param tool Tool to add
      * @param virus Virus to add
-     * @param status_new Status after the change
+     * @param status_new state after the change
      * @param queue 
      */
     ///@{
@@ -275,13 +275,13 @@ public:
     std::vector< Agent<TSeq> * > get_neighbors();
     size_t get_n_neighbors() const;
 
-    void change_status(
+    void change_state(
         Model<TSeq> * model,
-        epiworld_fast_uint new_status,
+        epiworld_fast_uint new_state,
         epiworld_fast_int queue = 0
         );
 
-    const epiworld_fast_uint & get_status() const;
+    const epiworld_fast_uint & get_state() const;
 
     void reset();
 

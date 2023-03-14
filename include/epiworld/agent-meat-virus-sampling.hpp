@@ -101,15 +101,15 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 if (exclude_agent_bool->size() == 0u)
                 {
 
-                    exclude_agent_bool->resize(m->get_status().size(), false);
+                    exclude_agent_bool->resize(m->get_state().size(), false);
                     for (auto s : *exclude_agent_bool_idx)
                     {
                         if (s >= exclude_agent_bool->size())
                             throw std::logic_error(
-                                std::string("You are trying to exclude a status that is out of range: ") +
+                                std::string("You are trying to exclude a state that is out of range: ") +
                                 std::to_string(s) + std::string(". There are only ") +
                                 std::to_string(exclude_agent_bool->size()) + 
-                                std::string(" statuses in the model.")
+                                std::string(" states in the model.")
                                 );
 
                         exclude_agent_bool->operator[](s) = true;
@@ -131,8 +131,8 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 for (auto & neighbor: p->get_neighbors()) 
                 {
 
-                    // If the status is in the list, exclude it
-                    if (exclude_agent_bool->operator[](neighbor->get_status()))
+                    // If the state is in the list, exclude it
+                    if (exclude_agent_bool->operator[](neighbor->get_state()))
                         continue;
                             
                     for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
@@ -269,15 +269,15 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                 if (exclude_agent_bool->size() == 0u)
                 {
 
-                    exclude_agent_bool->resize(m->get_status().size(), false);
+                    exclude_agent_bool->resize(m->get_state().size(), false);
                     for (auto s : *exclude_agent_bool_idx)
                     {
                         if (s >= exclude_agent_bool->size())
                             throw std::logic_error(
-                                std::string("You are trying to exclude a status that is out of range: ") +
+                                std::string("You are trying to exclude a state that is out of range: ") +
                                 std::to_string(s) + std::string(". There are only ") +
                                 std::to_string(exclude_agent_bool->size()) + 
-                                std::string(" statuses in the model.")
+                                std::string(" states in the model.")
                                 );
 
                         exclude_agent_bool->operator[](s) = true;
@@ -299,8 +299,8 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                 for (auto & neighbor: p->get_neighbors()) 
                 {
 
-                    // If the status is in the list, exclude it
-                    if (exclude_agent_bool->operator[](neighbor->get_status()))
+                    // If the state is in the list, exclude it
+                    if (exclude_agent_bool->operator[](neighbor->get_state()))
                         continue;
                             
                     for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 

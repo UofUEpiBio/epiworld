@@ -110,7 +110,7 @@ struct Action {
     VirusPtr<TSeq> virus;
     ToolPtr<TSeq> tool;
     Entity<TSeq> * entity;
-    epiworld_fast_int new_status;
+    epiworld_fast_int new_state;
     epiworld_fast_int queue;
     ActionFun<TSeq> call;
     int idx_agent;
@@ -126,7 +126,7 @@ public:
      * @param tool_ Tool to add
      * @param virus_idx Index of virus to be removed (if needed)
      * @param tool_idx Index of tool to be removed (if needed)
-     * @param new_status_ Next status
+     * @param new_state_ Next state
      * @param queue_ Efect on the queue
      * @param call_ The action call (if needed)
      * @param idx_agent_ Location of agent in object.
@@ -137,13 +137,13 @@ public:
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         Entity<TSeq> * entity_,
-        epiworld_fast_int new_status_,
+        epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
-        new_status(new_status_),
+        new_state(new_state_),
         queue(queue_), call(call_), idx_agent(idx_agent_), idx_object(idx_object_) {
             return;
         };

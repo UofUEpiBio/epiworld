@@ -47,8 +47,8 @@ inline ModelSIS<TSeq>::ModelSIS(
     model.set_name("Susceptible-Infected-Susceptible (SIS)");
 
     // Adding statuses
-    model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_status("Infected", epiworld::default_update_exposed<TSeq>);
+    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
+    model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
 
     // Setting up parameters
     model.add_param(infectiousness, "Infection rate");
@@ -56,7 +56,7 @@ inline ModelSIS<TSeq>::ModelSIS(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(1,0,0);
+    virus.set_state(1,0,0);
     
     virus.set_prob_infecting(&model("Infection rate"));
     virus.set_prob_recovery(&model("Recovery rate"));

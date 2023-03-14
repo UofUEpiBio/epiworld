@@ -6,9 +6,9 @@ int main()
 
     // Setting up model --------------------------------------------------------
     epiworld::Model<> model;
-    model.add_status("Susceptible", epiworld::default_update_susceptible<>);
-    model.add_status("Exposed", epiworld::default_update_exposed<>);
-    model.add_status("Removed");
+    model.add_state("Susceptible", epiworld::default_update_susceptible<>);
+    model.add_state("Exposed", epiworld::default_update_exposed<>);
+    model.add_state("Removed");
 
 
     model.set_user_data({"agent_id", "virus_id"});
@@ -22,7 +22,7 @@ int main()
 
     // Setting up virus --------------------------------------------------------
     epiworld::Virus<> v("covid");
-    v.set_status(1,2,2);
+    v.set_state(1,2,2);
 
     EPI_NEW_POSTRECOVERYFUN_LAMBDA(immunity, int)
     {

@@ -56,8 +56,8 @@ private:
     epiworld_fast_int status_init = -99;
     epiworld_fast_int status_post = -99;
 
-    epiworld_fast_int queue_init = 0; ///< Change of status when added to agent.
-    epiworld_fast_int queue_post = 0; ///< Change of status when removed from agent.
+    epiworld_fast_int queue_init = 0; ///< Change of state when added to agent.
+    epiworld_fast_int queue_post = 0; ///< Change of state when removed from agent.
 
 public:
 
@@ -86,9 +86,9 @@ public:
     int get_id() const noexcept;
     const std::string & get_name() const noexcept;
 
-    void set_status(epiworld_fast_int init, epiworld_fast_int post);
+    void set_state(epiworld_fast_int init, epiworld_fast_int post);
     void set_queue(epiworld_fast_int init, epiworld_fast_int post);
-    void get_status(epiworld_fast_int * init, epiworld_fast_int * post);
+    void get_state(epiworld_fast_int * init, epiworld_fast_int * post);
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
 
     void reset();

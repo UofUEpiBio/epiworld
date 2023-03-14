@@ -45,9 +45,9 @@ inline ModelSIR<TSeq>::ModelSIR(
 {
 
     // Adding statuses
-    model.add_status("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_status("Infected", epiworld::default_update_exposed<TSeq>);
-    model.add_status("Recovered");
+    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
+    model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
+    model.add_state("Recovered");
 
     // Setting up parameters
     model.add_param(recovery, "Prob. of Recovery");
@@ -55,7 +55,7 @@ inline ModelSIR<TSeq>::ModelSIR(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(1,2,2);
+    virus.set_state(1,2,2);
     
     virus.set_prob_recovery(&model("Prob. of Recovery"));
     virus.set_prob_infecting(&model("Infectiousness"));

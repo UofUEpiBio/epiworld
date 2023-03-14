@@ -45,8 +45,8 @@ private:
     epiworld_fast_int status_init = -99;
     epiworld_fast_int status_post = -99;
 
-    epiworld_fast_int queue_init = QueueValues::NoOne; ///< Change of status when added to agent.
-    epiworld_fast_int queue_post = QueueValues::NoOne; ///< Change of status when removed from agent.
+    epiworld_fast_int queue_init = QueueValues::NoOne; ///< Change of state when added to agent.
+    epiworld_fast_int queue_post = QueueValues::NoOne; ///< Change of state when removed from agent.
 
     void set_agent(Agent<TSeq> * p, size_t idx);
 
@@ -97,9 +97,9 @@ public:
     void set_date(int d);
     int get_date() const;
 
-    void set_status(epiworld_fast_int init, epiworld_fast_int post);
+    void set_state(epiworld_fast_int init, epiworld_fast_int post);
     void set_queue(epiworld_fast_int init, epiworld_fast_int post);
-    void get_status(epiworld_fast_int * init, epiworld_fast_int * post);
+    void get_state(epiworld_fast_int * init, epiworld_fast_int * post);
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
 
     bool operator==(const Tool<TSeq> & other) const;

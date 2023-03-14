@@ -298,7 +298,7 @@ inline int Tool<TSeq>::get_date() const
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_status(
+inline void Tool<TSeq>::set_state(
     epiworld_fast_int init,
     epiworld_fast_int end
 )
@@ -318,7 +318,7 @@ inline void Tool<TSeq>::set_queue(
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::get_status(
+inline void Tool<TSeq>::get_state(
     epiworld_fast_int * init,
     epiworld_fast_int * post
 )

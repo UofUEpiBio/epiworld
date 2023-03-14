@@ -60,7 +60,7 @@ namespace epiworld {
 
     #include "entities-bones.hpp"
     
-    #include "agent-meat-status.hpp"
+    #include "agent-meat-state.hpp"
     #include "agent-bones.hpp"
     #include "agent-meat.hpp"
 

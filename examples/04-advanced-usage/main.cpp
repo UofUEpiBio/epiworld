@@ -40,10 +40,10 @@ int main() {
     // Initializing the model and reading population --------------------------
     epiworld::Model<DAT> model;
 
-    model.add_status("Susceptible", epiworld::default_update_susceptible<DAT>);
-    model.add_status("Exposed", epiworld::default_update_exposed<DAT>);
-    model.add_status("Recovered");
-    model.add_status("Removed");
+    model.add_state("Susceptible", epiworld::default_update_susceptible<DAT>);
+    model.add_state("Exposed", epiworld::default_update_exposed<DAT>);
+    model.add_state("Recovered");
+    model.add_state("Removed");
 
     model.agents_from_adjlist(
         "edgelist.txt", // Filepath
@@ -69,7 +69,7 @@ int main() {
     covid19.set_post_recovery(post_covid); 
     covid19.set_prob_death(&model("virus death"));
 
-    covid19.set_status(1,2,3);
+    covid19.set_state(1,2,3);
 
     // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine");

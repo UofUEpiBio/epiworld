@@ -181,7 +181,7 @@ template<typename TSeq>
 inline void UserData<TSeq>::print() const
 {
     // File header
-    printf_epiworld("Total records: %lu\n", n);
+    printf_epiworld("Total records: %llu\n", n);
     printf_epiworld("date");
 
     for (auto & cn : data_names)

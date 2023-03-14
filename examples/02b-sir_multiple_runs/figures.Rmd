@@ -14,16 +14,16 @@ dat <- read.csv("02b-sir-multiple-runs.csv")
 dat <- with(
   dat,
   rbind(
-    data.frame(run_id = run_id, status = "healthy", n = healthy),
-    data.frame(run_id = run_id, status = "infected", n = infected),
-    data.frame(run_id = run_id, status = "recovered", n = recovered),
-    data.frame(run_id = run_id, status = "removed", n = removed)
+    data.frame(run_id = run_id, state = "healthy", n = healthy),
+    data.frame(run_id = run_id, state = "infected", n = infected),
+    data.frame(run_id = run_id, state = "recovered", n = recovered),
+    data.frame(run_id = run_id, state = "removed", n = removed)
   ))
 ```
 
 ```{r}
 library(ggplot2)
-ggplot(dat, aes(y = n, colour = status)) +
+ggplot(dat, aes(y = n, colour = state)) +
   geom_boxplot()
 
 ```

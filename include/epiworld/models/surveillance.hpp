@@ -164,7 +164,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
         
         epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
-        epiworld_fast_uint status = p->get_status();
+        epiworld_fast_uint status = p->get_state();
 
         // Figuring out latent period
         if (v->get_data().size() == 0u)
@@ -194,9 +194,9 @@ inline ModelSURV<TSeq>::ModelSURV(
 
             // Will be symptomatic?
             if (EPI_RUNIF() < m->par("Prob of symptoms"))
-                p->change_status(m, ModelSURV<TSeq>::SYMPTOMATIC);
+                p->change_state(m, ModelSURV<TSeq>::SYMPTOMATIC);
             else
-                p->change_status(m, ModelSURV<TSeq>::ASYMPTOMATIC);
+                p->change_state(m, ModelSURV<TSeq>::ASYMPTOMATIC);
             
             return;
 
@@ -205,7 +205,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         // Otherwise, it can be removed
         if (EPI_RUNIF() < p_die)
         {
-            p->change_status(m, ModelSURV<TSeq>::REMOVED, -1);
+            p->change_state(m, ModelSURV<TSeq>::REMOVED, -1);
             return;
         }
         
@@ -213,7 +213,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     };
 
-    std::vector< epiworld_fast_uint > exposed_status = {
+    std::vector< epiworld_fast_uint > exposed_state = {
         SYMPTOMATIC,
         SYMPTOMATIC_ISOLATED,
         ASYMPTOMATIC,
@@ -222,7 +222,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     };
 
     epiworld::GlobalFun<TSeq> surveillance_program = 
-    [exposed_status](
+    [exposed_state](
         epiworld::Model<TSeq>* m
         ) -> void
     {
@@ -252,18 +252,18 @@ inline ModelSURV<TSeq>::ModelSURV(
             epiworld::Agent<TSeq> * p = &pop[i];
             
             // If still exposed for the next term
-            if (epiworld::IN(p->get_status(), exposed_status ))
+            if (epiworld::IN(p->get_state(), exposed_state ))
             {
 
                 ndetected += 1.0;
-                if (p->get_status() == ModelSURV<TSeq>::ASYMPTOMATIC)
+                if (p->get_state() == ModelSURV<TSeq>::ASYMPTOMATIC)
                 {
                     ndetected_asympt += 1.0;
-                    p->change_status(m, ModelSURV<TSeq>::ASYMPTOMATIC_ISOLATED);
+                    p->change_state(m, ModelSURV<TSeq>::ASYMPTOMATIC_ISOLATED);
                 }
                 else 
                 {
-                    p->change_status(m, ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED);
+                    p->change_state(m, ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED);
                 }
 
             }
@@ -285,14 +285,14 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     };
 
-    model.add_status("Susceptible", surveillance_update_susceptible);
-    model.add_status("Latent", surveillance_update_exposed);
-    model.add_status("Symptomatic", surveillance_update_exposed);
-    model.add_status("Symptomatic isolated", surveillance_update_exposed);
-    model.add_status("Asymptomatic", surveillance_update_exposed);
-    model.add_status("Asymptomatic isolated", surveillance_update_exposed);
-    model.add_status("Recovered");
-    model.add_status("Removed");
+    model.add_state("Susceptible", surveillance_update_susceptible);
+    model.add_state("Latent", surveillance_update_exposed);
+    model.add_state("Symptomatic", surveillance_update_exposed);
+    model.add_state("Symptomatic isolated", surveillance_update_exposed);
+    model.add_state("Asymptomatic", surveillance_update_exposed);
+    model.add_state("Asymptomatic isolated", surveillance_update_exposed);
+    model.add_state("Recovered");
+    model.add_state("Removed");
 
     // General model parameters
     model.add_param(latent_period, "Latent period");
@@ -307,7 +307,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     // Virus ------------------------------------------------------------------
     epiworld::Virus<TSeq> covid("Covid19");
-    covid.set_status(LATENT, RECOVERED, REMOVED);
+    covid.set_state(LATENT, RECOVERED, REMOVED);
     covid.set_post_immunity(&model("Prob. no reinfect"));
     covid.set_prob_death(&model("Prob. death"));
 
@@ -318,7 +318,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         ) -> epiworld_double
     {
         // No chance of infecting
-        epiworld_fast_uint  s = p->get_status();
+        epiworld_fast_uint  s = p->get_state();
         if (s == ModelSURV<TSeq>::LATENT)
             return static_cast<epiworld_double>(0.0);
         else if (s == ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED)

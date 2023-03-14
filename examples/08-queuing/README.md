@@ -5,7 +5,7 @@ Output from the program:
 ```
 
 ________________________________________________________________________________
-DEFAULT STATUS CODES
+DEFAULT state CODES
 
   0 = susceptible (S)             *
   6 = recovered (S)               *
@@ -17,7 +17,7 @@ DEFAULT STATUS CODES
   7 = removed (R)                 *
 
 (S): Susceptible, (I): Infected, (R): Recovered
- * : Baseline status (default)
+ * : Baseline state (default)
 ________________________________________________________________________________
 
 Running the model...

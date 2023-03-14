@@ -7,7 +7,7 @@ int main()
   // Creating a virus
   epiworld::Virus<> covid19("covid 19");
   covid19.set_prob_infecting(0.8);
-  covid19.set_status(1,2,2);
+  covid19.set_state(1,2,2);
   
   // Creating a tool
   epiworld::Tool<> vax("vaccine");
@@ -16,9 +16,9 @@ int main()
   // Creating a model
   epiworld::Model<> model;
 
-  model.add_status("Susceptible", epiworld::default_update_susceptible<>);
-  model.add_status("Infected", epiworld::default_update_exposed<>);
-  model.add_status("Removed");
+  model.add_state("Susceptible", epiworld::default_update_susceptible<>);
+  model.add_state("Infected", epiworld::default_update_exposed<>);
+  model.add_state("Removed");
 
   // Adding the tool and virus
   model.add_virus(covid19, .05);

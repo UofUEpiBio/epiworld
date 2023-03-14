@@ -122,7 +122,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             /* Listing who is infected */ 
             for (auto & p : m->get_agents())
             {
-                if (p.get_status() == ModelSEIRCONN<TSeq>::INFECTED)
+                if (p.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
                 {
                 
                     m->tracked_agents_infected.push_back(&p);
@@ -180,7 +180,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     throw std::logic_error(
                         "[epi-debug] The agent " + std::to_string(which) + " has no "+
                         "virus to share. The agent's status is: " +
-                        std::to_string(_m->tracked_agents_infected[which]->get_status())
+                        std::to_string(_m->tracked_agents_infected[which]->get_state())
                     );
                 }
                 #endif
@@ -207,7 +207,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
             tracked_agents_check_init(_m);
 
-            auto status = p->get_status();
+            auto status = p->get_state();
 
             if (status == ModelSEIRCONN<TSeq>::EXPOSED)
             {
@@ -219,7 +219,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     _m->tracked_agents_infected_next.push_back(p);
                     _m->tracked_ninfected_next++;
 
-                    p->change_status(m, ModelSEIRCONN<TSeq>::INFECTED);
+                    p->change_state(m, ModelSEIRCONN<TSeq>::INFECTED);
 
                     return;
 
@@ -282,15 +282,15 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     model.add_param(incubation_days, "Avg. Incubation days");
     
     // Status
-    model.add_status("Susceptible", update_susceptible);
-    model.add_status("Exposed", update_infected);
-    model.add_status("Infected", update_infected);
-    model.add_status("Recovered");
+    model.add_state("Susceptible", update_susceptible);
+    model.add_state("Exposed", update_infected);
+    model.add_state("Infected", update_infected);
+    model.add_state("Recovered");
 
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(ModelSEIRCONN<TSeq>::EXPOSED, ModelSEIRCONN<TSeq>::RECOVERED, ModelSEIRCONN<TSeq>::RECOVERED);
+    virus.set_state(ModelSEIRCONN<TSeq>::EXPOSED, ModelSEIRCONN<TSeq>::RECOVERED, ModelSEIRCONN<TSeq>::RECOVERED);
     model.add_virus(virus, prevalence);
 
     // Adding updating function

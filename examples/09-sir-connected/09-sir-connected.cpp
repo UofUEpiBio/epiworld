@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
 
     // Writing the results to the disk
     std::ofstream fn("09-sir-connected-experiments.csv", std::ios_base::out);
-    fn << "run_id,date,status,counts\n";
+    fn << "run_id,date,state,counts\n";
     
     for (int r = 0; r < static_cast<int>(nexperiments); ++r)
     {

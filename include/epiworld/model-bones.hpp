@@ -194,7 +194,7 @@ private:
      * @param virus_ Virus pointer included in the action
      * @param tool_ Tool pointer included in the action
      * @param entity_ Entity pointer included in the action
-     * @param new_status_ New state of the agent
+     * @param new_state_ New state of the agent
      * @param call_ Function the action will call
      * @param queue_ Change in the queue
      * @param idx_agent_ Location of agent in object.
@@ -205,7 +205,7 @@ private:
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         Entity<TSeq> * entity_,
-        epiworld_fast_uint new_status_,
+        epiworld_fast_uint new_state_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_,
         int idx_agent_,
@@ -381,7 +381,7 @@ public:
      * 
      */
     ///@{
-    void update_status();
+    void update_state();
     void mutate_variant();
     void next();
     virtual void run(
@@ -434,7 +434,7 @@ public:
      * @param fn_variant_hist Filename. History of the variant.
      * @param fn_tool_info Filename. Information about the tool.
      * @param fn_tool_hist Filename. History of the tool.
-     * @param fn_total_hist   Filename. Aggregated history (status)
+     * @param fn_total_hist   Filename. Aggregated history (state)
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
      * @param fn_reproductive_number Filename. Case by case reproductive number
@@ -490,24 +490,24 @@ public:
     Model<TSeq> && clone() const;
 
     /**
-     * @name Manage status (states) in the model
+     * @name Manage state (states) in the model
      * 
      * @details
      * 
-     * The functions `get_status` return the current values for the 
-     * statuses included in the model.
+     * The functions `get_state` return the current values for the 
+     * states included in the model.
      * 
-     * @param lab `std::string` Name of the status.
+     * @param lab `std::string` Name of the state.
      * 
-     * @return `add_status*` returns nothing.
-     * @return `get_status_*` returns a vector of pairs with the 
-     * statuses and their labels.
+     * @return `add_state*` returns nothing.
+     * @return `get_state_*` returns a vector of pairs with the 
+     * states and their labels.
      */
     ///@{
-    void add_status(std::string lab, UpdateFun<TSeq> fun = nullptr);
-    const std::vector< std::string > & get_status() const;
-    const std::vector< UpdateFun<TSeq> > & get_status_fun() const;
-    void print_status_codes() const;
+    void add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
+    const std::vector< std::string > & get_state() const;
+    const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
+    void print_state_codes() const;
     ///@}
 
     /**
@@ -590,7 +590,7 @@ public:
 
     void run_global_actions();
 
-    void clear_status_set();
+    void clear_state_set();
 
     /**
      * @name Queuing system

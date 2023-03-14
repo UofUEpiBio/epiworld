@@ -10,16 +10,16 @@ int main()
     // Creating a model
     epiworld::Model<int> model;
 
-    // Declaring the three statuses in the model
-    model.add_status("Susceptible", epiworld::default_update_susceptible<int>);
-    model.add_status("Exposed", epiworld::default_update_exposed<int>);
-    model.add_status("Recovered");
-    model.add_status("Removed");
+    // Declaring the three states in the model
+    model.add_state("Susceptible", epiworld::default_update_susceptible<int>);
+    model.add_state("Exposed", epiworld::default_update_exposed<int>);
+    model.add_state("Recovered");
+    model.add_state("Removed");
 
     // Adding the tool and virus
     epiworld::Virus<int> virus("covid 19");
     virus.set_post_immunity(1.0);
-    virus.set_status(1,2,3);
+    virus.set_state(1,2,3);
     virus.set_prob_death(.01);
     model.add_virus_n(virus, 50);
     

@@ -29,7 +29,7 @@ Setup
 -   Create global events (e.g., surveillance).
 -   Set up the population: small world network (default).
 -   Set up rewiring (optional).
--   Set statuses (arbitrary number of them).
+-   Set states (arbitrary number of them).
 
 Run
 
@@ -37,7 +37,7 @@ Run
 
 2.  For each t in 1 -> Duration:
 
-    -   Update status for susceptible/infected/removed(?)
+    -   Update state for susceptible/infected/removed(?)
     -   Mutate virus(es) (each individual)
     -   Run global actions (e.g., surveillance)
     -   Run rewiring algorithm
@@ -214,7 +214,7 @@ hist_comb <- rbind(
 ```
 
 ``` r
-ggplot(hist_comb, aes(x = date, y = counts + 1, colour = status, linetype=sim)) +
+ggplot(hist_comb, aes(x = date, y = counts + 1, colour = state, linetype=sim)) +
   geom_line() +
   # scale_y_log10() +
   labs(y = "Counts (log)")

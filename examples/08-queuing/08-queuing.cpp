@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     set_up_surveillance(surveillance1, "covid19");    
     set_up_surveillance(surveillance2, "covid19");
 
-    surveillance1.print_status_codes();
+    surveillance1.print_state_codes();
 
     // Adding a bernoulli graph as step 0
     epiworld::AdjList rgraph = epiworld::rgraph_smallworld(popsize, 3, .01, false, surveillance1);

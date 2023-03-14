@@ -132,7 +132,7 @@ inline const std::string & Entity<TSeq>::get_name() const noexcept
 }
 
 template<typename TSeq>
-inline void Entity<TSeq>::set_status(
+inline void Entity<TSeq>::set_state(
     epiworld_fast_int init,
     epiworld_fast_int end
 )
@@ -152,7 +152,7 @@ inline void Entity<TSeq>::set_queue(
 }
 
 template<typename TSeq>
-inline void Entity<TSeq>::get_status(
+inline void Entity<TSeq>::get_state(
     epiworld_fast_int * init,
     epiworld_fast_int * post
 )

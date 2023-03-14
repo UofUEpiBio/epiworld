@@ -71,9 +71,9 @@ start <- c(S = EPI_N * (1 - EPI_0), I = EPI_N * EPI_0, R = 0)
 out <- ode(y = start, times = times, func = sirmod, parms= parms)
 out <- as.data.frame(out)
 out <- rbind(
-    with(out, data.table(date = time, status = "Susceptible", counts = S)),
-    with(out, data.table(date = time, status = "Infected", counts = I)),
-    with(out, data.table(date = time, status = "Recovered", counts = R))
+    with(out, data.table(date = time, state = "Susceptible", counts = S)),
+    with(out, data.table(date = time, state = "Infected", counts = I)),
+    with(out, data.table(date = time, state = "Recovered", counts = R))
 )
 ```
 
@@ -81,7 +81,7 @@ Now we visualize the model
 
 ```{r visualize}
 ggplot(out, aes(x = date, y = counts)) +
-    geom_line(aes(colour = status)) +
+    geom_line(aes(colour = state)) +
     labs(title = "Compartmental SIR")
 ```
 
@@ -131,10 +131,10 @@ start <- c(S = EPI_N * (1 - EPI_0), E = EPI_N * EPI_0, I = 0, R = 0)
 out_seir <- ode(y = start, times = times, func = seirmod, parms = parms)
 out_seir <- as.data.frame(out_seir)
 out_seir <- rbind(
-    with(out_seir, data.table(date = time, status = "Susceptible", counts = S)),
-    with(out_seir, data.table(date = time, status = "Exposed", counts = E)),
-    with(out_seir, data.table(date = time, status = "Infected", counts = I)),
-    with(out_seir, data.table(date = time, status = "Recovered", counts = R))
+    with(out_seir, data.table(date = time, state = "Susceptible", counts = S)),
+    with(out_seir, data.table(date = time, state = "Exposed", counts = E)),
+    with(out_seir, data.table(date = time, state = "Infected", counts = I)),
+    with(out_seir, data.table(date = time, state = "Recovered", counts = R))
 )
 ```
 
@@ -142,7 +142,7 @@ Now we visualize the model
 
 ```{r visualize-seir}
 ggplot(out_seir, aes(x = date, y = counts)) +
-    geom_line(aes(colour = status)) +
+    geom_line(aes(colour = state)) +
     labs(title = "Compartmental SEIR")
 ```
 
@@ -228,7 +228,7 @@ system("./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $
 library(ggplot2)
 epiworld <- data.table::fread("total_hist.txt")
 ggplot(epiworld, aes(x = date, y = counts)) +
-    geom_line(aes(colour = status)) +
+    geom_line(aes(colour = state)) +
     labs(title = "ABM SIR")
 ```
 
@@ -240,7 +240,7 @@ system("./09-seir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r 
 library(ggplot2)
 epiworld <- data.table::fread("total_hist.txt")
 ggplot(epiworld, aes(x = date, y = counts)) +
-    geom_line(aes(colour = status)) +
+    geom_line(aes(colour = state)) +
     labs(title = "ABM SEIR")
 ```
 
@@ -266,19 +266,19 @@ epiworld <- data.table::fread("09-sir-connected-experiments.csv")
 epiworld <- epiworld[, .(
     min  = quantile(counts, probs = .025),
     mean = mean(counts),
-    max  = quantile(counts, probs = .975)), by = .(date, status)]
+    max  = quantile(counts, probs = .975)), by = .(date, state)]
 
 # Merging Compartmental
 epiworld <- merge(
     epiworld,
-    out[, .(date = date, status = status, compartmental = counts)],
-    by = c("date", "status")
+    out[, .(date = date, state = state, compartmental = counts)],
+    by = c("date", "state")
 )
 
-setorder(epiworld, status, date)
+setorder(epiworld, state, date)
 ggplot(epiworld, aes(x = date, y = mean)) +
-    geom_ribbon(aes(ymin = min, ymax = max, colour = status), alpha = 0.1) +
-    geom_line(aes(x = date, y = compartmental, colour = sprintf("%s (compt)", status)))
+    geom_ribbon(aes(ymin = min, ymax = max, colour = state), alpha = 0.1) +
+    geom_line(aes(x = date, y = compartmental, colour = sprintf("%s (compt)", state)))
 ```
 
 It seems that, although both yield the same equilibria, compartmental models 
@@ -302,19 +302,19 @@ epiworld_seir <- data.table::fread("09-seir-connected-experiments.csv")
 epiworld_seir <- epiworld_seir[, .(
     min  = quantile(counts, probs = .025),
     mean = mean(counts),
-    max  = quantile(counts, probs = .975)), by = .(date, status)]
+    max  = quantile(counts, probs = .975)), by = .(date, state)]
 
 # Merging Compartmental
 epiworld_seir <- merge(
     epiworld_seir,
-    out_seir[, .(date = date, status = status, compartmental = counts)],
-    by = c("date", "status")
+    out_seir[, .(date = date, state = state, compartmental = counts)],
+    by = c("date", "state")
 )
 
-setorder(epiworld_seir, status, date)
+setorder(epiworld_seir, state, date)
 ggplot(epiworld_seir, aes(x = date, y = mean)) +
-    geom_ribbon(aes(ymin = min, ymax = max, colour = status), alpha = 0.1) +
-    geom_line(aes(x = date, y = compartmental, colour = sprintf("%s (compt)", status)))
+    geom_ribbon(aes(ymin = min, ymax = max, colour = state), alpha = 0.1) +
+    geom_line(aes(x = date, y = compartmental, colour = sprintf("%s (compt)", state)))
 ```
 
 ## Rates

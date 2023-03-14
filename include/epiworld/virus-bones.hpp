@@ -48,13 +48,13 @@ private:
     std::vector< epiworld_double * > params;
     std::vector< epiworld_double > data;
 
-    epiworld_fast_int status_init    = -99; ///< Change of status when added to agent.
-    epiworld_fast_int status_post    = -99; ///< Change of status when removed from agent.
-    epiworld_fast_int status_removed = -99; ///< Change of status when agent is removed
+    epiworld_fast_int status_init    = -99; ///< Change of state when added to agent.
+    epiworld_fast_int status_post    = -99; ///< Change of state when removed from agent.
+    epiworld_fast_int status_removed = -99; ///< Change of state when agent is removed
 
-    epiworld_fast_int queue_init    = QueueValues::Everyone; ///< Change of status when added to agent.
-    epiworld_fast_int queue_post    = -QueueValues::Everyone; ///< Change of status when removed from agent.
-    epiworld_fast_int queue_removed = -99; ///< Change of status when agent is removed
+    epiworld_fast_int queue_init    = QueueValues::Everyone; ///< Change of state when added to agent.
+    epiworld_fast_int queue_post    = -QueueValues::Everyone; ///< Change of state when removed from agent.
+    epiworld_fast_int queue_removed = -99; ///< Change of state when agent is removed
 
 public:
     Virus(std::string name = "unknown virus");
@@ -112,19 +112,19 @@ public:
     std::vector< epiworld_double > & get_data();
 
     /**
-     * @name Get and set the status and queue
+     * @name Get and set the state and queue
      * 
-     * After applied, viruses can change the status and affect
+     * After applied, viruses can change the state and affect
      * the queue of agents. These function sets the default values,
      * which are retrieved when adding or removing a virus does not
-     * specify a change in status or in queue.
+     * specify a change in state or in queue.
      * 
      * @param init After the virus/tool is added to the agent.
      * @param end After the virus/tool is removed.
      * @param removed After the agent (Agent) is removed.
      */
     ///@{
-    void set_status(
+    void set_state(
         epiworld_fast_int init,
         epiworld_fast_int end,
         epiworld_fast_int removed = -99
@@ -136,7 +136,7 @@ public:
         epiworld_fast_int removed = -99
         );
 
-    void get_status(
+    void get_state(
         epiworld_fast_int * init,
         epiworld_fast_int * end,
         epiworld_fast_int * removed = nullptr

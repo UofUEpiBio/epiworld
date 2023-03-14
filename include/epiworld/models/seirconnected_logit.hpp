@@ -102,7 +102,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
                 /* Listing who is infected */ 
                 for (auto & p : m->get_agents())
                 {
-                    if (p.get_status() == ModelSEIRCONNLogit<TSeq>::INFECTED)
+                    if (p.get_state() == ModelSEIRCONNLogit<TSeq>::INFECTED)
                     {
                     
                         _tracked_agents_infected->push_back(&p);
@@ -163,7 +163,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
                     throw std::logic_error(
                         "[epi-debug] The agent " + std::to_string(which) + " has no "+
                         "virus to share. The agent's status is: " +
-                        std::to_string(_tracked_agents_infected->operator[](which)->get_status())
+                        std::to_string(_tracked_agents_infected->operator[](which)->get_state())
                     );
                 }
                 #endif
@@ -190,7 +190,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
         {
 
             tracked_agents_check_init(m);
-            auto status = p->get_status();
+            auto status = p->get_state();
 
             if (status == ModelSEIRCONNLogit<TSeq>::EXPOSED)
             {
@@ -202,7 +202,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
                     _tracked_agents_infected_next->push_back(p);
                     *_tracked_ninfected_next += 1;
 
-                    p->change_status(m, ModelSEIRCONNLogit<TSeq>::INFECTED);
+                    p->change_state(m, ModelSEIRCONNLogit<TSeq>::INFECTED);
 
                     return;
 
@@ -268,10 +268,10 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
     model.add_param(incubation_days, "Avg. Incubation days");
     
     // Status
-    model.add_status("Susceptible", update_susceptible);
-    model.add_status("Exposed", update_infected);
-    model.add_status("Infected", update_infected);
-    model.add_status("Recovered");
+    model.add_state("Susceptible", update_susceptible);
+    model.add_state("Exposed", update_infected);
+    model.add_state("Infected", update_infected);
+    model.add_state("Recovered");
 
     // Adding agent's parameters
     model.set_agents_data(covars, logit_params.size());
@@ -283,7 +283,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(1,3,3);
+    virus.set_state(1,3,3);
     model.add_virus(virus, prevalence);
 
     // Adding updating function

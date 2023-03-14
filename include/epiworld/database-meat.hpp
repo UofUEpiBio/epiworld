@@ -9,7 +9,7 @@ inline void DataBase<TSeq>::reset()
     today_total.resize(model->nstatus);
     std::fill(today_total.begin(), today_total.end(), 0);
     for (auto & p : model->get_agents())
-        ++today_total[p.get_status()];
+        ++today_total[p.get_state()];
     
     transition_matrix.resize(model->nstatus * model->nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
@@ -18,12 +18,12 @@ inline void DataBase<TSeq>::reset()
 
     hist_variant_date.clear();
     hist_variant_id.clear();
-    hist_variant_status.clear();
+    hist_variant_state.clear();
     hist_variant_counts.clear();
 
     hist_tool_date.clear();
     hist_tool_id.clear();
-    hist_tool_status.clear();
+    hist_tool_state.clear();
     hist_tool_counts.clear();    
 
     today_variant.resize(get_n_variants());
@@ -33,7 +33,7 @@ inline void DataBase<TSeq>::reset()
     std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(model->nstatus, 0));
 
     hist_total_date.clear();
-    hist_total_status.clear();
+    hist_total_state.clear();
     hist_total_nvariants_active.clear();
     hist_total_counts.clear();
     hist_transition_matrix.clear();
@@ -63,9 +63,9 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     tool_origin_date(db.tool_origin_date),
     seq_hasher(db.seq_hasher),
     seq_writer(db.seq_writer),
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     today_variant(db.today_variant),
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     today_tool(db.today_tool),
     // {Susceptible, Infected, etc.}
     today_total(db.today_total),
@@ -75,17 +75,17 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     // Variants history
     hist_variant_date(db.hist_variant_date),
     hist_variant_id(db.hist_variant_id),
-    hist_variant_status(db.hist_variant_status),
+    hist_variant_state(db.hist_variant_state),
     hist_variant_counts(db.hist_variant_counts),
     // Tools history
     hist_tool_date(db.hist_tool_date),
     hist_tool_id(db.hist_tool_id),
-    hist_tool_status(db.hist_tool_status),
+    hist_tool_state(db.hist_tool_state),
     hist_tool_counts(db.hist_tool_counts),
     // Overall hist
     hist_total_date(db.hist_total_date),
     hist_total_nvariants_active(db.hist_total_nvariants_active),
-    hist_total_status(db.hist_total_status),
+    hist_total_state(db.hist_total_state),
     hist_total_counts(db.hist_total_counts),
     hist_transition_matrix(db.hist_transition_matrix),
     // Transmission network
@@ -127,7 +127,7 @@ inline void DataBase<TSeq>::record()
     // Checking whether the sums correspond
     std::vector< int > _today_total_cp(today_total.size(), 0);
     for (auto & p : model->population)
-        _today_total_cp[p.get_status()]++;
+        _today_total_cp[p.get_state()]++;
     
     EPI_DEBUG_VECTOR_MATCH_INT(
         _today_total_cp, today_total,
@@ -140,24 +140,24 @@ inline void DataBase<TSeq>::record()
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_date should be of length 0.")
         if (hist_total_nvariants_active.size() != 0)
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_nvariants_active should be of length 0.")
-        if (hist_total_status.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_status should be of length 0.")
+        if (hist_total_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_state should be of length 0.")
         if (hist_total_counts.size() != 0)
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_counts should be of length 0.")
         if (hist_variant_date.size() != 0)
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_date should be of length 0.")
         if (hist_variant_id.size() != 0)
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_id should be of length 0.")
-        if (hist_variant_status.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_status should be of length 0.")
+        if (hist_variant_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_state should be of length 0.")
         if (hist_variant_counts.size() != 0)
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_variant_counts should be of length 0.")
         if (hist_tool_date.size() != 0)
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_date should be of length 0.")
         if (hist_tool_id.size() != 0)
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_id should be of length 0.")
-        if (hist_tool_status.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_status should be of length 0.")
+        if (hist_tool_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_state should be of length 0.")
         if (hist_tool_counts.size() != 0)
             EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_counts should be of length 0.")
     }
@@ -177,7 +177,7 @@ inline void DataBase<TSeq>::record()
 
                 hist_variant_date.push_back(model->today());
                 hist_variant_id.push_back(p.second);
-                hist_variant_status.push_back(s);
+                hist_variant_state.push_back(s);
                 hist_variant_counts.push_back(today_variant[p.second][s]);
 
             }
@@ -193,7 +193,7 @@ inline void DataBase<TSeq>::record()
 
                 hist_tool_date.push_back(model->today());
                 hist_tool_id.push_back(p.second);
-                hist_tool_status.push_back(s);
+                hist_tool_state.push_back(s);
                 hist_tool_counts.push_back(today_tool[p.second][s]);
 
             }
@@ -205,7 +205,7 @@ inline void DataBase<TSeq>::record()
         {
             hist_total_date.push_back(model->today());
             hist_total_nvariants_active.push_back(today_total_nvariants_active);
-            hist_total_status.push_back(s);
+            hist_total_state.push_back(s);
             hist_total_counts.push_back(today_total[s]);
         }
 
@@ -320,9 +320,9 @@ inline void DataBase<TSeq>::record_variant(Virus<TSeq> & v)
         if (v.get_agent() != nullptr)
         {
             // Correcting math
-            epiworld_fast_uint tmp_status = v.get_agent()->get_status();
-            today_variant[old_id][tmp_status]--;
-            today_variant[new_id][tmp_status]++;
+            epiworld_fast_uint tmp_state = v.get_agent()->get_state();
+            today_variant[old_id][tmp_state]--;
+            today_variant[new_id][tmp_state]++;
 
         }
 
@@ -396,9 +396,9 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
         if (t.get_agent() != nullptr)
         {
             // Correcting math
-            epiworld_fast_uint tmp_status = t.get_agent()->get_status();
-            today_tool[old_id][tmp_status]--;
-            today_tool[new_id][tmp_status]++;
+            epiworld_fast_uint tmp_state = t.get_agent()->get_state();
+            today_tool[old_id][tmp_state]--;
+            today_tool[new_id][tmp_state]++;
 
         }
 
@@ -417,25 +417,25 @@ inline size_t DataBase<TSeq>::size() const
 
 template<typename TSeq>
 inline void DataBase<TSeq>::update_state(
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status,
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state,
         bool undo
 ) {
 
     if (undo)
     {
 
-        today_total[prev_status]++;
-        today_total[new_status]--;
+        today_total[prev_state]++;
+        today_total[new_state]--;
         
     } else {
 
-        today_total[prev_status]--;
-        today_total[new_status]++;
+        today_total[prev_state]--;
+        today_total[new_state]++;
 
     }
 
-    record_transition(prev_status, new_status, undo);
+    record_transition(prev_state, new_state, undo);
     
     return;
 }
@@ -443,12 +443,12 @@ inline void DataBase<TSeq>::update_state(
 template<typename TSeq>
 inline void DataBase<TSeq>::update_virus(
         epiworld_fast_uint virus_id,
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state
 ) {
 
-    today_variant[virus_id][prev_status]--;
-    today_variant[virus_id][new_status]++;
+    today_variant[virus_id][prev_state]--;
+    today_variant[virus_id][new_state]++;
 
     return;
     
@@ -457,13 +457,13 @@ inline void DataBase<TSeq>::update_virus(
 template<typename TSeq>
 inline void DataBase<TSeq>::update_tool(
         epiworld_fast_uint tool_id,
-        epiworld_fast_uint prev_status,
-        epiworld_fast_uint new_status
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state
 ) {
 
 
-    today_tool[tool_id][prev_status]--;    
-    today_tool[tool_id][new_status]++;
+    today_tool[tool_id][prev_state]--;    
+    today_tool[tool_id][new_state]++;
 
     return;
 
@@ -514,12 +514,12 @@ inline int DataBase<TSeq>::get_today_total(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_today_total(
-    std::vector< std::string > * status,
+    std::vector< std::string > * state,
     std::vector< int > * counts
 ) const
 {
-    if (status != nullptr)
-        (*status) = model->status_labels;
+    if (state != nullptr)
+        (*state) = model->status_labels;
 
     if (counts != nullptr)
         *counts = today_total;
@@ -528,13 +528,13 @@ inline void DataBase<TSeq>::get_today_total(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_today_variant(
-    std::vector< std::string > & status,
+    std::vector< std::string > & state,
     std::vector< int > & id,
     std::vector< int > & counts
     ) const
 {
       
-    status.resize(today_variant.size(), "");
+    state.resize(today_variant.size(), "");
     id.resize(today_variant.size(), 0);
     counts.resize(today_variant.size(),0);
 
@@ -542,7 +542,7 @@ inline void DataBase<TSeq>::get_today_variant(
     for (epiworld_fast_uint v = 0u; v < today_variant.size(); ++v)
         for (epiworld_fast_uint s = 0u; s < model->status_labels.size(); ++s)
         {
-            status[n]   = model->status_labels[s];
+            state[n]   = model->status_labels[s];
             id[n]       = static_cast<int>(v);
             counts[n++] = today_variant[v][s];
 
@@ -553,7 +553,7 @@ inline void DataBase<TSeq>::get_today_variant(
 template<typename TSeq>
 inline void DataBase<TSeq>::get_hist_total(
     std::vector< int > * date,
-    std::vector< std::string > * status,
+    std::vector< std::string > * state,
     std::vector< int > * counts
 ) const
 {
@@ -561,11 +561,11 @@ inline void DataBase<TSeq>::get_hist_total(
     if (date != nullptr)
         *date = hist_total_date;
 
-    if (status != nullptr)
+    if (state != nullptr)
     {
-        status->resize(hist_total_status.size(), "");
-        for (epiworld_fast_uint i = 0u; i < hist_total_status.size(); ++i)
-            status->operator[](i) = model->status_labels[hist_total_status[i]];
+        state->resize(hist_total_state.size(), "");
+        for (epiworld_fast_uint i = 0u; i < hist_total_state.size(); ++i)
+            state->operator[](i) = model->status_labels[hist_total_state[i]];
     }
 
     if (counts != nullptr)
@@ -579,7 +579,7 @@ template<typename TSeq>
 inline void DataBase<TSeq>::get_hist_variant(
     std::vector< int > & date,
     std::vector< int > & id,
-    std::vector< std::string > & status,
+    std::vector< std::string > & state,
     std::vector< int > & counts
 ) const {
 
@@ -588,9 +588,9 @@ inline void DataBase<TSeq>::get_hist_variant(
     labels = model->status_labels;
     
     id = hist_variant_id;
-    status.resize(hist_variant_status.size(), "");
-    for (epiworld_fast_uint i = 0u; i < hist_variant_status.size(); ++i)
-        status[i] = labels[hist_variant_status[i]];
+    state.resize(hist_variant_state.size(), "");
+    for (epiworld_fast_uint i = 0u; i < hist_variant_state.size(); ++i)
+        state[i] = labels[hist_variant_state[i]];
 
     counts = hist_variant_counts;
 
@@ -644,9 +644,9 @@ inline void DataBase<TSeq>::write_data(
         
         file_variant <<
             #ifdef _OPENMP
-            "thread "<< "date " << "id " << "status " << "n\n";
+            "thread "<< "date " << "id " << "state " << "n\n";
             #else
-            "date " << "id " << "status " << "n\n";
+            "date " << "id " << "state " << "n\n";
             #endif
 
         for (epiworld_fast_uint i = 0; i < hist_variant_id.size(); ++i)
@@ -656,7 +656,7 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
-                model->status_labels[hist_variant_status[i]] << " " <<
+                model->status_labels[hist_variant_state[i]] << " " <<
                 hist_variant_counts[i] << "\n";
     }
 
@@ -693,7 +693,7 @@ inline void DataBase<TSeq>::write_data(
             #ifdef _OPENMP
             "thread " << 
             #endif
-            "date " << "id " << "status " << "n\n";
+            "date " << "id " << "state " << "n\n";
 
         for (epiworld_fast_uint i = 0; i < hist_tool_id.size(); ++i)
             file_tool_hist <<
@@ -702,7 +702,7 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_tool_date[i] << " " <<
                 hist_tool_id[i] << " " <<
-                model->status_labels[hist_tool_status[i]] << " " <<
+                model->status_labels[hist_tool_state[i]] << " " <<
                 hist_tool_counts[i] << "\n";
     }
 
@@ -714,7 +714,7 @@ inline void DataBase<TSeq>::write_data(
             #ifdef _OPENMP
             "thread " << 
             #endif
-            "date " << "nvariants " << "status " << "counts\n";
+            "date " << "nvariants " << "state " << "counts\n";
 
         for (epiworld_fast_uint i = 0; i < hist_total_date.size(); ++i)
             file_total <<
@@ -723,7 +723,7 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
-                model->status_labels[hist_total_status[i]] << "\" " << 
+                model->status_labels[hist_total_state[i]] << "\" " << 
                 hist_total_counts[i] << "\n";
     }
 
@@ -921,30 +921,30 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
     bool print
 ) const {
 
-    auto status_labels = model->get_status();
-    size_t n_status = status_labels.size();
+    auto status_labels = model->get_state();
+    size_t n_state = status_labels.size();
     size_t n_days   = model->get_ndays();
-    std::vector< epiworld_double > res(n_status * n_status, 0.0);
-    std::vector< epiworld_double > days_to_include(n_status, 0.0);
+    std::vector< epiworld_double > res(n_state * n_state, 0.0);
+    std::vector< epiworld_double > days_to_include(n_state, 0.0);
 
     for (size_t t = 1; t < n_days; ++t)
     {
 
-        for (size_t s_i = 0; s_i < n_status; ++s_i)
+        for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
-            epiworld_double daily_total = hist_total_counts[(t - 1) * n_status + s_i];
+            epiworld_double daily_total = hist_total_counts[(t - 1) * n_state + s_i];
 
             if (daily_total == 0)
                 continue;
 
             days_to_include[s_i] += 1.0; 
 
-            for (size_t s_j = 0u; s_j < n_status; ++s_j)
+            for (size_t s_j = 0u; s_j < n_state; ++s_j)
             {
                 #ifdef EPI_DEBUG
                 epiworld_double entry = hist_transition_matrix[
-                    s_i + s_j * n_status +
-                    t * (n_status * n_status)
+                    s_i + s_j * n_state +
+                    t * (n_state * n_state)
                     ];
 
                 if (entry > daily_total)
@@ -952,12 +952,12 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
                         "The entry in hist_transition_matrix cannot have more elememnts than the total"
                         );
 
-                res[s_i + s_j * n_status] += (entry / daily_total);
+                res[s_i + s_j * n_state] += (entry / daily_total);
                 #else
-                    res[s_i + s_j * n_status] += (
+                    res[s_i + s_j * n_state] += (
                         hist_transition_matrix[
-                            s_i + s_j * n_status +
-                            t * (n_status * n_status)
+                            s_i + s_j * n_state +
+                            t * (n_state * n_state)
                         ] / daily_total
                     );
                 #endif
@@ -967,10 +967,10 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
 
     }
 
-    for (size_t s_i = 0; s_i < n_status; ++s_i)
+    for (size_t s_i = 0; s_i < n_state; ++s_i)
     {
-        for (size_t s_j = 0; s_j < n_status; ++s_j)
-            res[s_i + s_j * n_status] /= days_to_include[s_i];
+        for (size_t s_j = 0; s_j < n_state; ++s_j)
+            res[s_i + s_j * n_state] /= days_to_include[s_i];
     }
 
     if (print)
@@ -984,16 +984,16 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
         std::string fmt = " - %-" + std::to_string(nchar) + "s";
         
         printf_epiworld("\nTransition Probabilities:\n");
-        for (size_t s_i = 0u; s_i < n_status; ++s_i)
+        for (size_t s_i = 0u; s_i < n_state; ++s_i)
         {
             printf_epiworld(fmt.c_str(), status_labels[s_i].c_str());
-            for (size_t s_j = 0u; s_j < n_status; ++s_j)
+            for (size_t s_j = 0u; s_j < n_state; ++s_j)
             {
-                if (std::isnan(res[s_i + s_j * n_status]))
+                if (std::isnan(res[s_i + s_j * n_state]))
                 {
                     printf_epiworld("     -");
                 } else {
-                    printf_epiworld(" % 4.2f", res[s_i + s_j * n_status]);
+                    printf_epiworld(" % 4.2f", res[s_i + s_j * n_state]);
                 }
             }
             printf_epiworld("\n");
@@ -1086,9 +1086,9 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
         )
 
     VECT_MATCH(
-        hist_variant_status,
-        other.hist_variant_status,
-        "DataBase:: hist_variant_status[i] don't match"
+        hist_variant_state,
+        other.hist_variant_state,
+        "DataBase:: hist_variant_state[i] don't match"
         )
 
     VECT_MATCH(
@@ -1111,9 +1111,9 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
         )
 
     VECT_MATCH(
-        hist_tool_status,
-        other.hist_tool_status,
-        "DataBase:: hist_tool_status[i] don't match"
+        hist_tool_state,
+        other.hist_tool_state,
+        "DataBase:: hist_tool_state[i] don't match"
         )
 
     VECT_MATCH(
@@ -1136,9 +1136,9 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
         )
 
     VECT_MATCH(
-        hist_total_status,
-        other.hist_total_status,
-        "DataBase:: hist_total_status[i] don't match"
+        hist_total_state,
+        other.hist_total_state,
+        "DataBase:: hist_total_state[i] don't match"
         )
 
     VECT_MATCH(
@@ -1153,7 +1153,7 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
         "DataBase:: hist_transition_matrix[i] don't match"
         )
 
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     EPI_DEBUG_FAIL_AT_TRUE(
         today_variant.size() != other.today_variant.size(),
         "DataBase:: today_variant don't match."
@@ -1167,7 +1167,7 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
             )
     }
 
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     if (today_tool.size() != other.today_tool.size())
         return false;
     
@@ -1299,9 +1299,9 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
     )
 
     VECT_MATCH(
-        hist_variant_status,
-        other.hist_variant_status,
-        "DataBase:: hist_variant_status[i] don't match"
+        hist_variant_state,
+        other.hist_variant_state,
+        "DataBase:: hist_variant_state[i] don't match"
     )
 
     VECT_MATCH(
@@ -1324,9 +1324,9 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
     )
 
     VECT_MATCH(
-        hist_tool_status,
-        other.hist_tool_status,
-        "DataBase:: hist_tool_status[i] don't match"
+        hist_tool_state,
+        other.hist_tool_state,
+        "DataBase:: hist_tool_state[i] don't match"
     )
 
     VECT_MATCH(
@@ -1349,9 +1349,9 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
     )
 
     VECT_MATCH(
-        hist_total_status,
-        other.hist_total_status,
-        "DataBase:: hist_total_status[i] don't match"
+        hist_total_state,
+        other.hist_total_state,
+        "DataBase:: hist_total_state[i] don't match"
     )
 
     VECT_MATCH(
@@ -1366,7 +1366,7 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
         "DataBase:: hist_transition_matrix[i] don't match"
     )
 
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     EPI_DEBUG_FAIL_AT_TRUE(
         today_variant.size() != other.today_variant.size(),
         "DataBase:: today_variant.size() don't match."
@@ -1380,7 +1380,7 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
             )
     }
 
-    // {Variant 1: {Status 1, Status 2, etc.}, Variant 2: {...}, ...}
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     EPI_DEBUG_FAIL_AT_TRUE(
         today_tool.size() != other.today_tool.size(),
         "DataBase:: today_tool.size() don't match."

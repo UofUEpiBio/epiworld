@@ -122,7 +122,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             /* Listing who is infected */ 
             for (auto & p : m->get_agents())
             {
-                if (p.get_status() == ModelSIRCONN<TSeq>::INFECTED)
+                if (p.get_state() == ModelSIRCONN<TSeq>::INFECTED)
                 {
                 
                     m->tracked_agents_infected.push_back(&p);
@@ -255,9 +255,9 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         };
 
     // Status
-    model.add_status("Susceptible", update_susceptible);
-    model.add_status("Infected", update_infected);
-    model.add_status("Recovered");
+    model.add_state("Susceptible", update_susceptible);
+    model.add_state("Infected", update_infected);
+    model.add_state("Recovered");
 
     // Setting up parameters
     model.add_param(reproductive_number, "Beta");
@@ -267,7 +267,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_status(1, 2, 2);
+    virus.set_state(1, 2, 2);
 
     model.add_virus(virus, prevalence);
 

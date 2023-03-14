@@ -25,7 +25,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     entities(std::move(p.entities)),
     entities_locations(std::move(p.entities_locations)),
     n_entities(p.n_entities),
-    status(p.status),
+    state(p.state),
     status_prev(p.status_prev), 
     status_last_changed(p.status_last_changed),
     id(p.id),
@@ -42,7 +42,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     action_counter(p.action_counter)
 {
 
-    status = p.status;
+    state = p.state;
     id     = p.id;
     
     // Dealing with the virus
@@ -86,7 +86,7 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     date_last_build_sample(-99)
 {
 
-    status = p.status;
+    state = p.state;
     id     = p.id;
     
     // Dealing with the virus
@@ -146,7 +146,7 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     // entities            = other_agent.entities;
     // entities_locations  = other_agent.entities_locations;
     // n_entities          = other_agent.n_entities;
-    status              = other_agent.status;
+    state              = other_agent.state;
     status_prev         = other_agent.status_prev;
     status_last_changed = other_agent.status_last_changed;
     id                  = other_agent.id;
@@ -436,7 +436,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 {
 
     if (status_new == -99)
-        status_new = status;
+        status_new = state;
 
     if (virus_idx >= n_viruses)
         throw std::range_error(
@@ -453,19 +453,19 @@ inline void Agent<TSeq>::rm_agent_by_virus(
             rm_virus(i, model);
     }
 
-    // Changing status to new_status
+    // Changing state to new_state
     VirusPtr<TSeq> & v = viruses[virus_idx];
-    epiworld_fast_int dead_status, dead_queue;
-    v->get_status(nullptr, nullptr, &dead_status);
+    epiworld_fast_int dead_state, dead_queue;
+    v->get_state(nullptr, nullptr, &dead_state);
     v->get_queue(nullptr, nullptr, &dead_queue);
 
     if (queue != -99)
         dead_queue = queue;
 
-    change_status(
+    change_state(
         model,
-        // Either preserve the current status or apply a new one
-        (dead_status < 0) ? status : static_cast<epiworld_fast_uint>(dead_status),
+        // Either preserve the current state or apply a new one
+        (dead_state < 0) ? state : static_cast<epiworld_fast_uint>(dead_state),
 
         // By default, it will be removed from the queue... unless the user
         // says the contrary!
@@ -707,15 +707,15 @@ inline size_t Agent<TSeq>::get_n_neighbors() const
 }
 
 template<typename TSeq>
-inline void Agent<TSeq>::change_status(
+inline void Agent<TSeq>::change_state(
     Model<TSeq> * model,
-    epiworld_fast_uint new_status,
+    epiworld_fast_uint new_state,
     epiworld_fast_int queue
     )
 {
 
     model->actions_add(
-        this, nullptr, nullptr, nullptr, new_status, queue, nullptr, -1, -1
+        this, nullptr, nullptr, nullptr, new_state, queue, nullptr, -1, -1
     );
     
     return;
@@ -723,8 +723,8 @@ inline void Agent<TSeq>::change_status(
 }
 
 template<typename TSeq>
-inline const epiworld_fast_uint & Agent<TSeq>::get_status() const {
-    return status;
+inline const epiworld_fast_uint & Agent<TSeq>::get_state() const {
+    return state;
 }
 
 template<typename TSeq>
@@ -737,7 +737,7 @@ inline void Agent<TSeq>::reset()
     this->tools.clear();
     n_tools = 0u;
 
-    this->status = 0u;
+    this->state = 0u;
     this->status_prev = 0u;
 
     this->status_last_changed = -1;
@@ -800,14 +800,14 @@ inline void Agent<TSeq>::print(
     if (compressed)
     {
         printf_epiworld(
-            "Agent: %i, Status: %s (%lu), Nvirus: %lu, NTools: %lu, NNeigh: %lu\n",
-            id, model->status_labels[status].c_str(), status, n_viruses, n_tools, neighbors.size()
+            "Agent: %i, state: %s (%lu), Nvirus: %lu, NTools: %lu, NNeigh: %lu\n",
+            id, model->status_labels[state].c_str(), state, n_viruses, n_tools, neighbors.size()
         );
     }
     else {
 
         printf_epiworld("Information about agent id %i\n", this->id);
-        printf_epiworld("  Status       : %s (%lu)\n", model->status_labels[status].c_str(), status);
+        printf_epiworld("  state       : %s (%lu)\n", model->status_labels[state].c_str(), state);
         printf_epiworld("  Virus count  : %lu\n", n_viruses);
         printf_epiworld("  Tool count   : %lu\n", n_tools);
         printf_epiworld("  Neigh. count : %lu\n", neighbors.size());
@@ -904,8 +904,8 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     }
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        status != other.status,
-        "Agent:: status don't match"
+        state != other.state,
+        "Agent:: state don't match"
         )
         
 
