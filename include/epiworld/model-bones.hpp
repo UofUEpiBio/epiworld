@@ -83,7 +83,7 @@ class Model {
     friend class AgentsSample<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
-private:
+protected:
 
     std::string name = ""; ///< Name of the model
 

@@ -112,7 +112,7 @@ inline void Model<TSeq>::print(bool lite) const
 
     printf_epiworld("Virus(es):\n");
     size_t n_variants_model = viruses.size();
-    for (size_t i = 0u; i < db.get_n_variants(); ++i)
+    for (size_t i = 0u; i < n_variants_model; ++i)
     {    
 
         if ((n_variants_model > 10) && (i >= 10))
@@ -129,7 +129,7 @@ inline void Model<TSeq>::print(bool lite) const
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %.2f%%)\n",
-                    db.variant_name[i].c_str(),
+                    viruses[i]->get_name().c_str(),
                     prevalence_virus[i] * 100.00
                 );
 
@@ -139,7 +139,7 @@ inline void Model<TSeq>::print(bool lite) const
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %i seeds)\n",
-                    db.variant_name[i].c_str(),
+                    viruses[i]->get_name().c_str(),
                     static_cast<int>(prevalence_virus[i])
                 );
 
@@ -149,21 +149,21 @@ inline void Model<TSeq>::print(bool lite) const
 
             printf_epiworld(
                 " - %s (originated in the model...)\n",
-                db.variant_name[i].c_str()
+                viruses[i]->get_name().c_str()
             );
 
         }
 
     }
 
-    if (db.variant_id.size() == 0u)
+    if (viruses.size() == 0u)
     {
         printf_epiworld(" (none)\n");
     }
 
     printf_epiworld("\nTool(s):\n");
     size_t n_tools_model = tools.size();
-    for (size_t i = 0u; i < db.tool_id.size(); ++i)
+    for (size_t i = 0u; i < tools.size(); ++i)
     {   
 
         if ((n_tools_model > 10) && (i >= 10))
@@ -179,7 +179,7 @@ inline void Model<TSeq>::print(bool lite) const
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %.2f%%)\n",
-                    db.tool_name[i].c_str(),
+                    tools[i]->get_name().c_str(),
                     prevalence_tool[i] * 100.0
                     );
 
@@ -189,23 +189,25 @@ inline void Model<TSeq>::print(bool lite) const
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %i seeds)\n",
-                    db.tool_name[i].c_str(),
+                    tools[i]->get_name().c_str(),
                     static_cast<int>(prevalence_tool[i])
                     );
 
             }
 
         } else {
+
             printf_epiworld(
                 " - %s (originated in the model...)\n",
-                db.tool_name[i].c_str()
+                tools[i]->get_name().c_str()
             );
+
         }
         
 
     }
 
-    if (db.tool_id.size() == 0u)
+    if (tools.size() == 0u)
     {
         printf_epiworld(" (none)\n");
     }

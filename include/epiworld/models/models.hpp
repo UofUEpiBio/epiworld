@@ -8,6 +8,7 @@ namespace epimodels {
     #include "surveillance.hpp"
     #include "sirconnected.hpp"
     #include "seirconnected.hpp"
+    #include "seird.hpp"
 }
 
 #endif
