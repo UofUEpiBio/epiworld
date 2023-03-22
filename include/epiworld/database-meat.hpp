@@ -733,7 +733,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_transmission(fn_transmission, std::ios_base::out);
         file_transmission <<
             #ifdef _OPENMP
-            EPI_GET_THREAD_ID() << " " <<
+            "thread " << 
             #endif
             "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
@@ -1491,7 +1491,7 @@ inline void DataBase<TSeq>::generation_time(
         // minus 1;
         if (!found)
             gentime.push_back(-1);
-            
+
     }
 
     agent_id.shrink_to_fit();
