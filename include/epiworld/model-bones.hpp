@@ -449,7 +449,8 @@ public:
         std::string fn_total_hist,
         std::string fn_transmission,
         std::string fn_transition,
-        std::string fn_reproductive_number
+        std::string fn_reproductive_number,
+        std::string fn_generation_time
         ) const;
 
     /**

@@ -31,7 +31,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool tool_hist,
     bool transmission,
     bool transition,
-    bool reproductive
+    bool reproductive,
+    bool generation
     )
 {
 
@@ -53,7 +54,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         total_hist,
         transmission,
         transition,
-        reproductive
+        reproductive,
+        generation
     };
 
     std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
@@ -68,6 +70,7 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         std::string transmission = "";
         std::string transition = "";
         std::string reproductive = "";
+        std::string generation = "";
 
         char buff[128];
         if (what_to_save[0u])
@@ -120,6 +123,15 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
             reproductive = buff;
 
         }
+        if (what_to_save[8u])
+        {
+
+            reproductive = fmt + std::string("_generation.csv");
+            snprintf(buff, sizeof(buff), generation.c_str(), niter);
+            reproductive = buff;
+
+        }
+        
     
         m->write_data(
             variant_info,
@@ -129,7 +141,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
             total_hist,
             transmission,
             transition,
-            reproductive
+            reproductive,
+            generation
         );
 
     };
@@ -1835,7 +1848,8 @@ inline void Model<TSeq>::write_data(
     std::string fn_total_hist,
     std::string fn_transmission,
     std::string fn_transition,
-    std::string fn_reproductive_number
+    std::string fn_reproductive_number,
+    std::string fn_generation_time
     ) const
 {
 
@@ -1843,7 +1857,7 @@ inline void Model<TSeq>::write_data(
         fn_variant_info, fn_variant_hist,
         fn_tool_info, fn_tool_hist,
         fn_total_hist, fn_transmission, fn_transition,
-        fn_reproductive_number
+        fn_reproductive_number, fn_generation_time
         );
 
 }

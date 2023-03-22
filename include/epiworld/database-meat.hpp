@@ -607,7 +607,8 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_total_hist,
     std::string fn_transmission,
     std::string fn_transition,
-    std::string fn_reproductive_number
+    std::string fn_reproductive_number,
+    std::string fn_generation_time
 ) const
 {
 
@@ -780,6 +781,9 @@ inline void DataBase<TSeq>::write_data(
 
     if (fn_reproductive_number != "")
         reproductive_number(fn_reproductive_number);
+
+    if (fn_generation_time != "")
+        generation_time(fn_generation_time);
 
 }
 
