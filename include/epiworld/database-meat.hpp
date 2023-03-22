@@ -1493,6 +1493,42 @@ inline void DataBase<TSeq>::generation_time(
 
 }
 
+template<typename TSeq>
+inline void DataBase<TSeq>::generation_time(
+    std::string fn
+) const
+{
+
+    std::vector< int > agent_id;
+    std::vector< int > virus_id;
+    std::vector< int > time;
+    std::vector< int > gentime;
+
+    generation_time(agent_id, virus_id, time, gentime);
+
+    std::ofstream fn_file(fn, std::ios_base::out);
+
+    fn_file << 
+        #ifdef _OPENMP
+        "thread " <<
+        #endif
+        "variant source source_exposure_date gentime\n";
+
+    size_t n = agent_id.size();
+    for (size_t i = 0u; i < n; ++i)
+        fn_file <<
+            #ifdef _OPENMP
+            EPI_GET_THREAD_ID() << " " <<
+            #endif
+            virus_id[i] << " " <<
+            agent_id[i] << " " <<
+            time[i] << " " <<
+            gentime[i] << "\n";
+
+    return;
+
+}
+
 #undef VECT_MATCH
 
 #endif

@@ -2847,6 +2847,23 @@ public:
     bool operator==(const DataBase<TSeq> & other) const;
     bool operator!=(const DataBase<TSeq> & other) const {return !operator==(other);};
 
+    /**
+     * Calculates the generating time
+     * @param agent_id,virus_id,time,gentime vectors where to save the values agent_id
+    */
+   ///@{
+    void generation_time(
+        std::vector< int > & agent_id,
+        std::vector< int > & virus_id,
+        std::vector< int > & time,
+        std::vector< int > & gentime
+    ) const;
+
+    void generation_time(
+        std::string fn
+    ) const;
+    ///@}
+
 };
 
 
@@ -4315,6 +4332,88 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
     )
 
     return true;
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::generation_time(
+    std::vector< int > & agent_id,
+    std::vector< int > & virus_id,
+    std::vector< int > & time,
+    std::vector< int > & gentime
+) const {
+    
+    size_t nevents = transmission_date.size();
+
+    agent_id.reserve(nevents);
+    virus_id.reserve(nevents);
+    time.reserve(nevents);
+    gentime.reserve(nevents);
+
+    // Iterating through the individuals
+    for (size_t i = 0u; i < nevents; ++i)
+    {
+        int agent_id_i = transmission_target[i];
+        agent_id.push_back(agent_id_i);
+        virus_id.push_back(transmission_variant[i]);
+        time.push_back(transmission_date[i]);
+
+        for (size_t j = i; j < nevents; ++j)
+        {
+            if (transmission_source[j] == agent_id_i)
+            {
+                gentime.push_back(transmission_date[j] - time[i]);
+                break;
+            }
+        }
+
+        // If there's no transmission, we set the generation time to
+        // minus 1;
+        gentime.push_back(-1);
+    }
+
+    agent_id.shrink_to_fit();
+    virus_id.shrink_to_fit();
+    time.shrink_to_fit();
+    gentime.shrink_to_fit();
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::generation_time(
+    std::string fn
+) const
+{
+
+    std::vector< int > agent_id;
+    std::vector< int > virus_id;
+    std::vector< int > time;
+    std::vector< int > gentime;
+
+    generation_time(agent_id, virus_id, time, gentime);
+
+    std::ofstream fn_file(fn, std::ios_base::out);
+
+    fn_file << 
+        #ifdef _OPENMP
+        "thread " <<
+        #endif
+        "variant source source_exposure_date gentime\n";
+
+    size_t n = agent_id.size();
+    for (size_t i = 0u; i < n; ++i)
+        fn_file <<
+            #ifdef _OPENMP
+            EPI_GET_THREAD_ID() << " " <<
+            #endif
+            virus_id[i] << " " <<
+            agent_id[i] << " " <<
+            time[i] << " " <<
+            gentime[i] << "\n";
+
+    return;
 
 }
 
