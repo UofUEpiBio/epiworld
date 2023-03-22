@@ -4363,18 +4363,24 @@ inline void DataBase<TSeq>::generation_time(
         virus_id.push_back(transmission_variant[i]);
         time.push_back(transmission_date[i]);
 
+        bool found = false;
         for (size_t j = i; j < nevents; ++j)
         {
+
             if (transmission_source[j] == agent_id_i)
             {
                 gentime.push_back(transmission_date[j] - time[i]);
+                found = true;
                 break;
             }
+
         }
 
         // If there's no transmission, we set the generation time to
         // minus 1;
-        gentime.push_back(-1);
+        if (!found)
+            gentime.push_back(-1);
+            
     }
 
     agent_id.shrink_to_fit();
