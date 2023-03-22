@@ -239,6 +239,17 @@ public:
     bool operator==(const DataBase<TSeq> & other) const;
     bool operator!=(const DataBase<TSeq> & other) const {return !operator==(other);};
 
+    /**
+     * Calculates the generating time
+     * @param agent_id,virus_id,time,gentime vectors where to save the values agent_id
+    */
+    void generation_time(
+        std::vector< int > & agent_id,
+        std::vector< int > & virus_id,
+        std::vector< int > & time,
+        std::vector< int > & gentime
+    ) const;
+
 };
 
 
