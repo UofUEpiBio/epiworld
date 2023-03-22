@@ -6261,9 +6261,9 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         if (what_to_save[8u])
         {
 
-            reproductive = fmt + std::string("_generation.csv");
+            generation = fmt + std::string("_generation.csv");
             snprintf(buff, sizeof(buff), generation.c_str(), niter);
-            reproductive = buff;
+            generation = buff;
 
         }
         
