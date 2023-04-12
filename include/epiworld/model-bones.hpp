@@ -150,7 +150,7 @@ protected:
     epiworld_double rewire_prop = 0.0;
         
     std::map<std::string, epiworld_double > parameters;
-    epiworld_fast_uint ndays;
+    epiworld_fast_uint ndays = 0;
     Progress pb;
 
     std::vector< UpdateFun<TSeq> >    status_fun = {};

@@ -1395,6 +1395,10 @@ inline bool Model<TSeq>::is_directed() const
 
 template<typename TSeq>
 inline int Model<TSeq>::today() const {
+
+    if (ndays == 0)
+      return 0;
+
     return this->current_date;
 }
 
