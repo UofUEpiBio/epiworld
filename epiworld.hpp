@@ -3644,7 +3644,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_transition(fn_transition, std::ios_base::out);
         file_transition <<
             #ifdef _OPENMP
-            EPI_GET_THREAD_ID() << " " <<
+            "thread " << 
             #endif
             "date " << "from " << "to " << "counts\n";
 
