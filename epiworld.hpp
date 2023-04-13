@@ -14805,6 +14805,17 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     std::floor(_m->tracked_ninfected * m->runif())
                 );
 
+
+                /* There is a bug in which runif() returns 1.0. It is rare, but
+                 * we saw it here. See the Notes section in the C++ manual
+                 * https://en.cppreference.com/mwiki/index.php?title=cpp/numeric/random/uniform_real_distribution&oldid=133329
+                 * And the reported bug in GCC:
+                 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
+                 * 
+                 */
+                if (which == _m->tracked_ninfected)
+                    --which;
+
                 // Infecting the individual
                 p->add_virus(
                     _m->tracked_agents_infected[which]->get_virus(0u),
@@ -15128,6 +15139,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 epiworld_fast_uint which = static_cast<epiworld_fast_uint>(
                     std::floor(_m->tracked_ninfected * m->runif())
                 );
+
+                if (which == _m->tracked_ninfected)
+                    --which;
 
                 // Infecting the individual
                 #ifdef EPI_DEBUG
