@@ -12,7 +12,7 @@ ________________________________________________________________________________
 SIMULATION STUDY
 
 Population size     : 10000
-Number of entitites : 0
+Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of variants  : 1
 Last run elapsed t  : 40.00ms

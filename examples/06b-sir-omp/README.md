@@ -15,7 +15,7 @@ SIMULATION STUDY
 
 Name of the model   : Susceptible-Infected-Recovered (SIR)
 Population size     : 100000
-Number of entitites : 0
+Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of variants  : 1
 Last run elapsed t  : 0.00s

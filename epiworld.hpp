@@ -8192,7 +8192,7 @@ inline void Model<TSeq>::print(bool lite) const
 
     printf_epiworld("Name of the model   : %s\n", (this->name == "") ? std::string("(none)").c_str() : name.c_str());
     printf_epiworld("Population size     : %i\n", static_cast<int>(size()));
-    printf_epiworld("Number of entitites : %i\n", static_cast<int>(entities.size()));
+    printf_epiworld("Number of entities  : %i\n", static_cast<int>(entities.size()));
     printf_epiworld("Days (duration)     : %i (of %i)\n", today(), static_cast<int>(ndays));
     printf_epiworld("Number of variants  : %i\n", static_cast<int>(db.get_n_variants()));
     if (n_replicates > 0u)
@@ -14813,7 +14813,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                  * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
                  * 
                  */
-                if (which == _m->tracked_ninfected)
+                if (which == static_cast<epiworld_fast_uint>(_m->tracked_ninfected))
                     --which;
 
                 // Infecting the individual
@@ -15140,7 +15140,14 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     std::floor(_m->tracked_ninfected * m->runif())
                 );
 
-                if (which == _m->tracked_ninfected)
+                /* There is a bug in which runif() returns 1.0. It is rare, but
+                 * we saw it here. See the Notes section in the C++ manual
+                 * https://en.cppreference.com/mwiki/index.php?title=cpp/numeric/random/uniform_real_distribution&oldid=133329
+                 * And the reported bug in GCC:
+                 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
+                 * 
+                 */
+                if (which == static_cast<epiworld_fast_uint>(_m->tracked_ninfected))
                     --which;
 
                 // Infecting the individual

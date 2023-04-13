@@ -184,7 +184,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                  * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
                  * 
                  */
-                if (which == _m->tracked_ninfected)
+                if (which == static_cast<epiworld_fast_uint>(_m->tracked_ninfected))
                     --which;
 
                 // Infecting the individual
