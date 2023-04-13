@@ -100,7 +100,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
     return;
 
-};
+}
 
 template<typename TSeq>
 inline ModelSEIRD<TSeq>::ModelSEIRD(
@@ -143,7 +143,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
     return;
    
-};
+}
 
 template<typename TSeq>
 inline ModelSEIRD<TSeq>::ModelSEIRD(
@@ -183,7 +183,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
     return;
 
-};
+}
 
 
 
