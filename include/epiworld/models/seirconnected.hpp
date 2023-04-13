@@ -169,6 +169,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     std::floor(_m->tracked_ninfected * m->runif())
                 );
 
+                if (which == _m->tracked_ninfected)
+                    --which;
+
                 // Infecting the individual
                 #ifdef EPI_DEBUG
                 if (_m->tracked_agents_infected[which]->get_n_viruses() == 0)
