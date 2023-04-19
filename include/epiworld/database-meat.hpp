@@ -610,6 +610,7 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
     size_t n = this->hist_transition_matrix.size();
     
+    // Reserving space
     state_from.reserve(n);
     state_to.reserve(n);
     date.reserve(n);
