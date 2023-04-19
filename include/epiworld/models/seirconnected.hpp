@@ -24,7 +24,7 @@ public:
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double reproductive_number,
+        epiworld_double contact_rate,
         epiworld_double prob_transmission,
         epiworld_double incubation_days,
         epiworld_double prob_recovery
@@ -34,7 +34,7 @@ public:
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double reproductive_number,
+        epiworld_double contact_rate,
         epiworld_double prob_transmission,
         epiworld_double incubation_days,
         epiworld_double prob_recovery
@@ -93,7 +93,7 @@ inline Model<TSeq> * ModelSEIRCONN<TSeq>::clone_ptr()
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
- * @param reproductive_number Reproductive number (beta)
+ * @param contact_rate Average number of contacts (interactions) per step.
  * @param prob_transmission Probability of transmission
  * @param prob_recovery Probability of recovery
  */
@@ -103,7 +103,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double reproductive_number,
+    epiworld_double contact_rate,
     epiworld_double prob_transmission,
     epiworld_double incubation_days,
     epiworld_double prob_recovery
@@ -157,7 +157,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             // Computing probability of contagion
             // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
             epiworld_double prob_infect = 1.0 - std::pow(
-                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
+                1.0 - (m->par("Contact rate")) * (m->par("Prob. Transmission")) / m->size(),
                 _m->tracked_ninfected
                 );
 
@@ -286,7 +286,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         };
 
     // Setting up parameters
-    model.add_param(reproductive_number, "Beta");
+    model.add_param(contact_rate, "Contact rate");
     model.add_param(prob_transmission, "Prob. Transmission");
     model.add_param(prob_recovery, "Prob. Recovery");
     model.add_param(incubation_days, "Avg. Incubation days");
@@ -322,7 +322,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double reproductive_number,
+    epiworld_double contact_rate,
     epiworld_double prob_transmission,
     epiworld_double incubation_days,
     epiworld_double prob_recovery
@@ -334,7 +334,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         vname,
         n,
         prevalence,
-        reproductive_number,
+        contact_rate,
         prob_transmission,
         incubation_days,
         prob_recovery

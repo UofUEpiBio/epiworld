@@ -23,7 +23,7 @@ public:
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double reproductive_number,
+        epiworld_double contact_rate,
         epiworld_double prob_transmission,
         epiworld_double prob_recovery
     );
@@ -32,7 +32,7 @@ public:
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double reproductive_number,
+        epiworld_double contact_rate,
         epiworld_double prob_transmission,
         epiworld_double prob_recovery
     );
@@ -92,7 +92,7 @@ inline Model<TSeq> * ModelSIRCONN<TSeq>::clone_ptr()
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
- * @param reproductive_number Reproductive number (beta)
+ * @param contact_rate Average number of contacts (interactions) per step.
  * @param prob_transmission Probability of transmission
  * @param prob_recovery Probability of recovery
  */
@@ -102,7 +102,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double reproductive_number,
+    epiworld_double contact_rate,
     epiworld_double prob_transmission,
     epiworld_double prob_recovery
     // epiworld_double prob_reinfection
@@ -141,7 +141,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
             // Computing infection probability
             m->tracked_current_infect_prob =  1.0 - std::pow(
-                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
+                1.0 - (m->par("Contact rate")) * (m->par("Prob. Transmission")) / m->size(),
                 m->tracked_ninfected
             );
              
@@ -259,7 +259,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             _m->tracked_ninfected_next = 0;
 
             _m->tracked_current_infect_prob = 1.0 - std::pow(
-                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
+                1.0 - (m->par("Contact rate")) * (m->par("Prob. Transmission")) / m->size(),
                 _m->tracked_ninfected
                 );
 
@@ -271,7 +271,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     model.add_state("Recovered");
 
     // Setting up parameters
-    model.add_param(reproductive_number, "Beta");
+    model.add_param(contact_rate, "Contact rate");
     model.add_param(prob_transmission, "Prob. Transmission");
     model.add_param(prob_recovery, "Prob. Recovery");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
@@ -300,7 +300,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double reproductive_number,
+    epiworld_double contact_rate,
     epiworld_double prob_transmission,
     epiworld_double prob_recovery
     )
@@ -311,7 +311,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         vname,
         n,
         prevalence,
-        reproductive_number,
+        contact_rate,
         prob_transmission,
         prob_recovery
     );

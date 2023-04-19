@@ -1,5 +1,7 @@
 ---
-output: pdf_document
+output: 
+  pdf_document: default
+  github_document: default
 ---
 
 # General parameters
@@ -14,7 +16,7 @@ EPI_N     <- 10000
 EPI_0     <- 0.01
 EPI_NDAYS <- 50
 
-Sys.setenv(
+Sys.setenv( # nolint
     EPI_BETA  = EPI_BETA,
     EPI_GAMMA = EPI_GAMMA,
     EPI_LATENCY = EPI_LATENCY,
@@ -35,11 +37,11 @@ library(data.table)
 
 # Code from
 # Chapter 2: SIR
-# Book "Epidemics: Models and Data using R"
+# Book "Epidemics: Models and Data using R."
 # By: Ottar N. Bjørnstad
 sirmod <- function(t, y, parms) {
 
-    # Pull state variables from y vector
+    # Pull state variables from the vector y
     S = y[1]
     I = y[2]
     R = y[3]
@@ -164,7 +166,7 @@ mean(dat) - 1 / a
 
 ## Mathematical preliminaries
 
-That agent $i$ becomes infected can be computed as follow:
+That agent $i$ becomes infected can be computed as follows:
 
 \renewcommand{\Pr}[1]{\text{P}\left(#1\right)}
 \newcommand{\Prcond}[2]{\text{P}\left(#1\vphantom{#2}\right.\left|\vphantom{#1}#2\right)}
@@ -175,7 +177,7 @@ That agent $i$ becomes infected can be computed as follow:
 \end{equation}
 
 At the same time, the probability of not becoming infected equals to the
-probability of no infected agent transmiting the infection. The probability
+probability of no infected agent transmitting the infection. The probability
 that agent $j$ infects $i$ equals
 
 \begin{equation}
@@ -185,24 +187,20 @@ that agent $j$ infects $i$ equals
 \end{equation}
 
 In this case, $\beta$ is parametrized such that its values are within $(0,1)$.
-Since transmission from the $I$ infected agents happens independently, we finally have:
+Since transmission from the $I$ infected agents happens independently, we finally have the following:
 
 \begin{equation}
 \Pr{S_i\to I_i} = 1 - \left[1 - \beta p_t\right]^I
 \end{equation}
 
 With the above equation, we can now calculate the change in the number of susceptible
-agents. In this case, it equals to the expected number of new infections:
+agents. In this case, it equals the expected number of new infections:
 
 \begin{equation}
 \E{\Delta S} = -S\times\left\{1 - \left[1 - \beta p_t\right]^I\right\}
 \end{equation}
 
-With the same parametrization in cannonical SIR model (Kermack and McKendrick), the
-instantaneous change in the number of susceptible agent equals
-$\frac{\delta}{\delta t}S = -S \beta I$. We can show
-that, given $S$ and $I$, as $\beta\downarrow 0$, i.e., the population grows, both rates
-converge to the same number. Formally
+With the same parametrization in the canonical SIR model (Kermack and McKendrick), the instantaneous change in the number of susceptible agents equals $\frac{\delta}{\delta t}S = -S \beta I$. Given $S$ and $I$, we can show that, as $\beta\downarrow 0$, i.e., the population grows, both rates converge to the same number. Formally:
 
 \begin{align}
 & \lim_{\beta\downarrow 0} \frac{\E{\Delta S}}{\frac{\delta}{\delta t}S} \\

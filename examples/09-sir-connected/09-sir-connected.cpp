@@ -101,7 +101,10 @@ int main(int argc, char* argv[]) {
                 
     }
 
-    model.write_data("","","","","total_hist.txt", "transmission.txt", "transition.txt", "");
+    model.write_data(
+        "","","","",
+        "total_hist.txt", "transmission.txt", "transition.txt", "", ""
+        );
 
     return 0;
 
