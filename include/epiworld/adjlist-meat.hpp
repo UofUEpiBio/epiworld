@@ -2,18 +2,18 @@
 #define EPIWORLD_ADJLIST_MEAT_HPP
 
 inline AdjList::AdjList(
-    const std::vector< epiworld_fast_uint > & source,
-    const std::vector< epiworld_fast_uint > & target,
+    const std::vector< int > & source,
+    const std::vector< int > & target,
     int size,
     bool directed
 ) : directed(directed) {
 
 
-    dat.resize(size, std::map<epiworld_fast_uint,epiworld_fast_uint>({}));
+    dat.resize(size, std::map<int,int>({}));
     int max_id = size - 1;
 
     int i,j;
-    for (epiworld_fast_uint m = 0; m < source.size(); ++m)
+    for (int m = 0; m < static_cast<int>(source.size()); ++m)
     {
 
         i = source[m];
@@ -33,7 +33,7 @@ inline AdjList::AdjList(
 
         // Adding nodes
         if (dat[i].find(j) == dat[i].end())
-            dat[i].insert(std::pair<epiworld_fast_uint, epiworld_fast_uint>(j, 1u));
+            dat[i].insert(std::pair<int, int>(j, 1u));
         else
             dat[i][j]++; 
         
@@ -41,7 +41,7 @@ inline AdjList::AdjList(
         {
 
             if (dat[j].find(i) == dat[j].end())
-                dat[j].insert(std::pair<epiworld_fast_uint, epiworld_fast_uint>(i, 1u));
+                dat[j].insert(std::pair<int, int>(i, 1u));
             else
                 dat[j][i]++;
 
@@ -103,8 +103,8 @@ inline void AdjList::read_edgelist(
         throw std::logic_error("The file " + fn + " was not found.");
 
     int linenum = 0;
-    std::vector< epiworld_fast_uint > source_;
-    std::vector< epiworld_fast_uint > target_;
+    std::vector< int > source_;
+    std::vector< int > target_;
 
     source_.reserve(1e5);
     target_.reserve(1e5);
@@ -153,7 +153,7 @@ inline void AdjList::read_edgelist(
 
 }
 
-inline std::map<epiworld_fast_uint,epiworld_fast_uint> AdjList::operator()(
+inline std::map<int,int> AdjList::operator()(
     epiworld_fast_uint i
     ) const {
 

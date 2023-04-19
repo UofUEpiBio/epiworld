@@ -4,7 +4,7 @@
 class AdjList {
 private:
 
-    std::vector<std::map<epiworld_fast_uint, epiworld_fast_uint>> dat;
+    std::vector<std::map<int, int>> dat;
     bool directed;
     epiworld_fast_uint N = 0;
     epiworld_fast_uint E = 0;
@@ -25,8 +25,8 @@ public:
      * @param directed Bool true if the network is directed
      */
     AdjList(
-        const std::vector< epiworld_fast_uint > & source,
-        const std::vector< epiworld_fast_uint > & target,
+        const std::vector< int > & source,
+        const std::vector< int > & target,
         int size,
         bool directed
         );
@@ -53,7 +53,7 @@ public:
         bool directed = true
         );
 
-    std::map<epiworld_fast_uint, epiworld_fast_uint> operator()(
+    std::map<int, int> operator()(
         epiworld_fast_uint i
         ) const;
         
@@ -61,7 +61,7 @@ public:
     size_t vcount() const; ///< Number of vertices/nodes in the network.
     size_t ecount() const; ///< Number of edges/arcs/ties in the network.
     
-    std::vector<std::map<epiworld_fast_uint,epiworld_fast_uint>> & get_dat() {
+    std::vector<std::map<int,int>> & get_dat() {
         return dat;
     };
 

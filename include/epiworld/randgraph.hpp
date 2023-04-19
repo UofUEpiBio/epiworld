@@ -224,8 +224,8 @@ inline void rewire_degseq(
         if (id1 >= static_cast<int>(N))
             id1 = 0;
 
-        std::map<epiworld_fast_uint,epiworld_fast_uint> & p0 = agents->get_dat()[non_isolates[id0]];
-        std::map<epiworld_fast_uint,epiworld_fast_uint> & p1 = agents->get_dat()[non_isolates[id1]];
+        std::map<int,int> & p0 = agents->get_dat()[non_isolates[id0]];
+        std::map<int,int> & p1 = agents->get_dat()[non_isolates[id1]];
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
@@ -251,8 +251,8 @@ inline void rewire_degseq(
         if (!agents->is_directed())
         {
 
-            std::map<epiworld_fast_uint,epiworld_fast_uint> & p01 = agents->get_dat()[id01];
-            std::map<epiworld_fast_uint,epiworld_fast_uint> & p11 = agents->get_dat()[id11];
+            std::map<int,int> & p01 = agents->get_dat()[id01];
+            std::map<int,int> & p11 = agents->get_dat()[id11];
 
             std::swap(p01[id0], p11[id1]);
             
@@ -290,8 +290,8 @@ inline AdjList rgraph_bernoulli(
     Model<TSeq> & model
 ) {
 
-    std::vector< epiworld_fast_uint > source;
-    std::vector< epiworld_fast_uint > target;
+    std::vector< int > source;
+    std::vector< int > target;
 
     // Checking the density (how many)
     std::binomial_distribution<> d(
@@ -321,8 +321,8 @@ inline AdjList rgraph_bernoulli(
                 b = 0u;
         }
 
-        source[i] = a;
-        target[i] = b;
+        source[i] = static_cast<int>(a);
+        target[i] = static_cast<int>(b);
 
     }
 
@@ -391,20 +391,20 @@ inline AdjList rgraph_ring_lattice(
     if ((n - 1u) < k)
         throw std::logic_error("k can be at most n - 1.");
 
-    std::vector< epiworld_fast_uint > source;
-    std::vector< epiworld_fast_uint > target;
+    std::vector< int > source;
+    std::vector< int > target;
 
     if (!directed)
-        if (k > 1u) k = static_cast< epiworld_fast_uint >(floor(k / 2.0));
+        if (k > 1u) k = static_cast< size_t >(floor(k / 2.0));
 
-    for (epiworld_fast_uint i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; ++i)
     {
 
-        for (epiworld_fast_uint j = 1u; j <= k; ++j)
+        for (size_t j = 1u; j <= k; ++j)
         {
 
             // Next neighbor
-            epiworld_fast_uint l = i + j;
+            size_t l = i + j;
             if (l >= n) l = l - n;
 
             source.push_back(i);

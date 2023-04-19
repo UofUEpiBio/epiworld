@@ -1348,6 +1348,19 @@ inline void Model<TSeq>::agents_from_adjlist(
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::agents_from_edgelist(
+    const std::vector< int > & source,
+    const std::vector< int > & target,
+    int size,
+    bool directed
+) {
+
+    AdjList al(source, target, size, directed);
+    agents_from_adjlist(al);
+
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
 
     // Resizing the people

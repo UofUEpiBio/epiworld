@@ -360,10 +360,22 @@ public:
         int skip = 0,
         bool directed = false
         );
+
+    void agents_from_edgelist(
+        const std::vector< int > & source,
+        const std::vector< int > & target,
+        int size,
+        bool directed
+    );
+
     void agents_from_adjlist(AdjList al);
+
     bool is_directed() const;
+
     std::vector< Agent<TSeq> > & get_agents();
+
     std::vector< Entity<TSeq> > & get_entities();
+
     void agents_smallworld(
         epiworld_fast_uint n = 1000,
         epiworld_fast_uint k = 5,
