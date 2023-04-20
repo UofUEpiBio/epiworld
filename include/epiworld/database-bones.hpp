@@ -187,6 +187,13 @@ public:
         std::vector< int > & counts
     ) const;
 
+    void get_hist_tool(
+        std::vector< int > & date,
+        std::vector< int > & id,
+        std::vector< std::string > & state,
+        std::vector< int > & counts
+    ) const;
+
     void get_hist_transition_matrix(
         std::vector< std::string > & state_from,
         std::vector< std::string > & state_to,
