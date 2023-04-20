@@ -3507,6 +3507,7 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
     size_t n = this->hist_transition_matrix.size();
     
+    // Reserving space
     state_from.reserve(n);
     state_to.reserve(n);
     date.reserve(n);
@@ -5184,8 +5185,8 @@ inline AdjList rgraph_bernoulli2(
     Model<TSeq> & model
 ) {
 
-    std::vector< epiworld_fast_uint > source;
-    std::vector< epiworld_fast_uint > target;
+    std::vector< int > source;
+    std::vector< int > target;
 
     // Checking the density (how many)
     std::binomial_distribution<> d(
@@ -5314,8 +5315,8 @@ inline AdjList rgraph_blocked(
     Model<TSeq>&
 ) {
 
-    std::vector< epiworld_fast_uint > source_;
-    std::vector< epiworld_fast_uint > target_;
+    std::vector< int > source_;
+    std::vector< int > target_;
 
     size_t i = 0u;
     size_t cum_node_count = 0u;
@@ -5336,8 +5337,8 @@ inline AdjList rgraph_blocked(
                 if ((i + k) >= n)
                     break;
 
-                source_.push_back(j + i);
-                target_.push_back(k + i);
+                source_.push_back(static_cast<int>(j + i));
+                target_.push_back(static_cast<int>(k + i));
             }
 
             // No more nodes left to build connections
@@ -5356,8 +5357,8 @@ inline AdjList rgraph_blocked(
             for (size_t j = 0u; j < max_cons; ++j)
             {
 
-                source_.push_back(i + j - blocksize);
-                target_.push_back(i + j);
+                source_.push_back(static_cast<int>(i + j - blocksize));
+                target_.push_back(static_cast<int>(i + j));
 
             }
         }
@@ -7838,8 +7839,8 @@ inline void Model<TSeq>::run_multiple(
     }
 
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
-        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, stdout, ndays) \
-        default(none)
+        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, ndays) \
+        default(shared)
     {
 
         auto iam = omp_get_thread_num();

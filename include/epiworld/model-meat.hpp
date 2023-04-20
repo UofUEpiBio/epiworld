@@ -1625,8 +1625,8 @@ inline void Model<TSeq>::run_multiple(
     }
 
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
-        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, stdout, ndays) \
-        default(none)
+        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, ndays) \
+        default(shared)
     {
 
         auto iam = omp_get_thread_num();

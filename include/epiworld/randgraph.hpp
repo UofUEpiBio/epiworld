@@ -340,8 +340,8 @@ inline AdjList rgraph_bernoulli2(
     Model<TSeq> & model
 ) {
 
-    std::vector< epiworld_fast_uint > source;
-    std::vector< epiworld_fast_uint > target;
+    std::vector< int > source;
+    std::vector< int > target;
 
     // Checking the density (how many)
     std::binomial_distribution<> d(
@@ -470,8 +470,8 @@ inline AdjList rgraph_blocked(
     Model<TSeq>&
 ) {
 
-    std::vector< epiworld_fast_uint > source_;
-    std::vector< epiworld_fast_uint > target_;
+    std::vector< int > source_;
+    std::vector< int > target_;
 
     size_t i = 0u;
     size_t cum_node_count = 0u;
@@ -492,8 +492,8 @@ inline AdjList rgraph_blocked(
                 if ((i + k) >= n)
                     break;
 
-                source_.push_back(j + i);
-                target_.push_back(k + i);
+                source_.push_back(static_cast<int>(j + i));
+                target_.push_back(static_cast<int>(k + i));
             }
 
             // No more nodes left to build connections
@@ -512,8 +512,8 @@ inline AdjList rgraph_blocked(
             for (size_t j = 0u; j < max_cons; ++j)
             {
 
-                source_.push_back(i + j - blocksize);
-                target_.push_back(i + j);
+                source_.push_back(static_cast<int>(i + j - blocksize));
+                target_.push_back(static_cast<int>(i + j));
 
             }
         }
