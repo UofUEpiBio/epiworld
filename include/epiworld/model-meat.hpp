@@ -750,7 +750,7 @@ inline void Model<TSeq>::dist_virus()
     int n_left = n;
     std::iota(idx.begin(), idx.end(), 0);
 
-    for (epiworld_fast_uint v = 0; v < viruses.size(); ++v)
+    for (size_t v = 0u; v < viruses.size(); ++v)
     {
 
         if (viruses_dist_funs[v])

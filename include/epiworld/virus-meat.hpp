@@ -568,4 +568,18 @@ inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 
 }
 
+template<typename TSeq>
+inline void Virus<TSeq>::print() const
+{
+
+    printf_epiworld("Virus          : %s\n", virus_name->c_str());
+    printf_epiworld("status_init    : %i\n", status_init);
+    printf_epiworld("status_post    : %i\n", status_post);
+    printf_epiworld("status_removed : %i\n", status_removed);
+    printf_epiworld("queue_init     : %i\n", queue_init);
+    printf_epiworld("queue_post     : %i\n", queue_post);
+    printf_epiworld("queue_removed  : %i\n", queue_removed);
+
+}
+
 #endif
