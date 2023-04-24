@@ -40,6 +40,8 @@ public:
     // Tracking who is infected and who is not
     std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected = {};
     std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected_next = {};
+    std::vector< epiworld_double >        tracked_agents_weight        = {}
+    std::vector< epiworld_double >        tracked_agents_weight_next   = {}
 
     bool tracked_started = false;
     int tracked_ninfected = 0;

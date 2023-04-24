@@ -5680,8 +5680,8 @@ protected:
      * 
      */
     ///@{
-    double * population_data = nullptr;
-    size_t population_data_n_features = 0u;
+    double * agents_data = nullptr;
+    size_t agents_data_n_features = 0u;
     ///@}
 
     bool directed = false;
@@ -6717,8 +6717,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     if (use_queuing)
         queue.model = this;
 
-    population_data = model.population_data;
-    population_data_n_features = model.population_data_n_features;
+    agents_data = model.agents_data;
+    agents_data_n_features = model.agents_data_n_features;
 
     // Finally, seeds are resetted automatically based on the original
     // engine
@@ -6735,8 +6735,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     name(std::move(model.name)),
     db(std::move(model.db)),
     population(std::move(model.population)),
-    population_data(std::move(model.population_data)),
-    population_data_n_features(std::move(model.population_data_n_features)),
+    agents_data(std::move(model.agents_data)),
+    agents_data_n_features(std::move(model.agents_data_n_features)),
     directed(std::move(model.directed)),
     // Virus
     viruses(std::move(model.viruses)),
@@ -6859,8 +6859,8 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     db.model = this;
     db.user_data.model = this;
 
-    population_data            = m.population_data;
-    population_data_n_features = m.population_data_n_features;
+    agents_data            = m.agents_data;
+    agents_data_n_features = m.agents_data_n_features;
 
     // Figure out the queuing
     if (use_queuing)
@@ -8906,8 +8906,8 @@ const std::vector< ToolPtr<TSeq> > & Model<TSeq>::get_tools() const
 template<typename TSeq>
 inline void Model<TSeq>::set_agents_data(double * data_, size_t ncols_)
 {
-    population_data = data_;
-    population_data_n_features = ncols_;
+    agents_data = data_;
+    agents_data_n_features = ncols_;
 }
 
 template<typename TSeq>
@@ -8958,13 +8958,13 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     }
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        population_data != other.population_data,
-        "Model:: population_data don't match"
+        agents_data != other.agents_data,
+        "Model:: agents_data don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        population_data_n_features != other.population_data_n_features,
-        "Model:: population_data_n_features don't match"
+        agents_data_n_features != other.agents_data_n_features,
+        "Model:: agents_data_n_features don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
@@ -13456,17 +13456,17 @@ inline void Agent<TSeq>::print(
 // inline double & Agent<TSeq>::operator()(size_t j)
 // {
 
-//     if (model->population_data_n_features <= j)
+//     if (model->agents_data_n_features <= j)
 //         throw std::logic_error("The requested feature of the agent is out of range.");
 
-//     return *(model->population_data + j * model->size() + id);
+//     return *(model->agents_data + j * model->size() + id);
 
 // }
 
 // template<typename TSeq>
 // inline double & Agent<TSeq>::operator[](size_t j)
 // {
-//     return *(model->population_data + j * model->size() + id);
+//     return *(model->agents_data + j * model->size() + id);
 // }
 
 template<typename TSeq>
@@ -14802,6 +14802,8 @@ public:
     // Tracking who is infected and who is not
     std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected = {};
     std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected_next = {};
+    std::vector< epiworld_double >        tracked_agents_weight        = {}
+    std::vector< epiworld_double >        tracked_agents_weight_next   = {}
 
     bool tracked_started = false;
     int tracked_ninfected = 0;

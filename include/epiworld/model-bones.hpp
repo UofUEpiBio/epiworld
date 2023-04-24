@@ -119,8 +119,8 @@ protected:
      * 
      */
     ///@{
-    double * population_data = nullptr;
-    size_t population_data_n_features = 0u;
+    double * agents_data = nullptr;
+    size_t agents_data_n_features = 0u;
     ///@}
 
     bool directed = false;
