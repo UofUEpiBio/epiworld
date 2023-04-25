@@ -1205,7 +1205,10 @@ inline void Model<TSeq>::rm_virus(size_t virus_pos)
     std::swap(viruses[virus_pos], viruses[viruses.size() - 1]);
     std::swap(viruses_dist_funs[virus_pos], viruses_dist_funs[viruses.size() - 1]);
     std::swap(prevalence_virus[virus_pos], prevalence_virus[viruses.size() - 1]);
-    std::swap(prevalence_virus_as_proportion[virus_pos], prevalence_virus_as_proportion[viruses.size() - 1]);
+    std::vector<bool>::swap(
+        prevalence_virus_as_proportion[virus_pos],
+        prevalence_virus_as_proportion[viruses.size() - 1]
+        );
 
     viruses.pop_back();
     viruses_dist_funs.pop_back();
@@ -1234,8 +1237,22 @@ inline void Model<TSeq>::rm_tool(size_t tool_pos)
     std::swap(tools[tool_pos], tools[tools.size() - 1]);
     std::swap(tools_dist_funs[tool_pos], tools_dist_funs[tools.size() - 1]);
     std::swap(prevalence_tool[tool_pos], prevalence_tool[tools.size() - 1]);
-    std::swap(prevalence_tool_as_proportion[tool_pos], prevalence_tool_as_proportion[tools.size() - 1]);
+    
+    /* There's an error on windows:
+    https://github.com/UofUEpiBio/epiworldR/actions/runs/4801482395/jobs/8543744180#step:6:84
 
+    More clear here:
+    https://stackoverflow.com/questions/58660207/why-doesnt-stdswap-work-on-vectorbool-elements-under-clang-win
+    */
+    std::vector<bool>::swap(
+        prevalence_tool_as_proportion[tool_pos],
+        prevalence_tool_as_proportion[tools.size() - 1]
+    );
+
+    // auto old = prevalence_tool_as_proportion[tool_pos];
+    // prevalence_tool_as_proportion[tool_pos] = prevalence_tool_as_proportion[tools.size() - 1];
+    // prevalence_tool_as_proportion[tools.size() - 1] = old;
+    
 
     tools.pop_back();
     tools_dist_funs.pop_back();

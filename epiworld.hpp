@@ -7452,7 +7452,10 @@ inline void Model<TSeq>::rm_virus(size_t virus_pos)
     std::swap(viruses[virus_pos], viruses[viruses.size() - 1]);
     std::swap(viruses_dist_funs[virus_pos], viruses_dist_funs[viruses.size() - 1]);
     std::swap(prevalence_virus[virus_pos], prevalence_virus[viruses.size() - 1]);
-    std::swap(prevalence_virus_as_proportion[virus_pos], prevalence_virus_as_proportion[viruses.size() - 1]);
+    std::vector<bool>::swap(
+        prevalence_virus_as_proportion[virus_pos],
+        prevalence_virus_as_proportion[viruses.size() - 1]
+        );
 
     viruses.pop_back();
     viruses_dist_funs.pop_back();
@@ -7481,8 +7484,22 @@ inline void Model<TSeq>::rm_tool(size_t tool_pos)
     std::swap(tools[tool_pos], tools[tools.size() - 1]);
     std::swap(tools_dist_funs[tool_pos], tools_dist_funs[tools.size() - 1]);
     std::swap(prevalence_tool[tool_pos], prevalence_tool[tools.size() - 1]);
-    std::swap(prevalence_tool_as_proportion[tool_pos], prevalence_tool_as_proportion[tools.size() - 1]);
+    
+    /* There's an error on windows:
+    https://github.com/UofUEpiBio/epiworldR/actions/runs/4801482395/jobs/8543744180#step:6:84
 
+    More clear here:
+    https://stackoverflow.com/questions/58660207/why-doesnt-stdswap-work-on-vectorbool-elements-under-clang-win
+    */
+    std::vector<bool>::swap(
+        prevalence_tool_as_proportion[tool_pos],
+        prevalence_tool_as_proportion[tools.size() - 1]
+    );
+
+    // auto old = prevalence_tool_as_proportion[tool_pos];
+    // prevalence_tool_as_proportion[tool_pos] = prevalence_tool_as_proportion[tools.size() - 1];
+    // prevalence_tool_as_proportion[tools.size() - 1] = old;
+    
 
     tools.pop_back();
     tools_dist_funs.pop_back();
@@ -14898,6 +14915,9 @@ inline void ModelSIRCONN<TSeq>::run(
 template<typename TSeq>
 inline void ModelSIRCONN<TSeq>::reset()
 {
+
+    Model<TSeq>::reset();
+
     /* Listing who is infected */ 
     for (auto & p : Model<TSeq>::get_agents())
     {
@@ -14922,9 +14942,8 @@ inline void ModelSIRCONN<TSeq>::reset()
         tracked_ninfected
     );
 
-    Model<TSeq>::reset();
-
     return;
+
 }
 
 template<typename TSeq>
@@ -15186,7 +15205,6 @@ public:
     std::vector< epiworld::Agent<>* > tracked_agents_infected = {};
     std::vector< epiworld::Agent<>* > tracked_agents_infected_next = {};
 
-    bool tracked_started = false;
     int tracked_ninfected = 0;
     int tracked_ninfected_next = 0;
 
@@ -15194,6 +15212,8 @@ public:
         epiworld_fast_uint ndays,
         int seed = -1
     );
+
+    void reset();
 
     Model<TSeq> * clone_ptr();
 
@@ -15209,11 +15229,38 @@ inline void ModelSEIRCONN<TSeq>::run(
     tracked_agents_infected.clear();
     tracked_agents_infected_next.clear();
 
-    tracked_started = false;
     tracked_ninfected = 0;
     tracked_ninfected_next = 0;
-
+    
     Model<TSeq>::run(ndays, seed);
+
+}
+
+template<typename TSeq>
+inline void ModelSEIRCONN<TSeq>::reset()
+{
+
+    Model<TSeq>::reset();
+
+    /* Listing who is infected */ 
+    for (auto & p : Model<TSeq>::get_agents())
+    {
+        if (p.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
+        {
+        
+            tracked_agents_infected.push_back(&p);
+            tracked_ninfected++;
+        
+        }
+    }
+
+    for (auto & p: tracked_agents_infected)
+    {
+        if (p->get_n_viruses() == 0)
+            throw std::logic_error("Cannot be infected and have no viruses.");
+    }
+
+    return;
 
 }
 
@@ -15253,44 +15300,13 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     )
 {
 
-    std::function<void(ModelSEIRCONN<TSeq> *)> tracked_agents_check_init = 
-    [](ModelSEIRCONN<TSeq> * m) 
-        {
-
-            /* Checking first if it hasn't  */ 
-            if (m->tracked_started)
-                return;
-
-            /* Listing who is infected */ 
-            for (auto & p : m->get_agents())
-            {
-                if (p.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
-                {
-                
-                    m->tracked_agents_infected.push_back(&p);
-                    m->tracked_ninfected++;
-                
-                }
-            }
-
-            for (auto & p: m->tracked_agents_infected)
-            {
-                if (p->get_n_viruses() == 0)
-                    throw std::logic_error("Cannot be infected and have no viruses.");
-            }
-            
-            m->tracked_started = true;
-                
-        };
-
-    epiworld::UpdateFun<TSeq> update_susceptible = 
-    [tracked_agents_check_init](epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m) -> void
+    epiworld::UpdateFun<TSeq> update_susceptible = [](
+        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+        ) -> void
         {
 
             // Getting the right type
             ModelSEIRCONN<TSeq> * _m = dynamic_cast<ModelSEIRCONN<TSeq>*>(m);
-
-            tracked_agents_check_init(_m);
 
             // No infected individual?
             if (_m->tracked_ninfected == 0)
@@ -15350,14 +15366,12 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
         };
 
-    epiworld::UpdateFun<TSeq> update_infected = 
-    [tracked_agents_check_init](epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m) -> void
-        {
+    epiworld::UpdateFun<TSeq> update_infected = [](
+        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+        ) -> void {
 
             // Getting the right type
             ModelSEIRCONN<TSeq> * _m = dynamic_cast<ModelSEIRCONN<TSeq>*>(m);
-
-            tracked_agents_check_init(_m);
 
             auto status = p->get_state();
 
@@ -15409,13 +15423,6 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             // set the initialized value to false
             if (static_cast<epiworld_fast_uint>(m->today()) == (m->get_ndays() - 1))
             {
-
-                _m->tracked_started = false;
-                _m->tracked_agents_infected.clear();
-                _m->tracked_agents_infected_next.clear();
-                _m->tracked_ninfected = 0;
-                _m->tracked_ninfected_next = 0;    
-
                 return;
             }
 

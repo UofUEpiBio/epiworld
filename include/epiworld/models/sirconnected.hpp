@@ -80,6 +80,9 @@ inline void ModelSIRCONN<TSeq>::run(
 template<typename TSeq>
 inline void ModelSIRCONN<TSeq>::reset()
 {
+
+    Model<TSeq>::reset();
+
     /* Listing who is infected */ 
     for (auto & p : Model<TSeq>::get_agents())
     {
@@ -104,9 +107,8 @@ inline void ModelSIRCONN<TSeq>::reset()
         tracked_ninfected
     );
 
-    Model<TSeq>::reset();
-
     return;
+
 }
 
 template<typename TSeq>
