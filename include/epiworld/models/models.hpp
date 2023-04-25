@@ -2,6 +2,7 @@
 #define EPIWORLD_MODELS_HPP
 
 namespace epimodels {
+
     #include "sis.hpp"
     #include "sir.hpp"
     #include "seir.hpp"
@@ -9,6 +10,8 @@ namespace epimodels {
     #include "sirconnected.hpp"
     #include "seirconnected.hpp"
     #include "seird.hpp"
+    #include "sirlogit.hpp"
+
 }
 
 #endif

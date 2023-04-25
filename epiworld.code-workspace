@@ -72,7 +72,8 @@
 			"list": "cpp",
 			"variant": "cpp",
 			"future": "cpp",
-			"iomanip": "cpp"
+			"iomanip": "cpp",
+			"numbers": "cpp"
 		}
 	}
 }

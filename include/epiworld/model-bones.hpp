@@ -120,7 +120,7 @@ protected:
      */
     ///@{
     double * agents_data = nullptr;
-    size_t agents_data_n_features = 0u;
+    size_t agents_data_ncols = 0u;
     ///@}
 
     bool directed = false;
@@ -649,6 +649,8 @@ public:
      * 
      */
     void set_agents_data(double * data_, size_t ncols_);
+    double * get_agents_data();
+    size_t get_agents_data_ncols();
 
     /**
      * @brief Set the name object

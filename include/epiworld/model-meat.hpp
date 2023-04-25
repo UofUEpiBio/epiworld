@@ -473,7 +473,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         queue.model = this;
 
     agents_data = model.agents_data;
-    agents_data_n_features = model.agents_data_n_features;
+    agents_data_ncols = model.agents_data_ncols;
 
     // Finally, seeds are resetted automatically based on the original
     // engine
@@ -491,7 +491,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     db(std::move(model.db)),
     population(std::move(model.population)),
     agents_data(std::move(model.agents_data)),
-    agents_data_n_features(std::move(model.agents_data_n_features)),
+    agents_data_ncols(std::move(model.agents_data_ncols)),
     directed(std::move(model.directed)),
     // Virus
     viruses(std::move(model.viruses)),
@@ -615,7 +615,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     db.user_data.model = this;
 
     agents_data            = m.agents_data;
-    agents_data_n_features = m.agents_data_n_features;
+    agents_data_ncols = m.agents_data_ncols;
 
     // Figure out the queuing
     if (use_queuing)
@@ -2351,8 +2351,19 @@ template<typename TSeq>
 inline void Model<TSeq>::set_agents_data(double * data_, size_t ncols_)
 {
     agents_data = data_;
-    agents_data_n_features = ncols_;
+    agents_data_ncols = ncols_;
 }
+
+template<typename TSeq>
+inline double * Model<TSeq>::get_agents_data() {
+    return this->agents_data;
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_agents_data_ncols()  {
+    return this->agents_data_ncols;
+}
+
 
 template<typename TSeq>
 inline void Model<TSeq>::set_name(std::string name)
@@ -2407,8 +2418,8 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        agents_data_n_features != other.agents_data_n_features,
-        "Model:: agents_data_n_features don't match"
+        agents_data_ncols != other.agents_data_ncols,
+        "Model:: agents_data_ncols don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(

@@ -822,7 +822,7 @@ inline void Agent<TSeq>::print(
 // inline double & Agent<TSeq>::operator()(size_t j)
 // {
 
-//     if (model->agents_data_n_features <= j)
+//     if (model->agents_data_ncols <= j)
 //         throw std::logic_error("The requested feature of the agent is out of range.");
 
 //     return *(model->agents_data + j * model->size() + id);
