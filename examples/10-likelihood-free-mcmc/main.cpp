@@ -85,7 +85,7 @@ int main()
     lfmcmc.run(par0, 1000, 1);
     
     lfmcmc.set_par_names({"Immune recovery", "Infectiousness"});
-    lfmcmc.set_stats_names(model.get_state());
+    lfmcmc.set_stats_names(model.get_states());
 
     lfmcmc.print();
 

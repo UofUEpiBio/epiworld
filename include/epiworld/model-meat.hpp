@@ -2053,7 +2053,7 @@ inline void Model<TSeq>::add_state(
 
 template<typename TSeq>
 inline const std::vector< std::string > &
-Model<TSeq>::get_state() const
+Model<TSeq>::get_states() const
 {
     return states_labels;
 }

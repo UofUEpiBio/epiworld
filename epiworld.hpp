@@ -3906,7 +3906,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
     bool print
 ) const {
 
-    auto states_labels = model->get_state();
+    auto states_labels = model->get_states();
     size_t n_state = states_labels.size();
     size_t n_days   = model->get_ndays();
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
@@ -6081,7 +6081,7 @@ public:
      */
     ///@{
     void add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
-    const std::vector< std::string > & get_state() const;
+    const std::vector< std::string > & get_states() const;
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
     void print_state_codes() const;
     ///@}
@@ -8611,7 +8611,7 @@ inline void Model<TSeq>::add_state(
 
 template<typename TSeq>
 inline const std::vector< std::string > &
-Model<TSeq>::get_state() const
+Model<TSeq>::get_states() const
 {
     return states_labels;
 }
@@ -11573,7 +11573,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 if (exclude_agent_bool->size() == 0u)
                 {
 
-                    exclude_agent_bool->resize(m->get_state().size(), false);
+                    exclude_agent_bool->resize(m->get_states().size(), false);
                     for (auto s : *exclude_agent_bool_idx)
                     {
                         if (s >= exclude_agent_bool->size())
@@ -11741,7 +11741,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                 if (exclude_agent_bool->size() == 0u)
                 {
 
-                    exclude_agent_bool->resize(m->get_state().size(), false);
+                    exclude_agent_bool->resize(m->get_states().size(), false);
                     for (auto s : *exclude_agent_bool_idx)
                     {
                         if (s >= exclude_agent_bool->size())
