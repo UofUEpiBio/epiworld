@@ -801,16 +801,39 @@ inline void Agent<TSeq>::print(
     {
         printf_epiworld(
             "Agent: %i, state: %s (%lu), Nvirus: %lu, NTools: %lu, NNeigh: %lu\n",
-            id, model->status_labels[state].c_str(), state, n_viruses, n_tools, neighbors.size()
+            id, model->states_labels[state].c_str(), state, n_viruses, n_tools, neighbors.size()
         );
     }
     else {
 
         printf_epiworld("Information about agent id %i\n", this->id);
-        printf_epiworld("  state       : %s (%lu)\n", model->status_labels[state].c_str(), state);
+        printf_epiworld("  State        : %s (%lu)\n", model->states_labels[state].c_str(), state);
         printf_epiworld("  Virus count  : %lu\n", n_viruses);
         printf_epiworld("  Tool count   : %lu\n", n_tools);
         printf_epiworld("  Neigh. count : %lu\n", neighbors.size());
+
+        size_t nfeats = model->get_agents_data_ncols();
+        if (nfeats > 0)
+        {
+
+            printf_epiworld("This model includes features (%lu): [ ", nfeats);
+
+            int max_to_show = static_cast<int>((nfeats > 10)? 10 : nfeats);
+
+            for (int k = 0; k < max_to_show; ++k)
+            {
+                printf_epiworld("%.2f", this->operator[](k));
+
+                if (k != (max_to_show - 1))
+                {
+                    printf_epiworld(", ");
+                } else {
+                    printf_epiworld(" ]\n");
+                }
+
+            }
+            
+        }
 
     }
 
@@ -818,22 +841,39 @@ inline void Agent<TSeq>::print(
 
 }
 
-// template<typename TSeq>
-// inline double & Agent<TSeq>::operator()(size_t j)
-// {
+template<typename TSeq>
+inline double & Agent<TSeq>::operator()(size_t j)
+{
 
-//     if (model->agents_data_ncols <= j)
-//         throw std::logic_error("The requested feature of the agent is out of range.");
+    if (model->agents_data_ncols <= j)
+        throw std::logic_error("The requested feature of the agent is out of range.");
 
-//     return *(model->agents_data + j * model->size() + id);
+    return *(model->agents_data + j * model->size() + id);
 
-// }
+}
 
-// template<typename TSeq>
-// inline double & Agent<TSeq>::operator[](size_t j)
-// {
-//     return *(model->agents_data + j * model->size() + id);
-// }
+template<typename TSeq>
+inline double & Agent<TSeq>::operator[](size_t j)
+{
+    return *(model->agents_data + j * model->size() + id);
+}
+
+template<typename TSeq>
+inline double Agent<TSeq>::operator()(size_t j) const
+{
+
+    if (model->agents_data_ncols <= j)
+        throw std::logic_error("The requested feature of the agent is out of range.");
+
+    return *(model->agents_data + j * model->size() + id);
+
+}
+
+template<typename TSeq>
+inline double Agent<TSeq>::operator[](size_t j) const
+{
+    return *(model->agents_data + j * model->size() + id);
+}
 
 template<typename TSeq>
 inline Entities<TSeq> Agent<TSeq>::get_entities()

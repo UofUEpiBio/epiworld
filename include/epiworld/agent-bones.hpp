@@ -308,8 +308,10 @@ public:
      * @return double& 
      */
     ///@{
-    // double & operator()(size_t j);
-    // double & operator[](size_t j);
+    double & operator()(size_t j);
+    double & operator[](size_t j);
+    double operator()(size_t j) const;
+    double operator[](size_t j) const;
     ///@}
 
     Entities<TSeq> get_entities();

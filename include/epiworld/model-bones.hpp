@@ -154,7 +154,7 @@ protected:
     Progress pb;
 
     std::vector< UpdateFun<TSeq> >    status_fun = {};
-    std::vector< std::string >        status_labels = {};
+    std::vector< std::string >        states_labels = {};
     epiworld_fast_uint nstatus = 0u;
     
     bool verbose     = true;
@@ -499,7 +499,7 @@ public:
      * - set the date to 0
      * 
      */
-    void reset();
+    virtual void reset();
     void print(bool lite = false) const;
 
     Model<TSeq> && clone() const;

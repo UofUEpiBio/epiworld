@@ -43,7 +43,6 @@ public:
     std::vector< epiworld_double >        tracked_agents_weight        = {};
     std::vector< epiworld_double >        tracked_agents_weight_next   = {};
 
-    bool tracked_started = false;
     int tracked_ninfected = 0;
     int tracked_ninfected_next = 0;
     epiworld_double tracked_current_infect_prob = 0.0;
@@ -52,8 +51,11 @@ public:
         epiworld_fast_uint ndays,
         int seed = -1
     );
+    
+    void reset();
 
     Model<TSeq> * clone_ptr();
+
 
 };
 
@@ -67,13 +69,44 @@ inline void ModelSIRCONN<TSeq>::run(
     tracked_agents_infected.clear();
     tracked_agents_infected_next.clear();
 
-    tracked_started = false;
     tracked_ninfected = 0;
     tracked_ninfected_next = 0;
     tracked_current_infect_prob = 0.0;
 
     Model<TSeq>::run(ndays, seed);
 
+}
+
+template<typename TSeq>
+inline void ModelSIRCONN<TSeq>::reset()
+{
+    /* Listing who is infected */ 
+    for (auto & p : Model<TSeq>::get_agents())
+    {
+        if (p.get_state() == ModelSIRCONN<TSeq>::INFECTED)
+        {
+        
+            tracked_agents_infected.push_back(&p);
+            tracked_ninfected++;
+        
+        }
+    }
+
+    for (auto & p: tracked_agents_infected)
+    {
+        if (p->get_n_viruses() == 0)
+            throw std::logic_error("Cannot be infected and have no viruses.");
+    }
+    
+    // Computing infection probability
+    tracked_current_infect_prob =  1.0 - std::pow(
+        1.0 - (Model<TSeq>::par("Contact rate")) * (Model<TSeq>::par("Prob. Transmission")) / Model<TSeq>::size(),
+        tracked_ninfected
+    );
+
+    Model<TSeq>::reset();
+
+    return;
 }
 
 template<typename TSeq>
@@ -112,55 +145,14 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 {
 
 
-    std::function<void(ModelSIRCONN<TSeq> * m)> tracked_agents_check_init = [](
-        ModelSIRCONN<TSeq> * m
-        ) -> void
-        {
 
-            /* Checking first if it hasn't  */ 
-            if (m->tracked_started)
-                return;
-    
-            /* Listing who is infected */ 
-            for (auto & p : m->get_agents())
-            {
-                if (p.get_state() == ModelSIRCONN<TSeq>::INFECTED)
-                {
-                
-                    m->tracked_agents_infected.push_back(&p);
-                    m->tracked_ninfected++;
-                
-                }
-            }
-
-            for (auto & p: m->tracked_agents_infected)
-            {
-                if (p->get_n_viruses() == 0)
-                    throw std::logic_error("Cannot be infected and have no viruses.");
-            }
-            
-            m->tracked_started = true;
-
-            // Computing infection probability
-            m->tracked_current_infect_prob =  1.0 - std::pow(
-                1.0 - (m->par("Contact rate")) * (m->par("Prob. Transmission")) / m->size(),
-                m->tracked_ninfected
-            );
-             
-
-        };
-
-    epiworld::UpdateFun<TSeq> update_susceptible = [
-        tracked_agents_check_init
-    ](
+    epiworld::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void
         {
 
             // Getting the right type
             ModelSIRCONN<TSeq> * _m = dynamic_cast<ModelSIRCONN<TSeq>*>(m);
-
-            tracked_agents_check_init(_m);
 
             // No infected individual?
             if (_m->tracked_ninfected == 0)
@@ -203,17 +195,13 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
         };
 
-    epiworld::UpdateFun<TSeq> update_infected = [
-        tracked_agents_check_init
-    ](
+    epiworld::UpdateFun<TSeq> update_infected = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void
         {
 
             // Getting the right type
             ModelSIRCONN<TSeq> * _m = dynamic_cast<ModelSIRCONN<TSeq>*>(m);
-
-            tracked_agents_check_init(_m);
 
             // Is recovering
             if (m->runif() < (m->par("Prob. Recovery")))
@@ -243,14 +231,6 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             // set the initialized value to false
             if (static_cast<epiworld_fast_uint>(m->today()) == (m->get_ndays() - 1))
             {
-
-                _m->tracked_started = false;
-                _m->tracked_agents_infected.clear();
-                _m->tracked_agents_infected_next.clear();
-                _m->tracked_ninfected = 0;
-                _m->tracked_ninfected_next = 0;    
-                _m->tracked_current_infect_prob = 0.0;
-
                 return;
             }
 

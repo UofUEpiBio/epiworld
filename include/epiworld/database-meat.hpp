@@ -502,9 +502,9 @@ inline int DataBase<TSeq>::get_today_total(
 ) const
 {
 
-    for (auto i = 0u; i < model->status_labels.size(); ++i)
+    for (auto i = 0u; i < model->states_labels.size(); ++i)
     {
-        if (model->status_labels[i] == what)
+        if (model->states_labels[i] == what)
             return today_total[i];
     }
 
@@ -519,7 +519,7 @@ inline void DataBase<TSeq>::get_today_total(
 ) const
 {
     if (state != nullptr)
-        (*state) = model->status_labels;
+        (*state) = model->states_labels;
 
     if (counts != nullptr)
         *counts = today_total;
@@ -540,9 +540,9 @@ inline void DataBase<TSeq>::get_today_variant(
 
     int n = 0u;
     for (epiworld_fast_uint v = 0u; v < today_variant.size(); ++v)
-        for (epiworld_fast_uint s = 0u; s < model->status_labels.size(); ++s)
+        for (epiworld_fast_uint s = 0u; s < model->states_labels.size(); ++s)
         {
-            state[n]   = model->status_labels[s];
+            state[n]   = model->states_labels[s];
             id[n]       = static_cast<int>(v);
             counts[n++] = today_variant[v][s];
 
@@ -565,7 +565,7 @@ inline void DataBase<TSeq>::get_hist_total(
     {
         state->resize(hist_total_state.size(), "");
         for (epiworld_fast_uint i = 0u; i < hist_total_state.size(); ++i)
-            state->operator[](i) = model->status_labels[hist_total_state[i]];
+            state->operator[](i) = model->states_labels[hist_total_state[i]];
     }
 
     if (counts != nullptr)
@@ -585,7 +585,7 @@ inline void DataBase<TSeq>::get_hist_variant(
 
     date = hist_variant_date;
     std::vector< std::string > labels;
-    labels = model->status_labels;
+    labels = model->states_labels;
     
     id = hist_variant_id;
     state.resize(hist_variant_state.size(), "");
@@ -609,7 +609,7 @@ inline void DataBase<TSeq>::get_hist_tool(
 
     date = hist_tool_date;
     std::vector< std::string > labels;
-    labels = model->status_labels;
+    labels = model->states_labels;
     
     id = hist_tool_id;
     state.resize(hist_tool_state.size(), "");
@@ -660,8 +660,8 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
                 if (skip_zeros && v == 0)
                     continue;
                                 
-                state_from.push_back(model->status_labels[i]);
-                state_to.push_back(model->status_labels[j]);
+                state_from.push_back(model->states_labels[i]);
+                state_to.push_back(model->states_labels[j]);
                 date.push_back(hist_total_date[step * n_status]);
                 counts.push_back(v);
 
@@ -734,7 +734,7 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_variant_date[i] << " " <<
                 hist_variant_id[i] << " " <<
-                model->status_labels[hist_variant_state[i]] << " " <<
+                model->states_labels[hist_variant_state[i]] << " " <<
                 hist_variant_counts[i] << "\n";
     }
 
@@ -780,7 +780,7 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_tool_date[i] << " " <<
                 hist_tool_id[i] << " " <<
-                model->status_labels[hist_tool_state[i]] << " " <<
+                model->states_labels[hist_tool_state[i]] << " " <<
                 hist_tool_counts[i] << "\n";
     }
 
@@ -801,7 +801,7 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_total_date[i] << " " <<
                 hist_total_nvariants_active[i] << " \"" <<
-                model->status_labels[hist_total_state[i]] << "\" " << 
+                model->states_labels[hist_total_state[i]] << "\" " << 
                 hist_total_counts[i] << "\n";
     }
 
@@ -848,8 +848,8 @@ inline void DataBase<TSeq>::write_data(
                         EPI_GET_THREAD_ID() << " " <<
                         #endif
                         i << " " <<
-                        model->status_labels[from] << " " <<
-                        model->status_labels[to] << " " <<
+                        model->states_labels[from] << " " <<
+                        model->states_labels[to] << " " <<
                         hist_transition_matrix[i * (ns * ns) + to * ns + from] << "\n";
                 
         }
@@ -1002,8 +1002,8 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
     bool print
 ) const {
 
-    auto status_labels = model->get_state();
-    size_t n_state = status_labels.size();
+    auto states_labels = model->get_state();
+    size_t n_state = states_labels.size();
     size_t n_days   = model->get_ndays();
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
     std::vector< epiworld_double > days_to_include(n_state, 0.0);
@@ -1058,7 +1058,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
     {   
 
         size_t nchar = 0u;
-        for (auto & l : status_labels)
+        for (auto & l : states_labels)
             if (l.length() > nchar)
                 nchar = l.length();
 
@@ -1067,7 +1067,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
         printf_epiworld("\nTransition Probabilities:\n");
         for (size_t s_i = 0u; s_i < n_state; ++s_i)
         {
-            printf_epiworld(fmt.c_str(), status_labels[s_i].c_str());
+            printf_epiworld(fmt.c_str(), states_labels[s_i].c_str());
             for (size_t s_j = 0u; s_j < n_state; ++s_j)
             {
                 if (std::isnan(res[s_i + s_j * n_state]))

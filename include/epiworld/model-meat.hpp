@@ -435,7 +435,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     ndays(model.ndays),
     pb(model.pb),
     status_fun(model.status_fun),
-    status_labels(model.status_labels),
+    states_labels(model.states_labels),
     nstatus(model.nstatus),
     verbose(model.verbose),
     current_date(model.current_date),
@@ -524,7 +524,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     ndays(model.ndays),
     pb(std::move(model.pb)),
     status_fun(std::move(model.status_fun)),
-    status_labels(std::move(model.status_labels)),
+    states_labels(std::move(model.states_labels)),
     nstatus(model.nstatus),
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
@@ -596,7 +596,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     pb         = m.pb;
 
     status_fun    = m.status_fun;
-    status_labels = m.status_labels;
+    states_labels = m.states_labels;
     nstatus       = m.nstatus;
 
     verbose     = m.verbose;
@@ -2040,11 +2040,11 @@ inline void Model<TSeq>::add_state(
 {
 
     // Checking it doesn't match
-    for (auto & s : status_labels)
+    for (auto & s : states_labels)
         if (s == lab)
             throw std::logic_error("state \"" + s + "\" already registered.");
 
-    status_labels.push_back(lab);
+    states_labels.push_back(lab);
     status_fun.push_back(fun);
     nstatus++;
 
@@ -2055,7 +2055,7 @@ template<typename TSeq>
 inline const std::vector< std::string > &
 Model<TSeq>::get_state() const
 {
-    return status_labels;
+    return states_labels;
 }
 
 template<typename TSeq>
@@ -2077,7 +2077,7 @@ inline void Model<TSeq>::print_state_codes() const
     printf_epiworld("\n%s\nSTATUS CODES\n\n", line.c_str());
 
     epiworld_fast_uint nchar = 0u;
-    for (auto & p : status_labels)
+    for (auto & p : states_labels)
         if (p.length() > nchar)
             nchar = p.length();
     
@@ -2088,7 +2088,7 @@ inline void Model<TSeq>::print_state_codes() const
         printf_epiworld(
             fmt.c_str(),
             i,
-            (status_labels[i] + " (S)").c_str()
+            (states_labels[i] + " (S)").c_str()
         );
 
     }
@@ -2528,8 +2528,8 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     )
     
     VECT_MATCH(
-        status_labels,
-        other.status_labels,
+        states_labels,
+        other.states_labels,
         "state labels don't match"
     )
 

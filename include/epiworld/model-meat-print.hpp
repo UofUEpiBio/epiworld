@@ -10,7 +10,7 @@ inline void Model<TSeq>::print(bool lite) const
         size_t nchar = 0u;
         std::string fmt = " - %-" + std::to_string(nchar + 1) + "s: ";
 
-        for (auto & p : status_labels)
+        for (auto & p : states_labels)
             if (p.length() > nchar)
                 nchar = p.length();
 
@@ -31,7 +31,7 @@ inline void Model<TSeq>::print(bool lite) const
                 printf_epiworld(
                     fmt.c_str(),
                     s,
-                    status_labels[s].c_str(),
+                    states_labels[s].c_str(),
                     db.hist_total_counts[s],
                     db.today_total[ s ]
                     );
@@ -43,7 +43,7 @@ inline void Model<TSeq>::print(bool lite) const
                 printf_epiworld(
                     fmt.c_str(),
                     s,
-                    status_labels[s].c_str(),
+                    states_labels[s].c_str(),
                     db.today_total[ s ]
                     );
 
@@ -242,7 +242,7 @@ inline void Model<TSeq>::print(bool lite) const
     }
 
     nchar = 0u;
-    for (auto & p : status_labels)
+    for (auto & p : states_labels)
         if (p.length() > nchar)
             nchar = p.length();
 
@@ -265,7 +265,7 @@ inline void Model<TSeq>::print(bool lite) const
                 printf_epiworld(
                     fmt.c_str(),
                     s,
-                    status_labels[s].c_str(),
+                    states_labels[s].c_str(),
                     db.hist_total_counts[s],
                     db.today_total[ s ]
                     );
@@ -277,7 +277,7 @@ inline void Model<TSeq>::print(bool lite) const
             //     printf_epiworld(
             //         fmt.c_str(),
             //         s,
-            //         status_labels[s].c_str(),
+            //         states_labels[s].c_str(),
             //         db.today_total[ s ]
             //         );
 

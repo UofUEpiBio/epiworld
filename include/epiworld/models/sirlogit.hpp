@@ -33,6 +33,8 @@ public:
         std::vector< double > coefs_recover,
         std::vector< size_t > coef_infect_cols,
         std::vector< size_t > coef_recover_cols,
+        epiworld_double prob_infect,
+        epiworld_double prob_recover,
         epiworld_double prevalence
     );
 
@@ -44,6 +46,8 @@ public:
         std::vector< double > coefs_recover,
         std::vector< size_t > coef_infect_cols,
         std::vector< size_t > coef_recover_cols,
+        epiworld_double prob_infect,
+        epiworld_double prob_recover,
         epiworld_double prevalence
     );
 
@@ -54,7 +58,7 @@ public:
 
     Model<TSeq> * clone_ptr();
 
-    bool tracked_started = false;
+    void reset();
     
     std::vector< double > coefs_infect;
     std::vector< double > coefs_recover;
@@ -88,6 +92,40 @@ inline Model<TSeq> * ModelSIRLogit<TSeq>::clone_ptr()
 
 }
 
+template<typename TSeq>
+inline void ModelSIRLogit<TSeq>::reset()
+{
+
+    /* Checking specified columns in the model */
+    for (const auto & c : coef_infect_cols)
+    {
+        if (c >= Model<TSeq>::agents_data_ncols)
+            throw std::range_error("Columns specified in coef_infect_cols out of range.");
+    }
+
+    for (const auto & c : coef_recover_cols)
+    {
+        if (c >= Model<TSeq>::agents_data_ncols)
+            throw std::range_error("Columns specified in coef_recover_cols out of range.");
+    }
+
+    /* Checking attributes */ 
+    if (coefs_infect.size() != (coef_infect_cols.size() + 1u))
+        throw std::logic_error(
+            "The number of coefficients (infection) doesn't match the number of features. It must be as many features of the agents plus 1 (exposure.)"
+            );
+
+    if (coefs_recover.size() != coef_recover_cols.size())
+        throw std::logic_error(
+            "The number of coefficients (recovery) doesn't match the number of features. It must be as many features of the agents."
+            );
+    
+    Model<TSeq>::reset();
+
+    return;
+
+}
+
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
  * 
@@ -108,6 +146,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     std::vector< double > coefs_recover,
     std::vector< size_t > coef_infect_cols,
     std::vector< size_t > coef_recover_cols,
+    epiworld_double prob_infect,
+    epiworld_double prob_recover,
     epiworld_double prevalence
     )
 {
@@ -128,46 +168,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     model.coef_infect_cols = coef_infect_cols;
     model.coef_recover_cols = coef_recover_cols;
 
-    std::function<void(ModelSIRLogit<TSeq> * m)> check_init = [](
-        ModelSIRLogit<TSeq> * m
-        ) -> void
-        {
-
-            /* Checking first if it hasn't  */ 
-            if (m->tracked_started)
-                return;
-
-            /* Checking specified columns in the model */
-            for (const auto & c : m->coef_infect_cols)
-            {
-                if (c >= m->agents_data_ncols)
-                    throw std::range_error("Columns specified in coef_infect_cols out of range.");
-            }
-
-            for (const auto & c : m->coef_recover_cols)
-            {
-                if (c >= m->agents_data_ncols)
-                    throw std::range_error("Columns specified in coef_recover_cols out of range.");
-            }
-    
-            /* Checking attributes */ 
-            if (m->coefs_infect.size() != (m->coef_infect_cols.size() + 1u))
-                throw std::logic_error(
-                    "The number of coefficients (infection) doesn't match the number of features. It must be as many features of the agents plus 1 (exposure.)"
-                    );
-
-            if (m->coefs_recover.size() != m->coef_recover_cols.size())
-                throw std::logic_error(
-                    "The number of coefficients (recovery) doesn't match the number of features. It must be as many features of the agents."
-                    );
-            
-            m->tracked_started = true;            
-
-        };
-
-    epiworld::UpdateFun<TSeq> update_susceptible = [
-        check_init
-    ](
+    epiworld::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void
         {
@@ -175,26 +176,15 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             // Getting the right type
             ModelSIRLogit<TSeq> * _m = dynamic_cast<ModelSIRLogit<TSeq>*>(m);
 
-            check_init(_m);
-
             // Exposure coefficient
             const double coef_exposure = _m->coefs_infect[0u];
 
             // This computes the prob of getting any neighbor variant
             size_t nvariants_tmp = 0u;
 
-            size_t id      = p->get_id();
-            size_t nagents = m->size();
-
             double baseline = 0.0;
             for (size_t k = 0u; k < _m->coef_infect_cols.size(); ++k)
-            {
-                baseline += (*(
-                        m->get_agents_data() +
-                        /* data is stored column-major */
-                        (_m->coef_infect_cols[k] * nagents + id)
-                    )) * _m->coefs_infect[k + 1u];
-            }
+                baseline += p->operator[](k) * _m->coefs_infect[k + 1u];
 
             for (auto & neighbor: p->get_neighbors()) 
             {
@@ -242,9 +232,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
         };
 
-    epiworld::UpdateFun<TSeq> update_infected = [
-        check_init
-    ](
+    epiworld::UpdateFun<TSeq> update_infected = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void
         {
@@ -252,23 +240,11 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             // Getting the right type
             ModelSIRLogit<TSeq> * _m = dynamic_cast<ModelSIRLogit<TSeq>*>(m);
 
-            check_init(_m);
-
             // Computing recovery probability once
             double prob    = 0.0;
-            size_t id      = p->get_id();
-            size_t nagents = m->size();
             #pragma omp simd reduction(+:prob)
             for (size_t i = 0u; i < _m->coefs_recover.size(); ++i)
-            {
-                prob +=
-                    (*(
-                        m->get_agents_data() +
-                        /* data is stored column-major */
-                        (_m->coef_recover_cols[i] * nagents + id)
-                    )) * _m->coefs_recover[i];
-
-            }
+                prob += p->operator[](i) * _m->coefs_recover[i];
 
             // Computing logis
             prob = 1.0/(1.0 + std::exp(-prob));
@@ -287,8 +263,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     // Setting up parameters
     // model.add_param(contact_rate, "Contact rate");
-    // model.add_param(prob_transmission, "Prob. Transmission");
-    // model.add_param(prob_recovery, "Prob. Recovery");
+    model.add_param(prob_infect, "Prob. Infection");
+    model.add_param(prob_recover, "Prob. Recovery");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
@@ -298,6 +274,9 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         ModelSIRLogit<TSeq>::RECOVERED,
         ModelSIRLogit<TSeq>::RECOVERED
         );
+
+    virus.set_prob_infecting(&model("Prob. Infection"));
+    virus.set_prob_recovery(&model("Prob. Recovery"));
 
     // virus.set_prob
 
@@ -318,6 +297,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     std::vector< double > coefs_recover,
     std::vector< size_t > coef_infect_cols,
     std::vector< size_t > coef_recover_cols,
+    epiworld_double prob_infect,
+    epiworld_double prob_recover,
     epiworld_double prevalence
     )
 {
@@ -331,6 +312,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         coefs_recover,
         coef_infect_cols,
         coef_recover_cols,
+        prob_infect,
+        prob_recover,
         prevalence
     );
 
