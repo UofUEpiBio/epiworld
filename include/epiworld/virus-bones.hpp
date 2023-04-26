@@ -96,9 +96,9 @@ public:
     void set_prob_recovery_fun(VirusFun<TSeq> fun);
     void set_prob_death_fun(VirusFun<TSeq> fun);
     
-    void set_prob_infecting(epiworld_double * prob);
-    void set_prob_recovery(epiworld_double * prob);
-    void set_prob_death(epiworld_double * prob);
+    void set_prob_infecting(const epiworld_double * prob);
+    void set_prob_recovery(const epiworld_double * prob);
+    void set_prob_death(const epiworld_double * prob);
     
     void set_prob_infecting(epiworld_double prob);
     void set_prob_recovery(epiworld_double prob);

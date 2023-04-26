@@ -1,6 +1,81 @@
 #ifndef EPIWORLD_VIRUS_MEAT_HPP
 #define EPIWORLD_VIRUS_MEAT_HPP
 
+/**
+ * @brief Factory function of VirusFun base on logit
+ * 
+ * @tparam TSeq 
+ * @param vars Vector indicating the position of the variables to use.
+ * @param coefs Vector of coefficients.
+ * @return VirusFun<TSeq> 
+ */
+template<typename TSeq>
+inline VirusFun<TSeq> virus_fun_logit(
+    std::vector< int > vars,
+    std::vector< double > coefs,
+    Model<TSeq> * model
+) {
+
+    // Checking that there are features
+    if (coefs.size() == 0u)
+        throw std::logic_error(
+            "The -coefs- argument should feature at least one element."
+            );
+
+    if (coefs.size() != vars.size())
+        throw std::length_error(
+            std::string("The length of -coef- (") +
+            std::to_string(coefs.size()) + 
+            std::string(") and -vars- (") +
+            std::to_string(vars.size()) +
+            std::string(") should match. ")            
+            );
+
+    // Checking that there are variables in the model
+    if (model != nullptr)
+    {
+
+        size_t K = model->get_agents_data_ncols();
+        for (const auto & var: vars)
+        {
+            if ((var >= static_cast<int>(K)) | (var < 0))
+                throw std::range_error(
+                    std::string("The variable ") +
+                    std::to_string(var) +
+                    std::string(" is out of range.") +
+                    std::string(" The agents only feature ") +
+                    std::to_string(K) + 
+                    std::string("variables (features).")
+                );
+        }
+        
+    }
+
+    std::vector< epiworld_double > coefs_f;
+    for (auto c: coefs)
+        coefs_f.push_back(static_cast<epiworld_double>(c));
+
+    VirusFun<TSeq> fun_infect = [coefs_f,vars](
+        Agent<TSeq> * agent,
+        Virus<TSeq> & virus,
+        Model<TSeq> * model
+        ) -> epiworld_double {
+
+        size_t K = coefs_f.size();
+        epiworld_double res = 0.0;
+
+        #pragma omp simd reduction(+:res)
+        for (size_t i = 0u; i < K; ++i)
+            res += agent->operator[](vars.at(i)) * coefs_f.at(i);
+
+        return 1.0/(1.0 + std::exp(-res));
+
+    };
+
+    return fun_infect;
+
+}
+
 template<typename TSeq>
 inline Virus<TSeq>::Virus(std::string name) {
     set_name(name);
@@ -171,7 +246,7 @@ inline void Virus<TSeq>::set_prob_death_fun(VirusFun<TSeq> fun)
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_prob_infecting(epiworld_double * prob)
+inline void Virus<TSeq>::set_prob_infecting(const epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
         [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
@@ -183,7 +258,7 @@ inline void Virus<TSeq>::set_prob_infecting(epiworld_double * prob)
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_prob_recovery(epiworld_double * prob)
+inline void Virus<TSeq>::set_prob_recovery(const epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
         [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
@@ -195,7 +270,7 @@ inline void Virus<TSeq>::set_prob_recovery(epiworld_double * prob)
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_prob_death(epiworld_double * prob)
+inline void Virus<TSeq>::set_prob_death(const epiworld_double * prob)
 {
     VirusFun<TSeq> tmpfun = 
         [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)

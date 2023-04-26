@@ -636,6 +636,8 @@ public:
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
+    Virus<TSeq> & get_virus(size_t id);
+    Tool<TSeq> & get_tool(size_t id);
 
     /**
      * @brief Set the agents data object
