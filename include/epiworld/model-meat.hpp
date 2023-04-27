@@ -697,31 +697,37 @@ inline void Model<TSeq>::agents_empty_graph(
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_gamma(epiworld_double alpha, epiworld_double beta)
 {
-    rgammad = std::make_shared<std::gamma_distribution<>>(alpha,beta);
+    rgammad = std::gamma_distribution<>(alpha,beta);
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_norm(epiworld_double mean, epiworld_double sd)
 { 
-    rnormd  = std::make_shared<std::normal_distribution<>>(mean, sd);
+    rnormd  = std::normal_distribution<>(mean, sd);
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_unif(epiworld_double a, epiworld_double b)
 { 
-    runifd  = std::make_shared<std::uniform_real_distribution<>>(a, b);
+    runifd  = std::uniform_real_distribution<>(a, b);
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_lognormal(epiworld_double mean, epiworld_double shape)
 { 
-    rlognormald  = std::make_shared<std::lognormal_distribution<>>(mean, shape);
+    rlognormald  = std::lognormal_distribution<>(mean, shape);
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_exp(epiworld_double lambda)
 { 
-    rexpd  = std::make_shared<std::exponential_distribution<>>(lambda);
+    rexpd  = std::exponential_distribution<>(lambda);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_rand_binom(int n, epiworld_double p)
+{ 
+    rbinomd  = std::binomial_distribution<>(n, p);
 }
 
 template<typename TSeq>
@@ -1033,6 +1039,20 @@ inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_do
     rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
     epiworld_double ans = rlognormald(engine);
     rlognormald.param(old_param);
+    return ans;
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::rbinom() {
+    return rbinomd(engine);
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
+    auto old_param = rbinomd.param();
+    rbinomd.param(std::binomial_distribution<>::param_type(n, p));
+    epiworld_double ans = rbinomd(engine);
+    rbinomd.param(old_param);
     return ans;
 }
 

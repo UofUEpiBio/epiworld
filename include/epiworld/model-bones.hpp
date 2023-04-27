@@ -140,11 +140,18 @@ protected:
 
     std::mt19937 engine;
     
-    std::uniform_real_distribution<> runifd      = std::uniform_real_distribution<> (0.0, 1.0);
-    std::normal_distribution<>       rnormd      = std::normal_distribution<>(0.0);
-    std::gamma_distribution<>        rgammad     = std::gamma_distribution<>();
-    std::lognormal_distribution<>    rlognormald = std::lognormal_distribution<>();
-    std::exponential_distribution<>  rexpd       = std::exponential_distribution<>();
+    std::uniform_real_distribution<> runifd      =
+        std::uniform_real_distribution<> (0.0, 1.0);
+    std::normal_distribution<>       rnormd      =
+        std::normal_distribution<>(0.0);
+    std::gamma_distribution<>        rgammad     =
+        std::gamma_distribution<>();
+    std::lognormal_distribution<>    rlognormald =
+        std::lognormal_distribution<>();
+    std::exponential_distribution<>  rexpd       =
+        std::exponential_distribution<>();
+    std::binomial_distribution<> rbinomd         =
+        std::binomial_distribution<>();
 
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop = 0.0;
@@ -296,6 +303,7 @@ public:
     void set_rand_exp(epiworld_double lambda);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     void set_rand_lognormal(epiworld_double mean, epiworld_double shape);
+    void set_rand_binom(int n, epiworld_double p);
     epiworld_double runif();
     epiworld_double runif(epiworld_double a, epiworld_double b);
     epiworld_double rnorm();
@@ -306,6 +314,8 @@ public:
     epiworld_double rexp(epiworld_double lambda);
     epiworld_double rlognormal();
     epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
+    int rbinom();
+    int rbinom(int n, epiworld_double p);
     ///@}
 
     /**
