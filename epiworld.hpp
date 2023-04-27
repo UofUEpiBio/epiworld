@@ -15201,13 +15201,6 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         ) -> void
         {
 
-            // Getting the right type
-            ModelSIRCONN<TSeq> * _m = dynamic_cast<ModelSIRCONN<TSeq>*>(m);
-
-            // // No infected individual?
-            // if (_m->tracked_ninfected == 0)
-            //     return;
-
             // Sampling how many individuals
             int ndraw = m->rbinom();
 
