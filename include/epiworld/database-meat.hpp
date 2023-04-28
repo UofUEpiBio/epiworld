@@ -694,7 +694,7 @@ inline void DataBase<TSeq>::write_data(
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
         file_variant_info <<
-        #ifdef _OPENMP
+        #ifdef EPI_DEBUG
             "thread" << "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
         #else
             "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
@@ -704,7 +704,7 @@ inline void DataBase<TSeq>::write_data(
         {
             int id = v.second;
             file_variant_info <<
-                #ifdef _OPENMP
+                #ifdef EPI_DEBUG
                 EPI_GET_THREAD_ID() << " " <<
                 #endif
                 id << " \"" <<

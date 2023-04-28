@@ -601,7 +601,7 @@ public:
     /**
      * @brief Set a global action
      * 
-     * @param fun A function to be called on the prescribed dates
+     * @param fun A function to be called on the prescribed date
      * @param date Integer indicating when the function is called (see details)
      * 
      * @details When date is less than zero, then the function is called

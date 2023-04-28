@@ -105,6 +105,8 @@ public:
     bool operator==(const Tool<TSeq> & other) const;
     bool operator!=(const Tool<TSeq> & other) const {return !operator==(other);};
 
+    void print() const;
+
 };
 
 #endif

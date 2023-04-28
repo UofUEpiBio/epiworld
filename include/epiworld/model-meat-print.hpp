@@ -15,12 +15,19 @@ inline void Model<TSeq>::print(bool lite) const
                 nchar = p.length();
 
         if (today() != 0)
-            fmt = "  - (%" + std::to_string(nstatus).length() +
-                std::string("d) %-") + std::to_string(nchar) + "s : %" +
-                std::to_string(std::to_string(size()).length()) + "i -> %i\n";
+            fmt =
+                std::string("  - (%") +
+                    std::to_string(std::to_string(nstatus).length()) +
+                std::string("d) %-") + std::to_string(nchar) +
+                std::string("s : %") +
+                    std::to_string(std::to_string(size()).length()) +
+                std::string("i -> %i\n");
         else
-            fmt = "  - (%" + std::to_string(nstatus).length() +
-                std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
+            fmt =
+                std::string("  - (%") +
+                    std::to_string(std::to_string(nstatus).length()) +
+                std::string("d) %-") + std::to_string(nchar) + 
+                std::string("s : %i\n");
 
         printf_epiworld("\nDistribution of the population at time %i:\n", today());
         for (size_t s = 0u; s < nstatus; ++s)
@@ -249,12 +256,21 @@ inline void Model<TSeq>::print(bool lite) const
     
 
     if (today() != 0)
-        fmt = "  - (%" + std::to_string(nstatus).length() +
-            std::string("d) %-") + std::to_string(nchar) + "s : %" +
-            std::to_string(std::to_string(size()).length()) + "i -> %i\n";
-    else
-        fmt = "  - (%" + std::to_string(nstatus).length() +
-            std::string("d) %-") + std::to_string(nchar) + "s : %i\n";
+    {
+        fmt =
+            std::string("  - (%") +
+                std::to_string(std::to_string(nstatus).length()) +
+            std::string("d) %-") + std::to_string(nchar) +
+            std::string("s : %") +
+            std::to_string(std::to_string(size()).length()) +
+            std::string("i -> %i\n");
+    } else {
+        fmt =
+            std::string("  - (%") +
+                std::to_string(std::to_string(nstatus).length()) +
+            std::string("d) %-") + std::to_string(nchar) +
+            std::string("s : %i\n");
+    }
         
     if (today() != 0)
     {

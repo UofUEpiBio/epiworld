@@ -77,7 +77,7 @@ inline std::vector< epiworld_double > & UserData<TSeq>::get_data()
 template<typename TSeq>
 inline void UserData<TSeq>::get_all(
     std::vector< std::string > * names,
-    std::vector< int > * dates,
+    std::vector< int > * date,
     std::vector< epiworld_double > * data
 ) 
 {
@@ -85,8 +85,8 @@ inline void UserData<TSeq>::get_all(
     if (names != nullptr)
         names = &this->data_names;
 
-    if (dates != nullptr)
-        dates = &this->data_dates;
+    if (date != nullptr)
+        date = &this->data_dates;
 
     if (data != nullptr)
         data = &this->data_data;

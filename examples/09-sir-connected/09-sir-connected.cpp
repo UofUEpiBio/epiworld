@@ -52,18 +52,18 @@ int main(int argc, char* argv[]) {
 
     // Setup
     std::vector< std::vector< int > > results(nexperiments);
-    std::vector< std::vector< int > > dates(nexperiments);
+    std::vector< std::vector< int > > date(nexperiments);
     std::vector< std::string > labels;
     epiworld_fast_uint nreplica = 0u;
 
     auto record =
-        [&results,&dates,&nreplica,&labels](size_t s, epiworld::Model<> * m)
+        [&results,&date,&nreplica,&labels](size_t s, epiworld::Model<> * m)
         {
 
             if (nreplica == 0)
-                m->get_db().get_hist_total(&dates[nreplica], &labels, &results[nreplica]);
+                m->get_db().get_hist_total(&date[nreplica], &labels, &results[nreplica]);
             else
-                m->get_db().get_hist_total(&dates[nreplica], nullptr, &results[nreplica]);
+                m->get_db().get_hist_total(&date[nreplica], nullptr, &results[nreplica]);
 
             nreplica++;
 
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
         for (epiworld_fast_uint s = 0u; s < labels.size(); ++s)
             fn << 
                 r << "," << 
-                dates[r][s] << "," << 
+                date[r][s] << "," << 
                 labels[s] << "," << 
                 results[r][s] << "\n";
                 

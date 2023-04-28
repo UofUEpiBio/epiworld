@@ -2608,7 +2608,7 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "Model:: current_date don't match"
     )
 
-    VECT_MATCH(global_action_dates, other.global_action_dates, "global action dates don't match");
+    VECT_MATCH(global_action_dates, other.global_action_dates, "global action date don't match");
 
     EPI_DEBUG_FAIL_AT_TRUE(
         queue != other.queue,

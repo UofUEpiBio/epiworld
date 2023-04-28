@@ -482,4 +482,16 @@ inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
 }
 
 
+template<typename TSeq>
+inline void Tool<TSeq>::print() const
+{
+
+    printf_epiworld("Tool           : %s\n", tool_name->c_str());
+    printf_epiworld("status_init    : %i\n", status_init);
+    printf_epiworld("status_post    : %i\n", status_post);
+    printf_epiworld("queue_init     : %i\n", queue_init);
+    printf_epiworld("queue_post     : %i\n", queue_post);
+
+}
+
 #endif

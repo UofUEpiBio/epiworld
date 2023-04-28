@@ -83,30 +83,6 @@ inline void ModelSIRCONN<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // /* Listing who is infected */ 
-    // for (auto & p : Model<TSeq>::get_agents())
-    // {
-    //     if (p.get_state() == ModelSIRCONN<TSeq>::INFECTED)
-    //     {
-        
-    //         tracked_agents_infected.push_back(&p);
-    //         tracked_ninfected++;
-        
-    //     }
-    // }
-
-    // for (auto & p: tracked_agents_infected)
-    // {
-    //     if (p->get_n_viruses() == 0)
-    //         throw std::logic_error("Cannot be infected and have no viruses.");
-    // }
-    
-    // // Computing infection probability
-    // tracked_current_infect_prob =  1.0 - std::pow(
-    //     1.0 - (Model<TSeq>::par("Contact rate")) * (Model<TSeq>::par("Prob. Transmission")) / Model<TSeq>::size(),
-    //     tracked_ninfected
-    // );
-
     Model<TSeq>::set_rand_binom(
         Model<TSeq>::size(),
         static_cast<double>(
@@ -232,57 +208,61 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
         };
 
+
     epiworld::UpdateFun<TSeq> update_infected = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
-        ) -> void
-        {
+        ) -> void {
 
-            // // Getting the right type
-            // ModelSIRCONN<TSeq> * _m = dynamic_cast<ModelSIRCONN<TSeq>*>(m);
+            auto status = p->get_state();
 
-            // Is recovering
-            if (m->runif() < (m->par("Prob. Recovery")))
+            if (status == ModelSIRCONN<TSeq>::INFECTED)
             {
 
-                // --_m->tracked_ninfected_next;
-                epiworld::VirusPtr<int> v = p->get_virus(0u);
-                p->rm_virus(0, m);
-                return;
 
-            }
+                // Odd: Die, Even: Recover
+                epiworld_fast_uint n_events = 0u;
+                for (const auto & v : p->get_viruses())
+                {
 
-            // // Will be present next
-            // _m->tracked_agents_infected_next.push_back(p);
+                    // Recover
+                    m->array_double_tmp[n_events++] = 
+                        1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
+
+                }
+
+                #ifdef EPI_DEBUG
+                if (n_events == 0u)
+                {
+                    printf_epiworld(
+                        "[epi-debug] agent %i has 0 possible events!!\n",
+                        static_cast<int>(p->get_id())
+                        );
+                    throw std::logic_error("Zero events in exposed.");
+                }
+                #else
+                if (n_events == 0u)
+                    return;
+                #endif
+                
+
+                // Running the roulette
+                int which = roulette(n_events, m);
+
+                if (which < 0)
+                    return;
+
+                // Which roulette happen?
+                size_t which_v = std::floor(which / 2);
+                p->rm_virus(which_v, m);
+
+                return ;
+
+            } else
+                throw std::logic_error("This function can only be applied to infected individuals. (SIR)") ;
 
             return;
 
         };
-
-    // epiworld::GlobalFun<TSeq> global_accounting = [](epiworld::Model<TSeq> * m) -> void
-    //     {
-
-    //         // Getting the right type
-    //         ModelSIRCONN<TSeq> * _m = dynamic_cast<ModelSIRCONN<TSeq>*>(m);
-
-    //         // On the last day, also reset tracked agents and
-    //         // set the initialized value to false
-    //         if (static_cast<epiworld_fast_uint>(m->today()) == (m->get_ndays() - 1))
-    //         {
-    //             return;
-    //         }
-
-    //         std::swap(_m->tracked_agents_infected, _m->tracked_agents_infected_next);
-    //         _m->tracked_agents_infected_next.clear();
-
-    //         _m->tracked_ninfected += _m->tracked_ninfected_next;
-    //         _m->tracked_ninfected_next = 0;
-
-    //         _m->tracked_current_infect_prob = 1.0 - std::pow(
-    //             1.0 - (m->par("Contact rate")) * (m->par("Prob. Transmission")) / m->size(),
-    //             _m->tracked_ninfected
-    //             );
-
-    //     };
 
     // Status
     model.add_state("Susceptible", update_susceptible);
@@ -298,6 +278,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(1, 2, 2);
+    virus.set_prob_infecting(&model("Prob. Transmission"));
+    virus.set_prob_recovery(&model("Prob. Recovery"));
 
     model.add_virus(virus, prevalence);
 

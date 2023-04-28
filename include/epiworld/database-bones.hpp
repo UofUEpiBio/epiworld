@@ -158,7 +158,7 @@ public:
      * @return In `get_hist_total`, the time series of `what`
      * @return In `get_hist_variant`, the time series of what for each variant.
      * @return In `get_hist_total_date` and `get_hist_variant_date` the
-     * corresponding dates
+     * corresponding date
      */
     ///@{
     int get_today_total(std::string what) const;
