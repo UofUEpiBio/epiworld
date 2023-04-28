@@ -145,7 +145,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     continue;
 
                 // If the neighbor is infected, then proceed
-                auto neighbor = m->get_agents()[which];
+                auto & neighbor = m->get_agents()[which];
                 if (neighbor.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
                 {
 

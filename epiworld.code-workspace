@@ -73,7 +73,13 @@
 			"variant": "cpp",
 			"future": "cpp",
 			"iomanip": "cpp",
-			"numbers": "cpp"
+			"numbers": "cpp",
+			"strstream": "cpp",
+			"codecvt": "cpp",
+			"complex": "cpp",
+			"typeindex": "cpp",
+			"valarray": "cpp",
+			"semaphore": "cpp"
 		}
 	}
 }

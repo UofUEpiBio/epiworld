@@ -45,8 +45,8 @@ private:
     VirusFun<TSeq>        probability_of_death_fun     = nullptr;
 
     // Setup parameters
-    std::vector< epiworld_double * > params;
-    std::vector< epiworld_double > data;
+    std::vector< epiworld_double * > params = {};
+    std::vector< epiworld_double > data = {};
 
     epiworld_fast_int status_init    = -99; ///< Change of state when added to agent.
     epiworld_fast_int status_post    = -99; ///< Change of state when removed from agent.

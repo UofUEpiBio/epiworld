@@ -166,7 +166,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     continue;
 
                 // If the neighbor is infected, then proceed
-                auto neighbor = m->get_agents()[which];
+                auto & neighbor = m->get_agents()[which];
                 if (neighbor.get_state() == ModelSIRCONN<TSeq>::INFECTED)
                 {
 
