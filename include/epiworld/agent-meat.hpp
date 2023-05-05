@@ -469,7 +469,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 
         // By default, it will be removed from the queue... unless the user
         // says the contrary!
-        (dead_queue == -99) ? QueueValues::NoOne : dead_queue
+        (dead_queue == -99) ? Queue<TSeq>::NoOne : dead_queue
     );
 
 }

@@ -100,12 +100,5 @@
     epiworld::GlobalFun<tseq> funname = \
     [](epiworld::Model<tseq>* m) -> void
 
-class QueueValues {
-public:
-    static const int NoOne    = 0;
-    static const int OnlySelf = 1;
-    static const int Everyone = 2;
-};
-
 
 #endif

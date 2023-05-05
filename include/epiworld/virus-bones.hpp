@@ -52,8 +52,8 @@ private:
     epiworld_fast_int status_post    = -99; ///< Change of state when removed from agent.
     epiworld_fast_int status_removed = -99; ///< Change of state when agent is removed
 
-    epiworld_fast_int queue_init    = QueueValues::Everyone; ///< Change of state when added to agent.
-    epiworld_fast_int queue_post    = -QueueValues::Everyone; ///< Change of state when removed from agent.
+    epiworld_fast_int queue_init    = Queue<TSeq>::Everyone; ///< Change of state when added to agent.
+    epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
     epiworld_fast_int queue_removed = -99; ///< Change of state when agent is removed
 
 public:

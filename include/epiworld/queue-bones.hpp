@@ -42,6 +42,10 @@ public:
     bool operator==(const Queue<TSeq> & other) const;
     bool operator!=(const Queue<TSeq> & other) const {return !operator==(other);};
 
+    static const int NoOne    = 0;
+    static const int OnlySelf = 1;
+    static const int Everyone = 2;
+
 };
 
 template<typename TSeq>

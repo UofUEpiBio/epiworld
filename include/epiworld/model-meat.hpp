@@ -295,15 +295,15 @@ inline void Model<TSeq>::actions_run()
         if (use_queuing)
         {
 
-            if (a.queue == QueueValues::Everyone)
+            if (a.queue == Queue<TSeq>::Everyone)
                 queue += p;
-            else if (a.queue == -QueueValues::Everyone)
+            else if (a.queue == -Queue<TSeq>::Everyone)
                 queue -= p;
-            else if (a.queue == QueueValues::OnlySelf)
+            else if (a.queue == Queue<TSeq>::OnlySelf)
                 queue[p->get_id()]++;
-            else if (a.queue == -QueueValues::OnlySelf)
+            else if (a.queue == -Queue<TSeq>::OnlySelf)
                 queue[p->get_id()]--;
-            else if (a.queue != QueueValues::NoOne)
+            else if (a.queue != Queue<TSeq>::NoOne)
                 throw std::logic_error(
                     "The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}."
                     );

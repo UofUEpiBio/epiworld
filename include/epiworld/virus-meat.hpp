@@ -13,7 +13,8 @@ template<typename TSeq>
 inline VirusFun<TSeq> virus_fun_logit(
     std::vector< int > vars,
     std::vector< double > coefs,
-    Model<TSeq> * model
+    Model<TSeq> * model,
+    bool logit = true
 ) {
 
     // Checking that there are features
@@ -55,7 +56,7 @@ inline VirusFun<TSeq> virus_fun_logit(
     for (auto c: coefs)
         coefs_f.push_back(static_cast<epiworld_double>(c));
 
-    VirusFun<TSeq> fun_infect = [coefs_f,vars](
+    VirusFun<TSeq> fun_infect = [coefs_f,vars,logit](
         Agent<TSeq> * agent,
         Virus<TSeq> & virus,
         Model<TSeq> * model

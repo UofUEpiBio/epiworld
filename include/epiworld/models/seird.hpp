@@ -124,7 +124,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     Virus<TSeq> virus(vname);
     virus.set_prob_infecting(&model("Infectiousness"));
     virus.set_state(S::Exposed, S::Recovered);
-    virus.set_queue(QueueValues::OnlySelf, -99LL);
+    virus.set_queue(Queue<TSeq>::OnlySelf, -99LL);
     virus.get_data() = {0.0, 0.0F};
 
     model.add_virus_n(virus, model("Prevalence"));
@@ -223,7 +223,7 @@ inline void ModelSEIRD<TSeq>::update_exposed(
 
     } else if (m->today() >= v->get_data()[0u])
     {
-        p->change_state(m, S::Infected, epiworld::QueueValues::Everyone);
+        p->change_state(m, S::Infected, epiworld::Queue<TSeq>::Everyone);
         return;
     }
 
@@ -247,7 +247,7 @@ inline void ModelSEIRD<TSeq>::update_infected(
     if (v->get_data()[2u] < 0)
     {
         
-        p->rm_virus(v, m, S::Recovered, -epiworld::QueueValues::Everyone);
+        p->rm_virus(v, m, S::Recovered, -epiworld::Queue<TSeq>::Everyone);
         return;
 
     }
@@ -255,7 +255,7 @@ inline void ModelSEIRD<TSeq>::update_infected(
     {
 
         // Individual goes hospitalized
-        p->change_state(m, S::Hospitalized, -epiworld::QueueValues::Everyone);
+        p->change_state(m, S::Hospitalized, -epiworld::Queue<TSeq>::Everyone);
         return;
 
     }
@@ -284,12 +284,12 @@ inline void ModelSEIRD<TSeq>::update_hospitalized(
 
     if (which == 0) // Then it recovered
     {
-        p->rm_virus(v, m, S::Recovered, epiworld::QueueValues::NoOne);
+        p->rm_virus(v, m, S::Recovered, epiworld::Queue<TSeq>::NoOne);
         return;
     }
 
     // Individual dies
-    p->rm_virus(v, m, S::Deceased, epiworld::QueueValues::NoOne);
+    p->rm_virus(v, m, S::Deceased, epiworld::Queue<TSeq>::NoOne);
 
     return;
 
@@ -334,7 +334,7 @@ inline void ModelSEIRD<TSeq>::contact(Model<TSeq> * m)
                 *(m->array_virus_tmp[which]), // Viruse.
                 m, 
                 S::Exposed,                   // New state.
-                QueueValues::OnlySelf         // Change on the queue.
+                Queue<TSeq>::OnlySelf         // Change on the queue.
                 ); 
 
         }
