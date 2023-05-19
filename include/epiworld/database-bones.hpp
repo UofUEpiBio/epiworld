@@ -203,6 +203,33 @@ public:
     ) const;
     ///@}
 
+    /**
+     * @brief Get the transmissions object
+     * 
+     * @param date 
+     * @param source 
+     * @param target 
+     * @param variant 
+     * @param source_exposure_date 
+     */
+    ///@{
+    void get_transmissions(
+        std::vector<int> & date,
+        std::vector<int> & source,
+        std::vector<int> & target,
+        std::vector<int> & variant,
+        std::vector<int> & source_exposure_date
+    ) const;
+
+    void get_transmissions(
+        int * date,
+        int * source,
+        int * target,
+        int * variant,
+        int * source_exposure_date
+    ) const;
+    ///@}
+
     void write_data(
         std::string fn_variant_info,
         std::string fn_variant_hist,

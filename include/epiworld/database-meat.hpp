@@ -676,6 +676,59 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 }
 
 template<typename TSeq>
+inline void DataBase<TSeq>::get_transmissions(
+    std::vector<int> & date,
+    std::vector<int> & source,
+    std::vector<int> & target,
+    std::vector<int> & variant,
+    std::vector<int> & source_exposure_date
+) const 
+{
+
+    size_t nevents = transmission_date.size();
+
+    date.resize(nevents);
+    source.resize(nevents);
+    target.resize(nevents);
+    variant.resize(nevents);
+    source_exposure_date.resize(nevents);
+
+    get_transmissions(
+        &date[0u],
+        &source[0u],
+        &target[0u],
+        &variant[0u],
+        &source_exposure_date[0u]
+    );
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_transmissions(
+    int * date,
+    int * source,
+    int * target,
+    int * variant,
+    int * source_exposure_date
+) const 
+{
+
+    size_t nevents = transmission_date.size();
+
+    for (size_t i = 0u; i < nevents; ++i)
+    {
+
+        *(date + i) = transmission_date.at(i);
+        *(source + i) = transmission_source.at(i);
+        *(target + i) = transmission_target.at(i);
+        *(variant + i) = transmission_variant.at(i);
+        *(source_exposure_date + i) = transmission_source_exposure_date.at(i);
+
+    }
+
+}
+
+template<typename TSeq>
 inline void DataBase<TSeq>::write_data(
     std::string fn_variant_info,
     std::string fn_variant_hist,
