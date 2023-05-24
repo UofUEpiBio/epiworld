@@ -6054,12 +6054,12 @@ public:
      * indicating number of individuals.
      */
     ///@{
-    void add_virus(Virus<TSeq> v, epiworld_double preval);
-    void add_virus_n(Virus<TSeq> v, epiworld_fast_uint preval);
-    void add_virus_fun(Virus<TSeq> v, VirusToAgentFun<TSeq> fun);
-    void add_tool(Tool<TSeq> t, epiworld_double preval);
-    void add_tool_n(Tool<TSeq> t, epiworld_fast_uint preval);
-    void add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun);
+    void add_virus(Virus<TSeq> & v, epiworld_double preval);
+    void add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval);
+    void add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun);
+    void add_tool(Tool<TSeq> & t, epiworld_double preval);
+    void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
+    void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
     void add_entity(Entity<TSeq> e);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
@@ -7484,7 +7484,7 @@ inline void Model<TSeq>::seed(size_t s) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
+inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
 {
 
     if (preval > 1.0)
@@ -7518,7 +7518,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> v, epiworld_double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, epiworld_fast_uint preval)
+inline void Model<TSeq>::add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval)
 {
 
     // Checking the ids
@@ -7546,7 +7546,7 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> v, epiworld_fast_uint preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus_fun(Virus<TSeq> v, VirusToAgentFun<TSeq> fun)
+inline void Model<TSeq>::add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun)
 {
 
     // Checking the ids
@@ -7575,7 +7575,7 @@ inline void Model<TSeq>::add_virus_fun(Virus<TSeq> v, VirusToAgentFun<TSeq> fun)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
+inline void Model<TSeq>::add_tool(Tool<TSeq> & t, epiworld_double preval)
 {
 
     if (preval > 1.0)
@@ -7595,7 +7595,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> t, epiworld_double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, epiworld_fast_uint preval)
+inline void Model<TSeq>::add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval)
 {
     
     db.record_tool(t);
@@ -7604,10 +7604,11 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> t, epiworld_fast_uint preval)
     prevalence_tool.push_back(preval);
     prevalence_tool_as_proportion.push_back(false);
     tools_dist_funs.push_back(nullptr);
+
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool_fun(Tool<TSeq> t, ToolToAgentFun<TSeq> fun)
+inline void Model<TSeq>::add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun)
 {
     
     db.record_tool(t);
@@ -16681,11 +16682,11 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
  */
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalaction_tool(
-    Tool<TSeq> tool,
+    Tool<TSeq> & tool,
     double p
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [p,tool](
+    std::function<void(Model<TSeq>*)> fun = [p,&tool](
         Model<TSeq> * model
         ) -> void {
 
@@ -16702,6 +16703,10 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool(
             
         
         }
+
+        #ifdef EPIWORLD_DEBUG
+        tool.print();
+        #endif
 
         return;
             
@@ -16726,12 +16731,12 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool(
  */
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
-    Tool<TSeq> tool,
+    Tool<TSeq> & tool,
     std::vector< size_t > vars,
     std::vector< double > coefs
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [coefs,vars,tool](
+    std::function<void(Model<TSeq>*)> fun = [coefs,vars,&tool](
         Model<TSeq> * model
         ) -> void {
 
@@ -16757,6 +16762,10 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
             
         
         }
+
+        #ifdef EPIWORLD_DEBUG
+        tool.print();
+        #endif
 
         return;
             
