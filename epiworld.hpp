@@ -10405,6 +10405,7 @@ inline void Virus<TSeq>::print() const
 {
 
     printf_epiworld("Virus          : %s\n", virus_name->c_str());
+    printf_epiworld("Id             : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
     printf_epiworld("status_init    : %i\n", status_init);
     printf_epiworld("status_post    : %i\n", status_post);
     printf_epiworld("status_removed : %i\n", status_removed);
@@ -11224,6 +11225,7 @@ inline void Tool<TSeq>::print() const
 {
 
     printf_epiworld("Tool           : %s\n", tool_name->c_str());
+    printf_epiworld("Id             : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
     printf_epiworld("status_init    : %i\n", status_init);
     printf_epiworld("status_post    : %i\n", status_post);
     printf_epiworld("queue_init     : %i\n", queue_init);
@@ -13817,7 +13819,7 @@ inline bool Agent<TSeq>::has_tool(epiworld_fast_uint t) const
 {
 
     for (auto & tool : tools)
-        if (tool->get_id() == t)
+        if (tool->get_id() == static_cast<int>(t))
             return true;
 
     return false;
@@ -13848,7 +13850,7 @@ template<typename TSeq>
 inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
 {
     for (auto & v : viruses)
-        if (v->get_id() == t)
+        if (v->get_id() == static_cast<int>(t))
             return true;
 
     return false;
@@ -16674,29 +16676,29 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param p Probability of distributing the tool.
- * @param tool_fun Tool function.
+ * @param tool Tool function.
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalaction_tool(
-    double p,
-    ToolFun<TSeq> tool_fun
+    Tool<TSeq> tool,
+    double p
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [p,tool_fun](
+    std::function<void(Model<TSeq>*)> fun = [p,tool](
         Model<TSeq> * model
         ) -> void {
 
-        for (auto & agent : model->agents)
+        for (auto & agent : model->get_agents())
         {
 
-            // Check if the agent has the tool_fun
-            if (agent.has_tool(tool_fun))
+            // Check if the agent has the tool
+            if (agent.has_tool(tool))
                 continue;
 
             // Adding the tool
             if (model->runif() < p)
-                agent.add_tool(tool_fun, model);
+                agent.add_tool(tool, model);
             
         
         }
@@ -16724,26 +16726,26 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool(
  */
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
-    std::vector< epiworld_double > coefs,
+    Tool<TSeq> tool,
     std::vector< size_t > vars,
-    ToolFun<TSeq> tool_fun
+    std::vector< double > coefs
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [coefs,vars,tool_fun](
+    std::function<void(Model<TSeq>*)> fun = [coefs,vars,tool](
         Model<TSeq> * model
         ) -> void {
 
-        for (auto & agent : model->agents)
+        for (auto & agent : model->get_agents())
         {
 
-            // Check if the agent has the tool_fun
-            if (agent.has_tool(tool_fun))
+            // Check if the agent has the tool
+            if (agent.has_tool(tool))
                 continue;
 
             // Computing the probability using a logit. Uses OpenMP reduction
             // to sum the coefficients.
-            #pragma omp parallel for reduction(+:p)
             double p = 0.0;
+            #pragma omp parallel for reduction(+:p)
             for (size_t i = 0u; i < coefs.size(); ++i)
                 p += coefs.at(i) * agent(vars[i]);
 
@@ -16751,7 +16753,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
 
             // Adding the tool
             if (model->runif() < p)
-                agent.add_tool(tool_fun, model);
+                agent.add_tool(tool, model);
             
         
         }

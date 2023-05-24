@@ -649,6 +649,7 @@ inline void Virus<TSeq>::print() const
 {
 
     printf_epiworld("Virus          : %s\n", virus_name->c_str());
+    printf_epiworld("Id             : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
     printf_epiworld("status_init    : %i\n", status_init);
     printf_epiworld("status_post    : %i\n", status_post);
     printf_epiworld("status_removed : %i\n", status_removed);

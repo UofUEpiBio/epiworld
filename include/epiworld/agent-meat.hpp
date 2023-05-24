@@ -749,7 +749,7 @@ inline bool Agent<TSeq>::has_tool(epiworld_fast_uint t) const
 {
 
     for (auto & tool : tools)
-        if (tool->get_id() == t)
+        if (tool->get_id() == static_cast<int>(t))
             return true;
 
     return false;
@@ -780,7 +780,7 @@ template<typename TSeq>
 inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
 {
     for (auto & v : viruses)
-        if (v->get_id() == t)
+        if (v->get_id() == static_cast<int>(t))
             return true;
 
     return false;

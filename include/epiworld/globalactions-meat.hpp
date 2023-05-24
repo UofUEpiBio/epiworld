@@ -9,29 +9,29 @@
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param p Probability of distributing the tool.
- * @param tool_fun Tool function.
+ * @param tool Tool function.
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalaction_tool(
-    double p,
-    ToolFun<TSeq> tool_fun
+    Tool<TSeq> tool,
+    double p
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [p,tool_fun](
+    std::function<void(Model<TSeq>*)> fun = [p,tool](
         Model<TSeq> * model
         ) -> void {
 
-        for (auto & agent : model->agents)
+        for (auto & agent : model->get_agents())
         {
 
-            // Check if the agent has the tool_fun
-            if (agent.has_tool(tool_fun))
+            // Check if the agent has the tool
+            if (agent.has_tool(tool))
                 continue;
 
             // Adding the tool
             if (model->runif() < p)
-                agent.add_tool(tool_fun, model);
+                agent.add_tool(tool, model);
             
         
         }
@@ -59,26 +59,26 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool(
  */
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
-    std::vector< epiworld_double > coefs,
+    Tool<TSeq> tool,
     std::vector< size_t > vars,
-    ToolFun<TSeq> tool_fun
+    std::vector< double > coefs
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [coefs,vars,tool_fun](
+    std::function<void(Model<TSeq>*)> fun = [coefs,vars,tool](
         Model<TSeq> * model
         ) -> void {
 
-        for (auto & agent : model->agents)
+        for (auto & agent : model->get_agents())
         {
 
-            // Check if the agent has the tool_fun
-            if (agent.has_tool(tool_fun))
+            // Check if the agent has the tool
+            if (agent.has_tool(tool))
                 continue;
 
             // Computing the probability using a logit. Uses OpenMP reduction
             // to sum the coefficients.
-            #pragma omp parallel for reduction(+:p)
             double p = 0.0;
+            #pragma omp parallel for reduction(+:p)
             for (size_t i = 0u; i < coefs.size(); ++i)
                 p += coefs.at(i) * agent(vars[i]);
 
@@ -86,7 +86,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
 
             // Adding the tool
             if (model->runif() < p)
-                agent.add_tool(tool_fun, model);
+                agent.add_tool(tool, model);
             
         
         }
