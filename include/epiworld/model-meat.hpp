@@ -2204,6 +2204,33 @@ inline epiworld_double Model<TSeq>::get_param(std::string pname)
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::set_param(std::string pname, epiworld_double value)
+{
+    if (parameters.find(pname) == parameters.end())
+        throw std::logic_error("The parameter " + pname + " does not exists.");
+
+    parameters[pname] = value;
+
+    return;
+
+}
+
+// // Same as before but using the size_t method
+// template<typename TSeq>
+// inline void Model<TSeq>::set_param(size_t k, epiworld_double value)
+// {
+//     if (k >= parameters.size())
+//         throw std::logic_error("The parameter index " + std::to_string(k) + " does not exists.");
+
+//     // Access the k-th element of the std::unordered_map parameters
+
+
+//     *(parameters.begin() + k) = value;
+
+//     return;
+// }
+
+template<typename TSeq>
 inline epiworld_double Model<TSeq>::par(std::string pname)
 {
     return parameters[pname];

@@ -108,4 +108,35 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
 
 }
 
+// A global action that updates a parameter in the model.
+/**
+ * @brief Global action that updates a parameter in the model.
+ * 
+ * @tparam TSeq Sequence type (should match `TSeq` across the model)
+ * @param param Parameter to update.
+ * @param value Value to update the parameter to.
+ * @return std::function<void(Model<TSeq>*)> 
+ */
+template<typename TSeq>
+inline std::function<void(Model<TSeq>*)> globalaction_set_param(
+    std::string param,
+    double value
+) {
+
+    std::function<void(Model<TSeq>*)> fun = [value,param](
+        Model<TSeq> * model
+        ) -> void {
+
+        model->set_param(param, value);
+
+        return;
+            
+
+    };
+
+    return fun;
+
+}
+
+
 #endif

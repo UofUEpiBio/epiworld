@@ -83,12 +83,12 @@ inline void ModelSIRCONN<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    Model<TSeq>::set_rand_binom(
-        Model<TSeq>::size(),
-        static_cast<double>(
-            Model<TSeq>::par("Contact rate"))/
-            static_cast<double>(Model<TSeq>::size())
-        );
+    // Model<TSeq>::set_rand_binom(
+    //     Model<TSeq>::size(),
+    //     static_cast<double>(
+    //         Model<TSeq>::par("Contact rate"))/
+    //         static_cast<double>(Model<TSeq>::size())
+    //     );
 
     return;
 
@@ -137,6 +137,13 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         {
 
             // Sampling how many individuals
+            m->set_rand_binom(
+                m->size(),
+                static_cast<double>(
+                    m->par("Contact rate"))/
+                    static_cast<double>(m->size())
+            );
+
             int ndraw = m->rbinom();
 
             if (ndraw == 0)
