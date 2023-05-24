@@ -3670,6 +3670,16 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_variant_info(fn_variant_info, std::ios_base::out);
 
+        // Check if the file exists and throw an error if it doesn't
+        if (!file_variant_info)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_variant_info +
+                "\" for writing.")
+                ;
+        }
+
+
         file_variant_info <<
         #ifdef EPI_DEBUG
             "thread" << "id " << "variant_name " << "variant_sequence " << "date_recorded " << "parent\n";
@@ -3697,6 +3707,15 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_variant(fn_variant_hist, std::ios_base::out);
         
+        // Repeat the same error if the file doesn't exists
+        if (!file_variant)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_variant_hist +
+                "\" for writing.")
+                ;
+        }
+
         file_variant <<
             #ifdef _OPENMP
             "thread "<< "date " << "id " << "state " << "n\n";
@@ -3718,6 +3737,15 @@ inline void DataBase<TSeq>::write_data(
     if (fn_tool_info != "")
     {
         std::ofstream file_tool_info(fn_tool_info, std::ios_base::out);
+
+        // Repeat the same error if the file doesn't exists
+        if (!file_tool_info)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_tool_info +
+                "\" for writing.")
+                ;
+        }
 
         file_tool_info <<
             #ifdef _OPENMP
@@ -3743,6 +3771,15 @@ inline void DataBase<TSeq>::write_data(
     if (fn_tool_hist != "")
     {
         std::ofstream file_tool_hist(fn_tool_hist, std::ios_base::out);
+
+        // Repeat the same error if the file doesn't exists
+        if (!file_tool_hist)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_tool_hist +
+                "\" for writing.")
+                ;
+        }
         
         file_tool_hist <<
             #ifdef _OPENMP
@@ -3765,6 +3802,15 @@ inline void DataBase<TSeq>::write_data(
     {
         std::ofstream file_total(fn_total_hist, std::ios_base::out);
 
+        // Repeat the same error if the file doesn't exists
+        if (!file_total)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_total_hist +
+                "\" for writing.")
+                ;
+        }
+
         file_total <<
             #ifdef _OPENMP
             "thread " << 
@@ -3785,6 +3831,16 @@ inline void DataBase<TSeq>::write_data(
     if (fn_transmission != "")
     {
         std::ofstream file_transmission(fn_transmission, std::ios_base::out);
+
+        // Repeat the same error if the file doesn't exists
+        if (!file_transmission)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_transmission +
+                "\" for writing.")
+                ;
+        }
+
         file_transmission <<
             #ifdef _OPENMP
             "thread " << 
@@ -3807,6 +3863,16 @@ inline void DataBase<TSeq>::write_data(
     if (fn_transition != "")
     {
         std::ofstream file_transition(fn_transition, std::ios_base::out);
+
+        // Repeat the same error if the file doesn't exists
+        if (!file_transition)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_transition +
+                "\" for writing.")
+                ;
+        }
+
         file_transition <<
             #ifdef _OPENMP
             "thread " << 
@@ -3953,6 +4019,15 @@ inline void DataBase<TSeq>::reproductive_number(
     auto map = reproductive_number();
 
     std::ofstream fn_file(fn, std::ios_base::out);
+
+    // Repeat the same error if the file doesn't exists
+    if (!fn_file)
+    {
+        throw std::runtime_error(
+            "Could not open file \"" + fn +
+            "\" for writing.")
+            ;
+    }
 
     fn_file << 
         #ifdef _OPENMP
@@ -4571,6 +4646,17 @@ inline void DataBase<TSeq>::generation_time(
     generation_time(agent_id, virus_id, time, gentime);
 
     std::ofstream fn_file(fn, std::ios_base::out);
+
+    // Throw an error if the file doesn't exists using throw
+    if (!fn_file)
+    {
+        throw std::runtime_error(
+            "DataBase::generation_time: "
+            "Cannot open file " + fn + "."
+        );
+    }
+
+
 
     fn_file << 
         #ifdef _OPENMP

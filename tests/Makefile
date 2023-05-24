@@ -12,6 +12,17 @@ main.a: main.cpp
 01c.o: 01c-sir.cpp
 	g++ -std=c++14 -Wall -Wextra -O2 -g -fopenmp -pedantic 01c-sir.cpp -o 01c.o
 
+# Check coverage using the main.o target
+coverage: main.o
+	g++ -g -O1 -fprofile-arcs -ftest-coverage main.cpp -o main.o && \
+		./main.o && gcov -r main.cpp && \
+		rm catch*.hpp.gcov && \
+		mv *.hpp.gcov gcov-files/ && $(MAKE) clean
+
+
+# What's the -ftest-coverage flag?
+# https://stackoverflow.com/questions/9842759/what-is-ftest-coverage-option-in-gcov
+
 
 
 .PHONY: all
