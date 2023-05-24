@@ -769,6 +769,14 @@ inline bool Agent<TSeq>::has_tool(std::string name) const
 }
 
 template<typename TSeq>
+inline bool Agent<TSeq>::has_tool(const Tool<TSeq> & tool) const
+{
+
+    return has_tool(tool.get_id());
+
+}
+
+template<typename TSeq>
 inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
 {
     for (auto & v : viruses)
@@ -787,6 +795,14 @@ inline bool Agent<TSeq>::has_virus(std::string name) const
             return true;
 
     return false;
+
+}
+
+template<typename TSeq>
+inline bool Agent<TSeq>::has_virus(const Virus<TSeq> & virus) const
+{
+
+    return has_virus(virus.get_id());
 
 }
 

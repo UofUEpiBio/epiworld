@@ -287,8 +287,10 @@ public:
 
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
+    bool has_tool(const Tool<TSeq> & t) const;
     bool has_virus(epiworld_fast_uint t) const;
     bool has_virus(std::string name) const;
+    bool has_virus(const Virus<TSeq> & v) const;
 
     void print(Model<TSeq> * model, bool compressed = false) const;
 

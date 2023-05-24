@@ -68,6 +68,9 @@ namespace epiworld {
 
     #include "models/models.hpp"
 
+    // Including additional modules
+    #include "globalactions-meat.hpp"
+
 }
 
 #endif 

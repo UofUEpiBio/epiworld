@@ -221,7 +221,9 @@ inline void ModelSEIRD<TSeq>::update_exposed(
             ) ? 100.0 : -100.0;
 
 
-    } else if (m->today() >= v->get_data()[0u])
+    } 
+    
+    if (m->today() >= v->get_data()[0u])
     {
         p->change_state(m, S::Infected, epiworld::Queue<TSeq>::Everyone);
         return;
