@@ -116,8 +116,24 @@ inline void Model<TSeq>::print(bool lite) const
         printf_epiworld("Rewiring            : off\n\n");
     }
     
+    // Printing global actions
+    printf_epiworld("Global actions:\n");
+    for (auto & a : global_actions)
+    {
+        if (a.get_day() < 0)
+        {
+            printf_epiworld(" - %s (runs daily)\n", a.get_name().c_str());
+        } else {
+            printf_epiworld(" - %s (day %i)\n", a.get_name().c_str(), a.get_day());
+        }
+    }
 
-    printf_epiworld("Virus(es):\n");
+    if (global_actions.size() == 0u)
+    {
+        printf_epiworld(" (none)\n");
+    }
+
+    printf_epiworld("\nVirus(es):\n");
     size_t n_variants_model = viruses.size();
     for (size_t i = 0u; i < n_variants_model; ++i)
     {    

@@ -42,6 +42,9 @@ namespace epiworld {
 
     #include "queue-bones.hpp"
 
+    #include "globalactions-bones.hpp"
+    #include "globalactions-meat.hpp"
+
     #include "model-bones.hpp"
     #include "model-meat.hpp"
 
@@ -68,8 +71,7 @@ namespace epiworld {
 
     #include "models/models.hpp"
 
-    // Including additional modules
-    #include "globalactions-meat.hpp"
+    
 
 }
 

@@ -137,7 +137,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     }
 
     // This will act through the global
-    model.add_global_action(contact, -99);
+    model.add_global_action(contact, "Transmission (contact)", -99);
 
     model.set_name("Susceptible-Exposed-Infected-Recovered-Deceased (SEIRD)");
 

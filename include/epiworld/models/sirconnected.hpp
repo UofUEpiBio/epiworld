@@ -290,9 +290,6 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
     model.add_virus(virus, prevalence);
 
-    // // Adding updating function
-    // model.add_global_action(global_accounting, -1);
-
     model.queuing_off(); // No queuing need
 
     model.agents_empty_graph(n);
