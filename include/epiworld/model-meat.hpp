@@ -1950,6 +1950,46 @@ inline void Model<TSeq>::write_edgelist(
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::write_edgelist(
+std::vector< int > & source,
+std::vector< int > & target
+) const {
+
+    // Figuring out the writing sequence
+    std::vector< const Agent<TSeq> * > wseq(size());
+    for (const auto & p: population)
+        wseq[p.id] = &p;
+
+    if (this->is_directed())
+    {
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors)
+            {
+                source.push_back(static_cast<int>(p->id));
+                target.push_back(static_cast<int>(n));
+            }
+        }
+
+    } else {
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors) {
+                if (static_cast<int>(p->id) <= static_cast<int>(n)) {
+                    source.push_back(static_cast<int>(p->id));
+                    target.push_back(static_cast<int>(n));
+                }
+            }
+        }
+
+    }
+
+
+}
+
+template<typename TSeq>
 inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 {
     return parameters;
@@ -2506,7 +2546,7 @@ inline double * Model<TSeq>::get_agents_data() {
 }
 
 template<typename TSeq>
-inline size_t Model<TSeq>::get_agents_data_ncols()  {
+inline size_t Model<TSeq>::get_agents_data_ncols() const {
     return this->agents_data_ncols;
 }
 

@@ -493,8 +493,8 @@ public:
         ) const;
 
     void write_edgelist(
-        std::vector< epiworld_fast_uint > & source,
-        std::vector< epiworld_fast_uint > & target
+        std::vector< int > & source,
+        std::vector< int > & target
         ) const;
     ///@}
 
@@ -678,7 +678,7 @@ public:
      */
     void set_agents_data(double * data_, size_t ncols_);
     double * get_agents_data();
-    size_t get_agents_data_ncols();
+    size_t get_agents_data_ncols() const;
 
     /**
      * @brief Set the name object
