@@ -42,6 +42,10 @@ public:
     
     void print() const;
 
+    // Comparison operators
+    bool operator==(const GlobalAction<TSeq> & other) const;
+    bool operator!=(const GlobalAction<TSeq> & other) const;
+
 };
 
 
