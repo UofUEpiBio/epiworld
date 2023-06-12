@@ -5883,7 +5883,7 @@ inline void GlobalAction<TSeq>::print() const
 template<typename TSeq>
 inline bool GlobalAction<TSeq>::operator==(const GlobalAction<TSeq> & other) const
 {
-    return (this->name == other.name) && (this->day == other.day) && (this->fun == other.fun);
+    return (this->name == other.name) && (this->day == other.day);
 }
 
 template<typename TSeq>
