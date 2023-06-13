@@ -20,9 +20,9 @@ public:
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
-        epiworld_double prob_transmission,
-        epiworld_double incubation_days,
-        epiworld_double prob_recovery
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
     );
     
     ModelSEIRCONN(
@@ -30,9 +30,9 @@ public:
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
-        epiworld_double prob_transmission,
-        epiworld_double incubation_days,
-        epiworld_double prob_recovery
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
     );
 
     void run(
@@ -93,8 +93,8 @@ inline Model<TSeq> * ModelSEIRCONN<TSeq>::clone_ptr()
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
- * @param prob_transmission Probability of transmission
- * @param prob_recovery Probability of recovery
+ * @param transmission_rate Probability of transmission
+ * @param recovery_rate Probability of recovery
  */
 template<typename TSeq>
 inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
@@ -103,9 +103,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
-    epiworld_double prob_transmission,
-    epiworld_double incubation_days,
-    epiworld_double prob_recovery
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate
     // epiworld_double prob_reinfection
     )
 {
@@ -153,7 +153,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -261,9 +261,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
     // Setting up parameters
     model.add_param(contact_rate, "Contact rate");
-    model.add_param(prob_transmission, "Prob. Transmission");
-    model.add_param(prob_recovery, "Prob. Recovery");
-    model.add_param(incubation_days, "Avg. Incubation days");
+    model.add_param(transmission_rate, "Prob. Transmission");
+    model.add_param(recovery_rate, "Prob. Recovery");
+    model.add_param(avg_incubation_days, "Avg. Incubation days");
     
     // Status
     model.add_state("Susceptible", update_susceptible);
@@ -302,9 +302,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
-    epiworld_double prob_transmission,
-    epiworld_double incubation_days,
-    epiworld_double prob_recovery
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate
     )
 {
 
@@ -314,9 +314,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         n,
         prevalence,
         contact_rate,
-        prob_transmission,
-        incubation_days,
-        prob_recovery
+        transmission_rate,
+        avg_incubation_days,
+        recovery_rate
     );
 
     return;

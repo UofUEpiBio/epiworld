@@ -72,6 +72,18 @@ inline void Model<TSeq>::print(bool lite) const
 
     printf_epiworld("Name of the model   : %s\n", (this->name == "") ? std::string("(none)").c_str() : name.c_str());
     printf_epiworld("Population size     : %i\n", static_cast<int>(size()));
+
+    auto ncols = get_agents_data_ncols();
+
+    if (ncols > 0)
+    {
+        printf_epiworld("Agents' data loaded : yes (%i columns/features)\n", static_cast<int>(ncols));
+    }
+    else
+    {
+        printf_epiworld("Agents' data        : (none)\n");
+    }
+
     printf_epiworld("Number of entities  : %i\n", static_cast<int>(entities.size()));
     printf_epiworld("Days (duration)     : %i (of %i)\n", today(), static_cast<int>(ndays));
     printf_epiworld("Number of variants  : %i\n", static_cast<int>(db.get_n_variants()));
@@ -116,8 +128,24 @@ inline void Model<TSeq>::print(bool lite) const
         printf_epiworld("Rewiring            : off\n\n");
     }
     
+    // Printing global actions
+    printf_epiworld("Global actions:\n");
+    for (auto & a : global_actions)
+    {
+        if (a.get_day() < 0)
+        {
+            printf_epiworld(" - %s (runs daily)\n", a.get_name().c_str());
+        } else {
+            printf_epiworld(" - %s (day %i)\n", a.get_name().c_str(), a.get_day());
+        }
+    }
 
-    printf_epiworld("Virus(es):\n");
+    if (global_actions.size() == 0u)
+    {
+        printf_epiworld(" (none)\n");
+    }
+
+    printf_epiworld("\nVirus(es):\n");
     size_t n_variants_model = viruses.size();
     for (size_t i = 0u; i < n_variants_model; ++i)
     {    

@@ -1,4 +1,3 @@
-#include "../epiworld.hpp"
 #ifndef EPIWORLD_DIFFNET_H 
 #define EPIWORLD_DIFFNET_H
 
@@ -24,22 +23,29 @@ public:
         std::string innovation_name,
         epiworld_double prevalence,
         epiworld_double prob_adopt,
-        bool normalize_exposure,
-        std::vector< double > params
+        bool normalize_exposure = true,
+        double * agents_data = nullptr,
+        size_t data_ncols = 0u,
+        std::vector< size_t > data_cols = {},
+        std::vector< double > params = {}
     );
 
     ModelDiffNet(
         std::string innovation_name,
         epiworld_double prevalence,
         epiworld_double prob_adopt,
-        bool normalize_exposure,
-        std::vector< double > params
+        bool normalize_exposure = true,
+        double * agents_data = nullptr,
+        size_t data_ncols = 0u,
+        std::vector< size_t > data_cols = {},
+        std::vector< double > params = {}
     );
     
     static const int NONADOPTER = 0;
     static const int ADOPTER    = 1;
 
     bool normalize_exposure = true;
+    std::vector< size_t > data_cols;
     std::vector< double > params;
 };
 
@@ -50,19 +56,27 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     epiworld_double prevalence,
     epiworld_double prob_adopt,
     bool normalize_exposure,
+    double * agents_data,
+    size_t data_ncols,
+    std::vector< size_t > data_cols,
     std::vector< double > params
     )
 {
 
-    epiworld::UpdateFun<TSeq> update_non_adopters[](
+    // Adding additional parameters
+    this->normalize_exposure = normalize_exposure;
+    this->data_cols = data_cols;
+    this->params = params;
+
+    epiworld::UpdateFun<TSeq> update_non_adopters = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
     ) -> void {
 
         // Measuring exposure
         // If the neighbor is infected, then proceed
         size_t nvariants = m->get_n_variants();
-        std::vector< std::vector< Virus<TSeq>* > > innovations(nvariants, {});
-        std::vector< std::vector< double > > innovations_prob(nvariants, {});
+        std::vector< Virus<TSeq>* > innovations(nvariants, {});
+        std::vector< bool > stored(nvariants, false);
         std::vector< double > exposure(nvariants, 0.0);
 
         ModelDiffNet<TSeq> * diffmodel = dynamic_cast<ModelDiffNet<TSeq>*>(m);
@@ -87,8 +101,11 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
                         ; 
                 
                     size_t vid = v->get_id();
-                    innovations[vid].push_back(&(*v));
-                    innovations_prob[vid].push_back(p_i);
+                    if (!stored[vid])
+                    {
+                        stored[vid] = true;
+                        innovations[vid] = &(*v);
+                    }
                     exposure[vid] += p_i;
                     
                 } 
@@ -98,18 +115,17 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
         }
 
         // Computing probability of adoption
-        size_t nparams = diffmodel->params.size();
         for (size_t i = 0u; i < nvariants; ++i)
         {
 
             if (diffmodel->normalize_exposure)
                 exposure.at(i) /= agent.get_n_neighbors();
 
-            for (size_t j = 0u; j < nparams; ++j)
+            for (auto & j: diffmodel->data_cols)
                 exposure.at(i) += agent(j) * diffmodel->params.at(j);
 
             // Baseline probability of adoption
-            double p = m->viruses[i]->get_prob_infecting(m);
+            double p = m->get_viruses()[i]->get_prob_infecting(m);
             exposure.at(i) += std::log(p) - std::log(1.0 - p);
 
             // Computing as log
@@ -118,46 +134,26 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
         }
 
         // Running the roulette to see is an innovation is adopted
-        int which = roulette(exposure, m);
+        int which = roulette<int>(exposure, m);
 
         // No innovation was adopted
         if (which < 0)
             return;
 
-        // Innovation -which- will be adopted. Need to figure out who
-        // transmitted it
-        for (auto & inn: innovations_prob.at(which))
-            inn = 1.0/(1.0 + std::exp(inn));
-
-        int who = roulette(innovations_prob, m);
-
-        // If no one did, then it means that the agent will adopt it
-        // directly from the environment...
-        if (who < 0)
-        {
-            agent.add_virus(
-                *m->viruses[which], 
-                m,
-                ModelDiffNet::ADOPTER
-            );
-
-            return;
-        } 
-        else // Otherwise, it will be adopted from another agent
-        {
-
-            agent.add_virus(
-                *innovations.at(which).at(who),
-                m,
-                ModelDiffNet::ADOPTER
-            )
-
-        }
+        // Otherwise, it is adopted from any of the neighbors
+        agent.add_virus(
+            *innovations.at(which),
+            m,
+            ModelDiffNet::ADOPTER
+        );
 
         return;
 
         };
 
+    // Adding agents data
+    model.set_agents_data(agents_data, data_ncols);
+    
     // Adding statuses
     model.add_state("Non adopters", update_non_adopters);
     model.add_state("Adopters");
@@ -168,13 +164,14 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> innovation(innovation_name);
-    innovation.set_state(1,2,2);
+    innovation.set_state(1,1,1);
     
     innovation.set_prob_infecting(&model(parname));
     
     model.add_virus(innovation, prevalence);
 
-    model.set_name("Diffusion of Innovations");
+    model.set_name(
+        std::string("Diffusion of Innovations - ") + innovation_name);
 
     return;
    
@@ -182,19 +179,27 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
 template<typename TSeq>
 inline ModelDiffNet<TSeq>::ModelDiffNet(
-    std::string vname,
+    std::string innovation_name,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double recovery
+    epiworld_double prob_adopt,
+    bool normalize_exposure,
+    double * agents_data,
+    size_t data_ncols,
+    std::vector< size_t > data_cols,
+    std::vector< double > params
     )
 {
 
     ModelDiffNet<TSeq>(
         *this,
-        vname,
+        innovation_name,
         prevalence,
-        infectiousness,
-        recovery
+        prob_adopt,
+        normalize_exposure,
+        agents_data,
+        data_ncols,
+        data_cols,
+        params
         );
 
     return;

@@ -40,11 +40,11 @@ public:
         epiworld_double incu_rate,
         epiworld_double infe_shape,
         epiworld_double infe_rate,
-        epiworld_double p_hosp,
-        epiworld_double p_hosp_rec,
-        epiworld_double p_hosp_die,
-        epiworld_double p_transmission,
-        epiworld_double p_transmission_entity,
+        epiworld_double hospitalization_rate,
+        epiworld_double hospitalization_recover_rate,
+        epiworld_double hospitalization_decease_rate,
+        epiworld_double transmission_rate,
+        epiworld_double transmission_entity_rate,
         size_t n_entities,
         size_t n_interactions
     );
@@ -69,11 +69,11 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
         "Gamma rate (incubation)",
         "Gamma shape (infected)",
         "Gamma rate (infected)",
-        "Hospitalization prob.",
-        "Prob. hosp. recovers",
-        "Prob. hosp. dies",
-        "Infectiousness",
-        "Infectiousness in entity",
+        "Hospitalization rate",
+        "Recovery rate (hosp.)",
+        "Decease rate (hosp)",
+        "Transmission rate",
+        "Transmission rate (entity)",
         "Prevalence",
         "N entities",
         "N interactions"
@@ -122,7 +122,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
     // Creating the virus
     Virus<TSeq> virus(vname);
-    virus.set_prob_infecting(&model("Infectiousness"));
+    virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_state(S::Exposed, S::Recovered);
     virus.set_queue(Queue<TSeq>::OnlySelf, -99LL);
     virus.get_data() = {0.0, 0.0F};
@@ -137,7 +137,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     }
 
     // This will act through the global
-    model.add_global_action(contact, -99);
+    model.add_global_action(contact, "Transmission (contact)", -99);
 
     model.set_name("Susceptible-Exposed-Infected-Recovered-Deceased (SEIRD)");
 
@@ -153,11 +153,11 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     epiworld_double incu_rate,
     epiworld_double infe_shape,
     epiworld_double infe_rate,
-    epiworld_double p_hosp,
-    epiworld_double p_hosp_rec,
-    epiworld_double p_hosp_die,
-    epiworld_double p_transmission,
-    epiworld_double p_transmission_entity,
+    epiworld_double hospitalization_rate,
+    epiworld_double hospitalization_recover_rate,
+    epiworld_double hospitalization_decease_rate,
+    epiworld_double transmission_rate,
+    epiworld_double transmission_entity_rate,
     size_t n_entities,
     size_t n_interactions
 ) {
@@ -167,11 +167,11 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     this->add_param(incu_rate, "Gamma rate (incubation) ");
     this->add_param(infe_shape, "Gamma shape (infected)");
     this->add_param(infe_rate, "Gamma rate (infected)");
-    this->add_param(p_hosp, "Hospitalization prob.");
-    this->add_param(p_hosp_rec, "Prob. hosp. recovers");
-    this->add_param(p_hosp_rec, "Prob. hosp. dies");
-    this->add_param(p_transmission, "Infectiousness");
-    this->add_param(p_transmission_entity, "Infectiousness in entity");
+    this->add_param(hospitalization_rate, "Hospitalization rate");
+    this->add_param(hospitalization_recover_rate, "Recovery rate (hosp.)");
+    this->add_param(hospitalization_recover_rate, "Decease rate (hosp)");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(transmission_entity_rate, "Transmission rate (entity)");
     this->add_param(prevalence, "Prevalence");
     this->add_param(static_cast<epiworld_double>(n_entities), "N entities");
     this->add_param(static_cast<epiworld_double>(n_interactions), "N interactions");
@@ -217,7 +217,7 @@ inline void ModelSEIRD<TSeq>::update_exposed(
 
         // Prob of becoming hospitalized
         v->get_data()[2u] = (
-            m->runif() < m->par("Hospitalization prob.")
+            m->runif() < m->par("Hospitalization rate")
             ) ? 100.0 : -100.0;
 
 
@@ -274,8 +274,8 @@ inline void ModelSEIRD<TSeq>::update_hospitalized(
     // Computing the recovery probability
     auto v = p->get_virus(0u);
     auto probs = {
-        m->par("Prob. hosp. recovers"),
-        m->par("Prob. hosp. dies")
+        m->par("Recovery rate (hosp.)"),
+        m->par("Decease rate (hosp)")
         };
 
     int which = epiworld::roulette(probs, m);
@@ -323,7 +323,7 @@ inline void ModelSEIRD<TSeq>::contact(Model<TSeq> * m)
 
             // Is the individual getting the infection?
             double p_infection = 1.0 - std::pow(
-	        1.0 - m->par("Infectiousness in entity"), n_viruses
+	        1.0 - m->par("Transmission rate (entity)"), n_viruses
 		);
 
             if (m->runif() >= p_infection)

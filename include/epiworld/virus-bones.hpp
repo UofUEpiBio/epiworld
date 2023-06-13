@@ -62,7 +62,7 @@ public:
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
-    const TSeq* get_sequence();
+    std::shared_ptr<TSeq> get_sequence();
     void set_sequence(TSeq sequence);
     
     Agent<TSeq> * get_agent();

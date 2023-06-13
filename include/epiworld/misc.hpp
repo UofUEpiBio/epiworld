@@ -124,15 +124,15 @@ inline bool IN(const Ta & a, const std::vector< Ta > & b) noexcept
  * @return int If -1 then it means that none got sampled, otherwise the index
  * of the entry that got drawn.
  */
-template<typename TSeq>
+template<typename TSeq, typename TDbl>
 inline int roulette(
-    const std::vector< epiworld_double > & probs,
+    const std::vector< TDbl > & probs,
     Model<TSeq> * m
     )
 {
 
     // Step 1: Computing the prob on none 
-    epiworld_double p_none = 1.0;
+    TDbl p_none = 1.0;
     std::vector< int > certain_infection;
     certain_infection.reserve(probs.size());
 
@@ -145,15 +145,15 @@ inline int roulette(
         
     }
 
-    epiworld_double r = m->runif();
+    TDbl r = static_cast<TDbl>(m->runif());
     // If there are one or more probs that go close to 1, sample
     // uniformly
     if (certain_infection.size() > 0)
         return certain_infection[std::floor(r * certain_infection.size())];
 
     // Step 2: Calculating the prob of none or single
-    std::vector< epiworld_double > probs_only_p(probs.size());
-    epiworld_double p_none_or_single = p_none;
+    std::vector< TDbl > probs_only_p(probs.size());
+    TDbl p_none_or_single = p_none;
     for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
     {
         probs_only_p[p] = probs[p] * (p_none / (1.0 - probs[p]));
@@ -161,7 +161,7 @@ inline int roulette(
     }
 
     // Step 3: Roulette
-    epiworld_double cumsum = p_none/p_none_or_single;
+    TDbl cumsum = p_none/p_none_or_single;
     if (r < cumsum)
     {
         return -1;
@@ -185,6 +185,18 @@ inline int roulette(
 
 }
 
+template<typename TSeq>
+inline int roulette(std::vector< double > & probs, Model<TSeq> * m)
+{
+    return roulette<TSeq, double>(probs, m);
+}
+
+template<typename TSeq>
+inline int roulette(std::vector< float > & probs, Model<TSeq> * m)
+{
+    return roulette<TSeq, float>(probs, m);
+}
+
 
 template<typename TSeq>
 inline int roulette(
@@ -193,10 +205,14 @@ inline int roulette(
     )
 {
 
-    #ifdef EPI_DEBUG
-    if (nelements > m->array_double_tmp.size())
-        throw std::logic_error("Trying to sample from more data than there is in roulette!");
-    #endif
+    if ((nelements * 2) > m->array_double_tmp.size())
+    {
+        throw std::logic_error(
+            "Trying to sample from more data than there is in roulette!" +
+            std::to_string(nelements) + " vs " + 
+            std::to_string(m->array_double_tmp.size())
+            );
+    }
 
     // Step 1: Computing the prob on none 
     epiworld_double p_none = 1.0;

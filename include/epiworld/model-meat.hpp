@@ -439,8 +439,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     nstatus(model.nstatus),
     verbose(model.verbose),
     current_date(model.current_date),
-    global_action_functions(model.global_action_functions),
-    global_action_dates(model.global_action_dates),
+    global_actions(model.global_actions),
     queue(model.queue),
     use_queuing(model.use_queuing),
     array_double_tmp(model.array_double_tmp.size()),
@@ -528,8 +527,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     nstatus(model.nstatus),
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
-    global_action_functions(std::move(model.global_action_functions)),
-    global_action_dates(std::move(model.global_action_dates)),
+    global_actions(std::move(model.global_actions)),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
     array_double_tmp(model.array_double_tmp.size()),
@@ -603,8 +601,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     current_date = m.current_date;
 
-    global_action_functions = m.global_action_functions;
-    global_action_dates     = m.global_action_dates;
+    global_actions = m.global_actions;
 
     queue       = m.queue;
     use_queuing = m.use_queuing;
@@ -629,8 +626,12 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
             )
     );
 
-    array_double_tmp.resize(m.array_double_tmp.size());
-    array_virus_tmp.resize(m.array_virus_tmp.size());
+    array_double_tmp.resize(std::max(
+        size(),
+        static_cast<size_t>(1024 * 1024)
+    ));
+
+    array_virus_tmp.resize(1024u);
 
     return *this;
 
@@ -1488,8 +1489,12 @@ inline void Model<TSeq>::run(
     if (seed >= 0)
         engine.seed(seed);
 
-    array_double_tmp.resize(size()/2, 0.0);
-    array_virus_tmp.resize(size()/2);
+    array_double_tmp.resize(std::max(
+        size(),
+        static_cast<size_t>(1024 * 1024)
+    ));
+
+    array_virus_tmp.resize(1024);
 
     // Checking whether the proposed state in/out/removed
     // are valid
@@ -1953,6 +1958,46 @@ inline void Model<TSeq>::write_edgelist(
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::write_edgelist(
+std::vector< int > & source,
+std::vector< int > & target
+) const {
+
+    // Figuring out the writing sequence
+    std::vector< const Agent<TSeq> * > wseq(size());
+    for (const auto & p: population)
+        wseq[p.id] = &p;
+
+    if (this->is_directed())
+    {
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors)
+            {
+                source.push_back(static_cast<int>(p->id));
+                target.push_back(static_cast<int>(n));
+            }
+        }
+
+    } else {
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors) {
+                if (static_cast<int>(p->id) <= static_cast<int>(n)) {
+                    source.push_back(static_cast<int>(p->id));
+                    target.push_back(static_cast<int>(n));
+                }
+            }
+        }
+
+    }
+
+
+}
+
+template<typename TSeq>
 inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 {
     return parameters;
@@ -2341,12 +2386,87 @@ inline UserData<TSeq> & Model<TSeq>::get_user_data()
 template<typename TSeq>
 inline void Model<TSeq>::add_global_action(
     std::function<void(Model<TSeq>*)> fun,
+    std::string name,
     int date
 )
 {
 
-    global_action_functions.push_back(fun);
-    global_action_dates.push_back(date);
+    global_actions.push_back(
+        GlobalAction<TSeq>(
+            fun,
+            name,
+            date
+            )
+    );
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_global_action(
+    GlobalAction<TSeq> action
+)
+{
+    global_actions.push_back(action);
+}
+
+template<typename TSeq>
+GlobalAction<TSeq> & Model<TSeq>::get_global_action(
+    std::string name
+)
+{
+
+    for (auto & a : global_actions)
+        if (a.name == name)
+            return a;
+
+    throw std::logic_error("The global action " + name + " was not found.");
+
+}
+
+template<typename TSeq>
+GlobalAction<TSeq> & Model<TSeq>::get_global_action(
+    size_t index
+)
+{
+
+    if (index >= global_actions.size())
+        throw std::range_error("The index " + std::to_string(index) + " is out of range.");
+
+    return global_actions[index];
+
+}
+
+// Remove implementation
+template<typename TSeq>
+inline void Model<TSeq>::rm_global_action(
+    std::string name
+)
+{
+
+    for (auto it = global_actions.begin(); it != global_actions.end(); ++it)
+    {
+        if (it->get_name() == name)
+        {
+            global_actions.erase(it);
+            return;
+        }
+    }
+
+    throw std::logic_error("The global action " + name + " was not found.");
+
+}
+
+// Same as above, but the index implementation
+template<typename TSeq>
+inline void Model<TSeq>::rm_global_action(
+    size_t index
+)
+{
+
+    if (index >= global_actions.size())
+        throw std::range_error("The index " + std::to_string(index) + " is out of range.");
+
+    global_actions.erase(global_actions.begin() + index);
 
 }
 
@@ -2354,24 +2474,10 @@ template<typename TSeq>
 inline void Model<TSeq>::run_global_actions()
 {
 
-    for (epiworld_fast_uint i = 0u; i < global_action_dates.size(); ++i)
+    for (auto & action: global_actions)
     {
-
-        if (global_action_dates[i] < 0)
-        {
-
-            global_action_functions[i](this);
-
-        }
-        else if (global_action_dates[i] == today())
-        {
-
-            global_action_functions[i](this);
-
-        }
-
+        action(this, today());
         actions_run();
-
     }
 
 }
@@ -2448,7 +2554,7 @@ inline double * Model<TSeq>::get_agents_data() {
 }
 
 template<typename TSeq>
-inline size_t Model<TSeq>::get_agents_data_ncols()  {
+inline size_t Model<TSeq>::get_agents_data_ncols() const {
     return this->agents_data_ncols;
 }
 
@@ -2636,7 +2742,7 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "Model:: current_date don't match"
     )
 
-    VECT_MATCH(global_action_dates, other.global_action_dates, "global action date don't match");
+    VECT_MATCH(global_actions, other.global_actions, "global action don't match");
 
     EPI_DEBUG_FAIL_AT_TRUE(
         queue != other.queue,

@@ -24,8 +24,8 @@ public:
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
-        epiworld_double prob_transmission,
-        epiworld_double prob_recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
 
     ModelSIRCONN(
@@ -33,8 +33,8 @@ public:
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
-        epiworld_double prob_transmission,
-        epiworld_double prob_recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
 
     // Tracking who is infected and who is not
@@ -113,8 +113,8 @@ inline Model<TSeq> * ModelSIRCONN<TSeq>::clone_ptr()
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
- * @param prob_transmission Probability of transmission
- * @param prob_recovery Probability of recovery
+ * @param transmission_rate Probability of transmission
+ * @param recovery_rate Probability of recovery
  */
 template<typename TSeq>
 inline ModelSIRCONN<TSeq>::ModelSIRCONN(
@@ -123,8 +123,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
-    epiworld_double prob_transmission,
-    epiworld_double prob_recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     // epiworld_double prob_reinfection
     )
 {
@@ -181,7 +181,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -278,20 +278,17 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
     // Setting up parameters
     model.add_param(contact_rate, "Contact rate");
-    model.add_param(prob_transmission, "Prob. Transmission");
-    model.add_param(prob_recovery, "Prob. Recovery");
+    model.add_param(transmission_rate, "Transmission rate");
+    model.add_param(recovery_rate, "Recovery rate");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(1, 2, 2);
-    virus.set_prob_infecting(&model("Prob. Transmission"));
-    virus.set_prob_recovery(&model("Prob. Recovery"));
+    virus.set_prob_infecting(&model("Transmission rate"));
+    virus.set_prob_recovery(&model("Recovery rate"));
 
     model.add_virus(virus, prevalence);
-
-    // // Adding updating function
-    // model.add_global_action(global_accounting, -1);
 
     model.queuing_off(); // No queuing need
 
@@ -309,8 +306,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
-    epiworld_double prob_transmission,
-    epiworld_double prob_recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     )
 {
 
@@ -320,8 +317,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         n,
         prevalence,
         contact_rate,
-        prob_transmission,
-        prob_recovery
+        transmission_rate,
+        recovery_rate
     );
 
     return;

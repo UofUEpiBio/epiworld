@@ -2,6 +2,8 @@
 #define EPIWORLD_MODELS_HPP
 
 namespace epimodels {
+    
+    #include "globalactions.hpp"
 
     #include "sis.hpp"
     #include "sir.hpp"
@@ -11,6 +13,7 @@ namespace epimodels {
     #include "seirconnected.hpp"
     #include "seird.hpp"
     #include "sirlogit.hpp"
+    #include "diffnet.hpp"
 
 }
 

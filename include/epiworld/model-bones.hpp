@@ -25,6 +25,9 @@ template<typename TSeq>
 struct Action;
 
 template<typename TSeq>
+class GlobalAction;
+
+template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
@@ -181,8 +184,7 @@ protected:
     void chrono_start();
     void chrono_end();
 
-    std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
-    std::vector< int > global_action_dates;
+    std::vector<GlobalAction<TSeq>> global_actions;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
@@ -491,8 +493,8 @@ public:
         ) const;
 
     void write_edgelist(
-        std::vector< epiworld_fast_uint > & source,
-        std::vector< epiworld_fast_uint > & target
+        std::vector< int > & source,
+        std::vector< int > & target
         ) const;
     ///@}
 
@@ -604,6 +606,7 @@ public:
      * @brief Set a global action
      * 
      * @param fun A function to be called on the prescribed date
+     * @param name Name of the action.
      * @param date Integer indicating when the function is called (see details)
      * 
      * @details When date is less than zero, then the function is called
@@ -612,8 +615,19 @@ public:
      */
     void add_global_action(
         std::function<void(Model<TSeq>*)> fun,
+        std::string name = "A global action",
         int date = -99
         );
+
+    void add_global_action(
+        GlobalAction<TSeq> action
+    );
+
+    GlobalAction<TSeq> & get_global_action(std::string name); ///< Retrieve a global action by name
+    GlobalAction<TSeq> & get_global_action(size_t i); ///< Retrieve a global action by index
+
+    void rm_global_action(std::string name); ///< Remove a global action by name
+    void rm_global_action(size_t i); ///< Remove a global action by index
 
     void run_global_actions();
 
@@ -664,7 +678,7 @@ public:
      */
     void set_agents_data(double * data_, size_t ncols_);
     double * get_agents_data();
-    size_t get_agents_data_ncols();
+    size_t get_agents_data_ncols() const;
 
     /**
      * @brief Set the name object

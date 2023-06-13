@@ -8,7 +8,7 @@
  * @param vname std::string Name of the virus
  * @param initial_prevalence epiworld_double Initial prevalence
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery rate of the immune system
+ * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
 template<typename TSeq = int>
 class ModelSIR : public epiworld::Model<TSeq>
@@ -21,15 +21,15 @@ public:
         ModelSIR<TSeq> & model,
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
 
     ModelSIR(
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
     
 };
@@ -39,8 +39,8 @@ inline ModelSIR<TSeq>::ModelSIR(
     ModelSIR<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     )
 {
 
@@ -50,15 +50,15 @@ inline ModelSIR<TSeq>::ModelSIR(
     model.add_state("Recovered");
 
     // Setting up parameters
-    model.add_param(recovery, "Prob. of Recovery");
-    model.add_param(infectiousness, "Infectiousness");
+    model.add_param(recovery_rate, "Recovery rate");
+    model.add_param(transmission_rate, "Transmission rate");
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(1,2,2);
     
-    virus.set_prob_recovery(&model("Prob. of Recovery"));
-    virus.set_prob_infecting(&model("Infectiousness"));
+    virus.set_prob_recovery(&model("Recovery rate"));
+    virus.set_prob_infecting(&model("Transmission rate"));
     
     model.add_virus(virus, prevalence);
 
@@ -72,8 +72,8 @@ template<typename TSeq>
 inline ModelSIR<TSeq>::ModelSIR(
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     )
 {
 
@@ -81,8 +81,8 @@ inline ModelSIR<TSeq>::ModelSIR(
         *this,
         vname,
         prevalence,
-        infectiousness,
-        recovery
+        transmission_rate,
+        recovery_rate
         );
 
     return;

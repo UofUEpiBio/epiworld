@@ -6,9 +6,10 @@
  * 
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
- * @param initial_prevalence epiworld_double Initial prevalence
- * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery rate of the immune system
+ * @param prevalence epiworld_double Initial prevalence the immune system
+ * @param transmission_rate epiworld_double Transmission rate of the virus
+ * @param avg_incubation_days epiworld_double Average incubation days of the virus
+ * @param recovery_rate epiworld_double Recovery rate of the virus.
  */
 template<typename TSeq = int>
 class ModelSEIR : public epiworld::Model<TSeq>
@@ -27,17 +28,17 @@ public:
         ModelSEIR<TSeq> & model,
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double incubation_days,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
     );
 
     ModelSEIR(
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double incubation_days,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
     );
     
     epiworld::UpdateFun<TSeq> update_exposed_seir = [](
@@ -57,7 +58,7 @@ public:
         epiworld::Model<TSeq> * m
     ) -> void {
         // Does the agent recover?
-        if (m->runif() < (m->par("Immune recovery")))
+        if (m->runif() < (m->par("Recovery rate")))
             p->rm_virus(0, m);
 
         return;    
@@ -71,9 +72,9 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     ModelSEIR<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double incubation_days,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate
     )
 {
 
@@ -84,15 +85,15 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     model.add_state("Removed");
 
     // Setting up parameters
-    model.add_param(infectiousness, "Infectiousness");
-    model.add_param(incubation_days, "Incubation days");
-    model.add_param(recovery, "Immune recovery");
+    model.add_param(transmission_rate, "Transmission rate");
+    model.add_param(avg_incubation_days, "Incubation days");
+    model.add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
 
-    virus.set_prob_infecting(&model("Infectiousness"));
+    virus.set_prob_infecting(&model("Transmission rate"));
     
     // Adding the tool and the virus
     model.add_virus(virus, prevalence);
@@ -107,9 +108,9 @@ template<typename TSeq>
 inline ModelSEIR<TSeq>::ModelSEIR(
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double incubation_days,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate
     )
 {
 
@@ -117,9 +118,9 @@ inline ModelSEIR<TSeq>::ModelSEIR(
         *this,
         vname,
         prevalence,
-        infectiousness,
-        incubation_days,
-        recovery
+        transmission_rate,
+        avg_incubation_days,
+        recovery_rate
         );
 
     return;

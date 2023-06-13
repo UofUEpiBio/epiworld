@@ -35,7 +35,7 @@ namespace epiworld {
 #endif
 
 #ifndef EPIWORLD_MAXNEIGHBORS
-    #define EPIWORLD_MAXNEIGHBORS 100000
+    #define EPIWORLD_MAXNEIGHBORS 1048576
 #endif
 
 #ifdef _OPENMP
@@ -560,15 +560,15 @@ inline bool IN(const Ta & a, const std::vector< Ta > & b) noexcept
  * @return int If -1 then it means that none got sampled, otherwise the index
  * of the entry that got drawn.
  */
-template<typename TSeq>
+template<typename TSeq, typename TDbl>
 inline int roulette(
-    const std::vector< epiworld_double > & probs,
+    const std::vector< TDbl > & probs,
     Model<TSeq> * m
     )
 {
 
     // Step 1: Computing the prob on none 
-    epiworld_double p_none = 1.0;
+    TDbl p_none = 1.0;
     std::vector< int > certain_infection;
     certain_infection.reserve(probs.size());
 
@@ -581,15 +581,15 @@ inline int roulette(
         
     }
 
-    epiworld_double r = m->runif();
+    TDbl r = static_cast<TDbl>(m->runif());
     // If there are one or more probs that go close to 1, sample
     // uniformly
     if (certain_infection.size() > 0)
         return certain_infection[std::floor(r * certain_infection.size())];
 
     // Step 2: Calculating the prob of none or single
-    std::vector< epiworld_double > probs_only_p(probs.size());
-    epiworld_double p_none_or_single = p_none;
+    std::vector< TDbl > probs_only_p(probs.size());
+    TDbl p_none_or_single = p_none;
     for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
     {
         probs_only_p[p] = probs[p] * (p_none / (1.0 - probs[p]));
@@ -597,7 +597,7 @@ inline int roulette(
     }
 
     // Step 3: Roulette
-    epiworld_double cumsum = p_none/p_none_or_single;
+    TDbl cumsum = p_none/p_none_or_single;
     if (r < cumsum)
     {
         return -1;
@@ -621,6 +621,18 @@ inline int roulette(
 
 }
 
+template<typename TSeq>
+inline int roulette(std::vector< double > & probs, Model<TSeq> * m)
+{
+    return roulette<TSeq, double>(probs, m);
+}
+
+template<typename TSeq>
+inline int roulette(std::vector< float > & probs, Model<TSeq> * m)
+{
+    return roulette<TSeq, float>(probs, m);
+}
+
 
 template<typename TSeq>
 inline int roulette(
@@ -629,10 +641,14 @@ inline int roulette(
     )
 {
 
-    #ifdef EPI_DEBUG
-    if (nelements > m->array_double_tmp.size())
-        throw std::logic_error("Trying to sample from more data than there is in roulette!");
-    #endif
+    if ((nelements * 2) > m->array_double_tmp.size())
+    {
+        throw std::logic_error(
+            "Trying to sample from more data than there is in roulette!" +
+            std::to_string(nelements) + " vs " + 
+            std::to_string(m->array_double_tmp.size())
+            );
+    }
 
     // Step 1: Computing the prob on none 
     epiworld_double p_none = 1.0;
@@ -3558,6 +3574,12 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
     size_t n = this->hist_transition_matrix.size();
     
+    // Clearing the previous vectors
+    state_from.clear();
+    state_to.clear();
+    date.clear();
+    counts.clear();
+
     // Reserving space
     state_from.reserve(n);
     state_to.reserve(n);
@@ -3566,6 +3588,10 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
     size_t n_status = model->nstatus;
     size_t n_steps  = model->get_ndays();
+
+    // If n is zero, then we are done
+    if (n == 0u)
+        return;
 
     for (size_t step = 0u; step <= n_steps; ++step) // The final step counts
     {
@@ -5716,6 +5742,174 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -include/epiworld/globalactions-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_GLOBALACTIONS_BONES_HPP
+#define EPIWORLD_GLOBALACTIONS_BONES_HPP
+
+// template<typename TSeq = EPI_DEFAULT_TSEQ>
+// using GlobalFun = std::function<void(Model<TSeq>*)>;
+
+/**
+ * @brief Template for a Global Action
+ * @details Global actions are functions that Model<TSeq> executes
+ * at the end of a day.
+ * 
+ */
+template<typename TSeq>
+class GlobalAction
+{
+private:
+    GlobalFun<TSeq> fun = nullptr;
+    std::string name = "A global action";
+    int day = -99;
+public:
+
+    GlobalAction() {};
+
+    /**
+     * @brief Construct a new Global Action object
+     * 
+     * @param fun A function that takes a Model<TSeq> * as argument and returns void.
+     * @param name A descriptive name for the action.
+     * @param day The day when the action will be executed. If negative, it will be executed every day.
+     */
+    GlobalAction(GlobalFun<TSeq> fun, std::string name, int day = -99);
+    
+    ~GlobalAction() {};
+
+    void operator()(Model<TSeq> * m, int day);
+
+    void set_name(std::string name);
+    std::string get_name() const;
+
+    void set_day(int day);
+    int get_day() const;
+    
+    void print() const;
+
+    // Comparison operators
+    bool operator==(const GlobalAction<TSeq> & other) const;
+    bool operator!=(const GlobalAction<TSeq> & other) const;
+
+};
+
+
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/globalactions-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/globalactions-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_GLOBALACTIONS_MEAT_HPP
+#define EPIWORLD_GLOBALACTIONS_MEAT_HPP
+
+template<typename TSeq>
+inline GlobalAction<TSeq>::GlobalAction(
+    GlobalFun<TSeq> fun,
+    std::string name,
+    int day
+    )
+{
+    this->fun = fun;
+    this->name = name;
+    this->day = day;
+}
+
+template<typename TSeq>
+inline void GlobalAction<TSeq>::operator()(Model<TSeq> * m, int day)
+{   
+    
+    if (this->fun == nullptr)
+        return;
+
+    // Actions apply if day is negative or if day is equal to the day of the action
+    if (this->day < 0 || this->day == day)
+        this->fun(m);
+    
+    return;
+
+}
+
+template<typename TSeq>
+inline void GlobalAction<TSeq>::set_name(std::string name)
+{
+    this->name = name;
+}
+
+template<typename TSeq>
+inline std::string GlobalAction<TSeq>::get_name() const
+{
+    return this->name;
+}
+
+template<typename TSeq>
+inline void GlobalAction<TSeq>::set_day(int day)
+{
+    this->day = day;
+}
+
+template<typename TSeq>
+inline int GlobalAction<TSeq>::get_day() const
+{
+    return this->day;
+}
+
+template<typename TSeq>
+inline void GlobalAction<TSeq>::print() const
+{
+    printf_epiworld(
+        "Global action: %s\n"
+        "  - Day: %i\n",
+        this->name.c_str(),
+        this->day
+        );
+}
+
+template<typename TSeq>
+inline bool GlobalAction<TSeq>::operator==(const GlobalAction<TSeq> & other) const
+{
+    return (this->name == other.name) && (this->day == other.day);
+}
+
+template<typename TSeq>
+inline bool GlobalAction<TSeq>::operator!=(const GlobalAction<TSeq> & other) const
+{
+    return !(*this == other);
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/globalactions-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -include/epiworld/model-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5747,6 +5941,9 @@ class Queue;
 
 template<typename TSeq>
 struct Action;
+
+template<typename TSeq>
+class GlobalAction;
 
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
@@ -5905,8 +6102,7 @@ protected:
     void chrono_start();
     void chrono_end();
 
-    std::vector<std::function<void(Model<TSeq>*)>> global_action_functions;
-    std::vector< int > global_action_dates;
+    std::vector<GlobalAction<TSeq>> global_actions;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
@@ -6215,8 +6411,8 @@ public:
         ) const;
 
     void write_edgelist(
-        std::vector< epiworld_fast_uint > & source,
-        std::vector< epiworld_fast_uint > & target
+        std::vector< int > & source,
+        std::vector< int > & target
         ) const;
     ///@}
 
@@ -6328,6 +6524,7 @@ public:
      * @brief Set a global action
      * 
      * @param fun A function to be called on the prescribed date
+     * @param name Name of the action.
      * @param date Integer indicating when the function is called (see details)
      * 
      * @details When date is less than zero, then the function is called
@@ -6336,8 +6533,19 @@ public:
      */
     void add_global_action(
         std::function<void(Model<TSeq>*)> fun,
+        std::string name = "A global action",
         int date = -99
         );
+
+    void add_global_action(
+        GlobalAction<TSeq> action
+    );
+
+    GlobalAction<TSeq> & get_global_action(std::string name); ///< Retrieve a global action by name
+    GlobalAction<TSeq> & get_global_action(size_t i); ///< Retrieve a global action by index
+
+    void rm_global_action(std::string name); ///< Remove a global action by name
+    void rm_global_action(size_t i); ///< Remove a global action by index
 
     void run_global_actions();
 
@@ -6388,7 +6596,7 @@ public:
      */
     void set_agents_data(double * data_, size_t ncols_);
     double * get_agents_data();
-    size_t get_agents_data_ncols();
+    size_t get_agents_data_ncols() const;
 
     /**
      * @brief Set the name object
@@ -6863,8 +7071,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     nstatus(model.nstatus),
     verbose(model.verbose),
     current_date(model.current_date),
-    global_action_functions(model.global_action_functions),
-    global_action_dates(model.global_action_dates),
+    global_actions(model.global_actions),
     queue(model.queue),
     use_queuing(model.use_queuing),
     array_double_tmp(model.array_double_tmp.size()),
@@ -6952,8 +7159,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     nstatus(model.nstatus),
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
-    global_action_functions(std::move(model.global_action_functions)),
-    global_action_dates(std::move(model.global_action_dates)),
+    global_actions(std::move(model.global_actions)),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
     array_double_tmp(model.array_double_tmp.size()),
@@ -7027,8 +7233,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     current_date = m.current_date;
 
-    global_action_functions = m.global_action_functions;
-    global_action_dates     = m.global_action_dates;
+    global_actions = m.global_actions;
 
     queue       = m.queue;
     use_queuing = m.use_queuing;
@@ -7053,8 +7258,12 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
             )
     );
 
-    array_double_tmp.resize(m.array_double_tmp.size());
-    array_virus_tmp.resize(m.array_virus_tmp.size());
+    array_double_tmp.resize(std::max(
+        size(),
+        static_cast<size_t>(1024 * 1024)
+    ));
+
+    array_virus_tmp.resize(1024u);
 
     return *this;
 
@@ -7912,8 +8121,12 @@ inline void Model<TSeq>::run(
     if (seed >= 0)
         engine.seed(seed);
 
-    array_double_tmp.resize(size()/2, 0.0);
-    array_virus_tmp.resize(size()/2);
+    array_double_tmp.resize(std::max(
+        size(),
+        static_cast<size_t>(1024 * 1024)
+    ));
+
+    array_virus_tmp.resize(1024);
 
     // Checking whether the proposed state in/out/removed
     // are valid
@@ -8377,6 +8590,46 @@ inline void Model<TSeq>::write_edgelist(
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::write_edgelist(
+std::vector< int > & source,
+std::vector< int > & target
+) const {
+
+    // Figuring out the writing sequence
+    std::vector< const Agent<TSeq> * > wseq(size());
+    for (const auto & p: population)
+        wseq[p.id] = &p;
+
+    if (this->is_directed())
+    {
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors)
+            {
+                source.push_back(static_cast<int>(p->id));
+                target.push_back(static_cast<int>(n));
+            }
+        }
+
+    } else {
+
+        for (const auto & p : wseq)
+        {
+            for (auto & n : p->neighbors) {
+                if (static_cast<int>(p->id) <= static_cast<int>(n)) {
+                    source.push_back(static_cast<int>(p->id));
+                    target.push_back(static_cast<int>(n));
+                }
+            }
+        }
+
+    }
+
+
+}
+
+template<typename TSeq>
 inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 {
     return parameters;
@@ -8533,6 +8786,18 @@ inline void Model<TSeq>::print(bool lite) const
 
     printf_epiworld("Name of the model   : %s\n", (this->name == "") ? std::string("(none)").c_str() : name.c_str());
     printf_epiworld("Population size     : %i\n", static_cast<int>(size()));
+
+    auto ncols = get_agents_data_ncols();
+
+    if (ncols > 0)
+    {
+        printf_epiworld("Agents' data loaded : yes (%i columns/features)\n", static_cast<int>(ncols));
+    }
+    else
+    {
+        printf_epiworld("Agents' data        : (none)\n");
+    }
+
     printf_epiworld("Number of entities  : %i\n", static_cast<int>(entities.size()));
     printf_epiworld("Days (duration)     : %i (of %i)\n", today(), static_cast<int>(ndays));
     printf_epiworld("Number of variants  : %i\n", static_cast<int>(db.get_n_variants()));
@@ -8577,8 +8842,24 @@ inline void Model<TSeq>::print(bool lite) const
         printf_epiworld("Rewiring            : off\n\n");
     }
     
+    // Printing global actions
+    printf_epiworld("Global actions:\n");
+    for (auto & a : global_actions)
+    {
+        if (a.get_day() < 0)
+        {
+            printf_epiworld(" - %s (runs daily)\n", a.get_name().c_str());
+        } else {
+            printf_epiworld(" - %s (day %i)\n", a.get_name().c_str(), a.get_day());
+        }
+    }
 
-    printf_epiworld("Virus(es):\n");
+    if (global_actions.size() == 0u)
+    {
+        printf_epiworld(" (none)\n");
+    }
+
+    printf_epiworld("\nVirus(es):\n");
     size_t n_variants_model = viruses.size();
     for (size_t i = 0u; i < n_variants_model; ++i)
     {    
@@ -9092,12 +9373,87 @@ inline UserData<TSeq> & Model<TSeq>::get_user_data()
 template<typename TSeq>
 inline void Model<TSeq>::add_global_action(
     std::function<void(Model<TSeq>*)> fun,
+    std::string name,
     int date
 )
 {
 
-    global_action_functions.push_back(fun);
-    global_action_dates.push_back(date);
+    global_actions.push_back(
+        GlobalAction<TSeq>(
+            fun,
+            name,
+            date
+            )
+    );
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_global_action(
+    GlobalAction<TSeq> action
+)
+{
+    global_actions.push_back(action);
+}
+
+template<typename TSeq>
+GlobalAction<TSeq> & Model<TSeq>::get_global_action(
+    std::string name
+)
+{
+
+    for (auto & a : global_actions)
+        if (a.name == name)
+            return a;
+
+    throw std::logic_error("The global action " + name + " was not found.");
+
+}
+
+template<typename TSeq>
+GlobalAction<TSeq> & Model<TSeq>::get_global_action(
+    size_t index
+)
+{
+
+    if (index >= global_actions.size())
+        throw std::range_error("The index " + std::to_string(index) + " is out of range.");
+
+    return global_actions[index];
+
+}
+
+// Remove implementation
+template<typename TSeq>
+inline void Model<TSeq>::rm_global_action(
+    std::string name
+)
+{
+
+    for (auto it = global_actions.begin(); it != global_actions.end(); ++it)
+    {
+        if (it->get_name() == name)
+        {
+            global_actions.erase(it);
+            return;
+        }
+    }
+
+    throw std::logic_error("The global action " + name + " was not found.");
+
+}
+
+// Same as above, but the index implementation
+template<typename TSeq>
+inline void Model<TSeq>::rm_global_action(
+    size_t index
+)
+{
+
+    if (index >= global_actions.size())
+        throw std::range_error("The index " + std::to_string(index) + " is out of range.");
+
+    global_actions.erase(global_actions.begin() + index);
 
 }
 
@@ -9105,24 +9461,10 @@ template<typename TSeq>
 inline void Model<TSeq>::run_global_actions()
 {
 
-    for (epiworld_fast_uint i = 0u; i < global_action_dates.size(); ++i)
+    for (auto & action: global_actions)
     {
-
-        if (global_action_dates[i] < 0)
-        {
-
-            global_action_functions[i](this);
-
-        }
-        else if (global_action_dates[i] == today())
-        {
-
-            global_action_functions[i](this);
-
-        }
-
+        action(this, today());
         actions_run();
-
     }
 
 }
@@ -9199,7 +9541,7 @@ inline double * Model<TSeq>::get_agents_data() {
 }
 
 template<typename TSeq>
-inline size_t Model<TSeq>::get_agents_data_ncols()  {
+inline size_t Model<TSeq>::get_agents_data_ncols() const {
     return this->agents_data_ncols;
 }
 
@@ -9387,7 +9729,7 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "Model:: current_date don't match"
     )
 
-    VECT_MATCH(global_action_dates, other.global_action_dates, "global action date don't match");
+    VECT_MATCH(global_actions, other.global_actions, "global action don't match");
 
     EPI_DEBUG_FAIL_AT_TRUE(
         queue != other.queue,
@@ -9671,7 +10013,7 @@ public:
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
-    const TSeq* get_sequence();
+    std::shared_ptr<TSeq> get_sequence();
     void set_sequence(TSeq sequence);
     
     Agent<TSeq> * get_agent();
@@ -9895,10 +10237,10 @@ inline void Virus<TSeq>::set_mutation(
 }
 
 template<typename TSeq>
-inline const TSeq * Virus<TSeq>::get_sequence()
+inline std::shared_ptr<TSeq> Virus<TSeq>::get_sequence()
 {
 
-    return &(*baseline_sequence);
+    return baseline_sequence;
 
 }
 
@@ -11972,7 +12314,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -12060,7 +12402,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                             
                         #endif
@@ -12140,7 +12482,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -12228,7 +12570,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -14494,6 +14836,164 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 #define EPIWORLD_MODELS_HPP
 
 namespace epimodels {
+    
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld//models/globalactions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_GLOBALACTIONS_HPP
+#define EPIWORLD_GLOBALACTIONS_HPP
+
+// This function creates a global action that distributes a tool
+// to agents with probability p.
+/**
+ * @brief Global action that distributes a tool to agents with probability p.
+ * 
+ * @tparam TSeq Sequence type (should match `TSeq` across the model)
+ * @param p Probability of distributing the tool.
+ * @param tool Tool function.
+ * @return std::function<void(Model<TSeq>*)> 
+ */
+template<typename TSeq>
+inline std::function<void(Model<TSeq>*)> globalaction_tool(
+    Tool<TSeq> & tool,
+    double p
+) {
+
+    std::function<void(Model<TSeq>*)> fun = [p,&tool](
+        Model<TSeq> * model
+        ) -> void {
+
+        for (auto & agent : model->get_agents())
+        {
+
+            // Check if the agent has the tool
+            if (agent.has_tool(tool))
+                continue;
+
+            // Adding the tool
+            if (model->runif() < p)
+                agent.add_tool(tool, model);
+            
+        
+        }
+
+        #ifdef EPIWORLD_DEBUG
+        tool.print();
+        #endif
+
+        return;
+            
+
+    };
+
+    return fun;
+
+}
+
+// Same function as above, but p is now a function of a vector of coefficients
+// and a vector of variables.
+/**
+ * @brief Global action that distributes a tool to agents with probability
+ * p = 1 / (1 + exp(-\sum_i coef_i * agent(vars_i))).
+ * 
+ * @tparam TSeq Sequence type (should match `TSeq` across the model)
+ * @param coefs Vector of coefficients.
+ * @param vars Vector of variables.
+ * @param tool_fun Tool function.
+ * @return std::function<void(Model<TSeq>*)> 
+ */
+template<typename TSeq>
+inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
+    Tool<TSeq> & tool,
+    std::vector< size_t > vars,
+    std::vector< double > coefs
+) {
+
+    std::function<void(Model<TSeq>*)> fun = [coefs,vars,&tool](
+        Model<TSeq> * model
+        ) -> void {
+
+        for (auto & agent : model->get_agents())
+        {
+
+            // Check if the agent has the tool
+            if (agent.has_tool(tool))
+                continue;
+
+            // Computing the probability using a logit. Uses OpenMP reduction
+            // to sum the coefficients.
+            double p = 0.0;
+            #pragma omp parallel for reduction(+:p)
+            for (size_t i = 0u; i < coefs.size(); ++i)
+                p += coefs.at(i) * agent(vars[i]);
+
+            p = 1.0 / (1.0 + std::exp(-p));
+
+            // Adding the tool
+            if (model->runif() < p)
+                agent.add_tool(tool, model);
+            
+        
+        }
+
+        #ifdef EPIWORLD_DEBUG
+        tool.print();
+        #endif
+
+        return;
+            
+
+    };
+
+    return fun;
+
+}
+
+// A global action that updates a parameter in the model.
+/**
+ * @brief Global action that updates a parameter in the model.
+ * 
+ * @tparam TSeq Sequence type (should match `TSeq` across the model)
+ * @param param Parameter to update.
+ * @param value Value to update the parameter to.
+ * @return std::function<void(Model<TSeq>*)> 
+ */
+template<typename TSeq>
+inline std::function<void(Model<TSeq>*)> globalaction_set_param(
+    std::string param,
+    double value
+) {
+
+    std::function<void(Model<TSeq>*)> fun = [value,param](
+        Model<TSeq> * model
+        ) -> void {
+
+        model->set_param(param, value);
+
+        return;
+            
+
+    };
+
+    return fun;
+
+}
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld//models/globalactions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
 
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -14513,7 +15013,7 @@ namespace epimodels {
  * @param vname std::string Name of the virus
  * @param initial_prevalence epiworld_double Initial prevalence
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery rate of the immune system
+ * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
 template<typename TSeq = int>
 class ModelSIS : public epiworld::Model<TSeq>
@@ -14527,15 +15027,15 @@ public:
         ModelSIS<TSeq> & model,
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
 
     ModelSIS(
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
 
 };
@@ -14545,8 +15045,8 @@ inline ModelSIS<TSeq>::ModelSIS(
     ModelSIS<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     )
 {
 
@@ -14557,14 +15057,14 @@ inline ModelSIS<TSeq>::ModelSIS(
     model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
 
     // Setting up parameters
-    model.add_param(infectiousness, "Infection rate");
-    model.add_param(recovery, "Recovery rate");
+    model.add_param(transmission_rate, "Transmission rate");
+    model.add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(1,0,0);
     
-    virus.set_prob_infecting(&model("Infection rate"));
+    virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(0.0);
     
@@ -14578,8 +15078,8 @@ template<typename TSeq>
 inline ModelSIS<TSeq>::ModelSIS(
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     )
 {
 
@@ -14587,8 +15087,8 @@ inline ModelSIS<TSeq>::ModelSIS(
         *this,
         vname,
         prevalence,
-        infectiousness,
-        recovery
+        transmission_rate,
+        recovery_rate
     );    
 
     return;
@@ -14624,7 +15124,7 @@ inline ModelSIS<TSeq>::ModelSIS(
  * @param vname std::string Name of the virus
  * @param initial_prevalence epiworld_double Initial prevalence
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery rate of the immune system
+ * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
 template<typename TSeq = int>
 class ModelSIR : public epiworld::Model<TSeq>
@@ -14637,15 +15137,15 @@ public:
         ModelSIR<TSeq> & model,
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
 
     ModelSIR(
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
     
 };
@@ -14655,8 +15155,8 @@ inline ModelSIR<TSeq>::ModelSIR(
     ModelSIR<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     )
 {
 
@@ -14666,15 +15166,15 @@ inline ModelSIR<TSeq>::ModelSIR(
     model.add_state("Recovered");
 
     // Setting up parameters
-    model.add_param(recovery, "Prob. of Recovery");
-    model.add_param(infectiousness, "Infectiousness");
+    model.add_param(recovery_rate, "Recovery rate");
+    model.add_param(transmission_rate, "Transmission rate");
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(1,2,2);
     
-    virus.set_prob_recovery(&model("Prob. of Recovery"));
-    virus.set_prob_infecting(&model("Infectiousness"));
+    virus.set_prob_recovery(&model("Recovery rate"));
+    virus.set_prob_infecting(&model("Transmission rate"));
     
     model.add_virus(virus, prevalence);
 
@@ -14688,8 +15188,8 @@ template<typename TSeq>
 inline ModelSIR<TSeq>::ModelSIR(
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     )
 {
 
@@ -14697,8 +15197,8 @@ inline ModelSIR<TSeq>::ModelSIR(
         *this,
         vname,
         prevalence,
-        infectiousness,
-        recovery
+        transmission_rate,
+        recovery_rate
         );
 
     return;
@@ -14732,9 +15232,10 @@ inline ModelSIR<TSeq>::ModelSIR(
  * 
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
- * @param initial_prevalence epiworld_double Initial prevalence
- * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery rate of the immune system
+ * @param prevalence epiworld_double Initial prevalence the immune system
+ * @param transmission_rate epiworld_double Transmission rate of the virus
+ * @param avg_incubation_days epiworld_double Average incubation days of the virus
+ * @param recovery_rate epiworld_double Recovery rate of the virus.
  */
 template<typename TSeq = int>
 class ModelSEIR : public epiworld::Model<TSeq>
@@ -14753,17 +15254,17 @@ public:
         ModelSEIR<TSeq> & model,
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double incubation_days,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
     );
 
     ModelSEIR(
         std::string vname,
         epiworld_double prevalence,
-        epiworld_double infectiousness,
-        epiworld_double incubation_days,
-        epiworld_double recovery
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
     );
     
     epiworld::UpdateFun<TSeq> update_exposed_seir = [](
@@ -14783,7 +15284,7 @@ public:
         epiworld::Model<TSeq> * m
     ) -> void {
         // Does the agent recover?
-        if (m->runif() < (m->par("Immune recovery")))
+        if (m->runif() < (m->par("Recovery rate")))
             p->rm_virus(0, m);
 
         return;    
@@ -14797,9 +15298,9 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     ModelSEIR<TSeq> & model,
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double incubation_days,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate
     )
 {
 
@@ -14810,15 +15311,15 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     model.add_state("Removed");
 
     // Setting up parameters
-    model.add_param(infectiousness, "Infectiousness");
-    model.add_param(incubation_days, "Incubation days");
-    model.add_param(recovery, "Immune recovery");
+    model.add_param(transmission_rate, "Transmission rate");
+    model.add_param(avg_incubation_days, "Incubation days");
+    model.add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
 
-    virus.set_prob_infecting(&model("Infectiousness"));
+    virus.set_prob_infecting(&model("Transmission rate"));
     
     // Adding the tool and the virus
     model.add_virus(virus, prevalence);
@@ -14833,9 +15334,9 @@ template<typename TSeq>
 inline ModelSEIR<TSeq>::ModelSEIR(
     std::string vname,
     epiworld_double prevalence,
-    epiworld_double infectiousness,
-    epiworld_double incubation_days,
-    epiworld_double recovery
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate
     )
 {
 
@@ -14843,9 +15344,9 @@ inline ModelSEIR<TSeq>::ModelSEIR(
         *this,
         vname,
         prevalence,
-        infectiousness,
-        incubation_days,
-        recovery
+        transmission_rate,
+        avg_incubation_days,
+        recovery_rate
         );
 
     return;
@@ -15210,7 +15711,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_virus_n(covid, prevalence);
 
     model.set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
-    model.add_global_action(surveillance_program,-1);
+    model.add_global_action(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
     epiworld::Tool<TSeq> vax("Vaccine");
@@ -15309,8 +15810,8 @@ public:
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
-        epiworld_double prob_transmission,
-        epiworld_double prob_recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
 
     ModelSIRCONN(
@@ -15318,8 +15819,8 @@ public:
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
-        epiworld_double prob_transmission,
-        epiworld_double prob_recovery
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate
     );
 
     // Tracking who is infected and who is not
@@ -15398,8 +15899,8 @@ inline Model<TSeq> * ModelSIRCONN<TSeq>::clone_ptr()
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
- * @param prob_transmission Probability of transmission
- * @param prob_recovery Probability of recovery
+ * @param transmission_rate Probability of transmission
+ * @param recovery_rate Probability of recovery
  */
 template<typename TSeq>
 inline ModelSIRCONN<TSeq>::ModelSIRCONN(
@@ -15408,8 +15909,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
-    epiworld_double prob_transmission,
-    epiworld_double prob_recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     // epiworld_double prob_reinfection
     )
 {
@@ -15466,7 +15967,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -15563,20 +16064,17 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
     // Setting up parameters
     model.add_param(contact_rate, "Contact rate");
-    model.add_param(prob_transmission, "Prob. Transmission");
-    model.add_param(prob_recovery, "Prob. Recovery");
+    model.add_param(transmission_rate, "Transmission rate");
+    model.add_param(recovery_rate, "Recovery rate");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(1, 2, 2);
-    virus.set_prob_infecting(&model("Prob. Transmission"));
-    virus.set_prob_recovery(&model("Prob. Recovery"));
+    virus.set_prob_infecting(&model("Transmission rate"));
+    virus.set_prob_recovery(&model("Recovery rate"));
 
     model.add_virus(virus, prevalence);
-
-    // // Adding updating function
-    // model.add_global_action(global_accounting, -1);
 
     model.queuing_off(); // No queuing need
 
@@ -15594,8 +16092,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
-    epiworld_double prob_transmission,
-    epiworld_double prob_recovery
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate
     )
 {
 
@@ -15605,8 +16103,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         n,
         prevalence,
         contact_rate,
-        prob_transmission,
-        prob_recovery
+        transmission_rate,
+        recovery_rate
     );
 
     return;
@@ -15655,9 +16153,9 @@ public:
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
-        epiworld_double prob_transmission,
-        epiworld_double incubation_days,
-        epiworld_double prob_recovery
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
     );
     
     ModelSEIRCONN(
@@ -15665,9 +16163,9 @@ public:
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
-        epiworld_double prob_transmission,
-        epiworld_double incubation_days,
-        epiworld_double prob_recovery
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
     );
 
     void run(
@@ -15728,8 +16226,8 @@ inline Model<TSeq> * ModelSEIRCONN<TSeq>::clone_ptr()
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
- * @param prob_transmission Probability of transmission
- * @param prob_recovery Probability of recovery
+ * @param transmission_rate Probability of transmission
+ * @param recovery_rate Probability of recovery
  */
 template<typename TSeq>
 inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
@@ -15738,9 +16236,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
-    epiworld_double prob_transmission,
-    epiworld_double incubation_days,
-    epiworld_double prob_recovery
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate
     // epiworld_double prob_reinfection
     )
 {
@@ -15788,7 +16286,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -15896,9 +16394,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
     // Setting up parameters
     model.add_param(contact_rate, "Contact rate");
-    model.add_param(prob_transmission, "Prob. Transmission");
-    model.add_param(prob_recovery, "Prob. Recovery");
-    model.add_param(incubation_days, "Avg. Incubation days");
+    model.add_param(transmission_rate, "Prob. Transmission");
+    model.add_param(recovery_rate, "Prob. Recovery");
+    model.add_param(avg_incubation_days, "Avg. Incubation days");
     
     // Status
     model.add_state("Susceptible", update_susceptible);
@@ -15937,9 +16435,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
-    epiworld_double prob_transmission,
-    epiworld_double incubation_days,
-    epiworld_double prob_recovery
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate
     )
 {
 
@@ -15949,9 +16447,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         n,
         prevalence,
         contact_rate,
-        prob_transmission,
-        incubation_days,
-        prob_recovery
+        transmission_rate,
+        avg_incubation_days,
+        recovery_rate
     );
 
     return;
@@ -16019,11 +16517,11 @@ public:
         epiworld_double incu_rate,
         epiworld_double infe_shape,
         epiworld_double infe_rate,
-        epiworld_double p_hosp,
-        epiworld_double p_hosp_rec,
-        epiworld_double p_hosp_die,
-        epiworld_double p_transmission,
-        epiworld_double p_transmission_entity,
+        epiworld_double hospitalization_rate,
+        epiworld_double hospitalization_recover_rate,
+        epiworld_double hospitalization_decease_rate,
+        epiworld_double transmission_rate,
+        epiworld_double transmission_entity_rate,
         size_t n_entities,
         size_t n_interactions
     );
@@ -16048,11 +16546,11 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
         "Gamma rate (incubation)",
         "Gamma shape (infected)",
         "Gamma rate (infected)",
-        "Hospitalization prob.",
-        "Prob. hosp. recovers",
-        "Prob. hosp. dies",
-        "Infectiousness",
-        "Infectiousness in entity",
+        "Hospitalization rate",
+        "Recovery rate (hosp.)",
+        "Decease rate (hosp)",
+        "Transmission rate",
+        "Transmission rate (entity)",
         "Prevalence",
         "N entities",
         "N interactions"
@@ -16101,7 +16599,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
     // Creating the virus
     Virus<TSeq> virus(vname);
-    virus.set_prob_infecting(&model("Infectiousness"));
+    virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_state(S::Exposed, S::Recovered);
     virus.set_queue(Queue<TSeq>::OnlySelf, -99LL);
     virus.get_data() = {0.0, 0.0F};
@@ -16116,7 +16614,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     }
 
     // This will act through the global
-    model.add_global_action(contact, -99);
+    model.add_global_action(contact, "Transmission (contact)", -99);
 
     model.set_name("Susceptible-Exposed-Infected-Recovered-Deceased (SEIRD)");
 
@@ -16132,11 +16630,11 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     epiworld_double incu_rate,
     epiworld_double infe_shape,
     epiworld_double infe_rate,
-    epiworld_double p_hosp,
-    epiworld_double p_hosp_rec,
-    epiworld_double p_hosp_die,
-    epiworld_double p_transmission,
-    epiworld_double p_transmission_entity,
+    epiworld_double hospitalization_rate,
+    epiworld_double hospitalization_recover_rate,
+    epiworld_double hospitalization_decease_rate,
+    epiworld_double transmission_rate,
+    epiworld_double transmission_entity_rate,
     size_t n_entities,
     size_t n_interactions
 ) {
@@ -16146,11 +16644,11 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     this->add_param(incu_rate, "Gamma rate (incubation) ");
     this->add_param(infe_shape, "Gamma shape (infected)");
     this->add_param(infe_rate, "Gamma rate (infected)");
-    this->add_param(p_hosp, "Hospitalization prob.");
-    this->add_param(p_hosp_rec, "Prob. hosp. recovers");
-    this->add_param(p_hosp_rec, "Prob. hosp. dies");
-    this->add_param(p_transmission, "Infectiousness");
-    this->add_param(p_transmission_entity, "Infectiousness in entity");
+    this->add_param(hospitalization_rate, "Hospitalization rate");
+    this->add_param(hospitalization_recover_rate, "Recovery rate (hosp.)");
+    this->add_param(hospitalization_recover_rate, "Decease rate (hosp)");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(transmission_entity_rate, "Transmission rate (entity)");
     this->add_param(prevalence, "Prevalence");
     this->add_param(static_cast<epiworld_double>(n_entities), "N entities");
     this->add_param(static_cast<epiworld_double>(n_interactions), "N interactions");
@@ -16196,7 +16694,7 @@ inline void ModelSEIRD<TSeq>::update_exposed(
 
         // Prob of becoming hospitalized
         v->get_data()[2u] = (
-            m->runif() < m->par("Hospitalization prob.")
+            m->runif() < m->par("Hospitalization rate")
             ) ? 100.0 : -100.0;
 
 
@@ -16253,8 +16751,8 @@ inline void ModelSEIRD<TSeq>::update_hospitalized(
     // Computing the recovery probability
     auto v = p->get_virus(0u);
     auto probs = {
-        m->par("Prob. hosp. recovers"),
-        m->par("Prob. hosp. dies")
+        m->par("Recovery rate (hosp.)"),
+        m->par("Decease rate (hosp)")
         };
 
     int which = epiworld::roulette(probs, m);
@@ -16302,7 +16800,7 @@ inline void ModelSEIRD<TSeq>::contact(Model<TSeq> * m)
 
             // Is the individual getting the infection?
             double p_infection = 1.0 - std::pow(
-	        1.0 - m->par("Infectiousness in entity"), n_viruses
+	        1.0 - m->par("Transmission rate (entity)"), n_viruses
 		);
 
             if (m->runif() >= p_infection)
@@ -16379,8 +16877,8 @@ public:
         std::vector< double > coefs_recover,
         std::vector< size_t > coef_infect_cols,
         std::vector< size_t > coef_recover_cols,
-        epiworld_double prob_infect,
-        epiworld_double prob_recover,
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate,
         epiworld_double prevalence
     );
 
@@ -16392,8 +16890,8 @@ public:
         std::vector< double > coefs_recover,
         std::vector< size_t > coef_infect_cols,
         std::vector< size_t > coef_recover_cols,
-        epiworld_double prob_infect,
-        epiworld_double prob_recover,
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate,
         epiworld_double prevalence
     );
 
@@ -16492,8 +16990,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     std::vector< double > coefs_recover,
     std::vector< size_t > coef_infect_cols,
     std::vector< size_t > coef_recover_cols,
-    epiworld_double prob_infect,
-    epiworld_double prob_recover,
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate,
     epiworld_double prevalence
     )
 {
@@ -16609,8 +17107,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     // Setting up parameters
     // model.add_param(contact_rate, "Contact rate");
-    model.add_param(prob_infect, "Prob. Infection");
-    model.add_param(prob_recover, "Prob. Recovery");
+    model.add_param(transmission_rate, "Transmission rate");
+    model.add_param(recovery_rate, "Recovery rate");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
@@ -16621,8 +17119,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         ModelSIRLogit<TSeq>::RECOVERED
         );
 
-    virus.set_prob_infecting(&model("Prob. Infection"));
-    virus.set_prob_recovery(&model("Prob. Recovery"));
+    virus.set_prob_infecting(&model("Transmission rate"));
+    virus.set_prob_recovery(&model("Recovery rate"));
 
     // virus.set_prob
 
@@ -16643,8 +17141,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     std::vector< double > coefs_recover,
     std::vector< size_t > coef_infect_cols,
     std::vector< size_t > coef_recover_cols,
-    epiworld_double prob_infect,
-    epiworld_double prob_recover,
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate,
     epiworld_double prevalence
     )
 {
@@ -16658,8 +17156,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         coefs_recover,
         coef_infect_cols,
         coef_recover_cols,
-        prob_infect,
-        prob_recover,
+        transmission_rate,
+        recovery_rate,
         prevalence
     );
 
@@ -16673,6 +17171,233 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -include/epiworld//models/sirlogit.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld//models/diffnet.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_DIFFNET_H 
+#define EPIWORLD_DIFFNET_H
+
+/**
+ * @brief Template for a Network Diffusion Model
+ * 
+ * @param model A Model<TSeq> object where to set up the SIR.
+ * @param vname std::string Name of the virus
+ * @param initial_prevalence epiworld_double Initial prevalence
+ * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
+ * @param initial_recovery epiworld_double Initial recovery rate of the immune system
+ */
+template<typename TSeq = int>
+class ModelDiffNet : public epiworld::Model<TSeq>
+{
+private:
+public:
+
+    ModelDiffNet() {};
+
+    ModelDiffNet(
+        ModelDiffNet<TSeq> & model,
+        std::string innovation_name,
+        epiworld_double prevalence,
+        epiworld_double prob_adopt,
+        bool normalize_exposure = true,
+        double * agents_data = nullptr,
+        size_t data_ncols = 0u,
+        std::vector< size_t > data_cols = {},
+        std::vector< double > params = {}
+    );
+
+    ModelDiffNet(
+        std::string innovation_name,
+        epiworld_double prevalence,
+        epiworld_double prob_adopt,
+        bool normalize_exposure = true,
+        double * agents_data = nullptr,
+        size_t data_ncols = 0u,
+        std::vector< size_t > data_cols = {},
+        std::vector< double > params = {}
+    );
+    
+    static const int NONADOPTER = 0;
+    static const int ADOPTER    = 1;
+
+    bool normalize_exposure = true;
+    std::vector< size_t > data_cols;
+    std::vector< double > params;
+};
+
+template<typename TSeq>
+inline ModelDiffNet<TSeq>::ModelDiffNet(
+    ModelDiffNet<TSeq> & model,
+    std::string innovation_name,
+    epiworld_double prevalence,
+    epiworld_double prob_adopt,
+    bool normalize_exposure,
+    double * agents_data,
+    size_t data_ncols,
+    std::vector< size_t > data_cols,
+    std::vector< double > params
+    )
+{
+
+    // Adding additional parameters
+    this->normalize_exposure = normalize_exposure;
+    this->data_cols = data_cols;
+    this->params = params;
+
+    epiworld::UpdateFun<TSeq> update_non_adopters = [](
+        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    ) -> void {
+
+        // Measuring exposure
+        // If the neighbor is infected, then proceed
+        size_t nvariants = m->get_n_variants();
+        std::vector< Virus<TSeq>* > innovations(nvariants, {});
+        std::vector< bool > stored(nvariants, false);
+        std::vector< double > exposure(nvariants, 0.0);
+
+        ModelDiffNet<TSeq> * diffmodel = dynamic_cast<ModelDiffNet<TSeq>*>(m);
+
+        Agent<TSeq> & agent = *p;
+
+        // For each one of the possible innovations, we have to compute
+        // the adoption probability, which is a function of exposure
+        for (auto & neighbor: agent.get_neighbors())
+        {
+
+            if (neighbor->get_state() == ModelDiffNet<TSeq>::ADOPTER)
+            {
+
+                for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
+                { 
+                        
+                    /* And it is a function of susceptibility_reduction as well */ 
+                    double p_i =
+                        (1.0 - agent.get_susceptibility_reduction(v, m)) * 
+                        (1.0 - agent.get_transmission_reduction(v, m)) 
+                        ; 
+                
+                    size_t vid = v->get_id();
+                    if (!stored[vid])
+                    {
+                        stored[vid] = true;
+                        innovations[vid] = &(*v);
+                    }
+                    exposure[vid] += p_i;
+                    
+                } 
+
+            }
+
+        }
+
+        // Computing probability of adoption
+        for (size_t i = 0u; i < nvariants; ++i)
+        {
+
+            if (diffmodel->normalize_exposure)
+                exposure.at(i) /= agent.get_n_neighbors();
+
+            for (auto & j: diffmodel->data_cols)
+                exposure.at(i) += agent(j) * diffmodel->params.at(j);
+
+            // Baseline probability of adoption
+            double p = m->get_viruses()[i]->get_prob_infecting(m);
+            exposure.at(i) += std::log(p) - std::log(1.0 - p);
+
+            // Computing as log
+            exposure.at(i) = 1.0/(1.0 + std::exp(-exposure.at(i)));
+
+        }
+
+        // Running the roulette to see is an innovation is adopted
+        int which = roulette<int>(exposure, m);
+
+        // No innovation was adopted
+        if (which < 0)
+            return;
+
+        // Otherwise, it is adopted from any of the neighbors
+        agent.add_virus(
+            *innovations.at(which),
+            m,
+            ModelDiffNet::ADOPTER
+        );
+
+        return;
+
+        };
+
+    // Adding agents data
+    model.set_agents_data(agents_data, data_ncols);
+    
+    // Adding statuses
+    model.add_state("Non adopters", update_non_adopters);
+    model.add_state("Adopters");
+
+    // Adding parameters
+    std::string parname = std::string("Prob. Adopting ") + innovation_name;
+    model.add_param(prob_adopt, parname);
+
+    // Preparing the virus -------------------------------------------
+    epiworld::Virus<TSeq> innovation(innovation_name);
+    innovation.set_state(1,1,1);
+    
+    innovation.set_prob_infecting(&model(parname));
+    
+    model.add_virus(innovation, prevalence);
+
+    model.set_name(
+        std::string("Diffusion of Innovations - ") + innovation_name);
+
+    return;
+   
+}
+
+template<typename TSeq>
+inline ModelDiffNet<TSeq>::ModelDiffNet(
+    std::string innovation_name,
+    epiworld_double prevalence,
+    epiworld_double prob_adopt,
+    bool normalize_exposure,
+    double * agents_data,
+    size_t data_ncols,
+    std::vector< size_t > data_cols,
+    std::vector< double > params
+    )
+{
+
+    ModelDiffNet<TSeq>(
+        *this,
+        innovation_name,
+        prevalence,
+        prob_adopt,
+        normalize_exposure,
+        agents_data,
+        data_ncols,
+        data_cols,
+        params
+        );
+
+    return;
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld//models/diffnet.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -16692,167 +17417,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
 
 
-    // Including additional modules
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/globalactions-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef GLOBALACTIONS_MEAT_HPP
-#define GLOBALACTIONS_MEAT_HPP
-
-
-// This function creates a global action that distributes a tool
-// to agents with probability p.
-/**
- * @brief Global action that distributes a tool to agents with probability p.
- * 
- * @tparam TSeq Sequence type (should match `TSeq` across the model)
- * @param p Probability of distributing the tool.
- * @param tool Tool function.
- * @return std::function<void(Model<TSeq>*)> 
- */
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_tool(
-    Tool<TSeq> & tool,
-    double p
-) {
-
-    std::function<void(Model<TSeq>*)> fun = [p,&tool](
-        Model<TSeq> * model
-        ) -> void {
-
-        for (auto & agent : model->get_agents())
-        {
-
-            // Check if the agent has the tool
-            if (agent.has_tool(tool))
-                continue;
-
-            // Adding the tool
-            if (model->runif() < p)
-                agent.add_tool(tool, model);
-            
-        
-        }
-
-        #ifdef EPIWORLD_DEBUG
-        tool.print();
-        #endif
-
-        return;
-            
-
-    };
-
-    return fun;
-
-}
-
-// Same function as above, but p is now a function of a vector of coefficients
-// and a vector of variables.
-/**
- * @brief Global action that distributes a tool to agents with probability
- * p = 1 / (1 + exp(-\sum_i coef_i * agent(vars_i))).
- * 
- * @tparam TSeq Sequence type (should match `TSeq` across the model)
- * @param coefs Vector of coefficients.
- * @param vars Vector of variables.
- * @param tool_fun Tool function.
- * @return std::function<void(Model<TSeq>*)> 
- */
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
-    Tool<TSeq> & tool,
-    std::vector< size_t > vars,
-    std::vector< double > coefs
-) {
-
-    std::function<void(Model<TSeq>*)> fun = [coefs,vars,&tool](
-        Model<TSeq> * model
-        ) -> void {
-
-        for (auto & agent : model->get_agents())
-        {
-
-            // Check if the agent has the tool
-            if (agent.has_tool(tool))
-                continue;
-
-            // Computing the probability using a logit. Uses OpenMP reduction
-            // to sum the coefficients.
-            double p = 0.0;
-            #pragma omp parallel for reduction(+:p)
-            for (size_t i = 0u; i < coefs.size(); ++i)
-                p += coefs.at(i) * agent(vars[i]);
-
-            p = 1.0 / (1.0 + std::exp(-p));
-
-            // Adding the tool
-            if (model->runif() < p)
-                agent.add_tool(tool, model);
-            
-        
-        }
-
-        #ifdef EPIWORLD_DEBUG
-        tool.print();
-        #endif
-
-        return;
-            
-
-    };
-
-    return fun;
-
-}
-
-// A global action that updates a parameter in the model.
-/**
- * @brief Global action that updates a parameter in the model.
- * 
- * @tparam TSeq Sequence type (should match `TSeq` across the model)
- * @param param Parameter to update.
- * @param value Value to update the parameter to.
- * @return std::function<void(Model<TSeq>*)> 
- */
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_set_param(
-    std::string param,
-    double value
-) {
-
-    std::function<void(Model<TSeq>*)> fun = [value,param](
-        Model<TSeq> * model
-        ) -> void {
-
-        model->set_param(param, value);
-
-        return;
-            
-
-    };
-
-    return fun;
-
-}
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/globalactions-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
+    
 
 }
 

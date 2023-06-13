@@ -33,8 +33,8 @@ public:
         std::vector< double > coefs_recover,
         std::vector< size_t > coef_infect_cols,
         std::vector< size_t > coef_recover_cols,
-        epiworld_double prob_infect,
-        epiworld_double prob_recover,
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate,
         epiworld_double prevalence
     );
 
@@ -46,8 +46,8 @@ public:
         std::vector< double > coefs_recover,
         std::vector< size_t > coef_infect_cols,
         std::vector< size_t > coef_recover_cols,
-        epiworld_double prob_infect,
-        epiworld_double prob_recover,
+        epiworld_double transmission_rate,
+        epiworld_double recovery_rate,
         epiworld_double prevalence
     );
 
@@ -146,8 +146,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     std::vector< double > coefs_recover,
     std::vector< size_t > coef_infect_cols,
     std::vector< size_t > coef_recover_cols,
-    epiworld_double prob_infect,
-    epiworld_double prob_recover,
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate,
     epiworld_double prevalence
     )
 {
@@ -263,8 +263,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     // Setting up parameters
     // model.add_param(contact_rate, "Contact rate");
-    model.add_param(prob_infect, "Prob. Infection");
-    model.add_param(prob_recover, "Prob. Recovery");
+    model.add_param(transmission_rate, "Transmission rate");
+    model.add_param(recovery_rate, "Recovery rate");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
@@ -275,8 +275,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         ModelSIRLogit<TSeq>::RECOVERED
         );
 
-    virus.set_prob_infecting(&model("Prob. Infection"));
-    virus.set_prob_recovery(&model("Prob. Recovery"));
+    virus.set_prob_infecting(&model("Transmission rate"));
+    virus.set_prob_recovery(&model("Recovery rate"));
 
     // virus.set_prob
 
@@ -297,8 +297,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     std::vector< double > coefs_recover,
     std::vector< size_t > coef_infect_cols,
     std::vector< size_t > coef_recover_cols,
-    epiworld_double prob_infect,
-    epiworld_double prob_recover,
+    epiworld_double transmission_rate,
+    epiworld_double recovery_rate,
     epiworld_double prevalence
     )
 {
@@ -312,8 +312,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         coefs_recover,
         coef_infect_cols,
         coef_recover_cols,
-        prob_infect,
-        prob_recover,
+        transmission_rate,
+        recovery_rate,
         prevalence
     );
 
