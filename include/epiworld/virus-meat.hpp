@@ -82,12 +82,6 @@ inline Virus<TSeq>::Virus(std::string name) {
     set_name(name);
 }
 
-// template<typename TSeq>
-// inline Virus<TSeq>::Virus(TSeq sequence, std::string name) {
-//     baseline_sequence = std::make_shared<TSeq>(sequence);
-//     set_name(name);
-// }
-
 template<typename TSeq>
 inline void Virus<TSeq>::mutate(
     Model<TSeq> * model
@@ -229,6 +223,19 @@ inline epiworld_double Virus<TSeq>::get_prob_death(
 }
 
 template<typename TSeq>
+inline epiworld_double Virus<TSeq>::get_incubation(
+    Model<TSeq> * model
+)
+{
+
+    if (incubation_fun)
+        return incubation_fun(agent, *this, model);
+        
+    return EPI_DEFAULT_INCUBATION_DAYS;
+
+}
+
+template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting_fun(VirusFun<TSeq> fun)
 {
     probability_of_infecting_fun = fun;
@@ -244,6 +251,12 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death_fun(VirusFun<TSeq> fun)
 {
     probability_of_death_fun = fun;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_incubation_fun(VirusFun<TSeq> fun)
+{
+    incubation_fun = fun;
 }
 
 template<typename TSeq>
@@ -283,6 +296,18 @@ inline void Virus<TSeq>::set_prob_death(const epiworld_double * prob)
 }
 
 template<typename TSeq>
+inline void Virus<TSeq>::set_incubation(const epiworld_double * prob)
+{
+    VirusFun<TSeq> tmpfun = 
+        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
+        {
+            return *prob;
+        };
+    
+    incubation_fun = tmpfun;
+}
+
+template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(epiworld_double prob)
 {
     VirusFun<TSeq> tmpfun = 
@@ -316,6 +341,18 @@ inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
         };
     
     probability_of_death_fun = tmpfun;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_incubation(epiworld_double prob)
+{
+    VirusFun<TSeq> tmpfun = 
+        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
+        {
+            return prob;
+        };
+    
+    incubation_fun = tmpfun;
 }
 
 template<typename TSeq>

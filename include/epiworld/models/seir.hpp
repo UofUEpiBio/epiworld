@@ -45,8 +45,12 @@ public:
         epiworld::Agent<TSeq> * p,
         epiworld::Model<TSeq> * m
     ) -> void {
+
+        // Getting the virus
+        auto v = p->get_virus(0);
+
         // Does the agent become infected?
-        if (m->runif() < 1.0/(m->par("Incubation days")))
+        if (m->runif() < 1.0/(v->get_incubation(m)))
             p->change_state(m, ModelSEIR<TSeq>::INFECTED);
 
         return;    
@@ -94,6 +98,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     virus.set_state(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
 
     virus.set_prob_infecting(&model("Transmission rate"));
+    virus.set_incubation(&model("Incubation days"));
     
     // Adding the tool and the virus
     model.add_virus(virus, prevalence);

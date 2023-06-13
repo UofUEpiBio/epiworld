@@ -200,8 +200,11 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             if (status == ModelSEIRCONN<TSeq>::EXPOSED)
             {
 
+                // Getting the virus
+                auto & v = p->get_virus(0u);
+
                 // Does the agent become infected?
-                if (m->runif() < 1.0/(m->par("Avg. Incubation days")))
+                if (m->runif() < 1.0/(v.get_incubation(m)))
                 {
 
                     p->change_state(m, ModelSEIRCONN<TSeq>::INFECTED);
@@ -282,6 +285,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
     virus.set_prob_infecting(&model("Prob. Transmission"));
     virus.set_prob_recovery(&model("Prob. Recovery"));
+    virus.set_incubation(&model("Avg. Incubation days"));
 
     model.add_virus(virus, prevalence);
 

@@ -183,6 +183,10 @@ public:
 #ifndef EPI_DEFAULT_VIRUS_PROB_DEATH
     #define EPI_DEFAULT_VIRUS_PROB_DEATH        0.0
 #endif
+
+#ifndef EPI_DEFAULT_INCUBATION_DAYS
+    #define EPI_DEFAULT_INCUBATION_DAYS         7.0
+#endif
 ///@}
 
 #ifdef EPI_DEBUG

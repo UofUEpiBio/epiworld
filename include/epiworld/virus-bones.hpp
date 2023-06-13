@@ -43,6 +43,7 @@ private:
     VirusFun<TSeq>        probability_of_infecting_fun = nullptr;
     VirusFun<TSeq>        probability_of_recovery_fun  = nullptr;
     VirusFun<TSeq>        probability_of_death_fun     = nullptr;
+    VirusFun<TSeq>        incubation_fun               = nullptr;
 
     // Setup parameters
     std::vector< epiworld_double * > params = {};
@@ -86,6 +87,7 @@ public:
     epiworld_double get_prob_infecting(Model<TSeq> * model);
     epiworld_double get_prob_recovery(Model<TSeq> * model);
     epiworld_double get_prob_death(Model<TSeq> * model);
+    epiworld_double get_incubation(Model<TSeq> * model);
     
     void post_recovery(Model<TSeq> * model);
     void set_post_recovery(PostRecoveryFun<TSeq> fun);
@@ -95,14 +97,17 @@ public:
     void set_prob_infecting_fun(VirusFun<TSeq> fun);
     void set_prob_recovery_fun(VirusFun<TSeq> fun);
     void set_prob_death_fun(VirusFun<TSeq> fun);
+    void set_incubation_fun(VirusFun<TSeq> fun);
     
     void set_prob_infecting(const epiworld_double * prob);
     void set_prob_recovery(const epiworld_double * prob);
     void set_prob_death(const epiworld_double * prob);
+    void set_incubation(const epiworld_double * prob);
     
     void set_prob_infecting(epiworld_double prob);
     void set_prob_recovery(epiworld_double prob);
     void set_prob_death(epiworld_double prob);
+    void set_incubation(epiworld_double prob);
     ///@}
 
 
