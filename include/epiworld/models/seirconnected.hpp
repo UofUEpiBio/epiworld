@@ -204,7 +204,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 auto & v = p->get_virus(0u);
 
                 // Does the agent become infected?
-                if (m->runif() < 1.0/(v.get_incubation(m)))
+                if (m->runif() < 1.0/(v->get_incubation(m)))
                 {
 
                     p->change_state(m, ModelSEIRCONN<TSeq>::INFECTED);

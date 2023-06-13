@@ -10366,7 +10366,7 @@ inline epiworld_double Virus<TSeq>::get_incubation(
     if (incubation_fun)
         return incubation_fun(agent, *this, model);
         
-    return EPI_DEFAULT_VIRUS_INCUBATION;
+    return EPI_DEFAULT_INCUBATION_DAYS;
 
 }
 
@@ -16386,7 +16386,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 auto & v = p->get_virus(0u);
 
                 // Does the agent become infected?
-                if (m->runif() < 1.0/(v.get_incubation(m)))
+                if (m->runif() < 1.0/(v->get_incubation(m)))
                 {
 
                     p->change_state(m, ModelSEIRCONN<TSeq>::INFECTED);
