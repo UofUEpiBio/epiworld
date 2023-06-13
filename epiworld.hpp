@@ -35,7 +35,7 @@ namespace epiworld {
 #endif
 
 #ifndef EPIWORLD_MAXNEIGHBORS
-    #define EPIWORLD_MAXNEIGHBORS 100000
+    #define EPIWORLD_MAXNEIGHBORS 1048576
 #endif
 
 #ifdef _OPENMP
@@ -641,10 +641,14 @@ inline int roulette(
     )
 {
 
-    #ifdef EPI_DEBUG
     if ((nelements * 2) > m->array_double_tmp.size())
-        throw std::logic_error("Trying to sample from more data than there is in roulette!");
-    #endif
+    {
+        throw std::logic_error(
+            "Trying to sample from more data than there is in roulette!" +
+            std::to_string(nelements) + " vs " + 
+            std::to_string(m->array_double_tmp.size())
+            );
+    }
 
     // Step 1: Computing the prob on none 
     epiworld_double p_none = 1.0;
@@ -7254,13 +7258,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
             )
     );
 
-    // Max size of the array
-    size_t max_array_size = std::max(
-        static_cast<int>(m.array_double_tmp.size()), 
-        static_cast<int>(1024 * 1024)
-        );
+    array_double_tmp.resize(std::max(
+        size(),
+        static_cast<size_t>(1024 * 1024)
+    ));
 
-    array_double_tmp.resize(max_array_size);
     array_virus_tmp.resize(1024u);
 
     return *this;
@@ -8119,8 +8121,12 @@ inline void Model<TSeq>::run(
     if (seed >= 0)
         engine.seed(seed);
 
-    array_double_tmp.resize(size()/2, 0.0);
-    array_virus_tmp.resize(size()/2);
+    array_double_tmp.resize(std::max(
+        size(),
+        static_cast<size_t>(1024 * 1024)
+    ));
+
+    array_virus_tmp.resize(1024);
 
     // Checking whether the proposed state in/out/removed
     // are valid
@@ -12308,7 +12314,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -12396,7 +12402,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                             
                         #endif
@@ -12476,7 +12482,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -12564,7 +12570,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -15960,7 +15966,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
@@ -16279,7 +16285,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= m->array_virus_tmp.size())
+                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
