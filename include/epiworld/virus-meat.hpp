@@ -109,10 +109,10 @@ inline void Virus<TSeq>::set_mutation(
 }
 
 template<typename TSeq>
-inline const TSeq * Virus<TSeq>::get_sequence()
+inline std::shared_ptr<TSeq> Virus<TSeq>::get_sequence()
 {
 
-    return &(*baseline_sequence);
+    return baseline_sequence;
 
 }
 

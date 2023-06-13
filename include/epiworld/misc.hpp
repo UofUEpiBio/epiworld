@@ -192,9 +192,9 @@ inline int roulette(std::vector< double > & probs, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline int roulette(std::vector< epiworld_double > & probs, Model<TSeq> * m)
+inline int roulette(std::vector< float > & probs, Model<TSeq> * m)
 {
-    return roulette<TSeq, epiworld_double>(probs, m);
+    return roulette<TSeq, float>(probs, m);
 }
 
 
