@@ -44,8 +44,6 @@ inline void DataBase<TSeq>::reset()
     transmission_target.clear();
     transmission_source_exposure_date.clear();
 
-    
-
     return;
 
 }
@@ -803,7 +801,7 @@ inline void DataBase<TSeq>::write_data(
         }
 
         file_variant <<
-            #ifdef _OPENMP
+            #ifdef EPI_DEBUG
             "thread "<< "date " << "id " << "state " << "n\n";
             #else
             "date " << "id " << "state " << "n\n";
@@ -811,7 +809,7 @@ inline void DataBase<TSeq>::write_data(
 
         for (epiworld_fast_uint i = 0; i < hist_variant_id.size(); ++i)
             file_variant <<
-                #ifdef _OPENMP
+                #ifdef EPI_DEBUG
                 EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_variant_date[i] << " " <<
@@ -834,7 +832,7 @@ inline void DataBase<TSeq>::write_data(
         }
 
         file_tool_info <<
-            #ifdef _OPENMP
+            #ifdef EPI_DEBUG
             "thread " << 
             #endif
             "id " << "tool_name " << "tool_sequence " << "date_recorded\n";
@@ -843,7 +841,7 @@ inline void DataBase<TSeq>::write_data(
         {
             int id = t.second;
             file_tool_info <<
-                #ifdef _OPENMP
+                #ifdef EPI_DEBUG
                 EPI_GET_THREAD_ID() << " " <<
                 #endif
                 id << " \"" <<
@@ -868,14 +866,14 @@ inline void DataBase<TSeq>::write_data(
         }
         
         file_tool_hist <<
-            #ifdef _OPENMP
+            #ifdef EPI_DEBUG
             "thread " << 
             #endif
             "date " << "id " << "state " << "n\n";
 
         for (epiworld_fast_uint i = 0; i < hist_tool_id.size(); ++i)
             file_tool_hist <<
-                #ifdef _OPENMP
+                #ifdef EPI_DEBUG
                 EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_tool_date[i] << " " <<
@@ -898,14 +896,14 @@ inline void DataBase<TSeq>::write_data(
         }
 
         file_total <<
-            #ifdef _OPENMP
+            #ifdef EPI_DEBUG
             "thread " << 
             #endif
             "date " << "nvariants " << "state " << "counts\n";
 
         for (epiworld_fast_uint i = 0; i < hist_total_date.size(); ++i)
             file_total <<
-                #ifdef _OPENMP
+                #ifdef EPI_DEBUG
                 EPI_GET_THREAD_ID() << " " <<
                 #endif
                 hist_total_date[i] << " " <<
@@ -928,14 +926,14 @@ inline void DataBase<TSeq>::write_data(
         }
 
         file_transmission <<
-            #ifdef _OPENMP
+            #ifdef EPI_DEBUG
             "thread " << 
             #endif
             "date " << "variant " << "source_exposure_date " << "source " << "target\n";
 
         for (epiworld_fast_uint i = 0; i < transmission_target.size(); ++i)
             file_transmission <<
-                #ifdef _OPENMP
+                #ifdef EPI_DEBUG
                 EPI_GET_THREAD_ID() << " " <<
                 #endif
                 transmission_date[i] << " " <<
@@ -960,7 +958,7 @@ inline void DataBase<TSeq>::write_data(
         }
 
         file_transition <<
-            #ifdef _OPENMP
+            #ifdef EPI_DEBUG
             "thread " << 
             #endif
             "date " << "from " << "to " << "counts\n";
@@ -973,7 +971,7 @@ inline void DataBase<TSeq>::write_data(
             for (int from = 0u; from < ns; ++from)
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
-                        #ifdef _OPENMP
+                        #ifdef EPI_DEBUG
                         EPI_GET_THREAD_ID() << " " <<
                         #endif
                         i << " " <<
@@ -1116,14 +1114,14 @@ inline void DataBase<TSeq>::reproductive_number(
     }
 
     fn_file << 
-        #ifdef _OPENMP
+        #ifdef EPI_DEBUG
         "thread " <<
         #endif
         "variant source source_exposure_date rt\n";
 
     for (auto & m : map)
         fn_file <<
-            #ifdef _OPENMP
+            #ifdef EPI_DEBUG
             EPI_GET_THREAD_ID() << " " <<
             #endif
             m.first[0u] << " " <<
@@ -1745,7 +1743,7 @@ inline void DataBase<TSeq>::generation_time(
 
 
     fn_file << 
-        #ifdef _OPENMP
+        #ifdef EPI_DEBUG
         "thread " <<
         #endif
         "variant source source_exposure_date gentime\n";
@@ -1753,7 +1751,7 @@ inline void DataBase<TSeq>::generation_time(
     size_t n = agent_id.size();
     for (size_t i = 0u; i < n; ++i)
         fn_file <<
-            #ifdef _OPENMP
+            #ifdef EPI_DEBUG
             EPI_GET_THREAD_ID() << " " <<
             #endif
             virus_id[i] << " " <<
