@@ -626,13 +626,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
             )
     );
 
-    // Max size of the array
-    size_t max_array_size = std::max(
-        static_cast<int>(m.array_double_tmp.size()), 
-        static_cast<int>(1024 * 1024)
-        );
+    array_double_tmp.resize(std::max(
+        size(),
+        static_cast<size_t>(1024 * 1024)
+    ));
 
-    array_double_tmp.resize(max_array_size);
     array_virus_tmp.resize(1024u);
 
     return *this;
@@ -1491,8 +1489,12 @@ inline void Model<TSeq>::run(
     if (seed >= 0)
         engine.seed(seed);
 
-    array_double_tmp.resize(size()/2, 0.0);
-    array_virus_tmp.resize(size()/2);
+    array_double_tmp.resize(std::max(
+        size(),
+        static_cast<size_t>(1024 * 1024)
+    ));
+
+    array_virus_tmp.resize(1024);
 
     // Checking whether the proposed state in/out/removed
     // are valid

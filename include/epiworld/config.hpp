@@ -6,7 +6,7 @@
 #endif
 
 #ifndef EPIWORLD_MAXNEIGHBORS
-    #define EPIWORLD_MAXNEIGHBORS 100000
+    #define EPIWORLD_MAXNEIGHBORS 1048576
 #endif
 
 #ifdef _OPENMP
