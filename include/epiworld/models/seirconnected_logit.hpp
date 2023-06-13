@@ -22,10 +22,10 @@ public:
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double reproductive_number,
-        epiworld_double prob_transmission,
-        epiworld_double incubation_days,
-        epiworld_double prob_recovery,
+        epiworld_double contact_rate,
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate,
         double * covars,
         std::vector< double > logit_params
     );
@@ -34,10 +34,10 @@ public:
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double reproductive_number,
-        epiworld_double prob_transmission,
-        epiworld_double incubation_days,
-        epiworld_double prob_recovery
+        epiworld_double contact_rate,
+        epiworld_double transmission_rate,
+        epiworld_double avg_incubation_days,
+        epiworld_double recovery_rate
         double * covars,
         std::vector< double > logit_params
     );
@@ -58,9 +58,9 @@ public:
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
- * @param reproductive_number Reproductive number (beta)
- * @param prob_transmission Probability of transmission
- * @param prob_recovery Probability of recovery
+ * @param contact_rate Reproductive number (beta)
+ * @param transmission_rate Probability of transmission
+ * @param recovery_rate Probability of recovery
  */
 template<typename TSeq>
 inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
@@ -68,10 +68,10 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double reproductive_number,
-    epiworld_double prob_transmission,
-    epiworld_double incubation_days,
-    epiworld_double prob_recovery,
+    epiworld_double contact_rate,
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate,
     double * covars,
     std::vector< double > logit_params
     // epiworld_double prob_reinfection
@@ -140,7 +140,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
             // Computing probability of contagion
             // P(infected) = 1 - (1 - beta/Pop * ptransmit) ^ ninfected
             epiworld_double prob_infect = 1.0 - std::pow(
-                1.0 - (m->par("Beta")) * (m->par("Prob. Transmission")) / m->size(),
+                1.0 - (m->par("Contact rate")) * (m->par("Transmission rate")) / m->size(),
                 *_tracked_ninfected
                 );
 
@@ -212,7 +212,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
             } else if (status == ModelSEIRCONNLogit<TSeq>::INFECTED)
             {
 
-                if (m->runif() < (m->par("Prob. Recovery")))
+                if (m->runif() < (m->par("Recovery rate")))
                 {
 
                     *_tracked_ninfected_next -= 1;
@@ -262,10 +262,10 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
         };
 
     // Setting up parameters
-    model.add_param(reproductive_number, "Beta");
-    model.add_param(prob_transmission, "Prob. Transmission");
-    model.add_param(prob_recovery, "Prob. Recovery");
-    model.add_param(incubation_days, "Avg. Incubation days");
+    model.add_param(contact_rate, "Contact rate");
+    model.add_param(transmission_rate, "Transmission rate");
+    model.add_param(recovery_rate, "Recovery rate");
+    model.add_param(avg_incubation_days, "Avg. Incubation days");
     
     // Status
     model.add_state("Susceptible", update_susceptible);
@@ -305,10 +305,10 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double reproductive_number,
-    epiworld_double prob_transmission,
-    epiworld_double incubation_days,
-    epiworld_double prob_recovery,
+    epiworld_double contact_rate,
+    epiworld_double transmission_rate,
+    epiworld_double avg_incubation_days,
+    epiworld_double recovery_rate,
     double * covars,
     std::vector< double > logit_params
     )
@@ -319,9 +319,9 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
         vname,
         n,
         prevalence,
-        reproductive_number,
-        prob_transmission,
-        incubation_days,
+        contact_rate,
+        transmission_rate,
+        avg_incubation_days,
         covars,
         logit_params
     );
