@@ -642,7 +642,7 @@ inline int roulette(
 {
 
     #ifdef EPI_DEBUG
-    if (nelements > m->array_double_tmp.size())
+    if ((nelements * 2) > m->array_double_tmp.size())
         throw std::logic_error("Trying to sample from more data than there is in roulette!");
     #endif
 
@@ -7254,8 +7254,14 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
             )
     );
 
-    array_double_tmp.resize(m.array_double_tmp.size());
-    array_virus_tmp.resize(m.array_virus_tmp.size());
+    // Max size of the array
+    size_t max_array_size = std::max(
+        static_cast<int>(m.array_double_tmp.size()), 
+        static_cast<int>(1024 * 1024)
+        );
+
+    array_double_tmp.resize(max_array_size);
+    array_virus_tmp.resize(1024u);
 
     return *this;
 

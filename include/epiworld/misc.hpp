@@ -206,7 +206,7 @@ inline int roulette(
 {
 
     #ifdef EPI_DEBUG
-    if (nelements > m->array_double_tmp.size())
+    if ((nelements * 2) > m->array_double_tmp.size())
         throw std::logic_error("Trying to sample from more data than there is in roulette!");
     #endif
 
