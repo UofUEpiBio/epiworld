@@ -88,7 +88,13 @@ template<typename TSeq>
 inline void Viruses<TSeq>::print() const noexcept
 {
 
-    printf_epiworld("List of viruses (%i):\n", *n_viruses);
+    if (*n_viruses == 0u)
+    {
+        printf_epiworld("List of viruses (none)\n");
+        return;
+    }
+
+    printf_epiworld("List of viruses (%i): ", *n_viruses);
 
     // Printing the name of each virus separated by a comma
     for (size_t i = 0u; i < *n_viruses; ++i)
@@ -128,6 +134,8 @@ public:
     const VirusPtr<TSeq> & operator[](size_t i);
 
     size_t size() const noexcept;
+
+    void print() const noexcept;
 
 };
 
@@ -175,6 +183,30 @@ inline size_t Viruses_const<TSeq>::size() const noexcept
     return *n_viruses;
 }
 
+template<typename TSeq>
+inline void Viruses_const<TSeq>::print() const noexcept
+{
+
+    if (*n_viruses == 0u)
+    {
+        printf_epiworld("List of viruses (none)\n");
+        return;
+    }
+
+    printf_epiworld("List of viruses (%i): ", *n_viruses);
+
+    // Printing the name of each virus separated by a comma
+    for (size_t i = 0u; i < *n_viruses; ++i)
+    {
+        if (i == *n_viruses - 1u)
+            printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
+        else
+            printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
+    }
+    
+    printf_epiworld("\n");
+
+}
 
 
 #endif
