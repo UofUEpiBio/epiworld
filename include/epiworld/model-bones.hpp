@@ -11,6 +11,12 @@ template<typename TSeq>
 class Virus;
 
 template<typename TSeq>
+class Viruses;
+
+template<typename TSeq> 
+class Viruses_const;
+
+template<typename TSeq>
 class Tool;
 
 class AdjList;
@@ -384,7 +390,13 @@ public:
 
     bool is_directed() const;
 
-    std::vector< Agent<TSeq> > & get_agents();
+    std::vector< Agent<TSeq> > & get_agents(); ///< Returns a reference to the vector of agents.
+
+    std::vector< epiworld_fast_uint > get_agents_states() const; ///< Returns a vector with the states of the agents.
+
+    std::vector< Viruses_const<TSeq> > get_agents_viruses() const; ///< Returns a const vector with the viruses of the agents.
+
+    std::vector< Viruses<TSeq> > get_agents_viruses(); ///< Returns a vector with the viruses of the agents.
 
     std::vector< Entity<TSeq> > & get_entities();
 

@@ -650,6 +650,41 @@ inline std::vector<Agent<TSeq>> & Model<TSeq>::get_agents()
 }
 
 template<typename TSeq>
+inline std::vector< epiworld_fast_uint > Model<TSeq>::get_agents_states() const
+{
+    std::vector< epiworld_fast_uint > states(population.size());
+    for (size_t i = 0u; i < population.size(); ++i)
+        states[i] = population[i].get_state();
+
+    return states;
+}
+
+template<typename TSeq>
+inline std::vector< Viruses_const<TSeq> > Model<TSeq>::get_agents_viruses() const
+{
+
+    std::vector< Viruses_const<TSeq> > viruses(population.size());
+    for (size_t i = 0u; i < population.size(); ++i)
+        viruses[i] = population[i].get_viruses();
+
+    return viruses;
+
+}
+
+// Same as before, but the non const version
+template<typename TSeq>
+inline std::vector< Viruses<TSeq> > Model<TSeq>::get_agents_viruses()
+{
+
+    std::vector< Viruses<TSeq> > viruses(population.size());
+    for (size_t i = 0u; i < population.size(); ++i)
+        viruses[i] = population[i].get_viruses();
+
+    return viruses;
+
+}
+
+template<typename TSeq>
 inline std::vector<Entity<TSeq>> & Model<TSeq>::get_entities()
 {
     return entities;
