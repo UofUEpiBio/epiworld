@@ -118,7 +118,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     EPI_NEW_UPDATEFUN_LAMBDA(surveillance_update_susceptible, TSeq) {
 
         // This computes the prob of getting any neighbor variant
-        epiworld_fast_uint nvariants_tmp = 0u;
+        epiworld_fast_uint nviruses_tmp = 0u;
         for (auto & neighbor: p->get_neighbors()) 
         {
                     
@@ -134,18 +134,18 @@ inline ModelSURV<TSeq>::ModelSURV(
                     (1.0 - neighbor->get_transmission_reduction(v, m)) 
                     ; 
             
-                m->array_double_tmp[nvariants_tmp]  = tmp_transmission;
-                m->array_virus_tmp[nvariants_tmp++] = &(*v);
+                m->array_double_tmp[nviruses_tmp]  = tmp_transmission;
+                m->array_virus_tmp[nviruses_tmp++] = &(*v);
                 
             } 
         }
 
         // No virus to compute on
-        if (nvariants_tmp == 0)
+        if (nviruses_tmp == 0)
             return;
 
         // Running the roulette
-        int which = roulette(nvariants_tmp, m);
+        int which = roulette(nviruses_tmp, m);
 
         if (which < 0)
             return;

@@ -252,7 +252,7 @@ public:
     const Tools_const<TSeq> get_tools() const;
     size_t get_n_tools() const noexcept;
 
-    void mutate_variant();
+    void mutate_virus();
     void add_neighbor(
         Agent<TSeq> & p,
         bool check_source = true,

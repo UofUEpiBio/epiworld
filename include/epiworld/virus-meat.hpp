@@ -89,7 +89,7 @@ inline void Virus<TSeq>::mutate(
 
     if (mutation_fun)
         if (mutation_fun(agent, *this, model))
-            model->get_db().record_variant(*this);
+            model->get_db().record_virus(*this);
 
     return;
     

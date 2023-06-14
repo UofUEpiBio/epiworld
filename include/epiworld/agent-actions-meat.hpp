@@ -51,9 +51,9 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     p->viruses[n_viruses]->set_date(m->today());
 
     #ifdef EPI_DEBUG
-    m->get_db().today_variant.at(v->get_id()).at(p->state)++;
+    m->get_db().today_virus.at(v->get_id()).at(p->state)++;
     #else
-    m->get_db().today_variant[v->get_id()][p->state]++;
+    m->get_db().today_virus[v->get_id()][p->state]++;
     #endif
 
 }
