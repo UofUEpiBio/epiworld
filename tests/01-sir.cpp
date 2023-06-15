@@ -13,7 +13,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         "a virus", 0.01, .9, .3
         );
 
-    model_0.agents_smallworld(100000, 5, false, 0.01);
+    model_0.agents_smallworld(10000, 5, false, 0.01);
     
     model_0.verbose_off();
 
@@ -23,7 +23,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         "a virus", 0.01, .9, .3
         );
 
-    model_1.agents_smallworld(100000, 5, false, 0.01);
+    model_1.agents_smallworld(10000, 5, false, 0.01);
 
     model_1.queuing_off();
     model_1.verbose_off();
@@ -53,13 +53,13 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(tmat_0, Catch::Approx(tmat_expected).margin(0.025));
-    REQUIRE_THAT(tmat_1, Catch::Approx(tmat_expected).margin(0.025));
+    REQUIRE_THAT(tmat_1, Catch::Equals(tmat_0));
     REQUIRE_THAT(h_0, Catch::Equals(h_1));
     REQUIRE(out_of_range_0 == 0);
     REQUIRE(out_of_range_1 == 0);
     #else
-    model_0.print();
-    model_1.print();
+    model_0.print(true);
+    model_1.print(true);
     #endif 
 
     #ifndef CATCH_CONFIG_MAIN

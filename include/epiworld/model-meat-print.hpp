@@ -5,61 +5,6 @@ template<typename TSeq>
 inline void Model<TSeq>::print(bool lite) const
 {
 
-    if (lite)
-    {
-        size_t nchar = 0u;
-        std::string fmt = " - %-" + std::to_string(nchar + 1) + "s: ";
-
-        for (auto & p : states_labels)
-            if (p.length() > nchar)
-                nchar = p.length();
-
-        if (today() != 0)
-            fmt =
-                std::string("  - (%") +
-                    std::to_string(std::to_string(nstatus).length()) +
-                std::string("d) %-") + std::to_string(nchar) +
-                std::string("s : %") +
-                    std::to_string(std::to_string(size()).length()) +
-                std::string("i -> %i\n");
-        else
-            fmt =
-                std::string("  - (%") +
-                    std::to_string(std::to_string(nstatus).length()) +
-                std::string("d) %-") + std::to_string(nchar) + 
-                std::string("s : %i\n");
-
-        printf_epiworld("\nDistribution of the population at time %i:\n", today());
-        for (size_t s = 0u; s < nstatus; ++s)
-        {
-            if (today() != 0)
-            {
-
-                printf_epiworld(
-                    fmt.c_str(),
-                    s,
-                    states_labels[s].c_str(),
-                    db.hist_total_counts[s],
-                    db.today_total[ s ]
-                    );
-
-            }
-            else
-            {
-
-                printf_epiworld(
-                    fmt.c_str(),
-                    s,
-                    states_labels[s].c_str(),
-                    db.today_total[ s ]
-                    );
-
-            }
-        }
-
-        return;
-    }
-
     // Horizontal line
     std::string line = "";
     for (epiworld_fast_uint i = 0u; i < 80u; ++i)
@@ -68,7 +13,55 @@ inline void Model<TSeq>::print(bool lite) const
     // Prints a message if debugging is on
     EPI_DEBUG_NOTIFY_ACTIVE()
 
-    printf_epiworld("\n%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
+    printf_epiworld("%s\n",line.c_str());
+
+    if (lite)
+    {
+        // Printing the name of the model
+        printf_epiworld("%s", name.c_str());
+
+        // Printing the number of agents, viruses, and tools
+        printf_epiworld(
+            "\nIt features %i agents, %i virus(es), and %i tool(s).\n",
+            static_cast<int>(size()),
+            static_cast<int>(get_n_viruses()),
+            static_cast<int>(get_n_tools())
+            );
+
+        printf_epiworld(
+            "The model has %i states.",
+            static_cast<int>(nstatus)
+            );
+
+        if (today() != 0)
+        {
+            printf_epiworld(
+                "\nThe final distribution is: "
+            );
+
+            int nstatus_int = static_cast<int>(nstatus);
+
+            for (int i = 0u; i < nstatus_int; ++i)
+            {
+                printf_epiworld(
+                    "%i %s%s",
+                    static_cast<int>(db.today_total[ i ]),
+                    states_labels[i].c_str(),
+                    (
+                        i == (nstatus_int - 2)
+                        ) ? ", and " : (
+                            (i == (nstatus_int - 1)) ? ".\n" : ", "
+                            )
+                );
+            }
+        } else {
+            printf_epiworld(" The model hasn't been run yet.\n");
+        }
+
+        return;
+    }
+
+    printf_epiworld("%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
 
     printf_epiworld("Name of the model   : %s\n", (this->name == "") ? std::string("(none)").c_str() : name.c_str());
     printf_epiworld("Population size     : %i\n", static_cast<int>(size()));

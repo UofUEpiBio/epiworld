@@ -13,7 +13,7 @@ EPIWORLD_TEST_CASE("SIR multiple", "[SIR-multiple]") {
         "a virus", 0.01, .9, .3
         );
 
-    model_0.agents_smallworld(100000, 5, false, 0.01);
+    model_0.agents_smallworld(10000, 5, false, 0.01);
     
     model_0.verbose_off();
 

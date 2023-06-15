@@ -10,6 +10,20 @@ inline void DataBase<TSeq>::reset()
     std::fill(today_total.begin(), today_total.end(), 0);
     for (auto & p : model->get_agents())
         ++today_total[p.get_state()];
+
+    #ifdef EPI_DEBUG
+    // Only the first should be different from zero
+    {
+        auto n = model->size();
+        if (today_total[0] != n)
+            throw std::runtime_error("The number of susceptible agents is not equal to the total number of agents.");
+
+        if (std::accumulate(today_total.begin(), today_total.end(), 0) != n)
+            throw std::runtime_error("The total number of agents is not equal to the sum of the number of agents in each state.");
+            
+    }
+    #endif
+
     
     transition_matrix.resize(model->nstatus * model->nstatus);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);

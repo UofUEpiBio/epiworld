@@ -24,7 +24,7 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         );
 
     model_0.seed(1231);
-    model_0.agents_smallworld(10000, 5, false, 0.01);
+    model_0.agents_smallworld(1000, 5, false, 0.01);
     model_0.verbose_off();
     model_0.run_multiple(100, 10, 1231, saver_0, true, true, 1);
 
@@ -33,7 +33,7 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         );
 
     model_1.seed(1231);
-    model_1.agents_smallworld(10000, 5, false, 0.01);
+    model_1.agents_smallworld(1000, 5, false, 0.01);
     model_1.verbose_off();
     model_1.run_multiple(100, 10, 1231, saver_1, true, true, 2);
 
@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         "reproductive.csv",
         "tool_hist.csv",
         "total_hist.csv",
-        "variant_info.csv"
+        "virus_info.csv"
     };
     for (size_t i = 0; i < 10; ++i)
     {
@@ -64,17 +64,15 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
 
             if (fn0 != fn1)
                 printf("Models ARE NOT equal in file %s %lu\n", f.c_str(), i);
-            else
-                printf("Models ARE     equal in file %s %lu\n", f.c_str(), i);
+
+            #ifdef CATCH_CONFIG_MAIN
+            REQUIRE(fn0 == fn1);
+            #endif 
         }
         
     }
 
-    model_0.print(true);
-    model_1.print(true);
 
-    // if (model_0.get_db() != model_1.get_db())
-    //     printf("Models are not equal in db\n");
 
     #ifndef CATCH_CONFIG_MAIN
     return 0;
