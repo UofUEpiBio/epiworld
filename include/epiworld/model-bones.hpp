@@ -62,8 +62,8 @@ template<typename TSeq>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
     bool total_hist = true,
-    bool variant_info = false,
-    bool variant_hist = false,
+    bool virus_info = false,
+    bool virus_hist = false,
     bool tool_info = false,
     bool tool_hist = false,
     bool transmission = false,
@@ -420,7 +420,7 @@ public:
      */
     ///@{
     void update_state();
-    void mutate_variant();
+    void mutate_virus();
     void next();
     virtual void run(
         epiworld_fast_uint ndays,
@@ -437,7 +437,7 @@ public:
         );
     ///@}
 
-    size_t get_n_variants() const;
+    size_t get_n_viruses() const;
     size_t get_n_tools() const;
     epiworld_fast_uint get_ndays() const;
     epiworld_fast_uint get_n_replicates() const;
@@ -468,8 +468,8 @@ public:
     /**
      * @brief Wrapper of `DataBase::write_data`
      * 
-     * @param fn_variant_info Filename. Information about the variant.
-     * @param fn_variant_hist Filename. History of the variant.
+     * @param fn_virus_info Filename. Information about the virus.
+     * @param fn_virus_hist Filename. History of the virus.
      * @param fn_tool_info Filename. Information about the tool.
      * @param fn_tool_hist Filename. History of the tool.
      * @param fn_total_hist   Filename. Aggregated history (state)
@@ -478,8 +478,8 @@ public:
      * @param fn_reproductive_number Filename. Case by case reproductive number
      */
     void write_data(
-        std::string fn_variant_info,
-        std::string fn_variant_hist,
+        std::string fn_virus_info,
+        std::string fn_virus_hist,
         std::string fn_tool_info,
         std::string fn_tool_hist,
         std::string fn_total_hist,

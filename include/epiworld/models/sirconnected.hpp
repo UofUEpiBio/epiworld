@@ -150,7 +150,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 return;
 
             // Drawing from the set
-            int nvariants_tmp = 0;
+            int nviruses_tmp = 0;
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
@@ -181,18 +181,18 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nvariants_tmp] =
+                        m->array_double_tmp[nviruses_tmp] =
                             (1.0 - p->get_susceptibility_reduction(v, m)) * 
                             v->get_prob_infecting(m) * 
                             (1.0 - neighbor.get_transmission_reduction(v, m)) 
                             ; 
                     
-                        m->array_virus_tmp[nvariants_tmp++] = &(*v);
+                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
                         
                     } 
 
@@ -200,11 +200,11 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             }
 
             // No virus to compute
-            if (nvariants_tmp == 0u)
+            if (nviruses_tmp == 0u)
                 return;
 
             // Running the roulette
-            int which = roulette(nvariants_tmp, m);
+            int which = roulette(nviruses_tmp, m);
 
             if (which < 0)
                 return;

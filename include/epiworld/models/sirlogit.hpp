@@ -180,7 +180,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             const double coef_exposure = _m->coefs_infect[0u];
 
             // This computes the prob of getting any neighbor variant
-            size_t nvariants_tmp = 0u;
+            size_t nviruses_tmp = 0u;
 
             double baseline = 0.0;
             for (size_t k = 0u; k < _m->coef_infect_cols.size(); ++k)
@@ -193,12 +193,12 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
                 { 
 
                     #ifdef EPI_DEBUG
-                    if (nvariants_tmp >= m->array_virus_tmp.size())
+                    if (nviruses_tmp >= m->array_virus_tmp.size())
                         throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                     #endif
                         
                     /* And it is a function of susceptibility_reduction as well */ 
-                    m->array_double_tmp[nvariants_tmp] =
+                    m->array_double_tmp[nviruses_tmp] =
                         baseline +
                         (1.0 - p->get_susceptibility_reduction(v, m)) * 
                         v->get_prob_infecting(m) * 
@@ -207,21 +207,21 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
                         ; 
 
                     // Applying the plogis function
-                    m->array_double_tmp[nvariants_tmp] = 1.0/
-                        (1.0 + std::exp(-m->array_double_tmp[nvariants_tmp]));
+                    m->array_double_tmp[nviruses_tmp] = 1.0/
+                        (1.0 + std::exp(-m->array_double_tmp[nviruses_tmp]));
                 
-                    m->array_virus_tmp[nvariants_tmp++] = &(*v);
+                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
                 }
 
             }
 
             // No virus to compute
-            if (nvariants_tmp == 0u)
+            if (nviruses_tmp == 0u)
                 return;
 
             // Running the roulette
-            int which = roulette(nvariants_tmp, m);
+            int which = roulette(nviruses_tmp, m);
 
             if (which < 0)
                 return;

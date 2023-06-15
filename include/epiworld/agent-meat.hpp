@@ -223,9 +223,9 @@ inline void Agent<TSeq>::add_virus(
 {
 
     // Checking the virus exists
-    if (virus->get_id() >= static_cast<int>(model->get_db().get_n_variants()))
+    if (virus->get_id() >= static_cast<int>(model->get_db().get_n_viruses()))
         throw std::range_error("The virus with id: " + std::to_string(virus->get_id()) + 
-            " has not been registered. There are only " + std::to_string(model->get_n_variants()) + 
+            " has not been registered. There are only " + std::to_string(model->get_n_viruses()) + 
             " included in the model.");
 
     model->actions_add(
@@ -585,7 +585,7 @@ inline size_t Agent<TSeq>::get_n_tools() const noexcept
 }
 
 template<typename TSeq>
-inline void Agent<TSeq>::mutate_variant()
+inline void Agent<TSeq>::mutate_virus()
 {
 
     for (auto & v : viruses)

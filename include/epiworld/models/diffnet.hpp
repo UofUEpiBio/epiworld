@@ -74,10 +74,10 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
         // Measuring exposure
         // If the neighbor is infected, then proceed
-        size_t nvariants = m->get_n_variants();
-        std::vector< Virus<TSeq>* > innovations(nvariants, {});
-        std::vector< bool > stored(nvariants, false);
-        std::vector< double > exposure(nvariants, 0.0);
+        size_t nviruses = m->get_n_viruses();
+        std::vector< Virus<TSeq>* > innovations(nviruses, {});
+        std::vector< bool > stored(nviruses, false);
+        std::vector< double > exposure(nviruses, 0.0);
 
         ModelDiffNet<TSeq> * diffmodel = dynamic_cast<ModelDiffNet<TSeq>*>(m);
 
@@ -115,7 +115,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
         }
 
         // Computing probability of adoption
-        for (size_t i = 0u; i < nvariants; ++i)
+        for (size_t i = 0u; i < nviruses; ++i)
         {
 
             if (diffmodel->normalize_exposure)

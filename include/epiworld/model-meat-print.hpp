@@ -86,7 +86,7 @@ inline void Model<TSeq>::print(bool lite) const
 
     printf_epiworld("Number of entities  : %i\n", static_cast<int>(entities.size()));
     printf_epiworld("Days (duration)     : %i (of %i)\n", today(), static_cast<int>(ndays));
-    printf_epiworld("Number of variants  : %i\n", static_cast<int>(db.get_n_variants()));
+    printf_epiworld("Number of viruses  : %i\n", static_cast<int>(db.get_n_viruses()));
     if (n_replicates > 0u)
     {
         std::string abbr;
@@ -146,17 +146,17 @@ inline void Model<TSeq>::print(bool lite) const
     }
 
     printf_epiworld("\nVirus(es):\n");
-    size_t n_variants_model = viruses.size();
-    for (size_t i = 0u; i < n_variants_model; ++i)
+    size_t n_viruses_model = viruses.size();
+    for (size_t i = 0u; i < n_viruses_model; ++i)
     {    
 
-        if ((n_variants_model > 10) && (i >= 10))
+        if ((n_viruses_model > 10) && (i >= 10))
         {
-            printf_epiworld(" ...and %li more variants...\n", n_variants_model - i);
+            printf_epiworld(" ...and %li more viruses...\n", n_viruses_model - i);
             break;
         }
 
-        if (i < n_variants_model)
+        if (i < n_viruses_model)
         {
 
             if (prevalence_virus_as_proportion[i])

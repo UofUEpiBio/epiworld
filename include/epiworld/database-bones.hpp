@@ -38,11 +38,11 @@ private:
     Model<TSeq> * model;
 
     // Variants information 
-    MapVec_type<int,int> variant_id; ///< The squence is the key
-    std::vector< std::string > variant_name;
-    std::vector< TSeq> variant_sequence;
-    std::vector< int > variant_origin_date;
-    std::vector< int > variant_parent_id;
+    MapVec_type<int,int> virus_id; ///< The squence is the key
+    std::vector< std::string > virus_name;
+    std::vector< TSeq> virus_sequence;
+    std::vector< int > virus_origin_date;
+    std::vector< int > virus_parent_id;
 
     MapVec_type<int,int> tool_id; ///< The squence is the key
     std::vector< std::string > tool_name;
@@ -53,7 +53,7 @@ private:
     std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    std::vector< std::vector<int> > today_variant;
+    std::vector< std::vector<int> > today_virus;
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_tool;
@@ -62,15 +62,15 @@ private:
     std::vector< int > today_total;
 
     // Totals
-    int today_total_nvariants_active = 0;
+    int today_total_nviruses_active = 0;
     
     int sampling_freq = 1;
 
     // Variants history
-    std::vector< int > hist_variant_date;
-    std::vector< int > hist_variant_id;
-    std::vector< epiworld_fast_uint > hist_variant_state;
-    std::vector< int > hist_variant_counts;
+    std::vector< int > hist_virus_date;
+    std::vector< int > hist_virus_id;
+    std::vector< epiworld_fast_uint > hist_virus_state;
+    std::vector< int > hist_virus_counts;
 
     // Tools history
     std::vector< int > hist_tool_date;
@@ -80,7 +80,7 @@ private:
 
     // Overall hist
     std::vector< int > hist_total_date;
-    std::vector< int > hist_total_nvariants_active;
+    std::vector< int > hist_total_nviruses_active;
     std::vector< epiworld_fast_uint > hist_total_state;
     std::vector< int > hist_total_counts;
     std::vector< int > hist_transition_matrix;
@@ -89,7 +89,7 @@ private:
     std::vector< int > transmission_date;                 ///< Date of the transmission event
     std::vector< int > transmission_source;               ///< Id of the source
     std::vector< int > transmission_target;               ///< Id of the target
-    std::vector< int > transmission_variant;              ///< Id of the variant
+    std::vector< int > transmission_virus;              ///< Id of the variant
     std::vector< int > transmission_source_exposure_date; ///< Date when the source acquired the variant
 
     std::vector< int > transition_matrix;
@@ -132,12 +132,12 @@ public:
     /**
      * @brief Registering a new variant
      * 
-     * @param v Pointer to the new variant.
-     * Since variants are originated in the agent, the numbers simply move around.
-     * From the parent variant to the new variant. And the total number of infected
+     * @param v Pointer to the new virus.
+     * Since viruses are originated in the agent, the numbers simply move around.
+     * From the parent virus to the new virus. And the total number of infected
      * does not change.
      */
-    void record_variant(Virus<TSeq> & v); 
+    void record_virus(Virus<TSeq> & v); 
     void record_tool(Tool<TSeq> & t); 
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void reset();
@@ -153,11 +153,11 @@ public:
      * 
      * @param what std::string, The state, e.g., 0, 1, 2, ...
      * @return In `get_today_total`, the current counts of `what`.
-     * @return In `get_today_variant`, the current counts of `what` for
-     * each variant.
+     * @return In `get_today_virus`, the current counts of `what` for
+     * each virus.
      * @return In `get_hist_total`, the time series of `what`
-     * @return In `get_hist_variant`, the time series of what for each variant.
-     * @return In `get_hist_total_date` and `get_hist_variant_date` the
+     * @return In `get_hist_virus`, the time series of what for each virus.
+     * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
      */
     ///@{
@@ -168,7 +168,7 @@ public:
         std::vector< int > * counts = nullptr
     ) const;
 
-    void get_today_variant(
+    void get_today_virus(
         std::vector< std::string > & state,
         std::vector< int > & id,
         std::vector< int > & counts
@@ -180,7 +180,7 @@ public:
         std::vector< int > * counts
     ) const;
 
-    void get_hist_variant(
+    void get_hist_virus(
         std::vector< int > & date,
         std::vector< int > & id,
         std::vector< std::string > & state,
@@ -209,7 +209,7 @@ public:
      * @param date 
      * @param source 
      * @param target 
-     * @param variant 
+     * @param virus 
      * @param source_exposure_date 
      */
     ///@{
@@ -217,7 +217,7 @@ public:
         std::vector<int> & date,
         std::vector<int> & source,
         std::vector<int> & target,
-        std::vector<int> & variant,
+        std::vector<int> & virus,
         std::vector<int> & source_exposure_date
     ) const;
 
@@ -225,14 +225,14 @@ public:
         int * date,
         int * source,
         int * target,
-        int * variant,
+        int * virus,
         int * source_exposure_date
     ) const;
     ///@}
 
     void write_data(
-        std::string fn_variant_info,
-        std::string fn_variant_hist,
+        std::string fn_virus_info,
+        std::string fn_virus_hist,
         std::string fn_tool_info,
         std::string fn_tool_hist,
         std::string fn_total_hist,
@@ -242,9 +242,9 @@ public:
         std::string fn_generation_time
         ) const;
     
-    void record_transmission(int i, int j, int variant, int i_expo_date);
+    void record_transmission(int i, int j, int virus, int i_expo_date);
 
-    size_t get_n_variants() const;
+    size_t get_n_viruses() const;
     size_t get_n_tools() const;
     
     void set_user_data(std::vector< std::string > names);

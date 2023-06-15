@@ -13,8 +13,8 @@
  * @tparam TSeq 
  * @param fmt 
  * @param total_hist 
- * @param variant_info 
- * @param variant_hist 
+ * @param virus_info 
+ * @param virus_hist 
  * @param tool_info 
  * @param tool_hist 
  * @param transmission 
@@ -25,8 +25,8 @@ template<typename TSeq = int>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt,
     bool total_hist,
-    bool variant_info,
-    bool variant_hist,
+    bool virus_info,
+    bool virus_hist,
     bool tool_info,
     bool tool_hist,
     bool transmission,
@@ -47,8 +47,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
 
     // Listting things to save
     std::vector< bool > what_to_save = {
-        variant_info,
-        variant_hist,
+        virus_info,
+        virus_hist,
         tool_info,
         tool_hist,
         total_hist,
@@ -62,8 +62,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         size_t niter, Model<TSeq> * m
     ) -> void {
 
-        std::string variant_info = "";
-        std::string variant_hist = "";
+        std::string virus_info = "";
+        std::string virus_hist = "";
         std::string tool_info = "";
         std::string tool_hist = "";
         std::string total_hist = "";
@@ -75,15 +75,15 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         char buff[128];
         if (what_to_save[0u])
         {
-            variant_info = fmt + std::string("_variant_info.csv");
-            snprintf(buff, sizeof(buff), variant_info.c_str(), niter);
-            variant_info = buff;
+            virus_info = fmt + std::string("_virus_info.csv");
+            snprintf(buff, sizeof(buff), virus_info.c_str(), niter);
+            virus_info = buff;
         } 
         if (what_to_save[1u])
         {
-            variant_hist = fmt + std::string("_variant_hist.csv");
-            snprintf(buff, sizeof(buff), variant_hist.c_str(), niter);
-            variant_hist = buff;
+            virus_hist = fmt + std::string("_virus_hist.csv");
+            snprintf(buff, sizeof(buff), virus_hist.c_str(), niter);
+            virus_hist = buff;
         } 
         if (what_to_save[2u])
         {
@@ -134,8 +134,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         
     
         m->write_data(
-            variant_info,
-            variant_hist,
+            virus_info,
+            virus_hist,
             tool_info,
             tool_hist,
             total_hist,
@@ -1121,7 +1121,7 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
             );
     
     // Recording the variant
-    db.record_variant(v);
+    db.record_virus(v);
 
     // Adding new virus
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
@@ -1149,7 +1149,7 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval)
             );
 
     // Setting the id
-    db.record_variant(v);
+    db.record_virus(v);
 
     // Adding new virus
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
@@ -1177,7 +1177,7 @@ inline void Model<TSeq>::add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fu
             );
 
     // Setting the id
-    db.record_variant(v);
+    db.record_virus(v);
     // v.set_id(viruses.size());
 
     // Adding new virus
@@ -1599,7 +1599,7 @@ inline void Model<TSeq>::run(
         this->next();
 
         // Mutation must happen at the very end of all
-        this->mutate_variant();
+        this->mutate_virus();
 
     }
 
@@ -1824,7 +1824,7 @@ inline void Model<TSeq>::update_state() {
 
 
 template<typename TSeq>
-inline void Model<TSeq>::mutate_variant() {
+inline void Model<TSeq>::mutate_virus() {
 
     if (use_queuing)
     {
@@ -1861,7 +1861,7 @@ inline void Model<TSeq>::mutate_variant() {
 }
 
 template<typename TSeq>
-inline size_t Model<TSeq>::get_n_variants() const {
+inline size_t Model<TSeq>::get_n_viruses() const {
     return db.size();
 }
 
@@ -1936,8 +1936,8 @@ inline void Model<TSeq>::rewire() {
 
 template<typename TSeq>
 inline void Model<TSeq>::write_data(
-    std::string fn_variant_info,
-    std::string fn_variant_hist,
+    std::string fn_virus_info,
+    std::string fn_virus_hist,
     std::string fn_tool_info,
     std::string fn_tool_hist,
     std::string fn_total_hist,
@@ -1949,7 +1949,7 @@ inline void Model<TSeq>::write_data(
 {
 
     db.write_data(
-        fn_variant_info, fn_variant_hist,
+        fn_virus_info, fn_virus_hist,
         fn_tool_info, fn_tool_hist,
         fn_total_hist, fn_transmission, fn_transition,
         fn_reproductive_number, fn_generation_time

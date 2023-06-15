@@ -43,7 +43,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                         );
 
                 // This computes the prob of getting any neighbor variant
-                size_t nvariants_tmp = 0u;
+                size_t nviruses_tmp = 0u;
                 for (auto & neighbor: p->get_neighbors()) 
                 {
                             
@@ -51,28 +51,28 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nvariants_tmp] =
+                        m->array_double_tmp[nviruses_tmp] =
                             (1.0 - p->get_susceptibility_reduction(v, m)) * 
                             v->get_prob_infecting(m) * 
                             (1.0 - neighbor->get_transmission_reduction(v, m)) 
                             ; 
                     
-                        m->array_virus_tmp[nvariants_tmp++] = &(*v);
+                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
                         
                     } 
                 }
 
                 // No virus to compute
-                if (nvariants_tmp == 0u)
+                if (nviruses_tmp == 0u)
                     return;
 
                 // Running the roulette
-                int which = roulette(nvariants_tmp, m);
+                int which = roulette(nviruses_tmp, m);
 
                 if (which < 0)
                     return;
@@ -127,7 +127,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                         );
 
                 // This computes the prob of getting any neighbor variant
-                size_t nvariants_tmp = 0u;
+                size_t nviruses_tmp = 0u;
                 for (auto & neighbor: p->get_neighbors()) 
                 {
 
@@ -139,29 +139,29 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                             
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nvariants_tmp] =
+                        m->array_double_tmp[nviruses_tmp] =
                             (1.0 - p->get_susceptibility_reduction(v, m)) * 
                             v->get_prob_infecting(m) * 
                             (1.0 - neighbor->get_transmission_reduction(v, m)) 
                             ; 
                     
-                        m->array_virus_tmp[nvariants_tmp++] = &(*v);
+                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
                         
                     } 
                 }
 
                 // No virus to compute
-                if (nvariants_tmp == 0u)
+                if (nviruses_tmp == 0u)
                     return;
 
                 // Running the roulette
-                int which = roulette(nvariants_tmp, m);
+                int which = roulette(nviruses_tmp, m);
 
                 if (which < 0)
                     return;
@@ -211,7 +211,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                         );
 
                 // This computes the prob of getting any neighbor variant
-                size_t nvariants_tmp = 0u;
+                size_t nviruses_tmp = 0u;
                 for (auto & neighbor: p->get_neighbors()) 
                 {
                             
@@ -219,28 +219,28 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nvariants_tmp] =
+                        m->array_double_tmp[nviruses_tmp] =
                             (1.0 - p->get_susceptibility_reduction(v, m)) * 
                             v->get_prob_infecting(m) * 
                             (1.0 - neighbor->get_transmission_reduction(v, m)) 
                             ; 
                     
-                        m->array_virus_tmp[nvariants_tmp++] = &(*v);
+                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
                         
                     } 
                 }
 
                 // No virus to compute
-                if (nvariants_tmp == 0u)
+                if (nviruses_tmp == 0u)
                     return nullptr;
 
                 // Running the roulette
-                int which = roulette(nvariants_tmp, m);
+                int which = roulette(nviruses_tmp, m);
 
                 if (which < 0)
                     return nullptr;
@@ -295,7 +295,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                         );
 
                 // This computes the prob of getting any neighbor variant
-                size_t nvariants_tmp = 0u;
+                size_t nviruses_tmp = 0u;
                 for (auto & neighbor: p->get_neighbors()) 
                 {
 
@@ -307,28 +307,28 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                     { 
 
                         #ifdef EPI_DEBUG
-                        if (nvariants_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
                             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
                         #endif
                             
                         /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nvariants_tmp] =
+                        m->array_double_tmp[nviruses_tmp] =
                             (1.0 - p->get_susceptibility_reduction(v, m)) * 
                             v->get_prob_infecting(m) * 
                             (1.0 - neighbor->get_transmission_reduction(v, m)) 
                             ; 
                     
-                        m->array_virus_tmp[nvariants_tmp++] = &(*v);
+                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
                         
                     } 
                 }
 
                 // No virus to compute
-                if (nvariants_tmp == 0u)
+                if (nviruses_tmp == 0u)
                     return nullptr;
 
                 // Running the roulette
-                int which = roulette(nvariants_tmp, m);
+                int which = roulette(nviruses_tmp, m);
 
                 if (which < 0)
                     return nullptr;
@@ -372,7 +372,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
             );
 
     // This computes the prob of getting any neighbor variant
-    size_t nvariants_tmp = 0u;
+    size_t nviruses_tmp = 0u;
     for (auto & neighbor: p->get_neighbors()) 
     {   
         #ifdef EPI_DEBUG
@@ -382,30 +382,30 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
         { 
 
             #ifdef EPI_DEBUG
-            if (nvariants_tmp >= m->array_virus_tmp.size())
+            if (nviruses_tmp >= m->array_virus_tmp.size())
                 throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
             #endif
                 
             /* And it is a function of susceptibility_reduction as well */ 
-            m->array_double_tmp[nvariants_tmp] =
+            m->array_double_tmp[nviruses_tmp] =
                 (1.0 - p->get_susceptibility_reduction(v, m)) * 
                 v->get_prob_infecting(m) * 
                 (1.0 - neighbor->get_transmission_reduction(v, m)) 
                 ; 
         
-            m->array_virus_tmp[nvariants_tmp++] = &(*v);
+            m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
             #ifdef EPI_DEBUG
             if (
-                (m->array_double_tmp[nvariants_tmp - 1] < 0.0) |
-                (m->array_double_tmp[nvariants_tmp - 1] > 1.0)
+                (m->array_double_tmp[nviruses_tmp - 1] < 0.0) |
+                (m->array_double_tmp[nviruses_tmp - 1] > 1.0)
                 )
             {
                 printf_epiworld(
                     "[epi-debug] Agent %i's virus %i has transmission prob outside of [0, 1]: %.4f!\n",
                     static_cast<int>(neighbor->get_id()),
                     static_cast<int>(_vcount_neigh++),
-                    m->array_double_tmp[nvariants_tmp - 1]
+                    m->array_double_tmp[nviruses_tmp - 1]
                     );
             }
             #endif
@@ -415,7 +415,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 
 
     // No virus to compute
-    if (nvariants_tmp == 0u)
+    if (nviruses_tmp == 0u)
         return nullptr;
 
     #ifdef EPI_DEBUG
@@ -423,7 +423,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
     #endif
 
     // Running the roulette
-    int which = roulette(nvariants_tmp, m);
+    int which = roulette(nviruses_tmp, m);
 
     if (which < 0)
         return nullptr;

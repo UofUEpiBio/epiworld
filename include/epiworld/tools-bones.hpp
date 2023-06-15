@@ -96,9 +96,12 @@ inline void Tools<TSeq>::print() const noexcept
     for (size_t i = 0u; i < *n_tools; ++i)
     {
         if (i == *n_tools - 1u)
+        {
             printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
-        else
+        } else
+        {
             printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
+        }
     }
     
     printf_epiworld("\n");
@@ -190,9 +193,12 @@ inline void Tools_const<TSeq>::print() const noexcept
     for (size_t i = 0u; i < *n_tools; ++i)
     {
         if (i == *n_tools - 1u)
+        {
             printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
-        else
+        } else
+        {
             printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
+        }
     }
     
     printf_epiworld("\n");

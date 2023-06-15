@@ -100,9 +100,12 @@ inline void Viruses<TSeq>::print() const noexcept
     for (size_t i = 0u; i < *n_viruses; ++i)
     {
         if (i == *n_viruses - 1u)
+        {
             printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
-        else
+        } else 
+        {
             printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
+        }
     }
     
     printf_epiworld("\n");
@@ -199,9 +202,12 @@ inline void Viruses_const<TSeq>::print() const noexcept
     for (size_t i = 0u; i < *n_viruses; ++i)
     {
         if (i == *n_viruses - 1u)
+        {
             printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
-        else
+        } else
+        {
             printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
+        }
     }
     
     printf_epiworld("\n");
