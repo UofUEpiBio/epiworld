@@ -1,9 +1,9 @@
 all: main.o
 
-main.o: main.cpp
+main.o: main.cpp clean
 	g++ -std=c++14 -Wall -Wextra -Wnull-dereference -fdelete-null-pointer-checks -O2 -fopenmp -g -pedantic main.cpp -o main.o
 
-main.a: main.cpp
+main.a: main.cpp clean
 	clang++ -std=c++14 -Wall -Wextra -fopenmp -Wpedantic -O2 main.cpp -o main.a
 
 # Compile 02-reproducible-sirconn.cpp
@@ -24,9 +24,20 @@ coverage: main.o
 		mv *.hpp.gcov gcov-files/ && $(MAKE) clean
 
 
+# Create folders named after the *.cpp files in the current directory
+# and append "-saves" to the folder name
+# e.g. 01-sir.cpp -> 01-sir-saves
+clean:
+	rm -fr *-saves/
+	for file in *.cpp; do \
+		mkdir -p "$${file%.cpp}-saves"; \
+	done
+
+
+
 # What's the -ftest-coverage flag?
 # https://stackoverflow.com/questions/9842759/what-is-ftest-coverage-option-in-gcov
 
 
 
-.PHONY: all
+.PHONY: all clean coverage

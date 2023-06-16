@@ -17,6 +17,12 @@ std::string file_reader(std::string fname)
     // Read from the text file
     std::ifstream MyReadFile(fname);
 
+    // Check if fname exists and is readable. If not, throw an exception
+    if (!MyReadFile.good())
+    {
+        throw std::runtime_error("File " + fname + " does not exist or is not readable");
+    }
+
     // Use a while loop together with the getline() function to read the file line by line
     while (getline (MyReadFile, myText)) {
         // Output the text from the file

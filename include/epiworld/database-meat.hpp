@@ -14,7 +14,7 @@ inline void DataBase<TSeq>::reset()
     #ifdef EPI_DEBUG
     // Only the first should be different from zero
     {
-        auto n = model->size();
+        int n = static_cast<int>(model->size());
         if (today_total[0] != n)
             throw std::runtime_error("The number of susceptible agents is not equal to the total number of agents.");
 

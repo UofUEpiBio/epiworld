@@ -2970,7 +2970,7 @@ inline void DataBase<TSeq>::reset()
     #ifdef EPI_DEBUG
     // Only the first should be different from zero
     {
-        auto n = model->size();
+        int n = static_cast<int>(model->size());
         if (today_total[0] != n)
             throw std::runtime_error("The number of susceptible agents is not equal to the total number of agents.");
 
@@ -7151,14 +7151,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     agents_data = model.agents_data;
     agents_data_ncols = model.agents_data_ncols;
 
-    // Finally, seeds are resetted automatically based on the original
-    // engine
-    seed(
-        static_cast<size_t>(
-                std::floor(runif() * std::numeric_limits<size_t>::max())
-            )
-    );
-
 }
 
 template<typename TSeq>
@@ -7294,14 +7286,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     // Figure out the queuing
     if (use_queuing)
         queue.model = this;
-
-    // Finally, seeds are resetted automatically based on the original
-    // engine
-    seed(
-        static_cast<size_t>(
-                std::floor(runif() * std::numeric_limits<size_t>::max())
-            )
-    );
 
     array_double_tmp.resize(std::max(
         size(),
@@ -8208,6 +8192,7 @@ inline void Model<TSeq>::run(
         static_cast<size_t>(1024 * 1024)
     ));
 
+
     array_virus_tmp.resize(1024);
 
     // Checking whether the proposed state in/out/removed
@@ -8306,15 +8291,15 @@ inline void Model<TSeq>::run_multiple(
 
     // Seeds will be reproducible by default
     std::vector< int > seeds_n(nexperiments);
-    #ifdef EPI_DEBUG
-    std::fill(
-        seeds_n.begin(),
-        seeds_n.end(),
-        std::floor(
-            runif() * static_cast<double>(std::numeric_limits<int>::max())
-        )
-        );
-    #else
+    // #ifdef EPI_DEBUG
+    // std::fill(
+    //     seeds_n.begin(),
+    //     seeds_n.end(),
+    //     std::floor(
+    //         runif() * static_cast<double>(std::numeric_limits<int>::max())
+    //     )
+    //     );
+    // #else
     for (auto & s : seeds_n)
     {
         s = static_cast<int>(
@@ -8323,7 +8308,7 @@ inline void Model<TSeq>::run_multiple(
                 )
         );
     }
-    #endif
+    // #endif
 
     EPI_DEBUG_NOTIFY_ACTIVE()
 
@@ -8405,12 +8390,12 @@ inline void Model<TSeq>::run_multiple(
 
         for (size_t n = 0u; n < nreplicates[iam]; ++n)
         {
-            
+            size_t sim_id = nreplicates_csum[iam] + n;
             if (iam == 0)
             {
 
                 // Initializing the seed
-                run(ndays, seeds_n[n]);
+                run(ndays, seeds_n[sim_id]);
 
                 if (fun)
                     fun(n, this);
@@ -8422,13 +8407,10 @@ inline void Model<TSeq>::run_multiple(
             } else {
 
                 // Initializing the seed
-                these[iam - 1]->run(ndays, seeds_n[nreplicates_csum[iam] + n]);
+                these[iam - 1]->run(ndays, seeds_n[sim_id]);
 
                 if (fun)
-                    fun(
-                        n + nreplicates_csum[iam],
-                        these[iam - 1]
-                        );
+                    fun(sim_id, these[iam - 1]);
 
             }
 
@@ -8443,8 +8425,8 @@ inline void Model<TSeq>::run_multiple(
         delete ptr;
 
     #else
-    if (reset)
-        set_backup();
+    // if (reset)
+    //     set_backup();
 
     Progress pb_multiple(
         nexperiments,
@@ -8767,8 +8749,6 @@ inline void Model<TSeq>::reset() {
         }
         #endif
     }
-
-
         
     if (entities_backup.size() != 0)
     {
@@ -9681,6 +9661,11 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     
     if ((population_backup.size() != 0) & (other.population_backup.size() != 0))
     {
+
+        // False is population_backup.size() != other.population_backup.size()
+        if (population_backup.size() != other.population_backup.size())
+            return false;
+
         for (size_t i = 0u; i < population_backup.size(); ++i)
         {
             if (population_backup[i] != other.population_backup[i])
