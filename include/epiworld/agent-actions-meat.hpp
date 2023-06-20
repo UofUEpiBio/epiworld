@@ -8,7 +8,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     Agent<TSeq> *  p = a.agent;
     VirusPtr<TSeq> v = a.virus;
 
-    CHECK_COALESCE_(a.new_state, v->status_init, p->get_state())
+    CHECK_COALESCE_(a.new_state, v->state_init, p->get_state())
     CHECK_COALESCE_(a.queue, v->queue_init, 1)
 
     // Has a agent? If so, we need to register the transmission
@@ -65,7 +65,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
     Agent<TSeq> * p = a.agent;
     ToolPtr<TSeq> t = a.tool;
 
-    CHECK_COALESCE_(a.new_state, t->status_init, p->get_state())
+    CHECK_COALESCE_(a.new_state, t->state_init, p->get_state())
     CHECK_COALESCE_(a.queue, t->queue_init, Queue<TSeq>::NoOne)
     
     // Update tool accounting
@@ -93,7 +93,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
     Agent<TSeq> * p    = a.agent;    
     VirusPtr<TSeq> & v = a.agent->viruses[a.virus->pos_in_agent];
     
-    CHECK_COALESCE_(a.new_state, v->status_post, p->get_state())
+    CHECK_COALESCE_(a.new_state, v->state_post, p->get_state())
     CHECK_COALESCE_(a.queue, v->queue_post, -Queue<TSeq>::Everyone)
 
     if (--p->n_viruses > 0)
@@ -120,7 +120,7 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
     Agent<TSeq> * p   = a.agent;    
     ToolPtr<TSeq> & t = a.agent->tools[a.tool->pos_in_agent];
 
-    CHECK_COALESCE_(a.new_state, t->status_post, p->get_state())
+    CHECK_COALESCE_(a.new_state, t->state_post, p->get_state())
     CHECK_COALESCE_(a.queue, t->queue_post, Queue<TSeq>::NoOne)
 
     if (--p->n_tools > 0)
@@ -143,7 +143,7 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
     Agent<TSeq> *  p = a.agent;
     Entity<TSeq> * e = a.entity;
 
-    CHECK_COALESCE_(a.new_state, e->status_post, p->get_state())
+    CHECK_COALESCE_(a.new_state, e->state_post, p->get_state())
     CHECK_COALESCE_(a.queue, e->queue_post, Queue<TSeq>::NoOne)
 
     // Checking the agent and the entity are not linked
@@ -208,7 +208,7 @@ inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
     size_t idx_agent_in_entity = a.idx_agent;
     size_t idx_entity_in_agent = a.idx_object;
 
-    CHECK_COALESCE_(a.new_state, e->status_post, p->get_state())
+    CHECK_COALESCE_(a.new_state, e->state_post, p->get_state())
     CHECK_COALESCE_(a.queue, e->queue_post, Queue<TSeq>::NoOne)
 
     if (--p->n_entities > 0)

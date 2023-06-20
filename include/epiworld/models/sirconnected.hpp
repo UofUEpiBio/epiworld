@@ -220,9 +220,9 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void {
 
-            auto status = p->get_state();
+            auto state = p->get_state();
 
-            if (status == ModelSIRCONN<TSeq>::INFECTED)
+            if (state == ModelSIRCONN<TSeq>::INFECTED)
             {
 
 
@@ -271,7 +271,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
         };
 
-    // Status
+    // state
     model.add_state("Susceptible", update_susceptible);
     model.add_state("Infected", update_infected);
     model.add_state("Recovered");

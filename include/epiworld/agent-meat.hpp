@@ -26,8 +26,8 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     entities_locations(std::move(p.entities_locations)),
     n_entities(p.n_entities),
     state(p.state),
-    status_prev(p.status_prev), 
-    status_last_changed(p.status_last_changed),
+    state_prev(p.state_prev), 
+    state_last_changed(p.state_last_changed),
     id(p.id),
     viruses(std::move(p.viruses)),  /// Needs to be adjusted
     n_viruses(p.n_viruses),
@@ -147,8 +147,8 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     // entities_locations  = other_agent.entities_locations;
     // n_entities          = other_agent.n_entities;
     state              = other_agent.state;
-    status_prev         = other_agent.status_prev;
-    status_last_changed = other_agent.status_last_changed;
+    state_prev         = other_agent.state_prev;
+    state_last_changed = other_agent.state_last_changed;
     id                  = other_agent.id;
     
     // viruses             = other_agent.viruses;
@@ -184,7 +184,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
     ToolPtr<TSeq> tool,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 ) {
 
@@ -196,7 +196,7 @@ inline void Agent<TSeq>::add_tool(
     
 
     model->actions_add(
-        this, nullptr, tool, nullptr, status_new, queue, add_tool_, -1, -1
+        this, nullptr, tool, nullptr, state_new, queue, add_tool_, -1, -1
         );
 
 }
@@ -205,19 +205,19 @@ template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
     Tool<TSeq> tool,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
     ToolPtr<TSeq> tool_ptr = std::make_shared< Tool<TSeq> >(tool);
-    add_tool(tool_ptr, model, status_new, queue);
+    add_tool(tool_ptr, model, state_new, queue);
 }
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_virus(
     VirusPtr<TSeq> virus,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -229,7 +229,7 @@ inline void Agent<TSeq>::add_virus(
             " included in the model.");
 
     model->actions_add(
-        this, virus, nullptr, nullptr, status_new, queue, add_virus_, -1, -1
+        this, virus, nullptr, nullptr, state_new, queue, add_virus_, -1, -1
         );
 
 }
@@ -238,19 +238,19 @@ template<typename TSeq>
 inline void Agent<TSeq>::add_virus(
     Virus<TSeq> virus,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
     VirusPtr<TSeq> virus_ptr = std::make_shared< Virus<TSeq> >(virus);
-    add_virus(virus_ptr, model, status_new, queue);
+    add_virus(virus_ptr, model, state_new, queue);
 }
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_entity(
     Entity<TSeq> & entity,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -259,7 +259,7 @@ inline void Agent<TSeq>::add_entity(
     {
 
         model->actions_add(
-            this, nullptr, nullptr, &entity, status_new, queue, add_entity_, -1, -1
+            this, nullptr, nullptr, &entity, state_new, queue, add_entity_, -1, -1
         );
 
     }
@@ -268,7 +268,7 @@ inline void Agent<TSeq>::add_entity(
     {
 
         Action<TSeq> a(
-                this, nullptr, nullptr, &entity, status_new, queue, add_entity_,
+                this, nullptr, nullptr, &entity, state_new, queue, add_entity_,
                 -1, -1
             );
 
@@ -282,7 +282,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::rm_tool(
     epiworld_fast_uint tool_idx,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -294,7 +294,7 @@ inline void Agent<TSeq>::rm_tool(
         );
 
     model->actions_add(
-        this, nullptr, tools[tool_idx], nullptr, status_new, queue, rm_tool_, -1, -1
+        this, nullptr, tools[tool_idx], nullptr, state_new, queue, rm_tool_, -1, -1
         );
 
 }
@@ -303,7 +303,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::rm_tool(
     ToolPtr<TSeq> & tool,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -312,7 +312,7 @@ inline void Agent<TSeq>::rm_tool(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, nullptr, tool, nullptr, status_new, queue, rm_tool_, -1, -1
+        this, nullptr, tool, nullptr, state_new, queue, rm_tool_, -1, -1
         );
 
 }
@@ -321,7 +321,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::rm_virus(
     epiworld_fast_uint virus_idx,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -345,7 +345,7 @@ inline void Agent<TSeq>::rm_virus(
     #endif
 
     model->actions_add(
-        this, viruses[virus_idx], nullptr, nullptr, status_new, queue,
+        this, viruses[virus_idx], nullptr, nullptr, state_new, queue,
         default_rm_virus<TSeq>, -1, -1
         );
     
@@ -355,7 +355,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::rm_virus(
     VirusPtr<TSeq> & virus,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -364,7 +364,7 @@ inline void Agent<TSeq>::rm_virus(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, virus, nullptr, nullptr, status_new, queue,
+        this, virus, nullptr, nullptr, state_new, queue,
         default_rm_virus<TSeq>, -1, -1
         );
 
@@ -375,7 +375,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::rm_entity(
     epiworld_fast_uint entity_idx,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -391,7 +391,7 @@ inline void Agent<TSeq>::rm_entity(
         );
 
     model->actions_add(
-        this, nullptr, nullptr, model->entities[entity_idx], status_new, queue, 
+        this, nullptr, nullptr, model->entities[entity_idx], state_new, queue, 
         default_rm_entity, entities_locations[entity_idx], entity_idx
     );
 }
@@ -400,7 +400,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::rm_entity(
     Entity<TSeq> & entity,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -421,7 +421,7 @@ inline void Agent<TSeq>::rm_entity(
 
 
     model->actions_add(
-        this, nullptr, nullptr, entities[entity_idx], status_new, queue, 
+        this, nullptr, nullptr, entities[entity_idx], state_new, queue, 
         default_rm_entity, entities_locations[entity_idx], entity_idx
     );
 }
@@ -430,13 +430,13 @@ template<typename TSeq>
 inline void Agent<TSeq>::rm_agent_by_virus(
     epiworld_fast_uint virus_idx,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
 
-    if (status_new == -99)
-        status_new = state;
+    if (state_new == -99)
+        state_new = state;
 
     if (virus_idx >= n_viruses)
         throw std::range_error(
@@ -478,7 +478,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::rm_agent_by_virus(
     VirusPtr<TSeq> & virus,
     Model<TSeq> * model,
-    epiworld_fast_int status_new,
+    epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
@@ -492,7 +492,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
     rm_agent_by_virus(
         virus->pos_in_agent,
         model,
-        status_new,
+        state_new,
         queue
     );
 
@@ -738,9 +738,9 @@ inline void Agent<TSeq>::reset()
     n_tools = 0u;
 
     this->state = 0u;
-    this->status_prev = 0u;
+    this->state_prev = 0u;
 
-    this->status_last_changed = -1;
+    this->state_last_changed = -1;
     
 }
 
@@ -966,14 +966,14 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
         
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        status_prev != other.status_prev,
-        "Agent:: status_prev don't match"
+        state_prev != other.state_prev,
+        "Agent:: state_prev don't match"
         )
         
 
     // EPI_DEBUG_FAIL_AT_TRUE(
-    //     status_last_changed != other.status_last_changed,
-    //     "Agent:: status_last_changed don't match"
+    //     state_last_changed != other.state_last_changed,
+    //     "Agent:: state_last_changed don't match"
     //     ) ///< Last time the agent was updated.
         
     

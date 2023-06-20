@@ -6,7 +6,7 @@ inline void DataBase<TSeq>::reset()
 {
 
     // Initializing the counts
-    today_total.resize(model->nstatus);
+    today_total.resize(model->nstates);
     std::fill(today_total.begin(), today_total.end(), 0);
     for (auto & p : model->get_agents())
         ++today_total[p.get_state()];
@@ -25,10 +25,10 @@ inline void DataBase<TSeq>::reset()
     #endif
 
     
-    transition_matrix.resize(model->nstatus * model->nstatus);
+    transition_matrix.resize(model->nstates * model->nstates);
     std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
-    for (size_t s = 0u; s < model->nstatus; ++s)
-        transition_matrix[s + s * model->nstatus] = today_total[s];
+    for (size_t s = 0u; s < model->nstates; ++s)
+        transition_matrix[s + s * model->nstates] = today_total[s];
 
     hist_virus_date.clear();
     hist_virus_id.clear();
@@ -41,10 +41,10 @@ inline void DataBase<TSeq>::reset()
     hist_tool_counts.clear();    
 
     today_virus.resize(get_n_viruses());
-    std::fill(today_virus.begin(), today_virus.begin(), std::vector<int>(model->nstatus, 0));
+    std::fill(today_virus.begin(), today_virus.begin(), std::vector<int>(model->nstates, 0));
 
     today_tool.resize(get_n_tools());
-    std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(model->nstatus, 0));
+    std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(model->nstates, 0));
 
     hist_total_date.clear();
     hist_total_state.clear();
@@ -184,7 +184,7 @@ inline void DataBase<TSeq>::record()
         for (auto & p : virus_id)
         {
 
-            for (epiworld_fast_uint s = 0u; s < model->nstatus; ++s)
+            for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
             {
 
                 hist_virus_date.push_back(model->today());
@@ -200,7 +200,7 @@ inline void DataBase<TSeq>::record()
         for (auto & p : tool_id)
         {
 
-            for (epiworld_fast_uint s = 0u; s < model->nstatus; ++s)
+            for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
             {
 
                 hist_tool_date.push_back(model->today());
@@ -213,7 +213,7 @@ inline void DataBase<TSeq>::record()
         }
 
         // Recording the overall history
-        for (epiworld_fast_uint s = 0u; s < model->nstatus; ++s)
+        for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
         {
             hist_total_date.push_back(model->today());
             hist_total_nviruses_active.push_back(today_total_nviruses_active);
@@ -225,22 +225,22 @@ inline void DataBase<TSeq>::record()
             hist_transition_matrix.push_back(cell);
 
         // Now the diagonal must reflect the state
-        for (size_t s_i = 0u; s_i < model->nstatus; ++s_i)
+        for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
         {
-            for (size_t s_j = 0u; s_j < model->nstatus; ++s_j)
+            for (size_t s_j = 0u; s_j < model->nstates; ++s_j)
             {
-                if ((s_i != s_j) && (transition_matrix[s_i + s_j * model->nstatus] > 0))
+                if ((s_i != s_j) && (transition_matrix[s_i + s_j * model->nstates] > 0))
                 {
-                    transition_matrix[s_j + s_j * model->nstatus] +=
-                        transition_matrix[s_i + s_j * model->nstatus];
+                    transition_matrix[s_j + s_j * model->nstates] +=
+                        transition_matrix[s_i + s_j * model->nstates];
 
-                    transition_matrix[s_i + s_j * model->nstatus] = 0;
+                    transition_matrix[s_i + s_j * model->nstates] = 0;
                 }
          
             }
 
             #ifdef EPI_DEBUG
-            if (transition_matrix[s_i + s_i * model->nstatus] != 
+            if (transition_matrix[s_i + s_i * model->nstates] != 
                 today_total[s_i])
                 throw std::logic_error(
                     "The diagonal of the updated transition Matrix should match the daily totals"
@@ -280,7 +280,7 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
         virus_parent_id.push_back(v.get_id()); // Must be -99
         
         today_virus.push_back({});
-        today_virus[new_id].resize(model->nstatus, 0);
+        today_virus[new_id].resize(model->nstates, 0);
        
         // Updating the variant
         v.set_id(new_id);
@@ -309,7 +309,7 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
             virus_parent_id.push_back(old_id);
             
             today_virus.push_back({});
-            today_virus[new_id].resize(model->nstatus, 0);
+            today_virus[new_id].resize(model->nstates, 0);
         
             // Updating the variant
             v.set_id(new_id);
@@ -364,7 +364,7 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
         tool_origin_date.push_back(model->today());
                 
         today_tool.push_back({});
-        today_tool[new_id].resize(model->nstatus, 0);
+        today_tool[new_id].resize(model->nstates, 0);
 
         // Updating the tool
         t.set_id(new_id);
@@ -387,7 +387,7 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
             tool_origin_date.push_back(model->today());
                     
             today_tool.push_back({});
-            today_tool[new_id].resize(model->nstatus, 0);
+            today_tool[new_id].resize(model->nstates, 0);
 
             // Updating the tool
             t.set_id(new_id);
@@ -491,18 +491,18 @@ inline void DataBase<TSeq>::record_transition(
     if (undo)
     {   
 
-        transition_matrix[to * model->nstatus + from]--;
-        transition_matrix[from * model->nstatus + from]++;
+        transition_matrix[to * model->nstates + from]--;
+        transition_matrix[from * model->nstates + from]++;
 
     } else {
 
-        transition_matrix[to * model->nstatus + from]++;
-        transition_matrix[from * model->nstatus + from]--;
+        transition_matrix[to * model->nstates + from]++;
+        transition_matrix[from * model->nstates + from]--;
 
     }
 
     #ifdef EPI_DEBUG
-    if (transition_matrix[from * model->nstatus + from] < 0)
+    if (transition_matrix[from * model->nstates + from] < 0)
         throw std::logic_error("An entry in transition matrix is negative.");
     #endif
 
@@ -658,7 +658,7 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
     date.reserve(n);
     counts.reserve(n);
 
-    size_t n_status = model->nstatus;
+    size_t n_states = model->nstates;
     size_t n_steps  = model->get_ndays();
 
     // If n is zero, then we are done
@@ -667,14 +667,14 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
     for (size_t step = 0u; step <= n_steps; ++step) // The final step counts
     {
-        for (size_t j = 0u; j < n_status; ++j) // Column major storage
+        for (size_t j = 0u; j < n_states; ++j) // Column major storage
         {
-            for (size_t i = 0u; i < n_status; ++i)
+            for (size_t i = 0u; i < n_states; ++i)
             {
                 // Retrieving the value of the day
                 int v = hist_transition_matrix[
-                    step * n_status * n_status + // Day of the data
-                    j * n_status +               // Column (to)
+                    step * n_states * n_states + // Day of the data
+                    j * n_states +               // Column (to)
                     i                            // Row (from)
                     ];
 
@@ -684,7 +684,7 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
                                 
                 state_from.push_back(model->states_labels[i]);
                 state_to.push_back(model->states_labels[j]);
-                date.push_back(hist_total_date[step * n_status]);
+                date.push_back(hist_total_date[step * n_states]);
                 counts.push_back(v);
 
             }
@@ -979,7 +979,7 @@ inline void DataBase<TSeq>::write_data(
             #endif
             "date " << "from " << "to " << "counts\n";
 
-        int ns = model->nstatus;
+        int ns = model->nstates;
 
         for (int i = 0; i <= model->today(); ++i)
         {

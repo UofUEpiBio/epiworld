@@ -256,7 +256,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
         };
 
-    // Status
+    // state
     model.add_state("Susceptible", update_susceptible);
     model.add_state("Infected", update_infected);
     model.add_state("Recovered");

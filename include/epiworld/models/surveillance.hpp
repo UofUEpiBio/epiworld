@@ -5,7 +5,7 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSURV : public epiworld::Model<TSeq> {
 
 private:
-    // Status
+    // state
     static const int SUSCEPTIBLE           = 0;
     static const int LATENT                = 1;
     static const int SYMPTOMATIC           = 2;
@@ -164,7 +164,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
         
         epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
-        epiworld_fast_uint status = p->get_state();
+        epiworld_fast_uint state = p->get_state();
 
         // Figuring out latent period
         if (v->get_data().size() == 0u)
@@ -189,7 +189,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         }
 
         // If it is infected, then it can be asymptomatic or symptomatic
-        if (status == ModelSURV<TSeq>::LATENT)
+        if (state == ModelSURV<TSeq>::LATENT)
         {
 
             // Will be symptomatic?

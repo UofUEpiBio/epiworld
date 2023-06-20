@@ -162,7 +162,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
 
                     throw std::logic_error(
                         "[epi-debug] The agent " + std::to_string(which) + " has no "+
-                        "virus to share. The agent's status is: " +
+                        "virus to share. The agent's state is: " +
                         std::to_string(_tracked_agents_infected->operator[](which)->get_state())
                     );
                 }
@@ -190,9 +190,9 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
         {
 
             tracked_agents_check_init(m);
-            auto status = p->get_state();
+            auto state = p->get_state();
 
-            if (status == ModelSEIRCONNLogit<TSeq>::EXPOSED)
+            if (state == ModelSEIRCONNLogit<TSeq>::EXPOSED)
             {
 
                 // Does the agent become infected?
@@ -209,7 +209,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
                 }
 
 
-            } else if (status == ModelSEIRCONNLogit<TSeq>::INFECTED)
+            } else if (state == ModelSEIRCONNLogit<TSeq>::INFECTED)
             {
 
                 if (m->runif() < (m->par("Recovery rate")))
@@ -267,7 +267,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
     model.add_param(recovery_rate, "Recovery rate");
     model.add_param(avg_incubation_days, "Avg. Incubation days");
     
-    // Status
+    // state
     model.add_state("Susceptible", update_susceptible);
     model.add_state("Exposed", update_infected);
     model.add_state("Infected", update_infected);

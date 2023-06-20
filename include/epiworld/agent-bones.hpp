@@ -90,9 +90,9 @@ private:
     size_t n_entities = 0u;
 
     epiworld_fast_uint state = 0u;
-    epiworld_fast_uint status_prev = 0u; ///< For accounting, if need to undo a change.
+    epiworld_fast_uint state_prev = 0u; ///< For accounting, if need to undo a change.
     
-    int status_last_changed = -1; ///< Last time the agent was updated.
+    int state_last_changed = -1; ///< Last time the agent was updated.
     int id = -1;
     
     std::vector< VirusPtr<TSeq> > viruses;
@@ -131,98 +131,98 @@ public:
      * 
      * @param tool Tool to add
      * @param virus Virus to add
-     * @param status_new state after the change
+     * @param state_new state after the change
      * @param queue 
      */
     ///@{
     void add_tool(
         ToolPtr<TSeq> tool,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
         Tool<TSeq> tool,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_virus(
         VirusPtr<TSeq> virus,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_virus(
         Virus<TSeq> virus,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_entity(
         Entity<TSeq> & entity,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void rm_tool(
         epiworld_fast_uint tool_idx,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_tool(
         ToolPtr<TSeq> & tool,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_virus(
         epiworld_fast_uint virus_idx,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_virus(
         VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         epiworld_fast_uint entity_idx,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         Entity<TSeq> & entity,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_agent_by_virus(
         epiworld_fast_uint virus_idx,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     ); ///< Agent removed by virus
 
     void rm_agent_by_virus(
         VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
-        epiworld_fast_int status_new = -99,
+        epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     ); ///< Agent removed by virus
     ///@}

@@ -30,7 +30,7 @@ inline void Model<TSeq>::print(bool lite) const
 
         printf_epiworld(
             "The model has %i states.",
-            static_cast<int>(nstatus)
+            static_cast<int>(nstates)
             );
 
         if (today() != 0)
@@ -39,18 +39,18 @@ inline void Model<TSeq>::print(bool lite) const
                 "\nThe final distribution is: "
             );
 
-            int nstatus_int = static_cast<int>(nstatus);
+            int nstate_int = static_cast<int>(nstates);
 
-            for (int i = 0u; i < nstatus_int; ++i)
+            for (int i = 0u; i < nstate_int; ++i)
             {
                 printf_epiworld(
                     "%i %s%s",
                     static_cast<int>(db.today_total[ i ]),
                     states_labels[i].c_str(),
                     (
-                        i == (nstatus_int - 2)
+                        i == (nstate_int - 2)
                         ) ? ", and " : (
-                            (i == (nstatus_int - 1)) ? ".\n" : ", "
+                            (i == (nstate_int - 1)) ? ".\n" : ", "
                             )
                 );
             }
@@ -280,7 +280,7 @@ inline void Model<TSeq>::print(bool lite) const
     {
         fmt =
             std::string("  - (%") +
-                std::to_string(std::to_string(nstatus).length()) +
+                std::to_string(std::to_string(nstates).length()) +
             std::string("d) %-") + std::to_string(nchar) +
             std::string("s : %") +
             std::to_string(std::to_string(size()).length()) +
@@ -288,7 +288,7 @@ inline void Model<TSeq>::print(bool lite) const
     } else {
         fmt =
             std::string("  - (%") +
-                std::to_string(std::to_string(nstatus).length()) +
+                std::to_string(std::to_string(nstates).length()) +
             std::string("d) %-") + std::to_string(nchar) +
             std::string("s : %i\n");
     }
@@ -296,7 +296,7 @@ inline void Model<TSeq>::print(bool lite) const
     if (today() != 0)
     {
         printf_epiworld("\nDistribution of the population at time %i:\n", today());
-        for (size_t s = 0u; s < nstatus; ++s)
+        for (size_t s = 0u; s < nstates; ++s)
         {
 
                 printf_epiworld(

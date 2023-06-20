@@ -170,9 +170,9 @@ protected:
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
-    std::vector< UpdateFun<TSeq> >    status_fun = {};
+    std::vector< UpdateFun<TSeq> >    state_fun = {};
     std::vector< std::string >        states_labels = {};
-    epiworld_fast_uint nstatus = 0u;
+    epiworld_fast_uint nstates = 0u;
     
     bool verbose     = true;
     int current_date = 0;

@@ -53,8 +53,8 @@ private:
 
     std::vector< epiworld_double > location = {0.0}; ///< An arbitrary vector for location
 
-    epiworld_fast_int status_init = -99;
-    epiworld_fast_int status_post = -99;
+    epiworld_fast_int state_init = -99;
+    epiworld_fast_int state_post = -99;
 
     epiworld_fast_int queue_init = 0; ///< Change of state when added to agent.
     epiworld_fast_int queue_post = 0; ///< Change of state when removed from agent.

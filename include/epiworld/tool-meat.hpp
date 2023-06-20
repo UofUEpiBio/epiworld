@@ -379,8 +379,8 @@ inline void Tool<TSeq>::set_state(
     epiworld_fast_int end
 )
 {
-    status_init = init;
-    status_post = end;
+    state_init = init;
+    state_post = end;
 }
 
 template<typename TSeq>
@@ -400,10 +400,10 @@ inline void Tool<TSeq>::get_state(
 )
 {
     if (init != nullptr)
-        *init = status_init;
+        *init = state_init;
 
     if (post != nullptr)
-        *post = status_post;
+        *post = state_post;
 
 }
 
@@ -439,10 +439,10 @@ inline bool Tool<std::vector<int>>::operator==(
     if (tool_name != other.tool_name)
         return false;
     
-    if (status_init != other.status_init)
+    if (state_init != other.state_init)
         return false;
 
-    if (status_post != other.status_post)
+    if (state_post != other.state_post)
         return false;
 
     if (queue_init != other.queue_init)
@@ -465,10 +465,10 @@ inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
     if (tool_name != other.tool_name)
         return false;
     
-    if (status_init != other.status_init)
+    if (state_init != other.state_init)
         return false;
 
-    if (status_post != other.status_post)
+    if (state_post != other.state_post)
         return false;
 
     if (queue_init != other.queue_init)
@@ -488,8 +488,8 @@ inline void Tool<TSeq>::print() const
 
     printf_epiworld("Tool           : %s\n", tool_name->c_str());
     printf_epiworld("Id             : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
-    printf_epiworld("status_init    : %i\n", status_init);
-    printf_epiworld("status_post    : %i\n", status_post);
+    printf_epiworld("state_init    : %i\n", state_init);
+    printf_epiworld("state_post    : %i\n", state_post);
     printf_epiworld("queue_init     : %i\n", queue_init);
     printf_epiworld("queue_post     : %i\n", queue_post);
 

@@ -15,8 +15,8 @@
 //     max_capacity(e.max_capacity),
 //     entity_name(e.entity_name),
 //     location(e.location),
-//     status_init(e.status_init),
-//     status_post(e.status_post),
+//     state_init(e.state_init),
+//     state_post(e.state_post),
 //     queue_init(e.queue_init),
 //     queue_post(e.queue_post)
 // {
@@ -137,8 +137,8 @@ inline void Entity<TSeq>::set_state(
     epiworld_fast_int end
 )
 {
-    status_init = init;
-    status_post = end;
+    state_init = init;
+    state_post = end;
 }
 
 template<typename TSeq>
@@ -158,10 +158,10 @@ inline void Entity<TSeq>::get_state(
 )
 {
     if (init != nullptr)
-        *init = status_init;
+        *init = state_init;
 
     if (post != nullptr)
-        *post = status_post;
+        *post = state_post;
 
 }
 
@@ -222,10 +222,10 @@ inline bool Entity<TSeq>::operator==(const Entity<TSeq> & other) const
 
     }
 
-    if (status_init != other.status_init)
+    if (state_init != other.state_init)
         return false;
 
-    if (status_post != other.status_post)
+    if (state_post != other.state_post)
         return false;
 
     if (queue_init != other.queue_init)

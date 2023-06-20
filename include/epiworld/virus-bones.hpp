@@ -49,9 +49,9 @@ private:
     std::vector< epiworld_double * > params = {};
     std::vector< epiworld_double > data = {};
 
-    epiworld_fast_int status_init    = -99; ///< Change of state when added to agent.
-    epiworld_fast_int status_post    = -99; ///< Change of state when removed from agent.
-    epiworld_fast_int status_removed = -99; ///< Change of state when agent is removed
+    epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
+    epiworld_fast_int state_post    = -99; ///< Change of state when removed from agent.
+    epiworld_fast_int state_removed = -99; ///< Change of state when agent is removed
 
     epiworld_fast_int queue_init    = Queue<TSeq>::Everyone; ///< Change of state when added to agent.
     epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.

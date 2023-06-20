@@ -195,9 +195,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void {
 
-            auto status = p->get_state();
+            auto state = p->get_state();
 
-            if (status == ModelSEIRCONN<TSeq>::EXPOSED)
+            if (state == ModelSEIRCONN<TSeq>::EXPOSED)
             {
 
                 // Getting the virus
@@ -213,7 +213,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 }
 
 
-            } else if (status == ModelSEIRCONN<TSeq>::INFECTED)
+            } else if (state == ModelSEIRCONN<TSeq>::INFECTED)
             {
 
 
@@ -268,7 +268,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     model.add_param(recovery_rate, "Prob. Recovery");
     model.add_param(avg_incubation_days, "Avg. Incubation days");
     
-    // Status
+    // state
     model.add_state("Susceptible", update_susceptible);
     model.add_state("Exposed", update_infected);
     model.add_state("Infected", update_infected);

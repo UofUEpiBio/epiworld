@@ -515,9 +515,9 @@ inline void Virus<TSeq>::set_state(
     epiworld_fast_int removed
 )
 {
-    status_init    = init;
-    status_post    = end;
-    status_removed = removed;
+    state_init    = init;
+    state_post    = end;
+    state_removed = removed;
 }
 
 template<typename TSeq>
@@ -543,13 +543,13 @@ inline void Virus<TSeq>::get_state(
 {
 
     if (init != nullptr)
-        *init = status_init;
+        *init = state_init;
 
     if (end != nullptr)
-        *end = status_post;
+        *end = state_post;
 
     if (removed != nullptr)
-        *removed = status_removed;
+        *removed = state_removed;
 
 }
 
@@ -600,18 +600,18 @@ inline bool Virus<std::vector<int>>::operator==(
         )
     
     EPI_DEBUG_FAIL_AT_TRUE(
-        status_init != other.status_init,
-        "Virus:: status_init don't match"
+        state_init != other.state_init,
+        "Virus:: state_init don't match"
         )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        status_post != other.status_post,
-        "Virus:: status_post don't match"
+        state_post != other.state_post,
+        "Virus:: state_post don't match"
         )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        status_removed != other.status_removed,
-        "Virus:: status_removed don't match"
+        state_removed != other.state_removed,
+        "Virus:: state_removed don't match"
         )
 
     EPI_DEBUG_FAIL_AT_TRUE(
@@ -648,18 +648,18 @@ inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
     )
     
     EPI_DEBUG_FAIL_AT_TRUE(
-        status_init != other.status_init,
-        "Virus:: status_init don't match"
+        state_init != other.state_init,
+        "Virus:: state_init don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        status_post != other.status_post,
-        "Virus:: status_post don't match"
+        state_post != other.state_post,
+        "Virus:: state_post don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        status_removed != other.status_removed,
-        "Virus:: status_removed don't match"
+        state_removed != other.state_removed,
+        "Virus:: state_removed don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
@@ -687,9 +687,9 @@ inline void Virus<TSeq>::print() const
 
     printf_epiworld("Virus          : %s\n", virus_name->c_str());
     printf_epiworld("Id             : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
-    printf_epiworld("status_init    : %i\n", status_init);
-    printf_epiworld("status_post    : %i\n", status_post);
-    printf_epiworld("status_removed : %i\n", status_removed);
+    printf_epiworld("state_init    : %i\n", state_init);
+    printf_epiworld("state_post    : %i\n", state_post);
+    printf_epiworld("state_removed : %i\n", state_removed);
     printf_epiworld("queue_init     : %i\n", queue_init);
     printf_epiworld("queue_post     : %i\n", queue_post);
     printf_epiworld("queue_removed  : %i\n", queue_removed);
