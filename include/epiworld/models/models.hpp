@@ -15,6 +15,7 @@ namespace epimodels {
     #include "seird.hpp"
     #include "surveillanced.hpp"
     #include "sirdconnected.hpp"
+    #include "seirdconnected.hpp"
     #include "sirlogit.hpp"
     #include "diffnet.hpp"
 
