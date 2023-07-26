@@ -4,7 +4,6 @@
 namespace epimodels {
     
     #include "globalactions.hpp"
-
     #include "sis.hpp"
     #include "sir.hpp"
     #include "seir.hpp"
@@ -15,7 +14,7 @@ namespace epimodels {
     #include "sisd.hpp"
     #include "seird.hpp"
     #include "surveillanced.hpp"
-    #include "sirconnectedd.hpp"
+    #include "sirdconnected.hpp"
     #include "sirlogit.hpp"
     #include "diffnet.hpp"
 
