@@ -16902,12 +16902,12 @@ inline ModelSISD<TSeq>::ModelSISD(
     // Adding statuses
     model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
     model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
-    model.add_state("Deceased")
+    model.add_state("Deceased");
 
     // Setting up parameters
     model.add_param(transmission_rate, "Transmission rate");
     model.add_param(recovery_rate, "Recovery rate");
-    model.add_param(death_rate, "Death rate")
+    model.add_param(death_rate, "Death rate");
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
@@ -16929,7 +16929,7 @@ inline ModelSISD<TSeq>::ModelSISD(
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
-    epiworld_double death_rate,
+    epiworld_double death_rate
     )
 {
 
