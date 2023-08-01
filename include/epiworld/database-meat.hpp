@@ -227,8 +227,10 @@ inline void DataBase<TSeq>::record()
         // Now the diagonal must reflect the state
         for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
         {
+
             for (size_t s_j = 0u; s_j < model->nstates; ++s_j)
             {
+                
                 if ((s_i != s_j) && (transition_matrix[s_i + s_j * model->nstates] > 0))
                 {
                     transition_matrix[s_j + s_j * model->nstates] +=
@@ -239,15 +241,18 @@ inline void DataBase<TSeq>::record()
          
             }
 
-            #ifdef EPI_DEBUG
+        }
+
+        #ifdef EPI_DEBUG
+        for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
+        {
             if (transition_matrix[s_i + s_i * model->nstates] != 
                 today_total[s_i])
                 throw std::logic_error(
                     "The diagonal of the updated transition Matrix should match the daily totals"
                     );
-            #endif
         }
-
+        #endif
 
     }
 

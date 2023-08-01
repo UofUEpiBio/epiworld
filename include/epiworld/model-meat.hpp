@@ -272,7 +272,6 @@ inline void Model<TSeq>::actions_run()
                 for (size_t t = 0u; t < p->n_tools; ++t)
                     db.update_tool(p->tools[t]->id, p->state, a.new_state);
 
-
                 // Saving the last state and setting the new one
                 p->state_prev = p->state;
                 p->state      = a.new_state;
