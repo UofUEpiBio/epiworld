@@ -16781,9 +16781,8 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     // Adding statuses
     model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
     model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
-    model.add_state("Recovered"),
-    model.add_state("Deceased")
-    ;
+    model.add_state("Recovered");
+    model.add_state("Deceased");
 
     // Setting up parameters
     model.add_param(recovery_rate, "Recovery rate");
