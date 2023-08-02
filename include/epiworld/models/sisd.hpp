@@ -62,7 +62,7 @@ inline ModelSISD<TSeq>::ModelSISD(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_state(1,0,0);
+    virus.set_state(1,0,2);
     
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
