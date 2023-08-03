@@ -8,6 +8,7 @@ private:
     static const int SUSCEPTIBLE = 0;
     static const int INFECTED    = 1;
     static const int RECOVERED   = 2;
+    static const int DECEASED    = 3;
 
 public:
 
@@ -291,7 +292,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
     
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_state(1, 2, 2);
+    virus.set_state(1, 2, 3);
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(&model("Death rate"));
