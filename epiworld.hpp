@@ -16915,7 +16915,7 @@ inline ModelSISD<TSeq>::ModelSISD(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
-    virus.set_state(1,0,0);
+    virus.set_state(1,0,2);
     
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
@@ -18394,7 +18394,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     virus.set_state(
         ModelSEIRDCONN<TSeq>::EXPOSED,
         ModelSEIRDCONN<TSeq>::RECOVERED,
-        ModelSEIRDCONN<TSeq>::RECOVERED
+        ModelSEIRDCONN<TSeq>::DECEASED
         );
 
     virus.set_prob_infecting(&model("Prob. Transmission"));
