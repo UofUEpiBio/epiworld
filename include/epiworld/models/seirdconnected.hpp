@@ -286,7 +286,6 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(
         ModelSEIRDCONN<TSeq>::EXPOSED,
-        ModelSEIRDCONN<TSeq>::INFECTED,
         ModelSEIRDCONN<TSeq>::REMOVED,
         ModelSEIRDCONN<TSeq>::DECEASED
         );
