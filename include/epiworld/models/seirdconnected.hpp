@@ -9,7 +9,7 @@ public:
     static const int SUSCEPTIBLE = 0;
     static const int EXPOSED     = 1;
     static const int INFECTED    = 2;
-    static const int RECOVERED   = 3;
+    static const int REMOVED     = 3;
     static const int DECEASED    = 4;
 
 
@@ -261,7 +261,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 return ;
 
             } else
-                throw std::logic_error("This function can only be applied to exposed or infected individuals. (SEIR)") ;
+                throw std::logic_error("This function can only be applied to exposed or infected individuals. (SEIRD)") ;
 
             return;
 
@@ -278,7 +278,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     model.add_state("Susceptible", update_susceptible);
     model.add_state("Exposed", update_infected);
     model.add_state("Infected", update_infected);
-    model.add_state("Recovered");
+    model.add_state("Removed");
     model.add_state("Deceased");
 
 
@@ -286,7 +286,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(
         ModelSEIRDCONN<TSeq>::EXPOSED,
-        ModelSEIRDCONN<TSeq>::RECOVERED,
+        ModelSEIRDCONN<TSeq>::REMOVED,
         ModelSEIRDCONN<TSeq>::DECEASED
         );
 
