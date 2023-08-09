@@ -14,6 +14,8 @@ private:
     static const int ASYMPTOMATIC_ISOLATED = 5;
     static const int RECOVERED             = 6;
     static const int REMOVED               = 7;
+    static const int DECEASED              = 8;
+
 
 public:
 
@@ -309,7 +311,7 @@ inline ModelSURVD<TSeq>::ModelSURVD(
 
     // Virus ------------------------------------------------------------------
     epiworld::Virus<TSeq> covid("Covid19");
-    covid.set_state(LATENT, RECOVERED, REMOVED);
+    covid.set_state(LATENT, RECOVERED, REMOVED, DECEASED);
     covid.set_post_immunity(&model("Prob. no reinfect"));
     covid.set_prob_death(&model("Prob. death"));
 
