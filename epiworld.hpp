@@ -17016,6 +17016,7 @@ public:
         epiworld_double hospitalization_decease_rate,
         epiworld_double transmission_rate,
         epiworld_double transmission_entity_rate,
+        epiworld_double death_rate,
         size_t n_entities,
         size_t n_interactions
     );
@@ -17048,6 +17049,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
         "Prevalence",
         "N entities",
         "N interactions"
+        "Death Rate"
         };
 
     // Reading the parameters in
@@ -17094,7 +17096,8 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     // Creating the virus
     Virus<TSeq> virus(vname);
     virus.set_prob_infecting(&model("Transmission rate"));
-    virus.set_state(S::Exposed, S::Recovered);
+    virus.set_prob_death(&model("Death rate"));
+    virus.set_state(S::Exposed, S::Recovered, S::Deceased);
     virus.set_queue(Queue<TSeq>::OnlySelf, -99LL);
     virus.get_data() = {0.0, 0.0F};
 
@@ -17129,6 +17132,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     epiworld_double hospitalization_decease_rate,
     epiworld_double transmission_rate,
     epiworld_double transmission_entity_rate,
+    epiworld_double death_rate,
     size_t n_entities,
     size_t n_interactions
 ) {
@@ -17144,6 +17148,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
     this->add_param(transmission_rate, "Transmission rate");
     this->add_param(transmission_entity_rate, "Transmission rate (entity)");
     this->add_param(prevalence, "Prevalence");
+    this->add_param(prevalence, "Death Rate");
     this->add_param(static_cast<epiworld_double>(n_entities), "N entities");
     this->add_param(static_cast<epiworld_double>(n_interactions), "N interactions");
 
