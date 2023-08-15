@@ -8,7 +8,7 @@
  * @param vname std::string Name of the virus
  * @param prevalence epiworld_double Initial prevalence the immune system
  * @param transmission_rate epiworld_double Transmission rate of the virus
- * @param avg_incubation_days epiworld_double Average incubation days of the virus
+ * @param avg_incubation_days epiworld_double Average incubation days of the virus.
  * @param recovery_rate epiworld_double Recovery rate of the virus.
  */
 template<typename TSeq = int>
