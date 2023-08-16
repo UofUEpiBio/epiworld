@@ -17016,19 +17016,85 @@ public:
         epiworld_double death_rate
     );
     
-    epiworld::UpdateFun<TSeq> update_exposed_seir = [](
-        epiworld::Agent<TSeq> * p,
-        epiworld::Model<TSeq> * m
-    ) -> void {
-
-        // Getting the virus
-        auto v = p->get_virus(0);
-
-        // Does the agent become infected?
-        if (m->runif() < 1.0/(v->get_incubation(m)))
-            p->change_state(m, ModelSEIRD<TSeq>::INFECTED);
-
-        return;    
+    epiworld::UpdateFun<TSeq> update_susceptible = [](
+      epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    ) -> void
+    {
+      
+      // Sampling how many individuals
+      int ndraw = m->rbinom();
+      
+      if (ndraw == 0)
+        return;
+      
+      // Drawing from the set
+      int nviruses_tmp = 0;
+      for (int i = 0; i < ndraw; ++i)
+      {
+        // Now selecting who is transmitting the disease
+        int which = static_cast<int>(
+          std::floor(m->size() * m->runif())
+        );
+        
+        /* There is a bug in which runif() returns 1.0. It is rare, but
+         * we saw it here. See the Notes section in the C++ manual
+         * https://en.cppreference.com/mwiki/index.php?title=cpp/numeric/random/uniform_real_distribution&oldid=133329
+         * And the reported bug in GCC:
+         * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
+         * 
+         */
+        if (which == static_cast<int>(m->size()))
+          --which;
+        
+        // Can't sample itself
+        if (which == static_cast<int>(p->get_id()))
+          continue;
+        
+        // If the neighbor is infected, then proceed
+        auto & neighbor = m->get_agents()[which];
+        if (neighbor.get_state() == ModelSEIRD<TSeq>::INFECTED)
+        {
+          
+          for (const VirusPtr<TSeq> & v : neighbor.get_viruses()) 
+          { 
+            
+          #ifdef EPI_DEBUG
+            if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+              throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+          #endif
+            
+            /* And it is a function of susceptibility_reduction as well */ 
+            m->array_double_tmp[nviruses_tmp] =
+            (1.0 - p->get_susceptibility_reduction(v, m)) * 
+            v->get_prob_infecting(m) * 
+            (1.0 - neighbor.get_transmission_reduction(v, m)) 
+              ; 
+            
+            m->array_virus_tmp[nviruses_tmp++] = &(*v);
+            
+          } 
+          
+        }
+      }
+      
+      // No virus to compute
+      if (nviruses_tmp == 0u)
+        return;
+      
+      // Running the roulette
+      int which = roulette(nviruses_tmp, m);
+      
+      if (which < 0)
+        return;
+      
+      p->add_virus(
+          *m->array_virus_tmp[which],
+                             m,
+                             ModelSEIRD<TSeq>::EXPOSED
+      );
+      
+      return; 
+      
     };
       
 
