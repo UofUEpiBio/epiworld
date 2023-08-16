@@ -198,9 +198,9 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 {
 
     // Adding statuses
-    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_state("Exposed", model.update_exposed_seir);
-    model.add_state("Infected", model.update_infected);
+    model.add_state("Susceptible", update_susceptible);
+    model.add_state("Exposed", update_infected);
+    model.add_state("Infected", update_infected);
     model.add_state("Removed");
     model.add_state("Deceased");
 
