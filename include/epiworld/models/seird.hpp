@@ -147,6 +147,7 @@ public:
   };
 
 
+
 template<typename TSeq>
 inline ModelSEIRD<TSeq>::ModelSEIRD(
     ModelSEIRD<TSeq> & model,
