@@ -91,13 +91,12 @@ public:
         );
         throw std::logic_error("Zero events in exposed.");
       }
-#else
+      #else
       if (n_events == 0u)
         return;
-#endif
+      #endif
       
-      
-      / Running the roulette
+      // Running the roulette
         int which = roulette(n_events, m);
       
       if (which < 0)
