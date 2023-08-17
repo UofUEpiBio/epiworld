@@ -17068,16 +17068,25 @@ public:
 #endif
       
       
-      // Running the roulette
-      int which = roulette(n_events, m);
+      / Running the roulette
+        int which = roulette(n_events, m);
       
       if (which < 0)
         return;
       
       // Which roulette happen?
-      size_t which_v = std::floor(which / 2);
-      p->rm_virus(which_v, m);
-      
+      if ((which % 2) == 0) // If odd
+      {
+        
+        size_t which_v = std::ceil(which / 2);
+        p->rm_agent_by_virus(which_v, m);
+        
+      } else {
+        
+        size_t which_v = std::floor(which / 2);
+        p->rm_virus(which_v, m);
+        
+      }
       return ;
       
     } else
