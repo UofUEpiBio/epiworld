@@ -45,21 +45,21 @@ public:
     epiworld_double death_rate
   );
   
-  epiworld::UpdateFun<TSeq> update_exposed_seir = [](
-    epiworld::Agent<TSeq> * p,
-    epiworld::Model<TSeq> * m
-  ) -> void {
-    
-    // Getting the virus
-    auto v = p->get_virus(0);
-    
-    // Does the agent become infected?
-    if (m->runif() < 1.0/(v->get_incubation(m)))
-      p->change_state(m, ModelSEIRD<TSeq>::INFECTED);
-    
-    return;    
-  };
-  
+  // epiworld::UpdateFun<TSeq> update_exposed_seir = [](
+  //   epiworld::Agent<TSeq> * p,
+  //   epiworld::Model<TSeq> * m
+  // ) -> void {
+  //   
+  //   // Getting the virus
+  //   auto v = p->get_virus(0);
+  //   
+  //   // Does the agent become infected?
+  //   if (m->runif() < 1.0/(v->get_incubation(m)))
+  //     p->change_state(m, ModelSEIRD<TSeq>::INFECTED);
+  //   
+  //   return;    
+  // };
+  // 
   
   epiworld::UpdateFun<TSeq> update_infected = [](
     epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
@@ -162,7 +162,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   
   // Adding statuses
   model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
-  model.add_state("Exposed", model.update_exposed_seir);
+  model.add_state("Exposed",  epiworld::default_update_exposed<TSeq>);
   model.add_state("Infected", model.update_infected);
   model.add_state("Removed");
   model.add_state("Deceased");
