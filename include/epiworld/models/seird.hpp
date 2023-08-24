@@ -65,6 +65,8 @@ public:
     epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
   ) -> void {
     
+    auto state = p->get_state();
+    
     if (state == ModelSEIRD<TSeq>::INFECTED)
     {
       
