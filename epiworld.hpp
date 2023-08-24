@@ -17036,7 +17036,7 @@ public:
     epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
   ) -> void {
     
-    else if (state == ModelSEIRD<TSeq>::INFECTED)
+    if (state == ModelSEIRD<TSeq>::INFECTED)
     {
       
       
