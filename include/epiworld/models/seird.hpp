@@ -111,11 +111,13 @@ public:
       if ((which % 2) == 0) // If odd
       {
         
-        p->rm_agent_by_virus(0u, m);
+        size_t which_v = std::ceil(which / 2);
+        p->rm_agent_by_virus(which_v, m);
         
       } else {
         
-        p->rm_virus(0u, m);
+        size_t which_v = std::floor(which / 2);
+        p->rm_virus(which_v, m);
         
       }
       
