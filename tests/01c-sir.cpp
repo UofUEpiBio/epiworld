@@ -24,18 +24,18 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         );
 
     model_0.seed(1231);
-    model_0.agents_smallworld(1000, 5, false, 0.01);
+    model_0.agents_smallworld(10000, 5, false, 0.01);
     model_0.verbose_off();
-    model_0.run_multiple(100, 10, 1231, saver_0, true, true, 1);
+    model_0.run_multiple(100, 100, 1231, saver_0, true, true, 1);
 
     epimodels::ModelSIR<> model_1(
         "a virus", 0.01, .9, .3
         );
 
     model_1.seed(1231);
-    model_1.agents_smallworld(1000, 5, false, 0.01);
+    model_1.agents_smallworld(10000, 5, false, 0.01);
     model_1.verbose_off();
-    model_1.run_multiple(100, 10, 1231, saver_1, true, true, 2);
+    model_1.run_multiple(100, 100, 1231, saver_1, true, true, 2);
 
     std::vector< std::string > files = {
         "reproductive.csv",

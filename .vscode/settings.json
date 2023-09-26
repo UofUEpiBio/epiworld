@@ -64,5 +64,6 @@
     "typeinfo": "cpp",
     "variant": "cpp",
     "semaphore": "cpp"
-  }
+  },
+  "intel-corporation.oneapi-analysis-configurator.binary-path": "/home/george/Documents/development/epiworld/tests/01c.o"
 }
