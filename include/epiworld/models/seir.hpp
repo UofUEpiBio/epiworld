@@ -101,7 +101,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     virus.set_prob_recovery(&model("Recovery rate"));
     
     // Adding the tool and the virus
-    model.add_virus(virus, prevalence);
+    model.set_virus(virus, prevalence);
     
     model.set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 

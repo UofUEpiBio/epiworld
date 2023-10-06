@@ -122,22 +122,20 @@ inline ModelSURV<TSeq>::ModelSURV(
         for (auto & neighbor: p->get_neighbors()) 
         {
                     
-            for (size_t i = 0u; i < neighbor->get_n_viruses(); ++i) 
-            { 
+            auto & v = neighbor->get_virus();
 
-                auto & v = neighbor->get_virus(i);
-                    
-                /* And it is a function of susceptibility_reduction as well */ 
-                epiworld_double tmp_transmission = 
-                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                    v->get_prob_infecting(m) * 
-                    (1.0 - neighbor->get_transmission_reduction(v, m)) 
-                    ; 
-            
-                m->array_double_tmp[nviruses_tmp]  = tmp_transmission;
-                m->array_virus_tmp[nviruses_tmp++] = &(*v);
+            if (v == nullptr)
+                continue;
                 
-            } 
+            /* And it is a function of susceptibility_reduction as well */ 
+            epiworld_double tmp_transmission = 
+                (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                v->get_prob_infecting(m) * 
+                (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                ; 
+        
+            m->array_double_tmp[nviruses_tmp]  = tmp_transmission;
+            m->array_virus_tmp[nviruses_tmp++] = &(*v);
         }
 
         // No virus to compute on
@@ -150,7 +148,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         if (which < 0)
             return;
 
-        p->add_virus(*m->array_virus_tmp[which], m); 
+        p->set_virus(*m->array_virus_tmp[which], m); 
         return;
 
     };

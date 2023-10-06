@@ -212,7 +212,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
             if (which < 0)
                 return;
 
-            p->add_virus(*m->array_virus_tmp[which], m);
+            p->set_virus(*m->array_virus_tmp[which], m);
 
             return; 
 
@@ -309,7 +309,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(&model("Death rate"));
     
-    model.add_virus(virus, prevalence);
+    model.set_virus(virus, prevalence);
 
     model.queuing_off(); // No queuing need
 

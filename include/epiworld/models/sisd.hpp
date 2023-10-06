@@ -68,7 +68,7 @@ inline ModelSISD<TSeq>::ModelSISD(
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(0.01);
     
-    model.add_virus(virus, prevalence);
+    model.set_virus(virus, prevalence);
 
     return;
 

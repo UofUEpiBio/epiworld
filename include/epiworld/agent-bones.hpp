@@ -63,8 +63,6 @@ template<typename TSeq>
 class Agent {
     friend class Model<TSeq>;
     friend class Virus<TSeq>;
-    friend class Viruses<TSeq>;
-    friend class Viruses_const<TSeq>;
     friend class Tool<TSeq>;
     friend class Tools<TSeq>;
     friend class Tools_const<TSeq>;
@@ -95,8 +93,7 @@ private:
     int state_last_changed = -1; ///< Last time the agent was updated.
     int id = -1;
     
-    std::vector< VirusPtr<TSeq> > viruses;
-    epiworld_fast_uint n_viruses = 0u;
+    VirusPtr<TSeq> virus = nullptr;
 
     std::vector< ToolPtr<TSeq> > tools;
     epiworld_fast_uint n_tools = 0u;
@@ -149,14 +146,14 @@ public:
         epiworld_fast_int queue = -99
         );
 
-    void add_virus(
+    void set_virus(
         VirusPtr<TSeq> virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
-    void add_virus(
+    void set_virus(
         Virus<TSeq> virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
@@ -185,14 +182,6 @@ public:
     );
 
     void rm_virus(
-        epiworld_fast_uint virus_idx,
-        Model<TSeq> * model,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-    );
-
-    void rm_virus(
-        VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -213,14 +202,6 @@ public:
     );
 
     void rm_agent_by_virus(
-        epiworld_fast_uint virus_idx,
-        Model<TSeq> * model,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-    ); ///< Agent removed by virus
-
-    void rm_agent_by_virus(
-        VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -242,10 +223,7 @@ public:
 
     int get_id() const; ///< Id of the individual
 
-    VirusPtr<TSeq> & get_virus(int i);
-    Viruses<TSeq> get_viruses();
-    const Viruses_const<TSeq> get_viruses() const;
-    size_t get_n_viruses() const noexcept;
+    VirusPtr<TSeq> & get_virus();
 
     ToolPtr<TSeq> & get_tool(int i);
     Tools<TSeq> get_tools();

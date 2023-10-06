@@ -67,7 +67,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_death(&model("Death rate"));
     
-    model.add_virus(virus, prevalence);
+    model.set_virus(virus, prevalence);
 
     model.set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 

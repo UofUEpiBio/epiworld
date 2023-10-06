@@ -113,7 +113,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
 
                 for (auto & p: *_tracked_agents_infected)
                 {
-                    if (p->get_n_viruses() == 0)
+                    if (p->get_virus() == nullptr)
                         throw std::logic_error("Cannot be infected and have no viruses.");
                 }
                 
@@ -154,7 +154,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
 
                 // Infecting the individual
                 #ifdef EPI_DEBUG
-                if (_tracked_agents_infected->operator[](which)->get_n_viruses() == 0)
+                if (_tracked_agents_infected->operator[](which)->get_virus() == nullptr)
                 {
 
                     printf_epiworld("[epi-debug] date: %i\n", m->today());
@@ -167,8 +167,8 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
                     );
                 }
                 #endif
-                p->add_virus(
-                    _tracked_agents_infected->operator[](which)->get_virus(0u),
+                p->set_virus(
+                    _tracked_agents_infected->operator[](which)->get_virus(),
                     ModelSEIRCONNLogit<TSeq>::EXPOSED
                     ); 
 
@@ -284,7 +284,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(1,3,3);
-    model.add_virus(virus, prevalence);
+    model.set_virus(virus, prevalence);
 
     // Adding updating function
     model.add_global_action(global_accounting, "Accounting", -1);

@@ -168,14 +168,6 @@ inline void Model<TSeq>::actions_add(
     #ifdef EPI_DEBUG
     if (nactions == 0)
         throw std::logic_error("Actions cannot be zero!!");
-
-    if ((virus_ != nullptr) && idx_agent_ >= 0)
-    {
-        if (idx_agent_ >= static_cast<int>(virus_->get_agent()->get_n_viruses()))
-            throw std::logic_error(
-                "The virus to add is out of range in the host agent."
-                );
-    }
     #endif
 
     if (nactions > actions.size())
@@ -245,11 +237,9 @@ inline void Model<TSeq>::actions_run()
                 db.update_state(p->state_prev, p->state, true); // Undoing
                 db.update_state(p->state_prev, a.new_state);
 
-                for (size_t v = 0u; v < p->n_viruses; ++v)
-                {
-                    db.update_virus(p->viruses[v]->id, p->state, p->state_prev); // Undoing
-                    db.update_virus(p->viruses[v]->id, p->state_prev, a.new_state);
-                }
+                db.update_virus(p->virus->id, p->state, p->state_prev); // Undoing
+                db.update_virus(p->virus->id, p->state_prev, a.new_state);
+
 
                 for (size_t t = 0u; t < p->n_tools; ++t)
                 {
@@ -266,8 +256,7 @@ inline void Model<TSeq>::actions_run()
                 // Updating accounting
                 db.update_state(p->state, a.new_state);
 
-                for (size_t v = 0u; v < p->n_viruses; ++v)
-                    db.update_virus(p->viruses[v]->id, p->state, a.new_state);
+                db.update_virus(a.virus->id, p->state, a.new_state);
 
                 for (size_t t = 0u; t < p->n_tools; ++t)
                     db.update_tool(p->tools[t]->id, p->state, a.new_state);
@@ -648,7 +637,7 @@ inline std::vector< Viruses_const<TSeq> > Model<TSeq>::get_agents_viruses() cons
 
     std::vector< Viruses_const<TSeq> > viruses(population.size());
     for (size_t i = 0u; i < population.size(); ++i)
-        viruses[i] = population[i].get_viruses();
+        viruses[i] = population[i].get_virus();
 
     return viruses;
 
@@ -661,7 +650,7 @@ inline std::vector< Viruses<TSeq> > Model<TSeq>::get_agents_viruses()
 
     std::vector< Viruses<TSeq> > viruses(population.size());
     for (size_t i = 0u; i < population.size(); ++i)
-        viruses[i] = population[i].get_viruses();
+        viruses[i] = population[i].get_virus();
 
     return viruses;
 
@@ -811,7 +800,7 @@ inline void Model<TSeq>::dist_virus()
                 Agent<TSeq> & agent = population[idx[loc]];
                 
                 // Adding action
-                agent.add_virus(
+                agent.set_virus(
                     virus,
                     const_cast<Model<TSeq> * >(this),
                     virus->state_init,
@@ -1083,7 +1072,7 @@ inline void Model<TSeq>::seed(size_t s) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
+inline void Model<TSeq>::set_virus(Virus<TSeq> & v, epiworld_double preval)
 {
 
     if (preval > 1.0)
@@ -1834,9 +1823,8 @@ inline void Model<TSeq>::mutate_virus() {
             if (queue[++i] == 0)
                 continue;
 
-            if (p.n_viruses > 0u)
-                for (auto & v : p.get_viruses())
-                    v->mutate(this);
+            if (p.virus != nullptr)
+                p.virus->mutate(this);
 
         }
 
@@ -1847,9 +1835,8 @@ inline void Model<TSeq>::mutate_virus() {
         for (auto & p: population)
         {
 
-            if (p.n_viruses > 0u)
-                for (auto & v : p.get_viruses())
-                    v->mutate(this);
+            if (p.virus != nullptr)
+                p.virus->mutate(this);
 
         }
 

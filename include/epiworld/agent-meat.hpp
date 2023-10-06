@@ -29,8 +29,6 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     state_prev(p.state_prev), 
     state_last_changed(p.state_last_changed),
     id(p.id),
-    viruses(std::move(p.viruses)),  /// Needs to be adjusted
-    n_viruses(p.n_viruses),
     tools(std::move(p.tools)), /// Needs to be adjusted
     n_tools(p.n_tools),
     add_virus_(std::move(p.add_virus_)),
@@ -47,18 +45,9 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     
     // Dealing with the virus
 
+    virus->agent = this;
+
     int loc = 0;
-    for (auto & v : viruses)
-    {
-        
-        // Will create a copy of the virus, with the exeption of
-        // the virus code
-        v->agent = this;
-        v->pos_in_agent = loc++;
-
-    }
-
-    loc = 0;
     for (auto & t : tools)
     {
         
@@ -90,17 +79,12 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     id     = p.id;
     
     // Dealing with the virus
-    viruses.reserve(p.get_n_viruses());
-    n_viruses = viruses.size();
-    for (size_t i = 0u; i < n_viruses; ++i)
+    if (p.virus != nullptr)
     {
-
-        // Will create a copy of the virus, with the exeption of
-        // the virus code
-        viruses.emplace_back(std::make_shared<Virus<TSeq>>(*p.viruses[i]));
-        viruses.back()->set_agent(this, i);
-
+        virus = std::make_shared<Virus<TSeq>>(*p.virus);
+        virus->set_agent(this);
     }
+    
 
     tools.reserve(p.get_n_tools());
     n_tools = tools.size();
@@ -151,14 +135,12 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     state_last_changed = other_agent.state_last_changed;
     id                  = other_agent.id;
     
-    // viruses             = other_agent.viruses;
-    n_viruses           = other_agent.n_viruses;
-    viruses.resize(n_viruses, nullptr);
-    for (size_t i = 0u; i < n_viruses; ++i)
+    if (other_agent.virus != nullptr)
     {
-        viruses[i] = std::make_shared<Virus<TSeq>>(*other_agent.viruses[i]);
-        viruses[i]->set_agent(this, i);
-    }
+        virus = std::make_shared<Virus<TSeq>>(*other_agent.virus);
+        virus->set_agent(this);
+    } else
+        virus = nullptr;
     
     // tools               = other_agent.tools;
     n_tools             = other_agent.n_tools;
@@ -214,7 +196,7 @@ inline void Agent<TSeq>::add_tool(
 }
 
 template<typename TSeq>
-inline void Agent<TSeq>::add_virus(
+inline void Agent<TSeq>::set_virus(
     VirusPtr<TSeq> virus,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
@@ -235,7 +217,7 @@ inline void Agent<TSeq>::add_virus(
 }
 
 template<typename TSeq>
-inline void Agent<TSeq>::add_virus(
+inline void Agent<TSeq>::set_virus(
     Virus<TSeq> virus,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
@@ -243,7 +225,7 @@ inline void Agent<TSeq>::add_virus(
 )
 {
     VirusPtr<TSeq> virus_ptr = std::make_shared< Virus<TSeq> >(virus);
-    add_virus(virus_ptr, model, state_new, queue);
+    set_virus(virus_ptr, model, state_new, queue);
 }
 
 template<typename TSeq>
@@ -319,56 +301,21 @@ inline void Agent<TSeq>::rm_tool(
 
 template<typename TSeq>
 inline void Agent<TSeq>::rm_virus(
-    epiworld_fast_uint virus_idx,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
-    if (virus_idx >= n_viruses)
-        throw std::range_error(
-            "The Virus you want to remove is out of range. This Agent only has " +
-            std::to_string(n_viruses) + " viruses."
-        );
-    else if (n_viruses == 0u)
+    if (virus == nullptr)
         throw std::logic_error(
             "There is no virus to remove here!"
         );
-
-    #ifdef EPI_DEBUG
-    if (viruses[virus_idx]->pos_in_agent >= static_cast<int>(n_viruses))
-    {
-        throw std::logic_error(
-            "[epi-debug]::rm_virus the position in the agent is wrong."
-            );
-    }
-    #endif
-
-    model->actions_add(
-        this, viruses[virus_idx], nullptr, nullptr, state_new, queue,
-        default_rm_virus<TSeq>, -1, -1
-        );
-    
-}
-
-template<typename TSeq>
-inline void Agent<TSeq>::rm_virus(
-    VirusPtr<TSeq> & virus,
-    Model<TSeq> * model,
-    epiworld_fast_int state_new,
-    epiworld_fast_int queue
-)
-{
-
-    if (virus->agent != this)
-        throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
         this, virus, nullptr, nullptr, state_new, queue,
         default_rm_virus<TSeq>, -1, -1
         );
-
-
+    
 }
 
 template<typename TSeq>
@@ -428,7 +375,6 @@ inline void Agent<TSeq>::rm_entity(
 
 template<typename TSeq>
 inline void Agent<TSeq>::rm_agent_by_virus(
-    epiworld_fast_uint virus_idx,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -438,26 +384,13 @@ inline void Agent<TSeq>::rm_agent_by_virus(
     if (state_new == -99)
         state_new = state;
 
-    if (virus_idx >= n_viruses)
-        throw std::range_error(
-            std::string("The virus trying to remove the agent is out of range. ") +
-            std::string("This agent has only ") + std::to_string(n_viruses) + 
-            std::string(" and you are trying to remove virus # ") +
-            std::to_string(virus_idx) + std::string(".")
-            );
-
     // Removing viruses
-    for (size_t i = 0u; i < n_viruses; ++i)
-    {
-        if (i != virus_idx)
-            rm_virus(i, model);
-    }
-
+    rm_virus(model);
+    
     // Changing state to new_state
-    VirusPtr<TSeq> & v = viruses[virus_idx];
     epiworld_fast_int dead_state, dead_queue;
-    v->get_state(nullptr, nullptr, &dead_state);
-    v->get_queue(nullptr, nullptr, &dead_queue);
+    virus->get_state(nullptr, nullptr, &dead_state);
+    virus->get_queue(nullptr, nullptr, &dead_queue);
 
     if (queue != -99)
         dead_queue = queue;
@@ -470,30 +403,6 @@ inline void Agent<TSeq>::rm_agent_by_virus(
         // By default, it will be removed from the queue... unless the user
         // says the contrary!
         (dead_queue == -99) ? Queue<TSeq>::NoOne : dead_queue
-    );
-
-}
-
-template<typename TSeq>
-inline void Agent<TSeq>::rm_agent_by_virus(
-    VirusPtr<TSeq> & virus,
-    Model<TSeq> * model,
-    epiworld_fast_int state_new,
-    epiworld_fast_int queue
-)
-{
-
-    if (virus->get_agent() == nullptr)
-        throw std::logic_error("The virus trying to remove the agent has no host.");
-
-    if (virus->get_agent()->id != id)
-        throw std::logic_error("Viruses can only remove their hosts'.");
-
-    rm_agent_by_virus(
-        virus->pos_in_agent,
-        model,
-        state_new,
-        queue
     );
 
 }
@@ -538,29 +447,10 @@ inline int Agent<TSeq>::get_id() const
 }
 
 template<typename TSeq>
-inline Viruses<TSeq> Agent<TSeq>::get_viruses() {
-
-    return Viruses<TSeq>(*this);
-
+inline VirusPtr<TSeq> & Agent<TSeq>::get_virus() {
+    return virus;
 }
 
-template<typename TSeq>
-inline const Viruses_const<TSeq> Agent<TSeq>::get_viruses() const {
-
-    return Viruses_const<TSeq>(*this);
-    
-}
-
-template<typename TSeq>
-inline VirusPtr<TSeq> & Agent<TSeq>::get_virus(int i) {
-    return viruses.at(i);
-}
-
-template<typename TSeq>
-inline size_t Agent<TSeq>::get_n_viruses() const noexcept
-{
-    return n_viruses;
-}
 
 template<typename TSeq>
 inline Tools<TSeq> Agent<TSeq>::get_tools() {
@@ -588,8 +478,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::mutate_virus()
 {
 
-    for (auto & v : viruses)
-        v->mutate();
+    virus->mutate();
 
 }
 
@@ -731,8 +620,7 @@ template<typename TSeq>
 inline void Agent<TSeq>::reset()
 {
 
-    this->viruses.clear();
-    n_viruses = 0u;
+    this->virus = nullptr;
 
     this->tools.clear();
     n_tools = 0u;
@@ -779,9 +667,8 @@ inline bool Agent<TSeq>::has_tool(const Tool<TSeq> & tool) const
 template<typename TSeq>
 inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
 {
-    for (auto & v : viruses)
-        if (v->get_id() == static_cast<int>(t))
-            return true;
+    if (virus->get_id() == static_cast<int>(t))
+        return true;
 
     return false;
 }
@@ -790,9 +677,8 @@ template<typename TSeq>
 inline bool Agent<TSeq>::has_virus(std::string name) const
 {
     
-    for (auto & v : viruses)
-        if (v->get_name() == name)
-            return true;
+    if (virus->get_name() == name)
+        return true;
 
     return false;
 
@@ -816,15 +702,18 @@ inline void Agent<TSeq>::print(
     if (compressed)
     {
         printf_epiworld(
-            "Agent: %i, state: %s (%lu), Nvirus: %lu, NTools: %lu, NNeigh: %lu\n",
-            id, model->states_labels[state].c_str(), state, n_viruses, n_tools, neighbors.size()
+            "Agent: %i, state: %s (%lu), Has virus: %s, NTools: %lu, NNeigh: %lu\n",
+            id, model->states_labels[state].c_str(), state,
+            virus == nullptr ? std::string("no").c_str() : std::string("yes").c_str(),
+            n_tools, neighbors.size()
         );
     }
     else {
 
         printf_epiworld("Information about agent id %i\n", this->id);
         printf_epiworld("  State        : %s (%lu)\n", model->states_labels[state].c_str(), state);
-        printf_epiworld("  Virus count  : %lu\n", n_viruses);
+        printf_epiworld("  Has virus    : %s\n", virus == nullptr ?
+            std::string("no").c_str() : std::string("yes").c_str());
         printf_epiworld("  Tool count   : %lu\n", n_tools);
         printf_epiworld("  Neigh. count : %lu\n", neighbors.size());
 
@@ -975,24 +864,21 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     //     state_last_changed != other.state_last_changed,
     //     "Agent:: state_last_changed don't match"
     //     ) ///< Last time the agent was updated.
-        
-    
+
     EPI_DEBUG_FAIL_AT_TRUE(
-        n_viruses != other.n_viruses,
-        "Agent:: n_viruses don't match"
-        )
-        
+        ((virus == nullptr) && (other.virus != nullptr)) ||
+            ((virus != nullptr) && (other.virus == nullptr)),
+        "Agent:: virus don't match"
+    )
 
-    for (size_t i = 0u; i < n_viruses; ++i)
+    if ((virus != nullptr) && (other.virus != nullptr))
     {
-        
         EPI_DEBUG_FAIL_AT_TRUE(
-            *viruses[i] != *other.viruses[i],
-            "Agent:: viruses[i] don't match"
+            *virus != *other.virus,
+            "Agent:: virus doesn't match"
         )
-         
     }
-
+    
     EPI_DEBUG_FAIL_AT_TRUE(n_tools != other.n_tools, "Agent:: n_tools don't match")
 
     for (size_t i = 0u; i < n_tools; ++i)

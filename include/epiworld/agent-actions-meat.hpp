@@ -26,29 +26,9 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 
     }
     
-    // Update virus accounting
-    p->n_viruses++;
-    size_t n_viruses = p->n_viruses;
-
-    if (n_viruses <= p->viruses.size())
-        p->viruses[n_viruses - 1] = std::make_shared< Virus<TSeq> >(*v);
-    else
-        p->viruses.push_back(std::make_shared< Virus<TSeq> >(*v));
-
-    n_viruses--;
-
-    // Notice that both agent and date can be changed in this case
-    // as only the sequence is a shared_ptr itself.
-    #ifdef EPI_DEBUG
-    if (n_viruses >= p->viruses.size())
-    {
-        throw std::logic_error(
-            "[epi-debug]::default_add_virus Index for new virus out of range."
-            );
-    }
-    #endif
-    p->viruses[n_viruses]->set_agent(p, n_viruses);
-    p->viruses[n_viruses]->set_date(m->today());
+    p->virus = std::make_shared< Virus<TSeq> >(*v);
+    p->virus->set_date(m->today());
+    p->virus->set_agent(p);
 
     #ifdef EPI_DEBUG
     m->get_db().today_virus.at(v->get_id()).at(p->state)++;
@@ -91,21 +71,13 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
 {
 
     Agent<TSeq> * p    = a.agent;    
-    VirusPtr<TSeq> & v = a.agent->viruses[a.virus->pos_in_agent];
+    VirusPtr<TSeq> v = a.agent->virus;
     
     CHECK_COALESCE_(a.new_state, v->state_post, p->get_state())
     CHECK_COALESCE_(a.queue, v->queue_post, -Queue<TSeq>::Everyone)
 
-    if (--p->n_viruses > 0)
-    {
-        // The new virus will change positions
-        p->viruses[p->n_viruses]->pos_in_agent = v->pos_in_agent;
-        std::swap(
-            p->viruses[p->n_viruses],   // Moving to the end
-            p->viruses[v->pos_in_agent] // Moving to the beginning
-            );
-    }
-    
+    p->virus = nullptr;
+        
     // Calling the virus action over the removed virus
     v->post_recovery(model);
 

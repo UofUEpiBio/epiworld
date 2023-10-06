@@ -186,7 +186,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
             if (which < 0)
                 return;
 
-            p->add_virus(
+            p->set_virus(
                 *m->array_virus_tmp[which],
                 m,
                 ModelSEIRDCONN<TSeq>::EXPOSED
@@ -308,7 +308,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     virus.set_prob_recovery(&model("Prob. Recovery"));
     virus.set_incubation(&model("Avg. Incubation days"));
     virus.set_prob_death(&model("Death rate"));
-    model.add_virus(virus, prevalence);
+    model.set_virus(virus, prevalence);
 
     model.queuing_off(); // No queuing need
 

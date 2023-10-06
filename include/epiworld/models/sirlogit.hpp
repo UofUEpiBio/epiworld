@@ -226,7 +226,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             if (which < 0)
                 return;
 
-            p->add_virus(*m->array_virus_tmp[which], m);
+            p->set_virus(*m->array_virus_tmp[which], m);
 
             return;
 
@@ -280,7 +280,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     // virus.set_prob
 
-    model.add_virus(virus, prevalence);
+    model.set_virus(virus, prevalence);
 
     model.set_name("Susceptible-Infected-Removed (SIR) (logit)");
 

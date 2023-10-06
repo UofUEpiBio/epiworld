@@ -60,7 +60,7 @@ inline ModelSIR<TSeq>::ModelSIR(
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_infecting(&model("Transmission rate"));
     
-    model.add_virus(virus, prevalence);
+    model.set_virus(virus, prevalence);
 
     model.set_name("Susceptible-Infected-Recovered (SIR)");
 
