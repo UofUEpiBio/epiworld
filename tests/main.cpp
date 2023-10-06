@@ -6,10 +6,10 @@
 #include "tests.hpp"
 
 
-
+#include "00-cloning-model.cpp"
 #include "00-lfmcmc.cpp"
 #include "01-sir.cpp"
-// #include "01b-sir.cpp"
+#include "01b-sir.cpp"
 #include "01c-sir.cpp"
 #include "01-sirconnected.cpp"
 #include "02-reproducible-sir.cpp"

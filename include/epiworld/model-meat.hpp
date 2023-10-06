@@ -1072,7 +1072,7 @@ inline void Model<TSeq>::seed(size_t s) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_virus(Virus<TSeq> & v, epiworld_double preval)
+inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
 {
 
     if (preval > 1.0)

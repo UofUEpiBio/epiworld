@@ -216,7 +216,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
                 {
 
                     *_tracked_ninfected_next -= 1;
-                    p->rm_virus(0, m);
+                    p->rm_virus(m);
                     return;
 
                 }
@@ -284,7 +284,7 @@ inline ModelSEIRCONNLogit<TSeq>::ModelSEIRCONNLogit(
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(1,3,3);
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     // Adding updating function
     model.add_global_action(global_accounting, "Accounting", -1);

@@ -149,24 +149,24 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (neighbor.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
                 {
 
-                    for (const VirusPtr<TSeq> & v : neighbor.get_viruses()) 
-                    { 
+                    if (neighbor.get_virus() == nullptr)
+                        continue;
 
-                        #ifdef EPI_DEBUG
-                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                        #endif
-                            
-                        /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nviruses_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                            v->get_prob_infecting(m) * 
-                            (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                            ; 
-                    
-                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    auto & v = neighbor.get_virus();
+
+                    #ifdef EPI_DEBUG
+                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                    #endif
                         
-                    } 
+                    /* And it is a function of susceptibility_reduction as well */ 
+                    m->array_double_tmp[nviruses_tmp] =
+                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        v->get_prob_infecting(m) * 
+                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
+                        ; 
+                
+                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
                 }
             }
@@ -201,7 +201,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             {
 
                 // Getting the virus
-                auto & v = p->get_virus(0u);
+                auto & v = p->get_virus();
 
                 // Does the agent become infected?
                 if (m->runif() < 1.0/(v->get_incubation(m)))
@@ -219,14 +219,11 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                for (const auto & v : p->get_viruses())
-                {
+                const auto & v = p->get_virus();
 
-                    // Recover
-                    m->array_double_tmp[n_events++] = 
-                        1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
-
-                }
+                // Recover
+                m->array_double_tmp[n_events++] = 
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -250,8 +247,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     return;
 
                 // Which roulette happen?
-                size_t which_v = std::floor(which / 2);
-                p->rm_virus(which_v, m);
+                p->rm_virus(m);
 
                 return ;
 
@@ -287,7 +283,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     virus.set_prob_recovery(&model("Prob. Recovery"));
     virus.set_incubation(&model("Avg. Incubation days"));
 
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.queuing_off(); // No queuing need
 

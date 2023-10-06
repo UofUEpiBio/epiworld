@@ -169,7 +169,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     
     innovation.set_prob_infecting(&model(parname));
     
-    model.set_virus(innovation, prevalence);
+    model.add_virus(innovation, prevalence);
 
     model.set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);

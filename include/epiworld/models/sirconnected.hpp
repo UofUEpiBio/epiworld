@@ -256,7 +256,6 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     return;
 
                 // Which roulette happen?
-                size_t which_v = std::floor(which / 2);
                 p->rm_virus(m);
 
                 return ;
@@ -285,7 +284,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
 
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.queuing_off(); // No queuing need
 
