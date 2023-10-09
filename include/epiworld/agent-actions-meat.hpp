@@ -27,6 +27,18 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
     p->virus->set_date(m->today());
     p->virus->set_agent(p);
 
+    // Change of state needs to be recorded and updated on the
+    // tools.
+    if (p->state_prev != p->state)
+    {
+        auto & db = m->get_db();
+        db.update_state(p->state_prev, p->state);
+
+        for (size_t i = 0u; i < p->n_tools; ++i)
+            db.update_tool(p->tools[i]->get_id(), p->state_prev, p->state);
+    }
+
+    // Lastly, we increase the daily count of the virus
     #ifdef EPI_DEBUG
     m->get_db().today_virus.at(v->get_id()).at(p->state)++;
     #else
@@ -56,7 +68,19 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
     p->tools[n_tools]->set_date(m->today());
     p->tools[n_tools]->set_agent(p, n_tools);
 
+    // Change of state needs to be recorded and updated on the
+    // tools.
+    if (p->state_prev != p->state)
+    {
+        auto & db = m->get_db();
+        db.update_state(p->state_prev, p->state);
+
+        if (p->virus)
+            db.update_virus(p->virus->get_id(), p->state_prev, p->state);
+    }
+
     m->get_db().today_tool[t->get_id()][p->state]++;
+
 
 }
 
@@ -71,14 +95,32 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
     v->post_recovery(model);
 
     p->virus = nullptr;
-        
 
+    // Change of state needs to be recorded and updated on the
+    // tools.
+    if (p->state_prev != p->state)
+    {
+        auto & db = model->get_db();
+        db.update_state(p->state_prev, p->state);
+
+        for (size_t i = 0u; i < p->n_tools; ++i)
+            db.update_tool(p->tools[i]->get_id(), p->state_prev, p->state);
+    }
+
+    // The counters of the virus only needs to decrease
+    #ifdef EPI_DEBUG
+    model->get_db().today_virus.at(v->get_id()).at(p->state_prev)--;
+    #else
+    model->get_db().today_virus[v->get_id()][p->state_prev]--;
+    #endif
+
+    
     return;
 
 }
 
 template<typename TSeq>
-inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
+inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p   = a.agent;    
@@ -93,7 +135,46 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * /*m*/)
             );
     }
 
+    // Change of state needs to be recorded and updated on the
+    // tools.
+    if (p->state_prev != p->state)
+    {
+        auto & db = m->get_db();
+        db.update_state(p->state_prev, p->state);
+
+        if (p->virus)
+            db.update_virus(p->virus->get_id(), p->state_prev, p->state);
+    }
+
+    // Lastly, we increase the daily count of the tool
+    #ifdef EPI_DEBUG
+    m->get_db().today_tool.at(t->get_id()).at(p->state_prev)--;
+    #else
+    m->get_db().today_tool[t->get_id()][p->state_prev]--;
+    #endif
+
     return;
+
+}
+
+template<typename TSeq>
+inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m)
+{
+
+    Agent<TSeq> * p = a.agent;
+
+    if (p->state_prev != p->state)
+    {
+        auto & db = m->get_db();
+        db.update_state(p->state_prev, p->state);
+
+        if (p->virus)
+            db.update_virus(p->virus->get_id(), p->state_prev, p->state);
+
+        for (size_t i = 0u; i < p->n_tools; ++i)
+            db.update_tool(p->tools[i]->get_id(), p->state_prev, p->state);
+
+    }
 
 }
 

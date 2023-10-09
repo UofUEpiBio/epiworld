@@ -1,5 +1,5 @@
 
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;
@@ -21,13 +21,13 @@ int main()
     virus.set_post_immunity(1.0);
     virus.set_state(1,2,3);
     virus.set_prob_death(.01);
-    model.default_add_virus<TSeq>n(virus, 50);
+    model.add_virus_n(virus, 50);
     
     epiworld::Tool<int> tool("vaccine");
     model.add_tool(tool, .5);
 
     // Generating a random pop 
-    model.agents_smallworld(10000);
+    model.agents_smallworld(10000, 20, false, .01);
 
     // Running the model
     model.run(100, 123);
@@ -42,7 +42,8 @@ int main()
         "total_hist.txt",
         "transmissions.txt",
         "transitions.txt",
-        "reproductive.txt"
+        "reproductive.txt",
+        "generation_time.txt"
         );
   
 }

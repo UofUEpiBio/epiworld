@@ -384,17 +384,13 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 )
 {
 
-    // Removing viruses
-    rm_virus(model, -99, Queue<TSeq>::NoOne);
+    CHECK_COALESCE_(state_new, virus->state_removed, state);
+    CHECK_COALESCE_(queue, virus->queue_removed, Queue<TSeq>::Everyone);
 
-    CHECK_COALESCE_(state_new, virus->state_post, state);
-    CHECK_COALESCE_(queue, virus->queue_removed, Queue<TSeq>::Everyone)
-
-    change_state(
-        model,
-        state_new,
-        queue
-    );
+    model->actions_add(
+        this, virus, nullptr, nullptr, state_new, queue,
+        default_rm_virus<TSeq>, -1, -1
+        );
 
 }
 
@@ -595,7 +591,8 @@ inline void Agent<TSeq>::change_state(
 {
 
     model->actions_add(
-        this, nullptr, nullptr, nullptr, new_state, queue, nullptr, -1, -1
+        this, nullptr, nullptr, nullptr, new_state, queue,
+        default_change_state<TSeq>, -1, -1
     );
     
     return;

@@ -52,6 +52,9 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
 template<typename TSeq>
 inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m);
 
+template<typename TSeq>
+inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m);
+
 
 
 /**
@@ -75,6 +78,7 @@ class Agent {
     friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_change_state<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
 private:
     
     Model<TSeq> * model;

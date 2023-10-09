@@ -162,28 +162,6 @@ inline void Model<TSeq>::actions_add(
     int idx_object_
 ) {
 
-    // if (!virus_ && !tool_ && !entity_ && (entity == nullptr))
-    //     throw std::logic_error("Either virus or tool must be set.");
-    // else if (virus_)
-    // {
-
-    //     CHECK_COALESCE_(new_state_, virus_->state_init, agent->state);
-    //     CHECK_COALESCE_(queue_, virus_->queue_init, Queue<TSeq>::Everyone);
-        
-    // } else if (tool_)
-    // {
-
-    //     CHECK_COALESCE_(new_state_, tool_->state_init, agent->state);
-    //     CHECK_COALESCE_(queue_, virus_->queue_init, Queue<TSeq>::NoOne);
-
-    // } else if (entity != nullptr)
-    // {
-
-    //     CHECK_COALESCE_(new_state_, entity_->state_init, agent->state);
-    //     CHECK_COALESCE_(queue_, entity_->queue_init, Queue<TSeq>::NoOne);
-
-    // } 
-
     ++nactions;
 
     #ifdef EPI_DEBUG
@@ -194,7 +172,7 @@ inline void Model<TSeq>::actions_add(
     if (nactions > actions.size())
     {
 
-        actions.push_back(
+        actions.emplace_back(
             Action<TSeq>(
                 agent_, virus_, tool_, entity_, new_state_, queue_, call_,
                 idx_agent_, idx_object_
@@ -226,82 +204,45 @@ template<typename TSeq>
 inline void Model<TSeq>::actions_run()
 {
     // Making the call
-    while (nactions != 0u)
+    size_t nactions_tmp = 0;
+    while (nactions_tmp < nactions)
     {
 
-        Action<TSeq> & a = actions[--nactions];
+        Action<TSeq> & a = actions[nactions_tmp++];
         Agent<TSeq> * p  = a.agent;
 
-        // Applying function
+        #ifdef EPI_DEBUG
+        if (a.new_state >= static_cast<epiworld_fast_int>(nstates))
+            throw std::range_error(
+                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
+                "The model currently has " + std::to_string(nstates - 1) + " states.");
+
+        if (a.new_state < 0)
+            throw std::range_error(
+                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
+                "The state cannot be negative.");
+        #endif
+
+        // Undoing the change in the transition matrix
+        if ((p->state_last_changed == today()) && (static_cast<int>(p->state) != a.new_state))
+        {
+            // Undoing state change in the transition matrix
+            // The previous state is already recorded
+            db.update_state(p->state_prev, p->state, true);
+
+        } else 
+            p->state_prev = p->state; // Recording the previous state
+
+        // Applying function after the fact. This way, if there were
+        // updates, they can be recorded properly, before losing the information
+        p->state = a.new_state;
         if (a.call)
         {
             a.call(a, this);
         }
 
-        if (a.new_state >= static_cast<epiworld_fast_int>(nstates))
-            throw epiexception(std::range_error)(
-                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
-                "The model currently has " + std::to_string(nstates - 1) + " states.");
-
-        if (a.new_state < 0)
-            throw epiexception(std::range_error)(
-                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
-                "The state cannot be negative.");
-
-        // Updating state
-        if (static_cast<epiworld_fast_int>(p->state) != a.new_state)
-        {
-
-            // Figuring out if we need to undo a change
-            // If the agent has made a change in the state recently, then we
-            // need to undo the accounting, e.g., if A->B was made, we need to
-            // undo it and set B->A so that the daily accounting is right.
-            if (p->state_last_changed == today())
-            {
-
-                // Updating accounting
-                db.update_state(p->state_prev, p->state, true); // Undoing
-                db.update_state(p->state_prev, a.new_state);
-
-                if (p->get_virus() != nullptr)
-                {
-                    db.update_virus(p->virus->id, p->state, p->state_prev); // Undoing
-                    db.update_virus(p->virus->id, p->state_prev, a.new_state);
-                }
-
-
-                for (size_t t = 0u; t < p->n_tools; ++t)
-                {
-                    db.update_tool(p->tools[t]->id, p->state, p->state_prev); // Undoing
-                    db.update_tool(p->tools[t]->id, p->state_prev, a.new_state);
-                }
-
-                // Changing to the new state, we won't update the
-                // previous state in case we need to undo the change
-                p->state = a.new_state;
-
-            } else {
-
-                // Updating accounting
-                db.update_state(p->state, a.new_state);
-
-                // We only update virus accounting if there is one!
-                if (p->get_virus() != nullptr)
-                    db.update_virus(p->virus->id, p->state, a.new_state);
-
-                for (size_t t = 0u; t < p->n_tools; ++t)
-                    db.update_tool(p->tools[t]->id, p->state, a.new_state);
-
-                // Saving the last state and setting the new one
-                p->state_prev = p->state;
-                p->state      = a.new_state;
-
-                // It used to be a day before, but we still
-                p->state_last_changed = today();
-
-            }
-            
-        }
+        // Registering that the last change was today
+        p->state_last_changed = today();
 
         #ifdef EPI_DEBUG
         if (static_cast<int>(p->state) >= static_cast<int>(nstates))
@@ -330,6 +271,9 @@ inline void Model<TSeq>::actions_run()
         }
 
     }
+
+    // Go back to square 1
+    nactions = 0u;
 
     return;
     
