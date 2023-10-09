@@ -99,7 +99,7 @@ int main() {
     model.add_tool(immune, 1.0);
     model.add_tool(vaccine, 0.5);
     model.add_tool(mask, 0.5);
-    model.add_tool_n(post_immunity, 0);
+    model.default_add_tool<TSeq>n(post_immunity, 0);
     
     // Initializing and printing information about the model ------------------
     model.queuing_off(); // Not working with rewiring just yet.

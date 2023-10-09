@@ -6059,7 +6059,6 @@ protected:
     bool using_backup = true;
     std::vector< Agent<TSeq> > population_backup = {};
 
-
     /**
      * @name Auxiliary variables for AgentsSample<TSeq> iterators
      * 
@@ -6176,7 +6175,7 @@ protected:
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         Entity<TSeq> * entity_,
-        epiworld_fast_uint new_state_,
+        epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
         ActionFun<TSeq> call_,
         int idx_agent_,
@@ -6218,7 +6217,7 @@ public:
 
     Model();
     Model(const Model<TSeq> & m);
-    Model(Model<TSeq> & m) = delete;
+    Model(Model<TSeq> & m);
     Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
@@ -6294,12 +6293,12 @@ public:
      * indicating number of individuals.
      */
     ///@{
-    void set_virus(Virus<TSeq> & v, epiworld_double preval);
-    void add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval);
-    void add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun);
+    void add_virus(Virus<TSeq> & v, epiworld_double preval);
+    void default_add_virus<TSeq>n(Virus<TSeq> & v, epiworld_fast_uint preval);
+    void default_add_virus<TSeq>fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun);
     void add_tool(Tool<TSeq> & t, epiworld_double preval);
-    void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
-    void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
+    void default_add_tool<TSeq>n(Tool<TSeq> & t, epiworld_fast_uint preval);
+    void default_add_tool<TSeq>fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
     void add_entity(Entity<TSeq> e);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
@@ -6838,7 +6837,7 @@ inline void Model<TSeq>::actions_add(
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
     Entity<TSeq> * entity_,
-    epiworld_fast_uint new_state_,
+    epiworld_fast_int new_state_,
     epiworld_fast_int queue_,
     ActionFun<TSeq> call_,
     int idx_agent_,
@@ -6871,7 +6870,7 @@ inline void Model<TSeq>::actions_add(
         A.virus      = virus_;
         A.tool       = tool_;
         A.entity     = entity_;
-        A.new_state = new_state_;
+        A.new_state  = new_state_;
         A.queue      = queue_;
         A.call       = call_;
         A.idx_agent  = idx_agent_;
@@ -6890,7 +6889,7 @@ inline void Model<TSeq>::actions_run()
     while (nactions != 0u)
     {
 
-        Action<TSeq>   a = actions[--nactions];
+        Action<TSeq> & a = actions[--nactions];
         Agent<TSeq> * p  = a.agent;
 
         // Applying function
@@ -6899,14 +6898,19 @@ inline void Model<TSeq>::actions_run()
             a.call(a, this);
         }
 
+        if (a.new_state >= static_cast<epiworld_fast_int>(nstates))
+            throw std::range_error(
+                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
+                "The model currently has " + std::to_string(nstates - 1) + " states.");
+
+        if (a.new_state < 0)
+            throw std::range_error(
+                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
+                "The state cannot be negative.");
+
         // Updating state
         if (static_cast<epiworld_fast_int>(p->state) != a.new_state)
         {
-
-            if (a.new_state >= static_cast<epiworld_fast_int>(nstates))
-                throw std::range_error(
-                    "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
-                    "The model currently has " + std::to_string(nstates - 1) + " states.");
 
             // Figuring out if we need to undo a change
             // If the agent has made a change in the state recently, then we
@@ -6919,8 +6923,11 @@ inline void Model<TSeq>::actions_run()
                 db.update_state(p->state_prev, p->state, true); // Undoing
                 db.update_state(p->state_prev, a.new_state);
 
-                db.update_virus(p->virus->id, p->state, p->state_prev); // Undoing
-                db.update_virus(p->virus->id, p->state_prev, a.new_state);
+                if (p->get_virus() != nullptr)
+                {
+                    db.update_virus(p->virus->id, p->state, p->state_prev); // Undoing
+                    db.update_virus(p->virus->id, p->state_prev, a.new_state);
+                }
 
 
                 for (size_t t = 0u; t < p->n_tools; ++t)
@@ -6938,7 +6945,9 @@ inline void Model<TSeq>::actions_run()
                 // Updating accounting
                 db.update_state(p->state, a.new_state);
 
-                db.update_virus(p->virus->id, p->state, a.new_state);
+                // We only update virus accounting if there is one!
+                if (p->get_virus() != nullptr)
+                    db.update_virus(p->virus->id, p->state, a.new_state);
 
                 for (size_t t = 0u; t < p->n_tools; ++t)
                     db.update_tool(p->tools[t]->id, p->state, a.new_state);
@@ -7145,6 +7154,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     agents_data_ncols = model.agents_data_ncols;
 
 }
+
+template<typename TSeq>
+inline Model<TSeq>::Model(Model<TSeq> & model) :
+    Model(dynamic_cast< const Model<TSeq> & >(model)) {}
 
 template<typename TSeq>
 inline Model<TSeq>::Model(Model<TSeq> && model) :
@@ -7754,7 +7767,7 @@ inline void Model<TSeq>::seed(size_t s) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_virus(Virus<TSeq> & v, epiworld_double preval)
+inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
 {
 
     if (preval > 1.0)
@@ -7788,7 +7801,7 @@ inline void Model<TSeq>::set_virus(Virus<TSeq> & v, epiworld_double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval)
+inline void Model<TSeq>::default_add_virus<TSeq>n(Virus<TSeq> & v, epiworld_fast_uint preval)
 {
 
     // Checking the ids
@@ -7816,7 +7829,7 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun)
+inline void Model<TSeq>::default_add_virus<TSeq>fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun)
 {
 
     // Checking the ids
@@ -7865,7 +7878,7 @@ inline void Model<TSeq>::add_tool(Tool<TSeq> & t, epiworld_double preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval)
+inline void Model<TSeq>::default_add_tool<TSeq>n(Tool<TSeq> & t, epiworld_fast_uint preval)
 {
     
     db.record_tool(t);
@@ -7878,7 +7891,7 @@ inline void Model<TSeq>::add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun)
+inline void Model<TSeq>::default_add_tool<TSeq>fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun)
 {
     
     db.record_tool(t);
@@ -12521,7 +12534,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
             [](Agent<TSeq> * p, Model<TSeq> * m) -> void
             {
 
-                if (p->get_virus() == nullptr)
+                if (p->get_virus() != nullptr)
                     throw std::logic_error(
                         std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
                         std::string("Agent id ") + std::to_string(p->get_id()) +
@@ -12599,7 +12612,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
 
                 }                    
 
-                if (p->get_virus() == nullptr)
+                if (p->get_virus() != nullptr)
                     throw std::logic_error(
                         std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
                         std::string("Agent id ") + std::to_string(p->get_id()) +
@@ -12677,7 +12690,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
         std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> res = 
             [](Agent<TSeq> * p, Model<TSeq> * m) -> Virus<TSeq>* {
 
-                if (p->get_virus() == nullptr)
+                if (p->get_virus() != nullptr)
                     throw std::logic_error(
                         std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
                         std::string("Agent id ") + std::to_string(p->get_id()) +
@@ -12688,25 +12701,26 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                 size_t nviruses_tmp = 0u;
                 for (auto & neighbor: p->get_neighbors()) 
                 {
-                            
-                    for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
-                    { 
-
-                        #ifdef EPI_DEBUG
-                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                        #endif
-                            
-                        /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nviruses_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                            v->get_prob_infecting(m) * 
-                            (1.0 - neighbor->get_transmission_reduction(v, m)) 
-                            ; 
                     
-                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    if (neighbor->get_virus() == nullptr)
+                        continue;
+
+                    auto & v = neighbor->get_virus();
+
+                    #ifdef EPI_DEBUG
+                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                    #endif
                         
-                    } 
+                    /* And it is a function of susceptibility_reduction as well */ 
+                    m->array_double_tmp[nviruses_tmp] =
+                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        v->get_prob_infecting(m) * 
+                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        ; 
+                
+                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    
                 }
 
                 // No virus to compute
@@ -12760,7 +12774,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
 
                 }    
                 
-                if (p->get_virus() == nullptr)
+                if (p->get_virus() != nullptr)
                     throw std::logic_error(
                         std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
                         std::string("Agent id ") + std::to_string(p->get_id()) +
@@ -12775,25 +12789,26 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                     // If the state is in the list, exclude it
                     if (exclude_agent_bool->operator[](neighbor->get_state()))
                         continue;
-                            
-                    for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
-                    { 
 
-                        #ifdef EPI_DEBUG
-                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                        #endif
+                    if (neighbor->get_virus() == nullptr)
+                        continue;
+
+                    auto & v = neighbor->get_virus();
                             
-                        /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nviruses_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                            v->get_prob_infecting(m) * 
-                            (1.0 - neighbor->get_transmission_reduction(v, m)) 
-                            ; 
-                    
-                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    #ifdef EPI_DEBUG
+                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                    #endif
                         
-                    } 
+                    /* And it is a function of susceptibility_reduction as well */ 
+                    m->array_double_tmp[nviruses_tmp] =
+                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        v->get_prob_infecting(m) * 
+                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        ; 
+                
+                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    
                 }
 
                 // No virus to compute
@@ -12836,7 +12851,7 @@ template<typename TSeq = int>
 inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 {
 
-    if (p->get_virus() == nullptr)
+    if (p->get_virus() != nullptr)
         throw std::logic_error(
             std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense!") +
             std::string("Agent id ") + std::to_string(p->get_id()) +
@@ -13115,18 +13130,18 @@ private:
     int state_last_changed = -1; ///< Last time the agent was updated.
     int id = -1;
     
-    VirusPtr<TSeq> virus;
+    VirusPtr<TSeq> virus = nullptr;
 
     std::vector< ToolPtr<TSeq> > tools;
     epiworld_fast_uint n_tools = 0u;
 
-    ActionFun<TSeq> add_virus_  = default_add_virus<TSeq>;
-    ActionFun<TSeq> add_tool_   = default_add_tool<TSeq>;
-    ActionFun<TSeq> add_entity_ = default_add_entity<TSeq>;
+    ActionFun<TSeq> default_add_virus<TSeq>  = default_add_virus<TSeq>;
+    ActionFun<TSeq> default_add_tool<TSeq>   = default_add_tool<TSeq>;
+    ActionFun<TSeq> default_add_entity<TSeq> = default_add_entity<TSeq>;
 
-    ActionFun<TSeq> rm_virus_  = default_rm_virus<TSeq>;
-    ActionFun<TSeq> rm_tool_   = default_rm_tool<TSeq>;
-    ActionFun<TSeq> rm_entity_ = default_rm_entity<TSeq>;
+    ActionFun<TSeq> default_rm_virus<TSeq>  = default_rm_virus<TSeq>;
+    ActionFun<TSeq> default_rm_tool<TSeq>   = default_rm_tool<TSeq>;
+    ActionFun<TSeq> default_rm_entity<TSeq> = default_rm_entity<TSeq>;
     
     epiworld_fast_uint action_counter = 0u;
 
@@ -13442,16 +13457,17 @@ template<typename TSeq>
 inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
 {
 
-    Agent<TSeq> * p    = a.agent;    
-    VirusPtr<TSeq> & v = a.agent->virus;
+    Agent<TSeq> * p    = a.agent;
+    VirusPtr<TSeq> & v = a.virus;
     
     CHECK_COALESCE_(a.new_state, v->state_post, p->get_state())
     CHECK_COALESCE_(a.queue, v->queue_post, -Queue<TSeq>::Everyone)
 
-    p->virus = nullptr;
-        
     // Calling the virus action over the removed virus
     v->post_recovery(model);
+
+    p->virus = nullptr;
+        
 
     return;
 
@@ -13630,12 +13646,12 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     id(p.id),
     tools(std::move(p.tools)), /// Needs to be adjusted
     n_tools(p.n_tools),
-    add_virus_(std::move(p.add_virus_)),
-    add_tool_(std::move(p.add_tool_)),
-    add_entity_(std::move(p.add_entity_)),
-    rm_virus_(std::move(p.rm_virus_)),
-    rm_tool_(std::move(p.rm_tool_)),
-    rm_entity_(std::move(p.rm_entity_)),
+    default_add_virus<TSeq>(std::move(p.default_add_virus<TSeq>)),
+    default_add_tool<TSeq>(std::move(p.default_add_tool<TSeq>)),
+    default_add_entity<TSeq>(std::move(p.default_add_entity<TSeq>)),
+    default_rm_virus<TSeq>(std::move(p.default_rm_virus<TSeq>)),
+    default_rm_tool<TSeq>(std::move(p.default_rm_tool<TSeq>)),
+    default_rm_entity<TSeq>(std::move(p.default_rm_entity<TSeq>)),
     action_counter(p.action_counter)
 {
 
@@ -13643,8 +13659,11 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     id     = p.id;
     
     // Dealing with the virus
-
-    virus->agent = this;
+    if (p.virus != nullptr)
+    {
+        virus = std::move(p.virus);
+        virus->set_agent(this);
+    }
 
     int loc = 0;
     for (auto & t : tools)
@@ -13678,8 +13697,11 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     id     = p.id;
     
     // Dealing with the virus
-    virus = std::make_shared<Virus<TSeq>>(*p.virus);
-    virus->set_agent(this);
+    if (p.virus != nullptr)
+    {
+        virus = std::make_shared<Virus<TSeq>>(*p.virus);
+        virus->set_agent(this);
+    }
     
 
     tools.reserve(p.get_n_tools());
@@ -13694,10 +13716,10 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
 
     }
 
-    add_virus_ = p.add_virus_;
-    add_tool_  = p.add_tool_;
-    rm_virus_  = p.rm_virus_;
-    rm_tool_   = p.rm_tool_;
+    default_add_virus<TSeq> = p.default_add_virus<TSeq>;
+    default_add_tool<TSeq>  = p.default_add_tool<TSeq>;
+    default_rm_virus<TSeq>  = p.default_rm_virus<TSeq>;
+    default_rm_tool<TSeq>   = p.default_rm_tool<TSeq>;
     
 }
 
@@ -13731,8 +13753,12 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     state_last_changed = other_agent.state_last_changed;
     id                  = other_agent.id;
     
-    virus = std::make_shared<Virus<TSeq>>(*other_agent.virus);
-    virus->set_agent(this);
+    if (other_agent.virus != nullptr)
+    {
+        virus = std::make_shared<Virus<TSeq>>(*other_agent.virus);
+        virus->set_agent(this);
+    } else
+        virus = nullptr;
     
     // tools               = other_agent.tools;
     n_tools             = other_agent.n_tools;
@@ -13742,12 +13768,12 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
         tools[i]->set_agent(this, i);
     }
 
-    add_virus_          = other_agent.add_virus_;
-    add_tool_           = other_agent.add_tool_;
-    add_entity_         = other_agent.add_entity_;
-    rm_virus_           = other_agent.rm_virus_;
-    rm_tool_            = other_agent.rm_tool_;
-    rm_entity_          = other_agent.rm_entity_;
+    default_add_virus<TSeq>          = other_agent.default_add_virus<TSeq>;
+    default_add_tool<TSeq>           = other_agent.default_add_tool<TSeq>;
+    default_add_entity<TSeq>         = other_agent.default_add_entity<TSeq>;
+    default_rm_virus<TSeq>           = other_agent.default_rm_virus<TSeq>;
+    default_rm_tool<TSeq>            = other_agent.default_rm_tool<TSeq>;
+    default_rm_entity<TSeq>          = other_agent.default_rm_entity<TSeq>;
     action_counter      = other_agent.action_counter;
     
     return *this;
@@ -13770,7 +13796,7 @@ inline void Agent<TSeq>::add_tool(
     
 
     model->actions_add(
-        this, nullptr, tool, nullptr, state_new, queue, add_tool_, -1, -1
+        this, nullptr, tool, nullptr, state_new, queue, default_add_tool<TSeq>, -1, -1
         );
 
 }
@@ -13803,7 +13829,7 @@ inline void Agent<TSeq>::set_virus(
             " included in the model.");
 
     model->actions_add(
-        this, virus, nullptr, nullptr, state_new, queue, add_virus_, -1, -1
+        this, virus, nullptr, nullptr, state_new, queue, default_add_virus<TSeq>, -1, -1
         );
 
 }
@@ -13833,7 +13859,7 @@ inline void Agent<TSeq>::add_entity(
     {
 
         model->actions_add(
-            this, nullptr, nullptr, &entity, state_new, queue, add_entity_, -1, -1
+            this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>, -1, -1
         );
 
     }
@@ -13842,7 +13868,7 @@ inline void Agent<TSeq>::add_entity(
     {
 
         Action<TSeq> a(
-                this, nullptr, nullptr, &entity, state_new, queue, add_entity_,
+                this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>,
                 -1, -1
             );
 
@@ -13868,7 +13894,7 @@ inline void Agent<TSeq>::rm_tool(
         );
 
     model->actions_add(
-        this, nullptr, tools[tool_idx], nullptr, state_new, queue, rm_tool_, -1, -1
+        this, nullptr, tools[tool_idx], nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
         );
 
 }
@@ -13886,7 +13912,7 @@ inline void Agent<TSeq>::rm_tool(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model->actions_add(
-        this, nullptr, tool, nullptr, state_new, queue, rm_tool_, -1, -1
+        this, nullptr, tool, nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
         );
 
 }
@@ -13999,6 +14025,14 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 
 }
 
+template<typename TSeq>
+inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
+) {
+
+    return model->susceptibility_reduction_mixer(this, v, model);
+}
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_transmission_reduction(
@@ -14448,12 +14482,20 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     //     state_last_changed != other.state_last_changed,
     //     "Agent:: state_last_changed don't match"
     //     ) ///< Last time the agent was updated.
-        
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        *virus != *other.virus,
-        "Agent:: virus doesn't match"
+        ((virus == nullptr) && (other.virus != nullptr)) ||
+            ((virus != nullptr) && (other.virus == nullptr)),
+        "Agent:: virus don't match"
     )
+
+    if ((virus != nullptr) && (other.virus != nullptr))
+    {
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *virus != *other.virus,
+            "Agent:: virus doesn't match"
+        )
+    }
     
     EPI_DEBUG_FAIL_AT_TRUE(n_tools != other.n_tools, "Agent:: n_tools don't match")
 
@@ -15090,7 +15132,7 @@ inline ModelSIS<TSeq>::ModelSIS(
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(0.0);
     
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     return;
 
@@ -15198,7 +15240,7 @@ inline ModelSIR<TSeq>::ModelSIR(
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_infecting(&model("Transmission rate"));
     
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.set_name("Susceptible-Infected-Recovered (SIR)");
 
@@ -15294,7 +15336,7 @@ public:
     ) -> void {
 
         // Getting the virus
-        auto v = p->get_virus(0);
+        auto v = p->get_virus();
 
         // Does the agent become infected?
         if (m->runif() < 1.0/(v->get_incubation(m)))
@@ -15310,7 +15352,7 @@ public:
     ) -> void {
         // Does the agent recover?
         if (m->runif() < (m->par("Recovery rate")))
-            p->rm_virus(0, m);
+            p->rm_virus(m);
 
         return;    
     };
@@ -15349,7 +15391,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     virus.set_prob_recovery(&model("Recovery rate"));
     
     // Adding the tool and the virus
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
     
     model.set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
@@ -15561,7 +15603,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     [](epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m) -> void
     {
 
-        epiworld::VirusPtr<TSeq> & v = p->get_virus(0u); 
+        epiworld::VirusPtr<TSeq> & v = p->get_virus(); 
         epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
         
         epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
@@ -15585,7 +15627,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         // If past days infected + latent, then bye.
         if (days_since_exposed >= v->get_data()[1u])
         {
-            p->rm_virus(0, m);
+            p->rm_virus(m);
             return;
         }
 
@@ -15733,7 +15775,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     covid.set_prob_infecting_fun(ptransmitfun);
     
-    model.add_virus_n(covid, prevalence);
+    model.default_add_virus<TSeq>n(covid, prevalence);
 
     model.set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
     model.add_global_action(surveillance_program, "Surveilance program", -1);
@@ -15988,24 +16030,25 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 if (neighbor.get_state() == ModelSIRCONN<TSeq>::INFECTED)
                 {
 
-                    for (const VirusPtr<TSeq> & v : neighbor.get_viruses()) 
-                    { 
+                    if (neighbor.get_virus() == nullptr)
+                        continue;
 
-                        #ifdef EPI_DEBUG
-                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                        #endif
-                            
-                        /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nviruses_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                            v->get_prob_infecting(m) * 
-                            (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                            ; 
-                    
-                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    auto & v = neighbor.get_virus();
+
+                    #ifdef EPI_DEBUG
+                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                    #endif
                         
-                    } 
+                    /* And it is a function of susceptibility_reduction as well */ 
+                    m->array_double_tmp[nviruses_tmp] =
+                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        v->get_prob_infecting(m) * 
+                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
+                        ; 
+                
+                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                      
 
                 }
             }
@@ -16039,14 +16082,10 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                for (const auto & v : p->get_viruses())
-                {
-
-                    // Recover
-                    m->array_double_tmp[n_events++] = 
-                        1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
-
-                }
+                // Recover
+                m->array_double_tmp[n_events++] = 
+                    1.0 - (1.0 - p->get_virus()->get_prob_recovery(m)) *
+                        (1.0 - p->get_recovery_enhancer(p->get_virus(), m)); 
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -16070,8 +16109,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     return;
 
                 // Which roulette happen?
-                size_t which_v = std::floor(which / 2);
-                p->rm_virus(which_v, m);
+                p->rm_virus(m);
 
                 return ;
 
@@ -16099,7 +16137,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
 
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.queuing_off(); // No queuing need
 
@@ -16307,24 +16345,21 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (neighbor.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
                 {
 
-                    for (const VirusPtr<TSeq> & v : neighbor.get_viruses()) 
-                    { 
+                    auto & v = neighbor.get_virus();
 
-                        #ifdef EPI_DEBUG
-                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                        #endif
-                            
-                        /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nviruses_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                            v->get_prob_infecting(m) * 
-                            (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                            ; 
-                    
-                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    #ifdef EPI_DEBUG
+                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                    #endif
                         
-                    } 
+                    /* And it is a function of susceptibility_reduction as well */ 
+                    m->array_double_tmp[nviruses_tmp] =
+                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        v->get_prob_infecting(m) * 
+                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
+                        ; 
+                
+                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
                 }
             }
@@ -16359,7 +16394,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             {
 
                 // Getting the virus
-                auto & v = p->get_virus(0u);
+                auto & v = p->get_virus();
 
                 // Does the agent become infected?
                 if (m->runif() < 1.0/(v->get_incubation(m)))
@@ -16377,14 +16412,11 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                for (const auto & v : p->get_viruses())
-                {
+                const auto & v = p->get_virus();
 
-                    // Recover
-                    m->array_double_tmp[n_events++] = 
-                        1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
-
-                }
+                // Recover
+                m->array_double_tmp[n_events++] = 
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -16408,8 +16440,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     return;
 
                 // Which roulette happen?
-                size_t which_v = std::floor(which / 2);
-                p->rm_virus(which_v, m);
+                p->rm_virus(m);
 
                 return ;
 
@@ -16445,7 +16476,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     virus.set_prob_recovery(&model("Prob. Recovery"));
     virus.set_incubation(&model("Avg. Incubation days"));
 
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.queuing_off(); // No queuing need
 
@@ -16573,7 +16604,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_death(&model("Death rate"));
     
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
@@ -16693,7 +16724,7 @@ inline ModelSISD<TSeq>::ModelSISD(
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(0.01);
     
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     return;
 
@@ -16793,7 +16824,7 @@ public:
   ) -> void {
 
     // Getting the virus
-    auto v = p->get_virus(0);
+    auto v = p->get_virus();
 
     // Does the agent become infected?
     if (m->runif() < 1.0/(v->get_incubation(m)))
@@ -16806,23 +16837,20 @@ public:
   epiworld::UpdateFun<TSeq> update_infected = [](
     epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
   ) -> void {
-    
-    auto state = p->get_state();
-      
+          
     // Odd: Die, Even: Recover
     epiworld_fast_uint n_events = 0u;
-    for (const auto & v : p->get_viruses())
-    {
+
+    const auto & v = p->get_virus();
       
-      // Die
-      m->array_double_tmp[n_events++] = 
-        v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
-      
-      // Recover
-      m->array_double_tmp[n_events++] = 
-        1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
-      
-    }
+    // Die
+    m->array_double_tmp[n_events++] = 
+      v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
+    
+    // Recover
+    m->array_double_tmp[n_events++] = 
+      1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
+    
     
 #ifdef EPI_DEBUG
     if (n_events == 0u)
@@ -16849,13 +16877,11 @@ public:
     if ((which % 2) == 0) // If odd
     {
       
-      size_t which_v = std::ceil(which / 2);
-      p->rm_agent_by_virus(which_v, m);
+      p->rm_agent_by_virus(m);
       
     } else {
       
-      size_t which_v = std::floor(which / 2);
-      p->rm_virus(which_v, m);
+      p->rm_virus(m);
       
     }
     
@@ -16905,7 +16931,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   virus.set_prob_recovery(&model("Recovery rate"));
   
   // Adding the tool and the virus
-  model.set_virus(virus, prevalence);
+  model.add_virus(virus, prevalence);
   
   model.set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD)");
   
@@ -17141,24 +17167,21 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                 if (neighbor.get_state() == ModelSIRDCONN<TSeq>::INFECTED)
                 {
 
-                    for (const VirusPtr<TSeq> & v : neighbor.get_viruses()) 
-                    { 
-
-                        #ifdef EPI_DEBUG
-                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                        #endif
-                            
-                        /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nviruses_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                            v->get_prob_infecting(m) * 
-                            (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                            ; 
+                    const auto & v = neighbor.get_virus();
                     
-                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    #ifdef EPI_DEBUG
+                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                    #endif
                         
-                    } 
+                    /* And it is a function of susceptibility_reduction as well */ 
+                    m->array_double_tmp[nviruses_tmp] =
+                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        v->get_prob_infecting(m) * 
+                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
+                        ; 
+                
+                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
                 }
             }
@@ -17190,55 +17213,50 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
             {
 
 
-              // Odd: Die, Even: Recover
-              epiworld_fast_uint n_events = 0u;
-              for (const auto & v : p->get_viruses())
-              {
-                
+                // Odd: Die, Even: Recover
+                epiworld_fast_uint n_events = 0u;
+                const auto & v = p->get_virus();
+                    
                 // Die
                 m->array_double_tmp[n_events++] = 
-                  v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
+                v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
                 
                 // Recover
                 m->array_double_tmp[n_events++] = 
-                  1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
+                1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
                 
-              }
-              
-#ifdef EPI_DEBUG
-              if (n_events == 0u)
-              {
-                printf_epiworld(
-                  "[epi-debug] agent %i has 0 possible events!!\n",
-                  static_cast<int>(p->get_id())
-                );
-                throw std::logic_error("Zero events in exposed.");
-              }
-#else
-              if (n_events == 0u)
-                return;
-#endif
-              
-              
-              // Running the roulette
-              int which = roulette(n_events, m);
-              
-              if (which < 0)
-                return;
-              
-              // Which roulette happen?
-              if ((which % 2) == 0) // If odd
-              {
+    #ifdef EPI_DEBUG
+                if (n_events == 0u)
+                {
+                    printf_epiworld(
+                    "[epi-debug] agent %i has 0 possible events!!\n",
+                    static_cast<int>(p->get_id())
+                    );
+                    throw std::logic_error("Zero events in exposed.");
+                }
+    #else
+                if (n_events == 0u)
+                    return;
+    #endif
                 
-                size_t which_v = std::ceil(which / 2);
-                p->rm_agent_by_virus(which_v, m);
                 
-              } else {
+                // Running the roulette
+                int which = roulette(n_events, m);
                 
-                size_t which_v = std::floor(which / 2);
-                p->rm_virus(which_v, m);
+                if (which < 0)
+                    return;
                 
-              }
+                // Which roulette happen?
+                if ((which % 2) == 0) // If odd
+                {
+                    
+                    p->rm_agent_by_virus(m);
+                    
+                } else {
+                    
+                    p->rm_virus(m);
+                    
+                }
 
                 return ;
 
@@ -17270,7 +17288,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(&model("Death rate"));
     
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.queuing_off(); // No queuing need
 
@@ -17485,25 +17503,23 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 if (neighbor.get_state() == ModelSEIRDCONN<TSeq>::INFECTED)
                 {
 
-                    for (const VirusPtr<TSeq> & v : neighbor.get_viruses()) 
-                    { 
+                    const auto & v = neighbor.get_virus();
 
-                        #ifdef EPI_DEBUG
-                        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                        #endif
-                            
-                        /* And it is a function of susceptibility_reduction as well */ 
-                        m->array_double_tmp[nviruses_tmp] =
-                            (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                            v->get_prob_infecting(m) * 
-                            (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                            ; 
-                    
-                        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                
+                    #ifdef EPI_DEBUG
+                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                    #endif
                         
-                    } 
-
+                    /* And it is a function of susceptibility_reduction as well */ 
+                    m->array_double_tmp[nviruses_tmp] =
+                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        v->get_prob_infecting(m) * 
+                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
+                        ; 
+                
+                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                    
                 }
             }
 
@@ -17537,7 +17553,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
             {
 
                 // Getting the virus
-                auto & v = p->get_virus(0u);
+                auto & v = p->get_virus();
 
                 // Does the agent become infected?
                 if (m->runif() < 1.0/(v->get_incubation(m)))
@@ -17552,56 +17568,50 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
             } else if (state == ModelSEIRDCONN<TSeq>::INFECTED)
             {
 
-
-              // Odd: Die, Even: Recover
-              epiworld_fast_uint n_events = 0u;
-              for (const auto & v : p->get_viruses())
-              {
+                // Odd: Die, Even: Recover
+                epiworld_fast_uint n_events = 0u;
+                const auto & v = p->get_virus();
                 
                 // Die
                 m->array_double_tmp[n_events++] = 
-                  v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
+                    v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
                 
                 // Recover
                 m->array_double_tmp[n_events++] = 
-                  1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
-                
-              }
-              
-              #ifdef EPI_DEBUG
-              if (n_events == 0u)
-              {
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
+                                
+                #ifdef EPI_DEBUG
+                if (n_events == 0u)
+                {
                 printf_epiworld(
-                  "[epi-debug] agent %i has 0 possible events!!\n",
-                  static_cast<int>(p->get_id())
+                    "[epi-debug] agent %i has 0 possible events!!\n",
+                    static_cast<int>(p->get_id())
                 );
                 throw std::logic_error("Zero events in exposed.");
-              }
-              #else
-              if (n_events == 0u)
+                }
+                #else
+                if (n_events == 0u)
                 return;
-              #endif
-              
-              
-              // Running the roulette
-              int which = roulette(n_events, m);
-              
-              if (which < 0)
+                #endif
+                
+                
+                // Running the roulette
+                int which = roulette(n_events, m);
+                
+                if (which < 0)
                 return;
-              
-              // Which roulette happen?
-              if ((which % 2) == 0) // If odd
-              {
                 
-                size_t which_v = std::ceil(which / 2);
-                p->rm_agent_by_virus(which_v, m);
+                // Which roulette happen?
+                if ((which % 2) == 0) // If odd
+                {
                 
-              } else {
+                    p->rm_agent_by_virus(m);
                 
-                size_t which_v = std::floor(which / 2);
-                p->rm_virus(which_v, m);
+                } else {
                 
-              }
+                    p->rm_virus(m);
+                
+                }
 
                 return ;
 
@@ -17639,7 +17649,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     virus.set_prob_recovery(&model("Prob. Recovery"));
     virus.set_incubation(&model("Avg. Incubation days"));
     virus.set_prob_death(&model("Death rate"));
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.queuing_off(); // No queuing need
 
@@ -17891,30 +17901,30 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             for (auto & neighbor: p->get_neighbors()) 
             {
                 
-                for (const VirusPtr<TSeq> & v : neighbor->get_viruses()) 
-                { 
+                if (neighbor->get_virus() == nullptr)
+                    continue;
 
-                    #ifdef EPI_DEBUG
-                    if (nviruses_tmp >= m->array_virus_tmp.size())
-                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                    #endif
-                        
-                    /* And it is a function of susceptibility_reduction as well */ 
-                    m->array_double_tmp[nviruses_tmp] =
-                        baseline +
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                        v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m))  *
-                        coef_exposure
-                        ; 
+                auto & v = neighbor->get_virus();
 
-                    // Applying the plogis function
-                    m->array_double_tmp[nviruses_tmp] = 1.0/
-                        (1.0 + std::exp(-m->array_double_tmp[nviruses_tmp]));
-                
-                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                #ifdef EPI_DEBUG
+                if (nviruses_tmp >= m->array_virus_tmp.size())
+                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                #endif
+                    
+                /* And it is a function of susceptibility_reduction as well */ 
+                m->array_double_tmp[nviruses_tmp] =
+                    baseline +
+                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                    v->get_prob_infecting(m) * 
+                    (1.0 - neighbor->get_transmission_reduction(v, m))  *
+                    coef_exposure
+                    ; 
 
-                }
+                // Applying the plogis function
+                m->array_double_tmp[nviruses_tmp] = 1.0/
+                    (1.0 + std::exp(-m->array_double_tmp[nviruses_tmp]));
+            
+                m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
             }
 
@@ -17952,7 +17962,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             prob = 1.0/(1.0 + std::exp(-prob));
 
             if (prob > m->runif())
-                p->rm_virus(0, m);
+                p->rm_virus(m);
             
             return;
 
@@ -17982,7 +17992,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     // virus.set_prob
 
-    model.set_virus(virus, prevalence);
+    model.add_virus(virus, prevalence);
 
     model.set_name("Susceptible-Infected-Removed (SIR) (logit)");
 
@@ -18214,7 +18224,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     
     innovation.set_prob_infecting(&model(parname));
     
-    model.set_virus(innovation, prevalence);
+    model.add_virus(innovation, prevalence);
 
     model.set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);
@@ -18276,8 +18286,6 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-
-    
 
 }
 

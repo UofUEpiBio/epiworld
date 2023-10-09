@@ -50,8 +50,8 @@ int main()
     postImm.set_susceptibility_reduction(1.0);
 
     model.add_tool(is, 1.0);
-    model.add_tool_n(postImm, 0u);
-    model.add_virus_n(v, 5);
+    model.default_add_tool<TSeq>n(postImm, 0u);
+    model.default_add_virus<TSeq>n(v, 5);
     model.run(112, 30);
     model.print();
 

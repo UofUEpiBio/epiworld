@@ -137,7 +137,7 @@ int main()
     
     virus.set_status(1, 2);
 
-    model.add_virus_n(virus, 1000);
+    model.default_add_virus<TSeq>n(virus, 1000);
     
     // Generating a random pop from a smallworld network
     model.agents_smallworld(100000, 4L, false, .01);

@@ -63,7 +63,8 @@
     "thread": "cpp",
     "typeinfo": "cpp",
     "variant": "cpp",
-    "semaphore": "cpp"
+    "semaphore": "cpp",
+    "list": "cpp"
   },
   "intel-corporation.oneapi-analysis-configurator.binary-path": "/home/george/Documents/development/epiworld/tests/01c.o"
 }

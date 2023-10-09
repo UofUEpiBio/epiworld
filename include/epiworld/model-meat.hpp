@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_MODEL_MEAT_HPP
 #define EPIWORLD_MODEL_MEAT_HPP
 
-
-
 /**
  * @brief Function factory for saving model runs
  * 
@@ -150,19 +148,42 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     return saver;
 }
 
+
 template<typename TSeq>
 inline void Model<TSeq>::actions_add(
     Agent<TSeq> * agent_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
     Entity<TSeq> * entity_,
-    epiworld_fast_uint new_state_,
+    epiworld_fast_int new_state_,
     epiworld_fast_int queue_,
     ActionFun<TSeq> call_,
     int idx_agent_,
     int idx_object_
 ) {
-    
+
+    // if (!virus_ && !tool_ && !entity_ && (entity == nullptr))
+    //     throw std::logic_error("Either virus or tool must be set.");
+    // else if (virus_)
+    // {
+
+    //     CHECK_COALESCE_(new_state_, virus_->state_init, agent->state);
+    //     CHECK_COALESCE_(queue_, virus_->queue_init, Queue<TSeq>::Everyone);
+        
+    // } else if (tool_)
+    // {
+
+    //     CHECK_COALESCE_(new_state_, tool_->state_init, agent->state);
+    //     CHECK_COALESCE_(queue_, virus_->queue_init, Queue<TSeq>::NoOne);
+
+    // } else if (entity != nullptr)
+    // {
+
+    //     CHECK_COALESCE_(new_state_, entity_->state_init, agent->state);
+    //     CHECK_COALESCE_(queue_, entity_->queue_init, Queue<TSeq>::NoOne);
+
+    // } 
+
     ++nactions;
 
     #ifdef EPI_DEBUG
@@ -189,7 +210,7 @@ inline void Model<TSeq>::actions_add(
         A.virus      = virus_;
         A.tool       = tool_;
         A.entity     = entity_;
-        A.new_state = new_state_;
+        A.new_state  = new_state_;
         A.queue      = queue_;
         A.call       = call_;
         A.idx_agent  = idx_agent_;
@@ -208,7 +229,7 @@ inline void Model<TSeq>::actions_run()
     while (nactions != 0u)
     {
 
-        Action<TSeq>   a = actions[--nactions];
+        Action<TSeq> & a = actions[--nactions];
         Agent<TSeq> * p  = a.agent;
 
         // Applying function
@@ -217,14 +238,19 @@ inline void Model<TSeq>::actions_run()
             a.call(a, this);
         }
 
+        if (a.new_state >= static_cast<epiworld_fast_int>(nstates))
+            throw epiexception(std::range_error)(
+                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
+                "The model currently has " + std::to_string(nstates - 1) + " states.");
+
+        if (a.new_state < 0)
+            throw epiexception(std::range_error)(
+                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
+                "The state cannot be negative.");
+
         // Updating state
         if (static_cast<epiworld_fast_int>(p->state) != a.new_state)
         {
-
-            if (a.new_state >= static_cast<epiworld_fast_int>(nstates))
-                throw std::range_error(
-                    "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
-                    "The model currently has " + std::to_string(nstates - 1) + " states.");
 
             // Figuring out if we need to undo a change
             // If the agent has made a change in the state recently, then we
@@ -237,8 +263,11 @@ inline void Model<TSeq>::actions_run()
                 db.update_state(p->state_prev, p->state, true); // Undoing
                 db.update_state(p->state_prev, a.new_state);
 
-                db.update_virus(p->virus->id, p->state, p->state_prev); // Undoing
-                db.update_virus(p->virus->id, p->state_prev, a.new_state);
+                if (p->get_virus() != nullptr)
+                {
+                    db.update_virus(p->virus->id, p->state, p->state_prev); // Undoing
+                    db.update_virus(p->virus->id, p->state_prev, a.new_state);
+                }
 
 
                 for (size_t t = 0u; t < p->n_tools; ++t)
@@ -256,7 +285,9 @@ inline void Model<TSeq>::actions_run()
                 // Updating accounting
                 db.update_state(p->state, a.new_state);
 
-                db.update_virus(a.virus->id, p->state, a.new_state);
+                // We only update virus accounting if there is one!
+                if (p->get_virus() != nullptr)
+                    db.update_virus(p->virus->id, p->state, a.new_state);
 
                 for (size_t t = 0u; t < p->n_tools; ++t)
                     db.update_tool(p->tools[t]->id, p->state, a.new_state);
@@ -463,6 +494,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     agents_data_ncols = model.agents_data_ncols;
 
 }
+
+template<typename TSeq>
+inline Model<TSeq>::Model(Model<TSeq> & model) :
+    Model(dynamic_cast< const Model<TSeq> & >(model)) {}
 
 template<typename TSeq>
 inline Model<TSeq>::Model(Model<TSeq> && model) :

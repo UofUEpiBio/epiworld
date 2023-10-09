@@ -98,14 +98,6 @@ private:
     std::vector< ToolPtr<TSeq> > tools;
     epiworld_fast_uint n_tools = 0u;
 
-    ActionFun<TSeq> add_virus_  = default_add_virus<TSeq>;
-    ActionFun<TSeq> add_tool_   = default_add_tool<TSeq>;
-    ActionFun<TSeq> add_entity_ = default_add_entity<TSeq>;
-
-    ActionFun<TSeq> rm_virus_  = default_rm_virus<TSeq>;
-    ActionFun<TSeq> rm_tool_   = default_rm_tool<TSeq>;
-    ActionFun<TSeq> rm_entity_ = default_rm_entity<TSeq>;
-    
     epiworld_fast_uint action_counter = 0u;
 
     std::vector< Agent<TSeq> * > sampled_agents;

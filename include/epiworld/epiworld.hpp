@@ -69,7 +69,7 @@ namespace epiworld {
 
     #include "agentssample-bones.hpp"
 
-    #include "models/models.hpp"    
+    #include "models/models.hpp"
 
 }
 

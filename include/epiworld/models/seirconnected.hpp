@@ -149,9 +149,6 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (neighbor.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
                 {
 
-                    if (neighbor.get_virus() == nullptr)
-                        continue;
-
                     auto & v = neighbor.get_virus();
 
                     #ifdef EPI_DEBUG
