@@ -242,7 +242,9 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
             // Computing recovery probability once
             double prob    = 0.0;
+            #if defined(__OPENMP) || defined(_OPENMP)
             #pragma omp simd reduction(+:prob)
+            #endif
             for (size_t i = 0u; i < _m->coefs_recover.size(); ++i)
                 prob += p->operator[](i) * _m->coefs_recover[i];
 

@@ -3,40 +3,45 @@
 Output from the program:
 
 ```
-Running the model...
 _________________________________________________________________________
+Running the model...
 ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
-[epiworld-debug] DEBUGGING ON (compiled with EPI_DEBUG defined)
-
+ done.
+________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
+Name of the model   : (none)
 Population size     : 10000
+Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
-Number of variants  : 1
-Last run elapsed t  : 40.00ms
+Number of viruses   : 1
+Last run elapsed t  : 16.00ms
+Last run speed      : 59.75 million agents x day / second
 Rewiring            : off
+
+Global actions:
+ (none)
 
 Virus(es):
  - covid 19 (baseline prevalence: 50 seeds)
 
 Tool(s):
  - vaccine (baseline prevalence: 50.00%)
- - Immunity (covid 19) (originated in the model...)
 
 Model parameters:
  (none)
 
 Distribution of the population at time 100:
- - (0) Susceptible :  9950 -> 70
- - (1) Exposed     :    50 -> 70
- - (2) Recovered   :     0 -> 9271
- - (3) Removed     :     0 -> 589
+  - (0) Susceptible :  9950 -> 0
+  - (1) Exposed     :    50 -> 0
+  - (2) Recovered   :     0 -> 9399
+  - (3) Removed     :     0 -> 601
 
 Transition Probabilities:
- - Susceptible  0.95  0.05  0.00  0.00
- - Exposed      0.00  0.85  0.14  0.01
+ - Susceptible  0.87  0.13  0.00  0.00
+ - Exposed      0.00  0.83  0.15  0.01
  - Recovered    0.00  0.00  1.00  0.00
  - Removed      0.00  0.00  0.00  1.00
 

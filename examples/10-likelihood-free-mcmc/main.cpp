@@ -13,8 +13,8 @@ std::vector< int > simfun(
     LFMCMC<std::vector<int>> * m
 ) {
 
-    model("Prob. of Recovery") = params[0u];
-    model("Infectiousness")  = params[1u];
+    model("Recovery rate") = params[0u];
+    model("Transmission rate")  = params[1u];
 
     model.reset();
     model.run(50);
