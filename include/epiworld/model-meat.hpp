@@ -1792,6 +1792,15 @@ inline void Model<TSeq>::update_state() {
 template<typename TSeq>
 inline void Model<TSeq>::mutate_virus() {
 
+    // Checking if any virus has mutation
+    size_t nmutates = 0u;
+    for (const auto & v: viruses)
+        if (v->mutation_fun)
+            nmutates++;
+
+    if (nmutates == 0u)
+        return;
+
     if (use_queuing)
     {
 
