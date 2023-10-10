@@ -38,7 +38,7 @@ namespace epiworld {
     #define EPIWORLD_MAXNEIGHBORS 1048576
 #endif
 
-#ifdef _OPENMP
+#if defined(_OPENMP) || defined(__OPENMP)
     #include <omp.h>
 // #else
 //     #define omp_get_thread_num() 0
@@ -305,7 +305,7 @@ public:
     #define epiexception(a) a
 #endif
 
-#if defined(EPI_DEBUG_NO_THREAD_ID) && (defined(__OPENMP) || defined(_OPENMP))
+#if defined(EPI_DEBUG_NO_THREAD_ID) || (!defined(__OPENMP) && !defined(_OPENMP))
     #define EPI_GET_THREAD_ID() 0
 #else
     #define EPI_GET_THREAD_ID() omp_get_thread_num()
@@ -8480,6 +8480,15 @@ inline void Model<TSeq>::update_state() {
 template<typename TSeq>
 inline void Model<TSeq>::mutate_virus() {
 
+    // Checking if any virus has mutation
+    size_t nmutates = 0u;
+    for (const auto & v: viruses)
+        if (v->mutation_fun)
+            nmutates++;
+
+    if (nmutates == 0u)
+        return;
+
     if (use_queuing)
     {
 
@@ -10102,8 +10111,6 @@ class Virus {
 private:
     
     Agent<TSeq> * agent       = nullptr;
-    int       pos_in_agent    = -99; ///< Location in the agent
-    int agent_exposure_number = -99;
 
     std::shared_ptr<TSeq> baseline_sequence = nullptr;
     std::shared_ptr<std::string> virus_name = nullptr;
@@ -10116,10 +10123,6 @@ private:
     VirusFun<TSeq>        probability_of_recovery_fun  = nullptr;
     VirusFun<TSeq>        probability_of_death_fun     = nullptr;
     VirusFun<TSeq>        incubation_fun               = nullptr;
-
-    // Setup parameters
-    std::vector< epiworld_double * > params = {};
-    std::vector< epiworld_double > data = {};
 
     epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
     epiworld_fast_int state_post    = -99; ///< Change of state when removed from agent.
@@ -10319,7 +10322,9 @@ inline VirusFun<TSeq> virus_fun_logit(
         size_t K = coefs_f.size();
         epiworld_double res = 0.0;
 
+        #if defined(__OPENMP) || defined(_OPENMP)
         #pragma omp simd reduction(+:res)
+        #endif
         for (size_t i = 0u; i < K; ++i)
             res += agent->operator[](vars.at(i)) * coefs_f.at(i);
 
@@ -11385,7 +11390,9 @@ inline ToolFun<TSeq> tool_fun_logit(
         size_t K = coefs_f.size();
         epiworld_double res = 0.0;
 
+        #if defined(__OPENMP) || defined(_OPENMP)
         #pragma omp simd reduction(+:res)
+        #endif
         for (size_t i = 0u; i < K; ++i)
             res += agent->operator[](vars.at(i)) * coefs_f.at(i);
 
@@ -13093,8 +13100,6 @@ private:
     std::vector< ToolPtr<TSeq> > tools;
     epiworld_fast_uint n_tools = 0u;
 
-    epiworld_fast_uint action_counter = 0u;
-
     std::vector< Agent<TSeq> * > sampled_agents;
     size_t sampled_agents_n      = 0u;
     std::vector< size_t > sampled_agents_left;
@@ -13655,8 +13660,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     state_last_changed(p.state_last_changed),
     id(p.id),
     tools(std::move(p.tools)), /// Needs to be adjusted
-    n_tools(p.n_tools),
-    action_counter(p.action_counter)
+    n_tools(p.n_tools)
 {
 
     state = p.state;
@@ -13766,8 +13770,6 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
         tools[i] = std::make_shared<Tool<TSeq>>(*other_agent.tools[i]);
         tools[i]->set_agent(this, i);
     }
-
-    action_counter      = other_agent.action_counter;
     
     return *this;
     
@@ -14989,7 +14991,9 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
             // Computing the probability using a logit. Uses OpenMP reduction
             // to sum the coefficients.
             double p = 0.0;
+            #if defined(__OPENMP) || defined(_OPENMP)
             #pragma omp parallel for reduction(+:p)
+            #endif
             for (size_t i = 0u; i < coefs.size(); ++i)
                 p += coefs.at(i) * agent(vars[i]);
 
@@ -17952,7 +17956,9 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
             // Computing recovery probability once
             double prob    = 0.0;
+            #if defined(__OPENMP) || defined(_OPENMP)
             #pragma omp simd reduction(+:prob)
+            #endif
             for (size_t i = 0u; i < _m->coefs_recover.size(); ++i)
                 prob += p->operator[](i) * _m->coefs_recover[i];
 
