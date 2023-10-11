@@ -1,7 +1,7 @@
 all: main.o
 
 main.o: main.cpp clean
-	g++ -std=c++14 -Wall -Wextra -Wnull-dereference -fdelete-null-pointer-checks -O2 -fopenmp -g -pedantic main.cpp -o main.o
+	g++ -std=c++14 -Wunused -Wall -Wextra -Wnull-dereference -fdelete-null-pointer-checks -O2 -fopenmp -g -pedantic main.cpp -o main.o
 
 main.a: main.cpp clean
 	clang++ -std=c++14 -Wall -Wextra -fopenmp -Wpedantic -O2 main.cpp -o main.a

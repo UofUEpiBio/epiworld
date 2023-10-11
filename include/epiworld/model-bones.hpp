@@ -169,8 +169,11 @@ protected:
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
-    std::vector< UpdateFun<TSeq> >    state_fun = {};
-    std::vector< std::string >        states_labels = {};
+    std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
+    std::vector< std::string >        states_labels = {};              ///< Labels of the states
+    
+    /** Function to distribute states. Goes along with the function  */
+    std::function<void(Model<TSeq>*)> initial_states_fun = nullptr;
     epiworld_fast_uint nstates = 0u;
     
     bool verbose     = true;
@@ -437,8 +440,8 @@ public:
         );
     ///@}
 
-    size_t get_n_viruses() const;
-    size_t get_n_tools() const;
+    size_t get_n_viruses() const; ///< Number of viruses in the model
+    size_t get_n_tools() const; ///< Number of tools in the model
     epiworld_fast_uint get_ndays() const;
     epiworld_fast_uint get_n_replicates() const;
     void set_ndays(epiworld_fast_uint ndays);
@@ -548,6 +551,19 @@ public:
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
     void print_state_codes() const;
     ///@}
+
+    /**
+     * @name Initial states
+     * 
+     * @details These functions are called before the simulation starts.
+     * 
+     * @param proportions_ Vector of proportions for each state.
+     * @param queue_ Vector of queue for each state.
+     */
+    virtual void initial_states(
+        std::vector< double > /*proportions_*/,
+        std::vector< int > /*queue_*/
+    ) {};
 
     /**
      * @name Setting and accessing parameters from the model

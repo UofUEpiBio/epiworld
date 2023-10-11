@@ -285,7 +285,6 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
             std::iota(agents_left->begin(), agents_left->end(), 0u);
         }
 
-
     } else if (sample_type == SAMPLETYPE::ENTITY) {
 
         if (entity->size() != agents_left->size())
@@ -301,6 +300,10 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
     // Restart the counter of agents left
     *agents_left_n = agents_left->size();
 
+    #ifdef EPI_DEBUG
+    std::vector< bool > __sampled(*agents_left_n, false);
+    #endif
+
     if (agents->size() < sample_size)
         agents->resize(sample_size, nullptr);
 
@@ -310,24 +313,42 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
         for (size_t i = 0u; i < n; ++i)
         {
 
-            size_t ith = agents_left->operator[](model->runif() * ((*agents_left_n)--));
+            size_t ith_ = static_cast<size_t>(model->runif() * ((*agents_left_n)--));
+            size_t ith  = agents_left->operator[](ith_);
             agents->operator[](i) = &model->population[ith];
 
+            #ifdef EPI_DEBUG
+            if (__sampled[ith])
+                throw std::logic_error("The same agent was sampled twice.");
+            else
+                __sampled[ith] = true;
+            #endif
+
             // Updating list
-            std::swap(agents_left->operator[](ith), agents_left->operator[](*agents_left_n));
+            std::swap(agents_left->operator[](ith_), agents_left->operator[](*agents_left_n));
 
         }
+
+        
 
     } else if (sample_type == SAMPLETYPE::ENTITY) {
 
         for (size_t i = 0u; i < n; ++i)
         {
 
-            size_t ith = agents_left->operator[](model->runif() * (--(*agents_left_n)));
-            agents->operator[](i) = entity->agents[ith];
+            size_t ith_ = static_cast<size_t>(model->runif() * ((*agents_left_n)--));
+            size_t ith  = agents_left->operator[](ith_);
+            agents->operator[](i) = &model->population[entity->agents[ith]];
+
+            #ifdef EPI_DEBUG
+            if (__sampled[ith])
+                throw std::logic_error("The same agent was sampled twice.");
+            else
+                __sampled[ith] = true;
+            #endif
 
             // Updating list
-            std::swap(agents_left->operator[](ith), agents_left->operator[](*agents_left_n));
+            std::swap(agents_left->operator[](ith_), agents_left->operator[](*agents_left_n));
 
         }
 

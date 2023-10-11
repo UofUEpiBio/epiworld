@@ -399,6 +399,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     pb(model.pb),
     state_fun(model.state_fun),
     states_labels(model.states_labels),
+    initial_states_fun(model.initial_states_fun),
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(model.current_date),
@@ -483,6 +484,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     pb(std::move(model.pb)),
     state_fun(std::move(model.state_fun)),
     states_labels(std::move(model.states_labels)),
+    initial_states_fun(std::move(model.initial_states_fun)),
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
@@ -554,6 +556,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     state_fun    = m.state_fun;
     states_labels = m.states_labels;
+    initial_states_fun = m.initial_states_fun;
     nstates       = m.nstates;
 
     verbose     = m.verbose;
@@ -738,10 +741,16 @@ inline void Model<TSeq>::dist_virus()
 
     // Starting first infection
     int n = size();
-    std::vector< size_t > idx(n);
+    std::vector< size_t > idx;
+    idx.reserve(n);
 
-    int n_left = n;
-    std::iota(idx.begin(), idx.end(), 0);
+    // Only individuals in state 0 can be included
+    for (size_t i = 0u; i < n; ++i)
+        if (population[i].state == 0u)
+            idx.push_back(i);
+
+    int n_left = idx.size();
+    // std::iota(idx.begin(), idx.end(), 0);
 
     for (size_t v = 0u; v < viruses.size(); ++v)
     {
@@ -2075,6 +2084,13 @@ inline void Model<TSeq>::reset() {
     // This also clears the queue
     if (use_queuing)
         queue.reset();
+
+    // Distributing initial state, if specified
+    if (initial_states_fun)
+    {
+        initial_states_fun(this);
+        actions_run();
+    }
 
     // Re distributing tools and virus
     dist_virus();
