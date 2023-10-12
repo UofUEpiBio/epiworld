@@ -41,7 +41,7 @@ private:
     Agent<TSeq> * agent   = nullptr;
     
     int sample_type = SAMPLETYPE::AGENT;
-    int std::vector< size_t > states = {};
+    std::vector< size_t > states = {};
 
     void sample_n(size_t n); ///< Backbone function for sampling
 
@@ -70,8 +70,6 @@ public:
         std::vector< size_t > states_ = {},
         bool truncate = false
         );
-
-    void set_state(int s) { state = s; };
 
     ~AgentsSample();
 
@@ -242,7 +240,7 @@ inline AgentsSample<TSeq>::AgentsSample(
                 if (e == 0) // From the first group
                     agent_idx = entities_a[e][jth];
                 else
-                    agent_idx = = entities_a[e][jth - cum_agents_count[e - 1]];
+                    agent_idx = entities_a[e][jth - cum_agents_count[e - 1]];
 
                 // Getting the state
                 size_t state = model->population[agent_idx].get_state();
@@ -322,14 +320,42 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
     {
             
         // Getting the number of agents left
-        size_t n_agents_left = 0u;
         agents_left->clear();
-        agents_left->reserve(model->size());
-        for (auto & a : *agents_left)
+
+        if (sample_type == SAMPLETYPE::MODEL)
         {
-            size_t s = model->population[a].get_state();
-            if (std::find(states.begin(), states.end(), s) == states.end())
-                agents_left->push_back(a);
+
+            // Making some room
+            agents_left->reserve(model->size());
+
+            // Iterating through the agents in the population
+            for (size_t a_i = 0u; a_i < model->population.size(); ++a_i)
+            {
+
+                // If the agent is within the selected set of states,
+                // then we add it to the list of agents left
+                size_t s = model->population[a_i].get_state();
+                if (std::find(states.begin(), states.end(), s) != states.end())
+                    agents_left->push_back(a_i);
+
+            }
+
+        } 
+        else if (sample_type == SAMPLETYPE::ENTITY)
+        {
+
+            // Making room
+            agents_left->reserve(entity->size());
+
+            // Iterating through the agents in the entity
+            for (size_t a_i = 0u; a_i < entity->size(); ++a_i)
+            {
+                size_t s = model->population[entity->agents[a_i]].get_state();
+                if (std::find(states.begin(), states.end(), s) != states.end())
+                    agents_left->push_back(a_i);
+
+            }
+
         }
 
     } else {
@@ -361,20 +387,26 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
     // Restart the counter of agents left
     *agents_left_n = agents_left->size();
 
-    #ifdef EPI_DEBUG
-    std::vector< bool > __sampled(*agents_left_n, false);
-    #endif
-
+    // Making sure we have enough room for the sample of agents
     if (agents->size() < sample_size)
         agents->resize(sample_size, nullptr);
 
     if (sample_type == SAMPLETYPE::MODEL)
     {
 
+        #ifdef EPI_DEBUG
+        std::vector< bool > __sampled(model->size(), true);
+        for (auto & a_i: *agents_left)
+            __sampled[a_i] = false;
+        #endif
+
         for (size_t i = 0u; i < n; ++i)
         {
 
+            // Sampling from 0 to (agents_left_n - 1)
             size_t ith_ = static_cast<size_t>(model->runif() * ((*agents_left_n)--));
+            
+            // Getting the id of the agent and adding it to the list of agents
             size_t ith  = agents_left->operator[](ith_);
             agents->operator[](i) = &model->population[ith];
 
@@ -386,13 +418,23 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
             #endif
 
             // Updating list
-            std::swap(agents_left->operator[](ith_), agents_left->operator[](*agents_left_n));
+            std::swap(
+                agents_left->operator[](ith_),
+                agents_left->operator[](*agents_left_n)
+                );
 
         }
 
-        
 
-    } else if (sample_type == SAMPLETYPE::ENTITY) {
+    }
+    else if (sample_type == SAMPLETYPE::ENTITY)
+    {
+
+        #ifdef EPI_DEBUG
+        std::vector< bool > __sampled(entity->size(), true);
+        for (auto & a_i: *agents_left)
+            __sampled[a_i] = false;
+        #endif
 
         for (size_t i = 0u; i < n; ++i)
         {

@@ -173,7 +173,9 @@ protected:
     std::vector< std::string >        states_labels = {};              ///< Labels of the states
     
     /** Function to distribute states. Goes along with the function  */
-    std::function<void(Model<TSeq>*)> initial_states_fun = nullptr;
+    std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
+    -> void {};
+
     epiworld_fast_uint nstates = 0u;
     
     bool verbose     = true;
@@ -231,13 +233,6 @@ protected:
         );
 
     /**
-     * @brief Executes the stored action
-     * 
-     * @param model_ Model over which it will be executed.
-     */
-    void actions_run();
-
-    /**
      * @name Tool Mixers
      * 
      * These functions combine the effects tools have to deliver
@@ -260,6 +255,7 @@ protected:
 
 public:
 
+    
     std::vector<epiworld_double> array_double_tmp;
     std::vector<Virus<TSeq> * > array_virus_tmp;
 
@@ -689,6 +685,8 @@ public:
     ///@}
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
+    const std::vector< epiworld_double > & get_prevalence_virus() const;
+    const std::vector< bool > & get_prevalence_virus_as_proportion() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
     Virus<TSeq> & get_virus(size_t id);
     Tool<TSeq> & get_tool(size_t id);
@@ -718,6 +716,14 @@ public:
 
     bool operator==(const Model<TSeq> & other) const;
     bool operator!=(const Model<TSeq> & other) const {return !operator==(other);};
+
+    /**
+     * @brief Executes the stored action
+     * 
+     * @param model_ Model over which it will be executed.
+     */
+    void actions_run();
+
 
 };
 

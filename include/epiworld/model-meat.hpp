@@ -741,16 +741,9 @@ inline void Model<TSeq>::dist_virus()
 
     // Starting first infection
     int n = size();
-    std::vector< size_t > idx;
-    idx.reserve(n);
-
-    // Only individuals in state 0 can be included
-    for (size_t i = 0u; i < n; ++i)
-        if (population[i].state == 0u)
-            idx.push_back(i);
-
+    std::vector< size_t > idx(n, 0u);
+    std::iota(idx.begin(), idx.end(), 0);
     int n_left = idx.size();
-    // std::iota(idx.begin(), idx.end(), 0);
 
     for (size_t v = 0u; v < viruses.size(); ++v)
     {
@@ -2085,16 +2078,12 @@ inline void Model<TSeq>::reset() {
     if (use_queuing)
         queue.reset();
 
-    // Distributing initial state, if specified
-    if (initial_states_fun)
-    {
-        initial_states_fun(this);
-        actions_run();
-    }
-
     // Re distributing tools and virus
     dist_virus();
     dist_tools();
+
+    // Distributing initial state, if specified
+    initial_states_fun(this);
 
     // Recording the original state (at time 0) and advancing
     // to time 1
@@ -2543,6 +2532,18 @@ template<typename TSeq>
 inline const std::vector< VirusPtr<TSeq> > & Model<TSeq>::get_viruses() const
 {
     return viruses;
+}
+
+template<typename TSeq>
+inline const std::vector< epiworld_double > & Model<TSeq>::get_prevalence_virus() const
+{
+    return prevalence_virus;
+}
+
+template<typename TSeq>
+inline const std::vector< bool > & Model<TSeq>::get_prevalence_virus_as_proportion() const
+{
+    return prevalence_virus_as_proportion;
 }
 
 template<typename TSeq>

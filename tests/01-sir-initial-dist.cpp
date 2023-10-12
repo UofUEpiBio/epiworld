@@ -69,6 +69,14 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     model_1.print(false);
     #endif 
 
+    // Trying out the SEIR model now
+    epimodels::ModelSEIR<> model_2(
+        "a virus", 0.01, .5, 7.0, .1
+        );
+
+    // model_2.initial_states(
+
+
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif

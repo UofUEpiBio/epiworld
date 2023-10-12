@@ -116,14 +116,14 @@ inline void ModelSIR<TSeq>::initial_states(
     // Checking queue
     if (queue_.size() == 0u)
     {
-       queue_ = {Queue<TSeq>::NoOne, Queue<TSeq>::NoOne, Queue<TSeq>::NoOne};
+       queue_ = std::vector< int >(nstates, Queue<TSeq>::NoOne);
     } else if (queue_.size() != nstates) {
         throw std::invalid_argument("The number of queue must be equal to the number of states.");
     }
 
     // Capturing variables
-    const auto * vpreval = &Model<TSeq>::prevalence_virus;
-    const auto * vprop   = &Model<TSeq>::prevalence_virus_as_proportion;
+    const std::vector< epiworld_double > * vpreval = &Model<TSeq>::get_prevalence_virus();
+    const std::vector< bool > * vprop   = &Model<TSeq>::get_prevalence_virus_as_proportion();
 
     // Creating function
     std::function<void(epiworld::Model<TSeq>*)> fun =
@@ -153,6 +153,7 @@ inline void ModelSIR<TSeq>::initial_states(
         epiworld::AgentsSample<TSeq> sample(
             *model,
             nrecovered,
+            {0u},
             true
             );
 
@@ -160,6 +161,9 @@ inline void ModelSIR<TSeq>::initial_states(
         for (auto & agent : sample)
             agent->change_state(model, 2, Queue<TSeq>::NoOne);
         
+        // Running the actions
+        model->actions_run();
+
         return;
 
     };
