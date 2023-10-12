@@ -6131,8 +6131,13 @@ protected:
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
-    std::vector< UpdateFun<TSeq> >    state_fun = {};
-    std::vector< std::string >        states_labels = {};
+    std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
+    std::vector< std::string >        states_labels = {};              ///< Labels of the states
+    
+    /** Function to distribute states. Goes along with the function  */
+    std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
+    -> void {};
+
     epiworld_fast_uint nstates = 0u;
     
     bool verbose     = true;
@@ -6190,13 +6195,6 @@ protected:
         );
 
     /**
-     * @brief Executes the stored action
-     * 
-     * @param model_ Model over which it will be executed.
-     */
-    void actions_run();
-
-    /**
      * @name Tool Mixers
      * 
      * These functions combine the effects tools have to deliver
@@ -6219,6 +6217,7 @@ protected:
 
 public:
 
+    
     std::vector<epiworld_double> array_double_tmp;
     std::vector<Virus<TSeq> * > array_virus_tmp;
 
@@ -6362,7 +6361,7 @@ public:
 
     std::vector< Entity<TSeq> > & get_entities();
 
-    void agents_smallworld(
+    Model<TSeq> & agents_smallworld(
         epiworld_fast_uint n = 1000,
         epiworld_fast_uint k = 5,
         bool d = false,
@@ -6384,7 +6383,7 @@ public:
     void update_state();
     void mutate_virus();
     void next();
-    virtual void run(
+    virtual Model<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     ); ///< Runs the simulation (after initialization)
@@ -6399,14 +6398,14 @@ public:
         );
     ///@}
 
-    size_t get_n_viruses() const;
-    size_t get_n_tools() const;
+    size_t get_n_viruses() const; ///< Number of viruses in the model
+    size_t get_n_tools() const; ///< Number of tools in the model
     epiworld_fast_uint get_ndays() const;
     epiworld_fast_uint get_n_replicates() const;
     void set_ndays(epiworld_fast_uint ndays);
     bool get_verbose() const;
-    void verbose_off();
-    void verbose_on();
+    Model<TSeq> & verbose_off();
+    Model<TSeq> & verbose_on();
     int today() const; ///< The current time of the model
 
     /**
@@ -6486,7 +6485,7 @@ public:
      * 
      */
     virtual void reset();
-    void print(bool lite = false) const;
+    const Model<TSeq> & print(bool lite = false) const;
 
     Model<TSeq> && clone() const;
 
@@ -6510,6 +6509,19 @@ public:
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
     void print_state_codes() const;
     ///@}
+
+    /**
+     * @name Initial states
+     * 
+     * @details These functions are called before the simulation starts.
+     * 
+     * @param proportions_ Vector of proportions for each state.
+     * @param queue_ Vector of queue for each state.
+     */
+    virtual Model<TSeq> & initial_states(
+        std::vector< double > /*proportions_*/,
+        std::vector< int > /*queue_*/
+    ) {return *this;};
 
     /**
      * @name Setting and accessing parameters from the model
@@ -6616,7 +6628,7 @@ public:
      */
     ////@{
     void queuing_on(); ///< Activates the queuing system (default.)
-    void queuing_off(); ///< Deactivates the queuing system.
+    Model<TSeq> & queuing_off(); ///< Deactivates the queuing system.
     bool is_queuing_on() const; ///< Query if the queuing system is on.
     Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
     ///@}
@@ -6635,6 +6647,8 @@ public:
     ///@}
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
+    const std::vector< epiworld_double > & get_prevalence_virus() const;
+    const std::vector< bool > & get_prevalence_virus_as_proportion() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
     Virus<TSeq> & get_virus(size_t id);
     Tool<TSeq> & get_tool(size_t id);
@@ -6664,6 +6678,14 @@ public:
 
     bool operator==(const Model<TSeq> & other) const;
     bool operator!=(const Model<TSeq> & other) const {return !operator==(other);};
+
+    /**
+     * @brief Executes the stored action
+     * 
+     * @param model_ Model over which it will be executed.
+     */
+    void actions_run();
+
 
 };
 
@@ -7087,6 +7109,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     pb(model.pb),
     state_fun(model.state_fun),
     states_labels(model.states_labels),
+    initial_states_fun(model.initial_states_fun),
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(model.current_date),
@@ -7171,6 +7194,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     pb(std::move(model.pb)),
     state_fun(std::move(model.state_fun)),
     states_labels(std::move(model.states_labels)),
+    initial_states_fun(std::move(model.initial_states_fun)),
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
@@ -7242,6 +7266,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     state_fun    = m.state_fun;
     states_labels = m.states_labels;
+    initial_states_fun = m.initial_states_fun;
     nstates       = m.nstates;
 
     verbose     = m.verbose;
@@ -7330,7 +7355,7 @@ inline std::vector<Entity<TSeq>> & Model<TSeq>::get_entities()
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::agents_smallworld(
+inline Model<TSeq> & Model<TSeq>::agents_smallworld(
     epiworld_fast_uint n,
     epiworld_fast_uint k,
     bool d,
@@ -7340,6 +7365,8 @@ inline void Model<TSeq>::agents_smallworld(
     agents_from_adjlist(
         rgraph_smallworld(n, k, p, d, *this)
     );
+
+    return *this;
 }
 
 template<typename TSeq>
@@ -7426,10 +7453,9 @@ inline void Model<TSeq>::dist_virus()
 
     // Starting first infection
     int n = size();
-    std::vector< size_t > idx(n);
-
-    int n_left = n;
+    std::vector< size_t > idx(n, 0u);
     std::iota(idx.begin(), idx.end(), 0);
+    int n_left = idx.size();
 
     for (size_t v = 0u; v < viruses.size(); ++v)
     {
@@ -8144,7 +8170,7 @@ inline void Model<TSeq>::next() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::run(
+inline Model<TSeq> & Model<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 ) 
@@ -8249,6 +8275,8 @@ inline void Model<TSeq>::run(
     this->current_date--;
 
     chrono_end();
+
+    return *this;
 
 }
 
@@ -8553,13 +8581,15 @@ inline bool Model<TSeq>::get_verbose() const {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::verbose_on() {
+inline Model<TSeq> & Model<TSeq>::verbose_on() {
     verbose = true;
+    return *this;
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::verbose_off() {
+inline Model<TSeq> & Model<TSeq>::verbose_off() {
     verbose = false;
+    return *this;
 }
 
 template<typename TSeq>
@@ -8768,6 +8798,9 @@ inline void Model<TSeq>::reset() {
     dist_virus();
     dist_tools();
 
+    // Distributing initial state, if specified
+    initial_states_fun(this);
+
     // Recording the original state (at time 0) and advancing
     // to time 1
     next();
@@ -8789,7 +8822,7 @@ inline void Model<TSeq>::reset() {
 #define EPIWORLD_MODEL_MEAT_PRINT_HPP
 
 template<typename TSeq>
-inline void Model<TSeq>::print(bool lite) const
+inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 {
 
     // Horizontal line
@@ -8845,7 +8878,7 @@ inline void Model<TSeq>::print(bool lite) const
             printf_epiworld(" The model hasn't been run yet.\n");
         }
 
-        return;
+        return *this;
     }
 
     printf_epiworld("%s\n%s\n\n",line.c_str(), "SIMULATION STUDY");
@@ -9111,7 +9144,7 @@ inline void Model<TSeq>::print(bool lite) const
     if (today() != 0)
         (void) db.transition_probability(true);
 
-    return;
+    return *this;
 
 }
 
@@ -9542,9 +9575,10 @@ inline void Model<TSeq>::queuing_on()
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::queuing_off()
+inline Model<TSeq> & Model<TSeq>::queuing_off()
 {
     use_queuing = false;
+    return *this;
 }
 
 template<typename TSeq>
@@ -9563,6 +9597,18 @@ template<typename TSeq>
 inline const std::vector< VirusPtr<TSeq> > & Model<TSeq>::get_viruses() const
 {
     return viruses;
+}
+
+template<typename TSeq>
+inline const std::vector< epiworld_double > & Model<TSeq>::get_prevalence_virus() const
+{
+    return prevalence_virus;
+}
+
+template<typename TSeq>
+inline const std::vector< bool > & Model<TSeq>::get_prevalence_virus_as_proportion() const
+{
+    return prevalence_virus_as_proportion;
 }
 
 template<typename TSeq>
@@ -10123,6 +10169,9 @@ private:
     VirusFun<TSeq>        probability_of_recovery_fun  = nullptr;
     VirusFun<TSeq>        probability_of_death_fun     = nullptr;
     VirusFun<TSeq>        incubation_fun               = nullptr;
+
+    // Setup parameters
+    std::vector< epiworld_double > data = {};
 
     epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
     epiworld_fast_int state_post    = -99; ///< Change of state when removed from agent.
@@ -11963,28 +12012,6 @@ public:
 
 #ifndef EPIWORLD_ENTITY_MEAT_HPP
 #define EPIWORLD_ENTITY_MEAT_HPP
-
-// template<typename TSeq>
-// inline Entity<TSeq>::Entity(const Entity<TSeq> & e) :
-//     model(e.model),
-//     id(e.id),
-//     agents(0u),
-//     agents_location(0u),
-//     n_agents(0),
-//     sampled_agents(0u),
-//     sampled_agents_n(0u),
-//     sampled_agents_left(0u),
-//     sampled_agents_left_n(0u),
-//     max_capacity(e.max_capacity),
-//     entity_name(e.entity_name),
-//     location(e.location),
-//     state_init(e.state_init),
-//     state_post(e.state_post),
-//     queue_init(e.queue_init),
-//     queue_post(e.queue_post)
-// {
-
-// }
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(
@@ -14578,6 +14605,7 @@ private:
     Agent<TSeq> * agent   = nullptr;
     
     int sample_type = SAMPLETYPE::AGENT;
+    std::vector< size_t > states = {};
 
     void sample_n(size_t n); ///< Backbone function for sampling
 
@@ -14589,9 +14617,23 @@ public:
     AgentsSample(const AgentsSample<TSeq> & a) = delete; ///< Copy constructor
     AgentsSample(AgentsSample<TSeq> && a) = delete;      ///< Move constructor
 
-    AgentsSample(Model<TSeq> & model_, size_t n, bool truncate = false);
-    AgentsSample(Model<TSeq> * model, Entity<TSeq> & entity_, size_t n, bool truncate = false);
-    AgentsSample(Model<TSeq> * model, Agent<TSeq> & agent_, size_t n, bool truncate = false);
+    AgentsSample(
+        Model<TSeq> & model_, size_t n,
+        std::vector< size_t > states_ = {},
+        bool truncate = false
+        );
+
+    AgentsSample(
+        Model<TSeq> * model, Entity<TSeq> & entity_, size_t n,
+        std::vector< size_t > states_ = {},
+        bool truncate = false
+        );
+
+    AgentsSample(
+        Model<TSeq> * model, Agent<TSeq> & agent_, size_t n,
+        std::vector< size_t > states_ = {},
+        bool truncate = false
+        );
 
     ~AgentsSample();
 
@@ -14608,8 +14650,11 @@ template<typename TSeq>
 inline AgentsSample<TSeq>::AgentsSample(
     Model<TSeq> & model_,
     size_t n,
+    std::vector< size_t > states_,
     bool truncate
     ) {
+
+    states = states_;
 
     if (truncate)
     {
@@ -14622,12 +14667,12 @@ inline AgentsSample<TSeq>::AgentsSample(
             "There are only " + std::to_string(model_.size()) + " agents. You cannot " +
             "sample " + std::to_string(n));
 
-    sample_size = n;
-    model       = &model_;
-    sample_type = SAMPLETYPE::MODEL;
+    sample_size   = n;
+    model         = &model_;
+    sample_type   = SAMPLETYPE::MODEL;
 
-    agents   = &model_.sampled_population;
-    agents_n = &model_.sampled_population_n;
+    agents        = &model_.sampled_population;
+    agents_n      = &model_.sampled_population_n;
 
     agents_left   = &model_.population_left;
     agents_left_n = &model_.population_left_n;
@@ -14642,8 +14687,12 @@ template<typename TSeq>
 inline AgentsSample<TSeq>::AgentsSample(
     Model<TSeq> * model,
     Entity<TSeq> & entity_,
-    size_t n, bool truncate
+    size_t n,
+    std::vector< size_t > states_,
+    bool truncate
     ) {
+
+    states = states_;
 
     if (truncate)
     {
@@ -14656,12 +14705,12 @@ inline AgentsSample<TSeq>::AgentsSample(
             "There are only " + std::to_string(entity_.size()) + " agents. You cannot " +
             "sample " + std::to_string(n));
 
-    sample_size = n;
-    model       = &entity_.model;
-    sample_type = SAMPLETYPE::ENTITY;
+    sample_size   = n;
+    model         = &entity_.model;
+    sample_type   = SAMPLETYPE::ENTITY;
 
-    agents   = &entity_.sampled_agents;
-    agents_n = &entity_.sampled_agents_n;
+    agents        = &entity_.sampled_agents;
+    agents_n      = &entity_.sampled_agents_n;
 
     agents_left   = &entity_.sampled_agents_left;
     agents_left_n = &entity_.sampled_agents_left_n;
@@ -14689,16 +14738,18 @@ inline AgentsSample<TSeq>::AgentsSample(
     Model<TSeq> * model,
     Agent<TSeq> & agent_,
     size_t n,
+    std::vector< size_t > states_,
     bool truncate
     )
 {
 
+    states = states_;
     sample_type = SAMPLETYPE::AGENT;
     
-    agent = &agent_;
+    agent         = &agent_;
 
-    agents   = &agent_.sampled_agents;
-    agents_n = &agent_.sampled_agents_n;
+    agents        = &agent_.sampled_agents;
+    agents_n      = &agent_.sampled_agents_n;
 
     agents_left   = &agent_.sampled_agents_left;
     agents_left_n = &agent_.sampled_agents_left_n;
@@ -14707,7 +14758,7 @@ inline AgentsSample<TSeq>::AgentsSample(
     size_t agents_in_entities = 0;
     Entities<TSeq> entities_a = agent->get_entities();
 
-    std::vector< int > cum_agents_count(entities_a.size(), 0);
+    std::vector< size_t > cum_agents_count(entities_a.size(), 0);
     int idx = -1;
     for (auto & e : entities_a)
     {
@@ -14730,15 +14781,18 @@ inline AgentsSample<TSeq>::AgentsSample(
 
     } else if (n > agents_in_entities)
         throw std::logic_error(
-            "There are only " + std::to_string(agents_in_entities) + " agents. You cannot " +
-            "sample " + std::to_string(n));
+            "There are only " + std::to_string(agents_in_entities) +
+            " agents. You cannot " +
+            "sample " + std::to_string(n)
+            );
 
     sample_size = n;
 
     if (agents->size() < n)
         agents->resize(n);
 
-    for (size_t i = 0u; i < n; ++i)
+    size_t i_obs = 0u;
+    for (size_t i = 0u; i < agents_in_entities; ++i)
     {
         int jth = std::floor(model->runif() * agents_in_entities);
         for (size_t e = 0u; e < cum_agents_count.size(); ++e)
@@ -14746,11 +14800,24 @@ inline AgentsSample<TSeq>::AgentsSample(
             // Are we in the limit?
             if (jth <= cum_agents_count[e])
             {
+                size_t agent_idx = 0u;
                 if (e == 0) // From the first group
-                    agents->operator[](i) = entities_a[e][jth];
+                    agent_idx = entities_a[e][jth];
                 else
-                    agents->operator[](i) = entities_a[e][jth - cum_agents_count[e - 1]];
+                    agent_idx = entities_a[e][jth - cum_agents_count[e - 1]];
+
+                // Getting the state
+                size_t state = model->population[agent_idx].get_state();
+
+                // Checking if states was specified
+                if (states.size())
+                {
+                    if (std::find(states.begin(), states.end(), state) != states.end())
+                        continue;
+                }
                 
+                agents->operator[](i_obs++) = agent_idx;
+
                 break;
             }
 
@@ -14812,59 +14879,143 @@ template<typename TSeq>
 inline void AgentsSample<TSeq>::sample_n(size_t n)
 {
 
-    // Checking if the size of the entity has changed (or hasn't been initialized)
-    if (sample_type == SAMPLETYPE::MODEL)
+    // Reducing size
+    if (states.size())
     {
+            
+        // Getting the number of agents left
+        agents_left->clear();
 
-        if (model->size() != agents_left->size())
-        {
-            agents_left->resize(model->size(), 0u);
-            std::iota(agents_left->begin(), agents_left->end(), 0u);
-        }
-
-
-    } else if (sample_type == SAMPLETYPE::ENTITY) {
-
-        if (entity->size() != agents_left->size())
+        if (sample_type == SAMPLETYPE::MODEL)
         {
 
-            agents_left->resize(entity->size(), 0u);
-            std::iota(agents_left->begin(), agents_left->end(), 0u);
+            // Making some room
+            agents_left->reserve(model->size());
+
+            // Iterating through the agents in the population
+            for (size_t a_i = 0u; a_i < model->population.size(); ++a_i)
+            {
+
+                // If the agent is within the selected set of states,
+                // then we add it to the list of agents left
+                size_t s = model->population[a_i].get_state();
+                if (std::find(states.begin(), states.end(), s) != states.end())
+                    agents_left->push_back(a_i);
+
+            }
+
+        } 
+        else if (sample_type == SAMPLETYPE::ENTITY)
+        {
+
+            // Making room
+            agents_left->reserve(entity->size());
+
+            // Iterating through the agents in the entity
+            for (size_t a_i = 0u; a_i < entity->size(); ++a_i)
+            {
+                size_t s = model->population[entity->agents[a_i]].get_state();
+                if (std::find(states.begin(), states.end(), s) != states.end())
+                    agents_left->push_back(a_i);
+
+            }
 
         }
 
-    } 
+    } else {
+
+        // Checking if the size of the entity has changed (or hasn't been initialized)
+        if (sample_type == SAMPLETYPE::MODEL)
+        {
+
+            if (model->size() != agents_left->size())
+            {
+                agents_left->resize(model->size(), 0u);
+                std::iota(agents_left->begin(), agents_left->end(), 0u);
+            }
+
+        } else if (sample_type == SAMPLETYPE::ENTITY) {
+
+            if (entity->size() != agents_left->size())
+            {
+
+                agents_left->resize(entity->size(), 0u);
+                std::iota(agents_left->begin(), agents_left->end(), 0u);
+
+            }
+
+        } 
+
+    }
 
     // Restart the counter of agents left
     *agents_left_n = agents_left->size();
 
+    // Making sure we have enough room for the sample of agents
     if (agents->size() < sample_size)
         agents->resize(sample_size, nullptr);
 
     if (sample_type == SAMPLETYPE::MODEL)
     {
 
+        #ifdef EPI_DEBUG
+        std::vector< bool > __sampled(model->size(), true);
+        for (auto & a_i: *agents_left)
+            __sampled[a_i] = false;
+        #endif
+
         for (size_t i = 0u; i < n; ++i)
         {
 
-            size_t ith = agents_left->operator[](model->runif() * ((*agents_left_n)--));
+            // Sampling from 0 to (agents_left_n - 1)
+            size_t ith_ = static_cast<size_t>(model->runif() * ((*agents_left_n)--));
+            
+            // Getting the id of the agent and adding it to the list of agents
+            size_t ith  = agents_left->operator[](ith_);
             agents->operator[](i) = &model->population[ith];
 
+            #ifdef EPI_DEBUG
+            if (__sampled[ith])
+                throw std::logic_error("The same agent was sampled twice.");
+            else
+                __sampled[ith] = true;
+            #endif
+
             // Updating list
-            std::swap(agents_left->operator[](ith), agents_left->operator[](*agents_left_n));
+            std::swap(
+                agents_left->operator[](ith_),
+                agents_left->operator[](*agents_left_n)
+                );
 
         }
 
-    } else if (sample_type == SAMPLETYPE::ENTITY) {
+
+    }
+    else if (sample_type == SAMPLETYPE::ENTITY)
+    {
+
+        #ifdef EPI_DEBUG
+        std::vector< bool > __sampled(entity->size(), true);
+        for (auto & a_i: *agents_left)
+            __sampled[a_i] = false;
+        #endif
 
         for (size_t i = 0u; i < n; ++i)
         {
 
-            size_t ith = agents_left->operator[](model->runif() * (--(*agents_left_n)));
-            agents->operator[](i) = entity->agents[ith];
+            size_t ith_ = static_cast<size_t>(model->runif() * ((*agents_left_n)--));
+            size_t ith  = agents_left->operator[](ith_);
+            agents->operator[](i) = &model->population[entity->agents[ith]];
+
+            #ifdef EPI_DEBUG
+            if (__sampled[ith])
+                throw std::logic_error("The same agent was sampled twice.");
+            else
+                __sampled[ith] = true;
+            #endif
 
             // Updating list
-            std::swap(agents_left->operator[](ith), agents_left->operator[](*agents_left_n));
+            std::swap(agents_left->operator[](ith_), agents_left->operator[](*agents_left_n));
 
         }
 
@@ -14898,7 +15049,265 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 #define EPIWORLD_MODELS_HPP
 
 namespace epimodels {
-    
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld//models/init-functions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MODELS_INIT_FUNCTIONS_HPP
+#define EPIWORLD_MODELS_INIT_FUNCTIONS_HPP
+
+/**
+ * @brief Creates an initial function for the SIR-like models
+ * The function is used for the initial states of the model.
+*/
+template<typename TSeq>
+inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sir(
+    std::vector< double > proportions_
+) {
+
+    // Checking widths
+    if (proportions_.size() != 1u)
+        throw std::invalid_argument(
+            "The vector of proportions must have a single element."
+            );
+
+    // Proportion should be within [0, 1]
+    if ((proportions_[0] < 0.0) || (proportions_[0] > 1.0))
+        throw std::invalid_argument(
+            "The proportion must be within (0, 1)."
+            );
+
+    double prop = proportions_[0u];
+
+    std::function<void(epiworld::Model<TSeq>*)> fun =
+    [prop] (epiworld::Model<TSeq> * model) -> void {
+
+        // Figuring out information about the viruses
+        double tot = 0.0;
+        const auto & vpreval = model->get_prevalence_virus();
+        const auto & vprop   = model->get_prevalence_virus_as_proportion();
+        double n   = static_cast<double>(model->size());
+        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        {
+            if (vprop[i])
+                tot += vpreval[i];
+            else
+                tot += vpreval[i] / n;
+        }
+
+        // Putting the total into context
+        double tot_left = 1.0 - tot;
+
+        // Since susceptible and infected are "fixed,"
+        // we only need to change recovered
+        size_t nrecovered = prop * tot_left * n;
+        
+        epiworld::AgentsSample<TSeq> sample(
+            *model,
+            nrecovered,
+            {0u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample)
+            agent->change_state(model, 2, Queue<TSeq>::NoOne);
+        
+        // Running the actions
+        model->actions_run();
+
+        return;
+
+    };
+
+    return fun;
+
+}
+
+/**
+ * @brief Creates an initial function for the SIR-like models
+ * The function is used for the initial states of the model.
+*/
+template<typename TSeq>
+inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sird(
+    std::vector< double > prop
+) {
+
+    // Check length of prop equals two
+    if (prop.size() != 2u)
+        throw std::invalid_argument(
+            "The vector of proportions must have two elements."
+            );
+
+    // Check elements in prop are within [0, 1] and sum up to 1
+    double tot = 0.0;
+    for (auto & v : prop)
+    {
+        if ((v < 0.0) || (v > 1.0))
+            throw std::invalid_argument(
+                "The proportion must be within (0, 1)."
+                );
+        tot += v;
+    }
+
+    if (tot != 1.0)
+        throw std::invalid_argument(
+            "The proportions must sum up to 1."
+            );
+
+    std::function<void(epiworld::Model<TSeq>*)> fun =
+    [prop] (epiworld::Model<TSeq> * model) -> void {
+
+        // Figuring out information about the viruses
+        double tot = 0.0;
+        const auto & vpreval = model->get_prevalence_virus();
+        const auto & vprop   = model->get_prevalence_virus_as_proportion();
+        double n   = static_cast<double>(model->size());
+        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        {
+            if (vprop[i])
+                tot += vpreval[i];
+            else
+                tot += vpreval[i] / n;
+        }
+
+        // Putting the total into context
+        double tot_left = 1.0 - tot;
+
+        // Since susceptible and infected are "fixed,"
+        // we only need to change recovered
+        size_t nrecovered = prop[0u] * tot_left * n;
+        size_t ndeceased  = prop[01] * tot_left * n;
+        
+        epiworld::AgentsSample<TSeq> sample_recover(
+            *model,
+            nrecovered,
+            {0u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample_recover)
+            agent->change_state(model, 2, Queue<TSeq>::NoOne);
+
+        epiworld::AgentsSample<TSeq> sample_deceased(
+            *model,
+            ndeceased,
+            {0u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample_deceased)
+            agent->rm_agent(model);
+        
+        // Running the actions
+        model->actions_run();
+
+        return;
+
+    };
+
+    return fun;
+
+}
+
+
+/**
+ * @brief Creates an initial function for the SEIR-like models
+ * The function is used for the initial states of the model.
+*/
+template<typename TSeq>
+inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seir(
+    std::vector< double > proportions_
+) {
+
+    // Checking widths
+    if (proportions_.size() != 2u) {
+        throw std::invalid_argument("-proportions_- must have two entries.");
+    }
+
+    // proportions_ are values between 0 and 1, otherwise error
+    for (auto & v : proportions_)
+        if ((v < 0.0) || (v > 1.0))
+            throw std::invalid_argument(
+                "-proportions_- must have values between 0 and 1."
+                );
+
+
+    std::function<void(epiworld::Model<TSeq>*)> fun = 
+        [proportions_] (epiworld::Model<TSeq> * model) -> void {
+
+        // Figuring out information about the viruses
+        double tot = 0.0;
+        const auto & vpreval = model->get_prevalence_virus();
+        const auto & vprop   = model->get_prevalence_virus_as_proportion();
+        double n   = static_cast<double>(model->size());
+        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        {
+            if (vprop[i])
+                tot += vpreval[i];
+            else
+                tot += vpreval[i] / n;
+        }
+
+        // Putting the total into context
+        double tot_left = 1.0 - tot;
+
+        // Since susceptible and infected are "fixed,"
+        // we only need to change recovered
+        size_t nexposed   = proportions_[0u] * tot * n;
+        size_t nrecovered = proportions_[1u] * tot_left * n;
+        
+        epiworld::AgentsSample<TSeq> sample_suscept(
+            *model,
+            nrecovered,
+            {0u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample_suscept)
+            agent->change_state(model, 3, Queue<TSeq>::NoOne);
+
+        epiworld::AgentsSample<TSeq> sample_exposed(
+            *model,
+            nexposed,
+            {1u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample_exposed)
+            agent->change_state(model, 2, Queue<TSeq>::NoOne);
+        
+        // Running the actions
+        model->actions_run();
+
+        return;
+
+    };
+
+    return fun;
+
+}
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld//models/init-functions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -15213,6 +15622,16 @@ public:
         epiworld_double transmission_rate,
         epiworld_double recovery_rate
     );
+
+    /**
+     * @brief Set the initial states of the model
+     * @param proportions_ Double vector with a single element:
+     * - The proportion of non-infected individuals who have recovered.
+    */
+    ModelSIR<TSeq> & initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
     
 };
 
@@ -15268,6 +15687,20 @@ inline ModelSIR<TSeq>::ModelSIR(
         );
 
     return;
+
+}
+
+template<typename TSeq>
+inline ModelSIR<TSeq> & ModelSIR<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /* queue_ */
+) {
+
+    Model<TSeq>::initial_states_fun =
+        create_init_function_sir<TSeq>(proportions_)
+        ;
+
+    return *this;
 
 }
 
@@ -15359,6 +15792,17 @@ public:
         return;    
     };
 
+    /**
+     * @brief Set up the initial states of the model.
+     * @param proportions_ Double vector with the following values:
+     * - 0: Proportion of non-infected agents who are removed.
+     * - 1: Proportion of exposed agents to be set as infected.
+    */
+    ModelSEIR<TSeq> & initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
+
 };
 
 
@@ -15424,7 +15868,19 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 
 }
 
+template<typename TSeq>
+inline ModelSEIR<TSeq> & ModelSEIR<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /**/
+) {
 
+    Model<TSeq>::initial_states_fun =
+        create_init_function_seir<TSeq>(proportions_)
+        ;
+
+    return *this;
+
+}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -15866,12 +16322,7 @@ private:
 
 public:
 
-    ModelSIRCONN() {
-        
-        // tracked_agents_infected.reserve(1e4);
-        // tracked_agents_infected_next.reserve(1e4);
-
-    };
+    ModelSIRCONN() {};
 
     ModelSIRCONN(
         ModelSIRCONN<TSeq> & model,
@@ -15892,17 +16343,7 @@ public:
         epiworld_double recovery_rate
     );
 
-    // Tracking who is infected and who is not
-    // std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected = {};
-    // std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected_next = {};
-    // std::vector< epiworld_double >        tracked_agents_weight        = {};
-    // std::vector< epiworld_double >        tracked_agents_weight_next   = {};
-
-    // int tracked_ninfected = 0;
-    // int tracked_ninfected_next = 0;
-    // epiworld_double tracked_current_infect_prob = 0.0;
-
-    void run(
+    ModelSIRCONN<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -15911,24 +16352,28 @@ public:
 
     Model<TSeq> * clone_ptr();
 
+    /**
+     * @brief Set the initial states of the model
+     * @param proportions_ Double vector with a single element:
+     * - The proportion of non-infected individuals who have recovered.
+    */
+    ModelSIRCONN<TSeq> & initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
+
 
 };
 
 template<typename TSeq>
-inline void ModelSIRCONN<TSeq>::run(
+inline ModelSIRCONN<TSeq> & ModelSIRCONN<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
 {
 
-    // tracked_agents_infected.clear();
-    // tracked_agents_infected_next.clear();
-
-    // tracked_ninfected = 0;
-    // tracked_ninfected_next = 0;
-    // tracked_current_infect_prob = 0.0;
-
     Model<TSeq>::run(ndays, seed);
+    return *this;
 
 }
 
@@ -15937,14 +16382,6 @@ inline void ModelSIRCONN<TSeq>::reset()
 {
 
     Model<TSeq>::reset();
-
-    // Model<TSeq>::set_rand_binom(
-    //     Model<TSeq>::size(),
-    //     static_cast<double>(
-    //         Model<TSeq>::par("Contact rate"))/
-    //         static_cast<double>(Model<TSeq>::size())
-    //     );
-
     return;
 
 }
@@ -15983,8 +16420,6 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     // epiworld_double prob_reinfection
     )
 {
-
-
 
     epiworld::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
@@ -16116,7 +16551,9 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 return ;
 
             } else
-                throw std::logic_error("This function can only be applied to infected individuals. (SIR)") ;
+                throw std::logic_error(
+                    "This function can only be applied to infected individuals. (SIR)"
+                    ) ;
 
             return;
 
@@ -16173,6 +16610,20 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     );
 
     return;
+
+}
+
+template<typename TSeq>
+inline ModelSIRCONN<TSeq> & ModelSIRCONN<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /**/ 
+) {
+
+    Model<TSeq>::initial_states_fun = 
+        create_init_function_sir<TSeq>(proportions_)
+        ;
+
+    return *this;
 
 }
 
@@ -16233,7 +16684,7 @@ public:
         epiworld_double recovery_rate
     );
 
-    void run(
+    ModelSEIRCONN<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -16242,16 +16693,28 @@ public:
 
     Model<TSeq> * clone_ptr();
 
+    /**
+     * @brief Set the initial states of the model
+     * @param proportions_ Double vector with a single element:
+     * - The proportion of non-infected individuals who have recovered.
+    */
+    ModelSEIRCONN<TSeq> & initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
+
 };
 
 template<typename TSeq>
-inline void ModelSEIRCONN<TSeq>::run(
+inline ModelSEIRCONN<TSeq> & ModelSEIRCONN<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
 {
     
     Model<TSeq>::run(ndays, seed);
+
+    return *this;
 
 }
 
@@ -16518,6 +16981,21 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
 }
 
+template<typename TSeq>
+inline ModelSEIRCONN<TSeq> & ModelSEIRCONN<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /* queue_ */
+)
+{
+
+    Model<TSeq>::initial_states_fun =
+        create_init_function_seir<TSeq>(proportions_)
+        ;
+
+    return *this;
+
+}
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -16572,6 +17050,17 @@ public:
         epiworld_double transmission_rate,
         epiworld_double recovery_rate, 
         epiworld_double death_rate
+    );
+
+    /**
+     * @brief Set the initial states of the model
+     * @param proportions_ Double vector with two elements:
+     * - The proportion of non-infected individuals who have recovered.
+     * - The proportion of non-infected individuals who have died.
+    */
+    ModelSIRD<TSeq> & initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
     );
     
 };
@@ -16634,6 +17123,20 @@ inline ModelSIRD<TSeq>::ModelSIRD(
         );
 
     return;
+
+}
+
+template<typename TSeq>
+inline ModelSIRD<TSeq> & ModelSIRD<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /**/ 
+) {
+
+    Model<TSeq>::initial_states_fun = 
+        create_init_function_sird<TSeq>(proportions_)
+        ;
+
+    return *this;
 
 }
 
@@ -17037,7 +17540,7 @@ public:
     // int tracked_ninfected_next = 0;
     // epiworld_double tracked_current_infect_prob = 0.0;
 
-    void run(
+    ModelSIRDCONN<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -17050,20 +17553,15 @@ public:
 };
 
 template<typename TSeq>
-inline void ModelSIRDCONN<TSeq>::run(
+inline ModelSIRDCONN<TSeq> & ModelSIRDCONN<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
 {
 
-    // tracked_agents_infected.clear();
-    // tracked_agents_infected_next.clear();
-
-    // tracked_ninfected = 0;
-    // tracked_ninfected_next = 0;
-    // tracked_current_infect_prob = 0.0;
-
     Model<TSeq>::run(ndays, seed);
+
+    return *this;
 
 }
 
@@ -17389,7 +17887,7 @@ public:
         epiworld_double death_rate
     );
 
-    void run(
+    ModelSEIRDCONN<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -17398,16 +17896,29 @@ public:
 
     Model<TSeq> * clone_ptr();
 
+    /**
+     * @brief Set up the initial states of the model.
+     * @param proportions_ Double vector with the following values:
+     * - 0: Proportion of non-infected agents who are removed.
+     * - 1: Proportion of exposed agents to be set as infected.
+    */
+    ModelSEIRDCONN<TSeq> & initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
+
 };
 
 template<typename TSeq>
-inline void ModelSEIRDCONN<TSeq>::run(
+inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
 {
     
     Model<TSeq>::run(ndays, seed);
+
+    return *this;
 
 }
 
@@ -17693,6 +18204,20 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
 }
 
+template<typename TSeq>
+inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /**/
+) {
+
+    Model<TSeq>::initial_states_fun =
+        create_init_function_seir<TSeq>(proportions_)
+        ;
+
+    return *this;
+
+}
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -17765,7 +18290,7 @@ public:
         epiworld_double prevalence
     );
 
-    void run(
+    ModelSIRLogit<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -17784,13 +18309,14 @@ public:
 
 
 template<typename TSeq>
-inline void ModelSIRLogit<TSeq>::run(
+inline ModelSIRLogit<TSeq> & ModelSIRLogit<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
 {
 
     Model<TSeq>::run(ndays, seed);
+    return *this;
 
 }
 

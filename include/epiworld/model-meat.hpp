@@ -645,7 +645,7 @@ inline std::vector<Entity<TSeq>> & Model<TSeq>::get_entities()
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::agents_smallworld(
+inline Model<TSeq> & Model<TSeq>::agents_smallworld(
     epiworld_fast_uint n,
     epiworld_fast_uint k,
     bool d,
@@ -655,6 +655,8 @@ inline void Model<TSeq>::agents_smallworld(
     agents_from_adjlist(
         rgraph_smallworld(n, k, p, d, *this)
     );
+
+    return *this;
 }
 
 template<typename TSeq>
@@ -1458,7 +1460,7 @@ inline void Model<TSeq>::next() {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::run(
+inline Model<TSeq> & Model<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 ) 
@@ -1563,6 +1565,8 @@ inline void Model<TSeq>::run(
     this->current_date--;
 
     chrono_end();
+
+    return *this;
 
 }
 
@@ -1867,13 +1871,15 @@ inline bool Model<TSeq>::get_verbose() const {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::verbose_on() {
+inline Model<TSeq> & Model<TSeq>::verbose_on() {
     verbose = true;
+    return *this;
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::verbose_off() {
+inline Model<TSeq> & Model<TSeq>::verbose_off() {
     verbose = false;
+    return *this;
 }
 
 template<typename TSeq>

@@ -51,7 +51,7 @@ public:
         epiworld_double prevalence
     );
 
-    void run(
+    ModelSIRLogit<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -70,13 +70,14 @@ public:
 
 
 template<typename TSeq>
-inline void ModelSIRLogit<TSeq>::run(
+inline ModelSIRLogit<TSeq> & ModelSIRLogit<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
 {
 
     Model<TSeq>::run(ndays, seed);
+    return *this;
 
 }
 

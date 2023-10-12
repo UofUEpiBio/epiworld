@@ -399,7 +399,7 @@ public:
 
     std::vector< Entity<TSeq> > & get_entities();
 
-    void agents_smallworld(
+    Model<TSeq> & agents_smallworld(
         epiworld_fast_uint n = 1000,
         epiworld_fast_uint k = 5,
         bool d = false,
@@ -421,7 +421,7 @@ public:
     void update_state();
     void mutate_virus();
     void next();
-    virtual void run(
+    virtual Model<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     ); ///< Runs the simulation (after initialization)
@@ -442,8 +442,8 @@ public:
     epiworld_fast_uint get_n_replicates() const;
     void set_ndays(epiworld_fast_uint ndays);
     bool get_verbose() const;
-    void verbose_off();
-    void verbose_on();
+    Model<TSeq> & verbose_off();
+    Model<TSeq> & verbose_on();
     int today() const; ///< The current time of the model
 
     /**
@@ -523,7 +523,7 @@ public:
      * 
      */
     virtual void reset();
-    void print(bool lite = false) const;
+    const Model<TSeq> & print(bool lite = false) const;
 
     Model<TSeq> && clone() const;
 
@@ -556,10 +556,10 @@ public:
      * @param proportions_ Vector of proportions for each state.
      * @param queue_ Vector of queue for each state.
      */
-    virtual void initial_states(
+    virtual Model<TSeq> & initial_states(
         std::vector< double > /*proportions_*/,
         std::vector< int > /*queue_*/
-    ) {};
+    ) {return *this;};
 
     /**
      * @name Setting and accessing parameters from the model

@@ -73,7 +73,7 @@ public:
      * - 0: Proportion of non-infected agents who are removed.
      * - 1: Proportion of exposed agents to be set as infected.
     */
-    void initial_states(
+    ModelSEIR<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
     );
@@ -144,7 +144,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 }
 
 template<typename TSeq>
-inline void ModelSEIR<TSeq>::initial_states(
+inline ModelSEIR<TSeq> & ModelSEIR<TSeq>::initial_states(
     std::vector< double > proportions_,
     std::vector< int > /**/
 ) {
@@ -153,7 +153,7 @@ inline void ModelSEIR<TSeq>::initial_states(
         create_init_function_seir<TSeq>(proportions_)
         ;
 
-    return;
+    return *this;
 
 }
 

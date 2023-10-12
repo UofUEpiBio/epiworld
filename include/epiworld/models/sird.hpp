@@ -41,7 +41,7 @@ public:
      * - The proportion of non-infected individuals who have recovered.
      * - The proportion of non-infected individuals who have died.
     */
-    void initial_states(
+    ModelSIRD<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
     );
@@ -110,7 +110,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
 }
 
 template<typename TSeq>
-inline void ModelSIRD<TSeq>::initial_states(
+inline ModelSIRD<TSeq> & ModelSIRD<TSeq>::initial_states(
     std::vector< double > proportions_,
     std::vector< int > /**/ 
 ) {
@@ -119,7 +119,7 @@ inline void ModelSIRD<TSeq>::initial_states(
         create_init_function_sird<TSeq>(proportions_)
         ;
 
-    return;
+    return *this;
 
 }
 

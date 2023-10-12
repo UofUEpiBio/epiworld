@@ -32,7 +32,7 @@ public:
         epiworld_double recovery_rate
     );
 
-    void run(
+    ModelSIRCONN<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -46,7 +46,7 @@ public:
      * @param proportions_ Double vector with a single element:
      * - The proportion of non-infected individuals who have recovered.
     */
-    void initial_states(
+    ModelSIRCONN<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
     );
@@ -55,13 +55,14 @@ public:
 };
 
 template<typename TSeq>
-inline void ModelSIRCONN<TSeq>::run(
+inline ModelSIRCONN<TSeq> & ModelSIRCONN<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
 {
 
     Model<TSeq>::run(ndays, seed);
+    return *this;
 
 }
 
@@ -302,7 +303,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 }
 
 template<typename TSeq>
-inline void ModelSIRCONN<TSeq>::initial_states(
+inline ModelSIRCONN<TSeq> & ModelSIRCONN<TSeq>::initial_states(
     std::vector< double > proportions_,
     std::vector< int > /**/ 
 ) {
@@ -311,7 +312,7 @@ inline void ModelSIRCONN<TSeq>::initial_states(
         create_init_function_sir<TSeq>(proportions_)
         ;
 
-    return;
+    return *this;
 
 }
 

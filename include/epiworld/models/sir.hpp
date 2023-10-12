@@ -37,7 +37,7 @@ public:
      * @param proportions_ Double vector with a single element:
      * - The proportion of non-infected individuals who have recovered.
     */
-    void initial_states(
+    ModelSIR<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
     );
@@ -100,7 +100,7 @@ inline ModelSIR<TSeq>::ModelSIR(
 }
 
 template<typename TSeq>
-inline void ModelSIR<TSeq>::initial_states(
+inline ModelSIR<TSeq> & ModelSIR<TSeq>::initial_states(
     std::vector< double > proportions_,
     std::vector< int > /* queue_ */
 ) {
@@ -109,7 +109,7 @@ inline void ModelSIR<TSeq>::initial_states(
         create_init_function_sir<TSeq>(proportions_)
         ;
 
-    return;
+    return *this;
 
 }
 
