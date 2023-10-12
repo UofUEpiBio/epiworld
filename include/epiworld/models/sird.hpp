@@ -110,7 +110,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
 }
 
 template<typename TSeq>
-inline void ModelSIRCONN<TSeq>::initial_states(
+inline void ModelSIRD<TSeq>::initial_states(
     std::vector< double > proportions_,
     std::vector< int > /**/ 
 ) {
