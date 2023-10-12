@@ -41,6 +41,7 @@ private:
     Agent<TSeq> * agent   = nullptr;
     
     int sample_type = SAMPLETYPE::AGENT;
+    int std::vector< size_t > states = {};
 
     void sample_n(size_t n); ///< Backbone function for sampling
 
@@ -52,9 +53,25 @@ public:
     AgentsSample(const AgentsSample<TSeq> & a) = delete; ///< Copy constructor
     AgentsSample(AgentsSample<TSeq> && a) = delete;      ///< Move constructor
 
-    AgentsSample(Model<TSeq> & model_, size_t n, bool truncate = false);
-    AgentsSample(Model<TSeq> * model, Entity<TSeq> & entity_, size_t n, bool truncate = false);
-    AgentsSample(Model<TSeq> * model, Agent<TSeq> & agent_, size_t n, bool truncate = false);
+    AgentsSample(
+        Model<TSeq> & model_, size_t n,
+        std::vector< size_t > states_ = {},
+        bool truncate = false
+        );
+
+    AgentsSample(
+        Model<TSeq> * model, Entity<TSeq> & entity_, size_t n,
+        std::vector< size_t > states_ = {},
+        bool truncate = false
+        );
+
+    AgentsSample(
+        Model<TSeq> * model, Agent<TSeq> & agent_, size_t n,
+        std::vector< size_t > states_ = {},
+        bool truncate = false
+        );
+
+    void set_state(int s) { state = s; };
 
     ~AgentsSample();
 
@@ -71,8 +88,11 @@ template<typename TSeq>
 inline AgentsSample<TSeq>::AgentsSample(
     Model<TSeq> & model_,
     size_t n,
+    std::vector< size_t > states_,
     bool truncate
     ) {
+
+    states = states_;
 
     if (truncate)
     {
@@ -85,12 +105,12 @@ inline AgentsSample<TSeq>::AgentsSample(
             "There are only " + std::to_string(model_.size()) + " agents. You cannot " +
             "sample " + std::to_string(n));
 
-    sample_size = n;
-    model       = &model_;
-    sample_type = SAMPLETYPE::MODEL;
+    sample_size   = n;
+    model         = &model_;
+    sample_type   = SAMPLETYPE::MODEL;
 
-    agents   = &model_.sampled_population;
-    agents_n = &model_.sampled_population_n;
+    agents        = &model_.sampled_population;
+    agents_n      = &model_.sampled_population_n;
 
     agents_left   = &model_.population_left;
     agents_left_n = &model_.population_left_n;
@@ -105,8 +125,12 @@ template<typename TSeq>
 inline AgentsSample<TSeq>::AgentsSample(
     Model<TSeq> * model,
     Entity<TSeq> & entity_,
-    size_t n, bool truncate
+    size_t n,
+    std::vector< size_t > states_,
+    bool truncate
     ) {
+
+    states = states_;
 
     if (truncate)
     {
@@ -119,12 +143,12 @@ inline AgentsSample<TSeq>::AgentsSample(
             "There are only " + std::to_string(entity_.size()) + " agents. You cannot " +
             "sample " + std::to_string(n));
 
-    sample_size = n;
-    model       = &entity_.model;
-    sample_type = SAMPLETYPE::ENTITY;
+    sample_size   = n;
+    model         = &entity_.model;
+    sample_type   = SAMPLETYPE::ENTITY;
 
-    agents   = &entity_.sampled_agents;
-    agents_n = &entity_.sampled_agents_n;
+    agents        = &entity_.sampled_agents;
+    agents_n      = &entity_.sampled_agents_n;
 
     agents_left   = &entity_.sampled_agents_left;
     agents_left_n = &entity_.sampled_agents_left_n;
@@ -152,16 +176,18 @@ inline AgentsSample<TSeq>::AgentsSample(
     Model<TSeq> * model,
     Agent<TSeq> & agent_,
     size_t n,
+    std::vector< size_t > states_,
     bool truncate
     )
 {
 
+    states = states_;
     sample_type = SAMPLETYPE::AGENT;
     
-    agent = &agent_;
+    agent         = &agent_;
 
-    agents   = &agent_.sampled_agents;
-    agents_n = &agent_.sampled_agents_n;
+    agents        = &agent_.sampled_agents;
+    agents_n      = &agent_.sampled_agents_n;
 
     agents_left   = &agent_.sampled_agents_left;
     agents_left_n = &agent_.sampled_agents_left_n;
@@ -170,7 +196,7 @@ inline AgentsSample<TSeq>::AgentsSample(
     size_t agents_in_entities = 0;
     Entities<TSeq> entities_a = agent->get_entities();
 
-    std::vector< int > cum_agents_count(entities_a.size(), 0);
+    std::vector< size_t > cum_agents_count(entities_a.size(), 0);
     int idx = -1;
     for (auto & e : entities_a)
     {
@@ -193,15 +219,18 @@ inline AgentsSample<TSeq>::AgentsSample(
 
     } else if (n > agents_in_entities)
         throw std::logic_error(
-            "There are only " + std::to_string(agents_in_entities) + " agents. You cannot " +
-            "sample " + std::to_string(n));
+            "There are only " + std::to_string(agents_in_entities) +
+            " agents. You cannot " +
+            "sample " + std::to_string(n)
+            );
 
     sample_size = n;
 
     if (agents->size() < n)
         agents->resize(n);
 
-    for (size_t i = 0u; i < n; ++i)
+    size_t i_obs = 0u;
+    for (size_t i = 0u; i < agents_in_entities; ++i)
     {
         int jth = std::floor(model->runif() * agents_in_entities);
         for (size_t e = 0u; e < cum_agents_count.size(); ++e)
@@ -209,11 +238,24 @@ inline AgentsSample<TSeq>::AgentsSample(
             // Are we in the limit?
             if (jth <= cum_agents_count[e])
             {
+                size_t agent_idx = 0u;
                 if (e == 0) // From the first group
-                    agents->operator[](i) = entities_a[e][jth];
+                    agent_idx = entities_a[e][jth];
                 else
-                    agents->operator[](i) = entities_a[e][jth - cum_agents_count[e - 1]];
+                    agent_idx = = entities_a[e][jth - cum_agents_count[e - 1]];
+
+                // Getting the state
+                size_t state = model->population[agent_idx].get_state();
+
+                // Checking if states was specified
+                if (states.size())
+                {
+                    if (std::find(states.begin(), states.end(), state) != states.end())
+                        continue;
+                }
                 
+                agents->operator[](i_obs++) = agent_idx;
+
                 break;
             }
 
@@ -275,27 +317,46 @@ template<typename TSeq>
 inline void AgentsSample<TSeq>::sample_n(size_t n)
 {
 
-    // Checking if the size of the entity has changed (or hasn't been initialized)
-    if (sample_type == SAMPLETYPE::MODEL)
+    // Reducing size
+    if (states.size())
     {
-
-        if (model->size() != agents_left->size())
+            
+        // Getting the number of agents left
+        size_t n_agents_left = 0u;
+        agents_left->clear();
+        agents_left->reserve(model->size());
+        for (auto & a : *agents_left)
         {
-            agents_left->resize(model->size(), 0u);
-            std::iota(agents_left->begin(), agents_left->end(), 0u);
+            size_t s = model->population[a].get_state();
+            if (std::find(states.begin(), states.end(), s) == states.end())
+                agents_left->push_back(a);
         }
 
-    } else if (sample_type == SAMPLETYPE::ENTITY) {
+    } else {
 
-        if (entity->size() != agents_left->size())
+        // Checking if the size of the entity has changed (or hasn't been initialized)
+        if (sample_type == SAMPLETYPE::MODEL)
         {
 
-            agents_left->resize(entity->size(), 0u);
-            std::iota(agents_left->begin(), agents_left->end(), 0u);
+            if (model->size() != agents_left->size())
+            {
+                agents_left->resize(model->size(), 0u);
+                std::iota(agents_left->begin(), agents_left->end(), 0u);
+            }
 
-        }
+        } else if (sample_type == SAMPLETYPE::ENTITY) {
 
-    } 
+            if (entity->size() != agents_left->size())
+            {
+
+                agents_left->resize(entity->size(), 0u);
+                std::iota(agents_left->begin(), agents_left->end(), 0u);
+
+            }
+
+        } 
+
+    }
 
     // Restart the counter of agents left
     *agents_left_n = agents_left->size();

@@ -19,9 +19,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
       );
 
     model_0.agents_smallworld(10000, 5, false, 0.01);
-    
     model_0.verbose_off();
-
     model_0.run(100, 1231);
 
     epimodels::ModelSIR<> model_1(
@@ -29,7 +27,6 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     model_1.agents_smallworld(10000, 5, false, 0.01);
-
     model_1.queuing_off();
     model_1.verbose_off();
 

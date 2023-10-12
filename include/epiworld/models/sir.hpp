@@ -122,8 +122,8 @@ inline void ModelSIR<TSeq>::initial_states(
     }
 
     // Capturing variables
-    const auto vpreval = std::make_shared< std::vector< epiworld_double> >(Model<TSeq>::prevalence_virus);
-    const auto vprop   = std::make_shared< std::vector< bool > >(Model<TSeq>::prevalence_virus_as_proportion);
+    const auto * vpreval = &Model<TSeq>::prevalence_virus;
+    const auto * vprop   = &Model<TSeq>::prevalence_virus_as_proportion;
 
     // Creating function
     std::function<void(epiworld::Model<TSeq>*)> fun =
