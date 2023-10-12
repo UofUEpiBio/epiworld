@@ -666,7 +666,7 @@ public:
      */
     ////@{
     void queuing_on(); ///< Activates the queuing system (default.)
-    void queuing_off(); ///< Deactivates the queuing system.
+    Model<TSeq> & queuing_off(); ///< Deactivates the queuing system.
     bool is_queuing_on() const; ///< Query if the queuing system is on.
     Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
     ///@}

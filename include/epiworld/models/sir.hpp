@@ -102,66 +102,12 @@ inline ModelSIR<TSeq>::ModelSIR(
 template<typename TSeq>
 inline void ModelSIR<TSeq>::initial_states(
     std::vector< double > proportions_,
-    std::vector< int > queue_ 
+    std::vector< int > /* queue_ */
 ) {
 
-    // Checking widths
-    if (proportions_.size() != 1u)
-        throw std::invalid_argument(
-            "The vector of proportions must have a single element."
-            );
-
-    // Proportion should be within [0, 1]
-    if ((proportions_[0] < 0.0) || (proportions_[0] > 1.0))
-        throw std::invalid_argument(
-            "The proportion must be within (0, 1)."
-            );
-
-
-    // Creating function
-    double prop = proportions_[0];
-    std::function<void(epiworld::Model<TSeq>*)> fun =
-    [prop] (epiworld::Model<TSeq> * model) -> void {
-
-        // Figuring out information about the viruses
-        double tot = 0.0;
-        const auto & vpreval = model->get_prevalence_virus();
-        const auto & vprop   = model->get_prevalence_virus_as_proportion();
-        double n   = static_cast<double>(model->size());
-        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
-        {
-            if (vprop[i])
-                tot += vpreval[i];
-            else
-                tot += vpreval[i] / n;
-        }
-
-        // Putting the total into context
-        double tot_left = 1.0 - tot;
-
-        // Since susceptible and infected are "fixed,"
-        // we only need to change recovered
-        size_t nrecovered = prop * tot_left * n;
-        
-        epiworld::AgentsSample<TSeq> sample(
-            *model,
-            nrecovered,
-            {0u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample)
-            agent->change_state(model, 2, Queue<TSeq>::NoOne);
-        
-        // Running the actions
-        model->actions_run();
-
-        return;
-
-    };
-
-    Model<TSeq>::initial_states_fun = fun;
+    Model<TSeq>::initial_states_fun =
+        create_init_function_sir<TSeq>(proportions_)
+        ;
 
     return;
 

@@ -11,12 +11,7 @@ private:
 
 public:
 
-    ModelSIRCONN() {
-        
-        // tracked_agents_infected.reserve(1e4);
-        // tracked_agents_infected_next.reserve(1e4);
-
-    };
+    ModelSIRCONN() {};
 
     ModelSIRCONN(
         ModelSIRCONN<TSeq> & model,
@@ -37,16 +32,6 @@ public:
         epiworld_double recovery_rate
     );
 
-    // Tracking who is infected and who is not
-    // std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected = {};
-    // std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected_next = {};
-    // std::vector< epiworld_double >        tracked_agents_weight        = {};
-    // std::vector< epiworld_double >        tracked_agents_weight_next   = {};
-
-    // int tracked_ninfected = 0;
-    // int tracked_ninfected_next = 0;
-    // epiworld_double tracked_current_infect_prob = 0.0;
-
     void run(
         epiworld_fast_uint ndays,
         int seed = -1
@@ -55,6 +40,16 @@ public:
     void reset();
 
     Model<TSeq> * clone_ptr();
+
+    /**
+     * @brief Set the initial states of the model
+     * @param proportions_ Double vector with a single element:
+     * - The proportion of non-infected individuals who have recovered.
+    */
+    void initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
 
 
 };
@@ -66,13 +61,6 @@ inline void ModelSIRCONN<TSeq>::run(
 )
 {
 
-    // tracked_agents_infected.clear();
-    // tracked_agents_infected_next.clear();
-
-    // tracked_ninfected = 0;
-    // tracked_ninfected_next = 0;
-    // tracked_current_infect_prob = 0.0;
-
     Model<TSeq>::run(ndays, seed);
 
 }
@@ -82,14 +70,6 @@ inline void ModelSIRCONN<TSeq>::reset()
 {
 
     Model<TSeq>::reset();
-
-    // Model<TSeq>::set_rand_binom(
-    //     Model<TSeq>::size(),
-    //     static_cast<double>(
-    //         Model<TSeq>::par("Contact rate"))/
-    //         static_cast<double>(Model<TSeq>::size())
-    //     );
-
     return;
 
 }
@@ -128,8 +108,6 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     // epiworld_double prob_reinfection
     )
 {
-
-
 
     epiworld::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
@@ -261,7 +239,9 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 return ;
 
             } else
-                throw std::logic_error("This function can only be applied to infected individuals. (SIR)") ;
+                throw std::logic_error(
+                    "This function can only be applied to infected individuals. (SIR)"
+                    ) ;
 
             return;
 
@@ -316,6 +296,20 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         transmission_rate,
         recovery_rate
     );
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void ModelSIRCONN<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /**/ 
+) {
+
+    Model<TSeq>::initial_states_fun = 
+        create_init_function_sir<TSeq>(proportions_)
+        ;
 
     return;
 

@@ -44,6 +44,16 @@ public:
 
     Model<TSeq> * clone_ptr();
 
+    /**
+     * @brief Set the initial states of the model
+     * @param proportions_ Double vector with a single element:
+     * - The proportion of non-infected individuals who have recovered.
+    */
+    void initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
+
 };
 
 template<typename TSeq>
@@ -315,6 +325,21 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         avg_incubation_days,
         recovery_rate
     );
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void ModelSEIRCONN<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /* queue_ */
+)
+{
+
+    Model<TSeq>::initial_states_fun =
+        create_init_function_seir<TSeq>(proportions_)
+        ;
 
     return;
 

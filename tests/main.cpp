@@ -14,3 +14,4 @@
 #include "01-sirconnected.cpp"
 #include "02-reproducible-sir.cpp"
 #include "02-reproducible-sirconn.cpp"
+#include "04-initial-dist.cpp"

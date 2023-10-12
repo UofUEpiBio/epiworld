@@ -2511,9 +2511,10 @@ inline void Model<TSeq>::queuing_on()
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::queuing_off()
+inline Model<TSeq> & Model<TSeq>::queuing_off()
 {
     use_queuing = false;
+    return *this;
 }
 
 template<typename TSeq>

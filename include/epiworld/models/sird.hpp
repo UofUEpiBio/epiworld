@@ -34,6 +34,17 @@ public:
         epiworld_double recovery_rate, 
         epiworld_double death_rate
     );
+
+    /**
+     * @brief Set the initial states of the model
+     * @param proportions_ Double vector with two elements:
+     * - The proportion of non-infected individuals who have recovered.
+     * - The proportion of non-infected individuals who have died.
+    */
+    void initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
     
 };
 
@@ -93,6 +104,20 @@ inline ModelSIRD<TSeq>::ModelSIRD(
         recovery_rate, 
         death_rate
         );
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void ModelSIRCONN<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /**/ 
+) {
+
+    Model<TSeq>::initial_states_fun = 
+        create_init_function_sird<TSeq>(proportions_)
+        ;
 
     return;
 
