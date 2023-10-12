@@ -67,6 +67,17 @@ public:
         return;    
     };
 
+    /**
+     * @brief Set up the initial states of the model.
+     * @param proportions_ Double vector with the following values:
+     * - 0: Proportion of non-infected agents who are removed.
+     * - 1: Proportion of exposed agents to be set as infected.
+    */
+    void initial_states(
+        std::vector< double > proportions_,
+        std::vector< int > queue_ = {}
+    );
+
 };
 
 
@@ -132,6 +143,83 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 
 }
 
+template<typename TSeq>
+inline void ModelSEIR<TSeq>::initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > /**/
+) {
 
+    // Checking widths
+    size_t nstates = this->get_states().size();
+    if (proportions_.size() != 2u) {
+        throw std::invalid_argument("-proportions_- must have two entries.");
+    }
+
+    // proportions_ are values between 0 and 1, otherwise error
+    for (auto & v : proportions_)
+        if ((v < 0.0) || (v > 1.0))
+            throw std::invalid_argument(
+                "-proportions_- must have values between 0 and 1."
+                );
+
+    // Creating function
+    std::function<void(epiworld::Model<TSeq>*)> fun =
+    [proportions_] (epiworld::Model<TSeq> * model) -> void {
+
+        // Figuring out information about the viruses
+        double tot = 0.0;
+        const auto & vpreval = model->get_prevalence_virus();
+        const auto & vprop   = model->get_prevalence_virus_as_proportion();
+        double n   = static_cast<double>(model->size());
+        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        {
+            if (vprop[i])
+                tot += vpreval[i];
+            else
+                tot += vpreval[i] / n;
+        }
+
+        // Putting the total into context
+        double tot_left = 1.0 - tot;
+
+        // Since susceptible and infected are "fixed,"
+        // we only need to change recovered
+        size_t nexposed   = proportions_[0u] * tot * n;
+        size_t nrecovered = proportions_[1u] * tot_left * n;
+        
+        epiworld::AgentsSample<TSeq> sample_suscept(
+            *model,
+            nrecovered,
+            {0u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample_suscept)
+            agent->change_state(model, 3, Queue<TSeq>::NoOne);
+
+        epiworld::AgentsSample<TSeq> sample_exposed(
+            *model,
+            nexposed,
+            {1u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample_exposed)
+            agent->change_state(model, 2, Queue<TSeq>::NoOne);
+        
+        // Running the actions
+        model->actions_run();
+
+        return;
+
+    };
+
+    Model<TSeq>::initial_states_fun = fun;
+
+    return;
+
+}
 
 #endif

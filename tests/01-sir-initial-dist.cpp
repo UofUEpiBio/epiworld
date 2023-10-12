@@ -13,10 +13,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "a virus", 0.01, .9, .3
         );
 
-    model_0.initial_states(
-      {1.0, 0.0, 2.0},
-      {}
-      );
+    model_0.initial_states({0.5});
 
     model_0.agents_smallworld(10000, 5, false, 0.01);
     model_0.verbose_off();
@@ -30,10 +27,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     model_1.queuing_off();
     model_1.verbose_off();
 
-    model_1.initial_states(
-      {1.0, 0.0, 2.0},
-      {}
-      );
+    model_1.initial_states({.5});
     
     model_1.run(100, 1231);
 
@@ -74,8 +68,18 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "a virus", 0.01, .5, 7.0, .1
         );
 
-    // model_2.initial_states(
+    
+    model_2.agents_smallworld(10000, 5, false, 0.01);
+    model_2.queuing_off();
+    model_2.verbose_off();
 
+    model_2.initial_states(
+        {.3, .5},
+        {}
+        );
+
+    model_2.run(100, 1231);
+    model_2.print(false);
 
     #ifndef CATCH_CONFIG_MAIN
     return 0;
