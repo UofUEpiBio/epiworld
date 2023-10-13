@@ -362,7 +362,7 @@ inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::initial_states(
 ) {
 
     Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
+        create_init_function_seird<TSeq>(proportions_)
         ;
 
     return *this;
