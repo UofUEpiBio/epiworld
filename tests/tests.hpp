@@ -9,6 +9,12 @@
 #include <omp.h>
 #include "../include/epiworld/epiworld.hpp"
 
+template<typename T>
+inline bool moreless(T a, T b, T eps = static_cast<T>(1))
+{
+    return(std::abs(a-b) > eps);
+}
+
 std::string file_reader(std::string fname)
 {
     // Create a text string, which is used to output the text file
@@ -48,6 +54,7 @@ std::string file_reader(std::string fname)
         TEST_CASE(desc, tag) 
 
 #endif
+
 
 
 #endif

@@ -15156,7 +15156,7 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sird(
         tot += v;
     }
 
-    if (tot != 1.0)
+    if (tot >= 1.0)
         throw std::invalid_argument(
             "The proportions must sum up to 1."
             );
@@ -15205,7 +15205,7 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sird(
 
         // Setting up the initial states
         for (auto & agent : sample_deceased)
-            agent->rm_agent(model);
+            agent->change_state(model, 3, Queue<TSeq>::NoOne);
         
         // Running the actions
         model->actions_run();
@@ -15297,6 +15297,108 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seir(
     return fun;
 
 }
+
+/**
+ * @brief Creates an initial function for the SEIR-like models
+ * The function is used for the initial states of the model.
+*/
+template<typename TSeq>
+inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seird(
+    std::vector< double > proportions_
+) {
+
+    // Checking widths
+    if (proportions_.size() != 3u) {
+        throw std::invalid_argument("-proportions_- must have three entries.");
+    }
+
+    // proportions_ are values between 0 and 1, otherwise error
+    for (auto & v : proportions_)
+        if ((v < 0.0) || (v > 1.0))
+            throw std::invalid_argument(
+                "-proportions_- must have values between 0 and 1."
+                );
+
+    // Last first two terms shouldn't add up to more than 1
+    if ((proportions_[1u] + proportions_[2u]) > 1.0)
+        throw std::invalid_argument(
+            "The last two terms of -proportions_- must add up to less than 1."
+            );
+
+    std::function<void(epiworld::Model<TSeq>*)> fun = 
+        [proportions_] (epiworld::Model<TSeq> * model) -> void {
+
+        // Figuring out information about the viruses
+        double tot = 0.0;
+        const auto & vpreval = model->get_prevalence_virus();
+        const auto & vprop   = model->get_prevalence_virus_as_proportion();
+        double n   = static_cast<double>(model->size());
+        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        {
+            if (vprop[i])
+                tot += vpreval[i];
+            else
+                tot += vpreval[i] / n;
+        }
+
+        // Putting the total into context
+        double tot_left = 1.0 - tot;
+
+        // Since susceptible and infected are "fixed,"
+        // we only need to change recovered
+        size_t nexposed   = proportions_[0u] * tot * n;
+        size_t nrecovered = proportions_[1u] * tot_left * n;
+        size_t ndeceased  = proportions_[2u] * tot_left * n;
+        
+        epiworld::AgentsSample<TSeq> sample_suscept(
+            *model,
+            nrecovered,
+            {0u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample_suscept)
+            agent->change_state(model, 3, Queue<TSeq>::NoOne);
+
+        epiworld::AgentsSample<TSeq> sample_exposed(
+            *model,
+            nexposed,
+            {1u},
+            true
+            );
+
+        // Setting up the initial states
+        for (auto & agent : sample_exposed)
+            agent->change_state(model, 2, Queue<TSeq>::NoOne);
+
+        // Running the actions
+        model->actions_run();
+
+        // Setting the initial states for the deceased
+        epiworld::AgentsSample<TSeq> sample_deceased(
+            *model,
+            ndeceased,
+            {0u},
+            true
+            );
+        
+        // Setting up the initial states
+        for (auto & agent : sample_deceased)
+            agent->change_state(model, 4, Queue<TSeq>::NoOne);
+        
+        // Running the actions
+        model->actions_run();
+
+        return;
+
+    };
+
+    return fun;
+
+}
+
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -17020,13 +17122,6 @@ inline ModelSEIRCONN<TSeq> & ModelSEIRCONN<TSeq>::initial_states(
 
 /**
  * @brief Template for a Susceptible-Infected-Removed-Deceased (SIRD) model
- * 
- * @param model A Model<TSeq> object where to set up the SIRD.
- * @param vname std::string Name of the virus
- * @param initial_prevalence epiworld_double Initial prevalence
- * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
- * @param initial_death epiworld_double Initial death_rate of the immune system 
  */
 template<typename TSeq = int>
 class ModelSIRD : public epiworld::Model<TSeq>
@@ -17035,6 +17130,18 @@ public:
 
     ModelSIRD() {};
 
+    
+    /**
+     * @brief Constructs a new SIRD model with the given parameters.
+     * 
+     * @param model The SIRD model to copy from.
+     * @param vname The name of the vertex associated with this model.
+     * @param prevalence The initial prevalence of the disease in the population.
+     * @param transmission_rate The rate at which the disease spreads from infected to susceptible individuals.
+     * @param recovery_rate The rate at which infected individuals recover and become immune.
+     * @param death_rate The rate at which infected individuals die.
+     */
+    ///@{
     ModelSIRD(
         ModelSIRD<TSeq> & model,
         std::string vname,
@@ -17051,6 +17158,7 @@ public:
         epiworld_double recovery_rate, 
         epiworld_double death_rate
     );
+    ///@}
 
     /**
      * @brief Set the initial states of the model
@@ -17282,15 +17390,7 @@ inline ModelSISD<TSeq>::ModelSISD(
 
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
- * 
- * @param model A Model<TSeq> object where to set up the SIR.
- * @param vname std::string Name of the virus
- * @param prevalence epiworld_double Initial prevalence the immune system
- * @param transmission_rate epiworld_double Transmission rate of the virus
- * @param avg_incubation_days epiworld_double Average incubation days of the virus
- * @param recovery_rate epiworld_double Recovery rate of the virus.
- * @param death_rate epiworld_double Death rate of the virus.
- */
+*/
 template<typename TSeq = int>
 class ModelSEIRD : public epiworld::Model<TSeq>
 {
@@ -17304,6 +17404,18 @@ public:
   
   ModelSEIRD() {};
   
+  /**
+   * @brief Constructor for the SEIRD model.
+   * 
+   * @tparam TSeq Type of the sequence used in the model.
+   * @param model Reference to the SEIRD model.
+   * @param vname Name of the model.
+   * @param prevalence Prevalence of the disease.
+   * @param transmission_rate Transmission rate of the disease.
+   * @param avg_incubation_days Average incubation period of the disease.
+   * @param recovery_rate Recovery rate of the disease.
+   * @param death_rate Death rate of the disease.
+   */
   ModelSEIRD(
     ModelSEIRD<TSeq> & model,
     std::string vname,
@@ -17314,6 +17426,16 @@ public:
     epiworld_double death_rate
   );
   
+  /**
+   * @brief Constructor for the SEIRD model.
+   * 
+   * @param vname Name of the model.
+   * @param prevalence Initial prevalence of the disease.
+   * @param transmission_rate Transmission rate of the disease.
+   * @param avg_incubation_days Average incubation period of the disease.
+   * @param recovery_rate Recovery rate of the disease.
+   * @param death_rate Death rate of the disease.
+   */
   ModelSEIRD(
     std::string vname,
     epiworld_double prevalence,
@@ -17397,6 +17519,12 @@ public:
     return;
     
   };
+
+  ModelSEIRD<TSeq> & initial_states(
+    std::vector< double > proportions_,
+    std::vector< int > queue_ = {}
+  );
+
 };
 
 
@@ -17469,6 +17597,19 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   
 }
 
+template<typename TSeq>
+inline ModelSEIRD<TSeq> & ModelSEIRD<TSeq>::initial_states(
+  std::vector< double > proportions_,
+  std::vector< int > /**/
+) {
+
+  Model<TSeq>::initial_states_fun =
+    create_init_function_seird<TSeq>(proportions_)
+    ;
+
+  return *this;
+
+}
 
 
 #endif
