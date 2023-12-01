@@ -6,20 +6,21 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
     epiworld::Model<bool> m;
 
-    m.add_status("Susceptible", default_update_susceptible<bool>);
-    m.add_status("Recovered");
+    m.add_state("Susceptible", default_update_susceptible<bool>);
+    m.add_state("Recovered");
 
     epiworld::Virus<bool> v;
     epiworld::Tool<bool> t;
-    v.set_status(0, 1);
+    v.set_state(0, 1);
 
-    m.agents_from_adjlist("edgelist.txt", 1000);
+    m.seed(1333);
+    m.agents_smallworld(1000);
 
     m.add_virus(v, .5);
     m.add_tool(t, .5);
 
     // Cloning
-    epiworld::Model<bool>m2(m);
+    epiworld::Model<bool> m2 = m;
 
     // Printing the addresses
     std::cout << 
@@ -38,13 +39,13 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
         std::cout << n << ", ";
     std::cout << std::endl;
 
-    std::cout << "Agent[0] in m viruses and tools  : " <<
-        m.get_agents()[0u].get_virus(0u)->get_agent() << ", " <<
-        m.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
+    // std::cout << "Agent[0] in m tools  : " <<
+    //     // m.get_agents()[0u].get_virus()->get_agent() << ", " <<
+    //     m.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
 
-    std::cout << "Agent[0] in m2 viruses and tools : " <<
-        m2.get_agents()[0u].get_virus(0u)->get_agent() << ", " <<
-        m2.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
+    // std::cout << "Agent[0] in m2 tools : " <<
+    //     // m2.get_agents()[0u].get_virus()->get_agent() << ", " <<
+    //     m2.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
             
 
     #ifndef CATCH_CONFIG_MAIN

@@ -37,7 +37,7 @@ unfolder <- function(txt, rel = "include/epiworld/") {
 
         loc <- heads[h]
 
-        fn <- paste0(rel, fns[h])
+        fn <- trimws(paste0(rel, fns[h]))
         tmp_lines <- readLines(fn, warn = FALSE)
 
         # Extracting relative path

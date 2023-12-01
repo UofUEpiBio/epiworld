@@ -63,7 +63,12 @@
     "thread": "cpp",
     "typeinfo": "cpp",
     "variant": "cpp",
-    "semaphore": "cpp"
+    "semaphore": "cpp",
+    "list": "cpp",
+    "unordered_set": "cpp",
+    "shared_mutex": "cpp",
+    "cfenv": "cpp",
+    "cinttypes": "cpp"
   },
   "intel-corporation.oneapi-analysis-configurator.binary-path": "/home/george/Documents/development/epiworld/tests/01c.o"
 }

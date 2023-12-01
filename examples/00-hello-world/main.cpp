@@ -1,5 +1,5 @@
 
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;
@@ -27,7 +27,7 @@ int main()
     model.add_tool(tool, .5);
 
     // Generating a random pop 
-    model.agents_smallworld(10000);
+    model.agents_smallworld(10000, 20, false, .01);
 
     // Running the model
     model.run(100, 123);
@@ -42,7 +42,8 @@ int main()
         "total_hist.txt",
         "transmissions.txt",
         "transitions.txt",
-        "reproductive.txt"
+        "reproductive.txt",
+        "generation_time.txt"
         );
   
 }

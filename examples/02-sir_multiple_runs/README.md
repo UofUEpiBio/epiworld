@@ -3,31 +3,6 @@
 Output from the program:
 
 ```
-
-________________________________________________________________________________
-SIMULATION STUDY
-
-Population size     : 1000
-Number of entities  : 0
-Days (duration)     : 0 (of 60)
-Number of variants  : 1
-Last run elapsed t  : -
-Rewiring            : off
-
-Virus(es):
- - a virus (baseline prevalence: 1.00%)
-
-Tool(s):
- (none)
-
-Model parameters:
- - Infectiousness    : 0.9000
- - Prob. of Recovery : 0.3000
-
-Distribution of the population at time 0:
- - (0) Susceptible : 990
- - (1) Infected    : 10
- - (2) Recovered   : 0
 Replicate 0 done
 Replicate 1 done
 Replicate 2 done
@@ -129,18 +104,18 @@ Replicate 97 done
 Replicate 98 done
 Replicate 99 done
 last run elapsed time : 0.00ms
-total elapsed time    : 101.00ms
+total elapsed time    : 56.00ms
 total runs            : 100
-mean run elapsed time : 1.01ms
+mean run elapsed time : 0.56ms
 Susceptible, Infected, Recovered, 
-0, 0, 1000, 
-0, 0, 1000, 
-0, 0, 1000, 
-0, 0, 1000, 
-0, 0, 1000, 
-0, 0, 1000, 
-0, 0, 1000, 
-0, 0, 1000, 
-0, 0, 1000, 
-0, 0, 1000, 
+167, 25, 808, 
+71, 13, 916, 
+302, 13, 685, 
+0, 5, 995, 
+126, 15, 859, 
+187, 24, 789, 
+13, 9, 978, 
+146, 9, 845, 
+7, 13, 980, 
+76, 26, 898, 
 ```

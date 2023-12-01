@@ -14,7 +14,7 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     model.agents_from_adjlist(
-        rgraph_smallworld(500000, 5, .001, false, model)
+        rgraph_smallworld(1000000, 5, .001, false, model)
     );
 
     // Running and checking the results

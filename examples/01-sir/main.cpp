@@ -1,3 +1,4 @@
+#define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;
@@ -13,7 +14,7 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     model.agents_from_adjlist(
-        rgraph_smallworld(100000, 5, .001, false, model)
+        rgraph_smallworld(50000, 20, .01, false, model)
     );
 
     // Running and checking the results
