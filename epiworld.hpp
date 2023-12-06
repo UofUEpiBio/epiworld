@@ -9004,6 +9004,14 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
     }
 
+    auto nvariants = db.get_n_viruses() - n_viruses_model;
+    if (nvariants > 0)
+    {
+
+        printf_epiworld(" ...and %li more variants...\n", nvariants);
+
+    }
+
     if (viruses.size() == 0u)
     {
         printf_epiworld(" (none)\n");
@@ -18352,7 +18360,7 @@ inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::initial_states(
 ) {
 
     Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
+        create_init_function_seird<TSeq>(proportions_)
         ;
 
     return *this;
