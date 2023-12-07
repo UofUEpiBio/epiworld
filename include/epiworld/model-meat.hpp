@@ -2438,7 +2438,7 @@ inline void Model<TSeq>::add_global_action(
 }
 
 template<typename TSeq>
-GlobalEvent<TSeq> & Model<TSeq>::get_global_action(
+GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
     std::string name
 )
 {
@@ -2452,7 +2452,7 @@ GlobalEvent<TSeq> & Model<TSeq>::get_global_action(
 }
 
 template<typename TSeq>
-GlobalEvent<TSeq> & Model<TSeq>::get_global_action(
+GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
     size_t index
 )
 {

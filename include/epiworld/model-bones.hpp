@@ -647,8 +647,8 @@ public:
         GlobalEvent<TSeq> action
     );
 
-    GlobalEvent<TSeq> & get_global_action(std::string name); ///< Retrieve a global action by name
-    GlobalEvent<TSeq> & get_global_action(size_t i); ///< Retrieve a global action by index
+    GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
+    GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
 
     void rm_global_action(std::string name); ///< Remove a global action by name
     void rm_global_action(size_t i); ///< Remove a global action by index
