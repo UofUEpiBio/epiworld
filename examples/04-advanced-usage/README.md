@@ -17,7 +17,7 @@ Number of viruses   : 1
 Last run elapsed t  : -
 Rewiring            : on (0.10)
 
-Global actions:
+Global events:
  (none)
 
 Virus(es):
@@ -54,7 +54,7 @@ Last run elapsed t  : 35.00ms
 Last run speed      : 1.68 million agents x day / second
 Rewiring            : on (0.10)
 
-Global actions:
+Global events:
  (none)
 
 Virus(es):

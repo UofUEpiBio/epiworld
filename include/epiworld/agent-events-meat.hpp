@@ -1,5 +1,5 @@
-#ifndef EPIWORLD_AGENT_ACTIONS_MEAT_HPP
-#define EPIWORLD_AGENT_ACTIONS_MEAT_HPP
+#ifndef EPIWORLD_AGENT_EVENTS_MEAT_HPP
+#define EPIWORLD_AGENT_EVENTS_MEAT_HPP
 
 template<typename TSeq>
 inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)

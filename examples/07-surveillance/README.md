@@ -17,7 +17,7 @@ Number of viruses   : 1
 Last run elapsed t  : -
 Rewiring            : off
 
-Global actions:
+Global events:
  - Surveilance program (runs daily)
 
 Virus(es):
@@ -52,7 +52,7 @@ Last run elapsed t  : 3.00ms
 Last run speed      : 252.72 million agents x day / second
 Rewiring            : off
 
-Global actions:
+Global events:
  - Surveilance program (runs daily)
 
 Virus(es):

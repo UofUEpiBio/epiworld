@@ -20,7 +20,7 @@ inline void GlobalEvent<TSeq>::operator()(Model<TSeq> * m, int day)
     if (this->fun == nullptr)
         return;
 
-    // Actions apply if day is negative or if day is equal to the day of the action
+    // events apply if day is negative or if day is equal to the day of the action
     if (this->day < 0 || this->day == day)
         this->fun(m);
     

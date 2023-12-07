@@ -121,9 +121,9 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         printf_epiworld("Rewiring            : off\n\n");
     }
     
-    // Printing global actions
-    printf_epiworld("Global actions:\n");
-    for (auto & a : global_actions)
+    // Printing Global events
+    printf_epiworld("Global events:\n");
+    for (auto & a : globalevents)
     {
         if (a.get_day() < 0)
         {
@@ -133,7 +133,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         }
     }
 
-    if (global_actions.size() == 0u)
+    if (globalevents.size() == 0u)
     {
         printf_epiworld(" (none)\n");
     }

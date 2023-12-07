@@ -195,16 +195,16 @@ protected:
     void chrono_start();
     void chrono_end();
 
-    std::vector<GlobalEvent<TSeq>> global_actions;
+    std::vector<GlobalEvent<TSeq>> globalevents;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
 
     /**
-     * @brief Variables used to keep track of the actions
+     * @brief Variables used to keep track of the events
      * to be made regarding viruses.
      */
-    std::vector< Event<TSeq> > actions = {};
+    std::vector< Event<TSeq> > events = {};
     epiworld_fast_uint nactions = 0u;
 
     /**
@@ -220,7 +220,7 @@ protected:
      * @param idx_agent_ Location of agent in object.
      * @param idx_object_ Location of object in agent.
      */
-    void actions_add(
+    void events_add(
         Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
@@ -637,23 +637,23 @@ public:
      * at the end of every day. Otherwise, the function will be called only
      * at the end of the indicated date.
      */
-    void add_global_action(
+    void add_globalevent(
         std::function<void(Model<TSeq>*)> fun,
         std::string name = "A global action",
         int date = -99
         );
 
-    void add_global_action(
+    void add_globalevent(
         GlobalEvent<TSeq> action
     );
 
     GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
     GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
 
-    void rm_global_action(std::string name); ///< Remove a global action by name
-    void rm_global_action(size_t i); ///< Remove a global action by index
+    void rm_globalevent(std::string name); ///< Remove a global action by name
+    void rm_globalevent(size_t i); ///< Remove a global action by index
 
-    void run_global_actions();
+    void run_globalevents();
 
     void clear_state_set();
 
@@ -722,7 +722,7 @@ public:
      * 
      * @param model_ Model over which it will be executed.
      */
-    void actions_run();
+    void events_run();
 
 
 };

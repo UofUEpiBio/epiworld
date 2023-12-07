@@ -5800,7 +5800,7 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 
 /**
  * @brief Template for a Global Event
- * @details Global actions are functions that Model<TSeq> executes
+ * @details Global events are functions that Model<TSeq> executes
  * at the end of a day.
  * 
  */
@@ -5885,7 +5885,7 @@ inline void GlobalEvent<TSeq>::operator()(Model<TSeq> * m, int day)
     if (this->fun == nullptr)
         return;
 
-    // Actions apply if day is negative or if day is equal to the day of the action
+    // events apply if day is negative or if day is equal to the day of the action
     if (this->day < 0 || this->day == day)
         this->fun(m);
     
@@ -6157,16 +6157,16 @@ protected:
     void chrono_start();
     void chrono_end();
 
-    std::vector<GlobalEvent<TSeq>> global_actions;
+    std::vector<GlobalEvent<TSeq>> globalevents;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
 
     /**
-     * @brief Variables used to keep track of the actions
+     * @brief Variables used to keep track of the events
      * to be made regarding viruses.
      */
-    std::vector< Event<TSeq> > actions = {};
+    std::vector< Event<TSeq> > events = {};
     epiworld_fast_uint nactions = 0u;
 
     /**
@@ -6182,7 +6182,7 @@ protected:
      * @param idx_agent_ Location of agent in object.
      * @param idx_object_ Location of object in agent.
      */
-    void actions_add(
+    void events_add(
         Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
@@ -6599,23 +6599,23 @@ public:
      * at the end of every day. Otherwise, the function will be called only
      * at the end of the indicated date.
      */
-    void add_global_action(
+    void add_globalevent(
         std::function<void(Model<TSeq>*)> fun,
         std::string name = "A global action",
         int date = -99
         );
 
-    void add_global_action(
+    void add_globalevent(
         GlobalEvent<TSeq> action
     );
 
     GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
     GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
 
-    void rm_global_action(std::string name); ///< Remove a global action by name
-    void rm_global_action(size_t i); ///< Remove a global action by index
+    void rm_globalevent(std::string name); ///< Remove a global action by name
+    void rm_globalevent(size_t i); ///< Remove a global action by index
 
-    void run_global_actions();
+    void run_globalevents();
 
     void clear_state_set();
 
@@ -6684,7 +6684,7 @@ public:
      * 
      * @param model_ Model over which it will be executed.
      */
-    void actions_run();
+    void events_run();
 
 
 };
@@ -6860,7 +6860,7 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
 
 
 template<typename TSeq>
-inline void Model<TSeq>::actions_add(
+inline void Model<TSeq>::events_add(
     Agent<TSeq> * agent_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
@@ -6879,10 +6879,10 @@ inline void Model<TSeq>::actions_add(
         throw std::logic_error("Actions cannot be zero!!");
     #endif
 
-    if (nactions > actions.size())
+    if (nactions > events.size())
     {
 
-        actions.emplace_back(
+        events.emplace_back(
             Event<TSeq>(
                 agent_, virus_, tool_, entity_, new_state_, queue_, call_,
                 idx_agent_, idx_object_
@@ -6892,7 +6892,7 @@ inline void Model<TSeq>::actions_add(
     else 
     {
 
-        Event<TSeq> & A = actions.at(nactions - 1u);
+        Event<TSeq> & A = events.at(nactions - 1u);
 
         A.agent      = agent_;
         A.virus      = virus_;
@@ -6911,14 +6911,14 @@ inline void Model<TSeq>::actions_add(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::actions_run()
+inline void Model<TSeq>::events_run()
 {
     // Making the call
-    size_t nactions_tmp = 0;
-    while (nactions_tmp < nactions)
+    size_t nevents_tmp = 0;
+    while (nevents_tmp < nactions)
     {
 
-        Event<TSeq> & a = actions[nactions_tmp++];
+        Event<TSeq> & a = events[nevents_tmp++];
         Agent<TSeq> * p  = a.agent;
 
         #ifdef EPI_DEBUG
@@ -7113,7 +7113,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(model.current_date),
-    global_actions(model.global_actions),
+    globalevents(model.globalevents),
     queue(model.queue),
     use_queuing(model.use_queuing),
     array_double_tmp(model.array_double_tmp.size()),
@@ -7198,7 +7198,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
-    global_actions(std::move(model.global_actions)),
+    globalevents(std::move(model.globalevents)),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
     array_double_tmp(model.array_double_tmp.size()),
@@ -7273,7 +7273,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     current_date = m.current_date;
 
-    global_actions = m.global_actions;
+    globalevents = m.globalevents;
 
     queue       = m.queue;
     use_queuing = m.use_queuing;
@@ -7508,8 +7508,8 @@ inline void Model<TSeq>::dist_virus()
 
         }
 
-        // Apply the actions
-        actions_run();
+        // Apply the events
+        events_run();
     }
 
 }
@@ -7568,8 +7568,8 @@ inline void Model<TSeq>::dist_tools()
 
         }
 
-        // Apply the actions
-        actions_run();
+        // Apply the events
+        events_run();
 
     }
 
@@ -7625,8 +7625,8 @@ inline void Model<TSeq>::dist_tools()
 
 //         }
 
-//         // Apply the actions
-//         actions_run();
+//         // Apply the events
+//         events_run();
 
 //     }
 
@@ -8256,8 +8256,8 @@ inline Model<TSeq> & Model<TSeq>::run(
         // user needs.
         this->update_state();
     
-        // We start with the global actions
-        this->run_global_actions();
+        // We start with the Global events
+        this->run_globalevents();
 
         // In this case we are applying degree sequence rewiring
         // to change the network just a bit.
@@ -8499,7 +8499,7 @@ inline void Model<TSeq>::update_state() {
 
     }
 
-    actions_run();
+    events_run();
     
 }
 
@@ -8941,9 +8941,9 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         printf_epiworld("Rewiring            : off\n\n");
     }
     
-    // Printing global actions
-    printf_epiworld("Global actions:\n");
-    for (auto & a : global_actions)
+    // Printing Global events
+    printf_epiworld("Global events:\n");
+    for (auto & a : globalevents)
     {
         if (a.get_day() < 0)
         {
@@ -8953,7 +8953,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         }
     }
 
-    if (global_actions.size() == 0u)
+    if (globalevents.size() == 0u)
     {
         printf_epiworld(" (none)\n");
     }
@@ -9478,14 +9478,14 @@ inline UserData<TSeq> & Model<TSeq>::get_user_data()
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_global_action(
+inline void Model<TSeq>::add_globalevent(
     std::function<void(Model<TSeq>*)> fun,
     std::string name,
     int date
 )
 {
 
-    global_actions.push_back(
+    globalevents.push_back(
         GlobalEvent<TSeq>(
             fun,
             name,
@@ -9496,11 +9496,11 @@ inline void Model<TSeq>::add_global_action(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_global_action(
+inline void Model<TSeq>::add_globalevent(
     GlobalEvent<TSeq> action
 )
 {
-    global_actions.push_back(action);
+    globalevents.push_back(action);
 }
 
 template<typename TSeq>
@@ -9509,7 +9509,7 @@ GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
 )
 {
 
-    for (auto & a : global_actions)
+    for (auto & a : globalevents)
         if (a.name == name)
             return a;
 
@@ -9523,25 +9523,25 @@ GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
 )
 {
 
-    if (index >= global_actions.size())
+    if (index >= globalevents.size())
         throw std::range_error("The index " + std::to_string(index) + " is out of range.");
 
-    return global_actions[index];
+    return globalevents[index];
 
 }
 
 // Remove implementation
 template<typename TSeq>
-inline void Model<TSeq>::rm_global_action(
+inline void Model<TSeq>::rm_globalevent(
     std::string name
 )
 {
 
-    for (auto it = global_actions.begin(); it != global_actions.end(); ++it)
+    for (auto it = globalevents.begin(); it != globalevents.end(); ++it)
     {
         if (it->get_name() == name)
         {
-            global_actions.erase(it);
+            globalevents.erase(it);
             return;
         }
     }
@@ -9552,26 +9552,26 @@ inline void Model<TSeq>::rm_global_action(
 
 // Same as above, but the index implementation
 template<typename TSeq>
-inline void Model<TSeq>::rm_global_action(
+inline void Model<TSeq>::rm_globalevent(
     size_t index
 )
 {
 
-    if (index >= global_actions.size())
+    if (index >= globalevents.size())
         throw std::range_error("The index " + std::to_string(index) + " is out of range.");
 
-    global_actions.erase(global_actions.begin() + index);
+    globalevents.erase(globalevents.begin() + index);
 
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::run_global_actions()
+inline void Model<TSeq>::run_globalevents()
 {
 
-    for (auto & action: global_actions)
+    for (auto & action: globalevents)
     {
         action(this, today());
-        actions_run();
+        events_run();
     }
 
 }
@@ -9854,7 +9854,7 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "Model:: current_date don't match"
     )
 
-    VECT_MATCH(global_actions, other.global_actions, "global action don't match");
+    VECT_MATCH(globalevents, other.globalevents, "global action don't match");
 
     EPI_DEBUG_FAIL_AT_TRUE(
         queue != other.queue,
@@ -12028,7 +12028,7 @@ inline void Entity<TSeq>::add_agent(
     )
 {
 
-    // Need to add it to the actions, through the individual
+    // Need to add it to the events, through the individual
     p.add_entity(*this, model);    
 
 }
@@ -13366,14 +13366,14 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld//agent-actions-meat.hpp-
+ Start of -include/epiworld//agent-events-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_AGENT_ACTIONS_MEAT_HPP
-#define EPIWORLD_AGENT_ACTIONS_MEAT_HPP
+#ifndef EPIWORLD_AGENT_EVENTS_MEAT_HPP
+#define EPIWORLD_AGENT_EVENTS_MEAT_HPP
 
 template<typename TSeq>
 inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
@@ -13671,7 +13671,7 @@ inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld//agent-actions-meat.hpp-
+ End of -include/epiworld//agent-events-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -13827,7 +13827,7 @@ inline void Agent<TSeq>::add_tool(
     CHECK_COALESCE_(state_new, tool->state_init, state);
     CHECK_COALESCE_(queue, tool->queue_init, Queue<TSeq>::NoOne);
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, tool, nullptr, state_new, queue, default_add_tool<TSeq>, -1, -1
         );
 
@@ -13863,7 +13863,7 @@ inline void Agent<TSeq>::set_virus(
     CHECK_COALESCE_(state_new, virus->state_init, state);
     CHECK_COALESCE_(queue, virus->queue_init, Queue<TSeq>::NoOne);
 
-    model->actions_add(
+    model->events_add(
         this, virus, nullptr, nullptr, state_new, queue, default_add_virus<TSeq>, -1, -1
         );
 
@@ -13896,7 +13896,7 @@ inline void Agent<TSeq>::add_entity(
     if (model != nullptr)
     {
 
-        model->actions_add(
+        model->events_add(
             this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>, -1, -1
         );
 
@@ -13934,7 +13934,7 @@ inline void Agent<TSeq>::rm_tool(
             std::to_string(n_tools) + " tools."
         );
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, tools[tool_idx], nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
         );
 
@@ -13952,7 +13952,7 @@ inline void Agent<TSeq>::rm_tool(
     if (tool->agent != this)
         throw std::logic_error("Cannot remove a virus from another agent!");
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, tool, nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
         );
 
@@ -13974,7 +13974,7 @@ inline void Agent<TSeq>::rm_virus(
     CHECK_COALESCE_(state_new, virus->state_post, state);
     CHECK_COALESCE_(queue, virus->queue_post, Queue<TSeq>::Everyone);
 
-    model->actions_add(
+    model->events_add(
         this, virus, nullptr, nullptr, state_new, queue,
         default_rm_virus<TSeq>, -1, -1
         );
@@ -14003,7 +14003,7 @@ inline void Agent<TSeq>::rm_entity(
     CHECK_COALESCE_(state_new, model->entities[entity_idx].state_post, state);
     CHECK_COALESCE_(queue, model->entities[entity_idx].queue_post, Queue<TSeq>::NoOne);
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, nullptr, model->entities[entity_idx], state_new, queue, 
         default_rm_entity<TSeq>, entities_locations[entity_idx], entity_idx
     );
@@ -14035,7 +14035,7 @@ inline void Agent<TSeq>::rm_entity(
     CHECK_COALESCE_(state_new, entity.state_post, state);
     CHECK_COALESCE_(queue, entity.queue_post, Queue<TSeq>::NoOne);
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, nullptr, entities[entity_idx], state_new, queue, 
         default_rm_entity<TSeq>, entities_locations[entity_idx], entity_idx
     );
@@ -14052,7 +14052,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
     CHECK_COALESCE_(state_new, virus->state_removed, state);
     CHECK_COALESCE_(queue, virus->queue_removed, Queue<TSeq>::Everyone);
 
-    model->actions_add(
+    model->events_add(
         this, virus, nullptr, nullptr, state_new, queue,
         default_rm_virus<TSeq>, -1, -1
         );
@@ -14255,7 +14255,7 @@ inline void Agent<TSeq>::change_state(
     )
 {
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, nullptr, nullptr, new_state, queue,
         default_change_state<TSeq>, -1, -1
     );
@@ -15127,8 +15127,8 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sir(
         for (auto & agent : sample)
             agent->change_state(model, 2, Queue<TSeq>::NoOne);
         
-        // Running the actions
-        model->actions_run();
+        // Running the events
+        model->events_run();
 
         return;
 
@@ -15215,8 +15215,8 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sird(
         for (auto & agent : sample_deceased)
             agent->change_state(model, 3, Queue<TSeq>::NoOne);
         
-        // Running the actions
-        model->actions_run();
+        // Running the events
+        model->events_run();
 
         return;
 
@@ -15295,8 +15295,8 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seir(
         for (auto & agent : sample_exposed)
             agent->change_state(model, 2, Queue<TSeq>::NoOne);
         
-        // Running the actions
-        model->actions_run();
+        // Running the events
+        model->events_run();
 
         return;
 
@@ -15380,8 +15380,8 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seird(
         for (auto & agent : sample_exposed)
             agent->change_state(model, 2, Queue<TSeq>::NoOne);
 
-        // Running the actions
-        model->actions_run();
+        // Running the events
+        model->events_run();
 
         // Setting the initial states for the deceased
         epiworld::AgentsSample<TSeq> sample_deceased(
@@ -15395,8 +15395,8 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seird(
         for (auto & agent : sample_deceased)
             agent->change_state(model, 4, Queue<TSeq>::NoOne);
         
-        // Running the actions
-        model->actions_run();
+        // Running the events
+        model->events_run();
 
         return;
 
@@ -16346,7 +16346,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_virus_n(covid, prevalence);
 
     model.set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
-    model.add_global_action(surveillance_program, "Surveilance program", -1);
+    model.add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
     epiworld::Tool<TSeq> vax("Vaccine");

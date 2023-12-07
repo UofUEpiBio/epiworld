@@ -6,7 +6,7 @@
 
 /**
  * @brief Template for a Global Event
- * @details Global actions are functions that Model<TSeq> executes
+ * @details Global events are functions that Model<TSeq> executes
  * at the end of a day.
  * 
  */

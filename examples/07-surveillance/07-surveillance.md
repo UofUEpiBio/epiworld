@@ -39,7 +39,7 @@ Run
 
     -   Update state for susceptible/infected/removed(?)
     -   Mutate virus(es) (each individual)
-    -   Run global actions (e.g., surveillance)
+    -   Run Global events (e.g., surveillance)
     -   Run rewiring algorithm
 
 Along update:
