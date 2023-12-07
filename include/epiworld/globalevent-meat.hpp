@@ -1,8 +1,8 @@
-#ifndef EPIWORLD_GLOBALACTIONS_MEAT_HPP
-#define EPIWORLD_GLOBALACTIONS_MEAT_HPP
+#ifndef EPIWORLD_GLOBALEVENT_MEAT_HPP
+#define EPIWORLD_GLOBALEVENT_MEAT_HPP
 
 template<typename TSeq>
-inline GlobalAction<TSeq>::GlobalAction(
+inline GlobalEvent<TSeq>::GlobalEvent(
     GlobalFun<TSeq> fun,
     std::string name,
     int day
@@ -14,7 +14,7 @@ inline GlobalAction<TSeq>::GlobalAction(
 }
 
 template<typename TSeq>
-inline void GlobalAction<TSeq>::operator()(Model<TSeq> * m, int day)
+inline void GlobalEvent<TSeq>::operator()(Model<TSeq> * m, int day)
 {   
     
     if (this->fun == nullptr)
@@ -29,31 +29,31 @@ inline void GlobalAction<TSeq>::operator()(Model<TSeq> * m, int day)
 }
 
 template<typename TSeq>
-inline void GlobalAction<TSeq>::set_name(std::string name)
+inline void GlobalEvent<TSeq>::set_name(std::string name)
 {
     this->name = name;
 }
 
 template<typename TSeq>
-inline std::string GlobalAction<TSeq>::get_name() const
+inline std::string GlobalEvent<TSeq>::get_name() const
 {
     return this->name;
 }
 
 template<typename TSeq>
-inline void GlobalAction<TSeq>::set_day(int day)
+inline void GlobalEvent<TSeq>::set_day(int day)
 {
     this->day = day;
 }
 
 template<typename TSeq>
-inline int GlobalAction<TSeq>::get_day() const
+inline int GlobalEvent<TSeq>::get_day() const
 {
     return this->day;
 }
 
 template<typename TSeq>
-inline void GlobalAction<TSeq>::print() const
+inline void GlobalEvent<TSeq>::print() const
 {
     printf_epiworld(
         "Global action: %s\n"
@@ -64,13 +64,13 @@ inline void GlobalAction<TSeq>::print() const
 }
 
 template<typename TSeq>
-inline bool GlobalAction<TSeq>::operator==(const GlobalAction<TSeq> & other) const
+inline bool GlobalEvent<TSeq>::operator==(const GlobalEvent<TSeq> & other) const
 {
     return (this->name == other.name) && (this->day == other.day);
 }
 
 template<typename TSeq>
-inline bool GlobalAction<TSeq>::operator!=(const GlobalAction<TSeq> & other) const
+inline bool GlobalEvent<TSeq>::operator!=(const GlobalEvent<TSeq> & other) const
 {
     return !(*this == other);
 }

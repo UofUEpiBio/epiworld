@@ -117,10 +117,10 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
 
 template<typename TSeq>
-struct Action;
+struct Event;
 
 template<typename TSeq>
-using ActionFun = std::function<void(Action<TSeq>&,Model<TSeq>*)>;
+using ActionFun = std::function<void(Event<TSeq>&,Model<TSeq>*)>;
 
 /**
  * @brief Decides how to distribute viruses at initialization
@@ -141,12 +141,12 @@ template<typename TSeq>
 using EntityToAgentFun = std::function<void(Entity<TSeq>&,Model<TSeq>*)>;
 
 /**
- * @brief Action data for update an agent
+ * @brief Event data for update an agent
  * 
  * @tparam TSeq 
  */
 template<typename TSeq>
-struct Action {
+struct Event {
     Agent<TSeq> * agent;
     VirusPtr<TSeq> virus;
     ToolPtr<TSeq> tool;
@@ -158,7 +158,7 @@ struct Action {
     int idx_object;
 public:
 /**
-     * @brief Construct a new Action object
+     * @brief Construct a new Event object
      * 
      * All the parameters are rather optional.
      * 
@@ -173,7 +173,7 @@ public:
      * @param idx_agent_ Location of agent in object.
      * @param idx_object_ Location of object in agent.
      */
-    Action(
+    Event(
         Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
@@ -2647,19 +2647,19 @@ template<typename TSeq>
 class UserData;
 
 template<typename TSeq>
-inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m);
 
 /**
  * @brief Statistical data about the process
@@ -2669,11 +2669,11 @@ inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m);
 template<typename TSeq>
 class DataBase {
     friend class Model<TSeq>;
-    friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_change_state<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
 
@@ -5786,26 +5786,26 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/globalactions-bones.hpp-
+ Start of -include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_GLOBALACTIONS_BONES_HPP
-#define EPIWORLD_GLOBALACTIONS_BONES_HPP
+#ifndef EPIWORLD_GLOBALEVENT_BONES_HPP
+#define EPIWORLD_GLOBALEVENT_BONES_HPP
 
 // template<typename TSeq = EPI_DEFAULT_TSEQ>
 // using GlobalFun = std::function<void(Model<TSeq>*)>;
 
 /**
- * @brief Template for a Global Action
+ * @brief Template for a Global Event
  * @details Global actions are functions that Model<TSeq> executes
  * at the end of a day.
  * 
  */
 template<typename TSeq>
-class GlobalAction
+class GlobalEvent
 {
 private:
     GlobalFun<TSeq> fun = nullptr;
@@ -5813,18 +5813,18 @@ private:
     int day = -99;
 public:
 
-    GlobalAction() {};
+    GlobalEvent() {};
 
     /**
-     * @brief Construct a new Global Action object
+     * @brief Construct a new Global Event object
      * 
      * @param fun A function that takes a Model<TSeq> * as argument and returns void.
      * @param name A descriptive name for the action.
      * @param day The day when the action will be executed. If negative, it will be executed every day.
      */
-    GlobalAction(GlobalFun<TSeq> fun, std::string name, int day = -99);
+    GlobalEvent(GlobalFun<TSeq> fun, std::string name, int day = -99);
     
-    ~GlobalAction() {};
+    ~GlobalEvent() {};
 
     void operator()(Model<TSeq> * m, int day);
 
@@ -5837,8 +5837,8 @@ public:
     void print() const;
 
     // Comparison operators
-    bool operator==(const GlobalAction<TSeq> & other) const;
-    bool operator!=(const GlobalAction<TSeq> & other) const;
+    bool operator==(const GlobalEvent<TSeq> & other) const;
+    bool operator!=(const GlobalEvent<TSeq> & other) const;
 
 };
 
@@ -5848,7 +5848,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/globalactions-bones.hpp-
+ End of -include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -5857,17 +5857,17 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/globalactions-meat.hpp-
+ Start of -include/epiworld/globalevent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_GLOBALACTIONS_MEAT_HPP
-#define EPIWORLD_GLOBALACTIONS_MEAT_HPP
+#ifndef EPIWORLD_GLOBALEVENT_MEAT_HPP
+#define EPIWORLD_GLOBALEVENT_MEAT_HPP
 
 template<typename TSeq>
-inline GlobalAction<TSeq>::GlobalAction(
+inline GlobalEvent<TSeq>::GlobalEvent(
     GlobalFun<TSeq> fun,
     std::string name,
     int day
@@ -5879,7 +5879,7 @@ inline GlobalAction<TSeq>::GlobalAction(
 }
 
 template<typename TSeq>
-inline void GlobalAction<TSeq>::operator()(Model<TSeq> * m, int day)
+inline void GlobalEvent<TSeq>::operator()(Model<TSeq> * m, int day)
 {   
     
     if (this->fun == nullptr)
@@ -5894,31 +5894,31 @@ inline void GlobalAction<TSeq>::operator()(Model<TSeq> * m, int day)
 }
 
 template<typename TSeq>
-inline void GlobalAction<TSeq>::set_name(std::string name)
+inline void GlobalEvent<TSeq>::set_name(std::string name)
 {
     this->name = name;
 }
 
 template<typename TSeq>
-inline std::string GlobalAction<TSeq>::get_name() const
+inline std::string GlobalEvent<TSeq>::get_name() const
 {
     return this->name;
 }
 
 template<typename TSeq>
-inline void GlobalAction<TSeq>::set_day(int day)
+inline void GlobalEvent<TSeq>::set_day(int day)
 {
     this->day = day;
 }
 
 template<typename TSeq>
-inline int GlobalAction<TSeq>::get_day() const
+inline int GlobalEvent<TSeq>::get_day() const
 {
     return this->day;
 }
 
 template<typename TSeq>
-inline void GlobalAction<TSeq>::print() const
+inline void GlobalEvent<TSeq>::print() const
 {
     printf_epiworld(
         "Global action: %s\n"
@@ -5929,13 +5929,13 @@ inline void GlobalAction<TSeq>::print() const
 }
 
 template<typename TSeq>
-inline bool GlobalAction<TSeq>::operator==(const GlobalAction<TSeq> & other) const
+inline bool GlobalEvent<TSeq>::operator==(const GlobalEvent<TSeq> & other) const
 {
     return (this->name == other.name) && (this->day == other.day);
 }
 
 template<typename TSeq>
-inline bool GlobalAction<TSeq>::operator!=(const GlobalAction<TSeq> & other) const
+inline bool GlobalEvent<TSeq>::operator!=(const GlobalEvent<TSeq> & other) const
 {
     return !(*this == other);
 }
@@ -5944,7 +5944,7 @@ inline bool GlobalAction<TSeq>::operator!=(const GlobalAction<TSeq> & other) con
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/globalactions-meat.hpp-
+ End of -include/epiworld/globalevent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -5990,10 +5990,10 @@ template<typename TSeq>
 class Queue;
 
 template<typename TSeq>
-struct Action;
+struct Event;
 
 template<typename TSeq>
-class GlobalAction;
+class GlobalEvent;
 
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
@@ -6157,7 +6157,7 @@ protected:
     void chrono_start();
     void chrono_end();
 
-    std::vector<GlobalAction<TSeq>> global_actions;
+    std::vector<GlobalEvent<TSeq>> global_actions;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
@@ -6166,11 +6166,11 @@ protected:
      * @brief Variables used to keep track of the actions
      * to be made regarding viruses.
      */
-    std::vector< Action<TSeq> > actions = {};
+    std::vector< Event<TSeq> > actions = {};
     epiworld_fast_uint nactions = 0u;
 
     /**
-     * @brief Construct a new Action object
+     * @brief Construct a new Event object
      * 
      * @param agent_ Agent over which the action will be called
      * @param virus_ Virus pointer included in the action
@@ -6606,11 +6606,11 @@ public:
         );
 
     void add_global_action(
-        GlobalAction<TSeq> action
+        GlobalEvent<TSeq> action
     );
 
-    GlobalAction<TSeq> & get_global_action(std::string name); ///< Retrieve a global action by name
-    GlobalAction<TSeq> & get_global_action(size_t i); ///< Retrieve a global action by index
+    GlobalEvent<TSeq> & get_global_action(std::string name); ///< Retrieve a global action by name
+    GlobalEvent<TSeq> & get_global_action(size_t i); ///< Retrieve a global action by index
 
     void rm_global_action(std::string name); ///< Remove a global action by name
     void rm_global_action(size_t i); ///< Remove a global action by index
@@ -6883,7 +6883,7 @@ inline void Model<TSeq>::actions_add(
     {
 
         actions.emplace_back(
-            Action<TSeq>(
+            Event<TSeq>(
                 agent_, virus_, tool_, entity_, new_state_, queue_, call_,
                 idx_agent_, idx_object_
             ));
@@ -6892,7 +6892,7 @@ inline void Model<TSeq>::actions_add(
     else 
     {
 
-        Action<TSeq> & A = actions.at(nactions - 1u);
+        Event<TSeq> & A = actions.at(nactions - 1u);
 
         A.agent      = agent_;
         A.virus      = virus_;
@@ -6918,7 +6918,7 @@ inline void Model<TSeq>::actions_run()
     while (nactions_tmp < nactions)
     {
 
-        Action<TSeq> & a = actions[nactions_tmp++];
+        Event<TSeq> & a = actions[nactions_tmp++];
         Agent<TSeq> * p  = a.agent;
 
         #ifdef EPI_DEBUG
@@ -9486,7 +9486,7 @@ inline void Model<TSeq>::add_global_action(
 {
 
     global_actions.push_back(
-        GlobalAction<TSeq>(
+        GlobalEvent<TSeq>(
             fun,
             name,
             date
@@ -9497,14 +9497,14 @@ inline void Model<TSeq>::add_global_action(
 
 template<typename TSeq>
 inline void Model<TSeq>::add_global_action(
-    GlobalAction<TSeq> action
+    GlobalEvent<TSeq> action
 )
 {
     global_actions.push_back(action);
 }
 
 template<typename TSeq>
-GlobalAction<TSeq> & Model<TSeq>::get_global_action(
+GlobalEvent<TSeq> & Model<TSeq>::get_global_action(
     std::string name
 )
 {
@@ -9518,7 +9518,7 @@ GlobalAction<TSeq> & Model<TSeq>::get_global_action(
 }
 
 template<typename TSeq>
-GlobalAction<TSeq> & Model<TSeq>::get_global_action(
+GlobalEvent<TSeq> & Model<TSeq>::get_global_action(
     size_t index
 )
 {
@@ -10160,8 +10160,8 @@ class Virus {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;
     friend class DataBase<TSeq>;
-    friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
     
     Agent<TSeq> * agent       = nullptr;
@@ -11274,8 +11274,8 @@ template<typename TSeq>
 class Tool {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;
-    friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
 
     Agent<TSeq> * agent = nullptr;
@@ -11911,18 +11911,18 @@ template<typename TSeq>
 class AgentsSample;
 
 template<typename TSeq>
-inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_add_entity(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
 class Entity {
     friend class Agent<TSeq>;
     friend class AgentsSample<TSeq>;
     friend class Model<TSeq>;
-    friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
 
     Model<TSeq> * model;
@@ -13059,7 +13059,7 @@ template<typename TSeq>
 class Queue;
 
 template<typename TSeq>
-struct Action;
+struct Event;
 
 template<typename TSeq>
 class Entity;
@@ -13068,25 +13068,25 @@ template<typename TSeq>
 class Entities;
 
 template<typename TSeq>
-inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_add_entity(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_add_entity(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m);
+inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m);
 
 
 
@@ -13105,13 +13105,13 @@ class Agent {
     friend class Queue<TSeq>;
     friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;
-    friend void default_add_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_add_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_add_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_tool<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_entity<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
-    friend void default_change_state<TSeq>(Action<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_add_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
     
     Model<TSeq> * model;
@@ -13376,7 +13376,7 @@ public:
 #define EPIWORLD_AGENT_ACTIONS_MEAT_HPP
 
 template<typename TSeq>
-inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> *  p = a.agent;
@@ -13422,7 +13422,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p = a.agent;
@@ -13459,7 +13459,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
+inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
 {
 
     Agent<TSeq> * p    = a.agent;
@@ -13494,7 +13494,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p   = a.agent;    
@@ -13532,7 +13532,7 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p = a.agent;
@@ -13553,7 +13553,7 @@ inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
+inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
 {
 
     Agent<TSeq> *  p = a.agent;
@@ -13613,7 +13613,7 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m)
 {
     
     Agent<TSeq> *  p = a.agent;    
@@ -13905,7 +13905,7 @@ inline void Agent<TSeq>::add_entity(
          // model entity
     {
 
-        Action<TSeq> a(
+        Event<TSeq> a(
                 this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>,
                 -1, -1
             );
@@ -15421,19 +15421,19 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seird(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld//models/globalactions.hpp-
+ Start of -include/epiworld//models/globalevents.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_GLOBALACTIONS_HPP
-#define EPIWORLD_GLOBALACTIONS_HPP
+#ifndef EPIWORLD_GLOBALEVENTS_HPP
+#define EPIWORLD_GLOBALEVENTS_HPP
 
 // This function creates a global action that distributes a tool
 // to agents with probability p.
 /**
- * @brief Global action that distributes a tool to agents with probability p.
+ * @brief Global event that distributes a tool to agents with probability p.
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param p Probability of distributing the tool.
@@ -15441,7 +15441,7 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seird(
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_tool(
+inline std::function<void(Model<TSeq>*)> globalevent_tool(
     Tool<TSeq> & tool,
     double p
 ) {
@@ -15480,7 +15480,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool(
 // Same function as above, but p is now a function of a vector of coefficients
 // and a vector of variables.
 /**
- * @brief Global action that distributes a tool to agents with probability
+ * @brief Global event that distributes a tool to agents with probability
  * p = 1 / (1 + exp(-\sum_i coef_i * agent(vars_i))).
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
@@ -15490,7 +15490,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool(
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
+inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
     Tool<TSeq> & tool,
     std::vector< size_t > vars,
     std::vector< double > coefs
@@ -15540,7 +15540,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
 
 // A global action that updates a parameter in the model.
 /**
- * @brief Global action that updates a parameter in the model.
+ * @brief Global event that updates a parameter in the model.
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param param Parameter to update.
@@ -15548,7 +15548,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_set_param(
+inline std::function<void(Model<TSeq>*)> globalevent_set_param(
     std::string param,
     double value
 ) {
@@ -15571,7 +15571,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_set_param(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld//models/globalactions.hpp-
+ End of -include/epiworld//models/globalevents.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/

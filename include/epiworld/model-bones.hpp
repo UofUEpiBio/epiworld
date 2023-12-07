@@ -28,10 +28,10 @@ template<typename TSeq>
 class Queue;
 
 template<typename TSeq>
-struct Action;
+struct Event;
 
 template<typename TSeq>
-class GlobalAction;
+class GlobalEvent;
 
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
@@ -195,7 +195,7 @@ protected:
     void chrono_start();
     void chrono_end();
 
-    std::vector<GlobalAction<TSeq>> global_actions;
+    std::vector<GlobalEvent<TSeq>> global_actions;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
@@ -204,11 +204,11 @@ protected:
      * @brief Variables used to keep track of the actions
      * to be made regarding viruses.
      */
-    std::vector< Action<TSeq> > actions = {};
+    std::vector< Event<TSeq> > actions = {};
     epiworld_fast_uint nactions = 0u;
 
     /**
-     * @brief Construct a new Action object
+     * @brief Construct a new Event object
      * 
      * @param agent_ Agent over which the action will be called
      * @param virus_ Virus pointer included in the action
@@ -644,11 +644,11 @@ public:
         );
 
     void add_global_action(
-        GlobalAction<TSeq> action
+        GlobalEvent<TSeq> action
     );
 
-    GlobalAction<TSeq> & get_global_action(std::string name); ///< Retrieve a global action by name
-    GlobalAction<TSeq> & get_global_action(size_t i); ///< Retrieve a global action by index
+    GlobalEvent<TSeq> & get_global_action(std::string name); ///< Retrieve a global action by name
+    GlobalEvent<TSeq> & get_global_action(size_t i); ///< Retrieve a global action by index
 
     void rm_global_action(std::string name); ///< Remove a global action by name
     void rm_global_action(size_t i); ///< Remove a global action by index

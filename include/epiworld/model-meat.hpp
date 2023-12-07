@@ -173,7 +173,7 @@ inline void Model<TSeq>::actions_add(
     {
 
         actions.emplace_back(
-            Action<TSeq>(
+            Event<TSeq>(
                 agent_, virus_, tool_, entity_, new_state_, queue_, call_,
                 idx_agent_, idx_object_
             ));
@@ -182,7 +182,7 @@ inline void Model<TSeq>::actions_add(
     else 
     {
 
-        Action<TSeq> & A = actions.at(nactions - 1u);
+        Event<TSeq> & A = actions.at(nactions - 1u);
 
         A.agent      = agent_;
         A.virus      = virus_;
@@ -208,7 +208,7 @@ inline void Model<TSeq>::actions_run()
     while (nactions_tmp < nactions)
     {
 
-        Action<TSeq> & a = actions[nactions_tmp++];
+        Event<TSeq> & a = actions[nactions_tmp++];
         Agent<TSeq> * p  = a.agent;
 
         #ifdef EPI_DEBUG
@@ -2420,7 +2420,7 @@ inline void Model<TSeq>::add_global_action(
 {
 
     global_actions.push_back(
-        GlobalAction<TSeq>(
+        GlobalEvent<TSeq>(
             fun,
             name,
             date
@@ -2431,14 +2431,14 @@ inline void Model<TSeq>::add_global_action(
 
 template<typename TSeq>
 inline void Model<TSeq>::add_global_action(
-    GlobalAction<TSeq> action
+    GlobalEvent<TSeq> action
 )
 {
     global_actions.push_back(action);
 }
 
 template<typename TSeq>
-GlobalAction<TSeq> & Model<TSeq>::get_global_action(
+GlobalEvent<TSeq> & Model<TSeq>::get_global_action(
     std::string name
 )
 {
@@ -2452,7 +2452,7 @@ GlobalAction<TSeq> & Model<TSeq>::get_global_action(
 }
 
 template<typename TSeq>
-GlobalAction<TSeq> & Model<TSeq>::get_global_action(
+GlobalEvent<TSeq> & Model<TSeq>::get_global_action(
     size_t index
 )
 {

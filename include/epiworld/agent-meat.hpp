@@ -237,7 +237,7 @@ inline void Agent<TSeq>::add_entity(
          // model entity
     {
 
-        Action<TSeq> a(
+        Event<TSeq> a(
                 this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>,
                 -1, -1
             );
