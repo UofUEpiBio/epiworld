@@ -24,7 +24,7 @@ Last run speed      : 104.73 million agents x day / second
 Average run speed   : 103.36 million agents x day / second
 Rewiring            : off
 
-Global actions:
+Global events:
  (none)
 
 Virus(es):

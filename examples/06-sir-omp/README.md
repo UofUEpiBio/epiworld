@@ -18,7 +18,7 @@ Last run elapsed t  : 706.00ms
 Last run speed      : 35.37 million agents x day / second
 Rewiring            : off
 
-Global actions:
+Global events:
  (none)
 
 Virus(es):
@@ -55,7 +55,7 @@ Last run elapsed t  : 651.00ms
 Last run speed      : 38.34 million agents x day / second
 Rewiring            : off
 
-Global actions:
+Global events:
  (none)
 
 Virus(es):
@@ -92,7 +92,7 @@ Last run elapsed t  : 710.00ms
 Last run speed      : 35.19 million agents x day / second
 Rewiring            : off
 
-Global actions:
+Global events:
  (none)
 
 Virus(es):
@@ -129,7 +129,7 @@ Last run elapsed t  : 651.00ms
 Last run speed      : 38.38 million agents x day / second
 Rewiring            : off
 
-Global actions:
+Global events:
  (none)
 
 Virus(es):

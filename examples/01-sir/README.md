@@ -19,7 +19,7 @@ Last run elapsed t  : 70.00ms
 Last run speed      : 35.62 million agents x day / second
 Rewiring            : off
 
-Global actions:
+Global events:
  (none)
 
 Virus(es):

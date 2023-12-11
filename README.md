@@ -208,7 +208,7 @@ on the same day. A single step of `epiworld` features the following procedures:
 
 1. **Status update**: Agents are updated according to the status they are at.
 
-2. (optional) **Execute global actions**: A call of user-defined functions affecting
+2. (optional) **Execute Global events**: A call of user-defined functions affecting
 the system. These can make any type of change in the system.
 
 3. (optional) **Apply rewiring algorithm**: When specified, the network is rewired

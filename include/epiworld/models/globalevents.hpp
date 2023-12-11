@@ -1,10 +1,10 @@
-#ifndef EPIWORLD_GLOBALACTIONS_HPP
-#define EPIWORLD_GLOBALACTIONS_HPP
+#ifndef EPIWORLD_GLOBALEVENTS_HPP
+#define EPIWORLD_GLOBALEVENTS_HPP
 
 // This function creates a global action that distributes a tool
 // to agents with probability p.
 /**
- * @brief Global action that distributes a tool to agents with probability p.
+ * @brief Global event that distributes a tool to agents with probability p.
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param p Probability of distributing the tool.
@@ -12,7 +12,7 @@
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_tool(
+inline std::function<void(Model<TSeq>*)> globalevent_tool(
     Tool<TSeq> & tool,
     double p
 ) {
@@ -51,7 +51,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool(
 // Same function as above, but p is now a function of a vector of coefficients
 // and a vector of variables.
 /**
- * @brief Global action that distributes a tool to agents with probability
+ * @brief Global event that distributes a tool to agents with probability
  * p = 1 / (1 + exp(-\sum_i coef_i * agent(vars_i))).
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
@@ -61,7 +61,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool(
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
+inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
     Tool<TSeq> & tool,
     std::vector< size_t > vars,
     std::vector< double > coefs
@@ -111,7 +111,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
 
 // A global action that updates a parameter in the model.
 /**
- * @brief Global action that updates a parameter in the model.
+ * @brief Global event that updates a parameter in the model.
  * 
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param param Parameter to update.
@@ -119,7 +119,7 @@ inline std::function<void(Model<TSeq>*)> globalaction_tool_logit(
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalaction_set_param(
+inline std::function<void(Model<TSeq>*)> globalevent_set_param(
     std::string param,
     double value
 ) {

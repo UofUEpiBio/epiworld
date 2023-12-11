@@ -1,8 +1,8 @@
-#ifndef EPIWORLD_AGENT_ACTIONS_MEAT_HPP
-#define EPIWORLD_AGENT_ACTIONS_MEAT_HPP
+#ifndef EPIWORLD_AGENT_EVENTS_MEAT_HPP
+#define EPIWORLD_AGENT_EVENTS_MEAT_HPP
 
 template<typename TSeq>
-inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> *  p = a.agent;
@@ -48,7 +48,7 @@ inline void default_add_virus(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p = a.agent;
@@ -85,7 +85,7 @@ inline void default_add_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
+inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
 {
 
     Agent<TSeq> * p    = a.agent;
@@ -120,7 +120,7 @@ inline void default_rm_virus(Action<TSeq> & a, Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p   = a.agent;    
@@ -158,7 +158,7 @@ inline void default_rm_tool(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p = a.agent;
@@ -179,7 +179,7 @@ inline void default_change_state(Action<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
+inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
 {
 
     Agent<TSeq> *  p = a.agent;
@@ -239,7 +239,7 @@ inline void default_add_entity(Action<TSeq> & a, Model<TSeq> *)
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Action<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m)
 {
     
     Agent<TSeq> *  p = a.agent;    

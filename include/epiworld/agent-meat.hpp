@@ -8,7 +8,7 @@
         else (proposed_) = (virus_tool_);}
 
 // To large to add directly here
-#include "agent-actions-meat.hpp"
+#include "agent-events-meat.hpp"
 
 template<typename TSeq>
 inline Agent<TSeq>::Agent() {}
@@ -159,7 +159,7 @@ inline void Agent<TSeq>::add_tool(
     CHECK_COALESCE_(state_new, tool->state_init, state);
     CHECK_COALESCE_(queue, tool->queue_init, Queue<TSeq>::NoOne);
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, tool, nullptr, state_new, queue, default_add_tool<TSeq>, -1, -1
         );
 
@@ -195,7 +195,7 @@ inline void Agent<TSeq>::set_virus(
     CHECK_COALESCE_(state_new, virus->state_init, state);
     CHECK_COALESCE_(queue, virus->queue_init, Queue<TSeq>::NoOne);
 
-    model->actions_add(
+    model->events_add(
         this, virus, nullptr, nullptr, state_new, queue, default_add_virus<TSeq>, -1, -1
         );
 
@@ -228,7 +228,7 @@ inline void Agent<TSeq>::add_entity(
     if (model != nullptr)
     {
 
-        model->actions_add(
+        model->events_add(
             this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>, -1, -1
         );
 
@@ -237,7 +237,7 @@ inline void Agent<TSeq>::add_entity(
          // model entity
     {
 
-        Action<TSeq> a(
+        Event<TSeq> a(
                 this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>,
                 -1, -1
             );
@@ -266,7 +266,7 @@ inline void Agent<TSeq>::rm_tool(
             std::to_string(n_tools) + " tools."
         );
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, tools[tool_idx], nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
         );
 
@@ -284,7 +284,7 @@ inline void Agent<TSeq>::rm_tool(
     if (tool->agent != this)
         throw std::logic_error("Cannot remove a virus from another agent!");
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, tool, nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
         );
 
@@ -306,7 +306,7 @@ inline void Agent<TSeq>::rm_virus(
     CHECK_COALESCE_(state_new, virus->state_post, state);
     CHECK_COALESCE_(queue, virus->queue_post, Queue<TSeq>::Everyone);
 
-    model->actions_add(
+    model->events_add(
         this, virus, nullptr, nullptr, state_new, queue,
         default_rm_virus<TSeq>, -1, -1
         );
@@ -335,7 +335,7 @@ inline void Agent<TSeq>::rm_entity(
     CHECK_COALESCE_(state_new, model->entities[entity_idx].state_post, state);
     CHECK_COALESCE_(queue, model->entities[entity_idx].queue_post, Queue<TSeq>::NoOne);
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, nullptr, model->entities[entity_idx], state_new, queue, 
         default_rm_entity<TSeq>, entities_locations[entity_idx], entity_idx
     );
@@ -367,7 +367,7 @@ inline void Agent<TSeq>::rm_entity(
     CHECK_COALESCE_(state_new, entity.state_post, state);
     CHECK_COALESCE_(queue, entity.queue_post, Queue<TSeq>::NoOne);
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, nullptr, entities[entity_idx], state_new, queue, 
         default_rm_entity<TSeq>, entities_locations[entity_idx], entity_idx
     );
@@ -384,7 +384,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(
     CHECK_COALESCE_(state_new, virus->state_removed, state);
     CHECK_COALESCE_(queue, virus->queue_removed, Queue<TSeq>::Everyone);
 
-    model->actions_add(
+    model->events_add(
         this, virus, nullptr, nullptr, state_new, queue,
         default_rm_virus<TSeq>, -1, -1
         );
@@ -587,7 +587,7 @@ inline void Agent<TSeq>::change_state(
     )
 {
 
-    model->actions_add(
+    model->events_add(
         this, nullptr, nullptr, nullptr, new_state, queue,
         default_change_state<TSeq>, -1, -1
     );
