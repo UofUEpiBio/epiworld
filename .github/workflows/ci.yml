@@ -25,8 +25,8 @@ jobs:
 
       - name: Check
         run: |
-          docker run --rm -i -v ${PWD}:/home/tests -w /home/tests ${cntr} \
-            OPENMP=-fopenmp make all-examples
+          docker run --rm -i -e "OPENMP=-fopenmp" -v ${PWD}:/home/tests \
+            -w /home/tests ${cntr} make all-examples
   test-macos:
     runs-on: macos-latest
 
