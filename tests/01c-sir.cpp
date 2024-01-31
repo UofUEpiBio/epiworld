@@ -49,14 +49,14 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         for (auto f : files)
         {
             auto fn0 = file_reader(
-                std::string("01c/") +
+                std::string("01c-sir-saves/") +
                 std::to_string(i) +
                 std::string("-episims-0_") +
                 f
                 );
 
             auto fn1 = file_reader(
-                std::string("01c/") +
+                std::string("01c-sir-saves/") +
                 std::to_string(i) +
                 std::string("-episims-1_")  +
                 f
