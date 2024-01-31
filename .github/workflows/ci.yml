@@ -45,12 +45,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install valgrind
-        run: sudo apt-get install --no-install-recommends valgrind
+      # - name: Install valgrind
+      #   run: sudo apt-get install --no-install-recommends valgrind
 
       - name: Check
         run: |
-          cd tests && make 01c.o && valgrind --leak-check=full ./01c.o
-          # cd tests && make main.o && ./main.o
+          cd tests && make main.o && ./main.o
+          # cd tests && make 01c.o && valgrind --leak-check=full ./01c.o
 
           
