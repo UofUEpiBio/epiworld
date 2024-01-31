@@ -6,6 +6,9 @@ main.o: main.cpp clean
 main.a: main.cpp clean
 	clang++ -std=c++14 -Wall -Wextra $(OPENMP) -Wpedantic -O2 main.cpp -o main.a
 
+00-lfmcmc.o: 00-lfmcmc.cpp
+	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 00-lfmcmc.cpp -o 00-lfmcmc.o
+
 # Compile 02-reproducible-sirconn.cpp
 02-reproducible-sirconn.o: 02-reproducible-sirconn.cpp
 	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 02-reproducible-sirconn.cpp -o 02-reproducible-sirconn.o
