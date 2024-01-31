@@ -1,5 +1,5 @@
 VPATH = ../include/epiworld
-CPPFLAGS= -std=c++11 -Wall -pedantic -g -O2 -ftree-vectorize # -fopenmp
+CPPFLAGS= -std=c++11 -Wall -pedantic -g -O2 -ftree-vectorize $(OPENMP)
 GPP=g++
 # icpx take a look at ~/.profile
 # # /opt/intel/oneapi/setvars.sh 

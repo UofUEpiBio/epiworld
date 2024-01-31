@@ -6,7 +6,9 @@
 #include <iostream>
 #include <type_traits>
 #include <exception>
-#include <omp.h>
+#if defined(_OPENMP)
+    #include <omp.h>
+#endif
 #include "../include/epiworld/epiworld.hpp"
 
 template<typename T>

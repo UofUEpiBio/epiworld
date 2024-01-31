@@ -1,20 +1,20 @@
 all: main.o
 
 main.o: main.cpp clean
-	g++ -std=c++14 -Wunused -Wall -Wextra -Wnull-dereference -fdelete-null-pointer-checks -O2 -fopenmp -g -pedantic main.cpp -o main.o
+	g++ -std=c++14 -Wunused -Wall -Wextra -Wnull-dereference -fdelete-null-pointer-checks -O2 $(OPENMP) -g -pedantic main.cpp -o main.o
 
 main.a: main.cpp clean
-	clang++ -std=c++14 -Wall -Wextra -fopenmp -Wpedantic -O2 main.cpp -o main.a
+	clang++ -std=c++14 -Wall -Wextra $(OPENMP) -Wpedantic -O2 main.cpp -o main.a
 
 # Compile 02-reproducible-sirconn.cpp
 02-reproducible-sirconn.o: 02-reproducible-sirconn.cpp
-	g++ -std=c++14 -Wall -Wextra -O2 -g -fopenmp -pedantic 02-reproducible-sirconn.cpp -o 02-reproducible-sirconn.o
+	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 02-reproducible-sirconn.cpp -o 02-reproducible-sirconn.o
 
 02.o: 02-reproducible.cpp
-	g++ -std=c++14 -Wall -Wextra -O2 -g -fopenmp -pedantic 02-reproducible.cpp -o 02.o
+	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 02-reproducible.cpp -o 02.o
 
 01c.o: 01c-sir.cpp
-	g++ -std=c++14 -Wall -Wextra -O2 -g -fopenmp -pedantic 01c-sir.cpp -o 01c.o
+	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 01c-sir.cpp -o 01c.o
 
 # Check coverage using the main.o target
 coverage: main.o

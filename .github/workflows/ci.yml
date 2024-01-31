@@ -26,7 +26,7 @@ jobs:
       - name: Check
         run: |
           docker run --rm -i -v ${PWD}:/home/tests -w /home/tests ${cntr} \
-            make all-examples
+            OPENMP=-fopenmp make all-examples
   test-macos:
     runs-on: macos-latest
 
@@ -50,7 +50,7 @@ jobs:
 
       - name: Check
         run: |
-          cd tests && make main.o && ./main.o
+          cd tests && OPENMP=-fopenmp make main.o && ./main.o
           # cd tests && make 01c.o && valgrind --leak-check=full ./01c.o
 
           
