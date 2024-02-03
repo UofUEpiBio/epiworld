@@ -10,9 +10,9 @@ int main()
     // - Infected: Status 1
     // - Recovered: Status 2
     Model<> model;
-    model.add_status("Susceptible", default_update_susceptible<>);
-    model.add_status("Infected", default_update_exposed<>);
-    model.add_status("Recovered");
+    model.add_state("Susceptible", default_update_susceptible<>);
+    model.add_state("Infected", default_update_exposed<>);
+    model.add_state("Recovered");
 
     // Desgining a virus: This virus will:
     // - Have a 90% transmission rate
@@ -25,18 +25,15 @@ int main()
     virus.set_prob_infecting(.90);
     virus.set_prob_recovery(.30);
     
-    virus.set_status(1, 2);
+    virus.set_state(1, 2);
 
-    model.default_add_virus<TSeq>n(virus, 1000);
+    model.add_virus_n(virus, 1000);
     
     // Generating a random pop from a smallworld network
     model.agents_smallworld(100000, 4L, false, .01);
 
-    // Initializing setting days and seed
-    model.init(100, 122);
-
     // Running the model
-    model.run();
+    model.run(100, 122);
     model.print();
   
 }

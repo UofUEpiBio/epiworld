@@ -49,11 +49,9 @@ int main()
     // with 100,000 individuals, in this case
     hello.agents_smallworld(100000, 4L, false, .01);
 
-    // Setting the number of days (100) and seed (122)
-    hello.init(100, 122);
-
     // Running the model and printing the results
-    hello.run();
+    // Setting the number of days (100) and seed (122)
+    hello.run(100, 122);
     hello.print();
 
     return 0;
@@ -64,21 +62,26 @@ int main()
 Compiling (with `make helloworld.o`) and running the problem yields the following result:
 
 ```bash
-Running the model...
 _________________________________________________________________________
+Running the model...
 ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
-
+ done.
+________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
 Name of the model   : Susceptible-Infected-Recovered (SIR)
 Population size     : 100000
-Number of entitites : 0
+Agents' data        : (none)
+Number of entities  : 0
 Days (duration)     : 100 (of 100)
-Number of variants  : 1
-Last run elapsed t  : 211.00ms
-Last run speed      : 47.28 million agents x day / second
+Number of viruses   : 1
+Last run elapsed t  : 103.00ms
+Last run speed      : 96.34 million agents x day / second
 Rewiring            : off
+
+Global events:
+ (none)
 
 Virus(es):
  - COVID-19 (baseline prevalence: 1.00%)
@@ -87,13 +90,13 @@ Tool(s):
  (none)
 
 Model parameters:
- - Infectiousness    : 0.9000
- - Prob. of Recovery : 0.3000
+ - Recovery rate     : 0.3000
+ - Transmission rate : 0.9000
 
 Distribution of the population at time 100:
- - (0) Susceptible :  99000 -> 2565
- - (1) Infected    :   1000 -> 366
- - (2) Recovered   :      0 -> 97069
+  - (0) Susceptible :  99000 -> 2565
+  - (1) Infected    :   1000 -> 366
+  - (2) Recovered   :      0 -> 97069
 
 Transition Probabilities:
  - Susceptible  0.96  0.04  0.00
