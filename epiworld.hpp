@@ -8965,7 +8965,10 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
         if ((n_viruses_model > 10) && (i >= 10))
         {
-            printf_epiworld(" ...and %li more viruses...\n", n_viruses_model - i);
+            printf_epiworld(" ...and %i more viruses...\n",
+                static_cast<int>(n_viruses_model) - 
+                static_cast<int>(i)
+                );
             break;
         }
 
@@ -9008,7 +9011,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
     if (nvariants > 0)
     {
 
-        printf_epiworld(" ...and %li more variants...\n", nvariants);
+        printf_epiworld(" ...and %i more variants...\n", static_cast<int>(nvariants));
 
     }
 
@@ -9024,7 +9027,10 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
         if ((n_tools_model > 10) && (i >= 10))
         {
-            printf_epiworld(" ...and %li more tools...\n", n_tools_model - i);
+            printf_epiworld(
+                " ...and %i more tools...\n",
+                static_cast<int>(n_tools_model) - static_cast<int>(i)
+                );
             break;
         }
 
@@ -10989,14 +10995,14 @@ template<typename TSeq>
 inline void Virus<TSeq>::print() const
 {
 
-    printf_epiworld("Virus          : %s\n", virus_name->c_str());
-    printf_epiworld("Id             : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
-    printf_epiworld("state_init    : %i\n", state_init);
-    printf_epiworld("state_post    : %i\n", state_post);
-    printf_epiworld("state_removed : %i\n", state_removed);
-    printf_epiworld("queue_init     : %i\n", queue_init);
-    printf_epiworld("queue_post     : %i\n", queue_post);
-    printf_epiworld("queue_removed  : %i\n", queue_removed);
+    printf_epiworld("Virus         : %s\n", virus_name->c_str());
+    printf_epiworld("Id            : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
+    printf_epiworld("state_init    : %i\n", static_cast<int>(state_init));
+    printf_epiworld("state_post    : %i\n", static_cast<int>(state_post));
+    printf_epiworld("state_removed : %i\n", static_cast<int>(state_removed));
+    printf_epiworld("queue_init    : %i\n", static_cast<int>(queue_init));
+    printf_epiworld("queue_post    : %i\n", static_cast<int>(queue_post));
+    printf_epiworld("queue_removed : %i\n", static_cast<int>(queue_removed));
 
 }
 
@@ -11112,7 +11118,7 @@ inline void Tools<TSeq>::print() const noexcept
         return;
     }
 
-    printf_epiworld("List of tools (%i): ", *n_tools);
+    printf_epiworld("List of tools (%i): ", static_cast<int>(*n_tools));
 
     // Printing the name of each virus separated by a comma
     for (size_t i = 0u; i < *n_tools; ++i)
@@ -11869,12 +11875,12 @@ template<typename TSeq>
 inline void Tool<TSeq>::print() const
 {
 
-    printf_epiworld("Tool           : %s\n", tool_name->c_str());
-    printf_epiworld("Id             : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
-    printf_epiworld("state_init    : %i\n", state_init);
-    printf_epiworld("state_post    : %i\n", state_post);
-    printf_epiworld("queue_init     : %i\n", queue_init);
-    printf_epiworld("queue_post     : %i\n", queue_post);
+    printf_epiworld("Tool       : %s\n", tool_name->c_str());
+    printf_epiworld("Id         : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
+    printf_epiworld("state_init : %i\n", static_cast<int>(state_init));
+    printf_epiworld("state_post : %i\n", static_cast<int>(state_post));
+    printf_epiworld("queue_init : %i\n", static_cast<int>(queue_init));
+    printf_epiworld("queue_post : %i\n", static_cast<int>(queue_post));
 
 }
 
@@ -14355,26 +14361,34 @@ inline void Agent<TSeq>::print(
     if (compressed)
     {
         printf_epiworld(
-            "Agent: %i, state: %s (%lu), Has virus: %s, NTools: %lu, NNeigh: %lu\n",
-            id, model->states_labels[state].c_str(), state,
+            "Agent: %i, state: %s (%i), Has virus: %s, NTools: %ii NNeigh: %i\n",
+            static_cast<int>(id),
+            model->states_labels[state].c_str(),
+            static_cast<int>(state),
             virus == nullptr ? std::string("no").c_str() : std::string("yes").c_str(),
-            n_tools, neighbors.size()
+            static_cast<int>(n_tools),
+            static_cast<int>(neighbors.size())
         );
     }
     else {
 
-        printf_epiworld("Information about agent id %i\n", this->id);
-        printf_epiworld("  State        : %s (%lu)\n", model->states_labels[state].c_str(), state);
+        printf_epiworld("Information about agent id %i\n",
+            static_cast<int>(this->id));
+        printf_epiworld("  State        : %s (%i)\n",
+            model->states_labels[state].c_str(), static_cast<int>(state));
         printf_epiworld("  Has virus    : %s\n", virus == nullptr ?
             std::string("no").c_str() : std::string("yes").c_str());
-        printf_epiworld("  Tool count   : %lu\n", n_tools);
-        printf_epiworld("  Neigh. count : %lu\n", neighbors.size());
+        printf_epiworld("  Tool count   : %i\n", static_cast<int>(n_tools));
+        printf_epiworld("  Neigh. count : %i\n", static_cast<int>(neighbors.size()));
 
         size_t nfeats = model->get_agents_data_ncols();
         if (nfeats > 0)
         {
 
-            printf_epiworld("This model includes features (%lu): [ ", nfeats);
+            printf_epiworld(
+                "This model includes features (%i): [ ",
+                static_cast<int>(nfeats)
+                );
 
             int max_to_show = static_cast<int>((nfeats > 10)? 10 : nfeats);
 
