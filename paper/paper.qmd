@@ -5,6 +5,7 @@ format:
   docx: default
 author: 'George G. Vega Yon, Ph.D.'
 date: April 5, 2024
+bibliography: references.bib
 ---
 
 `epiworld` is a fast and flexible agent-based modeling (ABM) framework for epidemiological simulations. Designed in C++, it can simulate large populations with complex interactions. The framework is designed to be modular, allowing users to extend and modify the model to suit their needs quickly. Besides the C++ library, an R package ([epiworldR](https://github.com/UofUEpiBio/epiworldR)), a ShinyApp ([epiworldRShiny](https://github.com/UofUEpiBio/epiworldRShiny)), and a Python library ([epiworldpy](https://github.com/UofUEpiBio/epiworldpy)) are available to interact with the model.
@@ -35,6 +36,24 @@ As a framework, `epiworld` can simulate various epidemiological scenarios. This 
 
 - **Population comorbidities**: The library can model the impact of population comorbidities on the spread of the disease, including how different comorbidities affect the transmission and severity of the disease.
 
+## Other alternatives
+
+# Existing Alternatives
+
+The following table from @meyerEpiworldRFastAgentBased2023 shows existing alternatives to epiworld, including **ABM** [@ABM], **abmR** [@abmR], **cystiSim** [@cystiSim], **villager** [@villager], and **RNetLogo** [@RNetLogo].[^othermodels]
+
+[^othermodels]: Although other ABM frameworks are available, the table focuses on those most relevant (and popular) to epidemiological simulations.
+
+| Package                                                                     | Multiple Viruses | Multiple Tools | Multiple Runs | Global Actions | Built-In Epi Models |
+|:--------|:--------|:--------|:--------|:--------|---------|
+| [**epiworldR**](https://cran.r-project.org/package=epiworldR)               | yes              | yes            | yes           | yes            | yes                 |
+| [**ABM**](https://cran.r-project.org/package=ABM)                           | \-               | \-             | \-            | yes            | yes                 |
+| [**abmR**](https://cran.r-project.org/package=abmR)                         | \-               | \-             | yes           | \-             | \-                  |
+| [**cystiSim**](https://cran.r-project.org/package=cystiSim)                 | \-               | yes            | yes           | \-             | \-                  |
+| [**villager**](https://cran.r-project.org/package=villager)                 | \-               | \-             | \-            | yes            | \-                  |
+| [**RNetLogo**](https://cran.r-project.org/package=RNetLogo) | \-               | yes            | yes           | yes            | \-                  |
+
+A benchmark comparing epiworld's speed with other software packages can be found in the [benchmark section](#speed-benchmark).
 
 # Appendix
 
@@ -120,9 +139,14 @@ Transition Probabilities:
 
 ## Speed benchmark
 
+The following figure shows the time measured in seconds that each of the benchmarked software packages took to simulate a SIR model featuring 50,000 agents for 100 days. 
+
 ![](benchmark.png)
 
 ## Implementation
 
+The following figure illustrates the model composition process used in epiworld. Generally, users can add an arbitrary number of states, viruses, tools, and events to a single model. The flexibility of epiworld's API provides a simple way to extend the model's capabilities.
+
 ![](building-models.png)
 
+# References

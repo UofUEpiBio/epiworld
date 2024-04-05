@@ -72,6 +72,28 @@ package:
   different comorbidities affect the transmission and severity of the
   disease.
 
+## Other alternatives
+
+# Existing Alternatives
+
+The following table from Meyer and Vega Yon (2023) shows existing
+alternatives to epiworld, including **ABM** (Ma 2023), **abmR**
+(Gochanour, Fernandez-Lopez, and Contina 2023), **cystiSim**
+(Devleesschauwer and Braae 2016), **villager** (Thelen et al. 2022), and
+**RNetLogo** (Thiele, Kurth, and Grimm 2012).[^1]
+
+| Package                                                       | Multiple Viruses | Multiple Tools | Multiple Runs | Global Actions | Built-In Epi Models |
+|:--------------------------------------------------------------|:-----------------|:---------------|:--------------|:---------------|---------------------|
+| [**epiworldR**](https://cran.r-project.org/package=epiworldR) | yes              | yes            | yes           | yes            | yes                 |
+| [**ABM**](https://cran.r-project.org/package=ABM)             | \-               | \-             | \-            | yes            | yes                 |
+| [**abmR**](https://cran.r-project.org/package=abmR)           | \-               | \-             | yes           | \-             | \-                  |
+| [**cystiSim**](https://cran.r-project.org/package=cystiSim)   | \-               | yes            | yes           | \-             | \-                  |
+| [**villager**](https://cran.r-project.org/package=villager)   | \-               | \-             | \-            | yes            | \-                  |
+| [**RNetLogo**](https://cran.r-project.org/package=RNetLogo)   | \-               | yes            | yes           | yes            | \-                  |
+
+A benchmark comparing epiworld’s speed with other software packages can
+be found in the [benchmark section](#speed-benchmark).
+
 # Appendix
 
 ## Code example
@@ -158,8 +180,76 @@ Transition Probabilities:
 
 ## Speed benchmark
 
+The following figure shows the time measured in seconds that each of the
+benchmarked software packages took to simulate a SIR model featuring
+50,000 agents for 100 days.
+
 ![](benchmark.png)
 
 ## Implementation
 
+The following figure illustrates the model composition process used in
+epiworld. Generally, users can add an arbitrary number of states,
+viruses, tools, and events to a single model. The flexibility of
+epiworld’s API provides a simple way to extend the model’s capabilities.
+
 ![](building-models.png)
+
+# References
+
+<div id="refs" class="references csl-bib-body hanging-indent"
+entry-spacing="0">
+
+<div id="ref-cystiSim" class="csl-entry">
+
+Devleesschauwer, Brecht, and Uffe Christian Braae. 2016. *cystiSim:
+Agent-Based Model for Taenia_solium Transmission and Control*.
+<https://CRAN.R-project.org/package=cystiSim>.
+
+</div>
+
+<div id="ref-abmR" class="csl-entry">
+
+Gochanour, Benjamin, Javier Fernandez-Lopez, and Andrea Contina. 2023.
+*abmR: Agent-Based Models in R*.
+<https://doi.org/10.1111/2041-210X.14014>.
+
+</div>
+
+<div id="ref-ABM" class="csl-entry">
+
+Ma, Junling. 2023. *ABM: Agent Based Model Simulation Framework*.
+<https://CRAN.R-project.org/package=ABM>.
+
+</div>
+
+<div id="ref-meyerEpiworldRFastAgentBased2023" class="csl-entry">
+
+Meyer, Derek, and George G Vega Yon. 2023.
+“<span class="nocase">epiworldR</span>: Fast Agent-Based Epi Models.”
+*Journal of Open Source Software* 8 (90): 5781.
+<https://doi.org/10.21105/joss.05781>.
+
+</div>
+
+<div id="ref-villager" class="csl-entry">
+
+Thelen, Thomas, Gerardo Aldana, Marcus Thomson, and Toni Gonzalez. 2022.
+*Villager: A Framework for Designing and Running Agent Based Models*.
+<https://CRAN.R-project.org/package=villager>.
+
+</div>
+
+<div id="ref-RNetLogo" class="csl-entry">
+
+Thiele, Jan C., Winfried Kurth, and Volker Grimm. 2012. “RNetLogo: An R
+Package for Running and Exploring Individual-Based Models Implemented in
+NetLogo.” *Methods in Ecology and Evolution* 3 (3): 480–83.
+<https://doi.org/10.1111/j.2041-210X.2011.00180.x>.
+
+</div>
+
+</div>
+
+[^1]: Although other ABM frameworks are available, the table focuses on
+    those most relevant (and popular) to epidemiological simulations.
