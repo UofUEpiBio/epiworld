@@ -7,7 +7,11 @@ George G. Vega Yon, Ph.D.
 for epidemiological simulations. Designed in C++, it can simulate large
 populations with complex interactions. The framework is designed to be
 modular, allowing users to extend and modify the model to suit their
-needs quickly.
+needs quickly. Besides the C++ library, an R package
+([epiworldR](https://github.com/UofUEpiBio/epiworldR)), a ShinyApp
+([epiworldRShiny](https://github.com/UofUEpiBio/epiworldRShiny)), and a
+Python library ([epiworldpy](https://github.com/UofUEpiBio/epiworldpy))
+are available to interact with the model.
 
 ## Features
 
