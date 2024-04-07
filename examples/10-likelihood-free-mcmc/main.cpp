@@ -1,6 +1,10 @@
 // #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/epiworld.hpp"
+
+#define EPI_DEBUG
 #include "../../include/epiworld/math/lfmcmc.hpp"
+
+
 
 using namespace epiworld;
 
@@ -53,7 +57,7 @@ int main()
         model,   // Model
         "covid", // Name of the virus
         .1,      // Initial prevalence
-        .9,      // Infectiousness (par[1])
+        .1,      // Infectiousness (par[1])
         .3       // Immune Recovery (par[0])
         );
 
@@ -69,7 +73,6 @@ int main()
     lfmcmc.set_kernel_fun(kernel_fun_gaussian<std::vector<int>>);
 
     // Simulating some data
-    model.set_backup();
     model.verbose_off();
     model.run(50, 122);
     model.print();
@@ -82,7 +85,7 @@ int main()
 
     std::vector< epiworld_double > par0 = {.5, .5};
 
-    lfmcmc.run(par0, 1000, 1);
+    lfmcmc.run(par0, 2000, 1);
     
     lfmcmc.set_par_names({"Immune recovery", "Infectiousness"});
     lfmcmc.set_stats_names(model.get_states());
