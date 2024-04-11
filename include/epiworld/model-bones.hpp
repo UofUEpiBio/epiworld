@@ -145,6 +145,9 @@ protected:
     std::vector< ToolToAgentFun<TSeq> > tools_dist_funs = {};
 
     std::vector< Entity<TSeq> > entities = {}; 
+    std::vector< epiworld_double > prevalence_entity = {};
+    std::vector< bool > prevalence_entity_as_proportion = {};
+    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
     std::vector< Entity<TSeq> > entities_backup = {};
 
     std::mt19937 engine;
@@ -183,7 +186,7 @@ protected:
 
     void dist_tools();
     void dist_virus();
-    // void dist_entities();
+    void dist_entities();
 
     std::chrono::time_point<std::chrono::steady_clock> time_start;
     std::chrono::time_point<std::chrono::steady_clock> time_end;
@@ -344,6 +347,8 @@ public:
     void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
     void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
     void add_entity(Entity<TSeq> e);
+    void add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval);
+    void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
     void rm_entity(size_t entity_pos);
