@@ -6082,9 +6082,9 @@ protected:
      * AgentsSample<TSeq>::AgentsSample(Model<TSeq>) these vectors are allocated.
      */
     ///@{
-    std::vector< Agent<TSeq> * > sampled_population;
+    std::shared_ptr< std::vector< Agent<TSeq> * > > sampled_population;
     size_t sampled_population_n = 0u;
-    std::vector< size_t > population_left;
+    std::shared_ptr< std::vector< size_t > > population_left;
     size_t population_left_n = 0u;
     ///@}
 
@@ -14621,10 +14621,10 @@ private:
 
     size_t sample_size = 0u;
 
-    std::vector< Agent<TSeq>* > * agents = nullptr; ///< Pointer to sample of agents
+    std::shared_ptr<std::vector< Agent<TSeq>* > > agents = nullptr; ///< Pointer to sample of agents
     size_t * agents_n = nullptr;                    ///< Size of sample of agents
     
-    std::vector< size_t > * agents_left = nullptr;  ///< Pointer to agents left (iota)
+    std::shared_ptr<std::vector< size_t > > agents_left = nullptr;  ///< Pointer to agents left (iota)
     size_t * agents_left_n = nullptr;               ///< Size of agents left
 
     Model<TSeq> * model   = nullptr;   ///< Extracts runif() and (if the case) population.
@@ -14651,13 +14651,17 @@ public:
         );
 
     AgentsSample(
-        Model<TSeq> * model, Entity<TSeq> & entity_, size_t n,
+        Model<TSeq> * model,
+        Entity<TSeq> & entity_,
+        size_t n,
         std::vector< size_t > states_ = {},
         bool truncate = false
         );
 
     AgentsSample(
-        Model<TSeq> * model, Agent<TSeq> & agent_, size_t n,
+        Model<TSeq> * model,
+        Agent<TSeq> & agent_,
+        size_t n,
         std::vector< size_t > states_ = {},
         bool truncate = false
         );
