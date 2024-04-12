@@ -91,7 +91,110 @@ public:
 
 };
 
-// Global event that moves agents between states
+template<typename TSeq> 
+class GroupSampler {
+
+private:
+    
+    epiworld::Model<TSeq> & model;
+    const std::vector< double > & contact_matrix; ///< Contact matrix between groups
+    const std::vector< size_t > & group_sizes;    ///< Sizes of the groups
+    std::vector< double > cumulate;               ///< Cumulative sum of the contact matrix (row-major for faster access)
+
+    /**
+     * @brief Get the index of the contact matrix
+     * 
+     * The matrix is a vector stored in column-major order.
+     * 
+     * @param i Index of the row
+     * @param j Index of the column
+     * @return Index of the contact matrix
+     */
+    inline int idx(const int i, const int j, bool rowmajor = false) const
+    {
+        
+        if (rowmajor)
+            return i * group_sizes.size() + j;
+        
+        return j * group_sizes.size() + i; 
+
+    }
+
+public:
+
+    GroupSampler(
+        epiworld::Model<TSeq> & model,
+        const std::vector< double > & contact_matrix,
+        const std::vector< size_t > & group_sizes
+    ): model(model), contact_matrix(contact_matrix), group_sizes(group_sizes) {
+
+        this->cumulate.resize(contact_matrix.size());
+        std::fill(cumulate.begin(), cumulate.end(), 0.0);
+
+        // Cumulative sum
+        for (size_t j = 1; j < group_sizes.size(); ++j)
+        {
+            for (size_t i = 0; i < group_sizes.size(); ++i)
+                cumulate[idx(i, j, true)] += 
+                    cumulate[idx(i, j - 1, true)] +
+                    contact_matrix[idx(i, j)];
+        }
+
+    };
+
+    int sample_1(const int origin_group);
+
+    void sample_n(
+        std::vector< size_t > & sample,
+        const int origin_group,
+        const int nsamples
+    );
+
+};
+
+template<typename TSeq>
+int GroupSampler<TSeq>::sample_1(const int origin_group)
+{
+
+    // Random number
+    double r = model.runif();
+
+    // Finding the group
+    size_t j = 0;
+    while (r > cumulate[idx(origin_group, j, true)])
+        ++j;
+
+    // Adjusting the prob
+    r = r - (j == 0 ? 0.0 : cumulate[idx(origin_group, j - 1, true)]);
+
+    int res = static_cast<int>(
+        std::floor(r * group_sizes[j])
+    );
+
+    // Making sure we are not picling outside of the group
+    if (res >= static_cast<int>(group_sizes[j]))
+        res = static_cast<int>(group_sizes[j]) - 1;
+
+    return res;
+
+}
+
+template<typename TSeq>
+void GroupSampler<TSeq>::sample_n(
+    std::vector< size_t > & sample,
+    const int origin_group,
+    const int nsamples
+)
+{
+
+    for (int i = 0; i < nsamples; ++i)
+        sample[i] = sample_1(origin_group);
+
+    return;
+
+}
+
+
 
 
 template<typename TSeq>
@@ -182,7 +285,7 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
                 return;
 
             // Sampling from the agent's entities
-            auto sample = epiworld::AgentsSample<TSeq>(m, *p, ndraw, {}, true);
+            epiworld::AgentsSample<TSeq> sample(m, *p, ndraw, {}, true);
 
             // Drawing from the set
             int nviruses_tmp = 0;

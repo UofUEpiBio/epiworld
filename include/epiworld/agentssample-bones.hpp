@@ -191,9 +191,6 @@ inline AgentsSample<TSeq>::AgentsSample(
     agents        = &agent_.sampled_agents;
     agents_n      = &agent_.sampled_agents_n;
 
-    agents_left   = &agent_.sampled_agents_left;
-    agents_left_n = &agent_.sampled_agents_left_n;
-
     // Computing the cumulative sum of counts across entities
     size_t agents_in_entities = 0;
     Entities<TSeq> entities_a = agent->get_entities();
@@ -249,14 +246,17 @@ inline AgentsSample<TSeq>::AgentsSample(
                 else
                     agent_idx = entities_a[e][jth - cum_agents_count[e - 1]]->get_id();
 
-                // Getting the state
-                size_t state = model->population[agent_idx].get_state();
 
                 // Checking if states was specified
                 if (states.size())
                 {
+
+                    // Getting the state
+                    size_t state = model->population[agent_idx].get_state();
+
                     if (std::find(states.begin(), states.end(), state) != states.end())
                         continue;
+
                 }
                 
                 agents->operator[](i_obs++) = &(model->population[agent_idx]);

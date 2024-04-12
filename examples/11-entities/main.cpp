@@ -7,7 +7,7 @@ int main() {
 
     epimodels::ModelSEIREntitiesConn model(
         "Flu", // std::string vname,
-        10000, // epiworld_fast_uint n,
+        100000, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
         4.0,// epiworld_double contact_rate,
         0.1,// epiworld_double transmission_rate,
