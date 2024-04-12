@@ -1,6 +1,9 @@
 #ifndef EPIWORLD_MODELS_SEIRENTITIESCONNECTED_HPP
 #define EPIWORLD_MODELS_SEIRENTITIESCONNECTED_HPP
 
+template<typename TSeq>
+class GroupSampler;
+
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with entities
@@ -14,6 +17,8 @@ public:
     static const int EXPOSED     = 1;
     static const int INFECTED    = 2;
     static const int RECOVERED   = 3;
+
+    GroupSampler<TSeq> group_sampler;
 
 
     ModelSEIREntitiesConn() {};
@@ -43,7 +48,8 @@ public:
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
         std::vector< epiworld_double > entities,
-        std::vector< std::string > entities_names
+        std::vector< std::string > entities_names,
+        std::vector< double > contact_matrix
     );
     
     /**
@@ -67,7 +73,8 @@ public:
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
         std::vector< epiworld_double > entities,
-        std::vector< std::string > entities_names
+        std::vector< std::string > entities_names,
+        std::vector< double > contact_matrix
     );
 
     ModelSEIREntitiesConn<TSeq> & run(
@@ -91,14 +98,17 @@ public:
 
 };
 
+/**
+ * @brief Weighted sampling of groups
+ */
 template<typename TSeq> 
 class GroupSampler {
 
 private:
     
     epiworld::Model<TSeq> & model;
-    const std::vector< double > & contact_matrix; ///< Contact matrix between groups
-    const std::vector< size_t > & group_sizes;    ///< Sizes of the groups
+    const std::vector< double > contact_matrix; ///< Contact matrix between groups
+    const std::vector< size_t > group_sizes;    ///< Sizes of the groups
     std::vector< double > cumulate;               ///< Cumulative sum of the contact matrix (row-major for faster access)
 
     /**
@@ -125,7 +135,8 @@ public:
     GroupSampler(
         epiworld::Model<TSeq> & model,
         const std::vector< double > & contact_matrix,
-        const std::vector< size_t > & group_sizes
+        const std::vector< size_t > & group_sizes,
+        bool normalize = true
     ): model(model), contact_matrix(contact_matrix), group_sizes(group_sizes) {
 
         this->cumulate.resize(contact_matrix.size());
@@ -138,6 +149,18 @@ public:
                 cumulate[idx(i, j, true)] += 
                     cumulate[idx(i, j - 1, true)] +
                     contact_matrix[idx(i, j)];
+        }
+
+        if (normalize)
+        {
+            for (size_t i = 0; i < group_sizes.size(); ++i)
+            {
+                double sum = 0.0;
+                for (size_t j = 0; j < group_sizes.size(); ++j)
+                    sum += contact_matrix[idx(i, j, true)];
+                for (size_t j = 0; j < group_sizes.size(); ++j)
+                    contact_matrix[idx(i, j, true)] /= sum;
+            }
         }
 
     };
@@ -261,7 +284,8 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
     std::vector< epiworld_double > entities,
-    std::vector< std::string > entities_names
+    std::vector< std::string > entities_names,
+    std::vector< double > contact_matrix
     )
 {
 
@@ -272,6 +296,17 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
             epiworld::Entity<TSeq>(entities_names[entity_id++]),
             e * n
             );
+
+    std::vector< size_t > group_sizes(entities.size());
+    for (size_t i = 0; i < entities.size(); ++i)
+        group_sizes[i] = static_cast<size_t>(entities[i] * n);
+
+    // Setting up the group sampler
+    GroupSampler<TSeq> group_sampler(
+        model,
+        contact_matrix,
+        group_sizes
+        );
 
     epiworld::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
@@ -454,7 +489,8 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
     std::vector< epiworld_double > entities,
-    std::vector< std::string > entity_names
+    std::vector< std::string > entity_names,
+    std::vector< double > contact_matrix
     )
 {
 
@@ -468,7 +504,8 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
         avg_incubation_days,
         recovery_rate,
         entities,
-        entity_names
+        entity_names,
+        contact_matrix
     );
 
     return;
