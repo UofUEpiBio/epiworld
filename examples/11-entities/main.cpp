@@ -1,9 +1,15 @@
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;
 
 int main() {
+
+    std::vector< double > contact_matrix = {
+        0.9, 0.1, 0.1,
+        0.05, 0.8, .2,
+        0.05, 0.1, 0.7
+    };
 
     epimodels::ModelSEIREntitiesConn model(
         "Flu", // std::string vname,
@@ -14,7 +20,8 @@ int main() {
         4.0,// epiworld_double avg_incubation_days,
         1.0/7.0,// epiworld_double recovery_rate,
         {.1, .1, .8},// std::vector< epiworld_double > entities,
-        {"A", "B", "C"}// std::vector< std::string > entities_names
+        {"A", "B", "C"},// std::vector< std::string > entities_names
+        contact_matrix
     );
 
     // Running and checking the results

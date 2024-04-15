@@ -92,7 +92,10 @@ template<typename TSeq>
 inline Agent<TSeq> * Entity<TSeq>::operator[](size_t i)
 {
     if (n_agents <= i)
-        throw std::logic_error("There are not that many agents in this entity.");
+        throw std::logic_error(
+            "There are not that many agents in this entity. " +
+            std::to_string(n_agents) + " <= " + std::to_string(i)
+            );
 
     return &model->get_agents()[i];
 }

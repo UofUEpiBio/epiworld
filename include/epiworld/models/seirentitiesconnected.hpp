@@ -18,9 +18,6 @@ public:
     static const int INFECTED    = 2;
     static const int RECOVERED   = 3;
 
-    GroupSampler<TSeq> group_sampler;
-
-
     ModelSEIREntitiesConn() {};
 
     
@@ -106,9 +103,10 @@ class GroupSampler {
 
 private:
     
-    epiworld::Model<TSeq> & model;
-    const std::vector< double > contact_matrix; ///< Contact matrix between groups
-    const std::vector< size_t > group_sizes;    ///< Sizes of the groups
+    epiworld::Model<TSeq> * model;
+    std::vector< Entity<TSeq> > * entities;
+    std::vector< double > contact_matrix; ///< Contact matrix between groups
+    std::vector< size_t > group_sizes;    ///< Sizes of the groups
     std::vector< double > cumulate;               ///< Cumulative sum of the contact matrix (row-major for faster access)
 
     /**
@@ -132,18 +130,22 @@ private:
 
 public:
 
+    GroupSampler() {};
+
     GroupSampler(
-        epiworld::Model<TSeq> & model,
-        const std::vector< double > & contact_matrix,
-        const std::vector< size_t > & group_sizes,
+        epiworld::Model<TSeq> * model_,
+        const std::vector< double > & contact_matrix_,
+        const std::vector< size_t > & group_sizes_,
         bool normalize = true
-    ): model(model), contact_matrix(contact_matrix), group_sizes(group_sizes) {
+    ): model(model_), contact_matrix(contact_matrix_), group_sizes(group_sizes_) {
+
+        entities = &model->get_entities();
 
         this->cumulate.resize(contact_matrix.size());
         std::fill(cumulate.begin(), cumulate.end(), 0.0);
 
         // Cumulative sum
-        for (size_t j = 1; j < group_sizes.size(); ++j)
+        for (size_t j = 0; j < group_sizes.size(); ++j)
         {
             for (size_t i = 0; i < group_sizes.size(); ++i)
                 cumulate[idx(i, j, true)] += 
@@ -180,7 +182,7 @@ int GroupSampler<TSeq>::sample_1(const int origin_group)
 {
 
     // Random number
-    double r = model.runif();
+    double r = model->runif();
 
     // Finding the group
     size_t j = 0;
@@ -194,11 +196,11 @@ int GroupSampler<TSeq>::sample_1(const int origin_group)
         std::floor(r * group_sizes[j])
     );
 
-    // Making sure we are not picling outside of the group
+    // Making sure we are not picking outside of the group
     if (res >= static_cast<int>(group_sizes[j]))
         res = static_cast<int>(group_sizes[j]) - 1;
 
-    return res;
+    return entities->at(j)[res]->get_id();
 
 }
 
@@ -302,16 +304,20 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
         group_sizes[i] = static_cast<size_t>(entities[i] * n);
 
     // Setting up the group sampler
-    GroupSampler<TSeq> group_sampler(
-        model,
-        contact_matrix,
-        group_sizes
+    std::shared_ptr<GroupSampler<TSeq>> group_sampler = 
+        std::make_shared<GroupSampler<TSeq>>(
+            dynamic_cast<Model<TSeq>*>(&model),
+            contact_matrix,
+            group_sizes
         );
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
+    epiworld::UpdateFun<TSeq> update_susceptible = [group_sampler](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void
         {
+
+            if (p->get_n_entities() == 0)
+                return;
 
             // Sampling how many individuals
             int ndraw = m->rbinom();
@@ -320,22 +326,30 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
                 return;
 
             // Sampling from the agent's entities
-            epiworld::AgentsSample<TSeq> sample(m, *p, ndraw, {}, true);
+            std::vector< size_t > sample(ndraw);
+            group_sampler->sample_n(
+                sample, 
+                p->get_entity(0u).get_id(),
+                ndraw
+                );
 
             // Drawing from the set
             int nviruses_tmp = 0;
-            for (const auto & neighbor: sample)
+            auto & agents = m->get_agents();
+            for (const auto & i: sample)
             {
 
+                auto neighbor = agents[i];
+
                 // Can't sample itself
-                if (neighbor->get_id() == static_cast<int>(p->get_id()))
+                if (neighbor.get_id() == static_cast<int>(p->get_id()))
                     continue;
 
                 // If the neighbor is infected, then proceed
-                if (neighbor->get_state() == ModelSEIREntitiesConn<TSeq>::INFECTED)
+                if (neighbor.get_state() == ModelSEIREntitiesConn<TSeq>::INFECTED)
                 {
 
-                    auto & v = neighbor->get_virus();
+                    auto & v = neighbor.get_virus();
 
                     #ifdef EPI_DEBUG
                     if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
@@ -346,7 +360,7 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
                     m->array_double_tmp[nviruses_tmp] =
                         (1.0 - p->get_susceptibility_reduction(v, m)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
