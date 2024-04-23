@@ -1394,6 +1394,61 @@ inline void Model<TSeq>::load_agents_entities_ties(
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::load_agents_entities_ties(
+    const std::vector< int > & agents_ids,
+    const std::vector< int > & entities_ids
+) {
+
+    if (agents_ids.size() != entities_ids.size())
+        throw std::length_error(
+            std::string("agents_ids (") +
+            std::to_string(agents_ids.size()) +
+            std::string(") and entities_ids (") +
+            std::to_string(entities_ids.size()) +
+            std::string(") should match.")
+            );
+
+
+    size_t n_entries = agents_ids.size();
+    for (size_t i = 0u; i < n_entries; ++i)
+    {
+
+        if (agents_id[i] >= this->population.size())
+            throw std::length_error(
+                std::string("agents_ids[") +
+                std::to_string(i) +
+                std::string("] = ") +
+                std::to_string(agents_ids[i]) +
+                std::string(" is out of range (population size: ") +
+                std::to_string(this->population.size()) +
+                std::string(").")
+                );
+
+        
+        if (entities_ids[i] >= this->entities.size())
+            throw std::length_error(
+                std::string("entities_ids[") +
+                std::to_string(i) +
+                std::string("] = ") +
+                std::to_string(entities_ids[i]) +
+                std::string(" is out of range (entities size: ") +
+                std::to_string(this->entities.size()) +
+                std::string(").")
+                );
+
+        this->population[agents_ids[i]].add_entity(
+            this->entities[entities_ids[i]],
+            nullptr
+        );
+
+    }
+
+    return;
+
+
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::agents_from_adjlist(
     std::string fn,
     int size,

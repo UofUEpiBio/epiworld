@@ -366,6 +366,14 @@ public:
      * @param skip How many rows to skip.
      */
     void load_agents_entities_ties(std::string fn, int skip);
+    
+    /**
+     * @brief Associate agents-entities from data
+    */
+    void load_agents_entities_ties(
+        const std::vector<int> & agents_ids,
+        const std::vector<int> & entities_ids
+        );
 
     /**
      * @name Accessing population of the model
