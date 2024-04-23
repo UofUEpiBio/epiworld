@@ -407,7 +407,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     queue(model.queue),
     use_queuing(model.use_queuing),
     array_double_tmp(model.array_double_tmp.size()),
-    array_virus_tmp(model.array_virus_tmp.size())
+    array_virus_tmp(model.array_virus_tmp.size()),
+    array_int_tmp(model.array_int_tmp.size())
 {
 
 
@@ -492,7 +493,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
     array_double_tmp(model.array_double_tmp.size()),
-    array_virus_tmp(model.array_virus_tmp.size())
+    array_virus_tmp(model.array_virus_tmp.size()),
+    array_int_tmp(model.array_int_tmp.size())
 {
 
     db.model = this;
@@ -586,6 +588,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     ));
 
     array_virus_tmp.resize(1024u);
+    array_int_tmp.resize(1024u * 1024);
 
     return *this;
 
@@ -1514,6 +1517,7 @@ inline Model<TSeq> & Model<TSeq>::run(
 
 
     array_virus_tmp.resize(1024);
+    array_int_tmp.resize(1024 * 1024);
 
     // Checking whether the proposed state in/out/removed
     // are valid

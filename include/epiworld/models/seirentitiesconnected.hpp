@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_MODELS_SEIRENTITIESCONNECTED_HPP
 #define EPIWORLD_MODELS_SEIRENTITIESCONNECTED_HPP
 
-template<typename TSeq>
-class GroupSampler;
 
 /**
  * @file seirentitiesconnected.hpp
@@ -17,6 +15,8 @@ public:
     static const int EXPOSED     = 1;
     static const int INFECTED    = 2;
     static const int RECOVERED   = 3;
+
+    std::shared_ptr< epiworld::GroupSampler<TSeq> > group_sampler;
 
     ModelSEIREntitiesConn() {};
 
@@ -95,133 +95,6 @@ public:
 
 };
 
-/**
- * @brief Weighted sampling of groups
- */
-template<typename TSeq> 
-class GroupSampler {
-
-private:
-    
-    epiworld::Model<TSeq> * model;
-    std::vector< Entity<TSeq> > * entities;
-    std::vector< double > contact_matrix; ///< Contact matrix between groups
-    std::vector< size_t > group_sizes;    ///< Sizes of the groups
-    std::vector< double > cumulate;               ///< Cumulative sum of the contact matrix (row-major for faster access)
-
-    /**
-     * @brief Get the index of the contact matrix
-     * 
-     * The matrix is a vector stored in column-major order.
-     * 
-     * @param i Index of the row
-     * @param j Index of the column
-     * @return Index of the contact matrix
-     */
-    inline int idx(const int i, const int j, bool rowmajor = false) const
-    {
-        
-        if (rowmajor)
-            return i * group_sizes.size() + j;
-        
-        return j * group_sizes.size() + i; 
-
-    }
-
-public:
-
-    GroupSampler() {};
-
-    GroupSampler(
-        epiworld::Model<TSeq> * model_,
-        const std::vector< double > & contact_matrix_,
-        const std::vector< size_t > & group_sizes_,
-        bool normalize = true
-    ): model(model_), contact_matrix(contact_matrix_), group_sizes(group_sizes_) {
-
-        entities = &model->get_entities();
-
-        this->cumulate.resize(contact_matrix.size());
-        std::fill(cumulate.begin(), cumulate.end(), 0.0);
-
-        // Cumulative sum
-        for (size_t j = 0; j < group_sizes.size(); ++j)
-        {
-            for (size_t i = 0; i < group_sizes.size(); ++i)
-                cumulate[idx(i, j, true)] += 
-                    cumulate[idx(i, j - 1, true)] +
-                    contact_matrix[idx(i, j)];
-        }
-
-        if (normalize)
-        {
-            for (size_t i = 0; i < group_sizes.size(); ++i)
-            {
-                double sum = 0.0;
-                for (size_t j = 0; j < group_sizes.size(); ++j)
-                    sum += contact_matrix[idx(i, j, true)];
-                for (size_t j = 0; j < group_sizes.size(); ++j)
-                    contact_matrix[idx(i, j, true)] /= sum;
-            }
-        }
-
-    };
-
-    int sample_1(const int origin_group);
-
-    void sample_n(
-        std::vector< size_t > & sample,
-        const int origin_group,
-        const int nsamples
-    );
-
-};
-
-template<typename TSeq>
-int GroupSampler<TSeq>::sample_1(const int origin_group)
-{
-
-    // Random number
-    double r = model->runif();
-
-    // Finding the group
-    size_t j = 0;
-    while (r > cumulate[idx(origin_group, j, true)])
-        ++j;
-
-    // Adjusting the prob
-    r = r - (j == 0 ? 0.0 : cumulate[idx(origin_group, j - 1, true)]);
-
-    int res = static_cast<int>(
-        std::floor(r * group_sizes[j])
-    );
-
-    // Making sure we are not picking outside of the group
-    if (res >= static_cast<int>(group_sizes[j]))
-        res = static_cast<int>(group_sizes[j]) - 1;
-
-    return entities->at(j)[res]->get_id();
-
-}
-
-template<typename TSeq>
-void GroupSampler<TSeq>::sample_n(
-    std::vector< size_t > & sample,
-    const int origin_group,
-    const int nsamples
-)
-{
-
-    for (int i = 0; i < nsamples; ++i)
-        sample[i] = sample_1(origin_group);
-
-    return;
-
-}
-
-
-
-
 template<typename TSeq>
 inline ModelSEIREntitiesConn<TSeq> & ModelSEIREntitiesConn<TSeq>::run(
     epiworld_fast_uint ndays,
@@ -291,27 +164,7 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
     )
 {
 
-    // Instantiating entities
-    int entity_id = 0;
-    for (auto & e : entities)
-        model.add_entity_n(
-            epiworld::Entity<TSeq>(entities_names[entity_id++]),
-            e * n
-            );
-
-    std::vector< size_t > group_sizes(entities.size());
-    for (size_t i = 0; i < entities.size(); ++i)
-        group_sizes[i] = static_cast<size_t>(entities[i] * n);
-
-    // Setting up the group sampler
-    std::shared_ptr<GroupSampler<TSeq>> group_sampler = 
-        std::make_shared<GroupSampler<TSeq>>(
-            dynamic_cast<Model<TSeq>*>(&model),
-            contact_matrix,
-            group_sizes
-        );
-
-    epiworld::UpdateFun<TSeq> update_susceptible = [group_sampler](
+    epiworld::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void
         {
@@ -325,10 +178,16 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
             if (ndraw == 0)
                 return;
 
+            // Downcasting to retrieve the sampler attached to the
+            // class
+            ModelSEIREntitiesConn<TSeq> * m_down =
+                dynamic_cast<ModelSEIREntitiesConn<TSeq> *>(m);
+
             // Sampling from the agent's entities
-            std::vector< size_t > sample(ndraw);
-            group_sampler->sample_n(
-                sample, 
+            auto & samples = m->array_int_tmp;
+            m_down->group_sampler->sample_n(
+                m,
+                samples, 
                 p->get_entity(0u).get_id(),
                 ndraw
                 );
@@ -336,10 +195,10 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
             // Drawing from the set
             int nviruses_tmp = 0;
             auto & agents = m->get_agents();
-            for (const auto & i: sample)
+            for (int i = 0; i < ndraw; ++i)
             {
 
-                auto neighbor = agents[i];
+                auto neighbor = agents[samples[i]];
 
                 // Can't sample itself
                 if (neighbor.get_id() == static_cast<int>(p->get_id()))
@@ -507,6 +366,24 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
     std::vector< double > contact_matrix
     )
 {
+
+    // Instantiating entities
+    int entity_id = 0;
+    for (auto & e : entities)
+        this->add_entity_n(
+            epiworld::Entity<TSeq>(entity_names[entity_id++]),
+            e * n
+            );
+
+    std::vector< size_t > group_sizes(entities.size());
+    for (size_t i = 0; i < entities.size(); ++i)
+        group_sizes[i] = static_cast<size_t>(entities[i] * n);
+
+    // Setting up the group sampler
+    this->group_sampler = std::make_shared<epiworld::GroupSampler<TSeq>>(
+            contact_matrix,
+            group_sizes
+        );
 
     ModelSEIREntitiesConn(
         *this,
