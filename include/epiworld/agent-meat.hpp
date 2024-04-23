@@ -242,7 +242,7 @@ inline void Agent<TSeq>::add_entity(
                 -1, -1
             );
 
-        // default_add_entity(a, model); /* passing model makes nothing */
+        default_add_entity(a, model); /* passing model makes nothing */
 
     }
 

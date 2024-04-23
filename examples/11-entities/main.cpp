@@ -11,7 +11,7 @@ int main() {
         0.05, 0.1, 0.7
     };
 
-    epimodels::ModelSEIREntitiesConn model(
+    epimodels::ModelSEIRMixing model(
         "Flu", // std::string vname,
         100000, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,

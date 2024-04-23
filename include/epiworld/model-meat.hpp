@@ -1320,7 +1320,6 @@ inline void Model<TSeq>::load_agents_entities_ties(
         throw std::logic_error("The file " + fn + " was not found.");
 
     int linenum = 0;
-    std::vector< epiworld_fast_uint > source_;
     std::vector< std::vector< epiworld_fast_uint > > target_(entities.size());
 
     target_.reserve(1e5);
@@ -1361,34 +1360,6 @@ inline void Model<TSeq>::load_agents_entities_ties(
 
     }
 
-    // // Iterating over entities
-    // for (size_t e = 0u; e < entities.size(); ++e)
-    // {
-
-    //     // This entity will have individuals assigned to it, so we add it
-    //     if (target_[e].size() > 0u)
-    //     {
-
-    //         // Filling in the gaps
-    //         prevalence_entity[e] = static_cast<epiworld_double>(target_[e].size());
-    //         prevalence_entity_as_proportion[e] = false;
-
-    //         // Generating the assignment function
-    //         auto who = target_[e];
-    //         entities_dist_funs[e] =
-    //             [who](Entity<TSeq> & e, Model<TSeq>* m) -> void {
-
-    //                 for (auto w : who)
-    //                     m->population[w].add_entity(e, m, e.state_init, e.queue_init);
-                    
-    //                 return;
-                    
-    //             };
-
-    //     }
-
-    // }
-
     return;
 
 }
@@ -1413,7 +1384,7 @@ inline void Model<TSeq>::load_agents_entities_ties(
     for (size_t i = 0u; i < n_entries; ++i)
     {
 
-        if (agents_id[i] >= this->population.size())
+        if (agents_ids[i] >= this->population.size())
             throw std::length_error(
                 std::string("agents_ids[") +
                 std::to_string(i) +
@@ -1436,9 +1407,10 @@ inline void Model<TSeq>::load_agents_entities_ties(
                 std::string(").")
                 );
 
+        // Adding the entity to the agent
         this->population[agents_ids[i]].add_entity(
             this->entities[entities_ids[i]],
-            nullptr
+            nullptr /* Immediately add it to the agent */
         );
 
     }

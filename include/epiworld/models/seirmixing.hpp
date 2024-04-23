@@ -4,10 +4,10 @@
 
 /**
  * @file seirentitiesconnected.hpp
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with entities
+ * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIREntitiesConn : public epiworld::Model<TSeq> 
+class ModelSEIRMixing : public epiworld::Model<TSeq> 
 {
 public:
 
@@ -18,14 +18,14 @@ public:
 
     std::shared_ptr< epiworld::GroupSampler<TSeq> > group_sampler;
 
-    ModelSEIREntitiesConn() {};
+    ModelSEIRMixing() {};
 
     
     /**
-     * @brief Constructs a ModelSEIREntitiesConn object.
+     * @brief Constructs a ModelSEIRMixing object.
      *
-     * @param model A reference to an existing ModelSEIREntitiesConn object.
-     * @param vname The name of the ModelSEIREntitiesConn object.
+     * @param model A reference to an existing ModelSEIRMixing object.
+     * @param vname The name of the ModelSEIRMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
      * @param contact_rate The contact rate between entities in the model.
@@ -35,8 +35,8 @@ public:
      * @param entities A vector of entity values.
      * @param entities_names A vector of entity names.
      */
-    ModelSEIREntitiesConn(
-        ModelSEIREntitiesConn<TSeq> & model,
+    ModelSEIRMixing(
+        ModelSEIRMixing<TSeq> & model,
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
@@ -50,9 +50,9 @@ public:
     );
     
     /**
-     * @brief Constructs a ModelSEIREntitiesConn object.
+     * @brief Constructs a ModelSEIRMixing object.
      *
-     * @param vname The name of the ModelSEIREntitiesConn object.
+     * @param vname The name of the ModelSEIRMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
      * @param contact_rate The contact rate between entities in the model.
@@ -61,7 +61,7 @@ public:
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param entities A vector of entity values.
      */
-    ModelSEIREntitiesConn(
+    ModelSEIRMixing(
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
@@ -74,7 +74,7 @@ public:
         std::vector< double > contact_matrix
     );
 
-    ModelSEIREntitiesConn<TSeq> & run(
+    ModelSEIRMixing<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -88,7 +88,7 @@ public:
      * @param proportions_ Double vector with a single element:
      * - The proportion of non-infected individuals who have recovered.
     */
-    ModelSEIREntitiesConn<TSeq> & initial_states(
+    ModelSEIRMixing<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
     );
@@ -96,7 +96,7 @@ public:
 };
 
 template<typename TSeq>
-inline ModelSEIREntitiesConn<TSeq> & ModelSEIREntitiesConn<TSeq>::run(
+inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
@@ -109,7 +109,7 @@ inline ModelSEIREntitiesConn<TSeq> & ModelSEIREntitiesConn<TSeq>::run(
 }
 
 template<typename TSeq>
-inline void ModelSEIREntitiesConn<TSeq>::reset()
+inline void ModelSEIRMixing<TSeq>::reset()
 {
 
     Model<TSeq>::reset();
@@ -126,11 +126,11 @@ inline void ModelSEIREntitiesConn<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIREntitiesConn<TSeq>::clone_ptr()
+inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
 {
     
-    ModelSEIREntitiesConn<TSeq> * ptr = new ModelSEIREntitiesConn<TSeq>(
-        *dynamic_cast<const ModelSEIREntitiesConn<TSeq>*>(this)
+    ModelSEIRMixing<TSeq> * ptr = new ModelSEIRMixing<TSeq>(
+        *dynamic_cast<const ModelSEIRMixing<TSeq>*>(this)
         );
 
     return dynamic_cast< Model<TSeq> *>(ptr);
@@ -149,8 +149,8 @@ inline Model<TSeq> * ModelSEIREntitiesConn<TSeq>::clone_ptr()
  * @param recovery_rate Probability of recovery
  */
 template<typename TSeq>
-inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
-    ModelSEIREntitiesConn<TSeq> & model,
+inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
+    ModelSEIRMixing<TSeq> & model,
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -180,8 +180,8 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
 
             // Downcasting to retrieve the sampler attached to the
             // class
-            ModelSEIREntitiesConn<TSeq> * m_down =
-                dynamic_cast<ModelSEIREntitiesConn<TSeq> *>(m);
+            ModelSEIRMixing<TSeq> * m_down =
+                dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
 
             // Sampling from the agent's entities
             auto & samples = m->array_int_tmp;
@@ -205,7 +205,7 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
                     continue;
 
                 // If the neighbor is infected, then proceed
-                if (neighbor.get_state() == ModelSEIREntitiesConn<TSeq>::INFECTED)
+                if (neighbor.get_state() == ModelSEIRMixing<TSeq>::INFECTED)
                 {
 
                     auto & v = neighbor.get_virus();
@@ -240,7 +240,7 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
             p->set_virus(
                 *m->array_virus_tmp[which],
                 m,
-                ModelSEIREntitiesConn<TSeq>::EXPOSED
+                ModelSEIRMixing<TSeq>::EXPOSED
                 );
 
             return; 
@@ -253,7 +253,7 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
 
             auto state = p->get_state();
 
-            if (state == ModelSEIREntitiesConn<TSeq>::EXPOSED)
+            if (state == ModelSEIRMixing<TSeq>::EXPOSED)
             {
 
                 // Getting the virus
@@ -263,13 +263,13 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
                 if (m->runif() < 1.0/(v->get_incubation(m)))
                 {
 
-                    p->change_state(m, ModelSEIREntitiesConn<TSeq>::INFECTED);
+                    p->change_state(m, ModelSEIRMixing<TSeq>::INFECTED);
                     return;
 
                 }
 
 
-            } else if (state == ModelSEIREntitiesConn<TSeq>::INFECTED)
+            } else if (state == ModelSEIRMixing<TSeq>::INFECTED)
             {
 
 
@@ -330,9 +330,9 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(
-        ModelSEIREntitiesConn<TSeq>::EXPOSED,
-        ModelSEIREntitiesConn<TSeq>::RECOVERED,
-        ModelSEIREntitiesConn<TSeq>::RECOVERED
+        ModelSEIRMixing<TSeq>::EXPOSED,
+        ModelSEIRMixing<TSeq>::RECOVERED,
+        ModelSEIRMixing<TSeq>::RECOVERED
         );
 
     virus.set_prob_infecting(&model("Prob. Transmission"));
@@ -346,14 +346,14 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
     // Adding the empty population
     model.agents_empty_graph(n);
 
-    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) (connected)");
+    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) with Mixing");
 
     return;
 
 }
 
 template<typename TSeq>
-inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
+inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -385,7 +385,7 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
             group_sizes
         );
 
-    ModelSEIREntitiesConn(
+    ModelSEIRMixing(
         *this,
         vname,
         n,
@@ -404,7 +404,7 @@ inline ModelSEIREntitiesConn<TSeq>::ModelSEIREntitiesConn(
 }
 
 template<typename TSeq>
-inline ModelSEIREntitiesConn<TSeq> & ModelSEIREntitiesConn<TSeq>::initial_states(
+inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
     std::vector< double > proportions_,
     std::vector< int > /* queue_ */
 )
