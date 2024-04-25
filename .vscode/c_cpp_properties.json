@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/usr/include",
-                "/usr/local/include"
+                "/usr/local/include",
+                "include/epiworld"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
