@@ -189,7 +189,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 epiworld::Agent<TSeq> & neighbor = *model->infected[which];
 
                 // Can't sample itself
-                if (neighbor.get_id() == static_cast<int>(p->get_id()))
+                if (neighbor.get_id() == p->get_id())
                     continue;
 
                 // The neighbor is infected because it is on the list!
