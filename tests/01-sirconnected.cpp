@@ -6,19 +6,19 @@ EPIWORLD_TEST_CASE("SIRCON", "[SIR connected]") {
 
     // Queuing doesn't matter and get results that are meaningful
     epimodels::ModelSIRCONN<> model_0(
-        "a virus", 10000u, 0.01, 2.0, .9, .3
+        "a virus", 10000u, 0.01, 4.0, .5, 1.0/7.0
         );
     
     model_0.verbose_off();
-    model_0.run(100, 1231);
+    model_0.run(100, 131);
 
     epimodels::ModelSIRCONN<> model_1(
-        "a virus", 10000u, 0.01, 2.0, .9, .3
+        "a virus", 10000u, 0.01, 4.0, .5, 1.0/7.0
         );
 
     model_1.queuing_off();
     model_1.verbose_off();
-    model_1.run(100, 1231);
+    model_1.run(100, 131);
 
     std::vector< int > h_0, h_1;
     model_0.get_db().get_hist_total(nullptr, nullptr, &h_0);
@@ -40,15 +40,15 @@ EPIWORLD_TEST_CASE("SIRCON", "[SIR connected]") {
             out_of_range_1++;
 
     std::vector< epiworld_double > tmat_expected = {
-        0.954564095,
-        0.0,
-        0.0,
-        0.0454358757,
-        0.693945169,
-        0.0,
-        0.0,
-        0.306054711,
-        1.0};
+        0.556414008,
+        0,
+        0,
+        0.443586022,
+        0.859082818,
+        0,
+        0,
+        0.140917242,
+        1};
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(tmat_0, Catch::Approx(tmat_expected).margin(0.025));
