@@ -8,7 +8,6 @@ class ModelSIRCONN : public epiworld::Model<TSeq>
 private:
 
     std::vector< epiworld::Agent<TSeq> * > infected;
-    double effective_contact_rate;
     void update_infected();
 
 public:
