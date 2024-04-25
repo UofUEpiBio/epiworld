@@ -110,12 +110,7 @@ inline void ModelSEIRDCONN<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    Model<TSeq>::set_rand_binom(
-        Model<TSeq>::size(),
-        static_cast<double>(
-            Model<TSeq>::par("Contact rate"))/
-            static_cast<double>(Model<TSeq>::size())
-        );
+    this->update_infected();
 
     return;
 
