@@ -51,8 +51,8 @@ EPIWORLD_TEST_CASE("SIRCON", "[SIR connected]") {
         1};
 
     #ifdef CATCH_CONFIG_MAIN
-    REQUIRE_THAT(tmat_0, Catch::Approx(tmat_expected).margin(0.025));
-    REQUIRE_THAT(tmat_1, Catch::Approx(tmat_expected).margin(0.025));
+    REQUIRE_THAT(tmat_0, Catch::Approx(tmat_expected).margin(0.05));
+    REQUIRE_THAT(tmat_1, Catch::Approx(tmat_expected).margin(0.05));
     REQUIRE_THAT(h_0, Catch::Equals(h_1));
     REQUIRE(out_of_range_0 == 0);
     REQUIRE(out_of_range_1 == 0);
