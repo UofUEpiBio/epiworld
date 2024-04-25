@@ -85,6 +85,12 @@ inline void ModelSIRCONN<TSeq>::update_infected()
         }
     }
 
+    Model<TSeq>::set_rand_binom(
+        this->get_n_infected(),
+        static_cast<double>(Model<TSeq>::par("Contact rate"))/
+            static_cast<double>(Model<TSeq>::size())
+    );
+
     return;
 
 }
@@ -108,13 +114,6 @@ inline void ModelSIRCONN<TSeq>::reset()
     Model<TSeq>::reset();
 
     this->update_infected();
-
-    Model<TSeq>::set_rand_binom(
-        this->get_n_infected(),
-        static_cast<double>(
-            Model<TSeq>::par("Contact rate"))/
-            static_cast<double>(Model<TSeq>::size())
-        );
 
     return;
 
@@ -294,6 +293,17 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     model.add_param(transmission_rate, "Transmission rate");
     model.add_param(recovery_rate, "Recovery rate");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
+
+    // Adding update function
+    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
+    {
+        ModelSIRCONN<TSeq> * model = dynamic_cast<ModelSIRCONN<TSeq> *>(m);
+        model->update_infected();
+        
+        return;
+    };
+
+    model.add_globalevent(update, "Update infected individuals");
     
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
