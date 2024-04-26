@@ -16,6 +16,16 @@
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
 
+
+/* Versioning */
+#define EPIWORLD_VERSION_MAJOR 0
+#define EPIWORLD_VERSION_MINOR 1
+#define EPIWORLD_VERSION_PATCH 0
+
+static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
+static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
+static const int epiworld_version_patch = EPIWORLD_VERSION_PATCH;
+
 namespace epiworld {
 
 /*//////////////////////////////////////////////////////////////////////////////
@@ -8295,7 +8305,11 @@ inline void Model<TSeq>::run_multiple(
     std::function<void(size_t,Model<TSeq>*)> fun,
     bool reset,
     bool verbose,
+    #ifdef _OPENMP
     int nthreads
+    #else
+    int
+    #endif
 )
 {
 
@@ -16448,13 +16462,19 @@ inline ModelSURV<TSeq>::ModelSURV(
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSIRCONN : public epiworld::Model<TSeq>
 {
+
 private:
+
+    std::vector< epiworld::Agent<TSeq> * > infected;
+    void update_infected();
+
+public:
+
     static const int SUSCEPTIBLE = 0;
     static const int INFECTED    = 1;
     static const int RECOVERED   = 2;
 
-public:
-
+    
     ModelSIRCONN() {};
 
     ModelSIRCONN(
@@ -16495,8 +16515,42 @@ public:
         std::vector< int > queue_ = {}
     );
 
+    /**
+     * @brief Get the infected individuals
+     * @return std::vector< epiworld::Agent<TSeq> * > 
+     */
+    size_t get_n_infected() const
+    {
+        return infected.size();
+    }
+
 
 };
+
+template<typename TSeq>
+inline void ModelSIRCONN<TSeq>::update_infected()
+{
+
+    infected.clear();
+    infected.reserve(this->size());
+
+    for (auto & p : this->get_agents())
+    {
+        if (p.get_state() == ModelSIRCONN<TSeq>::INFECTED)
+        {
+            infected.push_back(&p);
+        }
+    }
+
+    Model<TSeq>::set_rand_binom(
+        this->get_n_infected(),
+        static_cast<double>(Model<TSeq>::par("Contact rate"))/
+            static_cast<double>(Model<TSeq>::size())
+    );
+
+    return;
+
+}
 
 template<typename TSeq>
 inline ModelSIRCONN<TSeq> & ModelSIRCONN<TSeq>::run(
@@ -16515,6 +16569,9 @@ inline void ModelSIRCONN<TSeq>::reset()
 {
 
     Model<TSeq>::reset();
+
+    this->update_infected();
+
     return;
 
 }
@@ -16559,18 +16616,13 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         ) -> void
         {
 
-            // Sampling how many individuals
-            m->set_rand_binom(
-                m->size(),
-                static_cast<double>(
-                    m->par("Contact rate"))/
-                    static_cast<double>(m->size())
-            );
-
             int ndraw = m->rbinom();
 
             if (ndraw == 0)
                 return;
+
+            ModelSIRCONN<TSeq> * model = dynamic_cast<ModelSIRCONN<TSeq> *>(m);
+            size_t ninfected = model->get_n_infected();
 
             // Drawing from the set
             int nviruses_tmp = 0;
@@ -16578,7 +16630,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             {
                 // Now selecting who is transmitting the disease
                 int which = static_cast<int>(
-                    std::floor(m->size() * m->runif())
+                    std::floor(ninfected * m->runif())
                 );
 
                 /* There is a bug in which runif() returns 1.0. It is rare, but
@@ -16588,39 +16640,35 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                  * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
                  * 
                  */
-                if (which == static_cast<int>(m->size()))
+                if (which == static_cast<int>(ninfected))
                     --which;
 
+                epiworld::Agent<TSeq> & neighbor = *model->infected[which];
+
                 // Can't sample itself
-                if (which == static_cast<int>(p->get_id()))
+                if (neighbor.get_id() == p->get_id())
                     continue;
 
-                // If the neighbor is infected, then proceed
-                auto & neighbor = m->get_agents()[which];
-                if (neighbor.get_state() == ModelSIRCONN<TSeq>::INFECTED)
-                {
+                // The neighbor is infected because it is on the list!
+                if (neighbor.get_virus() == nullptr)
+                    continue;
 
-                    if (neighbor.get_virus() == nullptr)
-                        continue;
+                auto & v = neighbor.get_virus();
 
-                    auto & v = neighbor.get_virus();
-
-                    #ifdef EPI_DEBUG
-                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                    #endif
-                        
-                    /* And it is a function of susceptibility_reduction as well */ 
-                    m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                        v->get_prob_infecting(m) * 
-                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                        ; 
-                
-                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
-                      
-
-                }
+                #ifdef EPI_DEBUG
+                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                #endif
+                    
+                /* And it is a function of susceptibility_reduction as well */ 
+                m->array_double_tmp[nviruses_tmp] =
+                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                    v->get_prob_infecting(m) * 
+                    (1.0 - neighbor.get_transmission_reduction(v, m)) 
+                    ; 
+            
+                m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                 
             }
 
             // No virus to compute
@@ -16702,6 +16750,17 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     model.add_param(transmission_rate, "Transmission rate");
     model.add_param(recovery_rate, "Recovery rate");
     // model.add_param(prob_reinfection, "Prob. Reinfection");
+
+    // Adding update function
+    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
+    {
+        ModelSIRCONN<TSeq> * model = dynamic_cast<ModelSIRCONN<TSeq> *>(m);
+        model->update_infected();
+        
+        return;
+    };
+
+    model.add_globalevent(update, "Update infected individuals");
     
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
@@ -16786,6 +16845,10 @@ inline ModelSIRCONN<TSeq> & ModelSIRCONN<TSeq>::initial_states(
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRCONN : public epiworld::Model<TSeq> 
 {
+private:
+    std::vector< epiworld::Agent<TSeq> * > infected;
+    void update_infected();
+
 public:
 
     static const int SUSCEPTIBLE = 0;
@@ -16836,7 +16899,34 @@ public:
         std::vector< int > queue_ = {}
     );
 
+    size_t get_n_infected() const { return infected.size(); }
+
 };
+
+template<typename TSeq>
+inline void ModelSEIRCONN<TSeq>::update_infected()
+{
+
+    infected.clear();
+    infected.reserve(this->size());
+
+    for (auto & p : this->get_agents())
+    {
+        if (p.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
+        {
+            infected.push_back(&p);
+        }
+    }
+
+    Model<TSeq>::set_rand_binom(
+        this->get_n_infected(),
+        static_cast<double>(Model<TSeq>::par("Contact rate"))/
+            static_cast<double>(Model<TSeq>::size())
+    );
+
+    return;
+
+}
 
 template<typename TSeq>
 inline ModelSEIRCONN<TSeq> & ModelSEIRCONN<TSeq>::run(
@@ -16856,13 +16946,7 @@ inline void ModelSEIRCONN<TSeq>::reset()
 {
 
     Model<TSeq>::reset();
-
-    Model<TSeq>::set_rand_binom(
-        Model<TSeq>::size(),
-        static_cast<double>(
-            Model<TSeq>::par("Contact rate"))/
-            static_cast<double>(Model<TSeq>::size())
-        );
+    this->update_infected();
 
     return;
 
@@ -16915,13 +16999,16 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             if (ndraw == 0)
                 return;
 
+            ModelSEIRCONN<TSeq> * model = dynamic_cast<ModelSEIRCONN<TSeq> *>(m);
+            size_t ninfected = model->get_n_infected();
+
             // Drawing from the set
             int nviruses_tmp = 0;
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
                 int which = static_cast<int>(
-                    std::floor(m->size() * m->runif())
+                    std::floor(ninfected * m->runif())
                 );
 
                 /* There is a bug in which runif() returns 1.0. It is rare, but
@@ -16931,35 +17018,32 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                  * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
                  * 
                  */
-                if (which == static_cast<int>(m->size()))
+                if (which == static_cast<int>(ninfected))
                     --which;
 
+                epiworld::Agent<TSeq> & neighbor = *model->infected[which];
+
                 // Can't sample itself
-                if (which == static_cast<int>(p->get_id()))
+                if (neighbor.get_id() == p->get_id())
                     continue;
 
-                // If the neighbor is infected, then proceed
-                auto & neighbor = m->get_agents()[which];
-                if (neighbor.get_state() == ModelSEIRCONN<TSeq>::INFECTED)
-                {
+                // The neighbor is infected by construction
+                auto & v = neighbor.get_virus();
 
-                    auto & v = neighbor.get_virus();
+                #ifdef EPI_DEBUG
+                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                #endif
+                    
+                /* And it is a function of susceptibility_reduction as well */ 
+                m->array_double_tmp[nviruses_tmp] =
+                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                    v->get_prob_infecting(m) * 
+                    (1.0 - neighbor.get_transmission_reduction(v, m)) 
+                    ; 
+            
+                m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
-                    #ifdef EPI_DEBUG
-                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                    #endif
-                        
-                    /* And it is a function of susceptibility_reduction as well */ 
-                    m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                        v->get_prob_infecting(m) * 
-                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                        ; 
-                
-                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
-
-                }
             }
 
             // No virus to compute
@@ -17060,6 +17144,22 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     model.add_state("Exposed", update_infected);
     model.add_state("Infected", update_infected);
     model.add_state("Recovered");
+
+    // Adding update function
+    epiworld::GlobalFun<TSeq> update = [](
+        epiworld::Model<TSeq> * m
+        ) -> void
+        {
+
+            ModelSEIRCONN<TSeq> * model = dynamic_cast<ModelSEIRCONN<TSeq> *>(m);
+
+            model->update_infected();
+
+            return;
+
+        };
+
+    model.add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------
@@ -18025,6 +18125,10 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRDCONN : public epiworld::Model<TSeq> 
 {
+private:
+    std::vector< epiworld::Agent<TSeq> * > infected;
+    void update_infected();
+
 public:
 
     static const int SUSCEPTIBLE = 0;
@@ -18032,7 +18136,6 @@ public:
     static const int INFECTED    = 2;
     static const int REMOVED     = 3;
     static const int DECEASED    = 4;
-
 
     ModelSEIRDCONN() {};
 
@@ -18079,7 +18182,35 @@ public:
         std::vector< int > queue_ = {}
     );
 
+    size_t get_n_infected() const
+    {
+        return infected.size();
+    }
+
 };
+
+template<typename TSeq>
+inline void ModelSEIRDCONN<TSeq>::update_infected()
+{
+    infected.clear();
+    infected.reserve(this->size());
+
+    for (auto & p : this->get_agents())
+    {
+        if (p.get_state() == ModelSEIRDCONN<TSeq>::INFECTED)
+        {
+            infected.push_back(&p);
+        }
+    }
+
+    Model<TSeq>::set_rand_binom(
+        this->get_n_infected(),
+        static_cast<double>(Model<TSeq>::par("Contact rate"))/
+            static_cast<double>(Model<TSeq>::size())
+    );
+
+    return; 
+}
 
 template<typename TSeq>
 inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::run(
@@ -18100,12 +18231,7 @@ inline void ModelSEIRDCONN<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    Model<TSeq>::set_rand_binom(
-        Model<TSeq>::size(),
-        static_cast<double>(
-            Model<TSeq>::par("Contact rate"))/
-            static_cast<double>(Model<TSeq>::size())
-        );
+    this->update_infected();
 
     return;
 
@@ -18160,13 +18286,19 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
             if (ndraw == 0)
                 return;
 
+            ModelSEIRDCONN<TSeq> * model = dynamic_cast<ModelSEIRDCONN<TSeq> *>(
+                m
+                );
+
+            size_t ninfected = model->get_n_infected();
+
             // Drawing from the set
             int nviruses_tmp = 0;
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
                 int which = static_cast<int>(
-                    std::floor(m->size() * m->runif())
+                    std::floor(ninfected * m->runif())
                 );
 
                 /* There is a bug in which runif() returns 1.0. It is rare, but
@@ -18176,36 +18308,31 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                  * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
                  * 
                  */
-                if (which == static_cast<int>(m->size()))
+                if (which == static_cast<int>(ninfected))
                     --which;
 
+                epiworld::Agent<TSeq> & neighbor = *model->infected[which];
+
                 // Can't sample itself
-                if (which == static_cast<int>(p->get_id()))
+                if (neighbor.get_id() == p->get_id())
                     continue;
 
-                // If the neighbor is infected, then proceed
-                auto & neighbor = m->get_agents()[which];
-                if (neighbor.get_state() == ModelSEIRDCONN<TSeq>::INFECTED)
-                {
-
-                    const auto & v = neighbor.get_virus();
-
-                
-                    #ifdef EPI_DEBUG
-                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                    #endif
-                        
-                    /* And it is a function of susceptibility_reduction as well */ 
-                    m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                        v->get_prob_infecting(m) * 
-                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                        ; 
-                
-                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
+                // All neighbors in this set are infected by construction
+                const auto & v = neighbor.get_virus();
+            
+                #ifdef EPI_DEBUG
+                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                #endif
                     
-                }
+                /* And it is a function of susceptibility_reduction as well */ 
+                m->array_double_tmp[nviruses_tmp] =
+                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                    v->get_prob_infecting(m) * 
+                    (1.0 - neighbor.get_transmission_reduction(v, m)) 
+                    ; 
+            
+                m->array_virus_tmp[nviruses_tmp++] = &(*v);
             }
 
             // No virus to compute
@@ -18320,6 +18447,18 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     model.add_state("Infected", update_infected);
     model.add_state("Removed");
     model.add_state("Deceased");
+
+
+    // Adding update function
+    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
+    {
+        ModelSEIRDCONN<TSeq> * model = dynamic_cast<ModelSEIRDCONN<TSeq> *>(m);
+        model->update_infected();
+        
+        return;
+    };
+
+    model.add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------
