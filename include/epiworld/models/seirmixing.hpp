@@ -1,7 +1,6 @@
 #ifndef EPIWORLD_MODELS_SEIRENTITIESCONNECTED_HPP
 #define EPIWORLD_MODELS_SEIRENTITIESCONNECTED_HPP
 
-
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
@@ -12,6 +11,17 @@ class ModelSEIRMixing : public epiworld::Model<TSeq>
 private:
     std::vector< std::vector< epiworld::Agent<TSeq> * > > infected;
     void update_infected();
+    std::vector< epiworld::Agent<TSeq> * > sampled_agents;
+    size_t sample_agents(
+        epiworld::Agent<TSeq> * agent,
+        std::vector< epiworld::Agent<TSeq> * > & sampled_agents
+        );
+    double adjusted_contact_rate;
+    std::vector< double > contact_matrix;
+
+    size_t index(size_t i, size_t j, size_t n) {
+        return j * n + i;
+    }
 
 public:
 
@@ -19,8 +29,6 @@ public:
     static const int EXPOSED     = 1;
     static const int INFECTED    = 2;
     static const int RECOVERED   = 3;
-
-    std::shared_ptr< epiworld::GroupSampler<TSeq> > group_sampler;
 
     ModelSEIRMixing() {};
 
@@ -36,8 +44,7 @@ public:
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param avg_incubation_days The average incubation period of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
-     * @param entities A vector of entity values.
-     * @param entities_names A vector of entity names.
+     * @param contact_matrix The contact matrix between entities in the model.
      */
     ModelSEIRMixing(
         ModelSEIRMixing<TSeq> & model,
@@ -48,8 +55,6 @@ public:
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
-        std::vector< epiworld_double > entities,
-        std::vector< std::string > entities_names,
         std::vector< double > contact_matrix
     );
     
@@ -63,7 +68,7 @@ public:
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param avg_incubation_days The average incubation period of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
-     * @param entities A vector of entity values.
+     * @param contact_matrix The contact matrix between entities in the model.
      */
     ModelSEIRMixing(
         std::string vname,
@@ -73,8 +78,6 @@ public:
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
-        std::vector< epiworld_double > entities,
-        std::vector< std::string > entities_names,
         std::vector< double > contact_matrix
     );
 
@@ -111,6 +114,41 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     auto & agents = Model<TSeq>::get_agents();
     auto & entities = Model<TSeq>::get_entities();
 
+    infected.resize(entities.size());
+    sampled_agents.resize(agents.size());
+
+    // Checking contact matrix's rows add to one
+    size_t nentities = entities.size();
+    if (this->contact_matrix.size() !=  nentities*nentities)
+        throw std::length_error(
+            std::string("The contact matrix must be a square matrix of size") +
+            std::string("nentities x nentities. ") +
+            std::to_string(this->contact_matrix.size()) +
+            std::string(" != ") + std::to_string(nentities*nentities) +
+            std::string(".")
+            );
+
+    for (size_t i = 0u; i < entities.size(); ++i)
+    {
+        double sum = 0.0;
+        for (size_t j = 0u; j < entities.size(); ++j)
+        {
+            if (this->contact_matrix[index(i, j, nentities)] < 0.0)
+                throw std::range_error(
+                    std::string("The contact matrix must be non-negative. ") +
+                    std::to_string(this->contact_matrix[index(i, j, nentities)]) +
+                    std::string(" < 0.")
+                    );
+            sum += this->contact_matrix[index(i, j, nentities)];
+        }
+        if (sum < 0.999 || sum > 1.001)
+            throw std::range_error(
+                std::string("The contact matrix must have rows that add to one. ") +
+                std::to_string(sum) +
+                std::string(" != 1.")
+                );
+    }
+
     for (size_t i = 0; i < entities.size(); ++i)
     {
         infected[i].clear();
@@ -126,6 +164,59 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     }
 
     return;
+
+}
+
+template<typename TSeq>
+inline size_t ModelSEIRMixing<TSeq>::sample_agents(
+    epiworld::Agent<TSeq> * agent,
+    std::vector< epiworld::Agent<TSeq> * > & sampled_agents
+    )
+{
+
+    auto & agents = Model<TSeq>::get_agents();
+    size_t agent_group_id = agent->get_entity(0u).get_id();
+    size_t ngroups = infected.size();
+
+    int samp_id = 0;
+    for (size_t g = 0; g < infected.size(); ++g)
+    {
+
+        // How many from this entity?
+        int nsamples = epiworld::Model<TSeq>::rbinom(
+            infected[g].size(),
+            adjusted_contact_rate * contact_matrix[
+                index(agent_group_id, g, ngroups)
+            ]
+        );
+
+        if (nsamples == 0)
+            continue;
+
+        // Sampling from the entity
+        for (size_t s = 0; s < nsamples; ++s)
+        {
+
+            // Randomly selecting an agent
+            int which = epiworld::Model<TSeq>::runif() * infected[g].size();
+
+            // Correcting overflow error
+            if (which >= infected[g].size())
+                which = infected[g].size() - 1;
+
+            auto & a = infected[g][which];
+
+            // Can't sample itself
+            if (a->get_id() == agent->get_id())
+                continue;
+
+            sampled_agents[samp_id++] = a;
+            
+        }
+
+    }
+    
+    return samp_id;
 
 }
 
@@ -147,10 +238,6 @@ inline void ModelSEIRMixing<TSeq>::reset()
 {
 
     Model<TSeq>::reset();
-    this->infected.resize(
-        Model<TSeq>::get_n_entities()
-        );
-
     this->update_infected();
 
     return;
@@ -190,8 +277,6 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
-    std::vector< epiworld_double > entities,
-    std::vector< std::string > entities_names,
     std::vector< double > contact_matrix
     )
 {
@@ -204,64 +289,39 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
             if (p->get_n_entities() == 0)
                 return;
 
-            // Sampling how many individuals
-            int ndraw = m->rbinom();
-                        
-            if (ndraw == 0)
-                return;
-
             // Downcasting to retrieve the sampler attached to the
             // class
             ModelSEIRMixing<TSeq> * m_down =
                 dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
 
-            // Sampling from the agent's entities
-            auto & samples = m->array_int_tmp;
-            m_down->group_sampler->sample_n(
-                m,
-                samples, 
-                p->get_entity(0u).get_id(),
-                ndraw
-                );
+            size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
+            if (ndraws == 0u)
+                return;
+
+            
             // Drawing from the set
             int nviruses_tmp = 0;
-            auto & agents = m->get_agents();
-            for (int i = 0; i < ndraw; ++i)
+            for (auto * neighbor: m_down->sampled_agents)
             {
 
-                auto neighbor = agents[samples[i]];
+                auto & v = neighbor->get_virus();
 
-                // Can't sample itself
-                if (neighbor.get_id() == static_cast<int>(p->get_id()))
-                    continue;
+                #ifdef EPI_DEBUG
+                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                #endif
+                    
+                /* And it is a function of susceptibility_reduction as well */ 
+                m->array_double_tmp[nviruses_tmp] =
+                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                    v->get_prob_infecting(m) * 
+                    (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                    ; 
+            
+                m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
-                // If the neighbor is infected, then proceed
-                if (neighbor.get_state() == ModelSEIRMixing<TSeq>::INFECTED)
-                {
-
-                    auto & v = neighbor.get_virus();
-
-                    #ifdef EPI_DEBUG
-                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                    #endif
-                        
-                    /* And it is a function of susceptibility_reduction as well */ 
-                    m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                        v->get_prob_infecting(m) * 
-                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                        ; 
-                
-                    m->array_virus_tmp[nviruses_tmp++] = &(*v);
-
-                }
             }
-
-            // No virus to compute
-            if (nviruses_tmp == 0u)
-                return;
 
             // Running the roulette
             int which = roulette(nviruses_tmp, m);
@@ -393,29 +453,12 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
-    std::vector< epiworld_double > entities,
-    std::vector< std::string > entity_names,
     std::vector< double > contact_matrix
     )
 {
 
-    // Instantiating entities
-    int entity_id = 0;
-    for (auto & e : entities)
-        this->add_entity_n(
-            epiworld::Entity<TSeq>(entity_names[entity_id++]),
-            e * n
-            );
-
-    std::vector< size_t > group_sizes(entities.size());
-    for (size_t i = 0; i < entities.size(); ++i)
-        group_sizes[i] = static_cast<size_t>(entities[i] * n);
-
-    // Setting up the group sampler
-    this->group_sampler = std::make_shared<epiworld::GroupSampler<TSeq>>(
-            contact_matrix,
-            group_sizes
-        );
+    // Setting up the contact matrix
+    this->contact_matrix = contact_matrix;
 
     ModelSEIRMixing(
         *this,
@@ -426,8 +469,6 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
         transmission_rate,
         avg_incubation_days,
         recovery_rate,
-        entities,
-        entity_names,
         contact_matrix
     );
 

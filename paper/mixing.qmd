@@ -29,7 +29,7 @@ plotter <- function(a, b) {
 
 ## Case 1: No grouping
 
-We will look into the probability of drawing infected individuals to simplify the algorithm. There are $I$ infected individuals at any time in the simulation; thus, instead of drawing from $Bern(c/N, N)$, we will be drawing from $Bern(c/N, I)$. The next step is to check which infected individuals should be drawn. Let's compare the distributions using the hypergeometric as an example:
+We will look into the probability of drawing infected individuals to simplify the algorithm. There are $I$ infected individuals at any time in the simulation; thus, instead of drawing from $Bern(c/N, N)$, we will be drawing from $Bern(c/N, I)$. The next step is to check which infected individuals should be drawn. Let's compare the distributions:
 
 
 ```{r}
