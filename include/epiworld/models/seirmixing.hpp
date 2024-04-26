@@ -163,6 +163,10 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
 
     }
 
+    // Adjusting contact rate
+    adjusted_contact_rate = Model<TSeq>::get_param("Contact rate") /
+        agents.size();
+
     return;
 
 }
@@ -302,8 +306,10 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
             
             // Drawing from the set
             int nviruses_tmp = 0;
-            for (auto * neighbor: m_down->sampled_agents)
+            for (size_t n = 0u; n < ndraws; ++n)
             {
+
+                auto & neighbor = m_down->sampled_agents[n];
 
                 auto & v = neighbor->get_virus();
 
@@ -417,6 +423,21 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     model.add_state("Exposed", update_infected);
     model.add_state("Infected", update_infected);
     model.add_state("Recovered");
+
+    // Global function
+    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
+    {
+
+        ModelSEIRMixing<TSeq> * m_down =
+            dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
+
+        m_down->update_infected();
+
+        return;
+
+    };
+
+    model.add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------

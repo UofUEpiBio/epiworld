@@ -3,15 +3,19 @@
 
 using namespace epiworld;
 
-template<typename TSeq>
-EntityToAgentFun<TSeq> dist_factory(int n) {
-    return [](
-    Entity<> * e, Model<> * m
-    ) -> Agent<> * {
+template<typename TSeq = int>
+EntityToAgentFun<TSeq> dist_factory(int from, int to) {
+    return [from, to](Entity<> & e, Model<> * m) -> void {
 
-        return new Agent<>(e, m);
+            auto & agents = m->get_agents();
+            for (size_t i = from; i < to; ++i)
+            {
+                e.add_agent(&agents[i], m);
+            }
+            
+            return;
 
-    };
+        };
 }
 
 int main() {
@@ -24,9 +28,9 @@ int main() {
 
     epimodels::ModelSEIRMixing<> model(
         "Flu", // std::string vname,
-        100000, // epiworld_fast_uint n,
+        10000, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
-        4.0,// epiworld_double contact_rate,
+        10.0,// epiworld_double contact_rate,
         0.1,// epiworld_double transmission_rate,
         4.0,// epiworld_double avg_incubation_days,
         1.0/7.0,// epiworld_double recovery_rate,
@@ -38,9 +42,9 @@ int main() {
     Entity<> e2("Entity 2");
     Entity<> e3("Entity 3");
 
-    model.add_entity_n(e1, 10000/3);
-    model.add_entity_n(e2, 10000/3);
-    model.add_entity_n(e3, 10000/3);
+    model.add_entity_fun(e1, dist_factory<>(0, 3000));
+    model.add_entity_fun(e2, dist_factory<>(3000, 6000));
+    model.add_entity_fun(e3, dist_factory<>(6000, 10000));
 
     // Running and checking the results
     model.run(50, 123);
