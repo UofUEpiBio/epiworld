@@ -13,19 +13,19 @@ hypergeometric as an example:
 
 ``` r
 set.seed(132)
-nsims <- 1e5
+nsims <- 1e4
 N <- 400
-rate <- 2
+rate <- 5
 p <- rate/N
 I <- 10
 
 sim_complex <- parallel::mclapply(1:nsims, \(i) {
   nsamples <- rbinom(N, N, p)
-  sum(rhyper(N, m = I, n = N, k = nsamples) > 0)
+  sum(rbinom(N, size = nsamples, prob = I/N) > 0)
 }, mc.cores = 4L) |> unlist()
 
 sim_simple <- parallel::mclapply(1:nsims, \(i) {
-  sum(rbinom(N, I, p) > 0) 
+  sum(rbinom(N, I, p) > 0)
 }, mc.cores = 4L) |> unlist()
 
 
@@ -43,14 +43,20 @@ quantile(sim_complex)
 ```
 
       0%  25%  50%  75% 100% 
-       3   16   19   22   40 
+      27   43   47   51   71 
 
 ``` r
 quantile(sim_simple)
 ```
 
       0%  25%  50%  75% 100% 
-       4   17   19   22   40 
+      23   43   47   51   71 
+
+``` r
+plotter(sim_complex, sim_simple)
+```
+
+![](mixing_files/figure-commonmark/Simulation-2.png)
 
 These two approaches are equivalent, but the second one is more
 efficient from the computational perspective.
@@ -81,24 +87,30 @@ mixing
 
 ``` r
 N <- 500
-sizes <- c(100, 50, 350)
-rate <- 1
+sizes <- c(100, 150, 250)
+rate <- 5
 p <- rate/N
-I <- c(10, 5, 20)
+I <- c(10, 30, 20)
 
 ids <- rep.int(1:ngroups, times = sizes)
 
-nsims <- 2e5
+nsims <- 1e4
 
 sim_complex <- parallel::mclapply(1:nsims, \(i) {
 
   # Sampling group first
-  where_from <- lapply(1:ngroups, \(g) {
-    sample(3, sizes[g], replace = TRUE, prob = mixing[g,])
-  }) |> unlist() |> c()
+  sapply(1:ngroups, \(g) {
 
-  nsamples <- rbinom(N, sizes[where_from], p)
-  sum(rhyper(N, m = I[where_from], n = sizes[where_from], k = nsamples) > 0)
+    # How many each individual will sample from the groups
+    ans <- rbinom(
+      n = N, size = sizes[g], prob = mixing[ids,][,g] * p
+      ) |> sum()
+
+    # Sampling with replacement
+    rbinom(ans, size = 1, prob = I[g]/sizes[g]) |> sum()
+
+  }) |> sum()
+
 }, mc.cores = 4L) |> unlist()
 ```
 
@@ -107,11 +119,13 @@ probabilities:
 
 ``` r
 sim_simple <- parallel::mclapply(1:nsims, \(i) {
-  where_from <- lapply(1:ngroups, \(g) {
-    sample(3, sizes[g], replace = TRUE, prob = mixing[g,])
-  }) |> unlist() |> c()
 
-  sum(rbinom(N, I[where_from], p) > 0)
+  # Sampling group first
+  sapply(1:ngroups, \(g) {
+    rbinom(
+      n = N, size = I[g], prob = mixing[cbind(ids,g)] * p
+      ) |> sum()
+  }) |> sum()
 
 }, mc.cores = 4L) |> unlist()
 
@@ -120,7 +134,7 @@ MASS::truehist(sim_complex)
 MASS::truehist(sim_simple)
 ```
 
-![](mixing_files/figure-commonmark/unnamed-chunk-3-1.png)
+![](mixing_files/figure-commonmark/sim-with-mixing-2-1.png)
 
 ``` r
 par(op)
@@ -129,22 +143,17 @@ quantile(sim_complex)
 ```
 
       0%  25%  50%  75% 100% 
-       0    8   10   12   27 
+      57   88   94  101  131 
 
 ``` r
 quantile(sim_simple)
 ```
 
       0%  25%  50%  75% 100% 
-       0    9   11   13   29 
+      58   87   94  101  135 
 
 ``` r
-(table(sim_complex) |> prop.table() |> cumsum() -
-  table(sim_simple) |> prop.table() |> cumsum()) |> plot()
+plotter(sim_complex, sim_simple)
 ```
 
-    Warning in cumsum(prop.table(table(sim_complex))) -
-    cumsum(prop.table(table(sim_simple))): longer object length is not a multiple
-    of shorter object length
-
-![](mixing_files/figure-commonmark/unnamed-chunk-3-2.png)
+![](mixing_files/figure-commonmark/sim-with-mixing-2-2.png)
