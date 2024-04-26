@@ -9,6 +9,10 @@
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixing : public epiworld::Model<TSeq> 
 {
+private:
+    std::vector< std::vector< epiworld::Agent<TSeq> * > > infected;
+    void update_infected();
+
 public:
 
     static const int SUSCEPTIBLE = 0;
@@ -93,7 +97,37 @@ public:
         std::vector< int > queue_ = {}
     );
 
+    size_t get_n_infected(size_t group) const
+    {
+        return infected[group].size();
+    }
+
 };
+
+template<typename TSeq>
+inline void ModelSEIRMixing<TSeq>::update_infected()
+{
+
+    auto & agents = Model<TSeq>::get_agents();
+    auto & entities = Model<TSeq>::get_entities();
+
+    for (size_t i = 0; i < entities.size(); ++i)
+    {
+        infected[i].clear();
+        infected[i].reserve(agents.size());
+    }
+    
+    for (auto & a : agents)
+    {
+
+        if (a.get_state() == ModelSEIRMixing<TSeq>::INFECTED)
+            infected[a.get_entity(0u).get_id()].push_back(&a);
+
+    }
+
+    return;
+
+}
 
 template<typename TSeq>
 inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
@@ -113,13 +147,11 @@ inline void ModelSEIRMixing<TSeq>::reset()
 {
 
     Model<TSeq>::reset();
-
-    Model<TSeq>::set_rand_binom(
-        Model<TSeq>::size(),
-        static_cast<double>(
-            Model<TSeq>::par("Contact rate"))/
-            static_cast<double>(Model<TSeq>::size())
+    this->infected.resize(
+        Model<TSeq>::get_n_entities()
         );
+
+    this->update_infected();
 
     return;
 
