@@ -19,6 +19,9 @@ main.a: main.cpp clean
 01c.o: 01c-sir.cpp
 	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 01c-sir.cpp -o 01c.o
 
+05-mixing.o: 05-mixing.cpp
+	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 05-mixing.cpp -o 05-mixing.o
+
 # Check coverage using the main.o target
 coverage: main.o
 	g++ -g -O1 -fprofile-arcs -ftest-coverage main.cpp -o main.o && \

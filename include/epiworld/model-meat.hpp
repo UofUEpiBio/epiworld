@@ -2129,11 +2129,9 @@ inline void Model<TSeq>::reset() {
         #endif
         
     }
-    else
-    {
-        for (auto & e: entities)
-            e.reset();
-    }
+
+    for (auto & e: entities)
+        e.reset();
     
     current_date = 0;
 

@@ -31,7 +31,7 @@ inline void Entity<TSeq>::rm_agent(size_t idx)
             " out of " + std::to_string(n_agents)
             );
 
-    model->population[idx].rm_entity(*this);
+    model->get_agents()[agents[idx]].rm_entity(*this, model);
 
     return;
 }
@@ -167,6 +167,13 @@ inline void Entity<TSeq>::reset()
     sampled_agents_n = 0u;
     sampled_agents_left.clear();
     sampled_agents_left_n = 0u;
+
+    // Removing agents from entities
+    for (size_t i = 0u; i < n_agents; ++i)
+        this->rm_agent(i);
+
+    return;
+
 }
 
 template<typename TSeq>

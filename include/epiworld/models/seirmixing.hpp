@@ -31,7 +31,6 @@ public:
     static const int RECOVERED   = 3;
 
     ModelSEIRMixing() {};
-
     
     /**
      * @brief Constructs a ModelSEIRMixing object.
@@ -105,6 +104,12 @@ public:
         return infected[group].size();
     }
 
+    void set_contact_matrix(std::vector< double > cmat)
+    {
+        contact_matrix = cmat;
+        return;
+    };
+
 };
 
 template<typename TSeq>
@@ -121,7 +126,7 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     size_t nentities = entities.size();
     if (this->contact_matrix.size() !=  nentities*nentities)
         throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size") +
+            std::string("The contact matrix must be a square matrix of size ") +
             std::string("nentities x nentities. ") +
             std::to_string(this->contact_matrix.size()) +
             std::string(" != ") + std::to_string(nentities*nentities) +
@@ -178,7 +183,6 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
     )
 {
 
-    auto & agents = Model<TSeq>::get_agents();
     size_t agent_group_id = agent->get_entity(0u).get_id();
     size_t ngroups = infected.size();
 
@@ -198,15 +202,15 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
             continue;
 
         // Sampling from the entity
-        for (size_t s = 0; s < nsamples; ++s)
+        for (int s = 0; s < nsamples; ++s)
         {
 
             // Randomly selecting an agent
             int which = epiworld::Model<TSeq>::runif() * infected[g].size();
 
             // Correcting overflow error
-            if (which >= infected[g].size())
-                which = infected[g].size() - 1;
+            if (which >= static_cast<int>(infected[g].size()))
+                which = static_cast<int>(infected[g].size()) - 1;
 
             auto & a = infected[g][which];
 
@@ -232,7 +236,6 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
 {
     
     Model<TSeq>::run(ndays, seed);
-
     return *this;
 
 }
@@ -284,6 +287,9 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     std::vector< double > contact_matrix
     )
 {
+
+    // Setting up the contact matrix
+    this->contact_matrix = contact_matrix;
 
     epiworld::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
@@ -476,9 +482,8 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix
     )
-{
+{   
 
-    // Setting up the contact matrix
     this->contact_matrix = contact_matrix;
 
     ModelSEIRMixing(
