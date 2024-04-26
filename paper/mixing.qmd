@@ -74,7 +74,9 @@ sim_complex <- parallel::mclapply(1:nsims, \(i) {
 
   # Sampling group first
   where_from <- lapply(1:N, \(i) {
-    sample(3, size = nsamples[i], replace = TRUE, prob = mixing[ids[i],])
+    groups <- sample(
+      3, size = nsamples[i], replace = TRUE, prob = mixing[ids[i],]
+      )
   })
 
   nsamples <- rbinom(N, sizes[where_from], p)
@@ -88,7 +90,7 @@ Using the alternative method in which we directly weight the probabilities:
 ```{r}
 sim_simple <- parallel::mclapply(1:nsims, \(i) {
 
-  res <- sapply(1:N, \(g) {
+  res <- sapply(ids, \(g) {
     sum(rbinom(3, size = I, prob = mixing[g,] * p))
   }) 
 
