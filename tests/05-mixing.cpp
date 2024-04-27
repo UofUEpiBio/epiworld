@@ -1,10 +1,13 @@
-// #define EPI_DEBUG
-#include "../include/epiworld/epiworld.hpp"
+#ifndef CATCH_CONFIG_MAIN
+#define EPI_DEBUG
+#endif
+
+#include "tests.hpp"
 
 using namespace epiworld;
 
 template<typename TSeq = int>
-EntityToAgentFun<TSeq> dist_factory(int from, int to) {
+inline EntityToAgentFun<TSeq> dist_factory(int from, int to) {
     return [from, to](Entity<TSeq> & e, Model<TSeq> * m) -> void {
 
             auto & agents = m->get_agents();
@@ -19,7 +22,7 @@ EntityToAgentFun<TSeq> dist_factory(int from, int to) {
 }
 
 template<typename TSeq = int>
-VirusToAgentFun<TSeq> dist_virus(int i)
+inline VirusToAgentFun<TSeq> dist_virus(int i)
 {
     return [i](Virus<TSeq> & v, Model<TSeq> * m) -> void {
 
@@ -30,7 +33,7 @@ VirusToAgentFun<TSeq> dist_virus(int i)
 
 }
 
-int main() {
+EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-dist]") {
 
     std::vector< double > contact_matrix = {
         1.0, 0.0, 0.0,
@@ -88,6 +91,10 @@ int main() {
             
     }
 
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_FALSE((n_wrong != 0 | n_right != 3000));
+    #endif
+
     // Reruning the model where individuals from group 0 transmit all to group 1
     contact_matrix[0] = 0.0;
     contact_matrix[6] = 1.0;
@@ -124,6 +131,34 @@ int main() {
             
     }
 
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_FALSE((n_wrong != 0 | n_right != 3001));
+    #endif
+
+    // Rerunning with plain mixing
+    std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
+    model.set_contact_matrix(contact_matrix);
+
+    // Running and checking the results
+    model.run(50, 123);
+    model.print();
+
+    std::vector< int > totals;
+    model.get_db().get_today_total(nullptr, &totals);
+
+    std::vector< int > expected_totals = {
+        0, 0, 0,
+        static_cast<int>(model.size())
+        };
+
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_THAT(totals, Catch::Equals(expected_totals));
+    #endif
+
+
+
+    #ifndef CATCH_CONFIG_MAIN
     return 0;
+    #endif
 
 }

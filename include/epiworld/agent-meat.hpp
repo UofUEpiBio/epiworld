@@ -361,7 +361,7 @@ inline void Agent<TSeq>::rm_entity(
     int entity_idx = -1;
     for (size_t i = 0u; i < n_entities; ++i)
     {
-        if (entities[i] == entity.get_id())
+        if (static_cast<int>(entities[i]) == entity.get_id())
         {
             entity_idx = i;
             break;
