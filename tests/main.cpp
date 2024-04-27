@@ -15,3 +15,5 @@
 #include "02-reproducible-sir.cpp"
 #include "02-reproducible-sirconn.cpp"
 #include "04-initial-dist.cpp"
+#include "05-mixing.cpp"
+#include "06-mixing.cpp"

@@ -70,5 +70,11 @@
     "cfenv": "cpp",
     "cinttypes": "cpp"
   },
-  "intel-corporation.oneapi-analysis-configurator.binary-path": "/home/george/Documents/development/epiworld/tests/01c.o"
+  "intel-corporation.oneapi-analysis-configurator.binary-path": "/home/george/Documents/development/epiworld/tests/01c.o",
+  "grammarly.selectors": [
+    {
+      "language": "quarto",
+      "scheme": "file"
+    }
+  ]
 }
