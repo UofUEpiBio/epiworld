@@ -6,7 +6,9 @@
 
 using namespace epiworld;
 
-EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
+
+
+EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     std::vector< double > contact_matrix = {
         1.0, 0.0, 0.0,
@@ -14,13 +16,12 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         0.0, 0.0, 1.0
     };
 
-    epimodels::ModelSEIRMixing<> model(
+    epimodels::ModelSIRMixing<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
         40.0,// epiworld_double contact_rate,
         1.0,// epiworld_double transmission_rate,
-        1.0,// epiworld_double avg_incubation_days,
         1.0/2.0,// epiworld_double recovery_rate,
         contact_matrix
     );
@@ -50,7 +51,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     for (const auto & a : model.get_agents())
     {
-        if (a.get_state() != epimodels::ModelSEIRMixing<int>::SUSCEPTIBLE)
+        if (a.get_state() != epimodels::ModelSIRMixing<int>::SUSCEPTIBLE)
         {
             if (a.get_entity(0).get_id() == 0)
             {
@@ -90,7 +91,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         {
             n_right++;
         } 
-        else if (a.get_state() != epimodels::ModelSEIRMixing<int>::SUSCEPTIBLE)
+        else if (a.get_state() != epimodels::ModelSIRMixing<int>::SUSCEPTIBLE)
         {
             if (a.get_entity(0).get_id() == 1)
             {
@@ -120,7 +121,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     model.get_db().get_today_total(nullptr, &totals);
 
     std::vector< int > expected_totals = {
-        0, 0, 0,
+        0, 0,
         static_cast<int>(model.size())
         };
 

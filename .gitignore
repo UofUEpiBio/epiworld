@@ -4,5 +4,6 @@ examples/*/*
 !*.cpp
 .Rproj.user
 .Rhistory
-tests
+tests/*
+!tests/
 !tests/*.cpp

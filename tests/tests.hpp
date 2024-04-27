@@ -43,6 +43,33 @@ std::string file_reader(std::string fname)
     return res;
 }
 
+template<typename TSeq = int>
+inline epiworld::EntityToAgentFun<TSeq> dist_factory(int from, int to) {
+    return [from, to](epiworld::Entity<TSeq> & e, epiworld::Model<TSeq> * m) -> void {
+
+            auto & agents = m->get_agents();
+            for (int i = from; i < to; ++i)
+            {
+                e.add_agent(&agents[i], m);
+            }
+            
+            return;
+
+        };
+}
+
+template<typename TSeq = int>
+inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
+{
+    return [i](epiworld::Virus<TSeq> & v, epiworld::Model<TSeq> * m) -> void {
+
+            m->get_agents()[i].set_virus(v, m);
+            return;
+
+        };
+
+}
+
 #ifndef CATCH_CONFIG_MAIN
 
     

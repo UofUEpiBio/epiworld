@@ -1,16 +1,16 @@
-#ifndef EPIWORLD_MODELS_SEIRMIXING_HPP
-#define EPIWORLD_MODELS_SEIRMIXING_HPP
+#ifndef EPIWORLD_MODELS_SIRMIXING_HPP
+#define EPIWORLD_MODELS_SIRMIXING_HPP
 
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRMixing : public epiworld::Model<TSeq> 
+class ModelSIRMixing : public epiworld::Model<TSeq> 
 {
 private:
     std::vector< std::vector< epiworld::Agent<TSeq> * > > infected;
-    void update_infected();
+    void update_infected_list();
     std::vector< epiworld::Agent<TSeq> * > sampled_agents;
     size_t sample_agents(
         epiworld::Agent<TSeq> * agent,
@@ -26,61 +26,56 @@ private:
 public:
 
     static const int SUSCEPTIBLE = 0;
-    static const int EXPOSED     = 1;
-    static const int INFECTED    = 2;
-    static const int RECOVERED   = 3;
+    static const int INFECTED    = 1;
+    static const int RECOVERED   = 2;
 
-    ModelSEIRMixing() {};
+    ModelSIRMixing() {};
     
     /**
-     * @brief Constructs a ModelSEIRMixing object.
+     * @brief Constructs a ModelSIRMixing object.
      *
-     * @param model A reference to an existing ModelSEIRMixing object.
-     * @param vname The name of the ModelSEIRMixing object.
+     * @param model A reference to an existing ModelSIRMixing object.
+     * @param vname The name of the ModelSIRMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
      * @param contact_rate The contact rate between entities in the model.
      * @param transmission_rate The transmission rate of the disease in the model.
-     * @param avg_incubation_days The average incubation period of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
      */
-    ModelSEIRMixing(
-        ModelSEIRMixing<TSeq> & model,
+    ModelSIRMixing(
+        ModelSIRMixing<TSeq> & model,
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
         epiworld_double transmission_rate,
-        epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix
     );
     
     /**
-     * @brief Constructs a ModelSEIRMixing object.
+     * @brief Constructs a ModelSIRMixing object.
      *
-     * @param vname The name of the ModelSEIRMixing object.
+     * @param vname The name of the ModelSIRMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
      * @param contact_rate The contact rate between entities in the model.
      * @param transmission_rate The transmission rate of the disease in the model.
-     * @param avg_incubation_days The average incubation period of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
      */
-    ModelSEIRMixing(
+    ModelSIRMixing(
         std::string vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
         epiworld_double transmission_rate,
-        epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix
     );
 
-    ModelSEIRMixing<TSeq> & run(
+    ModelSIRMixing<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
@@ -94,7 +89,7 @@ public:
      * @param proportions_ Double vector with a single element:
      * - The proportion of non-infected individuals who have recovered.
     */
-    ModelSEIRMixing<TSeq> & initial_states(
+    ModelSIRMixing<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
     );
@@ -113,7 +108,7 @@ public:
 };
 
 template<typename TSeq>
-inline void ModelSEIRMixing<TSeq>::update_infected()
+inline void ModelSIRMixing<TSeq>::update_infected_list()
 {
 
     auto & agents = Model<TSeq>::get_agents();
@@ -163,7 +158,7 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     for (auto & a : agents)
     {
 
-        if (a.get_state() == ModelSEIRMixing<TSeq>::INFECTED)
+        if (a.get_state() == ModelSIRMixing<TSeq>::INFECTED)
             infected[a.get_entity(0u).get_id()].push_back(&a);
 
     }
@@ -177,7 +172,7 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
 }
 
 template<typename TSeq>
-inline size_t ModelSEIRMixing<TSeq>::sample_agents(
+inline size_t ModelSIRMixing<TSeq>::sample_agents(
     epiworld::Agent<TSeq> * agent,
     std::vector< epiworld::Agent<TSeq> * > & sampled_agents
     )
@@ -229,7 +224,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
 }
 
 template<typename TSeq>
-inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
+inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::run(
     epiworld_fast_uint ndays,
     int seed
 )
@@ -241,22 +236,22 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
 }
 
 template<typename TSeq>
-inline void ModelSEIRMixing<TSeq>::reset()
+inline void ModelSIRMixing<TSeq>::reset()
 {
 
     Model<TSeq>::reset();
-    this->update_infected();
+    this->update_infected_list();
 
     return;
 
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
+inline Model<TSeq> * ModelSIRMixing<TSeq>::clone_ptr()
 {
     
-    ModelSEIRMixing<TSeq> * ptr = new ModelSEIRMixing<TSeq>(
-        *dynamic_cast<const ModelSEIRMixing<TSeq>*>(this)
+    ModelSIRMixing<TSeq> * ptr = new ModelSIRMixing<TSeq>(
+        *dynamic_cast<const ModelSIRMixing<TSeq>*>(this)
         );
 
     return dynamic_cast< Model<TSeq> *>(ptr);
@@ -275,14 +270,13 @@ inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
  * @param recovery_rate Probability of recovery
  */
 template<typename TSeq>
-inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
-    ModelSEIRMixing<TSeq> & model,
+inline ModelSIRMixing<TSeq>::ModelSIRMixing(
+    ModelSIRMixing<TSeq> & model,
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
     epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix
     )
@@ -301,8 +295,8 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
             // Downcasting to retrieve the sampler attached to the
             // class
-            ModelSEIRMixing<TSeq> * m_down =
-                dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
+            ModelSIRMixing<TSeq> * m_down =
+                dynamic_cast<ModelSIRMixing<TSeq> *>(m);
 
             size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
@@ -344,7 +338,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
             p->set_virus(
                 *m->array_virus_tmp[which],
                 m,
-                ModelSEIRMixing<TSeq>::EXPOSED
+                ModelSIRMixing<TSeq>::INFECTED
                 );
 
             return; 
@@ -357,23 +351,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
             auto state = p->get_state();
 
-            if (state == ModelSEIRMixing<TSeq>::EXPOSED)
-            {
-
-                // Getting the virus
-                auto & v = p->get_virus();
-
-                // Does the agent become infected?
-                if (m->runif() < 1.0/(v->get_incubation(m)))
-                {
-
-                    p->change_state(m, ModelSEIRMixing<TSeq>::INFECTED);
-                    return;
-
-                }
-
-
-            } else if (state == ModelSEIRMixing<TSeq>::INFECTED)
+            if (state == ModelSIRMixing<TSeq>::INFECTED)
             {
 
 
@@ -392,7 +370,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
                         "[epi-debug] agent %i has 0 possible events!!\n",
                         static_cast<int>(p->get_id())
                         );
-                    throw std::logic_error("Zero events in exposed.");
+                    throw std::logic_error("Zero events in infected.");
                 }
                 #else
                 if (n_events == 0u)
@@ -412,7 +390,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
                 return ;
 
             } else
-                throw std::logic_error("This function can only be applied to exposed or infected individuals. (SEIR)") ;
+                throw std::logic_error("This function can only be applied to infected individuals. (SIR)") ;
 
             return;
 
@@ -422,11 +400,9 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     model.add_param(contact_rate, "Contact rate");
     model.add_param(transmission_rate, "Prob. Transmission");
     model.add_param(recovery_rate, "Prob. Recovery");
-    model.add_param(avg_incubation_days, "Avg. Incubation days");
     
     // state
     model.add_state("Susceptible", update_susceptible);
-    model.add_state("Exposed", update_infected);
     model.add_state("Infected", update_infected);
     model.add_state("Recovered");
 
@@ -434,10 +410,10 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
     {
 
-        ModelSEIRMixing<TSeq> * m_down =
-            dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
+        ModelSIRMixing<TSeq> * m_down =
+            dynamic_cast<ModelSIRMixing<TSeq> *>(m);
 
-        m_down->update_infected();
+        m_down->update_infected_list();
 
         return;
 
@@ -449,14 +425,13 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname);
     virus.set_state(
-        ModelSEIRMixing<TSeq>::EXPOSED,
-        ModelSEIRMixing<TSeq>::RECOVERED,
-        ModelSEIRMixing<TSeq>::RECOVERED
+        ModelSIRMixing<TSeq>::INFECTED,
+        ModelSIRMixing<TSeq>::RECOVERED,
+        ModelSIRMixing<TSeq>::RECOVERED
         );
 
     virus.set_prob_infecting(&model("Prob. Transmission"));
     virus.set_prob_recovery(&model("Prob. Recovery"));
-    virus.set_incubation(&model("Avg. Incubation days"));
 
     model.add_virus(virus, prevalence);
 
@@ -465,20 +440,19 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     // Adding the empty population
     model.agents_empty_graph(n);
 
-    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) with Mixing");
+    model.set_name("Susceptible-Infected-Removed (SIR) with Mixing");
 
     return;
 
 }
 
 template<typename TSeq>
-inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
+inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     std::string vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
     epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix
     )
@@ -486,14 +460,13 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
     this->contact_matrix = contact_matrix;
 
-    ModelSEIRMixing(
+    ModelSIRMixing(
         *this,
         vname,
         n,
         prevalence,
         contact_rate,
         transmission_rate,
-        avg_incubation_days,
         recovery_rate,
         contact_matrix
     );
@@ -503,14 +476,14 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 }
 
 template<typename TSeq>
-inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
+inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
     std::vector< double > proportions_,
     std::vector< int > /* queue_ */
 )
 {
 
     Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
+        create_init_function_sir<TSeq>(proportions_)
         ;
 
     return *this;
