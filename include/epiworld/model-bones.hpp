@@ -145,9 +145,6 @@ protected:
     std::vector< ToolToAgentFun<TSeq> > tools_dist_funs = {};
 
     std::vector< Entity<TSeq> > entities = {}; 
-    std::vector< epiworld_double > prevalence_entity = {};
-    std::vector< bool > prevalence_entity_as_proportion = {};
-    std::vector< EntityToAgentFun<TSeq> > entities_dist_funs = {};
     std::vector< Entity<TSeq> > entities_backup = {};
 
     std::mt19937 engine;
@@ -352,7 +349,7 @@ public:
     void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
-    void rm_entity(size_t entity_pos);
+    void rm_entity(size_t entity_id);
     ///@}
 
     /**
@@ -405,6 +402,8 @@ public:
 
     std::vector< Agent<TSeq> > & get_agents(); ///< Returns a reference to the vector of agents.
 
+    Agent<TSeq> & get_agent(size_t i);
+
     std::vector< epiworld_fast_uint > get_agents_states() const; ///< Returns a vector with the states of the agents.
 
     std::vector< Viruses_const<TSeq> > get_agents_viruses() const; ///< Returns a const vector with the viruses of the agents.
@@ -412,6 +411,8 @@ public:
     std::vector< Viruses<TSeq> > get_agents_viruses(); ///< Returns a vector with the viruses of the agents.
 
     std::vector< Entity<TSeq> > & get_entities();
+
+    Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr);
 
     Model<TSeq> & agents_smallworld(
         epiworld_fast_uint n = 1000,

@@ -7952,9 +7952,6 @@ inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval)
     e.model = this;
     e.id = entities.size();
     entities.push_back(e);
-    prevalence_entity.push_back(preval);
-    prevalence_entity_as_proportion.push_back(false);
-    entities_dist_funs.push_back(nullptr);
 
 }
 
@@ -7965,9 +7962,6 @@ inline void Model<TSeq>::add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> f
     e.model = this;
     e.id = entities.size();
     entities.push_back(e);
-    prevalence_entity.push_back(0.0);
-    prevalence_entity_as_proportion.push_back(false);
-    entities_dist_funs.push_back(fun);
 
 }
 
