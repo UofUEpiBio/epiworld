@@ -372,6 +372,12 @@ public:
         const std::vector<int> & entities_ids
         );
 
+    void load_agents_entities_ties(
+        const int * agents_id,
+        const int * entities_id,
+        size_t n
+        );
+
     /**
      * @name Accessing population of the model
      * 
