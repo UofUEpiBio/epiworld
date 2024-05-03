@@ -105,6 +105,8 @@ public:
 
     std::vector< size_t > & get_agents();
 
+    void print() const;
+
 };
 
 

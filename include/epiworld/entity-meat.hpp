@@ -286,4 +286,16 @@ inline std::vector< size_t > & Entity<TSeq>::get_agents()
     return agents;
 }
 
+template<typename TSeq>
+inline void Entity<TSeq>::print() const
+{
+
+    printf_epiworld(
+        "Entity '%s' (id %i) with %i agents.\n",
+        this->entity_name.c_str(),
+        static_cast<int>(id),
+        static_cast<int>(n_agents)
+    );
+}
+
 #endif
