@@ -103,6 +103,8 @@ public:
 
     void distribute();
 
+    std::vector< size_t > & get_agents();
+
 };
 
 

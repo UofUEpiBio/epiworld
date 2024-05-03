@@ -280,4 +280,10 @@ inline void Entity<TSeq>::distribute()
 
 }
 
+template<typename TSeq>
+inline std::vector< size_t > & Entity<TSeq>::get_agents()
+{
+    return agents;
+}
+
 #endif
