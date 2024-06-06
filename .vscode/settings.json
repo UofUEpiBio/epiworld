@@ -1,5 +1,6 @@
 {
   "files.associations": {
+    "*.hpp": "cpp",
     "array": "cpp",
     "atomic": "cpp",
     "bit": "cpp",
@@ -68,7 +69,9 @@
     "unordered_set": "cpp",
     "shared_mutex": "cpp",
     "cfenv": "cpp",
-    "cinttypes": "cpp"
+    "cinttypes": "cpp",
+    "queue": "cpp",
+    "stack": "cpp"
   },
   "intel-corporation.oneapi-analysis-configurator.binary-path": "/home/george/Documents/development/epiworld/tests/01c.o",
   "grammarly.selectors": [

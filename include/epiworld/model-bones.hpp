@@ -345,8 +345,6 @@ public:
     void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
     void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
     void add_entity(Entity<TSeq> e);
-    void add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval);
-    void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
     void rm_entity(size_t entity_id);

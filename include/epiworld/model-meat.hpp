@@ -1180,29 +1180,6 @@ inline void Model<TSeq>::add_entity(Entity<TSeq> e)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval)
-{
-
-    e.model = this;
-    e.id = entities.size();
-    e.prevalence = preval;
-    e.prevalence_as_proportion = false;
-    entities.push_back(e);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun)
-{
-
-    e.model = this;
-    e.id = entities.size();
-    e.dist_fun = fun;
-    entities.push_back(e);
-
-}
-
-template<typename TSeq>
 inline void Model<TSeq>::rm_entity(size_t entity_id)
 {
 

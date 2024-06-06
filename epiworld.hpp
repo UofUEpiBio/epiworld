@@ -19,8 +19,8 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 2
-#define EPIWORLD_VERSION_PATCH 1
+#define EPIWORLD_VERSION_MINOR 3
+#define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -442,6 +442,9 @@ public:
     epiworld::GlobalFun<tseq> funname = \
     [](epiworld::Model<tseq>* m) -> void
 
+
+#define EPI_NEW_ENTITYTOAGENTFUN(funname,tseq) inline void \
+    (funname)(epiworld::Entity<tseq> & e, epiworld::Model<tseq> * m)
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -6324,8 +6327,6 @@ public:
     void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
     void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
     void add_entity(Entity<TSeq> e);
-    void add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval);
-    void add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
     void rm_entity(size_t entity_id);
@@ -7923,29 +7924,6 @@ inline void Model<TSeq>::add_entity(Entity<TSeq> e)
 
     e.model = this;
     e.id = entities.size();
-    entities.push_back(e);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_entity_n(Entity<TSeq> e, epiworld_fast_uint preval)
-{
-
-    e.model = this;
-    e.id = entities.size();
-    e.prevalence = preval;
-    e.prevalence_as_proportion = false;
-    entities.push_back(e);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_entity_fun(Entity<TSeq> e, EntityToAgentFun<TSeq> fun)
-{
-
-    e.model = this;
-    e.id = entities.size();
-    e.dist_fun = fun;
     entities.push_back(e);
 
 }
@@ -12081,7 +12059,7 @@ private:
     ///@}
 
     int max_capacity = -1;
-    std::string entity_name = "Unknown entity";
+    std::string entity_name = "Unnamed entity";
 
     std::vector< epiworld_double > location = {0.0}; ///< An arbitrary vector for location
 
@@ -12091,20 +12069,34 @@ private:
     epiworld_fast_int queue_init = 0; ///< Change of state when added to agent.
     epiworld_fast_int queue_post = 0; ///< Change of state when removed from agent.
 
-
 public:
 
     epiworld_double prevalence = 0.0;
     bool prevalence_as_proportion = false;
     EntityToAgentFun<TSeq> dist_fun = nullptr;
 
-    // Entity() = delete;
-    // Entity(Entity<TSeq> & e) = delete;
-    // Entity(const Entity<TSeq> & e);
-    // Entity(Entity && e);
-    Entity(std::string name) : entity_name(name) {};
-    // Entity<TSeq> & operator=(const Entity<TSeq> & e);
-
+    /**
+     * @brief Constructs an Entity object.
+     *
+     * This constructor initializes an Entity object with the specified parameters.
+     *
+     * @param name The name of the entity.
+     * @param preval The prevalence of the entity.
+     * @param as_proportion A flag indicating whether the prevalence is given as a proportion.
+     * @param fun A function pointer to a function that maps the entity to an agent.
+     */
+    Entity(
+        std::string name,
+        epiworld_double preval,
+        bool as_proportion,
+        EntityToAgentFun<TSeq> fun = nullptr
+        ) :
+            entity_name(name),
+            prevalence(preval),
+            prevalence_as_proportion(as_proportion),
+            dist_fun(fun)
+        {};
+    
     void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
     void add_agent(Agent<TSeq> * p, Model<TSeq> * model);
     void rm_agent(size_t idx);
@@ -12133,6 +12125,13 @@ public:
     bool operator==(const Entity<TSeq> & other) const;
     bool operator!=(const Entity<TSeq> & other) const {return !operator==(other);};
 
+    /** 
+     * @name Entity distribution
+     * 
+     * @details These functions are used for distributing agents among entities.
+     * The idea is to have a flexible way of distributing agents among entities.
+     
+     */
     void distribute();
 
     std::vector< size_t > & get_agents();
@@ -12163,6 +12162,53 @@ public:
 
 #ifndef EPIWORLD_ENTITY_MEAT_HPP
 #define EPIWORLD_ENTITY_MEAT_HPP
+
+template <typename TSeq = EPI_DEFAULT_TSEQ>
+EPI_NEW_ENTITYTOAGENTFUN(entity_to_unassigned_agents, TSeq)
+{
+
+    // Preparing the sampling space
+    std::vector< size_t > idx;
+    for (const auto & a: m->get_agents())
+        if (a.get_n_entities() == 0)
+            idx.push_back(a.get_id());
+    size_t n = idx.size();
+
+    // Figuring out how many to sample
+    int n_to_sample;
+    if (e.prevalence_as_proportion)
+    {
+        n_to_sample = static_cast<int>(std::floor(e.prevalence * n));
+        if (n_to_sample > n)
+            --n_to_sample;
+
+    } else
+    {
+        n_to_sample = static_cast<int>(e.prevalence);
+        if (n_to_sample > n)
+            throw std::range_error("There are only " + std::to_string(n) + 
+            " individuals in the population. Cannot add the entity to " +
+                std::to_string(n_to_sample));
+    }
+
+    int n_left = n;
+    for (size_t i = 0u; i < n_to_sample; ++i)
+    {
+        int loc = static_cast<epiworld_fast_uint>(
+            floor(m->runif() * n_left--)
+            );
+
+        // Correcting for possible overflow
+        if ((loc > 0) && (loc >= n_left))
+            loc = n_left - 1;
+
+        m->get_agent(idx[loc]).add_entity(e, m);
+
+        std::swap(idx[loc], idx[n_left]);
+
+    }
+
+}
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(

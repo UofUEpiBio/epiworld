@@ -17,10 +17,10 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     epimodels::ModelSEIRMixing<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
-        0.01,// epiworld_double prevalence,
-        40.0,// epiworld_double contact_rate,
-        1.0,// epiworld_double transmission_rate,
-        1.0,// epiworld_double avg_incubation_days,
+        0.01,  // epiworld_double prevalence,
+        40.0,  // epiworld_double contact_rate,
+        1.0,   // epiworld_double transmission_rate,
+        1.0,   // epiworld_double avg_incubation_days,
         1.0/2.0,// epiworld_double recovery_rate,
         contact_matrix
     );
@@ -32,13 +32,13 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     model.add_virus_fun(v1, dist_virus<>(0));
 
     // Creating three groups
-    Entity<> e1("Entity 1");
-    Entity<> e2("Entity 2");
-    Entity<> e3("Entity 3");
+    Entity<> e1("Entity 1", 0.0, false, dist_factory<>(0, 3000));
+    Entity<> e2("Entity 2", 0.0, false, dist_factory<>(3000, 6000));
+    Entity<> e3("Entity 3", 0.0, false, dist_factory<>(6000, 10000));
 
-    model.add_entity_fun(e1, dist_factory<>(0, 3000));
-    model.add_entity_fun(e2, dist_factory<>(3000, 6000));
-    model.add_entity_fun(e3, dist_factory<>(6000, 10000));
+    model.add_entity(e1);
+    model.add_entity(e2);
+    model.add_entity(e3);
 
     // Running and checking the results
     model.run(50, 123);
