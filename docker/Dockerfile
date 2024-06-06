@@ -8,6 +8,9 @@ RUN apt install -y --no-install-recommends make
 RUN cd /bin/ && ln -s g++-9 g++ && \
 	echo export PATH=$PATH:/bin/:/user/bin/ > ~/.profile
 
+# Installing gcov
+RUN apt install -y --no-install-recommends gcovr
+
 # Test run
 COPY hello.cpp /home/hello.cpp 
 RUN echo "all:\n\tg++ -std=c++11 hello.cpp -o hello.o && ./hello.o" >> /home/Makefile

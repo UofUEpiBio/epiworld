@@ -54,12 +54,6 @@ jobs:
           make main.o
           ./main.o
       
-      # Installing gcov
-      - name: Install gcov
-        run: |
-          apt-get update
-          apt-get install --no-install-recommends -y gcovr
-
       - name: Generate coverage
         run: |
           cd tests
