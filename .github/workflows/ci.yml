@@ -57,8 +57,8 @@ jobs:
       # Installing gcov
       - name: Install gcov
         run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y gcovr
+          apt-get update
+          apt-get install --no-install-recommends -y gcovr
 
       - name: Generate coverage
         run: |
