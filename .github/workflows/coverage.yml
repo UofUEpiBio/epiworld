@@ -6,35 +6,27 @@
 # See https://github.com/r-lib/actions/tree/master/examples#readme for
 # additional example workflows available for the R community.
 
-name: Tests
+name: Code coverage
 
 on: [push, pull_request]
 
-jobs:
-  test-macos:
-
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check
-        run: |
-          brew install llvm@14 
-          echo 'export PATH="/usr/local/opt/llvm@14/bin:$PATH"' >> /Users/runner/.bash_profile
-          cd tests && make main.a && ./main.a
-
-  test-ubuntu:
+jobs:        
+  coverage:
     runs-on: ubuntu-latest
     container: gvegayon/epiworld:latest
-
+    
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check
-        env:
-          OPENMP: -fopenmp
+      - name: Generate coverage
         run: |
           cd tests
-          make main.o
-          ./main.o
+          make coverage
+
+      - uses: codecov/codecov-action@v3
+        with:
+          gcov: true
+          directory: tests
+          gcov_ignore: tests/tests.hpp
+          verbose: true # optional (default = false)
+          token: ${{ secrets.CODECOV_TOKEN }}

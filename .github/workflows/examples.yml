@@ -6,27 +6,14 @@
 # See https://github.com/r-lib/actions/tree/master/examples#readme for
 # additional example workflows available for the R community.
 
-name: Tests
+name: Examples
 
 on: [push, pull_request]
 
 jobs:
-  test-macos:
-
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check
-        run: |
-          brew install llvm@14 
-          echo 'export PATH="/usr/local/opt/llvm@14/bin:$PATH"' >> /Users/runner/.bash_profile
-          cd tests && make main.a && ./main.a
-
   test-ubuntu:
-    runs-on: ubuntu-latest
     container: gvegayon/epiworld:latest
+    runs-on: Ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +22,5 @@ jobs:
         env:
           OPENMP: -fopenmp
         run: |
-          cd tests
-          make main.o
-          ./main.o
+          make all-examples
+  
