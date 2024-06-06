@@ -1,15 +1,13 @@
 FROM ubuntu:latest
 
 # Installing g++-9 and GNU Make
-RUN apt update && apt install -y --no-install-recommends g++-9
+RUN apt update && apt install -y --no-install-recommends g++-11
 RUN apt install -y --no-install-recommends make
 
-# Makeing the path availables
-RUN cd /bin/ && ln -s g++-9 g++ && \
+# Making the path availables
+RUN cd /bin/ && ln -s g++-11 g++ && \
+	ln -s gcov-11 gcov && \
 	echo export PATH=$PATH:/bin/:/user/bin/ > ~/.profile
-
-# Installing gcov
-RUN apt install -y --no-install-recommends gcovr
 
 # Test run
 COPY hello.cpp /home/hello.cpp 
