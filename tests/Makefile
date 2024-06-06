@@ -23,7 +23,7 @@ main.a: main.cpp clean
 	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 05-mixing.cpp -o 05-mixing.o
 
 # Check coverage using the main.o target
-coverage:
+coverage: clean
 	g++ -std=c++14 -O2 -g -fprofile-arcs -ftest-coverage main.cpp -o main.o && \
 	./main.o && \
 	mv main.o-main.gcda main.gcda && \
@@ -44,11 +44,7 @@ clean:
 		mkdir -p "$${file%.cpp}-saves"; \
 	done
 
-
-
 # What's the -ftest-coverage flag?
 # https://stackoverflow.com/questions/9842759/what-is-ftest-coverage-option-in-gcov
-
-
 
 .PHONY: all clean coverage
