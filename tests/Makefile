@@ -23,7 +23,8 @@ main.a: main.cpp clean
 	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 05-mixing.cpp -o 05-mixing.o
 
 # Check coverage using the main.o target
-coverage: main.o
+coverage:
+	g++ -std=c++14 -Wall -Wextra -O2 -g -fprofile-arcs -ftest-coverage main.cpp -o main.o && \
 	gcov -r main.cpp && ls -allt && \
 	rm -f catch*.hpp.gcov && \
 	mkdir -p gcov-files && rm -f gcov-files/* && \
