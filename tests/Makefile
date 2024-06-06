@@ -24,7 +24,7 @@ main.a: main.cpp clean
 
 # Check coverage using the main.o target
 coverage: main.o
-	gcov -r main.cpp && \
+	gcov -r main.cpp && ls -allt && \
 	rm -f catch*.hpp.gcov && \
 	mkdir -p gcov-files && rm -f gcov-files/* && \
 	mv *.hpp.gcov gcov-files/ && rm -f *.gcov
