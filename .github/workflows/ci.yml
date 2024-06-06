@@ -15,19 +15,19 @@ env:
 
 jobs:
   test-ubuntu:
+    container: ${cntr}
     runs-on: Ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Container
-        run: docker pull ${cntr}
-
       - name: Check
+        env:
+          OPENMP: -fopenmp
         run: |
-          docker run --rm -i -e "OPENMP=-fopenmp" -v ${PWD}:/home/tests \
-            -w /home/tests ${cntr} make all-examples
+          make all-examples
   test-macos:
+
     runs-on: macos-latest
 
     steps:
@@ -41,16 +41,33 @@ jobs:
 
   test-ubuntu2:
     runs-on: ubuntu-latest
+    container: ${cntr}
 
     steps:
       - uses: actions/checkout@v4
 
-      # - name: Install valgrind
-      #   run: sudo apt-get install --no-install-recommends valgrind
-
       - name: Check
+        env:
+          OPENMP: -fopenmp
         run: |
-          cd tests && OPENMP=-fopenmp make main.o && ./main.o
-          # cd tests && make 01c.o && valgrind --leak-check=full ./01c.o
+          cd tests
+          make main.o
+          ./main.o
+      
+      - name: Generate coverage
+        run: |
+          cd tests
+          make coverage
+
+      - uses: codecov/codecov-action@v1
+        with:
+          files: tests/gcov-files/* # optional
+          #        flags: unittests # optional
+          name: codecov-umbrella # optional
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
+    
+    
+          
 
           

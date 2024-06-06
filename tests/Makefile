@@ -24,10 +24,10 @@ main.a: main.cpp clean
 
 # Check coverage using the main.o target
 coverage: main.o
-	g++ -g -O1 -fprofile-arcs -ftest-coverage main.cpp -o main.o && \
-		./main.o && gcov -r main.cpp && \
-		rm catch*.hpp.gcov && \
-		mv *.hpp.gcov gcov-files/ && $(MAKE) clean
+	gcov -r main.cpp && \
+	rm -f catch*.hpp.gcov && \
+	mkdir -p gcov-files && rm -f gcov-files/* && \
+	mv *.hpp.gcov gcov-files/ && rm -f *.gcov
 
 
 # Create folders named after the *.cpp files in the current directory
