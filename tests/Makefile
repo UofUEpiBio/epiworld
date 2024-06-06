@@ -38,6 +38,7 @@ coverage:
 # and append "-saves" to the folder name
 # e.g. 01-sir.cpp -> 01-sir-saves
 clean:
+	rm -f *.o *.a *.so *.out *.exe *.gcda *.gcno *.gcov
 	rm -fr *-saves/
 	for file in *.cpp; do \
 		mkdir -p "$${file%.cpp}-saves"; \
