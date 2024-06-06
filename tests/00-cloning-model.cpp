@@ -9,14 +9,14 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     m.add_state("Susceptible", default_update_susceptible<bool>);
     m.add_state("Recovered");
 
-    epiworld::Virus<bool> v;
+    epiworld::Virus<bool> v("covid 19", 0.5, true);
     epiworld::Tool<bool> t;
     v.set_state(0, 1);
 
     m.seed(1333);
     m.agents_smallworld(1000);
 
-    m.add_virus(v, .5);
+    m.add_virus(v);
     m.add_tool(t, .5);
 
     // Cloning

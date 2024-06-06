@@ -6316,9 +6316,7 @@ public:
      * indicating number of individuals.
      */
     ///@{
-    void add_virus(Virus<TSeq> & v, epiworld_double preval);
-    void add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval);
-    void add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun);
+    void add_virus(Virus<TSeq> & v);
     void add_tool(Tool<TSeq> & t, epiworld_double preval);
     void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
     void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
@@ -7497,7 +7495,7 @@ inline void Model<TSeq>::dist_virus()
     for (auto & v: viruses)
     {
 
-        v.distribute(this);
+        v->distribute(this);
 
         // Apply the events
         events_run();
@@ -7715,14 +7713,10 @@ inline void Model<TSeq>::seed(size_t s) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
+inline void Model<TSeq>::add_virus(
+    Virus<TSeq> & v
+    )
 {
-
-    if (preval > 1.0)
-        throw std::range_error("Prevalence of virus cannot be above 1.0");
-
-    if (preval < 0.0)
-        throw std::range_error("Prevalence of virus cannot be negative");
 
     // Checking the state
     epiworld_fast_int init_, post_, rm_;
@@ -7739,57 +7733,6 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
     
     // Recording the variant
     db.record_virus(v);
-
-    // Adding new virus
-    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval)
-{
-
-    // Checking the ids
-    epiworld_fast_int init_, post_, rm_;
-    v.get_state(&init_, &post_, &rm_);
-
-    if (init_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -init- state."
-            );
-    else if (post_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -post- state."
-            );
-
-    // Setting the id
-    db.record_virus(v);
-
-    // Adding new virus
-    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun)
-{
-
-    // Checking the ids
-    epiworld_fast_int init_, post_, rm_;
-    v.get_state(&init_, &post_, &rm_);
-
-    if (init_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -init- state."
-            );
-    else if (post_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -post- state."
-            );
-
-    // Setting the id
-    db.record_virus(v);
-    // v.set_id(viruses.size());
 
     // Adding new virus
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
@@ -8995,13 +8938,13 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         if (i < n_viruses_model)
         {
 
-            if (virus.get_prevalence_as_proportion())
+            if (virus->get_prevalence_as_proportion())
             {
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %.2f%%)\n",
-                    virus.get_name().c_str(),
-                    virus.get_prevalence() * 100.00
+                    virus->get_name().c_str(),
+                    virus->get_prevalence() * 100.00
                 );
 
             }
@@ -9010,8 +8953,8 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %i seeds)\n",
-                    virus.get_name().c_str(),
-                    static_cast<int>(virus.get_prevalence())
+                    virus->get_name().c_str(),
+                    static_cast<int>(virus->get_prevalence())
                 );
 
             }
@@ -9020,7 +8963,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
             printf_epiworld(
                 " - %s (originated in the model...)\n",
-                virus.get_name().c_str()
+                virus->get_name().c_str()
             );
 
         }
@@ -10308,10 +10251,10 @@ public:
      */
     ///@{
     epiworld_double get_prevalence() const;
-    void set_prevalence(epiworld_double prevalence);
+    void set_prevalence(epiworld_double prevalence, bool as_proportion);
     bool get_prevalence_as_proportion() const;
-    void set_prevalence_as_proportion(bool prevalence_as_proportion);
     void distribute(Model<TSeq> * model);
+    void set_distribution(VirusToAgentFun<TSeq> fun);
     ///@}
 
 
@@ -10425,9 +10368,9 @@ inline Virus<TSeq>::Virus(
     VirusToAgentFun<TSeq> dist_fun
     ) {
     set_name(name);
-    this->prevalence = prevalence;
-    this->prevalence_as_proportion = prevalence_as_proportion;
-    this->dist_fun = dist_fun;
+
+    set_prevalence(prevalence, prevalence_as_proportion);
+    set_distribution(dist_fun);
 }
 
 template<typename TSeq>
@@ -11045,15 +10988,23 @@ inline bool Virus<TSeq>::get_prevalence_as_proportion() const
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_prevalence(epiworld_double preval)
+inline void Virus<TSeq>::set_prevalence(
+    epiworld_double preval,
+    bool as_proportion
+    )
 {
-    prevalence = preval;
-}
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_prevalence_as_proportion(bool preval_as_proportion)
-{
-    prevalence_as_proportion = preval_as_proportion;
+    if (as_proportion) {
+
+        if ((preval < 0.0) || (preval > 1.0))
+            throw std::range_error(
+                "The prevalence should be between 0 and 1. " +
+                std::string("Got ") + std::to_string(preval)
+                );
+    }
+
+    prevalence = preval;
+    prevalence_as_proportion = as_proportion;
 }
 
 template<typename TSeq>
@@ -11067,27 +11018,47 @@ inline void Virus<TSeq>::distribute(Model<TSeq> * model)
 
     } else {
 
+        // Figuring out how what agents are available
+        std::vector< size_t > idx;
+        for (const auto & agent: model->get_agents())
+            if (agent.get_virus() == nullptr)
+                idx.push_back(agent.get_id());
+
         // Picking how many
-        int nsampled;
         size_t n = model->size();
+        int n_available = static_cast<int>(idx.size());
+        int n_to_sample;
         if (prevalence_as_proportion)
         {
-            nsampled = static_cast<int>(std::floor(prevalence * n));
+            n_to_sample = static_cast<int>(std::floor(prevalence * n));
+
+            if (n_to_sample == static_cast<int>(n))
+                n_to_sample--;
         }
         else
         {
-            nsampled = static_cast<int>(prevalence);
+            n_to_sample = static_cast<int>(prevalence);
         }
 
-        if (nsampled > static_cast<int>(n))
-            throw std::range_error("There are only " + std::to_string(n) + 
-            " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
+        if (n_to_sample > n_available)
+            throw std::range_error(
+                "There are only " + std::to_string(n_available) + 
+                " individuals with no virus in the population. " +
+                "Cannot add the virus to " +
+                std::to_string(n_to_sample)
+            );
         
         auto & population = model->get_agents();
-        while (nsampled > 0)
+        for (int i = 0; i < n_to_sample; ++i)
         {
 
-            int loc = static_cast<epiworld_fast_uint>(floor(model->runif() * (n_left--)));
+            int loc = static_cast<epiworld_fast_uint>(
+                floor(model->runif() * (n_available--))
+                );
+
+            // Correcting for possible overflow
+            if ((loc > 0) && (loc >= n_available))
+                loc = n_available - 1;
 
             Agent<TSeq> & agent = population[idx[loc]];
             
@@ -11100,13 +11071,18 @@ inline void Virus<TSeq>::distribute(Model<TSeq> * model)
                 );
 
             // Adjusting sample
-            nsampled--;
-            std::swap(idx[loc], idx[n_left]);
+            std::swap(idx[loc], idx[n_available]);
 
         }
 
     }
 
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
+{
+    dist_fun = fun;
 }
 
 #endif
@@ -13521,6 +13497,7 @@ public:
     int get_id() const; ///< Id of the individual
 
     VirusPtr<TSeq> & get_virus();
+    const VirusPtr<TSeq> & get_virus() const;
 
     ToolPtr<TSeq> & get_tool(int i);
     Tools<TSeq> get_tools();
@@ -14397,6 +14374,11 @@ inline int Agent<TSeq>::get_id() const
 
 template<typename TSeq>
 inline VirusPtr<TSeq> & Agent<TSeq>::get_virus() {
+    return virus;
+}
+
+template<typename TSeq>
+inline const VirusPtr<TSeq> & Agent<TSeq>::get_virus() const {
     return virus;
 }
 
@@ -15593,10 +15575,10 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sir(
         double n   = static_cast<double>(model->size());
         for (const auto & virus: model->get_viruses())
         {
-            if (virus.get_prevalence_as_proportion())
-                tot += virus.get_prevalence();
+            if (virus->get_prevalence_as_proportion())
+                tot += virus->get_prevalence();
             else
-                tot += virus.get_prevalence() / n;
+                tot += virus->get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -15667,10 +15649,10 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sird(
         double n   = static_cast<double>(model->size());
         for (const auto & virus: model->get_viruses())
         {
-            if (virus.get_prevalence_as_proportion())
-                tot += virus.get_prevalence();
+            if (virus->get_prevalence_as_proportion())
+                tot += virus->get_prevalence();
             else
-                tot += virus.get_prevalence() / n;
+                tot += virus->get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -15745,10 +15727,10 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seir(
         double n   = static_cast<double>(model->size());
         for (const auto & virus: model->get_viruses())
         {
-            if (virus.get_prevalence_as_proportion())
-                tot += virus.get_prevalence();
+           if (virus->get_prevalence_as_proportion())
+                tot += virus->get_prevalence();
             else
-                tot += virus.get_prevalence() / n;
+                tot += virus->get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -15827,10 +15809,10 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seird(
         double n   = static_cast<double>(model->size());
         for (const auto & virus: model->get_viruses())
         {
-            if (virus.get_prevalence_as_proportion())
-                tot += virus.get_prevalence();
+            if (virus->get_prevalence_as_proportion())
+                tot += virus->get_prevalence();
             else
-                tot += virus.get_prevalence() / n;
+                tot += virus->get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -16130,14 +16112,14 @@ inline ModelSIS<TSeq>::ModelSIS(
     model.add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(ModelSIS<TSeq>::INFECTED, ModelSIS<TSeq>::SUSCEPTIBLE, ModelSIS<TSeq>::SUSCEPTIBLE);
     
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(0.0);
     
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     return;
 
@@ -16249,13 +16231,13 @@ inline ModelSIR<TSeq>::ModelSIR(
     model.add_param(transmission_rate, "Transmission rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1,2,2);
     
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_infecting(&model("Transmission rate"));
     
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.set_name("Susceptible-Infected-Recovered (SIR)");
 
@@ -16423,7 +16405,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     model.add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
 
     virus.set_prob_infecting(&model("Transmission rate"));
@@ -16431,7 +16413,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     virus.set_prob_recovery(&model("Recovery rate"));
     
     // Adding the tool and the virus
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
     
     model.set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
@@ -16801,7 +16783,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_param(prob_noreinfect, "Prob. no reinfect");
 
     // Virus ------------------------------------------------------------------
-    epiworld::Virus<TSeq> covid("Covid19");
+    epiworld::Virus<TSeq> covid("Covid19", prevalence, true);
     covid.set_state(LATENT, RECOVERED, REMOVED);
     covid.set_post_immunity(&model("Prob. no reinfect"));
     covid.set_prob_death(&model("Prob. death"));
@@ -16827,7 +16809,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     covid.set_prob_infecting_fun(ptransmitfun);
     
-    model.add_virus_n(covid, prevalence);
+    model.add_virus(covid);
 
     model.set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
     model.add_globalevent(surveillance_program, "Surveilance program", -1);
@@ -17210,12 +17192,12 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     model.add_globalevent(update, "Update infected individuals");
     
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1, 2, 2);
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
 
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.queuing_off(); // No queuing need
 
@@ -17610,7 +17592,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSEIRCONN<TSeq>::EXPOSED,
         ModelSEIRCONN<TSeq>::RECOVERED,
@@ -17621,7 +17603,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     virus.set_prob_recovery(&model("Prob. Recovery"));
     virus.set_incubation(&model("Avg. Incubation days"));
 
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.queuing_off(); // No queuing need
 
@@ -17775,13 +17757,13 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     model.add_param(death_rate, "Death rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1,2,3);
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_death(&model("Death rate"));
     
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
@@ -17908,14 +17890,14 @@ inline ModelSISD<TSeq>::ModelSISD(
     model.add_param(death_rate, "Death rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1,0,2);
     
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(0.01);
     
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     return;
 
@@ -18133,7 +18115,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   model.add_param(death_rate, "Death rate");
   
   // Preparing the virus -------------------------------------------
-  epiworld::Virus<TSeq> virus(vname);
+  epiworld::Virus<TSeq> virus(vname, prevalence, true);
   virus.set_state(ModelSEIRD<TSeq>::EXPOSED, ModelSEIRD<TSeq>::REMOVED, ModelSEIRD<TSeq>::DECEASED);
   
   virus.set_prob_infecting(&model("Transmission rate"));
@@ -18142,7 +18124,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   virus.set_prob_recovery(&model("Recovery rate"));
   
   // Adding the tool and the virus
-  model.add_virus(virus, prevalence);
+  model.add_virus(virus);
   
   model.set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD)");
   
@@ -18501,13 +18483,13 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1, 2, 3);
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(&model("Death rate"));
     
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.queuing_off(); // No queuing need
 
@@ -18909,7 +18891,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSEIRDCONN<TSeq>::EXPOSED,
         ModelSEIRDCONN<TSeq>::REMOVED,
@@ -18920,7 +18902,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     virus.set_prob_recovery(&model("Prob. Recovery"));
     virus.set_incubation(&model("Avg. Incubation days"));
     virus.set_prob_death(&model("Death rate"));
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.queuing_off(); // No queuing need
 
@@ -19296,7 +19278,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSIRLogit<TSeq>::INFECTED,
         ModelSIRLogit<TSeq>::RECOVERED,
@@ -19308,7 +19290,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     // virus.set_prob
 
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.set_name("Susceptible-Infected-Removed (SIR) (logit)");
 
@@ -19535,12 +19517,12 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     model.add_param(prob_adopt, parname);
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> innovation(innovation_name);
+    epiworld::Virus<TSeq> innovation(innovation_name, prevalence, true);
     innovation.set_state(1,1,1);
     
     innovation.set_prob_infecting(&model(parname));
     
-    model.add_virus(innovation, prevalence);
+    model.add_virus(innovation);
 
     model.set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);
@@ -20049,7 +20031,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSEIRMixing<TSeq>::EXPOSED,
         ModelSEIRMixing<TSeq>::RECOVERED,
@@ -20060,7 +20042,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     virus.set_prob_recovery(&model("Prob. Recovery"));
     virus.set_incubation(&model("Avg. Incubation days"));
 
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.queuing_off(); // No queuing need
 
@@ -20566,7 +20548,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname);
+    epiworld::Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSIRMixing<TSeq>::INFECTED,
         ModelSIRMixing<TSeq>::RECOVERED,
@@ -20576,7 +20558,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     virus.set_prob_infecting(&model("Prob. Transmission"));
     virus.set_prob_recovery(&model("Prob. Recovery"));
 
-    model.add_virus(virus, prevalence);
+    model.add_virus(virus);
 
     model.queuing_off(); // No queuing need
 

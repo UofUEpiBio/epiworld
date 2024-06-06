@@ -335,9 +335,7 @@ public:
      * indicating number of individuals.
      */
     ///@{
-    void add_virus(Virus<TSeq> & v, epiworld_double preval);
-    void add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval);
-    void add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun);
+    void add_virus(Virus<TSeq> & v);
     void add_tool(Tool<TSeq> & t, epiworld_double preval);
     void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
     void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);

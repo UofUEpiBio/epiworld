@@ -63,7 +63,7 @@ int main() {
     model.add_param(0.01, "virus death");
 
     // Initializing disease ---------------------------------------------------
-    epiworld::Virus<DAT> covid19("COVID19");
+    epiworld::Virus<DAT> covid19("COVID19", 0.01, true);
     covid19.set_sequence(base_seq);
     covid19.set_mutation(covid19_mut);
     covid19.set_post_recovery(post_covid); 
@@ -94,7 +94,7 @@ int main() {
     post_immunity.set_susceptibility_reduction(1.0);
 
     // Adding the virus and the tools to the model ----------------------------
-    model.add_virus(covid19, 0.01); 
+    model.add_virus(covid19); 
 
     model.add_tool(immune, 1.0);
     model.add_tool(vaccine, 0.5);

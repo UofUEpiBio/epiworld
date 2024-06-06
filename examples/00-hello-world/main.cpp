@@ -17,11 +17,11 @@ int main()
     model.add_state("Removed");
 
     // Adding the tool and virus
-    epiworld::Virus<int> virus("covid 19");
+    epiworld::Virus<int> virus("covid 19", 50, false);
     virus.set_post_immunity(1.0);
     virus.set_state(1,2,3);
     virus.set_prob_death(.01);
-    model.add_virus_n(virus, 50);
+    model.add_virus(virus);
     
     epiworld::Tool<int> tool("vaccine");
     model.add_tool(tool, .5);

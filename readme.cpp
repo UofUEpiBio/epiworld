@@ -20,14 +20,14 @@ int main()
     // - Infected individuals become "Infected" (status 1)
     // - Recovered individuals become "Recovered" (status 2)
     // 100 individuals will have the virus from the beginning.
-    Virus<> virus("covid 19");
+    Virus<> virus("covid 19", 1000, false);
 
     virus.set_prob_infecting(.90);
     virus.set_prob_recovery(.30);
     
     virus.set_state(1, 2);
 
-    model.add_virus_n(virus, 1000);
+    model.add_virus(virus);
     
     // Generating a random pop from a smallworld network
     model.agents_smallworld(100000, 4L, false, .01);

@@ -171,10 +171,10 @@ public:
      */
     ///@{
     epiworld_double get_prevalence() const;
-    void set_prevalence(epiworld_double prevalence);
+    void set_prevalence(epiworld_double prevalence, bool as_proportion);
     bool get_prevalence_as_proportion() const;
-    void set_prevalence_as_proportion(bool prevalence_as_proportion);
     void distribute(Model<TSeq> * model);
+    void set_distribution(VirusToAgentFun<TSeq> fun);
     ///@}
 
 

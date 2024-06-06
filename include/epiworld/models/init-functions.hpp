@@ -32,10 +32,10 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sir(
         double n   = static_cast<double>(model->size());
         for (const auto & virus: model->get_viruses())
         {
-            if (virus.get_prevalence_as_proportion())
-                tot += virus.get_prevalence();
+            if (virus->get_prevalence_as_proportion())
+                tot += virus->get_prevalence();
             else
-                tot += virus.get_prevalence() / n;
+                tot += virus->get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -106,10 +106,10 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sird(
         double n   = static_cast<double>(model->size());
         for (const auto & virus: model->get_viruses())
         {
-            if (virus.get_prevalence_as_proportion())
-                tot += virus.get_prevalence();
+            if (virus->get_prevalence_as_proportion())
+                tot += virus->get_prevalence();
             else
-                tot += virus.get_prevalence() / n;
+                tot += virus->get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -184,10 +184,10 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seir(
         double n   = static_cast<double>(model->size());
         for (const auto & virus: model->get_viruses())
         {
-            if (virus.get_prevalence_as_proportion())
-                tot += virus.get_prevalence();
+           if (virus->get_prevalence_as_proportion())
+                tot += virus->get_prevalence();
             else
-                tot += virus.get_prevalence() / n;
+                tot += virus->get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -266,10 +266,10 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seird(
         double n   = static_cast<double>(model->size());
         for (const auto & virus: model->get_viruses())
         {
-            if (virus.get_prevalence_as_proportion())
-                tot += virus.get_prevalence();
+            if (virus->get_prevalence_as_proportion())
+                tot += virus->get_prevalence();
             else
-                tot += virus.get_prevalence() / n;
+                tot += virus->get_prevalence() / n;
         }
 
         // Putting the total into context

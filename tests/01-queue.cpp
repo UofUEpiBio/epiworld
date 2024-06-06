@@ -8,9 +8,9 @@ int main()
     Model<> model;
     model.agents_smallworld(100, 2);
 
-    Virus<> v("covid");
+    Virus<> v("covid", 10, false);
     
-    model.add_virus_n(v, 10);
+    model.add_virus(v);
 
     Queue<> q;
     q.initialize(&model, nullptr);

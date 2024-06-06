@@ -21,7 +21,7 @@ int main()
     model.add_param(.3, "recovery");
 
     // Setting up virus --------------------------------------------------------
-    epiworld::Virus<> v("covid");
+    epiworld::Virus<> v("covid", 5, false);
     v.set_state(1,2,2);
 
     EPI_NEW_POSTRECOVERYFUN_LAMBDA(immunity, int)
@@ -51,7 +51,7 @@ int main()
 
     model.add_tool(is, 1.0);
     model.add_tool_n(postImm, 0u);
-    model.add_virus_n(v, 5);
+    model.add_virus(v);
     model.run(112, 30);
     model.print();
 

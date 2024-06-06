@@ -5,7 +5,7 @@ int main()
 {
 
   // Creating a virus
-  epiworld::Virus<> covid19("covid 19");
+  epiworld::Virus<> covid19("covid 19", 0.05, true);
   covid19.set_prob_infecting(0.8);
   covid19.set_state(1,2,2);
   
@@ -21,7 +21,7 @@ int main()
   model.add_state("Removed");
 
   // Adding the tool and virus
-  model.add_virus(covid19, .05);
+  model.add_virus(covid19);
 
   model.add_tool(vax, .5);
 

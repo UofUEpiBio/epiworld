@@ -754,7 +754,7 @@ inline void Model<TSeq>::dist_virus()
     for (auto & v: viruses)
     {
 
-        v.distribute(this);
+        v->distribute(this);
 
         // Apply the events
         events_run();
@@ -972,14 +972,10 @@ inline void Model<TSeq>::seed(size_t s) {
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
+inline void Model<TSeq>::add_virus(
+    Virus<TSeq> & v
+    )
 {
-
-    if (preval > 1.0)
-        throw std::range_error("Prevalence of virus cannot be above 1.0");
-
-    if (preval < 0.0)
-        throw std::range_error("Prevalence of virus cannot be negative");
 
     // Checking the state
     epiworld_fast_int init_, post_, rm_;
@@ -996,57 +992,6 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
     
     // Recording the variant
     db.record_virus(v);
-
-    // Adding new virus
-    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval)
-{
-
-    // Checking the ids
-    epiworld_fast_int init_, post_, rm_;
-    v.get_state(&init_, &post_, &rm_);
-
-    if (init_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -init- state."
-            );
-    else if (post_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -post- state."
-            );
-
-    // Setting the id
-    db.record_virus(v);
-
-    // Adding new virus
-    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fun)
-{
-
-    // Checking the ids
-    epiworld_fast_int init_, post_, rm_;
-    v.get_state(&init_, &post_, &rm_);
-
-    if (init_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -init- state."
-            );
-    else if (post_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -post- state."
-            );
-
-    // Setting the id
-    db.record_virus(v);
-    // v.set_id(viruses.size());
 
     // Adding new virus
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));

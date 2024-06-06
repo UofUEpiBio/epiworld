@@ -157,13 +157,13 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         if (i < n_viruses_model)
         {
 
-            if (virus.get_prevalence_as_proportion())
+            if (virus->get_prevalence_as_proportion())
             {
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %.2f%%)\n",
-                    virus.get_name().c_str(),
-                    virus.get_prevalence() * 100.00
+                    virus->get_name().c_str(),
+                    virus->get_prevalence() * 100.00
                 );
 
             }
@@ -172,8 +172,8 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %i seeds)\n",
-                    virus.get_name().c_str(),
-                    static_cast<int>(virus.get_prevalence())
+                    virus->get_name().c_str(),
+                    static_cast<int>(virus->get_prevalence())
                 );
 
             }
@@ -182,7 +182,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
             printf_epiworld(
                 " - %s (originated in the model...)\n",
-                virus.get_name().c_str()
+                virus->get_name().c_str()
             );
 
         }
