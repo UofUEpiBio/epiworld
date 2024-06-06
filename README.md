@@ -1,4 +1,4 @@
-[![Tests and coverage](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml/badge.svg)](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml) [![C++ Documentation](https://img.shields.io/badge/Docs-Doxygen-brightgreen)](https://UofUEpi.github.io/epiworld) ![GitHub Release](https://img.shields.io/github/v/release/UofUEpiBio/epiworld)
+[![Tests and coverage](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml/badge.svg)](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml) [![C++ Documentation](https://img.shields.io/badge/Docs-Doxygen-brightgreen)](https://UofUEpi.github.io/epiworld) ![GitHub Release](https://img.shields.io/github/v/release/UofUEpiBio/epiworld) [![codecov](https://codecov.io/gh/UofUEpiBio/epiworld/graph/badge.svg?token=CPDYG4HA0B)](https://codecov.io/gh/UofUEpiBio/epiworld)
 
 
 # epiworld
@@ -26,8 +26,7 @@ can be found [here](helloworld.cpp), and you can compile the code as follows:
 g++ -std=c++17 -O2 readme.cpp -o readme.o
 ```
 
-As you can see in [helloworld.cpp](helloworld.cpp), to use epiworld you only need
-to incorporate the single header file [epiworld.hpp](epiworld.hpp):
+As you can see in [`helloworld.cpp`](helloworld.cpp), to use `epiworld` you only need to incorporate the single header file [`epiworld.hpp`](epiworld.hpp):
 
 ```cpp
 #include "epiworld.hpp"
@@ -108,8 +107,7 @@ Transition Probabilities:
 
 ## Building from scratch
 
-One of the best things about epiworld is that models can be built from scratch, like
-in the following example ([readme.cpp](readme.cpp)):
+One of the best things about epiworld is the capability to build models from scratch. Here is one example ([readme.cpp](readme.cpp)):
 
 ```cpp
 #include "epiworld.hpp"
@@ -156,7 +154,7 @@ int main()
 }
 ```
 
-And you should get something like the following:
+Which should print something like the following:
 
 ```bash
 Running the model...
@@ -199,18 +197,11 @@ Which took about 0.209 seconds (~ 47 million ppl x day / second).
 
 ## Simulation Steps
 
-The core logic of the model relies on user-defined statuses and their corresponding
-update functions. In particular, the model does not have a predefined set of statuses,
-e.g., susceptible, infected, recovered; it is the user who establishes them. This
-provides a great deal of flexibility as models in `epiworld` can have an arbitrary
-set of statuses.
+The core logic of the model relies on user-defined statuses and their corresponding update functions. In particular, the model does not have a predefined set of statuses, e.g., susceptible, infected, recovered; the user establishes them. This provides flexibility as models in `epiworld` can have an arbitrary set of statuses.
 
-Like most other ABM, `epiworld` simulates the evolution of a system in discrete steps.
-Each step represents a day in the system, and changes are reflected at the beginning
-of the following day. Therefore, agents can become recovered and transmit a virus
-on the same day. A single step of `epiworld` features the following procedures:
+Like most other ABMs, `epiworld` simulates the evolution of a system in discrete steps. Each step represents a day in the system, and changes are reflected at the beginning of the following day. Therefore, agents can recover and transmit a virus on the same day. A single step of `epiworld` features the following procedures:
 
-1. **Status update**: Agents are updated according to the status they are at.
+**Status update**: Agents are updated according to their status.
 
 2. (optional) **Execute Global events**: A call of user-defined functions affecting
 the system. These can make any type of change in the system.
@@ -218,23 +209,19 @@ the system. These can make any type of change in the system.
 3. (optional) **Apply rewiring algorithm**: When specified, the network is rewired
 according to a user-defined function.
 
-4. **Lock the results**: The current date is incremented in one unit and
+4. **Lock the results**: The current date is incremented in one unit, and
   the changes (exposition, new infections, recoveries, etc.) are recorded
   in the database. 
 
 5. (optional) **Mutate Variants**: When defined, variants can mutate, with the new
 variants appearing the next day.
 
-To speed up computations, `epiworld` uses by default a queuing system that decides which
-agents will be active during each step and which will not. Agents are active when either
-they or at least one of their neighbors has a virus active. Agents' updates are triggered
-only for those who are in the queue, which in most cases accelerates the completion of
-the current step.
+To speed up computations, `epiworld` uses a queuing system that decides which agents will be active during each step and which will not. Agents are active when either they or at least one of their neighbors has a virus active. Agents' updates are triggered only for those in the queue, accelerating the completion of the current step.
 
 ## Agents
 
 Agents carry two sets of important information: viruses and tools. Each agent
-can have multiple instances of them, meaning that multiple viruses and tools can
+can have multiple instances of them, meaning multiple viruses and tools can
 coexist in a model. At each step of the simulation, an agent can face the following
 changes:
 
@@ -252,13 +239,9 @@ result in gaining immunity to that variant.
 agent. Examples of this are moving from "exposed" to "infected," from "infected"
 to "ICU," etc.
 
-- **Become removed (`rm_agent_by_virus()`)**: An agent becomes inactive after its
-condition becoming worse. In such a case, all viruses attached to the agent are
-removed as well.
+- **Become removed (`rm_agent_by_virus()`)**: An agent becomes inactive after its condition worsens. In such a case, all viruses attached to the agent are also removed.
 
-Any action in the model can trigger a change in its queuing system. By default,
-becoming exposed makes the agent (and its neighbors) active in the queuing system.
-Likewise, losing all viruses could make the agent and its neighbors inactive.
+Any action in the model can trigger a change in its queuing system. By default, becoming exposed makes the agent (and its neighbors) active in the queuing system. Likewise, losing all viruses could make the agent and its neighbors inactive.
 
 <!-- 
 ## Tools -->
