@@ -19,7 +19,7 @@ jobs:
     runs-on: Ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Check
         env:
@@ -31,7 +31,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Check
         run: |
@@ -53,21 +53,23 @@ jobs:
           cd tests
           make main.o
           ./main.o
-      
+        
+  coverage:
+    runs-on: ubuntu-latest
+    container: gvegayon/epiworld:latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Generate coverage
         run: |
           cd tests
           make coverage
 
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v4
         with:
           files: tests/gcov-files/* # optional
           #        flags: unittests # optional
           name: codecov-umbrella # optional
           fail_ci_if_error: true # optional (default = false)
           verbose: true # optional (default = false)
-    
-    
-          
-
-          
