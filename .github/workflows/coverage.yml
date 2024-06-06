@@ -25,7 +25,7 @@ jobs:
 
       - uses: codecov/codecov-action@v3
         with:
-          gcov: true
+          # gcov: true
           directory: tests
           gcov_ignore: tests/tests.hpp
           verbose: true # optional (default = false)
