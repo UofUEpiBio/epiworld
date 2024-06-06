@@ -72,17 +72,17 @@ int main() {
     covid19.set_state(1,2,3);
 
     // Creating tools ---------------------------------------------------------
-    epiworld::Tool<DAT> vaccine("Vaccine");
+    epiworld::Tool<DAT> vaccine("Vaccine", 0.5, true);
     vaccine.set_susceptibility_reduction(&model("vax efficacy"));
     vaccine.set_recovery_enhancer(0.4);
     vaccine.set_death_reduction(&model("vax death"));
     vaccine.set_transmission_reduction(0.5);
     
-    epiworld::Tool<DAT> mask("Face masks");
+    epiworld::Tool<DAT> mask("Face masks", 0.5, true);
     mask.set_susceptibility_reduction(0.8);
     mask.set_transmission_reduction(0.05);
 
-    epiworld::Tool<DAT> immune("Immune system");
+    epiworld::Tool<DAT> immune("Immune system", 1.0, true);
     immune.set_susceptibility_reduction(&model("imm efficacy"));
     immune.set_recovery_enhancer(&model("imm recovery"));
     immune.set_death_reduction(&model("imm death"));
@@ -90,16 +90,16 @@ int main() {
     DAT seq0(base_seq.size(), false);
     immune.set_sequence(seq0);
 
-    epiworld::Tool<DAT> post_immunity("Post Immune");
+    epiworld::Tool<DAT> post_immunity("Post Immune", 0, true);
     post_immunity.set_susceptibility_reduction(1.0);
 
     // Adding the virus and the tools to the model ----------------------------
     model.add_virus(covid19); 
 
-    model.add_tool(immune, 1.0);
-    model.add_tool(vaccine, 0.5);
-    model.add_tool(mask, 0.5);
-    model.add_tool_n(post_immunity, 0);
+    model.add_tool(immune);
+    model.add_tool(vaccine);
+    model.add_tool(mask);
+    model.add_tool(post_immunity);
     
     // Initializing and printing information about the model ------------------
     model.queuing_off(); // Not working with rewiring just yet.

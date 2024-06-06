@@ -174,7 +174,7 @@ public:
     void set_prevalence(epiworld_double prevalence, bool as_proportion);
     bool get_prevalence_as_proportion() const;
     void distribute(Model<TSeq> * model);
-    void set_distribution(VirusToAgentFun<TSeq> fun);
+    void set_dist_fun(VirusToAgentFun<TSeq> fun);
     ///@}
 
 

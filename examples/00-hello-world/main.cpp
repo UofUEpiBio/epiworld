@@ -23,8 +23,8 @@ int main()
     virus.set_prob_death(.01);
     model.add_virus(virus);
     
-    epiworld::Tool<int> tool("vaccine");
-    model.add_tool(tool, .5);
+    epiworld::Tool<int> tool("vaccine", .5, true);
+    model.add_tool(tool);
 
     // Generating a random pop 
     model.agents_smallworld(10000, 20, false, .01);

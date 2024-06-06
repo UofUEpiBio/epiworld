@@ -10,7 +10,7 @@ int main()
   covid19.set_state(1,2,2);
   
   // Creating a tool
-  epiworld::Tool<> vax("vaccine");
+  epiworld::Tool<> vax("vaccine", .5, true);
   vax.set_susceptibility_reduction(.95);
 
   // Creating a model
@@ -23,7 +23,7 @@ int main()
   // Adding the tool and virus
   model.add_virus(covid19);
 
-  model.add_tool(vax, .5);
+  model.add_tool(vax);
 
   // Generating a random pop
   model.agents_from_adjlist(

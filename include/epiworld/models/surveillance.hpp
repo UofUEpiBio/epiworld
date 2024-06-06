@@ -336,11 +336,11 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
-    epiworld::Tool<TSeq> vax("Vaccine");
+    epiworld::Tool<TSeq> vax("Vaccine", prop_vaccinated, true);
     vax.set_susceptibility_reduction(&model("Vax efficacy"));
     vax.set_transmission_reduction(&model("Vax redux transmission"));
     
-    model.add_tool(vax, prop_vaccinated);
+    model.add_tool(vax);
 
     model.set_name("Surveillance");
 

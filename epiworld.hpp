@@ -6116,11 +6116,7 @@ protected:
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses = {};
-    
     std::vector< ToolPtr<TSeq> > tools = {};
-    std::vector< epiworld_double > prevalence_tool = {};
-    std::vector< bool > prevalence_tool_as_proportion = {};
-    std::vector< ToolToAgentFun<TSeq> > tools_dist_funs = {};
 
     std::vector< Entity<TSeq> > entities = {}; 
     std::vector< Entity<TSeq> > entities_backup = {};
@@ -6317,9 +6313,7 @@ public:
      */
     ///@{
     void add_virus(Virus<TSeq> & v);
-    void add_tool(Tool<TSeq> & t, epiworld_double preval);
-    void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
-    void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
+    void add_tool(Tool<TSeq> & t);
     void add_entity(Entity<TSeq> e);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
@@ -7122,9 +7116,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     directed(model.directed),
     viruses(model.viruses),
     tools(model.tools),
-    prevalence_tool(model.prevalence_tool),
-    prevalence_tool_as_proportion(model.prevalence_tool_as_proportion),
-    tools_dist_funs(model.tools_dist_funs),
     entities(model.entities),
     entities_backup(model.entities_backup),
     rewire_fun(model.rewire_fun),
@@ -7192,9 +7183,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     viruses(std::move(model.viruses)),
     // Tools
     tools(std::move(model.tools)),
-    prevalence_tool(std::move(model.prevalence_tool)),
-    prevalence_tool_as_proportion(std::move(model.prevalence_tool_as_proportion)),
-    tools_dist_funs(std::move(model.tools_dist_funs)),
     // Entities
     entities(std::move(model.entities)),
     entities_backup(std::move(model.entities_backup)),
@@ -7265,9 +7253,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     viruses                        = m.viruses;
 
     tools                         = m.tools;
-    prevalence_tool               = m.prevalence_tool;
-    prevalence_tool_as_proportion = m.prevalence_tool_as_proportion;
-    tools_dist_funs               = m.tools_dist_funs;
     
     entities        = m.entities;
     entities_backup = m.entities_backup;
@@ -7507,55 +7492,10 @@ template<typename TSeq>
 inline void Model<TSeq>::dist_tools()
 {
 
-    // Starting first infection
-    int n = size();
-    std::vector< size_t > idx(n);
-    for (epiworld_fast_uint t = 0; t < tools.size(); ++t)
+    for (auto & tool: tools)
     {
 
-        if (tools_dist_funs[t])
-        {
-
-            tools_dist_funs[t](*tools[t], this);
-
-        } else {
-
-            // Picking how many
-            int nsampled;
-            if (prevalence_tool_as_proportion[t])
-            {
-                nsampled = static_cast<int>(std::floor(prevalence_tool[t] * size()));
-            }
-            else
-            {
-                nsampled = static_cast<int>(prevalence_tool[t]);
-            }
-
-            if (nsampled > static_cast<int>(size()))
-                throw std::range_error("There are only " + std::to_string(size()) + 
-                " individuals in the population. Cannot add the tool to " + std::to_string(nsampled));
-            
-            ToolPtr<TSeq> tool = tools[t];
-
-            int n_left = n;
-            std::iota(idx.begin(), idx.end(), 0);
-            while (nsampled > 0)
-            {
-                int loc = static_cast<epiworld_fast_uint>(floor(runif() * n_left--));
-                
-                population[idx[loc]].add_tool(
-                    tool,
-                    const_cast< Model<TSeq> * >(this),
-                    tool->state_init, tool->queue_init
-                    );
-                
-                nsampled--;
-
-                std::swap(idx[loc], idx[n_left]);
-
-            }
-
-        }
+        tool->distribute(this);
 
         // Apply the events
         events_run();
@@ -7740,50 +7680,16 @@ inline void Model<TSeq>::add_virus(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool(Tool<TSeq> & t, epiworld_double preval)
+inline void Model<TSeq>::add_tool(Tool<TSeq> & t)
 {
 
-    if (preval > 1.0)
-        throw std::range_error("Prevalence of tool cannot be above 1.0");
-
-    if (preval < 0.0)
-        throw std::range_error("Prevalence of tool cannot be negative");
-
+    
     db.record_tool(t);
 
     // Adding the tool to the model (and database.)
     tools.push_back(std::make_shared< Tool<TSeq> >(t));
-    prevalence_tool.push_back(preval);
-    prevalence_tool_as_proportion.push_back(true);
-    tools_dist_funs.push_back(nullptr);
 
 }
-
-template<typename TSeq>
-inline void Model<TSeq>::add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval)
-{
-    
-    db.record_tool(t);
-
-    tools.push_back(std::make_shared<Tool<TSeq> >(t));
-    prevalence_tool.push_back(preval);
-    prevalence_tool_as_proportion.push_back(false);
-    tools_dist_funs.push_back(nullptr);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun)
-{
-    
-    db.record_tool(t);
-    
-    tools.push_back(std::make_shared<Tool<TSeq> >(t));
-    prevalence_tool.push_back(0.0);
-    prevalence_tool_as_proportion.push_back(false);
-    tools_dist_funs.push_back(fun);
-}
-
 
 template<typename TSeq>
 inline void Model<TSeq>::add_entity(Entity<TSeq> e)
@@ -7850,8 +7756,6 @@ inline void Model<TSeq>::rm_tool(size_t tool_pos)
 
     // Flipping with the last one
     std::swap(tools[tool_pos], tools[tools.size() - 1]);
-    std::swap(tools_dist_funs[tool_pos], tools_dist_funs[tools.size() - 1]);
-    std::swap(prevalence_tool[tool_pos], prevalence_tool[tools.size() - 1]);
     
     /* There's an error on windows:
     https://github.com/UofUEpiBio/epiworldR/actions/runs/4801482395/jobs/8543744180#step:6:84
@@ -7859,20 +7763,8 @@ inline void Model<TSeq>::rm_tool(size_t tool_pos)
     More clear here:
     https://stackoverflow.com/questions/58660207/why-doesnt-stdswap-work-on-vectorbool-elements-under-clang-win
     */
-    std::vector<bool>::swap(
-        prevalence_tool_as_proportion[tool_pos],
-        prevalence_tool_as_proportion[tools.size() - 1]
-    );
-
-    // auto old = prevalence_tool_as_proportion[tool_pos];
-    // prevalence_tool_as_proportion[tool_pos] = prevalence_tool_as_proportion[tools.size() - 1];
-    // prevalence_tool_as_proportion[tools.size() - 1] = old;
-    
 
     tools.pop_back();
-    tools_dist_funs.pop_back();
-    prevalence_tool.pop_back();
-    prevalence_tool_as_proportion.pop_back();
 
     return;
 
@@ -8987,6 +8879,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
     size_t n_tools_model = tools.size();
     for (size_t i = 0u; i < tools.size(); ++i)
     {   
+        const auto & tool = tools[i];
 
         if ((n_tools_model > 10) && (i >= 10))
         {
@@ -8999,13 +8892,13 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
         if (i < n_tools_model)
         {
-            if (prevalence_tool_as_proportion[i])
+            if (tool->get_prevalence_as_proportion())
             {
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %.2f%%)\n",
-                    tools[i]->get_name().c_str(),
-                    prevalence_tool[i] * 100.0
+                    tool->get_name().c_str(),
+                    tool->get_prevalence() * 100.0
                     );
 
             }
@@ -9014,8 +8907,8 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %i seeds)\n",
-                    tools[i]->get_name().c_str(),
-                    static_cast<int>(prevalence_tool[i])
+                    tool->get_name().c_str(),
+                    static_cast<int>(tool->get_prevalence())
                     );
 
             }
@@ -9024,7 +8917,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
             printf_epiworld(
                 " - %s (originated in the model...)\n",
-                tools[i]->get_name().c_str()
+                tool->get_name().c_str()
             );
 
         }
@@ -9719,18 +9612,6 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         )
             
     }
-
-    VECT_MATCH(
-        prevalence_tool, 
-        other.prevalence_tool, 
-        "tools prevalence don't match"
-    )
-
-    VECT_MATCH(
-        prevalence_tool_as_proportion, 
-        other.prevalence_tool_as_proportion, 
-        "tools as prop don't match"
-    )
     
     VECT_MATCH(
         entities,
@@ -10254,7 +10135,7 @@ public:
     void set_prevalence(epiworld_double prevalence, bool as_proportion);
     bool get_prevalence_as_proportion() const;
     void distribute(Model<TSeq> * model);
-    void set_distribution(VirusToAgentFun<TSeq> fun);
+    void set_dist_fun(VirusToAgentFun<TSeq> fun);
     ///@}
 
 
@@ -10370,7 +10251,7 @@ inline Virus<TSeq>::Virus(
     set_name(name);
 
     set_prevalence(prevalence, prevalence_as_proportion);
-    set_distribution(dist_fun);
+    set_dist_fun(dist_fun);
 }
 
 template<typename TSeq>
@@ -11080,7 +10961,7 @@ inline void Virus<TSeq>::distribute(Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
+inline void Virus<TSeq>::set_dist_fun(VirusToAgentFun<TSeq> fun)
 {
     dist_fun = fun;
 }
@@ -11386,9 +11267,17 @@ private:
 
     void set_agent(Agent<TSeq> * p, size_t idx);
 
+    epiworld_double prevalence = 0.0;
+    bool prevalence_as_proportion = false;
+    ToolToAgentFun<TSeq> dist_fun = nullptr;
+
 public:
-    Tool(std::string name = "unknown tool");
-    // Tool(TSeq d, std::string name = "unknown tool");
+    Tool(
+        std::string name = "unknown tool",
+        epiworld_double prevalence = 0.0,
+        bool prevalence_as_proportion = false,
+        ToolToAgentFun<TSeq> dist_fun = nullptr
+        );
 
     void set_sequence(TSeq d);
     void set_sequence(std::shared_ptr<TSeq> d);
@@ -11442,6 +11331,13 @@ public:
     bool operator!=(const Tool<TSeq> & other) const {return !operator==(other);};
 
     void print() const;
+
+    void distribute(Model<TSeq> * model);
+
+    void set_prevalence(epiworld_double p, bool as_proportion = false);
+    epiworld_double get_prevalence() const;
+    bool get_prevalence_as_proportion() const;
+    void set_dist_fun(ToolToAgentFun<TSeq> fun);
 
 };
 
@@ -11547,9 +11443,16 @@ inline ToolFun<TSeq> tool_fun_logit(
 }
 
 template<typename TSeq>
-inline Tool<TSeq>::Tool(std::string name)
+inline Tool<TSeq>::Tool(
+    std::string name,
+    epiworld_double prevalence,
+    bool as_proportion,
+    ToolToAgentFun<TSeq> dist_fun
+    )
 {
     set_name(name);
+    set_prevalence(prevalence, as_proportion);
+    set_dist_fun(dist_fun);
 }
 
 // template<typename TSeq>
@@ -11963,6 +11866,89 @@ inline void Tool<TSeq>::print() const
 
 }
 
+template<typename TSeq>
+inline void Tool<TSeq>::distribute(Model<TSeq> * model)
+{
+
+    if (dist_fun)
+    {
+
+        dist_fun(*this, model);
+
+    } else {
+
+        // Picking how many
+        int n_to_distribute;
+        int n = model->size();
+        if (prevalence_as_proportion)
+        {
+            n_to_distribute = static_cast<int>(std::floor(prevalence * n));
+
+            if (n_to_distribute == n)
+                n_to_distribute--;
+        }
+        else
+        {
+            n_to_distribute = static_cast<int>(prevalence);
+        }
+
+        if (n_to_distribute > n)
+            throw std::range_error("There are only " + std::to_string(n) + 
+            " individuals in the population. Cannot add the tool to " + std::to_string(n_to_distribute));
+        
+        std::vector< int > idx(n);
+        std::iota(idx.begin(), idx.end(), 0);
+        auto & population = model->get_agents();
+        for (int i = 0u; i < n_to_distribute; ++i)
+        {
+            int loc = static_cast<epiworld_fast_uint>(
+                floor(model->runif() * n--)
+                );
+
+            if ((loc > 0) && (loc == n))
+                loc--;
+            
+            population[idx[loc]].add_tool(
+                *this,
+                const_cast< Model<TSeq> * >(model),
+                state_init, queue_init
+                );
+            
+            std::swap(idx[loc], idx[n]);
+
+        }
+
+    }
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_dist_fun(ToolToAgentFun<TSeq> fun)
+{
+    dist_fun = fun;
+}
+
+template<typename TSeq>
+inline epiworld_double Tool<TSeq>::get_prevalence() const
+{
+    return prevalence;
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_prevalence(
+    epiworld_double prevalence,
+    bool as_proportion
+)
+{
+    this->prevalence = prevalence;
+    this->prevalence_as_proportion = as_proportion;
+}
+
+template<typename TSeq>
+inline bool Tool<TSeq>::get_prevalence_as_proportion() const
+{
+    return prevalence_as_proportion;
+}
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -16815,11 +16801,11 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
-    epiworld::Tool<TSeq> vax("Vaccine");
+    epiworld::Tool<TSeq> vax("Vaccine", prop_vaccinated, true);
     vax.set_susceptibility_reduction(&model("Vax efficacy"));
     vax.set_transmission_reduction(&model("Vax redux transmission"));
     
-    model.add_tool(vax, prop_vaccinated);
+    model.add_tool(vax);
 
     model.set_name("Surveillance");
 

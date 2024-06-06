@@ -10,14 +10,14 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     m.add_state("Recovered");
 
     epiworld::Virus<bool> v("covid 19", 0.5, true);
-    epiworld::Tool<bool> t;
+    epiworld::Tool<bool> t("vax", .5, true);
     v.set_state(0, 1);
 
     m.seed(1333);
     m.agents_smallworld(1000);
 
     m.add_virus(v);
-    m.add_tool(t, .5);
+    m.add_tool(t);
 
     // Cloning
     epiworld::Model<bool> m2 = m;

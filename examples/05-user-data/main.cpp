@@ -41,16 +41,16 @@ int main()
     v.set_prob_infecting(&model("infectiousness"));
     
     // Setting up tool ---------------------------------------------------------
-    epiworld::Tool<> is("immune system");
+    epiworld::Tool<> is("immune system", 1.0, true);
     is.set_susceptibility_reduction(.3);
     is.set_death_reduction(.9);
     is.set_recovery_enhancer(&model("recovery"));
 
-    epiworld::Tool<> postImm("post immunity");
+    epiworld::Tool<> postImm("post immunity", 0, false);
     postImm.set_susceptibility_reduction(1.0);
 
-    model.add_tool(is, 1.0);
-    model.add_tool_n(postImm, 0u);
+    model.add_tool(is);
+    model.add_tool(postImm);
     model.add_virus(v);
     model.run(112, 30);
     model.print();

@@ -89,7 +89,7 @@ inline Virus<TSeq>::Virus(
     set_name(name);
 
     set_prevalence(prevalence, prevalence_as_proportion);
-    set_distribution(dist_fun);
+    set_dist_fun(dist_fun);
 }
 
 template<typename TSeq>
@@ -799,7 +799,7 @@ inline void Virus<TSeq>::distribute(Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
+inline void Virus<TSeq>::set_dist_fun(VirusToAgentFun<TSeq> fun)
 {
     dist_fun = fun;
 }

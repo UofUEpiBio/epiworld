@@ -135,11 +135,7 @@ protected:
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses = {};
-    
     std::vector< ToolPtr<TSeq> > tools = {};
-    std::vector< epiworld_double > prevalence_tool = {};
-    std::vector< bool > prevalence_tool_as_proportion = {};
-    std::vector< ToolToAgentFun<TSeq> > tools_dist_funs = {};
 
     std::vector< Entity<TSeq> > entities = {}; 
     std::vector< Entity<TSeq> > entities_backup = {};
@@ -336,9 +332,7 @@ public:
      */
     ///@{
     void add_virus(Virus<TSeq> & v);
-    void add_tool(Tool<TSeq> & t, epiworld_double preval);
-    void add_tool_n(Tool<TSeq> & t, epiworld_fast_uint preval);
-    void add_tool_fun(Tool<TSeq> & t, ToolToAgentFun<TSeq> fun);
+    void add_tool(Tool<TSeq> & t);
     void add_entity(Entity<TSeq> e);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
