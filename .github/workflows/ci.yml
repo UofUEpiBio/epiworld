@@ -15,7 +15,7 @@ env:
 
 jobs:
   test-ubuntu:
-    container: ${cntr}
+    container: gvegayon/epiworld:latest
     runs-on: Ubuntu-latest
 
     steps:
@@ -41,7 +41,7 @@ jobs:
 
   test-ubuntu2:
     runs-on: ubuntu-latest
-    container: ${cntr}
+    container: gvegayon/epiworld:latest
 
     steps:
       - uses: actions/checkout@v4
