@@ -24,7 +24,8 @@ main.a: main.cpp clean
 
 # Check coverage using the main.o target
 coverage:
-	g++ -std=c++14 -Wall -Wextra -O2 -g -fprofile-arcs -ftest-coverage main.cpp -o main.o && \
+	g++ -std=c++14 -O2 -g -fprofile-arcs -ftest-coverage main.cpp -o main.o && \
+	mv main.o-main.gcno main.gcno && \
 	gcov -r main.cpp && ls -allt && \
 	rm -f catch*.hpp.gcov && \
 	mkdir -p gcov-files && rm -f gcov-files/* && \
