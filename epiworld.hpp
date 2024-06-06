@@ -16,7 +16,6 @@
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
 
-
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 3
@@ -6117,9 +6116,6 @@ protected:
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses = {};
-    std::vector< epiworld_double > prevalence_virus = {}; ///< Initial prevalence_virus of each virus
-    std::vector< bool > prevalence_virus_as_proportion = {};
-    std::vector< VirusToAgentFun<TSeq> > viruses_dist_funs = {};
     
     std::vector< ToolPtr<TSeq> > tools = {};
     std::vector< epiworld_double > prevalence_tool = {};
@@ -6686,8 +6682,6 @@ public:
     ///@}
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
-    const std::vector< epiworld_double > & get_prevalence_virus() const;
-    const std::vector< bool > & get_prevalence_virus_as_proportion() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
     Virus<TSeq> & get_virus(size_t id);
     Tool<TSeq> & get_tool(size_t id);
@@ -7129,9 +7123,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     population_backup(model.population_backup),
     directed(model.directed),
     viruses(model.viruses),
-    prevalence_virus(model.prevalence_virus),
-    prevalence_virus_as_proportion(model.prevalence_virus_as_proportion),
-    viruses_dist_funs(model.viruses_dist_funs),
     tools(model.tools),
     prevalence_tool(model.prevalence_tool),
     prevalence_tool_as_proportion(model.prevalence_tool_as_proportion),
@@ -7201,9 +7192,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     directed(std::move(model.directed)),
     // Virus
     viruses(std::move(model.viruses)),
-    prevalence_virus(std::move(model.prevalence_virus)),
-    prevalence_virus_as_proportion(std::move(model.prevalence_virus_as_proportion)),
-    viruses_dist_funs(std::move(model.viruses_dist_funs)),
     // Tools
     tools(std::move(model.tools)),
     prevalence_tool(std::move(model.prevalence_tool)),
@@ -7277,9 +7265,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     directed = m.directed;
     
     viruses                        = m.viruses;
-    prevalence_virus               = m.prevalence_virus;
-    prevalence_virus_as_proportion = m.prevalence_virus_as_proportion;
-    viruses_dist_funs              = m.viruses_dist_funs;
 
     tools                         = m.tools;
     prevalence_tool               = m.prevalence_tool;
@@ -7509,62 +7494,10 @@ template<typename TSeq>
 inline void Model<TSeq>::dist_virus()
 {
 
-    // Starting first infection
-    int n = size();
-    std::vector< size_t > idx(n, 0u);
-    std::iota(idx.begin(), idx.end(), 0);
-    int n_left = idx.size();
-
-    for (size_t v = 0u; v < viruses.size(); ++v)
+    for (auto & v: viruses)
     {
 
-        if (viruses_dist_funs[v])
-        {
-
-            viruses_dist_funs[v](*viruses[v], this);
-
-        } else {
-
-            // Picking how many
-            int nsampled;
-            if (prevalence_virus_as_proportion[v])
-            {
-                nsampled = static_cast<int>(std::floor(prevalence_virus[v] * size()));
-            }
-            else
-            {
-                nsampled = static_cast<int>(prevalence_virus[v]);
-            }
-
-            if (nsampled > static_cast<int>(size()))
-                throw std::range_error("There are only " + std::to_string(size()) + 
-                " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
-
-
-            VirusPtr<TSeq> virus = viruses[v];
-            
-            while (nsampled > 0)
-            {
-
-                int loc = static_cast<epiworld_fast_uint>(floor(runif() * (n_left--)));
-
-                Agent<TSeq> & agent = population[idx[loc]];
-                
-                // Adding action
-                agent.set_virus(
-                    virus,
-                    const_cast<Model<TSeq> * >(this),
-                    virus->state_init,
-                    virus->queue_init
-                    );
-
-                // Adjusting sample
-                nsampled--;
-                std::swap(idx[loc], idx[n_left]);
-
-            }
-
-        }
+        v.distribute(this);
 
         // Apply the events
         events_run();
@@ -7809,9 +7742,6 @@ inline void Model<TSeq>::add_virus(Virus<TSeq> & v, epiworld_double preval)
 
     // Adding new virus
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
-    prevalence_virus.push_back(preval);
-    prevalence_virus_as_proportion.push_back(true);
-    viruses_dist_funs.push_back(nullptr);
 
 }
 
@@ -7837,9 +7767,6 @@ inline void Model<TSeq>::add_virus_n(Virus<TSeq> & v, epiworld_fast_uint preval)
 
     // Adding new virus
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
-    prevalence_virus.push_back(preval);
-    prevalence_virus_as_proportion.push_back(false);
-    viruses_dist_funs.push_back(nullptr);
 
 }
 
@@ -7866,9 +7793,6 @@ inline void Model<TSeq>::add_virus_fun(Virus<TSeq> & v, VirusToAgentFun<TSeq> fu
 
     // Adding new virus
     viruses.push_back(std::make_shared< Virus<TSeq> >(v));
-    prevalence_virus.push_back(0.0);
-    prevalence_virus_as_proportion.push_back(false);
-    viruses_dist_funs.push_back(fun);
 
 }
 
@@ -7961,17 +7885,7 @@ inline void Model<TSeq>::rm_virus(size_t virus_pos)
 
     // Flipping with the last one
     std::swap(viruses[virus_pos], viruses[viruses.size() - 1]);
-    std::swap(viruses_dist_funs[virus_pos], viruses_dist_funs[viruses.size() - 1]);
-    std::swap(prevalence_virus[virus_pos], prevalence_virus[viruses.size() - 1]);
-    std::vector<bool>::swap(
-        prevalence_virus_as_proportion[virus_pos],
-        prevalence_virus_as_proportion[viruses.size() - 1]
-        );
-
     viruses.pop_back();
-    viruses_dist_funs.pop_back();
-    prevalence_virus.pop_back();
-    prevalence_virus_as_proportion.pop_back();
 
     return;
 
@@ -9067,6 +8981,8 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
     for (size_t i = 0u; i < n_viruses_model; ++i)
     {    
 
+        
+        const auto & virus = viruses[i];
         if ((n_viruses_model > 10) && (i >= 10))
         {
             printf_epiworld(" ...and %i more viruses...\n",
@@ -9079,13 +8995,13 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         if (i < n_viruses_model)
         {
 
-            if (prevalence_virus_as_proportion[i])
+            if (virus.get_prevalence_as_proportion())
             {
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %.2f%%)\n",
-                    viruses[i]->get_name().c_str(),
-                    prevalence_virus[i] * 100.00
+                    virus.get_name().c_str(),
+                    virus.get_prevalence() * 100.00
                 );
 
             }
@@ -9094,8 +9010,8 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
                 printf_epiworld(
                     " - %s (baseline prevalence: %i seeds)\n",
-                    viruses[i]->get_name().c_str(),
-                    static_cast<int>(prevalence_virus[i])
+                    virus.get_name().c_str(),
+                    static_cast<int>(virus.get_prevalence())
                 );
 
             }
@@ -9104,7 +9020,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
             printf_epiworld(
                 " - %s (originated in the model...)\n",
-                viruses[i]->get_name().c_str()
+                virus.get_name().c_str()
             );
 
         }
@@ -9718,18 +9634,6 @@ inline const std::vector< VirusPtr<TSeq> > & Model<TSeq>::get_viruses() const
 }
 
 template<typename TSeq>
-inline const std::vector< epiworld_double > & Model<TSeq>::get_prevalence_virus() const
-{
-    return prevalence_virus;
-}
-
-template<typename TSeq>
-inline const std::vector< bool > & Model<TSeq>::get_prevalence_virus_as_proportion() const
-{
-    return prevalence_virus_as_proportion;
-}
-
-template<typename TSeq>
 const std::vector< ToolPtr<TSeq> > & Model<TSeq>::get_tools() const
 {
     return tools;
@@ -9857,18 +9761,6 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         )
             
     }
-
-    VECT_MATCH(
-        prevalence_virus,
-        other.prevalence_virus,
-        "virus prevalence don't match"
-    )
-
-    VECT_MATCH(
-        prevalence_virus_as_proportion,
-        other.prevalence_virus_as_proportion,
-        "virus prevalence as prop don't match"
-    )
     
     // Tools -------------------------------------------------------------------
     EPI_DEBUG_FAIL_AT_TRUE(
@@ -10299,8 +10191,18 @@ private:
     epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
     epiworld_fast_int queue_removed = -99; ///< Change of state when agent is removed
 
+    // Information about how distribution works
+    epiworld_double prevalence = 0.0;
+    bool prevalence_as_proportion = false;
+    VirusToAgentFun<TSeq> dist_fun = nullptr;
+
 public:
-    Virus(std::string name = "unknown virus");
+    Virus(
+        std::string name = "unknown virus",
+        epiworld_double prevalence = 0.0,
+        bool prevalence_as_proportion = false,
+        VirusToAgentFun<TSeq> dist_fun = nullptr
+        );
 
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
@@ -10400,6 +10302,18 @@ public:
     bool operator!=(const Virus<TSeq> & other) const {return !operator==(other);};
 
     void print() const;
+
+    /**
+     * @brief Get information about the prevalence of the virus
+     */
+    ///@{
+    epiworld_double get_prevalence() const;
+    void set_prevalence(epiworld_double prevalence);
+    bool get_prevalence_as_proportion() const;
+    void set_prevalence_as_proportion(bool prevalence_as_proportion);
+    void distribute(Model<TSeq> * model);
+    ///@}
+
 
 };
 
@@ -10504,8 +10418,16 @@ inline VirusFun<TSeq> virus_fun_logit(
 }
 
 template<typename TSeq>
-inline Virus<TSeq>::Virus(std::string name) {
+inline Virus<TSeq>::Virus(
+    std::string name,
+    epiworld_double prevalence,
+    bool prevalence_as_proportion,
+    VirusToAgentFun<TSeq> dist_fun
+    ) {
     set_name(name);
+    this->prevalence = prevalence;
+    this->prevalence_as_proportion = prevalence_as_proportion;
+    this->dist_fun = dist_fun;
 }
 
 template<typename TSeq>
@@ -11107,6 +11029,83 @@ inline void Virus<TSeq>::print() const
     printf_epiworld("queue_init    : %i\n", static_cast<int>(queue_init));
     printf_epiworld("queue_post    : %i\n", static_cast<int>(queue_post));
     printf_epiworld("queue_removed : %i\n", static_cast<int>(queue_removed));
+
+}
+
+template<typename TSeq>
+inline epiworld_double Virus<TSeq>::get_prevalence() const
+{
+    return prevalence;
+}
+
+template<typename TSeq>
+inline bool Virus<TSeq>::get_prevalence_as_proportion() const
+{
+    return prevalence_as_proportion;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_prevalence(epiworld_double preval)
+{
+    prevalence = preval;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_prevalence_as_proportion(bool preval_as_proportion)
+{
+    prevalence_as_proportion = preval_as_proportion;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::distribute(Model<TSeq> * model)
+{
+
+    if (dist_fun)
+    {
+
+        dist_fun(*this, model);
+
+    } else {
+
+        // Picking how many
+        int nsampled;
+        size_t n = model->size();
+        if (prevalence_as_proportion)
+        {
+            nsampled = static_cast<int>(std::floor(prevalence * n));
+        }
+        else
+        {
+            nsampled = static_cast<int>(prevalence);
+        }
+
+        if (nsampled > static_cast<int>(n))
+            throw std::range_error("There are only " + std::to_string(n) + 
+            " individuals in the population. Cannot add the virus to " + std::to_string(nsampled));
+        
+        auto & population = model->get_agents();
+        while (nsampled > 0)
+        {
+
+            int loc = static_cast<epiworld_fast_uint>(floor(model->runif() * (n_left--)));
+
+            Agent<TSeq> & agent = population[idx[loc]];
+            
+            // Adding action
+            agent.set_virus(
+                *this,
+                const_cast<Model<TSeq> * >(model),
+                this->state_init,
+                this->queue_init
+                );
+
+            // Adjusting sample
+            nsampled--;
+            std::swap(idx[loc], idx[n_left]);
+
+        }
+
+    }
 
 }
 
@@ -15591,15 +15590,13 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sir(
 
         // Figuring out information about the viruses
         double tot = 0.0;
-        const auto & vpreval = model->get_prevalence_virus();
-        const auto & vprop   = model->get_prevalence_virus_as_proportion();
         double n   = static_cast<double>(model->size());
-        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        for (const auto & virus: model->get_viruses())
         {
-            if (vprop[i])
-                tot += vpreval[i];
+            if (virus.get_prevalence_as_proportion())
+                tot += virus.get_prevalence();
             else
-                tot += vpreval[i] / n;
+                tot += virus.get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -15667,15 +15664,13 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_sird(
 
         // Figuring out information about the viruses
         double tot = 0.0;
-        const auto & vpreval = model->get_prevalence_virus();
-        const auto & vprop   = model->get_prevalence_virus_as_proportion();
         double n   = static_cast<double>(model->size());
-        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        for (const auto & virus: model->get_viruses())
         {
-            if (vprop[i])
-                tot += vpreval[i];
+            if (virus.get_prevalence_as_proportion())
+                tot += virus.get_prevalence();
             else
-                tot += vpreval[i] / n;
+                tot += virus.get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -15747,15 +15742,13 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seir(
 
         // Figuring out information about the viruses
         double tot = 0.0;
-        const auto & vpreval = model->get_prevalence_virus();
-        const auto & vprop   = model->get_prevalence_virus_as_proportion();
         double n   = static_cast<double>(model->size());
-        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        for (const auto & virus: model->get_viruses())
         {
-            if (vprop[i])
-                tot += vpreval[i];
+            if (virus.get_prevalence_as_proportion())
+                tot += virus.get_prevalence();
             else
-                tot += vpreval[i] / n;
+                tot += virus.get_prevalence() / n;
         }
 
         // Putting the total into context
@@ -15831,15 +15824,13 @@ inline std::function<void(epiworld::Model<TSeq>*)> create_init_function_seird(
 
         // Figuring out information about the viruses
         double tot = 0.0;
-        const auto & vpreval = model->get_prevalence_virus();
-        const auto & vprop   = model->get_prevalence_virus_as_proportion();
         double n   = static_cast<double>(model->size());
-        for (size_t i = 0u; i < model->get_n_viruses(); ++i)
+        for (const auto & virus: model->get_viruses())
         {
-            if (vprop[i])
-                tot += vpreval[i];
+            if (virus.get_prevalence_as_proportion())
+                tot += virus.get_prevalence();
             else
-                tot += vpreval[i] / n;
+                tot += virus.get_prevalence() / n;
         }
 
         // Putting the total into context

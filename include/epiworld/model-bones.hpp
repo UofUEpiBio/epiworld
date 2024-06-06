@@ -135,9 +135,6 @@ protected:
     bool directed = false;
     
     std::vector< VirusPtr<TSeq> > viruses = {};
-    std::vector< epiworld_double > prevalence_virus = {}; ///< Initial prevalence_virus of each virus
-    std::vector< bool > prevalence_virus_as_proportion = {};
-    std::vector< VirusToAgentFun<TSeq> > viruses_dist_funs = {};
     
     std::vector< ToolPtr<TSeq> > tools = {};
     std::vector< epiworld_double > prevalence_tool = {};
@@ -704,8 +701,6 @@ public:
     ///@}
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
-    const std::vector< epiworld_double > & get_prevalence_virus() const;
-    const std::vector< bool > & get_prevalence_virus_as_proportion() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
     Virus<TSeq> & get_virus(size_t id);
     Tool<TSeq> & get_tool(size_t id);

@@ -16,7 +16,6 @@
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
 
-
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 3

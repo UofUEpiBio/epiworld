@@ -80,8 +80,16 @@ inline VirusFun<TSeq> virus_fun_logit(
 }
 
 template<typename TSeq>
-inline Virus<TSeq>::Virus(std::string name) {
+inline Virus<TSeq>::Virus(
+    std::string name,
+    epiworld_double prevalence,
+    bool prevalence_as_proportion,
+    VirusToAgentFun<TSeq> dist_fun
+    ) {
     set_name(name);
+    this->prevalence = prevalence;
+    this->prevalence_as_proportion = prevalence_as_proportion;
+    this->dist_fun = dist_fun;
 }
 
 template<typename TSeq>
@@ -683,6 +691,96 @@ inline void Virus<TSeq>::print() const
     printf_epiworld("queue_init    : %i\n", static_cast<int>(queue_init));
     printf_epiworld("queue_post    : %i\n", static_cast<int>(queue_post));
     printf_epiworld("queue_removed : %i\n", static_cast<int>(queue_removed));
+
+}
+
+template<typename TSeq>
+inline epiworld_double Virus<TSeq>::get_prevalence() const
+{
+    return prevalence;
+}
+
+template<typename TSeq>
+inline bool Virus<TSeq>::get_prevalence_as_proportion() const
+{
+    return prevalence_as_proportion;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_prevalence(epiworld_double preval)
+{
+    prevalence = preval;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_prevalence_as_proportion(bool preval_as_proportion)
+{
+    prevalence_as_proportion = preval_as_proportion;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::distribute(Model<TSeq> * model)
+{
+
+    if (dist_fun)
+    {
+
+        dist_fun(*this, model);
+
+    } else {
+
+        // Figuring out how what agents are available
+        std::vector< size_t > idx;
+        for (const auto & agent: model->get_agents())
+            if (agent.get_virus() == nullptr)
+                idx.push_back(agent.get_id());
+
+        // Picking how many
+        size_t n = model->size();
+        size_t n_available = idx.size();
+        if (prevalence_as_proportion)
+        {
+            nsampled = static_cast<int>(std::floor(prevalence * n));
+
+            if (nsampled == n)
+                nsampled--;
+        }
+        else
+        {
+            nsampled = static_cast<int>(prevalence);
+        }
+
+        if (nsampled > static_cast<int>(n_available))
+            throw std::range_error(
+                "There are only " + std::to_string(n_available) + 
+                " individuals with no virus in the population. " +
+                "Cannot add the virus to " +
+                std::to_string(nsampled)
+            );
+        
+        auto & population = model->get_agents();
+        while (nsampled > 0)
+        {
+
+            int loc = static_cast<epiworld_fast_uint>(floor(model->runif() * (n_left--)));
+
+            Agent<TSeq> & agent = population[idx[loc]];
+            
+            // Adding action
+            agent.set_virus(
+                *this,
+                const_cast<Model<TSeq> * >(model),
+                this->state_init,
+                this->queue_init
+                );
+
+            // Adjusting sample
+            nsampled--;
+            std::swap(idx[loc], idx[n_left]);
+
+        }
+
+    }
 
 }
 
