@@ -66,7 +66,7 @@ jobs:
           cd tests
           make coverage
 
-      - uses: codecov/codecov-action@v4.4.1
+      - uses: codecov/codecov-action@v3
         with:
           files: tests/gcov-files/* # optional
           #        flags: unittests # optional
