@@ -27,9 +27,9 @@ coverage:
 	g++ -std=c++14 -O2 -g -fprofile-arcs -ftest-coverage main.cpp -o main.o && \
 	mv main.o-main.gcno main.gcno && \
 	gcov -r main.cpp && ls -allt && \
-	rm -f catch*.hpp.gcov && \
-	mkdir -p gcov-files && rm -f gcov-files/* && \
-	mv *.hpp.gcov gcov-files/ && rm -f *.gcov
+	rm -f catch*.hpp.gcov *cpp.gcov # && \
+	# mkdir -p gcov-files && rm -f gcov-files/* && \
+	# mv *.hpp.gcov gcov-files/ && rm -f *.gcov
 
 
 # Create folders named after the *.cpp files in the current directory
