@@ -17,15 +17,15 @@ inline EntityToAgentFun<TSeq> entity_to_unassigned_agents()
 
         // Figuring out how many to sample
         int n_to_sample;
-        if (e.prevalence_as_proportion)
+        if (e.get_prevalence_as_proportion())
         {
-            n_to_sample = static_cast<int>(std::floor(e.prevalence * n));
+            n_to_sample = static_cast<int>(std::floor(e.get_prevalence() * n));
             if (n_to_sample > static_cast<int>(n))
                 --n_to_sample;
 
         } else
         {
-            n_to_sample = static_cast<int>(e.prevalence);
+            n_to_sample = static_cast<int>(e.get_prevalence());
             if (n_to_sample > static_cast<int>(n))
                 throw std::range_error("There are only " + std::to_string(n) + 
                 " individuals in the population. Cannot add the entity to " +
@@ -33,7 +33,7 @@ inline EntityToAgentFun<TSeq> entity_to_unassigned_agents()
         }
 
         int n_left = n;
-        for (size_t i = 0u; i < n_to_sample; ++i)
+        for (int i = 0; i < n_to_sample; ++i)
         {
             int loc = static_cast<epiworld_fast_uint>(
                 floor(m->runif() * n_left--)
@@ -358,7 +358,7 @@ inline void Entity<TSeq>::distribute()
         
         int n_left = n;
         std::iota(idx.begin(), idx.end(), 0);
-        while (n_to_assign > 0)
+        while ((n_to_assign > 0) && (n_left > 0))
         {
             int loc = static_cast<epiworld_fast_uint>(
                 floor(model->runif() * n_left--)
@@ -371,9 +371,12 @@ inline void Entity<TSeq>::distribute()
             auto & agent = model->get_agent(idx[loc]);
 
             if (!agent.has_entity(id))
+            {
                 agent.add_entity(
                     *this, this->model, this->state_init, this->queue_init
                     );
+                n_to_assign--;
+            }
                             
             std::swap(idx[loc], idx[n_left]);
 

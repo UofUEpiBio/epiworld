@@ -134,6 +134,10 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     e1.set_dist_fun(nullptr);
     e2.set_dist_fun(nullptr);
     e3.set_dist_fun(nullptr);
+    
+    e1.set_prevalence(2000, false);
+    e2.set_prevalence(2000, false);
+    e3.set_prevalence(2000, false);
 
     model.rm_entity(0);
     model.rm_entity(1);
@@ -145,6 +149,33 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     // Running and checking the results
     model.run(50, 123);
+
+    auto agents1 = model.get_entity(0).get_agents();
+    auto agents2 = model.get_entity(1).get_agents();
+    auto agents3 = model.get_entity(2).get_agents();
+
+    std::vector< int > counts(model.size(), 0);
+    for (const auto & a: agents1)
+        counts[a]++;
+
+    for (const auto & a: agents2)
+        counts[a]++;
+
+    for (const auto & a: agents3)
+        counts[a]++;
+    
+    double n0 = 0, n1 = 0, n2 = 0, n3 = 0;
+    for (const auto & c: counts)
+    {
+        if (c == 0)
+            n0++;
+        else if (c == 1)
+            n1++;
+        else if (c == 2)
+            n2++;
+        else if (c == 3)
+            n3++;
+    }
 
 
     #ifndef CATCH_CONFIG_MAIN

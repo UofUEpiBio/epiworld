@@ -57,7 +57,7 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE(nrepeats == 0);
-    REQUIRE(ntrue == model.size());
+    REQUIRE(ntrue == static_cast<int>(model.size()));
     #endif
 
     // Distributing entities among agents in a small population:
