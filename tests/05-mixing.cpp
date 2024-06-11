@@ -177,7 +177,6 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
             n3++;
     }
 
-
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif

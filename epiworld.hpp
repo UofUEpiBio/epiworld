@@ -12135,7 +12135,7 @@ public:
 #define EPIWORLD_ENTITY_MEAT_HPP
 
 template <typename TSeq = EPI_DEFAULT_TSEQ>
-inline EntityToAgentFun<TSeq> entity_to_unassigned_agents()
+inline EntityToAgentFun<TSeq> distribute_entity_to_unassigned()
 {
 
     return [](Entity<TSeq> & e, Model<TSeq> * m) -> void {
@@ -12187,7 +12187,7 @@ inline EntityToAgentFun<TSeq> entity_to_unassigned_agents()
 }
 
 template<typename TSeq = int>
-inline EntityToAgentFun<TSeq> entity_to_agent_range(
+inline EntityToAgentFun<TSeq> distribute_entity_to_range(
     int from,
     int to,
     bool to_unassigned = false

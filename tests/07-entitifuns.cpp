@@ -19,7 +19,7 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     );
 
     // Generating two entities, 100 distribution
-    auto dfun = epiworld::entity_to_unassigned_agents<>();
+    auto dfun = epiworld::distribute_entity_to_unassigned<>();
     Entity<> e1("Entity 1", 5000, false, dfun);
     Entity<> e2("Entity 2", 5000, false, dfun);
     
@@ -110,6 +110,42 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     REQUIRE(std::fabs(n2 - std::pow(p, 2.0) * N) < 100);
     #endif
 
+    // Checking distribution via sets
+    std::vector< std::vector< size_t > > dist = {
+        model.get_entity(0).get_agents(),
+        model.get_entity(1).get_agents()
+    };
+
+    // Creating a copy of the model
+    epimodels::ModelSIRCONN<> model3(
+        "Flu", // std::string vname,
+        N, // epiworld_fast_uint n,
+        0.01,  // epiworld_double prevalence,
+        10.0,  // epiworld_double contact_rate,
+        1.0,   // epiworld_double transmission_rate,
+        1.0/2.0// epiworld_double recovery_rate
+    );
+
+    // Updating the distribution
+    e1.set_dist_fun(distribute_entity_to_set<>(dist[0]));
+    e2.set_dist_fun(distribute_entity_to_set<>(dist[1]));
+
+    model3.add_entity(e1);
+    model3.add_entity(e2);
+
+    model3.run(50, 123);
+
+    // Should match the results!
+    std::vector< std::vector< size_t > > dist2 = {
+        model3.get_entity(0).get_agents(),
+        model3.get_entity(1).get_agents()
+    };
+
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE(dist[0] == dist2[0]);
+    REQUIRE(dist[1] == dist2[1]);
+    #endif
+    
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif
