@@ -266,9 +266,9 @@ inline void Entity<TSeq>::reset()
     sampled_agents_left.clear();
     sampled_agents_left_n = 0u;
 
-    // Removing agents from entities
-    for (size_t i = 0u; i < n_agents; ++i)
-        this->rm_agent(i);
+    this->agents.clear();
+    this->n_agents = 0u;
+    this->agents_location.clear();
 
     return;
 
@@ -358,7 +358,7 @@ inline void Entity<TSeq>::distribute()
         
         int n_left = n;
         std::iota(idx.begin(), idx.end(), 0);
-        for (int i = 0; i < n_to_assign; ++i)
+        while (n_to_assign > 0)
         {
             int loc = static_cast<epiworld_fast_uint>(
                 floor(model->runif() * n_left--)
@@ -368,10 +368,13 @@ inline void Entity<TSeq>::distribute()
             if ((loc > 0) && (loc >= n_left))
                 loc = n_left - 1;
             
-            model->get_agent(idx[loc]).add_entity(
-                *this, this->model, this->state_init, this->queue_init
-                );
-            
+            auto & agent = model->get_agent(idx[loc]);
+
+            if (!agent.has_entity(id))
+                agent.add_entity(
+                    *this, this->model, this->state_init, this->queue_init
+                    );
+                            
             std::swap(idx[loc], idx[n_left]);
 
         }

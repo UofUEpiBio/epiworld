@@ -129,22 +129,22 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     REQUIRE_THAT(totals, Catch::Equals(expected_totals));
     #endif
 
-    // // If entities don't have a dist function, then it should be
-    // // OK
-    // e1.set_dist_fun(nullptr);
-    // e2.set_dist_fun(nullptr);
-    // e3.set_dist_fun(nullptr);
+    // If entities don't have a dist function, then it should be
+    // OK
+    e1.set_dist_fun(nullptr);
+    e2.set_dist_fun(nullptr);
+    e3.set_dist_fun(nullptr);
 
-    // model.rm_entity(0);
-    // model.rm_entity(1);
-    // model.rm_entity(2);
+    model.rm_entity(0);
+    model.rm_entity(1);
+    model.rm_entity(2);
 
-    // model.add_entity(e1);
-    // model.add_entity(e2);
-    // model.add_entity(e3);
+    model.add_entity(e1);
+    model.add_entity(e2);
+    model.add_entity(e3);
 
-    // // Running and checking the results
-    // model.run(50, 123);
+    // Running and checking the results
+    model.run(50, 123);
 
 
     #ifndef CATCH_CONFIG_MAIN

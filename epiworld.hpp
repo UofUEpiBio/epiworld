@@ -19,7 +19,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 3
-#define EPIWORLD_VERSION_PATCH 0
+#define EPIWORLD_VERSION_PATCH 1
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -129,7 +129,7 @@ template<typename TSeq>
 struct Event;
 
 template<typename TSeq>
-using ActionFun = std::function<void(Event<TSeq>&,Model<TSeq>*)>;
+using EventFun = std::function<void(Event<TSeq>&,Model<TSeq>*)>;
 
 /**
  * @brief Decides how to distribute viruses at initialization
@@ -162,7 +162,7 @@ struct Event {
     Entity<TSeq> * entity;
     epiworld_fast_int new_state;
     epiworld_fast_int queue;
-    ActionFun<TSeq> call;
+    EventFun<TSeq> call;
     int idx_agent;
     int idx_object;
 public:
@@ -189,7 +189,7 @@ public:
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        ActionFun<TSeq> call_,
+        EventFun<TSeq> call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -444,6 +444,10 @@ public:
 
 #define EPI_NEW_ENTITYTOAGENTFUN(funname,tseq) inline void \
     (funname)(epiworld::Entity<tseq> & e, epiworld::Model<tseq> * m)
+
+#define EPI_NEW_ENTITYTOAGENTFUN_LAMBDA(funname,tseq) \
+    epiworld::EntityToAgentFun<tseq> funname = \
+    [](epiworld::Entity<tseq> & e, epiworld::Model<tseq> * m) -> void
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -6201,7 +6205,7 @@ protected:
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        ActionFun<TSeq> call_,
+        EventFun<TSeq> call_,
         int idx_agent_,
         int idx_object_
         );
@@ -6892,7 +6896,7 @@ inline void Model<TSeq>::events_add(
     Entity<TSeq> * entity_,
     epiworld_fast_int new_state_,
     epiworld_fast_int queue_,
-    ActionFun<TSeq> call_,
+    EventFun<TSeq> call_,
     int idx_agent_,
     int idx_object_
 ) {
@@ -6901,7 +6905,7 @@ inline void Model<TSeq>::events_add(
 
     #ifdef EPI_DEBUG
     if (nactions == 0)
-        throw std::logic_error("Actions cannot be zero!!");
+        throw std::logic_error("Events cannot be zero!!");
     #endif
 
     if (nactions > events.size())
@@ -12030,11 +12034,12 @@ private:
     epiworld_fast_int queue_init = 0; ///< Change of state when added to agent.
     epiworld_fast_int queue_post = 0; ///< Change of state when removed from agent.
 
-public:
-
     epiworld_double prevalence = 0.0;
     bool prevalence_as_proportion = false;
     EntityToAgentFun<TSeq> dist_fun = nullptr;
+
+public:
+
 
     /**
      * @brief Constructs an Entity object.
@@ -12099,6 +12104,11 @@ public:
 
     void print() const;
 
+    void set_prevalence(epiworld_double p, bool as_proportion);
+    epiworld_double get_prevalence() const noexcept;
+    bool get_prevalence_as_proportion() const noexcept;
+    void set_dist_fun(EntityToAgentFun<TSeq> fun);
+
 };
 
 
@@ -12125,50 +12135,101 @@ public:
 #define EPIWORLD_ENTITY_MEAT_HPP
 
 template <typename TSeq = EPI_DEFAULT_TSEQ>
-EPI_NEW_ENTITYTOAGENTFUN(entity_to_unassigned_agents, TSeq)
+inline EntityToAgentFun<TSeq> entity_to_unassigned_agents()
 {
 
-    // Preparing the sampling space
-    std::vector< size_t > idx;
-    for (const auto & a: m->get_agents())
-        if (a.get_n_entities() == 0)
-            idx.push_back(a.get_id());
-    size_t n = idx.size();
+    return [](Entity<TSeq> & e, Model<TSeq> * m) -> void {
 
-    // Figuring out how many to sample
-    int n_to_sample;
-    if (e.prevalence_as_proportion)
-    {
-        n_to_sample = static_cast<int>(std::floor(e.prevalence * n));
-        if (n_to_sample > n)
-            --n_to_sample;
+        
+        // Preparing the sampling space
+        std::vector< size_t > idx;
+        for (const auto & a: m->get_agents())
+            if (a.get_n_entities() == 0)
+                idx.push_back(a.get_id());
+        size_t n = idx.size();
 
-    } else
+        // Figuring out how many to sample
+        int n_to_sample;
+        if (e.prevalence_as_proportion)
+        {
+            n_to_sample = static_cast<int>(std::floor(e.prevalence * n));
+            if (n_to_sample > static_cast<int>(n))
+                --n_to_sample;
+
+        } else
+        {
+            n_to_sample = static_cast<int>(e.prevalence);
+            if (n_to_sample > static_cast<int>(n))
+                throw std::range_error("There are only " + std::to_string(n) + 
+                " individuals in the population. Cannot add the entity to " +
+                    std::to_string(n_to_sample));
+        }
+
+        int n_left = n;
+        for (size_t i = 0u; i < n_to_sample; ++i)
+        {
+            int loc = static_cast<epiworld_fast_uint>(
+                floor(m->runif() * n_left--)
+                );
+
+            // Correcting for possible overflow
+            if ((loc > 0) && (loc >= n_left))
+                loc = n_left - 1;
+
+            m->get_agent(idx[loc]).add_entity(e, m);
+
+            std::swap(idx[loc], idx[n_left]);
+
+        }
+
+    };
+
+}
+
+template<typename TSeq = int>
+inline EntityToAgentFun<TSeq> entity_to_agent_range(
+    int from,
+    int to,
+    bool to_unassigned = false
+    ) {
+
+    if (to_unassigned)
     {
-        n_to_sample = static_cast<int>(e.prevalence);
-        if (n_to_sample > n)
-            throw std::range_error("There are only " + std::to_string(n) + 
-            " individuals in the population. Cannot add the entity to " +
-                std::to_string(n_to_sample));
+
+        return [from, to](Entity<TSeq> & e, Model<TSeq> * m) -> void {
+
+            auto & agents = m->get_agents();
+            for (size_t i = from; i < to; ++i)
+            {
+                if (agents[i].get_n_entities() == 0)
+                    e.add_agent(&agents[i], m);
+                else
+                    throw std::logic_error(
+                        "Agent " + std::to_string(i) + " already has an entity."
+                    );
+            }
+            
+            return;
+
+        };
+
     }
-
-    int n_left = n;
-    for (size_t i = 0u; i < n_to_sample; ++i)
+    else
     {
-        int loc = static_cast<epiworld_fast_uint>(
-            floor(m->runif() * n_left--)
-            );
 
-        // Correcting for possible overflow
-        if ((loc > 0) && (loc >= n_left))
-            loc = n_left - 1;
+        return [from, to](Entity<TSeq> & e, Model<TSeq> * m) -> void {
 
-        m->get_agent(idx[loc]).add_entity(e, m);
+            auto & agents = m->get_agents();
+            for (size_t i = from; i < to; ++i)
+            {
+                e.add_agent(&agents[i], m);
+            }
+            
+            return;
 
-        std::swap(idx[loc], idx[n_left]);
+        };
 
     }
-
 }
 
 template<typename TSeq>
@@ -12338,9 +12399,9 @@ inline void Entity<TSeq>::reset()
     sampled_agents_left.clear();
     sampled_agents_left_n = 0u;
 
-    // Removing agents from entities
-    for (size_t i = 0u; i < n_agents; ++i)
-        this->rm_agent(i);
+    this->agents.clear();
+    this->n_agents = 0u;
+    this->agents_location.clear();
 
     return;
 
@@ -12414,34 +12475,39 @@ inline void Entity<TSeq>::distribute()
     {
 
         // Picking how many
-        int nsampled;
+        int n_to_assign;
         if (prevalence_as_proportion)
         {
-            nsampled = static_cast<int>(std::floor(prevalence * size()));
+            n_to_assign = static_cast<int>(std::floor(prevalence * size()));
         }
         else
         {
-            nsampled = static_cast<int>(prevalence);
+            n_to_assign = static_cast<int>(prevalence);
         }
 
-        if (nsampled > static_cast<int>(model->size()))
+        if (n_to_assign > static_cast<int>(model->size()))
             throw std::range_error("There are only " + std::to_string(model->size()) + 
-            " individuals in the population. Cannot add the entity to " + std::to_string(nsampled));
+            " individuals in the population. Cannot add the entity to " + std::to_string(n_to_assign));
         
         int n_left = n;
         std::iota(idx.begin(), idx.end(), 0);
-        while (nsampled > 0)
+        while (n_to_assign > 0)
         {
             int loc = static_cast<epiworld_fast_uint>(
                 floor(model->runif() * n_left--)
                 );
-            
-            model->get_agent(idx[loc]).add_entity(
-                *this, this->model, this->state_init, this->queue_init
-                );
-            
-            nsampled--;
 
+            // Correcting for possible overflow
+            if ((loc > 0) && (loc >= n_left))
+                loc = n_left - 1;
+            
+            auto & agent = model->get_agent(idx[loc]);
+
+            if (!agent.has_entity(id))
+                agent.add_entity(
+                    *this, this->model, this->state_init, this->queue_init
+                    );
+                            
             std::swap(idx[loc], idx[n_left]);
 
         }
@@ -12466,6 +12532,34 @@ inline void Entity<TSeq>::print() const
         static_cast<int>(id),
         static_cast<int>(n_agents)
     );
+}
+
+template<typename TSeq>
+inline void Entity<TSeq>::set_prevalence(
+    epiworld_double p,
+    bool as_proportion
+)
+{
+    prevalence = p;
+    prevalence_as_proportion = as_proportion;
+}
+
+template<typename TSeq>
+inline epiworld_double Entity<TSeq>::get_prevalence() const noexcept
+{
+    return prevalence;
+}
+
+template<typename TSeq>
+inline bool Entity<TSeq>::get_prevalence_as_proportion() const noexcept
+{
+    return prevalence_as_proportion;
+}
+
+template<typename TSeq>
+inline void Entity<TSeq>::set_dist_fun(EntityToAgentFun<TSeq> fun)
+{
+    dist_fun = fun;
 }
 
 #endif
@@ -13529,6 +13623,8 @@ public:
     bool has_virus(epiworld_fast_uint t) const;
     bool has_virus(std::string name) const;
     bool has_virus(const Virus<TSeq> & v) const;
+    bool has_entity(epiworld_fast_uint t) const;
+    bool has_entity(std::string name) const;
 
     void print(Model<TSeq> * model, bool compressed = false) const;
 
@@ -14543,6 +14639,10 @@ inline void Agent<TSeq>::reset()
     this->tools.clear();
     n_tools = 0u;
 
+    this->entities.clear();
+    this->entities_locations.clear();
+    this->n_entities = 0u;
+
     this->state = 0u;
     this->state_prev = 0u;
 
@@ -14607,6 +14707,30 @@ inline bool Agent<TSeq>::has_virus(const Virus<TSeq> & virus) const
 {
 
     return has_virus(virus.get_id());
+
+}
+
+template<typename TSeq>
+inline bool Agent<TSeq>::has_entity(epiworld_fast_uint t) const
+{
+
+    for (auto & entity : entities)
+        if (entity == t)
+            return true;
+
+    return false;
+
+}
+
+template<typename TSeq>
+inline bool Agent<TSeq>::has_entity(std::string name) const
+{
+
+    for (auto & entity : entities)
+        if (model->get_entity(entity).get_name() == name)
+            return true;
+
+    return false;
 
 }
 
@@ -14721,6 +14845,9 @@ inline const Entities_const<TSeq> Agent<TSeq>::get_entities() const
 template<typename TSeq>
 inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i) const
 {
+    if (n_entities == 0)
+        throw std::range_error("Agent id " + std::to_string(id) + " has no entities.");
+
     if (i >= n_entities)
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
@@ -14730,6 +14857,9 @@ inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i) const
 template<typename TSeq>
 inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i)
 {
+    if (n_entities == 0)
+        throw std::range_error("Agent id " + std::to_string(id) + " has no entities.");
+
     if (i >= n_entities)
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
@@ -16769,7 +16899,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_param(prob_noreinfect, "Prob. no reinfect");
 
     // Virus ------------------------------------------------------------------
-    epiworld::Virus<TSeq> covid("Covid19", prevalence, true);
+    epiworld::Virus<TSeq> covid("Covid19", prevalence, false);
     covid.set_state(LATENT, RECOVERED, REMOVED);
     covid.set_post_immunity(&model("Prob. no reinfect"));
     covid.set_prob_death(&model("Prob. death"));
@@ -19804,7 +19934,7 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
     int seed
 )
 {
-    
+
     Model<TSeq>::run(ndays, seed);
     return *this;
 
