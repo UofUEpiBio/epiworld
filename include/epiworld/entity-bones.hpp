@@ -120,7 +120,7 @@ public:
     std::vector< size_t > & get_agents();
 
     void print() const;
-    void set_dist_fun(EntityToAgentFun<TSeq> fun);
+    void set_distribution(EntityToAgentFun<TSeq> fun);
 
 };
 

@@ -203,26 +203,11 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
         if (i < n_tools_model)
         {
-            if (tool->get_prevalence_as_proportion())
-            {
+            printf_epiworld(
+                " - %s\n",
+                tool->get_name().c_str()
+                );
 
-                printf_epiworld(
-                    " - %s (baseline prevalence: %.2f%%)\n",
-                    tool->get_name().c_str(),
-                    tool->get_prevalence() * 100.0
-                    );
-
-            }
-            else
-            {
-
-                printf_epiworld(
-                    " - %s (baseline prevalence: %i seeds)\n",
-                    tool->get_name().c_str(),
-                    static_cast<int>(tool->get_prevalence())
-                    );
-
-            }
 
         } else {
 

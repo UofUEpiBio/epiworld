@@ -58,10 +58,7 @@ private:
     VirusToAgentFun<TSeq> dist_fun = nullptr;
 
 public:
-    Virus(
-        std::string name = "unknown virus",
-        VirusToAgentFun<TSeq> dist_fun = nullptr
-        );
+    Virus(std::string name = "unknown virus");
 
     Virus(
         std::string name = "unknown virus",
@@ -173,7 +170,7 @@ public:
      */
     ///@{
     void distribute(Model<TSeq> * model);
-    void set_dist_fun(VirusToAgentFun<TSeq> fun);
+    void set_distribution(VirusToAgentFun<TSeq> fun);
     ///@}
 
 

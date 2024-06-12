@@ -258,7 +258,7 @@ inline void Entity<TSeq>::print() const
 }
 
 template<typename TSeq>
-inline void Entity<TSeq>::set_dist_fun(EntityToAgentFun<TSeq> fun)
+inline void Entity<TSeq>::set_distribution(EntityToAgentFun<TSeq> fun)
 {
     dist_fun = fun;
 }

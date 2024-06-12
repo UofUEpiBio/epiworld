@@ -127,8 +127,8 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     );
 
     // Updating the distribution
-    e1.set_dist_fun(distribute_entity_to_set<>(dist[0]));
-    e2.set_dist_fun(distribute_entity_to_set<>(dist[1]));
+    e1.set_distribution(distribute_entity_to_set<>(dist[0]));
+    e2.set_distribution(distribute_entity_to_set<>(dist[1]));
 
     model3.add_entity(e1);
     model3.add_entity(e2);

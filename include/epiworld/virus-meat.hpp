@@ -81,11 +81,9 @@ inline VirusFun<TSeq> virus_fun_logit(
 
 template<typename TSeq>
 inline Virus<TSeq>::Virus(
-    std::string name,
-    VirusToAgentFun<TSeq> dist_fun
+    std::string name
     ) {
     set_name(name);
-    set_dist_fun(dist_fun);
 }
 
 template<typename TSeq>
@@ -95,7 +93,7 @@ inline Virus<TSeq>::Virus(
     bool prevalence_as_proportion
     ) {
     set_name(name);
-    set_dist_fun(
+    set_distribution(
         distribute_virus_randomly<TSeq>(
             prevalence,
             prevalence_as_proportion
@@ -719,7 +717,7 @@ inline void Virus<TSeq>::distribute(Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_dist_fun(VirusToAgentFun<TSeq> fun)
+inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
 {
     dist_fun = fun;
 }

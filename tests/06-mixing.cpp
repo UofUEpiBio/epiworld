@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
     model.rm_virus(0);
-    v1.set_dist_fun(dist_virus<>(0));
+    v1.set_distribution(dist_virus<>(0));
 
     model.add_virus(v1);
 

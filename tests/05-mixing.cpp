@@ -28,7 +28,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
     model.rm_virus(0);
-    v1.set_dist_fun(dist_virus<>(0));
+    v1.set_distribution(dist_virus<>(0));
 
     model.add_virus(v1);
 
@@ -131,9 +131,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     // If entities don't have a dist function, then it should be
     // OK
-    e1.set_dist_fun(distribute_entity_randomly<>(2000, false, true));
-    e2.set_dist_fun(distribute_entity_randomly<>(2000, false, true));
-    e3.set_dist_fun(distribute_entity_randomly<>(2000, false, true));
+    e1.set_distribution(distribute_entity_randomly<>(2000, false, true));
+    e2.set_distribution(distribute_entity_randomly<>(2000, false, true));
+    e3.set_distribution(distribute_entity_randomly<>(2000, false, true));
 
     model.rm_entity(0);
     model.rm_entity(1);
