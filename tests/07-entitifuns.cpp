@@ -19,9 +19,9 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     );
 
     // Generating two entities, 100 distribution
-    auto dfun = epiworld::distribute_entity_to_unassigned<>();
-    Entity<> e1("Entity 1", 5000, false, dfun);
-    Entity<> e2("Entity 2", 5000, false, dfun);
+    auto dfun = epiworld::distribute_entity_randomly<>(5000, false, true);
+    Entity<> e1("Entity 1", dfun);
+    Entity<> e2("Entity 2", dfun);
     
     model.add_entity(e1);
     model.add_entity(e2);
@@ -75,8 +75,8 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
         1.0/2.0// epiworld_double recovery_rate
     );
 
-    Entity<> e3("Entity 3", n, false, nullptr);
-    Entity<> e4("Entity 4", n, false, nullptr);
+    Entity<> e3("Entity 3", distribute_entity_randomly<>(n, false, false));
+    Entity<> e4("Entity 4", distribute_entity_randomly<>(n, false, false));
 
     model2.add_entity(e3);
     model2.add_entity(e4);

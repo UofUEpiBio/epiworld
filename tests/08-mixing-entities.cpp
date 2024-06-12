@@ -23,9 +23,9 @@ int main()
     );
 
     // Creating three groups
-    Entity<> e1("Entity 1", 3000, false);
-    Entity<> e2("Entity 2", 3000, false);
-    Entity<> e3("Entity 3", 3000, false);
+    Entity<> e1("Entity 1", distribute_entity_randomly<>(n, false, true));
+    Entity<> e2("Entity 2", distribute_entity_randomly<>(n, false, true));
+    Entity<> e3("Entity 3", distribute_entity_randomly<>(n, false, true));
 
     model.add_entity(e1);
     model.add_entity(e2);

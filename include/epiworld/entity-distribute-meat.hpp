@@ -6,33 +6,54 @@ template <typename TSeq = EPI_DEFAULT_TSEQ>
 /**
  * Distributes an entity to unassigned agents in the model.
  * 
+ * @param prevalence The proportion of agents to distribute the entity to.
+ * @param as_proportion Flag indicating whether the prevalence is a proportion
+ * @param to_unassigned Flag indicating whether to distribute the entity only
+ * to unassigned agents.
  * @return An EntityToAgentFun object that distributes the entity to unassigned
  * agents.
  */
-inline EntityToAgentFun<TSeq> distribute_entity_to_unassigned()
+inline EntityToAgentFun<TSeq> distribute_entity_randomly(
+    epiworld_double prevalence,
+    bool as_proportion,
+    bool to_unassigned
+)
 {
 
-    return [](Entity<TSeq> & e, Model<TSeq> * m) -> void {
+    return [prevalence, as_proportion, to_unassigned](
+        Entity<TSeq> & e, Model<TSeq> * m
+        ) -> void {
 
         
         // Preparing the sampling space
         std::vector< size_t > idx;
-        for (const auto & a: m->get_agents())
-            if (a.get_n_entities() == 0)
+        if (to_unassigned)
+        {
+            for (const auto & a: m->get_agents())
+                if (a.get_n_entities() == 0)
+                    idx.push_back(a.get_id());
+        } 
+        else
+        {
+
+            for (const auto & a: m->get_agents())
                 idx.push_back(a.get_id());
+
+        }
+        
         size_t n = idx.size();
 
         // Figuring out how many to sample
         int n_to_sample;
-        if (e.get_prevalence_as_proportion())
+        if (as_proportion)
         {
-            n_to_sample = static_cast<int>(std::floor(e.get_prevalence() * n));
+            n_to_sample = static_cast<int>(std::floor(prevalence * n));
             if (n_to_sample > static_cast<int>(n))
                 --n_to_sample;
 
         } else
         {
-            n_to_sample = static_cast<int>(e.get_prevalence());
+            n_to_sample = static_cast<int>(prevalence);
             if (n_to_sample > static_cast<int>(n))
                 throw std::range_error("There are only " + std::to_string(n) + 
                 " individuals in the population. Cannot add the entity to " +

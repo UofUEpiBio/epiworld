@@ -33,9 +33,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     model.add_virus(v1);
 
     // Creating three groups
-    Entity<> e1("Entity 1", 0.0, false, dist_factory<>(0, 3000));
-    Entity<> e2("Entity 2", 0.0, false, dist_factory<>(3000, 6000));
-    Entity<> e3("Entity 3", 0.0, false, dist_factory<>(6000, 10000));
+    Entity<> e1("Entity 1", dist_factory<>(0, 3000));
+    Entity<> e2("Entity 2", dist_factory<>(3000, 6000));
+    Entity<> e3("Entity 3", dist_factory<>(6000, 10000));
 
     model.add_entity(e1);
     model.add_entity(e2);
@@ -131,13 +131,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     // If entities don't have a dist function, then it should be
     // OK
-    e1.set_dist_fun(nullptr);
-    e2.set_dist_fun(nullptr);
-    e3.set_dist_fun(nullptr);
-    
-    e1.set_prevalence(2000, false);
-    e2.set_prevalence(2000, false);
-    e3.set_prevalence(2000, false);
+    e1.set_dist_fun(distribute_entity_randomly<>(2000, false, true));
+    e2.set_dist_fun(distribute_entity_randomly<>(2000, false, true));
+    e3.set_dist_fun(distribute_entity_randomly<>(2000, false, true));
 
     model.rm_entity(0);
     model.rm_entity(1);
