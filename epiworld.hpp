@@ -10158,6 +10158,141 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -include/epiworld/virus-distribute-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_VIRUS_DISTRIBUTE_MEAT_HPP
+#define EPIWORLD_VIRUS_DISTRIBUTE_MEAT_HPP
+
+/**
+ * Distributes a virus to a set of agents.
+ *
+ * This function takes a vector of agent IDs and returns a lambda function that
+ * can be used to distribute a virus to the specified agents.
+ *
+ * @param agents_ids A vector of agent IDs representing the set of agents to
+ * distribute the virus to.
+ * 
+ * @return A lambda function that takes a Virus object and a Model object and
+ * distributes the virus to the specified agents.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline VirusToAgentFun<TSeq> distribute_virus_to_set(
+    std::vector< size_t > agents_ids
+) {
+
+    return [agents_ids](
+        Virus<TSeq> & virus, Model<TSeq> * model
+    ) -> void 
+    { 
+        // Adding action
+        for (auto i: agents_ids)
+        {
+            model->get_agent(i).set_virus(
+                virus,
+                const_cast<Model<TSeq> * >(model)
+                );
+        }
+    };
+
+}
+
+/**
+ * @brief Distributes a virus randomly to agents.
+ * 
+ * This function takes a sequence of agents and randomly assigns a virus to
+ * each agent.
+ * 
+ * @tparam TSeq The type of the sequence of agents.
+ * @param agents The sequence of agents to distribute the virus to.
+ * @return A function object that assigns a virus to each agent randomly.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline VirusToAgentFun<TSeq> distribute_virus_randomly(
+    epiworld_double prevalence,
+    bool prevalence_as_proportion = true
+) {
+
+    return [prevalence,prevalence_as_proportion](
+        Virus<TSeq> & virus, Model<TSeq> * model
+    ) -> void 
+    { 
+        
+        // Figuring out how what agents are available
+        std::vector< size_t > idx;
+        for (const auto & agent: model->get_agents())
+            if (agent.get_virus() == nullptr)
+                idx.push_back(agent.get_id());
+
+        // Picking how many
+        size_t n = model->size();
+        int n_available = static_cast<int>(idx.size());
+        int n_to_sample;
+        if (prevalence_as_proportion)
+        {
+            n_to_sample = static_cast<int>(std::floor(prevalence * n));
+
+            if (n_to_sample == static_cast<int>(n))
+                n_to_sample--;
+        }
+        else
+        {
+            n_to_sample = static_cast<int>(prevalence);
+        }
+
+        if (n_to_sample > n_available)
+            throw std::range_error(
+                "There are only " + std::to_string(n_available) + 
+                " individuals with no virus in the population. " +
+                "Cannot add the virus to " +
+                std::to_string(n_to_sample)
+            );
+        
+        auto & population = model->get_agents();
+        for (int i = 0; i < n_to_sample; ++i)
+        {
+
+            int loc = static_cast<epiworld_fast_uint>(
+                floor(model->runif() * (n_available--))
+                );
+
+            // Correcting for possible overflow
+            if ((loc > 0) && (loc >= n_available))
+                loc = n_available - 1;
+
+            Agent<TSeq> & agent = population[idx[loc]];
+            
+            // Adding action
+            agent.set_virus(
+                virus,
+                const_cast<Model<TSeq> * >(model)
+                );
+
+            // Adjusting sample
+            std::swap(idx[loc], idx[n_available]);
+
+        }
+
+    };
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/virus-distribute-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -include/epiworld/virus-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -12125,16 +12260,23 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entity-meat.hpp-
+ Start of -include/epiworld/entity-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_ENTITY_MEAT_HPP
-#define EPIWORLD_ENTITY_MEAT_HPP
+#ifndef EPIWORLD_ENTITY_DISTRIBUTE_MEAT_HPP
+#define EPIWORLD_ENTITY_DISTRIBUTE_MEAT_HPP
+
 
 template <typename TSeq = EPI_DEFAULT_TSEQ>
+/**
+ * Distributes an entity to unassigned agents in the model.
+ * 
+ * @return An EntityToAgentFun object that distributes the entity to unassigned
+ * agents.
+ */
 inline EntityToAgentFun<TSeq> distribute_entity_to_unassigned()
 {
 
@@ -12150,15 +12292,15 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_unassigned()
 
         // Figuring out how many to sample
         int n_to_sample;
-        if (e.prevalence_as_proportion)
+        if (e.get_prevalence_as_proportion())
         {
-            n_to_sample = static_cast<int>(std::floor(e.prevalence * n));
+            n_to_sample = static_cast<int>(std::floor(e.get_prevalence() * n));
             if (n_to_sample > static_cast<int>(n))
                 --n_to_sample;
 
         } else
         {
-            n_to_sample = static_cast<int>(e.prevalence);
+            n_to_sample = static_cast<int>(e.get_prevalence());
             if (n_to_sample > static_cast<int>(n))
                 throw std::range_error("There are only " + std::to_string(n) + 
                 " individuals in the population. Cannot add the entity to " +
@@ -12166,7 +12308,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_unassigned()
         }
 
         int n_left = n;
-        for (size_t i = 0u; i < n_to_sample; ++i)
+        for (int i = 0; i < n_to_sample; ++i)
         {
             int loc = static_cast<epiworld_fast_uint>(
                 floor(m->runif() * n_left--)
@@ -12186,7 +12328,17 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_unassigned()
 
 }
 
-template<typename TSeq = int>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+/**
+ * Distributes an entity to a range of agents.
+ *
+ * @param from The starting index of the range.
+ * @param to The ending index of the range.
+ * @param to_unassigned Flag indicating whether to distribute the entity only
+ * to unassigned agents.
+ * @return A lambda function that distributes the entity to the specified range
+ * of agents.
+ */
 inline EntityToAgentFun<TSeq> distribute_entity_to_range(
     int from,
     int to,
@@ -12231,6 +12383,45 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
 
     }
 }
+
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline EntityToAgentFun<TSeq> distribute_entity_to_set(
+    std::vector< size_t > & idx
+    ) {
+
+    return [idx](Entity<TSeq> & e, Model<TSeq> * m) -> void {
+
+        for (const auto & i: idx)
+        {
+            e.add_agent(&m->get_agent(i), m);
+        }
+
+    };
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/entity-distribute-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/entity-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_ENTITY_MEAT_HPP
+#define EPIWORLD_ENTITY_MEAT_HPP
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(
@@ -12491,7 +12682,7 @@ inline void Entity<TSeq>::distribute()
         
         int n_left = n;
         std::iota(idx.begin(), idx.end(), 0);
-        while (n_to_assign > 0)
+        while ((n_to_assign > 0) && (n_left > 0))
         {
             int loc = static_cast<epiworld_fast_uint>(
                 floor(model->runif() * n_left--)
@@ -12504,9 +12695,12 @@ inline void Entity<TSeq>::distribute()
             auto & agent = model->get_agent(idx[loc]);
 
             if (!agent.has_entity(id))
+            {
                 agent.add_entity(
                     *this, this->model, this->state_init, this->queue_init
                     );
+                n_to_assign--;
+            }
                             
             std::swap(idx[loc], idx[n_left]);
 
@@ -19740,7 +19934,8 @@ public:
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param avg_incubation_days The average incubation period of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
-     * @param contact_matrix The contact matrix between entities in the model.
+     * @param contact_matrix The contact matrix between entities in the model. Specified in
+     * column-major order.
      */
     ModelSEIRMixing(
         ModelSEIRMixing<TSeq> & model,

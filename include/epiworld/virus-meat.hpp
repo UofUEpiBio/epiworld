@@ -1,28 +1,6 @@
 #ifndef EPIWORLD_VIRUS_MEAT_HPP
 #define EPIWORLD_VIRUS_MEAT_HPP
 
-// Factory functions to distribute the virus
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline VirusToAgentFun<TSeq> distribute_virus_to_set(
-    std::vector< size_t > agents_ids
-) {
-
-    return [agents_ids](
-        Virus<TSeq> & virus, Model<TSeq> * model
-    ) -> void 
-    { 
-        // Adding action
-        for (auto i: agents_ids)
-        {
-            model->get_agent(i).set_virus(
-                virus,
-                const_cast<Model<TSeq> * >(model)
-                );
-        }
-    };
-
-}
-
 /**
  * @brief Factory function of VirusFun base on logit
  * 
