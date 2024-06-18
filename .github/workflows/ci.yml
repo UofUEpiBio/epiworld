@@ -24,6 +24,20 @@ jobs:
           echo 'export PATH="/usr/local/opt/llvm@14/bin:$PATH"' >> /Users/runner/.bash_profile
           cd tests && make main.a && ./main.a
 
+  test-macos-clang18:
+
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check
+        run: |
+          brew install llvm@18 
+          echo 'export PATH="/usr/local/opt/llvm@18/bin:$PATH"' >> /Users/runner/.bash_profile
+          cd tests && make main.a && ./main.a
+
+
   test-ubuntu:
     runs-on: ubuntu-latest
     container: gvegayon/epiworld:latest
