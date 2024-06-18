@@ -17,8 +17,8 @@ int main()
     model.add_state("Removed");
 
     // Adding the tool and virus
-    epiworld::Virus<int> virus(
-        "covid 19",
+    epiworld::Virus<int> virus("covid 19");
+    virus.set_distribution(
         distribute_virus_randomly<int>(50, false)
         );
 

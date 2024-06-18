@@ -6518,8 +6518,6 @@ public:
     virtual void reset();
     const Model<TSeq> & print(bool lite = false) const;
 
-    Model<TSeq> && clone() const;
-
     /**
      * @name Manage state (states) in the model
      * 
@@ -9002,47 +9000,6 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
 
 
-template<typename TSeq>
-inline Model<TSeq> && Model<TSeq>::clone() const {
-
-    // Step 1: Regen the individuals and make sure that:
-    //  - Neighbors point to the right place
-    //  - DB is pointing to the right place
-    Model<TSeq> res(*this);
-
-    // Removing old neighbors
-    for (auto & p: res.population)
-        p.neighbors.clear();
-    
-    // Rechecking individuals
-    for (epiworld_fast_uint p = 0u; p < size(); ++p)
-    {
-        // Making room
-        const Agent<TSeq> & agent_this = population[p];
-        Agent<TSeq> & agent_res  = res.population[p];
-
-        // Agent pointing to the right model and agent
-        agent_res.model         = &res;
-        agent_res.viruses.agent = &agent_res;
-        agent_res.tools.agent   = &agent_res;
-
-        // Readding
-        std::vector< Agent<TSeq> * > neigh = agent_this.neighbors;
-        for (epiworld_fast_uint n = 0u; n < neigh.size(); ++n)
-        {
-            // Point to the right neighbors
-            int loc = res.population_ids[neigh[n]->get_id()];
-            agent_res.add_neighbor(res.population[loc], true, true);
-
-        }
-
-    }
-
-    return res;
-
-}
-
-
 
 template<typename TSeq>
 inline void Model<TSeq>::add_state(
@@ -9995,9 +9952,9 @@ public:
     Virus(std::string name = "unknown virus");
 
     Virus(
-        std::string name = "unknown virus",
-        epiworld_double prevalence = 0.0,
-        bool as_proportion = true
+        std::string name,
+        epiworld_double prevalence,
+        bool as_proportion
         );
 
     void mutate(Model<TSeq> * model);
@@ -10322,7 +10279,7 @@ inline VirusFun<TSeq> virus_fun_logit(
     for (auto c: coefs)
         coefs_f.push_back(static_cast<epiworld_double>(c));
 
-    VirusFun<TSeq> fun_infect = [coefs_f,vars,logit](
+    VirusFun<TSeq> fun_infect = [coefs_f,vars](
         Agent<TSeq> * agent,
         Virus<TSeq> & virus,
         Model<TSeq> * model
