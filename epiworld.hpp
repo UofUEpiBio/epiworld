@@ -7148,13 +7148,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
         for (auto & p : population_backup)
             p.model = this;
 
-    for (auto & e : entities)
-        e.model = this;
-
-    if (entities_backup.size() != 0u)
-        for (auto & e : entities_backup)
-            e.model = this;
-
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
     // of the population.
@@ -7513,7 +7506,7 @@ inline void Model<TSeq>::dist_entities()
     for (auto & entity: entities)
     {
 
-        entity.distribute();
+        entity.distribute(this);
 
         // Apply the events
         events_run();
@@ -7697,7 +7690,6 @@ template<typename TSeq>
 inline void Model<TSeq>::add_entity(Entity<TSeq> e)
 {
 
-    e.model = this;
     e.id = entities.size();
     entities.push_back(e);
 
@@ -12032,8 +12024,6 @@ class Entity {
     friend void default_add_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
-
-    Model<TSeq> * model;
     
     int id = -1;
     std::vector< size_t > agents;   ///< Vector of agents
@@ -12090,7 +12080,7 @@ public:
     
     void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
     void add_agent(Agent<TSeq> * p, Model<TSeq> * model);
-    void rm_agent(size_t idx);
+    void rm_agent(size_t idx, Model<TSeq> * model);
     size_t size() const noexcept;
     void set_location(std::vector< epiworld_double > loc);
     std::vector< epiworld_double > & get_location();
@@ -12101,7 +12091,7 @@ public:
     typename std::vector< Agent<TSeq> * >::const_iterator begin() const;
     typename std::vector< Agent<TSeq> * >::const_iterator end() const;
 
-    Agent<TSeq> * operator[](size_t i);
+    size_t operator[](size_t i);
 
     int get_id() const noexcept;
     const std::string & get_name() const noexcept;
@@ -12123,7 +12113,7 @@ public:
      * The idea is to have a flexible way of distributing agents among entities.
      
      */
-    void distribute();
+    void distribute(Model<TSeq> * model);
 
     std::vector< size_t > & get_agents();
 
@@ -12352,7 +12342,7 @@ inline void Entity<TSeq>::add_agent(
 }
 
 template<typename TSeq>
-inline void Entity<TSeq>::rm_agent(size_t idx)
+inline void Entity<TSeq>::rm_agent(size_t idx, Model<TSeq> * model)
 {
     if (idx >= n_agents)
         throw std::out_of_range(
@@ -12418,7 +12408,7 @@ inline typename std::vector< Agent<TSeq> * >::const_iterator Entity<TSeq>::end()
 }
 
 template<typename TSeq>
-inline Agent<TSeq> * Entity<TSeq>::operator[](size_t i)
+size_t Entity<TSeq>::operator[](size_t i)
 {
     if (n_agents <= i)
         throw std::logic_error(
@@ -12426,7 +12416,7 @@ inline Agent<TSeq> * Entity<TSeq>::operator[](size_t i)
             std::to_string(n_agents) + " <= " + std::to_string(i)
             );
 
-    return &model->get_agents()[i];
+    return i;
 }
 
 template<typename TSeq>
@@ -12556,7 +12546,7 @@ inline bool Entity<TSeq>::operator==(const Entity<TSeq> & other) const
 }
 
 template<typename TSeq>
-inline void Entity<TSeq>::distribute()
+inline void Entity<TSeq>::distribute(Model<TSeq> * model)
 {
 
     if (dist_fun)
@@ -13925,7 +13915,7 @@ inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
         if (p->get_n_entities() > e->size()) // Slower search through the agent
         {
             for (size_t i = 0u; i < e->size(); ++i)
-                if(e->operator[](i)->get_id() == p->get_id())
+                if(static_cast<int>(e->operator[](i)) == p->get_id())
                     throw std::logic_error("An entity cannot be reassigned to an agent.");
         }
         else                                 // Slower search through the entity
@@ -16219,14 +16209,14 @@ public:
 
     ModelSIS(
         ModelSIS<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate
     );
 
     ModelSIS(
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate
@@ -16237,7 +16227,7 @@ public:
 template<typename TSeq>
 inline ModelSIS<TSeq>::ModelSIS(
     ModelSIS<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate
@@ -16270,7 +16260,7 @@ inline ModelSIS<TSeq>::ModelSIS(
 
 template<typename TSeq>
 inline ModelSIS<TSeq>::ModelSIS(
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate
@@ -16329,14 +16319,14 @@ public:
 
     ModelSIR(
         ModelSIR<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate
     );
 
     ModelSIR(
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate
@@ -16357,7 +16347,7 @@ public:
 template<typename TSeq>
 inline ModelSIR<TSeq>::ModelSIR(
     ModelSIR<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate
@@ -16390,7 +16380,7 @@ inline ModelSIR<TSeq>::ModelSIR(
 
 template<typename TSeq>
 inline ModelSIR<TSeq>::ModelSIR(
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate
@@ -16469,7 +16459,7 @@ public:
 
     ModelSEIR(
         ModelSEIR<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
@@ -16477,7 +16467,7 @@ public:
     );
 
     ModelSEIR(
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
@@ -16528,7 +16518,7 @@ public:
 template<typename TSeq>
 inline ModelSEIR<TSeq>::ModelSEIR(
     ModelSEIR<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
@@ -16566,7 +16556,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 
 template<typename TSeq>
 inline ModelSEIR<TSeq>::ModelSEIR(
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
@@ -16684,7 +16674,7 @@ public:
 
     ModelSURV(
         ModelSURV<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint prevalence               = 50,
         epiworld_double efficacy_vax          = 0.9,
         epiworld_double latent_period         = 3u,
@@ -16700,7 +16690,7 @@ public:
     );
 
     ModelSURV(
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint prevalence         = 50,
         epiworld_double efficacy_vax          = 0.9,
         epiworld_double latent_period         = 3u,
@@ -16721,7 +16711,7 @@ public:
 template<typename TSeq>
 inline ModelSURV<TSeq>::ModelSURV(
     ModelSURV<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint prevalence,
     epiworld_double efficacy_vax,
     epiworld_double latent_period,
@@ -16972,7 +16962,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
 template<typename TSeq>
 inline ModelSURV<TSeq>::ModelSURV(
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint prevalence,
     epiworld_double efficacy_vax,
     epiworld_double latent_period,
@@ -17051,7 +17041,7 @@ public:
 
     ModelSIRCONN(
         ModelSIRCONN<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -17060,7 +17050,7 @@ public:
     );
 
     ModelSIRCONN(
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -17173,7 +17163,7 @@ inline Model<TSeq> * ModelSIRCONN<TSeq>::clone_ptr()
 template<typename TSeq>
 inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     ModelSIRCONN<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -17354,7 +17344,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
 template<typename TSeq>
 inline ModelSIRCONN<TSeq>::ModelSIRCONN(
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -17433,7 +17423,7 @@ public:
 
     ModelSEIRCONN(
         ModelSEIRCONN<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -17443,7 +17433,7 @@ public:
     );
     
     ModelSEIRCONN(
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -17549,7 +17539,7 @@ inline Model<TSeq> * ModelSEIRCONN<TSeq>::clone_ptr()
 template<typename TSeq>
 inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     ModelSEIRCONN<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -17761,7 +17751,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
 template<typename TSeq>
 inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -17847,7 +17837,7 @@ public:
     ///@{
     ModelSIRD(
         ModelSIRD<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate, 
@@ -17855,7 +17845,7 @@ public:
     );
 
     ModelSIRD(
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate, 
@@ -17879,7 +17869,7 @@ public:
 template<typename TSeq>
 inline ModelSIRD<TSeq>::ModelSIRD(
     ModelSIRD<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate, 
@@ -17916,7 +17906,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
 
 template<typename TSeq>
 inline ModelSIRD<TSeq>::ModelSIRD(
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
@@ -17992,7 +17982,7 @@ public:
 
     ModelSISD(
         ModelSISD<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate,
@@ -18000,7 +17990,7 @@ public:
     );
 
     ModelSISD(
-        std::string vname,
+        const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate,
@@ -18012,7 +18002,7 @@ public:
 template<typename TSeq>
 inline ModelSISD<TSeq>::ModelSISD(
     ModelSISD<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
@@ -18048,7 +18038,7 @@ inline ModelSISD<TSeq>::ModelSISD(
 
 template<typename TSeq>
 inline ModelSISD<TSeq>::ModelSISD(
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
@@ -18121,7 +18111,7 @@ public:
    */
   ModelSEIRD(
     ModelSEIRD<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
@@ -18140,7 +18130,7 @@ public:
    * @param death_rate Death rate of the disease.
    */
   ModelSEIRD(
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
@@ -18235,7 +18225,7 @@ public:
 template<typename TSeq>
 inline ModelSEIRD<TSeq>::ModelSEIRD(
     ModelSEIRD<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
@@ -18277,7 +18267,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
 template<typename TSeq>
 inline ModelSEIRD<TSeq>::ModelSEIRD(
-    std::string vname,
+    const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
@@ -18355,7 +18345,7 @@ public:
 
     ModelSIRDCONN(
         ModelSIRDCONN<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -18365,7 +18355,7 @@ public:
     );
 
     ModelSIRDCONN(
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -18452,7 +18442,7 @@ inline Model<TSeq> * ModelSIRDCONN<TSeq>::clone_ptr()
 template<typename TSeq>
 inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
     ModelSIRDCONN<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -18646,7 +18636,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
 
 template<typename TSeq>
 inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -18713,7 +18703,7 @@ public:
 
     ModelSEIRDCONN(
         ModelSEIRDCONN<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -18724,7 +18714,7 @@ public:
     );
     
     ModelSEIRDCONN(
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -18835,7 +18825,7 @@ inline Model<TSeq> * ModelSEIRDCONN<TSeq>::clone_ptr()
 template<typename TSeq>
 inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     ModelSEIRDCONN<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -19060,7 +19050,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
 template<typename TSeq>
 inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -19176,7 +19166,7 @@ public:
     */
     ModelSIRLogit(
         ModelSIRLogit<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         double * data,
         size_t ncols,
         std::vector< double > coefs_infect,
@@ -19189,7 +19179,7 @@ public:
     );
 
     ModelSIRLogit(
-        std::string vname,
+        const std::string & vname,
         double * data,
         size_t ncols,
         std::vector< double > coefs_infect,
@@ -19290,7 +19280,7 @@ inline void ModelSIRLogit<TSeq>::reset()
 template<typename TSeq>
 inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     ModelSIRLogit<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     double * data,
     size_t ncols,
     std::vector< double > coefs_infect,
@@ -19443,7 +19433,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
 template<typename TSeq>
 inline ModelSIRLogit<TSeq>::ModelSIRLogit(
-    std::string vname,
+    const std::string & vname,
     double * data,
     size_t ncols,
     std::vector< double > coefs_infect,
@@ -19516,7 +19506,7 @@ public:
 
     ModelDiffNet(
         ModelDiffNet<TSeq> & model,
-        std::string innovation_name,
+        const std::string & innovation_name,
         epiworld_double prevalence,
         epiworld_double prob_adopt,
         bool normalize_exposure = true,
@@ -19527,7 +19517,7 @@ public:
     );
 
     ModelDiffNet(
-        std::string innovation_name,
+        const std::string & innovation_name,
         epiworld_double prevalence,
         epiworld_double prob_adopt,
         bool normalize_exposure = true,
@@ -19548,7 +19538,7 @@ public:
 template<typename TSeq>
 inline ModelDiffNet<TSeq>::ModelDiffNet(
     ModelDiffNet<TSeq> & model,
-    std::string innovation_name,
+    const std::string & innovation_name,
     epiworld_double prevalence,
     epiworld_double prob_adopt,
     bool normalize_exposure,
@@ -19676,7 +19666,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
 template<typename TSeq>
 inline ModelDiffNet<TSeq>::ModelDiffNet(
-    std::string innovation_name,
+    const std::string & innovation_name,
     epiworld_double prevalence,
     epiworld_double prob_adopt,
     bool normalize_exposure,
@@ -19772,7 +19762,7 @@ public:
      */
     ModelSEIRMixing(
         ModelSEIRMixing<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -19795,7 +19785,7 @@ public:
      * @param contact_matrix The contact matrix between entities in the model.
      */
     ModelSEIRMixing(
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -20005,7 +19995,7 @@ inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
 template<typename TSeq>
 inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     ModelSEIRMixing<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -20201,7 +20191,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
 template<typename TSeq>
 inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -20311,7 +20301,7 @@ public:
      */
     ModelSIRMixing(
         ModelSIRMixing<TSeq> & model,
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -20332,7 +20322,7 @@ public:
      * @param contact_matrix The contact matrix between entities in the model.
      */
     ModelSIRMixing(
-        std::string vname,
+        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -20541,7 +20531,7 @@ inline Model<TSeq> * ModelSIRMixing<TSeq>::clone_ptr()
 template<typename TSeq>
 inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     ModelSIRMixing<TSeq> & model,
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -20717,7 +20707,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
 template<typename TSeq>
 inline ModelSIRMixing<TSeq>::ModelSIRMixing(
-    std::string vname,
+    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
