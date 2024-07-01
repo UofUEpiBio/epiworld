@@ -95,7 +95,7 @@ int main()
         50.0/popsize,
         r,
         p_i,
-        2.0,
+        0.000009,
         p_r
     );
 
