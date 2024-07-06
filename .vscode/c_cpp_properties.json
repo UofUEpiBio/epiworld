@@ -1,18 +1,17 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "osx",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include",
                 "/usr/local/include",
                 "include/epiworld"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/gcc",
+            "compilerPath": "/usr/bin/clang",
             "cStandard": "gnu17",
-            "cppStandard": "gnu++14",
-            "intelliSenseMode": "gcc-x64"
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
         }
     ],
     "version": 4

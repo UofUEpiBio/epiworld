@@ -1410,15 +1410,6 @@ inline void Model<TSeq>::run_multiple(
 
     // Seeds will be reproducible by default
     std::vector< int > seeds_n(nexperiments);
-    // #ifdef EPI_DEBUG
-    // std::fill(
-    //     seeds_n.begin(),
-    //     seeds_n.end(),
-    //     std::floor(
-    //         runif() * static_cast<double>(std::numeric_limits<int>::max())
-    //     )
-    //     );
-    // #else
     for (auto & s : seeds_n)
     {
         s = static_cast<int>(

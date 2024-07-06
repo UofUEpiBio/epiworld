@@ -261,17 +261,6 @@ public:
 
     virtual ~Model() {};
 
-    void clone_population(
-        std::vector< Agent<TSeq> > & other_population,
-        std::vector< Entity<TSeq> > & other_entities,
-        Model<TSeq> * other_model,
-        bool & other_directed
-    ) const ;
-
-    void clone_population(
-        const Model<TSeq> & other_model
-    );
-
     /**
      * @name Set the backup object
      * @details `backup` can be used to restore the entire object

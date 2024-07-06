@@ -785,9 +785,16 @@ public:
 inline Progress::Progress(int n_, int width_) {
 
 
+    if (n_ < 0)
+        throw std::invalid_argument("n must be greater or equal than 0.");
+
+    if (width_ <= 0)
+        throw std::invalid_argument("width must be greater than 0");
+
     width     = std::max(7, width_ - 7);
     n         = n_;
-    step_size = static_cast<epiworld_double>(width)/static_cast<epiworld_double>(n);
+    step_size = n == 0? width : static_cast<epiworld_double>(width)/
+        static_cast<epiworld_double>(n);
     last_loc  = 0;
     i         = 0;
 
@@ -812,10 +819,9 @@ inline void Progress::next() {
 
     cur_loc = std::floor((++i) * step_size);
 
-
     #ifndef EPI_DEBUG
     for (int j = 0; j < (cur_loc - last_loc); ++j)
-    {
+    { 
         printf_epiworld("|");
     }
     #endif
@@ -6246,17 +6252,6 @@ public:
 
     virtual ~Model() {};
 
-    void clone_population(
-        std::vector< Agent<TSeq> > & other_population,
-        std::vector< Entity<TSeq> > & other_entities,
-        Model<TSeq> * other_model,
-        bool & other_directed
-    ) const ;
-
-    void clone_population(
-        const Model<TSeq> & other_model
-    );
-
     /**
      * @name Set the backup object
      * @details `backup` can be used to restore the entire object
@@ -8147,15 +8142,6 @@ inline void Model<TSeq>::run_multiple(
 
     // Seeds will be reproducible by default
     std::vector< int > seeds_n(nexperiments);
-    // #ifdef EPI_DEBUG
-    // std::fill(
-    //     seeds_n.begin(),
-    //     seeds_n.end(),
-    //     std::floor(
-    //         runif() * static_cast<double>(std::numeric_limits<int>::max())
-    //     )
-    //     );
-    // #else
     for (auto & s : seeds_n)
     {
         s = static_cast<int>(
