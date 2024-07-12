@@ -495,13 +495,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
         for (auto & p : population_backup)
             p.model = this;
 
-    for (auto & e : entities)
-        e.model = this;
-
-    if (entities_backup.size() != 0)
-        for (auto & e : entities_backup)
-            e.model = this;
-
     db = m.db;
     db.model = this;
     db.user_data.model = this;

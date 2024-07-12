@@ -51,8 +51,8 @@ int main() {
 
     
     printf(
-        "Elapsed time: %ld milliseconds\n",
-        (std::chrono::duration_cast<std::chrono::milliseconds>(end - start)).count()
+        "Elapsed time: %lld milliseconds\n",
+        (long long int)(std::chrono::duration_cast<std::chrono::milliseconds>(end - start)).count()
     );
 
     return 0;
