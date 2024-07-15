@@ -96,7 +96,9 @@
 			"locale": "cpp",
 			"print": "cpp",
 			"queue": "cpp",
-			"stack": "cpp"
+			"stack": "cpp",
+			"format": "cpp",
+			"span": "cpp"
 		}
 	},
 	"launch": {
