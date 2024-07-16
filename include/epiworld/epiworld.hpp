@@ -62,7 +62,7 @@ namespace epiworld {
     #include "virus-bones.hpp"
     #include "virus-distribute-meat.hpp"
     #include "virus-meat.hpp"
-    
+
     #include "tools-bones.hpp"
 
     #include "tool-bones.hpp"
@@ -74,7 +74,7 @@ namespace epiworld {
     #include "entity-meat.hpp"
 
     #include "entities-bones.hpp"
-    
+
     #include "agent-meat-state.hpp"
     #include "agent-bones.hpp"
     #include "agent-meat.hpp"
@@ -88,4 +88,4 @@ namespace epiworld {
 
 }
 
-#endif 
+#endif

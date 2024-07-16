@@ -5,18 +5,16 @@
 #define EPIWORLD_PROGRESS_BAR_WIDTH 80
 #endif
 
-/**
- * @brief A simple progress bar
-  */
 class Progress {
-private:
+protected:
     int    width;     ///< Total width size (number of bars)
     int    n;         ///< Total number of iterations
     epiworld_double step_size; ///< Size of the step
     int last_loc;     ///< Last location of the bar
     int cur_loc;      ///< Last location of the bar
     int i;            ///< Current iteration step
-    
+    bool done;        ///< If the progress bar has finished.
+
 public:
     Progress() {};
     Progress(int n_, int width_);
@@ -26,6 +24,9 @@ public:
     void next();
     void end();
 
+    int get_total();
+    int get_current();
+    bool is_done();
 };
 
 inline Progress::Progress(int n_, int width_) {
@@ -46,8 +47,40 @@ inline Progress::Progress(int n_, int width_) {
 
 }
 
+#ifdef __wasm__
 inline void Progress::start()
 {
+
+	done = false;
+
+}
+
+inline void Progress::next()
+{
+
+	if (i == 0)
+        start();
+
+    cur_loc = std::floor((++i) * step_size);
+
+    if (i >= n)
+        end();
+
+    last_loc = cur_loc;
+
+}
+
+inline void Progress::stop()
+{
+
+	done = true;
+
+}
+#else
+inline void Progress::start()
+{
+
+	done = false;
 
     #ifndef EPI_DEBUG
     for (int j = 0; j < (width); ++j)
@@ -67,7 +100,7 @@ inline void Progress::next() {
 
     #ifndef EPI_DEBUG
     for (int j = 0; j < (cur_loc - last_loc); ++j)
-    { 
+    {
         printf_epiworld("|");
     }
     #endif
@@ -81,9 +114,32 @@ inline void Progress::next() {
 
 inline void Progress::end() {
 
+	done = true;
+
     #ifndef EPI_DEBUG
     printf_epiworld(" done.\n");
     #endif
+
+}
+#endif /* __wasm__ */
+
+inline int Progress::get_total() {
+
+	return n;
+
+}
+
+inline int Progress::get_current()
+{
+
+	return i;
+
+}
+
+inline bool Progress::is_done()
+{
+
+	return done;
 
 }
 
