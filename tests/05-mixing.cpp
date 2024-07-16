@@ -173,6 +173,10 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
             n3++;
     }
 
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_FALSE(!(n0 == 4000 && n1 == 6000 && n2 == 0 && n3 == 0));
+    #endif
+
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif
