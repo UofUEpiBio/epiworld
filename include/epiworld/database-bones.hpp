@@ -246,10 +246,13 @@ public:
         std::string fn_generation_time
         ) const;
     
+    /***
+     * @brief Record a transmission event
+     */
     void record_transmission(int i, int j, int virus, int i_expo_date);
 
-    size_t get_n_viruses() const;
-    size_t get_n_tools() const;
+    size_t get_n_viruses() const; ///< Get the number of viruses
+    size_t get_n_tools() const; ///< Get the number of tools
     
     void set_user_data(std::vector< std::string > names);
     void add_user_data(std::vector< epiworld_double > x);
@@ -288,7 +291,11 @@ public:
 
     /**
      * Calculates the generating time
-     * @param agent_id,virus_id,time,gentime vectors where to save the values agent_id
+     * @param agent_id,virus_id,time,gentime vectors where to save the values 
+     * 
+     * @details
+     * The generation time is the time between the infection of the source and 
+     * the infection of the target.
     */
    ///@{
     void generation_time(
@@ -296,11 +303,11 @@ public:
         std::vector< int > & virus_id,
         std::vector< int > & time,
         std::vector< int > & gentime
-    ) const;
+    ) const; ///< Get the generation time
 
     void generation_time(
         std::string fn
-    ) const;
+    ) const; ///< Write the generation time to a file
     ///@}
 
 };

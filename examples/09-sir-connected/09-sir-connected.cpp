@@ -54,18 +54,19 @@ int main(int argc, char* argv[]) {
     std::vector< std::vector< int > > results(nexperiments);
     std::vector< std::vector< int > > date(nexperiments);
     std::vector< std::string > labels;
-    epiworld_fast_uint nreplica = 0u;
+    int nreplica = -1;
 
     auto record =
         [&results,&date,&nreplica,&labels](size_t s, epiworld::Model<> * m)
         {
 
+            #pragma omp critical
+            nreplica++;
+
             if (nreplica == 0)
                 m->get_db().get_hist_total(&date[nreplica], &labels, &results[nreplica]);
             else
                 m->get_db().get_hist_total(&date[nreplica], nullptr, &results[nreplica]);
-
-            nreplica++;
 
             return;
 
@@ -78,7 +79,7 @@ int main(int argc, char* argv[]) {
         result["seed"].as<int>(),
         record,       // Function to call after each experiment
         true,         // Whether to reset the population
-        true         // Whether to print a progress bar
+        true          // Whether to print a progress bar
         #ifdef _OPENMP
         ,threads 
         #endif
@@ -105,6 +106,48 @@ int main(int argc, char* argv[]) {
         "","","","",
         "total_hist.txt", "transmission.txt", "transition.txt", "", ""
         );
+
+
+    // We can compute the expected generation time
+    auto gen_time = model.generation_time_expected();
+
+    // Compute observed generation interval
+    std::vector< int > agent_id;
+    std::vector< int > virus_id;
+    std::vector< int > time;
+    std::vector< int > gentim;
+    model.get_db().generation_time(
+        agent_id,
+        virus_id,
+        time,
+        gentim
+    );
+
+    // Averaging out at the time level
+    std::vector< double > gen_time_observed;
+    std::vector< double > gen_time_observed_count;
+
+    for (size_t i = 0; i < gentim.size(); i++)
+    {
+        if (gentim[i] >= 0)
+        {
+            if (time[i] >= gen_time_observed.size())
+            {
+                gen_time_observed.resize(time[i] + 1, 0.0);
+                gen_time_observed_count.resize(time[i] + 1, 0.0);
+            }
+
+            gen_time_observed[time[i]] += gentim[i];
+            gen_time_observed_count[time[i]] += 1.0;
+        }
+    }
+
+    for (size_t i = 0; i < gen_time_observed.size(); i++)
+    {
+        if (gen_time_observed_count[i] > 0)
+            gen_time_observed[i] /= gen_time_observed_count[i];
+    }
+
 
     return 0;
 

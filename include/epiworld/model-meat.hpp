@@ -560,6 +560,13 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 }
 
 template<typename TSeq>
+inline const DataBase<TSeq> & Model<TSeq>::get_db() const
+{
+    return db;
+}
+
+
+template<typename TSeq>
 inline std::vector<Agent<TSeq>> & Model<TSeq>::get_agents()
 {
     return population;
@@ -2067,9 +2074,12 @@ inline void Model<TSeq>::set_param(std::string pname, epiworld_double value)
 // }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::par(std::string pname)
+inline epiworld_double Model<TSeq>::par(std::string pname) const
 {
-    return parameters[pname];
+    const auto iter = parameters.find(pname);
+    if (iter == parameters.end())
+        throw std::logic_error("The parameter " + pname + " does not exists.");
+    return iter->second;
 }
 
 #define DURCAST(tunit,txtunit) {\

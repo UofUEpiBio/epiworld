@@ -274,6 +274,7 @@ public:
     ///@}
 
     DataBase<TSeq> & get_db();
+    const DataBase<TSeq> & get_db() const;
     epiworld_double & operator()(std::string pname);
 
     size_t size() const;
@@ -598,7 +599,7 @@ public:
     // void set_param(size_t k, epiworld_double val);
     void set_param(std::string pname, epiworld_double val);
     // epiworld_double par(epiworld_fast_uint k);
-    epiworld_double par(std::string pname);
+    epiworld_double par(std::string pname) const;
     ///@}
 
     void get_elapsed(
