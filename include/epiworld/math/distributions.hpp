@@ -79,19 +79,21 @@ inline double dgenint(
         for (int i = 0; i < max_n; ++i)
         {
 
-            p_0_approx +=
-                dpois(i, S * p_c, max_n, false) *
-                std::pow(1.0 - p_i, static_cast<double>(i)) ;
+            p_0_approx += std::exp(
+                dpois(i, S * p_c, max_n, true) +
+                std::log(1.0 - p_i) * static_cast<double>(i)
+                );
 
         }
     }
 
     double g_dbl = static_cast<double>(g);
 
-    return
-        std::pow(1 - p_r, g_dbl) *
-        std::pow(p_0_approx, g_dbl - 1.0) * 
-        (1.0 - p_0_approx);
+    return std::exp(
+        std::log(1 - p_r) * g_dbl +
+        std::log(p_0_approx) * (g_dbl - 1.0) +
+        std::log(1.0 - p_0_approx)
+        );
 
 }
 
@@ -118,12 +120,12 @@ inline double gen_int_mean(
 
     double mean = 0.0;
     double p_0_approx = -1.0;
-    for (int i = 0; i < max_days; ++i)
+    for (int i = 1; i < max_days; ++i)
     {
         mean += 
             static_cast<double>(i) *
             dgenint(
-                static_cast<double>(i), S, p_c, p_i, p_r, p_0_approx, max_n
+                i, S, p_c, p_i, p_r, p_0_approx, max_n
                 );
 
     }
