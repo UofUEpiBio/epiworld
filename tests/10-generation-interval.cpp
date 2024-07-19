@@ -14,8 +14,8 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
     static const int S = 10000;
     static const size_t max_days = 200;
     static const size_t max_contacts = S/2;
-    static const double p_r = 1.0/7.0;
-    static const double p_i = 0.01;
+    static const double p_r = 1.0/15.0;
+    static const double p_i = 0.1;
 
     // Derived parameters
     static const double p_c = contact_rate/static_cast<double>(S);
@@ -28,7 +28,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
     model.seed(3123);
     
     // Building a simple simulation for SIR connected model
-    size_t nsims = 1000000u;
+    size_t nsims = 50000u;
     std::vector< size_t > sim_days;
 
     double p_0 = 0.0;
@@ -91,20 +91,28 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
 
     std::vector< double > distribution_expected(max_days * 5, 0.0);
     p_0_approx_analy_global = -1.0;
+    double normalizing_constant = -1.0;
     for (size_t i = 0u; i < (max_days * 5); ++i)
     {
         distribution_expected[i] = epiworld::dgenint(
-            i, S, p_c, p_i, p_r, p_0_approx_analy_global, max_contacts
+            i, S, p_c, p_i, p_r, p_0_approx_analy_global, 
+            normalizing_constant, max_contacts, max_days
         );
     }
 
     // Printing out the means
-    printf("Mean (simulated) : %.4f\n", mean);
-    printf("Mean (expected)  : %.4f\n", expected_mean);
+    printf("Mean GI (simulated)  : %.4f\n", mean);
+    printf("Mean GI (expected)   : %.4f\n", expected_mean);
+    printf("Ratio (sim/expected) : %.4f\n", mean/expected_mean);
+
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_FALSE(moreless(mean/expected_mean, 1.00, 0.01));
+    #endif
 
     // Printing out the first 20 of the distribution
     printf("         Expected | Simulated | AbsDiff\n");
     for (size_t i = 0u; i < 15u; ++i)
+    {
         printf(
             "P(G=%2i) = %.4f  | %.4f    | %.4f\n",
             static_cast<int>(i),
@@ -113,9 +121,12 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
             std::abs(distribution_expected[i] - distribution[i])
             );
 
+        #ifdef CATCH_CONFIG_MAIN
+        REQUIRE_FALSE(moreless(distribution_expected[i], distribution[i], 0.01));
+        #endif
+    }
 
-    double distribution_expected_sum = std::accumulate(distribution_expected.begin(), distribution_expected.end(), 0.0);
-
+    
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif

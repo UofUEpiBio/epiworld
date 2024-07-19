@@ -49,7 +49,7 @@ inline double dpois(
  * 
  * @details
  * If `p_0_approx` is negative, it will be computed using the Poisson
- * distribution.
+ * distribution. If `normalizing` is negative, it will be computed on the fly
  * 
  * @param g Generation interval
  * @param S Population size
@@ -57,7 +57,9 @@ inline double dpois(
  * @param p_i Probability of infection
  * @param p_r Probability of recovery
  * @param p_0_approx Approximation of the probability of not being infected
- * @param max_n Maximum number of contacts
+ * @param normalizing Normalizing constant
+ * @param max_contacts Maximum number of contacts
+ * @param max_days Maximum number of days
  * 
  * @return The probability of the generation interval
  * 
@@ -69,7 +71,9 @@ inline double dgenint(
     double p_i,
     double p_r,
     double & p_0_approx,
-    int max_n = 500
+    double & normalizing,
+    int max_contacts = 200,
+    int max_days = 200
     ) {
 
     g += 1;
@@ -78,11 +82,11 @@ inline double dgenint(
     {
 
         p_0_approx = 0.0;
-        for (int i = 0; i < max_n; ++i)
+        for (int i = 0; i < max_contacts; ++i)
         {
 
             p_0_approx += std::exp(
-                dpois(i, S * p_c, max_n, true) +
+                dpois(i, S * p_c, max_contacts, true) +
                 std::log(1.0 - p_i) * static_cast<double>(i)
                 );
 
@@ -91,20 +95,25 @@ inline double dgenint(
 
     double g_dbl = static_cast<double>(g);
 
-    double normalizing = 1.0;
-    double log1_p_r = std::log(1.0 - p_r);
-    double log_p_r = std::log(p_r);
-    double log_p_0_approx = std::log(p_0_approx);
-    for (size_t i = 1; i <= max_n; ++i)
+    if (normalizing < 0.0)
     {
 
-        double i_dbl = static_cast<double>(i);
+        normalizing = 1.0;
+        double log1_p_r = std::log(1.0 - p_r);
+        double log_p_r = std::log(p_r);
+        double log_p_0_approx = std::log(p_0_approx);
+        for (int i = 1; i <= max_days; ++i)
+        {
 
-        normalizing -= std::exp(
-            log1_p_r * (i_dbl - 1.0) +
-            log_p_r +
-            log_p_0_approx * (i_dbl - 1.0)
-            );
+            double i_dbl = static_cast<double>(i);
+
+            normalizing -= std::exp(
+                log1_p_r * (i_dbl - 1.0) +
+                log_p_r +
+                log_p_0_approx * (i_dbl - 1.0)
+                );
+        }
+
     }
 
 
@@ -140,12 +149,13 @@ inline double gen_int_mean(
 
     double mean = 0.0;
     double p_0_approx = -1.0;
+    double normalizing = -1.0;
     for (int i = 1; i < max_days; ++i)
     {
         mean += 
             static_cast<double>(i) *
             dgenint(
-                i, S, p_c, p_i, p_r, p_0_approx, max_n
+                i, S, p_c, p_i, p_r, p_0_approx, normalizing, max_n
                 );
 
     }

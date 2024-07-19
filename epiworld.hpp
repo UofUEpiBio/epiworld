@@ -18,8 +18,8 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 3
-#define EPIWORLD_VERSION_PATCH 2
+#define EPIWORLD_VERSION_MINOR 4
+#define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -852,7 +852,191 @@ inline void Progress::end() {
 
 
 
-    // #include "math/summary-stats.hpp"
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/math/distributions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MATH_DISTRIBUTIONS_HPP
+#define EPIWORLD_MATH_DISTRIBUTIONS_HPP
+
+// Implementing the factorial function
+/**
+ * @brief Compute the log of the factorial
+ * 
+ * @param n Number
+ * 
+ * @return The log of the factorial
+ */
+inline double log_factorial(int n)
+{
+    if (n == 0)
+        return 0.0;
+    return std::log(static_cast<double>(n)) + log_factorial(n-1);
+}
+
+/**
+ * @brief Compute the Poisson probability
+ * 
+ * @param k Number of events
+ * @param lambda Rate
+ * @param max_n Maximum number of events
+ * @param as_log Return the log of the probability
+ * 
+ * @return The Poisson probability
+ */
+inline double dpois(
+    int k,
+    double lambda,
+    int max_n = 100,
+    bool as_log = false
+    )
+{
+
+    if (max_n < k)
+        throw std::runtime_error("max_n must be greater than k");
+
+    double res = k * std::log(lambda) - lambda - log_factorial(
+        std::min(k, max_n)
+        );
+    
+    return as_log ? res : std::exp(res);
+}
+
+/**
+ * @brief Compute the probability of the generation interval
+ * 
+ * @details
+ * If `p_0_approx` is negative, it will be computed using the Poisson
+ * distribution. If `normalizing` is negative, it will be computed on the fly
+ * 
+ * @param g Generation interval
+ * @param S Population size
+ * @param p_c Probability of contact
+ * @param p_i Probability of infection
+ * @param p_r Probability of recovery
+ * @param p_0_approx Approximation of the probability of not being infected
+ * @param normalizing Normalizing constant
+ * @param max_contacts Maximum number of contacts
+ * @param max_days Maximum number of days
+ * 
+ * @return The probability of the generation interval
+ * 
+ */
+inline double dgenint(
+    int g,
+    double S,
+    double p_c,
+    double p_i,
+    double p_r,
+    double & p_0_approx,
+    double & normalizing,
+    int max_contacts = 200,
+    int max_days = 200
+    ) {
+
+    g += 1;
+
+    if (p_0_approx < 0.0)
+    {
+
+        p_0_approx = 0.0;
+        for (int i = 0; i < max_contacts; ++i)
+        {
+
+            p_0_approx += std::exp(
+                dpois(i, S * p_c, max_contacts, true) +
+                std::log(1.0 - p_i) * static_cast<double>(i)
+                );
+
+        }
+    }
+
+    double g_dbl = static_cast<double>(g);
+
+    if (normalizing < 0.0)
+    {
+
+        normalizing = 1.0;
+        double log1_p_r = std::log(1.0 - p_r);
+        double log_p_r = std::log(p_r);
+        double log_p_0_approx = std::log(p_0_approx);
+        for (int i = 1; i <= max_days; ++i)
+        {
+
+            double i_dbl = static_cast<double>(i);
+
+            normalizing -= std::exp(
+                log1_p_r * (i_dbl - 1.0) +
+                log_p_r +
+                log_p_0_approx * (i_dbl - 1.0)
+                );
+        }
+
+    }
+
+
+    return std::exp(
+        std::log(1 - p_r) * (g_dbl)+
+        std::log(p_0_approx) * (g_dbl - 1.0) +
+        std::log(1.0 - p_0_approx) -
+        std::log(normalizing)
+        );
+
+}
+
+// Mean of the generation interval
+/**
+ * @brief Compute the mean of the generation interval
+ * @param S Population size.
+ * @param p_c Probability of contact.
+ * @param p_i Probability of infection.
+ * @param p_r Probability of recovery.
+ * @param max_days Maximum number of days.
+ * @param max_n Maximum number of contacts.
+ * 
+ * @return The mean of the generation interval
+ */
+inline double gen_int_mean(
+    double S,
+    double p_c,
+    double p_i,
+    double p_r,
+    int max_days = 200,
+    int max_n = 200
+    ) {
+
+    double mean = 0.0;
+    double p_0_approx = -1.0;
+    double normalizing = -1.0;
+    for (int i = 1; i < max_days; ++i)
+    {
+        mean += 
+            static_cast<double>(i) *
+            dgenint(
+                i, S, p_c, p_i, p_r, p_0_approx, normalizing, max_n
+                );
+
+    }
+
+    return mean;
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/math/distributions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
 
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -2911,10 +3095,13 @@ public:
         std::string fn_generation_time
         ) const;
     
+    /***
+     * @brief Record a transmission event
+     */
     void record_transmission(int i, int j, int virus, int i_expo_date);
 
-    size_t get_n_viruses() const;
-    size_t get_n_tools() const;
+    size_t get_n_viruses() const; ///< Get the number of viruses
+    size_t get_n_tools() const; ///< Get the number of tools
     
     void set_user_data(std::vector< std::string > names);
     void add_user_data(std::vector< epiworld_double > x);
@@ -2953,7 +3140,11 @@ public:
 
     /**
      * Calculates the generating time
-     * @param agent_id,virus_id,time,gentime vectors where to save the values agent_id
+     * @param agent_id,virus_id,time,gentime vectors where to save the values 
+     * 
+     * @details
+     * The generation time is the time between the infection of the source and 
+     * the infection of the target.
     */
    ///@{
     void generation_time(
@@ -2961,11 +3152,11 @@ public:
         std::vector< int > & virus_id,
         std::vector< int > & time,
         std::vector< int > & gentime
-    ) const;
+    ) const; ///< Get the generation time
 
     void generation_time(
         std::string fn
-    ) const;
+    ) const; ///< Write the generation time to a file
     ///@}
 
 };
@@ -6265,6 +6456,7 @@ public:
     ///@}
 
     DataBase<TSeq> & get_db();
+    const DataBase<TSeq> & get_db() const;
     epiworld_double & operator()(std::string pname);
 
     size_t size() const;
@@ -6589,7 +6781,7 @@ public:
     // void set_param(size_t k, epiworld_double val);
     void set_param(std::string pname, epiworld_double val);
     // epiworld_double par(epiworld_fast_uint k);
-    epiworld_double par(std::string pname);
+    epiworld_double par(std::string pname) const;
     ///@}
 
     void get_elapsed(
@@ -7227,13 +7419,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
         for (auto & p : population_backup)
             p.model = this;
 
-    for (auto & e : entities)
-        e.model = this;
-
-    if (entities_backup.size() != 0)
-        for (auto & e : entities_backup)
-            e.model = this;
-
     db = m.db;
     db.model = this;
     db.user_data.model = this;
@@ -7297,6 +7482,13 @@ inline DataBase<TSeq> & Model<TSeq>::get_db()
 {
     return db;
 }
+
+template<typename TSeq>
+inline const DataBase<TSeq> & Model<TSeq>::get_db() const
+{
+    return db;
+}
+
 
 template<typename TSeq>
 inline std::vector<Agent<TSeq>> & Model<TSeq>::get_agents()
@@ -9140,9 +9332,12 @@ inline void Model<TSeq>::set_param(std::string pname, epiworld_double value)
 // }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::par(std::string pname)
+inline epiworld_double Model<TSeq>::par(std::string pname) const
 {
-    return parameters[pname];
+    const auto iter = parameters.find(pname);
+    if (iter == parameters.end())
+        throw std::logic_error("The parameter " + pname + " does not exists.");
+    return iter->second;
 }
 
 #define DURCAST(tunit,txtunit) {\
@@ -17072,6 +17267,15 @@ public:
         return infected.size();
     }
 
+    /***
+     * @brief Compute expected generation time
+     * @param max_days Maximum number of days.
+     * @param max_contacts Maximum number of contacts.
+     */
+    std::vector< double > generation_time_expected(
+        int max_days = 200,
+        int max_contacts = 200
+    ) const;
 
 };
 
@@ -17367,6 +17571,55 @@ inline ModelSIRCONN<TSeq> & ModelSIRCONN<TSeq>::initial_states(
 
 }
 
+template<typename TSeq>
+inline std::vector< double > ModelSIRCONN<TSeq>::generation_time_expected(
+    int max_days,
+    int max_contacts
+) const
+{
+
+    // Retrieving total counts
+    std::vector< int > h_date;
+    std::vector< std::string > h_state;
+    std::vector< int > h_counts;
+    const auto this_const = dynamic_cast<const ModelSIRCONN<TSeq> *>(this);
+    this_const->get_db().get_hist_total(
+        &h_date,
+        &h_state,
+        &h_counts
+    );
+
+    // Retrieving information on susceptibles
+    std::vector< double > S(this_const->get_ndays(), 0.0);
+    for (size_t i = 0; i < h_date.size(); ++i)
+    {
+        if (h_state[i] == "Susceptible")
+            S[h_date[i]] += h_counts[i];
+    }
+
+    // The generation time in the SIR model starts from 1, as agents 
+    // spend at least one day in the infected state before starting
+    // transmitting.
+    std::vector< double > gen_times(this_const->get_ndays(), 1.0);
+    double p_c = this_const->par("Contact rate")/this_const->size();
+    double p_i = this_const->par("Transmission rate");
+    double p_r = this_const->par("Recovery rate");
+    for (size_t i = 0u; i < this_const->get_ndays(); ++i)
+    {
+        gen_times[i] = gen_int_mean(
+            S[i],
+            p_c,
+            p_i,
+            p_r,
+            max_days,
+            max_contacts
+        );
+
+    }
+
+    return gen_times;
+
+}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -17448,6 +17701,16 @@ public:
     );
 
     size_t get_n_infected() const { return infected.size(); }
+
+    /***
+     * @brief Compute expected generation time
+     * @param max_days Maximum number of days.
+     * @param max_contacts Maximum number of contacts.
+     */
+    std::vector< double > generation_time_expected(
+        int max_days = 200,
+        int max_contacts = 200
+    ) const;
 
 };
 
@@ -17774,6 +18037,63 @@ inline ModelSEIRCONN<TSeq> & ModelSEIRCONN<TSeq>::initial_states(
         ;
 
     return *this;
+
+}
+
+template<typename TSeq>
+inline std::vector< double > ModelSEIRCONN<TSeq>::generation_time_expected(
+    int max_days,
+    int max_contacts
+) const
+{
+
+    // Retrieving total counts
+    std::vector< int > h_date;
+    std::vector< std::string > h_state;
+    std::vector< int > h_counts;
+    const auto this_const = dynamic_cast<const ModelSEIRCONN<TSeq> *>(this);
+    this_const->get_db().get_hist_total(
+        &h_date,
+        &h_state,
+        &h_counts
+    );
+
+    // Retrieving information on susceptibles
+    std::vector< double > S(this_const->get_ndays(), 0.0);
+    for (size_t i = 0; i < h_date.size(); ++i)
+    {
+        if (h_state[i] == "Susceptible")
+            S[h_date[i]] += h_counts[i];
+    }
+
+    // Computing the expected number of days in exposed
+    double days_exposed = this_const->par("Avg. Incubation days");
+
+    // The generation time in the SEIR model starts from 2, as agents 
+    // spend at least one day in the exposed state, and 1 day in the 
+    // infectious state before starting transmitting.
+    std::vector< double > gen_times(
+        this_const->get_ndays(), 2.0 + days_exposed
+        );
+        
+    double p_c = this_const->par("Contact rate")/this_const->size();
+    double p_i = this_const->par("Transmission rate");
+    double p_r = this_const->par("Recovery rate");
+
+    for (size_t i = 0u; i < this_const->get_ndays(); ++i)
+    {
+        gen_times[i] = gen_int_mean(
+            S[i],
+            p_c,
+            p_i,
+            p_r,
+            max_days,
+            max_contacts
+        );
+
+    }
+
+    return gen_times;
 
 }
 
