@@ -431,16 +431,16 @@ inline std::vector< double > ModelSEIRCONN<TSeq>::generation_time_expected(
     // spend at least one day in the exposed state, and 1 day in the 
     // infectious state before starting transmitting.
     std::vector< double > gen_times(
-        this_const->get_ndays(), 2.0 + days_exposed
+        this_const->get_ndays(), 1.0 + days_exposed
         );
         
     double p_c = this_const->par("Contact rate")/this_const->size();
-    double p_i = this_const->par("Transmission rate");
-    double p_r = this_const->par("Recovery rate");
+    double p_i = this_const->par("Prob. Transmission");
+    double p_r = this_const->par("Prob. Recovery");
 
     for (size_t i = 0u; i < this_const->get_ndays(); ++i)
     {
-        gen_times[i] = gen_int_mean(
+        gen_times[i] += gen_int_mean(
             S[i],
             p_c,
             p_i,

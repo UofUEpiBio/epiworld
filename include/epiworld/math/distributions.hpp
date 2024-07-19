@@ -76,7 +76,8 @@ inline double dgenint(
     int max_days = 200
     ) {
 
-    g += 1;
+    if ((g < 1) || (g > max_days))
+        return 0.0;
 
     if (p_0_approx < 0.0)
     {
@@ -155,7 +156,7 @@ inline double gen_int_mean(
         mean += 
             static_cast<double>(i) *
             dgenint(
-                i, S, p_c, p_i, p_r, p_0_approx, normalizing, max_n
+                i, S, p_c, p_i, p_r, p_0_approx, normalizing, max_n, max_days
                 );
 
     }

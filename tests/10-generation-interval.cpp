@@ -14,8 +14,8 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
     static const int S = 10000;
     static const size_t max_days = 200;
     static const size_t max_contacts = S/2;
-    static const double p_r = 1.0/15.0;
-    static const double p_i = 0.1;
+    static const double p_r = 1.0/7.0;
+    static const double p_i = 0.05;
 
     // Derived parameters
     static const double p_c = contact_rate/static_cast<double>(S);
@@ -63,7 +63,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
             if (model.runif() < p_at_least_one)
             {
                 p_0 -= 1.0;
-                sim_days.push_back(j);
+                sim_days.push_back(j + 1);
                 distribution[j] += 1.0;
                 break;
             }
@@ -95,7 +95,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
     for (size_t i = 0u; i < (max_days * 5); ++i)
     {
         distribution_expected[i] = epiworld::dgenint(
-            i, S, p_c, p_i, p_r, p_0_approx_analy_global, 
+            i + 1.0, S, p_c, p_i, p_r, p_0_approx_analy_global, 
             normalizing_constant, max_contacts, max_days
         );
     }
