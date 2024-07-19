@@ -72,6 +72,8 @@ inline double dgenint(
     int max_n = 500
     ) {
 
+    g += 1;
+
     if (p_0_approx < 0.0)
     {
 
@@ -89,10 +91,28 @@ inline double dgenint(
 
     double g_dbl = static_cast<double>(g);
 
+    double normalizing = 1.0;
+    double log1_p_r = std::log(1.0 - p_r);
+    double log_p_r = std::log(p_r);
+    double log_p_0_approx = std::log(p_0_approx);
+    for (size_t i = 1; i <= max_n; ++i)
+    {
+
+        double i_dbl = static_cast<double>(i);
+
+        normalizing -= std::exp(
+            log1_p_r * (i_dbl - 1.0) +
+            log_p_r +
+            log_p_0_approx * (i_dbl - 1.0)
+            );
+    }
+
+
     return std::exp(
-        std::log(1 - p_r) * g_dbl +
+        std::log(1 - p_r) * (g_dbl)+
         std::log(p_0_approx) * (g_dbl - 1.0) +
-        std::log(1.0 - p_0_approx)
+        std::log(1.0 - p_0_approx) -
+        std::log(normalizing)
         );
 
 }
