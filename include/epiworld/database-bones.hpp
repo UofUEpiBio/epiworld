@@ -178,6 +178,10 @@ public:
         std::vector< int > & counts
     ) const;
 
+    void get_today_transition_matrix(
+        std::vector< int > & counts
+    ) const;
+
     void get_hist_total(
         std::vector< int > * date,
         std::vector< std::string > * state,

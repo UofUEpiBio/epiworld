@@ -939,7 +939,8 @@ inline double dgenint(
     int max_days = 200
     ) {
 
-    g += 1;
+    if ((g < 1) || (g > max_days))
+        return 0.0;
 
     if (p_0_approx < 0.0)
     {
@@ -1018,7 +1019,7 @@ inline double gen_int_mean(
         mean += 
             static_cast<double>(i) *
             dgenint(
-                i, S, p_c, p_i, p_r, p_0_approx, normalizing, max_n
+                i, S, p_c, p_i, p_r, p_0_approx, normalizing, max_n, max_days
                 );
 
     }
@@ -3027,6 +3028,10 @@ public:
         std::vector< int > & counts
     ) const;
 
+    void get_today_transition_matrix(
+        std::vector< int > & counts
+    ) const;
+
     void get_hist_total(
         std::vector< int > * date,
         std::vector< std::string > * state,
@@ -3817,6 +3822,18 @@ inline void DataBase<TSeq>::get_hist_tool(
         state[i] = labels[hist_tool_state[i]];
 
     counts = hist_tool_counts;
+
+    return;
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_today_transition_matrix(
+    std::vector< int > & counts
+) const
+{
+
+    counts = transition_matrix;
 
     return;
 
@@ -18073,16 +18090,16 @@ inline std::vector< double > ModelSEIRCONN<TSeq>::generation_time_expected(
     // spend at least one day in the exposed state, and 1 day in the 
     // infectious state before starting transmitting.
     std::vector< double > gen_times(
-        this_const->get_ndays(), 2.0 + days_exposed
+        this_const->get_ndays(), 1.0 + days_exposed
         );
         
     double p_c = this_const->par("Contact rate")/this_const->size();
-    double p_i = this_const->par("Transmission rate");
-    double p_r = this_const->par("Recovery rate");
+    double p_i = this_const->par("Prob. Transmission");
+    double p_r = this_const->par("Prob. Recovery");
 
     for (size_t i = 0u; i < this_const->get_ndays(); ++i)
     {
-        gen_times[i] = gen_int_mean(
+        gen_times[i] += gen_int_mean(
             S[i],
             p_c,
             p_i,

@@ -640,6 +640,18 @@ inline void DataBase<TSeq>::get_hist_tool(
 }
 
 template<typename TSeq>
+inline void DataBase<TSeq>::get_today_transition_matrix(
+    std::vector< int > & counts
+) const
+{
+
+    counts = transition_matrix;
+
+    return;
+
+}
+
+template<typename TSeq>
 inline void DataBase<TSeq>::get_hist_transition_matrix(
     std::vector< std::string > & state_from,
     std::vector< std::string > & state_to,
