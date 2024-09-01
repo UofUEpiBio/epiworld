@@ -1007,9 +1007,9 @@ inline void DataBase<TSeq>::write_data(
                         #ifdef EPI_DEBUG
                         EPI_GET_THREAD_ID() << " " <<
                         #endif
-                        i << " " <<
-                        model->states_labels[from] << " " <<
-                        model->states_labels[to] << " " <<
+                        i << " \"" <<
+                        model->states_labels[from] << "\" \"" <<
+                        model->states_labels[to] << "\" " <<
                         hist_transition_matrix[i * (ns * ns) + to * ns + from] << "\n";
                 
         }
