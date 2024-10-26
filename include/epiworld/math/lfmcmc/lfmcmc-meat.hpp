@@ -380,7 +380,7 @@ inline void LFMCMC<TData>::seed(epiworld_fast_uint s) {
 template<typename TData>
 inline void LFMCMC<TData>::set_rand_engine(std::mt19937 & eng)
 {
-    engine = &eng;
+    engine = std::make_shared<std::mt19937>(eng);
 }
 
 template<typename TData>
