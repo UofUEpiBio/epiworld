@@ -390,7 +390,7 @@ inline void LFMCMC<TData>::set_rand_gamma(epiworld_double alpha, epiworld_double
 }
 
 template<typename TData>
-inline std::mt19937 & LFMCMC<TData>::get_rand_endgine()
+inline std::mt19937 & LFMCMC<TData>::get_rand_engine()
 {
     return *engine;
 }

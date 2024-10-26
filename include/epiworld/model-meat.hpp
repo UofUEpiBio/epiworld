@@ -820,7 +820,7 @@ inline void Model<TSeq>::set_backup()
 // }
 
 template<typename TSeq>
-inline std::mt19937 & Model<TSeq>::get_rand_endgine()
+inline std::mt19937 & Model<TSeq>::get_rand_engine()
 {
     return engine;
 }

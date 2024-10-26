@@ -81,7 +81,7 @@ int main()
     model.get_db().get_today_total(nullptr, &obs_dat);
 
     lfmcmc.set_observed_data(obs_dat);
-    lfmcmc.set_rand_engine(model.get_rand_endgine());
+    lfmcmc.set_rand_engine(model.get_rand_engine());
 
     std::vector< epiworld_double > par0 = {.5, .5};
 
