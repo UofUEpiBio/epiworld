@@ -286,7 +286,7 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::mt19937 & eng);
+    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
     std::shared_ptr< std::mt19937 > & get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);

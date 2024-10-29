@@ -6485,7 +6485,7 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::mt19937 & eng);
+    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
     std::shared_ptr< std::mt19937 > & get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
@@ -17031,7 +17031,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
         // How many will we find
         std::binomial_distribution<> bdist(m->size(), m->par("Surveilance prob."));
-        int nsampled = bdist(m->get_rand_endgine());
+        int nsampled = bdist(*m->get_rand_endgine());
 
         int to_go = nsampled + 1;
 
