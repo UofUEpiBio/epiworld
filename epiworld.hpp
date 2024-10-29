@@ -19,7 +19,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 4
-#define EPIWORLD_VERSION_PATCH 0
+#define EPIWORLD_VERSION_PATCH 1
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -1178,7 +1178,7 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::mt19937 * engine = nullptr;
+    std::shared_ptr< std::mt19937 > engine = nullptr;
     
     std::shared_ptr< std::uniform_real_distribution<> > runifd =
         std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
@@ -1190,7 +1190,7 @@ private:
         std::make_shared< std::gamma_distribution<> >();
 
     // Process data
-    TData * observed_data;
+    TData observed_data;
     
     // Information about the size of the problem
     size_t n_samples;
@@ -1253,10 +1253,10 @@ public:
         );
 
     LFMCMC() {};
-    LFMCMC(TData & observed_data_) : observed_data(&observed_data_) {};
+    LFMCMC(const TData & observed_data_) : observed_data(observed_data_) {};
     ~LFMCMC() {};
 
-    void set_observed_data(TData & observed_data_) {observed_data = &observed_data_;};
+    void set_observed_data(const TData & observed_data_) {observed_data = observed_data_;};
     void set_proposal_fun(LFMCMCProposalFun<TData> fun);
     void set_simulation_fun(LFMCMCSimFun<TData> fun);
     void set_summary_fun(LFMCMCSummaryFun<TData> fun);
@@ -1268,8 +1268,8 @@ public:
      * @param eng 
      */
     ///@{
-    void set_rand_engine(std::mt19937 & eng);
-    std::mt19937 & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
+    std::shared_ptr< std::mt19937 > & get_rand_endgine();
     void seed(epiworld_fast_uint s);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
@@ -1455,7 +1455,7 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::mt19937 * engine = nullptr;
+    std::shared_ptr< std::mt19937 > engine = nullptr;
     
     std::shared_ptr< std::uniform_real_distribution<> > runifd =
         std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
@@ -1467,7 +1467,7 @@ private:
         std::make_shared< std::gamma_distribution<> >();
 
     // Process data
-    TData * observed_data;
+    TData observed_data;
     
     // Information about the size of the problem
     size_t n_samples;
@@ -1530,10 +1530,10 @@ public:
         );
 
     LFMCMC() {};
-    LFMCMC(TData & observed_data_) : observed_data(&observed_data_) {};
+    LFMCMC(const TData & observed_data_) : observed_data(observed_data_) {};
     ~LFMCMC() {};
 
-    void set_observed_data(TData & observed_data_) {observed_data = &observed_data_;};
+    void set_observed_data(const TData & observed_data_) {observed_data = observed_data_;};
     void set_proposal_fun(LFMCMCProposalFun<TData> fun);
     void set_simulation_fun(LFMCMCSimFun<TData> fun);
     void set_summary_fun(LFMCMCSummaryFun<TData> fun);
@@ -1545,8 +1545,8 @@ public:
      * @param eng 
      */
     ///@{
-    void set_rand_engine(std::mt19937 & eng);
-    std::mt19937 & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
+    std::shared_ptr< std::mt19937 > & get_rand_endgine();
     void seed(epiworld_fast_uint s);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
@@ -1819,7 +1819,7 @@ inline void LFMCMC<TData>::run(
     params_now  = params_init;
 
     // Computing the baseline sufficient statistics
-    summary_fun(observed_stats, *observed_data, this);
+    summary_fun(observed_stats, observed_data, this);
     n_statistics = observed_stats.size();
 
     // Reserving size
@@ -1969,9 +1969,9 @@ inline void LFMCMC<TData>::seed(epiworld_fast_uint s) {
 }
 
 template<typename TData>
-inline void LFMCMC<TData>::set_rand_engine(std::mt19937 & eng)
+inline void LFMCMC<TData>::set_rand_engine(std::shared_ptr< std::mt19937 > & eng)
 {
-    engine = &eng;
+    engine = eng;
 }
 
 template<typename TData>
@@ -1981,9 +1981,9 @@ inline void LFMCMC<TData>::set_rand_gamma(epiworld_double alpha, epiworld_double
 }
 
 template<typename TData>
-inline std::mt19937 & LFMCMC<TData>::get_rand_endgine()
+inline std::shared_ptr< std::mt19937 > & LFMCMC<TData>::get_rand_endgine()
 {
-    return *engine;
+    return engine;
 }
 
 // Step 1: Simulate data
@@ -6339,7 +6339,7 @@ protected:
     std::vector< Entity<TSeq> > entities = {}; 
     std::vector< Entity<TSeq> > entities_backup = {};
 
-    std::mt19937 engine;
+    std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
     
     std::uniform_real_distribution<> runifd      =
         std::uniform_real_distribution<> (0.0, 1.0);
@@ -6485,8 +6485,8 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::mt19937 & eng);
-    std::mt19937 & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
+    std::shared_ptr< std::mt19937 > & get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
@@ -7615,12 +7615,6 @@ inline void Model<TSeq>::agents_empty_graph(
 
 }
 
-// template<typename TSeq>
-// inline void Model<TSeq>::set_rand_engine(std::mt19937 & eng)
-// {
-//     engine = std::make_shared< std::mt19937 >(eng);
-// }
-
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_gamma(epiworld_double alpha, epiworld_double beta)
 {
@@ -7761,7 +7755,7 @@ inline void Model<TSeq>::set_backup()
 // }
 
 template<typename TSeq>
-inline std::mt19937 & Model<TSeq>::get_rand_endgine()
+inline std::shared_ptr< std::mt19937 > & Model<TSeq>::get_rand_endgine()
 {
     return engine;
 }
@@ -7769,86 +7763,86 @@ inline std::mt19937 & Model<TSeq>::get_rand_endgine()
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return runifd(engine);
+    return runifd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return runifd(engine) * (b - a) + a;
+    return runifd(*engine) * (b - a) + a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm() {
     // CHECK_INIT()
-    return rnormd(engine);
+    return rnormd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rnorm(epiworld_double mean, epiworld_double sd) {
     // CHECK_INIT()
-    return rnormd(engine) * sd + mean;
+    return rnormd(*engine) * sd + mean;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma() {
-    return rgammad(engine);
+    return rgammad(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
     auto old_param = rgammad.param();
     rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = rgammad(engine);
+    epiworld_double ans = rgammad(*engine);
     rgammad.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp() {
-    return rexpd(engine);
+    return rexpd(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
     auto old_param = rexpd.param();
     rexpd.param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = rexpd(engine);
+    epiworld_double ans = rexpd(*engine);
     rexpd.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal() {
-    return rlognormald(engine);
+    return rlognormald(*engine);
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
     auto old_param = rlognormald.param();
     rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = rlognormald(engine);
+    epiworld_double ans = rlognormald(*engine);
     rlognormald.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline int Model<TSeq>::rbinom() {
-    return rbinomd(engine);
+    return rbinomd(*engine);
 }
 
 template<typename TSeq>
 inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
     auto old_param = rbinomd.param();
     rbinomd.param(std::binomial_distribution<>::param_type(n, p));
-    epiworld_double ans = rbinomd(engine);
+    epiworld_double ans = rbinomd(*engine);
     rbinomd.param(old_param);
     return ans;
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::seed(size_t s) {
-    this->engine.seed(s);
+    this->engine->seed(s);
 }
 
 template<typename TSeq>
@@ -8238,7 +8232,7 @@ inline Model<TSeq> & Model<TSeq>::run(
     this->ndays = ndays;
 
     if (seed >= 0)
-        engine.seed(seed);
+        engine->seed(seed);
 
     array_double_tmp.resize(std::max(
         size(),
@@ -17037,7 +17031,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
         // How many will we find
         std::binomial_distribution<> bdist(m->size(), m->par("Surveilance prob."));
-        int nsampled = bdist(m->get_rand_endgine());
+        int nsampled = bdist(*m->get_rand_endgine());
 
         int to_go = nsampled + 1;
 

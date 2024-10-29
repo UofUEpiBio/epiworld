@@ -140,7 +140,7 @@ protected:
     std::vector< Entity<TSeq> > entities = {}; 
     std::vector< Entity<TSeq> > entities_backup = {};
 
-    std::mt19937 engine;
+    std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
     
     std::uniform_real_distribution<> runifd      =
         std::uniform_real_distribution<> (0.0, 1.0);
@@ -286,8 +286,8 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::mt19937 & eng);
-    std::mt19937 & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
+    std::shared_ptr< std::mt19937 > & get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
