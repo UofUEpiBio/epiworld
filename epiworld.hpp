@@ -19,7 +19,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 4
-#define EPIWORLD_VERSION_PATCH 1
+#define EPIWORLD_VERSION_PATCH 2
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -1249,7 +1249,8 @@ public:
     void run(
         std::vector< epiworld_double > param_init,
         size_t n_samples_,
-        epiworld_double epsilon_
+        epiworld_double epsilon_,
+        int seed = -1
         );
 
     LFMCMC() {};
@@ -1526,7 +1527,8 @@ public:
     void run(
         std::vector< epiworld_double > param_init,
         size_t n_samples_,
-        epiworld_double epsilon_
+        epiworld_double epsilon_,
+        int seed = -1
         );
 
     LFMCMC() {};
@@ -1796,7 +1798,8 @@ template<typename TData>
 inline void LFMCMC<TData>::run(
     std::vector< epiworld_double > params_init_,
     size_t n_samples_,
-    epiworld_double epsilon_
+    epiworld_double epsilon_,
+    int seed
     )
 {
 
@@ -1808,6 +1811,9 @@ inline void LFMCMC<TData>::run(
     epsilon      = epsilon_;
     params_init  = params_init_;
     n_parameters = params_init_.size();
+
+    if (seed >= 0)
+        this->seed(seed);
 
     params_now.resize(n_parameters);
     params_prev.resize(n_parameters);
