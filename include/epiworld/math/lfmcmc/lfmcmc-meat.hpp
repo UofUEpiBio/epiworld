@@ -206,7 +206,7 @@ inline void LFMCMC<TData>::run(
     std::vector< epiworld_double > params_init_,
     size_t n_samples_,
     epiworld_double epsilon_,
-    int seed = -1
+    int seed
     )
 {
 
