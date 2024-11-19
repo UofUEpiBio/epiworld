@@ -58,7 +58,7 @@ jobs:
 
   test-epiworld-r:
     runs-on: ubuntu-latest
-    container: rocker/r-base:latest
+    container: rocker/r2u:latest
 
     steps:
       - uses: actions/checkout@v4
