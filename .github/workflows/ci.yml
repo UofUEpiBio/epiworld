@@ -60,9 +60,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/checkout@v4
+        with:
+          repository: UofUEpiBio/epiworldR
+          path: ./r-pkg
+
       - name: Getting epiworldR
         run: |
-          git clone --depth=1 https://github.com/UofUEpiBio/epiworldR.git r-pkg
           rsync -avz include/epiworld/ r-pkg/inst/include/epiworld/
           R CMD build r-pkg
           R CMD INSTALL epiworldR_*.tar.gz
