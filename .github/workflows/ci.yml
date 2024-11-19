@@ -67,6 +67,6 @@ jobs:
 
       - name: Getting epiworldR
         run: |
-          rsync -avz include/epiworld/ r-pkg/inst/include/epiworld/
+          cp -r include/epiworld/ r-pkg/inst/include/epiworld/
           R CMD build r-pkg
           R CMD INSTALL epiworldR_*.tar.gz
