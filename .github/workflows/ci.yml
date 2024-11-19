@@ -52,3 +52,17 @@ jobs:
           cd tests
           make main.o
           ./main.o
+
+  test-epiworld-r:
+    runs-on: ubuntu-latest
+    container: rocker/r-base:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Getting epiworldR
+        run: |
+          git clone --depth=1 https://github.com/UofUEpiBio/epiworldR.git r-pkg
+          rsync -avz include/epiworld/ r-pkg/inst/include/epiworld/
+          R CMD build r-pkg
+          R CMD INSTALL epiworldR_*.tar.gz
