@@ -595,7 +595,7 @@ inline bool IN(const Ta & a, const std::vector< Ta > & b) noexcept
  * @return int If -1 then it means that none got sampled, otherwise the index
  * of the entry that got drawn.
  */
-template<typename TSeq, typename TDbl>
+template<typename TSeq = EPI_DEFAULT_TSEQ, typename TDbl = epiworld_double >
 inline int roulette(
     const std::vector< TDbl > & probs,
     Model<TSeq> * m
@@ -7661,7 +7661,7 @@ template<typename TSeq>
 inline epiworld_double & Model<TSeq>::operator()(std::string pname) {
 
     if (parameters.find(pname) == parameters.end())
-        throw std::range_error("The parameter "+ pname + "is not in the model.");
+        throw std::range_error("The parameter '"+ pname + "' is not in the model.");
 
     return parameters[pname];
 
@@ -13078,7 +13078,7 @@ namespace sampler {
  * @return Virus<TSeq>* of the selected virus. If none selected (or none
  * available,) returns a nullptr;
  */
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
     std::vector< epiworld_fast_uint > exclude = {}
     )
@@ -13237,7 +13237,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
  * @return Virus<TSeq>* of the selected virus. If none selected (or none
  * available,) returns a nullptr;
  */
-template<typename TSeq = int>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_neighbors(
     std::vector< epiworld_fast_uint > exclude = {}
 )
@@ -13405,7 +13405,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
  * @return Virus<TSeq>* of the selected virus. If none selected (or none
  * available,) returns a nullptr;
  */
-template<typename TSeq = int>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 {
 
