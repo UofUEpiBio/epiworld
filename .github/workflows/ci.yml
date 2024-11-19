@@ -95,4 +95,4 @@ jobs:
             pandoc valgrind
           cp -r include/epiworld/ r-pkg/inst/include/epiworld/
           R CMD build r-pkg
-          R CMD check --no-manual epiworldR_*.tar.gz
+          R CMD check --no-manual --use-valgrind epiworldR_*.tar.gz
