@@ -71,6 +71,7 @@ jobs:
       - name: Getting epiworldR
         run: |
           install2.r knitr rmarkdown tinytest netplot igraph data.table
+          apt-get update && apt-get install -y --no-install-recommends pandoc 
           cp -r include/epiworld/ r-pkg/inst/include/epiworld/
           R CMD build r-pkg
           R CMD INSTALL epiworldR_*.tar.gz
