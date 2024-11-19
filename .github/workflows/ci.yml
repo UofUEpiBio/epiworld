@@ -74,4 +74,4 @@ jobs:
           apt-get update && apt-get install -y --no-install-recommends pandoc 
           cp -r include/epiworld/ r-pkg/inst/include/epiworld/
           R CMD build r-pkg
-          R CMD INSTALL epiworldR_*.tar.gz
+          R CMD check epiworldR_*.tar.gz
