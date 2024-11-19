@@ -8,7 +8,10 @@
 
 name: Tests
 
-on: [push, pull_request]
+on: 
+  push:
+    branches: [ master ]
+  pull_request:
 
 jobs:
   test-macos:
@@ -67,6 +70,7 @@ jobs:
 
       - name: Getting epiworldR
         run: |
+          install2.r knitr rmarkdown tinytest netplot igraph data.table
           cp -r include/epiworld/ r-pkg/inst/include/epiworld/
           R CMD build r-pkg
           R CMD INSTALL epiworldR_*.tar.gz
