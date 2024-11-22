@@ -18,8 +18,8 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 4
-#define EPIWORLD_VERSION_PATCH 4
+#define EPIWORLD_VERSION_MINOR 5
+#define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -1239,7 +1239,7 @@ private:
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
         bool print
-    );
+    ) const;
 
     void chrono_start();
     void chrono_end();
@@ -1297,13 +1297,17 @@ public:
     const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
     std::vector< TData > * get_sampled_data() {return sampled_data;};
 
+    const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
+    const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
+
+
     void set_par_names(std::vector< std::string > names);
     void set_stats_names(std::vector< std::string > names);
 
     std::vector< epiworld_double > get_params_mean();
     std::vector< epiworld_double > get_stats_mean();
 
-    void print() ;
+    void print(size_t burnin = 0u) const;
 
 };
 
@@ -1517,7 +1521,7 @@ private:
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
         bool print
-    );
+    ) const;
 
     void chrono_start();
     void chrono_end();
@@ -1575,13 +1579,17 @@ public:
     const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
     std::vector< TData > * get_sampled_data() {return sampled_data;};
 
+    const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
+    const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
+
+
     void set_par_names(std::vector< std::string > names);
     void set_stats_names(std::vector< std::string > names);
 
     std::vector< epiworld_double > get_params_mean();
     std::vector< epiworld_double > get_stats_mean();
 
-    void print() ;
+    void print(size_t burnin = 0u) const;
 
 };
 
@@ -1842,14 +1850,16 @@ inline void LFMCMC<TData>::run(
 
     std::vector< epiworld_double > proposed_stats_i;
     summary_fun(proposed_stats_i, data_i, this);
-    accepted_params_prob[0u] = kernel_fun(proposed_stats_i, observed_stats, epsilon, this);
+    accepted_params_prob[0u] = kernel_fun(
+        proposed_stats_i, observed_stats, epsilon, this
+        );
 
     // Recording statistics
     for (size_t i = 0u; i < n_statistics; ++i)
         sampled_stats[i] = proposed_stats_i[i];
 
-    for (size_t k = 0u; k < n_statistics; ++k)
-        accepted_params[k] = proposed_stats_i[k];
+    for (size_t k = 0u; k < n_parameters; ++k)
+        accepted_params[k] = params_init[k];
    
     for (size_t i = 1u; i < n_samples; ++i)
     {
@@ -1867,7 +1877,10 @@ inline void LFMCMC<TData>::run(
         summary_fun(proposed_stats_i, data_i, this);
 
         // Step 4: Compute the hastings ratio using the kernel function
-        epiworld_double hr = kernel_fun(proposed_stats_i, observed_stats, epsilon, this);
+        epiworld_double hr = kernel_fun(
+            proposed_stats_i, observed_stats, epsilon, this
+            );
+
         sampled_stats_prob[i] = hr;
 
         // Storing data
@@ -1875,7 +1888,7 @@ inline void LFMCMC<TData>::run(
             sampled_stats[i * n_statistics + k] = proposed_stats_i[k];
         
         // Running Hastings ratio
-        epiworld_double r      = runif();
+        epiworld_double r = runif();
         drawn_prob[i] = r;
 
         // Step 5: Update if likely
@@ -2011,7 +2024,7 @@ inline void LFMCMC<TData>::get_elapsed(
     epiworld_double * last_elapsed,
     std::string * unit_abbr,
     bool print
-) {
+) const {
 
     // Preparing the result
     epiworld_double elapsed;
@@ -2076,29 +2089,46 @@ inline void LFMCMC<TData>::get_elapsed(
 #define LFMCMC_MEAT_PRINT_HPP
 
 template<typename TData>
-inline void LFMCMC<TData>::print()
+inline void LFMCMC<TData>::print(size_t burnin) const
 {
+
     std::vector< epiworld_double > summ_params(n_parameters * 3, 0.0);
     std::vector< epiworld_double > summ_stats(n_statistics * 3, 0.0);
+
+    size_t n_samples_print = n_samples;
+    if (burnin > 0)
+    {
+        if (burnin >= n_samples)
+            throw std::length_error(
+                "The burnin is greater than the number of samples."
+                );
+
+        n_samples_print = n_samples - burnin;
+
+    }
+
+    epiworld_double n_samples_dbl = static_cast< epiworld_double >(
+        n_samples_print
+        );
 
     for (size_t k = 0u; k < n_parameters; ++k)
     {
 
         // Retrieving the relevant parameter
-        std::vector< epiworld_double > par_i(n_samples);
-        for (size_t i = 0u; i < n_samples; ++i)
+        std::vector< epiworld_double > par_i(n_samples_print);
+        for (size_t i = burnin; i < n_samples; ++i)
         {
             par_i[i] = accepted_params[i * n_parameters + k];
-            summ_params[k * 3] += par_i[i]/n_samples;
+            summ_params[k * 3] += par_i[i]/n_samples_dbl;
         }
 
         // Computing the 95% Credible interval
         std::sort(par_i.begin(), par_i.end());
 
         summ_params[k * 3 + 1u] = 
-            par_i[std::floor(.025 * static_cast<epiworld_double>(n_samples))];
+            par_i[std::floor(.025 * n_samples_dbl)];
         summ_params[k * 3 + 2u] = 
-            par_i[std::floor(.975 * static_cast<epiworld_double>(n_samples))];
+            par_i[std::floor(.975 * n_samples_dbl)];
 
     }
 
@@ -2106,20 +2136,20 @@ inline void LFMCMC<TData>::print()
     {
 
         // Retrieving the relevant parameter
-        std::vector< epiworld_double > stat_k(n_samples);
-        for (size_t i = 0u; i < n_samples; ++i)
+        std::vector< epiworld_double > stat_k(n_samples_print);
+        for (size_t i = burnin; i < n_samples; ++i)
         {
             stat_k[i] = accepted_stats[i * n_statistics + k];
-            summ_stats[k * 3] += stat_k[i]/n_samples;
+            summ_stats[k * 3] += stat_k[i]/n_samples_dbl;
         }
 
         // Computing the 95% Credible interval
         std::sort(stat_k.begin(), stat_k.end());
 
         summ_stats[k * 3 + 1u] = 
-            stat_k[std::floor(.025 * static_cast<epiworld_double>(n_samples))];
+            stat_k[std::floor(.025 * n_samples_dbl)];
         summ_stats[k * 3 + 2u] = 
-            stat_k[std::floor(.975 * static_cast<epiworld_double>(n_samples))];
+            stat_k[std::floor(.975 * n_samples_dbl)];
 
     }
 
