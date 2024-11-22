@@ -1,7 +1,7 @@
 #include "../../epiworld.hpp"
 
 /***
- * A concrete example would be a model that includes two populations.
+ * A concrete example with a model that includes two populations.
  * - One, a ‘community’ population and the other,
  * - a ‘hospital’ population.
  * In this model, individuals can move from the community to the hospital (admission) and move from the hospital back into the community (discharge). In both settings, there can be an infectious disease process (e.g. SIS), but we would assume that transmission does not occur between the community and the hospital (of course, this could be relaxed in the future). But through admission and discharge, infections in the community impact dynamics in the hospital and the reverse is true as well.
