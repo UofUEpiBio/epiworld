@@ -64,6 +64,7 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
 
     
     model.print();
+    model.print(50000);
 
     auto params_means = model.get_params_mean();
     auto stats_means  = model.get_stats_mean();
