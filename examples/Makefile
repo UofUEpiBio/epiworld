@@ -8,7 +8,8 @@ INTELFLAGS=-g -O2
 
 ALL_EXAMPLES=00-hello-world 01-sir 02-sir_multiple_runs 02b-sir_multiple_runs \
 	     03-simple-sir 04-advanced-usage 05-user-data 06-sir-omp 06b-sir-omp \
-	     07-surveillance 10-likelihood-free-mcmc
+	     07-surveillance 10-likelihood-free-mcmc 11-entities 13-genint \
+		 14-community-hosp
 
 all-examples:
 	for f in $(ALL_EXAMPLES); do \
