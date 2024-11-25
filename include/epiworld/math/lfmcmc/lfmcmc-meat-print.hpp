@@ -5,6 +5,8 @@ template<typename TData>
 inline void LFMCMC<TData>::print(size_t burnin) const
 {
 
+    // The summary statistics will have three values: mean, the 2.5% 
+    // quantile, and the 97.5% quantile
     std::vector< epiworld_double > summ_params(n_parameters * 3, 0.0);
     std::vector< epiworld_double > summ_stats(n_statistics * 3, 0.0);
 
@@ -58,7 +60,6 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
         // Computing the 95% Credible interval
         std::sort(stat_k.begin(), stat_k.end());
-
         summ_stats[k * 3 + 1u] = 
             stat_k[std::floor(.025 * n_samples_dbl)];
         summ_stats[k * 3 + 2u] = 
