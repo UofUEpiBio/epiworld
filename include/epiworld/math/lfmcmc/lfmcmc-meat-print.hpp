@@ -5,17 +5,18 @@ template<typename TData>
 inline void LFMCMC<TData>::print(size_t burnin) const
 {
 
-    // The summary statistics will have three values: mean, the 2.5% 
-    // quantile, and the 97.5% quantile
+    // For each statistic or parameter in the model, we print three values: 
+    // - mean, the 2.5% quantile, and the 97.5% quantile
     std::vector< epiworld_double > summ_params(n_parameters * 3, 0.0);
     std::vector< epiworld_double > summ_stats(n_statistics * 3, 0.0);
 
+    // Compute the number of samples to use based on burnin rate
     size_t n_samples_print = n_samples;
     if (burnin > 0)
     {
         if (burnin >= n_samples)
             throw std::length_error(
-                "The burnin is greater than the number of samples."
+                "The burnin is greater than or equal to the number of samples."
                 );
 
         n_samples_print = n_samples - burnin;
@@ -26,6 +27,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         n_samples_print
         );
 
+    // Compute parameter summary values
     for (size_t k = 0u; k < n_parameters; ++k)
     {
 
@@ -33,8 +35,8 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         std::vector< epiworld_double > par_i(n_samples_print);
         for (size_t i = burnin; i < n_samples; ++i)
         {
-            par_i[i] = accepted_params[i * n_parameters + k];
-            summ_params[k * 3] += par_i[i]/n_samples_dbl;
+            par_i[i-burnin] = accepted_params[i * n_parameters + k];
+            summ_params[k * 3] += par_i[i-burnin]/n_samples_dbl;
         }
 
         // Computing the 95% Credible interval
@@ -47,6 +49,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
     }
 
+    // Compute statistics summary values
     for (size_t k = 0u; k < n_statistics; ++k)
     {
 
@@ -54,8 +57,8 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         std::vector< epiworld_double > stat_k(n_samples_print);
         for (size_t i = burnin; i < n_samples; ++i)
         {
-            stat_k[i] = accepted_stats[i * n_statistics + k];
-            summ_stats[k * 3] += stat_k[i]/n_samples_dbl;
+            stat_k[i-burnin] = accepted_stats[i * n_statistics + k];
+            summ_stats[k * 3] += stat_k[i-burnin]/n_samples_dbl;
         }
 
         // Computing the 95% Credible interval
