@@ -17,9 +17,9 @@ The model has the following parameters:
 Here is an example of the run
 
 ```bash
-root ➜ /workspaces/epiworld/examples/14-community-hosp (example-karim) $ make
+root ➜ /workspaces/epiworld/examples/14-community-hosp $ make
 g++ -std=c++17 -O3 -g main.cpp -o main.o
-root ➜ /workspaces/epiworld/examples/14-community-hosp (example-karim) $ ./main.o
+root ➜ /workspaces/epiworld/examples/14-community-hosp $ ./main.o
 _________________________________________________________________________
 Running the model...
 ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
@@ -65,9 +65,9 @@ Transition Probabilities:
 
 ## Notes
 
-An few key observations from this example.
+A few key observations from this example.
 
-1. **We have a sampling function that exclude population**. These two functions are used in the update functions so, when susceptible (in the community) sample, the sampling excludes individuals who are hospitalized. Likewise, hospitalized 
+1. **We have a sampling function that exclude population**. These two functions are used in the update functions so the sampling excludes hospitalized individuals:
 
 
     ```cpp
