@@ -73,6 +73,8 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     std::vector<epiworld_double> expected = {5.0, 1.5};
     REQUIRE_THAT(params_means, Catch::Approx(expected).margin(0.5));
     REQUIRE_THAT(stats_means, Catch::Approx(expected).margin(0.5));
+    REQUIRE_THROWS(model.print(200000));
+    REQUIRE_NOTHROW(model.print(50000));
     #endif 
 
     #ifndef CATCH_CONFIG_MAIN
