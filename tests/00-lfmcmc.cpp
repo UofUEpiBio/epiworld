@@ -35,7 +35,7 @@ void summary_fun(vec_double & res, const vec_double & p, LFMCMC<vec_double> * m)
 
     *sd = std::sqrt(*sd);
 
-    auto params = m->get_params_now();
+    auto params = m->get_current_params();
 
     // printf("{mu, sigma} = {% 4.2f, % 4.2f}; ", params[0u], params[1u]);
     // printf("{mean, sd} =  {% 4.2f, % 4.2f}\n", *mean, *sd);
@@ -66,8 +66,8 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     model.print();
     model.print(50000);
 
-    auto params_means = model.get_params_mean();
-    auto stats_means  = model.get_stats_mean();
+    auto params_means = model.get_mean_params();
+    auto stats_means  = model.get_mean_stats();
 
     #ifdef CATCH_CONFIG_MAIN
     std::vector<epiworld_double> expected = {5.0, 1.5};
