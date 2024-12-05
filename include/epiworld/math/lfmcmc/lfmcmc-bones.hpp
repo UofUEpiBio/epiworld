@@ -159,10 +159,10 @@ private:
     std::vector< TData > * sampled_data = nullptr;
 
     // Functions
-    LFMCMCSimFun<TData> simulation_fun;
-    LFMCMCSummaryFun<TData> summary_fun;
-    LFMCMCProposalFun<TData> proposal_fun = proposal_fun_normal<TData>;
-    LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
+    LFMCMCSimFun<TData> m_simulation_fun;
+    LFMCMCSummaryFun<TData> m_summary_fun;
+    LFMCMCProposalFun<TData> m_proposal_fun = proposal_fun_normal<TData>;
+    LFMCMCKernelFun<TData> m_kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
     std::vector< std::string > m_param_names;

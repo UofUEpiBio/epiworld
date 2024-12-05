@@ -1221,10 +1221,10 @@ private:
     std::vector< TData > * sampled_data = nullptr;
 
     // Functions
-    LFMCMCSimFun<TData> simulation_fun;
-    LFMCMCSummaryFun<TData> summary_fun;
-    LFMCMCProposalFun<TData> proposal_fun = proposal_fun_normal<TData>;
-    LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
+    LFMCMCSimFun<TData> m_simulation_fun;
+    LFMCMCSummaryFun<TData> m_summary_fun;
+    LFMCMCProposalFun<TData> m_proposal_fun = proposal_fun_normal<TData>;
+    LFMCMCKernelFun<TData> m_kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
     std::vector< std::string > m_param_names;
@@ -1508,10 +1508,10 @@ private:
     std::vector< TData > * sampled_data = nullptr;
 
     // Functions
-    LFMCMCSimFun<TData> simulation_fun;
-    LFMCMCSummaryFun<TData> summary_fun;
-    LFMCMCProposalFun<TData> proposal_fun = proposal_fun_normal<TData>;
-    LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
+    LFMCMCSimFun<TData> m_simulation_fun;
+    LFMCMCSummaryFun<TData> m_summary_fun;
+    LFMCMCProposalFun<TData> m_proposal_fun = proposal_fun_normal<TData>;
+    LFMCMCKernelFun<TData> m_kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
     std::vector< std::string > m_param_names;
@@ -1790,25 +1790,25 @@ inline epiworld_double kernel_fun_gaussian(
 template<typename TData>
 inline void LFMCMC<TData>::set_proposal_fun(LFMCMCProposalFun<TData> fun)
 {
-    proposal_fun = fun;
+    m_proposal_fun = fun;
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_simulation_fun(LFMCMCSimFun<TData> fun)
 {
-    simulation_fun = fun;
+    m_simulation_fun = fun;
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_summary_fun(LFMCMCSummaryFun<TData> fun)
 {
-    summary_fun = fun;
+    m_summary_fun = fun;
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_kernel_fun(LFMCMCKernelFun<TData> fun)
 {
-    kernel_fun = fun;
+    m_kernel_fun = fun;
 }
 
 
@@ -1843,7 +1843,7 @@ inline void LFMCMC<TData>::run(
     m_current_params  = m_initial_params;
 
     // Computing the baseline sufficient statistics
-    summary_fun(m_observed_stats, m_observed_data, this);
+    m_summary_fun(m_observed_stats, m_observed_data, this);
     m_n_stats = m_observed_stats.size();
 
     // Reserving size
@@ -1856,11 +1856,11 @@ inline void LFMCMC<TData>::run(
     m_accepted_stats.resize(m_n_samples * m_n_stats);
     accepted_params_prob.resize(m_n_samples);
 
-    TData data_i = simulation_fun(m_initial_params, this);
+    TData data_i = m_simulation_fun(m_initial_params, this);
 
     std::vector< epiworld_double > proposed_stats_i;
-    summary_fun(proposed_stats_i, data_i, this);
-    accepted_params_prob[0u] = kernel_fun(
+    m_summary_fun(proposed_stats_i, data_i, this);
+    accepted_params_prob[0u] = m_kernel_fun(
         proposed_stats_i, m_observed_stats, m_epsilon, this
         );
 
@@ -1874,20 +1874,20 @@ inline void LFMCMC<TData>::run(
     for (size_t i = 1u; i < m_n_samples; ++i)
     {
         // Step 1: Generate a proposal and store it in m_current_params
-        proposal_fun(m_current_params, m_previous_params, this);
+        m_proposal_fun(m_current_params, m_previous_params, this);
 
         // Step 2: Using m_current_params, simulate data
-        TData data_i = simulation_fun(m_current_params, this);
+        TData data_i = m_simulation_fun(m_current_params, this);
 
         // Are we storing the data?
         if (sampled_data != nullptr)
             sampled_data->operator[](i) = data_i;
 
         // Step 3: Generate the summary statistics of the data
-        summary_fun(proposed_stats_i, data_i, this);
+        m_summary_fun(proposed_stats_i, data_i, this);
 
         // Step 4: Compute the hastings ratio using the kernel function
-        epiworld_double hr = kernel_fun(
+        epiworld_double hr = m_kernel_fun(
             proposed_stats_i, m_observed_stats, m_epsilon, this
             );
 
