@@ -1137,17 +1137,17 @@ inline void proposal_fun_unif(
 /**
  * @brief Uses the uniform kernel with euclidean distance
  * 
- * @param stats_now Vector of current statistics based on 
- * simulated data.
- * @param stats_obs Vector of observed statistics
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
  * @param epsilon Epsilon parameter
- * @param m LFMCMC model.
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_uniform(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 );
@@ -1156,14 +1156,17 @@ inline epiworld_double kernel_fun_uniform(
  * @brief Gaussian kernel
  * 
  * @tparam TData 
- * @param epsilon 
- * @param m 
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
+ * @param epsilon Epsilon parameter
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_gaussian(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 );
@@ -1425,17 +1428,17 @@ inline void proposal_fun_unif(
 /**
  * @brief Uses the uniform kernel with euclidean distance
  * 
- * @param stats_now Vector of current statistics based on 
- * simulated data.
- * @param stats_obs Vector of observed statistics
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
  * @param epsilon Epsilon parameter
- * @param m LFMCMC model.
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_uniform(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 );
@@ -1444,14 +1447,17 @@ inline epiworld_double kernel_fun_uniform(
  * @brief Gaussian kernel
  * 
  * @tparam TData 
- * @param epsilon 
- * @param m 
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
+ * @param epsilon Epsilon parameter
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_gaussian(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 );
@@ -1737,24 +1743,24 @@ inline void proposal_fun_unif(
 /**
  * @brief Uses the uniform kernel with euclidean distance
  * 
- * @param stats_now Vector of current statistics based on 
- * simulated data.
- * @param stats_obs Vector of observed statistics
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
  * @param epsilon Epsilon parameter
- * @param m LFMCMC model.
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_uniform(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 ) {
 
     epiworld_double ans = 0.0;
     for (size_t p = 0u; p < m->get_n_params(); ++p)
-        ans += std::pow(stats_obs[p] - stats_now[p], 2.0);
+        ans += std::pow(observed_stats[p] - simulated_stats[p], 2.0);
 
     return std::sqrt(ans) < epsilon ? 1.0 : 0.0;
 
@@ -1766,21 +1772,24 @@ inline epiworld_double kernel_fun_uniform(
  * @brief Gaussian kernel
  * 
  * @tparam TData 
- * @param epsilon 
- * @param m 
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
+ * @param epsilon Epsilon parameter
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_gaussian(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 ) {
 
     epiworld_double ans = 0.0;
     for (size_t p = 0u; p < m->get_n_params(); ++p)
-        ans += std::pow(stats_obs[p] - stats_now[p], 2.0);
+        ans += std::pow(observed_stats[p] - simulated_stats[p], 2.0);
 
     return std::exp(
         -.5 * (ans/std::pow(1 + std::pow(epsilon, 2.0)/3.0, 2.0))
