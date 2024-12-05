@@ -225,8 +225,8 @@ inline void LFMCMC<TData>::run(
     m_current_params.resize(m_n_params);
     m_previous_params.resize(m_n_params);
 
-    if (sampled_data != nullptr)
-        sampled_data->resize(m_n_samples);
+    if (m_simulated_data != nullptr)
+        m_simulated_data->resize(m_n_samples);
 
     m_previous_params = m_initial_params;
     m_current_params  = m_initial_params;
@@ -236,9 +236,9 @@ inline void LFMCMC<TData>::run(
     m_n_stats = m_observed_stats.size();
 
     // Reserving size
-    drawn_prob.resize(m_n_samples);
+    m_sample_drawn_prob.resize(m_n_samples);
     m_sample_acceptance.resize(m_n_samples, false);
-    m_stat_samples.resize(m_n_samples * m_n_stats);
+    m_sample_stats.resize(m_n_samples * m_n_stats);
     m_sample_kernel_scores.resize(m_n_samples);
 
     m_accepted_params.resize(m_n_samples * m_n_params);
@@ -255,7 +255,7 @@ inline void LFMCMC<TData>::run(
 
     // Recording statistics
     for (size_t i = 0u; i < m_n_stats; ++i)
-        m_stat_samples[i] = proposed_stats_i[i];
+        m_sample_stats[i] = proposed_stats_i[i];
 
     for (size_t k = 0u; k < m_n_params; ++k)
         m_accepted_params[k] = m_initial_params[k];
@@ -269,8 +269,8 @@ inline void LFMCMC<TData>::run(
         TData data_i = m_simulation_fun(m_current_params, this);
 
         // Are we storing the data?
-        if (sampled_data != nullptr)
-            sampled_data->operator[](i) = data_i;
+        if (m_simulated_data != nullptr)
+            m_simulated_data->operator[](i) = data_i;
 
         // Step 3: Generate the summary statistics of the data
         m_summary_fun(proposed_stats_i, data_i, this);
@@ -284,11 +284,11 @@ inline void LFMCMC<TData>::run(
 
         // Storing data
         for (size_t k = 0u; k < m_n_stats; ++k)
-            m_stat_samples[i * m_n_stats + k] = proposed_stats_i[k];
+            m_sample_stats[i * m_n_stats + k] = proposed_stats_i[k];
         
         // Running Hastings ratio
         epiworld_double r = runif();
-        drawn_prob[i] = r;
+        m_sample_drawn_prob[i] = r;
 
         // Step 5: Update if likely
         if (r < std::min(static_cast<epiworld_double>(1.0), hr / m_accepted_kernel_scores[i - 1u]))
