@@ -99,10 +99,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     nchar_par_num += 5; // 1 for neg padd, 2 for decimals, 1 the decimal point, and one b/c log(<10) < 1.
     std::string charlen = std::to_string(nchar_par_num);
 
-    if (names_parameters.size() != 0u)
+    if (m_param_names.size() != 0u)
     {
         int nchar_par = 0;
-        for (auto & n : names_parameters)
+        for (auto & n : m_param_names)
         {
             int tmp_nchar = n.length();
             if (nchar_par < tmp_nchar)
@@ -121,7 +121,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         {
             printf_epiworld(
                 fmt_params.c_str(),
-                names_parameters[k].c_str(),
+                m_param_names[k].c_str(),
                 summ_params[k * 3],
                 summ_params[k * 3 + 1u],
                 summ_params[k * 3 + 2u],
@@ -171,10 +171,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
     // Figuring out format
     std::string fmt_stats;
-    if (names_statistics.size() != 0u)
+    if (m_stat_names.size() != 0u)
     {
         int nchar_stats = 0;
-        for (auto & n : names_statistics)
+        for (auto & n : m_stat_names)
         {
             int tmp_nchar = n.length();
             if (nchar_stats < tmp_nchar)
@@ -193,7 +193,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         {
             printf_epiworld(
                 fmt_stats.c_str(),
-                names_statistics[k].c_str(),
+                m_stat_names[k].c_str(),
                 summ_stats[k * 3],
                 summ_stats[k * 3 + 1u],
                 summ_stats[k * 3 + 2u],

@@ -489,28 +489,28 @@ inline void LFMCMC<TData>::chrono_end() {
 }
 
 template<typename TData>
-inline void LFMCMC<TData>::set_par_names(std::vector< std::string > names)
+inline void LFMCMC<TData>::set_param_names(std::vector< std::string > names)
 {
 
     if (names.size() != m_n_params)
         throw std::length_error("The number of names to add differs from the number of parameters in the model.");
 
-    names_parameters = names;
+    m_param_names = names;
 
 }
 template<typename TData>
-inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
+inline void LFMCMC<TData>::set_stat_names(std::vector< std::string > names)
 {
 
     if (names.size() != m_n_stats)
         throw std::length_error("The number of names to add differs from the number of statistics in the model.");
 
-    names_statistics = names;
+    m_stat_names = names;
 
 }
 
 template<typename TData>
-inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
+inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_params()
 {
     std::vector< epiworld_double > res(this->m_n_params, 0.0);
     
@@ -526,7 +526,7 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
 }
 
 template<typename TData>
-inline std::vector< epiworld_double > LFMCMC<TData>::get_stats_mean()
+inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
 {
     std::vector< epiworld_double > res(this->m_n_stats, 0.0);
     

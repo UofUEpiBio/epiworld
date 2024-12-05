@@ -1230,9 +1230,8 @@ private:
     LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
-    // param_names, stat_names
-    std::vector< std::string > names_parameters;
-    std::vector< std::string > names_statistics;
+    std::vector< std::string > m_param_names;
+    std::vector< std::string > m_stat_names;
 
     // start_time, end_time (??)
     std::chrono::time_point<std::chrono::steady_clock> time_start;
@@ -1311,13 +1310,11 @@ public:
     const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
     const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
 
+    void set_param_names(std::vector< std::string > names);
+    void set_stat_names(std::vector< std::string > names);
 
-    void set_par_names(std::vector< std::string > names);
-    void set_stats_names(std::vector< std::string > names);
-
-    // get_mean_params, get_mean_stats
-    std::vector< epiworld_double > get_params_mean();
-    std::vector< epiworld_double > get_stats_mean();
+    std::vector< epiworld_double > get_mean_params();
+    std::vector< epiworld_double > get_mean_stats();
 
     void print(size_t burnin = 0u) const;
 
@@ -1524,9 +1521,8 @@ private:
     LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
-    // param_names, stat_names
-    std::vector< std::string > names_parameters;
-    std::vector< std::string > names_statistics;
+    std::vector< std::string > m_param_names;
+    std::vector< std::string > m_stat_names;
 
     // start_time, end_time (??)
     std::chrono::time_point<std::chrono::steady_clock> time_start;
@@ -1605,13 +1601,11 @@ public:
     const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
     const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
 
+    void set_param_names(std::vector< std::string > names);
+    void set_stat_names(std::vector< std::string > names);
 
-    void set_par_names(std::vector< std::string > names);
-    void set_stats_names(std::vector< std::string > names);
-
-    // get_mean_params, get_mean_stats
-    std::vector< epiworld_double > get_params_mean();
-    std::vector< epiworld_double > get_stats_mean();
+    std::vector< epiworld_double > get_mean_params();
+    std::vector< epiworld_double > get_mean_stats();
 
     void print(size_t burnin = 0u) const;
 
@@ -2210,10 +2204,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     nchar_par_num += 5; // 1 for neg padd, 2 for decimals, 1 the decimal point, and one b/c log(<10) < 1.
     std::string charlen = std::to_string(nchar_par_num);
 
-    if (names_parameters.size() != 0u)
+    if (m_param_names.size() != 0u)
     {
         int nchar_par = 0;
-        for (auto & n : names_parameters)
+        for (auto & n : m_param_names)
         {
             int tmp_nchar = n.length();
             if (nchar_par < tmp_nchar)
@@ -2232,7 +2226,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         {
             printf_epiworld(
                 fmt_params.c_str(),
-                names_parameters[k].c_str(),
+                m_param_names[k].c_str(),
                 summ_params[k * 3],
                 summ_params[k * 3 + 1u],
                 summ_params[k * 3 + 2u],
@@ -2282,10 +2276,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
     // Figuring out format
     std::string fmt_stats;
-    if (names_statistics.size() != 0u)
+    if (m_stat_names.size() != 0u)
     {
         int nchar_stats = 0;
-        for (auto & n : names_statistics)
+        for (auto & n : m_stat_names)
         {
             int tmp_nchar = n.length();
             if (nchar_stats < tmp_nchar)
@@ -2304,7 +2298,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         {
             printf_epiworld(
                 fmt_stats.c_str(),
-                names_statistics[k].c_str(),
+                m_stat_names[k].c_str(),
                 summ_stats[k * 3],
                 summ_stats[k * 3 + 1u],
                 summ_stats[k * 3 + 2u],
@@ -2362,28 +2356,28 @@ inline void LFMCMC<TData>::chrono_end() {
 }
 
 template<typename TData>
-inline void LFMCMC<TData>::set_par_names(std::vector< std::string > names)
+inline void LFMCMC<TData>::set_param_names(std::vector< std::string > names)
 {
 
     if (names.size() != m_n_params)
         throw std::length_error("The number of names to add differs from the number of parameters in the model.");
 
-    names_parameters = names;
+    m_param_names = names;
 
 }
 template<typename TData>
-inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
+inline void LFMCMC<TData>::set_stat_names(std::vector< std::string > names)
 {
 
     if (names.size() != m_n_stats)
         throw std::length_error("The number of names to add differs from the number of statistics in the model.");
 
-    names_statistics = names;
+    m_stat_names = names;
 
 }
 
 template<typename TData>
-inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
+inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_params()
 {
     std::vector< epiworld_double > res(this->m_n_params, 0.0);
     
@@ -2399,7 +2393,7 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
 }
 
 template<typename TData>
-inline std::vector< epiworld_double > LFMCMC<TData>::get_stats_mean()
+inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
 {
     std::vector< epiworld_double > res(this->m_n_stats, 0.0);
     

@@ -66,8 +66,8 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     model.print();
     model.print(50000);
 
-    auto params_means = model.get_params_mean();
-    auto stats_means  = model.get_stats_mean();
+    auto params_means = model.get_mean_params();
+    auto stats_means  = model.get_mean_stats();
 
     #ifdef CATCH_CONFIG_MAIN
     std::vector<epiworld_double> expected = {5.0, 1.5};

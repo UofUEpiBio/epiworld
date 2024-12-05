@@ -168,9 +168,8 @@ private:
     LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
-    // param_names, stat_names
-    std::vector< std::string > names_parameters;
-    std::vector< std::string > names_statistics;
+    std::vector< std::string > m_param_names;
+    std::vector< std::string > m_stat_names;
 
     // start_time, end_time (??)
     std::chrono::time_point<std::chrono::steady_clock> time_start;
@@ -249,13 +248,11 @@ public:
     const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
     const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
 
+    void set_param_names(std::vector< std::string > names);
+    void set_stat_names(std::vector< std::string > names);
 
-    void set_par_names(std::vector< std::string > names);
-    void set_stats_names(std::vector< std::string > names);
-
-    // get_mean_params, get_mean_stats
-    std::vector< epiworld_double > get_params_mean();
-    std::vector< epiworld_double > get_stats_mean();
+    std::vector< epiworld_double > get_mean_params();
+    std::vector< epiworld_double > get_mean_stats();
 
     void print(size_t burnin = 0u) const;
 
