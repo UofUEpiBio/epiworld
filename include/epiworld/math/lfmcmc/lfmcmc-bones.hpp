@@ -116,7 +116,7 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::shared_ptr< std::mt19937 > engine = nullptr;
+    std::shared_ptr< std::mt19937 > m_engine = nullptr;
     
     std::shared_ptr< std::uniform_real_distribution<> > runifd =
         std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
@@ -182,7 +182,6 @@ private:
         bool print
     ) const;
 
-    // start_chrono, end_chrono (??)
     void chrono_start();
     void chrono_end();
     

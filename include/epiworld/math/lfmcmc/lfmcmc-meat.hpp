@@ -327,7 +327,7 @@ inline void LFMCMC<TData>::run(
 template<typename TData>
 inline epiworld_double LFMCMC<TData>::runif()
 {
-    return runifd->operator()(*engine);
+    return runifd->operator()(*m_engine);
 }
 
 template<typename TData>
@@ -336,13 +336,13 @@ inline epiworld_double LFMCMC<TData>::runif(
     epiworld_double ub
 )
 {
-    return runifd->operator()(*engine) * (ub - lb) + lb;
+    return runifd->operator()(*m_engine) * (ub - lb) + lb;
 }
 
 template<typename TData>
 inline epiworld_double LFMCMC<TData>::rnorm()
 {
-    return rnormd->operator()(*engine);
+    return rnormd->operator()(*m_engine);
 }
 
 template<typename TData>
@@ -351,13 +351,13 @@ inline epiworld_double LFMCMC<TData>::rnorm(
     epiworld_double sd
     )
 {
-    return (rnormd->operator()(*engine)) * sd + mean;
+    return (rnormd->operator()(*m_engine)) * sd + mean;
 }
 
 template<typename TData>
 inline epiworld_double LFMCMC<TData>::rgamma()
 {
-    return rgammad->operator()(*engine);
+    return rgammad->operator()(*m_engine);
 }
 
 template<typename TData>
@@ -371,7 +371,7 @@ inline epiworld_double LFMCMC<TData>::rgamma(
 
     rgammad->param(std::gamma_distribution<>::param_type(alpha, beta));
 
-    epiworld_double ans = rgammad->operator()(*engine);
+    epiworld_double ans = rgammad->operator()(*m_engine);
 
     rgammad->param(old_param);
 
@@ -382,14 +382,14 @@ inline epiworld_double LFMCMC<TData>::rgamma(
 template<typename TData>
 inline void LFMCMC<TData>::seed(epiworld_fast_uint s) {
 
-    this->engine->seed(s);
+    this->m_engine->seed(s);
 
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_rand_engine(std::shared_ptr< std::mt19937 > & eng)
 {
-    engine = eng;
+    m_engine = eng;
 }
 
 template<typename TData>
@@ -401,7 +401,7 @@ inline void LFMCMC<TData>::set_rand_gamma(epiworld_double alpha, epiworld_double
 template<typename TData>
 inline std::shared_ptr< std::mt19937 > & LFMCMC<TData>::get_rand_endgine()
 {
-    return engine;
+    return m_engine;
 }
 
 // Step 1: Simulate data
