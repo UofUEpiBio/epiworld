@@ -23,15 +23,15 @@ using LFMCMCKernelFun = std::function<epiworld_double(const std::vector< epiworl
 
 /**
  * @brief Proposal function
- * @param params_now Vector where to save the new parameters.
- * @param params_prev Vector of reference parameters.
+ * @param new_params Vector where to save the new parameters.
+ * @param old_params Vector of reference parameters.
  * @param m LFMCMC model.
  * @tparam TData 
  */
 template<typename TData>
 inline void proposal_fun_normal(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 );
 
@@ -60,15 +60,15 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
  * Proposals are made within a radious 1 of the current
  * state of the parameters.
  * 
- * @param params_now Where to write the new parameters
- * @param params_prev Reference parameters
+ * @param new_params Where to write the new parameters
+ * @param old_params Reference parameters
  * @tparam TData 
  * @param m LFMCMC model.
  */
 template<typename TData>
 inline void proposal_fun_unif(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 );
 
@@ -130,24 +130,18 @@ private:
     // Process data
     TData m_observed_data;
     
-    // Information about the size of the problem
+    // Information about the size of the process
     size_t m_n_samples;
     size_t m_n_stats;
     size_t m_n_params;
 
     epiworld_double m_epsilon;
 
-    // params_new/new_params current_params (new_params in proposal function)
-    std::vector< epiworld_double > params_now;
-    // params_prev/prev_params maybe params_old/old_params
-    // previous_params
-    std::vector< epiworld_double > params_prev;
-    // params_init (no change)
-    // initial_params
-    std::vector< epiworld_double > params_init;
+    std::vector< epiworld_double > m_current_params;
+    std::vector< epiworld_double > m_previous_params;
+    std::vector< epiworld_double > m_initial_params;
 
-    // observed_stats (no change)
-    std::vector< epiworld_double > observed_stats; ///< Observed statistics
+    std::vector< epiworld_double > m_observed_stats; ///< Observed statistics
 
     // param_samples, stat_samples
     std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
@@ -242,10 +236,10 @@ public:
     size_t get_n_params() const {return m_n_params;};
     epiworld_double get_epsilon() const {return m_epsilon;};
 
-    const std::vector< epiworld_double > & get_params_now() {return params_now;};
-    const std::vector< epiworld_double > & get_params_prev() {return params_prev;};
-    const std::vector< epiworld_double > & get_params_init() {return params_init;};
-    const std::vector< epiworld_double > & get_statistics_obs() {return observed_stats;};
+    const std::vector< epiworld_double > & get_current_params() {return m_current_params;};
+    const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
+    const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
+    const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
     const std::vector< epiworld_double > & get_statistics_hist() {return sampled_stats;};
     const std::vector< bool >            & get_statistics_accepted() {return sampled_accepted;};
     const std::vector< epiworld_double > & get_posterior_lf_prob() {return accepted_params_prob;};

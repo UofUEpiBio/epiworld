@@ -125,7 +125,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
                 summ_params[k * 3],
                 summ_params[k * 3 + 1u],
                 summ_params[k * 3 + 2u],
-                params_init[k]
+                m_initial_params[k]
                 );
         }
 
@@ -147,7 +147,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
                 summ_params[k * 3],
                 summ_params[k * 3 + 1u],
                 summ_params[k * 3 + 2u],
-                params_init[k]
+                m_initial_params[k]
                 );
         }
 
@@ -197,7 +197,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
                 summ_stats[k * 3],
                 summ_stats[k * 3 + 1u],
                 summ_stats[k * 3 + 2u],
-                observed_stats[k]
+                m_observed_stats[k]
                 );
         }
 
@@ -219,7 +219,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
                 summ_stats[k * 3],
                 summ_stats[k * 3 + 1u],
                 summ_stats[k * 3 + 2u],
-                observed_stats[k]
+                m_observed_stats[k]
                 );
         }
 

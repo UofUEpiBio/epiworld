@@ -5,20 +5,20 @@
 
 /**
  * @brief Proposal function
- * @param params_now Vector where to save the new parameters.
- * @param params_prev Vector of reference parameters.
+ * @param new_params Vector where to save the new parameters.
+ * @param old_params Vector of reference parameters.
  * @param m LFMCMC model.
  * @tparam TData 
  */
 template<typename TData>
 inline void proposal_fun_normal(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 ) {
 
     for (size_t p = 0u; p < m->get_n_params(); ++p)
-        params_now[p] = params_prev[p] + m->rnorm();
+        new_params[p] = old_params[p] + m->rnorm();
 
     return;
 }
@@ -44,20 +44,20 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
 
     LFMCMCProposalFun<TData> fun =
         [scale,lb,ub](
-            std::vector< epiworld_double >& params_now,
-            const std::vector< epiworld_double >& params_prev,
+            std::vector< epiworld_double >& new_params,
+            const std::vector< epiworld_double >& old_params,
             LFMCMC<TData>* m
         ) {
 
         // Making the proposal
         for (size_t p = 0u; p < m->get_n_params(); ++p)
-            params_now[p] = params_prev[p] + m->rnorm() * scale;
+            new_params[p] = old_params[p] + m->rnorm() * scale;
 
         // Checking boundaries
         epiworld_double d = ub - lb;
         int odd;
         epiworld_double d_above, d_below;
-        for (auto & p : params_now)
+        for (auto & p : new_params)
         {
 
             // Correcting if parameter goes above the upper bound
@@ -84,7 +84,7 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
         }
 
         #ifdef EPI_DEBUG
-        for (auto & p : params_now)
+        for (auto & p : new_params)
             if (p < lb || p > ub)
                 throw std::range_error("The parameter is out of bounds.");
         #endif
@@ -103,20 +103,20 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
  * Proposals are made within a radious 1 of the current
  * state of the parameters.
  * 
- * @param params_now Where to write the new parameters
- * @param params_prev Reference parameters
+ * @param new_params Where to write the new parameters
+ * @param old_params Reference parameters
  * @tparam TData 
  * @param m LFMCMC model.
  */
 template<typename TData>
 inline void proposal_fun_unif(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 ) {
 
     for (size_t p = 0u; p < m->get_n_params(); ++p)
-        params_now[p] = (params_prev[p] + m->runif(-1.0, 1.0));
+        new_params[p] = (old_params[p] + m->runif(-1.0, 1.0));
 
     return;
 }
@@ -216,24 +216,24 @@ inline void LFMCMC<TData>::run(
     // Setting the baseline parameters of the model
     m_n_samples    = n_samples_;
     m_epsilon      = epsilon_;
-    params_init  = params_init_;
+    m_initial_params  = params_init_;
     m_n_params = params_init_.size();
 
     if (seed >= 0)
         this->seed(seed);
 
-    params_now.resize(m_n_params);
-    params_prev.resize(m_n_params);
+    m_current_params.resize(m_n_params);
+    m_previous_params.resize(m_n_params);
 
     if (sampled_data != nullptr)
         sampled_data->resize(m_n_samples);
 
-    params_prev = params_init;
-    params_now  = params_init;
+    m_previous_params = m_initial_params;
+    m_current_params  = m_initial_params;
 
     // Computing the baseline sufficient statistics
-    summary_fun(observed_stats, m_observed_data, this);
-    m_n_stats = observed_stats.size();
+    summary_fun(m_observed_stats, m_observed_data, this);
+    m_n_stats = m_observed_stats.size();
 
     // Reserving size
     drawn_prob.resize(m_n_samples);
@@ -245,12 +245,12 @@ inline void LFMCMC<TData>::run(
     accepted_stats.resize(m_n_samples * m_n_stats);
     accepted_params_prob.resize(m_n_samples);
 
-    TData data_i = simulation_fun(params_init, this);
+    TData data_i = simulation_fun(m_initial_params, this);
 
     std::vector< epiworld_double > proposed_stats_i;
     summary_fun(proposed_stats_i, data_i, this);
     accepted_params_prob[0u] = kernel_fun(
-        proposed_stats_i, observed_stats, m_epsilon, this
+        proposed_stats_i, m_observed_stats, m_epsilon, this
         );
 
     // Recording statistics
@@ -258,15 +258,15 @@ inline void LFMCMC<TData>::run(
         sampled_stats[i] = proposed_stats_i[i];
 
     for (size_t k = 0u; k < m_n_params; ++k)
-        accepted_params[k] = params_init[k];
+        accepted_params[k] = m_initial_params[k];
    
     for (size_t i = 1u; i < m_n_samples; ++i)
     {
-        // Step 1: Generate a proposal and store it in params_now
-        proposal_fun(params_now, params_prev, this);
+        // Step 1: Generate a proposal and store it in m_current_params
+        proposal_fun(m_current_params, m_previous_params, this);
 
-        // Step 2: Using params_now, simulate data
-        TData data_i = simulation_fun(params_now, this);
+        // Step 2: Using m_current_params, simulate data
+        TData data_i = simulation_fun(m_current_params, this);
 
         // Are we storing the data?
         if (sampled_data != nullptr)
@@ -277,7 +277,7 @@ inline void LFMCMC<TData>::run(
 
         // Step 4: Compute the hastings ratio using the kernel function
         epiworld_double hr = kernel_fun(
-            proposed_stats_i, observed_stats, m_epsilon, this
+            proposed_stats_i, m_observed_stats, m_epsilon, this
             );
 
         sampled_stats_prob[i] = hr;
@@ -300,7 +300,7 @@ inline void LFMCMC<TData>::run(
                 accepted_stats[i * m_n_stats + k] =
                     proposed_stats_i[k];
 
-            params_prev = params_now;
+            m_previous_params = m_current_params;
 
         } else
         {
@@ -314,7 +314,7 @@ inline void LFMCMC<TData>::run(
             
 
         for (size_t k = 0u; k < m_n_params; ++k)
-            accepted_params[i * m_n_params + k] = params_prev[k];
+            accepted_params[i * m_n_params + k] = m_previous_params[k];
 
     }
 
