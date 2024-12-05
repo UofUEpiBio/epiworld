@@ -128,30 +128,42 @@ private:
         std::make_shared< std::gamma_distribution<> >();
 
     // Process data
-    TData observed_data;
+    TData m_observed_data;
     
     // Information about the size of the problem
-    size_t n_samples;
-    size_t n_statistics;
-    size_t n_parameters;
+    size_t m_n_samples;
+    size_t m_n_stats;
+    size_t m_n_params;
 
-    epiworld_double epsilon;
+    epiworld_double m_epsilon;
 
+    // params_new/new_params current_params (new_params in proposal function)
     std::vector< epiworld_double > params_now;
+    // params_prev/prev_params maybe params_old/old_params
+    // previous_params
     std::vector< epiworld_double > params_prev;
+    // params_init (no change)
+    // initial_params
     std::vector< epiworld_double > params_init;
 
+    // observed_stats (no change)
     std::vector< epiworld_double > observed_stats; ///< Observed statistics
 
+    // param_samples, stat_samples
     std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
     std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
+    // What is this?
     std::vector< epiworld_double > sampled_stats_prob; ///< Sampled statistics
+    // accepted_samples
     std::vector< bool >            sampled_accepted;   ///< Indicator of accepted statistics
 
+    // accepted_params, accepted_stats
     std::vector< epiworld_double > accepted_params;      ///< Posterior distribution (accepted samples)
     std::vector< epiworld_double > accepted_stats;       ///< Posterior distribution (accepted samples)
+    // What is this?
     std::vector< epiworld_double > accepted_params_prob; ///< Posterior probability
 
+    // No change
     std::vector< epiworld_double > drawn_prob;     ///< Drawn probabilities (runif())
     std::vector< TData > * sampled_data = nullptr;
 
@@ -162,16 +174,20 @@ private:
     LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
+    // param_names, stat_names
     std::vector< std::string > names_parameters;
     std::vector< std::string > names_statistics;
 
+    // start_time, end_time (??)
     std::chrono::time_point<std::chrono::steady_clock> time_start;
     std::chrono::time_point<std::chrono::steady_clock> time_end;
 
     // std::chrono::milliseconds
+    // elapsed_time
     std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
 
+    // get_elapsed_time
     inline void get_elapsed(
         std::string unit,
         epiworld_double * last_elapsed,
@@ -179,6 +195,7 @@ private:
         bool print
     ) const;
 
+    // start_chrono, end_chrono (??)
     void chrono_start();
     void chrono_end();
     
@@ -192,10 +209,10 @@ public:
         );
 
     LFMCMC() {};
-    LFMCMC(const TData & observed_data_) : observed_data(observed_data_) {};
+    LFMCMC(const TData & observed_data_) : m_observed_data(observed_data_) {};
     ~LFMCMC() {};
 
-    void set_observed_data(const TData & observed_data_) {observed_data = observed_data_;};
+    void set_observed_data(const TData & observed_data_) {m_observed_data = observed_data_;};
     void set_proposal_fun(LFMCMCProposalFun<TData> fun);
     void set_simulation_fun(LFMCMCSimFun<TData> fun);
     void set_summary_fun(LFMCMCSummaryFun<TData> fun);
@@ -220,10 +237,10 @@ public:
     ///@}
 
     // Accessing parameters of the function
-    size_t get_n_samples() const {return n_samples;};
-    size_t get_n_statistics() const {return n_statistics;};
-    size_t get_n_parameters() const {return n_parameters;};
-    epiworld_double get_epsilon() const {return epsilon;};
+    size_t get_n_samples() const {return m_n_samples;};
+    size_t get_n_stats() const {return m_n_stats;};
+    size_t get_n_params() const {return m_n_params;};
+    epiworld_double get_epsilon() const {return m_epsilon;};
 
     const std::vector< epiworld_double > & get_params_now() {return params_now;};
     const std::vector< epiworld_double > & get_params_prev() {return params_prev;};
@@ -242,6 +259,7 @@ public:
     void set_par_names(std::vector< std::string > names);
     void set_stats_names(std::vector< std::string > names);
 
+    // get_mean_params, get_mean_stats
     std::vector< epiworld_double > get_params_mean();
     std::vector< epiworld_double > get_stats_mean();
 

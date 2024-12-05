@@ -17,7 +17,7 @@ inline void proposal_fun_normal(
     LFMCMC<TData>* m
 ) {
 
-    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
+    for (size_t p = 0u; p < m->get_n_params(); ++p)
         params_now[p] = params_prev[p] + m->rnorm();
 
     return;
@@ -50,7 +50,7 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
         ) {
 
         // Making the proposal
-        for (size_t p = 0u; p < m->get_n_parameters(); ++p)
+        for (size_t p = 0u; p < m->get_n_params(); ++p)
             params_now[p] = params_prev[p] + m->rnorm() * scale;
 
         // Checking boundaries
@@ -115,7 +115,7 @@ inline void proposal_fun_unif(
     LFMCMC<TData>* m
 ) {
 
-    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
+    for (size_t p = 0u; p < m->get_n_params(); ++p)
         params_now[p] = (params_prev[p] + m->runif(-1.0, 1.0));
 
     return;
@@ -140,7 +140,7 @@ inline epiworld_double kernel_fun_uniform(
 ) {
 
     epiworld_double ans = 0.0;
-    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
+    for (size_t p = 0u; p < m->get_n_params(); ++p)
         ans += std::pow(stats_obs[p] - stats_now[p], 2.0);
 
     return std::sqrt(ans) < epsilon ? 1.0 : 0.0;
@@ -166,7 +166,7 @@ inline epiworld_double kernel_fun_gaussian(
 ) {
 
     epiworld_double ans = 0.0;
-    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
+    for (size_t p = 0u; p < m->get_n_params(); ++p)
         ans += std::pow(stats_obs[p] - stats_now[p], 2.0);
 
     return std::exp(
@@ -214,53 +214,53 @@ inline void LFMCMC<TData>::run(
     chrono_start();
 
     // Setting the baseline parameters of the model
-    n_samples    = n_samples_;
-    epsilon      = epsilon_;
+    m_n_samples    = n_samples_;
+    m_epsilon      = epsilon_;
     params_init  = params_init_;
-    n_parameters = params_init_.size();
+    m_n_params = params_init_.size();
 
     if (seed >= 0)
         this->seed(seed);
 
-    params_now.resize(n_parameters);
-    params_prev.resize(n_parameters);
+    params_now.resize(m_n_params);
+    params_prev.resize(m_n_params);
 
     if (sampled_data != nullptr)
-        sampled_data->resize(n_samples);
+        sampled_data->resize(m_n_samples);
 
     params_prev = params_init;
     params_now  = params_init;
 
     // Computing the baseline sufficient statistics
-    summary_fun(observed_stats, observed_data, this);
-    n_statistics = observed_stats.size();
+    summary_fun(observed_stats, m_observed_data, this);
+    m_n_stats = observed_stats.size();
 
     // Reserving size
-    drawn_prob.resize(n_samples);
-    sampled_accepted.resize(n_samples, false);
-    sampled_stats.resize(n_samples * n_statistics);
-    sampled_stats_prob.resize(n_samples);
+    drawn_prob.resize(m_n_samples);
+    sampled_accepted.resize(m_n_samples, false);
+    sampled_stats.resize(m_n_samples * m_n_stats);
+    sampled_stats_prob.resize(m_n_samples);
 
-    accepted_params.resize(n_samples * n_parameters);
-    accepted_stats.resize(n_samples * n_statistics);
-    accepted_params_prob.resize(n_samples);
+    accepted_params.resize(m_n_samples * m_n_params);
+    accepted_stats.resize(m_n_samples * m_n_stats);
+    accepted_params_prob.resize(m_n_samples);
 
     TData data_i = simulation_fun(params_init, this);
 
     std::vector< epiworld_double > proposed_stats_i;
     summary_fun(proposed_stats_i, data_i, this);
     accepted_params_prob[0u] = kernel_fun(
-        proposed_stats_i, observed_stats, epsilon, this
+        proposed_stats_i, observed_stats, m_epsilon, this
         );
 
     // Recording statistics
-    for (size_t i = 0u; i < n_statistics; ++i)
+    for (size_t i = 0u; i < m_n_stats; ++i)
         sampled_stats[i] = proposed_stats_i[i];
 
-    for (size_t k = 0u; k < n_parameters; ++k)
+    for (size_t k = 0u; k < m_n_params; ++k)
         accepted_params[k] = params_init[k];
    
-    for (size_t i = 1u; i < n_samples; ++i)
+    for (size_t i = 1u; i < m_n_samples; ++i)
     {
         // Step 1: Generate a proposal and store it in params_now
         proposal_fun(params_now, params_prev, this);
@@ -277,14 +277,14 @@ inline void LFMCMC<TData>::run(
 
         // Step 4: Compute the hastings ratio using the kernel function
         epiworld_double hr = kernel_fun(
-            proposed_stats_i, observed_stats, epsilon, this
+            proposed_stats_i, observed_stats, m_epsilon, this
             );
 
         sampled_stats_prob[i] = hr;
 
         // Storing data
-        for (size_t k = 0u; k < n_statistics; ++k)
-            sampled_stats[i * n_statistics + k] = proposed_stats_i[k];
+        for (size_t k = 0u; k < m_n_stats; ++k)
+            sampled_stats[i * m_n_stats + k] = proposed_stats_i[k];
         
         // Running Hastings ratio
         epiworld_double r = runif();
@@ -296,8 +296,8 @@ inline void LFMCMC<TData>::run(
             accepted_params_prob[i] = hr;
             sampled_accepted[i]     = true;
             
-            for (size_t k = 0u; k < n_statistics; ++k)
-                accepted_stats[i * n_statistics + k] =
+            for (size_t k = 0u; k < m_n_stats; ++k)
+                accepted_stats[i * m_n_stats + k] =
                     proposed_stats_i[k];
 
             params_prev = params_now;
@@ -305,16 +305,16 @@ inline void LFMCMC<TData>::run(
         } else
         {
 
-            for (size_t k = 0u; k < n_statistics; ++k)
-                accepted_stats[i * n_statistics + k] =
-                    accepted_stats[(i - 1) * n_statistics + k];
+            for (size_t k = 0u; k < m_n_stats; ++k)
+                accepted_stats[i * m_n_stats + k] =
+                    accepted_stats[(i - 1) * m_n_stats + k];
 
             accepted_params_prob[i] = accepted_params_prob[i - 1u];
         }
             
 
-        for (size_t k = 0u; k < n_parameters; ++k)
-            accepted_params[i * n_parameters + k] = params_prev[k];
+        for (size_t k = 0u; k < m_n_params; ++k)
+            accepted_params[i * m_n_params + k] = params_prev[k];
 
     }
 
@@ -492,7 +492,7 @@ template<typename TData>
 inline void LFMCMC<TData>::set_par_names(std::vector< std::string > names)
 {
 
-    if (names.size() != n_parameters)
+    if (names.size() != m_n_params)
         throw std::length_error("The number of names to add differs from the number of parameters in the model.");
 
     names_parameters = names;
@@ -502,7 +502,7 @@ template<typename TData>
 inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
 {
 
-    if (names.size() != n_statistics)
+    if (names.size() != m_n_stats)
         throw std::length_error("The number of names to add differs from the number of statistics in the model.");
 
     names_statistics = names;
@@ -512,13 +512,13 @@ inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
 template<typename TData>
 inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
 {
-    std::vector< epiworld_double > res(this->n_parameters, 0.0);
+    std::vector< epiworld_double > res(this->m_n_params, 0.0);
     
-    for (size_t k = 0u; k < n_parameters; ++k)
+    for (size_t k = 0u; k < m_n_params; ++k)
     {
-        for (size_t i = 0u; i < n_samples; ++i)
-            res[k] += (this->accepted_params[k + n_parameters * i])/
-                static_cast< epiworld_double >(n_samples);
+        for (size_t i = 0u; i < m_n_samples; ++i)
+            res[k] += (this->accepted_params[k + m_n_params * i])/
+                static_cast< epiworld_double >(m_n_samples);
     }
 
     return res;
@@ -528,13 +528,13 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
 template<typename TData>
 inline std::vector< epiworld_double > LFMCMC<TData>::get_stats_mean()
 {
-    std::vector< epiworld_double > res(this->n_statistics, 0.0);
+    std::vector< epiworld_double > res(this->m_n_stats, 0.0);
     
-    for (size_t k = 0u; k < n_statistics; ++k)
+    for (size_t k = 0u; k < m_n_stats; ++k)
     {
-        for (size_t i = 0u; i < n_samples; ++i)
-            res[k] += (this->accepted_stats[k + n_statistics * i])/
-                static_cast< epiworld_double >(n_samples);
+        for (size_t i = 0u; i < m_n_samples; ++i)
+            res[k] += (this->accepted_stats[k + m_n_stats * i])/
+                static_cast< epiworld_double >(m_n_samples);
     }
 
     return res;
