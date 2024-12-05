@@ -239,17 +239,17 @@ inline void LFMCMC<TData>::run(
     drawn_prob.resize(m_n_samples);
     m_sample_acceptance.resize(m_n_samples, false);
     m_stat_samples.resize(m_n_samples * m_n_stats);
-    sampled_stats_prob.resize(m_n_samples);
+    m_sample_kernel_scores.resize(m_n_samples);
 
     m_accepted_params.resize(m_n_samples * m_n_params);
     m_accepted_stats.resize(m_n_samples * m_n_stats);
-    accepted_params_prob.resize(m_n_samples);
+    m_accepted_kernel_scores.resize(m_n_samples);
 
     TData data_i = m_simulation_fun(m_initial_params, this);
 
     std::vector< epiworld_double > proposed_stats_i;
     m_summary_fun(proposed_stats_i, data_i, this);
-    accepted_params_prob[0u] = m_kernel_fun(
+    m_accepted_kernel_scores[0u] = m_kernel_fun(
         proposed_stats_i, m_observed_stats, m_epsilon, this
         );
 
@@ -280,7 +280,7 @@ inline void LFMCMC<TData>::run(
             proposed_stats_i, m_observed_stats, m_epsilon, this
             );
 
-        sampled_stats_prob[i] = hr;
+        m_sample_kernel_scores[i] = hr;
 
         // Storing data
         for (size_t k = 0u; k < m_n_stats; ++k)
@@ -291,9 +291,9 @@ inline void LFMCMC<TData>::run(
         drawn_prob[i] = r;
 
         // Step 5: Update if likely
-        if (r < std::min(static_cast<epiworld_double>(1.0), hr / accepted_params_prob[i - 1u]))
+        if (r < std::min(static_cast<epiworld_double>(1.0), hr / m_accepted_kernel_scores[i - 1u]))
         {
-            accepted_params_prob[i] = hr;
+            m_accepted_kernel_scores[i] = hr;
             m_sample_acceptance[i]     = true;
             
             for (size_t k = 0u; k < m_n_stats; ++k)
@@ -309,7 +309,7 @@ inline void LFMCMC<TData>::run(
                 m_accepted_stats[i * m_n_stats + k] =
                     m_accepted_stats[(i - 1) * m_n_stats + k];
 
-            accepted_params_prob[i] = accepted_params_prob[i - 1u];
+            m_accepted_kernel_scores[i] = m_accepted_kernel_scores[i - 1u];
         }
             
 

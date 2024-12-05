@@ -137,22 +137,20 @@ private:
 
     epiworld_double m_epsilon;
 
-    std::vector< epiworld_double > m_current_params;
-    std::vector< epiworld_double > m_previous_params;
-    std::vector< epiworld_double > m_initial_params;
+    std::vector< epiworld_double > m_initial_params;            ///< Initial parameters
+    std::vector< epiworld_double > m_current_params;            ///< Parameters for the current sample
+    std::vector< epiworld_double > m_previous_params;           ///< Parameters from the previous sample
 
-    std::vector< epiworld_double > m_observed_stats; ///< Observed statistics
+    std::vector< epiworld_double > m_observed_stats;            ///< Observed statistics
 
-    std::vector< epiworld_double > m_param_samples;     ///< Sampled Parameters
-    std::vector< epiworld_double > m_stat_samples;      ///< Sampled statistics
-    // What is this?
-    std::vector< epiworld_double > sampled_stats_prob; ///< Sampled statistics
-    std::vector< bool >            m_sample_acceptance;   ///< Indicator of accepted statistics
+    std::vector< epiworld_double > m_param_samples;             ///< Sampled parameters
+    std::vector< epiworld_double > m_stat_samples;              ///< Sampled statistics
+    std::vector< bool >            m_sample_acceptance;         ///< Indicator if sample was accepted
+    std::vector< epiworld_double > m_sample_kernel_scores;      ///< Kernel scores for each sample
 
-    std::vector< epiworld_double > m_accepted_params;      ///< Posterior distribution (accepted samples)
-    std::vector< epiworld_double > m_accepted_stats;       ///< Posterior distribution (accepted samples)
-    // What is this?
-    std::vector< epiworld_double > accepted_params_prob; ///< Posterior probability
+    std::vector< epiworld_double > m_accepted_params;           ///< Posterior distribution of parameters from accepted samples
+    std::vector< epiworld_double > m_accepted_stats;            ///< Posterior distribution of statistics from accepted samples
+    std::vector< epiworld_double > m_accepted_kernel_scores;    ///< Kernel scores for each accepted sample
 
     // No change
     std::vector< epiworld_double > drawn_prob;     ///< Drawn probabilities (runif())
@@ -188,7 +186,7 @@ private:
 public:
 
     void run(
-        std::vector< epiworld_double > param_init,
+        std::vector< epiworld_double > params_init_,
         size_t n_samples_,
         epiworld_double epsilon_,
         int seed = -1
@@ -228,20 +226,23 @@ public:
     size_t get_n_params() const {return m_n_params;};
     epiworld_double get_epsilon() const {return m_epsilon;};
 
+    const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
     const std::vector< epiworld_double > & get_current_params() {return m_current_params;};
     const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
-    const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
+
     const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
 
     const std::vector< epiworld_double > & get_param_samples() {return m_param_samples;};
     const std::vector< epiworld_double > & get_stat_samples() {return m_stat_samples;};
     const std::vector< bool >            & get_sample_acceptance() {return m_sample_acceptance;};
-    const std::vector< epiworld_double > & get_posterior_lf_prob() {return accepted_params_prob;};
-    const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
-    std::vector< TData > * get_sampled_data() {return sampled_data;};
+    const std::vector< epiworld_double > & get_sample_kernel_scores() {return m_sample_kernel_scores;};
 
     const std::vector< epiworld_double > & get_accepted_params() {return m_accepted_params;};
     const std::vector< epiworld_double > & get_accepted_stats() {return m_accepted_stats;};
+    const std::vector< epiworld_double > & get_accepted_kernel_scores() {return m_accepted_kernel_scores;};
+    
+    const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
+    std::vector< TData > * get_sampled_data() {return sampled_data;};
 
     void set_param_names(std::vector< std::string > names);
     void set_stat_names(std::vector< std::string > names);
