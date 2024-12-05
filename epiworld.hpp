@@ -1205,17 +1205,14 @@ private:
 
     std::vector< epiworld_double > m_observed_stats; ///< Observed statistics
 
-    // param_samples, stat_samples
-    std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
-    std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
+    std::vector< epiworld_double > m_param_samples;     ///< Sampled Parameters
+    std::vector< epiworld_double > m_stat_samples;      ///< Sampled statistics
     // What is this?
     std::vector< epiworld_double > sampled_stats_prob; ///< Sampled statistics
-    // accepted_samples
-    std::vector< bool >            sampled_accepted;   ///< Indicator of accepted statistics
+    std::vector< bool >            m_sample_acceptance;   ///< Indicator of accepted statistics
 
-    // accepted_params, accepted_stats
-    std::vector< epiworld_double > accepted_params;      ///< Posterior distribution (accepted samples)
-    std::vector< epiworld_double > accepted_stats;       ///< Posterior distribution (accepted samples)
+    std::vector< epiworld_double > m_accepted_params;      ///< Posterior distribution (accepted samples)
+    std::vector< epiworld_double > m_accepted_stats;       ///< Posterior distribution (accepted samples)
     // What is this?
     std::vector< epiworld_double > accepted_params_prob; ///< Posterior probability
 
@@ -1233,17 +1230,14 @@ private:
     std::vector< std::string > m_param_names;
     std::vector< std::string > m_stat_names;
 
-    // start_time, end_time (??)
-    std::chrono::time_point<std::chrono::steady_clock> time_start;
-    std::chrono::time_point<std::chrono::steady_clock> time_end;
+    std::chrono::time_point<std::chrono::steady_clock> m_start_time;
+    std::chrono::time_point<std::chrono::steady_clock> m_end_time;
 
     // std::chrono::milliseconds
-    // elapsed_time
-    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+    std::chrono::duration<epiworld_double,std::micro> m_elapsed_time = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
 
-    // get_elapsed_time
-    inline void get_elapsed(
+    inline void get_elapsed_time(
         std::string unit,
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
@@ -1301,14 +1295,16 @@ public:
     const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
     const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
     const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
-    const std::vector< epiworld_double > & get_statistics_hist() {return sampled_stats;};
-    const std::vector< bool >            & get_statistics_accepted() {return sampled_accepted;};
+
+    const std::vector< epiworld_double > & get_param_samples() {return m_param_samples;};
+    const std::vector< epiworld_double > & get_stat_samples() {return m_stat_samples;};
+    const std::vector< bool >            & get_sample_acceptance() {return m_sample_acceptance;};
     const std::vector< epiworld_double > & get_posterior_lf_prob() {return accepted_params_prob;};
     const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
     std::vector< TData > * get_sampled_data() {return sampled_data;};
 
-    const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
-    const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
+    const std::vector< epiworld_double > & get_accepted_params() {return m_accepted_params;};
+    const std::vector< epiworld_double > & get_accepted_stats() {return m_accepted_stats;};
 
     void set_param_names(std::vector< std::string > names);
     void set_stat_names(std::vector< std::string > names);
@@ -1496,17 +1492,14 @@ private:
 
     std::vector< epiworld_double > m_observed_stats; ///< Observed statistics
 
-    // param_samples, stat_samples
-    std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
-    std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
+    std::vector< epiworld_double > m_param_samples;     ///< Sampled Parameters
+    std::vector< epiworld_double > m_stat_samples;      ///< Sampled statistics
     // What is this?
     std::vector< epiworld_double > sampled_stats_prob; ///< Sampled statistics
-    // accepted_samples
-    std::vector< bool >            sampled_accepted;   ///< Indicator of accepted statistics
+    std::vector< bool >            m_sample_acceptance;   ///< Indicator of accepted statistics
 
-    // accepted_params, accepted_stats
-    std::vector< epiworld_double > accepted_params;      ///< Posterior distribution (accepted samples)
-    std::vector< epiworld_double > accepted_stats;       ///< Posterior distribution (accepted samples)
+    std::vector< epiworld_double > m_accepted_params;      ///< Posterior distribution (accepted samples)
+    std::vector< epiworld_double > m_accepted_stats;       ///< Posterior distribution (accepted samples)
     // What is this?
     std::vector< epiworld_double > accepted_params_prob; ///< Posterior probability
 
@@ -1524,17 +1517,14 @@ private:
     std::vector< std::string > m_param_names;
     std::vector< std::string > m_stat_names;
 
-    // start_time, end_time (??)
-    std::chrono::time_point<std::chrono::steady_clock> time_start;
-    std::chrono::time_point<std::chrono::steady_clock> time_end;
+    std::chrono::time_point<std::chrono::steady_clock> m_start_time;
+    std::chrono::time_point<std::chrono::steady_clock> m_end_time;
 
     // std::chrono::milliseconds
-    // elapsed_time
-    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+    std::chrono::duration<epiworld_double,std::micro> m_elapsed_time = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
 
-    // get_elapsed_time
-    inline void get_elapsed(
+    inline void get_elapsed_time(
         std::string unit,
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
@@ -1592,14 +1582,16 @@ public:
     const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
     const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
     const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
-    const std::vector< epiworld_double > & get_statistics_hist() {return sampled_stats;};
-    const std::vector< bool >            & get_statistics_accepted() {return sampled_accepted;};
+
+    const std::vector< epiworld_double > & get_param_samples() {return m_param_samples;};
+    const std::vector< epiworld_double > & get_stat_samples() {return m_stat_samples;};
+    const std::vector< bool >            & get_sample_acceptance() {return m_sample_acceptance;};
     const std::vector< epiworld_double > & get_posterior_lf_prob() {return accepted_params_prob;};
     const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
     std::vector< TData > * get_sampled_data() {return sampled_data;};
 
-    const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
-    const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
+    const std::vector< epiworld_double > & get_accepted_params() {return m_accepted_params;};
+    const std::vector< epiworld_double > & get_accepted_stats() {return m_accepted_stats;};
 
     void set_param_names(std::vector< std::string > names);
     void set_stat_names(std::vector< std::string > names);
@@ -1856,12 +1848,12 @@ inline void LFMCMC<TData>::run(
 
     // Reserving size
     drawn_prob.resize(m_n_samples);
-    sampled_accepted.resize(m_n_samples, false);
-    sampled_stats.resize(m_n_samples * m_n_stats);
+    m_sample_acceptance.resize(m_n_samples, false);
+    m_stat_samples.resize(m_n_samples * m_n_stats);
     sampled_stats_prob.resize(m_n_samples);
 
-    accepted_params.resize(m_n_samples * m_n_params);
-    accepted_stats.resize(m_n_samples * m_n_stats);
+    m_accepted_params.resize(m_n_samples * m_n_params);
+    m_accepted_stats.resize(m_n_samples * m_n_stats);
     accepted_params_prob.resize(m_n_samples);
 
     TData data_i = simulation_fun(m_initial_params, this);
@@ -1874,10 +1866,10 @@ inline void LFMCMC<TData>::run(
 
     // Recording statistics
     for (size_t i = 0u; i < m_n_stats; ++i)
-        sampled_stats[i] = proposed_stats_i[i];
+        m_stat_samples[i] = proposed_stats_i[i];
 
     for (size_t k = 0u; k < m_n_params; ++k)
-        accepted_params[k] = m_initial_params[k];
+        m_accepted_params[k] = m_initial_params[k];
    
     for (size_t i = 1u; i < m_n_samples; ++i)
     {
@@ -1903,7 +1895,7 @@ inline void LFMCMC<TData>::run(
 
         // Storing data
         for (size_t k = 0u; k < m_n_stats; ++k)
-            sampled_stats[i * m_n_stats + k] = proposed_stats_i[k];
+            m_stat_samples[i * m_n_stats + k] = proposed_stats_i[k];
         
         // Running Hastings ratio
         epiworld_double r = runif();
@@ -1913,10 +1905,10 @@ inline void LFMCMC<TData>::run(
         if (r < std::min(static_cast<epiworld_double>(1.0), hr / accepted_params_prob[i - 1u]))
         {
             accepted_params_prob[i] = hr;
-            sampled_accepted[i]     = true;
+            m_sample_acceptance[i]     = true;
             
             for (size_t k = 0u; k < m_n_stats; ++k)
-                accepted_stats[i * m_n_stats + k] =
+                m_accepted_stats[i * m_n_stats + k] =
                     proposed_stats_i[k];
 
             m_previous_params = m_current_params;
@@ -1925,15 +1917,15 @@ inline void LFMCMC<TData>::run(
         {
 
             for (size_t k = 0u; k < m_n_stats; ++k)
-                accepted_stats[i * m_n_stats + k] =
-                    accepted_stats[(i - 1) * m_n_stats + k];
+                m_accepted_stats[i * m_n_stats + k] =
+                    m_accepted_stats[(i - 1) * m_n_stats + k];
 
             accepted_params_prob[i] = accepted_params_prob[i - 1u];
         }
             
 
         for (size_t k = 0u; k < m_n_params; ++k)
-            accepted_params[i * m_n_params + k] = m_previous_params[k];
+            m_accepted_params[i * m_n_params + k] = m_previous_params[k];
 
     }
 
@@ -2033,11 +2025,11 @@ inline std::shared_ptr< std::mt19937 > & LFMCMC<TData>::get_rand_endgine()
 
 #define DURCAST(tunit,txtunit) {\
         elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
-            time_end - time_start).count(); \
+            m_end_time - m_start_time).count(); \
         abbr_unit     = txtunit;}
 
 template<typename TData>
-inline void LFMCMC<TData>::get_elapsed(
+inline void LFMCMC<TData>::get_elapsed_time(
     std::string unit,
     epiworld_double * last_elapsed,
     std::string * unit_abbr,
@@ -2053,7 +2045,7 @@ inline void LFMCMC<TData>::get_elapsed(
     {
 
         size_t tlength = std::to_string(
-            static_cast<int>(floor(time_elapsed.count()))
+            static_cast<int>(floor(m_elapsed_time.count()))
             ).length();
         
         if (tlength <= 1)
@@ -2140,7 +2132,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         std::vector< epiworld_double > par_i(n_samples_print);
         for (size_t i = burnin; i < m_n_samples; ++i)
         {
-            par_i[i-burnin] = accepted_params[i * m_n_params + k];
+            par_i[i-burnin] = m_accepted_params[i * m_n_params + k];
             summ_params[k * 3] += par_i[i-burnin]/n_samples_dbl;
         }
 
@@ -2162,7 +2154,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         std::vector< epiworld_double > stat_k(n_samples_print);
         for (size_t i = burnin; i < m_n_samples; ++i)
         {
-            stat_k[i-burnin] = accepted_stats[i * m_n_stats + k];
+            stat_k[i-burnin] = m_accepted_stats[i * m_n_stats + k];
             summ_stats[k * 3] += stat_k[i-burnin]/n_samples_dbl;
         }
 
@@ -2182,7 +2174,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
     std::string abbr;
     epiworld_double elapsed;
-    get_elapsed("auto", &elapsed, &abbr, false);
+    get_elapsed_time("auto", &elapsed, &abbr, false);
     printf_epiworld("Elapsed t : %.2f%s\n\n", elapsed, abbr.c_str());
     
     ////////////////////////////////////////////////////////////////////////////
@@ -2346,13 +2338,13 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
 template<typename TData>
 inline void LFMCMC<TData>::chrono_start() {
-    time_start = std::chrono::steady_clock::now();
+    m_start_time = std::chrono::steady_clock::now();
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::chrono_end() {
-    time_end = std::chrono::steady_clock::now();
-    time_elapsed += (time_end - time_start);
+    m_end_time = std::chrono::steady_clock::now();
+    m_elapsed_time += (m_end_time - m_start_time);
 }
 
 template<typename TData>
@@ -2384,7 +2376,7 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_params()
     for (size_t k = 0u; k < m_n_params; ++k)
     {
         for (size_t i = 0u; i < m_n_samples; ++i)
-            res[k] += (this->accepted_params[k + m_n_params * i])/
+            res[k] += (this->m_accepted_params[k + m_n_params * i])/
                 static_cast< epiworld_double >(m_n_samples);
     }
 
@@ -2400,7 +2392,7 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
     for (size_t k = 0u; k < m_n_stats; ++k)
     {
         for (size_t i = 0u; i < m_n_samples; ++i)
-            res[k] += (this->accepted_stats[k + m_n_stats * i])/
+            res[k] += (this->m_accepted_stats[k + m_n_stats * i])/
                 static_cast< epiworld_double >(m_n_samples);
     }
 

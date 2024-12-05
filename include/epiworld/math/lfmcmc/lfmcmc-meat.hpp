@@ -237,12 +237,12 @@ inline void LFMCMC<TData>::run(
 
     // Reserving size
     drawn_prob.resize(m_n_samples);
-    sampled_accepted.resize(m_n_samples, false);
-    sampled_stats.resize(m_n_samples * m_n_stats);
+    m_sample_acceptance.resize(m_n_samples, false);
+    m_stat_samples.resize(m_n_samples * m_n_stats);
     sampled_stats_prob.resize(m_n_samples);
 
-    accepted_params.resize(m_n_samples * m_n_params);
-    accepted_stats.resize(m_n_samples * m_n_stats);
+    m_accepted_params.resize(m_n_samples * m_n_params);
+    m_accepted_stats.resize(m_n_samples * m_n_stats);
     accepted_params_prob.resize(m_n_samples);
 
     TData data_i = simulation_fun(m_initial_params, this);
@@ -255,10 +255,10 @@ inline void LFMCMC<TData>::run(
 
     // Recording statistics
     for (size_t i = 0u; i < m_n_stats; ++i)
-        sampled_stats[i] = proposed_stats_i[i];
+        m_stat_samples[i] = proposed_stats_i[i];
 
     for (size_t k = 0u; k < m_n_params; ++k)
-        accepted_params[k] = m_initial_params[k];
+        m_accepted_params[k] = m_initial_params[k];
    
     for (size_t i = 1u; i < m_n_samples; ++i)
     {
@@ -284,7 +284,7 @@ inline void LFMCMC<TData>::run(
 
         // Storing data
         for (size_t k = 0u; k < m_n_stats; ++k)
-            sampled_stats[i * m_n_stats + k] = proposed_stats_i[k];
+            m_stat_samples[i * m_n_stats + k] = proposed_stats_i[k];
         
         // Running Hastings ratio
         epiworld_double r = runif();
@@ -294,10 +294,10 @@ inline void LFMCMC<TData>::run(
         if (r < std::min(static_cast<epiworld_double>(1.0), hr / accepted_params_prob[i - 1u]))
         {
             accepted_params_prob[i] = hr;
-            sampled_accepted[i]     = true;
+            m_sample_acceptance[i]     = true;
             
             for (size_t k = 0u; k < m_n_stats; ++k)
-                accepted_stats[i * m_n_stats + k] =
+                m_accepted_stats[i * m_n_stats + k] =
                     proposed_stats_i[k];
 
             m_previous_params = m_current_params;
@@ -306,15 +306,15 @@ inline void LFMCMC<TData>::run(
         {
 
             for (size_t k = 0u; k < m_n_stats; ++k)
-                accepted_stats[i * m_n_stats + k] =
-                    accepted_stats[(i - 1) * m_n_stats + k];
+                m_accepted_stats[i * m_n_stats + k] =
+                    m_accepted_stats[(i - 1) * m_n_stats + k];
 
             accepted_params_prob[i] = accepted_params_prob[i - 1u];
         }
             
 
         for (size_t k = 0u; k < m_n_params; ++k)
-            accepted_params[i * m_n_params + k] = m_previous_params[k];
+            m_accepted_params[i * m_n_params + k] = m_previous_params[k];
 
     }
 
@@ -414,11 +414,11 @@ inline std::shared_ptr< std::mt19937 > & LFMCMC<TData>::get_rand_endgine()
 
 #define DURCAST(tunit,txtunit) {\
         elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
-            time_end - time_start).count(); \
+            m_end_time - m_start_time).count(); \
         abbr_unit     = txtunit;}
 
 template<typename TData>
-inline void LFMCMC<TData>::get_elapsed(
+inline void LFMCMC<TData>::get_elapsed_time(
     std::string unit,
     epiworld_double * last_elapsed,
     std::string * unit_abbr,
@@ -434,7 +434,7 @@ inline void LFMCMC<TData>::get_elapsed(
     {
 
         size_t tlength = std::to_string(
-            static_cast<int>(floor(time_elapsed.count()))
+            static_cast<int>(floor(m_elapsed_time.count()))
             ).length();
         
         if (tlength <= 1)
@@ -479,13 +479,13 @@ inline void LFMCMC<TData>::get_elapsed(
 
 template<typename TData>
 inline void LFMCMC<TData>::chrono_start() {
-    time_start = std::chrono::steady_clock::now();
+    m_start_time = std::chrono::steady_clock::now();
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::chrono_end() {
-    time_end = std::chrono::steady_clock::now();
-    time_elapsed += (time_end - time_start);
+    m_end_time = std::chrono::steady_clock::now();
+    m_elapsed_time += (m_end_time - m_start_time);
 }
 
 template<typename TData>
@@ -517,7 +517,7 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_params()
     for (size_t k = 0u; k < m_n_params; ++k)
     {
         for (size_t i = 0u; i < m_n_samples; ++i)
-            res[k] += (this->accepted_params[k + m_n_params * i])/
+            res[k] += (this->m_accepted_params[k + m_n_params * i])/
                 static_cast< epiworld_double >(m_n_samples);
     }
 
@@ -533,7 +533,7 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
     for (size_t k = 0u; k < m_n_stats; ++k)
     {
         for (size_t i = 0u; i < m_n_samples; ++i)
-            res[k] += (this->accepted_stats[k + m_n_stats * i])/
+            res[k] += (this->m_accepted_stats[k + m_n_stats * i])/
                 static_cast< epiworld_double >(m_n_samples);
     }
 

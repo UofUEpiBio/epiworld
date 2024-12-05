@@ -143,17 +143,14 @@ private:
 
     std::vector< epiworld_double > m_observed_stats; ///< Observed statistics
 
-    // param_samples, stat_samples
-    std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
-    std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
+    std::vector< epiworld_double > m_param_samples;     ///< Sampled Parameters
+    std::vector< epiworld_double > m_stat_samples;      ///< Sampled statistics
     // What is this?
     std::vector< epiworld_double > sampled_stats_prob; ///< Sampled statistics
-    // accepted_samples
-    std::vector< bool >            sampled_accepted;   ///< Indicator of accepted statistics
+    std::vector< bool >            m_sample_acceptance;   ///< Indicator of accepted statistics
 
-    // accepted_params, accepted_stats
-    std::vector< epiworld_double > accepted_params;      ///< Posterior distribution (accepted samples)
-    std::vector< epiworld_double > accepted_stats;       ///< Posterior distribution (accepted samples)
+    std::vector< epiworld_double > m_accepted_params;      ///< Posterior distribution (accepted samples)
+    std::vector< epiworld_double > m_accepted_stats;       ///< Posterior distribution (accepted samples)
     // What is this?
     std::vector< epiworld_double > accepted_params_prob; ///< Posterior probability
 
@@ -171,17 +168,14 @@ private:
     std::vector< std::string > m_param_names;
     std::vector< std::string > m_stat_names;
 
-    // start_time, end_time (??)
-    std::chrono::time_point<std::chrono::steady_clock> time_start;
-    std::chrono::time_point<std::chrono::steady_clock> time_end;
+    std::chrono::time_point<std::chrono::steady_clock> m_start_time;
+    std::chrono::time_point<std::chrono::steady_clock> m_end_time;
 
     // std::chrono::milliseconds
-    // elapsed_time
-    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+    std::chrono::duration<epiworld_double,std::micro> m_elapsed_time = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
 
-    // get_elapsed_time
-    inline void get_elapsed(
+    inline void get_elapsed_time(
         std::string unit,
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
@@ -239,14 +233,16 @@ public:
     const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
     const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
     const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
-    const std::vector< epiworld_double > & get_statistics_hist() {return sampled_stats;};
-    const std::vector< bool >            & get_statistics_accepted() {return sampled_accepted;};
+
+    const std::vector< epiworld_double > & get_param_samples() {return m_param_samples;};
+    const std::vector< epiworld_double > & get_stat_samples() {return m_stat_samples;};
+    const std::vector< bool >            & get_sample_acceptance() {return m_sample_acceptance;};
     const std::vector< epiworld_double > & get_posterior_lf_prob() {return accepted_params_prob;};
     const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
     std::vector< TData > * get_sampled_data() {return sampled_data;};
 
-    const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
-    const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
+    const std::vector< epiworld_double > & get_accepted_params() {return m_accepted_params;};
+    const std::vector< epiworld_double > & get_accepted_stats() {return m_accepted_stats;};
 
     void set_param_names(std::vector< std::string > names);
     void set_stat_names(std::vector< std::string > names);
