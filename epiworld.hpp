@@ -18,7 +18,7 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 5
+#define EPIWORLD_VERSION_MINOR 6
 #define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
@@ -1085,15 +1085,15 @@ using LFMCMCKernelFun = std::function<epiworld_double(const std::vector< epiworl
 
 /**
  * @brief Proposal function
- * @param params_now Vector where to save the new parameters.
- * @param params_prev Vector of reference parameters.
+ * @param new_params Vector where to save the new parameters.
+ * @param old_params Vector of reference parameters.
  * @param m LFMCMC model.
  * @tparam TData 
  */
 template<typename TData>
 inline void proposal_fun_normal(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 );
 
@@ -1122,32 +1122,32 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
  * Proposals are made within a radious 1 of the current
  * state of the parameters.
  * 
- * @param params_now Where to write the new parameters
- * @param params_prev Reference parameters
+ * @param new_params Where to write the new parameters
+ * @param old_params Reference parameters
  * @tparam TData 
  * @param m LFMCMC model.
  */
 template<typename TData>
 inline void proposal_fun_unif(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 );
 
 /**
  * @brief Uses the uniform kernel with euclidean distance
  * 
- * @param stats_now Vector of current statistics based on 
- * simulated data.
- * @param stats_obs Vector of observed statistics
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
  * @param epsilon Epsilon parameter
- * @param m LFMCMC model.
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_uniform(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 );
@@ -1156,14 +1156,17 @@ inline epiworld_double kernel_fun_uniform(
  * @brief Gaussian kernel
  * 
  * @tparam TData 
- * @param epsilon 
- * @param m 
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
+ * @param epsilon Epsilon parameter
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_gaussian(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 );
@@ -1178,7 +1181,7 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::shared_ptr< std::mt19937 > engine = nullptr;
+    std::shared_ptr< std::mt19937 > m_engine = nullptr;
     
     std::shared_ptr< std::uniform_real_distribution<> > runifd =
         std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
@@ -1190,51 +1193,50 @@ private:
         std::make_shared< std::gamma_distribution<> >();
 
     // Process data
-    TData observed_data;
-    
-    // Information about the size of the problem
-    size_t n_samples;
-    size_t n_statistics;
-    size_t n_parameters;
+    TData m_observed_data;
+    std::vector< TData > * m_simulated_data = nullptr;
 
-    epiworld_double epsilon;
+    // Information about the size of the process
+    size_t m_n_samples;
+    size_t m_n_stats;
+    size_t m_n_params;
 
-    std::vector< epiworld_double > params_now;
-    std::vector< epiworld_double > params_prev;
-    std::vector< epiworld_double > params_init;
+    epiworld_double m_epsilon;
 
-    std::vector< epiworld_double > observed_stats; ///< Observed statistics
+    std::vector< epiworld_double > m_initial_params;            ///< Initial parameters
+    std::vector< epiworld_double > m_current_params;            ///< Parameters for the current sample
+    std::vector< epiworld_double > m_previous_params;           ///< Parameters from the previous sample
 
-    std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
-    std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
-    std::vector< epiworld_double > sampled_stats_prob; ///< Sampled statistics
-    std::vector< bool >            sampled_accepted;   ///< Indicator of accepted statistics
+    std::vector< epiworld_double > m_observed_stats;            ///< Observed statistics
 
-    std::vector< epiworld_double > accepted_params;      ///< Posterior distribution (accepted samples)
-    std::vector< epiworld_double > accepted_stats;       ///< Posterior distribution (accepted samples)
-    std::vector< epiworld_double > accepted_params_prob; ///< Posterior probability
+    std::vector< epiworld_double > m_sample_params;             ///< Parameter samples
+    std::vector< epiworld_double > m_sample_stats;              ///< Statistic samples
+    std::vector< bool >            m_sample_acceptance;         ///< Indicator if sample was accepted
+    std::vector< epiworld_double > m_sample_drawn_prob;         ///< Drawn probabilities (runif()) for each sample
+    std::vector< epiworld_double > m_sample_kernel_scores;      ///< Kernel scores for each sample
 
-    std::vector< epiworld_double > drawn_prob;     ///< Drawn probabilities (runif())
-    std::vector< TData > * sampled_data = nullptr;
+    std::vector< epiworld_double > m_accepted_params;           ///< Posterior distribution of parameters from accepted samples
+    std::vector< epiworld_double > m_accepted_stats;            ///< Posterior distribution of statistics from accepted samples
+    std::vector< epiworld_double > m_accepted_kernel_scores;    ///< Kernel scores for each accepted sample
 
     // Functions
-    LFMCMCSimFun<TData> simulation_fun;
-    LFMCMCSummaryFun<TData> summary_fun;
-    LFMCMCProposalFun<TData> proposal_fun = proposal_fun_normal<TData>;
-    LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
+    LFMCMCSimFun<TData> m_simulation_fun;
+    LFMCMCSummaryFun<TData> m_summary_fun;
+    LFMCMCProposalFun<TData> m_proposal_fun = proposal_fun_normal<TData>;
+    LFMCMCKernelFun<TData> m_kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
-    std::vector< std::string > names_parameters;
-    std::vector< std::string > names_statistics;
+    std::vector< std::string > m_param_names;
+    std::vector< std::string > m_stat_names;
 
-    std::chrono::time_point<std::chrono::steady_clock> time_start;
-    std::chrono::time_point<std::chrono::steady_clock> time_end;
+    std::chrono::time_point<std::chrono::steady_clock> m_start_time;
+    std::chrono::time_point<std::chrono::steady_clock> m_end_time;
 
     // std::chrono::milliseconds
-    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+    std::chrono::duration<epiworld_double,std::micro> m_elapsed_time = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
 
-    inline void get_elapsed(
+    inline void get_elapsed_time(
         std::string unit,
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
@@ -1247,21 +1249,26 @@ private:
 public:
 
     void run(
-        std::vector< epiworld_double > param_init,
+        std::vector< epiworld_double > params_init_,
         size_t n_samples_,
         epiworld_double epsilon_,
         int seed = -1
         );
 
     LFMCMC() {};
-    LFMCMC(const TData & observed_data_) : observed_data(observed_data_) {};
+    LFMCMC(const TData & observed_data_) : m_observed_data(observed_data_) {};
     ~LFMCMC() {};
 
-    void set_observed_data(const TData & observed_data_) {observed_data = observed_data_;};
+    // Setting LFMCMC variables
+    void set_observed_data(const TData & observed_data_) {m_observed_data = observed_data_;};
+    
     void set_proposal_fun(LFMCMCProposalFun<TData> fun);
     void set_simulation_fun(LFMCMCSimFun<TData> fun);
     void set_summary_fun(LFMCMCSummaryFun<TData> fun);
     void set_kernel_fun(LFMCMCKernelFun<TData> fun);
+
+    void set_params_names(std::vector< std::string > names);
+    void set_stats_names(std::vector< std::string > names);
     
     /**
      * @name Random number generation
@@ -1282,31 +1289,33 @@ public:
     ///@}
 
     // Accessing parameters of the function
-    size_t get_n_samples() const {return n_samples;};
-    size_t get_n_statistics() const {return n_statistics;};
-    size_t get_n_parameters() const {return n_parameters;};
-    epiworld_double get_epsilon() const {return epsilon;};
+    size_t get_n_samples() const {return m_n_samples;};
+    size_t get_n_stats() const {return m_n_stats;};
+    size_t get_n_params() const {return m_n_params;};
+    epiworld_double get_epsilon() const {return m_epsilon;};
 
-    const std::vector< epiworld_double > & get_params_now() {return params_now;};
-    const std::vector< epiworld_double > & get_params_prev() {return params_prev;};
-    const std::vector< epiworld_double > & get_params_init() {return params_init;};
-    const std::vector< epiworld_double > & get_statistics_obs() {return observed_stats;};
-    const std::vector< epiworld_double > & get_statistics_hist() {return sampled_stats;};
-    const std::vector< bool >            & get_statistics_accepted() {return sampled_accepted;};
-    const std::vector< epiworld_double > & get_posterior_lf_prob() {return accepted_params_prob;};
-    const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
-    std::vector< TData > * get_sampled_data() {return sampled_data;};
+    const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
+    const std::vector< epiworld_double > & get_current_params() {return m_current_params;};
+    const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
 
-    const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
-    const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
+    const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
 
+    const std::vector< epiworld_double > & get_sample_params() {return m_sample_params;};
+    const std::vector< epiworld_double > & get_sample_stats() {return m_sample_stats;};
+    const std::vector< bool >            & get_sample_acceptance() {return m_sample_acceptance;};
+    const std::vector< epiworld_double > & get_sample_drawn_prob() {return m_sample_drawn_prob;};
+    const std::vector< epiworld_double > & get_sample_kernel_scores() {return m_sample_kernel_scores;};
 
-    void set_par_names(std::vector< std::string > names);
-    void set_stats_names(std::vector< std::string > names);
+    const std::vector< epiworld_double > & get_accepted_params() {return m_accepted_params;};
+    const std::vector< epiworld_double > & get_accepted_stats() {return m_accepted_stats;};
+    const std::vector< epiworld_double > & get_accepted_kernel_scores() {return m_accepted_kernel_scores;};
+    
+    std::vector< TData > * get_simulated_data() {return m_simulated_data;};
 
-    std::vector< epiworld_double > get_params_mean();
-    std::vector< epiworld_double > get_stats_mean();
+    std::vector< epiworld_double > get_mean_params();
+    std::vector< epiworld_double > get_mean_stats();
 
+    // Printing
     void print(size_t burnin = 0u) const;
 
 };
@@ -1367,15 +1376,15 @@ using LFMCMCKernelFun = std::function<epiworld_double(const std::vector< epiworl
 
 /**
  * @brief Proposal function
- * @param params_now Vector where to save the new parameters.
- * @param params_prev Vector of reference parameters.
+ * @param new_params Vector where to save the new parameters.
+ * @param old_params Vector of reference parameters.
  * @param m LFMCMC model.
  * @tparam TData 
  */
 template<typename TData>
 inline void proposal_fun_normal(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 );
 
@@ -1404,32 +1413,32 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
  * Proposals are made within a radious 1 of the current
  * state of the parameters.
  * 
- * @param params_now Where to write the new parameters
- * @param params_prev Reference parameters
+ * @param new_params Where to write the new parameters
+ * @param old_params Reference parameters
  * @tparam TData 
  * @param m LFMCMC model.
  */
 template<typename TData>
 inline void proposal_fun_unif(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 );
 
 /**
  * @brief Uses the uniform kernel with euclidean distance
  * 
- * @param stats_now Vector of current statistics based on 
- * simulated data.
- * @param stats_obs Vector of observed statistics
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
  * @param epsilon Epsilon parameter
- * @param m LFMCMC model.
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_uniform(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 );
@@ -1438,14 +1447,17 @@ inline epiworld_double kernel_fun_uniform(
  * @brief Gaussian kernel
  * 
  * @tparam TData 
- * @param epsilon 
- * @param m 
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
+ * @param epsilon Epsilon parameter
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_gaussian(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 );
@@ -1460,7 +1472,7 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::shared_ptr< std::mt19937 > engine = nullptr;
+    std::shared_ptr< std::mt19937 > m_engine = nullptr;
     
     std::shared_ptr< std::uniform_real_distribution<> > runifd =
         std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
@@ -1472,51 +1484,50 @@ private:
         std::make_shared< std::gamma_distribution<> >();
 
     // Process data
-    TData observed_data;
-    
-    // Information about the size of the problem
-    size_t n_samples;
-    size_t n_statistics;
-    size_t n_parameters;
+    TData m_observed_data;
+    std::vector< TData > * m_simulated_data = nullptr;
 
-    epiworld_double epsilon;
+    // Information about the size of the process
+    size_t m_n_samples;
+    size_t m_n_stats;
+    size_t m_n_params;
 
-    std::vector< epiworld_double > params_now;
-    std::vector< epiworld_double > params_prev;
-    std::vector< epiworld_double > params_init;
+    epiworld_double m_epsilon;
 
-    std::vector< epiworld_double > observed_stats; ///< Observed statistics
+    std::vector< epiworld_double > m_initial_params;            ///< Initial parameters
+    std::vector< epiworld_double > m_current_params;            ///< Parameters for the current sample
+    std::vector< epiworld_double > m_previous_params;           ///< Parameters from the previous sample
 
-    std::vector< epiworld_double > sampled_params;     ///< Sampled Parameters
-    std::vector< epiworld_double > sampled_stats;      ///< Sampled statistics
-    std::vector< epiworld_double > sampled_stats_prob; ///< Sampled statistics
-    std::vector< bool >            sampled_accepted;   ///< Indicator of accepted statistics
+    std::vector< epiworld_double > m_observed_stats;            ///< Observed statistics
 
-    std::vector< epiworld_double > accepted_params;      ///< Posterior distribution (accepted samples)
-    std::vector< epiworld_double > accepted_stats;       ///< Posterior distribution (accepted samples)
-    std::vector< epiworld_double > accepted_params_prob; ///< Posterior probability
+    std::vector< epiworld_double > m_sample_params;             ///< Parameter samples
+    std::vector< epiworld_double > m_sample_stats;              ///< Statistic samples
+    std::vector< bool >            m_sample_acceptance;         ///< Indicator if sample was accepted
+    std::vector< epiworld_double > m_sample_drawn_prob;         ///< Drawn probabilities (runif()) for each sample
+    std::vector< epiworld_double > m_sample_kernel_scores;      ///< Kernel scores for each sample
 
-    std::vector< epiworld_double > drawn_prob;     ///< Drawn probabilities (runif())
-    std::vector< TData > * sampled_data = nullptr;
+    std::vector< epiworld_double > m_accepted_params;           ///< Posterior distribution of parameters from accepted samples
+    std::vector< epiworld_double > m_accepted_stats;            ///< Posterior distribution of statistics from accepted samples
+    std::vector< epiworld_double > m_accepted_kernel_scores;    ///< Kernel scores for each accepted sample
 
     // Functions
-    LFMCMCSimFun<TData> simulation_fun;
-    LFMCMCSummaryFun<TData> summary_fun;
-    LFMCMCProposalFun<TData> proposal_fun = proposal_fun_normal<TData>;
-    LFMCMCKernelFun<TData> kernel_fun     = kernel_fun_uniform<TData>;
+    LFMCMCSimFun<TData> m_simulation_fun;
+    LFMCMCSummaryFun<TData> m_summary_fun;
+    LFMCMCProposalFun<TData> m_proposal_fun = proposal_fun_normal<TData>;
+    LFMCMCKernelFun<TData> m_kernel_fun     = kernel_fun_uniform<TData>;
 
     // Misc
-    std::vector< std::string > names_parameters;
-    std::vector< std::string > names_statistics;
+    std::vector< std::string > m_param_names;
+    std::vector< std::string > m_stat_names;
 
-    std::chrono::time_point<std::chrono::steady_clock> time_start;
-    std::chrono::time_point<std::chrono::steady_clock> time_end;
+    std::chrono::time_point<std::chrono::steady_clock> m_start_time;
+    std::chrono::time_point<std::chrono::steady_clock> m_end_time;
 
     // std::chrono::milliseconds
-    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+    std::chrono::duration<epiworld_double,std::micro> m_elapsed_time = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
 
-    inline void get_elapsed(
+    inline void get_elapsed_time(
         std::string unit,
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
@@ -1529,21 +1540,26 @@ private:
 public:
 
     void run(
-        std::vector< epiworld_double > param_init,
+        std::vector< epiworld_double > params_init_,
         size_t n_samples_,
         epiworld_double epsilon_,
         int seed = -1
         );
 
     LFMCMC() {};
-    LFMCMC(const TData & observed_data_) : observed_data(observed_data_) {};
+    LFMCMC(const TData & observed_data_) : m_observed_data(observed_data_) {};
     ~LFMCMC() {};
 
-    void set_observed_data(const TData & observed_data_) {observed_data = observed_data_;};
+    // Setting LFMCMC variables
+    void set_observed_data(const TData & observed_data_) {m_observed_data = observed_data_;};
+    
     void set_proposal_fun(LFMCMCProposalFun<TData> fun);
     void set_simulation_fun(LFMCMCSimFun<TData> fun);
     void set_summary_fun(LFMCMCSummaryFun<TData> fun);
     void set_kernel_fun(LFMCMCKernelFun<TData> fun);
+
+    void set_params_names(std::vector< std::string > names);
+    void set_stats_names(std::vector< std::string > names);
     
     /**
      * @name Random number generation
@@ -1564,31 +1580,33 @@ public:
     ///@}
 
     // Accessing parameters of the function
-    size_t get_n_samples() const {return n_samples;};
-    size_t get_n_statistics() const {return n_statistics;};
-    size_t get_n_parameters() const {return n_parameters;};
-    epiworld_double get_epsilon() const {return epsilon;};
+    size_t get_n_samples() const {return m_n_samples;};
+    size_t get_n_stats() const {return m_n_stats;};
+    size_t get_n_params() const {return m_n_params;};
+    epiworld_double get_epsilon() const {return m_epsilon;};
 
-    const std::vector< epiworld_double > & get_params_now() {return params_now;};
-    const std::vector< epiworld_double > & get_params_prev() {return params_prev;};
-    const std::vector< epiworld_double > & get_params_init() {return params_init;};
-    const std::vector< epiworld_double > & get_statistics_obs() {return observed_stats;};
-    const std::vector< epiworld_double > & get_statistics_hist() {return sampled_stats;};
-    const std::vector< bool >            & get_statistics_accepted() {return sampled_accepted;};
-    const std::vector< epiworld_double > & get_posterior_lf_prob() {return accepted_params_prob;};
-    const std::vector< epiworld_double > & get_drawn_prob() {return drawn_prob;};
-    std::vector< TData > * get_sampled_data() {return sampled_data;};
+    const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
+    const std::vector< epiworld_double > & get_current_params() {return m_current_params;};
+    const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
 
-    const std::vector< epiworld_double > & get_accepted_params() {return accepted_params;};
-    const std::vector< epiworld_double > & get_accepted_stats() {return accepted_stats;};
+    const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
 
+    const std::vector< epiworld_double > & get_sample_params() {return m_sample_params;};
+    const std::vector< epiworld_double > & get_sample_stats() {return m_sample_stats;};
+    const std::vector< bool >            & get_sample_acceptance() {return m_sample_acceptance;};
+    const std::vector< epiworld_double > & get_sample_drawn_prob() {return m_sample_drawn_prob;};
+    const std::vector< epiworld_double > & get_sample_kernel_scores() {return m_sample_kernel_scores;};
 
-    void set_par_names(std::vector< std::string > names);
-    void set_stats_names(std::vector< std::string > names);
+    const std::vector< epiworld_double > & get_accepted_params() {return m_accepted_params;};
+    const std::vector< epiworld_double > & get_accepted_stats() {return m_accepted_stats;};
+    const std::vector< epiworld_double > & get_accepted_kernel_scores() {return m_accepted_kernel_scores;};
+    
+    std::vector< TData > * get_simulated_data() {return m_simulated_data;};
 
-    std::vector< epiworld_double > get_params_mean();
-    std::vector< epiworld_double > get_stats_mean();
+    std::vector< epiworld_double > get_mean_params();
+    std::vector< epiworld_double > get_mean_stats();
 
+    // Printing
     void print(size_t burnin = 0u) const;
 
 };
@@ -1606,20 +1624,20 @@ public:
 
 /**
  * @brief Proposal function
- * @param params_now Vector where to save the new parameters.
- * @param params_prev Vector of reference parameters.
+ * @param new_params Vector where to save the new parameters.
+ * @param old_params Vector of reference parameters.
  * @param m LFMCMC model.
  * @tparam TData 
  */
 template<typename TData>
 inline void proposal_fun_normal(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 ) {
 
-    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
-        params_now[p] = params_prev[p] + m->rnorm();
+    for (size_t p = 0u; p < m->get_n_params(); ++p)
+        new_params[p] = old_params[p] + m->rnorm();
 
     return;
 }
@@ -1645,20 +1663,20 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
 
     LFMCMCProposalFun<TData> fun =
         [scale,lb,ub](
-            std::vector< epiworld_double >& params_now,
-            const std::vector< epiworld_double >& params_prev,
+            std::vector< epiworld_double >& new_params,
+            const std::vector< epiworld_double >& old_params,
             LFMCMC<TData>* m
         ) {
 
         // Making the proposal
-        for (size_t p = 0u; p < m->get_n_parameters(); ++p)
-            params_now[p] = params_prev[p] + m->rnorm() * scale;
+        for (size_t p = 0u; p < m->get_n_params(); ++p)
+            new_params[p] = old_params[p] + m->rnorm() * scale;
 
         // Checking boundaries
         epiworld_double d = ub - lb;
         int odd;
         epiworld_double d_above, d_below;
-        for (auto & p : params_now)
+        for (auto & p : new_params)
         {
 
             // Correcting if parameter goes above the upper bound
@@ -1685,7 +1703,7 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
         }
 
         #ifdef EPI_DEBUG
-        for (auto & p : params_now)
+        for (auto & p : new_params)
             if (p < lb || p > ub)
                 throw std::range_error("The parameter is out of bounds.");
         #endif
@@ -1704,20 +1722,20 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
  * Proposals are made within a radious 1 of the current
  * state of the parameters.
  * 
- * @param params_now Where to write the new parameters
- * @param params_prev Reference parameters
+ * @param new_params Where to write the new parameters
+ * @param old_params Reference parameters
  * @tparam TData 
  * @param m LFMCMC model.
  */
 template<typename TData>
 inline void proposal_fun_unif(
-    std::vector< epiworld_double >& params_now,
-    const std::vector< epiworld_double >& params_prev,
+    std::vector< epiworld_double >& new_params,
+    const std::vector< epiworld_double >& old_params,
     LFMCMC<TData>* m
 ) {
 
-    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
-        params_now[p] = (params_prev[p] + m->runif(-1.0, 1.0));
+    for (size_t p = 0u; p < m->get_n_params(); ++p)
+        new_params[p] = (old_params[p] + m->runif(-1.0, 1.0));
 
     return;
 }
@@ -1725,24 +1743,24 @@ inline void proposal_fun_unif(
 /**
  * @brief Uses the uniform kernel with euclidean distance
  * 
- * @param stats_now Vector of current statistics based on 
- * simulated data.
- * @param stats_obs Vector of observed statistics
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
  * @param epsilon Epsilon parameter
- * @param m LFMCMC model.
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_uniform(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 ) {
 
     epiworld_double ans = 0.0;
-    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
-        ans += std::pow(stats_obs[p] - stats_now[p], 2.0);
+    for (size_t p = 0u; p < m->get_n_params(); ++p)
+        ans += std::pow(observed_stats[p] - simulated_stats[p], 2.0);
 
     return std::sqrt(ans) < epsilon ? 1.0 : 0.0;
 
@@ -1754,21 +1772,24 @@ inline epiworld_double kernel_fun_uniform(
  * @brief Gaussian kernel
  * 
  * @tparam TData 
- * @param epsilon 
- * @param m 
+ * @param simulated_stats Vector of statistics based on 
+ * simulated data
+ * @param observed_stats Vector of observed statistics
+ * @param epsilon Epsilon parameter
+ * @param m LFMCMC model
  * @return epiworld_double 
  */
 template<typename TData>
 inline epiworld_double kernel_fun_gaussian(
-    const std::vector< epiworld_double >& stats_now,
-    const std::vector< epiworld_double >& stats_obs,
+    const std::vector< epiworld_double >& simulated_stats,
+    const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
     LFMCMC<TData>* m
 ) {
 
     epiworld_double ans = 0.0;
-    for (size_t p = 0u; p < m->get_n_parameters(); ++p)
-        ans += std::pow(stats_obs[p] - stats_now[p], 2.0);
+    for (size_t p = 0u; p < m->get_n_params(); ++p)
+        ans += std::pow(observed_stats[p] - simulated_stats[p], 2.0);
 
     return std::exp(
         -.5 * (ans/std::pow(1 + std::pow(epsilon, 2.0)/3.0, 2.0))
@@ -1780,25 +1801,25 @@ inline epiworld_double kernel_fun_gaussian(
 template<typename TData>
 inline void LFMCMC<TData>::set_proposal_fun(LFMCMCProposalFun<TData> fun)
 {
-    proposal_fun = fun;
+    m_proposal_fun = fun;
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_simulation_fun(LFMCMCSimFun<TData> fun)
 {
-    simulation_fun = fun;
+    m_simulation_fun = fun;
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_summary_fun(LFMCMCSummaryFun<TData> fun)
 {
-    summary_fun = fun;
+    m_summary_fun = fun;
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_kernel_fun(LFMCMCKernelFun<TData> fun)
 {
-    kernel_fun = fun;
+    m_kernel_fun = fun;
 }
 
 
@@ -1815,107 +1836,107 @@ inline void LFMCMC<TData>::run(
     chrono_start();
 
     // Setting the baseline parameters of the model
-    n_samples    = n_samples_;
-    epsilon      = epsilon_;
-    params_init  = params_init_;
-    n_parameters = params_init_.size();
+    m_n_samples    = n_samples_;
+    m_epsilon      = epsilon_;
+    m_initial_params  = params_init_;
+    m_n_params = params_init_.size();
 
     if (seed >= 0)
         this->seed(seed);
 
-    params_now.resize(n_parameters);
-    params_prev.resize(n_parameters);
+    m_current_params.resize(m_n_params);
+    m_previous_params.resize(m_n_params);
 
-    if (sampled_data != nullptr)
-        sampled_data->resize(n_samples);
+    if (m_simulated_data != nullptr)
+        m_simulated_data->resize(m_n_samples);
 
-    params_prev = params_init;
-    params_now  = params_init;
+    m_previous_params = m_initial_params;
+    m_current_params  = m_initial_params;
 
     // Computing the baseline sufficient statistics
-    summary_fun(observed_stats, observed_data, this);
-    n_statistics = observed_stats.size();
+    m_summary_fun(m_observed_stats, m_observed_data, this);
+    m_n_stats = m_observed_stats.size();
 
     // Reserving size
-    drawn_prob.resize(n_samples);
-    sampled_accepted.resize(n_samples, false);
-    sampled_stats.resize(n_samples * n_statistics);
-    sampled_stats_prob.resize(n_samples);
+    m_sample_drawn_prob.resize(m_n_samples);
+    m_sample_acceptance.resize(m_n_samples, false);
+    m_sample_stats.resize(m_n_samples * m_n_stats);
+    m_sample_kernel_scores.resize(m_n_samples);
 
-    accepted_params.resize(n_samples * n_parameters);
-    accepted_stats.resize(n_samples * n_statistics);
-    accepted_params_prob.resize(n_samples);
+    m_accepted_params.resize(m_n_samples * m_n_params);
+    m_accepted_stats.resize(m_n_samples * m_n_stats);
+    m_accepted_kernel_scores.resize(m_n_samples);
 
-    TData data_i = simulation_fun(params_init, this);
+    TData data_i = m_simulation_fun(m_initial_params, this);
 
     std::vector< epiworld_double > proposed_stats_i;
-    summary_fun(proposed_stats_i, data_i, this);
-    accepted_params_prob[0u] = kernel_fun(
-        proposed_stats_i, observed_stats, epsilon, this
+    m_summary_fun(proposed_stats_i, data_i, this);
+    m_accepted_kernel_scores[0u] = m_kernel_fun(
+        proposed_stats_i, m_observed_stats, m_epsilon, this
         );
 
     // Recording statistics
-    for (size_t i = 0u; i < n_statistics; ++i)
-        sampled_stats[i] = proposed_stats_i[i];
+    for (size_t i = 0u; i < m_n_stats; ++i)
+        m_sample_stats[i] = proposed_stats_i[i];
 
-    for (size_t k = 0u; k < n_parameters; ++k)
-        accepted_params[k] = params_init[k];
+    for (size_t k = 0u; k < m_n_params; ++k)
+        m_accepted_params[k] = m_initial_params[k];
    
-    for (size_t i = 1u; i < n_samples; ++i)
+    for (size_t i = 1u; i < m_n_samples; ++i)
     {
-        // Step 1: Generate a proposal and store it in params_now
-        proposal_fun(params_now, params_prev, this);
+        // Step 1: Generate a proposal and store it in m_current_params
+        m_proposal_fun(m_current_params, m_previous_params, this);
 
-        // Step 2: Using params_now, simulate data
-        TData data_i = simulation_fun(params_now, this);
+        // Step 2: Using m_current_params, simulate data
+        TData data_i = m_simulation_fun(m_current_params, this);
 
         // Are we storing the data?
-        if (sampled_data != nullptr)
-            sampled_data->operator[](i) = data_i;
+        if (m_simulated_data != nullptr)
+            m_simulated_data->operator[](i) = data_i;
 
         // Step 3: Generate the summary statistics of the data
-        summary_fun(proposed_stats_i, data_i, this);
+        m_summary_fun(proposed_stats_i, data_i, this);
 
         // Step 4: Compute the hastings ratio using the kernel function
-        epiworld_double hr = kernel_fun(
-            proposed_stats_i, observed_stats, epsilon, this
+        epiworld_double hr = m_kernel_fun(
+            proposed_stats_i, m_observed_stats, m_epsilon, this
             );
 
-        sampled_stats_prob[i] = hr;
+        m_sample_kernel_scores[i] = hr;
 
         // Storing data
-        for (size_t k = 0u; k < n_statistics; ++k)
-            sampled_stats[i * n_statistics + k] = proposed_stats_i[k];
+        for (size_t k = 0u; k < m_n_stats; ++k)
+            m_sample_stats[i * m_n_stats + k] = proposed_stats_i[k];
         
         // Running Hastings ratio
         epiworld_double r = runif();
-        drawn_prob[i] = r;
+        m_sample_drawn_prob[i] = r;
 
         // Step 5: Update if likely
-        if (r < std::min(static_cast<epiworld_double>(1.0), hr / accepted_params_prob[i - 1u]))
+        if (r < std::min(static_cast<epiworld_double>(1.0), hr / m_accepted_kernel_scores[i - 1u]))
         {
-            accepted_params_prob[i] = hr;
-            sampled_accepted[i]     = true;
+            m_accepted_kernel_scores[i] = hr;
+            m_sample_acceptance[i]     = true;
             
-            for (size_t k = 0u; k < n_statistics; ++k)
-                accepted_stats[i * n_statistics + k] =
+            for (size_t k = 0u; k < m_n_stats; ++k)
+                m_accepted_stats[i * m_n_stats + k] =
                     proposed_stats_i[k];
 
-            params_prev = params_now;
+            m_previous_params = m_current_params;
 
         } else
         {
 
-            for (size_t k = 0u; k < n_statistics; ++k)
-                accepted_stats[i * n_statistics + k] =
-                    accepted_stats[(i - 1) * n_statistics + k];
+            for (size_t k = 0u; k < m_n_stats; ++k)
+                m_accepted_stats[i * m_n_stats + k] =
+                    m_accepted_stats[(i - 1) * m_n_stats + k];
 
-            accepted_params_prob[i] = accepted_params_prob[i - 1u];
+            m_accepted_kernel_scores[i] = m_accepted_kernel_scores[i - 1u];
         }
             
 
-        for (size_t k = 0u; k < n_parameters; ++k)
-            accepted_params[i * n_parameters + k] = params_prev[k];
+        for (size_t k = 0u; k < m_n_params; ++k)
+            m_accepted_params[i * m_n_params + k] = m_previous_params[k];
 
     }
 
@@ -1928,7 +1949,7 @@ inline void LFMCMC<TData>::run(
 template<typename TData>
 inline epiworld_double LFMCMC<TData>::runif()
 {
-    return runifd->operator()(*engine);
+    return runifd->operator()(*m_engine);
 }
 
 template<typename TData>
@@ -1937,13 +1958,13 @@ inline epiworld_double LFMCMC<TData>::runif(
     epiworld_double ub
 )
 {
-    return runifd->operator()(*engine) * (ub - lb) + lb;
+    return runifd->operator()(*m_engine) * (ub - lb) + lb;
 }
 
 template<typename TData>
 inline epiworld_double LFMCMC<TData>::rnorm()
 {
-    return rnormd->operator()(*engine);
+    return rnormd->operator()(*m_engine);
 }
 
 template<typename TData>
@@ -1952,13 +1973,13 @@ inline epiworld_double LFMCMC<TData>::rnorm(
     epiworld_double sd
     )
 {
-    return (rnormd->operator()(*engine)) * sd + mean;
+    return (rnormd->operator()(*m_engine)) * sd + mean;
 }
 
 template<typename TData>
 inline epiworld_double LFMCMC<TData>::rgamma()
 {
-    return rgammad->operator()(*engine);
+    return rgammad->operator()(*m_engine);
 }
 
 template<typename TData>
@@ -1972,7 +1993,7 @@ inline epiworld_double LFMCMC<TData>::rgamma(
 
     rgammad->param(std::gamma_distribution<>::param_type(alpha, beta));
 
-    epiworld_double ans = rgammad->operator()(*engine);
+    epiworld_double ans = rgammad->operator()(*m_engine);
 
     rgammad->param(old_param);
 
@@ -1983,14 +2004,14 @@ inline epiworld_double LFMCMC<TData>::rgamma(
 template<typename TData>
 inline void LFMCMC<TData>::seed(epiworld_fast_uint s) {
 
-    this->engine->seed(s);
+    this->m_engine->seed(s);
 
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::set_rand_engine(std::shared_ptr< std::mt19937 > & eng)
 {
-    engine = eng;
+    m_engine = eng;
 }
 
 template<typename TData>
@@ -2002,7 +2023,7 @@ inline void LFMCMC<TData>::set_rand_gamma(epiworld_double alpha, epiworld_double
 template<typename TData>
 inline std::shared_ptr< std::mt19937 > & LFMCMC<TData>::get_rand_endgine()
 {
-    return engine;
+    return m_engine;
 }
 
 // Step 1: Simulate data
@@ -2015,11 +2036,11 @@ inline std::shared_ptr< std::mt19937 > & LFMCMC<TData>::get_rand_endgine()
 
 #define DURCAST(tunit,txtunit) {\
         elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
-            time_end - time_start).count(); \
+            m_end_time - m_start_time).count(); \
         abbr_unit     = txtunit;}
 
 template<typename TData>
-inline void LFMCMC<TData>::get_elapsed(
+inline void LFMCMC<TData>::get_elapsed_time(
     std::string unit,
     epiworld_double * last_elapsed,
     std::string * unit_abbr,
@@ -2035,7 +2056,7 @@ inline void LFMCMC<TData>::get_elapsed(
     {
 
         size_t tlength = std::to_string(
-            static_cast<int>(floor(time_elapsed.count()))
+            static_cast<int>(floor(m_elapsed_time.count()))
             ).length();
         
         if (tlength <= 1)
@@ -2094,19 +2115,19 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
     // For each statistic or parameter in the model, we print three values: 
     // - mean, the 2.5% quantile, and the 97.5% quantile
-    std::vector< epiworld_double > summ_params(n_parameters * 3, 0.0);
-    std::vector< epiworld_double > summ_stats(n_statistics * 3, 0.0);
+    std::vector< epiworld_double > summ_params(m_n_params * 3, 0.0);
+    std::vector< epiworld_double > summ_stats(m_n_stats * 3, 0.0);
 
     // Compute the number of samples to use based on burnin rate
-    size_t n_samples_print = n_samples;
+    size_t n_samples_print = m_n_samples;
     if (burnin > 0)
     {
-        if (burnin >= n_samples)
+        if (burnin >= m_n_samples)
             throw std::length_error(
                 "The burnin is greater than or equal to the number of samples."
                 );
 
-        n_samples_print = n_samples - burnin;
+        n_samples_print = m_n_samples - burnin;
 
     }
 
@@ -2115,14 +2136,14 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         );
 
     // Compute parameter summary values
-    for (size_t k = 0u; k < n_parameters; ++k)
+    for (size_t k = 0u; k < m_n_params; ++k)
     {
 
         // Retrieving the relevant parameter
         std::vector< epiworld_double > par_i(n_samples_print);
-        for (size_t i = burnin; i < n_samples; ++i)
+        for (size_t i = burnin; i < m_n_samples; ++i)
         {
-            par_i[i-burnin] = accepted_params[i * n_parameters + k];
+            par_i[i-burnin] = m_accepted_params[i * m_n_params + k];
             summ_params[k * 3] += par_i[i-burnin]/n_samples_dbl;
         }
 
@@ -2137,14 +2158,14 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     }
 
     // Compute statistics summary values
-    for (size_t k = 0u; k < n_statistics; ++k)
+    for (size_t k = 0u; k < m_n_stats; ++k)
     {
 
         // Retrieving the relevant parameter
         std::vector< epiworld_double > stat_k(n_samples_print);
-        for (size_t i = burnin; i < n_samples; ++i)
+        for (size_t i = burnin; i < m_n_samples; ++i)
         {
-            stat_k[i-burnin] = accepted_stats[i * n_statistics + k];
+            stat_k[i-burnin] = m_accepted_stats[i * m_n_stats + k];
             summ_stats[k * 3] += stat_k[i-burnin]/n_samples_dbl;
         }
 
@@ -2160,11 +2181,12 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     printf_epiworld("___________________________________________\n\n");
     printf_epiworld("LIKELIHOOD-FREE MARKOV CHAIN MONTE CARLO\n\n");
 
-    printf_epiworld("N Samples : %zu\n", n_samples);
+    printf_epiworld("N Samples (total) : %zu\n", m_n_samples);
+    printf_epiworld("N Samples (after burn-in period) : %zu\n", m_n_samples - burnin);
 
     std::string abbr;
     epiworld_double elapsed;
-    get_elapsed("auto", &elapsed, &abbr, false);
+    get_elapsed_time("auto", &elapsed, &abbr, false);
     printf_epiworld("Elapsed t : %.2f%s\n\n", elapsed, abbr.c_str());
     
     ////////////////////////////////////////////////////////////////////////////
@@ -2186,10 +2208,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     nchar_par_num += 5; // 1 for neg padd, 2 for decimals, 1 the decimal point, and one b/c log(<10) < 1.
     std::string charlen = std::to_string(nchar_par_num);
 
-    if (names_parameters.size() != 0u)
+    if (m_param_names.size() != 0u)
     {
         int nchar_par = 0;
-        for (auto & n : names_parameters)
+        for (auto & n : m_param_names)
         {
             int tmp_nchar = n.length();
             if (nchar_par < tmp_nchar)
@@ -2204,15 +2226,15 @@ inline void LFMCMC<TData>::print(size_t burnin) const
             std::string(".2f] (initial : % ") +
             charlen + std::string(".2f)\n");
 
-        for (size_t k = 0u; k < n_parameters; ++k)
+        for (size_t k = 0u; k < m_n_params; ++k)
         {
             printf_epiworld(
                 fmt_params.c_str(),
-                names_parameters[k].c_str(),
+                m_param_names[k].c_str(),
                 summ_params[k * 3],
                 summ_params[k * 3 + 1u],
                 summ_params[k * 3 + 2u],
-                params_init[k]
+                m_initial_params[k]
                 );
         }
 
@@ -2225,7 +2247,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
             std::string(".2f] (initial : % ") + charlen +
             std::string(".2f)\n");
 
-        for (size_t k = 0u; k < n_parameters; ++k)
+        for (size_t k = 0u; k < m_n_params; ++k)
         {
             
             printf_epiworld(
@@ -2234,7 +2256,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
                 summ_params[k * 3],
                 summ_params[k * 3 + 1u],
                 summ_params[k * 3 + 2u],
-                params_init[k]
+                m_initial_params[k]
                 );
         }
 
@@ -2258,10 +2280,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
     // Figuring out format
     std::string fmt_stats;
-    if (names_statistics.size() != 0u)
+    if (m_stat_names.size() != 0u)
     {
         int nchar_stats = 0;
-        for (auto & n : names_statistics)
+        for (auto & n : m_stat_names)
         {
             int tmp_nchar = n.length();
             if (nchar_stats < tmp_nchar)
@@ -2276,15 +2298,15 @@ inline void LFMCMC<TData>::print(size_t burnin) const
             std::string(".2f] (Observed: % ") + nchar_char +
             std::string(".2f)\n");
 
-        for (size_t k = 0u; k < n_statistics; ++k)
+        for (size_t k = 0u; k < m_n_stats; ++k)
         {
             printf_epiworld(
                 fmt_stats.c_str(),
-                names_statistics[k].c_str(),
+                m_stat_names[k].c_str(),
                 summ_stats[k * 3],
                 summ_stats[k * 3 + 1u],
                 summ_stats[k * 3 + 2u],
-                observed_stats[k]
+                m_observed_stats[k]
                 );
         }
 
@@ -2298,7 +2320,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
             std::string(".2f] (Observed: % ") + nchar_char +
             std::string(".2f)\n");
 
-        for (size_t k = 0u; k < n_statistics; ++k)
+        for (size_t k = 0u; k < m_n_stats; ++k)
         {
             printf_epiworld(
                 fmt_stats.c_str(),
@@ -2306,7 +2328,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
                 summ_stats[k * 3],
                 summ_stats[k * 3 + 1u],
                 summ_stats[k * 3 + 2u],
-                observed_stats[k]
+                m_observed_stats[k]
                 );
         }
 
@@ -2328,46 +2350,46 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
 template<typename TData>
 inline void LFMCMC<TData>::chrono_start() {
-    time_start = std::chrono::steady_clock::now();
+    m_start_time = std::chrono::steady_clock::now();
 }
 
 template<typename TData>
 inline void LFMCMC<TData>::chrono_end() {
-    time_end = std::chrono::steady_clock::now();
-    time_elapsed += (time_end - time_start);
+    m_end_time = std::chrono::steady_clock::now();
+    m_elapsed_time += (m_end_time - m_start_time);
 }
 
 template<typename TData>
-inline void LFMCMC<TData>::set_par_names(std::vector< std::string > names)
+inline void LFMCMC<TData>::set_params_names(std::vector< std::string > names)
 {
 
-    if (names.size() != n_parameters)
+    if (names.size() != m_n_params)
         throw std::length_error("The number of names to add differs from the number of parameters in the model.");
 
-    names_parameters = names;
+    m_param_names = names;
 
 }
 template<typename TData>
 inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
 {
 
-    if (names.size() != n_statistics)
+    if (names.size() != m_n_stats)
         throw std::length_error("The number of names to add differs from the number of statistics in the model.");
 
-    names_statistics = names;
+    m_stat_names = names;
 
 }
 
 template<typename TData>
-inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
+inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_params()
 {
-    std::vector< epiworld_double > res(this->n_parameters, 0.0);
+    std::vector< epiworld_double > res(this->m_n_params, 0.0);
     
-    for (size_t k = 0u; k < n_parameters; ++k)
+    for (size_t k = 0u; k < m_n_params; ++k)
     {
-        for (size_t i = 0u; i < n_samples; ++i)
-            res[k] += (this->accepted_params[k + n_parameters * i])/
-                static_cast< epiworld_double >(n_samples);
+        for (size_t i = 0u; i < m_n_samples; ++i)
+            res[k] += (this->m_accepted_params[k + m_n_params * i])/
+                static_cast< epiworld_double >(m_n_samples);
     }
 
     return res;
@@ -2375,15 +2397,15 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_params_mean()
 }
 
 template<typename TData>
-inline std::vector< epiworld_double > LFMCMC<TData>::get_stats_mean()
+inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
 {
-    std::vector< epiworld_double > res(this->n_statistics, 0.0);
+    std::vector< epiworld_double > res(this->m_n_stats, 0.0);
     
-    for (size_t k = 0u; k < n_statistics; ++k)
+    for (size_t k = 0u; k < m_n_stats; ++k)
     {
-        for (size_t i = 0u; i < n_samples; ++i)
-            res[k] += (this->accepted_stats[k + n_statistics * i])/
-                static_cast< epiworld_double >(n_samples);
+        for (size_t i = 0u; i < m_n_samples; ++i)
+            res[k] += (this->m_accepted_stats[k + m_n_stats * i])/
+                static_cast< epiworld_double >(m_n_samples);
     }
 
     return res;
