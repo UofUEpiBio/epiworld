@@ -259,8 +259,8 @@ public:
     std::vector< epiworld_double > get_mean_stats();
 
     // Printing
-    void verbose_off() { verbose = false; };
-    void verbose_on() { verbose = true; };
+    LFMCMC<TData> & verbose_off();
+    LFMCMC<TData> & verbose_on();
     void print(size_t burnin = 0u) const;
 
 };

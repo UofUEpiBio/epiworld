@@ -554,4 +554,18 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
 
 }
 
+template<typename TData>
+inline LFMCMC<TData> & LFMCMC<TData>::verbose_off()
+{
+    verbose = false;
+    return *this;
+}
+
+template<typename TData>
+inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
+{
+    verbose = true;
+    return *this;
+}
+
 #endif

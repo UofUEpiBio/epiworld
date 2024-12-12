@@ -1321,8 +1321,8 @@ public:
     std::vector< epiworld_double > get_mean_stats();
 
     // Printing
-    void verbose_off() { verbose = false; };
-    void verbose_on() { verbose = true; };
+    LFMCMC<TData> & verbose_off();
+    LFMCMC<TData> & verbose_on();
     void print(size_t burnin = 0u) const;
 
 };
@@ -1619,8 +1619,8 @@ public:
     std::vector< epiworld_double > get_mean_stats();
 
     // Printing
-    void verbose_off() { verbose = false; };
-    void verbose_on() { verbose = true; };
+    LFMCMC<TData> & verbose_off();
+    LFMCMC<TData> & verbose_on();
     void print(size_t burnin = 0u) const;
 
 };
@@ -2434,6 +2434,20 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
 
     return res;
 
+}
+
+template<typename TData>
+inline LFMCMC<TData> & LFMCMC<TData>::verbose_off()
+{
+    verbose = false;
+    return *this;
+}
+
+template<typename TData>
+inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
+{
+    verbose = true;
+    return *this;
 }
 
 #endif
