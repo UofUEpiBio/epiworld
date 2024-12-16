@@ -35,7 +35,7 @@ void summary_fun(vec_double & res, const vec_double & p, LFMCMC<vec_double> * m)
 
     *sd = std::sqrt(*sd);
 
-    auto params = m->get_current_params();
+    auto params = m->get_current_proposed_params();
 
     // printf("{mu, sigma} = {% 4.2f, % 4.2f}; ", params[0u], params[1u]);
     // printf("{mean, sd} =  {% 4.2f, % 4.2f}\n", *mean, *sd);

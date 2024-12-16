@@ -1203,21 +1203,21 @@ private:
 
     epiworld_double m_epsilon;
 
-    std::vector< epiworld_double > m_initial_params;            ///< Initial parameters
-    std::vector< epiworld_double > m_current_params;            ///< Parameters for the current sample
-    std::vector< epiworld_double > m_previous_params;           ///< Parameters from the previous sample
+    std::vector< epiworld_double > m_initial_params;             ///< Initial parameters
+    std::vector< epiworld_double > m_current_proposed_params;    ///< Proposed parameters for the next sample
+    std::vector< epiworld_double > m_current_accepted_params;    ///< Most recently accepted parameters (current state of MCMC)
 
-    std::vector< epiworld_double > m_observed_stats;            ///< Observed statistics
+    std::vector< epiworld_double > m_observed_stats;             ///< Observed statistics
 
-    std::vector< epiworld_double > m_sample_params;             ///< Parameter samples
-    std::vector< epiworld_double > m_sample_stats;              ///< Statistic samples
-    std::vector< bool >            m_sample_acceptance;         ///< Indicator if sample was accepted
-    std::vector< epiworld_double > m_sample_drawn_prob;         ///< Drawn probabilities (runif()) for each sample
-    std::vector< epiworld_double > m_sample_kernel_scores;      ///< Kernel scores for each sample
+    std::vector< epiworld_double > m_all_sample_params;          ///< Parameter samples
+    std::vector< epiworld_double > m_all_sample_stats;           ///< Statistic samples
+    std::vector< bool >            m_all_sample_acceptance;      ///< Indicator if sample was accepted
+    std::vector< epiworld_double > m_all_sample_drawn_prob;      ///< Drawn probabilities (runif()) for each sample
+    std::vector< epiworld_double > m_all_sample_kernel_scores;   ///< Kernel scores for each sample
 
-    std::vector< epiworld_double > m_accepted_params;           ///< Posterior distribution of parameters from accepted samples
-    std::vector< epiworld_double > m_accepted_stats;            ///< Posterior distribution of statistics from accepted samples
-    std::vector< epiworld_double > m_accepted_kernel_scores;    ///< Kernel scores for each accepted sample
+    std::vector< epiworld_double > m_all_accepted_params;        ///< Posterior distribution of parameters from accepted samples
+    std::vector< epiworld_double > m_all_accepted_stats;         ///< Posterior distribution of statistics from accepted samples
+    std::vector< epiworld_double > m_all_accepted_kernel_scores; ///< Kernel scores for each accepted sample
 
     // Functions
     LFMCMCSimFun<TData> m_simulation_fun;
@@ -1300,20 +1300,20 @@ public:
     epiworld_double get_epsilon() const {return m_epsilon;};
 
     const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
-    const std::vector< epiworld_double > & get_current_params() {return m_current_params;};
-    const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
+    const std::vector< epiworld_double > & get_current_proposed_params() {return m_current_proposed_params;};
+    const std::vector< epiworld_double > & get_current_accepted_params() {return m_current_accepted_params;};
 
     const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
 
-    const std::vector< epiworld_double > & get_sample_params() {return m_sample_params;};
-    const std::vector< epiworld_double > & get_sample_stats() {return m_sample_stats;};
-    const std::vector< bool >            & get_sample_acceptance() {return m_sample_acceptance;};
-    const std::vector< epiworld_double > & get_sample_drawn_prob() {return m_sample_drawn_prob;};
-    const std::vector< epiworld_double > & get_sample_kernel_scores() {return m_sample_kernel_scores;};
+    const std::vector< epiworld_double > & get_all_sample_params() {return m_all_sample_params;};
+    const std::vector< epiworld_double > & get_all_sample_stats() {return m_all_sample_stats;};
+    const std::vector< bool >            & get_all_sample_acceptance() {return m_all_sample_acceptance;};
+    const std::vector< epiworld_double > & get_all_sample_drawn_prob() {return m_all_sample_drawn_prob;};
+    const std::vector< epiworld_double > & get_all_sample_kernel_scores() {return m_all_sample_kernel_scores;};
 
-    const std::vector< epiworld_double > & get_accepted_params() {return m_accepted_params;};
-    const std::vector< epiworld_double > & get_accepted_stats() {return m_accepted_stats;};
-    const std::vector< epiworld_double > & get_accepted_kernel_scores() {return m_accepted_kernel_scores;};
+    const std::vector< epiworld_double > & get_all_accepted_params() {return m_all_accepted_params;};
+    const std::vector< epiworld_double > & get_all_accepted_stats() {return m_all_accepted_stats;};
+    const std::vector< epiworld_double > & get_all_accepted_kernel_scores() {return m_all_accepted_kernel_scores;};
     
     std::vector< TData > * get_simulated_data() {return m_simulated_data;};
 
@@ -1501,21 +1501,21 @@ private:
 
     epiworld_double m_epsilon;
 
-    std::vector< epiworld_double > m_initial_params;            ///< Initial parameters
-    std::vector< epiworld_double > m_current_params;            ///< Parameters for the current sample
-    std::vector< epiworld_double > m_previous_params;           ///< Parameters from the previous sample
+    std::vector< epiworld_double > m_initial_params;             ///< Initial parameters
+    std::vector< epiworld_double > m_current_proposed_params;    ///< Proposed parameters for the next sample
+    std::vector< epiworld_double > m_current_accepted_params;    ///< Most recently accepted parameters (current state of MCMC)
 
-    std::vector< epiworld_double > m_observed_stats;            ///< Observed statistics
+    std::vector< epiworld_double > m_observed_stats;             ///< Observed statistics
 
-    std::vector< epiworld_double > m_sample_params;             ///< Parameter samples
-    std::vector< epiworld_double > m_sample_stats;              ///< Statistic samples
-    std::vector< bool >            m_sample_acceptance;         ///< Indicator if sample was accepted
-    std::vector< epiworld_double > m_sample_drawn_prob;         ///< Drawn probabilities (runif()) for each sample
-    std::vector< epiworld_double > m_sample_kernel_scores;      ///< Kernel scores for each sample
+    std::vector< epiworld_double > m_all_sample_params;          ///< Parameter samples
+    std::vector< epiworld_double > m_all_sample_stats;           ///< Statistic samples
+    std::vector< bool >            m_all_sample_acceptance;      ///< Indicator if sample was accepted
+    std::vector< epiworld_double > m_all_sample_drawn_prob;      ///< Drawn probabilities (runif()) for each sample
+    std::vector< epiworld_double > m_all_sample_kernel_scores;   ///< Kernel scores for each sample
 
-    std::vector< epiworld_double > m_accepted_params;           ///< Posterior distribution of parameters from accepted samples
-    std::vector< epiworld_double > m_accepted_stats;            ///< Posterior distribution of statistics from accepted samples
-    std::vector< epiworld_double > m_accepted_kernel_scores;    ///< Kernel scores for each accepted sample
+    std::vector< epiworld_double > m_all_accepted_params;        ///< Posterior distribution of parameters from accepted samples
+    std::vector< epiworld_double > m_all_accepted_stats;         ///< Posterior distribution of statistics from accepted samples
+    std::vector< epiworld_double > m_all_accepted_kernel_scores; ///< Kernel scores for each accepted sample
 
     // Functions
     LFMCMCSimFun<TData> m_simulation_fun;
@@ -1598,20 +1598,20 @@ public:
     epiworld_double get_epsilon() const {return m_epsilon;};
 
     const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
-    const std::vector< epiworld_double > & get_current_params() {return m_current_params;};
-    const std::vector< epiworld_double > & get_previous_params() {return m_previous_params;};
+    const std::vector< epiworld_double > & get_current_proposed_params() {return m_current_proposed_params;};
+    const std::vector< epiworld_double > & get_current_accepted_params() {return m_current_accepted_params;};
 
     const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
 
-    const std::vector< epiworld_double > & get_sample_params() {return m_sample_params;};
-    const std::vector< epiworld_double > & get_sample_stats() {return m_sample_stats;};
-    const std::vector< bool >            & get_sample_acceptance() {return m_sample_acceptance;};
-    const std::vector< epiworld_double > & get_sample_drawn_prob() {return m_sample_drawn_prob;};
-    const std::vector< epiworld_double > & get_sample_kernel_scores() {return m_sample_kernel_scores;};
+    const std::vector< epiworld_double > & get_all_sample_params() {return m_all_sample_params;};
+    const std::vector< epiworld_double > & get_all_sample_stats() {return m_all_sample_stats;};
+    const std::vector< bool >            & get_all_sample_acceptance() {return m_all_sample_acceptance;};
+    const std::vector< epiworld_double > & get_all_sample_drawn_prob() {return m_all_sample_drawn_prob;};
+    const std::vector< epiworld_double > & get_all_sample_kernel_scores() {return m_all_sample_kernel_scores;};
 
-    const std::vector< epiworld_double > & get_accepted_params() {return m_accepted_params;};
-    const std::vector< epiworld_double > & get_accepted_stats() {return m_accepted_stats;};
-    const std::vector< epiworld_double > & get_accepted_kernel_scores() {return m_accepted_kernel_scores;};
+    const std::vector< epiworld_double > & get_all_accepted_params() {return m_all_accepted_params;};
+    const std::vector< epiworld_double > & get_all_accepted_stats() {return m_all_accepted_stats;};
+    const std::vector< epiworld_double > & get_all_accepted_kernel_scores() {return m_all_accepted_kernel_scores;};
     
     std::vector< TData > * get_simulated_data() {return m_simulated_data;};
 
@@ -1858,43 +1858,43 @@ inline void LFMCMC<TData>::run(
     if (seed >= 0)
         this->seed(seed);
 
-    m_current_params.resize(m_n_params);
-    m_previous_params.resize(m_n_params);
+    m_current_proposed_params.resize(m_n_params);
+    m_current_accepted_params.resize(m_n_params);
 
     if (m_simulated_data != nullptr)
         m_simulated_data->resize(m_n_samples);
 
-    m_previous_params = m_initial_params;
-    m_current_params  = m_initial_params;
+    m_current_accepted_params = m_initial_params;
+    m_current_proposed_params  = m_initial_params;
 
     // Computing the baseline sufficient statistics
     m_summary_fun(m_observed_stats, m_observed_data, this);
     m_n_stats = m_observed_stats.size();
 
     // Reserving size
-    m_sample_drawn_prob.resize(m_n_samples);
-    m_sample_acceptance.resize(m_n_samples, false);
-    m_sample_stats.resize(m_n_samples * m_n_stats);
-    m_sample_kernel_scores.resize(m_n_samples);
+    m_all_sample_drawn_prob.resize(m_n_samples);
+    m_all_sample_acceptance.resize(m_n_samples, false);
+    m_all_sample_stats.resize(m_n_samples * m_n_stats);
+    m_all_sample_kernel_scores.resize(m_n_samples);
 
-    m_accepted_params.resize(m_n_samples * m_n_params);
-    m_accepted_stats.resize(m_n_samples * m_n_stats);
-    m_accepted_kernel_scores.resize(m_n_samples);
+    m_all_accepted_params.resize(m_n_samples * m_n_params);
+    m_all_accepted_stats.resize(m_n_samples * m_n_stats);
+    m_all_accepted_kernel_scores.resize(m_n_samples);
 
     TData data_i = m_simulation_fun(m_initial_params, this);
 
     std::vector< epiworld_double > proposed_stats_i;
     m_summary_fun(proposed_stats_i, data_i, this);
-    m_accepted_kernel_scores[0u] = m_kernel_fun(
+    m_all_accepted_kernel_scores[0u] = m_kernel_fun(
         proposed_stats_i, m_observed_stats, m_epsilon, this
         );
 
     // Recording statistics
     for (size_t i = 0u; i < m_n_stats; ++i)
-        m_sample_stats[i] = proposed_stats_i[i];
+        m_all_sample_stats[i] = proposed_stats_i[i];
 
     for (size_t k = 0u; k < m_n_params; ++k)
-        m_accepted_params[k] = m_initial_params[k];
+        m_all_accepted_params[k] = m_initial_params[k];
    
     // Init progress bar
     progress_bar = Progress(m_n_samples, 80);
@@ -1905,11 +1905,11 @@ inline void LFMCMC<TData>::run(
     // Run LFMCMC
     for (size_t i = 1u; i < m_n_samples; ++i)
     {
-        // Step 1: Generate a proposal and store it in m_current_params
-        m_proposal_fun(m_current_params, m_previous_params, this);
+        // Step 1: Generate a proposal and store it in m_current_proposed_params
+        m_proposal_fun(m_current_proposed_params, m_current_accepted_params, this);
 
-        // Step 2: Using m_current_params, simulate data
-        TData data_i = m_simulation_fun(m_current_params, this);
+        // Step 2: Using m_current_proposed_params, simulate data
+        TData data_i = m_simulation_fun(m_current_proposed_params, this);
 
         // Are we storing the data?
         if (m_simulated_data != nullptr)
@@ -1923,41 +1923,41 @@ inline void LFMCMC<TData>::run(
             proposed_stats_i, m_observed_stats, m_epsilon, this
             );
 
-        m_sample_kernel_scores[i] = hr;
+        m_all_sample_kernel_scores[i] = hr;
 
         // Storing data
         for (size_t k = 0u; k < m_n_stats; ++k)
-            m_sample_stats[i * m_n_stats + k] = proposed_stats_i[k];
+            m_all_sample_stats[i * m_n_stats + k] = proposed_stats_i[k];
         
         // Running Hastings ratio
         epiworld_double r = runif();
-        m_sample_drawn_prob[i] = r;
+        m_all_sample_drawn_prob[i] = r;
 
         // Step 5: Update if likely
-        if (r < std::min(static_cast<epiworld_double>(1.0), hr / m_accepted_kernel_scores[i - 1u]))
+        if (r < std::min(static_cast<epiworld_double>(1.0), hr / m_all_accepted_kernel_scores[i - 1u]))
         {
-            m_accepted_kernel_scores[i] = hr;
-            m_sample_acceptance[i]     = true;
+            m_all_accepted_kernel_scores[i] = hr;
+            m_all_sample_acceptance[i]     = true;
             
             for (size_t k = 0u; k < m_n_stats; ++k)
-                m_accepted_stats[i * m_n_stats + k] =
+                m_all_accepted_stats[i * m_n_stats + k] =
                     proposed_stats_i[k];
 
-            m_previous_params = m_current_params;
+            m_current_accepted_params = m_current_proposed_params;
 
         } else
         {
 
             for (size_t k = 0u; k < m_n_stats; ++k)
-                m_accepted_stats[i * m_n_stats + k] =
-                    m_accepted_stats[(i - 1) * m_n_stats + k];
+                m_all_accepted_stats[i * m_n_stats + k] =
+                    m_all_accepted_stats[(i - 1) * m_n_stats + k];
 
-            m_accepted_kernel_scores[i] = m_accepted_kernel_scores[i - 1u];
+            m_all_accepted_kernel_scores[i] = m_all_accepted_kernel_scores[i - 1u];
         }
             
 
         for (size_t k = 0u; k < m_n_params; ++k)
-            m_accepted_params[i * m_n_params + k] = m_previous_params[k];
+            m_all_accepted_params[i * m_n_params + k] = m_current_accepted_params[k];
 
         if (verbose) { 
             progress_bar.next(); 
@@ -2167,7 +2167,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         std::vector< epiworld_double > par_i(n_samples_print);
         for (size_t i = burnin; i < m_n_samples; ++i)
         {
-            par_i[i-burnin] = m_accepted_params[i * m_n_params + k];
+            par_i[i-burnin] = m_all_accepted_params[i * m_n_params + k];
             summ_params[k * 3] += par_i[i-burnin]/n_samples_dbl;
         }
 
@@ -2189,7 +2189,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         std::vector< epiworld_double > stat_k(n_samples_print);
         for (size_t i = burnin; i < m_n_samples; ++i)
         {
-            stat_k[i-burnin] = m_accepted_stats[i * m_n_stats + k];
+            stat_k[i-burnin] = m_all_accepted_stats[i * m_n_stats + k];
             summ_stats[k * 3] += stat_k[i-burnin]/n_samples_dbl;
         }
 
@@ -2412,7 +2412,7 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_params()
     for (size_t k = 0u; k < m_n_params; ++k)
     {
         for (size_t i = 0u; i < m_n_samples; ++i)
-            res[k] += (this->m_accepted_params[k + m_n_params * i])/
+            res[k] += (this->m_all_accepted_params[k + m_n_params * i])/
                 static_cast< epiworld_double >(m_n_samples);
     }
 
@@ -2428,7 +2428,7 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
     for (size_t k = 0u; k < m_n_stats; ++k)
     {
         for (size_t i = 0u; i < m_n_samples; ++i)
-            res[k] += (this->m_accepted_stats[k + m_n_stats * i])/
+            res[k] += (this->m_all_accepted_stats[k + m_n_stats * i])/
                 static_cast< epiworld_double >(m_n_samples);
     }
 
