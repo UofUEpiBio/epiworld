@@ -1232,6 +1232,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> m_start_time;
     std::chrono::time_point<std::chrono::steady_clock> m_end_time;
 
+    // Timing
     // std::chrono::milliseconds
     std::chrono::duration<epiworld_double,std::micro> m_elapsed_time = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
@@ -1245,6 +1246,10 @@ private:
 
     void chrono_start();
     void chrono_end();
+
+    // Progress
+    bool verbose = true;
+    Progress progress_bar;
     
 public:
 
@@ -1316,6 +1321,8 @@ public:
     std::vector< epiworld_double > get_mean_stats();
 
     // Printing
+    LFMCMC<TData> & verbose_off();
+    LFMCMC<TData> & verbose_on();
     void print(size_t burnin = 0u) const;
 
 };
@@ -1523,6 +1530,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> m_start_time;
     std::chrono::time_point<std::chrono::steady_clock> m_end_time;
 
+    // Timing
     // std::chrono::milliseconds
     std::chrono::duration<epiworld_double,std::micro> m_elapsed_time = 
         std::chrono::duration<epiworld_double,std::micro>::zero();
@@ -1536,6 +1544,10 @@ private:
 
     void chrono_start();
     void chrono_end();
+
+    // Progress
+    bool verbose = true;
+    Progress progress_bar;
     
 public:
 
@@ -1607,6 +1619,8 @@ public:
     std::vector< epiworld_double > get_mean_stats();
 
     // Printing
+    LFMCMC<TData> & verbose_off();
+    LFMCMC<TData> & verbose_on();
     void print(size_t burnin = 0u) const;
 
 };
@@ -1882,6 +1896,13 @@ inline void LFMCMC<TData>::run(
     for (size_t k = 0u; k < m_n_params; ++k)
         m_accepted_params[k] = m_initial_params[k];
    
+    // Init progress bar
+    progress_bar = Progress(m_n_samples, 80);
+    if (verbose) { 
+        progress_bar.next(); 
+    }
+
+    // Run LFMCMC
     for (size_t i = 1u; i < m_n_samples; ++i)
     {
         // Step 1: Generate a proposal and store it in m_current_params
@@ -1938,6 +1959,9 @@ inline void LFMCMC<TData>::run(
         for (size_t k = 0u; k < m_n_params; ++k)
             m_accepted_params[i * m_n_params + k] = m_previous_params[k];
 
+        if (verbose) { 
+            progress_bar.next(); 
+        }
     }
 
     // End timing
@@ -2410,6 +2434,20 @@ inline std::vector< epiworld_double > LFMCMC<TData>::get_mean_stats()
 
     return res;
 
+}
+
+template<typename TData>
+inline LFMCMC<TData> & LFMCMC<TData>::verbose_off()
+{
+    verbose = false;
+    return *this;
+}
+
+template<typename TData>
+inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
+{
+    verbose = true;
+    return *this;
 }
 
 #endif
