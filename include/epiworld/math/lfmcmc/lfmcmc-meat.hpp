@@ -239,6 +239,8 @@ inline void LFMCMC<TData>::run(
     m_n_stats = m_observed_stats.size();
 
     // Reserving size
+    m_current_proposed_stats.resize(m_n_stats);
+    m_current_accepted_stats.resize(m_n_stats);
     m_all_sample_drawn_prob.resize(m_n_samples);
     m_all_sample_acceptance.resize(m_n_samples, false);
     m_all_sample_stats.resize(m_n_samples * m_n_stats);
@@ -250,15 +252,16 @@ inline void LFMCMC<TData>::run(
 
     TData data_i = m_simulation_fun(m_initial_params, this);
 
-    std::vector< epiworld_double > proposed_stats_i;
-    m_summary_fun(proposed_stats_i, data_i, this);
+    m_summary_fun(m_current_proposed_stats, data_i, this);
     m_all_accepted_kernel_scores[0u] = m_kernel_fun(
-        proposed_stats_i, m_observed_stats, m_epsilon, this
+        m_current_proposed_stats, m_observed_stats, m_epsilon, this
         );
 
     // Recording statistics
     for (size_t i = 0u; i < m_n_stats; ++i)
-        m_all_sample_stats[i] = proposed_stats_i[i];
+        m_all_sample_stats[i] = m_current_proposed_stats[i];
+    
+    m_current_accepted_stats = m_current_proposed_stats;
 
     for (size_t k = 0u; k < m_n_params; ++k)
         m_all_accepted_params[k] = m_initial_params[k];
@@ -283,18 +286,18 @@ inline void LFMCMC<TData>::run(
             m_simulated_data->operator[](i) = data_i;
 
         // Step 3: Generate the summary statistics of the data
-        m_summary_fun(proposed_stats_i, data_i, this);
+        m_summary_fun(m_current_proposed_stats, data_i, this);
 
         // Step 4: Compute the hastings ratio using the kernel function
         epiworld_double hr = m_kernel_fun(
-            proposed_stats_i, m_observed_stats, m_epsilon, this
+            m_current_proposed_stats, m_observed_stats, m_epsilon, this
             );
 
         m_all_sample_kernel_scores[i] = hr;
 
         // Storing data
         for (size_t k = 0u; k < m_n_stats; ++k)
-            m_all_sample_stats[i * m_n_stats + k] = proposed_stats_i[k];
+            m_all_sample_stats[i * m_n_stats + k] = m_current_proposed_stats[k];
         
         // Running Hastings ratio
         epiworld_double r = runif();
@@ -308,10 +311,10 @@ inline void LFMCMC<TData>::run(
             
             for (size_t k = 0u; k < m_n_stats; ++k)
                 m_all_accepted_stats[i * m_n_stats + k] =
-                    proposed_stats_i[k];
+                    m_current_proposed_stats[k];
 
             m_current_accepted_params = m_current_proposed_params;
-
+            m_current_accepted_stats = m_current_proposed_stats;
         } else
         {
 

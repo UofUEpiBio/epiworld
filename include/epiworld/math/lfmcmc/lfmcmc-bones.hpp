@@ -144,6 +144,8 @@ private:
     std::vector< epiworld_double > m_initial_params;             ///< Initial parameters
     std::vector< epiworld_double > m_current_proposed_params;    ///< Proposed parameters for the next sample
     std::vector< epiworld_double > m_current_accepted_params;    ///< Most recently accepted parameters (current state of MCMC)
+    std::vector< epiworld_double > m_current_proposed_stats;     ///< Statistics from simulation run with proposed parameters
+    std::vector< epiworld_double > m_current_accepted_stats;     ///< Statistics from simulation run with most recently accepted params
 
     std::vector< epiworld_double > m_observed_stats;             ///< Observed statistics
 
@@ -240,6 +242,8 @@ public:
     const std::vector< epiworld_double > & get_initial_params() {return m_initial_params;};
     const std::vector< epiworld_double > & get_current_proposed_params() {return m_current_proposed_params;};
     const std::vector< epiworld_double > & get_current_accepted_params() {return m_current_accepted_params;};
+    const std::vector< epiworld_double > & get_current_proposed_stats() {return m_current_proposed_stats;};
+    const std::vector< epiworld_double > & get_current_accepted_stats() {return m_current_accepted_stats;};
 
     const std::vector< epiworld_double > & get_observed_stats() {return m_observed_stats;};
 
