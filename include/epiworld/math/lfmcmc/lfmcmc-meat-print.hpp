@@ -97,7 +97,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         
         if (n == 0) {
             // std::log10 will return -inf and throw a runtime error
-            tmp_nchar = s;
+            tmp_nchar = n;
         } else {
             tmp_nchar = std::floor(std::log10(std::abs(n)));
         }
