@@ -77,6 +77,29 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     REQUIRE_NOTHROW(model.print(50000));
     #endif 
 
+    // Add test of summary stats between [0, 1]
+    std::normal_distribution<epiworld_double> rnorm2(0.5, 0.5);
+
+    vec_double obsdata2;
+    for (size_t i = 0u; i < 50000; ++i)
+        obsdata2.push_back(rnorm2(*rand));
+
+    LFMCMC< vec_double > model2(obsdata2);
+    model2.set_rand_engine(rand);
+
+    model2.set_simulation_fun(simfun);
+    model2.set_summary_fun(summary_fun);
+    model2.set_proposal_fun(make_proposal_norm_reflective<vec_double>(.05, .0000001, 10));
+    model2.set_kernel_fun(kernel_fun_gaussian<vec_double>);
+
+    model2.run({1,1}, 100000, .125);
+    model2.print();
+
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_NOTHROW(model2.print());
+    #endif 
+
+
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif

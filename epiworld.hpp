@@ -19,7 +19,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 6
-#define EPIWORLD_VERSION_PATCH 0
+#define EPIWORLD_VERSION_PATCH 1
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -2243,7 +2243,16 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     for (auto & n : summ_params)
     {
         
-        int tmp_nchar = std::floor(std::log10(std::abs(n)));
+        int tmp_nchar;
+        
+        if (std::abs(n) < 1) {
+            // std::log10(<1) will return negative number
+            // std::log10(0) will return -inf and throw a runtime error
+            tmp_nchar = 0;
+        } else {
+            tmp_nchar = std::floor(std::log10(std::abs(n)));
+        }
+
         if (nchar_par_num < tmp_nchar)
             nchar_par_num = tmp_nchar;
     }
@@ -2311,7 +2320,15 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     int nchar = 0;
     for (auto & s : summ_stats)
     {
-        int tmp_nchar = std::floor(std::log10(std::abs(s)));
+        int tmp_nchar;
+        if (std::abs(s) < 1) {
+            // std::log10(<1) will return negative number
+            // std::log10(0) will return -inf and throw a runtime error
+            tmp_nchar = 0;
+        } else {
+            tmp_nchar = std::floor(std::log10(std::abs(s)));
+        }
+    
         if (nchar < tmp_nchar)
             nchar = tmp_nchar;
     }
