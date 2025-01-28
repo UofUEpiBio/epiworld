@@ -2245,7 +2245,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         
         int tmp_nchar;
         
-        if (n < 1) {
+        if (std::abs(n) < 1) {
             // std::log10(<1) will return negative number
             // std::log10(0) will return -inf and throw a runtime error
             tmp_nchar = 0;
@@ -2321,7 +2321,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     for (auto & s : summ_stats)
     {
         int tmp_nchar;
-        if (s < 1) {
+        if (std::abs(s) < 1) {
             // std::log10(<1) will return negative number
             // std::log10(0) will return -inf and throw a runtime error
             tmp_nchar = 0;
