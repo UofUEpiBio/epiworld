@@ -2245,9 +2245,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
         
         int tmp_nchar;
         
-        if (n == 0) {
-            // std::log10 will return -inf and throw a runtime error
-            tmp_nchar = n;
+        if (n < 1) {
+            // std::log10(<1) will return negative number
+            // std::log10(0) will return -inf and throw a runtime error
+            tmp_nchar = 0;
         } else {
             tmp_nchar = std::floor(std::log10(std::abs(n)));
         }
@@ -2320,9 +2321,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     for (auto & s : summ_stats)
     {
         int tmp_nchar;
-        if (s == 0) {
-            // std::log10 will return -inf and throw a runtime error
-            tmp_nchar = s;
+        if (s < 1) {
+            // std::log10(<1) will return negative number
+            // std::log10(0) will return -inf and throw a runtime error
+            tmp_nchar = 0;
         } else {
             tmp_nchar = std::floor(std::log10(std::abs(s)));
         }
