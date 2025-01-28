@@ -77,6 +77,7 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     REQUIRE_NOTHROW(model.print(50000));
     #endif 
 
+    // Add test of summary stats between [0, 1]
     std::normal_distribution<epiworld_double> rnorm2(0.5, 0.5);
 
     vec_double obsdata2;
