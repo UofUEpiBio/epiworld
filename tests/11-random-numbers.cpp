@@ -92,7 +92,7 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(moreless(m_lognormal, std::exp(0.5), 0.025));
-    REQUIRE_FALSE(moreless(v_lognormal/(std::exp(1.0) - 1.0)*std::exp(1.0), 1.0, 0.25));
+    REQUIRE_FALSE(moreless(v_lognormal/((std::exp(1.0) - 1.0)*std::exp(1.0)), 1.0, 0.25));
     #endif
 
     // Now with binomial
