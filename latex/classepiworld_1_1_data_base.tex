@@ -68,7 +68,7 @@ void {\bfseries add\+\_\+user\+\_\+data} (epiworld\+\_\+fast\+\_\+uint j, epiwor
 \mbox{\Hypertarget{classepiworld_1_1_data_base_a3323ea7c7b2fbd8366ac7e8efd5528b8}\label{classepiworld_1_1_data_base_a3323ea7c7b2fbd8366ac7e8efd5528b8}} 
 \mbox{\hyperlink{classepiworld_1_1_user_data}{User\+Data}}$<$ TSeq $>$ \& {\bfseries get\+\_\+user\+\_\+data} ()
 \item 
-std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{classepiworld_1_1_data_base_a3391ab73b07892c8b66160e61dd294fd}{transition\+\_\+probability}} (bool print=true) const
+std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{classepiworld_1_1_data_base_ae02117c39eb4f2f1229c0415b31e68fe}{transition\+\_\+probability}} (bool print=true, bool normalize=true) const
 \begin{DoxyCompactList}\small\item\em Calculates the transition probabilities. \end{DoxyCompactList}\item 
 bool \mbox{\hyperlink{classepiworld_1_1_data_base_ab387bebbab95525c452660a7701c457d}{operator==}} (const \mbox{\hyperlink{classepiworld_1_1_data_base}{Data\+Base}}$<$ TSeq $>$ \&other) const
 \item 
@@ -275,12 +275,12 @@ By definition, whereas it computes R0 (basic reproductive number) or Rt/R (the e
 {\em fn} & File where to write out the reproductive number. \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classepiworld_1_1_data_base_a3391ab73b07892c8b66160e61dd294fd}\label{classepiworld_1_1_data_base_a3391ab73b07892c8b66160e61dd294fd}} 
+\mbox{\Hypertarget{classepiworld_1_1_data_base_ae02117c39eb4f2f1229c0415b31e68fe}\label{classepiworld_1_1_data_base_ae02117c39eb4f2f1229c0415b31e68fe}} 
 \index{epiworld::DataBase$<$ TSeq $>$@{epiworld::DataBase$<$ TSeq $>$}!transition\_probability@{transition\_probability}}
 \index{transition\_probability@{transition\_probability}!epiworld::DataBase$<$ TSeq $>$@{epiworld::DataBase$<$ TSeq $>$}}
 \doxysubsubsection{\texorpdfstring{transition\_probability()}{transition\_probability()}}
 {\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{classepiworld_1_1_data_base}{Data\+Base}}$<$ TSeq $>$\+::transition\+\_\+probability (\begin{DoxyParamCaption}\item[{bool}]{print = {\ttfamily true} }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{classepiworld_1_1_data_base}{Data\+Base}}$<$ TSeq $>$\+::transition\+\_\+probability (\begin{DoxyParamCaption}\item[{bool}]{print = {\ttfamily true},  }\item[{bool}]{normalize = {\ttfamily true} }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
 
 
 

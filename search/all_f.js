@@ -4,5 +4,5 @@ var searchData=
   ['tool_96',['Tool',['../classepiworld_1_1_tool.html',1,'epiworld::Tool&lt; TSeq &gt;'],['../class_tool.html',1,'Tool&lt; TSeq &gt;']]],
   ['tools_97',['Tools',['../classepiworld_1_1_tools.html',1,'epiworld::Tools&lt; TSeq &gt;'],['../class_tools.html',1,'Tools&lt; TSeq &gt;']]],
   ['tools_5fconst_98',['Tools_const',['../classepiworld_1_1_tools__const.html',1,'epiworld::Tools_const&lt; TSeq &gt;'],['../class_tools__const.html',1,'Tools_const&lt; TSeq &gt;']]],
-  ['transition_5fprobability_99',['transition_probability',['../classepiworld_1_1_data_base.html#a3391ab73b07892c8b66160e61dd294fd',1,'epiworld::DataBase::transition_probability()'],['../class_data_base.html#a3391ab73b07892c8b66160e61dd294fd',1,'DataBase::transition_probability()']]]
+  ['transition_5fprobability_99',['transition_probability',['../classepiworld_1_1_data_base.html#ae02117c39eb4f2f1229c0415b31e68fe',1,'epiworld::DataBase::transition_probability()'],['../class_data_base.html#ae02117c39eb4f2f1229c0415b31e68fe',1,'DataBase::transition_probability()']]]
 ];

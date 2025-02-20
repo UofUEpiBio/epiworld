@@ -137,9 +137,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>add_user_data</b> (ep
 <tr class="memitem:a3323ea7c7b2fbd8366ac7e8efd5528b8"><td class="memItemLeft" align="right" valign="top"><a id="a3323ea7c7b2fbd8366ac7e8efd5528b8"></a>
 <a class="el" href="class_user_data.html">UserData</a>&lt; TSeq &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_user_data</b> ()</td></tr>
 <tr class="separator:a3323ea7c7b2fbd8366ac7e8efd5528b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3391ab73b07892c8b66160e61dd294fd"><td class="memItemLeft" align="right" valign="top">std::vector&lt; epiworld_double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_data_base.html#a3391ab73b07892c8b66160e61dd294fd">transition_probability</a> (bool print=true) const</td></tr>
-<tr class="memdesc:a3391ab73b07892c8b66160e61dd294fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the transition probabilities.  <a href="class_data_base.html#a3391ab73b07892c8b66160e61dd294fd">More...</a><br /></td></tr>
-<tr class="separator:a3391ab73b07892c8b66160e61dd294fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae02117c39eb4f2f1229c0415b31e68fe"><td class="memItemLeft" align="right" valign="top">std::vector&lt; epiworld_double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_data_base.html#ae02117c39eb4f2f1229c0415b31e68fe">transition_probability</a> (bool print=true, bool normalize=true) const</td></tr>
+<tr class="memdesc:ae02117c39eb4f2f1229c0415b31e68fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the transition probabilities.  <a href="class_data_base.html#ae02117c39eb4f2f1229c0415b31e68fe">More...</a><br /></td></tr>
+<tr class="separator:ae02117c39eb4f2f1229c0415b31e68fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab387bebbab95525c452660a7701c457d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_data_base.html#ab387bebbab95525c452660a7701c457d">operator==</a> (const <a class="el" href="class_data_base.html">DataBase</a>&lt; TSeq &gt; &amp;other) const</td></tr>
 <tr class="separator:ab387bebbab95525c452660a7701c457d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac5d9c063be411ebe4fb7e2a08468eaf2"><td class="memItemLeft" align="right" valign="top"><a id="ac5d9c063be411ebe4fb7e2a08468eaf2"></a>
@@ -540,8 +540,8 @@ template&lt;typename TSeq &gt; </div>
 
 </div>
 </div>
-<a id="a3391ab73b07892c8b66160e61dd294fd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3391ab73b07892c8b66160e61dd294fd">&#9670;&nbsp;</a></span>transition_probability()</h2>
+<a id="ae02117c39eb4f2f1229c0415b31e68fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae02117c39eb4f2f1229c0415b31e68fe">&#9670;&nbsp;</a></span>transition_probability()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -555,8 +555,18 @@ template&lt;typename TSeq &gt; </div>
           <td class="memname">std::vector&lt; epiworld_double &gt; <a class="el" href="class_data_base.html">DataBase</a>&lt; TSeq &gt;::transition_probability </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>print</em> = <code>true</code></td><td>)</td>
-          <td> const</td>
+          <td class="paramname"><em>print</em> = <code>true</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>normalize</em> = <code>true</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
         </tr>
       </table>
   </td>
