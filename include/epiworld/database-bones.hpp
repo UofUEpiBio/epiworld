@@ -287,7 +287,8 @@ public:
      * @return std::vector< epiworld_double > 
      */
     std::vector< epiworld_double > transition_probability(
-        bool print = true
+        bool print = true,
+        bool normalize = true
     ) const;
 
     bool operator==(const DataBase<TSeq> & other) const;
