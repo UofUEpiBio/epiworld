@@ -3272,7 +3272,8 @@ public:
      * @return std::vector< epiworld_double > 
      */
     std::vector< epiworld_double > transition_probability(
-        bool print = true
+        bool print = true,
+        bool normalize = true
     ) const;
 
     bool operator==(const DataBase<TSeq> & other) const;
@@ -4493,7 +4494,8 @@ inline void DataBase<TSeq>::reproductive_number(
 
 template<typename TSeq>
 inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
-    bool print
+    bool print,
+    bool normalize
 ) const {
 
     auto states_labels = model->get_states();
@@ -4507,7 +4509,8 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
 
         for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
-            epiworld_double daily_total = hist_total_counts[(t - 1) * n_state + s_i];
+            epiworld_double daily_total =
+                hist_total_counts[(t - 1) * n_state + s_i];
 
             if (daily_total == 0)
                 continue;
@@ -4542,10 +4545,13 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
 
     }
 
-    for (size_t s_i = 0; s_i < n_state; ++s_i)
+    if (normalize)
     {
-        for (size_t s_j = 0; s_j < n_state; ++s_j)
-            res[s_i + s_j * n_state] /= days_to_include[s_i];
+        for (size_t s_i = 0; s_i < n_state; ++s_i)
+        {
+            for (size_t s_j = 0; s_j < n_state; ++s_j)
+                res[s_i + s_j * n_state] /= days_to_include[s_i];
+        }
     }
 
     if (print)
@@ -4557,6 +4563,21 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
                 nchar = l.length();
 
         std::string fmt = " - %-" + std::to_string(nchar) + "s";
+
+        std::string fmt_entry = " % 4.2f";
+        if (!normalize)
+        {
+            nchar = 0u;
+            for (auto & l: res)
+            {
+                std::string tmp = std::to_string(l);
+                if (tmp.length() > nchar)
+                    nchar = tmp.length();
+            }
+
+            fmt_entry = " % " + std::to_string(nchar) + ".0f";
+        } 
+
         
         printf_epiworld("\nTransition Probabilities:\n");
         for (size_t s_i = 0u; s_i < n_state; ++s_i)
@@ -4568,7 +4589,9 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
                 {
                     printf_epiworld("     -");
                 } else {
-                    printf_epiworld(" % 4.2f", res[s_i + s_j * n_state]);
+                    printf_epiworld(
+                        fmt_entry.c_str(), res[s_i + s_j * n_state]
+                    );
                 }
             }
             printf_epiworld("\n");
