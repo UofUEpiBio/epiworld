@@ -6629,6 +6629,8 @@ public:
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     void set_rand_lognormal(epiworld_double mean, epiworld_double shape);
     void set_rand_binom(int n, epiworld_double p);
+    void set_rand_nbinom(int n, epiworld_double p);
+    void set_rand_geom(epiworld_double p);
     epiworld_double runif();
     epiworld_double runif(epiworld_double a, epiworld_double b);
     epiworld_double rnorm();
@@ -6641,6 +6643,10 @@ public:
     epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
     int rbinom();
     int rbinom(int n, epiworld_double p);
+    int rnbinom();
+    int rnbinom(int n, epiworld_double p);
+    int rgeom();
+    int rgeom(epiworld_double p);
     ///@}
 
     /**
@@ -7787,6 +7793,18 @@ inline void Model<TSeq>::set_rand_binom(int n, epiworld_double p)
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::set_rand_nbinom(int n, epiworld_double p)
+{ 
+    rnbinomd  = std::negative_binomial_distribution<>(n, p);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_rand_geom(epiworld_double p)
+{ 
+    rgeomd  = std::geometric_distribution<>(p);
+}
+
+template<typename TSeq>
 inline epiworld_double & Model<TSeq>::operator()(std::string pname) {
 
     if (parameters.find(pname) == parameters.end())
@@ -7972,6 +7990,34 @@ inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
     rbinomd.param(std::binomial_distribution<>::param_type(n, p));
     epiworld_double ans = rbinomd(*engine);
     rbinomd.param(old_param);
+    return ans;
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::rnbinom() {
+    return rnbinomd(*engine);
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::rnbinom(int n, epiworld_double p) {
+    auto old_param = rnbinomd.param();
+    rnbinomd.param(std::negative_binomial_distribution<>::param_type(n, p));
+    int ans = rnbinomd(*engine);
+    rnbinomd.param(old_param);
+    return ans;
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::rgeom() {
+    return rgeomd(*engine);
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::rgeom(epiworld_double p) {
+    auto old_param = rgeomd.param();
+    rgeomd.param(std::geometric_distribution<>::param_type(p));
+    int ans = rgeomd(*engine);
+    rgeomd.param(old_param);
     return ans;
 }
 

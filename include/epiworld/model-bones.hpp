@@ -295,6 +295,8 @@ public:
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     void set_rand_lognormal(epiworld_double mean, epiworld_double shape);
     void set_rand_binom(int n, epiworld_double p);
+    void set_rand_nbinom(int n, epiworld_double p);
+    void set_rand_geom(epiworld_double p);
     epiworld_double runif();
     epiworld_double runif(epiworld_double a, epiworld_double b);
     epiworld_double rnorm();
@@ -307,6 +309,10 @@ public:
     epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
     int rbinom();
     int rbinom(int n, epiworld_double p);
+    int rnbinom();
+    int rnbinom(int n, epiworld_double p);
+    int rgeom();
+    int rgeom(epiworld_double p);
     ///@}
 
     /**
