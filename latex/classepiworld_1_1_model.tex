@@ -631,6 +631,12 @@ std\+::exponential\+\_\+distribution {\bfseries rexpd}
 \item 
 std\+::binomial\+\_\+distribution {\bfseries rbinomd}
 \item 
+std\+::negative\+\_\+binomial\+\_\+distribution {\bfseries rnbinomd}
+\item 
+std\+::geometric\+\_\+distribution {\bfseries rgeomd}
+\item 
+std\+::poisson\+\_\+distribution {\bfseries rpoissd}
+\item 
 \mbox{\Hypertarget{classepiworld_1_1_model_a127cc182f4251ece712cfadf80b59ecf}\label{classepiworld_1_1_model_a127cc182f4251ece712cfadf80b59ecf}} 
 std\+::function$<$ void(std\+::vector$<$ \mbox{\hyperlink{classepiworld_1_1_agent}{Agent}}$<$ TSeq $>$$>$ $\ast$, \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$, epiworld\+\_\+double)$>$ {\bfseries rewire\+\_\+fun}
 \item 
@@ -1057,6 +1063,19 @@ std\+::gamma\+\_\+distribution \mbox{\hyperlink{classepiworld_1_1_model}{epiworl
 \DoxyCodeLine{        std::gamma\_distribution<>()}
 
 \end{DoxyCode}
+\mbox{\Hypertarget{classepiworld_1_1_model_acae2744bd904356b5a0ddcd7231e529f}\label{classepiworld_1_1_model_acae2744bd904356b5a0ddcd7231e529f}} 
+\index{epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}!rgeomd@{rgeomd}}
+\index{rgeomd@{rgeomd}!epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{rgeomd}{rgeomd}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::geometric\+\_\+distribution \mbox{\hyperlink{classepiworld_1_1_model}{epiworld\+::\+Model}}$<$ TSeq $>$\+::rgeomd\hspace{0.3cm}{\ttfamily [protected]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=}
+\DoxyCodeLine{        std::geometric\_distribution<>()}
+
+\end{DoxyCode}
 \mbox{\Hypertarget{classepiworld_1_1_model_a7089d3aab9f5b61ab86fd116828616ff}\label{classepiworld_1_1_model_a7089d3aab9f5b61ab86fd116828616ff}} 
 \index{epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}!rlognormald@{rlognormald}}
 \index{rlognormald@{rlognormald}!epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}}
@@ -1070,6 +1089,19 @@ std\+::lognormal\+\_\+distribution \mbox{\hyperlink{classepiworld_1_1_model}{epi
 \DoxyCodeLine{        std::lognormal\_distribution<>()}
 
 \end{DoxyCode}
+\mbox{\Hypertarget{classepiworld_1_1_model_ab65af6566c951bef29bd8adc6016ec23}\label{classepiworld_1_1_model_ab65af6566c951bef29bd8adc6016ec23}} 
+\index{epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}!rnbinomd@{rnbinomd}}
+\index{rnbinomd@{rnbinomd}!epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{rnbinomd}{rnbinomd}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::negative\+\_\+binomial\+\_\+distribution \mbox{\hyperlink{classepiworld_1_1_model}{epiworld\+::\+Model}}$<$ TSeq $>$\+::rnbinomd\hspace{0.3cm}{\ttfamily [protected]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=}
+\DoxyCodeLine{        std::negative\_binomial\_distribution<>()}
+
+\end{DoxyCode}
 \mbox{\Hypertarget{classepiworld_1_1_model_abcb3d881826aa03f5d688869749fc336}\label{classepiworld_1_1_model_abcb3d881826aa03f5d688869749fc336}} 
 \index{epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}!rnormd@{rnormd}}
 \index{rnormd@{rnormd}!epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}}
@@ -1081,6 +1113,19 @@ std\+::normal\+\_\+distribution \mbox{\hyperlink{classepiworld_1_1_model}{epiwor
 \begin{DoxyCode}{0}
 \DoxyCodeLine{=}
 \DoxyCodeLine{        std::normal\_distribution<>(0.0)}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classepiworld_1_1_model_a395488900405f7cef9a162d84e9c4cb4}\label{classepiworld_1_1_model_a395488900405f7cef9a162d84e9c4cb4}} 
+\index{epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}!rpoissd@{rpoissd}}
+\index{rpoissd@{rpoissd}!epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{rpoissd}{rpoissd}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::poisson\+\_\+distribution \mbox{\hyperlink{classepiworld_1_1_model}{epiworld\+::\+Model}}$<$ TSeq $>$\+::rpoissd\hspace{0.3cm}{\ttfamily [protected]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=}
+\DoxyCodeLine{        std::poisson\_distribution<>()}
 
 \end{DoxyCode}
 \mbox{\Hypertarget{classepiworld_1_1_model_ac6e3cf369ccd0e3b7ab5f5d37ab8f8c7}\label{classepiworld_1_1_model_ac6e3cf369ccd0e3b7ab5f5d37ab8f8c7}} 

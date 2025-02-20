@@ -631,6 +631,12 @@ std\+::exponential\+\_\+distribution {\bfseries rexpd}
 \item 
 std\+::binomial\+\_\+distribution {\bfseries rbinomd}
 \item 
+std\+::negative\+\_\+binomial\+\_\+distribution {\bfseries rnbinomd}
+\item 
+std\+::geometric\+\_\+distribution {\bfseries rgeomd}
+\item 
+std\+::poisson\+\_\+distribution {\bfseries rpoissd}
+\item 
 \mbox{\Hypertarget{class_model_ac660f47b4f5536857d0c2b5900873bc5}\label{class_model_ac660f47b4f5536857d0c2b5900873bc5}} 
 std\+::function$<$ void(std\+::vector$<$ \mbox{\hyperlink{class_agent}{Agent}}$<$ TSeq $>$$>$ $\ast$, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$, epiworld\+\_\+double)$>$ {\bfseries rewire\+\_\+fun}
 \item 
@@ -1049,6 +1055,19 @@ std\+::gamma\+\_\+distribution \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$
 \DoxyCodeLine{        std::gamma\_distribution<>()}
 
 \end{DoxyCode}
+\mbox{\Hypertarget{class_model_adfc69657bde1a4e91cf9107cd490c010}\label{class_model_adfc69657bde1a4e91cf9107cd490c010}} 
+\index{Model$<$ TSeq $>$@{Model$<$ TSeq $>$}!rgeomd@{rgeomd}}
+\index{rgeomd@{rgeomd}!Model$<$ TSeq $>$@{Model$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{rgeomd}{rgeomd}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::geometric\+\_\+distribution \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$\+::rgeomd\hspace{0.3cm}{\ttfamily [protected]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=}
+\DoxyCodeLine{        std::geometric\_distribution<>()}
+
+\end{DoxyCode}
 \mbox{\Hypertarget{class_model_a3b19990554c5ef6a10e4bcc7cd4c5c04}\label{class_model_a3b19990554c5ef6a10e4bcc7cd4c5c04}} 
 \index{Model$<$ TSeq $>$@{Model$<$ TSeq $>$}!rlognormald@{rlognormald}}
 \index{rlognormald@{rlognormald}!Model$<$ TSeq $>$@{Model$<$ TSeq $>$}}
@@ -1062,6 +1081,19 @@ std\+::lognormal\+\_\+distribution \mbox{\hyperlink{class_model}{Model}}$<$ TSeq
 \DoxyCodeLine{        std::lognormal\_distribution<>()}
 
 \end{DoxyCode}
+\mbox{\Hypertarget{class_model_ad8a6c4fbf5860941fb4bb995173aeb36}\label{class_model_ad8a6c4fbf5860941fb4bb995173aeb36}} 
+\index{Model$<$ TSeq $>$@{Model$<$ TSeq $>$}!rnbinomd@{rnbinomd}}
+\index{rnbinomd@{rnbinomd}!Model$<$ TSeq $>$@{Model$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{rnbinomd}{rnbinomd}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::negative\+\_\+binomial\+\_\+distribution \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$\+::rnbinomd\hspace{0.3cm}{\ttfamily [protected]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=}
+\DoxyCodeLine{        std::negative\_binomial\_distribution<>()}
+
+\end{DoxyCode}
 \mbox{\Hypertarget{class_model_ab7545b52c050d063f7825f0486cc2043}\label{class_model_ab7545b52c050d063f7825f0486cc2043}} 
 \index{Model$<$ TSeq $>$@{Model$<$ TSeq $>$}!rnormd@{rnormd}}
 \index{rnormd@{rnormd}!Model$<$ TSeq $>$@{Model$<$ TSeq $>$}}
@@ -1073,6 +1105,19 @@ std\+::normal\+\_\+distribution \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>
 \begin{DoxyCode}{0}
 \DoxyCodeLine{=}
 \DoxyCodeLine{        std::normal\_distribution<>(0.0)}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_model_ac87a24cf69ae7cc8ec3b4e6604b31f19}\label{class_model_ac87a24cf69ae7cc8ec3b4e6604b31f19}} 
+\index{Model$<$ TSeq $>$@{Model$<$ TSeq $>$}!rpoissd@{rpoissd}}
+\index{rpoissd@{rpoissd}!Model$<$ TSeq $>$@{Model$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{rpoissd}{rpoissd}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::poisson\+\_\+distribution \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$\+::rpoissd\hspace{0.3cm}{\ttfamily [protected]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=}
+\DoxyCodeLine{        std::poisson\_distribution<>()}
 
 \end{DoxyCode}
 \mbox{\Hypertarget{class_model_ac57aa5428270d201ea4b75df1ef4f7a6}\label{class_model_ac57aa5428270d201ea4b75df1ef4f7a6}} 

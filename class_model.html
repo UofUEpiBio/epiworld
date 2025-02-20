@@ -678,6 +678,12 @@ std::shared_ptr&lt; std::mt19937 &gt;&#160;</td><td class="memItemRight" valign=
 <tr class="separator:a1a94be1c0b9b32abb00890ddcec4d4aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a3242127ab7ca8fb026103d7edfe3d0"><td class="memItemLeft" align="right" valign="top">std::binomial_distribution&#160;</td><td class="memItemRight" valign="bottom"><b>rbinomd</b></td></tr>
 <tr class="separator:a1a3242127ab7ca8fb026103d7edfe3d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8a6c4fbf5860941fb4bb995173aeb36"><td class="memItemLeft" align="right" valign="top">std::negative_binomial_distribution&#160;</td><td class="memItemRight" valign="bottom"><b>rnbinomd</b></td></tr>
+<tr class="separator:ad8a6c4fbf5860941fb4bb995173aeb36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfc69657bde1a4e91cf9107cd490c010"><td class="memItemLeft" align="right" valign="top">std::geometric_distribution&#160;</td><td class="memItemRight" valign="bottom"><b>rgeomd</b></td></tr>
+<tr class="separator:adfc69657bde1a4e91cf9107cd490c010"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac87a24cf69ae7cc8ec3b4e6604b31f19"><td class="memItemLeft" align="right" valign="top">std::poisson_distribution&#160;</td><td class="memItemRight" valign="bottom"><b>rpoissd</b></td></tr>
+<tr class="separator:ac87a24cf69ae7cc8ec3b4e6604b31f19"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac660f47b4f5536857d0c2b5900873bc5"><td class="memItemLeft" align="right" valign="top"><a id="ac660f47b4f5536857d0c2b5900873bc5"></a>
 std::function&lt; void(std::vector&lt; <a class="el" href="class_agent.html">Agent</a>&lt; TSeq &gt;&gt; *, <a class="el" href="class_model.html">Model</a>&lt; TSeq &gt; *, epiworld_double)&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>rewire_fun</b></td></tr>
 <tr class="separator:ac660f47b4f5536857d0c2b5900873bc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1495,6 +1501,32 @@ template&lt;typename TSeq &gt; </div>
 </div><!-- fragment -->
 </div>
 </div>
+<a id="adfc69657bde1a4e91cf9107cd490c010"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adfc69657bde1a4e91cf9107cd490c010">&#9670;&nbsp;</a></span>rgeomd</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename TSeq &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::geometric_distribution <a class="el" href="class_model.html">Model</a>&lt; TSeq &gt;::rgeomd</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line">        std::geometric_distribution&lt;&gt;()</div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="a3b19990554c5ef6a10e4bcc7cd4c5c04"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3b19990554c5ef6a10e4bcc7cd4c5c04">&#9670;&nbsp;</a></span>rlognormald</h2>
 
@@ -1521,6 +1553,32 @@ template&lt;typename TSeq &gt; </div>
 </div><!-- fragment -->
 </div>
 </div>
+<a id="ad8a6c4fbf5860941fb4bb995173aeb36"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8a6c4fbf5860941fb4bb995173aeb36">&#9670;&nbsp;</a></span>rnbinomd</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename TSeq &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::negative_binomial_distribution <a class="el" href="class_model.html">Model</a>&lt; TSeq &gt;::rnbinomd</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line">        std::negative_binomial_distribution&lt;&gt;()</div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="ab7545b52c050d063f7825f0486cc2043"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab7545b52c050d063f7825f0486cc2043">&#9670;&nbsp;</a></span>rnormd</h2>
 
@@ -1544,6 +1602,32 @@ template&lt;typename TSeq &gt; </div>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">=</div>
 <div class="line">        std::normal_distribution&lt;&gt;(0.0)</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="ac87a24cf69ae7cc8ec3b4e6604b31f19"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac87a24cf69ae7cc8ec3b4e6604b31f19">&#9670;&nbsp;</a></span>rpoissd</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename TSeq &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::poisson_distribution <a class="el" href="class_model.html">Model</a>&lt; TSeq &gt;::rpoissd</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line">        std::poisson_distribution&lt;&gt;()</div>
 </div><!-- fragment -->
 </div>
 </div>
