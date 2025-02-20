@@ -154,6 +154,12 @@ protected:
         std::exponential_distribution<>();
     std::binomial_distribution<> rbinomd         =
         std::binomial_distribution<>();
+    std::negative_binomial_distribution<> rnbinomd =
+        std::negative_binomial_distribution<>();
+    std::geometric_distribution<> rgeomd          =
+        std::geometric_distribution<>();
+    std::poisson_distribution<> rpoissd           =
+        std::poisson_distribution<>();
 
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop = 0.0;
