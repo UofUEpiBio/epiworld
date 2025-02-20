@@ -723,6 +723,12 @@ inline void Model<TSeq>::set_rand_geom(epiworld_double p)
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::set_rand_poiss(epiworld_double lambda)
+{ 
+    rpoissd  = std::poisson_distribution<>(lambda);
+}
+
+template<typename TSeq>
 inline epiworld_double & Model<TSeq>::operator()(std::string pname) {
 
     if (parameters.find(pname) == parameters.end())
@@ -936,6 +942,20 @@ inline int Model<TSeq>::rgeom(epiworld_double p) {
     rgeomd.param(std::geometric_distribution<>::param_type(p));
     int ans = rgeomd(*engine);
     rgeomd.param(old_param);
+    return ans;
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::rpoiss() {
+    return rpoissd(*engine);
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::rpoiss(epiworld_double lambda) {
+    auto old_param = rpoissd.param();
+    rpoissd.param(std::poisson_distribution<>::param_type(lambda));
+    int ans = rpoissd(*engine);
+    rpoissd.param(old_param);
     return ans;
 }
 

@@ -297,6 +297,7 @@ public:
     void set_rand_binom(int n, epiworld_double p);
     void set_rand_nbinom(int n, epiworld_double p);
     void set_rand_geom(epiworld_double p);
+    void set_rand_poiss(epiworld_double lambda);
     epiworld_double runif();
     epiworld_double runif(epiworld_double a, epiworld_double b);
     epiworld_double rnorm();
@@ -313,6 +314,8 @@ public:
     int rnbinom(int n, epiworld_double p);
     int rgeom();
     int rgeom(epiworld_double p);
+    int rpoiss();
+    int rpoiss(epiworld_double lambda);
     ///@}
 
     /**
