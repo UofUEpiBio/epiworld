@@ -48,7 +48,9 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
         if (as_proportion)
         {
             n_to_sample = static_cast<int>(std::floor(prevalence * n));
-            if (n_to_sample > static_cast<int>(n))
+
+            // Correcting for possible overflow
+            if (n_to_sample == (static_cast<int>(n) + 1))
                 --n_to_sample;
 
         } else

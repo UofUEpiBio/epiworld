@@ -19,7 +19,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 7
-#define EPIWORLD_VERSION_PATCH 0
+#define EPIWORLD_VERSION_PATCH 1
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -6964,8 +6964,10 @@ public:
      * 
      */
     ///@{
-    epiworld_double add_param(epiworld_double initial_val, std::string pname);
-    void read_params(std::string fn);
+    epiworld_double add_param(
+        epiworld_double initial_val, std::string pname, bool overwrite = false
+    );
+    void read_params(std::string fn, bool overwrite = false);
     epiworld_double get_param(epiworld_fast_uint k);
     epiworld_double get_param(std::string pname);
     // void set_param(size_t k, epiworld_double val);
@@ -9483,10 +9485,15 @@ inline void Model<TSeq>::print_state_codes() const
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::add_param(
     epiworld_double initial_value,
-    std::string pname
+    std::string pname,
+    bool overwrite
     ) {
 
     if (parameters.find(pname) == parameters.end())
+        parameters[pname] = initial_value;
+    else if (!overwrite)
+        throw std::logic_error("The parameter " + pname + " already exists.");
+    else
         parameters[pname] = initial_value;
     
     return initial_value;
@@ -9494,7 +9501,7 @@ inline epiworld_double Model<TSeq>::add_param(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::read_params(std::string fn)
+inline void Model<TSeq>::read_params(std::string fn, bool overwrite)
 {
 
     std::ifstream paramsfile(fn);
@@ -9532,7 +9539,8 @@ inline void Model<TSeq>::read_params(std::string fn)
             std::regex_replace(
                 match[1u].str(),
                 std::regex("^\\s+|\\s+$"),
-                "")
+                ""),
+            overwrite
         );
 
     }
@@ -10567,15 +10575,18 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
                 idx.push_back(agent.get_id());
 
         // Picking how many
-        size_t n = model->size();
+        int n = model->size();
         int n_available = static_cast<int>(idx.size());
         int n_to_sample;
         if (prevalence_as_proportion)
         {
-            n_to_sample = static_cast<int>(std::floor(prevalence * n));
+            n_to_sample = static_cast<int>(std::floor(
+                prevalence * static_cast< epiworld_double >(n)
+            ));
 
-            if (n_to_sample == static_cast<int>(n))
-                n_to_sample--;
+            // Correcting for possible overflow
+            if (n_to_sample == (n + 1))
+                --n_to_sample;
         }
         else
         {
@@ -11816,8 +11827,10 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
             {
                 n_to_distribute = static_cast<int>(std::floor(prevalence * n));
 
-                if (n_to_distribute == n)
-                    n_to_distribute--;
+                // Correcting for possible rounding errors
+                if (n_to_distribute == (n + 1))
+                    --n_to_distribute;
+
             }
             else
             {
@@ -12617,7 +12630,9 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
         if (as_proportion)
         {
             n_to_sample = static_cast<int>(std::floor(prevalence * n));
-            if (n_to_sample > static_cast<int>(n))
+
+            // Correcting for possible overflow
+            if (n_to_sample == (static_cast<int>(n) + 1))
                 --n_to_sample;
 
         } else
