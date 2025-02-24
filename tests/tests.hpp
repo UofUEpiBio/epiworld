@@ -11,7 +11,7 @@
 #endif
 #include "../include/epiworld/epiworld.hpp"
 
-template<typename T>
+template<typename T=epiworld_double>
 inline bool moreless(T a, T b, T eps = static_cast<T>(1))
 {
     return(std::abs(a-b) > eps);
