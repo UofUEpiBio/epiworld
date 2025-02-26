@@ -37,19 +37,28 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     int out_of_range_0 = 0;
 
     for (auto & v: tmat_0)
-        if (v < 0.0 | v > 1.0)
+        if ((v < 0.0) | (v > 1.0))
             out_of_range_0++;
     
     auto tmat_1 = model_1.get_db().transition_probability(false);
     int out_of_range_1 = 0;
 
     for (auto & v: tmat_1)
-        if (v < 0.0 | v > 1.0)
+        if ((v < 0.0) | (v > 1.0))
             out_of_range_1++;
 
     std::vector< epiworld_double > tmat_expected = {
         0.9988896435, 0.0, 0.0, 0.0011103565, 0.6434485983,
         0.0, 0.0, 0.3565514017, 1.0
+        };
+
+    // Test when normalize = false
+    auto tmat_0_not_norm = model_0.get_db().transition_probability(false, false);
+    auto tmat_1_not_norm = model_1.get_db().transition_probability(false, false);
+
+    std::vector< epiworld_double > tmat_not_norm_expected = {
+        98.890076, 0.000000, 0.000000, 0.109925, 12.868973, 0.000000, 
+        0.000000, 7.131027, 99.000000
         };
 
     #ifdef CATCH_CONFIG_MAIN
@@ -58,6 +67,8 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     REQUIRE_THAT(h_0, Catch::Equals(h_1));
     REQUIRE(out_of_range_0 == 0);
     REQUIRE(out_of_range_1 == 0);
+    REQUIRE_THAT(tmat_0_not_norm, Catch::Approx(tmat_not_norm_expected).margin(0.025));
+    REQUIRE_THAT(tmat_1_not_norm, Catch::Equals(tmat_0_not_norm));
     #else
     model_0.print(false);
     model_1.print(false);
