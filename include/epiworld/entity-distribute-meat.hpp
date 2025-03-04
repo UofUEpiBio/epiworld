@@ -51,7 +51,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
 
             // Correcting for possible overflow
             if (n_to_sample >= (static_cast<int>(n) + 1))
-                n_to_sample = n;
+                n_to_sample = static_cast<int>(n);
 
         } else
         {
