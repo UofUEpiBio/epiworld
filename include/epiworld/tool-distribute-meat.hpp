@@ -65,8 +65,8 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
                 n_to_distribute = static_cast<int>(std::floor(prevalence * n));
 
                 // Correcting for possible rounding errors
-                if (n_to_distribute == (n + 1))
-                    --n_to_distribute;
+                if (n_to_distribute >= (n + 1))
+                    n_to_distribute = n;
 
             }
             else

@@ -72,8 +72,8 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
             ));
 
             // Correcting for possible overflow
-            if (n_to_sample == (n + 1))
-                --n_to_sample;
+            if (n_to_sample >= (n + 1))
+                n_to_sample = n;
         }
         else
         {
