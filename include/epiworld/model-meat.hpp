@@ -2035,10 +2035,15 @@ inline void Model<TSeq>::print_state_codes() const
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::add_param(
     epiworld_double initial_value,
-    std::string pname
+    std::string pname,
+    bool overwrite
     ) {
 
     if (parameters.find(pname) == parameters.end())
+        parameters[pname] = initial_value;
+    else if (!overwrite)
+        throw std::logic_error("The parameter " + pname + " already exists.");
+    else
         parameters[pname] = initial_value;
     
     return initial_value;
@@ -2046,7 +2051,7 @@ inline epiworld_double Model<TSeq>::add_param(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::read_params(std::string fn)
+inline void Model<TSeq>::read_params(std::string fn, bool overwrite)
 {
 
     std::ifstream paramsfile(fn);
@@ -2084,7 +2089,8 @@ inline void Model<TSeq>::read_params(std::string fn)
             std::regex_replace(
                 match[1u].str(),
                 std::regex("^\\s+|\\s+$"),
-                "")
+                ""),
+            overwrite
         );
 
     }
