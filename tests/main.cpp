@@ -8,6 +8,7 @@
 
 #include "00-cloning-model.cpp"
 #include "00-lfmcmc.cpp"
+#include "01-model-methods.cpp"
 #include "01-sir.cpp"
 #include "01b-sir.cpp"
 #include "01c-sir.cpp"
