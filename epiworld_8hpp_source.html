@@ -9592,7 +9592,7 @@ $(function() {
 <div class="line"><a name="l10575"></a><span class="lineno">10575</span>&#160;<span class="comment">                idx.push_back(agent.get_id());</span></div>
 <div class="line"><a name="l10576"></a><span class="lineno">10576</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l10577"></a><span class="lineno">10577</span>&#160;<span class="comment">        // Picking how many</span></div>
-<div class="line"><a name="l10578"></a><span class="lineno">10578</span>&#160;<span class="comment">        int n = model-&gt;size();</span></div>
+<div class="line"><a name="l10578"></a><span class="lineno">10578</span>&#160;<span class="comment">        int n = static_cast&lt;int&gt;(model-&gt;size());</span></div>
 <div class="line"><a name="l10579"></a><span class="lineno">10579</span>&#160;<span class="comment">        int n_available = static_cast&lt;int&gt;(idx.size());</span></div>
 <div class="line"><a name="l10580"></a><span class="lineno">10580</span>&#160;<span class="comment">        int n_to_sample;</span></div>
 <div class="line"><a name="l10581"></a><span class="lineno">10581</span>&#160;<span class="comment">        if (prevalence_as_proportion)</span></div>
@@ -9602,8 +9602,8 @@ $(function() {
 <div class="line"><a name="l10585"></a><span class="lineno">10585</span>&#160;<span class="comment">            ));</span></div>
 <div class="line"><a name="l10586"></a><span class="lineno">10586</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l10587"></a><span class="lineno">10587</span>&#160;<span class="comment">            // Correcting for possible overflow</span></div>
-<div class="line"><a name="l10588"></a><span class="lineno">10588</span>&#160;<span class="comment">            if (n_to_sample == (n + 1))</span></div>
-<div class="line"><a name="l10589"></a><span class="lineno">10589</span>&#160;<span class="comment">                --n_to_sample;</span></div>
+<div class="line"><a name="l10588"></a><span class="lineno">10588</span>&#160;<span class="comment">            if (n_to_sample &gt; n)</span></div>
+<div class="line"><a name="l10589"></a><span class="lineno">10589</span>&#160;<span class="comment">                n_to_sample = n;</span></div>
 <div class="line"><a name="l10590"></a><span class="lineno">10590</span>&#160;<span class="comment">        }</span></div>
 <div class="line"><a name="l10591"></a><span class="lineno">10591</span>&#160;<span class="comment">        else</span></div>
 <div class="line"><a name="l10592"></a><span class="lineno">10592</span>&#160;<span class="comment">        {</span></div>
@@ -10763,8 +10763,8 @@ $(function() {
 <div class="line"><a name="l11828"></a><span class="lineno">11828</span>&#160;<span class="comment">                n_to_distribute = static_cast&lt;int&gt;(std::floor(prevalence * n));</span></div>
 <div class="line"><a name="l11829"></a><span class="lineno">11829</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l11830"></a><span class="lineno">11830</span>&#160;<span class="comment">                // Correcting for possible rounding errors</span></div>
-<div class="line"><a name="l11831"></a><span class="lineno">11831</span>&#160;<span class="comment">                if (n_to_distribute == (n + 1))</span></div>
-<div class="line"><a name="l11832"></a><span class="lineno">11832</span>&#160;<span class="comment">                    --n_to_distribute;</span></div>
+<div class="line"><a name="l11831"></a><span class="lineno">11831</span>&#160;<span class="comment">                if (n_to_distribute &gt; n)</span></div>
+<div class="line"><a name="l11832"></a><span class="lineno">11832</span>&#160;<span class="comment">                    n_to_distribute = n;</span></div>
 <div class="line"><a name="l11833"></a><span class="lineno">11833</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l11834"></a><span class="lineno">11834</span>&#160;<span class="comment">            }</span></div>
 <div class="line"><a name="l11835"></a><span class="lineno">11835</span>&#160;<span class="comment">            else</span></div>
@@ -11506,8 +11506,8 @@ $(function() {
 <div class="line"><a name="l12632"></a><span class="lineno">12632</span>&#160;<span class="comment">            n_to_sample = static_cast&lt;int&gt;(std::floor(prevalence * n));</span></div>
 <div class="line"><a name="l12633"></a><span class="lineno">12633</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l12634"></a><span class="lineno">12634</span>&#160;<span class="comment">            // Correcting for possible overflow</span></div>
-<div class="line"><a name="l12635"></a><span class="lineno">12635</span>&#160;<span class="comment">            if (n_to_sample == (static_cast&lt;int&gt;(n) + 1))</span></div>
-<div class="line"><a name="l12636"></a><span class="lineno">12636</span>&#160;<span class="comment">                --n_to_sample;</span></div>
+<div class="line"><a name="l12635"></a><span class="lineno">12635</span>&#160;<span class="comment">            if (n_to_sample &gt; static_cast&lt;int&gt;(n))</span></div>
+<div class="line"><a name="l12636"></a><span class="lineno">12636</span>&#160;<span class="comment">                n_to_sample = static_cast&lt;int&gt;(n);</span></div>
 <div class="line"><a name="l12637"></a><span class="lineno">12637</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l12638"></a><span class="lineno">12638</span>&#160;<span class="comment">        } else</span></div>
 <div class="line"><a name="l12639"></a><span class="lineno">12639</span>&#160;<span class="comment">        {</span></div>
