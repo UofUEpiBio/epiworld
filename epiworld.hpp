@@ -19,7 +19,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 7
-#define EPIWORLD_VERSION_PATCH 1
+#define EPIWORLD_VERSION_PATCH 2
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -9509,7 +9509,7 @@ inline void Model<TSeq>::read_params(std::string fn, bool overwrite)
     if (!paramsfile)
         throw std::logic_error("The file " + fn + " was not found.");
 
-    std::regex pattern("^([^:]+)\\s*[:]\\s*([0-9]+|[0-9]*\\.[0-9]+)?\\s*$");
+    std::regex pattern("^([^:]+)\\s*[:]\\s*[-]?([0-9]+|[0-9]*\\.[0-9]+)?\\s*$");
 
     std::string line;
     std::smatch match;
