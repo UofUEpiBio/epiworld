@@ -9509,7 +9509,7 @@ inline void Model<TSeq>::read_params(std::string fn, bool overwrite)
     if (!paramsfile)
         throw std::logic_error("The file " + fn + " was not found.");
 
-    std::regex pattern("^([^:]+)\\s*[:]\\s*[-]?([0-9]+|[0-9]*\\.[0-9]+)?\\s*$");
+    std::regex pattern("^([^:]+)\\s*[:]\\s*([-]?[0-9]+|[0-9]*\\.[0-9]+)?\\s*$");
 
     std::string line;
     std::smatch match;
