@@ -2104,7 +2104,7 @@ $(function() {
 <div class="line"><a name="l02059"></a><span class="lineno"> 2059</span>&#160;    <span class="keywordflow">if</span> (!paramsfile)</div>
 <div class="line"><a name="l02060"></a><span class="lineno"> 2060</span>&#160;        <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;The file &quot;</span> + fn + <span class="stringliteral">&quot; was not found.&quot;</span>);</div>
 <div class="line"><a name="l02061"></a><span class="lineno"> 2061</span>&#160; </div>
-<div class="line"><a name="l02062"></a><span class="lineno"> 2062</span>&#160;    std::regex pattern(<span class="stringliteral">&quot;^([^:]+)\\s*[:]\\s*[-]?([0-9]+|[0-9]*\\.[0-9]+)?\\s*$&quot;</span>);</div>
+<div class="line"><a name="l02062"></a><span class="lineno"> 2062</span>&#160;    std::regex pattern(<span class="stringliteral">&quot;^([^:]+)\\s*[:]\\s*([-]?[0-9]+|[0-9]*\\.[0-9]+)?\\s*$&quot;</span>);</div>
 <div class="line"><a name="l02063"></a><span class="lineno"> 2063</span>&#160; </div>
 <div class="line"><a name="l02064"></a><span class="lineno"> 2064</span>&#160;    std::string line;</div>
 <div class="line"><a name="l02065"></a><span class="lineno"> 2065</span>&#160;    std::smatch match;</div>
