@@ -193,10 +193,10 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     // Trying SEIRDCONN --------------------------------------------------------
     epimodels::ModelSEIRDCONN<> model_7(
-        "a virus", 10000, 0.1, 4, .9, 7, .3, .1
+        "a virus", 100000, 0.001, 4, .9, 7, .3, .1
     );
 
-    model_7.initial_states({0.5, .1, .1}).
+    model_7.//initial_states({0.5, .1, .1}).
         verbose_off().
         run(100, 1231).
         print(false);
