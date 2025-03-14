@@ -58,7 +58,7 @@ inline epiworld_double death_reduction_mixer_default(
     Model<TSeq>* m
     );
 
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
     bool total_hist = true,
