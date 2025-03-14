@@ -6230,7 +6230,7 @@ $(function() {
 <div class="line"><a name="l06863"></a><span class="lineno"> 6863</span>&#160;<span class="comment">    Model&lt;TSeq&gt;* m</span></div>
 <div class="line"><a name="l06864"></a><span class="lineno"> 6864</span>&#160;<span class="comment">    );</span></div>
 <div class="line"><a name="l06865"></a><span class="lineno"> 6865</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l06866"></a><span class="lineno"> 6866</span>&#160;<span class="comment">template&lt;typename TSeq&gt;</span></div>
+<div class="line"><a name="l06866"></a><span class="lineno"> 6866</span>&#160;<span class="comment">template&lt;typename TSeq = EPI_DEFAULT_TSEQ&gt;</span></div>
 <div class="line"><a name="l06867"></a><span class="lineno"> 6867</span>&#160;<span class="comment">inline std::function&lt;void(size_t,Model&lt;TSeq&gt;*)&gt; make_save_run(</span></div>
 <div class="line"><a name="l06868"></a><span class="lineno"> 6868</span>&#160;<span class="comment">    std::string fmt = &quot;%03lu-episimulation.csv&quot;,</span></div>
 <div class="line"><a name="l06869"></a><span class="lineno"> 6869</span>&#160;<span class="comment">    bool total_hist = true,</span></div>
@@ -6641,7 +6641,7 @@ $(function() {
 <div class="line"><a name="l07577"></a><span class="lineno"> 7577</span>&#160;<span class="comment">#ifndef EPIWORLD_MODEL_MEAT_HPP</span></div>
 <div class="line"><a name="l07578"></a><span class="lineno"> 7578</span>&#160;<span class="comment">#define EPIWORLD_MODEL_MEAT_HPP</span></div>
 <div class="line"><a name="l07579"></a><span class="lineno"> 7579</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l07598"></a><span class="lineno"> 7598</span>&#160;<span class="comment">template&lt;typename TSeq = EPI_DEFAULT_TSEQ&gt;</span></div>
+<div class="line"><a name="l07598"></a><span class="lineno"> 7598</span>&#160;<span class="comment">template&lt;typename TSeq&gt;</span></div>
 <div class="line"><a name="l07599"></a><span class="lineno"> 7599</span>&#160;<span class="comment">inline std::function&lt;void(size_t,Model&lt;TSeq&gt;*)&gt; make_save_run(</span></div>
 <div class="line"><a name="l07600"></a><span class="lineno"> 7600</span>&#160;<span class="comment">    std::string fmt,</span></div>
 <div class="line"><a name="l07601"></a><span class="lineno"> 7601</span>&#160;<span class="comment">    bool total_hist,</span></div>
