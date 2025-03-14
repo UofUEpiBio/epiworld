@@ -91,6 +91,15 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     model_1.draw();
     model_2.draw();
 
+    model_1.write_data(
+        "", "", "", "", "", "", "01-sir_transitions.txt", "", ""
+    );
+
+    std::cout << "Printing transitions from file" << std::endl;
+
+    epiworld::ModelDiagram diagram;
+    diagram.draw_from_file("01-sir_transitions.txt");
+
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif

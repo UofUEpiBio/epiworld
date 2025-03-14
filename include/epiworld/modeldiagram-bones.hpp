@@ -3,13 +3,8 @@
 
 class ModelDiagram {
 private:
-    #ifdef EPI_DEBUG
-    std::vector< int > thread;
-    #endif
 
-    std::vector< std::string > from;
-    std::vector< std::string > to;
-    std::vector< int > counts;
+    std::map< std::pair< std::string, std::string >, int > data;
 
     std::vector< std::string > states;
     std::vector< epiworld_double > tprob;
@@ -21,9 +16,6 @@ private:
 
 
     int n_runs = 0; ///< The number of runs included in the diagram.
-
-public:
-    ModelDiagram() {};
 
     /**
      * @brief Reads the transitions from a file.
@@ -67,15 +59,27 @@ public:
      */
     void transition_probability(bool normalize = true);
 
-    void draw(
+public:
+
+    ModelDiagram() {};
+
+    void draw_from_data(
+        const std::vector< std::string > & states,
+        const std::vector< epiworld_double > & tprob,
+        const std::string & fn_output = "",
+        bool self = false
+    );
+
+    void draw_from_file(
         const std::string & fn_transition,
         const std::string & fn_output = "",
         bool self = false
     );
 
-    void set_states_and_tprob(
-        const std::vector< std::string > & states,
-        const std::vector< epiworld_double > & tprob
+    void draw_from_files(
+        const std::vector< std::string > & fns_transition,
+        const std::string & fn_output = "",
+        bool self = false
     );
 
 };

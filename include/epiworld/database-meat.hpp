@@ -1180,13 +1180,15 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
     std::vector< epiworld_double > days_to_include(n_state, 0.0);
 
-    for (size_t t = 1; t < n_days; ++t)
+    for (size_t t = 0; t < n_days; ++t)
     {
 
         for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
+            // Total number of individuals in state s_i
+            // at time t
             epiworld_double daily_total =
-                hist_total_counts[(t - 1) * n_state + s_i];
+                hist_total_counts[t * n_state + s_i];
 
             if (daily_total == 0)
                 continue;

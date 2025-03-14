@@ -10,19 +10,24 @@ inline void ModelDiagram::read_transitions(
 
     if (!file.is_open())
         throw std::runtime_error(
-            "Could not open the file " + 
-            fn_transition + " for reading."
+            "Could not open the file '" + 
+            fn_transition + "' for reading."
         );
 
     // Reading the data
     std::string line;
+    int i = 0;
     while (std::getline(file, line))
     {
+
+        // Skipping the first line
+        if (i++ == 0)
+            continue;
+
         std::istringstream iss(line);
         #ifdef EPI_DEBUG
         int t;
         iss >> t;
-        thread.push_back(t);
         #endif
 
         int i_;
@@ -37,9 +42,15 @@ inline void ModelDiagram::read_transitions(
         // Read the integer
         iss >> counts_;
 
-        from.push_back(from_);
-        to.push_back(to_);
-        counts.push_back(counts_);
+        if (counts_ > 0)
+        {
+            auto idx = std::make_pair(from_, to_);
+            if (data.find(idx) == data.end())
+                data[idx] = counts_;
+            else
+                data[idx] += counts_;
+        }
+
     }
 
     // Incrementing the number of runs
@@ -65,24 +76,19 @@ inline void ModelDiagram::transition_probability(
 {
 
     // Generating the map of states
-    std::map< std::pair< std::string, std::string >, int > map;
     std::set< std::string > states_set;
 
-    for (size_t i = 0u; i < counts.size(); ++i)
+    for (const auto & d: data)
     {
-        states_set.insert(from[i]);
-        states_set.insert(to[i]);
-
-        auto key = std::make_pair(from[i], to[i]);
-        if (map.find(key) == map.end())
-            map[key] = counts[i];
-        else
-            map[key] += counts[i];
+        states_set.insert(d.first.first);
+        states_set.insert(d.first.second);
     }
 
     // Generating the transition matrix
+    states = std::vector< std::string >(states_set.begin(), states_set.end());
     size_t n_states = states.size();
-    std::vector< epiworld_double > tprob(n_states * n_states, 0.0);
+    tprob.resize(n_states * n_states);
+    std::fill(tprob.begin(), tprob.end(), 0.0);
 
     std::vector< epiworld_double > rowsum(n_states, 0.0);
     for (size_t i = 0; i < n_states; ++i)
@@ -92,9 +98,9 @@ inline void ModelDiagram::transition_probability(
         {
 
             auto key = std::make_pair(states[i], states[j]);
-            if (map.find(key) != map.end())
+            if (data.find(key) != data.end())
                 tprob[i + j * n_states] = static_cast<epiworld_double>(
-                    map[key]
+                    data[key]
                 );
 
             if (normalize)
@@ -102,7 +108,15 @@ inline void ModelDiagram::transition_probability(
 
         }
 
+        if (normalize)
+        {
+            for (size_t j = 0; j < n_states; ++j)
+                tprob[i + j * n_states] /= rowsum[i];
+        }
+
     }
+
+    return;
     
 
 }
@@ -164,38 +178,57 @@ inline void ModelDiagram::draw_mermaid(
 
 }
 
-inline void ModelDiagram::draw(
+inline void ModelDiagram::draw_from_file(
     const std::string & fn_transition,
     const std::string & fn_output,
     bool self
 ) {
 
-    if (fn_transition != "")
-    {
-        // Loading the transition file
-        this->read_transitions(fn_transition);
+    // Loading the transition file
+    this->read_transitions(fn_transition);
 
-        // Computing the transition probability
-        this->transition_probability();
-    }
+    // Computing the transition probability
+    this->transition_probability();
 
     // Actually drawing the diagram
     this->draw_mermaid(fn_output, self);
 
     return;
-
-    
+  
 }
 
-inline void ModelDiagram::set_states_and_tprob(
-    const std::vector< std::string > & states,
-    const std::vector< epiworld_double > & tprob
+inline void ModelDiagram::draw_from_files(
+    const std::vector< std::string > & fns_transition,
+    const std::string & fn_output,
+    bool self
 ) {
-    
+
+    // Loading the transition files
+    this->read_transitions(fns_transition);
+
+    // Computing the transition probability
+    this->transition_probability();
+
+    // Actually drawing the diagram
+    this->draw_mermaid(fn_output, self);
+
+    return;
+}
+
+inline void ModelDiagram::draw_from_data(
+    const std::vector< std::string > & states,
+    const std::vector< epiworld_double > & tprob,
+    const std::string & fn_output,
+    bool self
+) {
+
     this->states = states;
     this->tprob = tprob;
 
+    this->draw_mermaid(fn_output, self);
+
     return;
+
 }
 
 #endif

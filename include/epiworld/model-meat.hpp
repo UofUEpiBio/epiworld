@@ -2575,12 +2575,13 @@ inline void Model<TSeq>::draw(
 ) {
 
     ModelDiagram diagram;
-    diagram.set_states_and_tprob(
-        this->get_states(),
-        this->get_db().transition_probability(false)
-    );
 
-    diagram.draw("", fn_output, self);
+    diagram.draw_from_data(
+        this->get_states(),
+        this->get_db().transition_probability(false),
+        fn_output,
+        self
+    );
 
     return;
 
