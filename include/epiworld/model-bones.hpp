@@ -1,5 +1,5 @@
-#ifndef EPIWORLD_MODEL_HPP
-#define EPIWORLD_MODEL_HPP
+#ifndef EPIWORLD_MODEL_BONES_HPP
+#define EPIWORLD_MODEL_BONES_HPP
 
 template<typename TSeq>
 class Agent;
@@ -734,6 +734,18 @@ public:
      * @param model_ Model over which it will be executed.
      */
     void events_run();
+
+    /**
+     * @brief Draws a mermaid diagram of the model.
+     * @param model The model to draw.
+     * @param fn_output The name of the file to write the diagram.
+     * If empty, the diagram will be printed to the standard output.
+     * @param self Whether to allow self-transitions.
+     */
+    void draw(
+        const std::string & fn_output = "",
+        bool self = false
+    );
 
 
 };

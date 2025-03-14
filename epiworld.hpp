@@ -12,6 +12,8 @@
 #include <cstdint>
 #include <algorithm>
 #include <regex>
+#include <iomanip>
+#include <set>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -910,6 +912,327 @@ inline void Progress::end() {
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -include/epiworld/progress.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/modeldiagram-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MODELDIAGRAM_HPP
+#define EPIWORLD_MODELDIAGRAM_HPP
+
+class ModelDiagram {
+private:
+    #ifdef EPI_DEBUG
+    std::vector< int > thread;
+    #endif
+
+    std::vector< std::string > from;
+    std::vector< std::string > to;
+    std::vector< int > counts;
+
+    std::vector< std::string > states;
+    std::vector< epiworld_double > tprob;
+
+    void draw_mermaid(
+        std::string fn_output = "",
+        bool self = false
+    );
+
+
+    int n_runs = 0; ///< The number of runs included in the diagram.
+
+public:
+    ModelDiagram() {};
+
+    /**
+     * @brief Reads the transitions from a file.
+     * @details
+     * The file is assumed to come from the output of [Model::write_data()],
+     * and should be in the following format:
+     * ```
+     * 0 "S" "I" 10
+     * 1 "I" "R" 5
+     * 2 "R" "S" 3
+     * ...
+     * ```
+     * The first column is the step, the second column is the state from which
+     * the transition is made, the third column is the state to which the
+     * transition is made, and the fourth column is the number of transitions.
+     * 
+     * @param fn_transition The name of the file to read.
+     * @return void
+     * @throws std::runtime_error if the file cannot be opened.
+     */
+    void read_transitions(
+        const std::string & fn_transition
+    );
+
+    /**
+     * @brief In the case of multiple files (like from run_multiple)
+     * @param fns_transition The names of the files to read.
+     * @details
+     * It will read the transitions from multiple files and concatenate them.
+     * into the same object.
+     */
+    void read_transitions(
+        const std::vector< std::string > & fns_transition
+    );
+    
+    /**
+     * @brief Computes the transition probability matrix.
+     * @param normalize Whether to compute only the counts,
+     * otherwise the probabilities will be computed (row-stochastic).
+     * @return void
+     */
+    void transition_probability(bool normalize = true);
+
+    void draw(
+        const std::string & fn_transition,
+        const std::string & fn_output = "",
+        bool self = false
+    );
+
+    void set_states_and_tprob(
+        const std::vector< std::string > & states,
+        const std::vector< epiworld_double > & tprob
+    );
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/modeldiagram-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/modeldiagram-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MODELDIAGRAM_MEAT_HPP
+#define EPIWORLD_MODELDIAGRAM_MEAT_HPP
+
+inline void ModelDiagram::read_transitions(
+    const std::string & fn_transition
+) {
+
+    // Checking if the file exists
+    std::ifstream file(fn_transition);
+
+    if (!file.is_open())
+        throw std::runtime_error(
+            "Could not open the file " + 
+            fn_transition + " for reading."
+        );
+
+    // Reading the data
+    std::string line;
+    while (std::getline(file, line))
+    {
+        std::istringstream iss(line);
+        #ifdef EPI_DEBUG
+        int t;
+        iss >> t;
+        thread.push_back(t);
+        #endif
+
+        int i_;
+        std::string from_, to_;
+        int counts_;
+
+        iss >> i_;
+
+        // Read the quoted strings
+        iss >> std::quoted(from_) >> std::quoted(to_);
+
+        // Read the integer
+        iss >> counts_;
+
+        from.push_back(from_);
+        to.push_back(to_);
+        counts.push_back(counts_);
+    }
+
+    // Incrementing the number of runs
+    this->n_runs++;
+
+}
+
+inline void ModelDiagram::read_transitions(
+    const std::vector< std::string > & fns_transition
+)
+{
+
+    for (const auto & fn: fns_transition)
+        this->read_transitions(fn);
+
+    return;
+
+}
+
+inline void ModelDiagram::transition_probability(
+    bool normalize
+)
+{
+
+    // Generating the map of states
+    std::map< std::pair< std::string, std::string >, int > map;
+    std::set< std::string > states_set;
+
+    for (size_t i = 0u; i < counts.size(); ++i)
+    {
+        states_set.insert(from[i]);
+        states_set.insert(to[i]);
+
+        auto key = std::make_pair(from[i], to[i]);
+        if (map.find(key) == map.end())
+            map[key] = counts[i];
+        else
+            map[key] += counts[i];
+    }
+
+    // Generating the transition matrix
+    size_t n_states = states.size();
+    std::vector< epiworld_double > tprob(n_states * n_states, 0.0);
+
+    std::vector< epiworld_double > rowsum(n_states, 0.0);
+    for (size_t i = 0; i < n_states; ++i)
+    {
+
+        for (size_t j = 0; j < n_states; ++j)
+        {
+
+            auto key = std::make_pair(states[i], states[j]);
+            if (map.find(key) != map.end())
+                tprob[i + j * n_states] = static_cast<epiworld_double>(
+                    map[key]
+                );
+
+            if (normalize)
+                rowsum[i] += tprob[i + j * n_states];
+
+        }
+
+    }
+    
+
+}
+
+inline void ModelDiagram::draw_mermaid(
+    std::string fn_output,
+    bool self
+)
+{
+
+    std::vector< std::string > states_ids;
+    for (size_t i = 0u; i < states.size(); ++i)
+        states_ids.push_back("s" + std::to_string(i));
+
+    std::string graph = "flowchart LR\n";
+
+    // Declaring the states
+    for (size_t i = 0u; i < states.size(); ++i)
+    {
+        graph += "\t" + states_ids[i] + "[" + states[i] + "]\n";
+    }
+
+    // Adding the transitions
+    size_t n_states = states.size();
+    for (size_t i = 0u; i < states.size(); ++i)
+    {
+        for (size_t j = 0u; j < states.size(); ++j)
+        {
+            if (!self && i == j)
+                continue;
+
+            if (tprob[i + j * n_states] > 0.0)
+            {
+                graph += "\t" + states_ids[i] + " -->|" + 
+                    std::to_string(tprob[i + j * n_states]) + "| " + states_ids[j] + "\n";
+            }
+        }
+    }
+
+    if (fn_output != "")
+    {
+        std::ofstream file(fn_output);
+
+        if (!file.is_open())
+            throw std::runtime_error(
+                "Could not open the file " +
+                fn_output + 
+                " for writing."
+            );
+
+        file << graph;
+        file.close();
+        
+    } else {
+        printf_epiworld("%s\n", graph.c_str());
+    }
+
+    return;
+
+}
+
+inline void ModelDiagram::draw(
+    const std::string & fn_transition,
+    const std::string & fn_output,
+    bool self
+) {
+
+    if (fn_transition != "")
+    {
+        // Loading the transition file
+        this->read_transitions(fn_transition);
+
+        // Computing the transition probability
+        this->transition_probability();
+    }
+
+    // Actually drawing the diagram
+    this->draw_mermaid(fn_output, self);
+
+    return;
+
+    
+}
+
+inline void ModelDiagram::set_states_and_tprob(
+    const std::vector< std::string > & states,
+    const std::vector< epiworld_double > & tprob
+) {
+    
+    this->states = states;
+    this->tprob = tprob;
+
+    return;
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/modeldiagram-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6419,8 +6742,8 @@ inline bool GlobalEvent<TSeq>::operator!=(const GlobalEvent<TSeq> & other) const
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_MODEL_HPP
-#define EPIWORLD_MODEL_HPP
+#ifndef EPIWORLD_MODEL_BONES_HPP
+#define EPIWORLD_MODEL_BONES_HPP
 
 template<typename TSeq>
 class Agent;
@@ -7155,6 +7478,18 @@ public:
      * @param model_ Model over which it will be executed.
      */
     void events_run();
+
+    /**
+     * @brief Draws a mermaid diagram of the model.
+     * @param model The model to draw.
+     * @param fn_output The name of the file to write the diagram.
+     * If empty, the diagram will be printed to the standard output.
+     * @param self Whether to allow self-transitions.
+     */
+    void draw(
+        const std::string & fn_output = "",
+        bool self = false
+    );
 
 
 };
@@ -10079,6 +10414,24 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     )
     
     return true;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::draw(
+    const std::string & fn_output,
+    bool self
+) {
+
+    ModelDiagram diagram;
+    diagram.set_states_and_tprob(
+        this->get_states(),
+        this->get_db().transition_probability(false)
+    );
+
+    diagram.draw("", fn_output, self);
+
+    return;
 
 }
 

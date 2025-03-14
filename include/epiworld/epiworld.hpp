@@ -12,6 +12,8 @@
 #include <cstdint>
 #include <algorithm>
 #include <regex>
+#include <iomanip>
+#include <set>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -32,6 +34,9 @@ namespace epiworld {
 
     #include "misc.hpp"
     #include "progress.hpp"
+
+    #include "modeldiagram-bones.hpp"
+    #include "modeldiagram-meat.hpp"
 
     #include "math/distributions.hpp"
 

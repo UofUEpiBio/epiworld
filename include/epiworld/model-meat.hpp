@@ -2568,6 +2568,24 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
 
 }
 
+template<typename TSeq>
+inline void Model<TSeq>::draw(
+    const std::string & fn_output,
+    bool self
+) {
+
+    ModelDiagram diagram;
+    diagram.set_states_and_tprob(
+        this->get_states(),
+        this->get_db().transition_probability(false)
+    );
+
+    diagram.draw("", fn_output, self);
+
+    return;
+
+}
+
 #undef VECT_MATCH
 #undef DURCAST
 #undef CASES_PAR

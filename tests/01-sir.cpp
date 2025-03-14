@@ -87,6 +87,10 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     model_2.print(false);
     #endif 
 
+    model_0.draw();
+    model_1.draw();
+    model_2.draw();
+
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif
