@@ -59,6 +59,8 @@ private:
      */
     void transition_probability(bool normalize = true);
 
+    void clear();
+
 public:
 
     ModelDiagram() {};

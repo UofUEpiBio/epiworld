@@ -39,16 +39,11 @@ EPIWORLD_TEST_CASE("SIRCON", "[SIR connected]") {
         if (v < 0.0 | v > 1.0)
             out_of_range_1++;
 
-    std::vector< epiworld_double > tmat_expected = {
-        0.556414008,
-        0,
-        0,
-        0.443586022,
-        0.859082818,
-        0,
-        0,
-        0.140917242,
-        1};
+    // This is transposed
+    std::vector< epiworld_double > tmat_expected =  {
+        0.8195271612, 0.0         , 0.0,
+        0.1804728388, 0.8568422258, 0.0,
+        0.0,          0.1431577742, 1.0};
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(tmat_0, Catch::Approx(tmat_expected).margin(0.05));

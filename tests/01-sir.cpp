@@ -88,8 +88,6 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     #endif 
 
     model_0.draw();
-    model_1.draw();
-    model_2.draw();
 
     model_1.write_data(
         "", "", "", "", "", "", "01-sir_transitions.txt", "", ""

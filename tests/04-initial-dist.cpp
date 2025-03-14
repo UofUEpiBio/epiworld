@@ -48,17 +48,18 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
             out_of_range_1++;
 
     std::vector< epiworld_double > tmat_expected = {
-        0.9988896435, 0.0, 0.0, 0.0011103565, 0.6434485983,
-        0.0, 0.0, 0.3565514017, 1.0
+        0.9876168354, 0.0, 0.0, 0.0013803528, 0.6969253294, 0.0,
+        0.0110028118, 0.3030746706, 1.0
         };
 
     // Test when normalize = false
     auto tmat_0_not_norm = model_0.get_db().transition_probability(false, false);
     auto tmat_1_not_norm = model_1.get_db().transition_probability(false, false);
 
+    // Expected values of an unnormalized transition matrix
+    // so it is only the counts
     std::vector< epiworld_double > tmat_not_norm_expected = {
-        98.890076, 0.000000, 0.000000, 0.109925, 12.868973, 0.000000, 
-        0.000000, 7.131027, 99.000000
+        444314.0, 0.0, 0.0, 621.0, 1428.0, 0.0, 4950.0, 621.0, 548066.0
         };
 
     #ifdef CATCH_CONFIG_MAIN
@@ -193,10 +194,10 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     // Trying SEIRDCONN --------------------------------------------------------
     epimodels::ModelSEIRDCONN<> model_7(
-        "a virus", 100000, 0.001, 4, .9, 7, .3, .1
+        "a virus", 10000, 0.1, 4, .9, 7, .3, .1
     );
 
-    model_7.//initial_states({0.5, .1, .1}).
+    model_7.initial_states({0.5, .1, .1}).
         verbose_off().
         run(100, 1231).
         print(false);

@@ -932,9 +932,6 @@ inline void Progress::end() {
 
 class ModelDiagram {
 private:
-    #ifdef EPI_DEBUG
-    std::vector< int > thread;
-    #endif
 
     std::map< std::pair< std::string, std::string >, int > data;
 
@@ -990,6 +987,8 @@ private:
      * @return void
      */
     void transition_probability(bool normalize = true);
+
+    void clear();
 
 public:
 
@@ -1065,7 +1064,6 @@ inline void ModelDiagram::read_transitions(
         #ifdef EPI_DEBUG
         int t;
         iss >> t;
-        thread.push_back(t);
         #endif
 
         int i_;
@@ -1116,21 +1114,17 @@ inline void ModelDiagram::transition_probability(
     // Generating the map of states
     std::set< std::string > states_set;
 
-    for (size_t i = 0u; i < counts.size(); ++i)
+    for (const auto & d: data)
     {
-        states_set.insert(from[i]);
-        states_set.insert(to[i]);
-
-        auto key = std::make_pair(from[i], to[i]);
-        if (map.find(key) == map.end())
-            map[key] = counts[i];
-        else
-            map[key] += counts[i];
+        states_set.insert(d.first.first);
+        states_set.insert(d.first.second);
     }
 
     // Generating the transition matrix
+    states = std::vector< std::string >(states_set.begin(), states_set.end());
     size_t n_states = states.size();
-    std::vector< epiworld_double > tprob(n_states * n_states, 0.0);
+    tprob.resize(n_states * n_states);
+    std::fill(tprob.begin(), tprob.end(), 0.0);
 
     std::vector< epiworld_double > rowsum(n_states, 0.0);
     for (size_t i = 0; i < n_states; ++i)
@@ -1140,9 +1134,9 @@ inline void ModelDiagram::transition_probability(
         {
 
             auto key = std::make_pair(states[i], states[j]);
-            if (map.find(key) != map.end())
+            if (data.find(key) != data.end())
                 tprob[i + j * n_states] = static_cast<epiworld_double>(
-                    map[key]
+                    data[key]
                 );
 
             if (normalize)
@@ -1150,9 +1144,26 @@ inline void ModelDiagram::transition_probability(
 
         }
 
+        if (normalize)
+        {
+            for (size_t j = 0; j < n_states; ++j)
+                tprob[i + j * n_states] /= rowsum[i];
+        }
+
     }
+
+    return;
     
 
+}
+
+inline void ModelDiagram::clear()
+{
+    data.clear();
+    states.clear();
+    tprob.clear();
+    n_runs = 0;
+    return;
 }
 
 inline void ModelDiagram::draw_mermaid(
@@ -1160,6 +1171,19 @@ inline void ModelDiagram::draw_mermaid(
     bool self
 )
 {
+
+    // Getting a sorting vector of indices from the states
+    // string vector
+    std::vector< size_t > idx(states.size());
+    std::iota(idx.begin(), idx.end(), 0u);
+
+    std::sort(
+        idx.begin(),
+        idx.end(),
+        [&states = this->states](size_t i, size_t j) {
+            return states[i] < states[j];
+        }
+    );
 
     std::vector< std::string > states_ids;
     for (size_t i = 0u; i < states.size(); ++i)
@@ -1170,7 +1194,7 @@ inline void ModelDiagram::draw_mermaid(
     // Declaring the states
     for (size_t i = 0u; i < states.size(); ++i)
     {
-        graph += "\t" + states_ids[i] + "[" + states[i] + "]\n";
+        graph += "\t" + states_ids[i] + "[" + states[idx[i]] + "]\n";
     }
 
     // Adding the transitions
@@ -1182,10 +1206,11 @@ inline void ModelDiagram::draw_mermaid(
             if (!self && i == j)
                 continue;
 
-            if (tprob[i + j * n_states] > 0.0)
+            if (tprob[idx[i] + idx[j] * n_states] > 0.0)
             {
                 graph += "\t" + states_ids[i] + " -->|" + 
-                    std::to_string(tprob[i + j * n_states]) + "| " + states_ids[j] + "\n";
+                    std::to_string(tprob[idx[i] + idx[j] * n_states]) + 
+                    "| " + states_ids[j] + "\n";
             }
         }
     }
@@ -1218,11 +1243,14 @@ inline void ModelDiagram::draw_from_file(
     bool self
 ) {
 
+    this->clear();
+
     // Loading the transition file
     this->read_transitions(fn_transition);
 
     // Computing the transition probability
     this->transition_probability();
+
     // Actually drawing the diagram
     this->draw_mermaid(fn_output, self);
 
@@ -1236,6 +1264,8 @@ inline void ModelDiagram::draw_from_files(
     bool self
 ) {
 
+    this->clear();
+
     // Loading the transition files
     this->read_transitions(fns_transition);
 
@@ -1246,7 +1276,7 @@ inline void ModelDiagram::draw_from_files(
     this->draw_mermaid(fn_output, self);
 
     return;
-)
+}
 
 inline void ModelDiagram::draw_from_data(
     const std::vector< std::string > & states,
@@ -1255,12 +1285,14 @@ inline void ModelDiagram::draw_from_data(
     bool self
 ) {
 
-    // this->states = states;
-    // this->tprob = tprob;
+    this->clear();
 
-    // this->draw_mermaid(fn_output, self);
+    this->states = states;
+    this->tprob = tprob;
 
-    // return;
+    this->draw_mermaid(fn_output, self);
+
+    return;
 
 }
 
@@ -3691,7 +3723,15 @@ public:
 
     /**
      * @brief Calculates the transition probabilities
-     * 
+     * @param print Print the transition matrix.
+     * @param normalize Normalize the transition matrix. Otherwise, 
+     * it returns raw counts.
+     * @details
+     * The transition matrix is the matrix of the counts of transitions
+     * from one state to another. So the ij-th element of the matrix is
+     * the number of transitions from state i to state j (when not normalized),
+     * or the probability of transitioning from state i to state j 
+     * (when normalized).
      * @return std::vector< epiworld_double > 
      */
     std::vector< epiworld_double > transition_probability(
@@ -4925,43 +4965,28 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
     size_t n_state = states_labels.size();
     size_t n_days   = model->get_ndays();
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
-    std::vector< epiworld_double > days_to_include(n_state, 0.0);
+    std::vector< epiworld_double > rowsums(n_state, 0.0);
 
-    for (size_t t = 1; t < n_days; ++t)
+    for (size_t t = 0; t < n_days; ++t)
     {
 
         for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
-            epiworld_double daily_total =
-                hist_total_counts[(t - 1) * n_state + s_i];
-
-            if (daily_total == 0)
-                continue;
-
-            days_to_include[s_i] += 1.0; 
 
             for (size_t s_j = 0u; s_j < n_state; ++s_j)
             {
-                #ifdef EPI_DEBUG
-                epiworld_double entry = hist_transition_matrix[
+                res[s_i + s_j * n_state] += (
+                    hist_transition_matrix[
+                        s_i + s_j * n_state +
+                        t * (n_state * n_state)
+                    ]
+                );
+                
+                rowsums[s_i] += hist_transition_matrix[
                     s_i + s_j * n_state +
                     t * (n_state * n_state)
-                    ];
-
-                if (entry > daily_total)
-                    throw std::logic_error(
-                        "The entry in hist_transition_matrix cannot have more elememnts than the total"
-                        );
-
-                res[s_i + s_j * n_state] += (entry / daily_total);
-                #else
-                    res[s_i + s_j * n_state] += (
-                        hist_transition_matrix[
-                            s_i + s_j * n_state +
-                            t * (n_state * n_state)
-                        ] / daily_total
-                    );
-                #endif
+                ];
+            
             }
 
         }
@@ -4973,7 +4998,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
         for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
             for (size_t s_j = 0; s_j < n_state; ++s_j)
-                res[s_i + s_j * n_state] /= days_to_include[s_i];
+                res[s_i + s_j * n_state] /= rowsums[s_i];
         }
     }
 
@@ -7570,7 +7595,7 @@ public:
  * @param transition 
  * @return std::function<void(size_t,Model<TSeq>*)> 
  */
-template<typename TSeq = int>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt,
     bool total_hist,
@@ -20000,7 +20025,14 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
     {
         ModelSEIRDCONN<TSeq> * model = dynamic_cast<ModelSEIRDCONN<TSeq> *>(m);
-        model->update_infected();
+        
+        if (model == nullptr)
+            throw std::logic_error(
+                std::string("Internal error in the ModelSEIRDCONN model: ") +
+                std::string("The model returns a null pointer.")
+            );
+        else
+            model->update_infected();
         
         return;
     };

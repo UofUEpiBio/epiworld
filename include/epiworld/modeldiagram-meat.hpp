@@ -121,11 +121,33 @@ inline void ModelDiagram::transition_probability(
 
 }
 
+inline void ModelDiagram::clear()
+{
+    data.clear();
+    states.clear();
+    tprob.clear();
+    n_runs = 0;
+    return;
+}
+
 inline void ModelDiagram::draw_mermaid(
     std::string fn_output,
     bool self
 )
 {
+
+    // Getting a sorting vector of indices from the states
+    // string vector
+    std::vector< size_t > idx(states.size());
+    std::iota(idx.begin(), idx.end(), 0u);
+
+    std::sort(
+        idx.begin(),
+        idx.end(),
+        [&states = this->states](size_t i, size_t j) {
+            return states[i] < states[j];
+        }
+    );
 
     std::vector< std::string > states_ids;
     for (size_t i = 0u; i < states.size(); ++i)
@@ -136,7 +158,7 @@ inline void ModelDiagram::draw_mermaid(
     // Declaring the states
     for (size_t i = 0u; i < states.size(); ++i)
     {
-        graph += "\t" + states_ids[i] + "[" + states[i] + "]\n";
+        graph += "\t" + states_ids[i] + "[" + states[idx[i]] + "]\n";
     }
 
     // Adding the transitions
@@ -148,10 +170,11 @@ inline void ModelDiagram::draw_mermaid(
             if (!self && i == j)
                 continue;
 
-            if (tprob[i + j * n_states] > 0.0)
+            if (tprob[idx[i] + idx[j] * n_states] > 0.0)
             {
                 graph += "\t" + states_ids[i] + " -->|" + 
-                    std::to_string(tprob[i + j * n_states]) + "| " + states_ids[j] + "\n";
+                    std::to_string(tprob[idx[i] + idx[j] * n_states]) + 
+                    "| " + states_ids[j] + "\n";
             }
         }
     }
@@ -184,6 +207,8 @@ inline void ModelDiagram::draw_from_file(
     bool self
 ) {
 
+    this->clear();
+
     // Loading the transition file
     this->read_transitions(fn_transition);
 
@@ -203,6 +228,8 @@ inline void ModelDiagram::draw_from_files(
     bool self
 ) {
 
+    this->clear();
+
     // Loading the transition files
     this->read_transitions(fns_transition);
 
@@ -221,6 +248,8 @@ inline void ModelDiagram::draw_from_data(
     const std::string & fn_output,
     bool self
 ) {
+
+    this->clear();
 
     this->states = states;
     this->tprob = tprob;
