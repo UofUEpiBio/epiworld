@@ -296,7 +296,58 @@ $(function() {
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160; </div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;}</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160; </div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;<span class="keyword">inline</span> std::map&lt; std::string, T &gt; read_yaml(std::string fn)</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;{</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160; </div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;    std::ifstream paramsfile(fn);</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160; </div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    <span class="keywordflow">if</span> (!paramsfile)</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;The file &quot;</span> + fn + <span class="stringliteral">&quot; was not found.&quot;</span>);</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160; </div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    std::regex pattern(<span class="stringliteral">&quot;^([^:]+)\\s*[:]\\s*([-]?[0-9]+|[-]?[0-9]*\\.[0-9]+)?\\s*$&quot;</span>);</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160; </div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    std::string line;</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    std::smatch match;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keyword">auto</span> empty = std::sregex_iterator();</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160; </div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    <span class="comment">// Making room</span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    std::map&lt;std::string, T&gt; parameters;</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160; </div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    <span class="keywordflow">while</span> (std::getline(paramsfile, line))</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    {</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160; </div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;        <span class="comment">// Is it a comment or an empty line?</span></div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="keywordflow">if</span> (std::regex_match(line, std::regex(<span class="stringliteral">&quot;^([*].+|//.+|#.+|\\s*)$&quot;</span>)))</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;            <span class="keywordflow">continue</span>;</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160; </div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        <span class="comment">// Finding the patter, if it doesn&#39;t match, then error</span></div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;        std::regex_match(line, match, pattern);</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160; </div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        <span class="keywordflow">if</span> (match.empty())</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;            <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;The line does not match parameters:\n&quot;</span> + line);</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160; </div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;        <span class="comment">// Capturing the number</span></div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        std::string anumber = match[2u].str() + match[3u].str();</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        T tmp_num = <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            std::strtod(anumber.c_str(), <span class="keyword">nullptr</span>)</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            );</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        std::string pname = std::regex_replace(</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;            match[1u].str(),</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            std::regex(<span class="stringliteral">&quot;^\\s+|\\s+$&quot;</span>),</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;            <span class="stringliteral">&quot;&quot;</span>);</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160; </div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;        <span class="comment">// Adding the parameter to the map</span></div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;        parameters[pname] = tmp_num;</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160; </div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    }</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keywordflow">return</span> parameters;</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160; </div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;}</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_agent_html"><div class="ttname"><a href="class_agent.html">Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> agent-bones.hpp:66</div></div>
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
 <div class="ttc" id="astructvec_hasher_html"><div class="ttname"><a href="structvec_hasher.html">vecHasher</a></div><div class="ttdoc">Vector hasher.</div><div class="ttdef"><b>Definition:</b> misc.hpp:16</div></div>
