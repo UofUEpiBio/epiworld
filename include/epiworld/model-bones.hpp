@@ -610,7 +610,7 @@ public:
     epiworld_double add_param(
         epiworld_double initial_val, std::string pname, bool overwrite = false
     );
-    void read_params(std::string fn, bool overwrite = false);
+    Model<TSeq> & read_params(std::string fn, bool overwrite = false);
     epiworld_double get_param(epiworld_fast_uint k);
     epiworld_double get_param(std::string pname);
     // void set_param(size_t k, epiworld_double val);

@@ -1339,7 +1339,7 @@ inline Model<TSeq> & Model<TSeq>::run(
 {
 
     if (size() == 0u)
-        throw std::logic_error("There's no agents in this model!");
+        throw std::logic_error("There are no agents in this model!");
 
     if (nstates == 0u)
         throw std::logic_error(
@@ -2051,49 +2051,15 @@ inline epiworld_double Model<TSeq>::add_param(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::read_params(std::string fn, bool overwrite)
+inline Model<TSeq> & Model<TSeq>::read_params(std::string fn, bool overwrite)
 {
 
-    std::ifstream paramsfile(fn);
+    auto params_map = read_yaml<epiworld_double>(fn);
 
-    if (!paramsfile)
-        throw std::logic_error("The file " + fn + " was not found.");
+    for (auto & p : params_map)
+        add_param(p.second, p.first, overwrite);
 
-    std::regex pattern("^([^:]+)\\s*[:]\\s*([-]?[0-9]+|[-]?[0-9]*\\.[0-9]+)?\\s*$");
-
-    std::string line;
-    std::smatch match;
-    auto empty = std::sregex_iterator();
-
-    while (std::getline(paramsfile, line))
-    {
-
-        // Is it a comment or an empty line?
-        if (std::regex_match(line, std::regex("^([*].+|//.+|#.+|\\s*)$")))
-            continue;
-
-        // Finding the patter, if it doesn't match, then error
-        std::regex_match(line, match, pattern);
-
-        if (match.empty())
-            throw std::logic_error("The line does not match parameters:\n" + line);
-
-        // Capturing the number
-        std::string anumber = match[2u].str() + match[3u].str();
-        epiworld_double tmp_num = static_cast<epiworld_double>(
-            std::strtod(anumber.c_str(), nullptr)
-            );
-
-        add_param(
-            tmp_num,
-            std::regex_replace(
-                match[1u].str(),
-                std::regex("^\\s+|\\s+$"),
-                ""),
-            overwrite
-        );
-
-    }
+    return *this;
 
 }
 
