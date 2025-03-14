@@ -224,6 +224,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator!=</b> (const
 <tr class="memitem:a800647b05836b20054f1f2049a41787f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1_model.html#a800647b05836b20054f1f2049a41787f">events_run</a> ()</td></tr>
 <tr class="memdesc:a800647b05836b20054f1f2049a41787f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the stored action.  <a href="classepiworld_1_1_model.html#a800647b05836b20054f1f2049a41787f">More...</a><br /></td></tr>
 <tr class="separator:a800647b05836b20054f1f2049a41787f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a">draw</a> (const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
+<tr class="memdesc:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws a mermaid diagram of the model.  <a href="classepiworld_1_1_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a">More...</a><br /></td></tr>
+<tr class="separator:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Set the backup object</div></td></tr>
 <tr><td colspan="2"><div class="groupText"><p><code>backup</code> can be used to restore the entire object after a run. This can be useful if the user wishes to have individuals start with the same network from the beginning. </p>
 </div></td></tr>
@@ -521,7 +524,7 @@ virtual <a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt
 <div class="fragment"><div class="line">[<a class="code" href="classepiworld_1_1_model.html#a4af72bcd59626f5c6cb52fc10fc30c04">name</a> of parameter 1]: [value in double]</div>
 <div class="line">[<a class="code" href="classepiworld_1_1_model.html#a4af72bcd59626f5c6cb52fc10fc30c04">name</a> of parameter 2]: [value in double]</div>
 <div class="line">...</div>
-<div class="ttc" id="aclassepiworld_1_1_model_html_a4af72bcd59626f5c6cb52fc10fc30c04"><div class="ttname"><a href="classepiworld_1_1_model.html#a4af72bcd59626f5c6cb52fc10fc30c04">epiworld::Model::name</a></div><div class="ttdeci">std::string name</div><div class="ttdoc">Name of the model.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:6519</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_a4af72bcd59626f5c6cb52fc10fc30c04"><div class="ttname"><a href="classepiworld_1_1_model.html#a4af72bcd59626f5c6cb52fc10fc30c04">epiworld::Model::name</a></div><div class="ttdeci">std::string name</div><div class="ttdoc">Name of the model.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:6842</div></div>
 </div><!-- fragment --><p>The only condition for parameter names is that these do not include a colon.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -934,6 +937,54 @@ template&lt;typename TSeq &gt; </div>
 </dl>
 
 <p>Reimplemented in <a class="el" href="class_model_s_i_r_mixing.html#a609d6da791f6d097a6ece6554a75cbe6">ModelSIRMixing&lt; TSeq &gt;</a>, <a class="el" href="class_model_s_i_r_logit.html#a14cddb580e197f642f19da2d3432e6b1">ModelSIRLogit&lt; TSeq &gt;</a>, <a class="el" href="class_model_s_i_r_d_c_o_n_n.html#a2349e4616cb10b88424058970e5d0b18">ModelSIRDCONN&lt; TSeq &gt;</a>, <a class="el" href="class_model_s_i_r_c_o_n_n.html#a37cb3d22a04f9f620fbbd7a2c7904227">ModelSIRCONN&lt; TSeq &gt;</a>, <a class="el" href="class_model_s_e_i_r_mixing.html#ad53c73d00b5625fbd34f160732bec72a">ModelSEIRMixing&lt; TSeq &gt;</a>, <a class="el" href="class_model_s_e_i_r_d_c_o_n_n.html#a6b32c03ed27bde9d0c5049727425c33f">ModelSEIRDCONN&lt; TSeq &gt;</a>, <a class="el" href="class_model_s_e_i_r_c_o_n_n.html#a566a0d12a5987b978d4287ba2969004e">ModelSEIRCONN&lt; TSeq &gt;</a>, <a class="el" href="classepiworld_1_1epimodels_1_1_model_s_i_r_mixing.html#a609d6da791f6d097a6ece6554a75cbe6">epiworld::epimodels::ModelSIRMixing&lt; TSeq &gt;</a>, <a class="el" href="classepiworld_1_1epimodels_1_1_model_s_e_i_r_mixing.html#ad53c73d00b5625fbd34f160732bec72a">epiworld::epimodels::ModelSEIRMixing&lt; TSeq &gt;</a>, <a class="el" href="classepiworld_1_1epimodels_1_1_model_s_i_r_logit.html#a14cddb580e197f642f19da2d3432e6b1">epiworld::epimodels::ModelSIRLogit&lt; TSeq &gt;</a>, <a class="el" href="classepiworld_1_1epimodels_1_1_model_s_e_i_r_d_c_o_n_n.html#a6b32c03ed27bde9d0c5049727425c33f">epiworld::epimodels::ModelSEIRDCONN&lt; TSeq &gt;</a>, <a class="el" href="classepiworld_1_1epimodels_1_1_model_s_i_r_d_c_o_n_n.html#a2349e4616cb10b88424058970e5d0b18">epiworld::epimodels::ModelSIRDCONN&lt; TSeq &gt;</a>, <a class="el" href="classepiworld_1_1epimodels_1_1_model_s_e_i_r_c_o_n_n.html#a566a0d12a5987b978d4287ba2969004e">epiworld::epimodels::ModelSEIRCONN&lt; TSeq &gt;</a>, and <a class="el" href="classepiworld_1_1epimodels_1_1_model_s_i_r_c_o_n_n.html#a37cb3d22a04f9f620fbbd7a2c7904227">epiworld::epimodels::ModelSIRCONN&lt; TSeq &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a6a6f3fd87283f3cd3a7216ef67ff4e4a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a6f3fd87283f3cd3a7216ef67ff4e4a">&#9670;&nbsp;</a></span>draw()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename TSeq &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt;::draw </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>fn_output</em> = <code>&quot;&quot;</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>self</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Draws a mermaid diagram of the model. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">model</td><td>The model to draw. </td></tr>
+    <tr><td class="paramname">fn_output</td><td>The name of the file to write the diagram. If empty, the diagram will be printed to the standard output. </td></tr>
+    <tr><td class="paramname">self</td><td>Whether to allow self-transitions. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

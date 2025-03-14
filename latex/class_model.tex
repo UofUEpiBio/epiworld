@@ -137,7 +137,9 @@ bool {\bfseries operator==} (const \mbox{\hyperlink{class_model}{Model}}$<$ TSeq
 bool {\bfseries operator!=} (const \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ \&other) const
 \item 
 void \mbox{\hyperlink{class_model_a800647b05836b20054f1f2049a41787f}{events\+\_\+run}} ()
-\begin{DoxyCompactList}\small\item\em Executes the stored action. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Executes the stored action. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}{draw}} (const std\+::string \&fn\+\_\+output=\char`\"{}\char`\"{}, bool self=false)
+\begin{DoxyCompactList}\small\item\em Draws a mermaid diagram of the model. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \begin{Indent}\textbf{ Set the backup object}\par
 {\em {\ttfamily backup} can be used to restore the entire object after a run. This can be useful if the user wishes to have individuals start with the same network from the beginning. }\begin{DoxyCompactItemize}
 \item 
@@ -833,6 +835,26 @@ Advanced usage\+: Makes a copy of data and returns it as undeleted pointer.
 
 \begin{DoxyParams}{Parameters}
 {\em copy} & \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}\label{class_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}} 
+\index{Model$<$ TSeq $>$@{Model$<$ TSeq $>$}!draw@{draw}}
+\index{draw@{draw}!Model$<$ TSeq $>$@{Model$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{draw()}{draw()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$\+::draw (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{fn\+\_\+output = {\ttfamily \char`\"{}\char`\"{}},  }\item[{bool}]{self = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Draws a mermaid diagram of the model. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em model} & The model to draw. \\
+\hline
+{\em fn\+\_\+output} & The name of the file to write the diagram. If empty, the diagram will be printed to the standard output. \\
+\hline
+{\em self} & Whether to allow self-\/transitions. \\
 \hline
 \end{DoxyParams}
 \mbox{\Hypertarget{class_model_afb9d61f6f38a4a0eed72f000bf995fec}\label{class_model_afb9d61f6f38a4a0eed72f000bf995fec}} 

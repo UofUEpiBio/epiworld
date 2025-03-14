@@ -137,7 +137,9 @@ bool {\bfseries operator==} (const \mbox{\hyperlink{classepiworld_1_1_model}{Mod
 bool {\bfseries operator!=} (const \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ \&other) const
 \item 
 void \mbox{\hyperlink{classepiworld_1_1_model_a800647b05836b20054f1f2049a41787f}{events\+\_\+run}} ()
-\begin{DoxyCompactList}\small\item\em Executes the stored action. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Executes the stored action. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classepiworld_1_1_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}{draw}} (const std\+::string \&fn\+\_\+output=\char`\"{}\char`\"{}, bool self=false)
+\begin{DoxyCompactList}\small\item\em Draws a mermaid diagram of the model. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \begin{Indent}\textbf{ Set the backup object}\par
 {\em {\ttfamily backup} can be used to restore the entire object after a run. This can be useful if the user wishes to have individuals start with the same network from the beginning. }\begin{DoxyCompactItemize}
 \item 
@@ -839,6 +841,26 @@ Advanced usage\+: Makes a copy of data and returns it as undeleted pointer.
 
 Reimplemented in \mbox{\hyperlink{class_model_s_i_r_mixing_a609d6da791f6d097a6ece6554a75cbe6}{Model\+SIRMixing$<$ TSeq $>$}}, \mbox{\hyperlink{class_model_s_i_r_logit_a14cddb580e197f642f19da2d3432e6b1}{Model\+SIRLogit$<$ TSeq $>$}}, \mbox{\hyperlink{class_model_s_i_r_d_c_o_n_n_a2349e4616cb10b88424058970e5d0b18}{Model\+SIRDCONN$<$ TSeq $>$}}, \mbox{\hyperlink{class_model_s_i_r_c_o_n_n_a37cb3d22a04f9f620fbbd7a2c7904227}{Model\+SIRCONN$<$ TSeq $>$}}, \mbox{\hyperlink{class_model_s_e_i_r_mixing_ad53c73d00b5625fbd34f160732bec72a}{Model\+SEIRMixing$<$ TSeq $>$}}, \mbox{\hyperlink{class_model_s_e_i_r_d_c_o_n_n_a6b32c03ed27bde9d0c5049727425c33f}{Model\+SEIRDCONN$<$ TSeq $>$}}, \mbox{\hyperlink{class_model_s_e_i_r_c_o_n_n_a566a0d12a5987b978d4287ba2969004e}{Model\+SEIRCONN$<$ TSeq $>$}}, \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_i_r_mixing_a609d6da791f6d097a6ece6554a75cbe6}{epiworld\+::epimodels\+::\+Model\+SIRMixing$<$ TSeq $>$}}, \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_e_i_r_mixing_ad53c73d00b5625fbd34f160732bec72a}{epiworld\+::epimodels\+::\+Model\+SEIRMixing$<$ TSeq $>$}}, \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_i_r_logit_a14cddb580e197f642f19da2d3432e6b1}{epiworld\+::epimodels\+::\+Model\+SIRLogit$<$ TSeq $>$}}, \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_e_i_r_d_c_o_n_n_a6b32c03ed27bde9d0c5049727425c33f}{epiworld\+::epimodels\+::\+Model\+SEIRDCONN$<$ TSeq $>$}}, \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_i_r_d_c_o_n_n_a2349e4616cb10b88424058970e5d0b18}{epiworld\+::epimodels\+::\+Model\+SIRDCONN$<$ TSeq $>$}}, \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_e_i_r_c_o_n_n_a566a0d12a5987b978d4287ba2969004e}{epiworld\+::epimodels\+::\+Model\+SEIRCONN$<$ TSeq $>$}}, and \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_i_r_c_o_n_n_a37cb3d22a04f9f620fbbd7a2c7904227}{epiworld\+::epimodels\+::\+Model\+SIRCONN$<$ TSeq $>$}}.
 
+\mbox{\Hypertarget{classepiworld_1_1_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}\label{classepiworld_1_1_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}} 
+\index{epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}!draw@{draw}}
+\index{draw@{draw}!epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{draw()}{draw()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$\+::draw (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{fn\+\_\+output = {\ttfamily \char`\"{}\char`\"{}},  }\item[{bool}]{self = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Draws a mermaid diagram of the model. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em model} & The model to draw. \\
+\hline
+{\em fn\+\_\+output} & The name of the file to write the diagram. If empty, the diagram will be printed to the standard output. \\
+\hline
+{\em self} & Whether to allow self-\/transitions. \\
+\hline
+\end{DoxyParams}
 \mbox{\Hypertarget{classepiworld_1_1_model_afb9d61f6f38a4a0eed72f000bf995fec}\label{classepiworld_1_1_model_afb9d61f6f38a4a0eed72f000bf995fec}} 
 \index{epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}!events\_add@{events\_add}}
 \index{events\_add@{events\_add}!epiworld::Model$<$ TSeq $>$@{epiworld::Model$<$ TSeq $>$}}
