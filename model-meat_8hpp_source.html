@@ -73,7 +73,7 @@ $(function() {
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#ifndef EPIWORLD_MODEL_MEAT_HPP</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#define EPIWORLD_MODEL_MEAT_HPP</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = <span class="keywordtype">int</span>&gt;</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = EPI_DEFAULT_TSEQ&gt;</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">inline</span> std::function&lt;void(<span class="keywordtype">size_t</span>,<a class="code" href="class_model.html">Model&lt;TSeq&gt;</a>*)&gt; make_save_run(</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    std::string fmt,</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordtype">bool</span> total_hist,</div>
@@ -2620,23 +2620,24 @@ $(function() {
 <div class="line"><a name="l02575"></a><span class="lineno"> 2575</span>&#160;) {</div>
 <div class="line"><a name="l02576"></a><span class="lineno"> 2576</span>&#160; </div>
 <div class="line"><a name="l02577"></a><span class="lineno"> 2577</span>&#160;    <a class="code" href="class_model_diagram.html">ModelDiagram</a> diagram;</div>
-<div class="line"><a name="l02578"></a><span class="lineno"> 2578</span>&#160;    diagram.set_states_and_tprob(</div>
-<div class="line"><a name="l02579"></a><span class="lineno"> 2579</span>&#160;        this-&gt;get_states(),</div>
-<div class="line"><a name="l02580"></a><span class="lineno"> 2580</span>&#160;        this-&gt;get_db().transition_probability(<span class="keyword">false</span>)</div>
-<div class="line"><a name="l02581"></a><span class="lineno"> 2581</span>&#160;    );</div>
-<div class="line"><a name="l02582"></a><span class="lineno"> 2582</span>&#160; </div>
-<div class="line"><a name="l02583"></a><span class="lineno"> 2583</span>&#160;    diagram.draw(<span class="stringliteral">&quot;&quot;</span>, fn_output, <span class="keyword">self</span>);</div>
-<div class="line"><a name="l02584"></a><span class="lineno"> 2584</span>&#160; </div>
-<div class="line"><a name="l02585"></a><span class="lineno"> 2585</span>&#160;    <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l02586"></a><span class="lineno"> 2586</span>&#160; </div>
-<div class="line"><a name="l02587"></a><span class="lineno"> 2587</span>&#160;}</div>
-<div class="line"><a name="l02588"></a><span class="lineno"> 2588</span>&#160; </div>
-<div class="line"><a name="l02589"></a><span class="lineno"> 2589</span>&#160;<span class="preprocessor">#undef VECT_MATCH</span></div>
-<div class="line"><a name="l02590"></a><span class="lineno"> 2590</span>&#160;<span class="preprocessor">#undef DURCAST</span></div>
-<div class="line"><a name="l02591"></a><span class="lineno"> 2591</span>&#160;<span class="preprocessor">#undef CASES_PAR</span></div>
-<div class="line"><a name="l02592"></a><span class="lineno"> 2592</span>&#160;<span class="preprocessor">#undef CASE_PAR</span></div>
-<div class="line"><a name="l02593"></a><span class="lineno"> 2593</span>&#160;<span class="preprocessor">#undef CHECK_INIT</span></div>
-<div class="line"><a name="l02594"></a><span class="lineno"> 2594</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l02578"></a><span class="lineno"> 2578</span>&#160; </div>
+<div class="line"><a name="l02579"></a><span class="lineno"> 2579</span>&#160;    diagram.draw_from_data(</div>
+<div class="line"><a name="l02580"></a><span class="lineno"> 2580</span>&#160;        this-&gt;get_states(),</div>
+<div class="line"><a name="l02581"></a><span class="lineno"> 2581</span>&#160;        this-&gt;get_db().transition_probability(<span class="keyword">false</span>),</div>
+<div class="line"><a name="l02582"></a><span class="lineno"> 2582</span>&#160;        fn_output,</div>
+<div class="line"><a name="l02583"></a><span class="lineno"> 2583</span>&#160;        <span class="keyword">self</span></div>
+<div class="line"><a name="l02584"></a><span class="lineno"> 2584</span>&#160;    );</div>
+<div class="line"><a name="l02585"></a><span class="lineno"> 2585</span>&#160; </div>
+<div class="line"><a name="l02586"></a><span class="lineno"> 2586</span>&#160;    <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l02587"></a><span class="lineno"> 2587</span>&#160; </div>
+<div class="line"><a name="l02588"></a><span class="lineno"> 2588</span>&#160;}</div>
+<div class="line"><a name="l02589"></a><span class="lineno"> 2589</span>&#160; </div>
+<div class="line"><a name="l02590"></a><span class="lineno"> 2590</span>&#160;<span class="preprocessor">#undef VECT_MATCH</span></div>
+<div class="line"><a name="l02591"></a><span class="lineno"> 2591</span>&#160;<span class="preprocessor">#undef DURCAST</span></div>
+<div class="line"><a name="l02592"></a><span class="lineno"> 2592</span>&#160;<span class="preprocessor">#undef CASES_PAR</span></div>
+<div class="line"><a name="l02593"></a><span class="lineno"> 2593</span>&#160;<span class="preprocessor">#undef CASE_PAR</span></div>
+<div class="line"><a name="l02594"></a><span class="lineno"> 2594</span>&#160;<span class="preprocessor">#undef CHECK_INIT</span></div>
+<div class="line"><a name="l02595"></a><span class="lineno"> 2595</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_adj_list_html"><div class="ttname"><a href="class_adj_list.html">AdjList</a></div><div class="ttdef"><b>Definition:</b> adjlist-bones.hpp:4</div></div>
 <div class="ttc" id="aclass_adj_list_html_a2bf3a057863c9dfb958d44ff370690d1"><div class="ttname"><a href="class_adj_list.html#a2bf3a057863c9dfb958d44ff370690d1">AdjList::vcount</a></div><div class="ttdeci">size_t vcount() const</div><div class="ttdoc">Number of vertices/nodes in the network.</div><div class="ttdef"><b>Definition:</b> adjlist-meat.hpp:203</div></div>
 <div class="ttc" id="aclass_adj_list_html_aa08631a4605cc3037f017bb437a96ef0"><div class="ttname"><a href="class_adj_list.html#aa08631a4605cc3037f017bb437a96ef0">AdjList::read_edgelist</a></div><div class="ttdeci">void read_edgelist(std::string fn, int size, int skip=0, bool directed=true)</div><div class="ttdoc">Read an edgelist.</div><div class="ttdef"><b>Definition:</b> adjlist-meat.hpp:92</div></div>

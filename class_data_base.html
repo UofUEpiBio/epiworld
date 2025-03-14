@@ -577,7 +577,14 @@ template&lt;typename TSeq &gt; </div>
 </div><div class="memdoc">
 
 <p>Calculates the transition probabilities. </p>
-<dl class="section return"><dt>Returns</dt><dd>std::vector&lt; epiworld_double &gt; </dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">print</td><td>Print the transition matrix. </td></tr>
+    <tr><td class="paramname">normalize</td><td>Normalize the transition matrix. Otherwise, it returns raw counts.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>The transition matrix is the matrix of the counts of transitions from one state to another. So the ij-th element of the matrix is the number of transitions from state i to state j (when not normalized), or the probability of transitioning from state i to state j (when normalized). </p><dl class="section return"><dt>Returns</dt><dd>std::vector&lt; epiworld_double &gt; </dd></dl>
 
 </div>
 </div>

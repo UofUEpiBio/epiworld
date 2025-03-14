@@ -3,87 +3,15 @@
 \doxysubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-void \mbox{\hyperlink{class_model_diagram_a250353b1a1dd8adc3d5e5280693982f9}{read\+\_\+transitions}} (const std\+::string \&fn\+\_\+transition)
-\begin{DoxyCompactList}\small\item\em Reads the transitions from a file. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{class_model_diagram_ab0929182bbe6282f4f7f7d6b2c0d9f76}{read\+\_\+transitions}} (const std\+::vector$<$ std\+::string $>$ \&fns\+\_\+transition)
-\begin{DoxyCompactList}\small\item\em In the case of multiple files (like from run\+\_\+multiple) \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{class_model_diagram_acbc83b9dbd0b117ecb67d2eb20679ae3}{transition\+\_\+probability}} (bool normalize=true)
-\begin{DoxyCompactList}\small\item\em Computes the transition probability matrix. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{class_model_diagram_a557764f598c153efe5a0417136441a67}\label{class_model_diagram_a557764f598c153efe5a0417136441a67}} 
-void {\bfseries draw} (const std\+::string \&fn\+\_\+transition, const std\+::string \&fn\+\_\+output=\char`\"{}\char`\"{}, bool self=false)
+\mbox{\Hypertarget{class_model_diagram_add49316ef44a999871f12cf28d255f1b}\label{class_model_diagram_add49316ef44a999871f12cf28d255f1b}} 
+void {\bfseries draw\+\_\+from\+\_\+data} (const std\+::vector$<$ std\+::string $>$ \&states, const std\+::vector$<$ epiworld\+\_\+double $>$ \&tprob, const std\+::string \&fn\+\_\+output=\char`\"{}\char`\"{}, bool self=false)
 \item 
-\mbox{\Hypertarget{class_model_diagram_a1fbb0b16913eed08958e09602d30aecb}\label{class_model_diagram_a1fbb0b16913eed08958e09602d30aecb}} 
-void {\bfseries set\+\_\+states\+\_\+and\+\_\+tprob} (const std\+::vector$<$ std\+::string $>$ \&states, const std\+::vector$<$ epiworld\+\_\+double $>$ \&tprob)
+\mbox{\Hypertarget{class_model_diagram_a15bf1b2e6dba7203a81e559fa94635d5}\label{class_model_diagram_a15bf1b2e6dba7203a81e559fa94635d5}} 
+void {\bfseries draw\+\_\+from\+\_\+file} (const std\+::string \&fn\+\_\+transition, const std\+::string \&fn\+\_\+output=\char`\"{}\char`\"{}, bool self=false)
+\item 
+\mbox{\Hypertarget{class_model_diagram_a9a8895ad829c2eb00886eac60c02c805}\label{class_model_diagram_a9a8895ad829c2eb00886eac60c02c805}} 
+void {\bfseries draw\+\_\+from\+\_\+files} (const std\+::vector$<$ std\+::string $>$ \&fns\+\_\+transition, const std\+::string \&fn\+\_\+output=\char`\"{}\char`\"{}, bool self=false)
 \end{DoxyCompactItemize}
-
-
-\doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{class_model_diagram_a250353b1a1dd8adc3d5e5280693982f9}\label{class_model_diagram_a250353b1a1dd8adc3d5e5280693982f9}} 
-\index{ModelDiagram@{ModelDiagram}!read\_transitions@{read\_transitions}}
-\index{read\_transitions@{read\_transitions}!ModelDiagram@{ModelDiagram}}
-\doxysubsubsection{\texorpdfstring{read\_transitions()}{read\_transitions()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
-{\footnotesize\ttfamily void Model\+Diagram\+::read\+\_\+transitions (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{fn\+\_\+transition }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
-
-
-
-Reads the transitions from a file. 
-
-The file is assumed to come from the output of \mbox{[}\mbox{\hyperlink{class_model_a573869d1fe944d8a8345dc4a5bfc31bc}{Model\+::write\+\_\+data()}}\mbox{]}, and should be in the following format\+: 
-\begin{DoxyCode}{0}
-\DoxyCodeLine{0 \textcolor{stringliteral}{"{}S"{}} \textcolor{stringliteral}{"{}I"{}} 10}
-\DoxyCodeLine{1 \textcolor{stringliteral}{"{}I"{}} \textcolor{stringliteral}{"{}R"{}} 5}
-\DoxyCodeLine{2 \textcolor{stringliteral}{"{}R"{}} \textcolor{stringliteral}{"{}S"{}} 3}
-\DoxyCodeLine{...}
-
-\end{DoxyCode}
- The first column is the step, the second column is the state from which the transition is made, the third column is the state to which the transition is made, and the fourth column is the number of transitions.
-
-
-\begin{DoxyParams}{Parameters}
-{\em fn\+\_\+transition} & The name of the file to read. \\
-\hline
-\end{DoxyParams}
-\begin{DoxyReturn}{Returns}
-void 
-\end{DoxyReturn}
-
-\begin{DoxyExceptions}{Exceptions}
-{\em std\+::runtime\+\_\+error} & if the file cannot be opened. \\
-\hline
-\end{DoxyExceptions}
-\mbox{\Hypertarget{class_model_diagram_ab0929182bbe6282f4f7f7d6b2c0d9f76}\label{class_model_diagram_ab0929182bbe6282f4f7f7d6b2c0d9f76}} 
-\index{ModelDiagram@{ModelDiagram}!read\_transitions@{read\_transitions}}
-\index{read\_transitions@{read\_transitions}!ModelDiagram@{ModelDiagram}}
-\doxysubsubsection{\texorpdfstring{read\_transitions()}{read\_transitions()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
-{\footnotesize\ttfamily void Model\+Diagram\+::read\+\_\+transitions (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ std\+::string $>$ \&}]{fns\+\_\+transition }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
-
-
-
-In the case of multiple files (like from run\+\_\+multiple) 
-
-
-\begin{DoxyParams}{Parameters}
-{\em fns\+\_\+transition} & The names of the files to read.\\
-\hline
-\end{DoxyParams}
-It will read the transitions from multiple files and concatenate them. into the same object. \mbox{\Hypertarget{class_model_diagram_acbc83b9dbd0b117ecb67d2eb20679ae3}\label{class_model_diagram_acbc83b9dbd0b117ecb67d2eb20679ae3}} 
-\index{ModelDiagram@{ModelDiagram}!transition\_probability@{transition\_probability}}
-\index{transition\_probability@{transition\_probability}!ModelDiagram@{ModelDiagram}}
-\doxysubsubsection{\texorpdfstring{transition\_probability()}{transition\_probability()}}
-{\footnotesize\ttfamily void Model\+Diagram\+::transition\+\_\+probability (\begin{DoxyParamCaption}\item[{bool}]{normalize = {\ttfamily true} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
-
-
-
-Computes the transition probability matrix. 
-
-
-\begin{DoxyParams}{Parameters}
-{\em normalize} & Whether to compute only the counts, otherwise the probabilities will be computed (row-\/stochastic). \\
-\hline
-\end{DoxyParams}
-\begin{DoxyReturn}{Returns}
-void 
-\end{DoxyReturn}
 
 
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}

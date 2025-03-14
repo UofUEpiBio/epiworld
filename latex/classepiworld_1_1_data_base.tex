@@ -286,7 +286,14 @@ std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{classepiworld_1_1_dat
 
 Calculates the transition probabilities. 
 
-\begin{DoxyReturn}{Returns}
+
+\begin{DoxyParams}{Parameters}
+{\em print} & Print the transition matrix. \\
+\hline
+{\em normalize} & Normalize the transition matrix. Otherwise, it returns raw counts.\\
+\hline
+\end{DoxyParams}
+The transition matrix is the matrix of the counts of transitions from one state to another. So the ij-\/th element of the matrix is the number of transitions from state i to state j (when not normalized), or the probability of transitioning from state i to state j (when normalized). \begin{DoxyReturn}{Returns}
 std\+::vector$<$ epiworld\+\_\+double $>$ 
 \end{DoxyReturn}
 

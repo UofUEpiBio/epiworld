@@ -76,139 +76,16 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a250353b1a1dd8adc3d5e5280693982f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1_model_diagram.html#a250353b1a1dd8adc3d5e5280693982f9">read_transitions</a> (const std::string &amp;fn_transition)</td></tr>
-<tr class="memdesc:a250353b1a1dd8adc3d5e5280693982f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads the transitions from a file.  <a href="classepiworld_1_1_model_diagram.html#a250353b1a1dd8adc3d5e5280693982f9">More...</a><br /></td></tr>
-<tr class="separator:a250353b1a1dd8adc3d5e5280693982f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab0929182bbe6282f4f7f7d6b2c0d9f76"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1_model_diagram.html#ab0929182bbe6282f4f7f7d6b2c0d9f76">read_transitions</a> (const std::vector&lt; std::string &gt; &amp;fns_transition)</td></tr>
-<tr class="memdesc:ab0929182bbe6282f4f7f7d6b2c0d9f76"><td class="mdescLeft">&#160;</td><td class="mdescRight">In the case of multiple files (like from run_multiple)  <a href="classepiworld_1_1_model_diagram.html#ab0929182bbe6282f4f7f7d6b2c0d9f76">More...</a><br /></td></tr>
-<tr class="separator:ab0929182bbe6282f4f7f7d6b2c0d9f76"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acbc83b9dbd0b117ecb67d2eb20679ae3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1_model_diagram.html#acbc83b9dbd0b117ecb67d2eb20679ae3">transition_probability</a> (bool normalize=true)</td></tr>
-<tr class="memdesc:acbc83b9dbd0b117ecb67d2eb20679ae3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the transition probability matrix.  <a href="classepiworld_1_1_model_diagram.html#acbc83b9dbd0b117ecb67d2eb20679ae3">More...</a><br /></td></tr>
-<tr class="separator:acbc83b9dbd0b117ecb67d2eb20679ae3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a557764f598c153efe5a0417136441a67"><td class="memItemLeft" align="right" valign="top"><a id="a557764f598c153efe5a0417136441a67"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>draw</b> (const std::string &amp;fn_transition, const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
-<tr class="separator:a557764f598c153efe5a0417136441a67"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1fbb0b16913eed08958e09602d30aecb"><td class="memItemLeft" align="right" valign="top"><a id="a1fbb0b16913eed08958e09602d30aecb"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_states_and_tprob</b> (const std::vector&lt; std::string &gt; &amp;states, const std::vector&lt; epiworld_double &gt; &amp;tprob)</td></tr>
-<tr class="separator:a1fbb0b16913eed08958e09602d30aecb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add49316ef44a999871f12cf28d255f1b"><td class="memItemLeft" align="right" valign="top"><a id="add49316ef44a999871f12cf28d255f1b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>draw_from_data</b> (const std::vector&lt; std::string &gt; &amp;states, const std::vector&lt; epiworld_double &gt; &amp;tprob, const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
+<tr class="separator:add49316ef44a999871f12cf28d255f1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15bf1b2e6dba7203a81e559fa94635d5"><td class="memItemLeft" align="right" valign="top"><a id="a15bf1b2e6dba7203a81e559fa94635d5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>draw_from_file</b> (const std::string &amp;fn_transition, const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
+<tr class="separator:a15bf1b2e6dba7203a81e559fa94635d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a8895ad829c2eb00886eac60c02c805"><td class="memItemLeft" align="right" valign="top"><a id="a9a8895ad829c2eb00886eac60c02c805"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>draw_from_files</b> (const std::vector&lt; std::string &gt; &amp;fns_transition, const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
+<tr class="separator:a9a8895ad829c2eb00886eac60c02c805"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a250353b1a1dd8adc3d5e5280693982f9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a250353b1a1dd8adc3d5e5280693982f9">&#9670;&nbsp;</a></span>read_transitions() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void ModelDiagram::read_transitions </td>
-          <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>fn_transition</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Reads the transitions from a file. </p>
-<p>The file is assumed to come from the output of [<a class="el" href="classepiworld_1_1_model.html#a573869d1fe944d8a8345dc4a5bfc31bc" title="Wrapper of DataBase::write_data">Model::write_data()</a>], and should be in the following format: </p><div class="fragment"><div class="line">0 <span class="stringliteral">&quot;S&quot;</span> <span class="stringliteral">&quot;I&quot;</span> 10</div>
-<div class="line">1 <span class="stringliteral">&quot;I&quot;</span> <span class="stringliteral">&quot;R&quot;</span> 5</div>
-<div class="line">2 <span class="stringliteral">&quot;R&quot;</span> <span class="stringliteral">&quot;S&quot;</span> 3</div>
-<div class="line">...</div>
-</div><!-- fragment --><p> The first column is the step, the second column is the state from which the transition is made, the third column is the state to which the transition is made, and the fourth column is the number of transitions.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">fn_transition</td><td>The name of the file to read. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>void </dd></dl>
-<dl class="exception"><dt>Exceptions</dt><dd>
-  <table class="exception">
-    <tr><td class="paramname">std::runtime_error</td><td>if the file cannot be opened. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="ab0929182bbe6282f4f7f7d6b2c0d9f76"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab0929182bbe6282f4f7f7d6b2c0d9f76">&#9670;&nbsp;</a></span>read_transitions() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void ModelDiagram::read_transitions </td>
-          <td>(</td>
-          <td class="paramtype">const std::vector&lt; std::string &gt; &amp;&#160;</td>
-          <td class="paramname"><em>fns_transition</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>In the case of multiple files (like from run_multiple) </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">fns_transition</td><td>The names of the files to read.</td></tr>
-  </table>
-  </dd>
-</dl>
-<p>It will read the transitions from multiple files and concatenate them. into the same object. </p>
-
-</div>
-</div>
-<a id="acbc83b9dbd0b117ecb67d2eb20679ae3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acbc83b9dbd0b117ecb67d2eb20679ae3">&#9670;&nbsp;</a></span>transition_probability()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void ModelDiagram::transition_probability </td>
-          <td>(</td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>normalize</em> = <code>true</code></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes the transition probability matrix. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">normalize</td><td>Whether to compute only the counts, otherwise the probabilities will be computed (row-stochastic). </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>void </dd></dl>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="epiworld_8hpp_source.html">epiworld.hpp</a></li>
 </ul>
