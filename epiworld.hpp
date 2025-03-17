@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <regex>
+#include <sstream>
 #include <iomanip>
 #include <set>
 
