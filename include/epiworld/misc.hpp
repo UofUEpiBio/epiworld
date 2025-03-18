@@ -303,7 +303,7 @@ inline std::map< std::string, T > read_yaml(std::string fn)
         if (std::regex_match(line, std::regex("^([*].+|//.+|#.+|\\s*)$")))
             continue;
 
-        // Finding the patter, if it doesn't match, then error
+        // Finding the pattern, if it doesn't match, then error
         std::regex_match(line, match, pattern);
 
         if (match.empty())
