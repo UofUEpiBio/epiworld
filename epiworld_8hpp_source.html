@@ -722,11 +722,11 @@ $(function() {
 <div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;<span class="comment">        if (std::regex_match(line, std::regex(&quot;^([*].+|//.+|#.+|\\s*)$&quot;)))</span></div>
 <div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;<span class="comment">            continue;</span></div>
 <div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;<span class="comment">        // Finding the patter, if it doesn&#39;t match, then error</span></div>
+<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;<span class="comment">        // Finding the pattern, if it doesn&#39;t match, then error</span></div>
 <div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;<span class="comment">        std::regex_match(line, match, pattern);</span></div>
 <div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;<span class="comment">        if (match.empty())</span></div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;<span class="comment">            throw std::logic_error(&quot;The line does not match parameters:\n&quot; + line);</span></div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;<span class="comment">            throw std::logic_error(&quot;Line has invalid format:\n&quot; + line);</span></div>
 <div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;<span class="comment">        // Capturing the number</span></div>
 <div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="comment">        std::string anumber = match[2u].str() + match[3u].str();</span></div>
