@@ -1,5 +1,5 @@
-#ifndef EPIWORLD_MODEL_HPP
-#define EPIWORLD_MODEL_HPP
+#ifndef EPIWORLD_MODEL_BONES_HPP
+#define EPIWORLD_MODEL_BONES_HPP
 
 template<typename TSeq>
 class Agent;
@@ -58,7 +58,7 @@ inline epiworld_double death_reduction_mixer_default(
     Model<TSeq>* m
     );
 
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
     bool total_hist = true,
@@ -610,7 +610,7 @@ public:
     epiworld_double add_param(
         epiworld_double initial_val, std::string pname, bool overwrite = false
     );
-    void read_params(std::string fn, bool overwrite = false);
+    Model<TSeq> & read_params(std::string fn, bool overwrite = false);
     epiworld_double get_param(epiworld_fast_uint k);
     epiworld_double get_param(std::string pname);
     // void set_param(size_t k, epiworld_double val);
@@ -734,6 +734,18 @@ public:
      * @param model_ Model over which it will be executed.
      */
     void events_run();
+
+    /**
+     * @brief Draws a mermaid diagram of the model.
+     * @param model The model to draw.
+     * @param fn_output The name of the file to write the diagram.
+     * If empty, the diagram will be printed to the standard output.
+     * @param self Whether to allow self-transitions.
+     */
+    void draw(
+        const std::string & fn_output = "",
+        bool self = false
+    );
 
 
 };

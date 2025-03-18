@@ -22,3 +22,4 @@
 #include "09-distribute-tools-and-viruses.cpp"
 #include "10-generation-interval.cpp"
 #include "11-random-numbers.cpp"
+#include "12-diagrams.cpp"

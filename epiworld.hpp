@@ -12,14 +12,17 @@
 #include <cstdint>
 #include <algorithm>
 #include <regex>
+#include <sstream>
+#include <iomanip>
+#include <set>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 7
-#define EPIWORLD_VERSION_PATCH 1
+#define EPIWORLD_VERSION_MINOR 8
+#define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -733,6 +736,73 @@ inline int roulette(
 
 }
 
+/**
+ * @brief Read parameters from a yaml file
+ * 
+ * @details
+ * The file should have the following structure:
+ * ```yaml
+ * # Comment
+ * [name of parameter 1]: [value in T]
+ * [name of parameter 2]: [value in T]
+ * ...
+ * ```
+ * 
+ * @tparam T Type of the parameter
+ * @param fn Path to the file containing the parameters
+ * @return std::map<std::string, T> 
+ */
+template <typename T>
+inline std::map< std::string, T > read_yaml(std::string fn)
+{
+
+    std::ifstream paramsfile(fn);
+
+    if (!paramsfile)
+        throw std::logic_error("The file " + fn + " was not found.");
+
+    std::regex pattern("^([^:]+)\\s*[:]\\s*([-]?[0-9]+|[-]?[0-9]*\\.[0-9]+)?\\s*$");
+
+    std::string line;
+    std::smatch match;
+    auto empty = std::sregex_iterator();
+
+    // Making room
+    std::map<std::string, T> parameters;
+
+    while (std::getline(paramsfile, line))
+    {
+
+        // Is it a comment or an empty line?
+        if (std::regex_match(line, std::regex("^([*].+|//.+|#.+|\\s*)$")))
+            continue;
+
+        // Finding the pattern, if it doesn't match, then error
+        std::regex_match(line, match, pattern);
+
+        if (match.empty())
+            throw std::logic_error("Line has invalid format:\n" + line);
+
+        // Capturing the number
+        std::string anumber = match[2u].str() + match[3u].str();
+        T tmp_num = static_cast<T>(
+            std::strtod(anumber.c_str(), nullptr)
+            );
+
+        std::string pname = std::regex_replace(
+            match[1u].str(),
+            std::regex("^\\s+|\\s+$"),
+            "");
+
+        // Adding the parameter to the map
+        parameters[pname] = tmp_num;
+
+    }
+
+    return parameters;
+
+}
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -826,9 +896,6 @@ inline void Progress::next() {
     }
     #endif
 
-    if (i >= n)
-        end();
-
     last_loc = cur_loc;
 
 }
@@ -846,6 +913,395 @@ inline void Progress::end() {
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -include/epiworld/progress.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/modeldiagram-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MODELDIAGRAM_HPP
+#define EPIWORLD_MODELDIAGRAM_HPP
+
+class ModelDiagram {
+private:
+
+    std::map< std::pair< std::string, std::string >, int > data;
+
+    std::vector< std::string > states;
+    std::vector< epiworld_double > tprob;
+
+    void draw_mermaid(
+        std::string fn_output = "",
+        bool self = false
+    );
+
+
+    int n_runs = 0; ///< The number of runs included in the diagram.
+
+    /**
+     * @brief Reads the transitions from a file.
+     * @details
+     * The file is assumed to come from the output of [Model::write_data()],
+     * and should be in the following format:
+     * ```
+     * 0 "S" "I" 10
+     * 1 "I" "R" 5
+     * 2 "R" "S" 3
+     * ...
+     * ```
+     * The first column is the step, the second column is the state from which
+     * the transition is made, the third column is the state to which the
+     * transition is made, and the fourth column is the number of transitions.
+     * 
+     * @param fn_transition The name of the file to read.
+     * @return void
+     * @throws std::runtime_error if the file cannot be opened.
+     */
+    void read_transitions(
+        const std::string & fn_transition
+    );
+
+    /**
+     * @brief In the case of multiple files (like from run_multiple)
+     * @param fns_transition The names of the files to read.
+     * @details
+     * It will read the transitions from multiple files and concatenate them.
+     * into the same object.
+     */
+    void read_transitions(
+        const std::vector< std::string > & fns_transition
+    );
+    
+    /**
+     * @brief Computes the transition probability matrix.
+     * @param normalize Whether to compute only the counts,
+     * otherwise the probabilities will be computed (row-stochastic).
+     * @return void
+     */
+    void transition_probability(bool normalize = true);
+
+    void clear();
+
+public:
+
+    ModelDiagram() {};
+
+    void draw_from_data(
+        const std::vector< std::string > & states,
+        const std::vector< epiworld_double > & tprob,
+        const std::string & fn_output = "",
+        bool self = false
+    );
+
+    void draw_from_file(
+        const std::string & fn_transition,
+        const std::string & fn_output = "",
+        bool self = false
+    );
+
+    void draw_from_files(
+        const std::vector< std::string > & fns_transition,
+        const std::string & fn_output = "",
+        bool self = false
+    );
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/modeldiagram-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/modeldiagram-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MODELDIAGRAM_MEAT_HPP
+#define EPIWORLD_MODELDIAGRAM_MEAT_HPP
+
+inline void ModelDiagram::read_transitions(
+    const std::string & fn_transition
+) {
+
+    // Checking if the file exists
+    std::ifstream file(fn_transition);
+
+    if (!file.is_open())
+        throw std::runtime_error(
+            "Could not open the file '" + 
+            fn_transition + "' for reading."
+        );
+
+    // Reading the data
+    std::string line;
+    int i = 0;
+    while (std::getline(file, line))
+    {
+
+        // Skipping the first line
+        if (i++ == 0)
+            continue;
+
+        std::istringstream iss(line);
+        #ifdef EPI_DEBUG
+        int t;
+        iss >> t;
+        #endif
+
+        int i_;
+        std::string from_, to_;
+        int counts_;
+
+        iss >> i_;
+
+        // Read the quoted strings
+        iss >> std::quoted(from_) >> std::quoted(to_);
+
+        // Read the integer
+        iss >> counts_;
+
+        if (counts_ > 0)
+        {
+            auto idx = std::make_pair(from_, to_);
+            if (data.find(idx) == data.end())
+                data[idx] = counts_;
+            else
+                data[idx] += counts_;
+        }
+
+    }
+
+    // Incrementing the number of runs
+    this->n_runs++;
+
+}
+
+inline void ModelDiagram::read_transitions(
+    const std::vector< std::string > & fns_transition
+)
+{
+
+    for (const auto & fn: fns_transition)
+        this->read_transitions(fn);
+
+    return;
+
+}
+
+inline void ModelDiagram::transition_probability(
+    bool normalize
+)
+{
+
+    // Generating the map of states
+    std::set< std::string > states_set;
+
+    for (const auto & d: data)
+    {
+        states_set.insert(d.first.first);
+        states_set.insert(d.first.second);
+    }
+
+    // Generating the transition matrix
+    states = std::vector< std::string >(states_set.begin(), states_set.end());
+    size_t n_states = states.size();
+    tprob.resize(n_states * n_states);
+    std::fill(tprob.begin(), tprob.end(), 0.0);
+
+    std::vector< epiworld_double > rowsum(n_states, 0.0);
+    for (size_t i = 0; i < n_states; ++i)
+    {
+
+        for (size_t j = 0; j < n_states; ++j)
+        {
+
+            auto key = std::make_pair(states[i], states[j]);
+            if (data.find(key) != data.end())
+                tprob[i + j * n_states] = static_cast<epiworld_double>(
+                    data[key]
+                );
+
+            if (normalize)
+                rowsum[i] += tprob[i + j * n_states];
+
+        }
+
+        if (normalize)
+        {
+            for (size_t j = 0; j < n_states; ++j)
+                tprob[i + j * n_states] /= rowsum[i];
+        }
+
+    }
+
+    return;
+    
+
+}
+
+inline void ModelDiagram::clear()
+{
+    data.clear();
+    states.clear();
+    tprob.clear();
+    n_runs = 0;
+    return;
+}
+
+inline void ModelDiagram::draw_mermaid(
+    std::string fn_output,
+    bool self
+)
+{
+
+    // Getting a sorting vector of indices from the states
+    // string vector
+    std::vector< size_t > idx(states.size());
+    std::iota(idx.begin(), idx.end(), 0u);
+
+    std::sort(
+        idx.begin(),
+        idx.end(),
+        [&states = this->states](size_t i, size_t j) {
+            return states[i] < states[j];
+        }
+    );
+
+    std::vector< std::string > states_ids;
+    for (size_t i = 0u; i < states.size(); ++i)
+        states_ids.push_back("s" + std::to_string(i));
+
+    std::string graph = "flowchart LR\n";
+
+    // Declaring the states
+    for (size_t i = 0u; i < states.size(); ++i)
+    {
+        graph += "\t" + states_ids[i] + "[" + states[idx[i]] + "]\n";
+    }
+
+    // Adding the transitions
+    size_t n_states = states.size();
+    for (size_t i = 0u; i < states.size(); ++i)
+    {
+        for (size_t j = 0u; j < states.size(); ++j)
+        {
+            if (!self && i == j)
+                continue;
+
+            if (tprob[idx[i] + idx[j] * n_states] > 0.0)
+            {
+                graph += "\t" + states_ids[i] + " -->|" + 
+                    std::to_string(tprob[idx[i] + idx[j] * n_states]) + 
+                    "| " + states_ids[j] + "\n";
+            }
+        }
+    }
+
+    if (fn_output != "")
+    {
+        std::ofstream file(fn_output);
+
+        if (!file.is_open())
+            throw std::runtime_error(
+                "Could not open the file " +
+                fn_output + 
+                " for writing."
+            );
+
+        file << graph;
+        file.close();
+        
+    } else {
+        printf_epiworld("%s\n", graph.c_str());
+    }
+
+    return;
+
+}
+
+inline void ModelDiagram::draw_from_file(
+    const std::string & fn_transition,
+    const std::string & fn_output,
+    bool self
+) {
+
+    this->clear();
+
+    // Loading the transition file
+    this->read_transitions(fn_transition);
+
+    // Computing the transition probability
+    this->transition_probability();
+
+    // Actually drawing the diagram
+    this->draw_mermaid(fn_output, self);
+
+    return;
+  
+}
+
+inline void ModelDiagram::draw_from_files(
+    const std::vector< std::string > & fns_transition,
+    const std::string & fn_output,
+    bool self
+) {
+
+    this->clear();
+
+    // Loading the transition files
+    this->read_transitions(fns_transition);
+
+    // Computing the transition probability
+    this->transition_probability();
+
+    // Actually drawing the diagram
+    this->draw_mermaid(fn_output, self);
+
+    return;
+}
+
+inline void ModelDiagram::draw_from_data(
+    const std::vector< std::string > & states,
+    const std::vector< epiworld_double > & tprob,
+    const std::string & fn_output,
+    bool self
+) {
+
+    this->clear();
+
+    this->states = states;
+    this->tprob = tprob;
+
+    this->draw_mermaid(fn_output, self);
+
+    return;
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/modeldiagram-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3268,7 +3724,15 @@ public:
 
     /**
      * @brief Calculates the transition probabilities
-     * 
+     * @param print Print the transition matrix.
+     * @param normalize Normalize the transition matrix. Otherwise, 
+     * it returns raw counts.
+     * @details
+     * The transition matrix is the matrix of the counts of transitions
+     * from one state to another. So the ij-th element of the matrix is
+     * the number of transitions from state i to state j (when not normalized),
+     * or the probability of transitioning from state i to state j 
+     * (when normalized).
      * @return std::vector< epiworld_double > 
      */
     std::vector< epiworld_double > transition_probability(
@@ -4502,43 +4966,28 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
     size_t n_state = states_labels.size();
     size_t n_days   = model->get_ndays();
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
-    std::vector< epiworld_double > days_to_include(n_state, 0.0);
+    std::vector< epiworld_double > rowsums(n_state, 0.0);
 
-    for (size_t t = 1; t < n_days; ++t)
+    for (size_t t = 0; t < n_days; ++t)
     {
 
         for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
-            epiworld_double daily_total =
-                hist_total_counts[(t - 1) * n_state + s_i];
-
-            if (daily_total == 0)
-                continue;
-
-            days_to_include[s_i] += 1.0; 
 
             for (size_t s_j = 0u; s_j < n_state; ++s_j)
             {
-                #ifdef EPI_DEBUG
-                epiworld_double entry = hist_transition_matrix[
+                res[s_i + s_j * n_state] += (
+                    hist_transition_matrix[
+                        s_i + s_j * n_state +
+                        t * (n_state * n_state)
+                    ]
+                );
+                
+                rowsums[s_i] += hist_transition_matrix[
                     s_i + s_j * n_state +
                     t * (n_state * n_state)
-                    ];
-
-                if (entry > daily_total)
-                    throw std::logic_error(
-                        "The entry in hist_transition_matrix cannot have more elememnts than the total"
-                        );
-
-                res[s_i + s_j * n_state] += (entry / daily_total);
-                #else
-                    res[s_i + s_j * n_state] += (
-                        hist_transition_matrix[
-                            s_i + s_j * n_state +
-                            t * (n_state * n_state)
-                        ] / daily_total
-                    );
-                #endif
+                ];
+            
             }
 
         }
@@ -4550,7 +4999,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
         for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
             for (size_t s_j = 0; s_j < n_state; ++s_j)
-                res[s_i + s_j * n_state] /= days_to_include[s_i];
+                res[s_i + s_j * n_state] /= rowsums[s_i];
         }
     }
 
@@ -6355,8 +6804,8 @@ inline bool GlobalEvent<TSeq>::operator!=(const GlobalEvent<TSeq> & other) const
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_MODEL_HPP
-#define EPIWORLD_MODEL_HPP
+#ifndef EPIWORLD_MODEL_BONES_HPP
+#define EPIWORLD_MODEL_BONES_HPP
 
 template<typename TSeq>
 class Agent;
@@ -6415,7 +6864,7 @@ inline epiworld_double death_reduction_mixer_default(
     Model<TSeq>* m
     );
 
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
     bool total_hist = true,
@@ -6967,7 +7416,7 @@ public:
     epiworld_double add_param(
         epiworld_double initial_val, std::string pname, bool overwrite = false
     );
-    void read_params(std::string fn, bool overwrite = false);
+    Model<TSeq> & read_params(std::string fn, bool overwrite = false);
     epiworld_double get_param(epiworld_fast_uint k);
     epiworld_double get_param(std::string pname);
     // void set_param(size_t k, epiworld_double val);
@@ -7092,6 +7541,18 @@ public:
      */
     void events_run();
 
+    /**
+     * @brief Draws a mermaid diagram of the model.
+     * @param model The model to draw.
+     * @param fn_output The name of the file to write the diagram.
+     * If empty, the diagram will be printed to the standard output.
+     * @param self Whether to allow self-transitions.
+     */
+    void draw(
+        const std::string & fn_output = "",
+        bool self = false
+    );
+
 
 };
 
@@ -7135,7 +7596,7 @@ public:
  * @param transition 
  * @return std::function<void(size_t,Model<TSeq>*)> 
  */
-template<typename TSeq = int>
+template<typename TSeq>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt,
     bool total_hist,
@@ -8455,7 +8916,7 @@ inline Model<TSeq> & Model<TSeq>::run(
 {
 
     if (size() == 0u)
-        throw std::logic_error("There's no agents in this model!");
+        throw std::logic_error("There are no agents in this model!");
 
     if (nstates == 0u)
         throw std::logic_error(
@@ -9501,49 +9962,15 @@ inline epiworld_double Model<TSeq>::add_param(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::read_params(std::string fn, bool overwrite)
+inline Model<TSeq> & Model<TSeq>::read_params(std::string fn, bool overwrite)
 {
 
-    std::ifstream paramsfile(fn);
+    auto params_map = read_yaml<epiworld_double>(fn);
 
-    if (!paramsfile)
-        throw std::logic_error("The file " + fn + " was not found.");
+    for (auto & p : params_map)
+        add_param(p.second, p.first, overwrite);
 
-    std::regex pattern("^([^:]+)\\s*[:]\\s*([0-9]+|[0-9]*\\.[0-9]+)?\\s*$");
-
-    std::string line;
-    std::smatch match;
-    auto empty = std::sregex_iterator();
-
-    while (std::getline(paramsfile, line))
-    {
-
-        // Is it a comment or an empty line?
-        if (std::regex_match(line, std::regex("^([*].+|//.+|#.+|\\s*)$")))
-            continue;
-
-        // Finding the patter, if it doesn't match, then error
-        std::regex_match(line, match, pattern);
-
-        if (match.empty())
-            throw std::logic_error("The line does not match parameters:\n" + line);
-
-        // Capturing the number
-        std::string anumber = match[2u].str() + match[3u].str();
-        epiworld_double tmp_num = static_cast<epiworld_double>(
-            std::strtod(anumber.c_str(), nullptr)
-            );
-
-        add_param(
-            tmp_num,
-            std::regex_replace(
-                match[1u].str(),
-                std::regex("^\\s+|\\s+$"),
-                ""),
-            overwrite
-        );
-
-    }
+    return *this;
 
 }
 
@@ -10049,6 +10476,25 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     )
     
     return true;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::draw(
+    const std::string & fn_output,
+    bool self
+) {
+
+    ModelDiagram diagram;
+
+    diagram.draw_from_data(
+        this->get_states(),
+        this->get_db().transition_probability(false),
+        fn_output,
+        self
+    );
+
+    return;
 
 }
 
@@ -19580,7 +20026,14 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
     {
         ModelSEIRDCONN<TSeq> * model = dynamic_cast<ModelSEIRDCONN<TSeq> *>(m);
-        model->update_infected();
+        
+        if (model == nullptr)
+            throw std::logic_error(
+                std::string("Internal error in the ModelSEIRDCONN model: ") +
+                std::string("The model returns a null pointer.")
+            );
+        else
+            model->update_infected();
         
         return;
     };

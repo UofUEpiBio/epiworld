@@ -283,7 +283,15 @@ public:
 
     /**
      * @brief Calculates the transition probabilities
-     * 
+     * @param print Print the transition matrix.
+     * @param normalize Normalize the transition matrix. Otherwise, 
+     * it returns raw counts.
+     * @details
+     * The transition matrix is the matrix of the counts of transitions
+     * from one state to another. So the ij-th element of the matrix is
+     * the number of transitions from state i to state j (when not normalized),
+     * or the probability of transitioning from state i to state j 
+     * (when normalized).
      * @return std::vector< epiworld_double > 
      */
     std::vector< epiworld_double > transition_probability(

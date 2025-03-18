@@ -1178,43 +1178,28 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
     size_t n_state = states_labels.size();
     size_t n_days   = model->get_ndays();
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
-    std::vector< epiworld_double > days_to_include(n_state, 0.0);
+    std::vector< epiworld_double > rowsums(n_state, 0.0);
 
-    for (size_t t = 1; t < n_days; ++t)
+    for (size_t t = 0; t < n_days; ++t)
     {
 
         for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
-            epiworld_double daily_total =
-                hist_total_counts[(t - 1) * n_state + s_i];
-
-            if (daily_total == 0)
-                continue;
-
-            days_to_include[s_i] += 1.0; 
 
             for (size_t s_j = 0u; s_j < n_state; ++s_j)
             {
-                #ifdef EPI_DEBUG
-                epiworld_double entry = hist_transition_matrix[
+                res[s_i + s_j * n_state] += (
+                    hist_transition_matrix[
+                        s_i + s_j * n_state +
+                        t * (n_state * n_state)
+                    ]
+                );
+                
+                rowsums[s_i] += hist_transition_matrix[
                     s_i + s_j * n_state +
                     t * (n_state * n_state)
-                    ];
-
-                if (entry > daily_total)
-                    throw std::logic_error(
-                        "The entry in hist_transition_matrix cannot have more elememnts than the total"
-                        );
-
-                res[s_i + s_j * n_state] += (entry / daily_total);
-                #else
-                    res[s_i + s_j * n_state] += (
-                        hist_transition_matrix[
-                            s_i + s_j * n_state +
-                            t * (n_state * n_state)
-                        ] / daily_total
-                    );
-                #endif
+                ];
+            
             }
 
         }
@@ -1226,7 +1211,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
         for (size_t s_i = 0; s_i < n_state; ++s_i)
         {
             for (size_t s_j = 0; s_j < n_state; ++s_j)
-                res[s_i + s_j * n_state] /= days_to_include[s_i];
+                res[s_i + s_j * n_state] /= rowsums[s_i];
         }
     }
 

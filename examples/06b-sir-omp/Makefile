@@ -1,6 +1,6 @@
 CXX=g++
 main.o: main.cpp
-	$(CXX) -std=c++11 -Wall -pedantic -g -O2 -ftree-vectorize -fopenmp main.cpp -o main.o
+	$(CXX) -std=c++14 -Wall -pedantic -g -O2 -ftree-vectorize -fopenmp main.cpp -o main.o
 README.md: main.o
 	echo "## Example: 06b-sir-omp" > README.md && \
 	echo "" >> README.md && \
