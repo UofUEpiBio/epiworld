@@ -86,7 +86,9 @@
     "forward_list": "cpp",
     "ios": "cpp",
     "locale": "cpp",
-    "print": "cpp"
+    "print": "cpp",
+    "format": "cpp",
+    "span": "cpp"
   },
   "intel-corporation.oneapi-analysis-configurator.binary-path": "/home/george/Documents/development/epiworld/tests/01c.o",
   "grammarly.selectors": [

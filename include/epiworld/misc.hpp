@@ -307,7 +307,7 @@ inline std::map< std::string, T > read_yaml(std::string fn)
         std::regex_match(line, match, pattern);
 
         if (match.empty())
-            throw std::logic_error("The line does not match parameters:\n" + line);
+            throw std::logic_error("Line has invalid format:\n" + line);
 
         // Capturing the number
         std::string anumber = match[2u].str() + match[3u].str();

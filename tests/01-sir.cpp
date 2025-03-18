@@ -81,6 +81,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     REQUIRE(out_of_range_0 == 0);
     REQUIRE(out_of_range_1 == 0);
     REQUIRE(out_of_range_2 == 0);
+    REQUIRE_THROWS(model_2.read_params("bad_params_test.yaml", true));
     #else
     model_0.print(false);
     model_1.print(false);

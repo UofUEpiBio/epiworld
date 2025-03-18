@@ -46,6 +46,10 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
     std::cout << "Printing transitions from multiple files" << std::endl;
     diagram.draw_from_files(files);
 
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_THROWS(diagram.draw_from_file("non_existant_file.txt"));
+    #endif 
+
     
     #ifndef CATCH_CONFIG_MAIN
     return 0;
