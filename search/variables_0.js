@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['events_218',['events',['../classepiworld_1_1_model.html#a8ea9aacbf89d9f757e6b01f74335fb07',1,'epiworld::Model::events()'],['../class_model.html#a13d663322629f76f7e9462b6572475d8',1,'Model::events()']]]
+  ['available_225',['available',['../classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#a8adf00f2c1ca5fcbc927d9857cd5db8a',1,'epiworld::epimodels::ModelMeaslesQuarantine::available()'],['../class_model_measles_quarantine.html#a42e4979db0b127ba848523b54c037bdf',1,'ModelMeaslesQuarantine::available()']]]
 ];

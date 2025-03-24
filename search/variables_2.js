@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['name_220',['name',['../classepiworld_1_1_model.html#a4af72bcd59626f5c6cb52fc10fc30c04',1,'epiworld::Model::name()'],['../class_model.html#a343ab95f43273186d42d6df618695283',1,'Model::name()']]]
+  ['events_227',['events',['../classepiworld_1_1_model.html#a8ea9aacbf89d9f757e6b01f74335fb07',1,'epiworld::Model::events()'],['../class_model.html#a13d663322629f76f7e9462b6572475d8',1,'Model::events()']]]
 ];

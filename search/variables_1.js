@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['initial_5fstates_5ffun_219',['initial_states_fun',['../classepiworld_1_1_model.html#a151605fc485f2a818a3e8f884b210fde',1,'epiworld::Model::initial_states_fun()'],['../class_model.html#a6a3e893c076226874afbf0c0b20804ac',1,'Model::initial_states_fun()']]]
+  ['day_5fflagged_226',['day_flagged',['../classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#ac1b12b164eb6bc2c503a80e76ef54b61',1,'epiworld::epimodels::ModelMeaslesQuarantine::day_flagged()'],['../class_model_measles_quarantine.html#a71053fccd21dafa183ea180ed2a572f4',1,'ModelMeaslesQuarantine::day_flagged()']]]
 ];
