@@ -1,15 +1,15 @@
 {
   "configurations": [
     {
-      "name": "macos-clang-arm64",
+      "name": "Linux GCC arm64",
       "includePath": [
         "${workspaceFolder}/**"
       ],
       "defines": [],
-      "compilerPath": "/usr/bin/clang",
+      "compilerPath": "/usr/bin/g++",
       "cStandard": "${default}",
       "cppStandard": "${default}",
-      "intelliSenseMode": "macos-clang-arm64"
+      "intelliSenseMode": "linux-gcc-arm64"
     }
   ],
   "version": 4
