@@ -92,9 +92,11 @@ jobs:
         run: cp -r include/epiworld py-pkg/include
 
       - name: Build and install
+        working-directory: ./py-pkg
         run: pip install --verbose .[test]
 
       - name: Test
+        working-directory: ./py-pkg
         run: pytest
 
   test-epiworld-r-valgrind:
