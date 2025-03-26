@@ -8,14 +8,13 @@
 
 name: Tests
 
-on: 
+on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
 
 jobs:
   test-macos:
-
     runs-on: macos-latest
 
     steps:
@@ -28,7 +27,6 @@ jobs:
           cd tests && make main.a && ./main.a
 
   test-macos-clang18:
-
     runs-on: macos-latest
 
     steps:
@@ -39,7 +37,6 @@ jobs:
           brew install llvm@18 
           echo 'export PATH="/usr/local/opt/llvm@18/bin:$PATH"' >> /Users/runner/.bash_profile
           cd tests && make main.a && ./main.a
-
 
   test-ubuntu:
     runs-on: ubuntu-latest
@@ -75,6 +72,30 @@ jobs:
           cp -r include/epiworld/ r-pkg/inst/include/epiworld/
           R CMD build r-pkg
           R CMD check --no-manual epiworldR_*.tar.gz
+
+  test-epiworld-py:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: UofUEpiBio/epiworldPy
+          path: ./py-pkg
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.0
+
+      - name: Copy headers
+        run: cp -r include/epiworld py-pkg/include
+
+      - name: Build and install
+        run: pip install --verbose .[test]
+
+      - name: Test
+        run: pytest
 
   test-epiworld-r-valgrind:
     runs-on: ubuntu-latest
