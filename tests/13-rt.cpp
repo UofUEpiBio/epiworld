@@ -56,7 +56,7 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
 
     
     #ifdef CATCH_CONFIG_MAIN
-    REQUIRE_FALSE(n_seed != n_seeds);
+    REQUIRE(n_seed == n_seeds);
     REQUIRE_FALSE(moreless(rts/static_cast<double>(n_seed), R0, 0.05));
     #endif
 
