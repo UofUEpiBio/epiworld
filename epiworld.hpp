@@ -22,7 +22,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 8
-#define EPIWORLD_VERSION_PATCH 0
+#define EPIWORLD_VERSION_PATCH 1
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -3693,6 +3693,12 @@ public:
     
     /***
      * @brief Record a transmission event
+     * @param i,j Integers. Id of the source and target agents.
+     * @param virus Integer. Id of the virus.
+     * @param i_expo_date Integer. Date when the source agent was infected.
+     * @details
+     * If i is -1, then it means that the agent was assigned a virus at the
+     * beginning of the simulation.
      */
     void record_transmission(int i, int j, int virus, int i_expo_date);
 
@@ -3713,6 +3719,11 @@ public:
      * virus is allowed to circulate naïvely or not, respectively.
      * 
      * @param fn File where to write out the reproductive number.
+     * @details
+     * In the case of `MapVec_type<int,int>`, the key is a vector of 3 integers:
+     * - Virus id
+     * - Source id
+     * - Date when the source was infected
      */
     ///@{
     MapVec_type<int,int> reproductive_number() const;
@@ -14616,21 +14627,13 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 
     Agent<TSeq> *  p = a.agent;
     VirusPtr<TSeq> v = a.virus;
-
-    // Has a agent? If so, we need to register the transmission
-    if (v->get_agent())
-    {
-
-        // ... only if not the same agent
-        if (v->get_agent()->get_id() != p->get_id())
-            m->get_db().record_transmission(
-                v->get_agent()->get_id(),
-                p->get_id(),
-                v->get_id(),
-                v->get_date() 
-            );
-
-    }
+    
+    m->get_db().record_transmission(
+        v->get_agent() ? v->get_agent()->get_id() : -1,
+        p->get_id(),
+        v->get_id(),
+        v->get_date() 
+    );
     
     p->virus = std::make_shared< Virus<TSeq> >(*v);
     p->virus->set_date(m->today());
