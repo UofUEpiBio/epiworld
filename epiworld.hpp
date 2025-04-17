@@ -3719,6 +3719,11 @@ public:
      * virus is allowed to circulate naïvely or not, respectively.
      * 
      * @param fn File where to write out the reproductive number.
+     * @details
+     * In the case of `MapVec_type<int,int>`, the key is a vector of 3 integers:
+     * - Virus id
+     * - Source id
+     * - Date when the source was infected
      */
     ///@{
     MapVec_type<int,int> reproductive_number() const;
