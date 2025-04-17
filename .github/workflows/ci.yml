@@ -90,7 +90,7 @@ jobs:
 
       - name: Getting epiworldR
         run: |
-          install2.r knitr rmarkdown tinytest netplot igraph data.table
+          install2.r knitr rmarkdown tinytest netplot igraph data.table DiagrammeR
           apt-get update && apt-get install -y --no-install-recommends \
             pandoc valgrind
           cp -r include/epiworld/ r-pkg/inst/include/epiworld/
