@@ -304,10 +304,15 @@ By definition, whereas it computes R0 (basic reproductive number) or Rt/R (the e
 
 
 \begin{DoxyParams}{Parameters}
-{\em fn} & File where to write out the reproductive number. \\
+{\em fn} & File where to write out the reproductive number.\\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{class_data_base_ae02117c39eb4f2f1229c0415b31e68fe}\label{class_data_base_ae02117c39eb4f2f1229c0415b31e68fe}} 
+In the case of {\ttfamily Map\+Vec\+\_\+type$<$int,int$>$}, the key is a vector of 3 integers\+:
+\begin{DoxyItemize}
+\item \mbox{\hyperlink{class_virus}{Virus}} id
+\item Source id
+\item Date when the source was infected 
+\end{DoxyItemize}\mbox{\Hypertarget{class_data_base_ae02117c39eb4f2f1229c0415b31e68fe}\label{class_data_base_ae02117c39eb4f2f1229c0415b31e68fe}} 
 \index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!transition\_probability@{transition\_probability}}
 \index{transition\_probability@{transition\_probability}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
 \doxysubsubsection{\texorpdfstring{transition\_probability()}{transition\_probability()}}
