@@ -8,9 +8,9 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Rt", "[Rt]") {
 
-    int n_seeds = 500;
+    int n_seeds = 2000;
     double n = 100000;
-    double R0 = 1.75;
+    double R0 = 1.25;
     double trate = 0.9;
     double rrate = 1.0/7.0;
     double crate = R0 * rrate / trate;
@@ -29,13 +29,13 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
 
     model_0.get_virus(0).set_distribution(dist_virus);
 
-    model_0.run(30, 222);
+    model_0.run(60, 222);
 
     model_0.print(false);
 
     auto repnum = model_0.get_db().reproductive_number();
 
-    int n_seed = -1;
+    int n_seed = -1, n_records = 0;
     double rts = 0.0;
     for (auto & i: repnum)
     {
@@ -43,10 +43,8 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
             n_seed = i.second;
         else if (i.first[1] < n_seeds)
         {
-            #ifndef CATCH_CONFIG_MAIN
-            std::cout << "Seed: " << i.first[1] << " " << i.first[0] << " " << i.second << std::endl;
-            #endif
             rts += static_cast<double>(i.second);
+            ++n_records;
         }
     }
 
