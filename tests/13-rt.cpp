@@ -8,8 +8,8 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Rt", "[Rt]") {
 
-    int n_seeds = 200;
-    double n = 20000;
+    int n_seeds = 500;
+    double n = 100000;
     double R0 = 1.75;
     double trate = 0.9;
     double rrate = 1.0/7.0;
