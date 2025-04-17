@@ -20233,8 +20233,8 @@ $(function() {
 <div class="line"><a name="l22194"></a><span class="lineno">22194</span>&#160;    <span class="comment">// How many days since detected  </span></div>
 <div class="line"><a name="l22195"></a><span class="lineno">22195</span>&#160;    <span class="keywordtype">bool</span> detected = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l22196"></a><span class="lineno">22196</span>&#160;    <span class="keywordflow">if</span> (</div>
-<div class="line"><a name="l22197"></a><span class="lineno">22197</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Days undetected&quot;</span>) &gt; 0) &amp;&amp;</div>
-<div class="line"><a name="l22198"></a><span class="lineno">22198</span>&#160;        (m-&gt;runif() &gt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Days undetected&quot;</span>))</div>
+<div class="line"><a name="l22197"></a><span class="lineno">22197</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Days undetected&quot;</span>) &gt;= 0) &amp;&amp;</div>
+<div class="line"><a name="l22198"></a><span class="lineno">22198</span>&#160;        (m-&gt;runif() &lt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Days undetected&quot;</span>))</div>
 <div class="line"><a name="l22199"></a><span class="lineno">22199</span>&#160;    )</div>
 <div class="line"><a name="l22200"></a><span class="lineno">22200</span>&#160;    {</div>
 <div class="line"><a name="l22201"></a><span class="lineno">22201</span>&#160;        model-&gt;system_quarantine_triggered = <span class="keyword">true</span>;</div>
