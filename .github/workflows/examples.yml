@@ -13,7 +13,7 @@ on: [push, pull_request]
 jobs:
   test-ubuntu:
     container: gvegayon/epiworld:latest
-    runs-on: Ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
