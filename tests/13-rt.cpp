@@ -21,7 +21,7 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
     );
 
     // Function to distribute the virus to the first 10 agents
-    auto dist_virus = [n_seeds](Virus<> & v, Model<> * m) -> void {
+    auto dist_virus = [&n_seeds](Virus<> & v, Model<> * m) -> void {
         for (int i = 0; i < n_seeds; ++i)
             m->get_agents()[i].set_virus(v, m);
         return;

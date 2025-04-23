@@ -177,6 +177,49 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     REQUIRE_FALSE(!(n0 == 4000 && n1 == 6000 && n2 == 0 && n3 == 0));
     #endif
 
+    // Testing reproductive number in plain scenario
+    epimodels::ModelSEIRMixing<> model_1(
+        "Flu", // std::string vname,
+        10000, // epiworld_fast_uint n,
+        100/10000,  // epiworld_double prevalence,
+        10.0,  // epiworld_double contact_rate,
+        0.025,   // epiworld_double transmission_rate,
+        7.0,   // epiworld_double avg_incubation_days,
+        1.0/7.0,// epiworld_double recovery_rate,
+        contact_matrix
+    );
+
+    model_1.add_entity(e1);
+    model_1.add_entity(e2);
+    model_1.add_entity(e3);
+
+    // Function to distribute the virus to the first 100 agents
+    auto dist_virus = [](Virus<> & v, Model<> * m) -> void {
+        for (int i = 0; i < 100; ++i)
+            m->get_agents()[i].set_virus(v, m);
+        return;
+    };
+
+    model_1.get_virus(0).set_distribution(dist_virus);
+
+    model_1.run(60, 123);
+    model_1.print(false);
+
+    auto repnum = model_1.get_db().reproductive_number();
+
+    double rts = 0.0;
+    double counter = 0.0;
+    double R0 = 10.0 * 0.025 / (1.0/7.0);
+    for (auto & i: repnum)
+        if (i.first[1] >= 0 && i.first[1] < 100)
+        {
+            counter += 1.0;
+            rts += static_cast<double>(i.second)/100.0;
+        }
+
+    std::cout << "Rt: " << rts << 
+        " (expected: " << R0 << ")" << std::endl;
+
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif
