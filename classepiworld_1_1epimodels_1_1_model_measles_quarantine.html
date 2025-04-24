@@ -115,11 +115,11 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_available</b> 
 <tr class="memdesc:a21e6b8cd704e13d99201c39a2ea559a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Advanced usage: Makes a copy of data and returns it as undeleted pointer.  <a href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#a21e6b8cd704e13d99201c39a2ea559a6">More...</a><br /></td></tr>
 <tr class="separator:a21e6b8cd704e13d99201c39a2ea559a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader"></div></td></tr>
-<tr class="memitem:a5ce9a02499a107420b938e1cf558439e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#a5ce9a02499a107420b938e1cf558439e">ModelMeaslesQuarantine</a> (<a class="el" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine</a>&lt; TSeq &gt; &amp;model, epiworld_fast_uint n, epiworld_fast_uint n_exposed, epiworld_double contact_rate, epiworld_double transmission_rate, epiworld_double vax_efficacy, epiworld_double vax_reduction_recovery_rate, epiworld_double incubation_period, epiworld_double prodromal_period, epiworld_double rash_period, epiworld_double days_undetected, epiworld_double hospitalization_rate, epiworld_double hospitalization_duration, epiworld_double prop_vaccinated, epiworld_fast_uint quarantine_days, epiworld_double quarantine_willingness, epiworld_fast_uint isolation_days)</td></tr>
-<tr class="separator:a5ce9a02499a107420b938e1cf558439e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8208df4f181f4a35e830bbb19c13548b"><td class="memItemLeft" align="right" valign="top"><a id="a8208df4f181f4a35e830bbb19c13548b"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ModelMeaslesQuarantine</b> (epiworld_fast_uint n, epiworld_fast_uint n_exposed, epiworld_double contact_rate, epiworld_double transmission_rate, epiworld_double vax_efficacy, epiworld_double vax_reduction_recovery_rate, epiworld_double incubation_period, epiworld_double prodromal_period, epiworld_double rash_period, epiworld_double days_undetected, epiworld_double hospitalization_rate, epiworld_double hospitalization_duration, epiworld_double prop_vaccinated, epiworld_fast_uint quarantine_days, epiworld_double quarantine_willingness, epiworld_fast_uint isolation_days)</td></tr>
-<tr class="separator:a8208df4f181f4a35e830bbb19c13548b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acedb4671fa601e3410d618fc959f9923"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#acedb4671fa601e3410d618fc959f9923">ModelMeaslesQuarantine</a> (<a class="el" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine</a>&lt; TSeq &gt; &amp;model, epiworld_fast_uint n, epiworld_fast_uint n_exposed, epiworld_double contact_rate, epiworld_double transmission_rate, epiworld_double vax_efficacy, epiworld_double vax_reduction_recovery_rate, epiworld_double incubation_period, epiworld_double prodromal_period, epiworld_double rash_period, epiworld_double days_undetected, epiworld_double hospitalization_rate, epiworld_double hospitalization_period, epiworld_double prop_vaccinated, epiworld_fast_uint quarantine_period, epiworld_double quarantine_willingness, epiworld_fast_uint isolation_period)</td></tr>
+<tr class="separator:acedb4671fa601e3410d618fc959f9923"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1f72452dc352ecd5f3b129b8adb3eb5"><td class="memItemLeft" align="right" valign="top"><a id="ad1f72452dc352ecd5f3b129b8adb3eb5"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ModelMeaslesQuarantine</b> (epiworld_fast_uint n, epiworld_fast_uint n_exposed, epiworld_double contact_rate, epiworld_double transmission_rate, epiworld_double vax_efficacy, epiworld_double vax_reduction_recovery_rate, epiworld_double incubation_period, epiworld_double prodromal_period, epiworld_double rash_period, epiworld_double days_undetected, epiworld_double hospitalization_rate, epiworld_double hospitalization_period, epiworld_double prop_vaccinated, epiworld_fast_uint quarantine_period, epiworld_double quarantine_willingness, epiworld_fast_uint isolation_period)</td></tr>
+<tr class="separator:ad1f72452dc352ecd5f3b129b8adb3eb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classepiworld_1_1_model"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classepiworld_1_1_model')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classepiworld_1_1_model.html">epiworld::Model&lt; TSeq &gt;</a></td></tr>
 <tr class="memitem:a9a2d8f67ad467c6d5793a855d2314a39 inherit pub_methods_classepiworld_1_1_model"><td class="memItemLeft" align="right" valign="top"><a id="a9a2d8f67ad467c6d5793a855d2314a39"></a>
 <a class="el" href="classepiworld_1_1_data_base.html">DataBase</a>&lt; TSeq &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_db</b> ()</td></tr>
@@ -772,13 +772,15 @@ class epiworld::epimodels::ModelMeaslesQuarantine&lt; TSeq &gt;</h3>
 <p>Template for a Measles model with quarantine. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">TSeq</td><td>The type of the sequence to be used. </td></tr>
+    <tr><td class="paramname">TSeq</td><td>The type of the sequence to be used.</td></tr>
   </table>
   </dd>
 </dl>
+<p>This model can be described as a SEIHR model with isolation and quarantine. The infectious state is divided into prodromal and rash phases. Furthermore, the quarantine state includes exposed, susceptible, prodromal, and recovered states.</p>
+<p>The quarantine process is triggered any time that an agent with rash is detected. The agent is then isolated and all agents who are unvaccinated are quarantined. Isolated agents then may be moved out of the isolation in isolation_period days. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a5ce9a02499a107420b938e1cf558439e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5ce9a02499a107420b938e1cf558439e">&#9670;&nbsp;</a></span>ModelMeaslesQuarantine()</h2>
+<a id="acedb4671fa601e3410d618fc959f9923"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acedb4671fa601e3410d618fc959f9923">&#9670;&nbsp;</a></span>ModelMeaslesQuarantine()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -864,7 +866,7 @@ template&lt;typename TSeq &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">epiworld_double&#160;</td>
-          <td class="paramname"><em>hospitalization_duration</em>, </td>
+          <td class="paramname"><em>hospitalization_period</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -876,7 +878,7 @@ template&lt;typename TSeq &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">epiworld_fast_uint&#160;</td>
-          <td class="paramname"><em>quarantine_days</em>, </td>
+          <td class="paramname"><em>quarantine_period</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -888,7 +890,7 @@ template&lt;typename TSeq &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">epiworld_fast_uint&#160;</td>
-          <td class="paramname"><em>isolation_days</em>&#160;</td>
+          <td class="paramname"><em>isolation_period</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -915,11 +917,11 @@ template&lt;typename TSeq &gt; </div>
     <tr><td class="paramname">rash_period</td><td>The rash period of the virus. </td></tr>
     <tr><td class="paramname">days_undetected</td><td>The number of days the virus goes undetected. </td></tr>
     <tr><td class="paramname">hospitalization_rate</td><td>The rate of hospitalization. </td></tr>
-    <tr><td class="paramname">hospitalization_duration</td><td>The duration of hospitalization. </td></tr>
+    <tr><td class="paramname">hospitalization_period</td><td>The duration of hospitalization. </td></tr>
     <tr><td class="paramname">prop_vaccinated</td><td>The proportion of vaccinated agents. </td></tr>
-    <tr><td class="paramname">quarantine_days</td><td>The number of days for quarantine. </td></tr>
+    <tr><td class="paramname">quarantine_period</td><td>The number of days for quarantine. </td></tr>
     <tr><td class="paramname">quarantine_willingness</td><td>The willingness to be quarantined. </td></tr>
-    <tr><td class="paramname">isolation_days</td><td>The number of days for isolation. </td></tr>
+    <tr><td class="paramname">isolation_period</td><td>The number of days for isolation. </td></tr>
   </table>
   </dd>
 </dl>

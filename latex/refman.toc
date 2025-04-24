@@ -220,7 +220,7 @@
 \contentsline {subsubsection}{\numberline {15.30.2.1}ModelMeaslesQuarantine()}{125}{subsubsection.15.30.2.1}%
 \contentsline {subsection}{\numberline {15.30.3}Member Function Documentation}{126}{subsection.15.30.3}%
 \contentsline {subsubsection}{\numberline {15.30.3.1}clone\_ptr()}{126}{subsubsection.15.30.3.1}%
-\contentsline {subsubsection}{\numberline {15.30.3.2}quarantine\_agents()}{126}{subsubsection.15.30.3.2}%
+\contentsline {subsubsection}{\numberline {15.30.3.2}quarantine\_agents()}{127}{subsubsection.15.30.3.2}%
 \contentsline {subsubsection}{\numberline {15.30.3.3}reset()}{127}{subsubsection.15.30.3.3}%
 \contentsline {section}{\numberline {15.31}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::epimodels\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}SEIR$<$ TSeq $>$ Class Template Reference}{128}{section.15.31}%
 \contentsline {subsection}{\numberline {15.31.1}Detailed Description}{129}{subsection.15.31.1}%
