@@ -182,9 +182,11 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
 
     for (size_t i = 0u; i < infected.size(); ++i)
     {
+                
         adjusted_contact_rate[i] = 
             Model<TSeq>::get_param("Contact rate") /
-                static_cast< epiworld_double >(infected[i].size());
+                static_cast< epiworld_double > (this->get_entity(i).size());
+
     }
 
     return;
@@ -252,10 +254,6 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
 
     Model<TSeq>::run(ndays, seed);
 
-    #ifdef EPI_DEBUG
-    double sum = std::accumulate(sampled_sizes.begin(), sampled_sizes.end(), 0);
-    EPI_DEBUG_PRINTF("Mean sample size: %f\n", sum / sampled_sizes.size());
-    #endif
     return *this;
 
 }

@@ -178,46 +178,55 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     #endif
 
     // Testing reproductive number in plain scenario
+    int n_infected = 1000;
     epimodels::ModelSEIRMixing<> model_1(
         "Flu", // std::string vname,
-        10000, // epiworld_fast_uint n,
-        100/10000,  // epiworld_double prevalence,
-        10.0,  // epiworld_double contact_rate,
-        0.025,   // epiworld_double transmission_rate,
+        500000/2, // epiworld_fast_uint n,
+        static_cast<double>(n_infected)/10000.0,  // epiworld_double prevalence,
+        2.0,  // epiworld_double contact_rate,
+        0.1,   // epiworld_double transmission_rate,
         7.0,   // epiworld_double avg_incubation_days,
         1.0/7.0,// epiworld_double recovery_rate,
         contact_matrix
     );
 
-    model_1.add_entity(e1);
-    model_1.add_entity(e2);
-    model_1.add_entity(e3);
+    // Creating three groups
+    Entity<> e1_1("Entity 1", dist_factory<>(0, 15000/2));
+    Entity<> e2_1("Entity 2", dist_factory<>(15000/2, 30000/2));
+    Entity<> e3_1("Entity 3", dist_factory<>(30000/2, 50000/2));
+
+    model_1.add_entity(e1_1);
+    model_1.add_entity(e2_1);
+    model_1.add_entity(e3_1);
 
     // Function to distribute the virus to the first 100 agents
-    auto dist_virus = [](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < 100; ++i)
+    auto dist_virus = [n_infected](Virus<> & v, Model<> * m) -> void {
+        for (int i = 0; i < n_infected; ++i)
             m->get_agents()[i].set_virus(v, m);
         return;
     };
 
     model_1.get_virus(0).set_distribution(dist_virus);
 
-    model_1.run(60, 123);
+    model_1.run(40, 123);
     model_1.print(false);
 
     auto repnum = model_1.get_db().reproductive_number();
 
     double rts = 0.0;
     double counter = 0.0;
-    double R0 = 10.0 * 0.025 / (1.0/7.0);
+    double R0 = model_1("Contact rate") * 
+        model_1("Prob. Transmission") / model_1("Prob. Recovery");
     for (auto & i: repnum)
-        if (i.first[1] >= 0 && i.first[1] < 100)
+        if (i.first[1] >= 0 && i.first[1] < n_infected)
         {
             counter += 1.0;
-            rts += static_cast<double>(i.second)/100.0;
+            rts += static_cast<double>(i.second)/
+                static_cast<double>(n_infected);
         }
 
-    std::cout << "Rt: " << rts << 
+    std::cout <<
+        "SEIR Mixing Rt: " << rts << 
         " (expected: " << R0 << ")" << std::endl;
 
     #ifndef CATCH_CONFIG_MAIN
