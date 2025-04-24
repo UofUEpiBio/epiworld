@@ -19980,9 +19980,9 @@ $(function() {
 <div class="line"><a name="l21938"></a><span class="lineno">21938</span>&#160;<span class="comment">        epiworld_double hospitalization_period,</span></div>
 <div class="line"><a name="l21939"></a><span class="lineno">21939</span>&#160;<span class="comment">        // Policy parameters</span></div>
 <div class="line"><a name="l21940"></a><span class="lineno">21940</span>&#160;<span class="comment">        epiworld_double prop_vaccinated,</span></div>
-<div class="line"><a name="l21941"></a><span class="lineno">21941</span>&#160;<span class="comment">        epiworld_fast_uint quarantine_period,</span></div>
+<div class="line"><a name="l21941"></a><span class="lineno">21941</span>&#160;<span class="comment">        epiworld_fast_int quarantine_period,</span></div>
 <div class="line"><a name="l21942"></a><span class="lineno">21942</span>&#160;<span class="comment">        epiworld_double quarantine_willingness,</span></div>
-<div class="line"><a name="l21943"></a><span class="lineno">21943</span>&#160;<span class="comment">        epiworld_fast_uint isolation_period</span></div>
+<div class="line"><a name="l21943"></a><span class="lineno">21943</span>&#160;<span class="comment">        epiworld_fast_int isolation_period</span></div>
 <div class="line"><a name="l21944"></a><span class="lineno">21944</span>&#160;<span class="comment">    );</span></div>
 <div class="line"><a name="l21945"></a><span class="lineno">21945</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l21946"></a><span class="lineno">21946</span>&#160;<span class="comment">    ModelMeaslesQuarantine(</span></div>
@@ -20001,9 +20001,9 @@ $(function() {
 <div class="line"><a name="l21959"></a><span class="lineno">21959</span>&#160;<span class="comment">        epiworld_double hospitalization_period,</span></div>
 <div class="line"><a name="l21960"></a><span class="lineno">21960</span>&#160;<span class="comment">        // Policy parameters</span></div>
 <div class="line"><a name="l21961"></a><span class="lineno">21961</span>&#160;<span class="comment">        epiworld_double prop_vaccinated,</span></div>
-<div class="line"><a name="l21962"></a><span class="lineno">21962</span>&#160;<span class="comment">        epiworld_fast_uint quarantine_period,</span></div>
+<div class="line"><a name="l21962"></a><span class="lineno">21962</span>&#160;<span class="comment">        epiworld_fast_int quarantine_period,</span></div>
 <div class="line"><a name="l21963"></a><span class="lineno">21963</span>&#160;<span class="comment">        epiworld_double quarantine_willingness,</span></div>
-<div class="line"><a name="l21964"></a><span class="lineno">21964</span>&#160;<span class="comment">        epiworld_fast_uint isolation_period</span></div>
+<div class="line"><a name="l21964"></a><span class="lineno">21964</span>&#160;<span class="comment">        epiworld_fast_int isolation_period</span></div>
 <div class="line"><a name="l21965"></a><span class="lineno">21965</span>&#160;<span class="comment">    );</span></div>
 <div class="line"><a name="l21967"></a><span class="lineno">21967</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l21968"></a><span class="lineno"><a class="line" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#a8adf00f2c1ca5fcbc927d9857cd5db8a">21968</a></span>&#160;<span class="comment">    std::vector&lt;Agent&lt;TSeq&gt; *&gt; available; ///&lt; Agents available for contact</span></div>
@@ -20501,7 +20501,7 @@ $(function() {
 <div class="line"><a name="l22478"></a><span class="lineno">22478</span>&#160; </div>
 <div class="line"><a name="l22479"></a><span class="lineno">22479</span>&#160; </div>
 <div class="line"><a name="l22480"></a><span class="lineno">22480</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l22481"></a><span class="lineno"><a class="line" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#acedb4671fa601e3410d618fc959f9923">22481</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::ModelMeaslesQuarantine</a>(</div>
+<div class="line"><a name="l22481"></a><span class="lineno"><a class="line" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#ae99078b141176000eb305ffb6920842f">22481</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::ModelMeaslesQuarantine</a>(</div>
 <div class="line"><a name="l22482"></a><span class="lineno">22482</span>&#160;    <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;</a> &amp; model,</div>
 <div class="line"><a name="l22483"></a><span class="lineno">22483</span>&#160;    epiworld_fast_uint n,</div>
 <div class="line"><a name="l22484"></a><span class="lineno">22484</span>&#160;    epiworld_fast_uint n_exposed,</div>
@@ -20518,9 +20518,9 @@ $(function() {
 <div class="line"><a name="l22495"></a><span class="lineno">22495</span>&#160;    epiworld_double hospitalization_period,</div>
 <div class="line"><a name="l22496"></a><span class="lineno">22496</span>&#160;    <span class="comment">// Policy parameters</span></div>
 <div class="line"><a name="l22497"></a><span class="lineno">22497</span>&#160;    epiworld_double prop_vaccinated,</div>
-<div class="line"><a name="l22498"></a><span class="lineno">22498</span>&#160;    epiworld_fast_uint quarantine_period,</div>
+<div class="line"><a name="l22498"></a><span class="lineno">22498</span>&#160;    epiworld_fast_int quarantine_period,</div>
 <div class="line"><a name="l22499"></a><span class="lineno">22499</span>&#160;    epiworld_double quarantine_willingness,</div>
-<div class="line"><a name="l22500"></a><span class="lineno">22500</span>&#160;    epiworld_fast_uint isolation_period</div>
+<div class="line"><a name="l22500"></a><span class="lineno">22500</span>&#160;    epiworld_fast_int isolation_period</div>
 <div class="line"><a name="l22501"></a><span class="lineno">22501</span>&#160;) {</div>
 <div class="line"><a name="l22502"></a><span class="lineno">22502</span>&#160; </div>
 <div class="line"><a name="l22503"></a><span class="lineno">22503</span>&#160;    model.add_state(<span class="stringliteral">&quot;Susceptible&quot;</span>, this-&gt;m_update_susceptible);</div>
@@ -20619,9 +20619,9 @@ $(function() {
 <div class="line"><a name="l22596"></a><span class="lineno">22596</span>&#160;    epiworld_double hospitalization_period,</div>
 <div class="line"><a name="l22597"></a><span class="lineno">22597</span>&#160;    <span class="comment">// Policy parameters</span></div>
 <div class="line"><a name="l22598"></a><span class="lineno">22598</span>&#160;    epiworld_double prop_vaccinated,</div>
-<div class="line"><a name="l22599"></a><span class="lineno">22599</span>&#160;    epiworld_fast_uint quarantine_period,</div>
+<div class="line"><a name="l22599"></a><span class="lineno">22599</span>&#160;    epiworld_fast_int quarantine_period,</div>
 <div class="line"><a name="l22600"></a><span class="lineno">22600</span>&#160;    epiworld_double quarantine_willingness,</div>
-<div class="line"><a name="l22601"></a><span class="lineno">22601</span>&#160;    epiworld_fast_uint isolation_period</div>
+<div class="line"><a name="l22601"></a><span class="lineno">22601</span>&#160;    epiworld_fast_int isolation_period</div>
 <div class="line"><a name="l22602"></a><span class="lineno">22602</span>&#160; </div>
 <div class="line"><a name="l22603"></a><span class="lineno">22603</span>&#160;) {</div>
 <div class="line"><a name="l22604"></a><span class="lineno">22604</span>&#160; </div>
