@@ -22,7 +22,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 8
-#define EPIWORLD_VERSION_PATCH 1
+#define EPIWORLD_VERSION_PATCH 2
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -20751,12 +20751,16 @@ private:
         epiworld::Agent<TSeq> * agent,
         std::vector< epiworld::Agent<TSeq> * > & sampled_agents
         );
-    double adjusted_contact_rate;
+    std::vector< double > adjusted_contact_rate;
     std::vector< double > contact_matrix;
 
     size_t index(size_t i, size_t j, size_t n) {
         return j * n + i;
     }
+
+    #ifdef EPI_DEBUG
+    std::vector< int > sampled_sizes;
+    #endif
 
 public:
 
@@ -20908,8 +20912,17 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     }
 
     // Adjusting contact rate
-    adjusted_contact_rate = Model<TSeq>::get_param("Contact rate") /
-        agents.size();
+    adjusted_contact_rate.clear();
+    adjusted_contact_rate.resize(infected.size(), 0.0);
+
+    for (size_t i = 0u; i < infected.size(); ++i)
+    {
+                
+        adjusted_contact_rate[i] = 
+            Model<TSeq>::get_param("Contact rate") /
+                static_cast< epiworld_double > (this->get_entity(i).size());
+
+    }
 
     return;
 
@@ -20932,7 +20945,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         // How many from this entity?
         int nsamples = epiworld::Model<TSeq>::rbinom(
             infected[g].size(),
-            adjusted_contact_rate * contact_matrix[
+            adjusted_contact_rate[g] * contact_matrix[
                 index(agent_group_id, g, ngroups)
             ]
         );
@@ -20975,6 +20988,7 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
 {
 
     Model<TSeq>::run(ndays, seed);
+
     return *this;
 
 }
@@ -20985,6 +20999,10 @@ inline void ModelSEIRMixing<TSeq>::reset()
 
     Model<TSeq>::reset();
     this->update_infected();
+
+    #ifdef EPI_DEBUG
+    this->sampled_sizes.clear();
+    #endif
 
     return;
 
@@ -21045,9 +21063,12 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
             size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
+            #ifdef EPI_DEBUG
+            m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
+            #endif
+
             if (ndraws == 0u)
                 return;
-
             
             // Drawing from the set
             int nviruses_tmp = 0;
@@ -21060,7 +21081,9 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
                 #ifdef EPI_DEBUG
                 if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+                    throw std::logic_error(
+                        "Trying to add an extra element to a temporal array outside of the range."
+                    );
                 #endif
                     
                 /* And it is a function of susceptibility_reduction as well */ 
@@ -21293,7 +21316,7 @@ private:
         epiworld::Agent<TSeq> * agent,
         std::vector< epiworld::Agent<TSeq> * > & sampled_agents
         );
-    double adjusted_contact_rate;
+    std::vector< double > adjusted_contact_rate;
     std::vector< double > contact_matrix;
 
     size_t index(size_t i, size_t j, size_t n) {
@@ -21444,8 +21467,18 @@ inline void ModelSIRMixing<TSeq>::update_infected_list()
     }
 
     // Adjusting contact rate
-    adjusted_contact_rate = Model<TSeq>::get_param("Contact rate") /
-        agents.size();
+    adjusted_contact_rate.clear();
+    adjusted_contact_rate.resize(infected.size(), 0.0);
+
+    for (size_t i = 0u; i < infected.size(); ++i)
+    {
+                
+        adjusted_contact_rate[i] = 
+            Model<TSeq>::get_param("Contact rate") /
+                static_cast< epiworld_double > (this->get_entity(i).size());
+
+    }
+
 
     return;
 
@@ -21468,7 +21501,7 @@ inline size_t ModelSIRMixing<TSeq>::sample_agents(
         // How many from this entity?
         int nsamples = epiworld::Model<TSeq>::rbinom(
             infected[g].size(),
-            adjusted_contact_rate * contact_matrix[
+            adjusted_contact_rate[g] * contact_matrix[
                 index(agent_group_id, g, ngroups)
             ]
         );

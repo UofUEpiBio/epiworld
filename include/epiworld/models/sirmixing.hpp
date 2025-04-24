@@ -168,14 +168,17 @@ inline void ModelSIRMixing<TSeq>::update_infected_list()
 
     // Adjusting contact rate
     adjusted_contact_rate.clear();
-    adjusted_contact_rate.resize(agents.size(), 0.0);
+    adjusted_contact_rate.resize(infected.size(), 0.0);
 
     for (size_t i = 0u; i < infected.size(); ++i)
     {
+                
         adjusted_contact_rate[i] = 
             Model<TSeq>::get_param("Contact rate") /
-                static_cast< epiworld_double >(infected[i].size());
+                static_cast< epiworld_double > (this->get_entity(i).size());
+
     }
+
 
     return;
 
