@@ -11,6 +11,9 @@
 #endif
 #include "../include/epiworld/epiworld.hpp"
 
+/**
+ * Returns true is the absolute difference between a and b is greater than eps.
+ */
 template<typename T=epiworld_double>
 inline bool moreless(T a, T b, T eps = static_cast<T>(1))
 {
