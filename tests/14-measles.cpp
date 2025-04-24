@@ -23,9 +23,9 @@ EPIWORLD_TEST_CASE("Measles model", "[ModelMeaslesQuarantine]") {
         0.2, // Hospitalization rate
         7.0, // Hospitalization duration
         0.5, // Proportion vaccinated
-        21u, // Quarantine days
+        21u, // Quarantine period
         .8,  // Quarantine willingness
-        4u   // Isolation days
+        4u   // Isolation period
     );
 
     // Shutting off the quarantine feature
@@ -96,7 +96,7 @@ EPIWORLD_TEST_CASE("Measles model", "[ModelMeaslesQuarantine]") {
     // Checking especific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
     double p_recovered = 1.0 - (
-        1.0/model_0("Rash days") + model_0("Hospitalization rate")
+        1.0/model_0("Rash period") + model_0("Hospitalization rate")
     );
     #ifdef CATCH_CONFIG_MAIN
 
@@ -122,7 +122,7 @@ EPIWORLD_TEST_CASE("Measles model", "[ModelMeaslesQuarantine]") {
     REQUIRE_FALSE(moreless(mat(4, 5) + mat(4, 11), p_recovered, 0.05));
 
     // Transition from hospitalized to recovered
-    REQUIRE_FALSE(moreless(mat(10, 11), 1.0/model_0("Hospitalization days"), 0.05));
+    REQUIRE_FALSE(moreless(mat(10, 11), 1.0/model_0("Hospitalization period"), 0.05));
     #endif
     // Transition to prodromal
     std::cout << "Transition to prodromal: "
@@ -150,7 +150,7 @@ EPIWORLD_TEST_CASE("Measles model", "[ModelMeaslesQuarantine]") {
 
     // Transition from hospitalized to recovered
     std::cout << "Transition from hospitalized to recovered: "
-              << mat(10, 11) << " (expected ~" << 1.0/model_0("Hospitalization days") << ")" << std::endl;
+              << mat(10, 11) << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
     #undef mat
     #ifndef CATCH_CONFIG_MAIN
     return 0;
