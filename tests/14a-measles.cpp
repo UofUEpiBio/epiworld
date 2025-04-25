@@ -112,7 +112,7 @@ EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]
         printf_epiworld("\n");
     }
 
-    // Avarage R0
+    // Average R0
     double R0_observed = 0.0;
     for (auto & i: R0s)
     {
