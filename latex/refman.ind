@@ -317,7 +317,7 @@
   \item {ModelMeaslesQuarantine$<$ TSeq $>$}, \hyperpage{123}
     \subitem {clone\_ptr}, \hyperpage{126}
     \subitem {ModelMeaslesQuarantine}, \hyperpage{125}
-    \subitem {quarantine\_agents}, \hyperpage{126}
+    \subitem {quarantine\_agents}, \hyperpage{127}
     \subitem {reset}, \hyperpage{127}
   \item {ModelSEIR$<$ TSeq $>$}, \hyperpage{131}
     \subitem {initial\_states}, \hyperpage{132}
@@ -428,7 +428,7 @@
   \item {quarantine\_agents}
     \subitem {epiworld::epimodels::ModelMeaslesQuarantine$<$ TSeq $>$}, 
 		\hyperpage{122}
-    \subitem {ModelMeaslesQuarantine$<$ TSeq $>$}, \hyperpage{126}
+    \subitem {ModelMeaslesQuarantine$<$ TSeq $>$}, \hyperpage{127}
   \item {Queue$<$ TSeq $>$}, \hyperpage{208}
 
   \indexspace

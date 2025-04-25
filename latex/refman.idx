@@ -210,8 +210,8 @@
 \indexentry{ModelMeaslesQuarantine@{ModelMeaslesQuarantine}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}|hyperpage}{125}
 \indexentry{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{126}
 \indexentry{clone\_ptr@{clone\_ptr}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}|hyperpage}{126}
-\indexentry{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}!quarantine\_agents@{quarantine\_agents}|hyperpage}{126}
-\indexentry{quarantine\_agents@{quarantine\_agents}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}|hyperpage}{126}
+\indexentry{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}!quarantine\_agents@{quarantine\_agents}|hyperpage}{127}
+\indexentry{quarantine\_agents@{quarantine\_agents}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}|hyperpage}{127}
 \indexentry{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}!reset@{reset}|hyperpage}{127}
 \indexentry{reset@{reset}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}|hyperpage}{127}
 \indexentry{epiworld::epimodels::ModelSEIR$<$ TSeq $>$@{epiworld::epimodels::ModelSEIR$<$ TSeq $>$}|hyperpage}{128}
