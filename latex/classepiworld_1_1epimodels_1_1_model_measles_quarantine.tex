@@ -36,8 +36,8 @@ void \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_quarantine_aa
 \begin{DoxyCompactList}\small\item\em Quarantine agents that are in the system. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_quarantine_adbf25714985ddb82738dba114f6c7299}{reset}} ()
 \begin{DoxyCompactList}\small\item\em Reset the model. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_aa51ce95ee7a88866a000825d6a02f129}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_aa51ce95ee7a88866a000825d6a02f129}} 
-void {\bfseries update\+\_\+available} ()
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a6c75cfafcaa4519ba76d5c5f53aea0a9}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a6c75cfafcaa4519ba76d5c5f53aea0a9}} 
+void {\bfseries update\+\_\+infectious} ()
 \item 
 \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a21e6b8cd704e13d99201c39a2ea559a6}{clone\+\_\+ptr}} ()
 \begin{DoxyCompactList}\small\item\em Advanced usage\+: Makes a copy of data and returns it as undeleted pointer. \end{DoxyCompactList}\end{DoxyCompactItemize}
@@ -53,9 +53,9 @@ void {\bfseries update\+\_\+available} ()
 \doxysubsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a8adf00f2c1ca5fcbc927d9857cd5db8a}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a8adf00f2c1ca5fcbc927d9857cd5db8a}} 
-std\+::vector$<$ \mbox{\hyperlink{classepiworld_1_1_agent}{Agent}}$<$ TSeq $>$ $\ast$ $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a8adf00f2c1ca5fcbc927d9857cd5db8a}{available}}
-\begin{DoxyCompactList}\small\item\em Agents available for contact. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_aa7254e81b9b3133c3159ddb347eee43c}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_aa7254e81b9b3133c3159ddb347eee43c}} 
+std\+::vector$<$ \mbox{\hyperlink{classepiworld_1_1_agent}{Agent}}$<$ TSeq $>$ $\ast$ $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_quarantine_aa7254e81b9b3133c3159ddb347eee43c}{infectious}}
+\begin{DoxyCompactList}\small\item\em Agents infectious for contact. \end{DoxyCompactList}\item 
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a4847ce086b5b2d7d6057c95bc0fc7f8b}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a4847ce086b5b2d7d6057c95bc0fc7f8b}} 
 bool {\bfseries system\+\_\+quarantine\+\_\+triggered} = false
 \item 
@@ -86,23 +86,26 @@ static const epiworld\+\_\+fast\+\_\+uint {\bfseries ISOLATED} = 4u
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a2e74fa2229cde9e5afe70318034b65c3}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a2e74fa2229cde9e5afe70318034b65c3}} 
 static const epiworld\+\_\+fast\+\_\+uint {\bfseries ISOLATED\+\_\+\+RECOVERED} = 5u
 \item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_aad62f56c3c43b58c8c53dac52aba5433}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_aad62f56c3c43b58c8c53dac52aba5433}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries DETECTED\+\_\+\+HOSPITALIZED} = 6u
+\item 
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a7b4696e49888e64d2e7b5a4f314b5bda}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a7b4696e49888e64d2e7b5a4f314b5bda}} 
-static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+EXPOSED} = 6u
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+EXPOSED} = 7u
 \item 
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a0551ec393d0e29def21055d243e908ef}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a0551ec393d0e29def21055d243e908ef}} 
-static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+SUSCEPTIBLE} = 7u
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+SUSCEPTIBLE} = 8u
 \item 
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a6f8105cb088a49b217e48e83ab082447}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_a6f8105cb088a49b217e48e83ab082447}} 
-static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+PRODROMAL} = 8u
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+PRODROMAL} = 9u
 \item 
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_ae37e17c0fab6728b53e3a77d49315d33}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_ae37e17c0fab6728b53e3a77d49315d33}} 
-static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+RECOVERED} = 9u
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+RECOVERED} = 10u
 \item 
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_af0a6408720b9d3b094c119ecdd5cb942}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_af0a6408720b9d3b094c119ecdd5cb942}} 
-static const epiworld\+\_\+fast\+\_\+uint {\bfseries HOSPITALIZED} = 10u
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries HOSPITALIZED} = 11u
 \item 
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_quarantine_ade2162ea51d07297397e61e7f3711eb2}\label{classepiworld_1_1epimodels_1_1_model_measles_quarantine_ade2162ea51d07297397e61e7f3711eb2}} 
-static const epiworld\+\_\+fast\+\_\+uint {\bfseries RECOVERED} = 11u
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries RECOVERED} = 12u
 \end{DoxyCompactItemize}
 \doxysubsection*{Additional Inherited Members}
 
