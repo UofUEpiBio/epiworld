@@ -19947,7 +19947,7 @@ $(function() {
 <div class="line"><a name="l21886"></a><span class="lineno">21886</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l21887"></a><span class="lineno">21887</span>&#160;<span class="comment">public:</span></div>
 <div class="line"><a name="l21888"></a><span class="lineno">21888</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l21889"></a><span class="lineno">21889</span>&#160;<span class="comment">    static const epiworld_fast_uint SUSECPTIBLE             = 0u;</span></div>
+<div class="line"><a name="l21889"></a><span class="lineno">21889</span>&#160;<span class="comment">    static const epiworld_fast_uint SUSCEPTIBLE             = 0u;</span></div>
 <div class="line"><a name="l21890"></a><span class="lineno">21890</span>&#160;<span class="comment">    static const epiworld_fast_uint EXPOSED                 = 1u;</span></div>
 <div class="line"><a name="l21891"></a><span class="lineno">21891</span>&#160;<span class="comment">    static const epiworld_fast_uint PRODROMAL               = 2u;</span></div>
 <div class="line"><a name="l21892"></a><span class="lineno">21892</span>&#160;<span class="comment">    static const epiworld_fast_uint RASH                    = 3u;</span></div>
@@ -20061,7 +20061,7 @@ $(function() {
 <div class="line"><a name="l22038"></a><span class="lineno">22038</span>&#160;<span class="comment">        )</span></div>
 <div class="line"><a name="l22039"></a><span class="lineno">22039</span>&#160;<span class="comment">        {</span></div>
 <div class="line"><a name="l22040"></a><span class="lineno">22040</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22041"></a><span class="lineno">22041</span>&#160;<span class="comment">            if (agent_state == SUSECPTIBLE)</span></div>
+<div class="line"><a name="l22041"></a><span class="lineno">22041</span>&#160;<span class="comment">            if (agent_state == SUSCEPTIBLE)</span></div>
 <div class="line"><a name="l22042"></a><span class="lineno">22042</span>&#160;<span class="comment">                this-&gt;get_agent(i).change_state(this, QUARANTINED_SUSCEPTIBLE);</span></div>
 <div class="line"><a name="l22043"></a><span class="lineno">22043</span>&#160;<span class="comment">            else if (agent_state == EXPOSED)</span></div>
 <div class="line"><a name="l22044"></a><span class="lineno">22044</span>&#160;<span class="comment">                this-&gt;get_agent(i).change_state(this, QUARANTINED_EXPOSED);</span></div>
@@ -20463,7 +20463,7 @@ $(function() {
 <div class="line"><a name="l22440"></a><span class="lineno">22440</span>&#160;        m-&gt;today() - model-&gt;day_flagged[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
 <div class="line"><a name="l22441"></a><span class="lineno">22441</span>&#160;    </div>
 <div class="line"><a name="l22442"></a><span class="lineno">22442</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
-<div class="line"><a name="l22443"></a><span class="lineno">22443</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::SUSECPTIBLE);</div>
+<div class="line"><a name="l22443"></a><span class="lineno">22443</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::SUSCEPTIBLE);</div>
 <div class="line"><a name="l22444"></a><span class="lineno">22444</span>&#160; </div>
 <div class="line"><a name="l22445"></a><span class="lineno">22445</span>&#160;}</div>
 <div class="line"><a name="l22446"></a><span class="lineno">22446</span>&#160; </div>
