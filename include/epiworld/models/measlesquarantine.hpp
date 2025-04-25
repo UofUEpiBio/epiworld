@@ -146,7 +146,7 @@ public:
     );
     ///@}
 
-    std::vector<Agent<TSeq> *> available; ///< Agents available for contact
+    std::vector<Agent<TSeq> *> infectious; ///< Agents infectious for contact
 
     bool system_quarantine_triggered = false;
 
@@ -174,7 +174,7 @@ public:
     void quarantine_agents();
 
     void reset();
-    void update_available();
+    void update_infectious();
 
     Model<TSeq> * clone_ptr();
 
@@ -246,7 +246,7 @@ inline void ModelMeaslesQuarantine<TSeq>::m_update_model(Model<TSeq> * m) {
     GET_MODEL(model, m);
     model->quarantine_agents();
     model->events_run();
-    model->update_available();
+    model->update_infectious();
     return;
 
 }
@@ -276,7 +276,7 @@ inline void ModelMeaslesQuarantine<TSeq>::reset() {
 }
 
 template<typename TSeq>
-inline void ModelMeaslesQuarantine<TSeq>::update_available() {
+inline void ModelMeaslesQuarantine<TSeq>::update_infectious() {
 
     #ifdef EPI_DEBUG
     // All agents with state >= EXPOSED should have a virus
@@ -291,27 +291,25 @@ inline void ModelMeaslesQuarantine<TSeq>::update_available() {
     }
     #endif
 
-    this->available.clear();
+    this->infectious.clear();
     int n_available = 0;
     for (auto & agent: this->get_agents())
     {
         const auto & s = agent.get_state();
-        if ((s == RASH) || (s == PRODROMAL))
-            this->available.push_back(&agent);
+        if (s == PRODROMAL)
+            this->infectious.push_back(&agent);
 
-        if (s <= RASH)
-            n_available++;
+        if (s < RASH)
+            ++n_available;
         
     }
 
-    if (n_available == 0)
-        this->set_rand_binom(0, 0.0);
-
     // Assumes fixed contact rate throughout the simulation
-    double p_contact = this->par("Contact rate")/n_available;
+    double p_contact = this->par("Contact rate")/
+        static_cast< epiworld_double >(n_available);
 
     this->set_rand_binom(
-        static_cast<int>(this->available.size()),
+        static_cast<int>(this->infectious.size()),
         p_contact > 1.0 ? 1.0 : p_contact
     );
 
@@ -338,9 +336,9 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
         return;
 
     GET_MODEL(model, m);
-    size_t n_available = model->available.size();
+    size_t n_infectious = model->infectious.size();
 
-    if (n_available == 0)
+    if (n_infectious == 0)
         return;
 
     // Drawing from the set
@@ -349,7 +347,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
     while (i < ndraw)
     {
         // Picking the actual contacts
-        int which = static_cast<int>(std::floor(n_available * m->runif()));
+        int which = static_cast<int>(std::floor(n_infectious * m->runif()));
 
         /* There is a bug in which runif() returns 1.0. It is rare, but
             * we saw it here. See the Notes section in the C++ manual
@@ -358,10 +356,10 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
             * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
             * 
             */
-        if (which == static_cast<int>(n_available))
+        if (which == static_cast<int>(n_infectious))
             --which;
 
-        epiworld::Agent<> & neighbor = *model->available[which];
+        epiworld::Agent<> & neighbor = *model->infectious[which];
 
         // Can't sample itself
         if (neighbor.get_id() == p->get_id())
@@ -376,7 +374,10 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
 
         // Only prodomal individuals can transmit
         if (neighbor.get_state() != model->PRODROMAL)
-            continue;
+            throw std::logic_error(
+                "The neighbor is not in the prodromal state. The state is: " +
+                std::to_string(neighbor.get_state())
+            );
 
         auto & v = neighbor.get_virus();
 

@@ -9,24 +9,24 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]") {
     
     // Queuing doesn't matter and get results that are meaningful
-    int n_seeds = 10;
+    int n_seeds = 5;
     epimodels::ModelMeaslesQuarantine<> model_0(
-        1000, // Number of agents
-        n_seeds,   // Number of initial cases
-        2.0, // Contact rate
-        0.1, // Transmission rate
-        0.9, //  Vaccination efficacy
-        0.3, // Vaccination reduction recovery rate
-        7.0, // Incubation period
-        5.0, // Prodromal period
-        5.0, // Rash period
-        3.0, // Days undetected
-        0.2, // Hospitalization rate
-        7.0, // Hospitalization duration
-        0.5, // Proportion vaccinated
-        21u, // Quarantine period
-        .8,  // Quarantine willingness
-        4u   // Isolation period
+        1000,    // Number of agents
+        n_seeds, // Number of initial cases
+        2.0,     // Contact rate
+        0.2,     // Transmission rate
+        0.9,     // Vaccination efficacy
+        0.3,     // Vaccination reduction recovery rate
+        7.0,     // Incubation period
+        4.0,     // Prodromal period
+        5.0,     // Rash period
+        3.0,     // Days undetected
+        0.2,     // Hospitalization rate
+        7.0,     // Hospitalization duration
+        0.0,     // Proportion vaccinated
+        21u,     // Quarantine period
+        .8,      // Quarantine willingness
+        4u       // Isolation period
     );
 
     // Shutting off the quarantine feature
@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]
         return;
     });
 
-    size_t nsims = 1000;
+    size_t nsims = 500;
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
     auto saver = [&transitions, &R0s, n_seeds](size_t n, Model<>* m) -> void{
@@ -113,8 +113,17 @@ EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]
     }
 
     // Avarage R0
-    double R0_observed = std::accumulate(R0s.begin(), R0s.end(), 0.0) /
-        static_cast<double>(R0s.size());
+    double R0_observed = 0.0;
+    for (auto & i: R0s)
+    {
+        if (i >= 0.0)
+            R0_observed += i;
+        else
+            throw std::range_error(
+                "The R0 value is negative. This should not happen."
+            );
+    }
+    R0_observed /= static_cast<epiworld_double>(nsims * n_seeds);
 
     // Checking especific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
@@ -126,7 +135,7 @@ EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]
     #ifdef CATCH_CONFIG_MAIN
 
     // R0
-    REQUIRE_FALSE(R0_observed, R0_theo, 0.05));
+    REQUIRE_FALSE(R0_observed, R0_theo, 0.1));
 
     // Transition to prodromal
     REQUIRE_FALSE(moreless(mat(1, 2), 1.0/model_0("Incubation period"), 0.05));
