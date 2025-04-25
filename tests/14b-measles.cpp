@@ -6,7 +6,7 @@
 
 using namespace epiworld;
 
-EPIWORLD_TEST_CASE("Measles model", "[ModelMeaslesQuarantine]") {
+EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesQuarantineOn]") {
     
     // Queuing doesn't matter and get results that are meaningful
     epimodels::ModelMeaslesQuarantine<> model_0(
@@ -27,9 +27,6 @@ EPIWORLD_TEST_CASE("Measles model", "[ModelMeaslesQuarantine]") {
         .8,  // Quarantine willingness
         4u   // Isolation period
     );
-
-    // Shutting off the quarantine feature
-    model_0("Quarantine willingness") = -1.0;
 
     size_t nsims = 500;
     std::vector< std::vector<epiworld_double> > transitions(nsims);
