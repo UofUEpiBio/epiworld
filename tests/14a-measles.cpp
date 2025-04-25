@@ -135,7 +135,7 @@ EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]
     #ifdef CATCH_CONFIG_MAIN
 
     // R0
-    REQUIRE_FALSE(R0_observed, R0_theo, 0.1));
+    REQUIRE_FALSE(moreless(R0_observed, R0_theo, 0.1));
 
     // Transition to prodromal
     REQUIRE_FALSE(moreless(mat(1, 2), 1.0/model_0("Incubation period"), 0.05));

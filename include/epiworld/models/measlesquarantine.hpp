@@ -636,20 +636,17 @@ LOCAL_UPDATE_FUN(m_update_q_prodromal) {
         (m->par("Quarantine period") <= days_since) ?
         true: false;
     
-    // If they develop rash, then they are isolated and contact
-    // tracing is triggered.
+    // Develops rash?
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
-        if (unquarantine)
-            p->change_state(m, ModelMeaslesQuarantine::PRODROMAL);
+        model->day_rash_onset[p->get_id()] = m->today();
+        p->change_state(m, ModelMeaslesQuarantine::ISOLATED);
     }
     else
     {
-
-        // If develops rash during quarantine, they are moved to 
-        // isolation right away.
-        p->change_state(m, ModelMeaslesQuarantine::ISOLATED);        
-        model->day_rash_onset[p->get_id()] = m->today();
+        
+        if (unquarantine)
+            p->change_state(m, ModelMeaslesQuarantine::PRODROMAL);
 
     }
 
