@@ -102,7 +102,7 @@ $(function() {
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> Ta = epiworld_<span class="keywordtype">double</span>, <span class="keyword">typename</span> Tb = epiworld_fast_u<span class="keywordtype">int</span>&gt; </div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">using</span> MapVec_type = std::unordered_map&lt; std::vector&lt; Ta &gt;, Tb, <a class="code" href="structvec_hasher.html">vecHasher&lt;Ta&gt;</a>&gt;;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = <span class="keywordtype">int</span>&gt;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = EPI_DEFAULT_TSEQ&gt;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">inline</span> TSeq default_sequence(<span class="keywordtype">int</span> seq_count);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">// Making it &#39;static&#39; so that we don&#39;t have problems when including the</span></div>
