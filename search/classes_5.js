@@ -1,7 +1,7 @@
 var searchData=
 [
   ['model_127',['Model',['../classepiworld_1_1_model.html',1,'epiworld::Model&lt; TSeq &gt;'],['../class_model.html',1,'Model&lt; TSeq &gt;']]],
-  ['model_3c_20epi_5fdefault_5ftseq_20_3e_128',['Model&lt; EPI_DEFAULT_TSEQ &gt;',['../classepiworld_1_1_model.html',1,'epiworld']]],
+  ['model_3c_20epi_5fdefault_5ftseq_20_3e_128',['Model&lt; EPI_DEFAULT_TSEQ &gt;',['../class_model.html',1,'']]],
   ['model_3c_20int_20_3e_129',['Model&lt; int &gt;',['../classepiworld_1_1_model.html',1,'epiworld']]],
   ['modeldiagram_130',['ModelDiagram',['../classepiworld_1_1_model_diagram.html',1,'epiworld::ModelDiagram'],['../class_model_diagram.html',1,'ModelDiagram']]],
   ['modeldiffnet_131',['ModelDiffNet',['../classepiworld_1_1epimodels_1_1_model_diff_net.html',1,'epiworld::epimodels::ModelDiffNet&lt; TSeq &gt;'],['../class_model_diff_net.html',1,'ModelDiffNet&lt; TSeq &gt;']]],
