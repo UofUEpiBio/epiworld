@@ -4,7 +4,7 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("model-methods", "[model-methods]") {
     // Creating a model
-    Model<int> model;
+    Model<> model;
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_NOTHROW(model.add_param(0.1, "Prob hospitalization"));

@@ -35,7 +35,6 @@ private:
     std::shared_ptr<std::string> virus_name = nullptr;
     int date = -99;
     int id   = -99;
-    bool active = true;
     MutFun<TSeq>          mutation_fun                 = nullptr;
     PostRecoveryFun<TSeq> post_recovery_fun            = nullptr;
     VirusFun<TSeq>        probability_of_infecting_fun = nullptr;

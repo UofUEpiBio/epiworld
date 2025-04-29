@@ -28,7 +28,7 @@ int main(int argc, char * argv[]) {
         rgraph_smallworld(100000, 4, .01, false, model)
     );
 
-    auto sav = make_save_run<int>(std::string("%03lu-episim.txt"));
+    auto sav = make_save_run<>(std::string("%03lu-episim.txt"));
     model.run_multiple(100, nsims, 222, sav, true, true, nthreads);
 
     model.print();

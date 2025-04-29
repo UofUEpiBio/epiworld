@@ -21,7 +21,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
 {
 
-    Model<int> model;
+    Model<> model;
     model.seed(3312);
 
     // Generating random numbers

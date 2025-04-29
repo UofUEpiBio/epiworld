@@ -10,7 +10,7 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
 
 
     // Adding multi-file write
-    auto sav_0 = make_save_run<int>(
+    auto sav_0 = make_save_run<>(
         "02-reproducible-sirconn-saves/main_out_%li", // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,
@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
         true   // bool reproductive
     );
 
-    auto sav_1 = make_save_run<int>(
+    auto sav_1 = make_save_run<>(
         "02-reproducible-sirconn-saves/main_out_pll_%li", // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,

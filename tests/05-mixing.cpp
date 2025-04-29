@@ -51,7 +51,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     for (const auto & a : model.get_agents())
     {
-        if (a.get_state() != epimodels::ModelSEIRMixing<int>::SUSCEPTIBLE)
+        if (a.get_state() != epimodels::ModelSEIRMixing<>::SUSCEPTIBLE)
         {
             if (a.get_entity(0).get_id() == 0)
             {
@@ -91,7 +91,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         {
             n_right++;
         } 
-        else if (a.get_state() != epimodels::ModelSEIRMixing<int>::SUSCEPTIBLE)
+        else if (a.get_state() != epimodels::ModelSEIRMixing<>::SUSCEPTIBLE)
         {
             if (a.get_entity(0).get_id() == 1)
             {

@@ -61,11 +61,7 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     n_neighbors(p.n_neighbors),
     entities(p.entities),
     entities_locations(p.entities_locations),
-    n_entities(p.n_entities),
-    sampled_agents(0u),
-    sampled_agents_n(0u),
-    sampled_agents_left_n(0u),
-    date_last_build_sample(-99)
+    n_entities(p.n_entities)
 {
 
     state = p.state;
@@ -109,15 +105,6 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     entities_locations = other_agent.entities_locations;
     n_entities = other_agent.n_entities;
 
-    sampled_agents.clear();
-    sampled_agents_n = 0;
-    sampled_agents_left_n = 0;
-    date_last_build_sample = -99;
-
-    // neighbors           = other_agent.neighbors;
-    // entities            = other_agent.entities;
-    // entities_locations  = other_agent.entities_locations;
-    // n_entities          = other_agent.n_entities;
     state              = other_agent.state;
     state_prev         = other_agent.state_prev;
     state_last_changed = other_agent.state_last_changed;
@@ -130,7 +117,6 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     } else
         virus = nullptr;
     
-    // tools               = other_agent.tools;
     n_tools             = other_agent.n_tools;
     for (size_t i = 0u; i < n_tools; ++i)
     {
