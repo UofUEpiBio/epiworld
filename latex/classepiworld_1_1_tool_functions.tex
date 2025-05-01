@@ -1,5 +1,14 @@
 \hypertarget{classepiworld_1_1_tool_functions}{}\doxysection{epiworld\+::Tool\+Functions$<$ TSeq $>$ Class Template Reference}
 \label{classepiworld_1_1_tool_functions}\index{epiworld::ToolFunctions$<$ TSeq $>$@{epiworld::ToolFunctions$<$ TSeq $>$}}
+
+
+Helper class to store the functions avoiding multiple shared\+\_\+pointers (we have only one for the four of these)  
+
+
+
+
+{\ttfamily \#include $<$epiworld.\+hpp$>$}
+
 \doxysubsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
@@ -16,6 +25,12 @@ Tool\+Fun$<$ TSeq $>$ {\bfseries recovery\+\_\+enhancer} = nullptr
 Tool\+Fun$<$ TSeq $>$ {\bfseries death\+\_\+reduction} = nullptr
 \end{DoxyCompactItemize}
 
+
+\doxysubsection{Detailed Description}
+\subsubsection*{template$<$typename TSeq$>$\newline
+class epiworld\+::\+Tool\+Functions$<$ TSeq $>$}
+
+Helper class to store the functions avoiding multiple shared\+\_\+pointers (we have only one for the four of these) 
 
 The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
 \item 
