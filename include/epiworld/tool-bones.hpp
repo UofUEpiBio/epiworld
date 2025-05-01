@@ -14,6 +14,10 @@ class Model;
 template<typename TSeq>
 class Tool;
 
+/**
+ * @brief Helper class to store the functions avoiding
+ * multiple shared_pointers (we have only one for the four of these)
+ */
 template<typename TSeq>
 class ToolFunctions {
 public:
