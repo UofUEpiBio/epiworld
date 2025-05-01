@@ -1648,7 +1648,7 @@ inline void Model<TSeq>::mutate_virus() {
     // Checking if any virus has mutation
     size_t nmutates = 0u;
     for (const auto & v: viruses)
-        if (v->mutation_fun)
+        if (v->virus_functions->mutation)
             nmutates++;
 
     if (nmutates == 0u)
