@@ -4800,6 +4800,10 @@ inline void DataBase<TSeq>::write_data(
         for (int i = 0; i <= model->today(); ++i)
         {
 
+            // Skipping the zeros
+            if (hist_transition_matrix[i * (ns * ns)] == 0)
+                continue;
+
             for (int from = 0u; from < ns; ++from)
                 for (int to = 0u; to < ns; ++to)
                     file_transition <<
@@ -17576,7 +17580,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     };
 
-    std::vector< epiworld_fast_uint > exposed_state = {
+    std::vector< unsigned int > exposed_state = {
         SYMPTOMATIC,
         SYMPTOMATIC_ISOLATED,
         ASYMPTOMATIC,
