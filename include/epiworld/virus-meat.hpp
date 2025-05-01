@@ -511,11 +511,6 @@ inline std::string Virus<TSeq>::get_name() const
 }
 
 template<typename TSeq>
-inline std::vector< epiworld_double > & Virus<TSeq>::get_data() {
-    return data;
-}
-
-template<typename TSeq>
 inline void Virus<TSeq>::set_state(
     epiworld_fast_int init,
     epiworld_fast_int end,

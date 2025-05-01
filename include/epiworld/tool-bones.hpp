@@ -39,9 +39,6 @@ private:
     ToolFun<TSeq> recovery_enhancer_fun        = nullptr;
     ToolFun<TSeq> death_reduction_fun          = nullptr;
 
-    // Setup parameters
-    std::vector< epiworld_double * > params;  
-
     epiworld_fast_int state_init = -99;
     epiworld_fast_int state_post = -99;
 

@@ -119,8 +119,6 @@ public:
     void set_name(std::string name);
     std::string get_name() const;
 
-    std::vector< epiworld_double > & get_data();
-
     /**
      * @name Get and set the state and queue
      * 
