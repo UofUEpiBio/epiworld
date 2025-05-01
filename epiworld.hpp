@@ -6570,7 +6570,7 @@ inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
     if (++active[p->id] == 1)
         n_in_queue++;
 
-    for (auto n : p->neighbors)
+    for (auto n : (*p->neighbors))
     {
 
         if (++active[n] == 1)
@@ -6587,7 +6587,7 @@ inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
     if (--active[p->id] == 0)
         n_in_queue--;
 
-    for (auto n : p->neighbors)
+    for (auto n : (*p->neighbors))
     {
         if (--active[n] == 0)
             n_in_queue--;
@@ -11845,7 +11845,7 @@ class Tools {
     friend class Agent<TSeq>;
 private:
     std::vector< ToolPtr<TSeq> > * dat;
-    const epiworld_fast_uint * n_tools;
+    const unsigned int * n_tools;
 
 public:
 
@@ -14342,16 +14342,16 @@ private:
     
     Model<TSeq> * model;
 
-    std::vector< size_t > neighbors;
-    std::vector< size_t > neighbors_locations;
+    std::vector< size_t > * neighbors = nullptr;
+    std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
     std::vector< size_t > entities;
     std::vector< size_t > entities_locations;
     size_t n_entities = 0u;
 
-    epiworld_fast_uint state = 0u;
-    epiworld_fast_uint state_prev = 0u; ///< For accounting, if need to undo a change.
+    unsigned int state = 0u;
+    unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
     
     int state_last_changed = -1; ///< Last time the agent was updated.
     int id = -1;
@@ -14359,7 +14359,7 @@ private:
     VirusPtr<TSeq> virus = nullptr;
 
     std::vector< ToolPtr<TSeq> > tools;
-    epiworld_fast_uint n_tools = 0u;
+    unsigned int n_tools = 0u;
 
 public:
 
@@ -14367,6 +14367,7 @@ public:
     Agent(Agent<TSeq> && p);
     Agent(const Agent<TSeq> & p);
     Agent<TSeq> & operator=(const Agent<TSeq> & other_agent);
+    ~Agent();
 
     /**
      * @name Add/Remove Virus/Tool
@@ -14507,7 +14508,7 @@ public:
         epiworld_fast_int queue = 0
         );
 
-    const epiworld_fast_uint & get_state() const;
+    const unsigned int & get_state() const;
 
     void reset();
 
@@ -14552,10 +14553,6 @@ public:
 
     bool operator==(const Agent<TSeq> & other) const;
     bool operator!=(const Agent<TSeq> & other) const {return !operator==(other);};
-
-    #ifdef EPI_DEBUG
-    void print_memory() const;
-    #endif
 
 };
 
@@ -14950,13 +14947,19 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
 template<typename TSeq>
 inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     model(p.model),
-    neighbors(p.neighbors),
-    neighbors_locations(p.neighbors_locations),
+    // neighbors(p.neighbors),
+    // neighbors_locations(p.neighbors_locations),
     n_neighbors(p.n_neighbors),
     entities(p.entities),
     entities_locations(p.entities_locations),
     n_entities(p.n_entities)
 {
+
+    if (n_neighbors > 0u)
+    {
+        neighbors = new std::vector< size_t >(*p.neighbors);
+        neighbors_locations = new std::vector< size_t >(*p.neighbors_locations);
+    }
 
     state = p.state;
     id     = p.id;
@@ -14991,10 +14994,20 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
 
     model = other_agent.model;
 
-    neighbors = other_agent.neighbors;
-    neighbors_locations = other_agent.neighbors_locations;
-    n_neighbors = other_agent.n_neighbors;
+    if (neighbors != nullptr)
+    {
+        delete neighbors;
+        delete neighbors_locations;
+        n_neighbors = 0u;
+    }
 
+    if (other_agent.n_neighbors > 0u)
+    {
+        neighbors = new std::vector< size_t >(other_agent.n_neighbors);
+        neighbors_locations = new std::vector< size_t >(other_agent.n_neighbors);
+        n_neighbors = other_agent.n_neighbors;
+    }
+    
     entities = other_agent.entities;
     entities_locations = other_agent.entities_locations;
     n_entities = other_agent.n_entities;
@@ -15020,6 +15033,18 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     
     return *this;
     
+}
+
+template<typename TSeq>
+inline Agent<TSeq>::~Agent()
+{
+
+    if (neighbors != nullptr)
+    {
+        delete neighbors;
+        delete neighbors_locations;
+    }
+
 }
 
 template<typename TSeq>
@@ -15379,10 +15404,17 @@ inline void Agent<TSeq>::add_neighbor(
 ) {
     // Can we find the neighbor?
     bool found = false;
-    if (check_source)
+
+    if (neighbors == nullptr)
+    {
+        neighbors = new std::vector< size_t >();
+        neighbors_locations = new std::vector< size_t >();
+    }
+
+    if (check_source && neighbors)
     {
 
-        for (auto & n: neighbors)    
+        for (auto & n: *neighbors)    
             if (static_cast<int>(n) == p.get_id())
             {
                 found = true;
@@ -15398,18 +15430,18 @@ inline void Agent<TSeq>::add_neighbor(
     if (!found)
     {
 
-        neighbors_locations.push_back(p.get_n_neighbors());
-        neighbors.push_back(p.get_id());
+        neighbors_locations->push_back(p.get_n_neighbors());
+        neighbors->push_back(p.get_id());
         n_neighbors++;
 
     }
 
 
     found = false;
-    if (check_target)
+    if (check_target && p.neighbors)
     {
-
-        for (auto & n: p.neighbors)
+       
+        for (auto & n: *p.neighbors)
             if (static_cast<int>(n) == id)
             {
                 found = true;
@@ -15421,8 +15453,14 @@ inline void Agent<TSeq>::add_neighbor(
     if (!found)
     {
 
-        p.neighbors_locations.push_back(n_neighbors - 1);
-        p.neighbors.push_back(id);
+        if (p.neighbors == nullptr)
+        {
+            p.neighbors = new std::vector< size_t >();
+            p.neighbors_locations = new std::vector< size_t >();
+        }
+
+        p.neighbors_locations->push_back(n_neighbors - 1);
+        p.neighbors->push_back(id);
         p.n_neighbors++;
         
     }
@@ -15438,31 +15476,42 @@ inline void Agent<TSeq>::swap_neighbors(
 )
 {
 
+    if (n_this >= n_neighbors)
+        throw std::range_error(
+            "The neighbor you want to swap is out of range. This Agent only has " +
+            std::to_string(n_neighbors) + " neighbors."
+        );
+    if (n_other >= other.n_neighbors)
+        throw std::range_error(
+            "The neighbor you want to swap is out of range. This Agent only has " +
+            std::to_string(other.n_neighbors) + " neighbors."
+        );
+
     // Getting the agents
     auto & pop = model->population;
-    auto & neigh_this  = pop[neighbors[n_this]];
-    auto & neigh_other = pop[other.neighbors[n_other]];
+    auto & neigh_this  = pop[(*neighbors)[n_this]];
+    auto & neigh_other = pop[(*other.neighbors)[n_other]];
 
     // Getting the locations in the neighbors
-    size_t loc_this_in_neigh = neighbors_locations[n_this];
-    size_t loc_other_in_neigh = other.neighbors_locations[n_other];
+    size_t loc_this_in_neigh = (*neighbors_locations)[n_this];
+    size_t loc_other_in_neigh = (*other.neighbors_locations)[n_other];
 
     // Changing ids
-    std::swap(neighbors[n_this], other.neighbors[n_other]);
+    std::swap((*neighbors)[n_this], (*other.neighbors)[n_other]);
 
     if (!model->directed)
     {
         std::swap(
-            neigh_this.neighbors[loc_this_in_neigh],
-            neigh_other.neighbors[loc_other_in_neigh]
+            (*neigh_this.neighbors)[loc_this_in_neigh],
+            (*neigh_other.neighbors)[loc_other_in_neigh]
             );
 
         // Changing the locations
-        std::swap(neighbors_locations[n_this], other.neighbors_locations[n_other]);
+        std::swap((*neighbors_locations)[n_this], (*other.neighbors_locations)[n_other]);
         
         std::swap(
-            neigh_this.neighbors_locations[loc_this_in_neigh],
-            neigh_other.neighbors_locations[loc_other_in_neigh]
+            (*neigh_this.neighbors_locations)[loc_this_in_neigh],
+            (*neigh_other.neighbors_locations)[loc_other_in_neigh]
             );
     }
 
@@ -15473,7 +15522,7 @@ inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors()
 {
     std::vector< Agent<TSeq> * > res(n_neighbors, nullptr);
     for (size_t i = 0u; i < n_neighbors; ++i)
-        res[i] = &model->population[neighbors[i]];
+        res[i] = &model->population[(*neighbors)[i]];
 
     return res;
 }
@@ -15502,7 +15551,7 @@ inline void Agent<TSeq>::change_state(
 }
 
 template<typename TSeq>
-inline const epiworld_fast_uint & Agent<TSeq>::get_state() const {
+inline const unsigned int & Agent<TSeq>::get_state() const {
     return state;
 }
 
@@ -15626,7 +15675,7 @@ inline void Agent<TSeq>::print(
             static_cast<int>(state),
             virus == nullptr ? std::string("no").c_str() : std::string("yes").c_str(),
             static_cast<int>(n_tools),
-            static_cast<int>(neighbors.size())
+            static_cast<int>(n_neighbors)
         );
     }
     else {
@@ -15638,7 +15687,7 @@ inline void Agent<TSeq>::print(
         printf_epiworld("  Has virus    : %s\n", virus == nullptr ?
             std::string("no").c_str() : std::string("yes").c_str());
         printf_epiworld("  Tool count   : %i\n", static_cast<int>(n_tools));
-        printf_epiworld("  Neigh. count : %i\n", static_cast<int>(neighbors.size()));
+        printf_epiworld("  Neigh. count : %i\n", static_cast<int>(n_neighbors));
 
         size_t nfeats = model->get_agents_data_ncols();
         if (nfeats > 0)
@@ -15826,15 +15875,6 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     return true;
     
 }
-
-#ifdef EPI_DEBUG
-template<typename TSeq>
-inline void Agent<TSeq>::print_memory() const
-{
-    printf_epiworld("Agent %i: ", static_cast<int>(id));
-    printf_epiworld("Memory: %zu\n", sizeof(*this));
-}
-#endif
 
 #undef CHECK_COALESCE_
 

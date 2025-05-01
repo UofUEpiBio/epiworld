@@ -6,6 +6,9 @@
             "command": "/usr/bin/g++",
             "args": [
                 "-fdiagnostics-color=always",
+                "-Wall",
+                "-Wextra",
+                "-Wpedantic",
                 "-g",
                 "${file}",
                 "-fopenmp",
