@@ -14947,8 +14947,6 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
 template<typename TSeq>
 inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     model(p.model),
-    // neighbors(p.neighbors),
-    // neighbors_locations(p.neighbors_locations),
     n_neighbors(p.n_neighbors),
     entities(p.entities),
     entities_locations(p.entities_locations),
@@ -14994,18 +14992,17 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
 
     model = other_agent.model;
 
+    n_neighbors = other_agent.n_neighbors;
     if (neighbors != nullptr)
     {
         delete neighbors;
         delete neighbors_locations;
-        n_neighbors = 0u;
     }
 
     if (other_agent.n_neighbors > 0u)
     {
         neighbors = new std::vector< size_t >(other_agent.n_neighbors);
         neighbors_locations = new std::vector< size_t >(other_agent.n_neighbors);
-        n_neighbors = other_agent.n_neighbors;
     }
     
     entities = other_agent.entities;
