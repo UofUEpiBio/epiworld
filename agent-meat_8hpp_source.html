@@ -1005,9 +1005,18 @@ $(function() {
 <div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;    </div>
 <div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;}</div>
 <div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160; </div>
-<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;<span class="preprocessor">#undef CHECK_COALESCE_</span></div>
-<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160; </div>
-<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;<span class="preprocessor">#ifdef EPI_DEBUG</span></div>
+<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
+<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;::print_memory</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;<span class="keyword"></span>{</div>
+<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;    printf_epiworld(<span class="stringliteral">&quot;Agent %i: &quot;</span>, <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<span class="keywordtype">id</span>));</div>
+<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;    printf_epiworld(<span class="stringliteral">&quot;Memory: %zu\n&quot;</span>, <span class="keyword">sizeof</span>(*<span class="keyword">this</span>));</div>
+<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;}</div>
+<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160; </div>
+<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160;<span class="preprocessor">#undef CHECK_COALESCE_</span></div>
+<div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160; </div>
+<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_agent_html"><div class="ttname"><a href="class_agent.html">Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> agent-bones.hpp:66</div></div>
 <div class="ttc" id="aclass_agent_html_a370107b9e18076bce06f7bffb32f2757"><div class="ttname"><a href="class_agent.html#a370107b9e18076bce06f7bffb32f2757">Agent::operator()</a></div><div class="ttdeci">double &amp; operator()(size_t j)</div><div class="ttdoc">Access the j-th column of the agent.</div><div class="ttdef"><b>Definition:</b> agent-meat.hpp:782</div></div>
 <div class="ttc" id="aclass_agent_html_a3763f12b56e8dd7f0e23bbca4f183c8a"><div class="ttname"><a href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">Agent::get_id</a></div><div class="ttdeci">int get_id() const</div><div class="ttdoc">Id of the individual.</div><div class="ttdef"><b>Definition:</b> agent-meat.hpp:434</div></div>
@@ -1018,10 +1027,10 @@ $(function() {
 <div class="ttc" id="aclass_entity_html"><div class="ttname"><a href="class_entity.html">Entity</a></div><div class="ttdef"><b>Definition:</b> entity-bones.hpp:20</div></div>
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
 <div class="ttc" id="aclass_queue_html"><div class="ttname"><a href="class_queue.html">Queue</a></div><div class="ttdoc">Controls which agents are verified at each step.</div><div class="ttdef"><b>Definition:</b> queue-bones.hpp:16</div></div>
-<div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:23</div></div>
+<div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:34</div></div>
 <div class="ttc" id="aclass_tools__const_html"><div class="ttname"><a href="class_tools__const.html">Tools_const</a></div><div class="ttdoc">Set of Tools (const) (useful for iterators)</div><div class="ttdef"><b>Definition:</b> tools-bones.hpp:117</div></div>
 <div class="ttc" id="aclass_tools_html"><div class="ttname"><a href="class_tools.html">Tools</a></div><div class="ttdoc">Set of tools (useful for building iterators)</div><div class="ttdef"><b>Definition:</b> tools-bones.hpp:18</div></div>
-<div class="ttc" id="aclass_virus_html"><div class="ttname"><a href="class_virus.html">Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> virus-bones.hpp:24</div></div>
+<div class="ttc" id="aclass_virus_html"><div class="ttname"><a href="class_virus.html">Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> virus-bones.hpp:38</div></div>
 <div class="ttc" id="astruct_event_html"><div class="ttname"><a href="struct_event.html">Event</a></div><div class="ttdoc">Event data for update an agent.</div><div class="ttdef"><b>Definition:</b> config.hpp:120</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

@@ -54,9 +54,6 @@ void {\bfseries set\+\_\+name} (std\+::string name)
 \mbox{\Hypertarget{class_virus_a3ed03a833c81c733d8d44d6620b22e18}\label{class_virus_a3ed03a833c81c733d8d44d6620b22e18}} 
 std\+::string {\bfseries get\+\_\+name} () const
 \item 
-\mbox{\Hypertarget{class_virus_aae3d461f14353d68e349ee107e7a46a6}\label{class_virus_aae3d461f14353d68e349ee107e7a46a6}} 
-std\+::vector$<$ epiworld\+\_\+double $>$ \& {\bfseries get\+\_\+data} ()
-\item 
 \mbox{\Hypertarget{class_virus_acef69022c32c3fa66a84aead33d0a63c}\label{class_virus_acef69022c32c3fa66a84aead33d0a63c}} 
 bool {\bfseries operator==} (const \mbox{\hyperlink{class_virus}{Virus}}$<$ TSeq $>$ \&other) const
 \item 
@@ -183,6 +180,11 @@ void \mbox{\hyperlink{class_virus_a918adfceb40159f1bc4f666258544784}{distribute}
 void {\bfseries set\+\_\+distribution} (Virus\+To\+Agent\+Fun$<$ TSeq $>$ fun)
 \end{DoxyCompactItemize}
 
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{class_virus_functions}{Virus\+Functions}}$<$ TSeq $>$ $>$ {\bfseries virus\+\_\+functions}
+\end{DoxyCompactItemize}
 \doxysubsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
@@ -215,6 +217,22 @@ class Virus$<$ TSeq $>$}
 \hline
 \end{DoxyTemplParams}
 Raw transmisibility of a virus should be a function of its genetic sequence. Nonetheless, transmisibility can be reduced as a result of having one or more tools to fight the virus. Because of this, transmisibility should be a function of the agent. 
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_virus_aba14707b22ae1b0e4e0e5ec5d13543ec}\label{class_virus_aba14707b22ae1b0e4e0e5ec5d13543ec}} 
+\index{Virus$<$ TSeq $>$@{Virus$<$ TSeq $>$}!virus\_functions@{virus\_functions}}
+\index{virus\_functions@{virus\_functions}!Virus$<$ TSeq $>$@{Virus$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{virus\_functions}{virus\_functions}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{class_virus_functions}{Virus\+Functions}}$<$TSeq$>$ $>$ \mbox{\hyperlink{class_virus}{Virus}}$<$ TSeq $>$\+::virus\+\_\+functions}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{= }
+\DoxyCodeLine{    std::make\_shared< VirusFunctions<TSeq> >()}
+
+\end{DoxyCode}
+
 
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
 \item 

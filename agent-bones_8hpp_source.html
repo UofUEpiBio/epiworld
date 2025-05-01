@@ -317,11 +317,15 @@ $(function() {
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keywordtype">bool</span> operator==(<span class="keyword">const</span> <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> &amp; other) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <span class="keywordtype">bool</span> operator!=(<span class="keyword">const</span> <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> &amp; other)<span class="keyword"> const </span>{<span class="keywordflow">return</span> !operator==(other);};</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160; </div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;};</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160; </div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160; </div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;<span class="preprocessor">    #ifdef EPI_DEBUG</span></div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    <span class="keywordtype">void</span> print_memory() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;<span class="preprocessor">    #endif</span></div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160; </div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;};</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160; </div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160; </div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160; </div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_agent_html"><div class="ttname"><a href="class_agent.html">Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> agent-bones.hpp:66</div></div>
 <div class="ttc" id="aclass_agent_html_a370107b9e18076bce06f7bffb32f2757"><div class="ttname"><a href="class_agent.html#a370107b9e18076bce06f7bffb32f2757">Agent::operator()</a></div><div class="ttdeci">double &amp; operator()(size_t j)</div><div class="ttdoc">Access the j-th column of the agent.</div><div class="ttdef"><b>Definition:</b> agent-meat.hpp:782</div></div>
 <div class="ttc" id="aclass_agent_html_a3763f12b56e8dd7f0e23bbca4f183c8a"><div class="ttname"><a href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">Agent::get_id</a></div><div class="ttdeci">int get_id() const</div><div class="ttdoc">Id of the individual.</div><div class="ttdef"><b>Definition:</b> agent-meat.hpp:434</div></div>
@@ -333,10 +337,10 @@ $(function() {
 <div class="ttc" id="aclass_entity_html"><div class="ttname"><a href="class_entity.html">Entity</a></div><div class="ttdef"><b>Definition:</b> entity-bones.hpp:20</div></div>
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
 <div class="ttc" id="aclass_queue_html"><div class="ttname"><a href="class_queue.html">Queue</a></div><div class="ttdoc">Controls which agents are verified at each step.</div><div class="ttdef"><b>Definition:</b> queue-bones.hpp:16</div></div>
-<div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:23</div></div>
+<div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:34</div></div>
 <div class="ttc" id="aclass_tools__const_html"><div class="ttname"><a href="class_tools__const.html">Tools_const</a></div><div class="ttdoc">Set of Tools (const) (useful for iterators)</div><div class="ttdef"><b>Definition:</b> tools-bones.hpp:117</div></div>
 <div class="ttc" id="aclass_tools_html"><div class="ttname"><a href="class_tools.html">Tools</a></div><div class="ttdoc">Set of tools (useful for building iterators)</div><div class="ttdef"><b>Definition:</b> tools-bones.hpp:18</div></div>
-<div class="ttc" id="aclass_virus_html"><div class="ttname"><a href="class_virus.html">Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> virus-bones.hpp:24</div></div>
+<div class="ttc" id="aclass_virus_html"><div class="ttname"><a href="class_virus.html">Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> virus-bones.hpp:38</div></div>
 <div class="ttc" id="aclass_viruses__const_html"><div class="ttname"><a href="class_viruses__const.html">Viruses_const</a></div><div class="ttdoc">Set of Viruses (const) (useful for iterators)</div><div class="ttdef"><b>Definition:</b> viruses-bones.hpp:121</div></div>
 <div class="ttc" id="aclass_viruses_html"><div class="ttname"><a href="class_viruses.html">Viruses</a></div><div class="ttdoc">Set of viruses (useful for building iterators)</div><div class="ttdef"><b>Definition:</b> viruses-bones.hpp:16</div></div>
 <div class="ttc" id="astruct_event_html"><div class="ttname"><a href="struct_event.html">Event</a></div><div class="ttdoc">Event data for update an agent.</div><div class="ttdef"><b>Definition:</b> config.hpp:120</div></div>

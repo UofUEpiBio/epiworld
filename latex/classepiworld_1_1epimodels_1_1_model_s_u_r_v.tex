@@ -21,6 +21,10 @@ Collaboration diagram for epiworld\+::epimodels\+::Model\+SURV$<$ TSeq $>$\+:
 \end{center}
 \end{figure}
 \doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_u_r_v_a153c9b414205cf40ad85a74607af78fe}{reset}} ()
+\begin{DoxyCompactList}\small\item\em Reset the model. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \begin{Indent}\textbf{ Construct a new Model\+SURV object}\par
 {\em The \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_u_r_v}{Model\+SURV}} class simulates a survaillence model where agents can be isolated, even if asyptomatic.
 
@@ -83,7 +87,38 @@ An object of class {\ttfamily epiworld\+\_\+surv}
 {\bfseries Model\+SURV} (const std\+::string \&vname, epiworld\+\_\+fast\+\_\+uint prevalence=50, epiworld\+\_\+double efficacy\+\_\+vax=0.\+9, epiworld\+\_\+double latent\+\_\+period=3u, epiworld\+\_\+double infect\+\_\+period=6u, epiworld\+\_\+double prob\+\_\+symptoms=0.\+6, epiworld\+\_\+double prop\+\_\+vaccinated=0.\+25, epiworld\+\_\+double prop\+\_\+vax\+\_\+redux\+\_\+transm=0.\+5, epiworld\+\_\+double prop\+\_\+vax\+\_\+redux\+\_\+infect=0.\+5, epiworld\+\_\+double surveillance\+\_\+prob=0.\+001, epiworld\+\_\+double prob\+\_\+transmission=1.\+0, epiworld\+\_\+double prob\+\_\+death=0.\+001, epiworld\+\_\+double prob\+\_\+noreinfect=0.\+9)
 \end{DoxyCompactItemize}
 \end{Indent}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_s_u_r_v_aa750dd423454b1fbb7e8d503747a7a96}\label{classepiworld_1_1epimodels_1_1_model_s_u_r_v_aa750dd423454b1fbb7e8d503747a7a96}} 
+std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_u_r_v_aa750dd423454b1fbb7e8d503747a7a96}{days\+\_\+latent\+\_\+and\+\_\+infectious}}
+\begin{DoxyCompactList}\small\item\em Vector of days spent in latent and infectious states A row-\/major matrix. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \doxysubsection*{Additional Inherited Members}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_s_u_r_v_a153c9b414205cf40ad85a74607af78fe}\label{classepiworld_1_1epimodels_1_1_model_s_u_r_v_a153c9b414205cf40ad85a74607af78fe}} 
+\index{epiworld::epimodels::ModelSURV$<$ TSeq $>$@{epiworld::epimodels::ModelSURV$<$ TSeq $>$}!reset@{reset}}
+\index{reset@{reset}!epiworld::epimodels::ModelSURV$<$ TSeq $>$@{epiworld::epimodels::ModelSURV$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{reset()}{reset()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_u_r_v}{Model\+SURV}}$<$ TSeq $>$\+::reset\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Reset the model. 
+
+Resetting the model will\+:
+\begin{DoxyItemize}
+\item clear the database
+\item restore the population (if {\ttfamily set\+\_\+backup()} was called before)
+\item re-\/distribute tools
+\item re-\/distribute viruses
+\item set the date to 0 
+\end{DoxyItemize}
+
+Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model_a9591eb76c7cf1ed7e1510342ff602d37}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
+
 
 
 The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}

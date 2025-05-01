@@ -64,6 +64,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#friends">Friends</a> &#124;
 <a href="class_virus-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -120,9 +121,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>set_name</b> (std::st
 <tr class="memitem:a3ed03a833c81c733d8d44d6620b22e18"><td class="memItemLeft" align="right" valign="top"><a id="a3ed03a833c81c733d8d44d6620b22e18"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>get_name</b> () const</td></tr>
 <tr class="separator:a3ed03a833c81c733d8d44d6620b22e18"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae3d461f14353d68e349ee107e7a46a6"><td class="memItemLeft" align="right" valign="top"><a id="aae3d461f14353d68e349ee107e7a46a6"></a>
-std::vector&lt; epiworld_double &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_data</b> ()</td></tr>
-<tr class="separator:aae3d461f14353d68e349ee107e7a46a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acef69022c32c3fa66a84aead33d0a63c"><td class="memItemLeft" align="right" valign="top"><a id="acef69022c32c3fa66a84aead33d0a63c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator==</b> (const <a class="el" href="class_virus.html">Virus</a>&lt; TSeq &gt; &amp;other) const</td></tr>
 <tr class="separator:acef69022c32c3fa66a84aead33d0a63c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -240,6 +238,11 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_distribution</b> (VirusToAgentFun&lt; TSeq &gt; fun)</td></tr>
 <tr class="separator:a080157accd04abf8cace12116485368b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:aba14707b22ae1b0e4e0e5ec5d13543ec"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="class_virus_functions.html">VirusFunctions</a>&lt; TSeq &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>virus_functions</b></td></tr>
+<tr class="separator:aba14707b22ae1b0e4e0e5ec5d13543ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a4ebc26ee7b812cd7314ef1f7eb4cdebb"><td class="memItemLeft" align="right" valign="top"><a id="a4ebc26ee7b812cd7314ef1f7eb4cdebb"></a>
@@ -270,7 +273,26 @@ class Virus&lt; TSeq &gt;</h3>
   </dd>
 </dl>
 <p>Raw transmisibility of a virus should be a function of its genetic sequence. Nonetheless, transmisibility can be reduced as a result of having one or more tools to fight the virus. Because of this, transmisibility should be a function of the agent. </p>
-</div><hr/>The documentation for this class was generated from the following files:<ul>
+</div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="aba14707b22ae1b0e4e0e5ec5d13543ec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aba14707b22ae1b0e4e0e5ec5d13543ec">&#9670;&nbsp;</a></span>virus_functions</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename TSeq &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; <a class="el" href="class_virus_functions.html">VirusFunctions</a>&lt;TSeq&gt; &gt; <a class="el" href="class_virus.html">Virus</a>&lt; TSeq &gt;::virus_functions</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= </div>
+<div class="line">    std::make_shared&lt; VirusFunctions&lt;TSeq&gt; &gt;()</div>
+</div><!-- fragment -->
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/epiworld/<a class="el" href="agent-bones_8hpp_source.html">agent-bones.hpp</a></li>
 <li>include/epiworld/<a class="el" href="virus-bones_8hpp_source.html">virus-bones.hpp</a></li>
 <li>include/epiworld/<a class="el" href="virus-meat_8hpp_source.html">virus-meat.hpp</a></li>
