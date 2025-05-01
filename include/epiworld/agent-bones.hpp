@@ -294,6 +294,10 @@ public:
     bool operator==(const Agent<TSeq> & other) const;
     bool operator!=(const Agent<TSeq> & other) const {return !operator==(other);};
 
+    #ifdef EPI_DEBUG
+    void print_memory() const;
+    #endif
+
 };
 
 

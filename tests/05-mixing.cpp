@@ -45,6 +45,10 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     model.run(50, 123);
     model.print();
 
+    #ifdef EPI_DEBUG
+    model.get_agent(0).print_memory();
+    #endif
+
     // Getting all agents
     int n_right = 0;
     int n_wrong = 0;

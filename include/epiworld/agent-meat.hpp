@@ -933,6 +933,15 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     
 }
 
+#ifdef EPI_DEBUG
+template<typename TSeq>
+inline void Agent<TSeq>::print_memory() const
+{
+    printf_epiworld("Agent %i: ", static_cast<int>(id));
+    printf_epiworld("Memory: %zu\n", sizeof(*this));
+}
+#endif
+
 #undef CHECK_COALESCE_
 
 #endif
