@@ -8,8 +8,8 @@
 // In case the user has a way to stop the program
 // This is called during `run_multiple()` and it is
 // passed the simulation number.
-#ifndef EPI_USER_INTERRUPT
-    #define EPI_USER_INTERRUPT(a)
+#ifndef EPI_CHECK_USER_INTERRUPT
+    #define EPI_CHECK_USER_INTERRUPT(a)
 #endif
 
 #ifndef EPIWORLD_MAXNEIGHBORS
