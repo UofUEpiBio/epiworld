@@ -426,23 +426,19 @@
 \contentsline {subsection}{\numberline {15.78.1}Detailed Description}{220}{subsection.15.78.1}%
 \contentsline {section}{\numberline {15.79}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Virus$<$ TSeq $>$ Class Template Reference}{221}{section.15.79}%
 \contentsline {subsection}{\numberline {15.79.1}Detailed Description}{222}{subsection.15.79.1}%
-\contentsline {subsection}{\numberline {15.79.2}Member Data Documentation}{223}{subsection.15.79.2}%
-\contentsline {subsubsection}{\numberline {15.79.2.1}virus\_functions}{223}{subsubsection.15.79.2.1}%
 \contentsline {section}{\numberline {15.80}Virus$<$ TSeq $>$ Class Template Reference}{223}{section.15.80}%
 \contentsline {subsection}{\numberline {15.80.1}Detailed Description}{225}{subsection.15.80.1}%
-\contentsline {subsection}{\numberline {15.80.2}Member Data Documentation}{225}{subsection.15.80.2}%
-\contentsline {subsubsection}{\numberline {15.80.2.1}virus\_functions}{225}{subsubsection.15.80.2.1}%
 \contentsline {section}{\numberline {15.81}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Viruses$<$ TSeq $>$ Class Template Reference}{225}{section.15.81}%
-\contentsline {subsection}{\numberline {15.81.1}Detailed Description}{226}{subsection.15.81.1}%
+\contentsline {subsection}{\numberline {15.81.1}Detailed Description}{225}{subsection.15.81.1}%
 \contentsline {section}{\numberline {15.82}Viruses$<$ TSeq $>$ Class Template Reference}{226}{section.15.82}%
-\contentsline {subsection}{\numberline {15.82.1}Detailed Description}{227}{subsection.15.82.1}%
+\contentsline {subsection}{\numberline {15.82.1}Detailed Description}{226}{subsection.15.82.1}%
 \contentsline {section}{\numberline {15.83}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Viruses\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}\_\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}const$<$ TSeq $>$ Class Template Reference}{227}{section.15.83}%
 \contentsline {subsection}{\numberline {15.83.1}Detailed Description}{227}{subsection.15.83.1}%
-\contentsline {section}{\numberline {15.84}Viruses\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}\_\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}const$<$ TSeq $>$ Class Template Reference}{228}{section.15.84}%
+\contentsline {section}{\numberline {15.84}Viruses\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}\_\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}const$<$ TSeq $>$ Class Template Reference}{227}{section.15.84}%
 \contentsline {subsection}{\numberline {15.84.1}Detailed Description}{228}{subsection.15.84.1}%
-\contentsline {section}{\numberline {15.85}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Virus\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Functions$<$ TSeq $>$ Class Template Reference}{229}{section.15.85}%
+\contentsline {section}{\numberline {15.85}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Virus\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Functions$<$ TSeq $>$ Class Template Reference}{228}{section.15.85}%
 \contentsline {section}{\numberline {15.86}Virus\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Functions$<$ TSeq $>$ Class Template Reference}{229}{section.15.86}%
 \contentsline {chapter}{\numberline {16}File Documentation}{231}{chapter.16}%
 \contentsline {section}{\numberline {16.1}include/epiworld/agent-\/meat-\/state.hpp File Reference}{231}{section.16.1}%
 \contentsline {subsection}{\numberline {16.1.1}Detailed Description}{232}{subsection.16.1.1}%
-\contentsline {chapter}{Index}{233}{section*.320}%
+\contentsline {chapter}{Index}{233}{section*.318}%
