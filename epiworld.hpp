@@ -10786,6 +10786,9 @@ public:
     VirusFun<TSeq>        probability_of_death     = nullptr;
     VirusFun<TSeq>        incubation               = nullptr;
 
+    // Information about how distribution works
+    VirusToAgentFun<TSeq> dist = nullptr;
+
     VirusFunctions() = default;
 
 };
@@ -10822,9 +10825,6 @@ private:
     epiworld_fast_int queue_init    = Queue<TSeq>::Everyone; ///< Change of state when added to agent.
     epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
     epiworld_fast_int queue_removed = -99; ///< Change of state when agent is removed
-
-    // Information about how distribution works
-    VirusToAgentFun<TSeq> dist_fun = nullptr;
 
 public:
     std::shared_ptr< VirusFunctions<TSeq> > virus_functions = 
@@ -11807,10 +11807,10 @@ template<typename TSeq>
 inline void Virus<TSeq>::distribute(Model<TSeq> * model)
 {
 
-    if (dist_fun)
+    if (virus_functions->dist)
     {
 
-        dist_fun(*this, model);
+        virus_functions->dist(*this, model);
 
     }
 
@@ -11819,7 +11819,7 @@ inline void Virus<TSeq>::distribute(Model<TSeq> * model)
 template<typename TSeq>
 inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
 {
-    dist_fun = fun;
+    virus_functions->dist = fun;
 }
 
 #endif
@@ -12099,6 +12099,8 @@ public:
     ToolFun<TSeq> recovery_enhancer        = nullptr;
     ToolFun<TSeq> death_reduction          = nullptr;
 
+    ToolToAgentFun<TSeq> dist = nullptr;
+
     ToolFunctions() = default;
 };
 
@@ -12132,8 +12134,6 @@ private:
     epiworld_fast_int queue_post = Queue<TSeq>::NoOne; ///< Change of state when removed from agent.
 
     void set_agent(Agent<TSeq> * p, size_t idx);
-
-    ToolToAgentFun<TSeq> dist_fun = nullptr;
 
 public:
     Tool(std::string name = "unknown tool");
@@ -12864,10 +12864,10 @@ template<typename TSeq>
 inline void Tool<TSeq>::distribute(Model<TSeq> * model)
 {
 
-    if (dist_fun)
+    if (tool_functions->dist)
     {
 
-        dist_fun(*this, model);
+        tool_functions->dist(*this, model);
 
     }
 
@@ -12876,7 +12876,7 @@ inline void Tool<TSeq>::distribute(Model<TSeq> * model)
 template<typename TSeq>
 inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
 {
-    dist_fun = fun;
+    tool_functions->dist = fun;
 }
 
 #endif
@@ -20738,6 +20738,22 @@ public:
 template<typename TSeq>
 inline void ModelSEIRMixing<TSeq>::update_infected()
 {
+
+    // #ifdef EPI_DEBUG
+    // printf_epiworld("Estimating the size of `infected`:");
+    // size_t total = 0u;
+
+    // // Memory used by the `infected` vector itself
+    // total += infected.capacity() * sizeof(std::vector<epiworld::Agent<TSeq> *>);
+    
+    // // Memory used by each inner vector and its elements
+    // for (const auto& group : infected) {
+    //     total += group.capacity() * sizeof(epiworld::Agent<TSeq> *);
+    // }
+    // printf_epiworld("%.2f Mb\n", 
+    //     static_cast<double>(total)/1024.0/1024.0);
+    // #endif
+
 
     auto & agents = Model<TSeq>::get_agents();
     auto & entities = Model<TSeq>::get_entities();
