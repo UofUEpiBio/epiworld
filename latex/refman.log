@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.5.2)  2 MAY 2025 00:02
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.5.2)  2 MAY 2025 01:34
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -3891,7 +3891,7 @@ Chapter 16.
 pdfTeX warning: pdflatex (file ./agent-meat-state_8hpp__incl.pdf): PDF inclusio
 n: multiple pdfs with page group included in a single page
 >
-<agent-meat-state_8hpp__incl.pdf, id=7840, 229.85875pt x 167.62625pt>
+<agent-meat-state_8hpp__incl.pdf, id=7844, 229.85875pt x 167.62625pt>
 File: agent-meat-state_8hpp__incl.pdf Graphic file (type pdf)
 <use agent-meat-state_8hpp__incl.pdf>
 Package pdftex.def Info: agent-meat-state_8hpp__incl.pdf  used on input line 14
@@ -3902,7 +3902,7 @@ Package pdftex.def Info: agent-meat-state_8hpp__incl.pdf  used on input line 14
 pdfTeX warning: pdflatex (file ./agent-meat-state_8hpp__dep__incl.pdf): PDF inc
 lusion: multiple pdfs with page group included in a single page
 >
-<agent-meat-state_8hpp__dep__incl.pdf, id=7848, 223.83624pt x 223.83624pt>
+<agent-meat-state_8hpp__dep__incl.pdf, id=7852, 223.83624pt x 223.83624pt>
 File: agent-meat-state_8hpp__dep__incl.pdf Graphic file (type pdf)
 <use agent-meat-state_8hpp__dep__incl.pdf>
 Package pdftex.def Info: agent-meat-state_8hpp__dep__incl.pdf  used on input li
@@ -4082,10 +4082,10 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 22523 strings out of 480478
- 482298 string characters out of 5905925
- 734219 words of memory out of 5000000
- 35132 multiletter control sequences out of 15000+600000
+ 22531 strings out of 480478
+ 482790 string characters out of 5905925
+ 734415 words of memory out of 5000000
+ 35136 multiletter control sequences out of 15000+600000
  603446 words of font info for 114 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,16n,96p,2415b,718s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -4104,10 +4104,10 @@ b></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/share/texmf-
 dist/fonts/type1/urw/helvetic/uhvb8ac.pfb></usr/share/texmf-dist/fonts/type1/ur
 w/helvetic/uhvbo8ac.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.
 pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on refman.pdf (251 pages, 1196190 bytes).
+Output written on refman.pdf (251 pages, 1196578 bytes).
 PDF statistics:
- 8996 PDF objects out of 10688 (max. 8388607)
- 8305 compressed objects within 84 object streams
- 2886 named destinations out of 2984 (max. 500000)
+ 9001 PDF objects out of 10688 (max. 8388607)
+ 8310 compressed objects within 84 object streams
+ 2890 named destinations out of 2984 (max. 500000)
  3927 words of extra memory for PDF output out of 10000 (max. 10000000)
 

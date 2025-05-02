@@ -583,10 +583,10 @@ $(function() {
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_tool.html">Tool&lt;TSeq&gt;::distribute</a>(<a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * model)</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;{</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160; </div>
-<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    <span class="keywordflow">if</span> (dist_fun)</div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    <span class="keywordflow">if</span> (tool_functions-&gt;dist)</div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;    {</div>
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160; </div>
-<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;        dist_fun(*<span class="keyword">this</span>, model);</div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;        tool_functions-&gt;dist(*<span class="keyword">this</span>, model);</div>
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160; </div>
 <div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;    }</div>
 <div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160; </div>
@@ -595,13 +595,13 @@ $(function() {
 <div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_tool.html">Tool&lt;TSeq&gt;::set_distribution</a>(ToolToAgentFun&lt;TSeq&gt; fun)</div>
 <div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;{</div>
-<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;    dist_fun = fun;</div>
+<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;    tool_functions-&gt;dist = fun;</div>
 <div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;}</div>
 <div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160; </div>
 <div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_agent_html"><div class="ttname"><a href="class_agent.html">Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> agent-bones.hpp:66</div></div>
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
-<div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:38</div></div>
+<div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:40</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

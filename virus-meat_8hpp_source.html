@@ -766,10 +766,10 @@ $(function() {
 <div class="line"><a name="l00702"></a><span class="lineno"><a class="line" href="class_virus.html#a918adfceb40159f1bc4f666258544784">  702</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_virus.html#a918adfceb40159f1bc4f666258544784">Virus&lt;TSeq&gt;::distribute</a>(<a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * model)</div>
 <div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;{</div>
 <div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160; </div>
-<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;    <span class="keywordflow">if</span> (dist_fun)</div>
+<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;    <span class="keywordflow">if</span> (virus_functions-&gt;dist)</div>
 <div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;    {</div>
 <div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160; </div>
-<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;        dist_fun(*<span class="keyword">this</span>, model);</div>
+<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;        virus_functions-&gt;dist(*<span class="keyword">this</span>, model);</div>
 <div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160; </div>
 <div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;    }</div>
 <div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160; </div>
@@ -778,13 +778,13 @@ $(function() {
 <div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_virus.html">Virus&lt;TSeq&gt;::set_distribution</a>(VirusToAgentFun&lt;TSeq&gt; fun)</div>
 <div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;{</div>
-<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;    dist_fun = fun;</div>
+<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;    virus_functions-&gt;dist = fun;</div>
 <div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;}</div>
 <div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160; </div>
 <div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_agent_html"><div class="ttname"><a href="class_agent.html">Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> agent-bones.hpp:66</div></div>
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
-<div class="ttc" id="aclass_virus_html"><div class="ttname"><a href="class_virus.html">Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> virus-bones.hpp:38</div></div>
+<div class="ttc" id="aclass_virus_html"><div class="ttname"><a href="class_virus.html">Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> virus-bones.hpp:41</div></div>
 <div class="ttc" id="aclass_virus_html_a918adfceb40159f1bc4f666258544784"><div class="ttname"><a href="class_virus.html#a918adfceb40159f1bc4f666258544784">Virus::distribute</a></div><div class="ttdeci">void distribute(Model&lt; TSeq &gt; *model)</div><div class="ttdoc">Get information about the prevalence of the virus.</div><div class="ttdef"><b>Definition:</b> virus-meat.hpp:702</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
