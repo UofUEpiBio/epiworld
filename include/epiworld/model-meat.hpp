@@ -532,11 +532,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     if (use_queuing)
         queue.model = this;
 
-    array_double_tmp.resize(std::max(
-        size(),
-        static_cast<size_t>(1024 * 1024)
-    ));
-
+    array_double_tmp.resize(static_cast<size_t>(1024u), 0.0);
     array_virus_tmp.resize(1024u);
 
     return *this;

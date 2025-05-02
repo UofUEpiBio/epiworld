@@ -1,3 +1,7 @@
+
+
+CXX_FLAGS_DEBUG=-std=c++17 -Wall -Wextra -O0 -g -pedantic -fopenmp
+
 all: main.o
 
 main.o: main.cpp clean
@@ -48,3 +52,12 @@ clean:
 # https://stackoverflow.com/questions/9842759/what-is-ftest-coverage-option-in-gcov
 
 .PHONY: all clean coverage
+
+callgrind: 05-mixing-with-size.cpp
+	rm -f callgrind.out.* && \
+	g++ $(CXX_FLAGS_DEBUG) 05-mixing-with-size.cpp -o 05-mixing-with-size.o && \
+	valgrind --tool=callgrind ./05-mixing-with-size.o && \
+	callgrind_annotate callgrind.out.* > callgrind_report.txt
+
+
+

@@ -9,12 +9,12 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixing : public epiworld::Model<TSeq> 
 {
 private:
-    std::vector< std::vector< epiworld::Agent<TSeq> * > > infected;
+    std::vector< std::vector< size_t > > infected;
     void update_infected();
-    std::vector< epiworld::Agent<TSeq> * > sampled_agents;
+    std::vector< size_t > sampled_agents;
     size_t sample_agents(
         epiworld::Agent<TSeq> * agent,
-        std::vector< epiworld::Agent<TSeq> * > & sampled_agents
+        std::vector< size_t > & sampled_agents
         );
     std::vector< double > adjusted_contact_rate;
     std::vector< double > contact_matrix;
@@ -186,17 +186,17 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
         if (a.get_state() == ModelSEIRMixing<TSeq>::INFECTED)
         {
             if (a.get_n_entities() > 0u)
-                infected[a.get_entity(0u).get_id()].push_back(&a);
+                infected[a.get_entity(0u).get_id()].push_back(a.get_id());
         }
 
     }
 
-    // Shirnking the vectors to the actual size
-    for (size_t i = 0u; i < entities.size(); ++i)
-    {
-        infected[i].shrink_to_fit();
-    }
-    infected.shrink_to_fit();
+    // // Shirnking the vectors to the actual size
+    // for (size_t i = 0u; i < entities.size(); ++i)
+    // {
+    //     infected[i].shrink_to_fit();
+    // }
+    // infected.shrink_to_fit();
 
     // Adjusting contact rate
     adjusted_contact_rate.clear();
@@ -223,7 +223,7 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
 template<typename TSeq>
 inline size_t ModelSEIRMixing<TSeq>::sample_agents(
     epiworld::Agent<TSeq> * agent,
-    std::vector< epiworld::Agent<TSeq> * > & sampled_agents
+    std::vector< size_t > & sampled_agents
     )
 {
 
@@ -256,13 +256,13 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
             if (which >= static_cast<int>(infected[g].size()))
                 which = static_cast<int>(infected[g].size()) - 1;
 
-            auto & a = infected[g][which];
+            auto & a = this->get_agent(infected[g][which]);
 
             // Can't sample itself
-            if (a->get_id() == agent->get_id())
+            if (a.get_id() == agent->get_id())
                 continue;
 
-            sampled_agents[samp_id++] = a;
+            sampled_agents[samp_id++] = a.get_id();
             
         }
 
@@ -367,9 +367,9 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
             for (size_t n = 0u; n < ndraws; ++n)
             {
 
-                auto & neighbor = m_down->sampled_agents[n];
+                auto & neighbor = m->get_agent(m_down->sampled_agents[n]);
 
-                auto & v = neighbor->get_virus();
+                auto & v = neighbor.get_virus();
 
                 #ifdef EPI_DEBUG
                 if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
@@ -382,7 +382,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
                 m->array_double_tmp[nviruses_tmp] =
                     (1.0 - p->get_susceptibility_reduction(v, m)) * 
                     v->get_prob_infecting(m) * 
-                    (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                    (1.0 - neighbor.get_transmission_reduction(v, m)) 
                     ; 
             
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);

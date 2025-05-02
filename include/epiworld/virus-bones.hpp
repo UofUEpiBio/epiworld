@@ -60,9 +60,10 @@ private:
     epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
     epiworld_fast_int queue_removed = -99; ///< Change of state when agent is removed
 
-public:
     std::shared_ptr< VirusFunctions<TSeq> > virus_functions = 
-    std::make_shared< VirusFunctions<TSeq> >();
+        std::make_shared< VirusFunctions<TSeq> >();
+        
+public:
 
     Virus(std::string name = "unknown virus");
 
