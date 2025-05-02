@@ -8933,7 +8933,7 @@ inline Model<TSeq> & Model<TSeq>::run(
 
     array_double_tmp.resize(std::max(
         size(),
-        static_cast<size_t>(1024 * 1024)
+        static_cast<size_t>(1024)
     ));
 
 
