@@ -178,7 +178,6 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     for (size_t i = 0; i < entities.size(); ++i)
     {
         infected[i].clear();
-        infected[i].reserve(agents.size());
     }
     
     for (auto & a : agents)
@@ -191,6 +190,13 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
         }
 
     }
+
+    // Shirnking the vectors to the actual size
+    for (size_t i = 0u; i < entities.size(); ++i)
+    {
+        infected[i].shrink_to_fit();
+    }
+    infected.shrink_to_fit();
 
     // Adjusting contact rate
     adjusted_contact_rate.clear();

@@ -6930,7 +6930,7 @@ protected:
     std::vector< Agent<TSeq> > population = {};
 
     bool using_backup = true;
-    std::vector< Agent<TSeq> > population_backup = {};
+    std::shared_ptr< std::vector< Agent<TSeq> > > population_backup = {};
 
     /**
      * @name Auxiliary variables for AgentsSample<TSeq> iterators
@@ -6966,7 +6966,7 @@ protected:
     std::vector< ToolPtr<TSeq> > tools = {};
 
     std::vector< Entity<TSeq> > entities = {}; 
-    std::vector< Entity<TSeq> > entities_backup = {};
+    std::shared_ptr< std::vector< Entity<TSeq> > > entities_backup = {};
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
     
@@ -7951,6 +7951,7 @@ inline epiworld_double death_reduction_mixer_default(
 template<typename TSeq>
 inline Model<TSeq> * Model<TSeq>::clone_ptr()
 {
+    // Everything is copied
     Model<TSeq> * ptr = new Model<TSeq>(*dynamic_cast<const Model<TSeq>*>(this));
 
     #ifdef EPI_DEBUG
@@ -8003,10 +8004,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // Removing old neighbors
     for (auto & p : population)
         p.model = this;
-
-    if (population_backup.size() != 0u)
-        for (auto & p : population_backup)
-            p.model = this;
 
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
@@ -8086,10 +8083,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     for (auto & p : population)
         p.model = this;
-
-    if (population_backup.size() != 0)
-        for (auto & p : population_backup)
-            p.model = this;
 
     db = m.db;
     db.model = this;
@@ -8401,11 +8394,11 @@ template<typename TSeq>
 inline void Model<TSeq>::set_backup()
 {
 
-    if (population_backup.size() == 0u)
-        population_backup = population;
+    if (!population_backup)
+        population_backup = std::make_shared< std::vector< Agent<TSeq> > >(population);
 
-    if (entities_backup.size() == 0u)
-        entities_backup = entities;
+    if (!entities_backup)
+        entities_backup = std::make_shared< std::vector< Entity<TSeq> > >(entities);
 
 }
 
@@ -9485,15 +9478,19 @@ inline void Model<TSeq>::reset() {
     // Restablishing people
     pb = Progress(ndays, 80);
 
-    if (population_backup.size() != 0u)
+    if (population_backup)
     {
-        population = population_backup;
+        population = *population_backup;
+    
+        // Ensuring the population is poiting to the model
+        for (auto & p : population)
+            p.model = this;
 
         #ifdef EPI_DEBUG
         for (size_t i = 0; i < population.size(); ++i)
         {
 
-            if (population[i] != population_backup[i])
+            if (population[i] != (*population_backup)[i])
                 throw std::logic_error("Model::reset population doesn't match.");
 
         }
@@ -9513,15 +9510,15 @@ inline void Model<TSeq>::reset() {
     }
     #endif
         
-    if (entities_backup.size() != 0)
+    if (entities_backup)
     {
-        entities = entities_backup;
+        entities = *entities_backup;
 
         #ifdef EPI_DEBUG
         for (size_t i = 0; i < entities.size(); ++i)
         {
 
-            if (entities[i] != entities_backup[i])
+            if (entities[i] != (*entities_backup)[i])
                 throw std::logic_error("Model::reset entities don't match.");
 
         }
@@ -10334,22 +10331,22 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "Model:: using_backup don't match"
         )
     
-    if ((population_backup.size() != 0) & (other.population_backup.size() != 0))
+    if ((population_backup->size() != 0) & (other.population_backup->size() != 0))
     {
 
         // False is population_backup.size() != other.population_backup.size()
-        if (population_backup.size() != other.population_backup.size())
+        if (population_backup->size() != other.population_backup->size())
             return false;
 
-        for (size_t i = 0u; i < population_backup.size(); ++i)
+        for (size_t i = 0u; i < population_backup->size(); ++i)
         {
-            if (population_backup[i] != other.population_backup[i])
+            if ((*population_backup)[i] != (*other.population_backup)[i])
                 return false;
         }
         
-    } else if ((population_backup.size() == 0) & (other.population_backup.size() != 0)) {
+    } else if ((population_backup->size() == 0) & (other.population_backup->size() != 0)) {
         return false;
-    } else if ((population_backup.size() != 0) & (other.population_backup.size() == 0))
+    } else if ((population_backup->size() != 0) & (other.population_backup->size() == 0))
     {
         return false;
     }
@@ -10405,22 +10402,22 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "entities don't match"
     )
 
-    if ((entities_backup.size() != 0) & (other.entities_backup.size() != 0))
+    if ((entities_backup->size() != 0) & (other.entities_backup->size() != 0))
     {
         
-        for (size_t i = 0u; i < entities_backup.size(); ++i)
+        for (size_t i = 0u; i < entities_backup->size(); ++i)
         {
 
             EPI_DEBUG_FAIL_AT_TRUE(
-                entities_backup[i] != other.entities_backup[i],
+                (*entities_backup)[i] != (*other.entities_backup)[i],
                 "Model:: entities_backup[i] don't match"
             )
 
         }
         
-    } else if ((entities_backup.size() == 0) & (other.entities_backup.size() != 0)) {
+    } else if ((entities_backup->size() == 0) & (other.entities_backup->size() != 0)) {
         EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
-    } else if ((entities_backup.size() != 0) & (other.entities_backup.size() == 0))
+    } else if ((entities_backup->size() != 0) & (other.entities_backup->size() == 0))
     {
         EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
     }
