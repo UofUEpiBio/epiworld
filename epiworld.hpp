@@ -46,6 +46,10 @@ namespace epiworld {
     #define printf_epiworld fflush(stdout);printf
 #endif
 
+#ifndef EPI_USER_INTERRUPT
+    #define EPI_USER_INTERRUPT(a)
+#endif
+
 #ifndef EPIWORLD_MAXNEIGHBORS
     #define EPIWORLD_MAXNEIGHBORS 1048576
 #endif
@@ -9114,7 +9118,7 @@ inline void Model<TSeq>::run_multiple(
         }
     }
     #endif
-
+    
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
         firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, ndays) \
         default(shared)
@@ -9128,6 +9132,9 @@ inline void Model<TSeq>::run_multiple(
             if (iam == 0)
             {
 
+                // Checking if the user interrupted the simulation
+                EPI_CHECK_USER_INTERRUPT(n);
+
                 // Initializing the seed
                 run(ndays, seeds_n[sim_id]);
 
@@ -9136,7 +9143,7 @@ inline void Model<TSeq>::run_multiple(
 
                 // Only the first one prints
                 if (verbose)
-                    pb_multiple.next();
+                    pb_multiple.next();                
 
             } else {
 
@@ -9147,6 +9154,8 @@ inline void Model<TSeq>::run_multiple(
                     fun(sim_id, these[iam - 1]);
 
             }
+
+            
 
         }
         
@@ -9181,6 +9190,9 @@ inline void Model<TSeq>::run_multiple(
 
     for (size_t n = 0u; n < nexperiments; ++n)
     {
+
+        // Checking if the user interrupted the simulation
+        EPI_CHECK_USER_INTERRUPT(n);
 
         run(ndays, seeds_n[n]);
 
@@ -20795,7 +20807,6 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     for (size_t i = 0; i < entities.size(); ++i)
     {
         infected[i].clear();
-        infected[i].reserve(agents.size());
     }
     
     for (auto & a : agents)
@@ -20808,6 +20819,13 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
         }
 
     }
+
+    // Shirnking the vectors to the actual size
+    for (size_t i = 0u; i < entities.size(); ++i)
+    {
+        infected[i].shrink_to_fit();
+    }
+    infected.shrink_to_fit();
 
     // Adjusting contact rate
     adjusted_contact_rate.clear();

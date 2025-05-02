@@ -1516,7 +1516,7 @@ inline void Model<TSeq>::run_multiple(
         }
     }
     #endif
-
+    
     #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
         firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, ndays) \
         default(shared)
@@ -1530,6 +1530,9 @@ inline void Model<TSeq>::run_multiple(
             if (iam == 0)
             {
 
+                // Checking if the user interrupted the simulation
+                EPI_CHECK_USER_INTERRUPT(n);
+
                 // Initializing the seed
                 run(ndays, seeds_n[sim_id]);
 
@@ -1538,7 +1541,7 @@ inline void Model<TSeq>::run_multiple(
 
                 // Only the first one prints
                 if (verbose)
-                    pb_multiple.next();
+                    pb_multiple.next();                
 
             } else {
 
@@ -1549,6 +1552,8 @@ inline void Model<TSeq>::run_multiple(
                     fun(sim_id, these[iam - 1]);
 
             }
+
+            
 
         }
         
@@ -1583,6 +1588,9 @@ inline void Model<TSeq>::run_multiple(
 
     for (size_t n = 0u; n < nexperiments; ++n)
     {
+
+        // Checking if the user interrupted the simulation
+        EPI_CHECK_USER_INTERRUPT(n);
 
         run(ndays, seeds_n[n]);
 
