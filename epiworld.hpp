@@ -46,6 +46,9 @@ namespace epiworld {
     #define printf_epiworld fflush(stdout);printf
 #endif
 
+// In case the user has a way to stop the program
+// This is called during `run_multiple()` and it is
+// passed the simulation number.
 #ifndef EPI_USER_INTERRUPT
     #define EPI_USER_INTERRUPT(a)
 #endif
