@@ -9401,7 +9401,11 @@ inline void Model<TSeq>::write_edgelist(
 
         for (const auto & p : wseq)
         {
-            for (auto & n : p->neighbors)
+
+            if (p->neighbors == nullptr)
+                continue;
+
+            for (auto & n : *p->neighbors)
                 efile << p->id << " " << n << "\n";
         }
 
@@ -9409,7 +9413,11 @@ inline void Model<TSeq>::write_edgelist(
 
         for (const auto & p : wseq)
         {
-            for (auto & n : p->neighbors)
+
+            if (p->neighbors == nullptr)
+                continue;
+
+            for (auto & n : *p->neighbors)
                 if (static_cast<int>(p->id) <= static_cast<int>(n))
                     efile << p->id << " " << n << "\n";
         }
@@ -9434,7 +9442,10 @@ std::vector< int > & target
 
         for (const auto & p : wseq)
         {
-            for (auto & n : p->neighbors)
+            if (p->neighbors == nullptr)
+                continue;
+
+            for (auto & n : *p->neighbors)
             {
                 source.push_back(static_cast<int>(p->id));
                 target.push_back(static_cast<int>(n));
@@ -9445,7 +9456,11 @@ std::vector< int > & target
 
         for (const auto & p : wseq)
         {
-            for (auto & n : p->neighbors) {
+
+            if (p->neighbors == nullptr)
+                continue;
+
+            for (auto & n : *p->neighbors) {
                 if (static_cast<int>(p->id) <= static_cast<int>(n)) {
                     source.push_back(static_cast<int>(p->id));
                     target.push_back(static_cast<int>(n));
