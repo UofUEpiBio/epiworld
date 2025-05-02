@@ -208,7 +208,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     model_1.get_virus(0).set_distribution(dist_virus);
 
-    model_1.run(40, 123);
+    model_1.run(100, 123);
     model_1.print(false);
 
     auto repnum = model_1.get_db().reproductive_number();
@@ -228,6 +228,33 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     std::cout <<
         "SEIR Mixing Rt: " << rts << 
         " (expected: " << R0 << ")" << std::endl;
+
+    // Testing reproductive number in mixing scenario
+    // Setting the distribution function of the initial cases
+    n_infected = 100;
+    model_1.get_virus(0).set_distribution(
+        [&n_infected](Virus<> & v, Model<> * m) -> void {
+        for (int i = 0; i < n_infected; ++i)
+            m->get_agents()[i].set_virus(v, m);
+        return;
+    });
+
+    size_t nsims = 500;
+    std::vector< std::vector<epiworld_double> > transitions(nsims);
+    std::vector< epiworld_double > R0s(nsims * n_infected, -1.0);
+    auto saver = [&transitions, &R0s, n_infected](size_t n, Model<>* m) -> void{
+
+        // Saving the transition probabilities
+        transitions[n] = m->get_db().transition_probability(false, false);
+
+        // Recording the R0 from the index case
+        auto rts = m->get_db().reproductive_number();      
+        for (int i = 0; i < n_infected; ++i)
+            R0s[n_infected * n + i] = static_cast<epiworld_double>(rts[{0, i, 0}]);
+
+    };
+
+    model_1.run_multiple(60, nsims, 1231, saver, true, true, 4);
 
     #ifndef CATCH_CONFIG_MAIN
     return 0;

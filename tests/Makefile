@@ -60,4 +60,6 @@ callgrind: 05-mixing-with-size.cpp
 	callgrind_annotate callgrind.out.* > callgrind_report.txt
 
 
-
+05b-mixing.o: 05b-mixing.cpp
+	g++ -std=c++14 -Wall -Wextra -O2 -g $(OPENMP) -pedantic 05b-mixing.cpp \
+		-o 05b-mixing.o
