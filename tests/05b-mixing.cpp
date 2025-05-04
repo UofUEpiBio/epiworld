@@ -147,6 +147,10 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     std::cout << "observed: " << R0_observed <<
         " vs expected: " << R0_expected << std::endl;
 
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_FALSE(moreless(R0_observed, R0_expected, 0.1));
+    #endif
+
     #ifndef CATCH_CONFIG_MAIN
     return 0;
     #endif

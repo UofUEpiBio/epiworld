@@ -100,12 +100,6 @@ inline Tool<TSeq>::Tool(
     );
 }
 
-// template<typename TSeq>
-// inline Tool<TSeq>::Tool(TSeq d, std::string name) {
-//     sequence = std::make_shared<TSeq>(d);
-//     tool_name = std::make_shared<std::string>(name);
-// }
-
 template<typename TSeq>
 inline void Tool<TSeq>::set_sequence(TSeq d) {
     sequence = std::make_shared<TSeq>(d);
@@ -342,17 +336,13 @@ inline void Tool<TSeq>::set_death_reduction(
 template<typename TSeq>
 inline void Tool<TSeq>::set_name(std::string name)
 {
-    if (name != "")
-        tool_name = std::make_shared<std::string>(name);
+    tool_name = name;
 }
 
 template<typename TSeq>
 inline std::string Tool<TSeq>::get_name() const {
 
-    if (tool_name)
-        return *tool_name;
-
-    return "unknown tool";
+    return tool_name;
 
 }
 
@@ -506,7 +496,7 @@ template<typename TSeq>
 inline void Tool<TSeq>::print() const
 {
 
-    printf_epiworld("Tool       : %s\n", tool_name->c_str());
+    printf_epiworld("Tool       : %s\n", tool_name.c_str());
     printf_epiworld("Id         : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
     printf_epiworld("state_init : %i\n", static_cast<int>(state_init));
     printf_epiworld("state_post : %i\n", static_cast<int>(state_post));

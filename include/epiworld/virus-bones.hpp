@@ -49,7 +49,7 @@ private:
     Agent<TSeq> * agent = nullptr;
 
     std::shared_ptr<TSeq> baseline_sequence = nullptr;
-    std::shared_ptr<std::string> virus_name = nullptr;
+    std::string virus_name = "unknown virus";
     int date = -99;
     int id   = -99;    
     epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.

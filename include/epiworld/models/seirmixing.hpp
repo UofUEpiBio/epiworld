@@ -1,6 +1,15 @@
 #ifndef EPIWORLD_MODELS_SEIRMIXING_HPP
 #define EPIWORLD_MODELS_SEIRMIXING_HPP
 
+#define MM(i, j, n) \
+    j * n + i
+
+#define GET_MODEL(model, output) \
+    auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
+    /*Using the [[assume(...)]] to avoid the compiler warning \
+    if the standard is C++23 or later */ \
+    [[assume((output) != nullptr)]]
+
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
@@ -28,10 +37,6 @@ private:
         );
     std::vector< double > adjusted_contact_rate;
     std::vector< double > contact_matrix;
-
-    size_t index(size_t i, size_t j, size_t n) {
-        return j * n + i;
-    }
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -193,7 +198,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         int nsamples = epiworld::Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
-                index(agent_group_id, g, ngroups)
+                MM(agent_group_id, g, ngroups)
             ]
         );
 
@@ -273,13 +278,13 @@ inline void ModelSEIRMixing<TSeq>::reset()
         double sum = 0.0;
         for (size_t j = 0u; j < this->entities.size(); ++j)
         {
-            if (this->contact_matrix[index(i, j, nentities)] < 0.0)
+            if (this->contact_matrix[MM(i, j, nentities)] < 0.0)
                 throw std::range_error(
                     std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->contact_matrix[index(i, j, nentities)]) +
+                    std::to_string(this->contact_matrix[MM(i, j, nentities)]) +
                     std::string(" < 0.")
                     );
-            sum += this->contact_matrix[index(i, j, nentities)];
+            sum += this->contact_matrix[MM(i, j, nentities)];
         }
         if (sum < 0.999 || sum > 1.001)
             throw std::range_error(
@@ -345,6 +350,8 @@ inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
         *dynamic_cast<const ModelSEIRMixing<TSeq>*>(this)
         );
 
+    [[assume(ptr != nullptr)]];
+
     return dynamic_cast< Model<TSeq> *>(ptr);
 
 }
@@ -387,9 +394,8 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
             // Downcasting to retrieve the sampler attached to the
             // class
-            ModelSEIRMixing<TSeq> * m_down =
-                dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
-
+            GET_MODEL(m, m_down);
+            
             size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
             #ifdef EPI_DEBUG
@@ -525,9 +531,8 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
     {
 
-        ModelSEIRMixing<TSeq> * m_down =
-            dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
-
+        GET_MODEL(m, m_down);
+        
         m_down->update_infected();
 
         return;
@@ -607,5 +612,6 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
     return *this;
 
 }
-
+#undef MM
+#undef GET_MODEL
 #endif

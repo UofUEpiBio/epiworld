@@ -411,7 +411,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
     // To make sure that we keep registering the virus
     ToolPtr<TSeq> __no_reinfect = std::make_shared<Tool<TSeq>>(
-        "Immunity (" + *virus_name + ")"
+        "Immunity (" + virus_name + ")"
     );
 
     __no_reinfect->set_susceptibility_reduction(prob);
@@ -462,7 +462,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
     // To make sure that we keep registering the virus
     ToolPtr<TSeq> __no_reinfect = std::make_shared<Tool<TSeq>>(
-        "Immunity (" + *virus_name + ")"
+        "Immunity (" + virus_name + ")"
     );
 
     __no_reinfect->set_susceptibility_reduction(prob);
@@ -492,10 +492,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_name(std::string name)
 {
 
-    if (name == "")
-        virus_name = nullptr;
-    else
-        virus_name = std::make_shared<std::string>(name);
+    virus_name = name;
 
 }
 
@@ -503,10 +500,7 @@ template<typename TSeq>
 inline std::string Virus<TSeq>::get_name() const
 {
 
-    if (virus_name)
-        return *virus_name;
-    
-    return "unknown virus";
+    return virus_name;
 
 }
 
@@ -687,7 +681,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::print() const
 {
 
-    printf_epiworld("Virus         : %s\n", virus_name->c_str());
+    printf_epiworld("Virus         : %s\n", virus_name.c_str());
     printf_epiworld("Id            : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
     printf_epiworld("state_init    : %i\n", static_cast<int>(state_init));
     printf_epiworld("state_post    : %i\n", static_cast<int>(state_post));

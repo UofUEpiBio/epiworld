@@ -430,6 +430,10 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         ModelSIRMixing<TSeq> * m_down =
             dynamic_cast<ModelSIRMixing<TSeq> *>(m);
 
+        // Using the [[assume(...)]] to avoid the compiler warning
+        // if the standard is C++23 or later
+        [[assume(m_down != nullptr)]];
+
         m_down->update_infected_list();
 
         return;
