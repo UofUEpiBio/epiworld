@@ -10833,7 +10833,7 @@ private:
     Agent<TSeq> * agent = nullptr;
 
     std::shared_ptr<TSeq> baseline_sequence = nullptr;
-    std::shared_ptr<std::string> virus_name = nullptr;
+    std::string virus_name = "unknown virus";
     int date = -99;
     int id   = -99;    
     epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
@@ -11552,7 +11552,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
     // To make sure that we keep registering the virus
     ToolPtr<TSeq> __no_reinfect = std::make_shared<Tool<TSeq>>(
-        "Immunity (" + *virus_name + ")"
+        "Immunity (" + virus_name + ")"
     );
 
     __no_reinfect->set_susceptibility_reduction(prob);
@@ -11603,7 +11603,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
     // To make sure that we keep registering the virus
     ToolPtr<TSeq> __no_reinfect = std::make_shared<Tool<TSeq>>(
-        "Immunity (" + *virus_name + ")"
+        "Immunity (" + virus_name + ")"
     );
 
     __no_reinfect->set_susceptibility_reduction(prob);
@@ -11633,10 +11633,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_name(std::string name)
 {
 
-    if (name == "")
-        virus_name = nullptr;
-    else
-        virus_name = std::make_shared<std::string>(name);
+    virus_name = name;
 
 }
 
@@ -11644,10 +11641,7 @@ template<typename TSeq>
 inline std::string Virus<TSeq>::get_name() const
 {
 
-    if (virus_name)
-        return *virus_name;
-    
-    return "unknown virus";
+    return virus_name;
 
 }
 
@@ -11828,7 +11822,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::print() const
 {
 
-    printf_epiworld("Virus         : %s\n", virus_name->c_str());
+    printf_epiworld("Virus         : %s\n", virus_name.c_str());
     printf_epiworld("Id            : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
     printf_epiworld("state_init    : %i\n", static_cast<int>(state_init));
     printf_epiworld("state_post    : %i\n", static_cast<int>(state_post));
@@ -12158,7 +12152,7 @@ private:
 
     int date = -99;
     int id   = -99;
-    std::shared_ptr<std::string> tool_name     = nullptr;
+    std::string tool_name;
     std::shared_ptr<TSeq> sequence             = nullptr;
     std::shared_ptr<ToolFunctions<TSeq>> tool_functions = 
         std::make_shared< ToolFunctions<TSeq> >();
@@ -12490,12 +12484,6 @@ inline Tool<TSeq>::Tool(
     );
 }
 
-// template<typename TSeq>
-// inline Tool<TSeq>::Tool(TSeq d, std::string name) {
-//     sequence = std::make_shared<TSeq>(d);
-//     tool_name = std::make_shared<std::string>(name);
-// }
-
 template<typename TSeq>
 inline void Tool<TSeq>::set_sequence(TSeq d) {
     sequence = std::make_shared<TSeq>(d);
@@ -12732,17 +12720,13 @@ inline void Tool<TSeq>::set_death_reduction(
 template<typename TSeq>
 inline void Tool<TSeq>::set_name(std::string name)
 {
-    if (name != "")
-        tool_name = std::make_shared<std::string>(name);
+    tool_name = name;
 }
 
 template<typename TSeq>
 inline std::string Tool<TSeq>::get_name() const {
 
-    if (tool_name)
-        return *tool_name;
-
-    return "unknown tool";
+    return tool_name;
 
 }
 
@@ -12896,7 +12880,7 @@ template<typename TSeq>
 inline void Tool<TSeq>::print() const
 {
 
-    printf_epiworld("Tool       : %s\n", tool_name->c_str());
+    printf_epiworld("Tool       : %s\n", tool_name.c_str());
     printf_epiworld("Id         : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
     printf_epiworld("state_init : %i\n", static_cast<int>(state_init));
     printf_epiworld("state_post : %i\n", static_cast<int>(state_post));
@@ -20666,6 +20650,15 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 #ifndef EPIWORLD_MODELS_SEIRMIXING_HPP
 #define EPIWORLD_MODELS_SEIRMIXING_HPP
 
+#define MM(i, j, n) \
+    j * n + i
+
+#define GET_MODEL(model, output) \
+    auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
+    /*Using the [[assume(...)]] to avoid the compiler warning \
+    if the standard is C++23 or later */ \
+    [[assume((output) != nullptr)]]
+
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
@@ -20693,10 +20686,6 @@ private:
         );
     std::vector< double > adjusted_contact_rate;
     std::vector< double > contact_matrix;
-
-    size_t index(size_t i, size_t j, size_t n) {
-        return j * n + i;
-    }
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -20858,7 +20847,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         int nsamples = epiworld::Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
-                index(agent_group_id, g, ngroups)
+                MM(agent_group_id, g, ngroups)
             ]
         );
 
@@ -20938,13 +20927,13 @@ inline void ModelSEIRMixing<TSeq>::reset()
         double sum = 0.0;
         for (size_t j = 0u; j < this->entities.size(); ++j)
         {
-            if (this->contact_matrix[index(i, j, nentities)] < 0.0)
+            if (this->contact_matrix[MM(i, j, nentities)] < 0.0)
                 throw std::range_error(
                     std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->contact_matrix[index(i, j, nentities)]) +
+                    std::to_string(this->contact_matrix[MM(i, j, nentities)]) +
                     std::string(" < 0.")
                     );
-            sum += this->contact_matrix[index(i, j, nentities)];
+            sum += this->contact_matrix[MM(i, j, nentities)];
         }
         if (sum < 0.999 || sum > 1.001)
             throw std::range_error(
@@ -21010,6 +20999,8 @@ inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
         *dynamic_cast<const ModelSEIRMixing<TSeq>*>(this)
         );
 
+    [[assume(ptr != nullptr)]];
+
     return dynamic_cast< Model<TSeq> *>(ptr);
 
 }
@@ -21052,9 +21043,8 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
             // Downcasting to retrieve the sampler attached to the
             // class
-            ModelSEIRMixing<TSeq> * m_down =
-                dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
-
+            GET_MODEL(m, m_down);
+            
             size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
             #ifdef EPI_DEBUG
@@ -21190,9 +21180,8 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
     {
 
-        ModelSEIRMixing<TSeq> * m_down =
-            dynamic_cast<ModelSEIRMixing<TSeq> *>(m);
-
+        GET_MODEL(m, m_down);
+        
         m_down->update_infected();
 
         return;
@@ -21272,7 +21261,8 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
     return *this;
 
 }
-
+#undef MM
+#undef GET_MODEL
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -21724,6 +21714,10 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         ModelSIRMixing<TSeq> * m_down =
             dynamic_cast<ModelSIRMixing<TSeq> *>(m);
 
+        // Using the [[assume(...)]] to avoid the compiler warning
+        // if the standard is C++23 or later
+        [[assume(m_down != nullptr)]];
+
         m_down->update_infected_list();
 
         return;
@@ -21825,7 +21819,8 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 
 #define GET_MODEL(name, m) \
     ModelMeaslesQuarantine<TSeq> * name = \
-        dynamic_cast<ModelMeaslesQuarantine<TSeq> *>(m);
+        dynamic_cast<ModelMeaslesQuarantine<TSeq> *>(m); \
+    [[assume(name != nullptr)]]
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
