@@ -12960,22 +12960,6 @@ private:
     std::vector< size_t > agents_location; ///< Location where the entity is stored in the agent
     size_t n_agents = 0u;
 
-    /**
-     * @name Auxiliary variables for AgentsSample<TSeq> iterators
-     * 
-     * @details These variables+objects are used by the AgentsSample<TSeq>
-     * class for building efficient iterators over agents. The idea is to
-     * reduce the memory allocation, so only during the first call of
-     * AgentsSample<TSeq>::AgentsSample(Entity<TSeq>) these vectors are allocated.
-     */
-    ///@{
-    std::vector< Agent<TSeq> * > sampled_agents;
-    size_t sampled_agents_n = 0u;
-    std::vector< size_t > sampled_agents_left;
-    size_t sampled_agents_left_n = 0u;
-    // int date_last_add_or_remove = -99; ///< Last time the entity added or removed an agent
-    ///@}
-
     int max_capacity = -1;
     std::string entity_name = "Unnamed entity";
 
@@ -13416,10 +13400,6 @@ inline void Entity<TSeq>::get_queue(
 template<typename TSeq>
 inline void Entity<TSeq>::reset()
 {
-    sampled_agents.clear();
-    sampled_agents_n = 0u;
-    sampled_agents_left.clear();
-    sampled_agents_left_n = 0u;
 
     this->agents.clear();
     this->n_agents = 0u;
