@@ -1573,6 +1573,7 @@ inline void Model<TSeq>::run_multiple(
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
 
+    #pragma omp parallel for shared(these)
     for (auto & ptr : these)
         delete ptr;
 

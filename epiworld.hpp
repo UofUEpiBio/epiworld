@@ -9149,6 +9149,9 @@ inline void Model<TSeq>::run_multiple(
 
     omp_set_num_threads(nthreads);
 
+    // Not more than the number of experiments
+    nthreads = nthreads > nexperiments ? nexperiments : nthreads;
+
     // Generating copies of the model
     std::vector< Model<TSeq> * > these(
         std::max(nthreads - 1, 0)
@@ -9264,6 +9267,7 @@ inline void Model<TSeq>::run_multiple(
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
 
+    #pragma omp parallel for shared(these)
     for (auto & ptr : these)
         delete ptr;
 
