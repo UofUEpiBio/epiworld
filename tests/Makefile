@@ -1,7 +1,9 @@
 
-
 CXX_FLAGS_DEBUG=-std=c++23 -Wall -Wextra -O0 -g -pedantic -fopenmp
-CXX_STD=-std=c++23
+
+ifndef CXX_STD
+	CXX_STD=-std=c++23
+endif
 
 all: main.o
 
