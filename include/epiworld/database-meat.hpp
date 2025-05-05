@@ -296,7 +296,7 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
         else
         {
             hash = seq_hasher(*v.get_sequence());
-            virus_name.push_back(v.get_name());
+            virus_id[hash] = new_id;
             virus_sequence.push_back(*v.get_sequence());
         }
 

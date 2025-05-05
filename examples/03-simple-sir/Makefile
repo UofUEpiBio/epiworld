@@ -1,6 +1,6 @@
 main.o: main.cpp
-	g++ -std=c++14 -Wall -pedantic -g -O2 -ftree-vectorize main.cpp -o main.o
-README.md: 03-simple-sir.o
+	g++ -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize  main.cpp -o main.o
+README.md: main.o
 	echo "## Example: 03-simple-sir" > README.md && \
 	echo "" >> README.md && \
 	echo "Output from the program:" >> README.md && \

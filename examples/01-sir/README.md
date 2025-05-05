@@ -15,15 +15,15 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 70.00ms
-Last run speed      : 35.62 million agents x day / second
+Last run elapsed t  : 41.00ms
+Last run speed      : 60.90 million agents x day / second
 Rewiring            : off
 
 Global events:
  (none)
 
 Virus(es):
- - a virus (baseline prevalence: 1.00%)
+ - a virus
 
 Tool(s):
  (none)
@@ -38,8 +38,8 @@ Distribution of the population at time 50:
   - (2) Recovered   :     0 -> 50000
 
 Transition Probabilities:
- - Susceptible  0.81  0.19  0.00
- - Infected     0.00  0.49  0.51
- - Recovered    0.00  0.00  1.00
+ - Susceptible  0.86  0.14     -
+ - Infected        -  0.50  0.50
+ - Recovered       -     -  1.00
 
 ```

@@ -81,8 +81,32 @@ inline ToolFun<TSeq> tool_fun_logit(
 }
 
 template<typename TSeq>
+inline Tool<TSeq>::Tool()
+{
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        sequence = -1;
+    }
+    else
+    {
+        sequence = nullptr;
+    }
+
+    set_name("Tool");
+}
+
+template<typename TSeq>
 inline Tool<TSeq>::Tool(std::string name)
 {
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        sequence = -1;
+    }
+    else
+    {
+        sequence = nullptr;
+    }
+
     set_name(name);
 }
 
@@ -93,6 +117,16 @@ inline Tool<TSeq>::Tool(
     bool as_proportion
     )
 {
+
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        sequence = -1;
+    }
+    else
+    {
+        sequence = nullptr;
+    }
+
     set_name(name);
 
     set_distribution(

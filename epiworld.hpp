@@ -4102,16 +4102,17 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
         virus_name.push_back(v.get_name());
 
         // Generating the hash
+        std::vector< int > hash;
         EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
         {
-            std::vector< int > hash = seq_hasher(v.get_sequence());
+            hash = seq_hasher(v.get_sequence());
             virus_id[hash] = new_id;
             virus_sequence.push_back(v.get_sequence());
         }
         else
         {
-            std::vector< int > hash = seq_hasher(*v.get_sequence());
-            virus_name.push_back(v.get_name());
+            hash = seq_hasher(*v.get_sequence());
+            virus_id[hash] = new_id;
             virus_sequence.push_back(*v.get_sequence());
         }
 
@@ -4208,19 +4209,41 @@ template<typename TSeq>
 inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 {
 
-    if (t.get_sequence() == nullptr)
-        t.set_sequence(default_sequence<TSeq>(
-            static_cast<int>(tool_name.size())
-        ));
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        if (t.get_sequence() == -1)
+            t.set_sequence(default_sequence<TSeq>(
+                static_cast<int>(tool_name.size())
+            ));
+    }
+    else
+    {
+        if (t.get_sequence() == nullptr)
+            t.set_sequence(default_sequence<TSeq>(
+                static_cast<int>(tool_name.size())
+            ));
+    }
 
     if (t.get_id() < 0) 
     {
 
-        std::vector< int > hash = seq_hasher(*t.get_sequence());
         epiworld_fast_uint new_id = tool_id.size();
-        tool_id[hash] = new_id;
         tool_name.push_back(t.get_name());
-        tool_sequence.push_back(*t.get_sequence());
+
+        std::vector< int > hash;
+        EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+        {
+            hash = seq_hasher(t.get_sequence());
+            tool_id[hash] = new_id;
+            tool_sequence.push_back(t.get_sequence());
+        }
+        else
+        {
+            hash = seq_hasher(*t.get_sequence());
+            tool_id[hash] = new_id;
+            tool_sequence.push_back(*t.get_sequence());
+
+        }
         tool_origin_date.push_back(model->today());
                 
         today_tool.push_back({});
@@ -4233,7 +4256,15 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
     } else {
 
         // Updating registry
-        std::vector< int > hash = seq_hasher(*t.get_sequence());
+        std::vector< int > hash;
+        EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+        {
+            hash = seq_hasher(t.get_sequence());
+        }
+        else
+        {
+            hash = seq_hasher(*t.get_sequence());
+        }
         epiworld_fast_uint old_id = t.get_id();
         epiworld_fast_uint new_id;
         
@@ -4243,7 +4274,16 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
             new_id = tool_id.size();
             tool_id[hash] = new_id;
             tool_name.push_back(t.get_name());
-            tool_sequence.push_back(*t.get_sequence());
+
+            EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+            {
+                tool_sequence.push_back(t.get_sequence());
+            }
+            else
+            {
+                tool_sequence.push_back(*t.get_sequence());
+            }
+            
             tool_origin_date.push_back(model->today());
                     
             today_tool.push_back({});
@@ -10900,6 +10940,8 @@ private:
         
 public:
 
+    Virus();
+
     Virus(std::string name = "unknown virus");
 
     Virus(
@@ -11272,9 +11314,34 @@ inline VirusFun<TSeq> virus_fun_logit(
 }
 
 template<typename TSeq>
+inline Virus<TSeq>::Virus()
+{
+
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        baseline_sequence = -1;
+    }
+    else
+    {
+        baseline_sequence = nullptr;
+    }
+
+}
+
+template<typename TSeq>
 inline Virus<TSeq>::Virus(
     std::string name
     ) {
+
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        baseline_sequence = -1;
+    }
+    else
+    {
+        baseline_sequence = nullptr;
+    }
+    
     set_name(name);
 }
 
@@ -11284,6 +11351,16 @@ inline Virus<TSeq>::Virus(
     epiworld_double prevalence,
     bool prevalence_as_proportion
     ) {
+
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        baseline_sequence = -1;
+    }
+    else
+    {
+        baseline_sequence = nullptr;
+    }
+
     set_name(name);
     set_distribution(
         distribute_virus_randomly<TSeq>(
@@ -11834,10 +11911,10 @@ template<typename TSeq>
 inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 {
     
-    if constexpr (sizeof(TSeq) > sizeof(int))
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
         EPI_DEBUG_FAIL_AT_TRUE(
-            *baseline_sequence != *other.baseline_sequence,
+            baseline_sequence != other.baseline_sequence,
             "Virus:: baseline_sequence don't match"
         )
     }
@@ -12224,7 +12301,8 @@ private:
     int id   = -99;
     std::string tool_name;
     
-    std::shared_ptr<TSeq> sequence = nullptr;
+    EPI_TYPENAME_TRAITS(TSeq, int) sequence = 
+        EPI_TYPENAME_TRAITS(TSeq, int)(); ///< Sequence of the tool
 
     std::shared_ptr<ToolFunctions<TSeq>> tool_functions = 
         std::make_shared< ToolFunctions<TSeq> >();
@@ -12238,6 +12316,7 @@ private:
     void set_agent(Agent<TSeq> * p, size_t idx);
 
 public:
+    Tool();
     Tool(std::string name = "unknown tool");
     Tool(
         std::string name,
@@ -12247,7 +12326,7 @@ public:
 
     void set_sequence(TSeq d);
     void set_sequence(std::shared_ptr<TSeq> d);
-    std::shared_ptr<TSeq> get_sequence();
+    EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
 
     /**
      * @name Get and set the tool functions
@@ -12537,8 +12616,32 @@ inline ToolFun<TSeq> tool_fun_logit(
 }
 
 template<typename TSeq>
+inline Tool<TSeq>::Tool()
+{
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        sequence = -1;
+    }
+    else
+    {
+        sequence = nullptr;
+    }
+
+    set_name("Tool");
+}
+
+template<typename TSeq>
 inline Tool<TSeq>::Tool(std::string name)
 {
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        sequence = -1;
+    }
+    else
+    {
+        sequence = nullptr;
+    }
+
     set_name(name);
 }
 
@@ -12549,6 +12652,16 @@ inline Tool<TSeq>::Tool(
     bool as_proportion
     )
 {
+
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        sequence = -1;
+    }
+    else
+    {
+        sequence = nullptr;
+    }
+
     set_name(name);
 
     set_distribution(
@@ -12566,8 +12679,13 @@ inline void Tool<TSeq>::set_sequence(std::shared_ptr<TSeq> d) {
     sequence = d;
 }
 
+template<>
+inline void Tool<int>::set_sequence(int d) {
+    sequence = d;
+}
+
 template<typename TSeq>
-inline std::shared_ptr<TSeq> Tool<TSeq>::get_sequence() {
+inline EPI_TYPENAME_TRAITS(TSeq, int) Tool<TSeq>::get_sequence() {
     return sequence;
 }
 
@@ -12925,8 +13043,17 @@ inline bool Tool<std::vector<int>>::operator==(
 template<typename TSeq>
 inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
 {
-    if (*sequence != *other.sequence)
-        return false;
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        if (sequence != other.sequence)
+            return false;
+    }
+    else
+    {
+        if (*sequence != *other.sequence)
+            return false;
+    }
+
 
     if (tool_name != other.tool_name)
         return false;

@@ -1,7 +1,5 @@
 main.o: main.cpp
-	g++ -std=c++14 -Wall -pedantic -g -mtune=native -O3 main.cpp -o main.o
-main-intel.o: main.cpp
-	icpc -std=c++14 -Wall -pedantic -g -O3 -mtune=native main.cpp -o main-intel.o
+	g++ -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize  main.cpp -o main.o
 README.md: main.o
 	echo "## Example: 01-sir" > README.md && \
 	echo "" >> README.md && \

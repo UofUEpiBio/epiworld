@@ -80,9 +80,34 @@ inline VirusFun<TSeq> virus_fun_logit(
 }
 
 template<typename TSeq>
+inline Virus<TSeq>::Virus()
+{
+
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        baseline_sequence = -1;
+    }
+    else
+    {
+        baseline_sequence = nullptr;
+    }
+
+}
+
+template<typename TSeq>
 inline Virus<TSeq>::Virus(
     std::string name
     ) {
+
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        baseline_sequence = -1;
+    }
+    else
+    {
+        baseline_sequence = nullptr;
+    }
+    
     set_name(name);
 }
 
@@ -92,6 +117,16 @@ inline Virus<TSeq>::Virus(
     epiworld_double prevalence,
     bool prevalence_as_proportion
     ) {
+
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        baseline_sequence = -1;
+    }
+    else
+    {
+        baseline_sequence = nullptr;
+    }
+
     set_name(name);
     set_distribution(
         distribute_virus_randomly<TSeq>(
@@ -645,7 +680,7 @@ inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
     EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
         EPI_DEBUG_FAIL_AT_TRUE(
-            *baseline_sequence != *other.baseline_sequence,
+            baseline_sequence != other.baseline_sequence,
             "Virus:: baseline_sequence don't match"
         )
     }

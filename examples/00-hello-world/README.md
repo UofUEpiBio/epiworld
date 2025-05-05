@@ -5,9 +5,7 @@ Output from the program:
 ```
 _________________________________________________________________________
 Running the model...
-||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
- done.
-________________________________________________________________________________
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
@@ -17,18 +15,18 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 16.00ms
-Last run speed      : 59.75 million agents x day / second
+Last run elapsed t  : 17.00ms
+Last run speed      : 56.33 million agents x day / second
 Rewiring            : off
 
 Global events:
  (none)
 
 Virus(es):
- - covid 19 (baseline prevalence: 50 seeds)
+ - covid 19
 
 Tool(s):
- - vaccine (baseline prevalence: 50.00%)
+ - vaccine
 
 Model parameters:
  (none)
@@ -40,9 +38,9 @@ Distribution of the population at time 100:
   - (3) Removed     :     0 -> 601
 
 Transition Probabilities:
- - Susceptible  0.87  0.13  0.00  0.00
- - Exposed      0.00  0.83  0.15  0.01
- - Recovered    0.00  0.00  1.00  0.00
- - Removed      0.00  0.00  0.00  1.00
+ - Susceptible  0.92  0.08     -     -
+ - Exposed         -  0.85  0.14  0.01
+ - Recovered       -     -  1.00     -
+ - Removed         -     -     -  1.00
 
 ```

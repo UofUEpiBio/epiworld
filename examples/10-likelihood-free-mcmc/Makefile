@@ -1,5 +1,5 @@
 main.o: main.cpp
-	g++ -std=c++14 -Wall -pedantic -g -O2 -ftree-vectorize main.cpp -o main.o
+	g++ -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize  main.cpp -o main.o
 README.md: main.o
 	echo "## Example: 10-likelihood-free-mcmc" > README.md && \
 	echo "" >> README.md && \

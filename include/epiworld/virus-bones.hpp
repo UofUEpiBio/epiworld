@@ -67,6 +67,8 @@ private:
         
 public:
 
+    Virus();
+
     Virus(std::string name = "unknown virus");
 
     Virus(

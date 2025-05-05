@@ -66,6 +66,7 @@ private:
     void set_agent(Agent<TSeq> * p, size_t idx);
 
 public:
+    Tool();
     Tool(std::string name = "unknown tool");
     Tool(
         std::string name,

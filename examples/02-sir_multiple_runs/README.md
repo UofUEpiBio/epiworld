@@ -104,18 +104,18 @@ Replicate 97 done
 Replicate 98 done
 Replicate 99 done
 last run elapsed time : 0.00ms
-total elapsed time    : 56.00ms
+total elapsed time    : 4.00ms
 total runs            : 100
-mean run elapsed time : 0.56ms
+mean run elapsed time : 0.04ms
 Susceptible, Infected, Recovered, 
-167, 25, 808, 
-71, 13, 916, 
-302, 13, 685, 
-0, 5, 995, 
-126, 15, 859, 
-187, 24, 789, 
-13, 9, 978, 
-146, 9, 845, 
-7, 13, 980, 
-76, 26, 898, 
+990, 0, 10, 
+990, 0, 10, 
+990, 0, 10, 
+990, 0, 10, 
+990, 0, 10, 
+990, 0, 10, 
+990, 0, 10, 
+990, 0, 10, 
+990, 0, 10, 
+990, 0, 10, 
 ```
