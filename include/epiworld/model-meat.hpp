@@ -1662,7 +1662,7 @@ inline void Model<TSeq>::mutate_virus() {
     // Checking if any virus has mutation
     size_t nmutates = 0u;
     for (const auto & v: viruses)
-        if (v->virus_functions->mutation)
+        if (v->mutation_fun)
             nmutates++;
 
     if (nmutates == 0u)
@@ -1913,7 +1913,7 @@ inline void Model<TSeq>::reset() {
         for (size_t i = 0; i < population.size(); ++i)
         {
 
-            if (population[i] != (*population_backup)[i])
+            if (population[i] != (population_backup)[i])
                 throw std::logic_error("Model::reset population doesn't match.");
 
         }
@@ -1941,7 +1941,7 @@ inline void Model<TSeq>::reset() {
         for (size_t i = 0; i < entities.size(); ++i)
         {
 
-            if (entities[i] != (*entities_backup)[i])
+            if (entities[i] != (entities_backup)[i])
                 throw std::logic_error("Model::reset entities don't match.");
 
         }
