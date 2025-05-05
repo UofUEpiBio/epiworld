@@ -54,8 +54,15 @@ private:
     EPI_TYPENAME_TRAITS(TSeq, int) sequence = 
         EPI_TYPENAME_TRAITS(TSeq, int)(); ///< Sequence of the tool
 
-    std::shared_ptr<ToolFunctions<TSeq>> tool_functions = 
-        std::make_shared< ToolFunctions<TSeq> >();
+    // std::shared_ptr<ToolFunctions<TSeq>> tool_functions = 
+    //     std::make_shared< ToolFunctions<TSeq> >();
+
+    ToolFun<TSeq> susceptibility_reduction_fun = nullptr;
+    ToolFun<TSeq> transmission_reduction_fun   = nullptr;
+    ToolFun<TSeq> recovery_enhancer_fun        = nullptr;
+    ToolFun<TSeq> death_reduction_fun          = nullptr;
+
+    ToolToAgentFun<TSeq> dist_fun = nullptr;
 
     epiworld_fast_int state_init = -99;
     epiworld_fast_int state_post = -99;
