@@ -1456,7 +1456,8 @@ inline void Model<TSeq>::run_multiple(
     omp_set_num_threads(nthreads);
 
     // Not more than the number of experiments
-    nthreads = nthreads > nexperiments ? nexperiments : nthreads;
+    nthreads =
+        static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
 
     // Generating copies of the model
     std::vector< Model<TSeq> * > these(
@@ -1574,8 +1575,10 @@ inline void Model<TSeq>::run_multiple(
     n_replicates += (nexperiments - nreplicates[0u]);
 
     #pragma omp parallel for shared(these)
-    for (auto & ptr : these)
-        delete ptr;
+    for (int i = 1; i < nthreads; ++i)
+    {
+        delete these[i - 1];
+    }
 
     #else
     // if (reset)
