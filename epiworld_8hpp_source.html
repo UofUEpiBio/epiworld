@@ -6379,7 +6379,7 @@ $(function() {
 <div class="line"><a name="l07026"></a><span class="lineno"> 7026</span>&#160;<span class="comment">    std::vector&lt; Agent&lt;TSeq&gt; &gt; population = {};</span></div>
 <div class="line"><a name="l07027"></a><span class="lineno"> 7027</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l07028"></a><span class="lineno"> 7028</span>&#160;<span class="comment">    bool using_backup = true;</span></div>
-<div class="line"><a name="l07029"></a><span class="lineno"> 7029</span>&#160;<span class="comment">    std::shared_ptr&lt; std::vector&lt; Agent&lt;TSeq&gt; &gt; &gt; population_backup = {};</span></div>
+<div class="line"><a name="l07029"></a><span class="lineno"> 7029</span>&#160;<span class="comment">    std::vector&lt; Agent&lt;TSeq&gt; &gt; population_backup = {};</span></div>
 <div class="line"><a name="l07030"></a><span class="lineno"> 7030</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l07040"></a><span class="lineno"> 7040</span>&#160;<span class="comment">    std::vector&lt; Agent&lt;TSeq&gt; * &gt; sampled_population;</span></div>
 <div class="line"><a name="l07041"></a><span class="lineno"> 7041</span>&#160;<span class="comment">    size_t sampled_population_n = 0u;</span></div>
@@ -6395,7 +6395,7 @@ $(function() {
 <div class="line"><a name="l07062"></a><span class="lineno"> 7062</span>&#160;<span class="comment">    std::vector&lt; ToolPtr&lt;TSeq&gt; &gt; tools = {};</span></div>
 <div class="line"><a name="l07063"></a><span class="lineno"> 7063</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l07064"></a><span class="lineno"> 7064</span>&#160;<span class="comment">    std::vector&lt; Entity&lt;TSeq&gt; &gt; entities = {}; </span></div>
-<div class="line"><a name="l07065"></a><span class="lineno"> 7065</span>&#160;<span class="comment">    std::shared_ptr&lt; std::vector&lt; Entity&lt;TSeq&gt; &gt; &gt; entities_backup = {};</span></div>
+<div class="line"><a name="l07065"></a><span class="lineno"> 7065</span>&#160;<span class="comment">    std::vector&lt; Entity&lt;TSeq&gt; &gt; entities_backup = {};</span></div>
 <div class="line"><a name="l07066"></a><span class="lineno"> 7066</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l07067"></a><span class="lineno"> 7067</span>&#160;<span class="comment">    std::shared_ptr&lt; std::mt19937 &gt; engine = std::make_shared&lt; std::mt19937 &gt;();</span></div>
 <div class="line"><a name="l07068"></a><span class="lineno"> 7068</span>&#160;<span class="comment">    </span></div>
@@ -7518,11 +7518,11 @@ $(function() {
 <div class="line"><a name="l08486"></a><span class="lineno"> 8486</span>&#160;<span class="comment">inline void Model&lt;TSeq&gt;::set_backup()</span></div>
 <div class="line"><a name="l08487"></a><span class="lineno"> 8487</span>&#160;<span class="comment">{</span></div>
 <div class="line"><a name="l08488"></a><span class="lineno"> 8488</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l08489"></a><span class="lineno"> 8489</span>&#160;<span class="comment">    if (!population_backup)</span></div>
-<div class="line"><a name="l08490"></a><span class="lineno"> 8490</span>&#160;<span class="comment">        population_backup = std::make_shared&lt; std::vector&lt; Agent&lt;TSeq&gt; &gt; &gt;(population);</span></div>
+<div class="line"><a name="l08489"></a><span class="lineno"> 8489</span>&#160;<span class="comment">    if (population_backup.size() == 0u)</span></div>
+<div class="line"><a name="l08490"></a><span class="lineno"> 8490</span>&#160;<span class="comment">        population_backup = std::vector&lt; Agent&lt;TSeq&gt; &gt;(population);</span></div>
 <div class="line"><a name="l08491"></a><span class="lineno"> 8491</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l08492"></a><span class="lineno"> 8492</span>&#160;<span class="comment">    if (!entities_backup)</span></div>
-<div class="line"><a name="l08493"></a><span class="lineno"> 8493</span>&#160;<span class="comment">        entities_backup = std::make_shared&lt; std::vector&lt; Entity&lt;TSeq&gt; &gt; &gt;(entities);</span></div>
+<div class="line"><a name="l08492"></a><span class="lineno"> 8492</span>&#160;<span class="comment">    if (!entities_backup.size() == 0u)</span></div>
+<div class="line"><a name="l08493"></a><span class="lineno"> 8493</span>&#160;<span class="comment">        entities_backup = std::vector&lt; Entity&lt;TSeq&gt; &gt;(entities);</span></div>
 <div class="line"><a name="l08494"></a><span class="lineno"> 8494</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l08495"></a><span class="lineno"> 8495</span>&#160;<span class="comment">}</span></div>
 <div class="line"><a name="l08496"></a><span class="lineno"> 8496</span>&#160;<span class="comment"></span> </div>
@@ -8627,9 +8627,9 @@ $(function() {
 <div class="line"><a name="l09595"></a><span class="lineno"> 9595</span>&#160;    <span class="comment">// Restablishing people</span></div>
 <div class="line"><a name="l09596"></a><span class="lineno"> 9596</span>&#160;    pb = <a class="code" href="classepiworld_1_1_progress.html">Progress</a>(ndays, 80);</div>
 <div class="line"><a name="l09597"></a><span class="lineno"> 9597</span>&#160; </div>
-<div class="line"><a name="l09598"></a><span class="lineno"> 9598</span>&#160;    <span class="keywordflow">if</span> (population_backup)</div>
+<div class="line"><a name="l09598"></a><span class="lineno"> 9598</span>&#160;    <span class="keywordflow">if</span> (population_backup.size())</div>
 <div class="line"><a name="l09599"></a><span class="lineno"> 9599</span>&#160;    {</div>
-<div class="line"><a name="l09600"></a><span class="lineno"> 9600</span>&#160;        population = *population_backup;</div>
+<div class="line"><a name="l09600"></a><span class="lineno"> 9600</span>&#160;        population = population_backup;</div>
 <div class="line"><a name="l09601"></a><span class="lineno"> 9601</span>&#160;    </div>
 <div class="line"><a name="l09602"></a><span class="lineno"> 9602</span>&#160;        <span class="comment">// Ensuring the population is poiting to the model</span></div>
 <div class="line"><a name="l09603"></a><span class="lineno"> 9603</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp; p : population)</div>
@@ -8659,9 +8659,9 @@ $(function() {
 <div class="line"><a name="l09627"></a><span class="lineno"> 9627</span>&#160;    }</div>
 <div class="line"><a name="l09628"></a><span class="lineno"> 9628</span>&#160;<span class="preprocessor">    #endif</span></div>
 <div class="line"><a name="l09629"></a><span class="lineno"> 9629</span>&#160;        </div>
-<div class="line"><a name="l09630"></a><span class="lineno"> 9630</span>&#160;    <span class="keywordflow">if</span> (entities_backup)</div>
+<div class="line"><a name="l09630"></a><span class="lineno"> 9630</span>&#160;    <span class="keywordflow">if</span> (entities_backup.size())</div>
 <div class="line"><a name="l09631"></a><span class="lineno"> 9631</span>&#160;    {</div>
-<div class="line"><a name="l09632"></a><span class="lineno"> 9632</span>&#160;        entities = *entities_backup;</div>
+<div class="line"><a name="l09632"></a><span class="lineno"> 9632</span>&#160;        entities = entities_backup;</div>
 <div class="line"><a name="l09633"></a><span class="lineno"> 9633</span>&#160; </div>
 <div class="line"><a name="l09634"></a><span class="lineno"> 9634</span>&#160;<span class="preprocessor">        #ifdef EPI_DEBUG</span></div>
 <div class="line"><a name="l09635"></a><span class="lineno"> 9635</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; entities.size(); ++i)</div>
@@ -9474,22 +9474,22 @@ $(function() {
 <div class="line"><a name="l10448"></a><span class="lineno">10448</span>&#160;<span class="comment">        &quot;Model:: using_backup don&#39;t match&quot;</span></div>
 <div class="line"><a name="l10449"></a><span class="lineno">10449</span>&#160;<span class="comment">        )</span></div>
 <div class="line"><a name="l10450"></a><span class="lineno">10450</span>&#160;<span class="comment">    </span></div>
-<div class="line"><a name="l10451"></a><span class="lineno">10451</span>&#160;<span class="comment">    if ((population_backup-&gt;size() != 0) &amp; (other.population_backup-&gt;size() != 0))</span></div>
+<div class="line"><a name="l10451"></a><span class="lineno">10451</span>&#160;<span class="comment">    if ((population_backup.size() != 0) &amp; (other.population_backup.size() != 0))</span></div>
 <div class="line"><a name="l10452"></a><span class="lineno">10452</span>&#160;<span class="comment">    {</span></div>
 <div class="line"><a name="l10453"></a><span class="lineno">10453</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l10454"></a><span class="lineno">10454</span>&#160;<span class="comment">        // False is population_backup.size() != other.population_backup.size()</span></div>
-<div class="line"><a name="l10455"></a><span class="lineno">10455</span>&#160;<span class="comment">        if (population_backup-&gt;size() != other.population_backup-&gt;size())</span></div>
+<div class="line"><a name="l10455"></a><span class="lineno">10455</span>&#160;<span class="comment">        if (population_backup.size() != other.population_backup.size())</span></div>
 <div class="line"><a name="l10456"></a><span class="lineno">10456</span>&#160;<span class="comment">            return false;</span></div>
 <div class="line"><a name="l10457"></a><span class="lineno">10457</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l10458"></a><span class="lineno">10458</span>&#160;<span class="comment">        for (size_t i = 0u; i &lt; population_backup-&gt;size(); ++i)</span></div>
+<div class="line"><a name="l10458"></a><span class="lineno">10458</span>&#160;<span class="comment">        for (size_t i = 0u; i &lt; population_backup.size(); ++i)</span></div>
 <div class="line"><a name="l10459"></a><span class="lineno">10459</span>&#160;<span class="comment">        {</span></div>
-<div class="line"><a name="l10460"></a><span class="lineno">10460</span>&#160;<span class="comment">            if ((*population_backup)[i] != (*other.population_backup)[i])</span></div>
+<div class="line"><a name="l10460"></a><span class="lineno">10460</span>&#160;<span class="comment">            if (population_backup[i] != other.population_backup[i])</span></div>
 <div class="line"><a name="l10461"></a><span class="lineno">10461</span>&#160;<span class="comment">                return false;</span></div>
 <div class="line"><a name="l10462"></a><span class="lineno">10462</span>&#160;<span class="comment">        }</span></div>
 <div class="line"><a name="l10463"></a><span class="lineno">10463</span>&#160;<span class="comment">        </span></div>
-<div class="line"><a name="l10464"></a><span class="lineno">10464</span>&#160;<span class="comment">    } else if ((population_backup-&gt;size() == 0) &amp; (other.population_backup-&gt;size() != 0)) {</span></div>
+<div class="line"><a name="l10464"></a><span class="lineno">10464</span>&#160;<span class="comment">    } else if ((population_backup.size() == 0) &amp; (other.population_backup.size() != 0)) {</span></div>
 <div class="line"><a name="l10465"></a><span class="lineno">10465</span>&#160;<span class="comment">        return false;</span></div>
-<div class="line"><a name="l10466"></a><span class="lineno">10466</span>&#160;<span class="comment">    } else if ((population_backup-&gt;size() != 0) &amp; (other.population_backup-&gt;size() == 0))</span></div>
+<div class="line"><a name="l10466"></a><span class="lineno">10466</span>&#160;<span class="comment">    } else if ((population_backup.size() != 0) &amp; (other.population_backup.size() == 0))</span></div>
 <div class="line"><a name="l10467"></a><span class="lineno">10467</span>&#160;<span class="comment">    {</span></div>
 <div class="line"><a name="l10468"></a><span class="lineno">10468</span>&#160;<span class="comment">        return false;</span></div>
 <div class="line"><a name="l10469"></a><span class="lineno">10469</span>&#160;<span class="comment">    }</span></div>
@@ -9545,22 +9545,22 @@ $(function() {
 <div class="line"><a name="l10519"></a><span class="lineno">10519</span>&#160;<span class="comment">        &quot;entities don&#39;t match&quot;</span></div>
 <div class="line"><a name="l10520"></a><span class="lineno">10520</span>&#160;<span class="comment">    )</span></div>
 <div class="line"><a name="l10521"></a><span class="lineno">10521</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l10522"></a><span class="lineno">10522</span>&#160;<span class="comment">    if ((entities_backup-&gt;size() != 0) &amp; (other.entities_backup-&gt;size() != 0))</span></div>
+<div class="line"><a name="l10522"></a><span class="lineno">10522</span>&#160;<span class="comment">    if ((entities_backup.size() != 0) &amp; (other.entities_backup.size() != 0))</span></div>
 <div class="line"><a name="l10523"></a><span class="lineno">10523</span>&#160;<span class="comment">    {</span></div>
 <div class="line"><a name="l10524"></a><span class="lineno">10524</span>&#160;<span class="comment">        </span></div>
-<div class="line"><a name="l10525"></a><span class="lineno">10525</span>&#160;<span class="comment">        for (size_t i = 0u; i &lt; entities_backup-&gt;size(); ++i)</span></div>
+<div class="line"><a name="l10525"></a><span class="lineno">10525</span>&#160;<span class="comment">        for (size_t i = 0u; i &lt; entities_backup.size(); ++i)</span></div>
 <div class="line"><a name="l10526"></a><span class="lineno">10526</span>&#160;<span class="comment">        {</span></div>
 <div class="line"><a name="l10527"></a><span class="lineno">10527</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l10528"></a><span class="lineno">10528</span>&#160;<span class="comment">            EPI_DEBUG_FAIL_AT_TRUE(</span></div>
-<div class="line"><a name="l10529"></a><span class="lineno">10529</span>&#160;<span class="comment">                (*entities_backup)[i] != (*other.entities_backup)[i],</span></div>
+<div class="line"><a name="l10529"></a><span class="lineno">10529</span>&#160;<span class="comment">                entities_backup[i] != other.entities_backup[i],</span></div>
 <div class="line"><a name="l10530"></a><span class="lineno">10530</span>&#160;<span class="comment">                &quot;Model:: entities_backup[i] don&#39;t match&quot;</span></div>
 <div class="line"><a name="l10531"></a><span class="lineno">10531</span>&#160;<span class="comment">            )</span></div>
 <div class="line"><a name="l10532"></a><span class="lineno">10532</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l10533"></a><span class="lineno">10533</span>&#160;<span class="comment">        }</span></div>
 <div class="line"><a name="l10534"></a><span class="lineno">10534</span>&#160;<span class="comment">        </span></div>
-<div class="line"><a name="l10535"></a><span class="lineno">10535</span>&#160;<span class="comment">    } else if ((entities_backup-&gt;size() == 0) &amp; (other.entities_backup-&gt;size() != 0)) {</span></div>
+<div class="line"><a name="l10535"></a><span class="lineno">10535</span>&#160;<span class="comment">    } else if ((entities_backup.size() == 0) &amp; (other.entities_backup.size() != 0)) {</span></div>
 <div class="line"><a name="l10536"></a><span class="lineno">10536</span>&#160;<span class="comment">        EPI_DEBUG_FAIL_AT_TRUE(true, &quot;entities_backup don&#39;t match&quot;)</span></div>
-<div class="line"><a name="l10537"></a><span class="lineno">10537</span>&#160;<span class="comment">    } else if ((entities_backup-&gt;size() != 0) &amp; (other.entities_backup-&gt;size() == 0))</span></div>
+<div class="line"><a name="l10537"></a><span class="lineno">10537</span>&#160;<span class="comment">    } else if ((entities_backup.size() != 0) &amp; (other.entities_backup.size() == 0))</span></div>
 <div class="line"><a name="l10538"></a><span class="lineno">10538</span>&#160;<span class="comment">    {</span></div>
 <div class="line"><a name="l10539"></a><span class="lineno">10539</span>&#160;<span class="comment">        EPI_DEBUG_FAIL_AT_TRUE(true, &quot;entities_backup don&#39;t match&quot;)</span></div>
 <div class="line"><a name="l10540"></a><span class="lineno">10540</span>&#160;<span class="comment">    }</span></div>
