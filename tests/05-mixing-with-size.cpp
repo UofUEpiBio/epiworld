@@ -1,5 +1,5 @@
 #ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #endif
 
 #include "tests.hpp"
@@ -40,7 +40,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         static_cast<double>(n_groups)
     );
 
-    size_t n = 1000;
+    size_t n = 2000;
     epimodels::ModelSEIRMixing<> model(
         "Flu", // std::string vname,
         n, // epiworld_fast_uint n,
