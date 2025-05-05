@@ -642,7 +642,7 @@ template<typename TSeq>
 inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 {
     
-    if constexpr (sizeof(TSeq) > sizeof(int))
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
         EPI_DEBUG_FAIL_AT_TRUE(
             *baseline_sequence != *other.baseline_sequence,

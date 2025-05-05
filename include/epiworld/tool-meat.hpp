@@ -110,8 +110,13 @@ inline void Tool<TSeq>::set_sequence(std::shared_ptr<TSeq> d) {
     sequence = d;
 }
 
+template<>
+inline void Tool<int>::set_sequence(int d) {
+    sequence = d;
+}
+
 template<typename TSeq>
-inline std::shared_ptr<TSeq> Tool<TSeq>::get_sequence() {
+inline EPI_TYPENAME_TRAITS(TSeq, int) Tool<TSeq>::get_sequence() {
     return sequence;
 }
 
@@ -469,8 +474,17 @@ inline bool Tool<std::vector<int>>::operator==(
 template<typename TSeq>
 inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
 {
-    if (*sequence != *other.sequence)
-        return false;
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        if (sequence != other.sequence)
+            return false;
+    }
+    else
+    {
+        if (*sequence != *other.sequence)
+            return false;
+    }
+
 
     if (tool_name != other.tool_name)
         return false;

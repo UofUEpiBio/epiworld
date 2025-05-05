@@ -51,7 +51,8 @@ private:
     int id   = -99;
     std::string tool_name;
     
-    std::shared_ptr<TSeq> sequence = nullptr;
+    EPI_TYPENAME_TRAITS(TSeq, int) sequence = 
+        EPI_TYPENAME_TRAITS(TSeq, int)(); ///< Sequence of the tool
 
     std::shared_ptr<ToolFunctions<TSeq>> tool_functions = 
         std::make_shared< ToolFunctions<TSeq> >();
@@ -74,7 +75,7 @@ public:
 
     void set_sequence(TSeq d);
     void set_sequence(std::shared_ptr<TSeq> d);
-    std::shared_ptr<TSeq> get_sequence();
+    EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
 
     /**
      * @name Get and set the tool functions
