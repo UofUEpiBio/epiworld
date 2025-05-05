@@ -1707,7 +1707,7 @@ $(function() {
 <div class="line"><a name="l01662"></a><span class="lineno"> 1662</span>&#160;    <span class="comment">// Checking if any virus has mutation</span></div>
 <div class="line"><a name="l01663"></a><span class="lineno"> 1663</span>&#160;    <span class="keywordtype">size_t</span> nmutates = 0u;</div>
 <div class="line"><a name="l01664"></a><span class="lineno"> 1664</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp; v: viruses)</div>
-<div class="line"><a name="l01665"></a><span class="lineno"> 1665</span>&#160;        <span class="keywordflow">if</span> (v-&gt;virus_functions-&gt;mutation)</div>
+<div class="line"><a name="l01665"></a><span class="lineno"> 1665</span>&#160;        <span class="keywordflow">if</span> (v-&gt;mutation_fun)</div>
 <div class="line"><a name="l01666"></a><span class="lineno"> 1666</span>&#160;            nmutates++;</div>
 <div class="line"><a name="l01667"></a><span class="lineno"> 1667</span>&#160; </div>
 <div class="line"><a name="l01668"></a><span class="lineno"> 1668</span>&#160;    <span class="keywordflow">if</span> (nmutates == 0u)</div>
@@ -1958,7 +1958,7 @@ $(function() {
 <div class="line"><a name="l01913"></a><span class="lineno"> 1913</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; population.size(); ++i)</div>
 <div class="line"><a name="l01914"></a><span class="lineno"> 1914</span>&#160;        {</div>
 <div class="line"><a name="l01915"></a><span class="lineno"> 1915</span>&#160; </div>
-<div class="line"><a name="l01916"></a><span class="lineno"> 1916</span>&#160;            <span class="keywordflow">if</span> (population[i] != (*population_backup)[i])</div>
+<div class="line"><a name="l01916"></a><span class="lineno"> 1916</span>&#160;            <span class="keywordflow">if</span> (population[i] != (population_backup)[i])</div>
 <div class="line"><a name="l01917"></a><span class="lineno"> 1917</span>&#160;                <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;Model::reset population doesn&#39;t match.&quot;</span>);</div>
 <div class="line"><a name="l01918"></a><span class="lineno"> 1918</span>&#160; </div>
 <div class="line"><a name="l01919"></a><span class="lineno"> 1919</span>&#160;        }</div>
@@ -1986,7 +1986,7 @@ $(function() {
 <div class="line"><a name="l01941"></a><span class="lineno"> 1941</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; entities.size(); ++i)</div>
 <div class="line"><a name="l01942"></a><span class="lineno"> 1942</span>&#160;        {</div>
 <div class="line"><a name="l01943"></a><span class="lineno"> 1943</span>&#160; </div>
-<div class="line"><a name="l01944"></a><span class="lineno"> 1944</span>&#160;            <span class="keywordflow">if</span> (entities[i] != (*entities_backup)[i])</div>
+<div class="line"><a name="l01944"></a><span class="lineno"> 1944</span>&#160;            <span class="keywordflow">if</span> (entities[i] != (entities_backup)[i])</div>
 <div class="line"><a name="l01945"></a><span class="lineno"> 1945</span>&#160;                <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;Model::reset entities don&#39;t match.&quot;</span>);</div>
 <div class="line"><a name="l01946"></a><span class="lineno"> 1946</span>&#160; </div>
 <div class="line"><a name="l01947"></a><span class="lineno"> 1947</span>&#160;        }</div>
