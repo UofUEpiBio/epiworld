@@ -8639,7 +8639,7 @@ $(function() {
 <div class="line"><a name="l09607"></a><span class="lineno"> 9607</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; population.size(); ++i)</div>
 <div class="line"><a name="l09608"></a><span class="lineno"> 9608</span>&#160;        {</div>
 <div class="line"><a name="l09609"></a><span class="lineno"> 9609</span>&#160; </div>
-<div class="line"><a name="l09610"></a><span class="lineno"> 9610</span>&#160;            <span class="keywordflow">if</span> (population[i] != (*population_backup)[i])</div>
+<div class="line"><a name="l09610"></a><span class="lineno"> 9610</span>&#160;            <span class="keywordflow">if</span> (population[i] != (population_backup)[i])</div>
 <div class="line"><a name="l09611"></a><span class="lineno"> 9611</span>&#160;                <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;Model::reset population doesn&#39;t match.&quot;</span>);</div>
 <div class="line"><a name="l09612"></a><span class="lineno"> 9612</span>&#160; </div>
 <div class="line"><a name="l09613"></a><span class="lineno"> 9613</span>&#160;        }</div>
@@ -8667,7 +8667,7 @@ $(function() {
 <div class="line"><a name="l09635"></a><span class="lineno"> 9635</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; entities.size(); ++i)</div>
 <div class="line"><a name="l09636"></a><span class="lineno"> 9636</span>&#160;        {</div>
 <div class="line"><a name="l09637"></a><span class="lineno"> 9637</span>&#160; </div>
-<div class="line"><a name="l09638"></a><span class="lineno"> 9638</span>&#160;            <span class="keywordflow">if</span> (entities[i] != (*entities_backup)[i])</div>
+<div class="line"><a name="l09638"></a><span class="lineno"> 9638</span>&#160;            <span class="keywordflow">if</span> (entities[i] != (entities_backup)[i])</div>
 <div class="line"><a name="l09639"></a><span class="lineno"> 9639</span>&#160;                <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;Model::reset entities don&#39;t match.&quot;</span>);</div>
 <div class="line"><a name="l09640"></a><span class="lineno"> 9640</span>&#160; </div>
 <div class="line"><a name="l09641"></a><span class="lineno"> 9641</span>&#160;        }</div>
