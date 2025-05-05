@@ -48,7 +48,9 @@ private:
     
     Agent<TSeq> * agent = nullptr;
 
-    std::shared_ptr<TSeq> baseline_sequence = nullptr;
+    EPI_TYPENAME_TRAITS(TSeq, int) baseline_sequence = 
+        EPI_TYPENAME_TRAITS(TSeq, int)(); 
+
     std::string virus_name = "unknown virus";
     int date = -99;
     int id   = -99;    
@@ -76,7 +78,7 @@ public:
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
-    std::shared_ptr<TSeq> get_sequence();
+    EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
     void set_sequence(TSeq sequence);
     
     Agent<TSeq> * get_agent();

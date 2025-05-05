@@ -263,23 +263,43 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
 {
 
     // If no sequence, then need to add one. This is regardless of the case
-    if (v.get_sequence() == nullptr)
-        v.set_sequence(default_sequence<TSeq>(
-            static_cast<int>(virus_name.size())
-            ));
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        if (v.get_sequence() == -1)
+            v.set_sequence(default_sequence<TSeq>(
+                static_cast<int>(virus_name.size())
+                ));
+    }
+    else
+    {
+        if (v.get_sequence() == nullptr)
+            v.set_sequence(default_sequence<TSeq>(
+                static_cast<int>(virus_name.size())
+                ));        
+    }
 
     // Negative id -> virus hasn't been recorded
     if (v.get_id() < 0)
     {
 
+        epiworld_fast_uint new_id = virus_id.size();
+        virus_name.push_back(v.get_name());
 
         // Generating the hash
-        std::vector< int > hash = seq_hasher(*v.get_sequence());
+        EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+        {
+            std::vector< int > hash = seq_hasher(v.get_sequence());
+            virus_id[hash] = new_id;
+            virus_sequence.push_back(v.get_sequence());
+        }
+        else
+        {
+            std::vector< int > hash = seq_hasher(*v.get_sequence());
+            virus_name.push_back(v.get_name());
+            virus_sequence.push_back(*v.get_sequence());
+        }
 
-        epiworld_fast_uint new_id = virus_id.size();
-        virus_id[hash] = new_id;
-        virus_name.push_back(v.get_name());
-        virus_sequence.push_back(*v.get_sequence());
+
         virus_origin_date.push_back(model->today());
         
         virus_parent_id.push_back(v.get_id()); // Must be -99
@@ -293,11 +313,21 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
 
         today_total_nviruses_active++;
 
-    } else { // In this case, the virus is already on record, need to make sure
+    }
+    else
+    { // In this case, the virus is already on record, need to make sure
              // The new sequence is new.
 
         // Updating registry
-        std::vector< int > hash = seq_hasher(*v.get_sequence());
+        std::vector< int > hash;
+        EPI_IF_TSEQ_LESS_EQ_INT(TSeq)
+        {
+            hash = seq_hasher(v.get_sequence());
+        }
+        else
+        {
+            hash = seq_hasher(*v.get_sequence());
+        }
         epiworld_fast_uint old_id = v.get_id();
         epiworld_fast_uint new_id;
 
@@ -308,7 +338,16 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
             new_id = virus_id.size();
             virus_id[hash] = new_id;
             virus_name.push_back(v.get_name());
-            virus_sequence.push_back(*v.get_sequence());
+
+            EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+            {
+                virus_sequence.push_back(v.get_sequence());
+            }
+            else
+            {
+                virus_sequence.push_back(*v.get_sequence());
+            }
+
             virus_origin_date.push_back(model->today());
             
             virus_parent_id.push_back(old_id);

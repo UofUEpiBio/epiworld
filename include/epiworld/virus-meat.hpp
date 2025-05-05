@@ -122,7 +122,7 @@ inline void Virus<TSeq>::set_mutation(
 }
 
 template<typename TSeq>
-inline std::shared_ptr<TSeq> Virus<TSeq>::get_sequence()
+inline EPI_TYPENAME_TRAITS(TSeq, int) Virus<TSeq>::get_sequence()
 {
 
     return baseline_sequence;
@@ -137,6 +137,16 @@ inline void Virus<TSeq>::set_sequence(TSeq sequence)
     return;
 
 }
+
+template<>
+inline void Virus<int>::set_sequence(int sequence)
+{
+
+    baseline_sequence = sequence;
+    return;
+
+}
+
 
 template<typename TSeq>
 inline Agent<TSeq> * Virus<TSeq>::get_agent()
@@ -574,7 +584,6 @@ inline bool Virus<std::vector<int>>::operator==(
     ) const
 {
     
-
     EPI_DEBUG_FAIL_AT_TRUE(
         baseline_sequence->size() != other.baseline_sequence->size(),
         "Virus:: baseline_sequence don't match"
@@ -633,10 +642,20 @@ template<typename TSeq>
 inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 {
     
-    EPI_DEBUG_FAIL_AT_TRUE(
-        *baseline_sequence != *other.baseline_sequence,
-        "Virus:: baseline_sequence don't match"
-    )
+    if constexpr (sizeof(TSeq) > sizeof(int))
+    {
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *baseline_sequence != *other.baseline_sequence,
+            "Virus:: baseline_sequence don't match"
+        )
+    }
+    else
+    {
+        EPI_DEBUG_FAIL_AT_TRUE(
+            baseline_sequence != other.baseline_sequence,
+            "Virus:: baseline_sequence don't match"
+        )
+    }
 
     EPI_DEBUG_FAIL_AT_TRUE(
         virus_name != other.virus_name,

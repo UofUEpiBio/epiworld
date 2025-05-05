@@ -50,7 +50,9 @@ private:
     int date = -99;
     int id   = -99;
     std::string tool_name;
-    std::shared_ptr<TSeq> sequence             = nullptr;
+    
+    std::shared_ptr<TSeq> sequence = nullptr;
+
     std::shared_ptr<ToolFunctions<TSeq>> tool_functions = 
         std::make_shared< ToolFunctions<TSeq> >();
 

@@ -15,6 +15,7 @@
 #include <sstream>
 #include <iomanip>
 #include <set>
+#include <type_traits>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -352,8 +353,6 @@ public:
 #ifndef EPIWORLD_MACROS_HPP
 #define EPIWORLD_MACROS_HPP
 
-
-
 /**
  * @brief Helper macro to define a new tool
  * 
@@ -458,6 +457,17 @@ public:
 #define EPI_NEW_ENTITYTOAGENTFUN_LAMBDA(funname,tseq) \
     epiworld::EntityToAgentFun<tseq> funname = \
     [](epiworld::Entity<tseq> & e, epiworld::Model<tseq> * m) -> void
+
+// Use this to make it more efficient for storage if the type is small
+// and the pointer is not needed
+#define EPI_TYPENAME_TRAITS(tseq, bound) typename std::conditional< \
+    sizeof( tseq ) <= sizeof( bound ), \
+    tseq, \
+    std::shared_ptr< tseq > \
+    >::type
+
+#define EPI_IF_TSEQ_LESS_EQ_INT(tseq) \
+    if constexpr (sizeof( tseq ) <= sizeof( int ))
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -4069,23 +4079,43 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
 {
 
     // If no sequence, then need to add one. This is regardless of the case
-    if (v.get_sequence() == nullptr)
-        v.set_sequence(default_sequence<TSeq>(
-            static_cast<int>(virus_name.size())
-            ));
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        if (v.get_sequence() == -1)
+            v.set_sequence(default_sequence<TSeq>(
+                static_cast<int>(virus_name.size())
+                ));
+    }
+    else
+    {
+        if (v.get_sequence() == nullptr)
+            v.set_sequence(default_sequence<TSeq>(
+                static_cast<int>(virus_name.size())
+                ));        
+    }
 
     // Negative id -> virus hasn't been recorded
     if (v.get_id() < 0)
     {
 
+        epiworld_fast_uint new_id = virus_id.size();
+        virus_name.push_back(v.get_name());
 
         // Generating the hash
-        std::vector< int > hash = seq_hasher(*v.get_sequence());
+        EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+        {
+            std::vector< int > hash = seq_hasher(v.get_sequence());
+            virus_id[hash] = new_id;
+            virus_sequence.push_back(v.get_sequence());
+        }
+        else
+        {
+            std::vector< int > hash = seq_hasher(*v.get_sequence());
+            virus_name.push_back(v.get_name());
+            virus_sequence.push_back(*v.get_sequence());
+        }
 
-        epiworld_fast_uint new_id = virus_id.size();
-        virus_id[hash] = new_id;
-        virus_name.push_back(v.get_name());
-        virus_sequence.push_back(*v.get_sequence());
+
         virus_origin_date.push_back(model->today());
         
         virus_parent_id.push_back(v.get_id()); // Must be -99
@@ -4099,11 +4129,21 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
 
         today_total_nviruses_active++;
 
-    } else { // In this case, the virus is already on record, need to make sure
+    }
+    else
+    { // In this case, the virus is already on record, need to make sure
              // The new sequence is new.
 
         // Updating registry
-        std::vector< int > hash = seq_hasher(*v.get_sequence());
+        std::vector< int > hash;
+        EPI_IF_TSEQ_LESS_EQ_INT(TSeq)
+        {
+            hash = seq_hasher(v.get_sequence());
+        }
+        else
+        {
+            hash = seq_hasher(*v.get_sequence());
+        }
         epiworld_fast_uint old_id = v.get_id();
         epiworld_fast_uint new_id;
 
@@ -4114,7 +4154,16 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
             new_id = virus_id.size();
             virus_id[hash] = new_id;
             virus_name.push_back(v.get_name());
-            virus_sequence.push_back(*v.get_sequence());
+
+            EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+            {
+                virus_sequence.push_back(v.get_sequence());
+            }
+            else
+            {
+                virus_sequence.push_back(*v.get_sequence());
+            }
+
             virus_origin_date.push_back(model->today());
             
             virus_parent_id.push_back(old_id);
@@ -10832,7 +10881,9 @@ private:
     
     Agent<TSeq> * agent = nullptr;
 
-    std::shared_ptr<TSeq> baseline_sequence = nullptr;
+    EPI_TYPENAME_TRAITS(TSeq, int) baseline_sequence = 
+        EPI_TYPENAME_TRAITS(TSeq, int)(); 
+
     std::string virus_name = "unknown virus";
     int date = -99;
     int id   = -99;    
@@ -10860,7 +10911,7 @@ public:
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
-    std::shared_ptr<TSeq> get_sequence();
+    EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
     void set_sequence(TSeq sequence);
     
     Agent<TSeq> * get_agent();
@@ -11263,7 +11314,7 @@ inline void Virus<TSeq>::set_mutation(
 }
 
 template<typename TSeq>
-inline std::shared_ptr<TSeq> Virus<TSeq>::get_sequence()
+inline EPI_TYPENAME_TRAITS(TSeq, int) Virus<TSeq>::get_sequence()
 {
 
     return baseline_sequence;
@@ -11278,6 +11329,16 @@ inline void Virus<TSeq>::set_sequence(TSeq sequence)
     return;
 
 }
+
+template<>
+inline void Virus<int>::set_sequence(int sequence)
+{
+
+    baseline_sequence = sequence;
+    return;
+
+}
+
 
 template<typename TSeq>
 inline Agent<TSeq> * Virus<TSeq>::get_agent()
@@ -11715,7 +11776,6 @@ inline bool Virus<std::vector<int>>::operator==(
     ) const
 {
     
-
     EPI_DEBUG_FAIL_AT_TRUE(
         baseline_sequence->size() != other.baseline_sequence->size(),
         "Virus:: baseline_sequence don't match"
@@ -11774,10 +11834,20 @@ template<typename TSeq>
 inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 {
     
-    EPI_DEBUG_FAIL_AT_TRUE(
-        *baseline_sequence != *other.baseline_sequence,
-        "Virus:: baseline_sequence don't match"
-    )
+    if constexpr (sizeof(TSeq) > sizeof(int))
+    {
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *baseline_sequence != *other.baseline_sequence,
+            "Virus:: baseline_sequence don't match"
+        )
+    }
+    else
+    {
+        EPI_DEBUG_FAIL_AT_TRUE(
+            baseline_sequence != other.baseline_sequence,
+            "Virus:: baseline_sequence don't match"
+        )
+    }
 
     EPI_DEBUG_FAIL_AT_TRUE(
         virus_name != other.virus_name,
@@ -12153,7 +12223,9 @@ private:
     int date = -99;
     int id   = -99;
     std::string tool_name;
-    std::shared_ptr<TSeq> sequence             = nullptr;
+    
+    std::shared_ptr<TSeq> sequence = nullptr;
+
     std::shared_ptr<ToolFunctions<TSeq>> tool_functions = 
         std::make_shared< ToolFunctions<TSeq> >();
 
@@ -21265,6 +21337,12 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_SIRMIXING_HPP
 #define EPIWORLD_MODELS_SIRMIXING_HPP
 
+#define GET_MODEL(model, output) \
+    auto * output = dynamic_cast< ModelSIRMixing<TSeq> * >( (model) ); \
+    /*Using the [[assume(...)]] to avoid the compiler warning \
+    if the standard is C++23 or later */ \
+    [[assume((output) != nullptr)]]
+
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
@@ -21576,9 +21654,8 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
             // Downcasting to retrieve the sampler attached to the
             // class
-            ModelSIRMixing<TSeq> * m_down =
-                dynamic_cast<ModelSIRMixing<TSeq> *>(m);
-
+            GET_MODEL(m, m_down);
+            
             size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
             if (ndraws == 0u)
@@ -21691,12 +21768,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
     {
 
-        ModelSIRMixing<TSeq> * m_down =
-            dynamic_cast<ModelSIRMixing<TSeq> *>(m);
-
-        // Using the [[assume(...)]] to avoid the compiler warning
-        // if the standard is C++23 or later
-        [[assume(m_down != nullptr)]];
+        GET_MODEL(m, m_down);
 
         m_down->update_infected_list();
 
@@ -21775,6 +21847,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 
 }
 
+#undef GET_MODEL
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
