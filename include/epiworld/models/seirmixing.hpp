@@ -35,7 +35,6 @@ private:
         epiworld::Agent<TSeq> * agent,
         std::vector< size_t > & sampled_agents
         );
-    std::vector< double > adjusted_contact_rate;
     std::vector< double > contact_matrix;
     std::vector< double > contact_matrix_cum_row_sum;
 
@@ -332,24 +331,6 @@ inline void ModelSEIRMixing<TSeq>::reset()
             this->entities[i - 1].size() +
             entity_indices[i - 1]
             ;
-
-    }
-    
-    // Adjusting contact rate
-    adjusted_contact_rate.clear();
-    adjusted_contact_rate.resize(this->entities.size(), 0.0);
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-                
-        adjusted_contact_rate[i] = 
-            Model<TSeq>::get_param("Contact rate") /
-                static_cast< epiworld_double > (this->get_entity(i).size());
-
-
-        // Possibly correcting for a small number of agents
-        if (adjusted_contact_rate[i] > 1.0)
-            adjusted_contact_rate[i] = 1.0;
 
     }
 
