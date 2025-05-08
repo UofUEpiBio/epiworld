@@ -836,11 +836,26 @@ inline epiworld_double Model<TSeq>::rgamma() {
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
-    auto old_param = rgammad.param();
-    rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = rgammad(*engine);
-    rgammad.param(old_param);
+inline epiworld_double Model<TSeq>::rgamma(
+    epiworld_double alpha,
+    epiworld_double beta,
+    bool restore
+) {
+    epiworld_double ans;
+    if (restore)
+    {
+        auto old_param = rgammad.param();
+        rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
+        ans = rgammad(*engine);
+        rgammad.param(old_param);
+    }
+    else
+    {
+        rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
+        ans = rgammad(*engine);
+    }
+    
+        
     return ans;
 }
 
@@ -850,12 +865,28 @@ inline epiworld_double Model<TSeq>::rexp() {
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
-    auto old_param = rexpd.param();
-    rexpd.param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = rexpd(*engine);
-    rexpd.param(old_param);
+inline epiworld_double Model<TSeq>::rexp(
+    epiworld_double lambda,
+    bool restore
+) {
+
+    epiworld_double ans;
+
+    if (restore)
+    {
+        auto old_param = rexpd.param();
+        rexpd.param(std::exponential_distribution<>::param_type(lambda));
+        ans = rexpd(*engine);
+        rexpd.param(old_param);
+    }
+    else
+    {
+        rexpd.param(std::exponential_distribution<>::param_type(lambda));
+        ans = rexpd(*engine);
+    }
+    
     return ans;
+    
 }
 
 template<typename TSeq>
@@ -864,12 +895,28 @@ inline epiworld_double Model<TSeq>::rlognormal() {
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
-    auto old_param = rlognormald.param();
-    rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = rlognormald(*engine);
-    rlognormald.param(old_param);
+inline epiworld_double Model<TSeq>::rlognormal(
+    epiworld_double mean,
+    epiworld_double shape,
+    bool restore
+) {
+
+    epiworld_double ans;
+    if (restore)
+    {
+        auto old_param = rlognormald.param();
+        rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
+        ans = rlognormald(*engine);
+        rlognormald.param(old_param);
+    }
+    else
+    {
+        rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
+        ans = rlognormald(*engine);
+    }
+
     return ans;
+
 }
 
 template<typename TSeq>
@@ -878,11 +925,26 @@ inline int Model<TSeq>::rbinom() {
 }
 
 template<typename TSeq>
-inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
-    auto old_param = rbinomd.param();
-    rbinomd.param(std::binomial_distribution<>::param_type(n, p));
-    epiworld_double ans = rbinomd(*engine);
-    rbinomd.param(old_param);
+inline int Model<TSeq>::rbinom(
+    int n,
+    epiworld_double p,
+    bool restore
+)
+{
+    int ans;
+    if (restore)
+    {
+        auto old_param = rbinomd.param();
+        rbinomd.param(std::binomial_distribution<>::param_type(n, p));
+        ans = rbinomd(*engine);
+        rbinomd.param(old_param);
+    }
+    else
+    {
+        rbinomd.param(std::binomial_distribution<>::param_type(n, p));
+        ans = rbinomd(*engine);
+    }
+    
     return ans;
 }
 
@@ -892,11 +954,27 @@ inline int Model<TSeq>::rnbinom() {
 }
 
 template<typename TSeq>
-inline int Model<TSeq>::rnbinom(int n, epiworld_double p) {
-    auto old_param = rnbinomd.param();
-    rnbinomd.param(std::negative_binomial_distribution<>::param_type(n, p));
-    int ans = rnbinomd(*engine);
-    rnbinomd.param(old_param);
+inline int Model<TSeq>::rnbinom(
+    int n,
+    epiworld_double p,
+    bool restore
+) {
+
+    int ans;
+
+    if (restore)
+    {
+        auto old_param = rnbinomd.param();
+        rnbinomd.param(std::negative_binomial_distribution<>::param_type(n, p));
+        ans = rnbinomd(*engine);
+        rnbinomd.param(old_param);
+    }
+    else
+    {
+        rnbinomd.param(std::negative_binomial_distribution<>::param_type(n, p));
+        ans = rnbinomd(*engine);
+    }
+    
     return ans;
 }
 
@@ -906,11 +984,26 @@ inline int Model<TSeq>::rgeom() {
 }
 
 template<typename TSeq>
-inline int Model<TSeq>::rgeom(epiworld_double p) {
-    auto old_param = rgeomd.param();
-    rgeomd.param(std::geometric_distribution<>::param_type(p));
-    int ans = rgeomd(*engine);
-    rgeomd.param(old_param);
+inline int Model<TSeq>::rgeom(
+    epiworld_double p,
+    bool restore
+) {
+
+    int ans;
+
+    if (restore)
+    {
+        auto old_param = rgeomd.param();
+        rgeomd.param(std::geometric_distribution<>::param_type(p));
+        ans = rgeomd(*engine);
+        rgeomd.param(old_param);
+    }
+    else
+    {
+        rgeomd.param(std::geometric_distribution<>::param_type(p));
+        ans = rgeomd(*engine);
+    }
+    
     return ans;
 }
 
@@ -920,12 +1013,28 @@ inline int Model<TSeq>::rpoiss() {
 }
 
 template<typename TSeq>
-inline int Model<TSeq>::rpoiss(epiworld_double lambda) {
-    auto old_param = rpoissd.param();
-    rpoissd.param(std::poisson_distribution<>::param_type(lambda));
-    int ans = rpoissd(*engine);
-    rpoissd.param(old_param);
+inline int Model<TSeq>::rpoiss(
+    epiworld_double lambda,
+    bool restore
+) {
+
+    int ans;
+
+    if (restore)
+    {
+        auto old_param = rpoissd.param();
+        rpoissd.param(std::poisson_distribution<>::param_type(lambda));
+        ans = rpoissd(*engine);
+        rpoissd.param(old_param);
+    }
+    else
+    {
+        rpoissd.param(std::poisson_distribution<>::param_type(lambda));
+        ans = rpoissd(*engine);
+    }
+    
     return ans;
+    
 }
 
 template<typename TSeq>

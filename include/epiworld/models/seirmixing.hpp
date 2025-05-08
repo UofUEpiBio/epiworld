@@ -193,7 +193,8 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
     size_t nsamples = Model<TSeq>::rbinom(
         n_infected,
         Model<TSeq>::get_param("Contact rate")/
-            static_cast< epiworld_double >( Model<TSeq>::size() )
+            static_cast< epiworld_double >( Model<TSeq>::size() ),
+        false
     );
 
     if (nsamples == 0)
@@ -212,6 +213,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
             if (u <= contact_matrix_cum_row_sum[MM(agent_group_id, g, ngroups)])
                 break;
 
+        // Could be that the group is empty (so no infected agents in the group)
         if (n_infected_per_group[g] == 0u)
             continue;
 
