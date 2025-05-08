@@ -2,7 +2,7 @@
 #define EPIWORLD_MODELS_SEIRMIXING_HPP
 
 #define MM(i, j, n) \
-    j * n + i
+    (j) * (n) + (i)
 
 #define GET_MODEL(model, output) \
     auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
@@ -37,6 +37,7 @@ private:
         );
     std::vector< double > adjusted_contact_rate;
     std::vector< double > contact_matrix;
+    std::vector< double > contact_matrix_cum_row_sum;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -150,7 +151,7 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     auto & agents = Model<TSeq>::get_agents();
 
     std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
-    
+    n_infected = 0u;
     for (auto & a : agents)
     {
 
@@ -188,54 +189,55 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
     size_t agent_group_id = agent->get_entity(0u).get_id();
     size_t ngroups = this->entities.size();
 
-    int samp_id = 0;
-    for (size_t g = 0; g < ngroups; ++g)
+    // How many infected?
+    size_t nsamples = Model<TSeq>::rbinom(
+        n_infected,
+        Model<TSeq>::get_param("Contact rate")/
+            static_cast< epiworld_double >( Model<TSeq>::size() )
+    );
+
+    if (nsamples == 0)
+        return 0u;
+
+    // Sampling individuals
+    size_t samp_id = 0u;
+    for (size_t i = 0u; i < nsamples; ++i)
     {
 
-        size_t group_size = n_infected_per_group[g];
+        double u = Model<TSeq>::runif();
 
-        // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
-            group_size,
-            adjusted_contact_rate[g] * contact_matrix[
-                MM(agent_group_id, g, ngroups)
-            ]
-        );
+        // Identifying the group
+        size_t g;
+        for (g = 0; g < ngroups; ++g)
+            if (u <= contact_matrix_cum_row_sum[MM(agent_group_id, g, ngroups)])
+                break;
 
-        if (nsamples == 0)
+        if (n_infected_per_group[g] == 0u)
             continue;
 
-        // Sampling from the entity
-        for (int s = 0; s < nsamples; ++s)
-        {
-
-            // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
-
-            // Correcting overflow error
-            if (which >= static_cast<int>(group_size))
-                which = static_cast<int>(group_size) - 1;
-
-            #ifdef EPI_DEBUG
-            auto & a = this->population.at(infected.at(entity_indices[g] + which));
-            #else
-            auto & a = this->get_agent(infected[entity_indices[g] + which]);
-            #endif
-
-            #ifdef EPI_DEBUG
-            if (a.get_state() != ModelSEIRMixing<TSeq>::INFECTED)
-                throw std::logic_error(
-                    "The agent is not infected, but it should be."
-                );
-            #endif
-
-            // Can't sample itself
-            if (a.get_id() == agent->get_id())
-                continue;
-
-            sampled_agents[samp_id++] = a.get_id();
-            
+        // Correcting the U() to be matched within the group
+        if (g > 0u) {
+            u -= contact_matrix_cum_row_sum[
+                MM(agent_group_id, g - 1, ngroups)
+            ];
         }
+
+        u /= contact_matrix[MM(agent_group_id, g, ngroups)];
+        
+        // Identifying the agent
+        size_t which = u * n_infected_per_group[g];
+
+        // Correcting overflow error
+        if (which >= n_infected_per_group[g])
+            which = n_infected_per_group[g] - 1;
+
+        auto & a = this->get_agent(infected[entity_indices[g] + which]);
+
+        // Can't sample itself
+        if (a.get_id() == agent->get_id())
+            continue;
+
+        sampled_agents[samp_id++] = a.get_id();
 
     }
     
@@ -292,6 +294,19 @@ inline void ModelSEIRMixing<TSeq>::reset()
                 std::to_string(sum) +
                 std::string(" != 1.")
                 );
+    }
+
+    // Filling the rowSums matrix of the contact matrix
+    contact_matrix_cum_row_sum = contact_matrix;
+    for (size_t i = 0u; i < nentities; ++i)
+    {
+        for (size_t j = 1u; j < nentities; ++j)
+        {
+            contact_matrix_cum_row_sum[
+                MM(i, j, nentities)
+            ] = contact_matrix_cum_row_sum[MM(i, j, nentities)] +
+                contact_matrix_cum_row_sum[MM(i, j - 1, nentities)];
+        }
     }
 
     // Do it the first time only
