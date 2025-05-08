@@ -40,6 +40,8 @@ private:
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
+    std::vector< int > sampled_times_agents;
+    std::vector< int > sampled_times_groups;
     #endif
 
 public:
@@ -125,27 +127,23 @@ public:
         return;
     };
 
+    #ifdef EPI_DEBUG
+    const std::vector< int > & get_sampled_sizes() const {
+        return sampled_sizes;
+    };
+    const std::vector< int > & get_sampled_times_agents() const {
+        return sampled_times_agents;
+    };
+    const std::vector< int > & get_sampled_times_groups() const {
+        return sampled_times_groups;
+    };
+    #endif
+
 };
 
 template<typename TSeq>
 inline void ModelSEIRMixing<TSeq>::update_infected()
 {
-
-    // #ifdef EPI_DEBUG
-    // printf_epiworld("Estimating the size of `infected`:");
-    // size_t total = 0u;
-
-    // // Memory used by the `infected` vector itself
-    // total += infected.capacity() * sizeof(std::vector<epiworld::Agent<TSeq> *>);
-    
-    // // Memory used by each inner vector and its elements
-    // for (const auto& group : infected) {
-    //     total += group.capacity() * sizeof(epiworld::Agent<TSeq> *);
-    // }
-    // printf_epiworld("%.2f Mb\n", 
-    //     static_cast<double>(total)/1024.0/1024.0);
-    // #endif
-
 
     auto & agents = Model<TSeq>::get_agents();
 
@@ -212,6 +210,10 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
             if (u <= contact_matrix_cum_row_sum[MM(agent_group_id, g, ngroups)])
                 break;
 
+        #ifdef EPI_DEBUG
+        sampled_times_groups[agent_group_id * ngroups + g]++;
+        #endif
+
         // Could be that the group is empty (so no infected agents in the group)
         if (n_infected_per_group[g] == 0u)
             continue;
@@ -239,6 +241,10 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
             continue;
 
         sampled_agents[samp_id++] = a.get_id();
+
+        #ifdef EPI_DEBUG
+        sampled_times_agents[a.get_id()]++;        
+        #endif
 
     }
     
@@ -335,6 +341,17 @@ inline void ModelSEIRMixing<TSeq>::reset()
     }
 
     this->update_infected();
+
+    #ifdef EPI_DEBUG
+    sampled_sizes.clear();
+    sampled_times_agents.resize( Model<TSeq>::size(), 0 );
+    std::fill(sampled_times_agents.begin(), sampled_times_agents.end(), 0);
+    sampled_times_groups.resize(
+        this->entities.size() * this->entities.size(),
+        0
+    );
+    std::fill(sampled_times_groups.begin(), sampled_times_groups.end(), 0);
+    #endif
 
     return;
 
