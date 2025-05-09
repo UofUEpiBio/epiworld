@@ -205,18 +205,35 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         double u = Model<TSeq>::runif();
 
         // Identifying the group
-        size_t g;
-        for (g = 0; g < ngroups; ++g)
-            if (u <= contact_matrix_cum_row_sum[MM(agent_group_id, g, ngroups)])
+        size_t g = 0;
+        for (int j = 0; j < ngroups; ++j)
+        {
+            
+            if (u <= contact_matrix_cum_row_sum[MM(agent_group_id, j, ngroups)])
+            {
+                // If there are no infected in the group, we skip it
+                if (n_infected_per_group[j] == 0u)
+                    continue;
+        
+                #ifdef EPI_DEBUG
+                sampled_times_groups[agent_group_id * ngroups + j]++;
+                #endif
+
+                // Otherwise, that's the selected group and we break
                 break;
+            }
 
-        #ifdef EPI_DEBUG
-        sampled_times_groups[agent_group_id * ngroups + g]++;
-        #endif
+            // Going to the next group
+            g++;
+        }
 
-        // Could be that the group is empty (so no infected agents in the group)
+        // I case the group is empty, we skip it
         if (n_infected_per_group[g] == 0u)
-            continue;
+            throw std::logic_error(
+                std::string("The group ") +
+                std::to_string(g) +
+                std::string(" is empty.")
+            );
 
         // Correcting the U() to be matched within the group
         if (g > 0u) {
@@ -239,6 +256,15 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         // Can't sample itself
         if (a.get_id() == agent->get_id())
             continue;
+
+        #ifdef EPI_DEBUG
+        if (a.get_virus() == nullptr)
+            throw std::logic_error(
+                std::string("The agent ") +
+                std::to_string(a.get_id()) +
+                std::string(" doesn't have a virus.")
+            );
+        #endif
 
         sampled_agents[samp_id++] = a.get_id();
 

@@ -14,24 +14,22 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         0.05, 0.1, .7
     };
 
-    std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
-
     // std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
 
     // Testing reproductive number in plain scenario
     int n_infected = 10;
     #ifdef EPI_DEBUG
-    int n_agents = 1000;
+    int n_agents = 2000;
     #else
     int n_agents = 10000;
     #endif
-    size_t nsims = 400;
+    size_t nsims = 200;
     epimodels::ModelSEIRMixing<> model_1(
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
         static_cast<double>(n_infected)/n_agents,  // epiworld_double prevalence,
-        8.0,  // epiworld_double contact_rate,
-        0.05,   // epiworld_double transmission_rate,
+        2.0,  // epiworld_double contact_rate,
+        0.2,   // epiworld_double transmission_rate,
         7.0,   // epiworld_double avg_incubation_days,
         1.0/7.0,// epiworld_double recovery_rate,
         contact_matrix
