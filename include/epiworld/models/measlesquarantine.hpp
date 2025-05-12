@@ -1,10 +1,19 @@
 #ifndef MEASLESQUARANTINE_HPP
 #define MEASLESQUARANTINE_HPP
 
-#define GET_MODEL(name, m) \
-    ModelMeaslesQuarantine<TSeq> * name = \
-        dynamic_cast<ModelMeaslesQuarantine<TSeq> *>(m); \
-    [[assume(name != nullptr)]]
+#if __cplusplus >= 202302L
+    // C++23 or later
+    #define GET_MODEL(name, m) \
+        ModelMeaslesQuarantine<TSeq> * name = \
+            dynamic_cast<ModelMeaslesQuarantine<TSeq> *>(m); \
+        [[assume(name != nullptr)]]
+#else
+    // C++17 or C++20
+    #define GET_MODEL(name, m) \
+        ModelMeaslesQuarantine<TSeq> * name = \
+            dynamic_cast<ModelMeaslesQuarantine<TSeq> *>(m); \
+        assert(name != nullptr); // Use assert for runtime checks
+#endif
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
