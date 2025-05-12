@@ -8489,7 +8489,7 @@ inline void Model<TSeq>::set_backup()
     if (population_backup.size() == 0u)
         population_backup = std::vector< Agent<TSeq> >(population);
 
-    if (!entities_backup.size() == 0u)
+    if (entities_backup.size() == 0u)
         entities_backup = std::vector< Entity<TSeq> >(entities);
 
 }
@@ -20965,22 +20965,6 @@ public:
 template<typename TSeq>
 inline void ModelSEIRMixing<TSeq>::update_infected()
 {
-
-    // #ifdef EPI_DEBUG
-    // printf_epiworld("Estimating the size of `infected`:");
-    // size_t total = 0u;
-
-    // // Memory used by the `infected` vector itself
-    // total += infected.capacity() * sizeof(std::vector<epiworld::Agent<TSeq> *>);
-    
-    // // Memory used by each inner vector and its elements
-    // for (const auto& group : infected) {
-    //     total += group.capacity() * sizeof(epiworld::Agent<TSeq> *);
-    // }
-    // printf_epiworld("%.2f Mb\n", 
-    //     static_cast<double>(total)/1024.0/1024.0);
-    // #endif
-
 
     auto & agents = Model<TSeq>::get_agents();
 
