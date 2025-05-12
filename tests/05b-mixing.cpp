@@ -1,5 +1,5 @@
 #ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
+#define EPI_DEBUG
 #endif
 
 #include "tests.hpp"
@@ -51,7 +51,16 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s;
-    auto saver = [&transitions, &R0s, n_infected](size_t n, Model<>* m) -> void{
+    #ifdef EPI_DEBUG
+    int n_groups = 3;
+    std::vector< double > group_sampling(n_groups * n_groups, 0.0);
+    #endif
+    auto saver = [
+        &transitions, &R0s, n_infected
+        #ifdef EPI_DEBUG
+        , &group_sampling, n_groups
+        #endif
+    ](size_t n, Model<>* m) -> void{
 
         // Saving the transition probabilities
         transitions[n] = m->get_db().transition_probability(false, false);
@@ -68,9 +77,39 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
             R0s.push_back(static_cast<epiworld_double>(i.second));
         }
 
+        #ifdef EPI_DEBUG
+        // Saving the group sampling
+        auto sampling = dynamic_cast< epimodels::ModelSEIRMixing<>* >(m)->
+            get_sampled_times_groups();
+
+        // Saving the transition probabilities
+        for (int i = 0; i < n_groups; ++i)
+            for (int j = 0; j < n_groups; ++j)
+                group_sampling[i * n_groups + j] += sampling[i * n_groups + j];
+
+        #endif
+
     };
 
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
+
+    #ifdef EPI_DEBUG
+    // Processing group sampling
+    for (int i = 0; i < n_groups; ++i)
+    {
+        double rowsums = 0.0;
+        for (int j = 0; j < n_groups; ++j)
+        {
+            rowsums += group_sampling[j * n_groups + i];
+        }
+
+        for (int j = 0; j < n_groups; ++j)
+        {
+            group_sampling[j * n_groups + i] /= rowsums;
+        }
+    }
+    #endif
+
 
     // Creating an average across the transitions vectors
     std::vector<epiworld_double> avg_transitions(transitions[0].size(), 0.0);
@@ -142,6 +181,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     double R0_expected =
         model_1("Contact rate") * model_1("Prob. Transmission") /
         model_1("Prob. Recovery");
+
+    // Computing the 95% CI
+    std::sort(R0s.begin(), R0s.end());
 
     std::cout << "R0 in ModelSEIRMixing" << std::endl ;
     std::cout << "observed: " << R0_observed <<

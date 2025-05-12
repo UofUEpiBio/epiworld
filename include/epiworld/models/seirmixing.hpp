@@ -2,7 +2,7 @@
 #define EPIWORLD_MODELS_SEIRMIXING_HPP
 
 #define MM(i, j, n) \
-    j * n + i
+    (j) * (n) + (i)
 
 #define GET_MODEL(model, output) \
     auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
@@ -35,11 +35,13 @@ private:
         epiworld::Agent<TSeq> * agent,
         std::vector< size_t > & sampled_agents
         );
-    std::vector< double > adjusted_contact_rate;
     std::vector< double > contact_matrix;
+    std::vector< double > contact_matrix_cum_row_sum;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
+    std::vector< int > sampled_times_agents;
+    std::vector< int > sampled_times_groups;
     #endif
 
 public:
@@ -125,6 +127,18 @@ public:
         return;
     };
 
+    #ifdef EPI_DEBUG
+    const std::vector< int > & get_sampled_sizes() const {
+        return sampled_sizes;
+    };
+    const std::vector< int > & get_sampled_times_agents() const {
+        return sampled_times_agents;
+    };
+    const std::vector< int > & get_sampled_times_groups() const {
+        return sampled_times_groups;
+    };
+    #endif
+
 };
 
 template<typename TSeq>
@@ -134,7 +148,7 @@ inline void ModelSEIRMixing<TSeq>::update_infected()
     auto & agents = Model<TSeq>::get_agents();
 
     std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
-    
+    n_infected = 0u;
     for (auto & a : agents)
     {
 
@@ -172,54 +186,91 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
     size_t agent_group_id = agent->get_entity(0u).get_id();
     size_t ngroups = this->entities.size();
 
-    int samp_id = 0;
-    for (size_t g = 0; g < ngroups; ++g)
+    // How many infected?
+    size_t nsamples = Model<TSeq>::rbinom(
+        n_infected,
+        Model<TSeq>::get_param("Contact rate")/
+            static_cast< epiworld_double >( Model<TSeq>::size() ),
+        false
+    );
+
+    if (nsamples == 0)
+        return 0u;
+
+    // Sampling individuals
+    size_t samp_id = 0u;
+    for (size_t i = 0u; i < nsamples; ++i)
     {
 
-        size_t group_size = n_infected_per_group[g];
+        double u = Model<TSeq>::runif();
 
-        // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
-            group_size,
-            adjusted_contact_rate[g] * contact_matrix[
-                MM(agent_group_id, g, ngroups)
-            ]
-        );
+        // Identifying the group
+        size_t g = 0;
+        for (int j = 0; j < ngroups; ++j)
+        {
+            
+            if (u <= contact_matrix_cum_row_sum[MM(agent_group_id, j, ngroups)])
+            {
+                // If there are no infected in the group, we skip it
+                if (n_infected_per_group[j] == 0u)
+                    continue;
+        
+                #ifdef EPI_DEBUG
+                sampled_times_groups[agent_group_id * ngroups + j]++;
+                #endif
 
-        if (nsamples == 0)
+                // Otherwise, that's the selected group and we break
+                break;
+            }
+
+            // Going to the next group
+            g++;
+        }
+
+        // I case the group is empty, we skip it
+        if (n_infected_per_group[g] == 0u)
+            throw std::logic_error(
+                std::string("The group ") +
+                std::to_string(g) +
+                std::string(" is empty.")
+            );
+
+        // Correcting the U() to be matched within the group
+        if (g > 0u) {
+            u -= contact_matrix_cum_row_sum[
+                MM(agent_group_id, g - 1, ngroups)
+            ];
+        }
+
+        u /= contact_matrix[MM(agent_group_id, g, ngroups)];
+        
+        // Identifying the agent
+        size_t which = u * n_infected_per_group[g];
+
+        // Correcting overflow error
+        if (which >= n_infected_per_group[g])
+            which = n_infected_per_group[g] - 1;
+
+        auto & a = this->get_agent(infected[entity_indices[g] + which]);
+
+        // Can't sample itself
+        if (a.get_id() == agent->get_id())
             continue;
 
-        // Sampling from the entity
-        for (int s = 0; s < nsamples; ++s)
-        {
+        #ifdef EPI_DEBUG
+        if (a.get_virus() == nullptr)
+            throw std::logic_error(
+                std::string("The agent ") +
+                std::to_string(a.get_id()) +
+                std::string(" doesn't have a virus.")
+            );
+        #endif
 
-            // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+        sampled_agents[samp_id++] = a.get_id();
 
-            // Correcting overflow error
-            if (which >= static_cast<int>(group_size))
-                which = static_cast<int>(group_size) - 1;
-
-            #ifdef EPI_DEBUG
-            auto & a = this->population.at(infected.at(entity_indices[g] + which));
-            #else
-            auto & a = this->get_agent(infected[entity_indices[g] + which]);
-            #endif
-
-            #ifdef EPI_DEBUG
-            if (a.get_state() != ModelSEIRMixing<TSeq>::INFECTED)
-                throw std::logic_error(
-                    "The agent is not infected, but it should be."
-                );
-            #endif
-
-            // Can't sample itself
-            if (a.get_id() == agent->get_id())
-                continue;
-
-            sampled_agents[samp_id++] = a.get_id();
-            
-        }
+        #ifdef EPI_DEBUG
+        sampled_times_agents[a.get_id()]++;        
+        #endif
 
     }
     
@@ -278,6 +329,19 @@ inline void ModelSEIRMixing<TSeq>::reset()
                 );
     }
 
+    // Filling the rowSums matrix of the contact matrix
+    contact_matrix_cum_row_sum = contact_matrix;
+    for (size_t i = 0u; i < nentities; ++i)
+    {
+        for (size_t j = 1u; j < nentities; ++j)
+        {
+            contact_matrix_cum_row_sum[
+                MM(i, j, nentities)
+            ] = contact_matrix_cum_row_sum[MM(i, j, nentities)] +
+                contact_matrix_cum_row_sum[MM(i, j - 1, nentities)];
+        }
+    }
+
     // Do it the first time only
     sampled_agents.resize(Model<TSeq>::size());
 
@@ -301,26 +365,19 @@ inline void ModelSEIRMixing<TSeq>::reset()
             ;
 
     }
-    
-    // Adjusting contact rate
-    adjusted_contact_rate.clear();
-    adjusted_contact_rate.resize(this->entities.size(), 0.0);
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-                
-        adjusted_contact_rate[i] = 
-            Model<TSeq>::get_param("Contact rate") /
-                static_cast< epiworld_double > (this->get_entity(i).size());
-
-
-        // Possibly correcting for a small number of agents
-        if (adjusted_contact_rate[i] > 1.0)
-            adjusted_contact_rate[i] = 1.0;
-
-    }
 
     this->update_infected();
+
+    #ifdef EPI_DEBUG
+    sampled_sizes.clear();
+    sampled_times_agents.resize( Model<TSeq>::size(), 0 );
+    std::fill(sampled_times_agents.begin(), sampled_times_agents.end(), 0);
+    sampled_times_groups.resize(
+        this->entities.size() * this->entities.size(),
+        0
+    );
+    std::fill(sampled_times_groups.begin(), sampled_times_groups.end(), 0);
+    #endif
 
     return;
 

@@ -308,19 +308,33 @@ public:
     epiworld_double rnorm();
     epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
     epiworld_double rgamma();
-    epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
+    epiworld_double rgamma(
+        epiworld_double alpha, epiworld_double beta, bool restore = true
+    );
     epiworld_double rexp();
-    epiworld_double rexp(epiworld_double lambda);
+    epiworld_double rexp(
+        epiworld_double lambda, bool restore = true
+    );
     epiworld_double rlognormal();
-    epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
+    epiworld_double rlognormal(
+        epiworld_double mean, epiworld_double shape, bool restore = true
+    );
     int rbinom();
-    int rbinom(int n, epiworld_double p);
+    int rbinom(
+        int n, epiworld_double p, bool restore = true
+    );
     int rnbinom();
-    int rnbinom(int n, epiworld_double p);
+    int rnbinom(
+        int n, epiworld_double p, bool restore = true
+    );
     int rgeom();
-    int rgeom(epiworld_double p);
+    int rgeom(
+        epiworld_double p, bool restore = true
+    );
     int rpoiss();
-    int rpoiss(epiworld_double lambda);
+    int rpoiss(
+        epiworld_double lambda, bool restore = true
+    );
     ///@}
 
     /**
