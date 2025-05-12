@@ -21,13 +21,13 @@ Global events:
  (none)
 
 Virus(es):
- - COVID19 (baseline prevalence: 1.00%)
+ - COVID19
 
 Tool(s):
- - Immune system (baseline prevalence: 100.00%)
- - Vaccine (baseline prevalence: 50.00%)
- - Face masks (baseline prevalence: 50.00%)
- - Post Immune (baseline prevalence: 0 seeds)
+ - Immune system
+ - Vaccine
+ - Face masks
+ - Post Immune
 
 Model parameters:
  - Mutation rate : 0.0010
@@ -50,21 +50,21 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 60 (of 60)
 Number of viruses   : 1
-Last run elapsed t  : 35.00ms
-Last run speed      : 1.68 million agents x day / second
+Last run elapsed t  : 26.00ms
+Last run speed      : 2.27 million agents x day / second
 Rewiring            : on (0.10)
 
 Global events:
  (none)
 
 Virus(es):
- - COVID19 (baseline prevalence: 1.00%)
+ - COVID19
 
 Tool(s):
- - Immune system (baseline prevalence: 100.00%)
- - Vaccine (baseline prevalence: 50.00%)
- - Face masks (baseline prevalence: 50.00%)
- - Post Immune (baseline prevalence: 0 seeds)
+ - Immune system
+ - Vaccine
+ - Face masks
+ - Post Immune
 
 Model parameters:
  - Mutation rate : 0.0010
@@ -83,9 +83,9 @@ Distribution of the population at time 60:
   - (3) Removed     :    0 -> 2
 
 Transition Probabilities:
- - Susceptible  1.00  0.00  0.00  0.00
- - Exposed      0.00  0.75  0.24  0.00
- - Recovered    0.00  0.00  1.00  0.00
- - Removed      0.00  0.00  0.00  1.00
+ - Susceptible  1.00  0.00     -     -
+ - Exposed         -  0.74  0.25  0.01
+ - Recovered       -     -  1.00     -
+ - Removed         -     -     -  1.00
 
 ```

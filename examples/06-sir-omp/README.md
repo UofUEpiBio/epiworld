@@ -14,15 +14,15 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 706.00ms
-Last run speed      : 35.37 million agents x day / second
+Last run elapsed t  : 272.00ms
+Last run speed      : 91.69 million agents x day / second
 Rewiring            : off
 
 Global events:
  (none)
 
 Virus(es):
- - a virus (baseline prevalence: 1.00%)
+ - a virus
 
 Tool(s):
  (none)
@@ -37,9 +37,9 @@ Distribution of the population at time 100:
   - (2) Recovered   :      0 -> 241452
 
 Transition Probabilities:
- - Susceptible  0.97  0.03  0.00
- - Infected     0.00  0.70  0.30
- - Recovered    0.00  0.00  1.00
+ - Susceptible  0.96  0.04     -
+ - Infected        -  0.70  0.30
+ - Recovered       -     -  1.00
 
 ________________________________________________________________________________
 ________________________________________________________________________________
@@ -51,15 +51,15 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 651.00ms
-Last run speed      : 38.34 million agents x day / second
+Last run elapsed t  : 260.00ms
+Last run speed      : 95.80 million agents x day / second
 Rewiring            : off
 
 Global events:
  (none)
 
 Virus(es):
- - a virus (baseline prevalence: 1.00%)
+ - a virus
 
 Tool(s):
  (none)
@@ -74,9 +74,9 @@ Distribution of the population at time 100:
   - (2) Recovered   :      0 -> 241957
 
 Transition Probabilities:
- - Susceptible  0.97  0.03  0.00
- - Infected     0.00  0.70  0.30
- - Recovered    0.00  0.00  1.00
+ - Susceptible  0.97  0.03     -
+ - Infected        -  0.70  0.30
+ - Recovered       -     -  1.00
 
 ________________________________________________________________________________
 ________________________________________________________________________________
@@ -88,15 +88,15 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 710.00ms
-Last run speed      : 35.19 million agents x day / second
+Last run elapsed t  : 258.00ms
+Last run speed      : 96.63 million agents x day / second
 Rewiring            : off
 
 Global events:
  (none)
 
 Virus(es):
- - a virus (baseline prevalence: 1.00%)
+ - a virus
 
 Tool(s):
  (none)
@@ -111,9 +111,9 @@ Distribution of the population at time 100:
   - (2) Recovered   :      0 -> 243110
 
 Transition Probabilities:
- - Susceptible  0.96  0.04  0.00
- - Infected     0.00  0.70  0.30
- - Recovered    0.00  0.00  1.00
+ - Susceptible  0.96  0.04     -
+ - Infected        -  0.70  0.30
+ - Recovered       -     -  1.00
 
 ________________________________________________________________________________
 ________________________________________________________________________________
@@ -125,15 +125,15 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 651.00ms
-Last run speed      : 38.38 million agents x day / second
+Last run elapsed t  : 257.00ms
+Last run speed      : 97.00 million agents x day / second
 Rewiring            : off
 
 Global events:
  (none)
 
 Virus(es):
- - a virus (baseline prevalence: 1.00%)
+ - a virus
 
 Tool(s):
  (none)
@@ -148,13 +148,13 @@ Distribution of the population at time 100:
   - (2) Recovered   :      0 -> 243497
 
 Transition Probabilities:
- - Susceptible  0.96  0.04  0.00
- - Infected     0.00  0.70  0.30
- - Recovered    0.00  0.00  1.00
+ - Susceptible  0.96  0.04     -
+ - Infected        -  0.70  0.30
+ - Recovered       -     -  1.00
 
-last run elapsed time : 706.00ms.
-last run elapsed time : 651.00ms.
-last run elapsed time : 710.00ms.
-last run elapsed time : 651.00ms.
-Elapsed time: 726 milliseconds
+last run elapsed time : 272.00ms.
+last run elapsed time : 260.00ms.
+last run elapsed time : 258.00ms.
+last run elapsed time : 257.00ms.
+Elapsed time: 280 milliseconds
 ```

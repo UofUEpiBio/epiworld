@@ -11,7 +11,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
 
     // Adding multi-file write
-    auto sav_0 = epiworld::make_save_run<int>(
+    auto sav_0 = epiworld::make_save_run<>(
         "02-reproducible-sir-saves/main_out_%li", // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,
@@ -23,7 +23,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
         true   // bool reproductive
     );
 
-    auto sav_1 = epiworld::make_save_run<int>(
+    auto sav_1 = epiworld::make_save_run<>(
         "02-reproducible-sir-saves/main_out_pll_%li", // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,

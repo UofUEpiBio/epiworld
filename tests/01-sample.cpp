@@ -8,22 +8,22 @@ int main()
 {
 
     // Creating a model
-    Model<int> model;
+    Model<> model;
 
     // Declaring the three statuses in the model
-    model.add_status("Susceptible", epiworld::default_update_susceptible<int>);
-    model.add_status("Exposed", epiworld::default_update_exposed<int>);
+    model.add_status("Susceptible", epiworld::default_update_susceptible<>);
+    model.add_status("Exposed", epiworld::default_update_exposed<>);
     model.add_status("Recovered");
     model.add_status("Removed");
 
     // Adding the tool and virus
-    Virus<int> virus("covid 19", 50, false);
+    Virus<> virus("covid 19", 50, false);
     virus.set_post_immunity(1.0);
     virus.set_status(1,2,3);
     virus.set_prob_death(.01);
     model.add_virus(virus);
     
-    epiworld::Tool<int> tool("vaccine", .5, true);
+    epiworld::Tool<> tool("vaccine", .5, true);
     model.add_tool(tool);
 
     // Generating a random pop 
@@ -35,7 +35,7 @@ int main()
 
     (void) model.get_db().transition_probability();
 
-    AgentsSample<int> agents(model, .05 * 10000);
+    AgentsSample<> agents(model, .05 * 10000);
 
 
     printf_epiworld("Total sampled: %lu\n", agents.size());

@@ -3,7 +3,7 @@
 
 using namespace epiworld;
 
-template<typename TSeq = int>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 EntityToAgentFun<TSeq> dist_factory(int from, int to) {
     return [from, to](Entity<> & e, Model<> * m) -> void {
 

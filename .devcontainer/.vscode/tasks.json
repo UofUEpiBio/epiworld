@@ -2,10 +2,13 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: g++ build active file",
+            "label": "C/C++: g++ build active file debug active file",
             "command": "/usr/bin/g++",
             "args": [
                 "-fdiagnostics-color=always",
+                "-Wall",
+                "-Wextra",
+                "-Wpedantic",
                 "-g",
                 "${file}",
                 "-fopenmp",
