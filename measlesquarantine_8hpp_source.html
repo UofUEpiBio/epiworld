@@ -75,16 +75,16 @@ $(function() {
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#if __cplusplus &gt;= 202302L</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;    <span class="comment">// C++23 or later</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">    #define GET_MODEL(name, m) \</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">        ModelMeaslesQuarantine&lt;TSeq&gt; * name = \</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">            dynamic_cast&lt;ModelMeaslesQuarantine&lt;TSeq&gt; *&gt;(m); \</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">        [[assume(name != nullptr)]]</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">    #define GET_MODEL(model, output) \</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">        ModelMeaslesQuarantine&lt;TSeq&gt; * output = \</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">            dynamic_cast&lt;ModelMeaslesQuarantine&lt;TSeq&gt; *&gt;(model); \</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">        [[assume(output != nullptr)]]</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;    <span class="comment">// C++17 or C++20</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">    #define GET_MODEL(name, m) \</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">        ModelMeaslesQuarantine&lt;TSeq&gt; * name = \</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">            dynamic_cast&lt;ModelMeaslesQuarantine&lt;TSeq&gt; *&gt;(m); \</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">        assert(name != nullptr); </span><span class="comment">// Use assert for runtime checks</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">    #define GET_MODEL(model, output) \</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">        ModelMeaslesQuarantine&lt;TSeq&gt; * output = \</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">            dynamic_cast&lt;ModelMeaslesQuarantine&lt;TSeq&gt; *&gt;(model); \</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">        assert(output != nullptr); </span><span class="comment">// Use assert for runtime checks</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#define LOCAL_UPDATE_FUN(name) \</span></div>
@@ -262,7 +262,7 @@ $(function() {
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::m_update_model</a>(<a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * m) {</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    </div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    model-&gt;quarantine_agents();</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    model-&gt;events_run();</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    model-&gt;update_infectious();</div>
@@ -354,7 +354,7 @@ $(function() {
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;    <span class="keywordflow">if</span> (ndraw == 0)</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160; </div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    <span class="keywordtype">size_t</span> n_infectious = model-&gt;infectious.size();</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160; </div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    <span class="keywordflow">if</span> (n_infectious == 0)</div>
@@ -446,7 +446,7 @@ $(function() {
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; (1.0/m-&gt;par(<span class="stringliteral">&quot;Prodromal period&quot;</span>)))</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;    {</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160; </div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;        GET_MODEL(model, m);</div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;        GET_MODEL(m, model);</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        model-&gt;day_rash_onset[p-&gt;get_id()] = m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>();</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::RASH</a>);</div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160; </div>
@@ -459,7 +459,7 @@ $(function() {
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;LOCAL_UPDATE_FUN(m_update_rash) {</div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160; </div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160; </div>
-<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;    </div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;<span class="preprocessor">    #ifdef EPI_DEBUG</span></div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;    <span class="keywordflow">if</span> (model-&gt;day_flagged.size() &lt;= p-&gt;get_id())</div>
@@ -528,7 +528,7 @@ $(function() {
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160; </div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;LOCAL_UPDATE_FUN(m_update_isolated) {</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160; </div>
-<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160; </div>
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    <span class="comment">// Figuring out if the agent can be released from isolation</span></div>
 <div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;    <span class="comment">// if the quarantine period is over.</span></div>
@@ -578,7 +578,7 @@ $(function() {
 <div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160; </div>
 <div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;LOCAL_UPDATE_FUN(m_update_isolated_recovered) {</div>
 <div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160; </div>
-<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160; </div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;    <span class="comment">// Figuring out if the agent can be released from isolation</span></div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;    <span class="comment">// if the quarantine period is over.</span></div>
@@ -596,7 +596,7 @@ $(function() {
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;LOCAL_UPDATE_FUN(m_update_q_exposed) {</div>
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160; </div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;    <span class="comment">// How many days since quarantine started</span></div>
-<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;    <span class="keywordtype">int</span> days_since =</div>
 <div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;        m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;get_id()];</div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160; </div>
@@ -634,7 +634,7 @@ $(function() {
 <div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160; </div>
 <div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;LOCAL_UPDATE_FUN(m_update_q_susceptible) {</div>
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160; </div>
-<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;    <span class="keywordtype">int</span> days_since =</div>
 <div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;        m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;get_id()];</div>
 <div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;    </div>
@@ -645,7 +645,7 @@ $(function() {
 <div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160; </div>
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;LOCAL_UPDATE_FUN(m_update_q_prodromal) {</div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160; </div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160; </div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;    <span class="comment">// Otherwise, these are moved to the prodromal period, if</span></div>
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;    <span class="comment">// the quanrantine period is over.</span></div>
@@ -673,7 +673,7 @@ $(function() {
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160; </div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;LOCAL_UPDATE_FUN(m_update_q_recovered) {</div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160; </div>
-<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;    GET_MODEL(model, m);</div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;get_id()];</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;    </div>
 <div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
