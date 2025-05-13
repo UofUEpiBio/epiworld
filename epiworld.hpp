@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <set>
 #include <type_traits>
+#include <cassert>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -20839,12 +20840,19 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 #define MM(i, j, n) \
     j * n + i
 
-#define GET_MODEL(model, output) \
-    auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
-    /*Using the [[assume(...)]] to avoid the compiler warning \
-    if the standard is C++23 or later */ \
-    [[assume((output) != nullptr)]]
-
+#if __cplusplus >= 202302L
+    // C++23 or later
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
+        /*Using the [[assume(...)]] to avoid the compiler warning \
+        if the standard is C++23 or later */ \
+        [[assume((output) != nullptr)]]
+#else
+    // C++17 or C++20
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
+        assert((output) != nullptr); // Use assert for runtime checks
+#endif
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
@@ -21169,7 +21177,13 @@ inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
         *dynamic_cast<const ModelSEIRMixing<TSeq>*>(this)
         );
 
-    [[assume(ptr != nullptr)]];
+    #if __cplusplus >= 202302L
+        // C++23 or later
+        [[assume(ptr != nullptr)]]
+    #else
+        // C++17 or C++20
+        assert(ptr != nullptr); // Use assert for runtime checks
+    #endif
 
     return dynamic_cast< Model<TSeq> *>(ptr);
 
@@ -21455,11 +21469,19 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_SIRMIXING_HPP
 #define EPIWORLD_MODELS_SIRMIXING_HPP
 
-#define GET_MODEL(model, output) \
-    auto * output = dynamic_cast< ModelSIRMixing<TSeq> * >( (model) ); \
-    /*Using the [[assume(...)]] to avoid the compiler warning \
-    if the standard is C++23 or later */ \
-    [[assume((output) != nullptr)]]
+#if __cplusplus >= 202302L
+    // C++23 or later
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelSIRMixing<TSeq> * >( (model) ); \
+        /*Using the [[assume(...)]] to avoid the compiler warning \
+        if the standard is C++23 or later */ \
+        [[assume((output) != nullptr)]]
+#else
+    // C++17 or C++20
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelSIRMixing<TSeq> * >( (model) ); \
+        assert((output) != nullptr); // Use assert for runtime checks
+#endif
 
 /**
  * @file seirentitiesconnected.hpp
@@ -21988,10 +22010,19 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #ifndef MEASLESQUARANTINE_HPP
 #define MEASLESQUARANTINE_HPP
 
-#define GET_MODEL(name, m) \
-    ModelMeaslesQuarantine<TSeq> * name = \
-        dynamic_cast<ModelMeaslesQuarantine<TSeq> *>(m); \
-    [[assume(name != nullptr)]]
+#if __cplusplus >= 202302L
+    // C++23 or later
+    #define GET_MODEL(model, output) \
+        ModelMeaslesQuarantine<TSeq> * output = \
+            dynamic_cast<ModelMeaslesQuarantine<TSeq> *>(model); \
+        [[assume(output != nullptr)]]
+#else
+    // C++17 or C++20
+    #define GET_MODEL(model, output) \
+        ModelMeaslesQuarantine<TSeq> * output = \
+            dynamic_cast<ModelMeaslesQuarantine<TSeq> *>(model); \
+        assert(output != nullptr); // Use assert for runtime checks
+#endif
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
@@ -22231,7 +22262,7 @@ inline void ModelMeaslesQuarantine<TSeq>::quarantine_agents() {
 template<typename TSeq>
 inline void ModelMeaslesQuarantine<TSeq>::m_update_model(Model<TSeq> * m) {
     
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
     model->quarantine_agents();
     model->events_run();
     model->update_infectious();
@@ -22323,7 +22354,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
     if (ndraw == 0)
         return;
 
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
     size_t n_infectious = model->infectious.size();
 
     if (n_infectious == 0)
@@ -22415,7 +22446,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
 
-        GET_MODEL(model, m);
+        GET_MODEL(m, model);
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(m, ModelMeaslesQuarantine<TSeq>::RASH);
 
@@ -22428,7 +22459,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
 LOCAL_UPDATE_FUN(m_update_rash) {
 
 
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
     
     #ifdef EPI_DEBUG
     if (model->day_flagged.size() <= p->get_id())
@@ -22497,7 +22528,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
 
 LOCAL_UPDATE_FUN(m_update_isolated) {
 
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
 
     // Figuring out if the agent can be released from isolation
     // if the quarantine period is over.
@@ -22547,7 +22578,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
 
 LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
 
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
 
     // Figuring out if the agent can be released from isolation
     // if the quarantine period is over.
@@ -22565,7 +22596,7 @@ LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
 LOCAL_UPDATE_FUN(m_update_q_exposed) {
 
     // How many days since quarantine started
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
     int days_since =
         m->today() - model->day_flagged[p->get_id()];
 
@@ -22603,7 +22634,7 @@ LOCAL_UPDATE_FUN(m_update_q_exposed) {
 
 LOCAL_UPDATE_FUN(m_update_q_susceptible) {
 
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
     int days_since =
         m->today() - model->day_flagged[p->get_id()];
     
@@ -22614,7 +22645,7 @@ LOCAL_UPDATE_FUN(m_update_q_susceptible) {
 
 LOCAL_UPDATE_FUN(m_update_q_prodromal) {
 
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
 
     // Otherwise, these are moved to the prodromal period, if
     // the quanrantine period is over.
@@ -22642,7 +22673,7 @@ LOCAL_UPDATE_FUN(m_update_q_prodromal) {
 
 LOCAL_UPDATE_FUN(m_update_q_recovered) {
 
-    GET_MODEL(model, m);
+    GET_MODEL(m, model);
     int days_since = m->today() - model->day_flagged[p->get_id()];
     
     if (days_since >= m->par("Quarantine period"))
