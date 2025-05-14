@@ -33,14 +33,14 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     model_1.get_db().get_hist_total(nullptr, nullptr, &h_1);
 
     // Getting transition matrix
-    auto tmat_0 = model_0.get_db().transition_probability(false);
+    auto tmat_0 = model_0.get_db().get_transition_probability(false);
     int out_of_range_0 = 0;
 
     for (auto & v: tmat_0)
         if ((v < 0.0) | (v > 1.0))
             out_of_range_0++;
     
-    auto tmat_1 = model_1.get_db().transition_probability(false);
+    auto tmat_1 = model_1.get_db().get_transition_probability(false);
     int out_of_range_1 = 0;
 
     for (auto & v: tmat_1)
@@ -53,8 +53,8 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         };
 
     // Test when normalize = false
-    auto tmat_0_not_norm = model_0.get_db().transition_probability(false, false);
-    auto tmat_1_not_norm = model_1.get_db().transition_probability(false, false);
+    auto tmat_0_not_norm = model_0.get_db().get_transition_probability(false, false);
+    auto tmat_1_not_norm = model_1.get_db().get_transition_probability(false, false);
 
     // Expected values of an unnormalized transition matrix
     // so it is only the counts
