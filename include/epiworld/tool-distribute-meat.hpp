@@ -17,24 +17,14 @@
  * @return A lambda function that distributes the tool to the set of agents.
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline ToolToAgentFun<TSeq> distribute_tool_to_set(
-    std::vector< size_t > agents_ids
-) {
-
-    return [agents_ids](
-        Tool<TSeq> & tool, Model<TSeq> * model
-    ) -> void 
-    { 
+inline ToolToAgentFun<TSeq>
+distribute_tool_to_set(std::vector<size_t> agents_ids) {
+    return [agents_ids](Tool<TSeq>& tool, Model<TSeq>* model) -> void {
         // Adding action
-        for (auto i: agents_ids)
-        {
-            model->get_agent(i).add_tool(
-                tool,
-                const_cast<Model<TSeq> * >(model)
-                );
+        for (auto i : agents_ids) {
+            model->get_agent(i).add_tool(tool, const_cast<Model<TSeq>*>(model));
         }
     };
-
 }
 
 /**
@@ -51,64 +41,56 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline ToolToAgentFun<TSeq> distribute_tool_randomly(
     epiworld_double prevalence,
     bool as_proportion = true,
-    std::vector< size_t > agents_ids = {}
+    std::vector<size_t> agents_ids = {}
 ) {
+    auto agents_ids_ptr = std::make_shared<std::vector<size_t>>(agents_ids);
 
-    auto agents_ids_ptr = std::make_shared< std::vector< size_t > >(agents_ids);
+    return [prevalence,
+            as_proportion,
+            agents_ids_ptr](Tool<TSeq>& tool, Model<TSeq>* model) -> void {
+        // Figuring out how what agents are available
+        bool use_set = agents_ids_ptr->size() > 0;
 
-    return [prevalence,as_proportion,agents_ids_ptr](
-        Tool<TSeq> & tool, Model<TSeq> * model
-        ) -> void {
+        // Picking how many
+        int n_to_distribute;
+        int n = use_set ? static_cast<int>(agents_ids_ptr->size())
+                        : static_cast<int>(model->size());
 
-            // Figuring out how what agents are available
-            bool use_set = agents_ids_ptr->size() > 0;
+        if (as_proportion) {
+            n_to_distribute = static_cast<int>(std::floor(prevalence * n));
 
-            // Picking how many
-            int n_to_distribute;
-            int n = use_set ? 
-                static_cast<int>(agents_ids_ptr->size()) :
-                static_cast<int>(model->size());
-                
-            if (as_proportion)
-            {
-                n_to_distribute = static_cast<int>(std::floor(prevalence * n));
-
-                // Correcting for possible rounding errors
-                if (n_to_distribute > n)
-                    n_to_distribute = n;
-
-            }
-            else
-            {
-                n_to_distribute = static_cast<int>(prevalence);
-            }
-
+            // Correcting for possible rounding errors
             if (n_to_distribute > n)
-                throw std::range_error("There are only " + std::to_string(n) + 
-                " individuals in the population. Cannot add the tool to " + std::to_string(n_to_distribute));
-            
-            std::vector< int > idx(n);
-            std::iota(idx.begin(), idx.end(), 0);
-            auto & population = model->get_agents();
-            for (int i = 0u; i < n_to_distribute; ++i)
-            {
-                int loc = static_cast<epiworld_fast_uint>(
-                    floor(model->runif() * n--)
-                    );
+                n_to_distribute = n;
 
-                if ((loc > 0) && (loc == n))
-                    loc--;
-                
-                population[idx[loc]].add_tool(
-                    tool,
-                    const_cast< Model<TSeq> * >(model)
-                    );
-                
-                std::swap(idx[loc], idx[n]);
+        } else {
+            n_to_distribute = static_cast<int>(prevalence);
+        }
 
-            }
+        if (n_to_distribute > n)
+            throw std::range_error(
+                "There are only " + std::to_string(n)
+                + " individuals in the population. Cannot add the tool to "
+                + std::to_string(n_to_distribute)
+            );
 
-        };
+        std::vector<int> idx(n);
+        std::iota(idx.begin(), idx.end(), 0);
+        auto& population = model->get_agents();
+        for (int i = 0u; i < n_to_distribute; ++i) {
+            int loc =
+                static_cast<epiworld_fast_uint>(floor(model->runif() * n--));
 
+            if ((loc > 0) && (loc == n))
+                loc--;
+
+            population[idx[loc]].add_tool(
+                tool,
+                const_cast<Model<TSeq>*>(model)
+            );
+
+            std::swap(idx[loc], idx[n]);
+        }
+    };
 }
 #endif

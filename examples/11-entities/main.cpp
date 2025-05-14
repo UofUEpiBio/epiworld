@@ -5,35 +5,28 @@ using namespace epiworld;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 EntityToAgentFun<TSeq> dist_factory(int from, int to) {
-    return [from, to](Entity<> & e, Model<> * m) -> void {
+    return [from, to](Entity<>& e, Model<>* m) -> void {
+        auto& agents = m->get_agents();
+        for (size_t i = from; i < to; ++i) {
+            e.add_agent(&agents[i], m);
+        }
 
-            auto & agents = m->get_agents();
-            for (size_t i = from; i < to; ++i)
-            {
-                e.add_agent(&agents[i], m);
-            }
-            
-            return;
-
-        };
+        return;
+    };
 }
 
 int main() {
-
-    std::vector< double > contact_matrix = {
-        0.9, 0.1, 0.1,
-        0.05, 0.8, .2,
-        0.05, 0.1, 0.7
-    };
+    std::vector<double> contact_matrix =
+        {0.9, 0.1, 0.1, 0.05, 0.8, .2, 0.05, 0.1, 0.7};
 
     epimodels::ModelSEIRMixing<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
-        0.01,// epiworld_double prevalence,
-        10.0,// epiworld_double contact_rate,
-        0.1,// epiworld_double transmission_rate,
-        4.0,// epiworld_double avg_incubation_days,
-        1.0/7.0,// epiworld_double recovery_rate,
+        0.01, // epiworld_double prevalence,
+        10.0, // epiworld_double contact_rate,
+        0.1, // epiworld_double transmission_rate,
+        4.0, // epiworld_double avg_incubation_days,
+        1.0 / 7.0, // epiworld_double recovery_rate,
         contact_matrix
     );
 
@@ -51,5 +44,4 @@ int main() {
     model.print();
 
     return 0;
-
 }

@@ -1,4 +1,4 @@
-#ifndef EPIWORLD_MODELS_SIS_HPP 
+#ifndef EPIWORLD_MODELS_SIS_HPP
 #define EPIWORLD_MODELS_SIS_HPP
 
 /**
@@ -10,43 +10,37 @@
  * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIS : public epiworld::Model<TSeq>
-{
-
-public:
-
+class ModelSIS: public epiworld::Model<TSeq> {
+  public:
     static const int SUSCEPTIBLE = 0;
-    static const int INFECTED    = 1;
+    static const int INFECTED = 1;
 
     ModelSIS() {};
 
     ModelSIS(
-        ModelSIS<TSeq> & model,
-        const std::string & vname,
+        ModelSIS<TSeq>& model,
+        const std::string& vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate
     );
 
     ModelSIS(
-        const std::string & vname,
+        const std::string& vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate
     );
-
 };
 
 template<typename TSeq>
 inline ModelSIS<TSeq>::ModelSIS(
-    ModelSIS<TSeq> & model,
-    const std::string & vname,
+    ModelSIS<TSeq>& model,
+    const std::string& vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate
-    )
-{
-
+) {
     model.set_name("Susceptible-Infected-Susceptible (SIS)");
 
     // Adding statuses
@@ -59,37 +53,31 @@ inline ModelSIS<TSeq>::ModelSIS(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(ModelSIS<TSeq>::INFECTED, ModelSIS<TSeq>::SUSCEPTIBLE, ModelSIS<TSeq>::SUSCEPTIBLE);
-    
+    virus.set_state(
+        ModelSIS<TSeq>::INFECTED,
+        ModelSIS<TSeq>::SUSCEPTIBLE,
+        ModelSIS<TSeq>::SUSCEPTIBLE
+    );
+
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(0.0);
-    
+
     model.add_virus(virus);
 
     return;
-
 }
 
 template<typename TSeq>
 inline ModelSIS<TSeq>::ModelSIS(
-    const std::string & vname,
+    const std::string& vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate
-    )
-{
-
-    ModelSIS<TSeq>(
-        *this,
-        vname,
-        prevalence,
-        transmission_rate,
-        recovery_rate
-    );    
+) {
+    ModelSIS<TSeq>(*this, vname, prevalence, transmission_rate, recovery_rate);
 
     return;
-
 }
 
 #endif

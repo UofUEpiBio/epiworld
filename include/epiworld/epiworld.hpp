@@ -19,12 +19,12 @@
 #include <cassert>
 
 #ifndef EPIWORLD_HPP
-#define EPIWORLD_HPP
+    #define EPIWORLD_HPP
 
-/* Versioning */
-#define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 8
-#define EPIWORLD_VERSION_PATCH 2
+    /* Versioning */
+    #define EPIWORLD_VERSION_MAJOR 0
+    #define EPIWORLD_VERSION_MINOR 8
+    #define EPIWORLD_VERSION_PATCH 2
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -70,7 +70,7 @@ namespace epiworld {
     #include "virus-bones.hpp"
     #include "virus-distribute-meat.hpp"
     #include "virus-meat.hpp"
-    
+
     #include "tools-bones.hpp"
 
     #include "tool-bones.hpp"
@@ -82,7 +82,7 @@ namespace epiworld {
     #include "entity-meat.hpp"
 
     #include "entities-bones.hpp"
-    
+
     #include "agent-meat-state.hpp"
     #include "agent-bones.hpp"
     #include "agent-meat.hpp"
@@ -91,6 +91,6 @@ namespace epiworld {
 
     #include "models/models.hpp"
 
-}
+} // namespace epiworld
 
-#endif 
+#endif

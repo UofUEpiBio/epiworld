@@ -5,7 +5,6 @@
 #include "../include/epiworld/epiworld.hpp"
 #include "tests.hpp"
 
-
 #include "00-cloning-model.cpp"
 #include "00-lfmcmc.cpp"
 #include "01-model-methods.cpp"

@@ -9,16 +9,11 @@
 
 using namespace epiworld;
 
-enum States : size_t {
-    Susceptible = 0u,
-    Infected,
-    Infected_Hospitalized
-};
+enum States : size_t { Susceptible = 0u, Infected, Infected_Hospitalized };
 
 // A sampler that excludes infected from the hospital
-auto sampler_suscept = sampler::make_sample_virus_neighbors<>(
-    {States::Infected_Hospitalized}
-    );
+auto sampler_suscept =
+    sampler::make_sample_virus_neighbors<>({States::Infected_Hospitalized});
 
 /**
  * - Susceptibles only live in the community.
@@ -26,21 +21,16 @@ auto sampler_suscept = sampler::make_sample_virus_neighbors<>(
  * - Once they become infected, they may be hospitalized or not.
  */
 
-inline void update_susceptible(Agent<int> * p, Model<int> * m)
-{
-
+inline void update_susceptible(Agent<int>* p, Model<int>* m) {
     auto virus = sampler_suscept(p, m);
-    if (virus != nullptr)
-    {
+    if (virus != nullptr) {
         if (m->par("Prob hospitalization") > m->runif())
             p->set_virus(*virus, m, States::Infected_Hospitalized);
         else
             p->set_virus(*virus, m, States::Infected);
     }
 
-
     return;
-
 }
 
 /**
@@ -52,11 +42,9 @@ inline void update_susceptible(Agent<int> * p, Model<int> * m)
  * 
  * Notice that the roulette makes the probabilities to sum to 1.
  */
-inline void update_infected(Agent<int> * p, Model<int> * m)
-{
-
+inline void update_infected(Agent<int>* p, Model<int>* m) {
     // Vector of probabilities
-    std::vector< epiworld_double > probs = {
+    std::vector<epiworld_double> probs = {
         m->par("Prob hospitalization"),
         m->par("Prob recovery")
     };
@@ -73,7 +61,6 @@ inline void update_infected(Agent<int> * p, Model<int> * m)
         p->rm_virus(m, States::Susceptible);
 
     return;
-
 }
 
 /**
@@ -82,31 +69,27 @@ inline void update_infected(Agent<int> * p, Model<int> * m)
  * - Recover (and then be discharged)
  * - Stay the same and be discharged.
  */
-inline void update_infected_hospitalized(Agent<int> * p, Model<int> * m)
-{
-
+inline void update_infected_hospitalized(Agent<int>* p, Model<int>* m) {
     if (m->par("Prob recovery") > m->runif()) {
         p->rm_virus(m, States::Susceptible);
     } else if (m->par("Discharge infected") > m->runif()) {
         p->change_state(m, States::Infected);
     }
-    
-    return;
 
+    return;
 }
 
 int main() {
-
     // Using the mixing model as a baseline
     Model<> model;
 
     // model.add_state("Susceptible", default_update_susceptible<>); // State 0
     model.add_state("Susceptible", update_susceptible); // State 0
-    model.add_state("Infected", update_infected);       // State 1
+    model.add_state("Infected", update_infected); // State 1
     model.add_state(
         "Infected (hospitalized)",
         update_infected_hospitalized
-        ); // State 2         
+    ); // State 2
 
     // Adding a new virus
     Virus<> mrsa("MRSA");
@@ -129,5 +112,4 @@ int main() {
     model.print();
 
     return 0;
-
 }

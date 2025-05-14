@@ -11,19 +11,19 @@ template<typename TSeq>
 class UserData;
 
 template<typename TSeq>
-inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m);
+inline void default_add_virus(Event<TSeq>& a, Model<TSeq>* m);
 
 template<typename TSeq>
-inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m);
+inline void default_add_tool(Event<TSeq>& a, Model<TSeq>* m);
 
 template<typename TSeq>
-inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * m);
+inline void default_rm_virus(Event<TSeq>& a, Model<TSeq>* m);
 
 template<typename TSeq>
-inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m);
+inline void default_rm_tool(Event<TSeq>& a, Model<TSeq>* m);
 
 template<typename TSeq>
-inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m);
+inline void default_change_state(Event<TSeq>& a, Model<TSeq>* m);
 
 /**
  * @brief Statistical data about the process
@@ -33,70 +33,74 @@ inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m);
 template<typename TSeq>
 class DataBase {
     friend class Model<TSeq>;
-    friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-private:
-    Model<TSeq> * model;
+    friend void default_add_virus<TSeq>(Event<TSeq>& a, Model<TSeq>* m);
+    friend void default_add_tool<TSeq>(Event<TSeq>& a, Model<TSeq>* m);
+    friend void default_rm_virus<TSeq>(Event<TSeq>& a, Model<TSeq>* m);
+    friend void default_rm_tool<TSeq>(Event<TSeq>& a, Model<TSeq>* m);
+    friend void default_change_state<TSeq>(Event<TSeq>& a, Model<TSeq>* m);
 
-    // Variants information 
-    MapVec_type<int,int> virus_id; ///< The squence is the key
-    std::vector< std::string > virus_name;
-    std::vector< TSeq> virus_sequence;
-    std::vector< int > virus_origin_date;
-    std::vector< int > virus_parent_id;
+  private:
+    Model<TSeq>* model;
 
-    MapVec_type<int,int> tool_id; ///< The squence is the key
-    std::vector< std::string > tool_name;
-    std::vector< TSeq> tool_sequence;
-    std::vector< int > tool_origin_date;
+    // Variants information
+    MapVec_type<int, int> virus_id; ///< The squence is the key
+    std::vector<std::string> virus_name;
+    std::vector<TSeq> virus_sequence;
+    std::vector<int> virus_origin_date;
+    std::vector<int> virus_parent_id;
 
-    std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
-    std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
+    MapVec_type<int, int> tool_id; ///< The squence is the key
+    std::vector<std::string> tool_name;
+    std::vector<TSeq> tool_sequence;
+    std::vector<int> tool_origin_date;
+
+    std::function<std::vector<int>(const TSeq&)> seq_hasher =
+        default_seq_hasher<TSeq>;
+    std::function<std::string(const TSeq&)> seq_writer =
+        default_seq_writer<TSeq>;
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    std::vector< std::vector<int> > today_virus;
+    std::vector<std::vector<int>> today_virus;
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    std::vector< std::vector<int> > today_tool;
+    std::vector<std::vector<int>> today_tool;
 
     // {Susceptible, Infected, etc.}
-    std::vector< int > today_total;
+    std::vector<int> today_total;
 
     // Totals
     int today_total_nviruses_active = 0;
-    
+
     int sampling_freq = 1;
 
     // Variants history
-    std::vector< int > hist_virus_date;
-    std::vector< int > hist_virus_id;
-    std::vector< epiworld_fast_uint > hist_virus_state;
-    std::vector< int > hist_virus_counts;
+    std::vector<int> hist_virus_date;
+    std::vector<int> hist_virus_id;
+    std::vector<epiworld_fast_uint> hist_virus_state;
+    std::vector<int> hist_virus_counts;
 
     // Tools history
-    std::vector< int > hist_tool_date;
-    std::vector< int > hist_tool_id;
-    std::vector< epiworld_fast_uint > hist_tool_state;
-    std::vector< int > hist_tool_counts;
+    std::vector<int> hist_tool_date;
+    std::vector<int> hist_tool_id;
+    std::vector<epiworld_fast_uint> hist_tool_state;
+    std::vector<int> hist_tool_counts;
 
     // Overall hist
-    std::vector< int > hist_total_date;
-    std::vector< int > hist_total_nviruses_active;
-    std::vector< epiworld_fast_uint > hist_total_state;
-    std::vector< int > hist_total_counts;
-    std::vector< int > hist_transition_matrix;
+    std::vector<int> hist_total_date;
+    std::vector<int> hist_total_nviruses_active;
+    std::vector<epiworld_fast_uint> hist_total_state;
+    std::vector<int> hist_total_counts;
+    std::vector<int> hist_transition_matrix;
 
     // Transmission network
-    std::vector< int > transmission_date;                 ///< Date of the transmission event
-    std::vector< int > transmission_source;               ///< Id of the source
-    std::vector< int > transmission_target;               ///< Id of the target
-    std::vector< int > transmission_virus;              ///< Id of the variant
-    std::vector< int > transmission_source_exposure_date; ///< Date when the source acquired the variant
+    std::vector<int> transmission_date; ///< Date of the transmission event
+    std::vector<int> transmission_source; ///< Id of the source
+    std::vector<int> transmission_target; ///< Id of the target
+    std::vector<int> transmission_virus; ///< Id of the variant
+    std::vector<int>
+        transmission_source_exposure_date; ///< Date when the source acquired the variant
 
-    std::vector< int > transition_matrix;
+    std::vector<int> transition_matrix;
 
     UserData<TSeq> user_data;
 
@@ -118,19 +122,21 @@ private:
         epiworld_fast_uint new_state
     );
 
-    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
+    void record_transition(
+        epiworld_fast_uint from,
+        epiworld_fast_uint to,
+        bool undo
+    );
 
-
-public:
-
-    #ifdef EPI_DEBUG
+  public:
+#ifdef EPI_DEBUG
     int n_transmissions_potential = 0;
-    int n_transmissions_today     = 0;
-    #endif
+    int n_transmissions_today = 0;
+#endif
 
     DataBase() = delete;
-    DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
-    DataBase(const DataBase<TSeq> & db);
+    DataBase(Model<TSeq>& m) : model(&m), user_data(m) {};
+    DataBase(const DataBase<TSeq>& db);
     // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
 
     /**
@@ -141,15 +147,15 @@ public:
      * From the parent virus to the new virus. And the total number of infected
      * does not change.
      */
-    void record_virus(Virus<TSeq> & v); 
-    void record_tool(Tool<TSeq> & t); 
+    void record_virus(Virus<TSeq>& v);
+    void record_tool(Tool<TSeq>& t);
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void reset();
-    Model<TSeq> * get_model();
+    Model<TSeq>* get_model();
     void record();
 
-    const std::vector< TSeq > & get_sequence() const;
-    const std::vector< int > & get_nexposed() const;
+    const std::vector<TSeq>& get_sequence() const;
+    const std::vector<int>& get_nexposed() const;
     size_t size() const;
 
     /**
@@ -168,45 +174,43 @@ public:
     int get_today_total(std::string what) const;
     int get_today_total(epiworld_fast_uint what) const;
     void get_today_total(
-        std::vector< std::string > * state = nullptr,
-        std::vector< int > * counts = nullptr
+        std::vector<std::string>* state = nullptr,
+        std::vector<int>* counts = nullptr
     ) const;
 
     void get_today_virus(
-        std::vector< std::string > & state,
-        std::vector< int > & id,
-        std::vector< int > & counts
+        std::vector<std::string>& state,
+        std::vector<int>& id,
+        std::vector<int>& counts
     ) const;
 
-    void get_today_transition_matrix(
-        std::vector< int > & counts
-    ) const;
+    void get_today_transition_matrix(std::vector<int>& counts) const;
 
     void get_hist_total(
-        std::vector< int > * date,
-        std::vector< std::string > * state,
-        std::vector< int > * counts
+        std::vector<int>* date,
+        std::vector<std::string>* state,
+        std::vector<int>* counts
     ) const;
 
     void get_hist_virus(
-        std::vector< int > & date,
-        std::vector< int > & id,
-        std::vector< std::string > & state,
-        std::vector< int > & counts
+        std::vector<int>& date,
+        std::vector<int>& id,
+        std::vector<std::string>& state,
+        std::vector<int>& counts
     ) const;
 
     void get_hist_tool(
-        std::vector< int > & date,
-        std::vector< int > & id,
-        std::vector< std::string > & state,
-        std::vector< int > & counts
+        std::vector<int>& date,
+        std::vector<int>& id,
+        std::vector<std::string>& state,
+        std::vector<int>& counts
     ) const;
 
     void get_hist_transition_matrix(
-        std::vector< std::string > & state_from,
-        std::vector< std::string > & state_to,
-        std::vector< int > & date,
-        std::vector< int > & counts,
+        std::vector<std::string>& state_from,
+        std::vector<std::string>& state_to,
+        std::vector<int>& date,
+        std::vector<int>& counts,
         bool skip_zeros
     ) const;
     ///@}
@@ -222,19 +226,19 @@ public:
      */
     ///@{
     void get_transmissions(
-        std::vector<int> & date,
-        std::vector<int> & source,
-        std::vector<int> & target,
-        std::vector<int> & virus,
-        std::vector<int> & source_exposure_date
+        std::vector<int>& date,
+        std::vector<int>& source,
+        std::vector<int>& target,
+        std::vector<int>& virus,
+        std::vector<int>& source_exposure_date
     ) const;
 
     void get_transmissions(
-        int * date,
-        int * source,
-        int * target,
-        int * virus,
-        int * source_exposure_date
+        int* date,
+        int* source,
+        int* target,
+        int* virus,
+        int* source_exposure_date
     ) const;
     ///@}
 
@@ -248,8 +252,8 @@ public:
         std::string fn_transition,
         std::string fn_reproductive_number,
         std::string fn_generation_time
-        ) const;
-    
+    ) const;
+
     /***
      * @brief Record a transmission event
      * @param i,j Integers. Id of the source and target agents.
@@ -263,12 +267,11 @@ public:
 
     size_t get_n_viruses() const; ///< Get the number of viruses
     size_t get_n_tools() const; ///< Get the number of tools
-    
-    void set_user_data(std::vector< std::string > names);
-    void add_user_data(std::vector< epiworld_double > x);
-    void add_user_data(epiworld_fast_uint j, epiworld_double x);
-    UserData<TSeq> & get_user_data();
 
+    void set_user_data(std::vector<std::string> names);
+    void add_user_data(std::vector<epiworld_double> x);
+    void add_user_data(epiworld_fast_uint j, epiworld_double x);
+    UserData<TSeq>& get_user_data();
 
     /**
      * @brief Computes the reproductive number of each case
@@ -285,11 +288,9 @@ public:
      * - Date when the source was infected
      */
     ///@{
-    MapVec_type<int,int> reproductive_number() const;
+    MapVec_type<int, int> reproductive_number() const;
 
-    void reproductive_number(
-        std::string fn
-        ) const;
+    void reproductive_number(std::string fn) const;
     ///@}
 
     /**
@@ -305,13 +306,14 @@ public:
      * (when normalized).
      * @return std::vector< epiworld_double > 
      */
-    std::vector< epiworld_double > transition_probability(
-        bool print = true,
-        bool normalize = true
-    ) const;
+    std::vector<epiworld_double>
+    transition_probability(bool print = true, bool normalize = true) const;
 
-    bool operator==(const DataBase<TSeq> & other) const;
-    bool operator!=(const DataBase<TSeq> & other) const {return !operator==(other);};
+    bool operator==(const DataBase<TSeq>& other) const;
+
+    bool operator!=(const DataBase<TSeq>& other) const {
+        return !operator==(other);
+    };
 
     /**
      * Calculates the generating time
@@ -321,20 +323,17 @@ public:
      * The generation time is the time between the infection of the source and 
      * the infection of the target.
     */
-   ///@{
+    ///@{
     void generation_time(
-        std::vector< int > & agent_id,
-        std::vector< int > & virus_id,
-        std::vector< int > & time,
-        std::vector< int > & gentime
+        std::vector<int>& agent_id,
+        std::vector<int>& virus_id,
+        std::vector<int>& time,
+        std::vector<int>& gentime
     ) const; ///< Get the generation time
 
-    void generation_time(
-        std::string fn
+    void generation_time(std::string fn
     ) const; ///< Write the generation time to a file
     ///@}
-
 };
-
 
 #endif
