@@ -3252,13 +3252,13 @@ $(function() {
 <div class="line"><a name="l03729"></a><span class="lineno"> 3729</span>&#160;    <a class="code" href="classepiworld_1_1_user_data.html">UserData&lt;TSeq&gt;</a> &amp; get_user_data();</div>
 <div class="line"><a name="l03730"></a><span class="lineno"> 3730</span>&#160; </div>
 <div class="line"><a name="l03731"></a><span class="lineno"> 3731</span>&#160; </div>
-<div class="line"><a name="l03747"></a><span class="lineno"> 3747</span>&#160;    MapVec_type&lt;int,int&gt; get_reproductive_number() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l03747"></a><span class="lineno"> 3747</span>&#160;    MapVec_type&lt;int,int&gt; reproductive_number() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l03748"></a><span class="lineno"> 3748</span>&#160; </div>
-<div class="line"><a name="l03749"></a><span class="lineno"> 3749</span>&#160;    <span class="keywordtype">void</span> get_reproductive_number(</div>
+<div class="line"><a name="l03749"></a><span class="lineno"> 3749</span>&#160;    <span class="keywordtype">void</span> reproductive_number(</div>
 <div class="line"><a name="l03750"></a><span class="lineno"> 3750</span>&#160;        std::string fn</div>
 <div class="line"><a name="l03751"></a><span class="lineno"> 3751</span>&#160;        ) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l03753"></a><span class="lineno"> 3753</span>&#160; </div>
-<div class="line"><a name="l03767"></a><span class="lineno"> 3767</span>&#160;    std::vector&lt; epiworld_double &gt; get_transition_probability(</div>
+<div class="line"><a name="l03767"></a><span class="lineno"> 3767</span>&#160;    std::vector&lt; epiworld_double &gt; transition_probability(</div>
 <div class="line"><a name="l03768"></a><span class="lineno"> 3768</span>&#160;        <span class="keywordtype">bool</span> print = <span class="keyword">true</span>,</div>
 <div class="line"><a name="l03769"></a><span class="lineno"> 3769</span>&#160;        <span class="keywordtype">bool</span> normalize = <span class="keyword">true</span></div>
 <div class="line"><a name="l03770"></a><span class="lineno"> 3770</span>&#160;    ) <span class="keyword">const</span>;</div>
@@ -3266,14 +3266,14 @@ $(function() {
 <div class="line"><a name="l03772"></a><span class="lineno"> 3772</span>&#160;    <span class="keywordtype">bool</span> operator==(<span class="keyword">const</span> <a class="code" href="classepiworld_1_1_data_base.html">DataBase&lt;TSeq&gt;</a> &amp; other) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l03773"></a><span class="lineno"> 3773</span>&#160;    <span class="keywordtype">bool</span> operator!=(<span class="keyword">const</span> <a class="code" href="classepiworld_1_1_data_base.html">DataBase&lt;TSeq&gt;</a> &amp; other)<span class="keyword"> const </span>{<span class="keywordflow">return</span> !operator==(other);};</div>
 <div class="line"><a name="l03774"></a><span class="lineno"> 3774</span>&#160; </div>
-<div class="line"><a name="l03784"></a><span class="lineno"> 3784</span>&#160;    <span class="keywordtype">void</span> get_generation_time(</div>
+<div class="line"><a name="l03784"></a><span class="lineno"> 3784</span>&#160;    <span class="keywordtype">void</span> generation_time(</div>
 <div class="line"><a name="l03785"></a><span class="lineno"> 3785</span>&#160;        std::vector&lt; int &gt; &amp; agent_id,</div>
 <div class="line"><a name="l03786"></a><span class="lineno"> 3786</span>&#160;        std::vector&lt; int &gt; &amp; virus_id,</div>
 <div class="line"><a name="l03787"></a><span class="lineno"> 3787</span>&#160;        std::vector&lt; int &gt; &amp; time,</div>
 <div class="line"><a name="l03788"></a><span class="lineno"> 3788</span>&#160;        std::vector&lt; int &gt; &amp; gentime</div>
 <div class="line"><a name="l03789"></a><span class="lineno"> 3789</span>&#160;    ) <span class="keyword">const</span>; </div>
 <div class="line"><a name="l03790"></a><span class="lineno"> 3790</span>&#160; </div>
-<div class="line"><a name="l03791"></a><span class="lineno"> 3791</span>&#160;    <span class="keywordtype">void</span> get_generation_time(</div>
+<div class="line"><a name="l03791"></a><span class="lineno"> 3791</span>&#160;    <span class="keywordtype">void</span> generation_time(</div>
 <div class="line"><a name="l03792"></a><span class="lineno"> 3792</span>&#160;        std::string fn</div>
 <div class="line"><a name="l03793"></a><span class="lineno"> 3793</span>&#160;    ) <span class="keyword">const</span>; </div>
 <div class="line"><a name="l03795"></a><span class="lineno"> 3795</span>&#160; </div>
@@ -4392,10 +4392,10 @@ $(function() {
 <div class="line"><a name="l04917"></a><span class="lineno"> 4917</span>&#160;<span class="comment">    }</span></div>
 <div class="line"><a name="l04918"></a><span class="lineno"> 4918</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l04919"></a><span class="lineno"> 4919</span>&#160;<span class="comment">    if (fn_reproductive_number != &quot;&quot;)</span></div>
-<div class="line"><a name="l04920"></a><span class="lineno"> 4920</span>&#160;<span class="comment">        get_reproductive_number(fn_reproductive_number);</span></div>
+<div class="line"><a name="l04920"></a><span class="lineno"> 4920</span>&#160;<span class="comment">        reproductive_number(fn_reproductive_number);</span></div>
 <div class="line"><a name="l04921"></a><span class="lineno"> 4921</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l04922"></a><span class="lineno"> 4922</span>&#160;<span class="comment">    if (fn_generation_time != &quot;&quot;)</span></div>
-<div class="line"><a name="l04923"></a><span class="lineno"> 4923</span>&#160;<span class="comment">        get_generation_time(fn_generation_time);</span></div>
+<div class="line"><a name="l04923"></a><span class="lineno"> 4923</span>&#160;<span class="comment">        generation_time(fn_generation_time);</span></div>
 <div class="line"><a name="l04924"></a><span class="lineno"> 4924</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l04925"></a><span class="lineno"> 4925</span>&#160;<span class="comment">}</span></div>
 <div class="line"><a name="l04926"></a><span class="lineno"> 4926</span>&#160;<span class="comment"></span> </div>
@@ -4465,7 +4465,7 @@ $(function() {
 <div class="line"><a name="l04990"></a><span class="lineno"> 4990</span>&#160;<span class="comment">}</span></div>
 <div class="line"><a name="l04991"></a><span class="lineno"> 4991</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l04992"></a><span class="lineno"> 4992</span>&#160;<span class="comment">template&lt;typename TSeq&gt;</span></div>
-<div class="line"><a name="l04993"></a><span class="lineno"><a class="line" href="classepiworld_1_1_data_base.html#ae6cf5bfd5a3587d92f2349c3395f1186"> 4993</a></span>&#160;<span class="comment">inline MapVec_type&lt;int,int&gt; DataBase&lt;TSeq&gt;::get_reproductive_number()</span></div>
+<div class="line"><a name="l04993"></a><span class="lineno"><a class="line" href="classepiworld_1_1_data_base.html#a5d43d9fba8e46bee17f529e0ebce670e"> 4993</a></span>&#160;<span class="comment">inline MapVec_type&lt;int,int&gt; DataBase&lt;TSeq&gt;::reproductive_number()</span></div>
 <div class="line"><a name="l04994"></a><span class="lineno"> 4994</span>&#160;<span class="comment">const {</span></div>
 <div class="line"><a name="l04995"></a><span class="lineno"> 4995</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l04996"></a><span class="lineno"> 4996</span>&#160;<span class="comment">    // Checking size</span></div>
@@ -4503,12 +4503,12 @@ $(function() {
 <div class="line"><a name="l05028"></a><span class="lineno"> 5028</span>&#160;<span class="comment">}</span></div>
 <div class="line"><a name="l05029"></a><span class="lineno"> 5029</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l05030"></a><span class="lineno"> 5030</span>&#160;<span class="comment">template&lt;typename TSeq&gt;</span></div>
-<div class="line"><a name="l05031"></a><span class="lineno"> 5031</span>&#160;<span class="comment">inline void DataBase&lt;TSeq&gt;::get_reproductive_number(</span></div>
+<div class="line"><a name="l05031"></a><span class="lineno"> 5031</span>&#160;<span class="comment">inline void DataBase&lt;TSeq&gt;::reproductive_number(</span></div>
 <div class="line"><a name="l05032"></a><span class="lineno"> 5032</span>&#160;<span class="comment">    std::string fn</span></div>
 <div class="line"><a name="l05033"></a><span class="lineno"> 5033</span>&#160;<span class="comment">) const {</span></div>
 <div class="line"><a name="l05034"></a><span class="lineno"> 5034</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l05035"></a><span class="lineno"> 5035</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l05036"></a><span class="lineno"> 5036</span>&#160;<span class="comment">    auto map = get_reproductive_number();</span></div>
+<div class="line"><a name="l05036"></a><span class="lineno"> 5036</span>&#160;<span class="comment">    auto map = reproductive_number();</span></div>
 <div class="line"><a name="l05037"></a><span class="lineno"> 5037</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l05038"></a><span class="lineno"> 5038</span>&#160;<span class="comment">    std::ofstream fn_file(fn, std::ios_base::out);</span></div>
 <div class="line"><a name="l05039"></a><span class="lineno"> 5039</span>&#160;<span class="comment"></span> </div>
@@ -4544,7 +4544,7 @@ $(function() {
 <div class="line"><a name="l05069"></a><span class="lineno"> 5069</span>&#160;<span class="comment">}</span></div>
 <div class="line"><a name="l05070"></a><span class="lineno"> 5070</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l05071"></a><span class="lineno"> 5071</span>&#160;<span class="comment">template&lt;typename TSeq&gt;</span></div>
-<div class="line"><a name="l05072"></a><span class="lineno"><a class="line" href="classepiworld_1_1_data_base.html#a936612806b51d4b737c78166e71e9579"> 5072</a></span>&#160;<span class="comment">inline std::vector&lt; epiworld_double &gt; DataBase&lt;TSeq&gt;::get_transition_probability(</span></div>
+<div class="line"><a name="l05072"></a><span class="lineno"><a class="line" href="classepiworld_1_1_data_base.html#ae02117c39eb4f2f1229c0415b31e68fe"> 5072</a></span>&#160;<span class="comment">inline std::vector&lt; epiworld_double &gt; DataBase&lt;TSeq&gt;::transition_probability(</span></div>
 <div class="line"><a name="l05073"></a><span class="lineno"> 5073</span>&#160;<span class="comment">    bool print,</span></div>
 <div class="line"><a name="l05074"></a><span class="lineno"> 5074</span>&#160;<span class="comment">    bool normalize</span></div>
 <div class="line"><a name="l05075"></a><span class="lineno"> 5075</span>&#160;<span class="comment">) const {</span></div>
@@ -5089,7 +5089,7 @@ $(function() {
 <div class="line"><a name="l05614"></a><span class="lineno"> 5614</span>&#160;<span class="comment">}</span></div>
 <div class="line"><a name="l05615"></a><span class="lineno"> 5615</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l05616"></a><span class="lineno"> 5616</span>&#160;<span class="comment">template&lt;typename TSeq&gt;</span></div>
-<div class="line"><a name="l05617"></a><span class="lineno"><a class="line" href="classepiworld_1_1_data_base.html#a0269b69656879cd7477e859d774cc1f7"> 5617</a></span>&#160;<span class="comment">inline void DataBase&lt;TSeq&gt;::get_generation_time(</span></div>
+<div class="line"><a name="l05617"></a><span class="lineno"><a class="line" href="classepiworld_1_1_data_base.html#a17a16f7aa666f4852b40324cf89cd449"> 5617</a></span>&#160;<span class="comment">inline void DataBase&lt;TSeq&gt;::generation_time(</span></div>
 <div class="line"><a name="l05618"></a><span class="lineno"> 5618</span>&#160;<span class="comment">    std::vector&lt; int &gt; &amp; agent_id,</span></div>
 <div class="line"><a name="l05619"></a><span class="lineno"> 5619</span>&#160;<span class="comment">    std::vector&lt; int &gt; &amp; virus_id,</span></div>
 <div class="line"><a name="l05620"></a><span class="lineno"> 5620</span>&#160;<span class="comment">    std::vector&lt; int &gt; &amp; time,</span></div>
@@ -5141,7 +5141,7 @@ $(function() {
 <div class="line"><a name="l05666"></a><span class="lineno"> 5666</span>&#160;<span class="comment">}</span></div>
 <div class="line"><a name="l05667"></a><span class="lineno"> 5667</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l05668"></a><span class="lineno"> 5668</span>&#160;<span class="comment">template&lt;typename TSeq&gt;</span></div>
-<div class="line"><a name="l05669"></a><span class="lineno"><a class="line" href="classepiworld_1_1_data_base.html#a3bc5af34f99d2509cc203f2081e3a4b2"> 5669</a></span>&#160;<span class="comment">inline void DataBase&lt;TSeq&gt;::get_generation_time(</span></div>
+<div class="line"><a name="l05669"></a><span class="lineno"><a class="line" href="classepiworld_1_1_data_base.html#a6e8274cb88f77ef8b4b6051b1941e09f"> 5669</a></span>&#160;<span class="comment">inline void DataBase&lt;TSeq&gt;::generation_time(</span></div>
 <div class="line"><a name="l05670"></a><span class="lineno"> 5670</span>&#160;<span class="comment">    std::string fn</span></div>
 <div class="line"><a name="l05671"></a><span class="lineno"> 5671</span>&#160;<span class="comment">) const</span></div>
 <div class="line"><a name="l05672"></a><span class="lineno"> 5672</span>&#160;<span class="comment">{</span></div>
@@ -5151,7 +5151,7 @@ $(function() {
 <div class="line"><a name="l05676"></a><span class="lineno"> 5676</span>&#160;<span class="comment">    std::vector&lt; int &gt; time;</span></div>
 <div class="line"><a name="l05677"></a><span class="lineno"> 5677</span>&#160;<span class="comment">    std::vector&lt; int &gt; gentime;</span></div>
 <div class="line"><a name="l05678"></a><span class="lineno"> 5678</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l05679"></a><span class="lineno"> 5679</span>&#160;<span class="comment">    get_generation_time(agent_id, virus_id, time, gentime);</span></div>
+<div class="line"><a name="l05679"></a><span class="lineno"> 5679</span>&#160;<span class="comment">    generation_time(agent_id, virus_id, time, gentime);</span></div>
 <div class="line"><a name="l05680"></a><span class="lineno"> 5680</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l05681"></a><span class="lineno"> 5681</span>&#160;<span class="comment">    std::ofstream fn_file(fn, std::ios_base::out);</span></div>
 <div class="line"><a name="l05682"></a><span class="lineno"> 5682</span>&#160;<span class="comment"></span> </div>
@@ -5159,7 +5159,7 @@ $(function() {
 <div class="line"><a name="l05684"></a><span class="lineno"> 5684</span>&#160;<span class="comment">    if (!fn_file)</span></div>
 <div class="line"><a name="l05685"></a><span class="lineno"> 5685</span>&#160;<span class="comment">    {</span></div>
 <div class="line"><a name="l05686"></a><span class="lineno"> 5686</span>&#160;<span class="comment">        throw std::runtime_error(</span></div>
-<div class="line"><a name="l05687"></a><span class="lineno"> 5687</span>&#160;<span class="comment">            &quot;DataBase::get_generation_time: &quot;</span></div>
+<div class="line"><a name="l05687"></a><span class="lineno"> 5687</span>&#160;<span class="comment">            &quot;DataBase::generation_time: &quot;</span></div>
 <div class="line"><a name="l05688"></a><span class="lineno"> 5688</span>&#160;<span class="comment">            &quot;Cannot open file &quot; + fn + &quot;.&quot;</span></div>
 <div class="line"><a name="l05689"></a><span class="lineno"> 5689</span>&#160;<span class="comment">        );</span></div>
 <div class="line"><a name="l05690"></a><span class="lineno"> 5690</span>&#160;<span class="comment">    }</span></div>
@@ -9008,7 +9008,7 @@ $(function() {
 <div class="line"><a name="l09979"></a><span class="lineno"> 9979</span>&#160;<span class="comment">    }</span></div>
 <div class="line"><a name="l09980"></a><span class="lineno"> 9980</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l09981"></a><span class="lineno"> 9981</span>&#160;<span class="comment">    if (today() != 0)</span></div>
-<div class="line"><a name="l09982"></a><span class="lineno"> 9982</span>&#160;<span class="comment">        (void) db.get_transition_probability(true);</span></div>
+<div class="line"><a name="l09982"></a><span class="lineno"> 9982</span>&#160;<span class="comment">        (void) db.transition_probability(true);</span></div>
 <div class="line"><a name="l09983"></a><span class="lineno"> 9983</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l09984"></a><span class="lineno"> 9984</span>&#160;<span class="comment">    return *this;</span></div>
 <div class="line"><a name="l09985"></a><span class="lineno"> 9985</span>&#160;<span class="comment"></span> </div>
@@ -9634,7 +9634,7 @@ $(function() {
 <div class="line"><a name="l10608"></a><span class="lineno">10608</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l10609"></a><span class="lineno">10609</span>&#160;<span class="comment">    diagram.draw_from_data(</span></div>
 <div class="line"><a name="l10610"></a><span class="lineno">10610</span>&#160;<span class="comment">        this-&gt;get_states(),</span></div>
-<div class="line"><a name="l10611"></a><span class="lineno">10611</span>&#160;<span class="comment">        this-&gt;get_db().get_transition_probability(false),</span></div>
+<div class="line"><a name="l10611"></a><span class="lineno">10611</span>&#160;<span class="comment">        this-&gt;get_db().transition_probability(false),</span></div>
 <div class="line"><a name="l10612"></a><span class="lineno">10612</span>&#160;<span class="comment">        fn_output,</span></div>
 <div class="line"><a name="l10613"></a><span class="lineno">10613</span>&#160;<span class="comment">        self</span></div>
 <div class="line"><a name="l10614"></a><span class="lineno">10614</span>&#160;<span class="comment">    );</span></div>
