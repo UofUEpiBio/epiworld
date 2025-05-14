@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">epiworld
-   &#160;<span id="projectnumber">0.0-1</span>
+   &#160;<span id="projectnumber">0.8.2</span>
    </div>
   </td>
  </tr>
@@ -1169,10 +1169,10 @@ $(function() {
 <div class="line"><a name="l01100"></a><span class="lineno"> 1100</span>&#160;    }</div>
 <div class="line"><a name="l01101"></a><span class="lineno"> 1101</span>&#160; </div>
 <div class="line"><a name="l01102"></a><span class="lineno"> 1102</span>&#160;    <span class="keywordflow">if</span> (fn_reproductive_number != <span class="stringliteral">&quot;&quot;</span>)</div>
-<div class="line"><a name="l01103"></a><span class="lineno"> 1103</span>&#160;        get_reproductive_number(fn_reproductive_number);</div>
+<div class="line"><a name="l01103"></a><span class="lineno"> 1103</span>&#160;        reproductive_number(fn_reproductive_number);</div>
 <div class="line"><a name="l01104"></a><span class="lineno"> 1104</span>&#160; </div>
 <div class="line"><a name="l01105"></a><span class="lineno"> 1105</span>&#160;    <span class="keywordflow">if</span> (fn_generation_time != <span class="stringliteral">&quot;&quot;</span>)</div>
-<div class="line"><a name="l01106"></a><span class="lineno"> 1106</span>&#160;        get_generation_time(fn_generation_time);</div>
+<div class="line"><a name="l01106"></a><span class="lineno"> 1106</span>&#160;        generation_time(fn_generation_time);</div>
 <div class="line"><a name="l01107"></a><span class="lineno"> 1107</span>&#160; </div>
 <div class="line"><a name="l01108"></a><span class="lineno"> 1108</span>&#160;}</div>
 <div class="line"><a name="l01109"></a><span class="lineno"> 1109</span>&#160; </div>
@@ -1242,7 +1242,7 @@ $(function() {
 <div class="line"><a name="l01173"></a><span class="lineno"> 1173</span>&#160;}</div>
 <div class="line"><a name="l01174"></a><span class="lineno"> 1174</span>&#160; </div>
 <div class="line"><a name="l01175"></a><span class="lineno"> 1175</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l01176"></a><span class="lineno"><a class="line" href="class_data_base.html#ae6cf5bfd5a3587d92f2349c3395f1186"> 1176</a></span>&#160;<span class="keyword">inline</span> MapVec_type&lt;int,int&gt; <a class="code" href="class_data_base.html#ae6cf5bfd5a3587d92f2349c3395f1186">DataBase&lt;TSeq&gt;::get_reproductive_number</a>()<span class="keyword"></span></div>
+<div class="line"><a name="l01176"></a><span class="lineno"><a class="line" href="class_data_base.html#a5d43d9fba8e46bee17f529e0ebce670e"> 1176</a></span>&#160;<span class="keyword">inline</span> MapVec_type&lt;int,int&gt; <a class="code" href="class_data_base.html#a5d43d9fba8e46bee17f529e0ebce670e">DataBase&lt;TSeq&gt;::reproductive_number</a>()<span class="keyword"></span></div>
 <div class="line"><a name="l01177"></a><span class="lineno"> 1177</span>&#160;<span class="keyword">const </span>{</div>
 <div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160; </div>
 <div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160;    <span class="comment">// Checking size</span></div>
@@ -1280,12 +1280,12 @@ $(function() {
 <div class="line"><a name="l01211"></a><span class="lineno"> 1211</span>&#160;}</div>
 <div class="line"><a name="l01212"></a><span class="lineno"> 1212</span>&#160; </div>
 <div class="line"><a name="l01213"></a><span class="lineno"> 1213</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l01214"></a><span class="lineno"> 1214</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_data_base.html#ae6cf5bfd5a3587d92f2349c3395f1186">DataBase&lt;TSeq&gt;::get_reproductive_number</a>(</div>
+<div class="line"><a name="l01214"></a><span class="lineno"> 1214</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_data_base.html#a5d43d9fba8e46bee17f529e0ebce670e">DataBase&lt;TSeq&gt;::reproductive_number</a>(</div>
 <div class="line"><a name="l01215"></a><span class="lineno"> 1215</span>&#160;    std::string fn</div>
 <div class="line"><a name="l01216"></a><span class="lineno"> 1216</span>&#160;)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l01217"></a><span class="lineno"> 1217</span>&#160; </div>
 <div class="line"><a name="l01218"></a><span class="lineno"> 1218</span>&#160; </div>
-<div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160;    <span class="keyword">auto</span> map = get_reproductive_number();</div>
+<div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160;    <span class="keyword">auto</span> map = reproductive_number();</div>
 <div class="line"><a name="l01220"></a><span class="lineno"> 1220</span>&#160; </div>
 <div class="line"><a name="l01221"></a><span class="lineno"> 1221</span>&#160;    std::ofstream fn_file(fn, std::ios_base::out);</div>
 <div class="line"><a name="l01222"></a><span class="lineno"> 1222</span>&#160; </div>
@@ -1321,7 +1321,7 @@ $(function() {
 <div class="line"><a name="l01252"></a><span class="lineno"> 1252</span>&#160;}</div>
 <div class="line"><a name="l01253"></a><span class="lineno"> 1253</span>&#160; </div>
 <div class="line"><a name="l01254"></a><span class="lineno"> 1254</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l01255"></a><span class="lineno"><a class="line" href="class_data_base.html#a936612806b51d4b737c78166e71e9579"> 1255</a></span>&#160;<span class="keyword">inline</span> std::vector&lt; epiworld_double &gt; <a class="code" href="class_data_base.html#a936612806b51d4b737c78166e71e9579">DataBase&lt;TSeq&gt;::get_transition_probability</a>(</div>
+<div class="line"><a name="l01255"></a><span class="lineno"><a class="line" href="class_data_base.html#ae02117c39eb4f2f1229c0415b31e68fe"> 1255</a></span>&#160;<span class="keyword">inline</span> std::vector&lt; epiworld_double &gt; <a class="code" href="class_data_base.html#ae02117c39eb4f2f1229c0415b31e68fe">DataBase&lt;TSeq&gt;::transition_probability</a>(</div>
 <div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160;    <span class="keywordtype">bool</span> print,</div>
 <div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;    <span class="keywordtype">bool</span> normalize</div>
 <div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160;)<span class="keyword"> const </span>{</div>
@@ -1866,7 +1866,7 @@ $(function() {
 <div class="line"><a name="l01797"></a><span class="lineno"> 1797</span>&#160;}</div>
 <div class="line"><a name="l01798"></a><span class="lineno"> 1798</span>&#160; </div>
 <div class="line"><a name="l01799"></a><span class="lineno"> 1799</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l01800"></a><span class="lineno"><a class="line" href="class_data_base.html#a0269b69656879cd7477e859d774cc1f7"> 1800</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_data_base.html#a0269b69656879cd7477e859d774cc1f7">DataBase&lt;TSeq&gt;::get_generation_time</a>(</div>
+<div class="line"><a name="l01800"></a><span class="lineno"><a class="line" href="class_data_base.html#a17a16f7aa666f4852b40324cf89cd449"> 1800</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_data_base.html#a17a16f7aa666f4852b40324cf89cd449">DataBase&lt;TSeq&gt;::generation_time</a>(</div>
 <div class="line"><a name="l01801"></a><span class="lineno"> 1801</span>&#160;    std::vector&lt; int &gt; &amp; agent_id,</div>
 <div class="line"><a name="l01802"></a><span class="lineno"> 1802</span>&#160;    std::vector&lt; int &gt; &amp; virus_id,</div>
 <div class="line"><a name="l01803"></a><span class="lineno"> 1803</span>&#160;    std::vector&lt; int &gt; &amp; time,</div>
@@ -1918,7 +1918,7 @@ $(function() {
 <div class="line"><a name="l01849"></a><span class="lineno"> 1849</span>&#160;}</div>
 <div class="line"><a name="l01850"></a><span class="lineno"> 1850</span>&#160; </div>
 <div class="line"><a name="l01851"></a><span class="lineno"> 1851</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l01852"></a><span class="lineno"><a class="line" href="class_data_base.html#a3bc5af34f99d2509cc203f2081e3a4b2"> 1852</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_data_base.html#a0269b69656879cd7477e859d774cc1f7">DataBase&lt;TSeq&gt;::get_generation_time</a>(</div>
+<div class="line"><a name="l01852"></a><span class="lineno"><a class="line" href="class_data_base.html#a6e8274cb88f77ef8b4b6051b1941e09f"> 1852</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_data_base.html#a17a16f7aa666f4852b40324cf89cd449">DataBase&lt;TSeq&gt;::generation_time</a>(</div>
 <div class="line"><a name="l01853"></a><span class="lineno"> 1853</span>&#160;    std::string fn</div>
 <div class="line"><a name="l01854"></a><span class="lineno"> 1854</span>&#160;)<span class="keyword"> const</span></div>
 <div class="line"><a name="l01855"></a><span class="lineno"> 1855</span>&#160;<span class="keyword"></span>{</div>
@@ -1928,7 +1928,7 @@ $(function() {
 <div class="line"><a name="l01859"></a><span class="lineno"> 1859</span>&#160;    std::vector&lt; int &gt; time;</div>
 <div class="line"><a name="l01860"></a><span class="lineno"> 1860</span>&#160;    std::vector&lt; int &gt; gentime;</div>
 <div class="line"><a name="l01861"></a><span class="lineno"> 1861</span>&#160; </div>
-<div class="line"><a name="l01862"></a><span class="lineno"> 1862</span>&#160;    get_generation_time(agent_id, virus_id, time, gentime);</div>
+<div class="line"><a name="l01862"></a><span class="lineno"> 1862</span>&#160;    generation_time(agent_id, virus_id, time, gentime);</div>
 <div class="line"><a name="l01863"></a><span class="lineno"> 1863</span>&#160; </div>
 <div class="line"><a name="l01864"></a><span class="lineno"> 1864</span>&#160;    std::ofstream fn_file(fn, std::ios_base::out);</div>
 <div class="line"><a name="l01865"></a><span class="lineno"> 1865</span>&#160; </div>
@@ -1936,7 +1936,7 @@ $(function() {
 <div class="line"><a name="l01867"></a><span class="lineno"> 1867</span>&#160;    <span class="keywordflow">if</span> (!fn_file)</div>
 <div class="line"><a name="l01868"></a><span class="lineno"> 1868</span>&#160;    {</div>
 <div class="line"><a name="l01869"></a><span class="lineno"> 1869</span>&#160;        <span class="keywordflow">throw</span> std::runtime_error(</div>
-<div class="line"><a name="l01870"></a><span class="lineno"> 1870</span>&#160;            <span class="stringliteral">&quot;DataBase::get_generation_time: &quot;</span></div>
+<div class="line"><a name="l01870"></a><span class="lineno"> 1870</span>&#160;            <span class="stringliteral">&quot;DataBase::generation_time: &quot;</span></div>
 <div class="line"><a name="l01871"></a><span class="lineno"> 1871</span>&#160;            <span class="stringliteral">&quot;Cannot open file &quot;</span> + fn + <span class="stringliteral">&quot;.&quot;</span></div>
 <div class="line"><a name="l01872"></a><span class="lineno"> 1872</span>&#160;        );</div>
 <div class="line"><a name="l01873"></a><span class="lineno"> 1873</span>&#160;    }</div>
@@ -1968,14 +1968,14 @@ $(function() {
 <div class="line"><a name="l01899"></a><span class="lineno"> 1899</span>&#160; </div>
 <div class="line"><a name="l01900"></a><span class="lineno"> 1900</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_data_base_html"><div class="ttname"><a href="class_data_base.html">DataBase</a></div><div class="ttdoc">Statistical data about the process.</div><div class="ttdef"><b>Definition:</b> database-bones.hpp:34</div></div>
-<div class="ttc" id="aclass_data_base_html_a0269b69656879cd7477e859d774cc1f7"><div class="ttname"><a href="class_data_base.html#a0269b69656879cd7477e859d774cc1f7">DataBase::get_generation_time</a></div><div class="ttdeci">void get_generation_time(std::vector&lt; int &gt; &amp;agent_id, std::vector&lt; int &gt; &amp;virus_id, std::vector&lt; int &gt; &amp;time, std::vector&lt; int &gt; &amp;gentime) const</div><div class="ttdoc">Get the generation time.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1800</div></div>
+<div class="ttc" id="aclass_data_base_html_a17a16f7aa666f4852b40324cf89cd449"><div class="ttname"><a href="class_data_base.html#a17a16f7aa666f4852b40324cf89cd449">DataBase::generation_time</a></div><div class="ttdeci">void generation_time(std::vector&lt; int &gt; &amp;agent_id, std::vector&lt; int &gt; &amp;virus_id, std::vector&lt; int &gt; &amp;time, std::vector&lt; int &gt; &amp;gentime) const</div><div class="ttdoc">Get the generation time.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1800</div></div>
 <div class="ttc" id="aclass_data_base_html_a2b855969ae8aca805a8ee1713519c52d"><div class="ttname"><a href="class_data_base.html#a2b855969ae8aca805a8ee1713519c52d">DataBase::get_transmissions</a></div><div class="ttdeci">void get_transmissions(std::vector&lt; int &gt; &amp;date, std::vector&lt; int &gt; &amp;source, std::vector&lt; int &gt; &amp;target, std::vector&lt; int &gt; &amp;virus, std::vector&lt; int &gt; &amp;source_exposure_date) const</div><div class="ttdoc">Get the transmissions object.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:797</div></div>
 <div class="ttc" id="aclass_data_base_html_a4e61509ecd31d16fa4f7b235c7989251"><div class="ttname"><a href="class_data_base.html#a4e61509ecd31d16fa4f7b235c7989251">DataBase::get_n_tools</a></div><div class="ttdeci">size_t get_n_tools() const</div><div class="ttdoc">Get the number of tools.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1133</div></div>
+<div class="ttc" id="aclass_data_base_html_a5d43d9fba8e46bee17f529e0ebce670e"><div class="ttname"><a href="class_data_base.html#a5d43d9fba8e46bee17f529e0ebce670e">DataBase::reproductive_number</a></div><div class="ttdeci">MapVec_type&lt; int, int &gt; reproductive_number() const</div><div class="ttdoc">Computes the reproductive number of each case.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1176</div></div>
 <div class="ttc" id="aclass_data_base_html_a7961eba429b909eff0e0fa966ee81011"><div class="ttname"><a href="class_data_base.html#a7961eba429b909eff0e0fa966ee81011">DataBase::record_virus</a></div><div class="ttdeci">void record_virus(Virus&lt; TSeq &gt; &amp;v)</div><div class="ttdoc">Registering a new variant.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:262</div></div>
-<div class="ttc" id="aclass_data_base_html_a936612806b51d4b737c78166e71e9579"><div class="ttname"><a href="class_data_base.html#a936612806b51d4b737c78166e71e9579">DataBase::get_transition_probability</a></div><div class="ttdeci">std::vector&lt; epiworld_double &gt; get_transition_probability(bool print=true, bool normalize=true) const</div><div class="ttdoc">Calculates the transition probabilities.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1255</div></div>
 <div class="ttc" id="aclass_data_base_html_ab387bebbab95525c452660a7701c457d"><div class="ttname"><a href="class_data_base.html#ab387bebbab95525c452660a7701c457d">DataBase::operator==</a></div><div class="ttdeci">bool operator==(const DataBase&lt; TSeq &gt; &amp;other) const</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1587</div></div>
 <div class="ttc" id="aclass_data_base_html_ace337931bf21b1bc080fbf6e374d5d1c"><div class="ttname"><a href="class_data_base.html#ace337931bf21b1bc080fbf6e374d5d1c">DataBase::get_n_viruses</a></div><div class="ttdeci">size_t get_n_viruses() const</div><div class="ttdoc">Get the number of viruses.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1127</div></div>
-<div class="ttc" id="aclass_data_base_html_ae6cf5bfd5a3587d92f2349c3395f1186"><div class="ttname"><a href="class_data_base.html#ae6cf5bfd5a3587d92f2349c3395f1186">DataBase::get_reproductive_number</a></div><div class="ttdeci">MapVec_type&lt; int, int &gt; get_reproductive_number() const</div><div class="ttdoc">Computes the reproductive number of each case.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1176</div></div>
+<div class="ttc" id="aclass_data_base_html_ae02117c39eb4f2f1229c0415b31e68fe"><div class="ttname"><a href="class_data_base.html#ae02117c39eb4f2f1229c0415b31e68fe">DataBase::transition_probability</a></div><div class="ttdeci">std::vector&lt; epiworld_double &gt; transition_probability(bool print=true, bool normalize=true) const</div><div class="ttdoc">Calculates the transition probabilities.</div><div class="ttdef"><b>Definition:</b> database-meat.hpp:1255</div></div>
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
 <div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:40</div></div>
 <div class="ttc" id="aclass_user_data_html"><div class="ttname"><a href="class_user_data.html">UserData</a></div><div class="ttdoc">Personalized data by the user.</div><div class="ttdef"><b>Definition:</b> userdata-bones.hpp:17</div></div>
