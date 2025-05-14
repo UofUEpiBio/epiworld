@@ -1,13 +1,12 @@
 #ifndef EPIWORLD_NETWORK_BONES_HPP
 #define EPIWORLD_NETWORK_BONES_HPP
+
 template<typename Nettype, typename Nodetype, typename Edgetype>
 class Network {
-
-private:
+  private:
     NType data;
 
-public:
-
+  public:
     NType();
 
     Edgetype operator()(int i, int j);
@@ -18,8 +17,6 @@ public:
 
     void add_edge(int i, int j);
     void rm_edge(int i, int j);
-    
-
 };
 
 #endif

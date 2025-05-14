@@ -4,9 +4,7 @@
 
 using namespace epiworld;
 
-int main()
-{
-
+int main() {
     // Creating a model
     epiworld::Model<int> model;
 
@@ -18,19 +16,17 @@ int main()
 
     // Adding the tool and virus
     epiworld::Virus<int> virus("covid 19");
-    virus.set_distribution(
-        distribute_virus_randomly<int>(50, false)
-        );
+    virus.set_distribution(distribute_virus_randomly<int>(50, false));
 
     virus.set_post_immunity(1.0);
-    virus.set_state(1,2,3);
+    virus.set_state(1, 2, 3);
     virus.set_prob_death(.01);
     model.add_virus(virus);
-    
+
     epiworld::Tool<int> tool("vaccine", .5, true);
     model.add_tool(tool);
 
-    // Generating a random pop 
+    // Generating a random pop
     model.agents_smallworld(10000, 20, false, .01);
 
     // Running the model
@@ -48,6 +44,5 @@ int main()
         "transitions.txt",
         "reproductive.txt",
         "generation_time.txt"
-        );
-  
+    );
 }

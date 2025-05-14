@@ -2,18 +2,13 @@
 #define EPIWORLD_MODELDIAGRAM_HPP
 
 class ModelDiagram {
-private:
+  private:
+    std::map<std::pair<std::string, std::string>, int> data;
 
-    std::map< std::pair< std::string, std::string >, int > data;
+    std::vector<std::string> states;
+    std::vector<epiworld_double> tprob;
 
-    std::vector< std::string > states;
-    std::vector< epiworld_double > tprob;
-
-    void draw_mermaid(
-        std::string fn_output = "",
-        bool self = false
-    );
-
+    void draw_mermaid(std::string fn_output = "", bool self = false);
 
     int n_runs = 0; ///< The number of runs included in the diagram.
 
@@ -36,9 +31,7 @@ private:
      * @return void
      * @throws std::runtime_error if the file cannot be opened.
      */
-    void read_transitions(
-        const std::string & fn_transition
-    );
+    void read_transitions(const std::string& fn_transition);
 
     /**
      * @brief In the case of multiple files (like from run_multiple)
@@ -47,10 +40,8 @@ private:
      * It will read the transitions from multiple files and concatenate them.
      * into the same object.
      */
-    void read_transitions(
-        const std::vector< std::string > & fns_transition
-    );
-    
+    void read_transitions(const std::vector<std::string>& fns_transition);
+
     /**
      * @brief Computes the transition probability matrix.
      * @param normalize Whether to compute only the counts,
@@ -61,29 +52,27 @@ private:
 
     void clear();
 
-public:
-
+  public:
     ModelDiagram() {};
 
     void draw_from_data(
-        const std::vector< std::string > & states,
-        const std::vector< epiworld_double > & tprob,
-        const std::string & fn_output = "",
+        const std::vector<std::string>& states,
+        const std::vector<epiworld_double>& tprob,
+        const std::string& fn_output = "",
         bool self = false
     );
 
     void draw_from_file(
-        const std::string & fn_transition,
-        const std::string & fn_output = "",
+        const std::string& fn_transition,
+        const std::string& fn_output = "",
         bool self = false
     );
 
     void draw_from_files(
-        const std::vector< std::string > & fns_transition,
-        const std::string & fn_output = "",
+        const std::vector<std::string>& fns_transition,
+        const std::string& fn_output = "",
         bool self = false
     );
-
 };
 
 #endif

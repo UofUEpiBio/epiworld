@@ -2,9 +2,7 @@
 
 using namespace epiworld;
 
-int main()
-{
-
+int main() {
     // Creating a model with three statuses:
     // - Susceptible: Status 0
     // - Infected: Status 1
@@ -24,16 +22,15 @@ int main()
 
     virus.set_prob_infecting(.90);
     virus.set_prob_recovery(.30);
-    
+
     virus.set_state(1, 2);
 
     model.add_virus(virus);
-    
+
     // Generating a random pop from a smallworld network
     model.agents_smallworld(100000, 4L, false, .01);
 
     // Running the model
     model.run(100, 122);
     model.print();
-  
 }

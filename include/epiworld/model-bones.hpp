@@ -13,7 +13,7 @@ class Virus;
 template<typename TSeq>
 class Viruses;
 
-template<typename TSeq> 
+template<typename TSeq>
 class Viruses_const;
 
 template<typename TSeq>
@@ -38,28 +38,25 @@ inline epiworld_double susceptibility_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
-    );
+);
 template<typename TSeq>
 inline epiworld_double transmission_reduction_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
-    );
+);
 template<typename TSeq>
 inline epiworld_double recovery_enhancer_mixer_default(
     Agent<TSeq>* p,
     VirusPtr<TSeq> v,
     Model<TSeq>* m
-    );
+);
 template<typename TSeq>
-inline epiworld_double death_reduction_mixer_default(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-    );
+inline epiworld_double
+death_reduction_mixer_default(Agent<TSeq>* p, VirusPtr<TSeq> v, Model<TSeq>* m);
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
+inline std::function<void(size_t, Model<TSeq>*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
     bool total_hist = true,
     bool virus_info = false,
@@ -70,7 +67,7 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transition = false,
     bool reproductive = false,
     bool generation = false
-    );
+);
 
 // template<typename TSeq>
 // class VirusPtr;
@@ -93,16 +90,16 @@ class Model {
     friend class AgentsSample<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
-protected:
 
+  protected:
     std::string name = ""; ///< Name of the model
 
     DataBase<TSeq> db = DataBase<TSeq>(*this);
 
-    std::vector< Agent<TSeq> > population = {};
+    std::vector<Agent<TSeq>> population = {};
 
     bool using_backup = true;
-    std::vector< Agent<TSeq> > population_backup = {};
+    std::vector<Agent<TSeq>> population_backup = {};
 
     /**
      * @name Auxiliary variables for AgentsSample<TSeq> iterators
@@ -113,9 +110,9 @@ protected:
      * AgentsSample<TSeq>::AgentsSample(Model<TSeq>) these vectors are allocated.
      */
     ///@{
-    std::vector< Agent<TSeq> * > sampled_population;
+    std::vector<Agent<TSeq>*> sampled_population;
     size_t sampled_population_n = 0u;
-    std::vector< size_t > population_left;
+    std::vector<size_t> population_left;
     size_t population_left_n = 0u;
     ///@}
 
@@ -128,56 +125,51 @@ protected:
      * 
      */
     ///@{
-    double * agents_data = nullptr;
+    double* agents_data = nullptr;
     size_t agents_data_ncols = 0u;
     ///@}
 
     bool directed = false;
-    
-    std::vector< VirusPtr<TSeq> > viruses = {};
-    std::vector< ToolPtr<TSeq> > tools = {};
 
-    std::vector< Entity<TSeq> > entities = {}; 
-    std::vector< Entity<TSeq> > entities_backup = {};
+    std::vector<VirusPtr<TSeq>> viruses = {};
+    std::vector<ToolPtr<TSeq>> tools = {};
 
-    std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
-    
-    std::uniform_real_distribution<> runifd      =
-        std::uniform_real_distribution<> (0.0, 1.0);
-    std::normal_distribution<>       rnormd      =
-        std::normal_distribution<>(0.0);
-    std::gamma_distribution<>        rgammad     =
-        std::gamma_distribution<>();
-    std::lognormal_distribution<>    rlognormald =
-        std::lognormal_distribution<>();
-    std::exponential_distribution<>  rexpd       =
-        std::exponential_distribution<>();
-    std::binomial_distribution<> rbinomd         =
-        std::binomial_distribution<>();
+    std::vector<Entity<TSeq>> entities = {};
+    std::vector<Entity<TSeq>> entities_backup = {};
+
+    std::shared_ptr<std::mt19937> engine = std::make_shared<std::mt19937>();
+
+    std::uniform_real_distribution<> runifd =
+        std::uniform_real_distribution<>(0.0, 1.0);
+    std::normal_distribution<> rnormd = std::normal_distribution<>(0.0);
+    std::gamma_distribution<> rgammad = std::gamma_distribution<>();
+    std::lognormal_distribution<> rlognormald = std::lognormal_distribution<>();
+    std::exponential_distribution<> rexpd = std::exponential_distribution<>();
+    std::binomial_distribution<> rbinomd = std::binomial_distribution<>();
     std::negative_binomial_distribution<> rnbinomd =
         std::negative_binomial_distribution<>();
-    std::geometric_distribution<> rgeomd          =
-        std::geometric_distribution<>();
-    std::poisson_distribution<> rpoissd           =
-        std::poisson_distribution<>();
+    std::geometric_distribution<> rgeomd = std::geometric_distribution<>();
+    std::poisson_distribution<> rpoissd = std::poisson_distribution<>();
 
-    std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
+    std::function<
+        void(std::vector<Agent<TSeq>>*, Model<TSeq>*, epiworld_double)>
+        rewire_fun;
     epiworld_double rewire_prop = 0.0;
-        
-    std::map<std::string, epiworld_double > parameters;
+
+    std::map<std::string, epiworld_double> parameters;
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
-    std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
-    std::vector< std::string >        states_labels = {};              ///< Labels of the states
-    
+    std::vector<UpdateFun<TSeq>> state_fun = {}; ///< Functions to update states
+    std::vector<std::string> states_labels = {}; ///< Labels of the states
+
     /** Function to distribute states. Goes along with the function  */
-    std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
-    -> void {};
+    std::function<void(Model<TSeq>*)> initial_states_fun =
+        [](Model<TSeq>* /**/) -> void {};
 
     epiworld_fast_uint nstates = 0u;
-    
-    bool verbose     = true;
+
+    bool verbose = true;
     int current_date = 0;
 
     void dist_tools();
@@ -188,8 +180,8 @@ protected:
     std::chrono::time_point<std::chrono::steady_clock> time_end;
 
     // std::chrono::milliseconds
-    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
-        std::chrono::duration<epiworld_double,std::micro>::zero();
+    std::chrono::duration<epiworld_double, std::micro> time_elapsed =
+        std::chrono::duration<epiworld_double, std::micro>::zero();
     epiworld_fast_uint n_replicates = 0u;
     void chrono_start();
     void chrono_end();
@@ -197,13 +189,13 @@ protected:
     std::vector<GlobalEvent<TSeq>> globalevents;
 
     Queue<TSeq> queue;
-    bool use_queuing   = true;
+    bool use_queuing = true;
 
     /**
      * @brief Variables used to keep track of the events
      * to be made regarding viruses.
      */
-    std::vector< Event<TSeq> > events = {};
+    std::vector<Event<TSeq>> events = {};
     epiworld_fast_uint nactions = 0u;
 
     /**
@@ -220,16 +212,16 @@ protected:
      * @param idx_object_ Location of object in agent.
      */
     void events_add(
-        Agent<TSeq> * agent_,
+        Agent<TSeq>* agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
-        Entity<TSeq> * entity_,
+        Entity<TSeq>* entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
         EventFun<TSeq> call_,
         int idx_agent_,
         int idx_object_
-        );
+    );
 
     /**
      * @name Tool Mixers
@@ -240,9 +232,12 @@ protected:
      * the susceptibility for a given virus.
      * 
      */
-    MixerFun<TSeq> susceptibility_reduction_mixer = susceptibility_reduction_mixer_default<TSeq>;
-    MixerFun<TSeq> transmission_reduction_mixer = transmission_reduction_mixer_default<TSeq>;
-    MixerFun<TSeq> recovery_enhancer_mixer = recovery_enhancer_mixer_default<TSeq>;
+    MixerFun<TSeq> susceptibility_reduction_mixer =
+        susceptibility_reduction_mixer_default<TSeq>;
+    MixerFun<TSeq> transmission_reduction_mixer =
+        transmission_reduction_mixer_default<TSeq>;
+    MixerFun<TSeq> recovery_enhancer_mixer =
+        recovery_enhancer_mixer_default<TSeq>;
     MixerFun<TSeq> death_reduction_mixer = death_reduction_mixer_default<TSeq>;
 
     /**
@@ -250,19 +245,17 @@ protected:
      * 
      * @param copy 
      */
-    virtual Model<TSeq> * clone_ptr();
+    virtual Model<TSeq>* clone_ptr();
 
-public:
-
-    
+  public:
     std::vector<epiworld_double> array_double_tmp;
-    std::vector<Virus<TSeq> * > array_virus_tmp;
+    std::vector<Virus<TSeq>*> array_virus_tmp;
 
     Model();
-    Model(const Model<TSeq> & m);
-    Model(Model<TSeq> & m);
-    Model(Model<TSeq> && m);
-    Model<TSeq> & operator=(const Model<TSeq> & m);
+    Model(const Model<TSeq>& m);
+    Model(Model<TSeq>& m);
+    Model(Model<TSeq>&& m);
+    Model<TSeq>& operator=(const Model<TSeq>& m);
 
     virtual ~Model() {};
 
@@ -278,9 +271,9 @@ public:
     // void restore_backup();
     ///@}
 
-    DataBase<TSeq> & get_db();
-    const DataBase<TSeq> & get_db() const;
-    epiworld_double & operator()(std::string pname);
+    DataBase<TSeq>& get_db();
+    const DataBase<TSeq>& get_db() const;
+    epiworld_double& operator()(std::string pname);
 
     size_t size() const;
 
@@ -291,8 +284,8 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
-    std::shared_ptr< std::mt19937 > & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr<std::mt19937>& eng);
+    std::shared_ptr<std::mt19937>& get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
@@ -335,8 +328,8 @@ public:
      * indicating number of individuals.
      */
     ///@{
-    void add_virus(Virus<TSeq> & v);
-    void add_tool(Tool<TSeq> & t);
+    void add_virus(Virus<TSeq>& v);
+    void add_tool(Tool<TSeq>& t);
     void add_entity(Entity<TSeq> e);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
@@ -354,20 +347,20 @@ public:
      * @param skip How many rows to skip.
      */
     void load_agents_entities_ties(std::string fn, int skip);
-    
+
     /**
      * @brief Associate agents-entities from data
     */
     void load_agents_entities_ties(
-        const std::vector<int> & agents_ids,
-        const std::vector<int> & entities_ids
-        );
+        const std::vector<int>& agents_ids,
+        const std::vector<int>& entities_ids
+    );
 
     void load_agents_entities_ties(
-        const int * agents_id,
-        const int * entities_id,
+        const int* agents_id,
+        const int* entities_id,
         size_t n
-        );
+    );
 
     /**
      * @name Accessing population of the model
@@ -384,11 +377,11 @@ public:
         int size,
         int skip = 0,
         bool directed = false
-        );
+    );
 
     void agents_from_edgelist(
-        const std::vector< int > & source,
-        const std::vector< int > & target,
+        const std::vector<int>& source,
+        const std::vector<int>& target,
         int size,
         bool directed
     );
@@ -397,26 +390,30 @@ public:
 
     bool is_directed() const;
 
-    std::vector< Agent<TSeq> > & get_agents(); ///< Returns a reference to the vector of agents.
+    std::vector<Agent<TSeq>>&
+    get_agents(); ///< Returns a reference to the vector of agents.
 
-    Agent<TSeq> & get_agent(size_t i);
+    Agent<TSeq>& get_agent(size_t i);
 
-    std::vector< epiworld_fast_uint > get_agents_states() const; ///< Returns a vector with the states of the agents.
+    std::vector<epiworld_fast_uint> get_agents_states(
+    ) const; ///< Returns a vector with the states of the agents.
 
-    std::vector< Viruses_const<TSeq> > get_agents_viruses() const; ///< Returns a const vector with the viruses of the agents.
+    std::vector<Viruses_const<TSeq>> get_agents_viruses(
+    ) const; ///< Returns a const vector with the viruses of the agents.
 
-    std::vector< Viruses<TSeq> > get_agents_viruses(); ///< Returns a vector with the viruses of the agents.
+    std::vector<Viruses<TSeq>>
+    get_agents_viruses(); ///< Returns a vector with the viruses of the agents.
 
-    std::vector< Entity<TSeq> > & get_entities();
+    std::vector<Entity<TSeq>>& get_entities();
 
-    Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr);
+    Entity<TSeq>& get_entity(size_t entity_id, int* entity_pos = nullptr);
 
-    Model<TSeq> & agents_smallworld(
+    Model<TSeq>& agents_smallworld(
         epiworld_fast_uint n = 1000,
         epiworld_fast_uint k = 5,
         bool d = false,
         epiworld_double p = .01
-        );
+    );
     void agents_empty_graph(epiworld_fast_uint n = 1000);
     ///@}
 
@@ -433,19 +430,18 @@ public:
     void update_state();
     void mutate_virus();
     void next();
-    virtual Model<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    ); ///< Runs the simulation (after initialization)
+    virtual Model<TSeq>&
+    run(epiworld_fast_uint ndays,
+        int seed = -1); ///< Runs the simulation (after initialization)
     void run_multiple( ///< Multiple runs of the simulation
         epiworld_fast_uint ndays,
         epiworld_fast_uint nexperiments,
         int seed_ = -1,
-        std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
+        std::function<void(size_t, Model<TSeq>*)> fun = make_save_run<TSeq>(),
         bool reset = true,
         bool verbose = true,
         int nthreads = 1
-        );
+    );
     ///@}
 
     size_t get_n_viruses() const; ///< Number of viruses in the model
@@ -454,8 +450,8 @@ public:
     epiworld_fast_uint get_n_replicates() const;
     void set_ndays(epiworld_fast_uint ndays);
     bool get_verbose() const;
-    Model<TSeq> & verbose_off();
-    Model<TSeq> & verbose_on();
+    Model<TSeq>& verbose_off();
+    Model<TSeq>& verbose_on();
     int today() const; ///< The current time of the model
 
     /**
@@ -470,7 +466,10 @@ public:
      * @result A rewired version of the network.
      */
     ///@{
-    void set_rewire_fun(std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
+    void set_rewire_fun(
+        std::function<
+            void(std::vector<Agent<TSeq>>*, Model<TSeq>*, epiworld_double)> fun
+    );
     void set_rewire_prop(epiworld_double prop);
     epiworld_double get_rewire_prop() const;
     void rewire();
@@ -498,7 +497,7 @@ public:
         std::string fn_transition,
         std::string fn_reproductive_number,
         std::string fn_generation_time
-        ) const;
+    ) const;
 
     /**
      * @name Export the network data in edgelist form
@@ -511,17 +510,13 @@ public:
      * write the edgelist on those.
      */
     ///@{
-    void write_edgelist(
-        std::string fn
-        ) const;
+    void write_edgelist(std::string fn) const;
 
-    void write_edgelist(
-        std::vector< int > & source,
-        std::vector< int > & target
-        ) const;
+    void
+    write_edgelist(std::vector<int>& source, std::vector<int>& target) const;
     ///@}
 
-    std::map<std::string, epiworld_double> & params();
+    std::map<std::string, epiworld_double>& params();
 
     /**
      * @brief Reset the model
@@ -535,7 +530,7 @@ public:
      * 
      */
     virtual void reset();
-    const Model<TSeq> & print(bool lite = false) const;
+    const Model<TSeq>& print(bool lite = false) const;
 
     /**
      * @name Manage state (states) in the model
@@ -553,9 +548,10 @@ public:
      */
     ///@{
     void add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
-    const std::vector< std::string > & get_states() const;
-    const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
+    const std::vector<std::string>& get_states() const;
+    const std::vector<UpdateFun<TSeq>>& get_state_fun() const;
     void print_state_codes() const;
+
     ///@}
 
     /**
@@ -566,10 +562,12 @@ public:
      * @param proportions_ Vector of proportions for each state.
      * @param queue_ Vector of queue for each state.
      */
-    virtual Model<TSeq> & initial_states(
-        std::vector< double > /*proportions_*/,
-        std::vector< int > /*queue_*/
-    ) {return *this;};
+    virtual Model<TSeq>& initial_states(
+        std::vector<double> /*proportions_*/,
+        std::vector<int> /*queue_*/
+    ) {
+        return *this;
+    };
 
     /**
      * @name Setting and accessing parameters from the model
@@ -607,9 +605,11 @@ public:
      */
     ///@{
     epiworld_double add_param(
-        epiworld_double initial_val, std::string pname, bool overwrite = false
+        epiworld_double initial_val,
+        std::string pname,
+        bool overwrite = false
     );
-    Model<TSeq> & read_params(std::string fn, bool overwrite = false);
+    Model<TSeq>& read_params(std::string fn, bool overwrite = false);
     epiworld_double get_param(epiworld_fast_uint k);
     epiworld_double get_param(std::string pname);
     // void set_param(size_t k, epiworld_double val);
@@ -620,9 +620,9 @@ public:
 
     void get_elapsed(
         std::string unit = "auto",
-        epiworld_double * last_elapsed = nullptr,
-        epiworld_double * total_elapsed = nullptr,
-        std::string * unit_abbr = nullptr,
+        epiworld_double* last_elapsed = nullptr,
+        epiworld_double* total_elapsed = nullptr,
+        std::string* unit_abbr = nullptr,
         bool print = true
     ) const;
 
@@ -632,10 +632,10 @@ public:
      * @param names string vector with the names of the variables.
      */
     ///[@
-    void set_user_data(std::vector< std::string > names);
+    void set_user_data(std::vector<std::string> names);
     void add_user_data(epiworld_fast_uint j, epiworld_double x);
-    void add_user_data(std::vector< epiworld_double > x);
-    UserData<TSeq> & get_user_data();
+    void add_user_data(std::vector<epiworld_double> x);
+    UserData<TSeq>& get_user_data();
     ///@}
 
     /**
@@ -653,14 +653,14 @@ public:
         std::function<void(Model<TSeq>*)> fun,
         std::string name = "A global action",
         int date = -99
-        );
-
-    void add_globalevent(
-        GlobalEvent<TSeq> action
     );
 
-    GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
-    GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
+    void add_globalevent(GlobalEvent<TSeq> action);
+
+    GlobalEvent<TSeq>& get_globalevent(std::string name
+    ); ///< Retrieve a global action by name
+    GlobalEvent<TSeq>& get_globalevent(size_t i
+    ); ///< Retrieve a global action by index
 
     void rm_globalevent(std::string name); ///< Remove a global action by name
     void rm_globalevent(size_t i); ///< Remove a global action by index
@@ -678,9 +678,9 @@ public:
      */
     ////@{
     void queuing_on(); ///< Activates the queuing system (default.)
-    Model<TSeq> & queuing_off(); ///< Deactivates the queuing system.
+    Model<TSeq>& queuing_off(); ///< Deactivates the queuing system.
     bool is_queuing_on() const; ///< Query if the queuing system is on.
-    Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
+    Queue<TSeq>& get_queue(); ///< Retrieve the `Queue` object.
     ///@}
 
     /**
@@ -696,10 +696,10 @@ public:
     void set_death_reduction_mixer(MixerFun<TSeq> fun);
     ///@}
 
-    const std::vector< VirusPtr<TSeq> > & get_viruses() const;
-    const std::vector< ToolPtr<TSeq> > & get_tools() const;
-    Virus<TSeq> & get_virus(size_t id);
-    Tool<TSeq> & get_tool(size_t id);
+    const std::vector<VirusPtr<TSeq>>& get_viruses() const;
+    const std::vector<ToolPtr<TSeq>>& get_tools() const;
+    Virus<TSeq>& get_virus(size_t id);
+    Tool<TSeq>& get_tool(size_t id);
 
     /**
      * @brief Set the agents data object
@@ -712,8 +712,8 @@ public:
      * @param ncols_ Number of features included in the data.
      * 
      */
-    void set_agents_data(double * data_, size_t ncols_);
-    double * get_agents_data();
+    void set_agents_data(double* data_, size_t ncols_);
+    double* get_agents_data();
     size_t get_agents_data_ncols() const;
 
     /**
@@ -724,8 +724,11 @@ public:
     void set_name(std::string name);
     std::string get_name() const;
 
-    bool operator==(const Model<TSeq> & other) const;
-    bool operator!=(const Model<TSeq> & other) const {return !operator==(other);};
+    bool operator==(const Model<TSeq>& other) const;
+
+    bool operator!=(const Model<TSeq>& other) const {
+        return !operator==(other);
+    };
 
     /**
      * @brief Executes the stored action
@@ -741,12 +744,7 @@ public:
      * If empty, the diagram will be printed to the standard output.
      * @param self Whether to allow self-transitions.
      */
-    void draw(
-        const std::string & fn_output = "",
-        bool self = false
-    );
-
-
+    void draw(const std::string& fn_output = "", bool self = false);
 };
 
 #endif

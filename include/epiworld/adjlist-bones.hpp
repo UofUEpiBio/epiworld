@@ -2,15 +2,13 @@
 #define EPIWORLD_ADJLIST_BONES_HPP
 
 class AdjList {
-private:
-
+  private:
     std::vector<std::map<int, int>> dat;
     bool directed;
     epiworld_fast_uint N = 0;
     epiworld_fast_uint E = 0;
 
-public:
-
+  public:
     AdjList() {};
 
     /**
@@ -25,16 +23,15 @@ public:
      * @param directed Bool true if the network is directed
      */
     AdjList(
-        const std::vector< int > & source,
-        const std::vector< int > & target,
+        const std::vector<int>& source,
+        const std::vector<int>& target,
         int size,
         bool directed
-        );
+    );
 
-    AdjList(AdjList && a); // Move constructor
-    AdjList(const AdjList & a); // Copy constructor
+    AdjList(AdjList&& a); // Move constructor
+    AdjList(const AdjList& a); // Copy constructor
     AdjList& operator=(const AdjList& a);
-
 
     /**
      * @brief Read an edgelist
@@ -46,29 +43,20 @@ public:
      * @param directed `true` if the network is directed
      * @param size Number of vertices in the network.
      */
-    void read_edgelist(
-        std::string fn,
-        int size,
-        int skip = 0,
-        bool directed = true
-        );
+    void
+    read_edgelist(std::string fn, int size, int skip = 0, bool directed = true);
 
-    std::map<int, int> operator()(
-        epiworld_fast_uint i
-        ) const;
-        
+    std::map<int, int> operator()(epiworld_fast_uint i) const;
+
     void print(epiworld_fast_uint limit = 20u) const;
     size_t vcount() const; ///< Number of vertices/nodes in the network.
     size_t ecount() const; ///< Number of edges/arcs/ties in the network.
-    
-    std::vector<std::map<int,int>> & get_dat() {
+
+    std::vector<std::map<int, int>>& get_dat() {
         return dat;
     };
 
     bool is_directed() const; ///< `true` if the network is directed.
-
 };
 
-
 #endif
-

@@ -12,18 +12,11 @@
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalevent_tool(
-    Tool<TSeq> & tool,
-    double p
-) {
-
-    std::function<void(Model<TSeq>*)> fun = [p,&tool](
-        Model<TSeq> * model
-        ) -> void {
-
-        for (auto & agent : model->get_agents())
-        {
-
+inline std::function<void(Model<TSeq>*)>
+globalevent_tool(Tool<TSeq>& tool, double p) {
+    std::function<void(Model<TSeq>*)> fun = [p, &tool](Model<TSeq>* model
+                                            ) -> void {
+        for (auto& agent : model->get_agents()) {
             // Check if the agent has the tool
             if (agent.has_tool(tool))
                 continue;
@@ -31,21 +24,16 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool(
             // Adding the tool
             if (model->runif() < p)
                 agent.add_tool(tool, model);
-            
-        
         }
 
-        #ifdef EPIWORLD_DEBUG
+#ifdef EPIWORLD_DEBUG
         tool.print();
-        #endif
+#endif
 
         return;
-            
-
     };
 
     return fun;
-
 }
 
 // Same function as above, but p is now a function of a vector of coefficients
@@ -62,18 +50,13 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool(
  */
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
-    Tool<TSeq> & tool,
-    std::vector< size_t > vars,
-    std::vector< double > coefs
+    Tool<TSeq>& tool,
+    std::vector<size_t> vars,
+    std::vector<double> coefs
 ) {
-
-    std::function<void(Model<TSeq>*)> fun = [coefs,vars,&tool](
-        Model<TSeq> * model
-        ) -> void {
-
-        for (auto & agent : model->get_agents())
-        {
-
+    std::function<void(Model<TSeq>*)> fun =
+        [coefs, vars, &tool](Model<TSeq>* model) -> void {
+        for (auto& agent : model->get_agents()) {
             // Check if the agent has the tool
             if (agent.has_tool(tool))
                 continue;
@@ -81,9 +64,9 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
             // Computing the probability using a logit. Uses OpenMP reduction
             // to sum the coefficients.
             double p = 0.0;
-            #if defined(__OPENMP) || defined(_OPENMP)
-            #pragma omp parallel for reduction(+:p)
-            #endif
+#if defined(__OPENMP) || defined(_OPENMP)
+    #pragma omp parallel for reduction(+ : p)
+#endif
             for (size_t i = 0u; i < coefs.size(); ++i)
                 p += coefs.at(i) * agent(vars[i]);
 
@@ -92,21 +75,16 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
             // Adding the tool
             if (model->runif() < p)
                 agent.add_tool(tool, model);
-            
-        
         }
 
-        #ifdef EPIWORLD_DEBUG
+#ifdef EPIWORLD_DEBUG
         tool.print();
-        #endif
+#endif
 
         return;
-            
-
     };
 
     return fun;
-
 }
 
 // A global action that updates a parameter in the model.
@@ -119,23 +97,15 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
  * @return std::function<void(Model<TSeq>*)> 
  */
 template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalevent_set_param(
-    std::string param,
-    double value
-) {
-
-    std::function<void(Model<TSeq>*)> fun = [value,param](
-        Model<TSeq> * model
-        ) -> void {
-
+inline std::function<void(Model<TSeq>*)>
+globalevent_set_param(std::string param, double value) {
+    std::function<void(Model<TSeq>*)> fun = [value, param](Model<TSeq>* model
+                                            ) -> void {
         model->set_param(param, value);
 
         return;
-            
-
     };
 
     return fun;
-
 }
 #endif

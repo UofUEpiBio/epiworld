@@ -11,14 +11,13 @@
  * 
  */
 template<typename TSeq>
-class GlobalEvent
-{
-private:
+class GlobalEvent {
+  private:
     GlobalFun<TSeq> fun = nullptr;
     std::string name = "A global action";
     int day = -99;
-public:
 
+  public:
     GlobalEvent() {};
 
     /**
@@ -29,25 +28,22 @@ public:
      * @param day The day when the action will be executed. If negative, it will be executed every day.
      */
     GlobalEvent(GlobalFun<TSeq> fun, std::string name, int day = -99);
-    
+
     ~GlobalEvent() {};
 
-    void operator()(Model<TSeq> * m, int day);
+    void operator()(Model<TSeq>* m, int day);
 
     void set_name(std::string name);
     std::string get_name() const;
 
     void set_day(int day);
     int get_day() const;
-    
+
     void print() const;
 
     // Comparison operators
-    bool operator==(const GlobalEvent<TSeq> & other) const;
-    bool operator!=(const GlobalEvent<TSeq> & other) const;
-
+    bool operator==(const GlobalEvent<TSeq>& other) const;
+    bool operator!=(const GlobalEvent<TSeq>& other) const;
 };
-
-
 
 #endif
