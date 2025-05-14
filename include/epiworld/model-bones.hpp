@@ -742,6 +742,7 @@ public:
      * @param self Whether to allow self-transitions.
      */
     void draw(
+        DiagramType diagram_type,
         const std::string & fn_output = "",
         bool self = false
     );
