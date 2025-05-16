@@ -24,7 +24,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 8
-#define EPIWORLD_VERSION_PATCH 2
+#define EPIWORLD_VERSION_PATCH 3
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -15242,8 +15242,8 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
 
     if (other_agent.n_neighbors > 0u)
     {
-        neighbors = new std::vector< size_t >(other_agent.n_neighbors);
-        neighbors_locations = new std::vector< size_t >(other_agent.n_neighbors);
+        neighbors = new std::vector< size_t >(*other_agent.neighbors);
+        neighbors_locations = new std::vector< size_t >(*other_agent.neighbors_locations);
     }
     
     entities = other_agent.entities;
