@@ -13875,8 +13875,8 @@ $(function() {
 <div class="line"><a name="l15242"></a><span class="lineno">15242</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l15243"></a><span class="lineno">15243</span>&#160;<span class="comment">    if (other_agent.n_neighbors &gt; 0u)</span></div>
 <div class="line"><a name="l15244"></a><span class="lineno">15244</span>&#160;<span class="comment">    {</span></div>
-<div class="line"><a name="l15245"></a><span class="lineno">15245</span>&#160;<span class="comment">        neighbors = new std::vector&lt; size_t &gt;(other_agent.n_neighbors);</span></div>
-<div class="line"><a name="l15246"></a><span class="lineno">15246</span>&#160;<span class="comment">        neighbors_locations = new std::vector&lt; size_t &gt;(other_agent.n_neighbors);</span></div>
+<div class="line"><a name="l15245"></a><span class="lineno">15245</span>&#160;<span class="comment">        neighbors = new std::vector&lt; size_t &gt;(*other_agent.neighbors);</span></div>
+<div class="line"><a name="l15246"></a><span class="lineno">15246</span>&#160;<span class="comment">        neighbors_locations = new std::vector&lt; size_t &gt;(*other_agent.neighbors_locations);</span></div>
 <div class="line"><a name="l15247"></a><span class="lineno">15247</span>&#160;<span class="comment">    }</span></div>
 <div class="line"><a name="l15248"></a><span class="lineno">15248</span>&#160;<span class="comment">    </span></div>
 <div class="line"><a name="l15249"></a><span class="lineno">15249</span>&#160;<span class="comment">    entities = other_agent.entities;</span></div>

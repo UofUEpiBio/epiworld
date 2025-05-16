@@ -182,8 +182,8 @@ $(function() {
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <span class="keywordflow">if</span> (other_agent.n_neighbors &gt; 0u)</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    {</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        neighbors = <span class="keyword">new</span> std::vector&lt; size_t &gt;(other_agent.n_neighbors);</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        neighbors_locations = <span class="keyword">new</span> std::vector&lt; size_t &gt;(other_agent.n_neighbors);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        neighbors = <span class="keyword">new</span> std::vector&lt; size_t &gt;(*other_agent.neighbors);</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        neighbors_locations = <span class="keyword">new</span> std::vector&lt; size_t &gt;(*other_agent.neighbors_locations);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    }</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    </div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    entities = other_agent.entities;</div>
