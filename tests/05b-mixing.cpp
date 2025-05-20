@@ -4,6 +4,14 @@
 
 #include "tests.hpp"
 
+#define calc_r0(ans_observed, ans_expected, r0, model) \
+    double (ans_observed) = std::accumulate(r0.begin(), r0.end(), 0.0); \
+    (ans_observed) /= static_cast<epiworld_double>(r0.size()); \
+    std::fill(r0.begin(), r0.end(), -1.0); \
+    double (ans_expected) = (model)("Contact rate") * \
+        (model)("Prob. Transmission") / \
+        (model)("Prob. Recovery");
+
 using namespace epiworld;
 
 EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
@@ -17,19 +25,19 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
     // std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
 
     // Testing reproductive number in plain scenario
-    int n_infected = 10;
+    int n_infected = 1;
     #ifdef EPI_DEBUG
     int n_agents = 2000;
     #else
-    int n_agents = 2000;
+    int n_agents = 4000;
     #endif
     size_t nsims = 400;
     epimodels::ModelSEIRMixing<> model_1(
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
         static_cast<double>(n_infected)/n_agents,  // epiworld_double prevalence,
-        2.0,  // epiworld_double contact_rate,
-        0.2,   // epiworld_double transmission_rate,
+        1.0,  // epiworld_double contact_rate,
+        0.1,   // epiworld_double transmission_rate,
         7.0,   // epiworld_double avg_incubation_days,
         1.0/7.0,// epiworld_double recovery_rate,
         contact_matrix
@@ -50,7 +58,7 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
     );
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
-    std::vector< epiworld_double > R0s;
+    std::vector< epiworld_double > R0s(nsims, -1.0);
     auto saver = [&transitions, &R0s, n_infected](size_t n, Model<>* m) -> void{
 
         // Saving the transition probabilities
@@ -58,15 +66,16 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
 
         // Recording the R0 from the index case
         auto rts = m->get_db().reproductive_number();      
-        for (const auto & i: rts)
+
+        for (auto & rt: rts)
         {
-
-            // Only on the first day
-            if ((i.first[2] != 0) || (i.first[1] < 0))
-                continue;
-
-            R0s.push_back(static_cast<epiworld_double>(i.second));
-        }
+            if (rt.first[1] != -1 && rt.first[2] == 0)
+            {
+                R0s[n] = static_cast<epiworld_double>(
+                    rt.second
+                );
+            }
+        }            
 
     };
 
@@ -122,33 +131,37 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
         printf_epiworld("\n");
     }
 
-    // Average R0
-    double R0_observed = 0.0;
-    for (auto & i: R0s)
-    {
-        if (i >= 0.0)
-            R0_observed += i;
-        else
-            throw std::range_error(
-                "The R0 value is negative. This should not happen."
-            );
-    }
-    R0_observed /= static_cast<epiworld_double>(nsims * n_infected);
+    // Different runs
+    model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
+    calc_r0(R0_obs1, R0_exp1, R0s, model_1);
+
+    model_1("Contact rate") = model_1("Contact rate") * 1.5;
+    model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
+    calc_r0(R0_obs2, R0_exp2, R0s, model_1);
+
+    model_1("Contact rate") = model_1("Contact rate")  * 1.5;
+    model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
+    calc_r0(R0_obs3, R0_exp3, R0s, model_1);
+
+    model_1("Contact rate") = model_1("Contact rate")  * 1.5;
+    model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
+    calc_r0(R0_obs4, R0_exp4, R0s, model_1);
     
     #ifdef EPI_DEBUG
     model_1.print();
     #endif
 
-    double R0_expected =
-        model_1("Contact rate") * model_1("Prob. Transmission") /
-        model_1("Prob. Recovery");
-
-    std::cout << "R0 in ModelSEIRMixing" << std::endl ;
-    std::cout << "observed: " << R0_observed <<
-        " vs expected: " << R0_expected << std::endl;
+    std::cout << "Testing R0 in SEIRMixing" << std::endl;
+    std::cout << "R0 obs " << R0_obs1 << " vs exp " << R0_exp1 << std::endl;
+    std::cout << "R0 obs " << R0_obs2 << " vs exp " << R0_exp2 << std::endl;
+    std::cout << "R0 obs " << R0_obs3 << " vs exp " << R0_exp3 << std::endl;
+    std::cout << "R0 obs " << R0_obs4 << " vs exp " << R0_exp4 << std::endl;
 
     #ifdef CATCH_CONFIG_MAIN
-    REQUIRE_FALSE(moreless(R0_observed, R0_expected, 0.1));
+    REQUIRE_FALSE(moreless(R0_obs1, R0_exp1, 0.2));
+    REQUIRE_FALSE(moreless(R0_obs2, R0_exp2, 0.2));
+    REQUIRE_FALSE(moreless(R0_obs3, R0_exp3, 0.2));
+    REQUIRE_FALSE(moreless(R0_obs4, R0_exp4, 0.2));
     #endif
 
     #ifndef CATCH_CONFIG_MAIN
@@ -156,3 +169,5 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
     #endif
 
 }
+
+#undef calc_r0
