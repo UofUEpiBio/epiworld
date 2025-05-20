@@ -1722,6 +1722,11 @@ inline epiworld_fast_uint Model<TSeq>::get_n_replicates() const
 }
 
 template<typename TSeq>
+inline size_t Model<TSeq>::get_n_entities() const {
+    return entities.size();
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::set_ndays(epiworld_fast_uint ndays) {
     this->ndays = ndays;
 }
