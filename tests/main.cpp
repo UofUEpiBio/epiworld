@@ -17,6 +17,7 @@
 #include "02-reproducible-sirconn.cpp"
 #include "04-initial-dist.cpp"
 #include "05-mixing.cpp"
+#include "05b-mixing.cpp"
 #include "06-mixing.cpp"
 #include "07-entitifuns.cpp"
 #include "09-distribute-tools-and-viruses.cpp"

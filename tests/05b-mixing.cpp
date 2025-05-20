@@ -6,7 +6,7 @@
 
 using namespace epiworld;
 
-EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
+EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
 
     std::vector< double > contact_matrix = {
         0.8, 0.1, 0.05,
@@ -21,9 +21,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     #ifdef EPI_DEBUG
     int n_agents = 2000;
     #else
-    int n_agents = 10000;
+    int n_agents = 2000;
     #endif
-    size_t nsims = 200;
+    size_t nsims = 400;
     epimodels::ModelSEIRMixing<> model_1(
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
