@@ -7377,6 +7377,7 @@ public:
     size_t get_n_tools() const; ///< Number of tools in the model
     epiworld_fast_uint get_ndays() const;
     epiworld_fast_uint get_n_replicates() const;
+    size_t get_n_entities() const;
     void set_ndays(epiworld_fast_uint ndays);
     bool get_verbose() const;
     Model<TSeq> & verbose_off();
@@ -9414,6 +9415,11 @@ template<typename TSeq>
 inline epiworld_fast_uint Model<TSeq>::get_n_replicates() const
 {
     return n_replicates;
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_n_entities() const {
+    return entities.size();
 }
 
 template<typename TSeq>
@@ -20853,6 +20859,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
         auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
         assert((output) != nullptr); // Use assert for runtime checks
 #endif
+
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
