@@ -242,7 +242,7 @@ inline void ModelMeaslesQuarantine<TSeq>::quarantine_agents() {
 
     }
 
-    // Clearing the list of ids
+    // Setting the quarantine process off
     this->system_quarantine_triggered = false;
 
     return;
