@@ -508,7 +508,8 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     else if (which != 0)
     {
         throw std::logic_error("The roulette returned an unexpected value.");
-    } else if ((which == 0u) && detected)
+    }
+    else if ((which == 0u) && detected)
     {
         // If the agent is not hospitalized, then it is moved to
         // isolation.
@@ -556,7 +557,13 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     // If hospitalized, then the agent is removed from the system
     else if (which == 1u)
     {
-        p->change_state(m, ModelMeaslesQuarantine::HOSPITALIZED);
+        p->change_state(
+            m,
+            // HOSPITALIZED 
+            unisolate ?
+                ModelMeaslesQuarantine::HOSPITALIZED :
+                ModelMeaslesQuarantine::DETECTED_HOSPITALIZED
+            );
     }
     // If neither hospitalized nor recovered, then the agent is
     // still under isolation, unless the quarantine period is over.
