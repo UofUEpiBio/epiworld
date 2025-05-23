@@ -158,7 +158,9 @@ EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]
         moreless(mat(3, 6) + mat(3, 11), model_0("Hospitalization rate"),
         0.05)
     );
-    REQUIRE_FALSE(moreless(mat(4, 11), model_0("Hospitalization rate"), 0.05));
+    REQUIRE_FALSE(
+        moreless(mat(3, 6) + mat(4, 11), model_0("Hospitalization rate"), 0.05)
+    );
 
     // Transition to recovered
     REQUIRE_FALSE(moreless(mat(3, 5) + mat(3, 12), p_recovered, 0.05));
@@ -187,7 +189,7 @@ EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]
     std::cout << "Transition to hospitalized (prodromal): "
               << mat(3, 6) + mat(3, 11) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
     std::cout << "Transition to hospitalized (rash): "
-              << mat(4, 11) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
+              << mat(4, 6) + mat(4, 11) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
 
     // Transition to recovered    
     std::cout << "Transition to recovered (prodromal): "

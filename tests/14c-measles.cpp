@@ -82,6 +82,7 @@ EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesQuarantineR0]") {
     model_0.print(false);
     #endif
 
+    std::cout << "Testing R0 in Measles" << std::endl;
     std::cout << "R0 obs " << R0_obs1 << " vs exp " << R0_exp1 << std::endl;
     std::cout << "R0 obs " << R0_obs2 << " vs exp " << R0_exp2 << std::endl;
     std::cout << "R0 obs " << R0_obs3 << " vs exp " << R0_exp3 << std::endl;
