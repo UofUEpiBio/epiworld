@@ -20346,7 +20346,7 @@ $(function() {
 <div class="line"><a name="l22297"></a><span class="lineno">22297</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l22298"></a><span class="lineno">22298</span>&#160;<span class="comment">    }</span></div>
 <div class="line"><a name="l22299"></a><span class="lineno">22299</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22300"></a><span class="lineno">22300</span>&#160;<span class="comment">    // Clearing the list of ids</span></div>
+<div class="line"><a name="l22300"></a><span class="lineno">22300</span>&#160;<span class="comment">    // Setting the quarantine process off</span></div>
 <div class="line"><a name="l22301"></a><span class="lineno">22301</span>&#160;<span class="comment">    this-&gt;system_quarantine_triggered = false;</span></div>
 <div class="line"><a name="l22302"></a><span class="lineno">22302</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l22303"></a><span class="lineno">22303</span>&#160;<span class="comment">    return;</span></div>
@@ -20612,356 +20612,363 @@ $(function() {
 <div class="line"><a name="l22563"></a><span class="lineno">22563</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (which != 0)</div>
 <div class="line"><a name="l22564"></a><span class="lineno">22564</span>&#160;    {</div>
 <div class="line"><a name="l22565"></a><span class="lineno">22565</span>&#160;        <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;The roulette returned an unexpected value.&quot;</span>);</div>
-<div class="line"><a name="l22566"></a><span class="lineno">22566</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> ((which == 0u) &amp;&amp; detected)</div>
-<div class="line"><a name="l22567"></a><span class="lineno">22567</span>&#160;    {</div>
-<div class="line"><a name="l22568"></a><span class="lineno">22568</span>&#160;        <span class="comment">// If the agent is not hospitalized, then it is moved to</span></div>
-<div class="line"><a name="l22569"></a><span class="lineno">22569</span>&#160;        <span class="comment">// isolation.</span></div>
-<div class="line"><a name="l22570"></a><span class="lineno">22570</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::ISOLATED);</div>
-<div class="line"><a name="l22571"></a><span class="lineno">22571</span>&#160;    }</div>
-<div class="line"><a name="l22572"></a><span class="lineno">22572</span>&#160;    </div>
-<div class="line"><a name="l22573"></a><span class="lineno">22573</span>&#160;};</div>
-<div class="line"><a name="l22574"></a><span class="lineno">22574</span>&#160; </div>
-<div class="line"><a name="l22575"></a><span class="lineno">22575</span>&#160;LOCAL_UPDATE_FUN(m_update_isolated) {</div>
-<div class="line"><a name="l22576"></a><span class="lineno">22576</span>&#160; </div>
-<div class="line"><a name="l22577"></a><span class="lineno">22577</span>&#160;    GET_MODEL(m, model);</div>
-<div class="line"><a name="l22578"></a><span class="lineno">22578</span>&#160; </div>
-<div class="line"><a name="l22579"></a><span class="lineno">22579</span>&#160;    <span class="comment">// Figuring out if the agent can be released from isolation</span></div>
-<div class="line"><a name="l22580"></a><span class="lineno">22580</span>&#160;    <span class="comment">// if the quarantine period is over.</span></div>
-<div class="line"><a name="l22581"></a><span class="lineno">22581</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_rash_onset[p-&gt;get_id()];</div>
-<div class="line"><a name="l22582"></a><span class="lineno">22582</span>&#160; </div>
-<div class="line"><a name="l22583"></a><span class="lineno">22583</span>&#160;    <span class="keywordtype">bool</span> unisolate =</div>
-<div class="line"><a name="l22584"></a><span class="lineno">22584</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Isolation period&quot;</span>) &lt;= days_since) ?</div>
-<div class="line"><a name="l22585"></a><span class="lineno">22585</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
-<div class="line"><a name="l22586"></a><span class="lineno">22586</span>&#160; </div>
-<div class="line"><a name="l22587"></a><span class="lineno">22587</span>&#160;    <span class="comment">// Probability of staying in the rash period vs becoming</span></div>
-<div class="line"><a name="l22588"></a><span class="lineno">22588</span>&#160;    <span class="comment">// hospitalized</span></div>
-<div class="line"><a name="l22589"></a><span class="lineno">22589</span>&#160;    m-&gt;array_double_tmp[0] = 1.0/m-&gt;par(<span class="stringliteral">&quot;Rash period&quot;</span>);</div>
-<div class="line"><a name="l22590"></a><span class="lineno">22590</span>&#160;    m-&gt;array_double_tmp[1] = m-&gt;par(<span class="stringliteral">&quot;Hospitalization rate&quot;</span>);</div>
-<div class="line"><a name="l22591"></a><span class="lineno">22591</span>&#160; </div>
-<div class="line"><a name="l22592"></a><span class="lineno">22592</span>&#160;    <span class="comment">// Sampling from the probabilities</span></div>
-<div class="line"><a name="l22593"></a><span class="lineno">22593</span>&#160;    SAMPLE_FROM_PROBS(2, which);</div>
-<div class="line"><a name="l22594"></a><span class="lineno">22594</span>&#160; </div>
-<div class="line"><a name="l22595"></a><span class="lineno">22595</span>&#160;    <span class="comment">// Recovers</span></div>
-<div class="line"><a name="l22596"></a><span class="lineno">22596</span>&#160;    <span class="keywordflow">if</span> (which == 2u)</div>
-<div class="line"><a name="l22597"></a><span class="lineno">22597</span>&#160;    {</div>
-<div class="line"><a name="l22598"></a><span class="lineno">22598</span>&#160;        <span class="keywordflow">if</span> (unisolate)</div>
-<div class="line"><a name="l22599"></a><span class="lineno">22599</span>&#160;        {</div>
-<div class="line"><a name="l22600"></a><span class="lineno">22600</span>&#160;            p-&gt;rm_agent_by_virus(</div>
-<div class="line"><a name="l22601"></a><span class="lineno">22601</span>&#160;                m,</div>
-<div class="line"><a name="l22602"></a><span class="lineno">22602</span>&#160;                ModelMeaslesQuarantine::RECOVERED</div>
-<div class="line"><a name="l22603"></a><span class="lineno">22603</span>&#160;            );</div>
-<div class="line"><a name="l22604"></a><span class="lineno">22604</span>&#160;        }</div>
-<div class="line"><a name="l22605"></a><span class="lineno">22605</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l22606"></a><span class="lineno">22606</span>&#160;            p-&gt;rm_agent_by_virus(</div>
-<div class="line"><a name="l22607"></a><span class="lineno">22607</span>&#160;                m, ModelMeaslesQuarantine::ISOLATED_RECOVERED</div>
-<div class="line"><a name="l22608"></a><span class="lineno">22608</span>&#160;            );</div>
-<div class="line"><a name="l22609"></a><span class="lineno">22609</span>&#160;    }</div>
-<div class="line"><a name="l22610"></a><span class="lineno">22610</span>&#160; </div>
-<div class="line"><a name="l22611"></a><span class="lineno">22611</span>&#160;    <span class="comment">// If hospitalized, then the agent is removed from the system</span></div>
-<div class="line"><a name="l22612"></a><span class="lineno">22612</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (which == 1u)</div>
-<div class="line"><a name="l22613"></a><span class="lineno">22613</span>&#160;    {</div>
-<div class="line"><a name="l22614"></a><span class="lineno">22614</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::HOSPITALIZED);</div>
-<div class="line"><a name="l22615"></a><span class="lineno">22615</span>&#160;    }</div>
-<div class="line"><a name="l22616"></a><span class="lineno">22616</span>&#160;    <span class="comment">// If neither hospitalized nor recovered, then the agent is</span></div>
-<div class="line"><a name="l22617"></a><span class="lineno">22617</span>&#160;    <span class="comment">// still under isolation, unless the quarantine period is over.</span></div>
-<div class="line"><a name="l22618"></a><span class="lineno">22618</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> ((which == 0u) &amp;&amp; unisolate)</div>
-<div class="line"><a name="l22619"></a><span class="lineno">22619</span>&#160;    {</div>
-<div class="line"><a name="l22620"></a><span class="lineno">22620</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RASH);</div>
-<div class="line"><a name="l22621"></a><span class="lineno">22621</span>&#160;    }</div>
-<div class="line"><a name="l22622"></a><span class="lineno">22622</span>&#160; </div>
-<div class="line"><a name="l22623"></a><span class="lineno">22623</span>&#160;}</div>
-<div class="line"><a name="l22624"></a><span class="lineno">22624</span>&#160; </div>
-<div class="line"><a name="l22625"></a><span class="lineno">22625</span>&#160;LOCAL_UPDATE_FUN(m_update_isolated_recovered) {</div>
-<div class="line"><a name="l22626"></a><span class="lineno">22626</span>&#160; </div>
-<div class="line"><a name="l22627"></a><span class="lineno">22627</span>&#160;    GET_MODEL(m, model);</div>
-<div class="line"><a name="l22628"></a><span class="lineno">22628</span>&#160; </div>
-<div class="line"><a name="l22629"></a><span class="lineno">22629</span>&#160;    <span class="comment">// Figuring out if the agent can be released from isolation</span></div>
-<div class="line"><a name="l22630"></a><span class="lineno">22630</span>&#160;    <span class="comment">// if the quarantine period is over.</span></div>
-<div class="line"><a name="l22631"></a><span class="lineno">22631</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_rash_onset[p-&gt;get_id()];</div>
-<div class="line"><a name="l22632"></a><span class="lineno">22632</span>&#160; </div>
-<div class="line"><a name="l22633"></a><span class="lineno">22633</span>&#160;    <span class="keywordtype">bool</span> unisolate =</div>
-<div class="line"><a name="l22634"></a><span class="lineno">22634</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Isolation period&quot;</span>) &lt;= days_since) ?</div>
-<div class="line"><a name="l22635"></a><span class="lineno">22635</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
-<div class="line"><a name="l22636"></a><span class="lineno">22636</span>&#160; </div>
-<div class="line"><a name="l22637"></a><span class="lineno">22637</span>&#160;    <span class="keywordflow">if</span> (unisolate)</div>
-<div class="line"><a name="l22638"></a><span class="lineno">22638</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RECOVERED);</div>
+<div class="line"><a name="l22566"></a><span class="lineno">22566</span>&#160;    }</div>
+<div class="line"><a name="l22567"></a><span class="lineno">22567</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> ((which == 0u) &amp;&amp; detected)</div>
+<div class="line"><a name="l22568"></a><span class="lineno">22568</span>&#160;    {</div>
+<div class="line"><a name="l22569"></a><span class="lineno">22569</span>&#160;        <span class="comment">// If the agent is not hospitalized, then it is moved to</span></div>
+<div class="line"><a name="l22570"></a><span class="lineno">22570</span>&#160;        <span class="comment">// isolation.</span></div>
+<div class="line"><a name="l22571"></a><span class="lineno">22571</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::ISOLATED);</div>
+<div class="line"><a name="l22572"></a><span class="lineno">22572</span>&#160;    }</div>
+<div class="line"><a name="l22573"></a><span class="lineno">22573</span>&#160;    </div>
+<div class="line"><a name="l22574"></a><span class="lineno">22574</span>&#160;};</div>
+<div class="line"><a name="l22575"></a><span class="lineno">22575</span>&#160; </div>
+<div class="line"><a name="l22576"></a><span class="lineno">22576</span>&#160;LOCAL_UPDATE_FUN(m_update_isolated) {</div>
+<div class="line"><a name="l22577"></a><span class="lineno">22577</span>&#160; </div>
+<div class="line"><a name="l22578"></a><span class="lineno">22578</span>&#160;    GET_MODEL(m, model);</div>
+<div class="line"><a name="l22579"></a><span class="lineno">22579</span>&#160; </div>
+<div class="line"><a name="l22580"></a><span class="lineno">22580</span>&#160;    <span class="comment">// Figuring out if the agent can be released from isolation</span></div>
+<div class="line"><a name="l22581"></a><span class="lineno">22581</span>&#160;    <span class="comment">// if the quarantine period is over.</span></div>
+<div class="line"><a name="l22582"></a><span class="lineno">22582</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_rash_onset[p-&gt;get_id()];</div>
+<div class="line"><a name="l22583"></a><span class="lineno">22583</span>&#160; </div>
+<div class="line"><a name="l22584"></a><span class="lineno">22584</span>&#160;    <span class="keywordtype">bool</span> unisolate =</div>
+<div class="line"><a name="l22585"></a><span class="lineno">22585</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Isolation period&quot;</span>) &lt;= days_since) ?</div>
+<div class="line"><a name="l22586"></a><span class="lineno">22586</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
+<div class="line"><a name="l22587"></a><span class="lineno">22587</span>&#160; </div>
+<div class="line"><a name="l22588"></a><span class="lineno">22588</span>&#160;    <span class="comment">// Probability of staying in the rash period vs becoming</span></div>
+<div class="line"><a name="l22589"></a><span class="lineno">22589</span>&#160;    <span class="comment">// hospitalized</span></div>
+<div class="line"><a name="l22590"></a><span class="lineno">22590</span>&#160;    m-&gt;array_double_tmp[0] = 1.0/m-&gt;par(<span class="stringliteral">&quot;Rash period&quot;</span>);</div>
+<div class="line"><a name="l22591"></a><span class="lineno">22591</span>&#160;    m-&gt;array_double_tmp[1] = m-&gt;par(<span class="stringliteral">&quot;Hospitalization rate&quot;</span>);</div>
+<div class="line"><a name="l22592"></a><span class="lineno">22592</span>&#160; </div>
+<div class="line"><a name="l22593"></a><span class="lineno">22593</span>&#160;    <span class="comment">// Sampling from the probabilities</span></div>
+<div class="line"><a name="l22594"></a><span class="lineno">22594</span>&#160;    SAMPLE_FROM_PROBS(2, which);</div>
+<div class="line"><a name="l22595"></a><span class="lineno">22595</span>&#160; </div>
+<div class="line"><a name="l22596"></a><span class="lineno">22596</span>&#160;    <span class="comment">// Recovers</span></div>
+<div class="line"><a name="l22597"></a><span class="lineno">22597</span>&#160;    <span class="keywordflow">if</span> (which == 2u)</div>
+<div class="line"><a name="l22598"></a><span class="lineno">22598</span>&#160;    {</div>
+<div class="line"><a name="l22599"></a><span class="lineno">22599</span>&#160;        <span class="keywordflow">if</span> (unisolate)</div>
+<div class="line"><a name="l22600"></a><span class="lineno">22600</span>&#160;        {</div>
+<div class="line"><a name="l22601"></a><span class="lineno">22601</span>&#160;            p-&gt;rm_agent_by_virus(</div>
+<div class="line"><a name="l22602"></a><span class="lineno">22602</span>&#160;                m,</div>
+<div class="line"><a name="l22603"></a><span class="lineno">22603</span>&#160;                ModelMeaslesQuarantine::RECOVERED</div>
+<div class="line"><a name="l22604"></a><span class="lineno">22604</span>&#160;            );</div>
+<div class="line"><a name="l22605"></a><span class="lineno">22605</span>&#160;        }</div>
+<div class="line"><a name="l22606"></a><span class="lineno">22606</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l22607"></a><span class="lineno">22607</span>&#160;            p-&gt;rm_agent_by_virus(</div>
+<div class="line"><a name="l22608"></a><span class="lineno">22608</span>&#160;                m, ModelMeaslesQuarantine::ISOLATED_RECOVERED</div>
+<div class="line"><a name="l22609"></a><span class="lineno">22609</span>&#160;            );</div>
+<div class="line"><a name="l22610"></a><span class="lineno">22610</span>&#160;    }</div>
+<div class="line"><a name="l22611"></a><span class="lineno">22611</span>&#160; </div>
+<div class="line"><a name="l22612"></a><span class="lineno">22612</span>&#160;    <span class="comment">// If hospitalized, then the agent is removed from the system</span></div>
+<div class="line"><a name="l22613"></a><span class="lineno">22613</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (which == 1u)</div>
+<div class="line"><a name="l22614"></a><span class="lineno">22614</span>&#160;    {</div>
+<div class="line"><a name="l22615"></a><span class="lineno">22615</span>&#160;        p-&gt;change_state(</div>
+<div class="line"><a name="l22616"></a><span class="lineno">22616</span>&#160;            m,</div>
+<div class="line"><a name="l22617"></a><span class="lineno">22617</span>&#160;            <span class="comment">// HOSPITALIZED </span></div>
+<div class="line"><a name="l22618"></a><span class="lineno">22618</span>&#160;            unisolate ?</div>
+<div class="line"><a name="l22619"></a><span class="lineno">22619</span>&#160;                ModelMeaslesQuarantine::HOSPITALIZED :</div>
+<div class="line"><a name="l22620"></a><span class="lineno">22620</span>&#160;                ModelMeaslesQuarantine::DETECTED_HOSPITALIZED</div>
+<div class="line"><a name="l22621"></a><span class="lineno">22621</span>&#160;            );</div>
+<div class="line"><a name="l22622"></a><span class="lineno">22622</span>&#160;    }</div>
+<div class="line"><a name="l22623"></a><span class="lineno">22623</span>&#160;    <span class="comment">// If neither hospitalized nor recovered, then the agent is</span></div>
+<div class="line"><a name="l22624"></a><span class="lineno">22624</span>&#160;    <span class="comment">// still under isolation, unless the quarantine period is over.</span></div>
+<div class="line"><a name="l22625"></a><span class="lineno">22625</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> ((which == 0u) &amp;&amp; unisolate)</div>
+<div class="line"><a name="l22626"></a><span class="lineno">22626</span>&#160;    {</div>
+<div class="line"><a name="l22627"></a><span class="lineno">22627</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RASH);</div>
+<div class="line"><a name="l22628"></a><span class="lineno">22628</span>&#160;    }</div>
+<div class="line"><a name="l22629"></a><span class="lineno">22629</span>&#160; </div>
+<div class="line"><a name="l22630"></a><span class="lineno">22630</span>&#160;}</div>
+<div class="line"><a name="l22631"></a><span class="lineno">22631</span>&#160; </div>
+<div class="line"><a name="l22632"></a><span class="lineno">22632</span>&#160;LOCAL_UPDATE_FUN(m_update_isolated_recovered) {</div>
+<div class="line"><a name="l22633"></a><span class="lineno">22633</span>&#160; </div>
+<div class="line"><a name="l22634"></a><span class="lineno">22634</span>&#160;    GET_MODEL(m, model);</div>
+<div class="line"><a name="l22635"></a><span class="lineno">22635</span>&#160; </div>
+<div class="line"><a name="l22636"></a><span class="lineno">22636</span>&#160;    <span class="comment">// Figuring out if the agent can be released from isolation</span></div>
+<div class="line"><a name="l22637"></a><span class="lineno">22637</span>&#160;    <span class="comment">// if the quarantine period is over.</span></div>
+<div class="line"><a name="l22638"></a><span class="lineno">22638</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_rash_onset[p-&gt;get_id()];</div>
 <div class="line"><a name="l22639"></a><span class="lineno">22639</span>&#160; </div>
-<div class="line"><a name="l22640"></a><span class="lineno">22640</span>&#160;}</div>
-<div class="line"><a name="l22641"></a><span class="lineno">22641</span>&#160; </div>
-<div class="line"><a name="l22642"></a><span class="lineno">22642</span>&#160;LOCAL_UPDATE_FUN(m_update_q_exposed) {</div>
+<div class="line"><a name="l22640"></a><span class="lineno">22640</span>&#160;    <span class="keywordtype">bool</span> unisolate =</div>
+<div class="line"><a name="l22641"></a><span class="lineno">22641</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Isolation period&quot;</span>) &lt;= days_since) ?</div>
+<div class="line"><a name="l22642"></a><span class="lineno">22642</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
 <div class="line"><a name="l22643"></a><span class="lineno">22643</span>&#160; </div>
-<div class="line"><a name="l22644"></a><span class="lineno">22644</span>&#160;    <span class="comment">// How many days since quarantine started</span></div>
-<div class="line"><a name="l22645"></a><span class="lineno">22645</span>&#160;    GET_MODEL(m, model);</div>
-<div class="line"><a name="l22646"></a><span class="lineno">22646</span>&#160;    <span class="keywordtype">int</span> days_since =</div>
-<div class="line"><a name="l22647"></a><span class="lineno">22647</span>&#160;        m-&gt;today() - model-&gt;day_flagged[p-&gt;get_id()];</div>
+<div class="line"><a name="l22644"></a><span class="lineno">22644</span>&#160;    <span class="keywordflow">if</span> (unisolate)</div>
+<div class="line"><a name="l22645"></a><span class="lineno">22645</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RECOVERED);</div>
+<div class="line"><a name="l22646"></a><span class="lineno">22646</span>&#160; </div>
+<div class="line"><a name="l22647"></a><span class="lineno">22647</span>&#160;}</div>
 <div class="line"><a name="l22648"></a><span class="lineno">22648</span>&#160; </div>
-<div class="line"><a name="l22649"></a><span class="lineno">22649</span>&#160;    <span class="keywordtype">bool</span> unquarantine =</div>
-<div class="line"><a name="l22650"></a><span class="lineno">22650</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &lt;= days_since) ?</div>
-<div class="line"><a name="l22651"></a><span class="lineno">22651</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
-<div class="line"><a name="l22652"></a><span class="lineno">22652</span>&#160; </div>
-<div class="line"><a name="l22653"></a><span class="lineno">22653</span>&#160;    <span class="comment">// Will develop prodromal symptoms?</span></div>
-<div class="line"><a name="l22654"></a><span class="lineno">22654</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; (1.0/p-&gt;get_virus()-&gt;get_incubation(m)))</div>
-<div class="line"><a name="l22655"></a><span class="lineno">22655</span>&#160;    {</div>
-<div class="line"><a name="l22656"></a><span class="lineno">22656</span>&#160;        <span class="comment">// If the quarantine period is over, then they are moved to</span></div>
-<div class="line"><a name="l22657"></a><span class="lineno">22657</span>&#160;        <span class="comment">// the prodromal period. Otherwise, they are moved to the</span></div>
-<div class="line"><a name="l22658"></a><span class="lineno">22658</span>&#160;        <span class="comment">// quarantined prodromal period.</span></div>
-<div class="line"><a name="l22659"></a><span class="lineno">22659</span>&#160;        <span class="keywordflow">if</span> (unquarantine)</div>
-<div class="line"><a name="l22660"></a><span class="lineno">22660</span>&#160;            p-&gt; change_state(</div>
-<div class="line"><a name="l22661"></a><span class="lineno">22661</span>&#160;                m,</div>
-<div class="line"><a name="l22662"></a><span class="lineno">22662</span>&#160;                ModelMeaslesQuarantine::PRODROMAL</div>
-<div class="line"><a name="l22663"></a><span class="lineno">22663</span>&#160;            );</div>
-<div class="line"><a name="l22664"></a><span class="lineno">22664</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l22665"></a><span class="lineno">22665</span>&#160;            p-&gt;change_state(</div>
-<div class="line"><a name="l22666"></a><span class="lineno">22666</span>&#160;                m,</div>
-<div class="line"><a name="l22667"></a><span class="lineno">22667</span>&#160;                ModelMeaslesQuarantine::QUARANTINED_PRODROMAL</div>
-<div class="line"><a name="l22668"></a><span class="lineno">22668</span>&#160;            );</div>
-<div class="line"><a name="l22669"></a><span class="lineno">22669</span>&#160; </div>
-<div class="line"><a name="l22670"></a><span class="lineno">22670</span>&#160;    }</div>
-<div class="line"><a name="l22671"></a><span class="lineno">22671</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (unquarantine)</div>
-<div class="line"><a name="l22672"></a><span class="lineno">22672</span>&#160;    {</div>
-<div class="line"><a name="l22673"></a><span class="lineno">22673</span>&#160;        p-&gt;change_state(</div>
-<div class="line"><a name="l22674"></a><span class="lineno">22674</span>&#160;            m,</div>
-<div class="line"><a name="l22675"></a><span class="lineno">22675</span>&#160;            ModelMeaslesQuarantine::EXPOSED</div>
-<div class="line"><a name="l22676"></a><span class="lineno">22676</span>&#160;        );</div>
+<div class="line"><a name="l22649"></a><span class="lineno">22649</span>&#160;LOCAL_UPDATE_FUN(m_update_q_exposed) {</div>
+<div class="line"><a name="l22650"></a><span class="lineno">22650</span>&#160; </div>
+<div class="line"><a name="l22651"></a><span class="lineno">22651</span>&#160;    <span class="comment">// How many days since quarantine started</span></div>
+<div class="line"><a name="l22652"></a><span class="lineno">22652</span>&#160;    GET_MODEL(m, model);</div>
+<div class="line"><a name="l22653"></a><span class="lineno">22653</span>&#160;    <span class="keywordtype">int</span> days_since =</div>
+<div class="line"><a name="l22654"></a><span class="lineno">22654</span>&#160;        m-&gt;today() - model-&gt;day_flagged[p-&gt;get_id()];</div>
+<div class="line"><a name="l22655"></a><span class="lineno">22655</span>&#160; </div>
+<div class="line"><a name="l22656"></a><span class="lineno">22656</span>&#160;    <span class="keywordtype">bool</span> unquarantine =</div>
+<div class="line"><a name="l22657"></a><span class="lineno">22657</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &lt;= days_since) ?</div>
+<div class="line"><a name="l22658"></a><span class="lineno">22658</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
+<div class="line"><a name="l22659"></a><span class="lineno">22659</span>&#160; </div>
+<div class="line"><a name="l22660"></a><span class="lineno">22660</span>&#160;    <span class="comment">// Will develop prodromal symptoms?</span></div>
+<div class="line"><a name="l22661"></a><span class="lineno">22661</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; (1.0/p-&gt;get_virus()-&gt;get_incubation(m)))</div>
+<div class="line"><a name="l22662"></a><span class="lineno">22662</span>&#160;    {</div>
+<div class="line"><a name="l22663"></a><span class="lineno">22663</span>&#160;        <span class="comment">// If the quarantine period is over, then they are moved to</span></div>
+<div class="line"><a name="l22664"></a><span class="lineno">22664</span>&#160;        <span class="comment">// the prodromal period. Otherwise, they are moved to the</span></div>
+<div class="line"><a name="l22665"></a><span class="lineno">22665</span>&#160;        <span class="comment">// quarantined prodromal period.</span></div>
+<div class="line"><a name="l22666"></a><span class="lineno">22666</span>&#160;        <span class="keywordflow">if</span> (unquarantine)</div>
+<div class="line"><a name="l22667"></a><span class="lineno">22667</span>&#160;            p-&gt; change_state(</div>
+<div class="line"><a name="l22668"></a><span class="lineno">22668</span>&#160;                m,</div>
+<div class="line"><a name="l22669"></a><span class="lineno">22669</span>&#160;                ModelMeaslesQuarantine::PRODROMAL</div>
+<div class="line"><a name="l22670"></a><span class="lineno">22670</span>&#160;            );</div>
+<div class="line"><a name="l22671"></a><span class="lineno">22671</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l22672"></a><span class="lineno">22672</span>&#160;            p-&gt;change_state(</div>
+<div class="line"><a name="l22673"></a><span class="lineno">22673</span>&#160;                m,</div>
+<div class="line"><a name="l22674"></a><span class="lineno">22674</span>&#160;                ModelMeaslesQuarantine::QUARANTINED_PRODROMAL</div>
+<div class="line"><a name="l22675"></a><span class="lineno">22675</span>&#160;            );</div>
+<div class="line"><a name="l22676"></a><span class="lineno">22676</span>&#160; </div>
 <div class="line"><a name="l22677"></a><span class="lineno">22677</span>&#160;    }</div>
-<div class="line"><a name="l22678"></a><span class="lineno">22678</span>&#160; </div>
-<div class="line"><a name="l22679"></a><span class="lineno">22679</span>&#160;}</div>
-<div class="line"><a name="l22680"></a><span class="lineno">22680</span>&#160; </div>
-<div class="line"><a name="l22681"></a><span class="lineno">22681</span>&#160;LOCAL_UPDATE_FUN(m_update_q_susceptible) {</div>
-<div class="line"><a name="l22682"></a><span class="lineno">22682</span>&#160; </div>
-<div class="line"><a name="l22683"></a><span class="lineno">22683</span>&#160;    GET_MODEL(m, model);</div>
-<div class="line"><a name="l22684"></a><span class="lineno">22684</span>&#160;    <span class="keywordtype">int</span> days_since =</div>
-<div class="line"><a name="l22685"></a><span class="lineno">22685</span>&#160;        m-&gt;today() - model-&gt;day_flagged[p-&gt;get_id()];</div>
-<div class="line"><a name="l22686"></a><span class="lineno">22686</span>&#160;    </div>
-<div class="line"><a name="l22687"></a><span class="lineno">22687</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
-<div class="line"><a name="l22688"></a><span class="lineno">22688</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::SUSCEPTIBLE);</div>
+<div class="line"><a name="l22678"></a><span class="lineno">22678</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (unquarantine)</div>
+<div class="line"><a name="l22679"></a><span class="lineno">22679</span>&#160;    {</div>
+<div class="line"><a name="l22680"></a><span class="lineno">22680</span>&#160;        p-&gt;change_state(</div>
+<div class="line"><a name="l22681"></a><span class="lineno">22681</span>&#160;            m,</div>
+<div class="line"><a name="l22682"></a><span class="lineno">22682</span>&#160;            ModelMeaslesQuarantine::EXPOSED</div>
+<div class="line"><a name="l22683"></a><span class="lineno">22683</span>&#160;        );</div>
+<div class="line"><a name="l22684"></a><span class="lineno">22684</span>&#160;    }</div>
+<div class="line"><a name="l22685"></a><span class="lineno">22685</span>&#160; </div>
+<div class="line"><a name="l22686"></a><span class="lineno">22686</span>&#160;}</div>
+<div class="line"><a name="l22687"></a><span class="lineno">22687</span>&#160; </div>
+<div class="line"><a name="l22688"></a><span class="lineno">22688</span>&#160;LOCAL_UPDATE_FUN(m_update_q_susceptible) {</div>
 <div class="line"><a name="l22689"></a><span class="lineno">22689</span>&#160; </div>
-<div class="line"><a name="l22690"></a><span class="lineno">22690</span>&#160;}</div>
-<div class="line"><a name="l22691"></a><span class="lineno">22691</span>&#160; </div>
-<div class="line"><a name="l22692"></a><span class="lineno">22692</span>&#160;LOCAL_UPDATE_FUN(m_update_q_prodromal) {</div>
-<div class="line"><a name="l22693"></a><span class="lineno">22693</span>&#160; </div>
-<div class="line"><a name="l22694"></a><span class="lineno">22694</span>&#160;    GET_MODEL(m, model);</div>
-<div class="line"><a name="l22695"></a><span class="lineno">22695</span>&#160; </div>
-<div class="line"><a name="l22696"></a><span class="lineno">22696</span>&#160;    <span class="comment">// Otherwise, these are moved to the prodromal period, if</span></div>
-<div class="line"><a name="l22697"></a><span class="lineno">22697</span>&#160;    <span class="comment">// the quanrantine period is over.</span></div>
-<div class="line"><a name="l22698"></a><span class="lineno">22698</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_flagged[p-&gt;get_id()];</div>
-<div class="line"><a name="l22699"></a><span class="lineno">22699</span>&#160; </div>
-<div class="line"><a name="l22700"></a><span class="lineno">22700</span>&#160;    <span class="keywordtype">bool</span> unquarantine =</div>
-<div class="line"><a name="l22701"></a><span class="lineno">22701</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &lt;= days_since) ?</div>
-<div class="line"><a name="l22702"></a><span class="lineno">22702</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
-<div class="line"><a name="l22703"></a><span class="lineno">22703</span>&#160;    </div>
-<div class="line"><a name="l22704"></a><span class="lineno">22704</span>&#160;    <span class="comment">// Develops rash?</span></div>
-<div class="line"><a name="l22705"></a><span class="lineno">22705</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; (1.0/m-&gt;par(<span class="stringliteral">&quot;Prodromal period&quot;</span>)))</div>
-<div class="line"><a name="l22706"></a><span class="lineno">22706</span>&#160;    {</div>
-<div class="line"><a name="l22707"></a><span class="lineno">22707</span>&#160;        model-&gt;day_rash_onset[p-&gt;get_id()] = m-&gt;today();</div>
-<div class="line"><a name="l22708"></a><span class="lineno">22708</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::ISOLATED);</div>
-<div class="line"><a name="l22709"></a><span class="lineno">22709</span>&#160;    }</div>
-<div class="line"><a name="l22710"></a><span class="lineno">22710</span>&#160;    <span class="keywordflow">else</span></div>
-<div class="line"><a name="l22711"></a><span class="lineno">22711</span>&#160;    {</div>
-<div class="line"><a name="l22712"></a><span class="lineno">22712</span>&#160;        </div>
-<div class="line"><a name="l22713"></a><span class="lineno">22713</span>&#160;        <span class="keywordflow">if</span> (unquarantine)</div>
-<div class="line"><a name="l22714"></a><span class="lineno">22714</span>&#160;            p-&gt;change_state(m, ModelMeaslesQuarantine::PRODROMAL);</div>
-<div class="line"><a name="l22715"></a><span class="lineno">22715</span>&#160; </div>
+<div class="line"><a name="l22690"></a><span class="lineno">22690</span>&#160;    GET_MODEL(m, model);</div>
+<div class="line"><a name="l22691"></a><span class="lineno">22691</span>&#160;    <span class="keywordtype">int</span> days_since =</div>
+<div class="line"><a name="l22692"></a><span class="lineno">22692</span>&#160;        m-&gt;today() - model-&gt;day_flagged[p-&gt;get_id()];</div>
+<div class="line"><a name="l22693"></a><span class="lineno">22693</span>&#160;    </div>
+<div class="line"><a name="l22694"></a><span class="lineno">22694</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
+<div class="line"><a name="l22695"></a><span class="lineno">22695</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::SUSCEPTIBLE);</div>
+<div class="line"><a name="l22696"></a><span class="lineno">22696</span>&#160; </div>
+<div class="line"><a name="l22697"></a><span class="lineno">22697</span>&#160;}</div>
+<div class="line"><a name="l22698"></a><span class="lineno">22698</span>&#160; </div>
+<div class="line"><a name="l22699"></a><span class="lineno">22699</span>&#160;LOCAL_UPDATE_FUN(m_update_q_prodromal) {</div>
+<div class="line"><a name="l22700"></a><span class="lineno">22700</span>&#160; </div>
+<div class="line"><a name="l22701"></a><span class="lineno">22701</span>&#160;    GET_MODEL(m, model);</div>
+<div class="line"><a name="l22702"></a><span class="lineno">22702</span>&#160; </div>
+<div class="line"><a name="l22703"></a><span class="lineno">22703</span>&#160;    <span class="comment">// Otherwise, these are moved to the prodromal period, if</span></div>
+<div class="line"><a name="l22704"></a><span class="lineno">22704</span>&#160;    <span class="comment">// the quanrantine period is over.</span></div>
+<div class="line"><a name="l22705"></a><span class="lineno">22705</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_flagged[p-&gt;get_id()];</div>
+<div class="line"><a name="l22706"></a><span class="lineno">22706</span>&#160; </div>
+<div class="line"><a name="l22707"></a><span class="lineno">22707</span>&#160;    <span class="keywordtype">bool</span> unquarantine =</div>
+<div class="line"><a name="l22708"></a><span class="lineno">22708</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &lt;= days_since) ?</div>
+<div class="line"><a name="l22709"></a><span class="lineno">22709</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
+<div class="line"><a name="l22710"></a><span class="lineno">22710</span>&#160;    </div>
+<div class="line"><a name="l22711"></a><span class="lineno">22711</span>&#160;    <span class="comment">// Develops rash?</span></div>
+<div class="line"><a name="l22712"></a><span class="lineno">22712</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; (1.0/m-&gt;par(<span class="stringliteral">&quot;Prodromal period&quot;</span>)))</div>
+<div class="line"><a name="l22713"></a><span class="lineno">22713</span>&#160;    {</div>
+<div class="line"><a name="l22714"></a><span class="lineno">22714</span>&#160;        model-&gt;day_rash_onset[p-&gt;get_id()] = m-&gt;today();</div>
+<div class="line"><a name="l22715"></a><span class="lineno">22715</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::ISOLATED);</div>
 <div class="line"><a name="l22716"></a><span class="lineno">22716</span>&#160;    }</div>
-<div class="line"><a name="l22717"></a><span class="lineno">22717</span>&#160; </div>
-<div class="line"><a name="l22718"></a><span class="lineno">22718</span>&#160;}</div>
-<div class="line"><a name="l22719"></a><span class="lineno">22719</span>&#160; </div>
-<div class="line"><a name="l22720"></a><span class="lineno">22720</span>&#160;LOCAL_UPDATE_FUN(m_update_q_recovered) {</div>
-<div class="line"><a name="l22721"></a><span class="lineno">22721</span>&#160; </div>
-<div class="line"><a name="l22722"></a><span class="lineno">22722</span>&#160;    GET_MODEL(m, model);</div>
-<div class="line"><a name="l22723"></a><span class="lineno">22723</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_flagged[p-&gt;get_id()];</div>
-<div class="line"><a name="l22724"></a><span class="lineno">22724</span>&#160;    </div>
-<div class="line"><a name="l22725"></a><span class="lineno">22725</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
-<div class="line"><a name="l22726"></a><span class="lineno">22726</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RECOVERED);</div>
-<div class="line"><a name="l22727"></a><span class="lineno">22727</span>&#160; </div>
-<div class="line"><a name="l22728"></a><span class="lineno">22728</span>&#160;}</div>
-<div class="line"><a name="l22729"></a><span class="lineno">22729</span>&#160; </div>
-<div class="line"><a name="l22730"></a><span class="lineno">22730</span>&#160;LOCAL_UPDATE_FUN(m_update_hospitalized) {</div>
-<div class="line"><a name="l22731"></a><span class="lineno">22731</span>&#160; </div>
-<div class="line"><a name="l22732"></a><span class="lineno">22732</span>&#160;    <span class="comment">// The agent is removed from the system</span></div>
-<div class="line"><a name="l22733"></a><span class="lineno">22733</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Hospitalization period&quot;</span>))</div>
-<div class="line"><a name="l22734"></a><span class="lineno">22734</span>&#160;        p-&gt;rm_agent_by_virus(m, ModelMeaslesQuarantine::RECOVERED);</div>
-<div class="line"><a name="l22735"></a><span class="lineno">22735</span>&#160; </div>
-<div class="line"><a name="l22736"></a><span class="lineno">22736</span>&#160;    <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l22737"></a><span class="lineno">22737</span>&#160; </div>
-<div class="line"><a name="l22738"></a><span class="lineno">22738</span>&#160;}</div>
-<div class="line"><a name="l22739"></a><span class="lineno">22739</span>&#160; </div>
-<div class="line"><a name="l22740"></a><span class="lineno">22740</span>&#160; </div>
-<div class="line"><a name="l22741"></a><span class="lineno">22741</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l22742"></a><span class="lineno"><a class="line" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#ae99078b141176000eb305ffb6920842f">22742</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::ModelMeaslesQuarantine</a>(</div>
-<div class="line"><a name="l22743"></a><span class="lineno">22743</span>&#160;    <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;</a> &amp; model,</div>
-<div class="line"><a name="l22744"></a><span class="lineno">22744</span>&#160;    epiworld_fast_uint n,</div>
-<div class="line"><a name="l22745"></a><span class="lineno">22745</span>&#160;    epiworld_fast_uint n_exposed,</div>
-<div class="line"><a name="l22746"></a><span class="lineno">22746</span>&#160;    <span class="comment">// Disease parameters</span></div>
-<div class="line"><a name="l22747"></a><span class="lineno">22747</span>&#160;    epiworld_double contact_rate,</div>
-<div class="line"><a name="l22748"></a><span class="lineno">22748</span>&#160;    epiworld_double transmission_rate,</div>
-<div class="line"><a name="l22749"></a><span class="lineno">22749</span>&#160;    epiworld_double vax_efficacy,</div>
-<div class="line"><a name="l22750"></a><span class="lineno">22750</span>&#160;    epiworld_double vax_reduction_recovery_rate,</div>
-<div class="line"><a name="l22751"></a><span class="lineno">22751</span>&#160;    epiworld_double incubation_period,</div>
-<div class="line"><a name="l22752"></a><span class="lineno">22752</span>&#160;    epiworld_double prodromal_period,</div>
-<div class="line"><a name="l22753"></a><span class="lineno">22753</span>&#160;    epiworld_double rash_period,</div>
-<div class="line"><a name="l22754"></a><span class="lineno">22754</span>&#160;    epiworld_double days_undetected,</div>
-<div class="line"><a name="l22755"></a><span class="lineno">22755</span>&#160;    epiworld_double hospitalization_rate,</div>
-<div class="line"><a name="l22756"></a><span class="lineno">22756</span>&#160;    epiworld_double hospitalization_period,</div>
-<div class="line"><a name="l22757"></a><span class="lineno">22757</span>&#160;    <span class="comment">// Policy parameters</span></div>
-<div class="line"><a name="l22758"></a><span class="lineno">22758</span>&#160;    epiworld_double prop_vaccinated,</div>
-<div class="line"><a name="l22759"></a><span class="lineno">22759</span>&#160;    epiworld_fast_int quarantine_period,</div>
-<div class="line"><a name="l22760"></a><span class="lineno">22760</span>&#160;    epiworld_double quarantine_willingness,</div>
-<div class="line"><a name="l22761"></a><span class="lineno">22761</span>&#160;    epiworld_fast_int isolation_period</div>
-<div class="line"><a name="l22762"></a><span class="lineno">22762</span>&#160;) {</div>
-<div class="line"><a name="l22763"></a><span class="lineno">22763</span>&#160; </div>
-<div class="line"><a name="l22764"></a><span class="lineno">22764</span>&#160;    model.add_state(<span class="stringliteral">&quot;Susceptible&quot;</span>, this-&gt;m_update_susceptible);</div>
-<div class="line"><a name="l22765"></a><span class="lineno">22765</span>&#160;    model.add_state(<span class="stringliteral">&quot;Exposed&quot;</span>, this-&gt;m_update_exposed);</div>
-<div class="line"><a name="l22766"></a><span class="lineno">22766</span>&#160;    model.add_state(<span class="stringliteral">&quot;Prodromal&quot;</span>, this-&gt;m_update_prodromal);</div>
-<div class="line"><a name="l22767"></a><span class="lineno">22767</span>&#160;    model.add_state(<span class="stringliteral">&quot;Rash&quot;</span>, this-&gt;m_update_rash);</div>
-<div class="line"><a name="l22768"></a><span class="lineno">22768</span>&#160;    model.add_state(<span class="stringliteral">&quot;Isolated&quot;</span>, this-&gt;m_update_isolated);</div>
-<div class="line"><a name="l22769"></a><span class="lineno">22769</span>&#160;    model.add_state(</div>
-<div class="line"><a name="l22770"></a><span class="lineno">22770</span>&#160;        <span class="stringliteral">&quot;Isolated Recovered&quot;</span>, this-&gt;m_update_isolated_recovered</div>
-<div class="line"><a name="l22771"></a><span class="lineno">22771</span>&#160;    );</div>
-<div class="line"><a name="l22772"></a><span class="lineno">22772</span>&#160;    model.add_state(<span class="stringliteral">&quot;Detected Hospitalized&quot;</span>, this-&gt;m_update_hospitalized);</div>
-<div class="line"><a name="l22773"></a><span class="lineno">22773</span>&#160;    model.add_state(</div>
-<div class="line"><a name="l22774"></a><span class="lineno">22774</span>&#160;        <span class="stringliteral">&quot;Quarantined Exposed&quot;</span>, this-&gt;m_update_q_exposed</div>
-<div class="line"><a name="l22775"></a><span class="lineno">22775</span>&#160;    );</div>
-<div class="line"><a name="l22776"></a><span class="lineno">22776</span>&#160; </div>
-<div class="line"><a name="l22777"></a><span class="lineno">22777</span>&#160;    model.add_state(</div>
-<div class="line"><a name="l22778"></a><span class="lineno">22778</span>&#160;        <span class="stringliteral">&quot;Quarantined Susceptible&quot;</span>, this-&gt;m_update_q_susceptible</div>
-<div class="line"><a name="l22779"></a><span class="lineno">22779</span>&#160;    );</div>
-<div class="line"><a name="l22780"></a><span class="lineno">22780</span>&#160; </div>
-<div class="line"><a name="l22781"></a><span class="lineno">22781</span>&#160;    model.add_state(</div>
-<div class="line"><a name="l22782"></a><span class="lineno">22782</span>&#160;        <span class="stringliteral">&quot;Quarantined Prodromal&quot;</span>, this-&gt;m_update_q_prodromal</div>
-<div class="line"><a name="l22783"></a><span class="lineno">22783</span>&#160;    );</div>
-<div class="line"><a name="l22784"></a><span class="lineno">22784</span>&#160; </div>
-<div class="line"><a name="l22785"></a><span class="lineno">22785</span>&#160;    model.add_state(</div>
-<div class="line"><a name="l22786"></a><span class="lineno">22786</span>&#160;        <span class="stringliteral">&quot;Quarantined Recovered&quot;</span>, this-&gt;m_update_q_recovered</div>
-<div class="line"><a name="l22787"></a><span class="lineno">22787</span>&#160;    );</div>
-<div class="line"><a name="l22788"></a><span class="lineno">22788</span>&#160; </div>
-<div class="line"><a name="l22789"></a><span class="lineno">22789</span>&#160;    model.add_state(<span class="stringliteral">&quot;Hospitalized&quot;</span>, this-&gt;m_update_hospitalized);</div>
-<div class="line"><a name="l22790"></a><span class="lineno">22790</span>&#160; </div>
-<div class="line"><a name="l22791"></a><span class="lineno">22791</span>&#160;    model.add_state(<span class="stringliteral">&quot;Recovered&quot;</span>);</div>
-<div class="line"><a name="l22792"></a><span class="lineno">22792</span>&#160; </div>
-<div class="line"><a name="l22793"></a><span class="lineno">22793</span>&#160;    <span class="comment">// Adding the model parameters</span></div>
-<div class="line"><a name="l22794"></a><span class="lineno">22794</span>&#160;    model.add_param(contact_rate, <span class="stringliteral">&quot;Contact rate&quot;</span>);</div>
-<div class="line"><a name="l22795"></a><span class="lineno">22795</span>&#160;    model.add_param(transmission_rate, <span class="stringliteral">&quot;Transmission rate&quot;</span>);</div>
-<div class="line"><a name="l22796"></a><span class="lineno">22796</span>&#160;    model.add_param(incubation_period, <span class="stringliteral">&quot;Incubation period&quot;</span>);</div>
-<div class="line"><a name="l22797"></a><span class="lineno">22797</span>&#160;    model.add_param(prodromal_period, <span class="stringliteral">&quot;Prodromal period&quot;</span>);</div>
-<div class="line"><a name="l22798"></a><span class="lineno">22798</span>&#160;    model.add_param(rash_period, <span class="stringliteral">&quot;Rash period&quot;</span>);</div>
-<div class="line"><a name="l22799"></a><span class="lineno">22799</span>&#160;    model.add_param(days_undetected, <span class="stringliteral">&quot;Days undetected&quot;</span>);</div>
-<div class="line"><a name="l22800"></a><span class="lineno">22800</span>&#160;    model.add_param(quarantine_period, <span class="stringliteral">&quot;Quarantine period&quot;</span>);</div>
-<div class="line"><a name="l22801"></a><span class="lineno">22801</span>&#160;    model.add_param(</div>
-<div class="line"><a name="l22802"></a><span class="lineno">22802</span>&#160;        quarantine_willingness, <span class="stringliteral">&quot;Quarantine willingness&quot;</span></div>
-<div class="line"><a name="l22803"></a><span class="lineno">22803</span>&#160;    );</div>
-<div class="line"><a name="l22804"></a><span class="lineno">22804</span>&#160;    model.add_param(isolation_period, <span class="stringliteral">&quot;Isolation period&quot;</span>);</div>
-<div class="line"><a name="l22805"></a><span class="lineno">22805</span>&#160;    model.add_param(hospitalization_rate, <span class="stringliteral">&quot;Hospitalization rate&quot;</span>);</div>
-<div class="line"><a name="l22806"></a><span class="lineno">22806</span>&#160;    model.add_param(hospitalization_period, <span class="stringliteral">&quot;Hospitalization period&quot;</span>);</div>
-<div class="line"><a name="l22807"></a><span class="lineno">22807</span>&#160;    model.add_param(prop_vaccinated, <span class="stringliteral">&quot;Vaccination rate&quot;</span>);</div>
-<div class="line"><a name="l22808"></a><span class="lineno">22808</span>&#160;    model.add_param(vax_efficacy, <span class="stringliteral">&quot;Vax efficacy&quot;</span>);</div>
-<div class="line"><a name="l22809"></a><span class="lineno">22809</span>&#160;    model.add_param(vax_reduction_recovery_rate, <span class="stringliteral">&quot;Vax improved recovery&quot;</span>);</div>
-<div class="line"><a name="l22810"></a><span class="lineno">22810</span>&#160; </div>
-<div class="line"><a name="l22811"></a><span class="lineno">22811</span>&#160;    <span class="comment">// Designing the disease</span></div>
-<div class="line"><a name="l22812"></a><span class="lineno">22812</span>&#160;    <a class="code" href="classepiworld_1_1_virus.html">Virus&lt;&gt;</a> measles(<span class="stringliteral">&quot;Measles&quot;</span>);</div>
-<div class="line"><a name="l22813"></a><span class="lineno">22813</span>&#160;    measles.set_state(EXPOSED, RECOVERED);</div>
-<div class="line"><a name="l22814"></a><span class="lineno">22814</span>&#160;    measles.set_prob_infecting(&amp;model(<span class="stringliteral">&quot;Transmission rate&quot;</span>));</div>
-<div class="line"><a name="l22815"></a><span class="lineno">22815</span>&#160;    measles.set_prob_recovery(&amp;model(<span class="stringliteral">&quot;Rash period&quot;</span>));</div>
-<div class="line"><a name="l22816"></a><span class="lineno">22816</span>&#160;    measles.set_incubation(&amp;model(<span class="stringliteral">&quot;Incubation period&quot;</span>));</div>
-<div class="line"><a name="l22817"></a><span class="lineno">22817</span>&#160;    measles.set_distribution(</div>
-<div class="line"><a name="l22818"></a><span class="lineno">22818</span>&#160;        distribute_virus_randomly(n_exposed, <span class="keyword">false</span>)</div>
-<div class="line"><a name="l22819"></a><span class="lineno">22819</span>&#160;    );</div>
-<div class="line"><a name="l22820"></a><span class="lineno">22820</span>&#160; </div>
-<div class="line"><a name="l22821"></a><span class="lineno">22821</span>&#160;    model.add_virus(measles);</div>
-<div class="line"><a name="l22822"></a><span class="lineno">22822</span>&#160; </div>
-<div class="line"><a name="l22823"></a><span class="lineno">22823</span>&#160;    <span class="comment">// Designing the vaccine</span></div>
-<div class="line"><a name="l22824"></a><span class="lineno">22824</span>&#160;    <a class="code" href="classepiworld_1_1_tool.html">Tool&lt;&gt;</a> vaccine(<span class="stringliteral">&quot;Vaccine&quot;</span>);</div>
-<div class="line"><a name="l22825"></a><span class="lineno">22825</span>&#160;    vaccine.set_susceptibility_reduction(&amp;model(<span class="stringliteral">&quot;Vax efficacy&quot;</span>));</div>
-<div class="line"><a name="l22826"></a><span class="lineno">22826</span>&#160;    vaccine.set_recovery_enhancer(&amp;model(<span class="stringliteral">&quot;Vax improved recovery&quot;</span>));</div>
-<div class="line"><a name="l22827"></a><span class="lineno">22827</span>&#160;    vaccine.set_distribution(</div>
-<div class="line"><a name="l22828"></a><span class="lineno">22828</span>&#160;        distribute_tool_randomly(prop_vaccinated, <span class="keyword">true</span>)</div>
-<div class="line"><a name="l22829"></a><span class="lineno">22829</span>&#160;    );</div>
-<div class="line"><a name="l22830"></a><span class="lineno">22830</span>&#160; </div>
-<div class="line"><a name="l22831"></a><span class="lineno">22831</span>&#160;    model.add_tool(vaccine);</div>
-<div class="line"><a name="l22832"></a><span class="lineno">22832</span>&#160; </div>
-<div class="line"><a name="l22833"></a><span class="lineno">22833</span>&#160;    <span class="comment">// Global actions</span></div>
-<div class="line"><a name="l22834"></a><span class="lineno">22834</span>&#160;    model.add_globalevent(this-&gt;m_update_model, <span class="stringliteral">&quot;Update model&quot;</span>);</div>
-<div class="line"><a name="l22835"></a><span class="lineno">22835</span>&#160;    model.queuing_off();</div>
-<div class="line"><a name="l22836"></a><span class="lineno">22836</span>&#160; </div>
-<div class="line"><a name="l22837"></a><span class="lineno">22837</span>&#160;    <span class="comment">// Setting the population</span></div>
-<div class="line"><a name="l22838"></a><span class="lineno">22838</span>&#160;    model.agents_empty_graph(n);</div>
+<div class="line"><a name="l22717"></a><span class="lineno">22717</span>&#160;    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l22718"></a><span class="lineno">22718</span>&#160;    {</div>
+<div class="line"><a name="l22719"></a><span class="lineno">22719</span>&#160;        </div>
+<div class="line"><a name="l22720"></a><span class="lineno">22720</span>&#160;        <span class="keywordflow">if</span> (unquarantine)</div>
+<div class="line"><a name="l22721"></a><span class="lineno">22721</span>&#160;            p-&gt;change_state(m, ModelMeaslesQuarantine::PRODROMAL);</div>
+<div class="line"><a name="l22722"></a><span class="lineno">22722</span>&#160; </div>
+<div class="line"><a name="l22723"></a><span class="lineno">22723</span>&#160;    }</div>
+<div class="line"><a name="l22724"></a><span class="lineno">22724</span>&#160; </div>
+<div class="line"><a name="l22725"></a><span class="lineno">22725</span>&#160;}</div>
+<div class="line"><a name="l22726"></a><span class="lineno">22726</span>&#160; </div>
+<div class="line"><a name="l22727"></a><span class="lineno">22727</span>&#160;LOCAL_UPDATE_FUN(m_update_q_recovered) {</div>
+<div class="line"><a name="l22728"></a><span class="lineno">22728</span>&#160; </div>
+<div class="line"><a name="l22729"></a><span class="lineno">22729</span>&#160;    GET_MODEL(m, model);</div>
+<div class="line"><a name="l22730"></a><span class="lineno">22730</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_flagged[p-&gt;get_id()];</div>
+<div class="line"><a name="l22731"></a><span class="lineno">22731</span>&#160;    </div>
+<div class="line"><a name="l22732"></a><span class="lineno">22732</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
+<div class="line"><a name="l22733"></a><span class="lineno">22733</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RECOVERED);</div>
+<div class="line"><a name="l22734"></a><span class="lineno">22734</span>&#160; </div>
+<div class="line"><a name="l22735"></a><span class="lineno">22735</span>&#160;}</div>
+<div class="line"><a name="l22736"></a><span class="lineno">22736</span>&#160; </div>
+<div class="line"><a name="l22737"></a><span class="lineno">22737</span>&#160;LOCAL_UPDATE_FUN(m_update_hospitalized) {</div>
+<div class="line"><a name="l22738"></a><span class="lineno">22738</span>&#160; </div>
+<div class="line"><a name="l22739"></a><span class="lineno">22739</span>&#160;    <span class="comment">// The agent is removed from the system</span></div>
+<div class="line"><a name="l22740"></a><span class="lineno">22740</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Hospitalization period&quot;</span>))</div>
+<div class="line"><a name="l22741"></a><span class="lineno">22741</span>&#160;        p-&gt;rm_agent_by_virus(m, ModelMeaslesQuarantine::RECOVERED);</div>
+<div class="line"><a name="l22742"></a><span class="lineno">22742</span>&#160; </div>
+<div class="line"><a name="l22743"></a><span class="lineno">22743</span>&#160;    <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l22744"></a><span class="lineno">22744</span>&#160; </div>
+<div class="line"><a name="l22745"></a><span class="lineno">22745</span>&#160;}</div>
+<div class="line"><a name="l22746"></a><span class="lineno">22746</span>&#160; </div>
+<div class="line"><a name="l22747"></a><span class="lineno">22747</span>&#160; </div>
+<div class="line"><a name="l22748"></a><span class="lineno">22748</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
+<div class="line"><a name="l22749"></a><span class="lineno"><a class="line" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#ae99078b141176000eb305ffb6920842f">22749</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::ModelMeaslesQuarantine</a>(</div>
+<div class="line"><a name="l22750"></a><span class="lineno">22750</span>&#160;    <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;</a> &amp; model,</div>
+<div class="line"><a name="l22751"></a><span class="lineno">22751</span>&#160;    epiworld_fast_uint n,</div>
+<div class="line"><a name="l22752"></a><span class="lineno">22752</span>&#160;    epiworld_fast_uint n_exposed,</div>
+<div class="line"><a name="l22753"></a><span class="lineno">22753</span>&#160;    <span class="comment">// Disease parameters</span></div>
+<div class="line"><a name="l22754"></a><span class="lineno">22754</span>&#160;    epiworld_double contact_rate,</div>
+<div class="line"><a name="l22755"></a><span class="lineno">22755</span>&#160;    epiworld_double transmission_rate,</div>
+<div class="line"><a name="l22756"></a><span class="lineno">22756</span>&#160;    epiworld_double vax_efficacy,</div>
+<div class="line"><a name="l22757"></a><span class="lineno">22757</span>&#160;    epiworld_double vax_reduction_recovery_rate,</div>
+<div class="line"><a name="l22758"></a><span class="lineno">22758</span>&#160;    epiworld_double incubation_period,</div>
+<div class="line"><a name="l22759"></a><span class="lineno">22759</span>&#160;    epiworld_double prodromal_period,</div>
+<div class="line"><a name="l22760"></a><span class="lineno">22760</span>&#160;    epiworld_double rash_period,</div>
+<div class="line"><a name="l22761"></a><span class="lineno">22761</span>&#160;    epiworld_double days_undetected,</div>
+<div class="line"><a name="l22762"></a><span class="lineno">22762</span>&#160;    epiworld_double hospitalization_rate,</div>
+<div class="line"><a name="l22763"></a><span class="lineno">22763</span>&#160;    epiworld_double hospitalization_period,</div>
+<div class="line"><a name="l22764"></a><span class="lineno">22764</span>&#160;    <span class="comment">// Policy parameters</span></div>
+<div class="line"><a name="l22765"></a><span class="lineno">22765</span>&#160;    epiworld_double prop_vaccinated,</div>
+<div class="line"><a name="l22766"></a><span class="lineno">22766</span>&#160;    epiworld_fast_int quarantine_period,</div>
+<div class="line"><a name="l22767"></a><span class="lineno">22767</span>&#160;    epiworld_double quarantine_willingness,</div>
+<div class="line"><a name="l22768"></a><span class="lineno">22768</span>&#160;    epiworld_fast_int isolation_period</div>
+<div class="line"><a name="l22769"></a><span class="lineno">22769</span>&#160;) {</div>
+<div class="line"><a name="l22770"></a><span class="lineno">22770</span>&#160; </div>
+<div class="line"><a name="l22771"></a><span class="lineno">22771</span>&#160;    model.add_state(<span class="stringliteral">&quot;Susceptible&quot;</span>, this-&gt;m_update_susceptible);</div>
+<div class="line"><a name="l22772"></a><span class="lineno">22772</span>&#160;    model.add_state(<span class="stringliteral">&quot;Exposed&quot;</span>, this-&gt;m_update_exposed);</div>
+<div class="line"><a name="l22773"></a><span class="lineno">22773</span>&#160;    model.add_state(<span class="stringliteral">&quot;Prodromal&quot;</span>, this-&gt;m_update_prodromal);</div>
+<div class="line"><a name="l22774"></a><span class="lineno">22774</span>&#160;    model.add_state(<span class="stringliteral">&quot;Rash&quot;</span>, this-&gt;m_update_rash);</div>
+<div class="line"><a name="l22775"></a><span class="lineno">22775</span>&#160;    model.add_state(<span class="stringliteral">&quot;Isolated&quot;</span>, this-&gt;m_update_isolated);</div>
+<div class="line"><a name="l22776"></a><span class="lineno">22776</span>&#160;    model.add_state(</div>
+<div class="line"><a name="l22777"></a><span class="lineno">22777</span>&#160;        <span class="stringliteral">&quot;Isolated Recovered&quot;</span>, this-&gt;m_update_isolated_recovered</div>
+<div class="line"><a name="l22778"></a><span class="lineno">22778</span>&#160;    );</div>
+<div class="line"><a name="l22779"></a><span class="lineno">22779</span>&#160;    model.add_state(<span class="stringliteral">&quot;Detected Hospitalized&quot;</span>, this-&gt;m_update_hospitalized);</div>
+<div class="line"><a name="l22780"></a><span class="lineno">22780</span>&#160;    model.add_state(</div>
+<div class="line"><a name="l22781"></a><span class="lineno">22781</span>&#160;        <span class="stringliteral">&quot;Quarantined Exposed&quot;</span>, this-&gt;m_update_q_exposed</div>
+<div class="line"><a name="l22782"></a><span class="lineno">22782</span>&#160;    );</div>
+<div class="line"><a name="l22783"></a><span class="lineno">22783</span>&#160; </div>
+<div class="line"><a name="l22784"></a><span class="lineno">22784</span>&#160;    model.add_state(</div>
+<div class="line"><a name="l22785"></a><span class="lineno">22785</span>&#160;        <span class="stringliteral">&quot;Quarantined Susceptible&quot;</span>, this-&gt;m_update_q_susceptible</div>
+<div class="line"><a name="l22786"></a><span class="lineno">22786</span>&#160;    );</div>
+<div class="line"><a name="l22787"></a><span class="lineno">22787</span>&#160; </div>
+<div class="line"><a name="l22788"></a><span class="lineno">22788</span>&#160;    model.add_state(</div>
+<div class="line"><a name="l22789"></a><span class="lineno">22789</span>&#160;        <span class="stringliteral">&quot;Quarantined Prodromal&quot;</span>, this-&gt;m_update_q_prodromal</div>
+<div class="line"><a name="l22790"></a><span class="lineno">22790</span>&#160;    );</div>
+<div class="line"><a name="l22791"></a><span class="lineno">22791</span>&#160; </div>
+<div class="line"><a name="l22792"></a><span class="lineno">22792</span>&#160;    model.add_state(</div>
+<div class="line"><a name="l22793"></a><span class="lineno">22793</span>&#160;        <span class="stringliteral">&quot;Quarantined Recovered&quot;</span>, this-&gt;m_update_q_recovered</div>
+<div class="line"><a name="l22794"></a><span class="lineno">22794</span>&#160;    );</div>
+<div class="line"><a name="l22795"></a><span class="lineno">22795</span>&#160; </div>
+<div class="line"><a name="l22796"></a><span class="lineno">22796</span>&#160;    model.add_state(<span class="stringliteral">&quot;Hospitalized&quot;</span>, this-&gt;m_update_hospitalized);</div>
+<div class="line"><a name="l22797"></a><span class="lineno">22797</span>&#160; </div>
+<div class="line"><a name="l22798"></a><span class="lineno">22798</span>&#160;    model.add_state(<span class="stringliteral">&quot;Recovered&quot;</span>);</div>
+<div class="line"><a name="l22799"></a><span class="lineno">22799</span>&#160; </div>
+<div class="line"><a name="l22800"></a><span class="lineno">22800</span>&#160;    <span class="comment">// Adding the model parameters</span></div>
+<div class="line"><a name="l22801"></a><span class="lineno">22801</span>&#160;    model.add_param(contact_rate, <span class="stringliteral">&quot;Contact rate&quot;</span>);</div>
+<div class="line"><a name="l22802"></a><span class="lineno">22802</span>&#160;    model.add_param(transmission_rate, <span class="stringliteral">&quot;Transmission rate&quot;</span>);</div>
+<div class="line"><a name="l22803"></a><span class="lineno">22803</span>&#160;    model.add_param(incubation_period, <span class="stringliteral">&quot;Incubation period&quot;</span>);</div>
+<div class="line"><a name="l22804"></a><span class="lineno">22804</span>&#160;    model.add_param(prodromal_period, <span class="stringliteral">&quot;Prodromal period&quot;</span>);</div>
+<div class="line"><a name="l22805"></a><span class="lineno">22805</span>&#160;    model.add_param(rash_period, <span class="stringliteral">&quot;Rash period&quot;</span>);</div>
+<div class="line"><a name="l22806"></a><span class="lineno">22806</span>&#160;    model.add_param(days_undetected, <span class="stringliteral">&quot;Days undetected&quot;</span>);</div>
+<div class="line"><a name="l22807"></a><span class="lineno">22807</span>&#160;    model.add_param(quarantine_period, <span class="stringliteral">&quot;Quarantine period&quot;</span>);</div>
+<div class="line"><a name="l22808"></a><span class="lineno">22808</span>&#160;    model.add_param(</div>
+<div class="line"><a name="l22809"></a><span class="lineno">22809</span>&#160;        quarantine_willingness, <span class="stringliteral">&quot;Quarantine willingness&quot;</span></div>
+<div class="line"><a name="l22810"></a><span class="lineno">22810</span>&#160;    );</div>
+<div class="line"><a name="l22811"></a><span class="lineno">22811</span>&#160;    model.add_param(isolation_period, <span class="stringliteral">&quot;Isolation period&quot;</span>);</div>
+<div class="line"><a name="l22812"></a><span class="lineno">22812</span>&#160;    model.add_param(hospitalization_rate, <span class="stringliteral">&quot;Hospitalization rate&quot;</span>);</div>
+<div class="line"><a name="l22813"></a><span class="lineno">22813</span>&#160;    model.add_param(hospitalization_period, <span class="stringliteral">&quot;Hospitalization period&quot;</span>);</div>
+<div class="line"><a name="l22814"></a><span class="lineno">22814</span>&#160;    model.add_param(prop_vaccinated, <span class="stringliteral">&quot;Vaccination rate&quot;</span>);</div>
+<div class="line"><a name="l22815"></a><span class="lineno">22815</span>&#160;    model.add_param(vax_efficacy, <span class="stringliteral">&quot;Vax efficacy&quot;</span>);</div>
+<div class="line"><a name="l22816"></a><span class="lineno">22816</span>&#160;    model.add_param(vax_reduction_recovery_rate, <span class="stringliteral">&quot;Vax improved recovery&quot;</span>);</div>
+<div class="line"><a name="l22817"></a><span class="lineno">22817</span>&#160; </div>
+<div class="line"><a name="l22818"></a><span class="lineno">22818</span>&#160;    <span class="comment">// Designing the disease</span></div>
+<div class="line"><a name="l22819"></a><span class="lineno">22819</span>&#160;    <a class="code" href="classepiworld_1_1_virus.html">Virus&lt;&gt;</a> measles(<span class="stringliteral">&quot;Measles&quot;</span>);</div>
+<div class="line"><a name="l22820"></a><span class="lineno">22820</span>&#160;    measles.set_state(EXPOSED, RECOVERED);</div>
+<div class="line"><a name="l22821"></a><span class="lineno">22821</span>&#160;    measles.set_prob_infecting(&amp;model(<span class="stringliteral">&quot;Transmission rate&quot;</span>));</div>
+<div class="line"><a name="l22822"></a><span class="lineno">22822</span>&#160;    measles.set_prob_recovery(&amp;model(<span class="stringliteral">&quot;Rash period&quot;</span>));</div>
+<div class="line"><a name="l22823"></a><span class="lineno">22823</span>&#160;    measles.set_incubation(&amp;model(<span class="stringliteral">&quot;Incubation period&quot;</span>));</div>
+<div class="line"><a name="l22824"></a><span class="lineno">22824</span>&#160;    measles.set_distribution(</div>
+<div class="line"><a name="l22825"></a><span class="lineno">22825</span>&#160;        distribute_virus_randomly(n_exposed, <span class="keyword">false</span>)</div>
+<div class="line"><a name="l22826"></a><span class="lineno">22826</span>&#160;    );</div>
+<div class="line"><a name="l22827"></a><span class="lineno">22827</span>&#160; </div>
+<div class="line"><a name="l22828"></a><span class="lineno">22828</span>&#160;    model.add_virus(measles);</div>
+<div class="line"><a name="l22829"></a><span class="lineno">22829</span>&#160; </div>
+<div class="line"><a name="l22830"></a><span class="lineno">22830</span>&#160;    <span class="comment">// Designing the vaccine</span></div>
+<div class="line"><a name="l22831"></a><span class="lineno">22831</span>&#160;    <a class="code" href="classepiworld_1_1_tool.html">Tool&lt;&gt;</a> vaccine(<span class="stringliteral">&quot;Vaccine&quot;</span>);</div>
+<div class="line"><a name="l22832"></a><span class="lineno">22832</span>&#160;    vaccine.set_susceptibility_reduction(&amp;model(<span class="stringliteral">&quot;Vax efficacy&quot;</span>));</div>
+<div class="line"><a name="l22833"></a><span class="lineno">22833</span>&#160;    vaccine.set_recovery_enhancer(&amp;model(<span class="stringliteral">&quot;Vax improved recovery&quot;</span>));</div>
+<div class="line"><a name="l22834"></a><span class="lineno">22834</span>&#160;    vaccine.set_distribution(</div>
+<div class="line"><a name="l22835"></a><span class="lineno">22835</span>&#160;        distribute_tool_randomly(prop_vaccinated, <span class="keyword">true</span>)</div>
+<div class="line"><a name="l22836"></a><span class="lineno">22836</span>&#160;    );</div>
+<div class="line"><a name="l22837"></a><span class="lineno">22837</span>&#160; </div>
+<div class="line"><a name="l22838"></a><span class="lineno">22838</span>&#160;    model.add_tool(vaccine);</div>
 <div class="line"><a name="l22839"></a><span class="lineno">22839</span>&#160; </div>
-<div class="line"><a name="l22840"></a><span class="lineno">22840</span>&#160;    <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l22841"></a><span class="lineno">22841</span>&#160; </div>
-<div class="line"><a name="l22842"></a><span class="lineno">22842</span>&#160;}</div>
+<div class="line"><a name="l22840"></a><span class="lineno">22840</span>&#160;    <span class="comment">// Global actions</span></div>
+<div class="line"><a name="l22841"></a><span class="lineno">22841</span>&#160;    model.add_globalevent(this-&gt;m_update_model, <span class="stringliteral">&quot;Update model&quot;</span>);</div>
+<div class="line"><a name="l22842"></a><span class="lineno">22842</span>&#160;    model.queuing_off();</div>
 <div class="line"><a name="l22843"></a><span class="lineno">22843</span>&#160; </div>
-<div class="line"><a name="l22844"></a><span class="lineno">22844</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l22845"></a><span class="lineno">22845</span>&#160;<span class="keyword">inline</span> <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::ModelMeaslesQuarantine</a>(</div>
-<div class="line"><a name="l22846"></a><span class="lineno">22846</span>&#160;    epiworld_fast_uint n,</div>
-<div class="line"><a name="l22847"></a><span class="lineno">22847</span>&#160;    epiworld_fast_uint n_exposed,</div>
-<div class="line"><a name="l22848"></a><span class="lineno">22848</span>&#160;    <span class="comment">// Disease parameters</span></div>
-<div class="line"><a name="l22849"></a><span class="lineno">22849</span>&#160;    epiworld_double contact_rate,</div>
-<div class="line"><a name="l22850"></a><span class="lineno">22850</span>&#160;    epiworld_double transmission_rate,</div>
-<div class="line"><a name="l22851"></a><span class="lineno">22851</span>&#160;    epiworld_double vax_efficacy,</div>
-<div class="line"><a name="l22852"></a><span class="lineno">22852</span>&#160;    epiworld_double vax_reduction_recovery_rate,</div>
-<div class="line"><a name="l22853"></a><span class="lineno">22853</span>&#160;    epiworld_double incubation_period,</div>
-<div class="line"><a name="l22854"></a><span class="lineno">22854</span>&#160;    epiworld_double prodromal_period,</div>
-<div class="line"><a name="l22855"></a><span class="lineno">22855</span>&#160;    epiworld_double rash_period,</div>
-<div class="line"><a name="l22856"></a><span class="lineno">22856</span>&#160;    epiworld_double days_undetected,</div>
-<div class="line"><a name="l22857"></a><span class="lineno">22857</span>&#160;    epiworld_double hospitalization_rate,</div>
-<div class="line"><a name="l22858"></a><span class="lineno">22858</span>&#160;    epiworld_double hospitalization_period,</div>
-<div class="line"><a name="l22859"></a><span class="lineno">22859</span>&#160;    <span class="comment">// Policy parameters</span></div>
-<div class="line"><a name="l22860"></a><span class="lineno">22860</span>&#160;    epiworld_double prop_vaccinated,</div>
-<div class="line"><a name="l22861"></a><span class="lineno">22861</span>&#160;    epiworld_fast_int quarantine_period,</div>
-<div class="line"><a name="l22862"></a><span class="lineno">22862</span>&#160;    epiworld_double quarantine_willingness,</div>
-<div class="line"><a name="l22863"></a><span class="lineno">22863</span>&#160;    epiworld_fast_int isolation_period</div>
-<div class="line"><a name="l22864"></a><span class="lineno">22864</span>&#160; </div>
-<div class="line"><a name="l22865"></a><span class="lineno">22865</span>&#160;) {</div>
-<div class="line"><a name="l22866"></a><span class="lineno">22866</span>&#160; </div>
-<div class="line"><a name="l22867"></a><span class="lineno">22867</span>&#160;    <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine</a>(</div>
-<div class="line"><a name="l22868"></a><span class="lineno">22868</span>&#160;        *<span class="keyword">this</span>,</div>
-<div class="line"><a name="l22869"></a><span class="lineno">22869</span>&#160;        n,</div>
-<div class="line"><a name="l22870"></a><span class="lineno">22870</span>&#160;        n_exposed,</div>
-<div class="line"><a name="l22871"></a><span class="lineno">22871</span>&#160;        contact_rate,</div>
-<div class="line"><a name="l22872"></a><span class="lineno">22872</span>&#160;        transmission_rate,</div>
-<div class="line"><a name="l22873"></a><span class="lineno">22873</span>&#160;        vax_efficacy,</div>
-<div class="line"><a name="l22874"></a><span class="lineno">22874</span>&#160;        vax_reduction_recovery_rate,</div>
-<div class="line"><a name="l22875"></a><span class="lineno">22875</span>&#160;        incubation_period,</div>
-<div class="line"><a name="l22876"></a><span class="lineno">22876</span>&#160;        prodromal_period,</div>
-<div class="line"><a name="l22877"></a><span class="lineno">22877</span>&#160;        rash_period,</div>
-<div class="line"><a name="l22878"></a><span class="lineno">22878</span>&#160;        days_undetected,</div>
-<div class="line"><a name="l22879"></a><span class="lineno">22879</span>&#160;        hospitalization_rate,</div>
-<div class="line"><a name="l22880"></a><span class="lineno">22880</span>&#160;        hospitalization_period,</div>
-<div class="line"><a name="l22881"></a><span class="lineno">22881</span>&#160;        prop_vaccinated,</div>
-<div class="line"><a name="l22882"></a><span class="lineno">22882</span>&#160;        quarantine_period,</div>
-<div class="line"><a name="l22883"></a><span class="lineno">22883</span>&#160;        quarantine_willingness,</div>
-<div class="line"><a name="l22884"></a><span class="lineno">22884</span>&#160;        isolation_period</div>
-<div class="line"><a name="l22885"></a><span class="lineno">22885</span>&#160;    );</div>
-<div class="line"><a name="l22886"></a><span class="lineno">22886</span>&#160; </div>
-<div class="line"><a name="l22887"></a><span class="lineno">22887</span>&#160;    <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l22888"></a><span class="lineno">22888</span>&#160; </div>
-<div class="line"><a name="l22889"></a><span class="lineno">22889</span>&#160;}</div>
-<div class="line"><a name="l22890"></a><span class="lineno">22890</span>&#160; </div>
-<div class="line"><a name="l22891"></a><span class="lineno">22891</span>&#160;<span class="preprocessor">#undef SAMPLE_FROM_PROBS</span></div>
-<div class="line"><a name="l22892"></a><span class="lineno">22892</span>&#160;<span class="preprocessor">#undef LOCAL_UPDATE_FUN</span></div>
-<div class="line"><a name="l22893"></a><span class="lineno">22893</span>&#160;<span class="preprocessor">#undef GET_MODEL</span></div>
-<div class="line"><a name="l22894"></a><span class="lineno">22894</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l22895"></a><span class="lineno">22895</span>&#160;<span class="comment">/*//////////////////////////////////////////////////////////////////////////////</span></div>
-<div class="line"><a name="l22897"></a><span class="lineno">22897</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22898"></a><span class="lineno">22898</span>&#160;<span class="comment"> End of -include/epiworld//models/measlesquarantine.hpp-</span></div>
-<div class="line"><a name="l22899"></a><span class="lineno">22899</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22902"></a><span class="lineno">22902</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22903"></a><span class="lineno">22903</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22844"></a><span class="lineno">22844</span>&#160;    <span class="comment">// Setting the population</span></div>
+<div class="line"><a name="l22845"></a><span class="lineno">22845</span>&#160;    model.agents_empty_graph(n);</div>
+<div class="line"><a name="l22846"></a><span class="lineno">22846</span>&#160; </div>
+<div class="line"><a name="l22847"></a><span class="lineno">22847</span>&#160;    <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l22848"></a><span class="lineno">22848</span>&#160; </div>
+<div class="line"><a name="l22849"></a><span class="lineno">22849</span>&#160;}</div>
+<div class="line"><a name="l22850"></a><span class="lineno">22850</span>&#160; </div>
+<div class="line"><a name="l22851"></a><span class="lineno">22851</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
+<div class="line"><a name="l22852"></a><span class="lineno">22852</span>&#160;<span class="keyword">inline</span> <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::ModelMeaslesQuarantine</a>(</div>
+<div class="line"><a name="l22853"></a><span class="lineno">22853</span>&#160;    epiworld_fast_uint n,</div>
+<div class="line"><a name="l22854"></a><span class="lineno">22854</span>&#160;    epiworld_fast_uint n_exposed,</div>
+<div class="line"><a name="l22855"></a><span class="lineno">22855</span>&#160;    <span class="comment">// Disease parameters</span></div>
+<div class="line"><a name="l22856"></a><span class="lineno">22856</span>&#160;    epiworld_double contact_rate,</div>
+<div class="line"><a name="l22857"></a><span class="lineno">22857</span>&#160;    epiworld_double transmission_rate,</div>
+<div class="line"><a name="l22858"></a><span class="lineno">22858</span>&#160;    epiworld_double vax_efficacy,</div>
+<div class="line"><a name="l22859"></a><span class="lineno">22859</span>&#160;    epiworld_double vax_reduction_recovery_rate,</div>
+<div class="line"><a name="l22860"></a><span class="lineno">22860</span>&#160;    epiworld_double incubation_period,</div>
+<div class="line"><a name="l22861"></a><span class="lineno">22861</span>&#160;    epiworld_double prodromal_period,</div>
+<div class="line"><a name="l22862"></a><span class="lineno">22862</span>&#160;    epiworld_double rash_period,</div>
+<div class="line"><a name="l22863"></a><span class="lineno">22863</span>&#160;    epiworld_double days_undetected,</div>
+<div class="line"><a name="l22864"></a><span class="lineno">22864</span>&#160;    epiworld_double hospitalization_rate,</div>
+<div class="line"><a name="l22865"></a><span class="lineno">22865</span>&#160;    epiworld_double hospitalization_period,</div>
+<div class="line"><a name="l22866"></a><span class="lineno">22866</span>&#160;    <span class="comment">// Policy parameters</span></div>
+<div class="line"><a name="l22867"></a><span class="lineno">22867</span>&#160;    epiworld_double prop_vaccinated,</div>
+<div class="line"><a name="l22868"></a><span class="lineno">22868</span>&#160;    epiworld_fast_int quarantine_period,</div>
+<div class="line"><a name="l22869"></a><span class="lineno">22869</span>&#160;    epiworld_double quarantine_willingness,</div>
+<div class="line"><a name="l22870"></a><span class="lineno">22870</span>&#160;    epiworld_fast_int isolation_period</div>
+<div class="line"><a name="l22871"></a><span class="lineno">22871</span>&#160; </div>
+<div class="line"><a name="l22872"></a><span class="lineno">22872</span>&#160;) {</div>
+<div class="line"><a name="l22873"></a><span class="lineno">22873</span>&#160; </div>
+<div class="line"><a name="l22874"></a><span class="lineno">22874</span>&#160;    <a class="code" href="classepiworld_1_1epimodels_1_1_model_measles_quarantine.html">ModelMeaslesQuarantine</a>(</div>
+<div class="line"><a name="l22875"></a><span class="lineno">22875</span>&#160;        *<span class="keyword">this</span>,</div>
+<div class="line"><a name="l22876"></a><span class="lineno">22876</span>&#160;        n,</div>
+<div class="line"><a name="l22877"></a><span class="lineno">22877</span>&#160;        n_exposed,</div>
+<div class="line"><a name="l22878"></a><span class="lineno">22878</span>&#160;        contact_rate,</div>
+<div class="line"><a name="l22879"></a><span class="lineno">22879</span>&#160;        transmission_rate,</div>
+<div class="line"><a name="l22880"></a><span class="lineno">22880</span>&#160;        vax_efficacy,</div>
+<div class="line"><a name="l22881"></a><span class="lineno">22881</span>&#160;        vax_reduction_recovery_rate,</div>
+<div class="line"><a name="l22882"></a><span class="lineno">22882</span>&#160;        incubation_period,</div>
+<div class="line"><a name="l22883"></a><span class="lineno">22883</span>&#160;        prodromal_period,</div>
+<div class="line"><a name="l22884"></a><span class="lineno">22884</span>&#160;        rash_period,</div>
+<div class="line"><a name="l22885"></a><span class="lineno">22885</span>&#160;        days_undetected,</div>
+<div class="line"><a name="l22886"></a><span class="lineno">22886</span>&#160;        hospitalization_rate,</div>
+<div class="line"><a name="l22887"></a><span class="lineno">22887</span>&#160;        hospitalization_period,</div>
+<div class="line"><a name="l22888"></a><span class="lineno">22888</span>&#160;        prop_vaccinated,</div>
+<div class="line"><a name="l22889"></a><span class="lineno">22889</span>&#160;        quarantine_period,</div>
+<div class="line"><a name="l22890"></a><span class="lineno">22890</span>&#160;        quarantine_willingness,</div>
+<div class="line"><a name="l22891"></a><span class="lineno">22891</span>&#160;        isolation_period</div>
+<div class="line"><a name="l22892"></a><span class="lineno">22892</span>&#160;    );</div>
+<div class="line"><a name="l22893"></a><span class="lineno">22893</span>&#160; </div>
+<div class="line"><a name="l22894"></a><span class="lineno">22894</span>&#160;    <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l22895"></a><span class="lineno">22895</span>&#160; </div>
+<div class="line"><a name="l22896"></a><span class="lineno">22896</span>&#160;}</div>
+<div class="line"><a name="l22897"></a><span class="lineno">22897</span>&#160; </div>
+<div class="line"><a name="l22898"></a><span class="lineno">22898</span>&#160;<span class="preprocessor">#undef SAMPLE_FROM_PROBS</span></div>
+<div class="line"><a name="l22899"></a><span class="lineno">22899</span>&#160;<span class="preprocessor">#undef LOCAL_UPDATE_FUN</span></div>
+<div class="line"><a name="l22900"></a><span class="lineno">22900</span>&#160;<span class="preprocessor">#undef GET_MODEL</span></div>
+<div class="line"><a name="l22901"></a><span class="lineno">22901</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l22902"></a><span class="lineno">22902</span>&#160;<span class="comment">/*//////////////////////////////////////////////////////////////////////////////</span></div>
 <div class="line"><a name="l22904"></a><span class="lineno">22904</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22905"></a><span class="lineno">22905</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22906"></a><span class="lineno">22906</span>&#160;<span class="comment">}</span></div>
-<div class="line"><a name="l22907"></a><span class="lineno">22907</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22908"></a><span class="lineno">22908</span>&#160;<span class="comment">#endif</span></div>
-<div class="line"><a name="l22909"></a><span class="lineno">22909</span>&#160;<span class="comment">/*//////////////////////////////////////////////////////////////////////////////</span></div>
+<div class="line"><a name="l22905"></a><span class="lineno">22905</span>&#160;<span class="comment"> End of -include/epiworld//models/measlesquarantine.hpp-</span></div>
+<div class="line"><a name="l22906"></a><span class="lineno">22906</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22909"></a><span class="lineno">22909</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22910"></a><span class="lineno">22910</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l22911"></a><span class="lineno">22911</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22912"></a><span class="lineno">22912</span>&#160;<span class="comment"> End of -include/epiworld/models/models.hpp-</span></div>
-<div class="line"><a name="l22913"></a><span class="lineno">22913</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22916"></a><span class="lineno">22916</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22917"></a><span class="lineno">22917</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22912"></a><span class="lineno">22912</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22913"></a><span class="lineno">22913</span>&#160;<span class="comment">}</span></div>
+<div class="line"><a name="l22914"></a><span class="lineno">22914</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22915"></a><span class="lineno">22915</span>&#160;<span class="comment">#endif</span></div>
+<div class="line"><a name="l22916"></a><span class="lineno">22916</span>&#160;<span class="comment">/*//////////////////////////////////////////////////////////////////////////////</span></div>
 <div class="line"><a name="l22918"></a><span class="lineno">22918</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22919"></a><span class="lineno">22919</span>&#160;<span class="comment">}</span></div>
+<div class="line"><a name="l22919"></a><span class="lineno">22919</span>&#160;<span class="comment"> End of -include/epiworld/models/models.hpp-</span></div>
 <div class="line"><a name="l22920"></a><span class="lineno">22920</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l22921"></a><span class="lineno">22921</span>&#160;<span class="comment">#endif </span></div>
+<div class="line"><a name="l22923"></a><span class="lineno">22923</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22924"></a><span class="lineno">22924</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22925"></a><span class="lineno">22925</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22926"></a><span class="lineno">22926</span>&#160;<span class="comment">}</span></div>
+<div class="line"><a name="l22927"></a><span class="lineno">22927</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l22928"></a><span class="lineno">22928</span>&#160;<span class="comment">#endif </span></div>
 <div class="ttc" id="aclass_adj_list_html"><div class="ttname"><a href="class_adj_list.html">AdjList</a></div><div class="ttdef"><b>Definition:</b> adjlist-bones.hpp:4</div></div>
 <div class="ttc" id="aclass_adj_list_html_a2bf3a057863c9dfb958d44ff370690d1"><div class="ttname"><a href="class_adj_list.html#a2bf3a057863c9dfb958d44ff370690d1">AdjList::vcount</a></div><div class="ttdeci">size_t vcount() const</div><div class="ttdoc">Number of vertices/nodes in the network.</div><div class="ttdef"><b>Definition:</b> adjlist-meat.hpp:203</div></div>
 <div class="ttc" id="aclass_adj_list_html_aa08631a4605cc3037f017bb437a96ef0"><div class="ttname"><a href="class_adj_list.html#aa08631a4605cc3037f017bb437a96ef0">AdjList::read_edgelist</a></div><div class="ttdeci">void read_edgelist(std::string fn, int size, int skip=0, bool directed=true)</div><div class="ttdoc">Read an edgelist.</div><div class="ttdef"><b>Definition:</b> adjlist-meat.hpp:92</div></div>
