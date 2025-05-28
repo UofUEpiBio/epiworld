@@ -134,9 +134,6 @@ epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>get_nda
 <tr class="memitem:a171d1a3a36a9a93bfb317fce1b40adc7"><td class="memItemLeft" align="right" valign="top"><a id="a171d1a3a36a9a93bfb317fce1b40adc7"></a>
 epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>get_n_replicates</b> () const</td></tr>
 <tr class="separator:a171d1a3a36a9a93bfb317fce1b40adc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a246cd6286cbd5b24cbac8e7f2431b10d"><td class="memItemLeft" align="right" valign="top"><a id="a246cd6286cbd5b24cbac8e7f2431b10d"></a>
-size_t&#160;</td><td class="memItemRight" valign="bottom"><b>get_n_entities</b> () const</td></tr>
-<tr class="separator:a246cd6286cbd5b24cbac8e7f2431b10d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f589402f7bdde8d56c3768955fa7aa7"><td class="memItemLeft" align="right" valign="top"><a id="a6f589402f7bdde8d56c3768955fa7aa7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_ndays</b> (epiworld_fast_uint ndays)</td></tr>
 <tr class="separator:a6f589402f7bdde8d56c3768955fa7aa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -232,9 +229,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator!=</b> (const
 <tr class="memitem:a800647b05836b20054f1f2049a41787f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a800647b05836b20054f1f2049a41787f">events_run</a> ()</td></tr>
 <tr class="memdesc:a800647b05836b20054f1f2049a41787f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the stored action.  <a href="class_model.html#a800647b05836b20054f1f2049a41787f">More...</a><br /></td></tr>
 <tr class="separator:a800647b05836b20054f1f2049a41787f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a">draw</a> (const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
-<tr class="memdesc:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws a mermaid diagram of the model.  <a href="class_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a">More...</a><br /></td></tr>
-<tr class="separator:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8676057ee6ca2494b9c416ce30946836"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a8676057ee6ca2494b9c416ce30946836">draw</a> (DiagramType diagram_type, const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
+<tr class="memdesc:a8676057ee6ca2494b9c416ce30946836"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws a mermaid diagram of the model.  <a href="class_model.html#a8676057ee6ca2494b9c416ce30946836">More...</a><br /></td></tr>
+<tr class="separator:a8676057ee6ca2494b9c416ce30946836"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Set the backup object</div></td></tr>
 <tr><td colspan="2"><div class="groupText"><p><code>backup</code> can be used to restore the entire object after a run. This can be useful if the user wishes to have individuals start with the same network from the beginning. </p>
 </div></td></tr>
@@ -945,8 +942,8 @@ template&lt;typename TSeq &gt; </div>
 
 </div>
 </div>
-<a id="a6a6f3fd87283f3cd3a7216ef67ff4e4a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6a6f3fd87283f3cd3a7216ef67ff4e4a">&#9670;&nbsp;</a></span>draw()</h2>
+<a id="a8676057ee6ca2494b9c416ce30946836"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8676057ee6ca2494b9c416ce30946836">&#9670;&nbsp;</a></span>draw()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -959,6 +956,12 @@ template&lt;typename TSeq &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="class_model.html">Model</a>&lt; TSeq &gt;::draw </td>
           <td>(</td>
+          <td class="paramtype">DiagramType&#160;</td>
+          <td class="paramname"><em>diagram_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>fn_output</em> = <code>&quot;&quot;</code>, </td>
         </tr>
