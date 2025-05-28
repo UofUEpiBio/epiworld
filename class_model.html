@@ -229,9 +229,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator!=</b> (const
 <tr class="memitem:a800647b05836b20054f1f2049a41787f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a800647b05836b20054f1f2049a41787f">events_run</a> ()</td></tr>
 <tr class="memdesc:a800647b05836b20054f1f2049a41787f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the stored action.  <a href="class_model.html#a800647b05836b20054f1f2049a41787f">More...</a><br /></td></tr>
 <tr class="separator:a800647b05836b20054f1f2049a41787f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8676057ee6ca2494b9c416ce30946836"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a8676057ee6ca2494b9c416ce30946836">draw</a> (DiagramType diagram_type, const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
-<tr class="memdesc:a8676057ee6ca2494b9c416ce30946836"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws a mermaid diagram of the model.  <a href="class_model.html#a8676057ee6ca2494b9c416ce30946836">More...</a><br /></td></tr>
-<tr class="separator:a8676057ee6ca2494b9c416ce30946836"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a3f0255dfa3c7b7f673146ac5f0ffda"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a9a3f0255dfa3c7b7f673146ac5f0ffda">draw</a> (DiagramType diagram_type=DiagramType::Mermaid, const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
+<tr class="memdesc:a9a3f0255dfa3c7b7f673146ac5f0ffda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws a mermaid diagram of the model.  <a href="class_model.html#a9a3f0255dfa3c7b7f673146ac5f0ffda">More...</a><br /></td></tr>
+<tr class="separator:a9a3f0255dfa3c7b7f673146ac5f0ffda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Set the backup object</div></td></tr>
 <tr><td colspan="2"><div class="groupText"><p><code>backup</code> can be used to restore the entire object after a run. This can be useful if the user wishes to have individuals start with the same network from the beginning. </p>
 </div></td></tr>
@@ -942,8 +942,8 @@ template&lt;typename TSeq &gt; </div>
 
 </div>
 </div>
-<a id="a8676057ee6ca2494b9c416ce30946836"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8676057ee6ca2494b9c416ce30946836">&#9670;&nbsp;</a></span>draw()</h2>
+<a id="a9a3f0255dfa3c7b7f673146ac5f0ffda"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a3f0255dfa3c7b7f673146ac5f0ffda">&#9670;&nbsp;</a></span>draw()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -957,7 +957,7 @@ template&lt;typename TSeq &gt; </div>
           <td class="memname">void <a class="el" href="class_model.html">Model</a>&lt; TSeq &gt;::draw </td>
           <td>(</td>
           <td class="paramtype">DiagramType&#160;</td>
-          <td class="paramname"><em>diagram_type</em>, </td>
+          <td class="paramname"><em>diagram_type</em> = <code>DiagramType::Mermaid</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1745,7 +1745,7 @@ template&lt;typename TSeq &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">= </div>
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
 <div class="line">        std::chrono::duration&lt;epiworld_double,std::micro&gt;::zero()</div>
 </div><!-- fragment -->
 </div>
