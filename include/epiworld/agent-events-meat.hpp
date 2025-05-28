@@ -21,20 +21,24 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 
     // Change of state needs to be recorded and updated on the
     // tools.
-    if (p->state_prev != p->state)
+    if (static_cast<int>(p->state) != a.new_state)
     {
         auto & db = m->get_db();
-        db.update_state(p->state_prev, p->state);
+        db.update_state(p->state_prev, a.new_state);
 
         for (size_t i = 0u; i < p->n_tools; ++i)
-            db.update_tool(p->tools[i]->get_id(), p->state_prev, p->state);
+            db.update_tool(
+                p->tools[i]->get_id(),
+                p->state_prev,
+                a.new_state
+            );
     }
 
     // Lastly, we increase the daily count of the virus
     #ifdef EPI_DEBUG
-    m->get_db().today_virus.at(v->get_id()).at(p->state)++;
+    m->get_db().today_virus.at(v->get_id()).at(a.new_state)++;
     #else
-    m->get_db().today_virus[v->get_id()][p->state]++;
+    m->get_db().today_virus[v->get_id()][a.new_state]++;
     #endif
 
 }
@@ -62,16 +66,20 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 
     // Change of state needs to be recorded and updated on the
     // tools.
-    if (p->state_prev != p->state)
+    if (static_cast<int>(p->state) != a.new_state)
     {
         auto & db = m->get_db();
-        db.update_state(p->state_prev, p->state);
+        db.update_state(p->state_prev, a.new_state);
 
         if (p->virus)
-            db.update_virus(p->virus->get_id(), p->state_prev, p->state);
+            db.update_virus(
+                p->virus->get_id(),
+                p->state_prev,
+                a.new_state
+            );
     }
 
-    m->get_db().today_tool[t->get_id()][p->state]++;
+    m->get_db().today_tool[t->get_id()][a.new_state]++;
 
 
 }
@@ -90,16 +98,22 @@ inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
 
     // Change of state needs to be recorded and updated on the
     // tools.
-    if (p->state_prev != p->state)
+    if (static_cast<int>(p->state) != a.new_state)
     {
         auto & db = model->get_db();
-        db.update_state(p->state_prev, p->state);
+        db.update_state(p->state_prev, a.new_state);
 
         for (size_t i = 0u; i < p->n_tools; ++i)
-            db.update_tool(p->tools[i]->get_id(), p->state_prev, p->state);
+            db.update_tool(
+                p->tools[i]->get_id(),
+                p->state_prev,
+                a.new_state
+            );
     }
 
-    // The counters of the virus only needs to decrease
+    // The counters of the virus only needs to decrease.
+    // We use the previous state of the agent as that was
+    // the state when the virus was added.
     #ifdef EPI_DEBUG
     model->get_db().today_virus.at(v->get_id()).at(p->state_prev)--;
     #else
@@ -129,16 +143,22 @@ inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
 
     // Change of state needs to be recorded and updated on the
     // tools.
-    if (p->state_prev != p->state)
+    if (static_cast<int>(p->state) != a.new_state)
     {
         auto & db = m->get_db();
-        db.update_state(p->state_prev, p->state);
+        db.update_state(p->state_prev, a.new_state);
 
         if (p->virus)
-            db.update_virus(p->virus->get_id(), p->state_prev, p->state);
+            db.update_virus(
+                p->virus->get_id(),
+                p->state_prev,
+                a.new_state
+            );
     }
 
-    // Lastly, we increase the daily count of the tool
+    // Lastly, we increase the daily count of the tool.
+    // Like rm_virus, we use the previous state of the agent
+    // as that was the state when the tool was added.
     #ifdef EPI_DEBUG
     m->get_db().today_tool.at(t->get_id()).at(p->state_prev)--;
     #else
@@ -155,16 +175,22 @@ inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m)
 
     Agent<TSeq> * p = a.agent;
 
-    if (p->state_prev != p->state)
+    if (static_cast<int>(p->state) != a.new_state)
     {
         auto & db = m->get_db();
-        db.update_state(p->state_prev, p->state);
+        db.update_state(p->state_prev, a.new_state);
 
         if (p->virus)
-            db.update_virus(p->virus->get_id(), p->state_prev, p->state);
+            db.update_virus(
+                p->virus->get_id(), p->state_prev, a.new_state
+            );
 
         for (size_t i = 0u; i < p->n_tools; ++i)
-            db.update_tool(p->tools[i]->get_id(), p->state_prev, p->state);
+            db.update_tool(
+                p->tools[i]->get_id(),
+                p->state_prev,
+                a.new_state
+            );
 
     }
 

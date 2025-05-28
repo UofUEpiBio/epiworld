@@ -16168,7 +16168,7 @@ public:
  * 
  * @tparam TSeq 
  */
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 class AgentsSample {
 private:
 

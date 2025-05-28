@@ -1,6 +1,21 @@
 #ifndef EPIWORLD_MODEL_MEAT_HPP
 #define EPIWORLD_MODEL_MEAT_HPP
 
+#include <vector>
+#include <functional>
+#include <memory>
+#include <random>
+#include <string>
+#include <map>
+#include <unordered_map>
+#include "config.hpp"
+#include "userdata-bones.hpp"
+#include "adjlist-bones.hpp"
+#include "model-bones.hpp"
+#include "entities-bones.hpp"
+#include "virus-bones.hpp"
+#include "agent-bones.hpp"
+
 /**
  * @brief Function factory for saving model runs
  * 
@@ -230,16 +245,16 @@ inline void Model<TSeq>::events_run()
             // The previous state is already recorded
             db.update_state(p->state_prev, p->state, true);
 
-        } else 
+        } else if (p->state_last_changed != today()) 
             p->state_prev = p->state; // Recording the previous state
 
         // Applying function after the fact. This way, if there were
         // updates, they can be recorded properly, before losing the information
-        p->state = a.new_state;
         if (a.call)
         {
             a.call(a, this);
         }
+        p->state = a.new_state;
 
         // Registering that the last change was today
         p->state_last_changed = today();
@@ -1289,6 +1304,34 @@ inline int Model<TSeq>::today() const {
 
 template<typename TSeq>
 inline void Model<TSeq>::next() {
+
+    #ifdef EPI_DEBUG
+    // Checking all the agents have proper states
+    for (auto & p : population)
+    {
+        if ((p.state >= nstates) || (p.state < 0))
+        {
+            throw std::range_error(
+                "The agent " + std::to_string(p.id) +
+                " has state " + std::to_string(p.state) +
+                " which is above the maximum state of " +
+                std::to_string(nstates - 1) + "."
+            );
+        }
+
+        if ((p.state_prev >= nstates) || (p.state_prev < 0))
+        {
+            throw std::range_error(
+                "The agent " + std::to_string(p.id) +
+                " has previous state " + std::to_string(p.state_prev) +
+                " which is above the maximum state of " +
+                std::to_string(nstates - 1) + "."
+            );
+        }
+        
+    }
+
+    #endif
 
     db.record();
     ++this->current_date;

@@ -262,7 +262,7 @@ public:
     bool has_entity(epiworld_fast_uint t) const;
     bool has_entity(std::string name) const;
 
-    void print(Model<TSeq> * model, bool compressed = false) const;
+    void print(bool compressed = false) const;
 
     /**
      * @brief Access the j-th column of the agent

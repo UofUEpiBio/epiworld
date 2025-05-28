@@ -453,7 +453,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     GET_MODEL(m, model);
     
     #ifdef EPI_DEBUG
-    if (model->day_flagged.size() <= p->get_id())
+    if (static_cast<int>(model->day_flagged.size()) <= p->get_id())
         throw std::logic_error(
             "The agent is not in the list of quarantined or isolated agents: " +
             std::to_string(p->get_id()) +

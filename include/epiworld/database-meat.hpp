@@ -518,6 +518,25 @@ inline void DataBase<TSeq>::update_state(
         bool undo
 ) {
 
+    if (prev_state == new_state)
+        return; // No need to update if the state is the same
+
+    #ifdef EPI_DEBUG
+    // Checking ranges (should be within expected)
+    if ((prev_state >= model->nstates))
+        throw std::out_of_range(
+            "prev_state is out of range in DataBase::update_state"
+        );
+    if ((new_state >= model->nstates))
+        throw std::out_of_range(
+            "new_state is out of range in DataBase::update_state"
+        );
+    if (prev_state == new_state)
+        throw std::logic_error(
+            "prev_state and new_state are the same in DataBase::update_state"
+        );
+    #endif
+
     if (undo)
     {
 

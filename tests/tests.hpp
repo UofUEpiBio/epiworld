@@ -87,6 +87,4 @@ inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
 
 #endif
 
-
-
 #endif

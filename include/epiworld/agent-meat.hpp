@@ -767,7 +767,6 @@ inline bool Agent<TSeq>::has_entity(std::string name) const
 
 template<typename TSeq>
 inline void Agent<TSeq>::print(
-    Model<TSeq> * model,
     bool compressed
     ) const
 {
@@ -916,7 +915,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     for (size_t i = 0u; i < n_neighbors; ++i)
     {
         EPI_DEBUG_FAIL_AT_TRUE(
-            neighbors[i] != other.neighbors[i],
+            (*neighbors)[i] != (*other.neighbors)[i],
             "Agent:: neighbor[i] don't match"
         )
     }

@@ -159,7 +159,7 @@ EPIWORLD_TEST_CASE("Measles model (no quarantine)", "[ModelMeaslesQuarantineOff]
         0.05)
     );
     REQUIRE_FALSE(
-        moreless(mat(3, 6) + mat(4, 11), model_0("Hospitalization rate"), 0.05)
+        moreless(mat(4, 6) + mat(4, 11), model_0("Hospitalization rate"), 0.05)
     );
 
     // Transition to recovered
