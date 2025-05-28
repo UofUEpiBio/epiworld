@@ -1,6 +1,8 @@
 #ifndef EPIWORLD_VIRUS_MEAT_HPP
 #define EPIWORLD_VIRUS_MEAT_HPP
 
+#include "config.hpp"
+
 /**
  * @brief Factory function of VirusFun base on logit
  * 

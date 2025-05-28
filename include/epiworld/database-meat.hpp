@@ -1,6 +1,13 @@
 #ifndef EPIWORLD_DATABASE_MEAT_HPP
 #define EPIWORLD_DATABASE_MEAT_HPP
 
+#include <vector>
+#include <string>
+#include "config.hpp"
+#include "epiworld-macros.hpp"
+#include "misc.hpp"
+#include "database-bones.hpp"
+
 template<typename TSeq>
 inline void DataBase<TSeq>::reset()
 {
@@ -1099,12 +1106,18 @@ inline void DataBase<TSeq>::write_data(
         for (int i = 0; i <= model->today(); ++i)
         {
 
-            // Skipping the zeros
-            if (hist_transition_matrix[i * (ns * ns)] == 0)
-                continue;
-
             for (int from = 0u; from < ns; ++from)
+            {
                 for (int to = 0u; to < ns; ++to)
+                {
+                    // Skipping the zeros
+                    auto counts = hist_transition_matrix[
+                        i * (ns * ns) + to * ns + from
+                    ];
+
+                    if (counts == 0)
+                        continue;
+
                     file_transition <<
                         #ifdef EPI_DEBUG
                         EPI_GET_THREAD_ID() << " " <<
@@ -1112,7 +1125,9 @@ inline void DataBase<TSeq>::write_data(
                         i << " \"" <<
                         model->states_labels[from] << "\" \"" <<
                         model->states_labels[to] << "\" " <<
-                        hist_transition_matrix[i * (ns * ns) + to * ns + from] << "\n";
+                        counts << "\n";
+                }
+            }
                 
         }
                 
