@@ -10,7 +10,7 @@ inline void ModelDiagram::read_transitions(
 
     if (!file.is_open())
         throw std::runtime_error(
-            "Could not open the file '" + 
+            "Could not open the file '" +
             fn_transition + "' for reading."
         );
 
@@ -117,7 +117,7 @@ inline void ModelDiagram::transition_probability(
     }
 
     return;
-    
+
 
 }
 
@@ -170,8 +170,8 @@ inline void ModelDiagram::draw_mermaid(
 
             if (tprob[idx[i] + idx[j] * n_states] > 0.0)
             {
-                graph += "\t" + states_ids[i] + " -->|" + 
-                    std::to_string(tprob[idx[i] + idx[j] * n_states]) + 
+                graph += "\t" + states_ids[i] + " -->|" +
+                    std::to_string(tprob[idx[i] + idx[j] * n_states]) +
                     "| " + states_ids[j] + "\n";
             }
         }
@@ -184,13 +184,13 @@ inline void ModelDiagram::draw_mermaid(
         if (!file.is_open())
             throw std::runtime_error(
                 "Could not open the file " +
-                fn_output + 
+                fn_output +
                 " for writing."
             );
 
         file << graph;
         file.close();
-        
+
     } else {
         printf_epiworld("%s\n", graph.c_str());
     }
@@ -275,6 +275,8 @@ inline void ModelDiagram::draw(
         return draw_mermaid(fn_output, self);
     case DiagramType::DOT:
         return draw_dot(fn_output, self);
+    default:
+  		assert(("Unknown how to dispatch DiagramType.", false));
     }
 }
 
@@ -297,7 +299,7 @@ inline void ModelDiagram::draw_from_file(
     this->draw(diagram_type, fn_output, self);
 
     return;
-  
+
 }
 
 inline void ModelDiagram::draw_from_files(
