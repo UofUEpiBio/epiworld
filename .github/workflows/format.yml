@@ -21,17 +21,15 @@ jobs:
             - name: Install clang-format
               run: sudo apt-get install -y clang-format
 
-            - name: Run clang-format
+            - name: Format C++ files with clang-format
               run: |
-                  FILES=$(find . -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" \) -print0)
-                  echo "$FILES" | xargs -0 clang-format -style=file -i
+                  find . -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" \) -print0 \
+                    | xargs -0 clang-format -style=file -i
 
-            - name: Check for formatting changes
+            - name: Fail on formatting changes
               run: |
-                  if ! git diff --exit-code; then
-                    echo "❌ Formatting issues found. Please run clang-format.";
+                  if ! git diff --quiet; then
+                    echo "::error::Code is not formatted. Please run clang-format.";
                     git --no-pager diff
                     exit 1
-                  else
-                    echo "✅ No formatting issues found."
                   fi
