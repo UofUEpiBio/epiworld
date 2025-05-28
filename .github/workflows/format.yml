@@ -4,10 +4,10 @@ on:
     pull_request:
         paths:
             - "**.cpp"
-            - "**.h"
-            - "**.hpp"
             - "**.cc"
             - "**.cxx"
+            - "**.h"
+            - "**.hpp"
 
 jobs:
     clang-format:
@@ -21,19 +21,17 @@ jobs:
             - name: Install clang-format
               run: sudo apt-get install -y clang-format
 
-            - name: Find C++ files
-              id: files
-              run: |
-                  FILES=$(find . -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" \))
-                  echo "files=$FILES" >> $GITHUB_OUTPUT
-
             - name: Run clang-format
               run: |
-                  echo "${{ steps.files.outputs.files }}" | xargs clang-format -style=file -i
+                  FILES=$(find . -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" \) -print0)
+                  echo "$FILES" | xargs -0 clang-format -style=file -i
 
             - name: Check for formatting changes
               run: |
                   if ! git diff --exit-code; then
-                    echo "Formatting issues found. Please run clang-format.";
-                    exit 1;
+                    echo "❌ Formatting issues found. Please run clang-format.";
+                    git --no-pager diff
+                    exit 1
+                  else
+                    echo "✅ No formatting issues found."
                   fi
