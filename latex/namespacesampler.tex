@@ -8,9 +8,9 @@ Functions for sampling viruses.
 \doxysubsection*{Functions}
 \begin{DoxyCompactItemize}
 \item 
-{\footnotesize template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ }\\std\+::function$<$ void(\mbox{\hyperlink{class_agent}{Agent}}$<$ TSeq $>$ $\ast$, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$)$>$ \mbox{\hyperlink{namespacesampler_a9f4c303b5e9016b050dd008fec902448}{make\+\_\+update\+\_\+susceptible}} (std\+::vector$<$ epiworld\+\_\+fast\+\_\+uint $>$ exclude=\{\})
+{\footnotesize template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ }\\std\+::function$<$ void(\mbox{\hyperlink{class_agent}{Agent}}$<$ TSeq $>$ $\ast$, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$)$>$ \mbox{\hyperlink{namespacesampler_a001ac6eee849afcdd3e6904500c77fa4}{make\+\_\+update\+\_\+susceptible}} (std\+::vector$<$ epiworld\+\_\+fast\+\_\+uint $>$ exclude=\{\})
 \begin{DoxyCompactList}\small\item\em Make a function to sample from neighbors. \end{DoxyCompactList}\item 
-{\footnotesize template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ }\\std\+::function$<$ \mbox{\hyperlink{class_virus}{Virus}}$<$ TSeq $>$ $\ast$(\mbox{\hyperlink{class_agent}{Agent}}$<$ TSeq $>$ $\ast$, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$)$>$ \mbox{\hyperlink{namespacesampler_a4cafc444e0a6c563f34ed5f9b5366ae4}{make\+\_\+sample\+\_\+virus\+\_\+neighbors}} (std\+::vector$<$ epiworld\+\_\+fast\+\_\+uint $>$ exclude=\{\})
+{\footnotesize template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ }\\std\+::function$<$ \mbox{\hyperlink{class_virus}{Virus}}$<$ TSeq $>$ $\ast$(\mbox{\hyperlink{class_agent}{Agent}}$<$ TSeq $>$ $\ast$, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$)$>$ \mbox{\hyperlink{namespacesampler_a4671a91fd9b8fececf5364dd5d5b4ac2}{make\+\_\+sample\+\_\+virus\+\_\+neighbors}} (std\+::vector$<$ epiworld\+\_\+fast\+\_\+uint $>$ exclude=\{\})
 \begin{DoxyCompactList}\small\item\em Make a function to sample from neighbors. \end{DoxyCompactList}\item 
 {\footnotesize template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ }\\\mbox{\hyperlink{class_virus}{Virus}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{namespacesampler_ab33532e84aba976673b13d0f6758e95b}{sample\+\_\+virus\+\_\+single}} (\mbox{\hyperlink{class_agent}{Agent}}$<$ TSeq $>$ $\ast$p, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
 \begin{DoxyCompactList}\small\item\em Sample from neighbors pool of viruses (at most one) \end{DoxyCompactList}\end{DoxyCompactItemize}
@@ -20,12 +20,12 @@ Functions for sampling viruses.
 Functions for sampling viruses. 
 
 \doxysubsection{Function Documentation}
-\mbox{\Hypertarget{namespacesampler_a4cafc444e0a6c563f34ed5f9b5366ae4}\label{namespacesampler_a4cafc444e0a6c563f34ed5f9b5366ae4}} 
+\mbox{\Hypertarget{namespacesampler_a4671a91fd9b8fececf5364dd5d5b4ac2}\label{namespacesampler_a4671a91fd9b8fececf5364dd5d5b4ac2}} 
 \index{sampler@{sampler}!make\_sample\_virus\_neighbors@{make\_sample\_virus\_neighbors}}
 \index{make\_sample\_virus\_neighbors@{make\_sample\_virus\_neighbors}!sampler@{sampler}}
 \doxysubsubsection{\texorpdfstring{make\_sample\_virus\_neighbors()}{make\_sample\_virus\_neighbors()}}
 {\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
-std\+::function$<$\mbox{\hyperlink{class_virus}{Virus}}$<$TSeq$>$$\ast$(\mbox{\hyperlink{class_agent}{Agent}}$<$TSeq$>$$\ast$,\mbox{\hyperlink{class_model}{Model}}$<$TSeq$>$$\ast$)$>$ sampler\+::make\+\_\+sample\+\_\+virus\+\_\+neighbors (\begin{DoxyParamCaption}\item[{std\+::vector$<$ epiworld\+\_\+fast\+\_\+uint $>$}]{exclude = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+std\+::function$<$\mbox{\hyperlink{class_virus}{Virus}}$<$TSeq$>$$\ast$(\mbox{\hyperlink{class_agent}{Agent}}$<$TSeq$>$$\ast$, \mbox{\hyperlink{class_model}{Model}}$<$TSeq$>$$\ast$)$>$ sampler\+::make\+\_\+sample\+\_\+virus\+\_\+neighbors (\begin{DoxyParamCaption}\item[{std\+::vector$<$ epiworld\+\_\+fast\+\_\+uint $>$}]{exclude = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
 
 
 
@@ -46,12 +46,12 @@ This is akin to the function default\+\_\+update\+\_\+susceptible, with the diff
 \begin{DoxyReturn}{Returns}
 Virus$<$\+TSeq$>$$\ast$ of the selected virus. If none selected (or none available,) returns a nullptr; 
 \end{DoxyReturn}
-\mbox{\Hypertarget{namespacesampler_a9f4c303b5e9016b050dd008fec902448}\label{namespacesampler_a9f4c303b5e9016b050dd008fec902448}} 
+\mbox{\Hypertarget{namespacesampler_a001ac6eee849afcdd3e6904500c77fa4}\label{namespacesampler_a001ac6eee849afcdd3e6904500c77fa4}} 
 \index{sampler@{sampler}!make\_update\_susceptible@{make\_update\_susceptible}}
 \index{make\_update\_susceptible@{make\_update\_susceptible}!sampler@{sampler}}
 \doxysubsubsection{\texorpdfstring{make\_update\_susceptible()}{make\_update\_susceptible()}}
 {\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
-std\+::function$<$void(\mbox{\hyperlink{class_agent}{Agent}}$<$TSeq$>$$\ast$,\mbox{\hyperlink{class_model}{Model}}$<$TSeq$>$$\ast$)$>$ sampler\+::make\+\_\+update\+\_\+susceptible (\begin{DoxyParamCaption}\item[{std\+::vector$<$ epiworld\+\_\+fast\+\_\+uint $>$}]{exclude = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+std\+::function$<$void(\mbox{\hyperlink{class_agent}{Agent}}$<$TSeq$>$$\ast$, \mbox{\hyperlink{class_model}{Model}}$<$TSeq$>$$\ast$)$>$ sampler\+::make\+\_\+update\+\_\+susceptible (\begin{DoxyParamCaption}\item[{std\+::vector$<$ epiworld\+\_\+fast\+\_\+uint $>$}]{exclude = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
 
 
 
