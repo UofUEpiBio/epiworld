@@ -1,8 +1,6 @@
 #include "tests.hpp"
 #include "../include/epiworld/math/lfmcmc.hpp"
 
-#define EPI_DEBUG
-
 typedef std::vector<epiworld_double> vec_double;
 
 using namespace epiworld;

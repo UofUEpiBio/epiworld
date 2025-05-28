@@ -228,18 +228,26 @@ inline void Model<TSeq>::events_run()
 
         #ifdef EPI_DEBUG
         if (a.new_state >= static_cast<epiworld_fast_int>(nstates))
+        {
             throw std::range_error(
                 "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
                 "The model currently has " + std::to_string(nstates - 1) + " states.");
 
-        if (a.new_state < 0)
+        }
+        else if ((a.new_state != -99) && (a.new_state < 0))
+        {
             throw std::range_error(
                 "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
                 "The state cannot be negative.");
+        }
         #endif
 
         // Undoing the change in the transition matrix
-        if ((p->state_last_changed == today()) && (static_cast<int>(p->state) != a.new_state))
+        if (
+            (a.new_state != -99) &&
+            (p->state_last_changed == today()) &&
+            (static_cast<int>(p->state) != a.new_state)
+        )
         {
             // Undoing state change in the transition matrix
             // The previous state is already recorded
@@ -254,10 +262,13 @@ inline void Model<TSeq>::events_run()
         {
             a.call(a, this);
         }
-        p->state = a.new_state;
+
+        if (a.new_state != -99)
+            p->state = a.new_state;
 
         // Registering that the last change was today
         p->state_last_changed = today();
+        
 
         #ifdef EPI_DEBUG
         if (static_cast<int>(p->state) >= static_cast<int>(nstates))
@@ -267,7 +278,7 @@ inline void Model<TSeq>::events_run()
         #endif
 
         // Updating queue
-        if (use_queuing)
+        if (use_queuing && a.queue != -99)
         {
 
             if (a.queue == Queue<TSeq>::Everyone)

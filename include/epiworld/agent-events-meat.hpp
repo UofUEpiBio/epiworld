@@ -1,6 +1,7 @@
 #ifndef EPIWORLD_AGENT_EVENTS_MEAT_HPP
 #define EPIWORLD_AGENT_EVENTS_MEAT_HPP
 
+
 template<typename TSeq>
 inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 {
@@ -21,7 +22,7 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 
     // Change of state needs to be recorded and updated on the
     // tools.
-    if (static_cast<int>(p->state) != a.new_state)
+    if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
@@ -36,9 +37,13 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 
     // Lastly, we increase the daily count of the virus
     #ifdef EPI_DEBUG
-    m->get_db().today_virus.at(v->get_id()).at(a.new_state)++;
+    m->get_db().today_virus.at(v->get_id()).at(
+        a.new_state != -99 ? a.new_state : p->state
+    )++;
     #else
-    m->get_db().today_virus[v->get_id()][a.new_state]++;
+    m->get_db().today_virus[v->get_id()][
+        a.new_state != -99 ? a.new_state : p->state
+    ]++;
     #endif
 
 }
@@ -66,7 +71,7 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 
     // Change of state needs to be recorded and updated on the
     // tools.
-    if (static_cast<int>(p->state) != a.new_state)
+    if ((a.new_state != -99) && static_cast<int>(p->state) != a.new_state)
     {
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
@@ -79,7 +84,9 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
             );
     }
 
-    m->get_db().today_tool[t->get_id()][a.new_state]++;
+    m->get_db().today_tool[t->get_id()][
+        a.new_state != -99 ? a.new_state : p->state
+    ]++;
 
 
 }
@@ -98,7 +105,7 @@ inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
 
     // Change of state needs to be recorded and updated on the
     // tools.
-    if (static_cast<int>(p->state) != a.new_state)
+    if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
         auto & db = model->get_db();
         db.update_state(p->state_prev, a.new_state);
@@ -143,7 +150,7 @@ inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
 
     // Change of state needs to be recorded and updated on the
     // tools.
-    if (static_cast<int>(p->state) != a.new_state)
+    if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
@@ -175,7 +182,7 @@ inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m)
 
     Agent<TSeq> * p = a.agent;
 
-    if (static_cast<int>(p->state) != a.new_state)
+    if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
@@ -317,5 +324,6 @@ inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m)
 
     return;
 
-}
+};
+
 #endif

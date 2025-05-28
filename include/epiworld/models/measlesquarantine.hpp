@@ -487,7 +487,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     // Recovers
     if (which == 2)
     {
-        p->rm_agent_by_virus(
+        p->rm_virus(
             m,
             detected ?
                 ModelMeaslesQuarantine::ISOLATED_RECOVERED:
@@ -543,13 +543,13 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     {
         if (unisolate)
         {
-            p->rm_agent_by_virus(
+            p->rm_virus(
                 m,
                 ModelMeaslesQuarantine::RECOVERED
             );
         }
         else
-            p->rm_agent_by_virus(
+            p->rm_virus(
                 m, ModelMeaslesQuarantine::ISOLATED_RECOVERED
             );
     }
@@ -683,7 +683,7 @@ LOCAL_UPDATE_FUN(m_update_hospitalized) {
 
     // The agent is removed from the system
     if (m->runif() < 1.0/m->par("Hospitalization period"))
-        p->rm_agent_by_virus(m, ModelMeaslesQuarantine::RECOVERED);
+        p->rm_virus(m, ModelMeaslesQuarantine::RECOVERED);
 
     return;
 
