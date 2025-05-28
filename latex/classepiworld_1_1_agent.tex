@@ -89,8 +89,8 @@ bool {\bfseries has\+\_\+entity} (epiworld\+\_\+fast\+\_\+uint t) const
 \mbox{\Hypertarget{classepiworld_1_1_agent_a76e92dc2b6d5892ca7dd88f9e92b12dc}\label{classepiworld_1_1_agent_a76e92dc2b6d5892ca7dd88f9e92b12dc}} 
 bool {\bfseries has\+\_\+entity} (std\+::string name) const
 \item 
-\mbox{\Hypertarget{classepiworld_1_1_agent_acca4a2fbcfcdf32f144b84e394d37f4c}\label{classepiworld_1_1_agent_acca4a2fbcfcdf32f144b84e394d37f4c}} 
-void {\bfseries print} (\mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$model, bool compressed=false) const
+\mbox{\Hypertarget{classepiworld_1_1_agent_a2510243ae327dc9ca10fb3fd5a244ce3}\label{classepiworld_1_1_agent_a2510243ae327dc9ca10fb3fd5a244ce3}} 
+void {\bfseries print} (bool compressed=false) const
 \item 
 \mbox{\Hypertarget{classepiworld_1_1_agent_aa8f3cf3ff2cd28ab97b6489b2d5124a8}\label{classepiworld_1_1_agent_aa8f3cf3ff2cd28ab97b6489b2d5124a8}} 
 \mbox{\hyperlink{classepiworld_1_1_entities}{Entities}}$<$ TSeq $>$ {\bfseries get\+\_\+entities} ()
@@ -159,8 +159,8 @@ void {\bfseries rm\+\_\+entity} (epiworld\+\_\+fast\+\_\+uint entity\+\_\+idx, \
 \mbox{\Hypertarget{classepiworld_1_1_agent_a4f4b256dcc62a7a3717f18114b33df43}\label{classepiworld_1_1_agent_a4f4b256dcc62a7a3717f18114b33df43}} 
 void {\bfseries rm\+\_\+entity} (\mbox{\hyperlink{classepiworld_1_1_entity}{Entity}}$<$ TSeq $>$ \&entity, \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
 \item 
-\mbox{\Hypertarget{classepiworld_1_1_agent_af401cfc8d95fc04e015ada240e169bc5}\label{classepiworld_1_1_agent_af401cfc8d95fc04e015ada240e169bc5}} 
-void \mbox{\hyperlink{classepiworld_1_1_agent_af401cfc8d95fc04e015ada240e169bc5}{rm\+\_\+agent\+\_\+by\+\_\+virus}} (\mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
+\mbox{\Hypertarget{classepiworld_1_1_agent_a8898842fd7ca0d357a18027495ba58d8}\label{classepiworld_1_1_agent_a8898842fd7ca0d357a18027495ba58d8}} 
+void \mbox{\hyperlink{classepiworld_1_1_agent_a8898842fd7ca0d357a18027495ba58d8}{rm\+\_\+agent\+\_\+by\+\_\+virus}} (\mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$model)
 \begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classepiworld_1_1_agent}{Agent}} removed by virus. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \end{Indent}
 \begin{Indent}\textbf{ Get the rates (multipliers) for the agent}\par
@@ -244,7 +244,8 @@ void {\bfseries default\+\_\+rm\+\_\+virus} (\mbox{\hyperlink{structepiworld_1_1
 \mbox{\Hypertarget{classepiworld_1_1_agent_ac94ff8addd602f970c8a6f5150b8ab29}\label{classepiworld_1_1_agent_ac94ff8addd602f970c8a6f5150b8ab29}} 
 void {\bfseries default\+\_\+rm\+\_\+tool} (\mbox{\hyperlink{structepiworld_1_1_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$m)
 \item 
-void \mbox{\hyperlink{classepiworld_1_1_agent_a2f8e631876a6426672ef736655789cca}{default\+\_\+rm\+\_\+entity}} (\mbox{\hyperlink{structepiworld_1_1_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$m)
+\mbox{\Hypertarget{classepiworld_1_1_agent_a2f8e631876a6426672ef736655789cca}\label{classepiworld_1_1_agent_a2f8e631876a6426672ef736655789cca}} 
+void {\bfseries default\+\_\+rm\+\_\+entity} (\mbox{\hyperlink{structepiworld_1_1_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$m)
 \item 
 \mbox{\Hypertarget{classepiworld_1_1_agent_ab8c9d3a9231f2b64da69e3e20ef1a506}\label{classepiworld_1_1_agent_ab8c9d3a9231f2b64da69e3e20ef1a506}} 
 void {\bfseries default\+\_\+change\+\_\+state} (\mbox{\hyperlink{structepiworld_1_1_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$m)
@@ -309,18 +310,6 @@ Swaps neighbors between the current agent and agent {\ttfamily other}
 \hline
 \end{DoxyParams}
 
-
-\doxysubsection{Friends And Related Function Documentation}
-\mbox{\Hypertarget{classepiworld_1_1_agent_a2f8e631876a6426672ef736655789cca}\label{classepiworld_1_1_agent_a2f8e631876a6426672ef736655789cca}} 
-\index{epiworld::Agent$<$ TSeq $>$@{epiworld::Agent$<$ TSeq $>$}!default\_rm\_entity@{default\_rm\_entity}}
-\index{default\_rm\_entity@{default\_rm\_entity}!epiworld::Agent$<$ TSeq $>$@{epiworld::Agent$<$ TSeq $>$}}
-\doxysubsubsection{\texorpdfstring{default\_rm\_entity}{default\_rm\_entity}}
-{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-void default\+\_\+rm\+\_\+entity (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structepiworld_1_1_event}{Event}}$<$ TSeq $>$ \&}]{a,  }\item[{\mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [friend]}}
-
-$<$ Last entity of the agent
-
-$<$ Last agent of the entity
 
 The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
 \item 

@@ -161,9 +161,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_entity</b> (epiwo
 <tr class="memitem:a76e92dc2b6d5892ca7dd88f9e92b12dc"><td class="memItemLeft" align="right" valign="top"><a id="a76e92dc2b6d5892ca7dd88f9e92b12dc"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_entity</b> (std::string name) const</td></tr>
 <tr class="separator:a76e92dc2b6d5892ca7dd88f9e92b12dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acca4a2fbcfcdf32f144b84e394d37f4c"><td class="memItemLeft" align="right" valign="top"><a id="acca4a2fbcfcdf32f144b84e394d37f4c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>print</b> (<a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *model, bool compressed=false) const</td></tr>
-<tr class="separator:acca4a2fbcfcdf32f144b84e394d37f4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2510243ae327dc9ca10fb3fd5a244ce3"><td class="memItemLeft" align="right" valign="top"><a id="a2510243ae327dc9ca10fb3fd5a244ce3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>print</b> (bool compressed=false) const</td></tr>
+<tr class="separator:a2510243ae327dc9ca10fb3fd5a244ce3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8f3cf3ff2cd28ab97b6489b2d5124a8"><td class="memItemLeft" align="right" valign="top"><a id="aa8f3cf3ff2cd28ab97b6489b2d5124a8"></a>
 <a class="el" href="classepiworld_1_1_entities.html">Entities</a>&lt; TSeq &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_entities</b> ()</td></tr>
 <tr class="separator:aa8f3cf3ff2cd28ab97b6489b2d5124a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -227,10 +227,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>rm_entity</b> (epiwor
 <tr class="memitem:a4f4b256dcc62a7a3717f18114b33df43"><td class="memItemLeft" align="right" valign="top"><a id="a4f4b256dcc62a7a3717f18114b33df43"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>rm_entity</b> (<a class="el" href="classepiworld_1_1_entity.html">Entity</a>&lt; TSeq &gt; &amp;entity, <a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *model, epiworld_fast_int state_new=-99, epiworld_fast_int queue=-99)</td></tr>
 <tr class="separator:a4f4b256dcc62a7a3717f18114b33df43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af401cfc8d95fc04e015ada240e169bc5"><td class="memItemLeft" align="right" valign="top"><a id="af401cfc8d95fc04e015ada240e169bc5"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1_agent.html#af401cfc8d95fc04e015ada240e169bc5">rm_agent_by_virus</a> (<a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *model, epiworld_fast_int state_new=-99, epiworld_fast_int queue=-99)</td></tr>
-<tr class="memdesc:af401cfc8d95fc04e015ada240e169bc5"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classepiworld_1_1_agent.html" title="Agent (agents)">Agent</a> removed by virus. <br /></td></tr>
-<tr class="separator:af401cfc8d95fc04e015ada240e169bc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8898842fd7ca0d357a18027495ba58d8"><td class="memItemLeft" align="right" valign="top"><a id="a8898842fd7ca0d357a18027495ba58d8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1_agent.html#a8898842fd7ca0d357a18027495ba58d8">rm_agent_by_virus</a> (<a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *model)</td></tr>
+<tr class="memdesc:a8898842fd7ca0d357a18027495ba58d8"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classepiworld_1_1_agent.html" title="Agent (agents)">Agent</a> removed by virus. <br /></td></tr>
+<tr class="separator:a8898842fd7ca0d357a18027495ba58d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Get the rates (multipliers) for the agent</div></td></tr>
 <tr><td colspan="2"><div class="groupText"><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -307,7 +307,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>default_rm_virus</b> 
 <tr class="memitem:ac94ff8addd602f970c8a6f5150b8ab29"><td class="memItemLeft" align="right" valign="top"><a id="ac94ff8addd602f970c8a6f5150b8ab29"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>default_rm_tool</b> (<a class="el" href="structepiworld_1_1_event.html">Event</a>&lt; TSeq &gt; &amp;a, <a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *m)</td></tr>
 <tr class="separator:ac94ff8addd602f970c8a6f5150b8ab29"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f8e631876a6426672ef736655789cca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepiworld_1_1_agent.html#a2f8e631876a6426672ef736655789cca">default_rm_entity</a> (<a class="el" href="structepiworld_1_1_event.html">Event</a>&lt; TSeq &gt; &amp;a, <a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *m)</td></tr>
+<tr class="memitem:a2f8e631876a6426672ef736655789cca"><td class="memItemLeft" align="right" valign="top"><a id="a2f8e631876a6426672ef736655789cca"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>default_rm_entity</b> (<a class="el" href="structepiworld_1_1_event.html">Event</a>&lt; TSeq &gt; &amp;a, <a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *m)</td></tr>
 <tr class="separator:a2f8e631876a6426672ef736655789cca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8c9d3a9231f2b64da69e3e20ef1a506"><td class="memItemLeft" align="right" valign="top"><a id="ab8c9d3a9231f2b64da69e3e20ef1a506"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>default_change_state</b> (<a class="el" href="structepiworld_1_1_event.html">Event</a>&lt; TSeq &gt; &amp;a, <a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *m)</td></tr>
@@ -415,47 +416,6 @@ template&lt;typename TSeq &gt; </div>
   </table>
   </dd>
 </dl>
-
-</div>
-</div>
-<h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a id="a2f8e631876a6426672ef736655789cca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2f8e631876a6426672ef736655789cca">&#9670;&nbsp;</a></span>default_rm_entity</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename TSeq &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void default_rm_entity </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structepiworld_1_1_event.html">Event</a>&lt; TSeq &gt; &amp;&#160;</td>
-          <td class="paramname"><em>a</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classepiworld_1_1_model.html">Model</a>&lt; TSeq &gt; *&#160;</td>
-          <td class="paramname"><em>m</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>&lt; Last entity of the agent</p>
-<p>&lt; Last agent of the entity</p>
 
 </div>
 </div>
