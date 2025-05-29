@@ -26,6 +26,8 @@ EPIWORLD_TEST_CASE(
         4.0,   // epiworld_double avg_incubation_days,
         1.0/2.0,// epiworld_double recovery_rate,
         contact_matrix,
+        .1, // Hospitalization rate
+        4, // Hospitalization period
         2.5, // Days undetected (negative means no quarantine)
         15, // Quarantine period
         .9, // Quarantine willingness

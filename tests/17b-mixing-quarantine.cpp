@@ -79,8 +79,7 @@ EPIWORLD_TEST_CASE(
     // Checking the expected and effective R0
     epiworld_double R0_expected = 
         model("Contact rate") * model("Prob. Transmission") /
-            (1 - (1 - model("Prob. Recovery")) * 
-            (1 - model("Hospitalization rate")));
+            (model("Prob. Recovery") + model("Hospitalization rate"));
 
     epiworld_double R0 = 0.0;
     for (int i = 0; i < R0s.size(); ++i)
