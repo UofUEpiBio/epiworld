@@ -40,18 +40,8 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesQuarantineOn]") {
     size_t nsims = 1000;
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
-    auto saver = [&transitions, &R0s, n_seeds](size_t n, Model<>* m) -> void{
-
-        // Saving the transition probabilities
-        transitions[n] = m->get_db().transition_probability(false, false);
-
-        // Recording the R0 from the index case
-        auto rts = m->get_db().reproductive_number();      
-        for (int i = 0; i < n_seeds; ++i)
-            R0s[n_seeds * n + i] = static_cast<epiworld_double>(rts[{0, i, 0}]);
-
-    };
-
+    auto saver = tests_create_saver(transitions, R0s, n_seeds);
+    
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 1);
     
     #ifndef CATCH_CONFIG_MAIN
@@ -59,56 +49,14 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesQuarantineOn]") {
     #endif
 
     // Creating an average across the transitions vectors
-    std::vector<epiworld_double> avg_transitions(transitions[0].size(), 0.0);
-    for (size_t i = 0; i < transitions.size(); ++i)
-    {
-        for (size_t j = 0; j < transitions[i].size(); ++j)
-        {
-            avg_transitions[j] += transitions[i][j];
-        }
-    }
-    // Normalizing the average
-    auto states = model_0.get_states();
-    size_t n_states = states.size();
-    for (size_t i = 0; i < n_states; ++i)
-    {
-        double rowsums = 0.0;
-        for (size_t j = 0; j < n_states; ++j)
-        {
-            rowsums += avg_transitions[j * n_states + i];
-        }
+    auto avg_transitions = tests_calculate_avg_transitions(
+        transitions, model_0
+    );
 
-        // Normalizing the rows
-        // If the row is empty, we skip it
-        if (rowsums == 0.0)
-            continue;
-
-        for (size_t j = 0; j < n_states; ++j)
-        {
-            avg_transitions[j * n_states + i] /= rowsums;
-        }
-
-    }
-
-    // Printing the entry as a matrix
-    std::cout << "Average transitions: " << std::endl;
-    for (size_t i = 0; i < n_states; ++i)
-    {
-        printf_epiworld("%25s ", states[i].c_str());
-        for (size_t j = 0; j < n_states; ++j)
-        {
-            if (avg_transitions[j*n_states + i] == 0.0)
-            {
-                printf_epiworld("  -   ");
-                continue;
-            }
-
-            printf_epiworld("%5.2f ", avg_transitions[j*n_states + i]);
-        }
-        printf_epiworld("\n");
-    }
-
+    tests_print_avg_transitions(avg_transitions, model_0);
+    
     // Avarage R0
+    auto n_states = model_0.get_n_states();
     double R0_observed = 0.0;
     for (auto & i: R0s)
     {

@@ -160,7 +160,19 @@ void inline tests_print_avg_transitions(
     std::cout << "Average transitions: " << std::endl;
     for (size_t i = 0; i < n_states; ++i)
     {
-        printf_epiworld("%25s ", states[i].c_str());
+
+        // First prints the column numbers
+        if (i == 0u)
+        {
+            printf_epiworld("%32s", " ");
+            for (size_t j = 0; j < n_states; ++j)
+            {
+                printf_epiworld(" [,%2li]", j);
+            }
+            printf_epiworld("\n");
+        }
+
+        printf_epiworld(" %-25s[%-2li,] ", states[i].c_str(), i);
         for (size_t j = 0; j < n_states; ++j)
         {
             if (avg_transitions[j*n_states + i] == 0.0)

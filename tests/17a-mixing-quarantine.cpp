@@ -23,6 +23,8 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         2.0,   // epiworld_double avg_incubation_days,
         1.0/2.0,// epiworld_double recovery_rate,
         contact_matrix,
+        .1,
+        5,
         2,
         4,
         .9,
