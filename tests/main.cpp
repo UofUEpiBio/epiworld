@@ -31,3 +31,4 @@
 #include "14c-measles.cpp"
 #include "15-edgelist-after-run-multiple.cpp"
 #include "16-multiple-events.cpp"
+#include "17-mixing-quarantine.cpp"

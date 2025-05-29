@@ -1,6 +1,10 @@
 #ifndef EPIWORLD_MODELS_SEIRMIXINGQUARANTINE_HPP
 #define EPIWORLD_MODELS_SEIRMIXINGQUARANTINE_HPP
 
+#include "../epiworld.hpp"
+
+using namespace epiworld;
+
 #define MM(i, j, n) \
     j * n + i
 
@@ -58,6 +62,7 @@ private:
     static void m_update_quarantine_exposed(Agent<TSeq> * p, Model<TSeq> * m);
     static void m_update_quarantine_infected(Agent<TSeq> * p, Model<TSeq> * m);
     static void m_update_quarantine_recovered(Agent<TSeq> * p, Model<TSeq> * m);
+    static void m_update_isolated_recovered(Agent<TSeq> * p, Model<TSeq> * m);
 
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator
@@ -65,6 +70,8 @@ private:
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_exposed; ///< Day of exposure
 
+    void m_quarantine_process();
+    static void m_update_model(Model<TSeq> * m);
 
 public:
 
@@ -76,7 +83,8 @@ public:
     static const int QUARANTINED_EXPOSED     = 5;
     static const int QUARANTINED_INFECTED    = 6;
     static const int QUARANTINED_RECOVERED   = 7;
-    static const int RECOVERED               = 8;
+    static const int ISOLATED_RECOVERED      = 8;
+    static const int RECOVERED               = 9;
 
     ModelSEIRMixingQuarantine() {};
     
@@ -103,7 +111,12 @@ public:
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
-        std::vector< double > contact_matrix
+        std::vector< double > contact_matrix,
+        // Policy parameters
+        epiworld_double days_undetected,
+        epiworld_fast_int quarantine_period,
+        epiworld_double quarantine_willingness,
+        epiworld_fast_int isolation_period
     );
     
     /**
@@ -126,7 +139,12 @@ public:
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
-        std::vector< double > contact_matrix
+        std::vector< double > contact_matrix,
+        // Policy parameters
+        epiworld_double days_undetected,
+        epiworld_fast_int quarantine_period,
+        epiworld_double quarantine_willingness,
+        epiworld_fast_int isolation_period
     );
 
     ModelSEIRMixingQuarantine<TSeq> & run(
@@ -154,10 +172,18 @@ public:
         return;
     };
 
-    static void quarantine_process();
-    static void update_model();
-
 };
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_update_model(Model<TSeq> * m)
+{
+    GET_MODEL(m, model);
+    model->m_quarantine_process();
+    model->events_run();
+    model->m_update_infected_list();
+    return;
+}
+
 
 template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected_list()
@@ -353,8 +379,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     // Setting up the quarantine parameters
     quarantine_willingness.resize(this->size(), false);
-    for (auto & i: quarantine_willingness)
-        i = runif() < this->par("Quarantine willingness");
+    for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
+        quarantine_willingness[idx] =
+            Model<TSeq>::runif() < this->par("Quarantine willingness");
 
     entity_quarantine_triggered.resize(this->size(), false);
     std::fill(
@@ -468,9 +495,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
 template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::m_update_exposed(
     Agent<TSeq> * p, Model<TSeq> * m
-) -> void {
-
-    auto state = p->get_state();
+) {
 
     // Getting the virus
     auto & v = p->get_virus();
@@ -491,52 +516,263 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_exposed(
 template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     Agent<TSeq> * p, Model<TSeq> * m
-) -> void {
+) {
 
     auto state = p->get_state();
+    GET_MODEL(m, model);
+
+    // Checking if the agent is detected
+    bool detected = false;
+    if (
+        (m->par("Isolation period") >= 0) &&
+        (m->runif() < 1.0/m->par("Days undetected"))
+    )
+    {
+        model->entity_quarantine_triggered[p->get_entity(0u).get_id()] = true;
+        detected = true;
+
+    }
 
     // Odd: Die, Even: Recover
     epiworld_fast_uint n_events = 0u;
     const auto & v = p->get_virus();
 
     // Recover
-    m->array_double_tmp[n_events++] = 
-        1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
-
-    #ifdef EPI_DEBUG
-    if (n_events == 0u)
-    {
-        printf_epiworld(
-            "[epi-debug] agent %i has 0 possible events!!\n",
-            static_cast<int>(p->get_id())
-            );
-        throw std::logic_error("Zero events in exposed.");
-    }
-    #else
-    if (n_events == 0u)
-        return;
-    #endif
+    auto p_recover = 
+        1.0 - (1.0 - v->get_prob_recovery(m)) *
+        (1.0 - p->get_recovery_enhancer(v, m)); 
     
+    if (m->runif() < p_recover)
+    {
+        if (detected)
+        {
+            p->change_state(
+                m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
+            );
+        }
+        else
+        {
+            p->rm_virus(
+                m, ModelSEIRMixingQuarantine<TSeq>::RECOVERED
+            );
+        }
 
-    // Running the roulette
-    int which = roulette(n_events, m);
-
-    if (which < 0)
         return;
+    }
+    else if (detected)
+    {
+        // If the agent is detected, it goes to isolation
+        p->change_state(
+            m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED
+        );
 
-    // Which roulette happen?
-    p->rm_virus(m);
-
+        // Flagging the day of isolation
+        model->day_flagged[p->get_id()] = m->today();
+        return;
+    }
+    
     return ;
-
 
 };
 
 template<typename TSeq>
-inline void ModelSEIRMixingQuarantine<TSeq>::quarantine_process() {
+inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated(
+    Agent<TSeq> * p, Model<TSeq> * m
+) {
+
+    GET_MODEL(m, model);
+
+    // Figuring out if the agent can be released from isolation
+    // if the quarantine period is over.
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+
+    bool unisolate =
+        (m->par("Isolation period") <= days_since) ?
+        true: false;
+
+    // Sampling from the probabilities
+    auto p_recovery = 1.0 - (1.0 - p->get_virus()->get_prob_recovery(m)) *
+        (1.0 - p->get_recovery_enhancer(p->get_virus(), m));
+
+    // Recovers
+    if (m->runif() < p_recovery)
+    {
+        if (unisolate)
+        {
+            p->rm_virus(
+                m,
+                ModelSEIRMixingQuarantine<TSeq>::RECOVERED
+            );
+        }
+        else
+            p->rm_virus(
+                m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
+            );
+    }
+
+};
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_update_quarantine_suscep(
+    Agent<TSeq> * p, Model<TSeq> * m
+) {
+
+    GET_MODEL(m, model);
+
+    // Figuring out if the agent can be released from quarantine
+    // if the quarantine period is over.
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+
+    bool unquarantine =
+        (m->par("Quarantine period") <= days_since) ?
+        true: false;
+
+    if (unquarantine)
+    {
+        p->change_state(
+            m, ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE
+        );
+    }
+
+};
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_update_quarantine_exposed(
+    Agent<TSeq> * p, Model<TSeq> * m
+) {
+
+    GET_MODEL(m, model);
+
+    // Figuring out if the agent can be released from quarantine
+    // if the quarantine period is over.
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+
+    bool unquarantine =
+        (m->par("Quarantine period") <= days_since) ?
+        true: false;
+
+    if (m->runif() < 1.0/(p->get_virus()->get_incubation(m)))
+    {
+
+        // If the agent is unquarantined, it becomes infected
+        if (unquarantine)
+        {
+            p->change_state(
+                m, ModelSEIRMixingQuarantine<TSeq>::INFECTED
+            );
+        }
+        else
+        {
+            p->change_state(
+                m, ModelSEIRMixingQuarantine<TSeq>::QUARANTINED_INFECTED
+            );
+        }
+
+    }
+    else if (unquarantine)
+    {
+        p->change_state(
+            m, ModelSEIRMixingQuarantine<TSeq>::EXPOSED
+        );
+    }
+
+};
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_update_quarantine_infected(
+    Agent<TSeq> * p, Model<TSeq> * m
+) {
+
+    GET_MODEL(m, model);
+
+    // Figuring out if the agent can be released from quarantine
+    // if the quarantine period is over.
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+
+    bool unquarantine =
+        (m->par("Quarantine period") <= days_since) ?
+        true: false;
+
+    // Sampling from the probabilities
+    auto p_recovery = 1.0 - (1.0 - p->get_virus()->get_prob_recovery(m)) *
+        (1.0 - p->get_recovery_enhancer(p->get_virus(), m));
+
+    // Recovers
+    if (m->runif() < p_recovery)
+    {
+        if (unquarantine)
+        {
+            p->rm_virus(
+                m, ModelSEIRMixingQuarantine<TSeq>::RECOVERED
+            );
+        }
+        else
+            p->rm_virus(
+                m, ModelSEIRMixingQuarantine<TSeq>::QUARANTINED_RECOVERED
+            );
+    }
+    else if (unquarantine)
+    {
+        p->change_state(
+            m, ModelSEIRMixingQuarantine<TSeq>::INFECTED
+        );
+    }
+
+};
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_update_quarantine_recovered(
+    Agent<TSeq> * p, Model<TSeq> * m
+) {
+
+    GET_MODEL(m, model);
+
+    // Figuring out if the agent can be released from quarantine
+    // if the quarantine period is over.
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+
+    bool unquarantine =
+        (m->par("Quarantine period") <= days_since) ?
+        true: false;
+
+    if (unquarantine)
+    {
+        p->change_state(
+            m, ModelSEIRMixingQuarantine<TSeq>::RECOVERED
+        );
+    }
+
+};
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated_recovered(
+    Agent<TSeq> * p, Model<TSeq> * m
+) {
+
+    GET_MODEL(m, model);
+
+    // Figuring out if the agent can be released from isolation
+    // if the quarantine period is over.
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+
+    bool unisolate =
+        (m->par("Isolation period") <= days_since) ?
+        true: false;
+
+    if (unisolate)
+    {
+        p->change_state(
+            m, ModelSEIRMixingQuarantine<TSeq>::RECOVERED
+        );
+    }
+
+};
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
 
     int entity_num = -1;
-    for (auto & entity: get_entities())
+    for (auto & entity: Model<TSeq>::get_entities())
     {
 
         // Checking if the quarantine in the entity was triggered
@@ -553,7 +789,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::quarantine_process() {
         for (auto i: entity.get_agents())
         {
 
-            auto & agent = get_agent(i);
+            auto & agent = Model<TSeq>::get_agent(i);
 
             if (agent.get_state() > INFECTED)
                 continue;
@@ -562,7 +798,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::quarantine_process() {
             if (agent.get_n_tools() != 0u)
                 continue;
 
-            if (quarantine_willingness[i] && (par("Quarantine period") >= 0))
+            if (
+                quarantine_willingness[i] &&
+                (Model<TSeq>::par("Quarantine period") >= 0))
             {
 
                 switch (agent.get_state())
@@ -583,7 +821,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::quarantine_process() {
                 }
 
                 // And we add the day of quarantine
-                day_flagged[i] = today();
+                day_flagged[i] = Model<TSeq>::today();
 
             }
         }
@@ -591,16 +829,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::quarantine_process() {
         // Setting the quarantine process off
         entity_quarantine_triggered[entity_num] = false;
     }
-
-    return;
-}
-
-template<typename TSeq>
-inline void ModelSEIRMixingQuarantine<TSeq>::update_model() 
-{
-    this->quarantine_process();
-    this->events_run();
-    this->m_update_infected_list();
 
     return;
 }
@@ -625,7 +853,12 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
-    std::vector< double > contact_matrix
+    std::vector< double > contact_matrix,
+    // Policy parameters
+    epiworld_double days_undetected,
+    epiworld_fast_int quarantine_period,
+    epiworld_double quarantine_willingness,
+    epiworld_fast_int isolation_period
     )
 {
 
@@ -637,6 +870,12 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.add_param(transmission_rate, "Prob. Transmission");
     model.add_param(recovery_rate, "Prob. Recovery");
     model.add_param(avg_incubation_days, "Avg. Incubation days");
+    model.add_param(days_undetected, "Days undetected");
+    model.add_param(quarantine_period, "Quarantine period");
+    model.add_param(
+        quarantine_willingness, "Quarantine willingness"
+    );
+    model.add_param(isolation_period, "Isolation period");
     
     // state
     model.add_state("Susceptible", m_update_susceptible);
@@ -647,21 +886,12 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.add_state("Quarantined Exposed", m_update_quarantine_exposed);
     model.add_state("Quarantined Infected", m_update_quarantine_infected);
     model.add_state("Quarantined Recovered", m_update_quarantine_recovered);
+    model.add_state("Isolated Recovered", m_update_isolated_recovered);
     model.add_state("Recovered");
 
     // Global function
-    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
-    {
-
-        GET_MODEL(m, m_down);
-        
-        m_down->m_update_infected_list();
-
-        return;
-
-    };
-
-    model.add_globalevent(update, "Update infected individuals");
+    model.add_globalevent(this->m_update_model, "Update infected individuals");
+    model.queuing_off();
 
 
     // Preparing the virus -------------------------------------------
@@ -698,7 +928,12 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
-    std::vector< double > contact_matrix
+    std::vector< double > contact_matrix,
+    // Policy parameters
+    epiworld_double days_undetected,
+    epiworld_fast_int quarantine_period,
+    epiworld_double quarantine_willingness,
+    epiworld_fast_int isolation_period
     )
 {   
 
@@ -713,7 +948,12 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         transmission_rate,
         avg_incubation_days,
         recovery_rate,
-        contact_matrix
+        contact_matrix,
+        // Policy parameters
+        days_undetected,
+        quarantine_period,
+        quarantine_willingness,
+        isolation_period
     );
 
     return;
