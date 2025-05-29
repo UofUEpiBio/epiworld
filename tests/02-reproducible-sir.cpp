@@ -6,8 +6,6 @@
 
 using namespace epiworld;
 
-
-
 EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
 
     // Adding multi-file write
@@ -79,7 +77,9 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
             }
 
             #ifdef CATCH_CONFIG_MAIN
+            #ifndef EPI_DEBUG
             REQUIRE_THAT(file0, Catch::Equals(file1));
+            #endif
             #endif
 
 

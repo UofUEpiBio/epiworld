@@ -1,5 +1,5 @@
 #ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #endif
 
 #include "tests.hpp"
@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesQuarantineOn]") {
 
     };
 
-    model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
+    model_0.run_multiple(60, nsims, 1231, saver, true, true, 1);
     
     #ifndef CATCH_CONFIG_MAIN
     model_0.print(false);

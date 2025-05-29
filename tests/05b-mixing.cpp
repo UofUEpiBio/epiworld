@@ -26,11 +26,7 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
 
     // Testing reproductive number in plain scenario
     int n_infected = 1;
-    #ifdef EPI_DEBUG
-    int n_agents = 2000;
-    #else
     int n_agents = 4000;
-    #endif
     size_t nsims = 400;
     epimodels::ModelSEIRMixing<> model_1(
         "Flu", // std::string vname,
