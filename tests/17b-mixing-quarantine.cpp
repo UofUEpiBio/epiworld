@@ -11,11 +11,7 @@ EPIWORLD_TEST_CASE(
     "[SEIR-mixing-quarantine-transitions]"
 ) {
 
-    std::vector< double > contact_matrix = {
-        0.8, 0.1, 0.1,
-        0.1, 0.8, 0.1,
-        0.1, 0.1, 0.8
-    };
+    std::vector< double > contact_matrix(9, 1.0/3.0);
 
     int n = 600;
     epimodels::ModelSEIRMixingQuarantine<> model(
@@ -49,9 +45,33 @@ EPIWORLD_TEST_CASE(
     model.add_entity(e2);
     model.add_entity(e3);
 
+    // Setting the distribution function of the initial cases
+    size_t n_seeds = 5;
+    model.get_virus(0).set_distribution(
+        [&n_seeds](Virus<> & v, Model<> * m) -> void {
+        for (int i = 0; i < n_seeds; ++i)
+            m->get_agents()[i].set_virus(v, m);
+        return;
+    });
+
+    size_t nsims = 500;
+    std::vector< std::vector<epiworld_double> > transitions(nsims);
+    std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
+    
+    // Generating the saver function
+    auto saver = tests_create_saver(transitions, R0s, n_seeds);
+
     // Running and checking the results
-    model.run(50, 123);
+    model.run_multiple(60, nsims, 123, saver, true, true, 4);
     model.print();
+
+    // Calculate average transitions
+    auto avg_transitions = tests_calculate_avg_transitions(
+        transitions, model
+    );
+
+    // Checking the average transitions
+    tests_print_avg_transitions(avg_transitions, model);
 
     
     #ifndef CATCH_CONFIG_MAIN
