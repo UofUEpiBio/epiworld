@@ -291,8 +291,8 @@
 \indexentry{ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{153}
 \indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}|hyperpage}{154}
 \indexentry{ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{154}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{154}
-\indexentry{clone\_ptr@{clone\_ptr}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{154}
+\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{155}
+\indexentry{clone\_ptr@{clone\_ptr}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{155}
 \indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{155}
 \indexentry{initial\_states@{initial\_states}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{155}
 \indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!reset@{reset}|hyperpage}{155}
@@ -300,7 +300,7 @@
 \indexentry{epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}|hyperpage}{156}
 \indexentry{epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{157}
 \indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}|hyperpage}{157}
-\indexentry{ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}|hyperpage}{157}
+\indexentry{ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}|hyperpage}{158}
 \indexentry{ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{159}
 \indexentry{initial\_states@{initial\_states}!ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}|hyperpage}{159}
 \indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{160}

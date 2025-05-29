@@ -282,7 +282,7 @@
 \contentsline {subsection}{\numberline {15.38.1}Constructor \& Destructor Documentation}{153}{subsection.15.38.1}%
 \contentsline {subsubsection}{\numberline {15.38.1.1}ModelSEIRMixingQuarantine()\hspace {0.1cm}{\footnotesize \ttfamily [1/2]}}{153}{subsubsection.15.38.1.1}%
 \contentsline {subsubsection}{\numberline {15.38.1.2}ModelSEIRMixingQuarantine()\hspace {0.1cm}{\footnotesize \ttfamily [2/2]}}{154}{subsubsection.15.38.1.2}%
-\contentsline {subsection}{\numberline {15.38.2}Member Function Documentation}{154}{subsection.15.38.2}%
+\contentsline {subsection}{\numberline {15.38.2}Member Function Documentation}{155}{subsection.15.38.2}%
 \contentsline {subsubsection}{\numberline {15.38.2.1}clone\_ptr()}{155}{subsubsection.15.38.2.1}%
 \contentsline {subsubsection}{\numberline {15.38.2.2}initial\_states()}{155}{subsubsection.15.38.2.2}%
 \contentsline {subsubsection}{\numberline {15.38.2.3}reset()}{155}{subsubsection.15.38.2.3}%
@@ -290,8 +290,8 @@
 \contentsline {subsection}{\numberline {15.39.1}Detailed Description}{157}{subsection.15.39.1}%
 \contentsline {subsection}{\numberline {15.39.2}Member Function Documentation}{157}{subsection.15.39.2}%
 \contentsline {subsubsection}{\numberline {15.39.2.1}initial\_states()}{157}{subsubsection.15.39.2.1}%
-\contentsline {section}{\numberline {15.40}Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}SIR$<$ TSeq $>$ Class Template Reference}{157}{section.15.40}%
-\contentsline {subsection}{\numberline {15.40.1}Detailed Description}{158}{subsection.15.40.1}%
+\contentsline {section}{\numberline {15.40}Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}SIR$<$ TSeq $>$ Class Template Reference}{158}{section.15.40}%
+\contentsline {subsection}{\numberline {15.40.1}Detailed Description}{159}{subsection.15.40.1}%
 \contentsline {subsection}{\numberline {15.40.2}Member Function Documentation}{159}{subsection.15.40.2}%
 \contentsline {subsubsection}{\numberline {15.40.2.1}initial\_states()}{159}{subsubsection.15.40.2.1}%
 \contentsline {section}{\numberline {15.41}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::epimodels\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}SIRCONN$<$ TSeq $>$ Class Template Reference}{160}{section.15.41}%
@@ -437,4 +437,4 @@
 \contentsline {chapter}{\numberline {16}File Documentation}{229}{chapter.16}%
 \contentsline {section}{\numberline {16.1}include/epiworld/agent-\/meat-\/state.hpp File Reference}{229}{section.16.1}%
 \contentsline {subsection}{\numberline {16.1.1}Detailed Description}{230}{subsection.16.1.1}%
-\contentsline {chapter}{Index}{231}{section*.321}%
+\contentsline {chapter}{Index}{231}{section*.320}%
