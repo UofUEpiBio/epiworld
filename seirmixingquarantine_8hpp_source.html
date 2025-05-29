@@ -555,23 +555,23 @@ $(function() {
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;) {</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160; </div>
-<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;    <span class="keyword">auto</span> state = p-&gt;get_state();</div>
-<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    GET_MODEL(m, model);</div>
-<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160; </div>
-<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    <span class="comment">// Checking if the agent is detected</span></div>
-<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;    <span class="keywordtype">bool</span> detected = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;    <span class="keywordflow">if</span> (</div>
-<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Isolation period&quot;</span>) &gt;= 0) &amp;&amp;</div>
-<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;        (m-&gt;runif() &lt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Days undetected&quot;</span>))</div>
+<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;    GET_MODEL(m, model);</div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160; </div>
+<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;    <span class="comment">// Checking if the agent is detected</span></div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    <span class="keywordtype">bool</span> detected = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;    <span class="keywordflow">if</span> (</div>
+<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Isolation period&quot;</span>) &gt;= 0) &amp;&amp;</div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;        (m-&gt;runif() &lt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Days undetected&quot;</span>)) &amp;&amp;</div>
+<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;        (p-&gt;get_n_entities() != 0u)</div>
 <div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;    )</div>
 <div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;    {</div>
-<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;        model-&gt;entity_quarantine_triggered[p-&gt;get_entity(0u).get_id()] = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;        detected = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160; </div>
-<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;    }</div>
-<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160; </div>
-<div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;    <span class="comment">// Odd: Die, Even: Recover</span></div>
-<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;    epiworld_fast_uint n_events = 0u;</div>
+<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;        </div>
+<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;        model-&gt;entity_quarantine_triggered[p-&gt;get_entity(0u).get_id()] = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;        detected = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160; </div>
+<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;    }</div>
+<div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160; </div>
+<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;    <span class="comment">// Odd: Die, Even: Recover</span></div>
 <div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;    <span class="keyword">const</span> <span class="keyword">auto</span> &amp; v = p-&gt;get_virus();</div>
 <div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160; </div>
 <div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;    <span class="comment">// Recover</span></div>
