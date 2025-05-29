@@ -555,6 +555,7 @@ public:
     ///@{
     void add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
     const std::vector< std::string > & get_states() const;
+    size_t get_n_states() const;
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
     void print_state_codes() const;
     ///@}

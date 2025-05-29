@@ -518,23 +518,23 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto state = p->get_state();
     GET_MODEL(m, model);
 
     // Checking if the agent is detected
     bool detected = false;
     if (
         (m->par("Isolation period") >= 0) &&
-        (m->runif() < 1.0/m->par("Days undetected"))
+        (m->runif() < 1.0/m->par("Days undetected")) &&
+        (p->get_n_entities() != 0u)
     )
     {
+        
         model->entity_quarantine_triggered[p->get_entity(0u).get_id()] = true;
         detected = true;
 
     }
 
     // Odd: Die, Even: Recover
-    epiworld_fast_uint n_events = 0u;
     const auto & v = p->get_virus();
 
     // Recover

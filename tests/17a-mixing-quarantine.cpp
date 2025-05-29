@@ -113,73 +113,72 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3001));
     #endif
 
-    // // Rerunning with plain mixing
-    // std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
-    // model.set_contact_matrix(contact_matrix);
+    // Rerunning with plain mixing
+    std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
+    model.set_contact_matrix(contact_matrix);
 
-    // // Running and checking the results
-    // model.run(50, 123);
-    // model.print();
+    // Running and checking the results
+    model("Days undetected") = -1.0; // No detection
+    model.run(50, 123); 
+    model.print();
 
-    // std::vector< int > totals;
-    // model.get_db().get_today_total(nullptr, &totals);
+    std::vector< int > totals;
+    model.get_db().get_today_total(nullptr, &totals);
 
-    // std::vector< int > expected_totals = {
-    //     0, 0, 0,
-    //     static_cast<int>(model.size())
-    //     };
+    std::vector< int > expected_totals(model.get_n_states(), 0);
+    expected_totals[expected_totals.size() - 1] = static_cast<int>(model.size());
 
-    // #ifdef CATCH_CONFIG_MAIN
-    // REQUIRE_THAT(totals, Catch::Equals(expected_totals));
-    // #endif
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_THAT(totals, Catch::Equals(expected_totals));
+    #endif
 
-    // // If entities don't have a dist function, then it should be
-    // // OK
-    // e1.set_distribution(distribute_entity_randomly<>(2000, false, true));
-    // e2.set_distribution(distribute_entity_randomly<>(2000, false, true));
-    // e3.set_distribution(distribute_entity_randomly<>(2000, false, true));
+    // If entities don't have a dist function, then it should be
+    // OK
+    e1.set_distribution(distribute_entity_randomly<>(2000, false, true));
+    e2.set_distribution(distribute_entity_randomly<>(2000, false, true));
+    e3.set_distribution(distribute_entity_randomly<>(2000, false, true));
 
-    // model.rm_entity(0);
-    // model.rm_entity(1);
-    // model.rm_entity(2);
+    model.rm_entity(0);
+    model.rm_entity(1);
+    model.rm_entity(2);
 
-    // model.add_entity(e1);
-    // model.add_entity(e2);
-    // model.add_entity(e3);
+    model.add_entity(e1);
+    model.add_entity(e2);
+    model.add_entity(e3);
 
-    // // Running and checking the results
-    // model.run(50, 123);
+    // Running and checking the results
+    model.run(50, 123);
 
-    // auto agents1 = model.get_entity(0).get_agents();
-    // auto agents2 = model.get_entity(1).get_agents();
-    // auto agents3 = model.get_entity(2).get_agents();
+    auto agents1 = model.get_entity(0).get_agents();
+    auto agents2 = model.get_entity(1).get_agents();
+    auto agents3 = model.get_entity(2).get_agents();
 
-    // std::vector< int > counts(model.size(), 0);
-    // for (const auto & a: agents1)
-    //     counts[a]++;
+    std::vector< int > counts(model.size(), 0);
+    for (const auto & a: agents1)
+        counts[a]++;
 
-    // for (const auto & a: agents2)
-    //     counts[a]++;
+    for (const auto & a: agents2)
+        counts[a]++;
 
-    // for (const auto & a: agents3)
-    //     counts[a]++;
+    for (const auto & a: agents3)
+        counts[a]++;
     
-    // double n0 = 0, n1 = 0, n2 = 0, n3 = 0;
-    // for (const auto & c: counts)
-    // {
-    //     if (c == 0)
-    //         n0++;
-    //     else if (c == 1)
-    //         n1++;
-    //     else if (c == 2)
-    //         n2++;
-    //     else if (c == 3)
-    //         n3++;
-    // }
+    double n0 = 0, n1 = 0, n2 = 0, n3 = 0;
+    for (const auto & c: counts)
+    {
+        if (c == 0)
+            n0++;
+        else if (c == 1)
+            n1++;
+        else if (c == 2)
+            n2++;
+        else if (c == 3)
+            n3++;
+    }
 
-    // #ifdef CATCH_CONFIG_MAIN
-    // REQUIRE_FALSE(!(n0 == 4000 && n1 == 6000 && n2 == 0 && n3 == 0));
-    // #endif
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE_FALSE(!(n0 == 4000 && n1 == 6000 && n2 == 0 && n3 == 0));
+    #endif
 
     #ifndef CATCH_CONFIG_MAIN
     return 0;
