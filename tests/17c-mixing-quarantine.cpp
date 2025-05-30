@@ -26,6 +26,7 @@ EPIWORLD_TEST_CASE(
         4.0,   // epiworld_double avg_incubation_days,
         1.0/3.5,// epiworld_double recovery_rate,
         contact_matrix,
+        {true, true, true}, // Entity can quarantine
         .2, // Hospitalization rate
         4, // Hospitalization period
         1.5, // Days undetected (negative means no quarantine)
@@ -65,7 +66,7 @@ EPIWORLD_TEST_CASE(
     auto saver = tests_create_saver(transitions, R0s, n_seeds);
 
     // Running and checking the results
-    model.run_multiple(60, nsims, 123, saver, true, true, 1);
+    model.run_multiple(60, nsims, 123, saver, true, true, 4);
     model.print();
 
     // Calculate average transitions

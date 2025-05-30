@@ -76,6 +76,7 @@ private:
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator
     std::vector< bool > entity_quarantine_triggered; ///< Whether the quarantine process has started
+    std::vector< bool > entity_can_quarantine; ///< Whether the entity can quarantine
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_onset; ///< Day of onset of the disease
     std::vector< int > day_exposed; ///< Day of exposure
@@ -122,6 +123,7 @@ public:
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix,
+        std::vector< bool > entity_can_quarantine,
         epiworld_double hospitalization_rate,
         epiworld_double hospitalization_period,
         // Policy parameters
@@ -152,6 +154,7 @@ public:
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix,
+        std::vector< bool > entity_can_quarantine,
         epiworld_double hospitalization_rate,
         epiworld_double hospitalization_period,
         // Policy parameters
@@ -184,6 +187,32 @@ public:
     {
         contact_matrix = cmat;
         return;
+    };
+
+    void set_entity_can_quarantine(std::vector< bool > can_quarantine)
+    {
+        entity_can_quarantine = can_quarantine;
+        return;
+    };
+
+    std::vector< double > get_contact_matrix() const
+    {
+        return contact_matrix;
+    };
+
+    std::vector< bool > get_entity_can_quarantine() const
+    {
+        return entity_can_quarantine;
+    };
+
+    std::vector< bool > get_entity_quarantine_triggered() const
+    {
+        return entity_quarantine_triggered;
+    };
+
+    std::vector< bool > get_quarantine_willingness() const
+    {
+        return quarantine_willingness;
     };
 
 };
@@ -328,6 +357,16 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
             std::string(" != ") + std::to_string(nentities*nentities) +
             std::string(".")
             );
+
+    
+    // Checking the quarantine variable
+    if (entity_can_quarantine.size() != this->entities.size())
+        throw std::length_error(
+            std::string("The entity_can_quarantine vector must have the same size as the number of entities. ") +
+            std::to_string(entity_can_quarantine.size()) +
+            std::string(" != ") + std::to_string(this->entities.size()) +
+            std::string(".")
+        );
 
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
@@ -553,7 +592,8 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     if (
         (m->par("Isolation period") >= 0) &&
         (m->runif() < 1.0/m->par("Days undetected")) &&
-        (p->get_n_entities() != 0u)
+        (p->get_n_entities() != 0u) &&
+        (model->entity_can_quarantine[p->get_entity(0u).get_id()]) 
     )
     {
         
@@ -873,6 +913,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix,
+    std::vector< bool > entity_can_quarantine,
     epiworld_double hospitalization_rate,
     epiworld_double hospitalization_period,
     // Policy parameters
@@ -885,6 +926,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
 
     // Setting up the contact matrix
     this->contact_matrix = contact_matrix;
+    this->entity_can_quarantine = entity_can_quarantine;
 
     // Setting up parameters
     model.add_param(contact_rate, "Contact rate");
@@ -915,7 +957,6 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     // Global function
     model.add_globalevent(this->m_update_model, "Update infected individuals");
     model.queuing_off();
-
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname, prevalence, true);
@@ -952,6 +993,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix,
+    std::vector< bool > entity_can_quarantine,
     epiworld_double hospitalization_rate,
     epiworld_double hospitalization_period,
     // Policy parameters
@@ -963,6 +1005,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
 {   
 
     this->contact_matrix = contact_matrix;
+    this->entity_can_quarantine = entity_can_quarantine;
 
     ModelSEIRMixingQuarantine(
         *this,
@@ -974,6 +1017,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         avg_incubation_days,
         recovery_rate,
         contact_matrix,
+        entity_can_quarantine,
         hospitalization_rate,
         hospitalization_period,
         // Policy parameters
