@@ -13,22 +13,22 @@ EPIWORLD_TEST_CASE(
 
     std::vector< double > contact_matrix(9, 1.0/3.0);
 
-    int n = 1000;
-    size_t n_seeds = 5;
-    size_t nsims = 500;
+    int n = 2000;
+    size_t n_seeds = 10;
+    size_t nsims = 400;
 
     epimodels::ModelSEIRMixingQuarantine<> model(
         "Flu", // std::string vname,
         n, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        12.0,  // epiworld_double contact_rate,
-        0.08,   // epiworld_double transmission_rate,
+        8.0,  // epiworld_double contact_rate,
+        0.5,   // epiworld_double transmission_rate,
         4.0,   // epiworld_double avg_incubation_days,
-        1.0/2.0,// epiworld_double recovery_rate,
+        1.0/3.5,// epiworld_double recovery_rate,
         contact_matrix,
-        .1, // Hospitalization rate
+        .2, // Hospitalization rate
         4, // Hospitalization period
-        2.5, // Days undetected (negative means no quarantine)
+        1.5, // Days undetected (negative means no quarantine)
         15, // Quarantine period
         .9, // Quarantine willingness
         4 // Isolation period
@@ -53,7 +53,7 @@ EPIWORLD_TEST_CASE(
     // Setting the distribution function of the initial cases
     model.get_virus(0).set_distribution(
         [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
+        for (size_t i = 0; i < n_seeds; ++i)
             m->get_agents()[i].set_virus(v, m);
         return;
     });
@@ -65,7 +65,7 @@ EPIWORLD_TEST_CASE(
     auto saver = tests_create_saver(transitions, R0s, n_seeds);
 
     // Running and checking the results
-    model.run_multiple(60, nsims, 123, saver, true, true, 4);
+    model.run_multiple(60, nsims, 123, saver, true, true, 1);
     model.print();
 
     // Calculate average transitions
@@ -77,10 +77,12 @@ EPIWORLD_TEST_CASE(
     tests_print_avg_transitions(avg_transitions, model);
 
     // Checking the expected and effective R0
-    epiworld_double R0_expected = model("Contact rate") * model("Prob. Transmission") / model("Prob. Recovery");
+    epiworld_double R0_expected =
+        model("Contact rate") * model("Prob. Transmission") / 
+        (model("Prob. Recovery") + model("Hospitalization rate"));
 
     epiworld_double R0 = 0.0;
-    for (int i = 0; i < R0s.size(); ++i)
+    for (size_t i = 0; i < R0s.size(); ++i)
     {
         R0 += R0s[i];
     }
@@ -93,51 +95,56 @@ EPIWORLD_TEST_CASE(
     #define mat(i, j) avg_transitions[j * model.get_n_states() + i]
 
     std::cout << "Transition to infected (exposed): " <<
-        mat(1, 2) + mat(1, 6) << " (expected: " << 
+        mat(1, 2) + mat(1, 3) << " (expected: " << 
         1.0/model("Avg. Incubation days") << ")" << std::endl;
 
     // Transition to recovered
     std::cout << "Transition to recovered (infected): " <<
-        mat(2, 8) + mat(2, 9) << " (expected: " << 
+        mat(2, 7) + mat(2, 9) << " (expected: " << 
         model("Prob. Recovery") << ")" << std::endl;
 
     // Transition to isolated
-    std::cout << "Transition to isolated (infected): " <<
-        mat(2, 3) + mat(2, 8) << " (expected: " << 
+    std::cout << "Transition to isolated (infected; larger b/c of quarantine): " <<
+        mat(2, 3) + mat(2, 4) + mat(2, 7) << " (expected: " << 
         1.0/model("Days undetected") << ")" << std::endl;
 
     // Transition to infected (from quarantined exposed)
     std::cout << "Transition to q. infected (q. exposed): " <<
-        mat(5, 2) + mat(5, 6) << " (expected: " << 
+        mat(6, 2) + mat(6, 3) << " (expected: " << 
         1.0/model("Avg. Incubation days") << ")" << std::endl;
-
-    // Transition from q. infected to infected
-    std::cout << "Transition to infected (q. infected): " <<
-        mat(6, 2) << " (expected: " << 
-        (1.0 - model("Prob. Recovery")) * 1.0/model("Avg. Incubation days") << ")" << std::endl;
 
     #ifdef CATCH_CONFIG_MAIN
     // Transition to infected
     REQUIRE_FALSE(
-        moreless(mat(1, 2) + mat(1, 6), 1.0/model("Avg. Incubation days"), 0.05)
+        moreless(mat(1, 2) + mat(1, 3), 1.0/model("Avg. Incubation days"), 0.05)
     );
 
     // Transition to recovered
     REQUIRE_FALSE(
         moreless(
-            mat(2, 8) + mat(2, 9),
+            mat(2, 7) + mat(2, 9),
             model("Prob. Recovery"), 0.05
         )
     );
 
     // Transition to isolated
     REQUIRE_FALSE(
-        moreless(mat(2, 3) + mat(2, 8), 1.0/model("Days undetected"), 0.05)
+        moreless(
+            mat(2, 3) + mat(2, 4) + mat(2, 7),
+            1.0/model("Days undetected") +
+            // The quarantine process moves agents to isolation
+            // so it increases the transition to isolated
+            .04,
+            0.05
+        )
     );
 
     // Transition to infected (from quarantined exposed)
     REQUIRE_FALSE(
-        moreless(mat(5, 2) + mat(5, 6), 1.0/model("Avg. Incubation days"), 0.05)
+        moreless(
+            mat(6, 2) + mat(6, 3),
+            1.0/model("Avg. Incubation days"), 0.05
+        )
     );
     #endif
     

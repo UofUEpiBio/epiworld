@@ -560,8 +560,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
         model->entity_quarantine_triggered[p->get_entity(0u).get_id()] = true;
         detected = true;
 
-        return;
-
     }
 
     // Odd: Die, Even: Recover
@@ -634,12 +632,18 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated(
         (m->par("Isolation period") <= days_since) ?
         true: false;
 
-    // Sampling from the probabilities
-    auto p_recovery = 1.0 - (1.0 - p->get_virus()->get_prob_recovery(m)) *
+    // Sampling from the probabilities of recovery   
+    m->array_double_tmp[0] = 1.0 -
+        (1.0 - p->get_virus()->get_prob_recovery(m)) *
         (1.0 - p->get_recovery_enhancer(p->get_virus(), m));
 
+    // And hospitalization
+    m->array_double_tmp[1] = m->par("Hospitalization rate");
+
+    SAMPLE_FROM_PROBS(2, which);
+
     // Recovers
-    if (m->runif() < p_recovery)
+    if (which == 0)
     {
         if (unisolate)
         {
@@ -653,6 +657,29 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated(
                 m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
             );
     }
+    else if (which == 1)
+    {
+
+        if (unisolate)
+        {
+            p->change_state(
+                m, ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
+            );
+        }
+        else
+        {
+            p->change_state(
+                m, ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
+            );
+        }
+    }
+    else if ((which == 2) && unisolate)
+    {
+        p->change_state(
+            m, ModelSEIRMixingQuarantine<TSeq>::INFECTED
+        );
+    }
+
 
 };
 

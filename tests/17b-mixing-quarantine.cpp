@@ -14,14 +14,14 @@ EPIWORLD_TEST_CASE(
     std::vector< double > contact_matrix(9, 1.0/3.0);
 
     int n = 1000;
-    size_t n_seeds = 1;
-    size_t nsims = 500;
+    size_t n_seeds = 5;
+    size_t nsims = 400;
 
     epimodels::ModelSEIRMixingQuarantine<> model(
         "Flu", // std::string vname,
         n, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        12.0,  // epiworld_double contact_rate,
+        8.0,  // epiworld_double contact_rate,
         0.08,   // epiworld_double transmission_rate,
         4.0,   // epiworld_double avg_incubation_days,
         1.0/3.5,// epiworld_double recovery_rate,
@@ -82,7 +82,7 @@ EPIWORLD_TEST_CASE(
             (model("Prob. Recovery") + model("Hospitalization rate"));
 
     epiworld_double R0 = 0.0;
-    for (int i = 0; i < R0s.size(); ++i)
+    for (size_t i = 0; i < R0s.size(); ++i)
     {
         R0 += R0s[i];
     }
@@ -122,7 +122,7 @@ EPIWORLD_TEST_CASE(
 
     // Transition to recovered
     REQUIRE_FALSE(
-        moreless(mat(2, 7), model("Prob. Recovery"), 0.05)
+        moreless(mat(2, 9), model("Prob. Recovery"), 0.05)
     );
 
     // Transition to hospitalized
