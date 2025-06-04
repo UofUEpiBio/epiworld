@@ -23,7 +23,7 @@ jobs:
 
             - name: Format C++ files with clang-format
               run: |
-                  find . -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" \) -print0 \
+                  find tests examples include/epiworld -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" \) -print0 \
                     | xargs -0 clang-format -style=file -i
 
             - name: Fail on formatting changes
