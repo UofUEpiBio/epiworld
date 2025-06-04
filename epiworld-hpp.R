@@ -3,6 +3,9 @@ line78 <- paste(rep("/", 78), collapse = "")
 N_CALLS   <- 0L
 MAX_CALLS <- 10L
 
+# Track already included files
+INCLUDED_FILES <- character(0)
+
 unfolder <- function(txt, rel = "include/epiworld/") {
 
     heads <- which(grepl("^\\s*#include \"", txt))
@@ -37,7 +40,18 @@ unfolder <- function(txt, rel = "include/epiworld/") {
 
         loc <- heads[h]
 
-        fn <- trimws(paste0(rel, fns[h]))
+        fn <- trimws(paste0(rel, fns[h])) |>
+            normalizePath()
+
+        # Skip if already included
+        if (fn %in% INCLUDED_FILES) {
+            # Remove the #include line
+            new_src <- new_src[-loc]
+            next
+        }
+
+        INCLUDED_FILES <<- c(INCLUDED_FILES, fn)
+
         tmp_lines <- readLines(fn, warn = FALSE)
 
         # Extracting relative path
