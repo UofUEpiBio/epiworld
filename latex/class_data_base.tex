@@ -38,7 +38,7 @@ void {\bfseries record} ()
 \mbox{\Hypertarget{class_data_base_aab9773f0305630dc3684a8757bbfe053}\label{class_data_base_aab9773f0305630dc3684a8757bbfe053}} 
 const std\+::vector$<$ TSeq $>$ \& {\bfseries get\+\_\+sequence} () const
 \item 
-\mbox{\Hypertarget{class_data_base_abdb7ca34dd0e89b46204c909e07d8f13}\label{class_data_base_abdb7ca34dd0e89b46204c909e07d8f13}} 
+\mbox{\Hypertarget{class_data_base_a713d3c4620585cbbcbef4cd43c48bc29}\label{class_data_base_a713d3c4620585cbbcbef4cd43c48bc29}} 
 const std\+::vector$<$ int $>$ \& {\bfseries get\+\_\+nexposed} () const
 \item 
 \mbox{\Hypertarget{class_data_base_a743d5061724b6cb3c8d669195fc995be}\label{class_data_base_a743d5061724b6cb3c8d669195fc995be}} 
@@ -68,7 +68,7 @@ void {\bfseries add\+\_\+user\+\_\+data} (epiworld\+\_\+fast\+\_\+uint j, epiwor
 \mbox{\Hypertarget{class_data_base_a3323ea7c7b2fbd8366ac7e8efd5528b8}\label{class_data_base_a3323ea7c7b2fbd8366ac7e8efd5528b8}} 
 \mbox{\hyperlink{class_user_data}{User\+Data}}$<$ TSeq $>$ \& {\bfseries get\+\_\+user\+\_\+data} ()
 \item 
-std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{class_data_base_a936612806b51d4b737c78166e71e9579}{get\+\_\+transition\+\_\+probability}} (bool print=true, bool normalize=true) const
+std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{class_data_base_ae02117c39eb4f2f1229c0415b31e68fe}{transition\+\_\+probability}} (bool print=true, bool normalize=true) const
 \begin{DoxyCompactList}\small\item\em Calculates the transition probabilities. \end{DoxyCompactList}\item 
 bool \mbox{\hyperlink{class_data_base_ab387bebbab95525c452660a7701c457d}{operator==}} (const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$ \&other) const
 \item 
@@ -138,19 +138,19 @@ void {\bfseries get\+\_\+transmissions} (int $\ast$date, int $\ast$source, int $
 \textbf{ }\par
 \begin{DoxyCompactItemize}
 \item 
-Map\+Vec\+\_\+type$<$ int, int $>$ \mbox{\hyperlink{class_data_base_ae6cf5bfd5a3587d92f2349c3395f1186}{get\+\_\+reproductive\+\_\+number}} () const
+Map\+Vec\+\_\+type$<$ int, int $>$ \mbox{\hyperlink{class_data_base_a5d43d9fba8e46bee17f529e0ebce670e}{reproductive\+\_\+number}} () const
 \begin{DoxyCompactList}\small\item\em Computes the reproductive number of each case. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{class_data_base_a35022413f30f8f4befdad3dabfbd2dcc}\label{class_data_base_a35022413f30f8f4befdad3dabfbd2dcc}} 
-void {\bfseries get\+\_\+reproductive\+\_\+number} (std\+::string fn) const
+\mbox{\Hypertarget{class_data_base_a24076459592eecd983344be203773770}\label{class_data_base_a24076459592eecd983344be203773770}} 
+void {\bfseries reproductive\+\_\+number} (std\+::string fn) const
 \end{DoxyCompactItemize}
 
 \textbf{ }\par
 \begin{DoxyCompactItemize}
 \item 
-void \mbox{\hyperlink{class_data_base_a0269b69656879cd7477e859d774cc1f7}{get\+\_\+generation\+\_\+time}} (std\+::vector$<$ int $>$ \&agent\+\_\+id, std\+::vector$<$ int $>$ \&virus\+\_\+id, std\+::vector$<$ int $>$ \&time, std\+::vector$<$ int $>$ \&gentime) const
+void \mbox{\hyperlink{class_data_base_a17a16f7aa666f4852b40324cf89cd449}{generation\+\_\+time}} (std\+::vector$<$ int $>$ \&agent\+\_\+id, std\+::vector$<$ int $>$ \&virus\+\_\+id, std\+::vector$<$ int $>$ \&time, std\+::vector$<$ int $>$ \&gentime) const
 \begin{DoxyCompactList}\small\item\em Get the generation time. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{class_data_base_a3bc5af34f99d2509cc203f2081e3a4b2}\label{class_data_base_a3bc5af34f99d2509cc203f2081e3a4b2}} 
-void \mbox{\hyperlink{class_data_base_a3bc5af34f99d2509cc203f2081e3a4b2}{get\+\_\+generation\+\_\+time}} (std\+::string fn) const
+\mbox{\Hypertarget{class_data_base_a6e8274cb88f77ef8b4b6051b1941e09f}\label{class_data_base_a6e8274cb88f77ef8b4b6051b1941e09f}} 
+void \mbox{\hyperlink{class_data_base_a6e8274cb88f77ef8b4b6051b1941e09f}{generation\+\_\+time}} (std\+::string fn) const
 \begin{DoxyCompactList}\small\item\em Write the generation time to a file. \end{DoxyCompactList}\end{DoxyCompactItemize}
 
 \doxysubsection*{Friends}
@@ -190,12 +190,12 @@ Statistical data about the process.
 
 
 \doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{class_data_base_a0269b69656879cd7477e859d774cc1f7}\label{class_data_base_a0269b69656879cd7477e859d774cc1f7}} 
-\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_generation\_time@{get\_generation\_time}}
-\index{get\_generation\_time@{get\_generation\_time}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
-\doxysubsubsection{\texorpdfstring{get\_generation\_time()}{get\_generation\_time()}}
+\mbox{\Hypertarget{class_data_base_a17a16f7aa666f4852b40324cf89cd449}\label{class_data_base_a17a16f7aa666f4852b40324cf89cd449}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!generation\_time@{generation\_time}}
+\index{generation\_time@{generation\_time}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{generation\_time()}{generation\_time()}}
 {\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-void \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::get\+\_\+generation\+\_\+time (\begin{DoxyParamCaption}\item[{std\+::vector$<$ int $>$ \&}]{agent\+\_\+id,  }\item[{std\+::vector$<$ int $>$ \&}]{virus\+\_\+id,  }\item[{std\+::vector$<$ int $>$ \&}]{time,  }\item[{std\+::vector$<$ int $>$ \&}]{gentime }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+void \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::generation\+\_\+time (\begin{DoxyParamCaption}\item[{std\+::vector$<$ int $>$ \&}]{agent\+\_\+id,  }\item[{std\+::vector$<$ int $>$ \&}]{virus\+\_\+id,  }\item[{std\+::vector$<$ int $>$ \&}]{time,  }\item[{std\+::vector$<$ int $>$ \&}]{gentime }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
 
 
 
@@ -206,51 +206,7 @@ Calculates the generating time
 {\em agent\+\_\+id,virus\+\_\+id,time,gentime} & vectors where to save the values\\
 \hline
 \end{DoxyParams}
-The generation time is the time between the infection of the source and the infection of the target. \mbox{\Hypertarget{class_data_base_ae6cf5bfd5a3587d92f2349c3395f1186}\label{class_data_base_ae6cf5bfd5a3587d92f2349c3395f1186}} 
-\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_reproductive\_number@{get\_reproductive\_number}}
-\index{get\_reproductive\_number@{get\_reproductive\_number}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
-\doxysubsubsection{\texorpdfstring{get\_reproductive\_number()}{get\_reproductive\_number()}}
-{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-Map\+Vec\+\_\+type$<$ int, int $>$ \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::get\+\_\+reproductive\+\_\+number\hspace{0.3cm}{\ttfamily [inline]}}
-
-
-
-Computes the reproductive number of each case. 
-
-By definition, whereas it computes R0 (basic reproductive number) or Rt/R (the effective reproductive number) will depend on whether the virus is allowed to circulate naïvely or not, respectively.
-
-
-\begin{DoxyParams}{Parameters}
-{\em fn} & File where to write out the reproductive number.\\
-\hline
-\end{DoxyParams}
-In the case of {\ttfamily Map\+Vec\+\_\+type$<$int,int$>$}, the key is a vector of 3 integers\+:
-\begin{DoxyItemize}
-\item \mbox{\hyperlink{class_virus}{Virus}} id
-\item Source id
-\item Date when the source was infected 
-\end{DoxyItemize}\mbox{\Hypertarget{class_data_base_a936612806b51d4b737c78166e71e9579}\label{class_data_base_a936612806b51d4b737c78166e71e9579}} 
-\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_transition\_probability@{get\_transition\_probability}}
-\index{get\_transition\_probability@{get\_transition\_probability}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
-\doxysubsubsection{\texorpdfstring{get\_transition\_probability()}{get\_transition\_probability()}}
-{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::get\+\_\+transition\+\_\+probability (\begin{DoxyParamCaption}\item[{bool}]{print = {\ttfamily true},  }\item[{bool}]{normalize = {\ttfamily true} }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
-
-
-
-Calculates the transition probabilities. 
-
-
-\begin{DoxyParams}{Parameters}
-{\em print} & Print the transition matrix. \\
-\hline
-{\em normalize} & Normalize the transition matrix. Otherwise, it returns raw counts.\\
-\hline
-\end{DoxyParams}
-The transition matrix is the matrix of the counts of transitions from one state to another. So the ij-\/th element of the matrix is the number of transitions from state i to state j (when not normalized), or the probability of transitioning from state i to state j (when normalized). \begin{DoxyReturn}{Returns}
-std\+::vector$<$ epiworld\+\_\+double $>$ 
-\end{DoxyReturn}
-\mbox{\Hypertarget{class_data_base_a2b855969ae8aca805a8ee1713519c52d}\label{class_data_base_a2b855969ae8aca805a8ee1713519c52d}} 
+The generation time is the time between the infection of the source and the infection of the target. \mbox{\Hypertarget{class_data_base_a2b855969ae8aca805a8ee1713519c52d}\label{class_data_base_a2b855969ae8aca805a8ee1713519c52d}} 
 \index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_transmissions@{get\_transmissions}}
 \index{get\_transmissions@{get\_transmissions}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
 \doxysubsubsection{\texorpdfstring{get\_transmissions()}{get\_transmissions()}}
@@ -333,6 +289,50 @@ Registering a new variant.
 {\em v} & Pointer to the new virus. Since viruses are originated in the agent, the numbers simply move around. From the parent virus to the new virus. And the total number of infected does not change. \\
 \hline
 \end{DoxyParams}
+\mbox{\Hypertarget{class_data_base_a5d43d9fba8e46bee17f529e0ebce670e}\label{class_data_base_a5d43d9fba8e46bee17f529e0ebce670e}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!reproductive\_number@{reproductive\_number}}
+\index{reproductive\_number@{reproductive\_number}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{reproductive\_number()}{reproductive\_number()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+Map\+Vec\+\_\+type$<$ int, int $>$ \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::reproductive\+\_\+number\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Computes the reproductive number of each case. 
+
+By definition, whereas it computes R0 (basic reproductive number) or Rt/R (the effective reproductive number) will depend on whether the virus is allowed to circulate naïvely or not, respectively.
+
+
+\begin{DoxyParams}{Parameters}
+{\em fn} & File where to write out the reproductive number.\\
+\hline
+\end{DoxyParams}
+In the case of {\ttfamily Map\+Vec\+\_\+type$<$int,int$>$}, the key is a vector of 3 integers\+:
+\begin{DoxyItemize}
+\item \mbox{\hyperlink{class_virus}{Virus}} id
+\item Source id
+\item Date when the source was infected 
+\end{DoxyItemize}\mbox{\Hypertarget{class_data_base_ae02117c39eb4f2f1229c0415b31e68fe}\label{class_data_base_ae02117c39eb4f2f1229c0415b31e68fe}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!transition\_probability@{transition\_probability}}
+\index{transition\_probability@{transition\_probability}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{transition\_probability()}{transition\_probability()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::transition\+\_\+probability (\begin{DoxyParamCaption}\item[{bool}]{print = {\ttfamily true},  }\item[{bool}]{normalize = {\ttfamily true} }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Calculates the transition probabilities. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em print} & Print the transition matrix. \\
+\hline
+{\em normalize} & Normalize the transition matrix. Otherwise, it returns raw counts.\\
+\hline
+\end{DoxyParams}
+The transition matrix is the matrix of the counts of transitions from one state to another. So the ij-\/th element of the matrix is the number of transitions from state i to state j (when not normalized), or the probability of transitioning from state i to state j (when normalized). \begin{DoxyReturn}{Returns}
+std\+::vector$<$ epiworld\+\_\+double $>$ 
+\end{DoxyReturn}
 
 
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
