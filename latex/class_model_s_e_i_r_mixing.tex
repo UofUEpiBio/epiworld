@@ -28,12 +28,14 @@ Collaboration diagram for Model\+SEIRMixing$<$ TSeq $>$\+:
 \mbox{\hyperlink{class_model_s_e_i_r_mixing_ab02c9e3f95e1cd213f16d6761709debc}{Model\+SEIRMixing}} (const std\+::string \&vname, epiworld\+\_\+fast\+\_\+uint n, epiworld\+\_\+double prevalence, epiworld\+\_\+double contact\+\_\+rate, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double avg\+\_\+incubation\+\_\+days, epiworld\+\_\+double recovery\+\_\+rate, std\+::vector$<$ double $>$ contact\+\_\+matrix)
 \begin{DoxyCompactList}\small\item\em Constructs a \mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}} object. \end{DoxyCompactList}\item 
 \mbox{\Hypertarget{class_model_s_e_i_r_mixing_ab0b7da08a394f5c4dc39e125ec88f297}\label{class_model_s_e_i_r_mixing_ab0b7da08a394f5c4dc39e125ec88f297}} 
-\mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$ \& \mbox{\hyperlink{class_model_s_e_i_r_mixing_ab0b7da08a394f5c4dc39e125ec88f297}{run}} (epiworld\+\_\+fast\+\_\+uint ndays, int seed=-\/1)
-\begin{DoxyCompactList}\small\item\em Runs the simulation (after initialization) \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{class_model_s_e_i_r_mixing_a3cddda040d2a888460d0f189cf47836d}{reset}} ()
-\begin{DoxyCompactList}\small\item\em Reset the model. \end{DoxyCompactList}\item 
-\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_s_e_i_r_mixing_ad53c73d00b5625fbd34f160732bec72a}{clone\+\_\+ptr}} ()
-\begin{DoxyCompactList}\small\item\em Advanced usage\+: Makes a copy of data and returns it as undeleted pointer. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$ \& {\bfseries run} (epiworld\+\_\+fast\+\_\+uint ndays, int seed=-\/1)
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_a3cddda040d2a888460d0f189cf47836d}\label{class_model_s_e_i_r_mixing_a3cddda040d2a888460d0f189cf47836d}} 
+void {\bfseries reset} ()
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_ad53c73d00b5625fbd34f160732bec72a}\label{class_model_s_e_i_r_mixing_ad53c73d00b5625fbd34f160732bec72a}} 
+\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ {\bfseries clone\+\_\+ptr} ()
+\item 
 \mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$ \& \mbox{\hyperlink{class_model_s_e_i_r_mixing_a9b0db4f89539c5e5bd8c06555df627b9}{initial\+\_\+states}} (std\+::vector$<$ double $>$ proportions\+\_\+, std\+::vector$<$ int $>$ queue\+\_\+=\{\})
 \begin{DoxyCompactList}\small\item\em Set the initial states of the model. \end{DoxyCompactList}\item 
 \mbox{\Hypertarget{class_model_s_e_i_r_mixing_a5186e5796fb873daec749ca0a4dd8ffc}\label{class_model_s_e_i_r_mixing_a5186e5796fb873daec749ca0a4dd8ffc}} 
@@ -54,7 +56,6 @@ static const int {\bfseries INFECTED} = 2
 \mbox{\Hypertarget{class_model_s_e_i_r_mixing_a3780bdc5931f5fb4cdfd568ac6120051}\label{class_model_s_e_i_r_mixing_a3780bdc5931f5fb4cdfd568ac6120051}} 
 static const int {\bfseries RECOVERED} = 3
 \end{DoxyCompactItemize}
-\doxysubsection*{Additional Inherited Members}
 
 
 \doxysubsection{Constructor \& Destructor Documentation}
@@ -137,32 +138,12 @@ Constructs a \mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}} ob
 
 
 \doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{class_model_s_e_i_r_mixing_ad53c73d00b5625fbd34f160732bec72a}\label{class_model_s_e_i_r_mixing_ad53c73d00b5625fbd34f160732bec72a}} 
-\index{ModelSEIRMixing$<$ TSeq $>$@{ModelSEIRMixing$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}}
-\index{clone\_ptr@{clone\_ptr}!ModelSEIRMixing$<$ TSeq $>$@{ModelSEIRMixing$<$ TSeq $>$}}
-\doxysubsubsection{\texorpdfstring{clone\_ptr()}{clone\_ptr()}}
-{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$\+::clone\+\_\+ptr\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
-
-
-
-Advanced usage\+: Makes a copy of data and returns it as undeleted pointer. 
-
-
-\begin{DoxyParams}{Parameters}
-{\em copy} & \\
-\hline
-\end{DoxyParams}
-
-
-Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model_afd0c24e19b0a104e03d96ab4333725e5}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
-
 \mbox{\Hypertarget{class_model_s_e_i_r_mixing_a9b0db4f89539c5e5bd8c06555df627b9}\label{class_model_s_e_i_r_mixing_a9b0db4f89539c5e5bd8c06555df627b9}} 
 \index{ModelSEIRMixing$<$ TSeq $>$@{ModelSEIRMixing$<$ TSeq $>$}!initial\_states@{initial\_states}}
 \index{initial\_states@{initial\_states}!ModelSEIRMixing$<$ TSeq $>$@{ModelSEIRMixing$<$ TSeq $>$}}
 \doxysubsubsection{\texorpdfstring{initial\_states()}{initial\_states()}}
 {\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-\mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$ \& \mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$\+::initial\+\_\+states (\begin{DoxyParamCaption}\item[{std\+::vector$<$ double $>$}]{proportions\+\_\+,  }\item[{std\+::vector$<$ int $>$}]{queue\+\_\+ = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+\mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$ \& \mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$\+::initial\+\_\+states (\begin{DoxyParamCaption}\item[{std\+::vector$<$ double $>$}]{proportions\+\_\+,  }\item[{std\+::vector$<$ int $>$}]{queue\+\_\+ = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
 
 
 
@@ -176,32 +157,6 @@ Set the initial states of the model.
 \end{DoxyItemize}\\
 \hline
 \end{DoxyParams}
-
-
-Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
-
-\mbox{\Hypertarget{class_model_s_e_i_r_mixing_a3cddda040d2a888460d0f189cf47836d}\label{class_model_s_e_i_r_mixing_a3cddda040d2a888460d0f189cf47836d}} 
-\index{ModelSEIRMixing$<$ TSeq $>$@{ModelSEIRMixing$<$ TSeq $>$}!reset@{reset}}
-\index{reset@{reset}!ModelSEIRMixing$<$ TSeq $>$@{ModelSEIRMixing$<$ TSeq $>$}}
-\doxysubsubsection{\texorpdfstring{reset()}{reset()}}
-{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-void \mbox{\hyperlink{class_model_s_e_i_r_mixing}{Model\+SEIRMixing}}$<$ TSeq $>$\+::reset\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
-
-
-
-Reset the model. 
-
-Resetting the model will\+:
-\begin{DoxyItemize}
-\item clear the database
-\item restore the population (if {\ttfamily set\+\_\+backup()} was called before)
-\item re-\/distribute tools
-\item re-\/distribute viruses
-\item set the date to 0 
-\end{DoxyItemize}
-
-Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model_a9591eb76c7cf1ed7e1510342ff602d37}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
-
 
 
 The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
