@@ -265,7 +265,7 @@ $(function() {
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            db.update_state(p-&gt;state_prev, p-&gt;state, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160; </div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        } <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00214"></a><span class="lineno"><a class="line" href="class_model.html#afb9d61f6f38a4a0eed72f000bf995fec">  214</a></span>&#160;            p-&gt;state_prev = p-&gt;state; <span class="comment">// Recording the previous state</span></div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            p-&gt;state_prev = p-&gt;state; <span class="comment">// Recording the previous state</span></div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160; </div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;        <span class="comment">// Applying function after the fact. This way, if there were</span></div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;        <span class="comment">// updates, they can be recorded properly, before losing the information</span></div>
@@ -299,7 +299,7 @@ $(function() {
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;            <span class="keywordflow">else</span> <span class="keywordflow">if</span> (a.queue != <a class="code" href="class_queue.html">Queue&lt;TSeq&gt;::NoOne</a>)</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                <span class="keywordflow">throw</span> std::logic_error(</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                    <span class="stringliteral">&quot;The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}.&quot;</span></div>
-<div class="line"><a name="l00248"></a><span class="lineno"><a class="line" href="class_model.html#afd0c24e19b0a104e03d96ab4333725e5">  248</a></span>&#160;                );</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;                );</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        }</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    }</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160; </div>
@@ -391,12 +391,12 @@ $(function() {
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    name(model.name),</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    db(model.db),</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    population(model.population),</div>
-<div class="line"><a name="l00349"></a><span class="lineno"><a class="line" href="class_model.html#a4761b43494d081f2f7bd2443ea6cb2db">  349</a></span>&#160;    population_backup(model.population_backup),</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    population_backup(model.population_backup),</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;    directed(model.directed),</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    viruses(model.viruses),</div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    tools(model.tools),</div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    entities(model.entities),</div>
-<div class="line"><a name="l00354"></a><span class="lineno"><a class="line" href="class_model.html#a0879a1cac7c33b691812d1063dda9f1a">  354</a></span>&#160;    entities_backup(model.entities_backup),</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;    entities_backup(model.entities_backup),</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;    rewire_fun(model.rewire_fun),</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    rewire_prop(model.rewire_prop),</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    parameters(model.parameters),</div>
@@ -436,18 +436,18 @@ $(function() {
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160; </div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;::Model</a>(<a class="code" href="class_model.html">Model&lt;TSeq&gt;</a>&amp;&amp; model) :</div>
-<div class="line"><a name="l00394"></a><span class="lineno"><a class="line" href="class_model.html#a077f3c2f03c119d038909cb34aa1aade">  394</a></span>&#160;    name(std::move(model.name)),</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    name(std::move(model.name)),</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    db(std::move(model.db)),</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    population(std::move(model.population)),</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    agents_data(std::move(model.agents_data)),</div>
-<div class="line"><a name="l00398"></a><span class="lineno"><a class="line" href="class_model.html#a98edc1600684faeecc9d7f101c141d06">  398</a></span>&#160;    agents_data_ncols(std::move(model.agents_data_ncols)),</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    agents_data_ncols(std::move(model.agents_data_ncols)),</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;    directed(std::move(model.directed)),</div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;    <span class="comment">// Virus</span></div>
-<div class="line"><a name="l00401"></a><span class="lineno"><a class="line" href="class_model.html#a0dcfddf7f242497cb5ae30c3e602394d">  401</a></span>&#160;    viruses(std::move(model.viruses)),</div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;    viruses(std::move(model.viruses)),</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;    <span class="comment">// Tools</span></div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;    tools(std::move(model.tools)),</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;    <span class="comment">// Entities</span></div>
-<div class="line"><a name="l00405"></a><span class="lineno"><a class="line" href="class_model.html#ad798500b1b8a1ceb6a02010858b37504">  405</a></span>&#160;    entities(std::move(model.entities)),</div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;    entities(std::move(model.entities)),</div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    entities_backup(std::move(model.entities_backup)),</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    <span class="comment">// Pseudo-RNG</span></div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    engine(std::move(model.engine)),</div>
@@ -476,9 +476,9 @@ $(function() {
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    array_virus_tmp(model.array_virus_tmp.size()) {</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    db.model = <span class="keyword">this</span>;</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    db.user_data.model = <span class="keyword">this</span>;</div>
-<div class="line"><a name="l00434"></a><span class="lineno"><a class="line" href="class_model.html#aa7d8311e60c5a6683f52868f4d1c099e">  434</a></span>&#160; </div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160; </div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;    <span class="keywordflow">if</span> (use_queuing)</div>
-<div class="line"><a name="l00436"></a><span class="lineno"><a class="line" href="class_model.html#a2ca6dc004b17bf5cc451f48419b18635">  436</a></span>&#160;        queue.model = <span class="keyword">this</span>;</div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;        queue.model = <span class="keyword">this</span>;</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;}</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160; </div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
@@ -489,15 +489,15 @@ $(function() {
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;    population_backup = m.population_backup;</div>
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160; </div>
 <div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">auto</span>&amp; p : population)</div>
-<div class="line"><a name="l00447"></a><span class="lineno"><a class="line" href="class_model.html#ab7d63eb898445d3d30167c14ddec0c3d">  447</a></span>&#160;        p.model = <span class="keyword">this</span>;</div>
-<div class="line"><a name="l00448"></a><span class="lineno"><a class="line" href="class_model.html#a50aa99abe9d9b997ebce22f90a05009c">  448</a></span>&#160; </div>
+<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        p.model = <span class="keyword">this</span>;</div>
+<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160; </div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    db = m.db;</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    db.model = <span class="keyword">this</span>;</div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;    db.user_data.model = <span class="keyword">this</span>;</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160; </div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;    directed = m.directed;</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160; </div>
-<div class="line"><a name="l00455"></a><span class="lineno"><a class="line" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">  455</a></span>&#160;    viruses = m.viruses;</div>
+<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;    viruses = m.viruses;</div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160; </div>
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;    tools = m.tools;</div>
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160; </div>
@@ -532,7 +532,7 @@ $(function() {
 <div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160; </div>
 <div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;    agents_data = m.agents_data;</div>
 <div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;    agents_data_ncols = m.agents_data_ncols;</div>
-<div class="line"><a name="l00490"></a><span class="lineno"><a class="line" href="class_model.html#a573869d1fe944d8a8345dc4a5bfc31bc">  490</a></span>&#160; </div>
+<div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160; </div>
 <div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;    <span class="comment">// Figure out the queuing</span></div>
 <div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;    <span class="keywordflow">if</span> (use_queuing)</div>
 <div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;        queue.model = <span class="keyword">this</span>;</div>
@@ -677,7 +677,7 @@ $(function() {
 <div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;}</div>
 <div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160; </div>
 <div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00635"></a><span class="lineno"><a class="line" href="class_model.html#adc8d49825ecf57ac045a4c93e4d63924">  635</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;::set_rand_geom</a>(epiworld_double p) {</div>
+<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;::set_rand_geom</a>(epiworld_double p) {</div>
 <div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;    rgeomd = std::geometric_distribution&lt;&gt;(p);</div>
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;}</div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160; </div>
@@ -694,7 +694,7 @@ $(function() {
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;        );</div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160; </div>
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;    <span class="keywordflow">return</span> parameters[pname];</div>
-<div class="line"><a name="l00652"></a><span class="lineno"><a class="line" href="class_model.html#a51ab3b98ed8ce29868974d88680c5f26">  652</a></span>&#160;}</div>
+<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;}</div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160; </div>
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;::size</a>()<span class="keyword"> const </span>{</div>
@@ -702,13 +702,13 @@ $(function() {
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;}</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160; </div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00660"></a><span class="lineno"><a class="line" href="class_model.html#af72c43814a4c8fac7bb5da1b1c16ebb2">  660</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;::dist_virus</a>() {</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;::dist_virus</a>() {</div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">auto</span>&amp; v : viruses) {</div>
-<div class="line"><a name="l00662"></a><span class="lineno"><a class="line" href="class_model.html#a9e6b1a3b0c34c3a12688cf973f0db365">  662</a></span>&#160;        v-&gt;distribute(<span class="keyword">this</span>);</div>
+<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;        v-&gt;distribute(<span class="keyword">this</span>);</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160; </div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;        <span class="comment">// Apply the events</span></div>
-<div class="line"><a name="l00665"></a><span class="lineno"><a class="line" href="class_model.html#acbf306d7d9264817761a04caf83ad46f">  665</a></span>&#160;        events_run();</div>
-<div class="line"><a name="l00666"></a><span class="lineno"><a class="line" href="class_model.html#a08cb2ccc447a0cc5812d77a974cdf88f">  666</a></span>&#160;    }</div>
+<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        events_run();</div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;    }</div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;}</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160; </div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
@@ -722,10 +722,10 @@ $(function() {
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;}</div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160; </div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00680"></a><span class="lineno"><a class="line" href="class_model.html#a1cbe26a38285095c62d1971251a6c3db">  680</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;::dist_entities</a>() {</div>
-<div class="line"><a name="l00681"></a><span class="lineno"><a class="line" href="class_model.html#a8822ff230b2c4804d0ae28db014520d1">  681</a></span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">auto</span>&amp; entity : entities) {</div>
-<div class="line"><a name="l00682"></a><span class="lineno"><a class="line" href="class_model.html#a2c4ac58e918e9e8dc2e58be6521d8827">  682</a></span>&#160;        entity.distribute(<span class="keyword">this</span>);</div>
-<div class="line"><a name="l00683"></a><span class="lineno"><a class="line" href="class_model.html#a3cf5b4f14dcd54816785b38894c8088f">  683</a></span>&#160; </div>
+<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;::dist_entities</a>() {</div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">auto</span>&amp; entity : entities) {</div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        entity.distribute(<span class="keyword">this</span>);</div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160; </div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        <span class="comment">// Apply the events</span></div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        events_run();</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;    }</div>
@@ -757,7 +757,7 @@ $(function() {
 <div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;    <span class="keywordflow">return</span> engine;</div>
 <div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;}</div>
 <div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160; </div>
-<div class="line"><a name="l00715"></a><span class="lineno"><a class="line" href="class_model.html#a14758e0476fd4a05643ab41190530513">  715</a></span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;<span class="keyword">inline</span> epiworld_double <a class="code" href="class_model.html">Model&lt;TSeq&gt;::runif</a>() {</div>
 <div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;    <span class="comment">// CHECK_INIT()</span></div>
 <div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;    <span class="keywordflow">return</span> runifd(*engine);</div>
@@ -766,7 +766,7 @@ $(function() {
 <div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;<span class="keyword">inline</span> epiworld_double</div>
 <div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;<a class="code" href="class_model.html">Model&lt;TSeq&gt;::runif</a>(epiworld_double a, epiworld_double b) {</div>
-<div class="line"><a name="l00724"></a><span class="lineno"><a class="line" href="class_model.html#a453485b4cfe2a51addf33003f8d70c36">  724</a></span>&#160;    <span class="comment">// CHECK_INIT()</span></div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;    <span class="comment">// CHECK_INIT()</span></div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;    <span class="keywordflow">return</span> runifd(*engine) * (b - a) + a;</div>
 <div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;}</div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160; </div>
@@ -780,7 +780,7 @@ $(function() {
 <div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;<span class="keyword">inline</span> epiworld_double</div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;<a class="code" href="class_model.html">Model&lt;TSeq&gt;::rnorm</a>(epiworld_double mean, epiworld_double sd) {</div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;    <span class="comment">// CHECK_INIT()</span></div>
-<div class="line"><a name="l00738"></a><span class="lineno"><a class="line" href="class_model.html#a800647b05836b20054f1f2049a41787f">  738</a></span>&#160;    <span class="keywordflow">return</span> rnormd(*engine) * sd + mean;</div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;    <span class="keywordflow">return</span> rnormd(*engine) * sd + mean;</div>
 <div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;}</div>
 <div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160; </div>
 <div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
@@ -789,7 +789,7 @@ $(function() {
 <div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;}</div>
 <div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160; </div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00747"></a><span class="lineno"><a class="line" href="class_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a">  747</a></span>&#160;<span class="keyword">inline</span> epiworld_double</div>
+<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;<span class="keyword">inline</span> epiworld_double</div>
 <div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;<a class="code" href="class_model.html">Model&lt;TSeq&gt;::rgamma</a>(epiworld_double alpha, epiworld_double beta) {</div>
 <div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;    <span class="keyword">auto</span> old_param = rgammad.param();</div>
 <div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;    rgammad.param(std::gamma_distribution&lt;&gt;::param_type(alpha, beta));</div>

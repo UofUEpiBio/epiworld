@@ -74,7 +74,7 @@ $(function() {
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#define EPIWORLD_MODELS_SIRCONNECTED_HPP</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = EPI_DEFAULT_TSEQ&gt;</div>
-<div class="line"><a name="l00005"></a><span class="lineno"><a class="line" href="class_model_s_i_r_c_o_n_n.html">    5</a></span>&#160;<span class="keyword">class </span><a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN</a>: <span class="keyword">public</span> epiworld::Model&lt;TSeq&gt; {</div>
+<div class="line"><a name="l00005"></a><span class="lineno"><a class="line" href="class_model_s_i_r_c_o_n_n.html">    5</a></span>&#160;<span class="keyword">class </span><a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN</a>: <span class="keyword">public</span> <a class="code" href="classepiworld_1_1_model.html">epiworld::Model</a>&lt;TSeq&gt; {</div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;  <span class="keyword">private</span>:</div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;    std::vector&lt;epiworld::Agent&lt;TSeq&gt;*&gt; infected;</div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;    <span class="keywordtype">void</span> update_infected();</div>
@@ -105,11 +105,11 @@ $(function() {
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;        epiworld_double recovery_rate</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    );</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>&amp; run(epiworld_fast_uint ndays, <span class="keywordtype">int</span> seed = -1);</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>&amp; <a class="code" href="class_model_s_i_r_c_o_n_n.html#a017f0089d928a975cc62a8b1e75dfdc6">run</a>(epiworld_fast_uint ndays, <span class="keywordtype">int</span> seed = -1);</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">void</span> reset();</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_model_s_i_r_c_o_n_n.html#a5928623ff6a69b6eb6733dc3eb1516f5">reset</a>();</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a>* clone_ptr();</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a>* <a class="code" href="class_model_s_i_r_c_o_n_n.html#a37cb3d22a04f9f620fbbd7a2c7904227">clone_ptr</a>();</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>&amp; <a class="code" href="class_model_s_i_r_c_o_n_n.html#a433e5c933efa713ae79396eae1bf453d">initial_states</a>(</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        std::vector&lt;double&gt; proportions_,</div>
@@ -151,13 +151,13 @@ $(function() {
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>&amp;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;::run</a>(epiworld_fast_uint ndays, <span class="keywordtype">int</span> seed) {</div>
+<div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="class_model_s_i_r_c_o_n_n.html#a017f0089d928a975cc62a8b1e75dfdc6">   91</a></span>&#160;<a class="code" href="class_model_s_i_r_c_o_n_n.html#a017f0089d928a975cc62a8b1e75dfdc6">ModelSIRCONN&lt;TSeq&gt;::run</a>(epiworld_fast_uint ndays, <span class="keywordtype">int</span> seed) {</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="class_model.html#aa7d8311e60c5a6683f52868f4d1c099e">Model&lt;TSeq&gt;::run</a>(ndays, seed);</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;}</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;::reset</a>() {</div>
+<div class="line"><a name="l00097"></a><span class="lineno"><a class="line" href="class_model_s_i_r_c_o_n_n.html#a5928623ff6a69b6eb6733dc3eb1516f5">   97</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_s_i_r_c_o_n_n.html#a5928623ff6a69b6eb6733dc3eb1516f5">ModelSIRCONN&lt;TSeq&gt;::reset</a>() {</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <a class="code" href="class_model.html#a9591eb76c7cf1ed7e1510342ff602d37">Model&lt;TSeq&gt;::reset</a>();</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    this-&gt;update_infected();</div>
@@ -166,7 +166,7 @@ $(function() {
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;}</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a>* <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;::clone_ptr</a>() {</div>
+<div class="line"><a name="l00106"></a><span class="lineno"><a class="line" href="class_model_s_i_r_c_o_n_n.html#a37cb3d22a04f9f620fbbd7a2c7904227">  106</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a>* <a class="code" href="class_model_s_i_r_c_o_n_n.html#a37cb3d22a04f9f620fbbd7a2c7904227">ModelSIRCONN&lt;TSeq&gt;::clone_ptr</a>() {</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>* ptr =</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        <span class="keyword">new</span> <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>(*<span class="keyword">dynamic_cast&lt;</span><span class="keyword">const </span><a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>*<span class="keyword">&gt;</span>(<span class="keyword">this</span>));</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
@@ -185,7 +185,7 @@ $(function() {
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <span class="comment">// epiworld_double prob_reinfection</span></div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;) {</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    epiworld::UpdateFun&lt;TSeq&gt; update_susceptible =</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        [](epiworld::Agent&lt;TSeq&gt;* p, epiworld::Model&lt;TSeq&gt;* m) -&gt; <span class="keywordtype">void</span> {</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        [](<a class="code" href="classepiworld_1_1_agent.html">epiworld::Agent&lt;TSeq&gt;</a>* p, <a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;TSeq&gt;</a>* m) -&gt; <span class="keywordtype">void</span> {</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        <span class="keywordtype">int</span> ndraw = m-&gt;rbinom();</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160; </div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        <span class="keywordflow">if</span> (ndraw == 0)</div>
@@ -210,10 +210,10 @@ $(function() {
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            <span class="keywordflow">if</span> (which == <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(ninfected))</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;                --which;</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160; </div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;            epiworld::Agent&lt;TSeq&gt;&amp; neighbor = *model-&gt;infected[which];</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;            <a class="code" href="classepiworld_1_1_agent.html">epiworld::Agent&lt;TSeq&gt;</a>&amp; neighbor = *model-&gt;infected[which];</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160; </div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;            <span class="comment">// Can&#39;t sample itself</span></div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;            <span class="keywordflow">if</span> (neighbor.get_id() == p-&gt;get_id())</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;            <span class="keywordflow">if</span> (neighbor.<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>() == p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>())</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160; </div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            <span class="comment">// The neighbor is infected because it is on the list!</span></div>
@@ -254,7 +254,7 @@ $(function() {
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    };</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160; </div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    epiworld::UpdateFun&lt;TSeq&gt; update_infected =</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        [](epiworld::Agent&lt;TSeq&gt;* p, epiworld::Model&lt;TSeq&gt;* m) -&gt; <span class="keywordtype">void</span> {</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        [](<a class="code" href="classepiworld_1_1_agent.html">epiworld::Agent&lt;TSeq&gt;</a>* p, <a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;TSeq&gt;</a>* m) -&gt; <span class="keywordtype">void</span> {</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        <span class="keyword">auto</span> state = p-&gt;get_state();</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160; </div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <span class="keywordflow">if</span> (state == <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;::INFECTED</a>) {</div>
@@ -269,7 +269,7 @@ $(function() {
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;            <span class="keywordflow">if</span> (n_events == 0u) {</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;                printf_epiworld(</div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;                    <span class="stringliteral">&quot;[epi-debug] agent %i has 0 possible events!!\n&quot;</span>,</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                    <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(p-&gt;get_id())</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                    <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>())</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;                );</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;                <span class="keywordflow">throw</span> std::logic_error(<span class="stringliteral">&quot;Zero events in exposed.&quot;</span>);</div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;            }</div>
@@ -309,7 +309,7 @@ $(function() {
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    <span class="comment">// model.add_param(prob_reinfection, &quot;Prob. Reinfection&quot;);</span></div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    <span class="comment">// Adding update function</span></div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    epiworld::GlobalFun&lt;TSeq&gt; update = [](epiworld::Model&lt;TSeq&gt;* m) -&gt; <span class="keywordtype">void</span> {</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    epiworld::GlobalFun&lt;TSeq&gt; update = [](<a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;TSeq&gt;</a>* m) -&gt; <span class="keywordtype">void</span> {</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        <a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>* model = <span class="keyword">dynamic_cast&lt;</span><a class="code" href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN&lt;TSeq&gt;</a>*<span class="keyword">&gt;</span>(m);</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        model-&gt;update_infected();</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160; </div>
@@ -319,7 +319,7 @@ $(function() {
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    model.add_globalevent(update, <span class="stringliteral">&quot;Update infected individuals&quot;</span>);</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160; </div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="comment">// Preparing the virus -------------------------------------------</span></div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    epiworld::Virus&lt;TSeq&gt; virus(vname, prevalence, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <a class="code" href="classepiworld_1_1_virus.html">epiworld::Virus&lt;TSeq&gt;</a> virus(vname, prevalence, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    virus.set_state(1, 2, 2);</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    virus.set_prob_infecting(&amp;model(<span class="stringliteral">&quot;Transmission rate&quot;</span>));</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    virus.set_prob_recovery(&amp;model(<span class="stringliteral">&quot;Recovery rate&quot;</span>));</div>
@@ -406,8 +406,15 @@ $(function() {
 <div class="ttc" id="aclass_model_html_a9591eb76c7cf1ed7e1510342ff602d37"><div class="ttname"><a href="class_model.html#a9591eb76c7cf1ed7e1510342ff602d37">Model::reset</a></div><div class="ttdeci">virtual void reset()</div><div class="ttdoc">Reset the model.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1641</div></div>
 <div class="ttc" id="aclass_model_html_aa7d8311e60c5a6683f52868f4d1c099e"><div class="ttname"><a href="class_model.html#aa7d8311e60c5a6683f52868f4d1c099e">Model::run</a></div><div class="ttdeci">virtual Model&lt; TSeq &gt; &amp; run(epiworld_fast_uint ndays, int seed=-1)</div><div class="ttdoc">Runs the simulation (after initialization)</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1142</div></div>
 <div class="ttc" id="aclass_model_s_i_r_c_o_n_n_html"><div class="ttname"><a href="class_model_s_i_r_c_o_n_n.html">ModelSIRCONN</a></div><div class="ttdef"><b>Definition:</b> sirconnected.hpp:5</div></div>
+<div class="ttc" id="aclass_model_s_i_r_c_o_n_n_html_a017f0089d928a975cc62a8b1e75dfdc6"><div class="ttname"><a href="class_model_s_i_r_c_o_n_n.html#a017f0089d928a975cc62a8b1e75dfdc6">ModelSIRCONN::run</a></div><div class="ttdeci">ModelSIRCONN&lt; TSeq &gt; &amp; run(epiworld_fast_uint ndays, int seed=-1)</div><div class="ttdoc">Runs the simulation (after initialization)</div><div class="ttdef"><b>Definition:</b> sirconnected.hpp:91</div></div>
 <div class="ttc" id="aclass_model_s_i_r_c_o_n_n_html_a152478d7e14cc0922794b0d7637789e2"><div class="ttname"><a href="class_model_s_i_r_c_o_n_n.html#a152478d7e14cc0922794b0d7637789e2">ModelSIRCONN::get_n_infected</a></div><div class="ttdeci">size_t get_n_infected() const</div><div class="ttdoc">Get the infected individuals.</div><div class="ttdef"><b>Definition:</b> sirconnected.hpp:56</div></div>
+<div class="ttc" id="aclass_model_s_i_r_c_o_n_n_html_a37cb3d22a04f9f620fbbd7a2c7904227"><div class="ttname"><a href="class_model_s_i_r_c_o_n_n.html#a37cb3d22a04f9f620fbbd7a2c7904227">ModelSIRCONN::clone_ptr</a></div><div class="ttdeci">Model&lt; TSeq &gt; * clone_ptr()</div><div class="ttdoc">Advanced usage: Makes a copy of data and returns it as undeleted pointer.</div><div class="ttdef"><b>Definition:</b> sirconnected.hpp:106</div></div>
 <div class="ttc" id="aclass_model_s_i_r_c_o_n_n_html_a433e5c933efa713ae79396eae1bf453d"><div class="ttname"><a href="class_model_s_i_r_c_o_n_n.html#a433e5c933efa713ae79396eae1bf453d">ModelSIRCONN::initial_states</a></div><div class="ttdeci">ModelSIRCONN&lt; TSeq &gt; &amp; initial_states(std::vector&lt; double &gt; proportions_, std::vector&lt; int &gt; queue_={})</div><div class="ttdoc">Set the initial states of the model.</div><div class="ttdef"><b>Definition:</b> sirconnected.hpp:308</div></div>
+<div class="ttc" id="aclass_model_s_i_r_c_o_n_n_html_a5928623ff6a69b6eb6733dc3eb1516f5"><div class="ttname"><a href="class_model_s_i_r_c_o_n_n.html#a5928623ff6a69b6eb6733dc3eb1516f5">ModelSIRCONN::reset</a></div><div class="ttdeci">void reset()</div><div class="ttdoc">Reset the model.</div><div class="ttdef"><b>Definition:</b> sirconnected.hpp:97</div></div>
+<div class="ttc" id="aclassepiworld_1_1_agent_html"><div class="ttname"><a href="classepiworld_1_1_agent.html">epiworld::Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:13053</div></div>
+<div class="ttc" id="aclassepiworld_1_1_agent_html_a3763f12b56e8dd7f0e23bbca4f183c8a"><div class="ttname"><a href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">epiworld::Agent::get_id</a></div><div class="ttdeci">int get_id() const</div><div class="ttdoc">Id of the individual.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:14021</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html"><div class="ttname"><a href="classepiworld_1_1_model.html">epiworld::Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:6504</div></div>
+<div class="ttc" id="aclassepiworld_1_1_virus_html"><div class="ttname"><a href="classepiworld_1_1_virus.html">epiworld::Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:9986</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
