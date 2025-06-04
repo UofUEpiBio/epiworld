@@ -32,13 +32,13 @@ int main()
     model.print();
 
     std::vector<int> agent, virus, time, gentime_sir_obs;
-    model.get_db().generation_time(agent, virus, time, gentime_sir_obs);
+    model.get_db().get_generation_time(agent, virus, time, gentime_sir_obs);
 
     auto gentime_sir = model.generation_time_expected();
     double gentime_sir_mean = std::accumulate(
         gentime_sir.begin(), gentime_sir.begin() + max_days_for_calc, 0.0
         ) / max_days_for_calc;
-    
+
     // Computing the mean of gentime conditioning on gentime >= 0
     double gentime_sir_obs_mean = 0.0;
     size_t n = 0;
@@ -71,7 +71,7 @@ int main()
     model2.print();
 
     std::vector<int> agent2, virus2, time2, gentime_seir_obs;
-    model2.get_db().generation_time(agent2, virus2, time2, gentime_seir_obs);
+    model2.get_db().get_generation_time(agent2, virus2, time2, gentime_seir_obs);
 
     auto gentime_seirconn = model2.generation_time_expected();
     double gentime_seirconn_mean = std::accumulate(
@@ -97,10 +97,10 @@ int main()
 
     std::cout << "SIR Gen. Int. (obs)       : " << gentime_sir_obs_mean << std::endl;
     std::cout << "SIR Gen. Int. (expected)  : " << gentime_sir_mean << std::endl;
- 
+
     std::cout << "SEIR Gen. Int. (obs)      : " << gentime_seir_obs_mean << std::endl;
     std::cout << "SEIR Gen. Int. (expected) : " << gentime_seirconn_mean << std::endl;
-    
+
 
     return 0;
 
