@@ -331,7 +331,8 @@ class DataBase {
         std::vector<int>& gentime
     ) const; ///< Get the generation time
 
-    void get_generation_time(std::string fn) const; ///< Write the generation time to a file
+    void get_generation_time(std::string fn
+    ) const; ///< Write the generation time to a file
     ///@}
 };
 

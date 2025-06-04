@@ -57,7 +57,8 @@ int main() {
     model2.print();
 
     std::vector<int> agent2, virus2, time2, gentime_seir_obs;
-    model2.get_db().get_generation_time(agent2, virus2, time2, gentime_seir_obs);
+    model2.get_db()
+    	.get_generation_time(agent2, virus2, time2, gentime_seir_obs);
 
     auto gentime_seirconn = model2.generation_time_expected();
     double gentime_seirconn_mean =
