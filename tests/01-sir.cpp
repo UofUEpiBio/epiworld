@@ -88,7 +88,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     model_2.print(false);
     #endif 
 
-    model_0.draw();
+    model_0.draw(epiworld::DiagramType::Mermaid);
 
     model_1.write_data(
         "", "", "", "", "", "", "01-sir_transitions.txt", "", ""
@@ -97,7 +97,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     std::cout << "Printing transitions from file" << std::endl;
 
     epiworld::ModelDiagram diagram;
-    diagram.draw_from_file("01-sir_transitions.txt");
+    diagram.draw_from_file(epiworld::DiagramType::Mermaid, "01-sir_transitions.txt");
 
     #ifndef CATCH_CONFIG_MAIN
     return 0;

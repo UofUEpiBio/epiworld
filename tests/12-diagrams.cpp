@@ -20,14 +20,14 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
         run(100);
 
     
-    model_0.draw();
+    model_0.draw(epiworld::DiagramType::Mermaid);
     std::cout << "Printing transitions from file" << std::endl;
 
     model_0.write_data(
         "", "", "", "", "", "", "01-sir_transitions.txt", "", ""
     );
     epiworld::ModelDiagram diagram;
-    diagram.draw_from_file("01-sir_transitions.txt");
+    diagram.draw_from_file(epiworld::DiagramType::Mermaid, "01-sir_transitions.txt");
 
     model_0.run_multiple(
         100, 10, 1231, make_save_run<>(
@@ -44,10 +44,10 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
             );
 
     std::cout << "Printing transitions from multiple files" << std::endl;
-    diagram.draw_from_files(files);
+    diagram.draw_from_files(epiworld::DiagramType::Mermaid, files);
 
     #ifdef CATCH_CONFIG_MAIN
-    REQUIRE_THROWS(diagram.draw_from_file("non_existant_file.txt"));
+    REQUIRE_THROWS(diagram.draw_from_file(epiworld::DiagramType::Mermaid, "non_existant_file.txt"));
     #endif 
 
     
