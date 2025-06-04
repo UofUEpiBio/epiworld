@@ -37,7 +37,7 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
 
     model_0.print(false);
 
-    auto repnum = model_0.get_db().reproductive_number();
+    auto repnum = model_0.get_db().get_reproductive_number();
 
     int n_seed = -1, n_records = 0;
     double rts = 0.0;

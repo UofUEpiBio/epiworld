@@ -54,7 +54,7 @@ EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesQuarantineR0]") {
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
     auto saver = [&transitions, &R0s, n_seeds](size_t n, Model<>* m) -> void {
         // Recording the R0 from the index case
-        auto rts = m->get_db().reproductive_number();
+        auto rts = m->get_db().get_reproductive_number();
         for (int i = 0; i < n_seeds; ++i)
             R0s[n_seeds * n + i] = static_cast<epiworld_double>(rts[{0, i, 0}]);
     };

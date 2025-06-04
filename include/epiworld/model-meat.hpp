@@ -2225,7 +2225,7 @@ inline void Model<TSeq>::draw(const std::string& fn_output, bool self) {
 
     diagram.draw_from_data(
         this->get_states(),
-        this->get_db().transition_probability(false),
+        this->get_db().get_transition_probability(false),
         fn_output,
         self
     );

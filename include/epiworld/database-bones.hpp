@@ -288,9 +288,9 @@ class DataBase {
      * - Date when the source was infected
      */
     ///@{
-    MapVec_type<int, int> reproductive_number() const;
+    MapVec_type<int, int> get_reproductive_number() const;
 
-    void reproductive_number(std::string fn) const;
+    void get_reproductive_number(std::string fn) const;
     ///@}
 
     /**
@@ -307,7 +307,7 @@ class DataBase {
      * @return std::vector< epiworld_double > 
      */
     std::vector<epiworld_double>
-    transition_probability(bool print = true, bool normalize = true) const;
+    get_transition_probability(bool print = true, bool normalize = true) const;
 
     bool operator==(const DataBase<TSeq>& other) const;
 
@@ -324,15 +324,14 @@ class DataBase {
      * the infection of the target.
     */
     ///@{
-    void generation_time(
+    void get_generation_time(
         std::vector<int>& agent_id,
         std::vector<int>& virus_id,
         std::vector<int>& time,
         std::vector<int>& gentime
     ) const; ///< Get the generation time
 
-    void generation_time(std::string fn
-    ) const; ///< Write the generation time to a file
+    void get_generation_time(std::string fn) const; ///< Write the generation time to a file
     ///@}
 };
 

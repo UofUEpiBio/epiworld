@@ -977,10 +977,10 @@ inline void DataBase<TSeq>::write_data(
     }
 
     if (fn_reproductive_number != "")
-        reproductive_number(fn_reproductive_number);
+        get_reproductive_number(fn_reproductive_number);
 
     if (fn_generation_time != "")
-        generation_time(fn_generation_time);
+        get_generation_time(fn_generation_time);
 }
 
 template<typename TSeq>
@@ -1026,7 +1026,7 @@ inline UserData<TSeq>& DataBase<TSeq>::get_user_data() {
 }
 
 template<typename TSeq>
-inline MapVec_type<int, int> DataBase<TSeq>::reproductive_number() const {
+inline MapVec_type<int, int> DataBase<TSeq>::get_reproductive_number() const {
     // Checking size
     MapVec_type<int, int> map;
 
@@ -1059,8 +1059,8 @@ inline MapVec_type<int, int> DataBase<TSeq>::reproductive_number() const {
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::reproductive_number(std::string fn) const {
-    auto map = reproductive_number();
+inline void DataBase<TSeq>::get_reproductive_number(std::string fn) const {
+    auto map = get_reproductive_number();
 
     std::ofstream fn_file(fn, std::ios_base::out);
 
@@ -1090,7 +1090,7 @@ inline void DataBase<TSeq>::reproductive_number(std::string fn) const {
 
 template<typename TSeq>
 inline std::vector<epiworld_double>
-DataBase<TSeq>::transition_probability(bool print, bool normalize) const {
+DataBase<TSeq>::get_transition_probability(bool print, bool normalize) const {
     auto states_labels = model->get_states();
     size_t n_state = states_labels.size();
     size_t n_days = model->get_ndays();
@@ -1601,7 +1601,7 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq>& other) const {
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::generation_time(
+inline void DataBase<TSeq>::get_generation_time(
     std::vector<int>& agent_id,
     std::vector<int>& virus_id,
     std::vector<int>& time,
@@ -1645,20 +1645,20 @@ inline void DataBase<TSeq>::generation_time(
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::generation_time(std::string fn) const {
+inline void DataBase<TSeq>::get_generation_time(std::string fn) const {
     std::vector<int> agent_id;
     std::vector<int> virus_id;
     std::vector<int> time;
     std::vector<int> gentime;
 
-    generation_time(agent_id, virus_id, time, gentime);
+    get_generation_time(agent_id, virus_id, time, gentime);
 
     std::ofstream fn_file(fn, std::ios_base::out);
 
     // Throw an error if the file doesn't exists using throw
     if (!fn_file) {
         throw std::runtime_error(
-            "DataBase::generation_time: "
+            "DataBase::get_generation_time: "
             "Cannot open file "
             + fn + "."
         );

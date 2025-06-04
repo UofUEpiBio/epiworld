@@ -24,7 +24,7 @@ int main() {
     model.print();
 
     std::vector<int> agent, virus, time, gentime_sir_obs;
-    model.get_db().generation_time(agent, virus, time, gentime_sir_obs);
+    model.get_db().get_generation_time(agent, virus, time, gentime_sir_obs);
 
     auto gentime_sir = model.generation_time_expected();
     double gentime_sir_mean = std::accumulate(
@@ -57,7 +57,7 @@ int main() {
     model2.print();
 
     std::vector<int> agent2, virus2, time2, gentime_seir_obs;
-    model2.get_db().generation_time(agent2, virus2, time2, gentime_seir_obs);
+    model2.get_db().get_generation_time(agent2, virus2, time2, gentime_seir_obs);
 
     auto gentime_seirconn = model2.generation_time_expected();
     double gentime_seirconn_mean =
