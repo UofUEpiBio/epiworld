@@ -5,8 +5,10 @@
 using namespace epiworld;
 
 int main(int argc, char* argv[]) {
-
-    cxxopts::Options options("SIR connected graph", "SIR ABM with a fully connected graph.");
+    cxxopts::Options options(
+        "SIR connected graph",
+        "SIR ABM with a fully connected graph."
+    );
 
     options.add_options()
         ("d,days", "Duration in days", cxxopts::value<int>()->default_value("100"))
@@ -23,27 +25,26 @@ int main(int argc, char* argv[]) {
 
     auto result = options.parse(argc, argv);
 
-    if (result.count("help"))
-    {
-      std::cout << options.help() << std::endl;
-      exit(0);
+    if (result.count("help")) {
+        std::cout << options.help() << std::endl;
+        exit(0);
     }
 
-    epiworld_fast_uint ndays        = result["days"].as<int>();
-    epiworld_fast_uint popsize      = result["nagents"].as<int>();
-    epiworld_double preval          = result["preval"].as<epiworld_double>();
-    epiworld_double prob_infect     = result["infectprob"].as<epiworld_double>();
-    epiworld_double beta            = result["beta"].as<epiworld_double>();
-    epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
-    int threads                     = result["threads"].as<int>();
-    epiworld_fast_uint nexperiments = result["experiments"].as<int>(); 
+    epiworld_fast_uint ndays = result["days"].as<int>();
+    epiworld_fast_uint popsize = result["nagents"].as<int>();
+    epiworld_double preval = result["preval"].as<epiworld_double>();
+    epiworld_double prob_infect = result["infectprob"].as<epiworld_double>();
+    epiworld_double beta = result["beta"].as<epiworld_double>();
+    epiworld_double prob_recovery = result["recprob"].as<epiworld_double>();
+    int threads = result["threads"].as<int>();
+    epiworld_fast_uint nexperiments = result["experiments"].as<int>();
 
     epiworld::epimodels::ModelSIRCONN<> model(
-        "a virus",    // Name of the virus
+        "a virus", // Name of the virus
         popsize,
-        preval,       // Initial prevalence
-        beta,         // Reproductive number
-        prob_infect,  // Prob of transmission
+        preval, // Initial prevalence
+        beta, // Reproductive number
+        prob_infect, // Prob of transmission
         prob_recovery // Prob of recovery
     );
 
@@ -51,25 +52,31 @@ int main(int argc, char* argv[]) {
     // model.agents_smallworld(popsize, 1, false, .0);
 
     // Setup
-    std::vector< std::vector< int > > results(nexperiments);
-    std::vector< std::vector< int > > date(nexperiments);
-    std::vector< std::string > labels;
+    std::vector<std::vector<int>> results(nexperiments);
+    std::vector<std::vector<int>> date(nexperiments);
+    std::vector<std::string> labels;
     int nreplica = -1;
 
     auto record =
-        [&results,&date,&nreplica,&labels](size_t s, epiworld::Model<> * m)
-        {
+        [&results, &date, &nreplica, &labels](size_t s, epiworld::Model<>* m) {
 
-            #pragma omp critical
+#pragma omp critical
             nreplica++;
 
             if (nreplica == 0)
-                m->get_db().get_hist_total(&date[nreplica], &labels, &results[nreplica]);
+                m->get_db().get_hist_total(
+                    &date[nreplica],
+                    &labels,
+                    &results[nreplica]
+                );
             else
-                m->get_db().get_hist_total(&date[nreplica], nullptr, &results[nreplica]);
+                m->get_db().get_hist_total(
+                    &date[nreplica],
+                    nullptr,
+                    &results[nreplica]
+                );
 
             return;
-
         };
 
     // Running and checking the results
@@ -77,12 +84,13 @@ int main(int argc, char* argv[]) {
         ndays,
         nexperiments, // How many experiments
         result["seed"].as<int>(),
-        record,       // Function to call after each experiment
-        true,         // Whether to reset the population
-        true          // Whether to print a progress bar
-        #ifdef _OPENMP
-        ,threads 
-        #endif
+        record, // Function to call after each experiment
+        true, // Whether to reset the population
+        true // Whether to print a progress bar
+#ifdef _OPENMP
+        ,
+        threads
+#endif
     );
 
     model.print();
@@ -90,49 +98,42 @@ int main(int argc, char* argv[]) {
     // Writing the results to the disk
     std::ofstream fn("09-sir-connected-experiments.csv", std::ios_base::out);
     fn << "run_id,date,state,counts\n";
-    
-    for (int r = 0; r < static_cast<int>(nexperiments); ++r)
-    {
+
+    for (int r = 0; r < static_cast<int>(nexperiments); ++r) {
         for (epiworld_fast_uint s = 0u; s < labels.size(); ++s)
-            fn << 
-                r << "," << 
-                date[r][s] << "," << 
-                labels[s] << "," << 
-                results[r][s] << "\n";
-                
+            fn << r << "," << date[r][s] << "," << labels[s] << ","
+               << results[r][s] << "\n";
     }
 
     model.write_data(
-        "","","","",
-        "total_hist.txt", "transmission.txt", "transition.txt", "", ""
-        );
-
+        "",
+        "",
+        "",
+        "",
+        "total_hist.txt",
+        "transmission.txt",
+        "transition.txt",
+        "",
+        ""
+    );
 
     // We can compute the expected generation time
     auto gen_time = model.generation_time_expected();
 
     // Compute observed generation interval
-    std::vector< int > agent_id;
-    std::vector< int > virus_id;
-    std::vector< int > time;
-    std::vector< int > gentim;
-    model.get_db().generation_time(
-        agent_id,
-        virus_id,
-        time,
-        gentim
-    );
+    std::vector<int> agent_id;
+    std::vector<int> virus_id;
+    std::vector<int> time;
+    std::vector<int> gentim;
+    model.get_db().generation_time(agent_id, virus_id, time, gentim);
 
     // Averaging out at the time level
-    std::vector< double > gen_time_observed;
-    std::vector< double > gen_time_observed_count;
+    std::vector<double> gen_time_observed;
+    std::vector<double> gen_time_observed_count;
 
-    for (size_t i = 0; i < gentim.size(); i++)
-    {
-        if (gentim[i] >= 0)
-        {
-            if (time[i] >= gen_time_observed.size())
-            {
+    for (size_t i = 0; i < gentim.size(); i++) {
+        if (gentim[i] >= 0) {
+            if (time[i] >= gen_time_observed.size()) {
                 gen_time_observed.resize(time[i] + 1, 0.0);
                 gen_time_observed_count.resize(time[i] + 1, 0.0);
             }
@@ -142,14 +143,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    for (size_t i = 0; i < gen_time_observed.size(); i++)
-    {
+    for (size_t i = 0; i < gen_time_observed.size(); i++) {
         if (gen_time_observed_count[i] > 0)
             gen_time_observed[i] /= gen_time_observed_count[i];
     }
 
-
     return 0;
-
 }
-

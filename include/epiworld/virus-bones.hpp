@@ -12,19 +12,18 @@ class Model;
 
 template<typename TSeq>
 class VirusFunctions {
-public:
-    MutFun<TSeq>          mutation                 = nullptr;
-    PostRecoveryFun<TSeq> post_recovery            = nullptr;
-    VirusFun<TSeq>        probability_of_infecting = nullptr;
-    VirusFun<TSeq>        probability_of_recovery  = nullptr;
-    VirusFun<TSeq>        probability_of_death     = nullptr;
-    VirusFun<TSeq>        incubation               = nullptr;
+  public:
+    MutFun<TSeq> mutation = nullptr;
+    PostRecoveryFun<TSeq> post_recovery = nullptr;
+    VirusFun<TSeq> probability_of_infecting = nullptr;
+    VirusFun<TSeq> probability_of_recovery = nullptr;
+    VirusFun<TSeq> probability_of_death = nullptr;
+    VirusFun<TSeq> incubation = nullptr;
 
     // Information about how distribution works
     VirusToAgentFun<TSeq> dist = nullptr;
 
     VirusFunctions() = default;
-
 };
 
 /**
@@ -42,50 +41,51 @@ class Virus {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;
     friend class DataBase<TSeq>;
-    friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-private:
-    
-    Agent<TSeq> * agent = nullptr;
+    friend void default_add_virus<TSeq>(Event<TSeq>& a, Model<TSeq>* m);
+    friend void default_rm_virus<TSeq>(Event<TSeq>& a, Model<TSeq>* m);
 
-    EPI_TYPENAME_TRAITS(TSeq, int) baseline_sequence = 
-        EPI_TYPENAME_TRAITS(TSeq, int)(); 
+  private:
+    Agent<TSeq>* agent = nullptr;
+
+    EPI_TYPENAME_TRAITS(TSeq, int)
+    baseline_sequence = EPI_TYPENAME_TRAITS(TSeq, int)();
 
     std::string virus_name = "unknown virus";
     int date = -99;
-    int id   = -99;    
-    epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
-    epiworld_fast_int state_post    = -99; ///< Change of state when removed from agent.
-    epiworld_fast_int state_removed = -99; ///< Change of state when agent is removed
+    int id = -99;
+    epiworld_fast_int state_init =
+        -99; ///< Change of state when added to agent.
+    epiworld_fast_int state_post =
+        -99; ///< Change of state when removed from agent.
+    epiworld_fast_int state_removed =
+        -99; ///< Change of state when agent is removed
 
-    epiworld_fast_int queue_init    = Queue<TSeq>::Everyone; ///< Change of state when added to agent.
-    epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
-    epiworld_fast_int queue_removed = -99; ///< Change of state when agent is removed
+    epiworld_fast_int queue_init =
+        Queue<TSeq>::Everyone; ///< Change of state when added to agent.
+    epiworld_fast_int queue_post =
+        -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
+    epiworld_fast_int queue_removed =
+        -99; ///< Change of state when agent is removed
 
-    std::shared_ptr< VirusFunctions<TSeq> > virus_functions = 
-        std::make_shared< VirusFunctions<TSeq> >();
-        
-public:
+    std::shared_ptr<VirusFunctions<TSeq>> virus_functions =
+        std::make_shared<VirusFunctions<TSeq>>();
 
+  public:
     Virus();
 
     Virus(std::string name = "unknown virus");
 
-    Virus(
-        std::string name,
-        epiworld_double prevalence,
-        bool as_proportion
-        );
+    Virus(std::string name, epiworld_double prevalence, bool as_proportion);
 
-    void mutate(Model<TSeq> * model);
+    void mutate(Model<TSeq>* model);
     void set_mutation(MutFun<TSeq> fun);
-    
+
     EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
     void set_sequence(TSeq sequence);
-    
-    Agent<TSeq> * get_agent();
-    void set_agent(Agent<TSeq> * p);
-    
+
+    Agent<TSeq>* get_agent();
+    void set_agent(Agent<TSeq>* p);
+
     void set_date(int d);
     int get_date() const;
 
@@ -101,32 +101,31 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_prob_infecting(Model<TSeq> * model);
-    epiworld_double get_prob_recovery(Model<TSeq> * model);
-    epiworld_double get_prob_death(Model<TSeq> * model);
-    epiworld_double get_incubation(Model<TSeq> * model);
-    
-    void post_recovery(Model<TSeq> * model);
+    epiworld_double get_prob_infecting(Model<TSeq>* model);
+    epiworld_double get_prob_recovery(Model<TSeq>* model);
+    epiworld_double get_prob_death(Model<TSeq>* model);
+    epiworld_double get_incubation(Model<TSeq>* model);
+
+    void post_recovery(Model<TSeq>* model);
     void set_post_recovery(PostRecoveryFun<TSeq> fun);
     void set_post_immunity(epiworld_double prob);
-    void set_post_immunity(epiworld_double * prob);
+    void set_post_immunity(epiworld_double* prob);
 
     void set_prob_infecting_fun(VirusFun<TSeq> fun);
     void set_prob_recovery_fun(VirusFun<TSeq> fun);
     void set_prob_death_fun(VirusFun<TSeq> fun);
     void set_incubation_fun(VirusFun<TSeq> fun);
-    
-    void set_prob_infecting(const epiworld_double * prob);
-    void set_prob_recovery(const epiworld_double * prob);
-    void set_prob_death(const epiworld_double * prob);
-    void set_incubation(const epiworld_double * prob);
-    
+
+    void set_prob_infecting(const epiworld_double* prob);
+    void set_prob_recovery(const epiworld_double* prob);
+    void set_prob_death(const epiworld_double* prob);
+    void set_incubation(const epiworld_double* prob);
+
     void set_prob_infecting(epiworld_double prob);
     void set_prob_recovery(epiworld_double prob);
     void set_prob_death(epiworld_double prob);
     void set_incubation(epiworld_double prob);
     ///@}
-
 
     void set_name(std::string name);
     std::string get_name() const;
@@ -148,29 +147,32 @@ public:
         epiworld_fast_int init,
         epiworld_fast_int end,
         epiworld_fast_int removed = -99
-        );
-        
+    );
+
     void set_queue(
         epiworld_fast_int init,
         epiworld_fast_int end,
         epiworld_fast_int removed = -99
-        );
+    );
 
     void get_state(
-        epiworld_fast_int * init,
-        epiworld_fast_int * end,
-        epiworld_fast_int * removed = nullptr
-        );
+        epiworld_fast_int* init,
+        epiworld_fast_int* end,
+        epiworld_fast_int* removed = nullptr
+    );
 
     void get_queue(
-        epiworld_fast_int * init,
-        epiworld_fast_int * end,
-        epiworld_fast_int * removed = nullptr
-        );
+        epiworld_fast_int* init,
+        epiworld_fast_int* end,
+        epiworld_fast_int* removed = nullptr
+    );
     ///@}
 
-    bool operator==(const Virus<TSeq> & other) const;
-    bool operator!=(const Virus<TSeq> & other) const {return !operator==(other);};
+    bool operator==(const Virus<TSeq>& other) const;
+
+    bool operator!=(const Virus<TSeq>& other) const {
+        return !operator==(other);
+    };
 
     void print() const;
 
@@ -178,11 +180,9 @@ public:
      * @brief Get information about the prevalence of the virus
      */
     ///@{
-    void distribute(Model<TSeq> * model);
+    void distribute(Model<TSeq>* model);
     void set_distribution(VirusToAgentFun<TSeq> fun);
     ///@}
-
-
 };
 
 #endif

@@ -5,8 +5,10 @@
 using namespace epiworld;
 
 int main(int argc, char* argv[]) {
-
-    cxxopts::Options options("SEIR connected graph", "SEIR ABM with a fully connected graph.");
+    cxxopts::Options options(
+        "SEIR connected graph",
+        "SEIR ABM with a fully connected graph."
+    );
 
     options.add_options()
         ("d,days", "Duration in days", cxxopts::value<int>()->default_value("100"))
@@ -24,64 +26,65 @@ int main(int argc, char* argv[]) {
 
     auto result = options.parse(argc, argv);
 
-    if (result.count("help"))
-    {
-      std::cout << options.help() << std::endl;
-      exit(0);
+    if (result.count("help")) {
+        std::cout << options.help() << std::endl;
+        exit(0);
     }
 
-    epiworld_fast_uint ndays              = result["days"].as<int>();
-    epiworld_fast_uint popsize            = result["nagents"].as<int>();
-    epiworld_double preval          = result["preval"].as<epiworld_double>();
-    epiworld_double prob_infect     = result["infectprob"].as<epiworld_double>();
-    epiworld_double beta            = result["beta"].as<epiworld_double>();
+    epiworld_fast_uint ndays = result["days"].as<int>();
+    epiworld_fast_uint popsize = result["nagents"].as<int>();
+    epiworld_double preval = result["preval"].as<epiworld_double>();
+    epiworld_double prob_infect = result["infectprob"].as<epiworld_double>();
+    epiworld_double beta = result["beta"].as<epiworld_double>();
     epiworld_double incubation_days = result["latency"].as<epiworld_double>();
-    epiworld_double prob_recovery   = result["recprob"].as<epiworld_double>();
-    epiworld_fast_uint nexperiments       = result["experiments"].as<int>();
+    epiworld_double prob_recovery = result["recprob"].as<epiworld_double>();
+    epiworld_fast_uint nexperiments = result["experiments"].as<int>();
     int threads = result["threads"].as<int>();
 
     epiworld::epimodels::ModelSEIRCONN<> model(
-        "a virus",       // Name of the virus
+        "a virus", // Name of the virus
         popsize,
-        preval,          // Initial prevalence
-        beta,            // Reproductive number
-        prob_infect,     // Prob of transmission
+        preval, // Initial prevalence
+        beta, // Reproductive number
+        prob_infect, // Prob of transmission
         incubation_days, // Number of incubation days
-        prob_recovery    // Prob of recovery
+        prob_recovery // Prob of recovery
     );
 
     // Setup
-    std::vector< std::vector< int > > results(nexperiments);
-    std::vector< std::vector< int > > date(nexperiments);
-    std::vector< std::string > labels;
+    std::vector<std::vector<int>> results(nexperiments);
+    std::vector<std::vector<int>> date(nexperiments);
+    std::vector<std::string> labels;
     epiworld_fast_uint nreplica = 0u;
 
-    auto record =
-        [&results,&date,&nreplica,&labels](size_t s, epiworld::Model<int> * m)
-        {
+    auto record = [&results,
+                   &date,
+                   &nreplica,
+                   &labels](size_t s, epiworld::Model<int>* m) {
+        if (nreplica == 0)
+            m->get_db()
+                .get_hist_total(&date[nreplica], &labels, &results[nreplica]);
+        else
+            m->get_db()
+                .get_hist_total(&date[nreplica], nullptr, &results[nreplica]);
 
-            if (nreplica == 0)
-                m->get_db().get_hist_total(&date[nreplica], &labels, &results[nreplica]);
-            else
-                m->get_db().get_hist_total(&date[nreplica], nullptr, &results[nreplica]);
+        nreplica++;
 
-            nreplica++;
-
-            return;
-
-        };
+        return;
+    };
 
     // Running and checking the results
     model.run_multiple(
         ndays,
         nexperiments, // How many experiments
         result["seed"].as<int>(),
-        record,           // Function to call after each experiment
-        true,             // Whether to reset the population
-        true              // Whether to print a progress bar
-        #ifdef _OPENMP
-        ,threads
-        #endif
+        record, // Function to call after each experiment
+        true, // Whether to reset the population
+        true // Whether to print a progress bar
+#ifdef _OPENMP
+        ,
+        threads
+#endif
     );
 
     model.print();
@@ -89,21 +92,24 @@ int main(int argc, char* argv[]) {
     // Writing the results to the disk
     std::ofstream fn("09-seir-connected-experiments.csv", std::ios_base::out);
     fn << "run_id,date,state,counts\n";
-    
-    for (int r = 0; r < static_cast<int>(nexperiments); ++r)
-    {
+
+    for (int r = 0; r < static_cast<int>(nexperiments); ++r) {
         for (epiworld_fast_uint s = 0u; s < labels.size(); ++s)
-            fn << 
-                r << "," << 
-                date[r][s] << "," << 
-                labels[s] << "," << 
-                results[r][s] << "\n";
-                
+            fn << r << "," << date[r][s] << "," << labels[s] << ","
+               << results[r][s] << "\n";
     }
 
-    model.write_data("","","","","total_hist.txt", "transmission.txt", "transition.txt", "", "");
+    model.write_data(
+        "",
+        "",
+        "",
+        "",
+        "total_hist.txt",
+        "transmission.txt",
+        "transition.txt",
+        "",
+        ""
+    );
 
     return 0;
-
 }
-

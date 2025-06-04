@@ -1,28 +1,22 @@
 #ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
+    #define EPI_DEBUG
 #endif
 
 #include "tests.hpp"
 
 using namespace epiworld;
 
-
-
 EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
-
-    std::vector< double > contact_matrix = {
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0
-    };
+    std::vector<double> contact_matrix =
+        {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
     epimodels::ModelSIRMixing<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
-        0.01,// epiworld_double prevalence,
-        40.0,// epiworld_double contact_rate,
-        1.0,// epiworld_double transmission_rate,
-        1.0/2.0,// epiworld_double recovery_rate,
+        0.01, // epiworld_double prevalence,
+        40.0, // epiworld_double contact_rate,
+        1.0, // epiworld_double transmission_rate,
+        1.0 / 2.0, // epiworld_double recovery_rate,
         contact_matrix
     );
 
@@ -50,25 +44,20 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
     int n_right = 0;
     int n_wrong = 0;
 
-    for (const auto & a : model.get_agents())
-    {
-        if (a.get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
-        {
-            if (a.get_entity(0).get_id() == 0)
-            {
+    for (const auto& a : model.get_agents()) {
+        if (a.get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE) {
+            if (a.get_entity(0).get_id() == 0) {
                 n_right++;
                 continue;
             }
 
             n_wrong++;
-            
         }
-            
     }
 
-    #ifdef CATCH_CONFIG_MAIN
+#ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3000));
-    #endif
+#endif
 
     // Reruning the model where individuals from group 0 transmit all to group 1
     contact_matrix[0] = 0.0;
@@ -85,55 +74,41 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
     n_right = 0;
     n_wrong = 0;
 
-    for (const auto & a : model.get_agents())
-    {
-
-        if (a.get_id() == 0)
-        {
+    for (const auto& a : model.get_agents()) {
+        if (a.get_id() == 0) {
             n_right++;
-        } 
-        else if (a.get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
-        {
-            if (a.get_entity(0).get_id() == 1)
-            {
+        } else if (a.get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE) {
+            if (a.get_entity(0).get_id() == 1) {
                 n_right++;
                 continue;
             }
 
             n_wrong++;
-            
         }
-            
     }
 
-    #ifdef CATCH_CONFIG_MAIN
+#ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3001));
-    #endif
+#endif
 
     // Rerunning with plain mixing
-    std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
+    std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0 / 3.0);
     model.set_contact_matrix(contact_matrix);
 
     // Running and checking the results
     model.run(50, 123);
     model.print();
 
-    std::vector< int > totals;
+    std::vector<int> totals;
     model.get_db().get_today_total(nullptr, &totals);
 
-    std::vector< int > expected_totals = {
-        0, 0,
-        static_cast<int>(model.size())
-        };
+    std::vector<int> expected_totals = {0, 0, static_cast<int>(model.size())};
 
-    #ifdef CATCH_CONFIG_MAIN
+#ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(totals, Catch::Equals(expected_totals));
-    #endif
+#endif
 
-
-
-    #ifndef CATCH_CONFIG_MAIN
+#ifndef CATCH_CONFIG_MAIN
     return 0;
-    #endif
-
+#endif
 }

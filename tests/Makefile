@@ -1,8 +1,8 @@
 
-CXX_FLAGS_DEBUG=-std=c++23 -Wall -Wextra -O0 -g -pedantic -fopenmp
+CXX_FLAGS_DEBUG=-std=c++20 -Wall -Wextra -O0 -g -pedantic -fopenmp
 
 ifndef CXX_STD
-	CXX_STD=-std=c++23
+	CXX_STD=-std=c++20
 endif
 
 all: main.o

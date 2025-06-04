@@ -1,0 +1,35 @@
+name: Clang Format Check
+
+on:
+    pull_request:
+        paths:
+            - "**.cpp"
+            - "**.cc"
+            - "**.cxx"
+            - "**.h"
+            - "**.hpp"
+
+jobs:
+    clang-format:
+        name: Check C++ Formatting
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Install clang-format
+              run: sudo apt-get install -y clang-format
+
+            - name: Format C++ files with clang-format
+              run: |
+                  find tests examples include/epiworld -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.h" -o -name "*.hpp" \) -print0 \
+                    | xargs -0 clang-format -style=file -i
+
+            - name: Fail on formatting changes
+              run: |
+                  if ! git diff --quiet; then
+                    echo "::error::Code is not formatted. Please run clang-format.";
+                    git --no-pager diff
+                    exit 1
+                  fi

@@ -1,4 +1,4 @@
-#ifndef EPIWORLD_MODELS_SISD_HPP 
+#ifndef EPIWORLD_MODELS_SISD_HPP
 #define EPIWORLD_MODELS_SISD_HPP
 
 /**
@@ -11,16 +11,13 @@
  * @param inital_death epiworld_double Initial death_rate of the immune system
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSISD : public epiworld::Model<TSeq>
-{
-
-public:
-
+class ModelSISD: public epiworld::Model<TSeq> {
+  public:
     ModelSISD() {};
 
     ModelSISD(
-        ModelSISD<TSeq> & model,
-        const std::string & vname,
+        ModelSISD<TSeq>& model,
+        const std::string& vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate,
@@ -28,26 +25,23 @@ public:
     );
 
     ModelSISD(
-        const std::string & vname,
+        const std::string& vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate,
         epiworld_double death_rate
     );
-
 };
 
 template<typename TSeq>
 inline ModelSISD<TSeq>::ModelSISD(
-    ModelSISD<TSeq> & model,
-    const std::string & vname,
+    ModelSISD<TSeq>& model,
+    const std::string& vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
     epiworld_double death_rate
-    )
-{
-
+) {
     model.set_name("Susceptible-Infected-Susceptible-Deceased (SISD)");
 
     // Adding statuses
@@ -62,28 +56,25 @@ inline ModelSISD<TSeq>::ModelSISD(
 
     // Preparing the virus -------------------------------------------
     epiworld::Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(1,0,2);
-    
+    virus.set_state(1, 0, 2);
+
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_death(0.01);
-    
+
     model.add_virus(virus);
 
     return;
-
 }
 
 template<typename TSeq>
 inline ModelSISD<TSeq>::ModelSISD(
-    const std::string & vname,
+    const std::string& vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
     epiworld_double death_rate
-    )
-{
-
+) {
     ModelSISD<TSeq>(
         *this,
         vname,
@@ -91,10 +82,9 @@ inline ModelSISD<TSeq>::ModelSISD(
         transmission_rate,
         recovery_rate,
         death_rate
-    );    
+    );
 
     return;
-
 }
 
 #endif

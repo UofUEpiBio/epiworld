@@ -2,7 +2,9 @@
 #define EPIWORLD_CONFIG_HPP
 
 #ifndef printf_epiworld
-    #define printf_epiworld fflush(stdout);printf
+    #define printf_epiworld \
+        fflush(stdout); \
+        printf
 #endif
 
 // In case the user has a way to stop the program
@@ -68,28 +70,32 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Entity;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusPtr = std::shared_ptr< Virus< TSeq > >;
+using VirusPtr = std::shared_ptr<Virus<TSeq>>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolPtr = std::shared_ptr< Tool< TSeq > >;
+using ToolPtr = std::shared_ptr<Tool<TSeq>>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using ToolFun = std::function<
+    epiworld_double(Tool<TSeq>&, Agent<TSeq>*, VirusPtr<TSeq>, Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using MixerFun =
+    std::function<epiworld_double(Agent<TSeq>*, VirusPtr<TSeq>, Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using MutFun = std::function<bool(Agent<TSeq>*, Virus<TSeq>&, Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using PostRecoveryFun = std::function<void(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using PostRecoveryFun =
+    std::function<void(Agent<TSeq>*, Virus<TSeq>&, Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusFun = std::function<epiworld_double(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using VirusFun =
+    std::function<epiworld_double(Agent<TSeq>*, Virus<TSeq>&, Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using UpdateFun = std::function<void(Agent<TSeq>*,Model<TSeq>*)>;
+using UpdateFun = std::function<void(Agent<TSeq>*, Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
@@ -98,25 +104,25 @@ template<typename TSeq>
 struct Event;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using EventFun = std::function<void(Event<TSeq>&,Model<TSeq>*)>;
+using EventFun = std::function<void(Event<TSeq>&, Model<TSeq>*)>;
 
 /**
  * @brief Decides how to distribute viruses at initialization
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusToAgentFun = std::function<void(Virus<TSeq>&,Model<TSeq>*)>;
+using VirusToAgentFun = std::function<void(Virus<TSeq>&, Model<TSeq>*)>;
 
 /**
  * @brief Decides how to distribute tools at initialization
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolToAgentFun = std::function<void(Tool<TSeq>&,Model<TSeq>*)>;
+using ToolToAgentFun = std::function<void(Tool<TSeq>&, Model<TSeq>*)>;
 
 /**
  * @brief Decides how to distribute entities at initialization
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using EntityToAgentFun = std::function<void(Entity<TSeq>&,Model<TSeq>*)>;
+using EntityToAgentFun = std::function<void(Entity<TSeq>&, Model<TSeq>*)>;
 
 /**
  * @brief Event data for update an agent
@@ -125,17 +131,18 @@ using EntityToAgentFun = std::function<void(Entity<TSeq>&,Model<TSeq>*)>;
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 struct Event {
-    Agent<TSeq> * agent;
+    Agent<TSeq>* agent;
     VirusPtr<TSeq> virus;
     ToolPtr<TSeq> tool;
-    Entity<TSeq> * entity;
+    Entity<TSeq>* entity;
     epiworld_fast_int new_state;
     epiworld_fast_int queue;
     EventFun<TSeq> call;
     int idx_agent;
     int idx_object;
-public:
-/**
+
+  public:
+    /**
      * @brief Construct a new Event object
      * 
      * All the parameters are rather optional.
@@ -152,20 +159,27 @@ public:
      * @param idx_object_ Location of object in agent.
      */
     Event(
-        Agent<TSeq> * agent_,
+        Agent<TSeq>* agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
-        Entity<TSeq> * entity_,
+        Entity<TSeq>* entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
         EventFun<TSeq> call_,
         int idx_agent_,
         int idx_object_
-    ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
+    ) :
+        agent(agent_),
+        virus(virus_),
+        tool(tool_),
+        entity(entity_),
         new_state(new_state_),
-        queue(queue_), call(call_), idx_agent(idx_agent_), idx_object(idx_object_) {
-            return;
-        };
+        queue(queue_),
+        call(call_),
+        idx_agent(idx_agent_),
+        idx_object(idx_object_) {
+        return;
+    };
 };
 
 /**
@@ -176,7 +190,7 @@ public:
  */
 ///@{
 #ifndef DEFAULT_TOOL_CONTAGION_REDUCTION
-    #define DEFAULT_TOOL_CONTAGION_REDUCTION    0.0
+    #define DEFAULT_TOOL_CONTAGION_REDUCTION 0.0
 #endif
 
 #ifndef DEFAULT_TOOL_TRANSMISSION_REDUCTION
@@ -184,27 +198,27 @@ public:
 #endif
 
 #ifndef DEFAULT_TOOL_RECOVERY_ENHANCER
-    #define DEFAULT_TOOL_RECOVERY_ENHANCER      0.0
+    #define DEFAULT_TOOL_RECOVERY_ENHANCER 0.0
 #endif
 
 #ifndef DEFAULT_TOOL_DEATH_REDUCTION
-    #define DEFAULT_TOOL_DEATH_REDUCTION        0.0
+    #define DEFAULT_TOOL_DEATH_REDUCTION 0.0
 #endif
 
 #ifndef EPI_DEFAULT_VIRUS_PROB_INFECTION
-    #define EPI_DEFAULT_VIRUS_PROB_INFECTION    1.0
+    #define EPI_DEFAULT_VIRUS_PROB_INFECTION 1.0
 #endif
 
 #ifndef EPI_DEFAULT_VIRUS_PROB_RECOVERY
-    #define EPI_DEFAULT_VIRUS_PROB_RECOVERY     0.1428
+    #define EPI_DEFAULT_VIRUS_PROB_RECOVERY 0.1428
 #endif
 
 #ifndef EPI_DEFAULT_VIRUS_PROB_DEATH
-    #define EPI_DEFAULT_VIRUS_PROB_DEATH        0.0
+    #define EPI_DEFAULT_VIRUS_PROB_DEATH 0.0
 #endif
 
 #ifndef EPI_DEFAULT_INCUBATION_DAYS
-    #define EPI_DEFAULT_INCUBATION_DAYS         7.0
+    #define EPI_DEFAULT_INCUBATION_DAYS 7.0
 #endif
 ///@}
 
@@ -215,56 +229,73 @@ public:
         (etype)("[[epi-debug]] (error) " + std::string(msg));
 
     #define EPI_DEBUG_NOTIFY_ACTIVE() \
-        EPI_DEBUG_PRINTF("DEBUGGING ON (compiled with EPI_DEBUG defined)%s\n", "");
+        EPI_DEBUG_PRINTF( \
+            "DEBUGGING ON (compiled with EPI_DEBUG defined)%s\n", \
+            "" \
+        );
 
     #define EPI_DEBUG_ALL_NON_NEGATIVE(vect) \
-        for (auto & v : vect) \
+        for (auto& v : vect) \
             if (static_cast<double>(v) < 0.0) \
-                throw EPI_DEBUG_ERROR(std::logic_error, "A negative value not allowed.");
+                throw EPI_DEBUG_ERROR( \
+                    std::logic_error, \
+                    "A negative value not allowed." \
+                );
 
     #define EPI_DEBUG_SUM_DBL(vect, num) \
         double _epi_debug_sum = 0.0; \
-        for (auto & v : vect) \
-        {   \
-            _epi_debug_sum += static_cast<double>(v);\
+        for (auto& v : vect) { \
+            _epi_debug_sum += static_cast<double>(v); \
             if (_epi_debug_sum > static_cast<double>(num)) \
-                throw EPI_DEBUG_ERROR(std::logic_error, "The sum of elements not reached."); \
+                throw EPI_DEBUG_ERROR( \
+                    std::logic_error, \
+                    "The sum of elements not reached." \
+                ); \
         }
 
     #define EPI_DEBUG_SUM_INT(vect, num) \
         int _epi_debug_sum = 0; \
-        for (auto & v : vect) \
-        {   \
-            _epi_debug_sum += static_cast<int>(v);\
+        for (auto& v : vect) { \
+            _epi_debug_sum += static_cast<int>(v); \
             if (_epi_debug_sum > static_cast<int>(num)) \
-                throw EPI_DEBUG_ERROR(std::logic_error, "The sum of elements not reached."); \
+                throw EPI_DEBUG_ERROR( \
+                    std::logic_error, \
+                    "The sum of elements not reached." \
+                ); \
         }
 
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c) \
-        if (a.size() != b.size())  {\
+        if (a.size() != b.size()) { \
             EPI_DEBUG_PRINTF("In '%s'", std::string(c).c_str()); \
-            EPI_DEBUG_PRINTF("Size of vector a: %lu\n", (a).size());\
-            EPI_DEBUG_PRINTF("Size of vector b: %lu\n", (b).size());\
-            throw EPI_DEBUG_ERROR(std::length_error, "The vectors do not match size."); \
-        }\
+            EPI_DEBUG_PRINTF("Size of vector a: %lu\n", (a).size()); \
+            EPI_DEBUG_PRINTF("Size of vector b: %lu\n", (b).size()); \
+            throw EPI_DEBUG_ERROR( \
+                std::length_error, \
+                "The vectors do not match size." \
+            ); \
+        } \
         for (int _i = 0; _i < static_cast<int>(a.size()); ++_i) \
-            if (a[_i] != b[_i]) {\
+            if (a[_i] != b[_i]) { \
                 EPI_DEBUG_PRINTF("In '%s'", std::string(c).c_str()); \
                 EPI_DEBUG_PRINTF("Iterating the last 5 values%s:\n", ""); \
-                for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
-                { \
+                for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; \
+                     ++_j) { \
                     EPI_DEBUG_PRINTF( \
                         "a[%i]: %i; b[%i]: %i\n", \
                         _j, \
                         static_cast<int>(a[_j]), \
-                        _j, static_cast<int>(b[_j])); \
+                        _j, \
+                        static_cast<int>(b[_j]) \
+                    ); \
                 } \
-                throw EPI_DEBUG_ERROR(std::logic_error, "The vectors do not match."); \
+                throw EPI_DEBUG_ERROR( \
+                    std::logic_error, \
+                    "The vectors do not match." \
+                ); \
             }
 
-    #define EPI_DEBUG_FAIL_AT_TRUE(a,b) \
-        if (a) \
-        {\
+    #define EPI_DEBUG_FAIL_AT_TRUE(a, b) \
+        if (a) { \
             throw EPI_DEBUG_ERROR(std::logic_error, b); \
         }
 
