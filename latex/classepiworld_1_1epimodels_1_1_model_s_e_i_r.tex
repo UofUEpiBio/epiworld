@@ -62,7 +62,6 @@ static const int {\bfseries INFECTED} = 2
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_s_e_i_r_a1f51f3935f5b2f2a1c129c654d58df1d}\label{classepiworld_1_1epimodels_1_1_model_s_e_i_r_a1f51f3935f5b2f2a1c129c654d58df1d}} 
 static const int {\bfseries REMOVED} = 3
 \end{DoxyCompactItemize}
-\doxysubsection*{Additional Inherited Members}
 
 
 \doxysubsection{Detailed Description}
@@ -94,7 +93,7 @@ Template for a Susceptible-\/\+Exposed-\/\+Infected-\/\+Removed (SEIR) model.
 \index{initial\_states@{initial\_states}!epiworld::epimodels::ModelSEIR$<$ TSeq $>$@{epiworld::epimodels::ModelSEIR$<$ TSeq $>$}}
 \doxysubsubsection{\texorpdfstring{initial\_states()}{initial\_states()}}
 {\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_e_i_r}{Model\+SEIR}}$<$ TSeq $>$ \& \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_e_i_r}{Model\+SEIR}}$<$ TSeq $>$\+::initial\+\_\+states (\begin{DoxyParamCaption}\item[{std\+::vector$<$ double $>$}]{proportions\+\_\+,  }\item[{std\+::vector$<$ int $>$}]{queue\+\_\+ = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_e_i_r}{Model\+SEIR}}$<$ TSeq $>$ \& \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_s_e_i_r}{Model\+SEIR}}$<$ TSeq $>$\+::initial\+\_\+states (\begin{DoxyParamCaption}\item[{std\+::vector$<$ double $>$}]{proportions\+\_\+,  }\item[{std\+::vector$<$ int $>$}]{queue\+\_\+ = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
 
 
 
@@ -111,10 +110,6 @@ Set up the initial states of the model.
 \end{DoxyParams}
 
 
-Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
-
-
-
 \doxysubsection{Member Data Documentation}
 \mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_s_e_i_r_a4dd9da9e5a389e752cd11a43a00278a2}\label{classepiworld_1_1epimodels_1_1_model_s_e_i_r_a4dd9da9e5a389e752cd11a43a00278a2}} 
 \index{epiworld::epimodels::ModelSEIR$<$ TSeq $>$@{epiworld::epimodels::ModelSEIR$<$ TSeq $>$}!update\_exposed\_seir@{update\_exposed\_seir}}
@@ -126,8 +121,8 @@ epiworld\+::\+Update\+Fun$<$TSeq$>$ \mbox{\hyperlink{classepiworld_1_1epimodels_
 {\bfseries Initial value\+:}
 \begin{DoxyCode}{0}
 \DoxyCodeLine{= [](}
-\DoxyCodeLine{        \mbox{\hyperlink{classepiworld_1_1_agent}{epiworld::Agent<TSeq>}} * p,}
-\DoxyCodeLine{        \mbox{\hyperlink{classepiworld_1_1_model}{epiworld::Model<TSeq>}} * m}
+\DoxyCodeLine{        epiworld::Agent<TSeq> * p,}
+\DoxyCodeLine{        epiworld::Model<TSeq> * m}
 \DoxyCodeLine{    ) -\/> \textcolor{keywordtype}{void} \{}
 \DoxyCodeLine{}
 \DoxyCodeLine{        }
@@ -151,8 +146,8 @@ epiworld\+::\+Update\+Fun$<$TSeq$>$ \mbox{\hyperlink{classepiworld_1_1epimodels_
 {\bfseries Initial value\+:}
 \begin{DoxyCode}{0}
 \DoxyCodeLine{= [](}
-\DoxyCodeLine{        \mbox{\hyperlink{classepiworld_1_1_agent}{epiworld::Agent<TSeq>}} * p,}
-\DoxyCodeLine{        \mbox{\hyperlink{classepiworld_1_1_model}{epiworld::Model<TSeq>}} * m}
+\DoxyCodeLine{        epiworld::Agent<TSeq> * p,}
+\DoxyCodeLine{        epiworld::Model<TSeq> * m}
 \DoxyCodeLine{    ) -\/> \textcolor{keywordtype}{void} \{}
 \DoxyCodeLine{        }
 \DoxyCodeLine{        \textcolor{keywordflow}{if} (m-\/>runif() < (m-\/>par(\textcolor{stringliteral}{"{}Recovery rate"{}})))}
