@@ -141,7 +141,7 @@ bool {\bfseries operator!=} (const \mbox{\hyperlink{class_model}{Model}}$<$ TSeq
 \item 
 void \mbox{\hyperlink{class_model_a800647b05836b20054f1f2049a41787f}{events\+\_\+run}} ()
 \begin{DoxyCompactList}\small\item\em Executes the stored action. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{class_model_a9a3f0255dfa3c7b7f673146ac5f0ffda}{draw}} (Diagram\+Type diagram\+\_\+type=Diagram\+Type\+::\+Mermaid, const std\+::string \&fn\+\_\+output=\char`\"{}\char`\"{}, bool self=false)
+void \mbox{\hyperlink{class_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}{draw}} (const std\+::string \&fn\+\_\+output=\char`\"{}\char`\"{}, bool self=false)
 \begin{DoxyCompactList}\small\item\em Draws a mermaid diagram of the model. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \begin{Indent}\textbf{ Set the backup object}\par
 {\em {\ttfamily backup} can be used to restore the entire object after a run. This can be useful if the user wishes to have individuals start with the same network from the beginning. }\begin{DoxyCompactItemize}
@@ -841,12 +841,12 @@ Advanced usage\+: Makes a copy of data and returns it as undeleted pointer.
 
 Reimplemented in \mbox{\hyperlink{class_model_measles_quarantine_a21e6b8cd704e13d99201c39a2ea559a6}{Model\+Measles\+Quarantine$<$ TSeq $>$}}.
 
-\mbox{\Hypertarget{class_model_a9a3f0255dfa3c7b7f673146ac5f0ffda}\label{class_model_a9a3f0255dfa3c7b7f673146ac5f0ffda}} 
+\mbox{\Hypertarget{class_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}\label{class_model_a6a6f3fd87283f3cd3a7216ef67ff4e4a}} 
 \index{Model$<$ TSeq $>$@{Model$<$ TSeq $>$}!draw@{draw}}
 \index{draw@{draw}!Model$<$ TSeq $>$@{Model$<$ TSeq $>$}}
 \doxysubsubsection{\texorpdfstring{draw()}{draw()}}
 {\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-void \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$\+::draw (\begin{DoxyParamCaption}\item[{Diagram\+Type}]{diagram\+\_\+type = {\ttfamily DiagramType\+:\+:Mermaid},  }\item[{const std\+::string \&}]{fn\+\_\+output = {\ttfamily \char`\"{}\char`\"{}},  }\item[{bool}]{self = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+void \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$\+::draw (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{fn\+\_\+output = {\ttfamily \char`\"{}\char`\"{}},  }\item[{bool}]{self = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
 
 
 
@@ -1172,7 +1172,7 @@ std\+::chrono\+::duration$<$epiworld\+\_\+double,std\+::micro$>$ \mbox{\hyperlin
 
 {\bfseries Initial value\+:}
 \begin{DoxyCode}{0}
-\DoxyCodeLine{=}
+\DoxyCodeLine{= }
 \DoxyCodeLine{        std::chrono::duration<epiworld\_double,std::micro>::zero()}
 
 \end{DoxyCode}

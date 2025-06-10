@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['quarantine_5fagents_81',['quarantine_agents',['../classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#aaaa64ccaff50d92ed9665409c09d2485',1,'epiworld::epimodels::ModelMeaslesQuarantine::quarantine_agents()'],['../class_model_measles_quarantine.html#aaaa64ccaff50d92ed9665409c09d2485',1,'ModelMeaslesQuarantine::quarantine_agents()']]],
-  ['queue_82',['Queue',['../class_queue.html',1,'']]],
-  ['queuing_5foff_83',['queuing_off',['../class_model.html#a8822ff230b2c4804d0ae28db014520d1',1,'Model']]],
-  ['queuing_5fon_84',['queuing_on',['../class_model.html#a1cbe26a38285095c62d1971251a6c3db',1,'Model']]]
+  ['quarantine_5fagents_79',['quarantine_agents',['../classepiworld_1_1epimodels_1_1_model_measles_quarantine.html#aaaa64ccaff50d92ed9665409c09d2485',1,'epiworld::epimodels::ModelMeaslesQuarantine::quarantine_agents()'],['../class_model_measles_quarantine.html#aaaa64ccaff50d92ed9665409c09d2485',1,'ModelMeaslesQuarantine::quarantine_agents()']]],
+  ['queue_80',['Queue',['../class_queue.html',1,'']]],
+  ['queuing_5foff_81',['queuing_off',['../class_model.html#a8822ff230b2c4804d0ae28db014520d1',1,'Model']]],
+  ['queuing_5fon_82',['queuing_on',['../class_model.html#a1cbe26a38285095c62d1971251a6c3db',1,'Model']]]
 ];

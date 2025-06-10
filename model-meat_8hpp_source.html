@@ -787,7 +787,7 @@ $(function() {
 <div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160; </div>
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;<span class="keyword">inline</span> epiworld_double &amp; <a class="code" href="class_model.html">Model&lt;TSeq&gt;::operator()</a>(std::string pname) {</div>
-<div class="line"><a name="l00745"></a><span class="lineno"><a class="line" href="class_model.html#a9a3f0255dfa3c7b7f673146ac5f0ffda">  745</a></span>&#160; </div>
+<div class="line"><a name="l00745"></a><span class="lineno"><a class="line" href="class_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a">  745</a></span>&#160; </div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;    <span class="keywordflow">if</span> (parameters.find(pname) == parameters.end())</div>
 <div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;        <span class="keywordflow">throw</span> std::range_error(<span class="stringliteral">&quot;The parameter &#39;&quot;</span>+ pname + <span class="stringliteral">&quot;&#39; is not in the model.&quot;</span>);</div>
 <div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160; </div>
@@ -2685,32 +2685,30 @@ $(function() {
 <div class="line"><a name="l02640"></a><span class="lineno"> 2640</span>&#160;}</div>
 <div class="line"><a name="l02641"></a><span class="lineno"> 2641</span>&#160; </div>
 <div class="line"><a name="l02642"></a><span class="lineno"> 2642</span>&#160;template&lt;typename TSeq&gt;</div>
-<div class="line"><a name="l02643"></a><span class="lineno"><a class="line" href="class_model.html#a9a3f0255dfa3c7b7f673146ac5f0ffda"> 2643</a></span>&#160;inline <span class="keywordtype">void</span> <a class="code" href="class_model.html">Model</a>&lt;TSeq&gt;::draw(</div>
-<div class="line"><a name="l02644"></a><span class="lineno"> 2644</span>&#160;    DiagramType diagram_type,</div>
-<div class="line"><a name="l02645"></a><span class="lineno"> 2645</span>&#160;    const std::<span class="keywordtype">string</span> &amp; fn_output,</div>
-<div class="line"><a name="l02646"></a><span class="lineno"> 2646</span>&#160;    <span class="keywordtype">bool</span> self</div>
-<div class="line"><a name="l02647"></a><span class="lineno"> 2647</span>&#160;) {</div>
-<div class="line"><a name="l02648"></a><span class="lineno"> 2648</span>&#160; </div>
-<div class="line"><a name="l02649"></a><span class="lineno"> 2649</span>&#160;    <a class="code" href="class_model_diagram.html">ModelDiagram</a> diagram;</div>
-<div class="line"><a name="l02650"></a><span class="lineno"> 2650</span>&#160; </div>
-<div class="line"><a name="l02651"></a><span class="lineno"> 2651</span>&#160;    diagram.draw_from_data(</div>
-<div class="line"><a name="l02652"></a><span class="lineno"> 2652</span>&#160;        diagram_type,</div>
-<div class="line"><a name="l02653"></a><span class="lineno"> 2653</span>&#160;        this-&gt;get_states(),</div>
-<div class="line"><a name="l02654"></a><span class="lineno"> 2654</span>&#160;        this-&gt;get_db().get_transition_probability(<span class="keyword">false</span>),</div>
-<div class="line"><a name="l02655"></a><span class="lineno"> 2655</span>&#160;        fn_output,</div>
-<div class="line"><a name="l02656"></a><span class="lineno"> 2656</span>&#160;        <span class="keyword">self</span></div>
-<div class="line"><a name="l02657"></a><span class="lineno"> 2657</span>&#160;    );</div>
+<div class="line"><a name="l02643"></a><span class="lineno"><a class="line" href="class_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a"> 2643</a></span>&#160;inline <span class="keywordtype">void</span> <a class="code" href="class_model.html">Model</a>&lt;TSeq&gt;::draw(</div>
+<div class="line"><a name="l02644"></a><span class="lineno"> 2644</span>&#160;    const std::<span class="keywordtype">string</span> &amp; fn_output,</div>
+<div class="line"><a name="l02645"></a><span class="lineno"> 2645</span>&#160;    <span class="keywordtype">bool</span> self</div>
+<div class="line"><a name="l02646"></a><span class="lineno"> 2646</span>&#160;) {</div>
+<div class="line"><a name="l02647"></a><span class="lineno"> 2647</span>&#160; </div>
+<div class="line"><a name="l02648"></a><span class="lineno"> 2648</span>&#160;    <a class="code" href="class_model_diagram.html">ModelDiagram</a> diagram;</div>
+<div class="line"><a name="l02649"></a><span class="lineno"> 2649</span>&#160; </div>
+<div class="line"><a name="l02650"></a><span class="lineno"> 2650</span>&#160;    diagram.draw_from_data(</div>
+<div class="line"><a name="l02651"></a><span class="lineno"> 2651</span>&#160;        this-&gt;get_states(),</div>
+<div class="line"><a name="l02652"></a><span class="lineno"> 2652</span>&#160;        this-&gt;get_db().transition_probability(<span class="keyword">false</span>),</div>
+<div class="line"><a name="l02653"></a><span class="lineno"> 2653</span>&#160;        fn_output,</div>
+<div class="line"><a name="l02654"></a><span class="lineno"> 2654</span>&#160;        <span class="keyword">self</span></div>
+<div class="line"><a name="l02655"></a><span class="lineno"> 2655</span>&#160;    );</div>
+<div class="line"><a name="l02656"></a><span class="lineno"> 2656</span>&#160; </div>
+<div class="line"><a name="l02657"></a><span class="lineno"> 2657</span>&#160;    <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l02658"></a><span class="lineno"> 2658</span>&#160; </div>
-<div class="line"><a name="l02659"></a><span class="lineno"> 2659</span>&#160;    <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l02659"></a><span class="lineno"> 2659</span>&#160;}</div>
 <div class="line"><a name="l02660"></a><span class="lineno"> 2660</span>&#160; </div>
-<div class="line"><a name="l02661"></a><span class="lineno"> 2661</span>&#160;}</div>
-<div class="line"><a name="l02662"></a><span class="lineno"> 2662</span>&#160; </div>
-<div class="line"><a name="l02663"></a><span class="lineno"> 2663</span>&#160;<span class="preprocessor">#undef VECT_MATCH</span></div>
-<div class="line"><a name="l02664"></a><span class="lineno"> 2664</span>&#160;<span class="preprocessor">#undef DURCAST</span></div>
-<div class="line"><a name="l02665"></a><span class="lineno"> 2665</span>&#160;<span class="preprocessor">#undef CASES_PAR</span></div>
-<div class="line"><a name="l02666"></a><span class="lineno"> 2666</span>&#160;<span class="preprocessor">#undef CASE_PAR</span></div>
-<div class="line"><a name="l02667"></a><span class="lineno"> 2667</span>&#160;<span class="preprocessor">#undef CHECK_INIT</span></div>
-<div class="line"><a name="l02668"></a><span class="lineno"> 2668</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l02661"></a><span class="lineno"> 2661</span>&#160;<span class="preprocessor">#undef VECT_MATCH</span></div>
+<div class="line"><a name="l02662"></a><span class="lineno"> 2662</span>&#160;<span class="preprocessor">#undef DURCAST</span></div>
+<div class="line"><a name="l02663"></a><span class="lineno"> 2663</span>&#160;<span class="preprocessor">#undef CASES_PAR</span></div>
+<div class="line"><a name="l02664"></a><span class="lineno"> 2664</span>&#160;<span class="preprocessor">#undef CASE_PAR</span></div>
+<div class="line"><a name="l02665"></a><span class="lineno"> 2665</span>&#160;<span class="preprocessor">#undef CHECK_INIT</span></div>
+<div class="line"><a name="l02666"></a><span class="lineno"> 2666</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_adj_list_html"><div class="ttname"><a href="class_adj_list.html">AdjList</a></div><div class="ttdef"><b>Definition:</b> adjlist-bones.hpp:4</div></div>
 <div class="ttc" id="aclass_adj_list_html_a2bf3a057863c9dfb958d44ff370690d1"><div class="ttname"><a href="class_adj_list.html#a2bf3a057863c9dfb958d44ff370690d1">AdjList::vcount</a></div><div class="ttdeci">size_t vcount() const</div><div class="ttdoc">Number of vertices/nodes in the network.</div><div class="ttdef"><b>Definition:</b> adjlist-meat.hpp:203</div></div>
 <div class="ttc" id="aclass_adj_list_html_aa08631a4605cc3037f017bb437a96ef0"><div class="ttname"><a href="class_adj_list.html#aa08631a4605cc3037f017bb437a96ef0">AdjList::read_edgelist</a></div><div class="ttdeci">void read_edgelist(std::string fn, int size, int skip=0, bool directed=true)</div><div class="ttdoc">Read an edgelist.</div><div class="ttdef"><b>Definition:</b> adjlist-meat.hpp:92</div></div>
@@ -2719,7 +2717,7 @@ $(function() {
 <div class="ttc" id="aclass_data_base_html"><div class="ttname"><a href="class_data_base.html">DataBase</a></div><div class="ttdoc">Statistical data about the process.</div><div class="ttdef"><b>Definition:</b> database-bones.hpp:34</div></div>
 <div class="ttc" id="aclass_entity_html"><div class="ttname"><a href="class_entity.html">Entity</a></div><div class="ttdef"><b>Definition:</b> entity-bones.hpp:20</div></div>
 <div class="ttc" id="aclass_global_event_html"><div class="ttname"><a href="class_global_event.html">GlobalEvent</a></div><div class="ttdoc">Template for a Global Event.</div><div class="ttdef"><b>Definition:</b> globalevent-bones.hpp:15</div></div>
-<div class="ttc" id="aclass_model_diagram_html"><div class="ttname"><a href="class_model_diagram.html">ModelDiagram</a></div><div class="ttdef"><b>Definition:</b> modeldiagram-bones.hpp:8</div></div>
+<div class="ttc" id="aclass_model_diagram_html"><div class="ttname"><a href="class_model_diagram.html">ModelDiagram</a></div><div class="ttdef"><b>Definition:</b> modeldiagram-bones.hpp:4</div></div>
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
 <div class="ttc" id="aclass_model_html_a077f3c2f03c119d038909cb34aa1aade"><div class="ttname"><a href="class_model.html#a077f3c2f03c119d038909cb34aa1aade">Model::get_agents</a></div><div class="ttdeci">std::vector&lt; Agent&lt; TSeq &gt; &gt; &amp; get_agents()</div><div class="ttdoc">Returns a reference to the vector of agents.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:582</div></div>
 <div class="ttc" id="aclass_model_html_a0dcfddf7f242497cb5ae30c3e602394d"><div class="ttname"><a href="class_model.html#a0dcfddf7f242497cb5ae30c3e602394d">Model::get_agents_viruses</a></div><div class="ttdeci">std::vector&lt; Viruses_const&lt; TSeq &gt; &gt; get_agents_viruses() const</div><div class="ttdoc">Returns a const vector with the viruses of the agents.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:604</div></div>
