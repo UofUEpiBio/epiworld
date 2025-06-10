@@ -469,7 +469,7 @@ $(function() {
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160; </div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;        };</div>
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160; </div>
-<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;    epiworld::UpdateFun&lt;TSeq&gt; update_infected_list = [](</div>
+<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;    epiworld::UpdateFun&lt;TSeq&gt; update_exposed_and_infected = [](</div>
 <div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;        epiworld::Agent&lt;TSeq&gt; * p, epiworld::Model&lt;TSeq&gt; * m</div>
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        ) -&gt; <span class="keywordtype">void</span> {</div>
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160; </div>
@@ -544,8 +544,8 @@ $(function() {
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;    </div>
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;    <span class="comment">// state</span></div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;    model.add_state(<span class="stringliteral">&quot;Susceptible&quot;</span>, update_susceptible);</div>
-<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;    model.add_state(<span class="stringliteral">&quot;Exposed&quot;</span>, update_infected_list);</div>
-<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;    model.add_state(<span class="stringliteral">&quot;Infected&quot;</span>, update_infected_list);</div>
+<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;    model.add_state(<span class="stringliteral">&quot;Exposed&quot;</span>, update_exposed_and_infected);</div>
+<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;    model.add_state(<span class="stringliteral">&quot;Infected&quot;</span>, update_exposed_and_infected);</div>
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    model.add_state(<span class="stringliteral">&quot;Recovered&quot;</span>);</div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160; </div>
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    <span class="comment">// Global function</span></div>

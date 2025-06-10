@@ -1,0 +1,242 @@
+\hypertarget{class_model_s_e_i_r_mixing_quarantine}{}\doxysection{Model\+SEIRMixing\+Quarantine$<$ TSeq $>$ Class Template Reference}
+\label{class_model_s_e_i_r_mixing_quarantine}\index{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}}
+
+
+Inheritance diagram for Model\+SEIRMixing\+Quarantine$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=220pt]{class_model_s_e_i_r_mixing_quarantine__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Model\+SEIRMixing\+Quarantine$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=220pt]{class_model_s_e_i_r_mixing_quarantine__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine_a4cab184eaf3ed155bcf96ca6f7e00334}{Model\+SEIRMixing\+Quarantine}} (\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$ \&model, const std\+::string \&vname, epiworld\+\_\+fast\+\_\+uint n, epiworld\+\_\+double prevalence, epiworld\+\_\+double contact\+\_\+rate, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double avg\+\_\+incubation\+\_\+days, epiworld\+\_\+double recovery\+\_\+rate, std\+::vector$<$ double $>$ contact\+\_\+matrix, std\+::vector$<$ bool $>$ entity\+\_\+can\+\_\+quarantine, epiworld\+\_\+double hospitalization\+\_\+rate, epiworld\+\_\+double hospitalization\+\_\+period, epiworld\+\_\+double days\+\_\+undetected, epiworld\+\_\+fast\+\_\+int quarantine\+\_\+period, epiworld\+\_\+double quarantine\+\_\+willingness, epiworld\+\_\+fast\+\_\+int isolation\+\_\+period)
+\begin{DoxyCompactList}\small\item\em Constructs a \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} object. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine_a6d3ffb90ef0300139dc65c8027709750}{Model\+SEIRMixing\+Quarantine}} (const std\+::string \&vname, epiworld\+\_\+fast\+\_\+uint n, epiworld\+\_\+double prevalence, epiworld\+\_\+double contact\+\_\+rate, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double avg\+\_\+incubation\+\_\+days, epiworld\+\_\+double recovery\+\_\+rate, std\+::vector$<$ double $>$ contact\+\_\+matrix, std\+::vector$<$ bool $>$ entity\+\_\+can\+\_\+quarantine, epiworld\+\_\+double hospitalization\+\_\+rate, epiworld\+\_\+double hospitalization\+\_\+period, epiworld\+\_\+double days\+\_\+undetected, epiworld\+\_\+fast\+\_\+int quarantine\+\_\+period, epiworld\+\_\+double quarantine\+\_\+willingness, epiworld\+\_\+fast\+\_\+int isolation\+\_\+period)
+\begin{DoxyCompactList}\small\item\em Constructs a \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} object. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a8448e60624718171730064caa808f126}\label{class_model_s_e_i_r_mixing_quarantine_a8448e60624718171730064caa808f126}} 
+\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$ \& \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine_a8448e60624718171730064caa808f126}{run}} (epiworld\+\_\+fast\+\_\+uint ndays, int seed=-\/1)
+\begin{DoxyCompactList}\small\item\em Runs the simulation (after initialization) \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine_a958d448529fa478980a593d80114125d}{reset}} ()
+\begin{DoxyCompactList}\small\item\em Reset the model. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine_a52e71150188940df10a09bb60e4d9959}{clone\+\_\+ptr}} ()
+\begin{DoxyCompactList}\small\item\em Advanced usage\+: Makes a copy of data and returns it as undeleted pointer. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$ \& \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine_a08e83ce26e78f0386b78ab6f68db8693}{initial\+\_\+states}} (std\+::vector$<$ double $>$ proportions\+\_\+, std\+::vector$<$ int $>$ queue\+\_\+=\{\})
+\begin{DoxyCompactList}\small\item\em Set the initial states of the model. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a0bcb9c2003588e46f05efc9ee519535e}\label{class_model_s_e_i_r_mixing_quarantine_a0bcb9c2003588e46f05efc9ee519535e}} 
+void {\bfseries set\+\_\+contact\+\_\+matrix} (std\+::vector$<$ double $>$ cmat)
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_aa8f0910509338e7cdc59ef93d227f4eb}\label{class_model_s_e_i_r_mixing_quarantine_aa8f0910509338e7cdc59ef93d227f4eb}} 
+void {\bfseries set\+\_\+entity\+\_\+can\+\_\+quarantine} (std\+::vector$<$ bool $>$ can\+\_\+quarantine)
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a41f14cfca372ff2c57b72639ce970368}\label{class_model_s_e_i_r_mixing_quarantine_a41f14cfca372ff2c57b72639ce970368}} 
+std\+::vector$<$ double $>$ {\bfseries get\+\_\+contact\+\_\+matrix} () const
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a0197c19c68957000af63e5e49486e2e9}\label{class_model_s_e_i_r_mixing_quarantine_a0197c19c68957000af63e5e49486e2e9}} 
+std\+::vector$<$ bool $>$ {\bfseries get\+\_\+entity\+\_\+can\+\_\+quarantine} () const
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a98e97c6f653bcd7af40585e6969687ed}\label{class_model_s_e_i_r_mixing_quarantine_a98e97c6f653bcd7af40585e6969687ed}} 
+std\+::vector$<$ bool $>$ {\bfseries get\+\_\+entity\+\_\+quarantine\+\_\+triggered} () const
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_ab924efc15fc117560bd6e7aee824b690}\label{class_model_s_e_i_r_mixing_quarantine_ab924efc15fc117560bd6e7aee824b690}} 
+std\+::vector$<$ bool $>$ {\bfseries get\+\_\+quarantine\+\_\+willingness} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a391bca89a420124da7ddfaecf24f7350}\label{class_model_s_e_i_r_mixing_quarantine_a391bca89a420124da7ddfaecf24f7350}} 
+static const int {\bfseries SUSCEPTIBLE} = 0
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a0beff98703fc0bf85bf6d5760a5e13e3}\label{class_model_s_e_i_r_mixing_quarantine_a0beff98703fc0bf85bf6d5760a5e13e3}} 
+static const int {\bfseries EXPOSED} = 1
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_afe6f5adaa5d121329a07c4d87cf7ab62}\label{class_model_s_e_i_r_mixing_quarantine_afe6f5adaa5d121329a07c4d87cf7ab62}} 
+static const int {\bfseries INFECTED} = 2
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a7a4be5d1af70af9cd71bdd668eed0038}\label{class_model_s_e_i_r_mixing_quarantine_a7a4be5d1af70af9cd71bdd668eed0038}} 
+static const int {\bfseries ISOLATED} = 3
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a384f1a7df0b44889d4ed226f16339b4b}\label{class_model_s_e_i_r_mixing_quarantine_a384f1a7df0b44889d4ed226f16339b4b}} 
+static const int {\bfseries DETECTED\+\_\+\+HOSPITALIZED} = 4
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a636b72a0486b0814cfbe9620a2151b78}\label{class_model_s_e_i_r_mixing_quarantine_a636b72a0486b0814cfbe9620a2151b78}} 
+static const int {\bfseries QUARANTINED\+\_\+\+SUSCEPTIBLE} = 5
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_af04ff3c55a890405690f91fe36381a89}\label{class_model_s_e_i_r_mixing_quarantine_af04ff3c55a890405690f91fe36381a89}} 
+static const int {\bfseries QUARANTINED\+\_\+\+EXPOSED} = 6
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a21d00250a1232117084ccab49517f9bf}\label{class_model_s_e_i_r_mixing_quarantine_a21d00250a1232117084ccab49517f9bf}} 
+static const int {\bfseries ISOLATED\+\_\+\+RECOVERED} = 7
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_afc543065d672d52014a4c224fc47c0b6}\label{class_model_s_e_i_r_mixing_quarantine_afc543065d672d52014a4c224fc47c0b6}} 
+static const int {\bfseries HOSPITALIZED} = 8
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a6abb0e18e78040595d5e0abd74c8bc9d}\label{class_model_s_e_i_r_mixing_quarantine_a6abb0e18e78040595d5e0abd74c8bc9d}} 
+static const int {\bfseries RECOVERED} = 9
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a4cab184eaf3ed155bcf96ca6f7e00334}\label{class_model_s_e_i_r_mixing_quarantine_a4cab184eaf3ed155bcf96ca6f7e00334}} 
+\index{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}}
+\index{ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{ModelSEIRMixingQuarantine()}{ModelSEIRMixingQuarantine()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$\+::\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$ \&}]{model,  }\item[{const std\+::string \&}]{vname,  }\item[{epiworld\+\_\+fast\+\_\+uint}]{n,  }\item[{epiworld\+\_\+double}]{prevalence,  }\item[{epiworld\+\_\+double}]{contact\+\_\+rate,  }\item[{epiworld\+\_\+double}]{transmission\+\_\+rate,  }\item[{epiworld\+\_\+double}]{avg\+\_\+incubation\+\_\+days,  }\item[{epiworld\+\_\+double}]{recovery\+\_\+rate,  }\item[{std\+::vector$<$ double $>$}]{contact\+\_\+matrix,  }\item[{std\+::vector$<$ bool $>$}]{entity\+\_\+can\+\_\+quarantine,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+rate,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+period,  }\item[{epiworld\+\_\+double}]{days\+\_\+undetected,  }\item[{epiworld\+\_\+fast\+\_\+int}]{quarantine\+\_\+period,  }\item[{epiworld\+\_\+double}]{quarantine\+\_\+willingness,  }\item[{epiworld\+\_\+fast\+\_\+int}]{isolation\+\_\+period }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Constructs a \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} object. 
+
+Template for a Susceptible-\/\+Exposed-\/\+Infected-\/\+Removed (SEIR) model.
+
+
+\begin{DoxyParams}{Parameters}
+{\em model} & A reference to an existing \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} object. \\
+\hline
+{\em vname} & The name of the \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} object. \\
+\hline
+{\em n} & The number of entities in the model. \\
+\hline
+{\em prevalence} & The initial prevalence of the disease in the model. \\
+\hline
+{\em contact\+\_\+rate} & The contact rate between entities in the model. \\
+\hline
+{\em transmission\+\_\+rate} & The transmission rate of the disease in the model. \\
+\hline
+{\em avg\+\_\+incubation\+\_\+days} & The average incubation period of the disease in the model. \\
+\hline
+{\em recovery\+\_\+rate} & The recovery rate of the disease in the model. \\
+\hline
+{\em contact\+\_\+matrix} & The contact matrix between entities in the model. Specified in column-\/major order.\\
+\hline
+{\em model} & A Model$<$\+TSeq$>$ object where to set up the SIR. \\
+\hline
+{\em vname} & std\+::string Name of the virus \\
+\hline
+{\em prevalence} & Initial prevalence (proportion) \\
+\hline
+{\em contact\+\_\+rate} & Average number of contacts (interactions) per step. \\
+\hline
+{\em transmission\+\_\+rate} & Probability of transmission \\
+\hline
+{\em recovery\+\_\+rate} & Probability of recovery \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a6d3ffb90ef0300139dc65c8027709750}\label{class_model_s_e_i_r_mixing_quarantine_a6d3ffb90ef0300139dc65c8027709750}} 
+\index{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}}
+\index{ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{ModelSEIRMixingQuarantine()}{ModelSEIRMixingQuarantine()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$\+::\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{vname,  }\item[{epiworld\+\_\+fast\+\_\+uint}]{n,  }\item[{epiworld\+\_\+double}]{prevalence,  }\item[{epiworld\+\_\+double}]{contact\+\_\+rate,  }\item[{epiworld\+\_\+double}]{transmission\+\_\+rate,  }\item[{epiworld\+\_\+double}]{avg\+\_\+incubation\+\_\+days,  }\item[{epiworld\+\_\+double}]{recovery\+\_\+rate,  }\item[{std\+::vector$<$ double $>$}]{contact\+\_\+matrix,  }\item[{std\+::vector$<$ bool $>$}]{entity\+\_\+can\+\_\+quarantine,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+rate,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+period,  }\item[{epiworld\+\_\+double}]{days\+\_\+undetected,  }\item[{epiworld\+\_\+fast\+\_\+int}]{quarantine\+\_\+period,  }\item[{epiworld\+\_\+double}]{quarantine\+\_\+willingness,  }\item[{epiworld\+\_\+fast\+\_\+int}]{isolation\+\_\+period }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Constructs a \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em vname} & The name of the \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}} object. \\
+\hline
+{\em n} & The number of entities in the model. \\
+\hline
+{\em prevalence} & The initial prevalence of the disease in the model. \\
+\hline
+{\em contact\+\_\+rate} & The contact rate between entities in the model. \\
+\hline
+{\em transmission\+\_\+rate} & The transmission rate of the disease in the model. \\
+\hline
+{\em avg\+\_\+incubation\+\_\+days} & The average incubation period of the disease in the model. \\
+\hline
+{\em recovery\+\_\+rate} & The recovery rate of the disease in the model. \\
+\hline
+{\em contact\+\_\+matrix} & The contact matrix between entities in the model. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a52e71150188940df10a09bb60e4d9959}\label{class_model_s_e_i_r_mixing_quarantine_a52e71150188940df10a09bb60e4d9959}} 
+\index{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}}
+\index{clone\_ptr@{clone\_ptr}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{clone\_ptr()}{clone\_ptr()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$\+::clone\+\_\+ptr\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Advanced usage\+: Makes a copy of data and returns it as undeleted pointer. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em copy} & \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \mbox{\hyperlink{class_model_afd0c24e19b0a104e03d96ab4333725e5}{Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
+
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a08e83ce26e78f0386b78ab6f68db8693}\label{class_model_s_e_i_r_mixing_quarantine_a08e83ce26e78f0386b78ab6f68db8693}} 
+\index{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!initial\_states@{initial\_states}}
+\index{initial\_states@{initial\_states}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{initial\_states()}{initial\_states()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$ \& \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$\+::initial\+\_\+states (\begin{DoxyParamCaption}\item[{std\+::vector$<$ double $>$}]{proportions\+\_\+,  }\item[{std\+::vector$<$ int $>$}]{queue\+\_\+ = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Set the initial states of the model. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em proportions\+\_\+} & Double vector with a single element\+:
+\begin{DoxyItemize}
+\item The proportion of non-\/infected individuals who have recovered. 
+\end{DoxyItemize}\\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \mbox{\hyperlink{class_model}{Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
+
+\mbox{\Hypertarget{class_model_s_e_i_r_mixing_quarantine_a958d448529fa478980a593d80114125d}\label{class_model_s_e_i_r_mixing_quarantine_a958d448529fa478980a593d80114125d}} 
+\index{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!reset@{reset}}
+\index{reset@{reset}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{reset()}{reset()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{class_model_s_e_i_r_mixing_quarantine}{Model\+SEIRMixing\+Quarantine}}$<$ TSeq $>$\+::reset\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Reset the model. 
+
+Resetting the model will\+:
+\begin{DoxyItemize}
+\item clear the database
+\item restore the population (if {\ttfamily set\+\_\+backup()} was called before)
+\item re-\/distribute tools
+\item re-\/distribute viruses
+\item set the date to 0 
+\end{DoxyItemize}
+
+Reimplemented from \mbox{\hyperlink{class_model_a9591eb76c7cf1ed7e1510342ff602d37}{Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+include/epiworld/models/seirmixingquarantine.\+hpp\end{DoxyCompactItemize}
