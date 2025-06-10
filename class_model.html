@@ -78,15 +78,6 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="model-bones_8hpp_source.html">model-bones.hpp</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for Model&lt; TSeq &gt;:</div>
-<div class="dyncontent">
-<div class="center"><img src="class_model__inherit__graph.png" border="0" usemap="#a_model_3_01_t_seq_01_4_inherit__map" alt="Inheritance graph"/></div>
-<map name="a_model_3_01_t_seq_01_4_inherit__map" id="a_model_3_01_t_seq_01_4_inherit__map">
-<area shape="rect" title="Core class of epiworld." alt="" coords="35,5,145,32"/>
-<area shape="rect" href="class_model_measles_quarantine.html" title="Template for a Measles model with quarantine." alt="" coords="5,80,175,121"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
-<div class="dynheader">
 Collaboration diagram for Model&lt; TSeq &gt;:</div>
 <div class="dyncontent">
 <div class="center"><img src="class_model__coll__graph.png" border="0" usemap="#a_model_3_01_t_seq_01_4_coll__map" alt="Collaboration graph"/></div>
@@ -134,6 +125,9 @@ epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>get_nda
 <tr class="memitem:a171d1a3a36a9a93bfb317fce1b40adc7"><td class="memItemLeft" align="right" valign="top"><a id="a171d1a3a36a9a93bfb317fce1b40adc7"></a>
 epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>get_n_replicates</b> () const</td></tr>
 <tr class="separator:a171d1a3a36a9a93bfb317fce1b40adc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a246cd6286cbd5b24cbac8e7f2431b10d"><td class="memItemLeft" align="right" valign="top"><a id="a246cd6286cbd5b24cbac8e7f2431b10d"></a>
+size_t&#160;</td><td class="memItemRight" valign="bottom"><b>get_n_entities</b> () const</td></tr>
+<tr class="separator:a246cd6286cbd5b24cbac8e7f2431b10d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f589402f7bdde8d56c3768955fa7aa7"><td class="memItemLeft" align="right" valign="top"><a id="a6f589402f7bdde8d56c3768955fa7aa7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_ndays</b> (epiworld_fast_uint ndays)</td></tr>
 <tr class="separator:a6f589402f7bdde8d56c3768955fa7aa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -229,9 +223,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator!=</b> (const
 <tr class="memitem:a800647b05836b20054f1f2049a41787f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a800647b05836b20054f1f2049a41787f">events_run</a> ()</td></tr>
 <tr class="memdesc:a800647b05836b20054f1f2049a41787f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the stored action.  <a href="class_model.html#a800647b05836b20054f1f2049a41787f">More...</a><br /></td></tr>
 <tr class="separator:a800647b05836b20054f1f2049a41787f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a3f0255dfa3c7b7f673146ac5f0ffda"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a9a3f0255dfa3c7b7f673146ac5f0ffda">draw</a> (DiagramType diagram_type=DiagramType::Mermaid, const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
-<tr class="memdesc:a9a3f0255dfa3c7b7f673146ac5f0ffda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws a mermaid diagram of the model.  <a href="class_model.html#a9a3f0255dfa3c7b7f673146ac5f0ffda">More...</a><br /></td></tr>
-<tr class="separator:a9a3f0255dfa3c7b7f673146ac5f0ffda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a">draw</a> (const std::string &amp;fn_output=&quot;&quot;, bool self=false)</td></tr>
+<tr class="memdesc:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws a mermaid diagram of the model.  <a href="class_model.html#a6a6f3fd87283f3cd3a7216ef67ff4e4a">More...</a><br /></td></tr>
+<tr class="separator:a6a6f3fd87283f3cd3a7216ef67ff4e4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Set the backup object</div></td></tr>
 <tr><td colspan="2"><div class="groupText"><p><code>backup</code> can be used to restore the entire object after a run. This can be useful if the user wishes to have individuals start with the same network from the beginning. </p>
 </div></td></tr>
@@ -503,6 +497,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>add_state</b> (std::s
 <tr class="memitem:af372433843a655e8d93f6ee3e7498bc1"><td class="memItemLeft" align="right" valign="top"><a id="af372433843a655e8d93f6ee3e7498bc1"></a>
 const std::vector&lt; std::string &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_states</b> () const</td></tr>
 <tr class="separator:af372433843a655e8d93f6ee3e7498bc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45ad998c7290a0e892779af327e094f7"><td class="memItemLeft" align="right" valign="top"><a id="a45ad998c7290a0e892779af327e094f7"></a>
+size_t&#160;</td><td class="memItemRight" valign="bottom"><b>get_n_states</b> () const</td></tr>
+<tr class="separator:a45ad998c7290a0e892779af327e094f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a50c2560ee67de2691becdb552431f3c4"><td class="memItemLeft" align="right" valign="top"><a id="a50c2560ee67de2691becdb552431f3c4"></a>
 const std::vector&lt; UpdateFun&lt; TSeq &gt; &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_state_fun</b> () const</td></tr>
 <tr class="separator:a50c2560ee67de2691becdb552431f3c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -938,12 +935,12 @@ template&lt;typename TSeq &gt; </div>
   </dd>
 </dl>
 
-<p>Reimplemented in <a class="el" href="class_model_measles_quarantine.html#a21e6b8cd704e13d99201c39a2ea559a6">ModelMeaslesQuarantine&lt; TSeq &gt;</a>.</p>
+<p>Reimplemented in <a class="el" href="class_model_s_e_i_r_mixing_quarantine.html#a52e71150188940df10a09bb60e4d9959">ModelSEIRMixingQuarantine&lt; TSeq &gt;</a>, and <a class="el" href="class_model_measles_quarantine.html#a21e6b8cd704e13d99201c39a2ea559a6">ModelMeaslesQuarantine&lt; TSeq &gt;</a>.</p>
 
 </div>
 </div>
-<a id="a9a3f0255dfa3c7b7f673146ac5f0ffda"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9a3f0255dfa3c7b7f673146ac5f0ffda">&#9670;&nbsp;</a></span>draw()</h2>
+<a id="a6a6f3fd87283f3cd3a7216ef67ff4e4a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a6f3fd87283f3cd3a7216ef67ff4e4a">&#9670;&nbsp;</a></span>draw()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -956,12 +953,6 @@ template&lt;typename TSeq &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="class_model.html">Model</a>&lt; TSeq &gt;::draw </td>
           <td>(</td>
-          <td class="paramtype">DiagramType&#160;</td>
-          <td class="paramname"><em>diagram_type</em> = <code>DiagramType::Mermaid</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>fn_output</em> = <code>&quot;&quot;</code>, </td>
         </tr>
@@ -1203,7 +1194,7 @@ template&lt;typename TSeq &gt; </div>
 <li>set the date to 0 </li>
 </ul>
 
-<p>Reimplemented in <a class="el" href="class_model_measles_quarantine.html#adbf25714985ddb82738dba114f6c7299">ModelMeaslesQuarantine&lt; TSeq &gt;</a>.</p>
+<p>Reimplemented in <a class="el" href="class_model_s_e_i_r_mixing_quarantine.html#a958d448529fa478980a593d80114125d">ModelSEIRMixingQuarantine&lt; TSeq &gt;</a>, and <a class="el" href="class_model_measles_quarantine.html#adbf25714985ddb82738dba114f6c7299">ModelMeaslesQuarantine&lt; TSeq &gt;</a>.</p>
 
 </div>
 </div>
@@ -1745,7 +1736,7 @@ template&lt;typename TSeq &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<b>Initial value:</b><div class="fragment"><div class="line">= </div>
 <div class="line">        std::chrono::duration&lt;epiworld_double,std::micro&gt;::zero()</div>
 </div><!-- fragment -->
 </div>

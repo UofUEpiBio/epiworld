@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['sampler_162',['sampler',['../namespaceepiworld_1_1sampler.html',1,'epiworld']]]
+  ['sampler_163',['sampler',['../namespacesampler.html',1,'']]]
 ];
