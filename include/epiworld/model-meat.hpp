@@ -2065,6 +2065,12 @@ Model<TSeq>::get_states() const
 }
 
 template<typename TSeq>
+inline size_t Model<TSeq>::get_n_states() const
+{
+    return nstates;
+}
+
+template<typename TSeq>
 inline const std::vector< UpdateFun<TSeq> > &
 Model<TSeq>::get_state_fun() const
 {
