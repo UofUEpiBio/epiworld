@@ -276,7 +276,7 @@ inline void ModelDiagram::draw(
     case DiagramType::DOT:
         return draw_dot(fn_output, self);
     default:
-  		assert(("Unknown how to dispatch DiagramType.", false));
+  		throw std::logic_error("Unknown how to dispatch DiagramType.");
     }
 }
 

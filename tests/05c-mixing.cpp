@@ -61,10 +61,10 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     auto saver = [&transitions, &R0s, n_infected](size_t n, Model<>* m) -> void{
 
         // Saving the transition probabilities
-        transitions[n] = m->get_db().transition_probability(false, false);
+        transitions[n] = m->get_db().get_transition_probability(false, false);
 
         // Recording the R0 from the index case
-        auto rts = m->get_db().reproductive_number();      
+        auto rts = m->get_db().get_reproductive_number();      
 
         for (auto & rt: rts)
         {

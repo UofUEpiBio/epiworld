@@ -34,7 +34,7 @@ int main()
     model.run(100, 123);
     model.print();
 
-    (void) model.get_db().transition_probability();
+    (void) model.get_db().get_transition_probability();
 
     AgentsSample<> agents(model, .05 * 10000);
 

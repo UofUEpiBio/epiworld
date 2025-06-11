@@ -90,10 +90,10 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
 ) {
     return [&transitions, &R0s, n_seeds](size_t n, epiworld::Model<>* m) -> void {
         // Saving the transition probabilities
-        transitions[n] = m->get_db().transition_probability(false, false);
+        transitions[n] = m->get_db().get_transition_probability(false, false);
 
         // Recording the R0 from the index case
-        auto rts = m->get_db().reproductive_number();      
+        auto rts = m->get_db().get_reproductive_number();      
         for (int i = 0; i < n_seeds; ++i)
             R0s[n_seeds * n + i] = static_cast<epiworld_double>(rts[{0, i, 0}]);
     };
