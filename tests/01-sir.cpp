@@ -49,21 +49,21 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     model_2.get_db().get_hist_total(nullptr, nullptr, &h_2);
 
     // Getting transition matrix
-    auto tmat_0 = model_0.get_db().transition_probability(false);
+    auto tmat_0 = model_0.get_db().get_transition_probability(false);
     int out_of_range_0 = 0;
 
     for (auto & v: tmat_0)
         if (v < 0.0 | v > 1.0)
             out_of_range_0++;
     
-    auto tmat_1 = model_1.get_db().transition_probability(false);
+    auto tmat_1 = model_1.get_db().get_transition_probability(false);
     int out_of_range_1 = 0;
 
     for (auto & v: tmat_1)
         if (v < 0.0 | v > 1.0)
             out_of_range_1++;
 
-    auto tmat_2 = model_2.get_db().transition_probability(false);
+    auto tmat_2 = model_2.get_db().get_transition_probability(false);
     int out_of_range_2 = 0;
 
     for (auto & v: tmat_2)
@@ -88,7 +88,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     model_2.print(false);
     #endif 
 
-    model_0.draw();
+    model_0.draw(epiworld::DiagramType::Mermaid);
 
     model_1.write_data(
         "", "", "", "", "", "", "01-sir_transitions.txt", "", ""
@@ -97,7 +97,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     std::cout << "Printing transitions from file" << std::endl;
 
     epiworld::ModelDiagram diagram;
-    diagram.draw_from_file("01-sir_transitions.txt");
+    diagram.draw_from_file(epiworld::DiagramType::Mermaid, "01-sir_transitions.txt");
 
     #ifndef CATCH_CONFIG_MAIN
     return 0;

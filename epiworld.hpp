@@ -9263,9 +9263,9 @@ public:
      * - Date when the source was infected
      */
     ///@{
-    MapVec_type<int,int> reproductive_number() const;
+    MapVec_type<int,int> get_reproductive_number() const;
 
-    void reproductive_number(
+    void get_reproductive_number(
         std::string fn
         ) const;
     ///@}
@@ -9283,7 +9283,7 @@ public:
      * (when normalized).
      * @return std::vector< epiworld_double > 
      */
-    std::vector< epiworld_double > transition_probability(
+    std::vector< epiworld_double > get_transition_probability(
         bool print = true,
         bool normalize = true
     ) const;
@@ -9300,14 +9300,14 @@ public:
      * the infection of the target.
     */
    ///@{
-    void generation_time(
+    void get_generation_time(
         std::vector< int > & agent_id,
         std::vector< int > & virus_id,
         std::vector< int > & time,
         std::vector< int > & gentime
     ) const; ///< Get the generation time
 
-    void generation_time(
+    void get_generation_time(
         std::string fn
     ) const; ///< Write the generation time to a file
     ///@}
@@ -10452,10 +10452,10 @@ inline void DataBase<TSeq>::write_data(
     }
 
     if (fn_reproductive_number != "")
-        reproductive_number(fn_reproductive_number);
+        get_reproductive_number(fn_reproductive_number);
 
     if (fn_generation_time != "")
-        generation_time(fn_generation_time);
+        get_generation_time(fn_generation_time);
 
 }
 
@@ -10525,7 +10525,7 @@ inline UserData<TSeq> & DataBase<TSeq>::get_user_data()
 }
 
 template<typename TSeq>
-inline MapVec_type<int,int> DataBase<TSeq>::reproductive_number()
+inline MapVec_type<int,int> DataBase<TSeq>::get_reproductive_number()
 const {
 
     // Checking size
@@ -10563,12 +10563,12 @@ const {
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::reproductive_number(
+inline void DataBase<TSeq>::get_reproductive_number(
     std::string fn
 ) const {
 
 
-    auto map = reproductive_number();
+    auto map = get_reproductive_number();
 
     std::ofstream fn_file(fn, std::ios_base::out);
 
@@ -10604,7 +10604,7 @@ inline void DataBase<TSeq>::reproductive_number(
 }
 
 template<typename TSeq>
-inline std::vector< epiworld_double > DataBase<TSeq>::transition_probability(
+inline std::vector< epiworld_double > DataBase<TSeq>::get_transition_probability(
     bool print,
     bool normalize
 ) const {
@@ -11149,7 +11149,7 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::generation_time(
+inline void DataBase<TSeq>::get_generation_time(
     std::vector< int > & agent_id,
     std::vector< int > & virus_id,
     std::vector< int > & time,
@@ -11201,7 +11201,7 @@ inline void DataBase<TSeq>::generation_time(
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::generation_time(
+inline void DataBase<TSeq>::get_generation_time(
     std::string fn
 ) const
 {
@@ -11211,7 +11211,7 @@ inline void DataBase<TSeq>::generation_time(
     std::vector< int > time;
     std::vector< int > gentime;
 
-    generation_time(agent_id, virus_id, time, gentime);
+    get_generation_time(agent_id, virus_id, time, gentime);
 
     std::ofstream fn_file(fn, std::ios_base::out);
 
@@ -11219,7 +11219,7 @@ inline void DataBase<TSeq>::generation_time(
     if (!fn_file)
     {
         throw std::runtime_error(
-            "DataBase::generation_time: "
+            "DataBase::get_generation_time: "
             "Cannot open file " + fn + "."
         );
     }
@@ -15692,7 +15692,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
     }
 
     if (today() != 0)
-        (void) db.transition_probability(true);
+        (void) db.get_transition_probability(true);
 
     return *this;
 
@@ -16327,7 +16327,7 @@ inline void Model<TSeq>::draw(
 
     diagram.draw_from_data(
         this->get_states(),
-        this->get_db().transition_probability(false),
+        this->get_db().get_transition_probability(false),
         fn_output,
         self
     );

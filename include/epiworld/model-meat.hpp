@@ -2647,6 +2647,7 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
 
 template<typename TSeq>
 inline void Model<TSeq>::draw(
+    DiagramType diagram_type,
     const std::string & fn_output,
     bool self
 ) {
@@ -2654,8 +2655,9 @@ inline void Model<TSeq>::draw(
     ModelDiagram diagram;
 
     diagram.draw_from_data(
+        diagram_type,
         this->get_states(),
-        this->get_db().transition_probability(false),
+        this->get_db().get_transition_probability(false),
         fn_output,
         self
     );
