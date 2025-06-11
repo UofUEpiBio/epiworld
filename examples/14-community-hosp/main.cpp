@@ -1,4 +1,4 @@
-#include "../../epiworld.hpp"
+#include "../../include/epiworld/epiworld.hpp"
 
 /***
  * A concrete example with a model that includes two populations.

@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_MODELS_SEIRMIXINGQUARANTINE_HPP
 #define EPIWORLD_MODELS_SEIRMIXINGQUARANTINE_HPP
 
-#include "../epiworld.hpp"
-
 using namespace epiworld;
 
 #define MM(i, j, n) \

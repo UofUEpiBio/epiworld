@@ -42,11 +42,7 @@ unfolder <- function(txt, rel = "include/epiworld/") {
         
         # Normalize the file path to detect true duplicates
         # This resolves relative paths like "../" to the actual file location
-        tryCatch({
-            fn_normalized <- normalizePath(fn, mustWork = TRUE)
-        }, error = function(e) {
-            fn_normalized <<- fn
-        })
+        fn_normalized <- normalizePath(fn, mustWork = TRUE)
         
         # Check if this file has already been included (use normalized path)
         if (fn_normalized %in% INCLUDED_FILES) {
@@ -79,12 +75,18 @@ unfolder <- function(txt, rel = "include/epiworld/") {
 
         # Getting the filename
         new_src <- c(
-            new_src[1:(loc - 1)],
-            sprintf(head_start, fn),
-            tmp_lines,
-            sprintf(head_end, fn),
-            new_src[(loc + 1):length(new_src)]
-            )
+          new_src[1:(loc - 1)],
+          sprintf(head_start, fn),
+          tmp_lines,
+          sprintf(head_end, fn),
+          new_src[(loc + 1):length(new_src)]
+          )
+
+        # # It should be skipping "#include"
+        # if (any(grepl("^\\s*#include\\s*\"", new_src)))
+        # {
+        #   stop("Unexpected include found in included file: ", fn)
+        # }
 
     }
 
