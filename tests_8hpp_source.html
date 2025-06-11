@@ -117,7 +117,7 @@ $(function() {
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = EPI_DEFAULT_TSEQ&gt;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">inline</span> epiworld::EntityToAgentFun&lt;TSeq&gt; dist_factory(<span class="keywordtype">int</span> from, <span class="keywordtype">int</span> to) {</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordflow">return</span> [from, to](epiworld::Entity&lt;TSeq&gt; &amp; e, epiworld::Model&lt;TSeq&gt; * m) -&gt; <span class="keywordtype">void</span> {</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordflow">return</span> [from, to](<a class="code" href="classepiworld_1_1_entity.html">epiworld::Entity&lt;TSeq&gt;</a> &amp; e, <a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;TSeq&gt;</a> * m) -&gt; <span class="keywordtype">void</span> {</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            <span class="keyword">auto</span> &amp; agents = m-&gt;get_agents();</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = from; i &lt; to; ++i)</div>
@@ -133,7 +133,7 @@ $(function() {
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = EPI_DEFAULT_TSEQ&gt;</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="keyword">inline</span> epiworld::VirusToAgentFun&lt;TSeq&gt; dist_virus(<span class="keywordtype">int</span> i)</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;{</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordflow">return</span> [i](epiworld::Virus&lt;TSeq&gt; &amp; v, epiworld::Model&lt;TSeq&gt; * m) -&gt; <span class="keywordtype">void</span> {</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordflow">return</span> [i](<a class="code" href="classepiworld_1_1_virus.html">epiworld::Virus&lt;TSeq&gt;</a> &amp; v, <a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;TSeq&gt;</a> * m) -&gt; <span class="keywordtype">void</span> {</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;            m-&gt;get_agents()[i].set_virus(v, m);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            <span class="keywordflow">return</span>;</div>
@@ -142,12 +142,12 @@ $(function() {
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keyword">inline</span> std::function&lt;void(<span class="keywordtype">size_t</span>, epiworld::Model&lt;&gt;*)&gt; tests_create_saver(</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keyword">inline</span> std::function&lt;void(<span class="keywordtype">size_t</span>, <a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;&gt;</a>*)&gt; tests_create_saver(</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    std::vector&lt;std::vector&lt;epiworld_double&gt;&gt;&amp; transitions,</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    std::vector&lt;epiworld_double&gt;&amp; R0s,</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keywordtype">int</span> n_seeds</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;) {</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordflow">return</span> [&amp;transitions, &amp;R0s, n_seeds](<span class="keywordtype">size_t</span> n, epiworld::Model&lt;&gt;* m) -&gt; <span class="keywordtype">void</span> {</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordflow">return</span> [&amp;transitions, &amp;R0s, n_seeds](<span class="keywordtype">size_t</span> n, <a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;&gt;</a>* m) -&gt; <span class="keywordtype">void</span> {</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="comment">// Saving the transition probabilities</span></div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        transitions[n] = m-&gt;get_db().get_transition_probability(<span class="keyword">false</span>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
@@ -254,6 +254,9 @@ $(function() {
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160; </div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="ttc" id="aclassepiworld_1_1_entity_html"><div class="ttname"><a href="classepiworld_1_1_entity.html">epiworld::Entity</a></div><div class="ttdef"><b>Definition:</b> epiworld.hpp:11838</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html"><div class="ttname"><a href="classepiworld_1_1_model.html">epiworld::Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:12510</div></div>
+<div class="ttc" id="aclassepiworld_1_1_virus_html"><div class="ttname"><a href="classepiworld_1_1_virus.html">epiworld::Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:9602</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
