@@ -6512,15 +6512,22 @@ inline void Progress::end() {
 #ifndef EPIWORLD_MODELDIAGRAM_HPP
 #define EPIWORLD_MODELDIAGRAM_HPP
 
+enum class DiagramType {
+    Mermaid, DOT
+};
+
 class ModelDiagram {
 private:
 
     std::map< std::pair< std::string, std::string >, int > data;
-
     std::vector< std::string > states;
     std::vector< epiworld_double > tprob;
 
-    void draw_mermaid(
+    void draw_mermaid(std::string fn_output, bool self);
+    void draw_dot(std::string fn_output, bool self);
+
+    void draw(
+        DiagramType diagram_type,
         std::string fn_output = "",
         bool self = false
     );
@@ -6577,6 +6584,7 @@ public:
     ModelDiagram() {};
 
     void draw_from_data(
+        DiagramType diagram_type,
         const std::vector< std::string > & states,
         const std::vector< epiworld_double > & tprob,
         const std::string & fn_output = "",
@@ -6584,12 +6592,14 @@ public:
     );
 
     void draw_from_file(
+        DiagramType diagram_type,
         const std::string & fn_transition,
         const std::string & fn_output = "",
         bool self = false
     );
 
     void draw_from_files(
+        DiagramType diagram_type,
         const std::vector< std::string > & fns_transition,
         const std::string & fn_output = "",
         bool self = false
@@ -6628,7 +6638,7 @@ inline void ModelDiagram::read_transitions(
 
     if (!file.is_open())
         throw std::runtime_error(
-            "Could not open the file '" + 
+            "Could not open the file '" +
             fn_transition + "' for reading."
         );
 
@@ -6735,7 +6745,7 @@ inline void ModelDiagram::transition_probability(
     }
 
     return;
-    
+
 
 }
 
@@ -6751,10 +6761,8 @@ inline void ModelDiagram::clear()
 inline void ModelDiagram::draw_mermaid(
     std::string fn_output,
     bool self
-)
-{
-
-    // Getting a sorting vector of indices from the states
+) {
+     // Getting a sorting vector of indices from the states
     // string vector
     std::vector< size_t > idx(states.size());
     std::iota(idx.begin(), idx.end(), 0u);
@@ -6790,8 +6798,8 @@ inline void ModelDiagram::draw_mermaid(
 
             if (tprob[idx[i] + idx[j] * n_states] > 0.0)
             {
-                graph += "\t" + states_ids[i] + " -->|" + 
-                    std::to_string(tprob[idx[i] + idx[j] * n_states]) + 
+                graph += "\t" + states_ids[i] + " -->|" +
+                    std::to_string(tprob[idx[i] + idx[j] * n_states]) +
                     "| " + states_ids[j] + "\n";
             }
         }
@@ -6804,22 +6812,104 @@ inline void ModelDiagram::draw_mermaid(
         if (!file.is_open())
             throw std::runtime_error(
                 "Could not open the file " +
-                fn_output + 
+                fn_output +
                 " for writing."
             );
 
         file << graph;
         file.close();
-        
+
     } else {
         printf_epiworld("%s\n", graph.c_str());
     }
 
     return;
+}
 
+inline void ModelDiagram::draw_dot(std::string fn_output, bool self) {
+    std::vector<size_t> idx(states.size());
+    std::iota(idx.begin(), idx.end(), 0u);
+
+    std::sort(
+        idx.begin(),
+        idx.end(),
+        [&states = this->states](size_t i, size_t j) {
+            return states[i] < states[j];
+        }
+    );
+
+    std::vector<std::string> states_ids;
+    for (size_t i = 0u; i < states.size(); ++i)
+        states_ids.push_back("s" + std::to_string(i));
+
+    std::string graph = "digraph G {\n\trankdir=LR;\n";
+
+    // Declaring the states
+    for (size_t i = 0u; i < states.size(); ++i)
+    {
+        graph += "\t" + states_ids[i] + " [label=\"" + states[idx[i]] + "\"];\n";
+    }
+
+    // Adding the transitions
+    size_t n_states = states.size();
+    for (size_t i = 0u; i < states.size(); ++i)
+    {
+        for (size_t j = 0u; j < states.size(); ++j)
+        {
+            if (!self && i == j)
+                continue;
+
+            if (tprob[idx[i] + idx[j] * n_states] > 0.0)
+            {
+                graph += "\t" + states_ids[i] + " -> " + states_ids[j] +
+                         " [label=\"" +
+                         std::to_string(tprob[idx[i] + idx[j] * n_states]) +
+                         "\"];\n";
+            }
+        }
+    }
+
+    graph += "}\n";
+
+    if (fn_output != "")
+    {
+        std::ofstream file(fn_output);
+
+        if (!file.is_open())
+            throw std::runtime_error(
+                "Could not open the file " +
+                fn_output +
+                " for writing."
+            );
+
+        file << graph;
+        file.close();
+
+    } else {
+        printf_epiworld("%s\n", graph.c_str());
+    }
+
+    return;
+}
+
+inline void ModelDiagram::draw(
+    DiagramType diagram_type,
+    std::string fn_output,
+    bool self
+)
+{
+    switch (diagram_type) {
+    case DiagramType::Mermaid:
+        return draw_mermaid(fn_output, self);
+    case DiagramType::DOT:
+        return draw_dot(fn_output, self);
+    default:
+  		throw std::logic_error("Unknown how to dispatch DiagramType.");
+    }
 }
 
 inline void ModelDiagram::draw_from_file(
+    DiagramType diagram_type,
     const std::string & fn_transition,
     const std::string & fn_output,
     bool self
@@ -6834,13 +6924,14 @@ inline void ModelDiagram::draw_from_file(
     this->transition_probability();
 
     // Actually drawing the diagram
-    this->draw_mermaid(fn_output, self);
+    this->draw(diagram_type, fn_output, self);
 
     return;
-  
+
 }
 
 inline void ModelDiagram::draw_from_files(
+    DiagramType diagram_type,
     const std::vector< std::string > & fns_transition,
     const std::string & fn_output,
     bool self
@@ -6855,12 +6946,13 @@ inline void ModelDiagram::draw_from_files(
     this->transition_probability();
 
     // Actually drawing the diagram
-    this->draw_mermaid(fn_output, self);
+    this->draw(diagram_type, fn_output, self);
 
     return;
 }
 
 inline void ModelDiagram::draw_from_data(
+    DiagramType diagram_type,
     const std::vector< std::string > & states,
     const std::vector< epiworld_double > & tprob,
     const std::string & fn_output,
@@ -6872,7 +6964,7 @@ inline void ModelDiagram::draw_from_data(
     this->states = states;
     this->tprob = tprob;
 
-    this->draw_mermaid(fn_output, self);
+    this->draw(diagram_type, fn_output, self);
 
     return;
 
@@ -12616,7 +12708,7 @@ class Virus;
 template<typename TSeq>
 class Viruses;
 
-template<typename TSeq> 
+template<typename TSeq>
 class Viruses_const;
 
 template<typename TSeq>
@@ -12683,10 +12775,10 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
 
 /**
  * @brief Core class of epiworld.
- * 
+ *
  * The model class provides the wrapper that puts together `Agent`, `Virus`, and
  * `Tools`.
- * 
+ *
  * @tparam TSeq Type of sequence. In principle, users can build models in which
  * virus and human sequence is represented as numeric vectors (if needed.)
  */
@@ -12709,7 +12801,7 @@ protected:
 
     /**
      * @name Auxiliary variables for AgentsSample<TSeq> iterators
-     * 
+     *
      * @details These variables+objects are used by the AgentsSample<TSeq>
      * class for building efficient iterators over agents. The idea is to
      * reduce the memory allocation, so only during the first call of
@@ -12724,11 +12816,11 @@ protected:
 
     /**
      * @name Agents features
-     * 
+     *
      * @details Optionally, a model can include an external data source
      * pointing to agents information. The data can then be access through
      * the `Agent::operator()` method.
-     * 
+     *
      */
     ///@{
     double * agents_data = nullptr;
@@ -12736,15 +12828,15 @@ protected:
     ///@}
 
     bool directed = false;
-    
+
     std::vector< VirusPtr<TSeq> > viruses = {};
     std::vector< ToolPtr<TSeq> > tools = {};
 
-    std::vector< Entity<TSeq> > entities = {}; 
+    std::vector< Entity<TSeq> > entities = {};
     std::vector< Entity<TSeq> > entities_backup = {};
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
-    
+
     std::uniform_real_distribution<> runifd      =
         std::uniform_real_distribution<> (0.0, 1.0);
     std::normal_distribution<>       rnormd      =
@@ -12766,20 +12858,20 @@ protected:
 
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop = 0.0;
-        
+
     std::map<std::string, epiworld_double > parameters;
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
     std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
     std::vector< std::string >        states_labels = {};              ///< Labels of the states
-    
+
     /** Function to distribute states. Goes along with the function  */
     std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
     -> void {};
 
     epiworld_fast_uint nstates = 0u;
-    
+
     bool verbose     = true;
     int current_date = 0;
 
@@ -12791,7 +12883,7 @@ protected:
     std::chrono::time_point<std::chrono::steady_clock> time_end;
 
     // std::chrono::milliseconds
-    std::chrono::duration<epiworld_double,std::micro> time_elapsed = 
+    std::chrono::duration<epiworld_double,std::micro> time_elapsed =
         std::chrono::duration<epiworld_double,std::micro>::zero();
     epiworld_fast_uint n_replicates = 0u;
     void chrono_start();
@@ -12811,7 +12903,7 @@ protected:
 
     /**
      * @brief Construct a new Event object
-     * 
+     *
      * @param agent_ Agent over which the action will be called
      * @param virus_ Virus pointer included in the action
      * @param tool_ Tool pointer included in the action
@@ -12836,12 +12928,12 @@ protected:
 
     /**
      * @name Tool Mixers
-     * 
+     *
      * These functions combine the effects tools have to deliver
      * a single effect. For example, wearing a mask, been vaccinated,
      * and the immune system combine together to jointly reduce
      * the susceptibility for a given virus.
-     * 
+     *
      */
     MixerFun<TSeq> susceptibility_reduction_mixer = susceptibility_reduction_mixer_default<TSeq>;
     MixerFun<TSeq> transmission_reduction_mixer = transmission_reduction_mixer_default<TSeq>;
@@ -12850,14 +12942,14 @@ protected:
 
     /**
      * @brief Advanced usage: Makes a copy of data and returns it as undeleted pointer
-     * 
-     * @param copy 
+     *
+     * @param copy
      */
     virtual Model<TSeq> * clone_ptr();
 
 public:
 
-    
+
     std::vector<epiworld_double> array_double_tmp;
     std::vector<Virus<TSeq> * > array_virus_tmp;
 
@@ -12874,7 +12966,7 @@ public:
      * @details `backup` can be used to restore the entire object
      * after a run. This can be useful if the user wishes to have
      * individuals start with the same network from the beginning.
-     * 
+     *
      */
     ///@{
     void set_backup();
@@ -12889,7 +12981,7 @@ public:
 
     /**
      * @name Random number generation
-     * 
+     *
      * @param eng Random number generator
      * @param s Seed
      */
@@ -12928,9 +13020,9 @@ public:
 
     /**
      * @name Add Virus/Tool to the model
-     * 
+     *
      * This is done before the model has been initialized.
-     * 
+     *
      * @param v Virus to be added
      * @param t Tool to be added
      * @param preval Initial prevalence (initial state.) It can be
@@ -12948,16 +13040,16 @@ public:
 
     /**
      * @brief Associate agents-entities from a file
-     * 
-     * The structure of the file should be two columns separated by 
+     *
+     * The structure of the file should be two columns separated by
      * space. The first column indexing between 0 and nagents-1, and the
      * second column between 0 and nentities - 1.
-     * 
+     *
      * @param fn Path to the file.
      * @param skip How many rows to skip.
      */
     void load_agents_entities_ties(std::string fn, int skip);
-    
+
     /**
      * @brief Associate agents-entities from data
     */
@@ -12974,7 +13066,7 @@ public:
 
     /**
      * @name Accessing population of the model
-     * 
+     *
      * @param fn std::string Filename of the edgelist file.
      * @param skip int Number of lines to skip in `fn`.
      * @param directed bool Whether the graph is directed or not.
@@ -13025,12 +13117,12 @@ public:
 
     /**
      * @name Functions to run the model
-     * 
+     *
      * @param seed Seed to be used for Pseudo-RNG.
      * @param ndays Number of days (steps) of the simulation.
      * @param fun In the case of `run_multiple`, a function that is called
      * after each experiment.
-     * 
+     *
      */
     ///@{
     void update_state();
@@ -13068,9 +13160,9 @@ public:
      * @details This implementation assumes an undirected network,
      * thus if {(i,j), (k,l)} -> {(i,l), (k,j)}, the reciprocal
      * is also true, i.e., {(j,i), (l,k)} -> {(j,k), (l,i)}.
-     * 
+     *
      * @param proportion Proportion of ties to be rewired.
-     * 
+     *
      * @result A rewired version of the network.
      */
     ///@{
@@ -13082,7 +13174,7 @@ public:
 
     /**
      * @brief Wrapper of `DataBase::write_data`
-     * 
+     *
      * @param fn_virus_info Filename. Information about the virus.
      * @param fn_virus_hist Filename. History of the virus.
      * @param fn_tool_info Filename. Information about the tool.
@@ -13106,11 +13198,11 @@ public:
 
     /**
      * @name Export the network data in edgelist form
-     * 
+     *
      * @param fn std::string. File name.
      * @param source Integer vector
      * @param target Integer vector
-     * 
+     *
      * @details When passing the source and target, the function will
      * write the edgelist on those.
      */
@@ -13129,30 +13221,30 @@ public:
 
     /**
      * @brief Reset the model
-     * 
+     *
      * @details Resetting the model will:
      * - clear the database
      * - restore the population (if `set_backup()` was called before)
      * - re-distribute tools
      * - re-distribute viruses
      * - set the date to 0
-     * 
+     *
      */
     virtual void reset();
     const Model<TSeq> & print(bool lite = false) const;
 
     /**
      * @name Manage state (states) in the model
-     * 
+     *
      * @details
-     * 
-     * The functions `get_state` return the current values for the 
+     *
+     * The functions `get_state` return the current values for the
      * states included in the model.
-     * 
+     *
      * @param lab `std::string` Name of the state.
-     * 
+     *
      * @return `add_state*` returns nothing.
-     * @return `get_state_*` returns a vector of pairs with the 
+     * @return `get_state_*` returns a vector of pairs with the
      * states and their labels.
      */
     ///@{
@@ -13165,9 +13257,9 @@ public:
 
     /**
      * @name Initial states
-     * 
+     *
      * @details These functions are called before the simulation starts.
-     * 
+     *
      * @param proportions_ Vector of proportions for each state.
      * @param queue_ Vector of queue for each state.
      */
@@ -13178,7 +13270,7 @@ public:
 
     /**
      * @name Setting and accessing parameters from the model
-     * 
+     *
      * @details Tools can incorporate parameters included in the model.
      * Internally, parameters in the tool are stored as pointers to
      * an std::map<> of parameters in the model. Using the `epiworld_fast_uint`
@@ -13186,29 +13278,29 @@ public:
      * added to the tool. Accessing parameters via the `std::string` method
      * involves searching the parameter directly in the std::map<> member
      * of the model (so it is not recommended.)
-     * 
+     *
      * The `par()` function members are aliases for `get_param()`.
-     * 
+     *
      * In the case of the function `read_params`, users can pass a file
      * listing parameters to be included in the model. Each line in the
      * file should have the following structure:
-     * 
+     *
      * ```
      * [name of parameter 1]: [value in double]
      * [name of parameter 2]: [value in double]
      * ...
      * ```
-     * 
+     *
      * The only condition for parameter names is that these do not include
      * a colon.
-     * 
-     * 
-     * @param initial_val 
+     *
+     *
+     * @param initial_val
      * @param pname Name of the parameter to add or to fetch
      * @param fn Path to the file containing parameters
      * @return The current value of the parameter
      * in the model.
-     * 
+     *
      */
     ///@{
     epiworld_double add_param(
@@ -13233,7 +13325,7 @@ public:
 
     /**
      * @name Set the user data object
-     * 
+     *
      * @param names string vector with the names of the variables.
      */
     ///[@
@@ -13245,11 +13337,11 @@ public:
 
     /**
      * @brief Set a global action
-     * 
+     *
      * @param fun A function to be called on the prescribed date
      * @param name Name of the action.
      * @param date Integer indicating when the function is called (see details)
-     * 
+     *
      * @details When date is less than zero, then the function is called
      * at the end of every day. Otherwise, the function will be called only
      * at the end of the indicated date.
@@ -13277,9 +13369,9 @@ public:
     /**
      * @name Queuing system
      * @details When queueing is on, the model will keep track of which agents
-     * are either in risk of exposure or exposed. This then is used at each 
+     * are either in risk of exposure or exposed. This then is used at each
      * step to act only on the aforementioned agents.
-     * 
+     *
      */
     ////@{
     void queuing_on(); ///< Activates the queuing system (default.)
@@ -13290,9 +13382,9 @@ public:
 
     /**
      * @name Get the susceptibility reduction object
-     * 
-     * @param v 
-     * @return epiworld_double 
+     *
+     * @param v
+     * @return epiworld_double
      */
     ///@{
     void set_susceptibility_reduction_mixer(MixerFun<TSeq> fun);
@@ -13308,14 +13400,14 @@ public:
 
     /**
      * @brief Set the agents data object
-     * 
+     *
      * @details The data should be an array with the data stored in a
      * column major order, i.e., by column.
-     * 
+     *
      * @param data_ Pointer to the first element of an array of size
      * `size() * ncols_`.
      * @param ncols_ Number of features included in the data.
-     * 
+     *
      */
     void set_agents_data(double * data_, size_t ncols_);
     double * get_agents_data();
@@ -13323,8 +13415,8 @@ public:
 
     /**
      * @brief Set the name object
-     * 
-     * @param name 
+     *
+     * @param name
      */
     void set_name(std::string name);
     std::string get_name() const;
@@ -13334,7 +13426,7 @@ public:
 
     /**
      * @brief Executes the stored action
-     * 
+     *
      * @param model_ Model over which it will be executed.
      */
     void events_run();
@@ -13347,6 +13439,7 @@ public:
      * @param self Whether to allow self-transitions.
      */
     void draw(
+        DiagramType diagram_type = DiagramType::Mermaid,
         const std::string & fn_output = "",
         bool self = false
     );
@@ -16319,6 +16412,7 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
 
 template<typename TSeq>
 inline void Model<TSeq>::draw(
+    DiagramType diagram_type,
     const std::string & fn_output,
     bool self
 ) {
@@ -16326,6 +16420,7 @@ inline void Model<TSeq>::draw(
     ModelDiagram diagram;
 
     diagram.draw_from_data(
+        diagram_type,
         this->get_states(),
         this->get_db().get_transition_probability(false),
         fn_output,
