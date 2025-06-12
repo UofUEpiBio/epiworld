@@ -452,6 +452,7 @@ public:
     size_t get_n_tools() const; ///< Number of tools in the model
     epiworld_fast_uint get_ndays() const;
     epiworld_fast_uint get_n_replicates() const;
+    size_t get_n_entities() const;
     void set_ndays(epiworld_fast_uint ndays);
     bool get_verbose() const;
     Model<TSeq> & verbose_off();
@@ -554,6 +555,7 @@ public:
     ///@{
     void add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
     const std::vector< std::string > & get_states() const;
+    size_t get_n_states() const;
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
     void print_state_codes() const;
     ///@}

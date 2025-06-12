@@ -73,6 +73,120 @@ inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
 
 }
 
+/**
+ * @brief Create a saver function for the model that saves transition probabilities
+ * and R0 values.
+ * @tparam ModelType The type of the model.
+ * @param transitions A vector of vectors to store transition probabilities.
+ * @param R0s A vector to store R0 values.
+ * @param n_seeds The number of initial cases.
+ * @return A function that takes an index and a model pointer, saving the
+ * transition probabilities and R0 values for that model instance.
+ */
+inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
+    std::vector<std::vector<epiworld_double>>& transitions,
+    std::vector<epiworld_double>& R0s,
+    int n_seeds
+) {
+    return [&transitions, &R0s, n_seeds](size_t n, epiworld::Model<>* m) -> void {
+        // Saving the transition probabilities
+        transitions[n] = m->get_db().get_transition_probability(false, false);
+
+        // Recording the R0 from the index case
+        auto rts = m->get_db().get_reproductive_number();      
+        for (int i = 0; i < n_seeds; ++i)
+            R0s[n_seeds * n + i] = static_cast<epiworld_double>(rts[{0, i, 0}]);
+    };
+};
+
+/**
+ * @brief Calculate the average transition probabilities from a vector of transitions.
+ * @param transitions A vector of vectors containing transition counts
+ * extracted from multiple simulations.
+ * @param model The model used to calculate the average transitions.
+ * @return A vector containing the average transition probabilities.
+ */
+template<typename ModelType>
+inline std::vector<epiworld_double> tests_calculate_avg_transitions(
+    const std::vector<std::vector<epiworld_double>>& transitions,
+    const ModelType & model)
+{
+    if (transitions.empty())
+        return {};
+        
+    // Creating an average across the transitions vectors
+    std::vector<epiworld_double> avg_transitions(transitions[0].size(), 0.0);
+    for (size_t i = 0; i < transitions.size(); ++i)
+    {
+        for (size_t j = 0; j < transitions[i].size(); ++j)
+        {
+            avg_transitions[j] += transitions[i][j];
+        }
+    }
+    
+    // Normalizing the average
+    auto n_states = model.get_n_states();
+    for (size_t i = 0; i < n_states; ++i)
+    {
+        double rowsums = 0.0;
+        for (size_t j = 0; j < n_states; ++j)
+        {
+            rowsums += avg_transitions[j * n_states + i];
+        }
+
+        // Normalizing the rows
+        // If the row is empty, we skip it
+        if (rowsums == 0.0)
+            continue;
+
+        for (size_t j = 0; j < n_states; ++j)
+        {
+            avg_transitions[j * n_states + i] /= rowsums;
+        }
+    }
+    
+    return avg_transitions;
+};
+
+template<typename ModelType>
+void inline tests_print_avg_transitions(
+    const std::vector<epiworld_double> & avg_transitions,
+    const ModelType & model
+) {
+    auto states = model.get_states();
+    size_t n_states = states.size();
+
+    // Printing the entry as a matrix
+    std::cout << "Average transitions: " << std::endl;
+    for (size_t i = 0; i < n_states; ++i)
+    {
+
+        // First prints the column numbers
+        if (i == 0u)
+        {
+            printf_epiworld("%32s", " ");
+            for (size_t j = 0; j < n_states; ++j)
+            {
+                printf_epiworld(" [,%2li]", j);
+            }
+            printf_epiworld("\n");
+        }
+
+        printf_epiworld(" %-25s[%-2li,] ", states[i].c_str(), i);
+        for (size_t j = 0; j < n_states; ++j)
+        {
+            if (avg_transitions[j*n_states + i] == 0.0)
+            {
+                printf_epiworld("  -   ");
+                continue;
+            }
+
+            printf_epiworld("%5.2f ", avg_transitions[j*n_states + i]);
+        }
+        printf_epiworld("\n");
+    }
+}
+
 #ifndef CATCH_CONFIG_MAIN
 
     
@@ -86,7 +200,5 @@ inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
         TEST_CASE(desc, tag) 
 
 #endif
-
-
 
 #endif

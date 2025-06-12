@@ -8,7 +8,10 @@ endif
 all: main.o
 
 main.o: main.cpp clean
-	g++ $(CXX_STD) -Wunused -Wall -Wextra -Wnull-dereference -fdelete-null-pointer-checks -O2 $(OPENMP) -g -pedantic main.cpp -o main.o
+	g++ $(CXX_STD) -Wunused -Wall -Wextra -Wnull-dereference \
+		-fdelete-null-pointer-checks -O2 $(OPENMP) -g -pedantic \
+		$(CXX_FLAGS) \
+		main.cpp -o main.o
 
 main.a: main.cpp clean
 	clang++ $(CXX_STD) -Wall -Wextra $(OPENMP) -Wpedantic -O2 main.cpp -o main.a

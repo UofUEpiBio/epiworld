@@ -10,7 +10,8 @@ RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
     fi \
     && rm -f /tmp/reinstall-cmake.sh
 
-RUN apt-get update && apt-get install heaptrack -y --no-install-recommends
+RUN apt-get update && apt-get install heaptrack \
+    r-base -y --no-install-recommends
 # [Optional] Uncomment this section to install additional vcpkg ports.
 # RUN su vscode -c "${VCPKG_ROOT}/vcpkg install <your-port-name-here>"
 

@@ -3,6 +3,7 @@
 #include "../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;
+#define EPI_DEBUG
 
 int main()
 {
@@ -11,15 +12,15 @@ int main()
     Model<> model;
 
     // Declaring the three statuses in the model
-    model.add_status("Susceptible", epiworld::default_update_susceptible<>);
-    model.add_status("Exposed", epiworld::default_update_exposed<>);
-    model.add_status("Recovered");
-    model.add_status("Removed");
+    model.add_state("Susceptible", epiworld::default_update_susceptible<>);
+    model.add_state("Exposed", epiworld::default_update_exposed<>);
+    model.add_state("Recovered");
+    model.add_state("Removed");
 
     // Adding the tool and virus
     Virus<> virus("covid 19", 50, false);
     virus.set_post_immunity(1.0);
-    virus.set_status(1,2,3);
+    virus.set_state(1,2,3);
     virus.set_prob_death(.01);
     model.add_virus(virus);
     
@@ -33,14 +34,14 @@ int main()
     model.run(100, 123);
     model.print();
 
-    (void) model.get_db().transition_probability();
+    (void) model.get_db().get_transition_probability();
 
     AgentsSample<> agents(model, .05 * 10000);
 
 
     printf_epiworld("Total sampled: %lu\n", agents.size());
     for (auto & a: agents)
-        a->print(true);
+        a->print();
 
 
   

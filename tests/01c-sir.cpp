@@ -1,5 +1,5 @@
 #ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
+#define EPI_DEBUG
 #endif
 
 #define EPI_DEBUG_NO_THREAD_ID
