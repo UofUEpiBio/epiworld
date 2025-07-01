@@ -235,6 +235,10 @@ inline void Agent<TSeq>::set_entity(
 )
 {
 
+    if (entity_id < 0)
+        throw std::range_error("The entity id must be a positive integer. " +
+            std::to_string(entity_id) + " is not a valid id.");
+
     if (model != nullptr)
     {
 
@@ -247,10 +251,19 @@ inline void Agent<TSeq>::set_entity(
          // entity
     {
 
+        #if __cplusplus >= 202302L
+        [[assume((model) != nullptr)]]
+        #else
+        assert((model) != nullptr);
+        #endif
+
         Event<TSeq> a(
-                this, nullptr, nullptr, &model->get_entity(entity_id), state_new, queue, default_set_entity<TSeq>,
-                -1, -1
-            );
+            this, nullptr, nullptr,
+            &model->get_entity(entity_id),
+            state_new, queue,
+            default_set_entity<TSeq>,
+            -1, -1
+        );
 
         default_set_entity(a, model); /* passing model makes nothing */
 

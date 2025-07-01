@@ -15,31 +15,21 @@ template <typename TSeq = EPI_DEFAULT_TSEQ>
  */
 inline EntityToAgentFun<TSeq> distribute_entity_randomly(
     epiworld_double prevalence,
-    bool as_proportion,
-    bool to_unassigned
+    bool as_proportion
 )
 {
 
-    return [prevalence, as_proportion, to_unassigned](
+    return [prevalence, as_proportion](
         Entity<TSeq> & e, Model<TSeq> * m
         ) -> void {
 
         
         // Preparing the sampling space
         std::vector< size_t > idx;
-        if (to_unassigned)
-        {
-            for (const auto & a: m->get_agents())
-                if (a.get_entity() == -1)
-                    idx.push_back(a.get_id());
-        } 
-        else
-        {
-
-            for (const auto & a: m->get_agents())
+        for (const auto & a: m->get_agents())
+            if (a.get_entity() == -1)
                 idx.push_back(a.get_id());
-
-        }
+        
         
         size_t n = idx.size();
 

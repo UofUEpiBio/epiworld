@@ -23,9 +23,9 @@ int main()
     );
 
     // Creating three groups
-    Entity<> e1("Entity 1", distribute_entity_randomly<>(n, false, true));
-    Entity<> e2("Entity 2", distribute_entity_randomly<>(n, false, true));
-    Entity<> e3("Entity 3", distribute_entity_randomly<>(n, false, true));
+    Entity<> e1("Entity 1", distribute_entity_randomly<>(n, false));
+    Entity<> e2("Entity 2", distribute_entity_randomly<>(n, false));
+    Entity<> e3("Entity 3", distribute_entity_randomly<>(n, false));
 
     model.add_entity(e1);
     model.add_entity(e2);
@@ -40,16 +40,6 @@ int main()
     auto agents2 = model.get_entity(1).get_agents();
     auto agents3 = model.get_entity(2).get_agents();
 
-    // How many agents have 0, 1, 2, or 3 entities?
-    std::vector< int > nentities(4, 0);
-    for (const auto & a: agents1)
-        nentities[model.get_agent(a).get_n_entities()]++;
-
-    for (const auto & a: agents2)
-        nentities[model.get_agent(a).get_n_entities()]++;
-    
-    for (const auto & a: agents3)
-        nentities[model.get_agent(a).get_n_entities()]++;
     
     return 0;
 

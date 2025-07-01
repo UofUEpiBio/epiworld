@@ -19,7 +19,7 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     );
 
     // Generating two entities, 100 distribution
-    auto dfun = epiworld::distribute_entity_randomly<>(5000, false, true);
+    auto dfun = epiworld::distribute_entity_randomly<>(5000, false);
     Entity<> e1("Entity 1", dfun);
     Entity<> e2("Entity 2", dfun);
     
@@ -65,7 +65,6 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     // The rest should have 0
     int N = 1e5;
     int n = 1e4;
-    double p = static_cast<double>(n) / static_cast<double>(N);
     epimodels::ModelSIRCONN<> model2(
         "Flu", // std::string vname,
         N, // epiworld_fast_uint n,
@@ -75,8 +74,8 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
         1.0/2.0// epiworld_double recovery_rate
     );
 
-    Entity<> e3("Entity 3", distribute_entity_randomly<>(n, false, false));
-    Entity<> e4("Entity 4", distribute_entity_randomly<>(n, false, false));
+    Entity<> e3("Entity 3", distribute_entity_randomly<>(n, false));
+    Entity<> e4("Entity 4", distribute_entity_randomly<>(n, false));
 
     model2.add_entity(e3);
     model2.add_entity(e4);
@@ -93,21 +92,18 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     for (const auto & a: agents4)
         counts[a]++;
     
-    double n0 = 0, n1 = 0, n2 = 0;
+    double n0 = 0, n1 = 0;
     for (const auto & c: counts)
     {
         if (c == 0)
             n0++;
         else if (c == 1)
             n1++;
-        else if (c == 2)
-            n2++;
     }
 
     #ifdef CATCH_CONFIG_MAIN
-    REQUIRE(std::fabs(n0 - std::pow(1.0-p, 2.0) * N) < 100);
-    REQUIRE(std::fabs(n1 - 2.0 * p * (1.0-p) * N) < 100);
-    REQUIRE(std::fabs(n2 - std::pow(p, 2.0) * N) < 100);
+    REQUIRE(std::fabs(n0 - (N - n * 2)) < 100);
+    REQUIRE(std::fabs(n1 - 2 * n) < 100);
     #endif
 
     // Checking distribution via sets

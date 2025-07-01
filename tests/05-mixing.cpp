@@ -131,9 +131,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     // If entities don't have a dist function, then it should be
     // OK
-    e1.set_distribution(distribute_entity_randomly<>(2000, false, true));
-    e2.set_distribution(distribute_entity_randomly<>(2000, false, true));
-    e3.set_distribution(distribute_entity_randomly<>(2000, false, true));
+    e1.set_distribution(distribute_entity_randomly<>(2000, false));
+    e2.set_distribution(distribute_entity_randomly<>(2000, false));
+    e3.set_distribution(distribute_entity_randomly<>(2000, false));
 
     model.rm_entity(0);
     model.rm_entity(1);
