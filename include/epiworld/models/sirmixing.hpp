@@ -170,7 +170,13 @@ inline size_t ModelSIRMixing<TSeq>::sample_agents(
     )
 {
 
-    size_t agent_group_id = agent->get_entity();
+    // Get the entity ID of the agent
+    int agent_entity_id = agent->get_entity();
+    if (agent_entity_id == -1)
+        return 0; // Agent has no entity
+    
+    // Entity ID coincides with entity index
+    size_t agent_group_id = static_cast<size_t>(agent_entity_id);
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;
@@ -364,7 +370,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         ) -> void
         {
 
-            if (p->get_n_entities() == 0)
+            if (p->get_entity() < 0)
                 return;
 
             // Downcasting to retrieve the sampler attached to the

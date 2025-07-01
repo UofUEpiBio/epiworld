@@ -151,16 +151,8 @@ inline void ModelSEIRMixing<TSeq>::update_infected_list()
             int entity_id = a.get_entity();
             if (entity_id != -1)
             {
-                // Find the entity index from the entity ID
-                size_t entity_idx = 0;
-                for (size_t i = 0; i < this->entities.size(); ++i)
-                {
-                    if (this->entities[i].get_id() == entity_id)
-                    {
-                        entity_idx = i;
-                        break;
-                    }
-                }
+                // Entity ID coincides with entity index
+                size_t entity_idx = static_cast<size_t>(entity_id);
                 
                 infected[
                     // Position of the group in the `infected` vector
@@ -190,17 +182,8 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
     if (agent_entity_id == -1)
         return 0; // Agent has no entity
     
-    // Find the entity index from the entity ID
-    size_t agent_group_id = 0;
-    for (size_t i = 0; i < this->entities.size(); ++i)
-    {
-        if (this->entities[i].get_id() == agent_entity_id)
-        {
-            agent_group_id = i;
-            break;
-        }
-    }
-    
+    // Entity ID coincides with entity index
+    size_t agent_group_id = static_cast<size_t>(agent_entity_id);
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;

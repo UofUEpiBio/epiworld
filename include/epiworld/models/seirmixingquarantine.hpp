@@ -239,14 +239,17 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected_list()
 
         if (a.get_state() == ModelSEIRMixingQuarantine<TSeq>::INFECTED)
         {
-            if (a.get_n_entities() > 0u)
+            int entity_id = a.get_entity();
+            if (entity_id != -1)
             {
-                const auto & entity = a.get_entity();
+                // Entity ID coincides with entity index
+                size_t entity_idx = static_cast<size_t>(entity_id);
+                
                 infected[
                     // Position of the group in the `infected` vector
-                    entity_indices[entity] +
+                    entity_indices[entity_idx] +
                     // Position of the agent in the group
-                    n_infected_per_group[entity]++
+                    n_infected_per_group[entity_idx]++
                 ] = a.get_id();
 
             }
@@ -265,7 +268,13 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::sample_agents(
     )
 {
 
-    size_t agent_group_id = agent->get_entity();
+    // Get the entity ID of the agent
+    int agent_entity_id = agent->get_entity();
+    if (agent_entity_id == -1)
+        return 0; // Agent has no entity
+    
+    // Entity ID coincides with entity index
+    size_t agent_group_id = static_cast<size_t>(agent_entity_id);
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;
@@ -494,7 +503,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    if (p->get_n_entities() == 0)
+    if (p->get_entity() == -1)
         return;
 
     // Downcasting to retrieve the sampler attached to the
@@ -590,7 +599,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     if (
         (m->par("Isolation period") >= 0) &&
         (m->runif() < 1.0/m->par("Days undetected")) &&
-        (p->get_n_entities() != 0u) &&
+        (p->get_entity() != -1) &&
         (model->entity_can_quarantine[p->get_entity()]) 
     )
     {

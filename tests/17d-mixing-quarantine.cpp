@@ -73,7 +73,7 @@ EPIWORLD_TEST_CASE(
             for (auto & a: m->get_agents())
             {
                 if (IN(a.get_state(), quarantined_states))
-                    quarantined_counts[a.get_entity(0).get_id()]++;
+                    quarantined_counts[a.get_entity()]++;
             }
 
         };
