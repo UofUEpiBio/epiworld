@@ -8,12 +8,11 @@
     \subitem {epiworld::AdjList}, \hyperpage{43}
     \subitem {read\_edgelist}, \hyperpage{42}
   \item {Agent$<$ TSeq $>$}, \hyperpage{44}
-    \subitem {default\_rm\_entity}, \hyperpage{48}
     \subitem {operator()}, \hyperpage{46}
-    \subitem {swap\_neighbors}, \hyperpage{48}
+    \subitem {swap\_neighbors}, \hyperpage{47}
   \item {AgentsSample}
     \subitem {AgentsSample$<$ TSeq $>$}, \hyperpage{53}
-    \subitem {epiworld::AgentsSample$<$ TSeq $>$}, \hyperpage{55}
+    \subitem {epiworld::AgentsSample$<$ TSeq $>$}, \hyperpage{54}
   \item {AgentsSample$<$ TSeq $>$}, \hyperpage{52}
     \subitem {AgentsSample}, \hyperpage{53}
 
@@ -53,16 +52,14 @@
   \indexspace
 
   \item {DataBase$<$ TSeq $>$}, \hyperpage{55}
-    \subitem {get\_generation\_time}, \hyperpage{58}
-    \subitem {get\_reproductive\_number}, \hyperpage{58}
+    \subitem {get\_generation\_time}, \hyperpage{57}
+    \subitem {get\_reproductive\_number}, \hyperpage{57}
     \subitem {get\_transition\_probability}, \hyperpage{58}
-    \subitem {get\_transmissions}, \hyperpage{59}
-    \subitem {operator==}, \hyperpage{59, 60}
-    \subitem {record\_virus}, \hyperpage{60}
+    \subitem {get\_transmissions}, \hyperpage{58}
+    \subitem {operator==}, \hyperpage{59}
+    \subitem {record\_virus}, \hyperpage{59}
   \item {default\_rm\_entity}
-    \subitem {Agent$<$ TSeq $>$}, \hyperpage{48}
-    \subitem {Entity$<$ TSeq $>$}, \hyperpage{70}
-    \subitem {epiworld::Agent$<$ TSeq $>$}, \hyperpage{52}
+    \subitem {epiworld::Agent$<$ TSeq $>$}, \hyperpage{51}
     \subitem {epiworld::Entity$<$ TSeq $>$}, \hyperpage{71}
   \item {draw}
     \subitem {epiworld::Model$<$ TSeq $>$}, \hyperpage{90}
@@ -70,32 +67,31 @@
 
   \indexspace
 
-  \item {Entities$<$ TSeq $>$}, \hyperpage{65}
-  \item {Entities\_const$<$ TSeq $>$}, \hyperpage{67}
+  \item {Entities$<$ TSeq $>$}, \hyperpage{64}
+  \item {Entities\_const$<$ TSeq $>$}, \hyperpage{66}
   \item {Entity}
-    \subitem {Entity$<$ TSeq $>$}, \hyperpage{69}
+    \subitem {Entity$<$ TSeq $>$}, \hyperpage{68}
     \subitem {epiworld::Entity$<$ TSeq $>$}, \hyperpage{71}
-  \item {Entity$<$ TSeq $>$}, \hyperpage{69}
-    \subitem {default\_rm\_entity}, \hyperpage{70}
-    \subitem {Entity}, \hyperpage{69}
+  \item {Entity$<$ TSeq $>$}, \hyperpage{68}
+    \subitem {Entity}, \hyperpage{68}
   \item {epiworld::AdjList}, \hyperpage{42}
     \subitem {AdjList}, \hyperpage{43}
     \subitem {read\_edgelist}, \hyperpage{43}
-  \item {epiworld::Agent$<$ TSeq $>$}, \hyperpage{49}
-    \subitem {default\_rm\_entity}, \hyperpage{52}
+  \item {epiworld::Agent$<$ TSeq $>$}, \hyperpage{47}
+    \subitem {default\_rm\_entity}, \hyperpage{51}
     \subitem {operator()}, \hyperpage{51}
     \subitem {swap\_neighbors}, \hyperpage{51}
-  \item {epiworld::AgentsSample$<$ TSeq $>$}, \hyperpage{54}
-    \subitem {AgentsSample}, \hyperpage{55}
-  \item {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{61}
-    \subitem {get\_generation\_time}, \hyperpage{63}
-    \subitem {get\_reproductive\_number}, \hyperpage{63}
-    \subitem {get\_transition\_probability}, \hyperpage{64}
-    \subitem {get\_transmissions}, \hyperpage{64}
-    \subitem {operator==}, \hyperpage{65}
-    \subitem {record\_virus}, \hyperpage{65}
-  \item {epiworld::Entities$<$ TSeq $>$}, \hyperpage{66}
-  \item {epiworld::Entities\_const$<$ TSeq $>$}, \hyperpage{68}
+  \item {epiworld::AgentsSample$<$ TSeq $>$}, \hyperpage{53}
+    \subitem {AgentsSample}, \hyperpage{54}
+  \item {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{60}
+    \subitem {get\_generation\_time}, \hyperpage{62}
+    \subitem {get\_reproductive\_number}, \hyperpage{62}
+    \subitem {get\_transition\_probability}, \hyperpage{63}
+    \subitem {get\_transmissions}, \hyperpage{63}
+    \subitem {operator==}, \hyperpage{64}
+    \subitem {record\_virus}, \hyperpage{64}
+  \item {epiworld::Entities$<$ TSeq $>$}, \hyperpage{65}
+  \item {epiworld::Entities\_const$<$ TSeq $>$}, \hyperpage{67}
   \item {epiworld::Entity$<$ TSeq $>$}, \hyperpage{70}
     \subitem {default\_rm\_entity}, \hyperpage{71}
     \subitem {Entity}, \hyperpage{71}
@@ -171,7 +167,7 @@
   \item {epiworld::epimodels::ModelSURV$<$ TSeq $>$}, \hyperpage{210}
     \subitem {reset}, \hyperpage{212}
   \item {epiworld::Event$<$ TSeq $>$}, \hyperpage{72}
-    \subitem {Event}, \hyperpage{73}
+    \subitem {Event}, \hyperpage{72}
   \item {epiworld::GlobalEvent$<$ TSeq $>$}, \hyperpage{75}
     \subitem {GlobalEvent}, \hyperpage{76}
   \item {epiworld::LFMCMC$<$ TData $>$}, \hyperpage{78}
@@ -219,7 +215,7 @@
   \item {epiworld::Viruses\_const$<$ TSeq $>$}, \hyperpage{237}
   \item {epiworld::VirusFunctions$<$ TSeq $>$}, \hyperpage{238}
   \item {Event}
-    \subitem {epiworld::Event$<$ TSeq $>$}, \hyperpage{73}
+    \subitem {epiworld::Event$<$ TSeq $>$}, \hyperpage{72}
     \subitem {Event$<$ TSeq $>$}, \hyperpage{75}
   \item {Event$<$ TSeq $>$}, \hyperpage{73}
     \subitem {Event}, \hyperpage{75}
@@ -233,21 +229,21 @@
   \indexspace
 
   \item {get\_generation\_time}
-    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{58}
-    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{63}
+    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{57}
+    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{62}
   \item {get\_n\_infected}
     \subitem {epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}, 
 		\hyperpage{174}
     \subitem {ModelSIRCONN$<$ TSeq $>$}, \hyperpage{178}
   \item {get\_reproductive\_number}
-    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{58}
-    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{63}
+    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{57}
+    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{62}
   \item {get\_transition\_probability}
     \subitem {DataBase$<$ TSeq $>$}, \hyperpage{58}
-    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{64}
+    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{63}
   \item {get\_transmissions}
-    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{59}
-    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{64}
+    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{58}
+    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{63}
   \item {GlobalEvent}
     \subitem {epiworld::GlobalEvent$<$ TSeq $>$}, \hyperpage{76}
     \subitem {GlobalEvent$<$ TSeq $>$}, \hyperpage{77}
@@ -445,8 +441,8 @@
     \subitem {Agent$<$ TSeq $>$}, \hyperpage{46}
     \subitem {epiworld::Agent$<$ TSeq $>$}, \hyperpage{51}
   \item {operator==}
-    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{59, 60}
-    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{65}
+    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{59}
+    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{64}
 
   \indexspace
 
@@ -471,8 +467,8 @@
     \subitem {AdjList}, \hyperpage{42}
     \subitem {epiworld::AdjList}, \hyperpage{43}
   \item {record\_virus}
-    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{60}
-    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{65}
+    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{59}
+    \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{64}
   \item {reset}
     \subitem {epiworld::epimodels::ModelMeaslesQuarantine$<$ TSeq $>$}, 
 		\hyperpage{121}
@@ -551,7 +547,7 @@
     \subitem {epiworld::Model$<$ TSeq $>$}, \hyperpage{94}
     \subitem {Model$<$ TSeq $>$}, \hyperpage{110}
   \item {swap\_neighbors}
-    \subitem {Agent$<$ TSeq $>$}, \hyperpage{48}
+    \subitem {Agent$<$ TSeq $>$}, \hyperpage{47}
     \subitem {epiworld::Agent$<$ TSeq $>$}, \hyperpage{51}
 
   \indexspace

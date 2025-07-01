@@ -92,20 +92,11 @@ bool {\bfseries has\+\_\+entity} (std\+::string name) const
 \mbox{\Hypertarget{class_agent_a2510243ae327dc9ca10fb3fd5a244ce3}\label{class_agent_a2510243ae327dc9ca10fb3fd5a244ce3}} 
 void {\bfseries print} (bool compressed=false) const
 \item 
-\mbox{\Hypertarget{class_agent_aa8f3cf3ff2cd28ab97b6489b2d5124a8}\label{class_agent_aa8f3cf3ff2cd28ab97b6489b2d5124a8}} 
-\mbox{\hyperlink{class_entities}{Entities}}$<$ TSeq $>$ {\bfseries get\+\_\+entities} ()
+\mbox{\Hypertarget{class_agent_a4f102b7b405f7b6d012782716a080c8a}\label{class_agent_a4f102b7b405f7b6d012782716a080c8a}} 
+int {\bfseries get\+\_\+entity} () const
 \item 
-\mbox{\Hypertarget{class_agent_a365a3cf04b993495a16ca2d7c9e4834b}\label{class_agent_a365a3cf04b993495a16ca2d7c9e4834b}} 
-const \mbox{\hyperlink{class_entities__const}{Entities\+\_\+const}}$<$ TSeq $>$ {\bfseries get\+\_\+entities} () const
-\item 
-\mbox{\Hypertarget{class_agent_abdd03e806601fd87dd837a9166efa915}\label{class_agent_abdd03e806601fd87dd837a9166efa915}} 
-const \mbox{\hyperlink{class_entity}{Entity}}$<$ TSeq $>$ \& {\bfseries get\+\_\+entity} (size\+\_\+t i) const
-\item 
-\mbox{\Hypertarget{class_agent_a228668db7884fae8e507ed8fec548c73}\label{class_agent_a228668db7884fae8e507ed8fec548c73}} 
-\mbox{\hyperlink{class_entity}{Entity}}$<$ TSeq $>$ \& {\bfseries get\+\_\+entity} (size\+\_\+t i)
-\item 
-\mbox{\Hypertarget{class_agent_a5247fae534e29a36f747654ad443fa93}\label{class_agent_a5247fae534e29a36f747654ad443fa93}} 
-size\+\_\+t {\bfseries get\+\_\+n\+\_\+entities} () const
+\mbox{\Hypertarget{class_agent_ad2a9fb49a88bc3803582702a1f2d15c3}\label{class_agent_ad2a9fb49a88bc3803582702a1f2d15c3}} 
+\mbox{\hyperlink{class_entity}{Entity}}$<$ TSeq $>$ $\ast$ {\bfseries get\+\_\+entity\+\_\+object} () const
 \item 
 \mbox{\Hypertarget{class_agent_a31b86ef3d48809ddbabae4e6c40dffee}\label{class_agent_a31b86ef3d48809ddbabae4e6c40dffee}} 
 bool {\bfseries operator==} (const \mbox{\hyperlink{class_agent}{Agent}}$<$ TSeq $>$ \&other) const
@@ -141,8 +132,8 @@ void {\bfseries set\+\_\+virus} (Virus\+Ptr$<$ TSeq $>$ virus, \mbox{\hyperlink{
 \mbox{\Hypertarget{class_agent_aee46f1dc6b850d5244e05ef7dde7f4ba}\label{class_agent_aee46f1dc6b850d5244e05ef7dde7f4ba}} 
 void {\bfseries set\+\_\+virus} (\mbox{\hyperlink{class_virus}{Virus}}$<$ TSeq $>$ virus, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
 \item 
-\mbox{\Hypertarget{class_agent_acffc29fea0f297cb222506127a9fbd57}\label{class_agent_acffc29fea0f297cb222506127a9fbd57}} 
-void {\bfseries add\+\_\+entity} (\mbox{\hyperlink{class_entity}{Entity}}$<$ TSeq $>$ \&entity, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
+\mbox{\Hypertarget{class_agent_ab8125e5c3501f4a28ac6f404e1063e39}\label{class_agent_ab8125e5c3501f4a28ac6f404e1063e39}} 
+void {\bfseries set\+\_\+entity} (int entity\+\_\+id, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
 \item 
 \mbox{\Hypertarget{class_agent_a76d4593e1b6026ee6ba02b31a95576f5}\label{class_agent_a76d4593e1b6026ee6ba02b31a95576f5}} 
 void {\bfseries rm\+\_\+tool} (epiworld\+\_\+fast\+\_\+uint tool\+\_\+idx, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
@@ -153,11 +144,8 @@ void {\bfseries rm\+\_\+tool} (Tool\+Ptr$<$ TSeq $>$ \&tool, \mbox{\hyperlink{cl
 \mbox{\Hypertarget{class_agent_ad75dabf9691ca668ca9aeb3e68944c78}\label{class_agent_ad75dabf9691ca668ca9aeb3e68944c78}} 
 void {\bfseries rm\+\_\+virus} (\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
 \item 
-\mbox{\Hypertarget{class_agent_a9850f643f8db451eb5bb56ecb43f0348}\label{class_agent_a9850f643f8db451eb5bb56ecb43f0348}} 
-void {\bfseries rm\+\_\+entity} (epiworld\+\_\+fast\+\_\+uint entity\+\_\+idx, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
-\item 
-\mbox{\Hypertarget{class_agent_a4f4b256dcc62a7a3717f18114b33df43}\label{class_agent_a4f4b256dcc62a7a3717f18114b33df43}} 
-void {\bfseries rm\+\_\+entity} (\mbox{\hyperlink{class_entity}{Entity}}$<$ TSeq $>$ \&entity, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
+\mbox{\Hypertarget{class_agent_a726074023304f79e810ae49a9e6be7de}\label{class_agent_a726074023304f79e810ae49a9e6be7de}} 
+void {\bfseries rm\+\_\+entity} (\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model, epiworld\+\_\+fast\+\_\+int state\+\_\+new=-\/99, epiworld\+\_\+fast\+\_\+int queue=-\/99)
 \item 
 \mbox{\Hypertarget{class_agent_a8898842fd7ca0d357a18027495ba58d8}\label{class_agent_a8898842fd7ca0d357a18027495ba58d8}} 
 void \mbox{\hyperlink{class_agent_a8898842fd7ca0d357a18027495ba58d8}{rm\+\_\+agent\+\_\+by\+\_\+virus}} (\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$model)
@@ -235,8 +223,8 @@ void {\bfseries default\+\_\+add\+\_\+virus} (\mbox{\hyperlink{struct_event}{Eve
 \mbox{\Hypertarget{class_agent_a4dcb2ffcfccdbdd8e9878a2fea3334ba}\label{class_agent_a4dcb2ffcfccdbdd8e9878a2fea3334ba}} 
 void {\bfseries default\+\_\+add\+\_\+tool} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
 \item 
-\mbox{\Hypertarget{class_agent_a384e62da66cf6cba31ab495f6bcdf7f4}\label{class_agent_a384e62da66cf6cba31ab495f6bcdf7f4}} 
-void {\bfseries default\+\_\+add\+\_\+entity} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
+\mbox{\Hypertarget{class_agent_ae328cfe3d11e77408a9b630199c6bdba}\label{class_agent_ae328cfe3d11e77408a9b630199c6bdba}} 
+void {\bfseries default\+\_\+set\+\_\+entity} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
 \item 
 \mbox{\Hypertarget{class_agent_a9310ac4067690f7debee532b4440f6b2}\label{class_agent_a9310ac4067690f7debee532b4440f6b2}} 
 void {\bfseries default\+\_\+rm\+\_\+virus} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
@@ -244,7 +232,8 @@ void {\bfseries default\+\_\+rm\+\_\+virus} (\mbox{\hyperlink{struct_event}{Even
 \mbox{\Hypertarget{class_agent_ac94ff8addd602f970c8a6f5150b8ab29}\label{class_agent_ac94ff8addd602f970c8a6f5150b8ab29}} 
 void {\bfseries default\+\_\+rm\+\_\+tool} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
 \item 
-void \mbox{\hyperlink{class_agent_a2f8e631876a6426672ef736655789cca}{default\+\_\+rm\+\_\+entity}} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
+\mbox{\Hypertarget{class_agent_a2f8e631876a6426672ef736655789cca}\label{class_agent_a2f8e631876a6426672ef736655789cca}} 
+void {\bfseries default\+\_\+rm\+\_\+entity} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
 \item 
 \mbox{\Hypertarget{class_agent_ab8c9d3a9231f2b64da69e3e20ef1a506}\label{class_agent_ab8c9d3a9231f2b64da69e3e20ef1a506}} 
 void {\bfseries default\+\_\+change\+\_\+state} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
@@ -309,18 +298,6 @@ Swaps neighbors between the current agent and agent {\ttfamily other}
 \hline
 \end{DoxyParams}
 
-
-\doxysubsection{Friends And Related Function Documentation}
-\mbox{\Hypertarget{class_agent_a2f8e631876a6426672ef736655789cca}\label{class_agent_a2f8e631876a6426672ef736655789cca}} 
-\index{Agent$<$ TSeq $>$@{Agent$<$ TSeq $>$}!default\_rm\_entity@{default\_rm\_entity}}
-\index{default\_rm\_entity@{default\_rm\_entity}!Agent$<$ TSeq $>$@{Agent$<$ TSeq $>$}}
-\doxysubsubsection{\texorpdfstring{default\_rm\_entity}{default\_rm\_entity}}
-{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-void default\+\_\+rm\+\_\+entity (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&}]{a,  }\item[{\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [friend]}}
-
-$<$ Last entity of the agent
-
-$<$ Last agent of the entity
 
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
 \item 
