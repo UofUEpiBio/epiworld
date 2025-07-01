@@ -147,14 +147,26 @@ inline void ModelSEIRMixing<TSeq>::update_infected_list()
 
         if (a.get_state() == ModelSEIRMixing<TSeq>::INFECTED)
         {
-            if (a.get_n_entities() > 0u)
+            // Check if agent has an entity (not -1)
+            int entity_id = a.get_entity();
+            if (entity_id != -1)
             {
-                const auto & entity = a.get_entity(0u);
+                // Find the entity index from the entity ID
+                size_t entity_idx = 0;
+                for (size_t i = 0; i < this->entities.size(); ++i)
+                {
+                    if (this->entities[i].get_id() == entity_id)
+                    {
+                        entity_idx = i;
+                        break;
+                    }
+                }
+                
                 infected[
                     // Position of the group in the `infected` vector
-                    entity_indices[entity.get_id()] +
+                    entity_indices[entity_idx] +
                     // Position of the agent in the group
-                    n_infected_per_group[entity.get_id()]++
+                    n_infected_per_group[entity_idx]++
                 ] = a.get_id();
 
             }
@@ -173,7 +185,22 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
     )
 {
 
-    size_t agent_group_id = agent->get_entity(0u).get_id();
+    // Get the entity ID of the agent
+    int agent_entity_id = agent->get_entity();
+    if (agent_entity_id == -1)
+        return 0; // Agent has no entity
+    
+    // Find the entity index from the entity ID
+    size_t agent_group_id = 0;
+    for (size_t i = 0; i < this->entities.size(); ++i)
+    {
+        if (this->entities[i].get_id() == agent_entity_id)
+        {
+            agent_group_id = i;
+            break;
+        }
+    }
+    
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;
@@ -383,7 +410,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
         ) -> void
         {
 
-            if (p->get_n_entities() == 0)
+            if (p->get_entity() == -1)
                 return;
 
             // Downcasting to retrieve the sampler attached to the

@@ -241,12 +241,12 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected_list()
         {
             if (a.get_n_entities() > 0u)
             {
-                const auto & entity = a.get_entity(0u);
+                const auto & entity = a.get_entity();
                 infected[
                     // Position of the group in the `infected` vector
-                    entity_indices[entity.get_id()] +
+                    entity_indices[entity] +
                     // Position of the agent in the group
-                    n_infected_per_group[entity.get_id()]++
+                    n_infected_per_group[entity]++
                 ] = a.get_id();
 
             }
@@ -265,7 +265,7 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::sample_agents(
     )
 {
 
-    size_t agent_group_id = agent->get_entity(0u).get_id();
+    size_t agent_group_id = agent->get_entity();
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;
@@ -591,11 +591,11 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
         (m->par("Isolation period") >= 0) &&
         (m->runif() < 1.0/m->par("Days undetected")) &&
         (p->get_n_entities() != 0u) &&
-        (model->entity_can_quarantine[p->get_entity(0u).get_id()]) 
+        (model->entity_can_quarantine[p->get_entity()]) 
     )
     {
         
-        model->entity_quarantine_triggered[p->get_entity(0u).get_id()] = true;
+        model->entity_quarantine_triggered[p->get_entity()] = true;
         detected = true;
 
     }

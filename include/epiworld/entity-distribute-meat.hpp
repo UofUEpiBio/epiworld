@@ -30,7 +30,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
         if (to_unassigned)
         {
             for (const auto & a: m->get_agents())
-                if (a.get_n_entities() == 0)
+                if (a.get_entity() == -1)
                     idx.push_back(a.get_id());
         } 
         else
@@ -73,7 +73,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
             if ((loc > 0) && (loc >= n_left))
                 loc = n_left - 1;
 
-            m->get_agent(idx[loc]).add_entity(e, m);
+            m->get_agent(idx[loc]).set_entity(e.get_id(), m);
 
             std::swap(idx[loc], idx[n_left]);
 

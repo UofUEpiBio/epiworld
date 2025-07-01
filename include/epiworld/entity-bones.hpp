@@ -22,12 +22,12 @@ class Entity {
     friend class AgentsSample<TSeq>;
     friend class Model<TSeq>;
     friend void default_add_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_set_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
     
     int id = -1;
     std::vector< size_t > agents;   ///< Vector of agents
-    std::vector< size_t > agents_location; ///< Location where the entity is stored in the agent
     size_t n_agents = 0u;
 
     int max_capacity = -1;

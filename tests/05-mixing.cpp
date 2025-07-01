@@ -53,7 +53,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     {
         if (a.get_state() != epimodels::ModelSEIRMixing<>::SUSCEPTIBLE)
         {
-            if (a.get_entity(0).get_id() == 0)
+            if (a.get_entity() == 0)
             {
                 n_right++;
                 continue;
@@ -93,7 +93,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         } 
         else if (a.get_state() != epimodels::ModelSEIRMixing<>::SUSCEPTIBLE)
         {
-            if (a.get_entity(0).get_id() == 1)
+            if (a.get_entity() == 1)
             {
                 n_right++;
                 continue;

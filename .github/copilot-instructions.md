@@ -1,0 +1,4 @@
+- This is a C++ library for agent-based modeling.
+- The top level file `./epiworld.hpp` should not be modified, as it is generated automatically by another script.
+- In general, I use CamelCase for class names and snake_case for function names.
+- Only the code base in `src/epiworld`, `examples/` and `tests/` should be modified.

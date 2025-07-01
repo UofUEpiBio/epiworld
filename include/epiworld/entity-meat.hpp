@@ -19,7 +19,7 @@ inline void Entity<TSeq>::add_agent(
     Model<TSeq> * model
     )
 {
-    p->add_entity(*this, model);
+    p->set_entity(this->get_id(), model);
 }
 
 template<typename TSeq>
@@ -166,7 +166,6 @@ inline void Entity<TSeq>::reset()
 
     this->agents.clear();
     this->n_agents = 0u;
-    this->agents_location.clear();
 
     return;
 

@@ -144,14 +144,14 @@ inline void ModelSIRMixing<TSeq>::update_infected_list()
     {
         if (a.get_state() == ModelSIRMixing<TSeq>::INFECTED)
         {
-            if (a.get_n_entities() > 0u)
+            if (a.get_entity() != -1)
             {
-                const auto & entity = a.get_entity(0u);
+                int entity_id = a.get_entity();
                 infected[
                     // Position of the group in the `infected` vector
-                    entity_indices[entity.get_id()] +
+                    entity_indices[entity_id] +
                     // Position of the agent in the group
-                    n_infected_per_group[entity.get_id()]++
+                    n_infected_per_group[entity_id]++
                 ] = a.get_id();
 
                 // Incrementing the overall counter
@@ -170,7 +170,7 @@ inline size_t ModelSIRMixing<TSeq>::sample_agents(
     )
 {
 
-    size_t agent_group_id = agent->get_entity(0u).get_id();
+    size_t agent_group_id = agent->get_entity();
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;

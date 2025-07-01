@@ -41,7 +41,7 @@ template<typename TSeq>
 inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
-inline void default_add_entity(Event<TSeq> & a, Model<TSeq> * m);
+inline void default_set_entity(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
 inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * m);
@@ -74,7 +74,7 @@ class Agent {
     friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_add_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
+    friend void default_set_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
@@ -87,9 +87,7 @@ private:
     std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
-    std::vector< size_t > entities;
-    std::vector< size_t > entities_locations;
-    size_t n_entities = 0u;
+    int entity = -1; ///< Entity id, if any. -1 means no entity.
 
     unsigned int state = 0u;
     unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
@@ -149,8 +147,8 @@ public:
         epiworld_fast_int queue = -99
         );
 
-    void add_entity(
-        Entity<TSeq> & entity,
+    void set_entity(
+        int entity_id,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -177,14 +175,6 @@ public:
     );
 
     void rm_entity(
-        epiworld_fast_uint entity_idx,
-        Model<TSeq> * model,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-    );
-
-    void rm_entity(
-        Entity<TSeq> & entity,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -282,11 +272,8 @@ public:
     double operator[](size_t j) const;
     ///@}
 
-    Entities<TSeq> get_entities();
-    const Entities_const<TSeq> get_entities() const;
-    const Entity<TSeq> & get_entity(size_t i) const;
-    Entity<TSeq> & get_entity(size_t i);
-    size_t get_n_entities() const;
+    int get_entity() const;
+    Entity<TSeq> * get_entity_object() const;
 
     bool operator==(const Agent<TSeq> & other) const;
     bool operator!=(const Agent<TSeq> & other) const {return !operator==(other);};
