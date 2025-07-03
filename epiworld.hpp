@@ -24,7 +24,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 8
-#define EPIWORLD_VERSION_PATCH 3
+#define EPIWORLD_VERSION_PATCH 4
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -30000,7 +30000,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         // Checking if the quarantine in the entity was triggered
         // or not
         if (!entity_quarantine_triggered[++entity_num])
-            return;
+            continue;
 
         if (
             (this->par("Quarantine period") < 0) &&
