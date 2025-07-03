@@ -32,6 +32,7 @@ EPIWORLD_TEST_CASE(
         1.5, // Days undetected (negative means no quarantine)
         15, // Quarantine period
         .9, // Quarantine willingness
+        1.0, // Isolation willingness
         4 // Isolation period
     );
 
@@ -67,10 +68,6 @@ EPIWORLD_TEST_CASE(
         &quarantined_counts,
         quarantined_states
         ](epiworld::Model<>* m) -> void {
-
-            auto model = dynamic_cast<
-                epimodels::ModelSEIRMixingQuarantine<>*
-                >(m);
 
             for (auto & a: m->get_agents())
             {
@@ -137,13 +134,47 @@ EPIWORLD_TEST_CASE(
     auto prob_seed_expected = std::vector< double >(3, 1.0/3.0);
     REQUIRE_THAT(
         quarantined_counts,
-        Catch::Approx(quarantined_counts_expected, 0.05)
+        Catch::Approx(quarantined_counts_expected).margin(0.05)
     );
     REQUIRE_THAT(
         prob_seed,
-        Catch::Approx(prob_seed_expected, 0.05)
+        Catch::Approx(prob_seed_expected).margin(0.05)
     );
     // Checking the results
+    #endif
+
+    // Changing whether the entity 0 can be quarantined
+    model.set_entity_can_quarantine(
+        {false, true, true}
+    );
+
+    // Restarting the quarantine counts
+    std::fill(quarantined_counts.begin(), quarantined_counts.end(), 0.0);
+
+    // Running the model again
+    model.run_multiple(100, nsims, 123, saver, true, true, 1);
+
+    model.print();
+
+    // Normalizing the vector of `quarantined_counts`
+    total_quarantined = std::accumulate(
+        quarantined_counts.begin(),
+        quarantined_counts.end(),
+        0.0
+    );
+
+    for (size_t i = 0; i < quarantined_counts.size(); i++)
+    {
+        quarantined_counts[i] /= total_quarantined;
+    }
+
+    // Checking the results
+    #ifdef CATCH_CONFIG_MAIN
+    quarantined_counts_expected = {0.0, 0.5, 0.5};
+    REQUIRE_THAT(
+        quarantined_counts,
+        Catch::Approx(quarantined_counts_expected).margin(0.05)
+    );
     #endif
 
     

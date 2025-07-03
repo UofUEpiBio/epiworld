@@ -32,6 +32,7 @@ EPIWORLD_TEST_CASE(
         -1, // Days undetected (negative means no quarantine)
         4, // Quarantine period
         .9, // Quarantine willingness
+        1.0, // Isolation willingness
         10 // Isolation period
     );
 
