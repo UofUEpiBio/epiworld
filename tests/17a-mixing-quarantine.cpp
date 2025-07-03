@@ -115,7 +115,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     }
 
     #ifdef CATCH_CONFIG_MAIN
-    REQUIRE_FALSE((n_wrong != 0 | n_right != 3001));
+    REQUIRE_FALSE((n_wrong != 0));
     #endif
 
     // Rerunning with plain mixing

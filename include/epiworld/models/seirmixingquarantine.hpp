@@ -835,7 +835,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         // Checking if the quarantine in the entity was triggered
         // or not
         if (!entity_quarantine_triggered[++entity_num])
-            return;
+            continue;
 
         if (
             (this->par("Quarantine period") < 0) &&
