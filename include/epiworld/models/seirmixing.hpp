@@ -151,14 +151,11 @@ inline void ModelSEIRMixing<TSeq>::update_infected_list()
             int entity_id = a.get_entity();
             if (entity_id != -1)
             {
-                // Entity ID coincides with entity index
-                size_t entity_idx = static_cast<size_t>(entity_id);
-                
                 infected[
                     // Position of the group in the `infected` vector
-                    entity_indices[entity_idx] +
+                    entity_indices[entity_id] +
                     // Position of the agent in the group
-                    n_infected_per_group[entity_idx]++
+                    n_infected_per_group[entity_id]++
                 ] = a.get_id();
 
             }
@@ -177,13 +174,11 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
     )
 {
 
-    // Get the entity ID of the agent
+    // Get the entity ID of the agent and use it directly
     int agent_entity_id = agent->get_entity();
     if (agent_entity_id == -1)
         return 0; // Agent has no entity
     
-    // Entity ID coincides with entity index
-    size_t agent_group_id = static_cast<size_t>(agent_entity_id);
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;
@@ -196,7 +191,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         int nsamples = epiworld::Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
-                MM(agent_group_id, g, ngroups)
+                MM(agent_entity_id, g, ngroups)
             ]
         );
 
