@@ -16,7 +16,7 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
         v->get_date() 
     );
     
-    p->virus = std::move(v); // std::make_shared< Virus<TSeq> >(*v);
+    p->virus = std::move(v);
     p->virus->set_date(m->today());
     p->virus->set_agent(p);
 
