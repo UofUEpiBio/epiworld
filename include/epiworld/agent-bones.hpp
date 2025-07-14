@@ -122,7 +122,7 @@ public:
      */
     ///@{
     void add_tool(
-        ToolPtr<TSeq> tool,
+        ToolPtr<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99

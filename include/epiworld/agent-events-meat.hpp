@@ -53,16 +53,16 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p = a.agent;
-    ToolPtr<TSeq> t = a.tool;
+    ToolPtr<TSeq> & t = a.tool;
     
     // Update tool accounting
     p->n_tools++;
     size_t n_tools = p->n_tools;
 
     if (n_tools <= p->tools.size())
-        p->tools[n_tools - 1] = std::make_shared< Tool<TSeq> >(*t);
+        p->tools[n_tools - 1] = std::move(t);
     else
-        p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
+        p->tools.emplace_back(std::move(t));
 
     n_tools--;
 
@@ -84,7 +84,7 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
             );
     }
 
-    m->get_db().today_tool[t->get_id()][
+    m->get_db().today_tool[p->tools.back()->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
 

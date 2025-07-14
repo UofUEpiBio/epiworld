@@ -163,7 +163,7 @@ inline Agent<TSeq>::~Agent()
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
-    ToolPtr<TSeq> tool,
+    ToolPtr<TSeq> & tool,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue

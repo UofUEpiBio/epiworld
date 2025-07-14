@@ -17,6 +17,9 @@
 #include <set>
 #include <type_traits>
 #include <cassert>
+#ifdef EPI_DEBUG_VIRUS
+#include <atomic>
+#endif
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -196,12 +199,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -3722,8 +3725,8 @@ public:
      * corresponding date
      */
     ///@{
-    int get_today_total(std::string what) const;
-    int get_today_total(epiworld_fast_uint what) const;
+    int get_today_total(const std::string & what) const;
+    int get_today_total(const epiworld_fast_uint & what) const;
     void get_today_total(
         std::vector< std::string > * state = nullptr,
         std::vector< int > * counts = nullptr
@@ -4082,12 +4085,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -4898,8 +4901,8 @@ public:
      * corresponding date
      */
     ///@{
-    int get_today_total(std::string what) const;
-    int get_today_total(epiworld_fast_uint what) const;
+    int get_today_total(const std::string & what) const;
+    int get_today_total(const epiworld_fast_uint & what) const;
     void get_today_total(
         std::vector< std::string > * state = nullptr,
         std::vector< int > * counts = nullptr
@@ -5121,10 +5124,12 @@ inline void DataBase<TSeq>::reset()
     hist_tool_counts.clear();    
 
     today_virus.resize(get_n_viruses());
-    std::fill(today_virus.begin(), today_virus.begin(), std::vector<int>(model->nstates, 0));
+    for (auto& virus_states : today_virus)
+        virus_states.assign(model->nstates, 0);
 
     today_tool.resize(get_n_tools());
-    std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(model->nstates, 0));
+    for (auto& tool_states : today_tool)
+        tool_states.assign(model->nstates, 0);
 
     hist_total_date.clear();
     hist_total_state.clear();
@@ -5301,7 +5306,7 @@ inline void DataBase<TSeq>::record()
             hist_total_counts.push_back(today_total[s]);
         }
 
-        for (auto cell : transition_matrix)
+        for (const auto& cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
 
         // Now the diagonal must reflect the state
@@ -5693,7 +5698,7 @@ inline void DataBase<TSeq>::record_transition(
 
 template<typename TSeq>
 inline int DataBase<TSeq>::get_today_total(
-    std::string what
+    const std::string & what
 ) const
 {
 
@@ -5779,8 +5784,7 @@ inline void DataBase<TSeq>::get_hist_virus(
 ) const {
 
     date = hist_virus_date;
-    std::vector< std::string > labels;
-    labels = model->states_labels;
+    const auto& labels = model->states_labels;
     
     id = hist_virus_id;
     state.resize(hist_virus_state.size(), "");
@@ -5803,8 +5807,7 @@ inline void DataBase<TSeq>::get_hist_tool(
 ) const {
 
     date = hist_tool_date;
-    std::vector< std::string > labels;
-    labels = model->states_labels;
+    const auto& labels = model->states_labels;
     
     id = hist_tool_id;
     state.resize(hist_tool_state.size(), "");
@@ -6364,7 +6367,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::get_transition_probability
     bool normalize
 ) const {
 
-    auto states_labels = model->get_states();
+    const auto& states_labels = model->get_states();
     size_t n_state = states_labels.size();
     size_t n_days   = model->get_ndays();
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
@@ -9166,12 +9169,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -10599,16 +10602,36 @@ private:
         
 public:
 
+    #ifdef EPI_DEBUG_VIRUS
+    static std::atomic<int> counter_construct;          // Default and parameterized constructors
+    static std::atomic<int> counter_copy_construct;     // Copy constructor
+    static std::atomic<int> counter_move_construct;     // Move constructor
+    static std::atomic<int> counter_copy_assign;        // Copy assignment
+    static std::atomic<int> counter_move_assign;        // Move assignment
+    static std::atomic<int> counter_destruct;           // Destructor
+    #endif
+
     Virus();
 
     Virus(std::string name = "unknown virus");
-
+    
     Virus(
         std::string name,
         epiworld_double prevalence,
         bool as_proportion
-        );
+    );
+    
+    #ifdef EPI_DEBUG_VIRUS
+    
+    // Copy and move operations for debugging
+    Virus(const Virus<TSeq>& other);                    // Copy constructor
+    Virus(Virus<TSeq>&& other) noexcept;                // Move constructor
+    Virus<TSeq>& operator=(const Virus<TSeq>& other);   // Copy assignment
+    Virus<TSeq>& operator=(Virus<TSeq>&& other) noexcept; // Move assignment
 
+    ~Virus();
+    #endif
+    
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
@@ -10860,28 +10883,28 @@ public:
      */
     ///@{
     void add_tool(
-        ToolPtr<TSeq> tool,
+        ToolPtr<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
-        Tool<TSeq> tool,
+        const Tool<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        VirusPtr<TSeq> virus,
+        VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        Virus<TSeq> virus,
+        const Virus<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -11227,15 +11250,15 @@ inline void Model<TSeq>::events_add(
 
         Event<TSeq> & A = events.at(nactions - 1u);
 
-        A.agent      = agent_;
-        A.virus      = virus_;
-        A.tool       = tool_;
-        A.entity     = entity_;
-        A.new_state  = new_state_;
-        A.queue      = queue_;
-        A.call       = call_;
-        A.idx_agent  = idx_agent_;
-        A.idx_object = idx_object_;
+        A.agent      = std::move(agent_);
+        A.virus      = std::move(virus_);
+        A.tool       = std::move(tool_);
+        A.entity     = std::move(entity_);
+        A.new_state  = std::move(new_state_);
+        A.queue      = std::move(queue_);
+        A.call       = std::move(call_);
+        A.idx_agent  = std::move(idx_agent_);
+        A.idx_object = std::move(idx_object_);
 
     }
 
@@ -11891,11 +11914,12 @@ inline epiworld_double Model<TSeq>::rgamma() {
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
-    auto old_param = rgammad.param();
-    rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = rgammad(*engine);
-    rgammad.param(old_param);
-    return ans;
+
+    return rgammad(
+        *engine,
+        std::gamma_distribution<>::param_type(alpha, beta)
+    );
+    
 }
 
 template<typename TSeq>
@@ -11905,11 +11929,12 @@ inline epiworld_double Model<TSeq>::rexp() {
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
-    auto old_param = rexpd.param();
-    rexpd.param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = rexpd(*engine);
-    rexpd.param(old_param);
-    return ans;
+
+    return rexpd(
+        *engine,
+        std::exponential_distribution<>::param_type(lambda)
+    );
+
 }
 
 template<typename TSeq>
@@ -11919,11 +11944,11 @@ inline epiworld_double Model<TSeq>::rlognormal() {
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
-    auto old_param = rlognormald.param();
-    rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = rlognormald(*engine);
-    rlognormald.param(old_param);
-    return ans;
+    
+    return rlognormald(
+        *engine,
+        std::lognormal_distribution<>::param_type(mean, shape)
+    );
 }
 
 template<typename TSeq>
@@ -11933,11 +11958,15 @@ inline int Model<TSeq>::rbinom() {
 
 template<typename TSeq>
 inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
-    auto old_param = rbinomd.param();
-    rbinomd.param(std::binomial_distribution<>::param_type(n, p));
-    epiworld_double ans = rbinomd(*engine);
-    rbinomd.param(old_param);
-    return ans;
+
+    if (n == 0 || p == 0.0)
+        return 0;
+
+    return rbinomd(
+        *engine,
+        std::binomial_distribution<>::param_type(n, p)
+    );
+
 }
 
 template<typename TSeq>
@@ -11947,11 +11976,11 @@ inline int Model<TSeq>::rnbinom() {
 
 template<typename TSeq>
 inline int Model<TSeq>::rnbinom(int n, epiworld_double p) {
-    auto old_param = rnbinomd.param();
-    rnbinomd.param(std::negative_binomial_distribution<>::param_type(n, p));
-    int ans = rnbinomd(*engine);
-    rnbinomd.param(old_param);
-    return ans;
+
+    return rnbinomd(
+        *engine,
+        std::negative_binomial_distribution<>::param_type(n, p)
+    );
 }
 
 template<typename TSeq>
@@ -11961,11 +11990,12 @@ inline int Model<TSeq>::rgeom() {
 
 template<typename TSeq>
 inline int Model<TSeq>::rgeom(epiworld_double p) {
-    auto old_param = rgeomd.param();
-    rgeomd.param(std::geometric_distribution<>::param_type(p));
-    int ans = rgeomd(*engine);
-    rgeomd.param(old_param);
-    return ans;
+
+    return rgeomd(
+        *engine,
+        std::geometric_distribution<>::param_type(p)
+    );
+
 }
 
 template<typename TSeq>
@@ -11975,11 +12005,12 @@ inline int Model<TSeq>::rpoiss() {
 
 template<typename TSeq>
 inline int Model<TSeq>::rpoiss(epiworld_double lambda) {
-    auto old_param = rpoissd.param();
-    rpoissd.param(std::poisson_distribution<>::param_type(lambda));
-    int ans = rpoissd(*engine);
-    rpoissd.param(old_param);
-    return ans;
+    
+    return rpoissd(
+        *engine,
+        std::poisson_distribution<>::param_type(lambda)
+    );
+
 }
 
 template<typename TSeq>
@@ -14348,16 +14379,36 @@ private:
         
 public:
 
+    #ifdef EPI_DEBUG_VIRUS
+    static std::atomic<int> counter_construct;          // Default and parameterized constructors
+    static std::atomic<int> counter_copy_construct;     // Copy constructor
+    static std::atomic<int> counter_move_construct;     // Move constructor
+    static std::atomic<int> counter_copy_assign;        // Copy assignment
+    static std::atomic<int> counter_move_assign;        // Move assignment
+    static std::atomic<int> counter_destruct;           // Destructor
+    #endif
+
     Virus();
 
     Virus(std::string name = "unknown virus");
-
+    
     Virus(
         std::string name,
         epiworld_double prevalence,
         bool as_proportion
-        );
+    );
+    
+    #ifdef EPI_DEBUG_VIRUS
+    
+    // Copy and move operations for debugging
+    Virus(const Virus<TSeq>& other);                    // Copy constructor
+    Virus(Virus<TSeq>&& other) noexcept;                // Move constructor
+    Virus<TSeq>& operator=(const Virus<TSeq>& other);   // Copy assignment
+    Virus<TSeq>& operator=(Virus<TSeq>&& other) noexcept; // Move assignment
 
+    ~Virus();
+    #endif
+    
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
@@ -14807,12 +14858,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -15036,6 +15087,10 @@ template<typename TSeq>
 inline Virus<TSeq>::Virus()
 {
 
+    #ifdef EPI_DEBUG_VIRUS
+    counter_construct++;
+    #endif
+
     EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
         baseline_sequence = -1;
@@ -15051,6 +15106,10 @@ template<typename TSeq>
 inline Virus<TSeq>::Virus(
     std::string name
     ) {
+
+    #ifdef EPI_DEBUG_VIRUS
+    counter_construct++;
+    #endif
 
     EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
@@ -15071,6 +15130,10 @@ inline Virus<TSeq>::Virus(
     bool prevalence_as_proportion
     ) {
 
+    #ifdef EPI_DEBUG_VIRUS
+    counter_construct++;
+    #endif
+
     EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
         baseline_sequence = -1;
@@ -15088,6 +15151,116 @@ inline Virus<TSeq>::Virus(
         )
     );
 }
+
+#ifdef EPI_DEBUG_VIRUS
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_construct = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_copy_construct = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_move_construct = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_copy_assign = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_move_assign = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_destruct = 0;
+
+template<typename TSeq>
+inline Virus<TSeq>::~Virus()
+{
+    counter_destruct++;
+}
+
+// Copy constructor
+template<typename TSeq>
+inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
+    : agent(other.agent),
+      baseline_sequence(other.baseline_sequence),
+      virus_name(other.virus_name),
+      date(other.date),
+      id(other.id),
+      state_init(other.state_init),
+      state_post(other.state_post),
+      state_removed(other.state_removed),
+      queue_init(other.queue_init),
+      queue_post(other.queue_post),
+      queue_removed(other.queue_removed),
+      virus_functions(other.virus_functions)
+{
+    counter_copy_construct++;
+}
+
+// Move constructor
+template<typename TSeq>
+inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
+    : agent(other.agent),
+      baseline_sequence(std::move(other.baseline_sequence)),
+      virus_name(std::move(other.virus_name)),
+      date(other.date),
+      id(other.id),
+      state_init(other.state_init),
+      state_post(other.state_post),
+      state_removed(other.state_removed),
+      queue_init(other.queue_init),
+      queue_post(other.queue_post),
+      queue_removed(other.queue_removed),
+      virus_functions(std::move(other.virus_functions))
+{
+    counter_move_construct++;
+    // other.agent = nullptr;
+}
+
+// Copy assignment
+template<typename TSeq>
+inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
+{
+    if (this != &other) {
+        agent = other.agent;
+        baseline_sequence = other.baseline_sequence;
+        virus_name = other.virus_name;
+        date = other.date;
+        id = other.id;
+        state_init = other.state_init;
+        state_post = other.state_post;
+        state_removed = other.state_removed;
+        queue_init = other.queue_init;
+        queue_post = other.queue_post;
+        queue_removed = other.queue_removed;
+        virus_functions = other.virus_functions;
+        counter_copy_assign++;
+    }
+    return *this;
+}
+
+// Move assignment
+template<typename TSeq>
+inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
+{
+    if (this != &other) {
+        agent = other.agent;
+        baseline_sequence = std::move(other.baseline_sequence);
+        virus_name = std::move(other.virus_name);
+        date = other.date;
+        id = other.id;
+        state_init = other.state_init;
+        state_post = other.state_post;
+        state_removed = other.state_removed;
+        queue_init = other.queue_init;
+        queue_post = other.queue_post;
+        queue_removed = other.queue_removed;
+        virus_functions = std::move(other.virus_functions);
+        other.agent = nullptr;
+        counter_move_assign++;
+    }
+    return *this;
+}
+#endif
 
 template<typename TSeq>
 inline void Virus<TSeq>::mutate(
@@ -19497,12 +19670,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -19857,28 +20030,28 @@ public:
      */
     ///@{
     void add_tool(
-        ToolPtr<TSeq> tool,
+        ToolPtr<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
-        Tool<TSeq> tool,
+        const Tool<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        VirusPtr<TSeq> virus,
+        VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        Virus<TSeq> virus,
+        const Virus<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -20218,12 +20391,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -20867,28 +21040,28 @@ public:
      */
     ///@{
     void add_tool(
-        ToolPtr<TSeq> tool,
+        ToolPtr<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
-        Tool<TSeq> tool,
+        const Tool<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        VirusPtr<TSeq> virus,
+        VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        Virus<TSeq> virus,
+        const Virus<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -21068,7 +21241,7 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> *  p = a.agent;
-    VirusPtr<TSeq> v = a.virus;
+    VirusPtr<TSeq> & v = a.virus;
     
     m->get_db().record_transmission(
         v->get_agent() ? v->get_agent()->get_id() : -1,
@@ -21077,7 +21250,7 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
         v->get_date() 
     );
     
-    p->virus = std::make_shared< Virus<TSeq> >(*v);
+    p->virus = std::move(v);
     p->virus->set_date(m->today());
     p->virus->set_agent(p);
 
@@ -21098,11 +21271,11 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 
     // Lastly, we increase the daily count of the virus
     #ifdef EPI_DEBUG
-    m->get_db().today_virus.at(v->get_id()).at(
+    m->get_db().today_virus.at(p->virus->get_id()).at(
         a.new_state != -99 ? a.new_state : p->state
     )++;
     #else
-    m->get_db().today_virus[v->get_id()][
+    m->get_db().today_virus[p->virus->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
     #endif
@@ -21114,16 +21287,16 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p = a.agent;
-    ToolPtr<TSeq> t = a.tool;
+    ToolPtr<TSeq> & t = a.tool;
     
     // Update tool accounting
     p->n_tools++;
     size_t n_tools = p->n_tools;
 
     if (n_tools <= p->tools.size())
-        p->tools[n_tools - 1] = std::make_shared< Tool<TSeq> >(*t);
+        p->tools[n_tools - 1] = std::move(t);
     else
-        p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
+        p->tools.emplace_back(std::move(t));
 
     n_tools--;
 
@@ -21145,7 +21318,7 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
             );
     }
 
-    m->get_db().today_tool[t->get_id()][
+    m->get_db().today_tool[p->tools.back()->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
 
@@ -21552,7 +21725,7 @@ inline Agent<TSeq>::~Agent()
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
-    ToolPtr<TSeq> tool,
+    ToolPtr<TSeq> & tool,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -21572,7 +21745,7 @@ inline void Agent<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
-    Tool<TSeq> tool,
+    const Tool<TSeq> & tool,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -21584,7 +21757,7 @@ inline void Agent<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Agent<TSeq>::set_virus(
-    VirusPtr<TSeq> virus,
+    VirusPtr<TSeq> & virus,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -21611,7 +21784,7 @@ inline void Agent<TSeq>::set_virus(
 
 template<typename TSeq>
 inline void Agent<TSeq>::set_virus(
-    Virus<TSeq> virus,
+    const Virus<TSeq> & virus,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -21642,8 +21815,16 @@ inline void Agent<TSeq>::add_entity(
          // model entity
     {
 
+        auto nullvirus = VirusPtr<TSeq>(nullptr);
+        auto nulltool = ToolPtr<TSeq>(nullptr);
+        auto call = EventFun<TSeq>(default_add_entity<TSeq>);
+
         Event<TSeq> a(
-                this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>,
+                this,
+                nullvirus,
+                nulltool,
+                &entity, state_new, queue,
+                call,
                 -1, -1
             );
 
