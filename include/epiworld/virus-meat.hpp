@@ -598,7 +598,7 @@ inline void Virus<TSeq>::set_post_immunity(
             if (__no_reinfect->get_id() == -99)
                 m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(__no_reinfect, m);
+            p->add_tool(*__no_reinfect, m);
 
             return;
 
@@ -647,7 +647,7 @@ inline void Virus<TSeq>::set_post_immunity(
             if (__no_reinfect->get_id() == -99)
                 m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(__no_reinfect, m);
+            p->add_tool(*__no_reinfect, m);
 
             return;
 
