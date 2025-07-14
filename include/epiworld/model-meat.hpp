@@ -199,15 +199,15 @@ inline void Model<TSeq>::events_add(
 
         Event<TSeq> & A = events.at(nactions - 1u);
 
-        A.agent      = agent_;
-        A.virus      = virus_;
-        A.tool       = tool_;
-        A.entity     = entity_;
-        A.new_state  = new_state_;
-        A.queue      = queue_;
-        A.call       = call_;
-        A.idx_agent  = idx_agent_;
-        A.idx_object = idx_object_;
+        A.agent      = std::move(agent_);
+        A.virus      = std::move(virus_);
+        A.tool       = std::move(tool_);
+        A.entity     = std::move(entity_);
+        A.new_state  = std::move(new_state_);
+        A.queue      = std::move(queue_);
+        A.call       = std::move(call_);
+        A.idx_agent  = std::move(idx_agent_);
+        A.idx_object = std::move(idx_object_);
 
     }
 

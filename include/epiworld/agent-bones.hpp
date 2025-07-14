@@ -129,7 +129,7 @@ public:
         );
 
     void add_tool(
-        Tool<TSeq> tool,
+        const Tool<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -143,7 +143,7 @@ public:
         );
 
     void set_virus(
-        Virus<TSeq> virus,
+        const Virus<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
