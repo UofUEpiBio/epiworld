@@ -7,7 +7,7 @@ var searchData=
   ['entity_3c_20epi_5fdefault_5ftseq_20_3e_20',['Entity&lt; EPI_DEFAULT_TSEQ &gt;',['../class_entity.html',1,'']]],
   ['epi_20simulator_21',['EPI Simulator',['../md__r_e_a_d_m_e_old.html',1,'']]],
   ['epiworld_20c_2b_2b_20template_20library_22',['epiworld c++ template library',['../md_examples_07_surveillance_07_surveillance.html',1,'']]],
-  ['event_23',['Event',['../structepiworld_1_1_event.html',1,'epiworld::Event&lt; TSeq &gt;'],['../struct_event.html',1,'Event&lt; TSeq &gt;'],['../structepiworld_1_1_event.html#a96e62a475af1a629a153a9c5ea129cd5',1,'epiworld::Event::Event()'],['../struct_event.html#afbf93fedb156e7aed31f6179aab7a8e3',1,'Event::Event()']]],
+  ['event_23',['Event',['../structepiworld_1_1_event.html',1,'epiworld::Event&lt; TSeq &gt;'],['../struct_event.html',1,'Event&lt; TSeq &gt;'],['../structepiworld_1_1_event.html#a38f63900aeda17e064a4d4b626fb502e',1,'epiworld::Event::Event()'],['../struct_event.html#a1a1645be60fbc706c2cc8af01c30894c',1,'Event::Event()']]],
   ['events_24',['events',['../classepiworld_1_1_model.html#a8ea9aacbf89d9f757e6b01f74335fb07',1,'epiworld::Model::events()'],['../class_model.html#a13d663322629f76f7e9462b6572475d8',1,'Model::events()']]],
   ['events_5fadd_25',['events_add',['../classepiworld_1_1_model.html#afb9d61f6f38a4a0eed72f000bf995fec',1,'epiworld::Model::events_add()'],['../class_model.html#afb9d61f6f38a4a0eed72f000bf995fec',1,'Model::events_add()']]],
   ['events_5frun_26',['events_run',['../classepiworld_1_1_model.html#a800647b05836b20054f1f2049a41787f',1,'epiworld::Model::events_run()'],['../class_model.html#a800647b05836b20054f1f2049a41787f',1,'Model::events_run()']]],

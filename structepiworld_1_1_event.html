@@ -82,9 +82,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a96e62a475af1a629a153a9c5ea129cd5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structepiworld_1_1_event.html#a96e62a475af1a629a153a9c5ea129cd5">Event</a> (<a class="el" href="classepiworld_1_1_agent.html">Agent</a>&lt; TSeq &gt; *agent_, VirusPtr&lt; TSeq &gt; virus_, ToolPtr&lt; TSeq &gt; tool_, <a class="el" href="classepiworld_1_1_entity.html">Entity</a>&lt; TSeq &gt; *entity_, epiworld_fast_int new_state_, epiworld_fast_int queue_, EventFun&lt; TSeq &gt; call_, int idx_agent_, int idx_object_)</td></tr>
-<tr class="memdesc:a96e62a475af1a629a153a9c5ea129cd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new <a class="el" href="structepiworld_1_1_event.html" title="Event data for update an agent.">Event</a> object.  <a href="structepiworld_1_1_event.html#a96e62a475af1a629a153a9c5ea129cd5">More...</a><br /></td></tr>
-<tr class="separator:a96e62a475af1a629a153a9c5ea129cd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38f63900aeda17e064a4d4b626fb502e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structepiworld_1_1_event.html#a38f63900aeda17e064a4d4b626fb502e">Event</a> (<a class="el" href="classepiworld_1_1_agent.html">Agent</a>&lt; TSeq &gt; *agent_, VirusPtr&lt; TSeq &gt; &amp;virus_, ToolPtr&lt; TSeq &gt; &amp;tool_, <a class="el" href="classepiworld_1_1_entity.html">Entity</a>&lt; TSeq &gt; *entity_, epiworld_fast_int new_state_, epiworld_fast_int queue_, EventFun&lt; TSeq &gt; &amp;call_, int idx_agent_, int idx_object_)</td></tr>
+<tr class="memdesc:a38f63900aeda17e064a4d4b626fb502e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new <a class="el" href="structepiworld_1_1_event.html" title="Event data for update an agent.">Event</a> object.  <a href="structepiworld_1_1_event.html#a38f63900aeda17e064a4d4b626fb502e">More...</a><br /></td></tr>
+<tr class="separator:a38f63900aeda17e064a4d4b626fb502e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -128,8 +128,8 @@ struct epiworld::Event&lt; TSeq &gt;</h3>
   </dd>
 </dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a96e62a475af1a629a153a9c5ea129cd5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96e62a475af1a629a153a9c5ea129cd5">&#9670;&nbsp;</a></span>Event()</h2>
+<a id="a38f63900aeda17e064a4d4b626fb502e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38f63900aeda17e064a4d4b626fb502e">&#9670;&nbsp;</a></span>Event()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -148,13 +148,13 @@ template&lt;typename TSeq  = EPI_DEFAULT_TSEQ&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">VirusPtr&lt; TSeq &gt;&#160;</td>
+          <td class="paramtype">VirusPtr&lt; TSeq &gt; &amp;&#160;</td>
           <td class="paramname"><em>virus_</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">ToolPtr&lt; TSeq &gt;&#160;</td>
+          <td class="paramtype">ToolPtr&lt; TSeq &gt; &amp;&#160;</td>
           <td class="paramname"><em>tool_</em>, </td>
         </tr>
         <tr>
@@ -178,7 +178,7 @@ template&lt;typename TSeq  = EPI_DEFAULT_TSEQ&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">EventFun&lt; TSeq &gt;&#160;</td>
+          <td class="paramtype">EventFun&lt; TSeq &gt; &amp;&#160;</td>
           <td class="paramname"><em>call_</em>, </td>
         </tr>
         <tr>

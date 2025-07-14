@@ -79,7 +79,7 @@ $(function() {
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;{</div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160; </div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> *  p = a.agent;</div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    VirusPtr&lt;TSeq&gt; v = a.virus;</div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    VirusPtr&lt;TSeq&gt; &amp; v = a.virus;</div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;    </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;    m-&gt;get_db().record_transmission(</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;        v-&gt;get_agent() ? v-&gt;get_agent()-&gt;get_id() : -1,</div>
@@ -88,7 +88,7 @@ $(function() {
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;        v-&gt;get_date() </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    );</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    </div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    p-&gt;virus = std::make_shared&lt; Virus&lt;TSeq&gt; &gt;(*v);</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    p-&gt;virus = std::move(v);</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    p-&gt;virus-&gt;set_date(m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>());</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    p-&gt;virus-&gt;set_agent(p);</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
@@ -109,11 +109,11 @@ $(function() {
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="comment">// Lastly, we increase the daily count of the virus</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">    #ifdef EPI_DEBUG</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    m-&gt;get_db().today_virus.at(v-&gt;get_id()).at(</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    m-&gt;get_db().today_virus.at(p-&gt;virus-&gt;get_id()).at(</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        a.new_state != -99 ? a.new_state : p-&gt;state</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    )++;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">    #else</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    m-&gt;get_db().today_virus[v-&gt;get_id()][</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    m-&gt;get_db().today_virus[p-&gt;virus-&gt;get_id()][</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        a.new_state != -99 ? a.new_state : p-&gt;state</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    ]++;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">    #endif</span></div>
@@ -125,16 +125,16 @@ $(function() {
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;{</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p = a.agent;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    ToolPtr&lt;TSeq&gt; t = a.tool;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    ToolPtr&lt;TSeq&gt; &amp; t = a.tool;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    </div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="comment">// Update tool accounting</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    p-&gt;n_tools++;</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordtype">size_t</span> n_tools = p-&gt;n_tools;</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordflow">if</span> (n_tools &lt;= p-&gt;tools.size())</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        p-&gt;tools[n_tools - 1] = std::make_shared&lt; Tool&lt;TSeq&gt; &gt;(*t);</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        p-&gt;tools[n_tools - 1] = std::move(t);</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        p-&gt;tools.push_back(std::make_shared&lt; <a class="code" href="class_tool.html">Tool&lt;TSeq&gt;</a> &gt;(*t));</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        p-&gt;tools.emplace_back(std::move(t));</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    n_tools--;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
@@ -156,7 +156,7 @@ $(function() {
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;            );</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    }</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    m-&gt;get_db().today_tool[t-&gt;get_id()][</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    m-&gt;get_db().today_tool[p-&gt;tools.back()-&gt;get_id()][</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        a.new_state != -99 ? a.new_state : p-&gt;state</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    ]++;</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
@@ -400,12 +400,11 @@ $(function() {
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160; </div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclass_agent_html"><div class="ttname"><a href="class_agent.html">Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> agent-bones.hpp:66</div></div>
-<div class="ttc" id="aclass_agent_html_a3763f12b56e8dd7f0e23bbca4f183c8a"><div class="ttname"><a href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">Agent::get_id</a></div><div class="ttdeci">int get_id() const</div><div class="ttdoc">Id of the individual.</div><div class="ttdef"><b>Definition:</b> agent-meat.hpp:457</div></div>
+<div class="ttc" id="aclass_agent_html_a3763f12b56e8dd7f0e23bbca4f183c8a"><div class="ttname"><a href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">Agent::get_id</a></div><div class="ttdeci">int get_id() const</div><div class="ttdoc">Id of the individual.</div><div class="ttdef"><b>Definition:</b> agent-meat.hpp:465</div></div>
 <div class="ttc" id="aclass_entity_html"><div class="ttname"><a href="class_entity.html">Entity</a></div><div class="ttdef"><b>Definition:</b> entity-bones.hpp:20</div></div>
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
 <div class="ttc" id="aclass_model_html_a077f3c2f03c119d038909cb34aa1aade"><div class="ttname"><a href="class_model.html#a077f3c2f03c119d038909cb34aa1aade">Model::get_agents</a></div><div class="ttdeci">std::vector&lt; Agent&lt; TSeq &gt; &gt; &amp; get_agents()</div><div class="ttdoc">Returns a reference to the vector of agents.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:582</div></div>
-<div class="ttc" id="aclass_model_html_aa3ce8d5f025e239f8090ab9645f3e917"><div class="ttname"><a href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model::today</a></div><div class="ttdeci">int today() const</div><div class="ttdoc">The current time of the model.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1308</div></div>
-<div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:40</div></div>
+<div class="ttc" id="aclass_model_html_aa3ce8d5f025e239f8090ab9645f3e917"><div class="ttname"><a href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model::today</a></div><div class="ttdeci">int today() const</div><div class="ttdoc">The current time of the model.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1316</div></div>
 <div class="ttc" id="astruct_event_html"><div class="ttname"><a href="struct_event.html">Event</a></div><div class="ttdoc">Event data for update an agent.</div><div class="ttdef"><b>Definition:</b> config.hpp:127</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
