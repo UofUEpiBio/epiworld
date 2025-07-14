@@ -1,4 +1,4 @@
-#define EPI_DEBUG_VIRUS
+// #define EPI_DEBUG_VIRUS
 #include "tests.hpp"
 
 using namespace epiworld;
