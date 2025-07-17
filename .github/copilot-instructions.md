@@ -1,0 +1,2 @@
+- The `./epiworld.hpp` is a single header that contains all the necessary includes for the Epiworld library. Do not analyze it or suggest changes to it.
+- Don't use the `./epiworld.hpp` file in your suggestions.

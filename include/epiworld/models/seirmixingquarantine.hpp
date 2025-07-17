@@ -83,6 +83,12 @@ private:
     void m_quarantine_process();
     static void m_update_model(Model<TSeq> * m);
 
+    // We will limit tracking to up to EPI_MAX_TRACKING
+    std::vector< size_t > tracking_matrix; ///< Tracking matrix for agent interactions
+    std::vector< size_t > tracking_matrix_size; ///< Number of current interactions for each agent
+
+    void m_add_tracking(size_t infected_id, size_t agent_id);
+
 public:
 
     static const int SUSCEPTIBLE             = 0;
@@ -230,6 +236,23 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_model(Model<TSeq> * m)
     model->m_quarantine_process();
     model->events_run();
     model->m_update_infected_list();
+    return;
+}
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_add_tracking(
+    size_t infected_id,
+    size_t agent_id
+)
+{
+
+    // If we are overflow, we start from the beginning
+    size_t loc = tracking_matrix_size[infected_id] % EPI_MAX_TRACKING;
+    tracking_matrix[MM(infected_id, loc, Model<TSeq>::size())] = agent_id;
+
+    // We increase the size of the tracking matrix
+    tracking_matrix_size[infected_id]++;
+
     return;
 }
 
@@ -477,7 +500,14 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
         day_exposed.end(),
         0
     );
-    
+
+    // Tracking matrix
+    tracking_matrix.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
+    std::fill(tracking_matrix.begin(), tracking_matrix.end(), 0u);
+
+    tracking_matrix_size.resize(Model<TSeq>::size(), 0u);
+    std::fill(tracking_matrix_size.begin(), tracking_matrix_size.end(), 0u);
+
     return;
 
 }
@@ -538,6 +568,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
                 "Trying to add an extra element to a temporal array outside of the range."
             );
         #endif
+
+        // Adding the current agent to the tracked interactions
+        m_down->m_add_tracking(neighbor.get_id(), p->get_id());
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
