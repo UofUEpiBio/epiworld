@@ -29503,7 +29503,8 @@ public:
         epiworld_double quarantine_willingness,
         epiworld_double isolation_willingness,
         epiworld_fast_int isolation_period,
-        epiworld_double contact_tracing_success_rate = 1.0
+        epiworld_double contact_tracing_success_rate = 1.0,
+        epiworld_fast_uint contact_tracing_days_prior = 4u
     );
     
     /**
@@ -29535,7 +29536,8 @@ public:
         epiworld_double quarantine_willingness,
         epiworld_double isolation_willingness,
         epiworld_fast_int isolation_period,
-        epiworld_double contact_tracing_success_rate = 1.0
+        epiworld_double contact_tracing_success_rate = 1.0,
+        epiworld_fast_uint contact_tracing_days_prior = 4u
     );
 
     ModelSEIRMixingQuarantine<TSeq> & run(
@@ -29605,6 +29607,15 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_add_tracking(
     // We avoid the math if there's no point in tracking anymore
     if (agent_quarantine_triggered[infected_id] >= 2u)
         return;
+
+    // We avoid the math if the contact happened before
+    // the lower bound of the contact tracing
+    size_t days_since_onset = Model<TSeq>::today() - day_onset[infected_id];
+    if (days_since_onset > 
+        Model<TSeq>::par("Contact tracing days prior")
+    )
+        return;
+    
 
     // If we are overflow, we start from the beginning
     size_t loc = tracking_matrix_size[infected_id] % EPI_MAX_TRACKING;
@@ -30336,7 +30347,8 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_double quarantine_willingness,
     epiworld_double isolation_willingness,
     epiworld_fast_int isolation_period,
-    epiworld_double contact_tracing_success_rate
+    epiworld_double contact_tracing_success_rate,
+    epiworld_fast_uint contact_tracing_days_prior
     )
 {
 
@@ -30361,6 +30373,9 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.add_param(isolation_period, "Isolation period");
     model.add_param(
         contact_tracing_success_rate, "Contact tracing success rate"
+    );
+    model.add_param(
+        contact_tracing_days_prior, "Contact tracing days prior"
     );
     
     // state
@@ -30422,7 +30437,8 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_double quarantine_willingness,
     epiworld_double isolation_willingness,
     epiworld_fast_int isolation_period,
-    epiworld_double contact_tracing_success_rate
+    epiworld_double contact_tracing_success_rate,
+    epiworld_fast_uint contact_tracing_days_prior
     )
 {   
 
@@ -30446,7 +30462,8 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         quarantine_willingness,
         isolation_willingness,
         isolation_period,
-        contact_tracing_success_rate
+        contact_tracing_success_rate,
+        contact_tracing_days_prior
     );
 
     return;
