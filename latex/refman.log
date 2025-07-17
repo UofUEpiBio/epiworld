@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.7.17)  17 JUL 2025 16:54
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.7.17)  17 JUL 2025 17:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -2658,17 +2658,23 @@ on[]_[]period,
  []
 
 
-Underfull \hbox (badness 940) in paragraph at lines 26--27
+Underfull \hbox (badness 2012) in paragraph at lines 26--27
 \T1/phv/m/n/10 epiworld[]_[]double days[]_[]undetected, epiworld[]_[]fast[]_[]i
-nt quarantine[]_[]period, epiworld[]_[]double quarantine[]_[]
+nt quarantine[]_[]period, epiworld[]_[]double quarantine[]
  []
 
-[159] [160] [161]
+
+Underfull \hbox (badness 1117) in paragraph at lines 26--27
+\T1/phv/m/n/10 _[]willingness, epiworld[]_[]double isolation[]_[]willingness, e
+piworld[]_[]fast[]_[]int isolation[]_[]period, epiworld[]_[]double
+ []
+
+[159] [160] [161] [162]
 Overfull \hbox (3.9776pt too wide) in paragraph at lines 1--1
 []\T1/phv/m/sl/10 proportions[] 
  []
 
-[162]) (./class_model_s_e_i_r_mixing_quarantine.tex
+) (./class_model_s_e_i_r_mixing_quarantine.tex
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                removing `math shift' on input line 1.
@@ -2734,9 +2740,15 @@ on[]_[]period,
  []
 
 
-Underfull \hbox (badness 940) in paragraph at lines 26--27
+Underfull \hbox (badness 2012) in paragraph at lines 26--27
 \T1/phv/m/n/10 epiworld[]_[]double days[]_[]undetected, epiworld[]_[]fast[]_[]i
-nt quarantine[]_[]period, epiworld[]_[]double quarantine[]_[]
+nt quarantine[]_[]period, epiworld[]_[]double quarantine[]
+ []
+
+
+Underfull \hbox (badness 1117) in paragraph at lines 26--27
+\T1/phv/m/n/10 _[]willingness, epiworld[]_[]double isolation[]_[]willingness, e
+piworld[]_[]fast[]_[]int isolation[]_[]period, epiworld[]_[]double
  []
 
 [164] [165] [166]
@@ -4310,7 +4322,7 @@ b></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/share/texmf-
 dist/fonts/type1/urw/helvetic/uhvb8ac.pfb></usr/share/texmf-dist/fonts/type1/ur
 w/helvetic/uhvbo8ac.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.
 pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on refman.pdf (261 pages, 1249156 bytes).
+Output written on refman.pdf (261 pages, 1249342 bytes).
 PDF statistics:
  9321 PDF objects out of 10688 (max. 8388607)
  8587 compressed objects within 86 object streams
