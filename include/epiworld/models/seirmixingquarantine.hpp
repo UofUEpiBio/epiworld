@@ -134,7 +134,8 @@ public:
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
         epiworld_double isolation_willingness,
-        epiworld_fast_int isolation_period
+        epiworld_fast_int isolation_period,
+        epiworld_double contact_tracing_success_rate = 1.0
     );
     
     /**
@@ -165,7 +166,8 @@ public:
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
         epiworld_double isolation_willingness,
-        epiworld_fast_int isolation_period
+        epiworld_fast_int isolation_period,
+        epiworld_double contact_tracing_success_rate = 1.0
     );
 
     ModelSEIRMixingQuarantine<TSeq> & run(
@@ -882,6 +884,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
 
+            // Checking if we will detect the contact
+            if (Model<TSeq>::runif() > Model<TSeq>::par("Contact tracing success rate"))
+                continue;
+
             size_t contact_id = this->tracking_matrix[
                 MM(agent_i, contact_i, Model<TSeq>::size())
             ];
@@ -961,7 +967,8 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
     epiworld_double isolation_willingness,
-    epiworld_fast_int isolation_period
+    epiworld_fast_int isolation_period,
+    epiworld_double contact_tracing_success_rate
     )
 {
 
@@ -984,6 +991,9 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         isolation_willingness, "Isolation willingness"
     );
     model.add_param(isolation_period, "Isolation period");
+    model.add_param(
+        contact_tracing_success_rate, "Contact tracing success rate"
+    );
     
     // state
     model.add_state("Susceptible", m_update_susceptible);
@@ -1043,7 +1053,8 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
     epiworld_double isolation_willingness,
-    epiworld_fast_int isolation_period
+    epiworld_fast_int isolation_period,
+    epiworld_double contact_tracing_success_rate
     )
 {   
 
@@ -1066,7 +1077,8 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         quarantine_period,
         quarantine_willingness,
         isolation_willingness,
-        isolation_period
+        isolation_period,
+        contact_tracing_success_rate
     );
 
     return;
