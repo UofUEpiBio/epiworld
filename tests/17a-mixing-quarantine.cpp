@@ -14,8 +14,6 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         0.0, 0.0, 1.0
     };
 
-    std::vector< bool > quarantine(3, true);
-
     epimodels::ModelSEIRMixingQuarantine<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
@@ -25,7 +23,6 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         2.0,   // epiworld_double avg_incubation_days,
         1.0/2.0,// epiworld_double recovery_rate,
         contact_matrix,
-        quarantine, // Entity can quarantine
         .1,     // epiworld_double hospitalization_rate,
         5,      // epiworld_double hospitalization_period,
         2,      // epiworld_double days_undetected,

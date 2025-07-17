@@ -26,7 +26,6 @@ EPIWORLD_TEST_CASE(
         4.0,   // epiworld_double avg_incubation_days,
         1.0/3.5,// epiworld_double recovery_rate,
         contact_matrix,
-        {true, true, true}, // Entity can quarantine
         .2, // Hospitalization rate
         4, // Hospitalization period
         1.5, // Days undetected (negative means no quarantine)
@@ -143,11 +142,6 @@ EPIWORLD_TEST_CASE(
     // Checking the results
     #endif
 
-    // Changing whether the entity 0 can be quarantined
-    model.set_entity_can_quarantine(
-        {false, true, true}
-    );
-
     // Restarting the quarantine counts
     std::fill(quarantined_counts.begin(), quarantined_counts.end(), 0.0);
 
@@ -170,7 +164,7 @@ EPIWORLD_TEST_CASE(
 
     // Checking the results
     #ifdef CATCH_CONFIG_MAIN
-    quarantined_counts_expected = {0.0, 0.5, 0.5};
+    quarantined_counts_expected = {1.0/3.0, 1.0/3.0, 1.0/3.0};
     REQUIRE_THAT(
         quarantined_counts,
         Catch::Approx(quarantined_counts_expected).margin(0.05)
