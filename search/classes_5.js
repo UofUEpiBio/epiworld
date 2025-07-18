@@ -4,7 +4,7 @@ var searchData=
   ['model_3c_20epi_5fdefault_5ftseq_20_3e_137',['Model&lt; EPI_DEFAULT_TSEQ &gt;',['../classepiworld_1_1_model.html',1,'epiworld']]],
   ['modeldiagram_138',['ModelDiagram',['../classepiworld_1_1_model_diagram.html',1,'epiworld::ModelDiagram'],['../class_model_diagram.html',1,'ModelDiagram']]],
   ['modeldiffnet_139',['ModelDiffNet',['../classepiworld_1_1epimodels_1_1_model_diff_net.html',1,'epiworld::epimodels::ModelDiffNet&lt; TSeq &gt;'],['../class_model_diff_net.html',1,'ModelDiffNet&lt; TSeq &gt;']]],
-  ['modelmeaslesmixing_140',['ModelMeaslesMixing',['../class_model_measles_mixing.html',1,'']]],
+  ['modelmeaslesmixing_140',['ModelMeaslesMixing',['../classepiworld_1_1epimodels_1_1_model_measles_mixing.html',1,'epiworld::epimodels::ModelMeaslesMixing&lt; TSeq &gt;'],['../class_model_measles_mixing.html',1,'ModelMeaslesMixing&lt; TSeq &gt;']]],
   ['modelmeaslesquarantine_141',['ModelMeaslesQuarantine',['../classepiworld_1_1epimodels_1_1_model_measles_quarantine.html',1,'epiworld::epimodels::ModelMeaslesQuarantine&lt; TSeq &gt;'],['../class_model_measles_quarantine.html',1,'ModelMeaslesQuarantine&lt; TSeq &gt;']]],
   ['modelseir_142',['ModelSEIR',['../classepiworld_1_1epimodels_1_1_model_s_e_i_r.html',1,'epiworld::epimodels::ModelSEIR&lt; TSeq &gt;'],['../class_model_s_e_i_r.html',1,'ModelSEIR&lt; TSeq &gt;']]],
   ['modelseirconn_143',['ModelSEIRCONN',['../classepiworld_1_1epimodels_1_1_model_s_e_i_r_c_o_n_n.html',1,'epiworld::epimodels::ModelSEIRCONN&lt; TSeq &gt;'],['../class_model_s_e_i_r_c_o_n_n.html',1,'ModelSEIRCONN&lt; TSeq &gt;']]],
