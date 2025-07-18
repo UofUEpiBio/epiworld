@@ -101,6 +101,10 @@ public:
     static const int HOSPITALIZED            = 8;
     static const int RECOVERED               = 9;
 
+    static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
+    static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
+    static const size_t QUARANTINE_PROCESS_DONE     = 2u;
+
     ModelSEIRMixingQuarantine() {};
     
     /**
@@ -237,7 +241,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_add_tracking(
 {
 
     // We avoid the math if there's no point in tracking anymore
-    if (agent_quarantine_triggered[infected_id] >= 2u)
+    if (
+        agent_quarantine_triggered[infected_id] >= 
+        ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_DONE
+    )
         return;
 
     // We avoid the math if the contact happened before
@@ -470,7 +477,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
     std::fill(
         agent_quarantine_triggered.begin(),
         agent_quarantine_triggered.end(),
-        0u
+        ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_INACTIVE
     );
 
     day_flagged.resize(this->size(), 0);
@@ -631,7 +638,8 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     // the quarantine process
     if (detected)
     {
-        model->agent_quarantine_triggered[p->get_id()] = 1u;
+        model->agent_quarantine_triggered[p->get_id()] = 
+            ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE;
     }
 
     // Checking if the agent is willing to isolate individually
@@ -879,7 +887,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
 
         // Checking if the quarantine in the agent was triggered
         // or not
-        if (agent_quarantine_triggered[agent_i] != 1u)
+        if (
+            agent_quarantine_triggered[agent_i] != 
+            ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE
+        )
             continue;
 
         if (this->par("Quarantine period") < 0)
@@ -944,7 +955,8 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         }
 
         // Setting the quarantine process off
-        agent_quarantine_triggered[agent_i] = 2u;
+        agent_quarantine_triggered[agent_i] = 
+            ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_DONE;
     }
 
     return;
