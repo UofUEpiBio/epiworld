@@ -6,7 +6,7 @@
 <area shape="rect" id="node5" href="$class_model_s_e_i_r_d.html" title="Template for a Susceptible&#45;Exposed&#45;Infected&#45;Removed&#45;Deceased (SEIRD) model." alt="" coords="219,157,368,184"/>
 <area shape="rect" id="node6" href="$class_model_s_e_i_r_d_c_o_n_n.html" title=" " alt="" coords="199,208,387,235"/>
 <area shape="rect" id="node7" href="$class_model_s_e_i_r_mixing.html" title=" " alt="" coords="205,259,382,285"/>
-<area shape="rect" id="node8" href="$class_model_s_e_i_r_mixing_quarantine.html" title=" " alt="" coords="200,310,387,351"/>
+<area shape="rect" id="node8" href="$class_model_s_e_i_r_mixing_quarantine.html" title="SEIR model with mixing, quarantine, and contact tracing." alt="" coords="200,310,387,351"/>
 <area shape="rect" id="node9" href="$class_model_s_i_r.html" title="Template for a Susceptible&#45;Infected&#45;Removed (SIR) model." alt="" coords="227,376,359,403"/>
 <area shape="rect" id="node10" href="$class_model_s_i_r_c_o_n_n.html" title=" " alt="" coords="208,427,379,453"/>
 <area shape="rect" id="node11" href="$class_model_s_i_r_d.html" title="Template for a Susceptible&#45;Infected&#45;Removed&#45;Deceased (SIRD) model." alt="" coords="223,477,364,504"/>
@@ -23,7 +23,7 @@
 <area shape="rect" id="node22" href="$classepiworld_1_1epimodels_1_1_model_s_e_i_r_d.html" title="Template for a Susceptible&#45;Exposed&#45;Infected&#45;Removed&#45;Deceased (SEIRD) model." alt="" coords="216,1107,371,1149"/>
 <area shape="rect" id="node23" href="$classepiworld_1_1epimodels_1_1_model_s_e_i_r_d_c_o_n_n.html" title=" " alt="" coords="196,1173,391,1214"/>
 <area shape="rect" id="node24" href="$classepiworld_1_1epimodels_1_1_model_s_e_i_r_mixing.html" title=" " alt="" coords="202,1238,385,1279"/>
-<area shape="rect" id="node25" href="$classepiworld_1_1epimodels_1_1_model_s_e_i_r_mixing_quarantine.html" title=" " alt="" coords="197,1303,390,1359"/>
+<area shape="rect" id="node25" href="$classepiworld_1_1epimodels_1_1_model_s_e_i_r_mixing_quarantine.html" title="SEIR model with mixing, quarantine, and contact tracing." alt="" coords="197,1303,390,1359"/>
 <area shape="rect" id="node26" href="$classepiworld_1_1epimodels_1_1_model_s_i_r.html" title="Template for a Susceptible&#45;Infected&#45;Removed (SIR) model." alt="" coords="224,1382,363,1423"/>
 <area shape="rect" id="node27" href="$classepiworld_1_1epimodels_1_1_model_s_i_r_c_o_n_n.html" title=" " alt="" coords="205,1447,382,1489"/>
 <area shape="rect" id="node28" href="$classepiworld_1_1epimodels_1_1_model_s_i_r_d.html" title="Template for a Susceptible&#45;Infected&#45;Removed&#45;Deceased (SIRD) model." alt="" coords="220,1513,367,1554"/>

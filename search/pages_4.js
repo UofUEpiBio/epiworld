@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['mit_20license_246',['MIT License',['../md__l_i_c_e_n_s_e.html',1,'']]],
-  ['mixing_20probabilities_20in_20connected_20model_247',['Mixing probabilities in connected model',['../md_paper_mixing.html',1,'']]],
-  ['model1_248',['model1',['../md_model1.html',1,'']]]
+  ['mit_20license_258',['MIT License',['../md__l_i_c_e_n_s_e.html',1,'']]],
+  ['mixing_20probabilities_20in_20connected_20model_259',['Mixing probabilities in connected model',['../md_paper_mixing.html',1,'']]],
+  ['model1_260',['model1',['../md_model1.html',1,'']]]
 ];
