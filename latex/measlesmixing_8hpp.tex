@@ -1,0 +1,68 @@
+\hypertarget{measlesmixing_8hpp}{}\doxysection{include/epiworld/models/measlesmixing.hpp File Reference}
+\label{measlesmixing_8hpp}\index{include/epiworld/models/measlesmixing.hpp@{include/epiworld/models/measlesmixing.hpp}}
+
+
+Template for a Measles model with population mixing, quarantine, and contact tracing.  
+
+
+This graph shows which files directly or indirectly include this file\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=223pt]{measlesmixing_8hpp__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{class_model_measles_mixing}{Model\+Measles\+Mixing$<$ TSeq $>$}}
+\begin{DoxyCompactList}\small\item\em Measles model with population mixing, quarantine, and contact tracing. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{measlesmixing_8hpp_a2707ffdcdd046f7aea3054ce82bfb818}\label{measlesmixing_8hpp_a2707ffdcdd046f7aea3054ce82bfb818}} 
+\#define {\bfseries MM}(i,  j,  n)~    j $\ast$ n + i
+\item 
+\#define {\bfseries GET\+\_\+\+MODEL}(model,  output)
+\item 
+\#define {\bfseries SAMPLE\+\_\+\+FROM\+\_\+\+PROBS}(n,  ans)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Template for a Measles model with population mixing, quarantine, and contact tracing. 
+
+
+
+\doxysubsection{Macro Definition Documentation}
+\mbox{\Hypertarget{measlesmixing_8hpp_afe4a6775ab9b6c97ffa459e33bad497a}\label{measlesmixing_8hpp_afe4a6775ab9b6c97ffa459e33bad497a}} 
+\index{measlesmixing.hpp@{measlesmixing.hpp}!GET\_MODEL@{GET\_MODEL}}
+\index{GET\_MODEL@{GET\_MODEL}!measlesmixing.hpp@{measlesmixing.hpp}}
+\doxysubsubsection{\texorpdfstring{GET\_MODEL}{GET\_MODEL}}
+{\footnotesize\ttfamily \#define GET\+\_\+\+MODEL(\begin{DoxyParamCaption}\item[{}]{model,  }\item[{}]{output }\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{        \textcolor{keyword}{auto} * output = \textcolor{keyword}{dynamic\_cast<} \mbox{\hyperlink{class_model_measles_mixing}{ModelMeaslesMixing<TSeq>}} * \textcolor{keyword}{>}( (model) ); \(\backslash\)}
+\DoxyCodeLine{        assert((output) != \textcolor{keyword}{nullptr});}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{measlesmixing_8hpp_acd100adc82f9678acf826732feacd32d}\label{measlesmixing_8hpp_acd100adc82f9678acf826732feacd32d}} 
+\index{measlesmixing.hpp@{measlesmixing.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}}
+\index{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!measlesmixing.hpp@{measlesmixing.hpp}}
+\doxysubsubsection{\texorpdfstring{SAMPLE\_FROM\_PROBS}{SAMPLE\_FROM\_PROBS}}
+{\footnotesize\ttfamily \#define SAMPLE\+\_\+\+FROM\+\_\+\+PROBS(\begin{DoxyParamCaption}\item[{}]{n,  }\item[{}]{ans }\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{    \textcolor{keywordtype}{size\_t} ans; \(\backslash\)}
+\DoxyCodeLine{    epiworld\_double p\_total = m-\/>runif(); \(\backslash\)}
+\DoxyCodeLine{    for (ans = 0u; ans < n; ++ans) \(\backslash\)}
+\DoxyCodeLine{    \{ \(\backslash\)}
+\DoxyCodeLine{        if (p\_total < m-\/>array\_double\_tmp[ans]) \(\backslash\)}
+\DoxyCodeLine{            break; \(\backslash\)}
+\DoxyCodeLine{        m-\/>array\_double\_tmp[ans + 1] += m-\/>array\_double\_tmp[ans]; \(\backslash\)}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
