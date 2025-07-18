@@ -56,7 +56,7 @@ EPIWORLD_TEST_CASE(
         return;
     });
 
-    size_t nsims = 100; // Reduced for faster testing
+    size_t nsims = 400; // Reduced for faster testing
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
         

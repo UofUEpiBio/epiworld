@@ -383,7 +383,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_infectious_list()
 
     std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);
     
-    for (auto & a : agents)
+    for (const auto & a : agents)
     {
 
         if (a.get_state() == ModelMeaslesMixing<TSeq>::PRODROMAL)

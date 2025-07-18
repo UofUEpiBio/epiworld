@@ -19,8 +19,8 @@ EPIWORLD_TEST_CASE(
     
     epimodels::ModelMeaslesMixing<> model_0(
         "Measles",   // Virus name
-        9000,        // Number of agents
-        n_seeds / 9000.0, // Initial prevalence
+        900,        // Number of agents
+        n_seeds / 900.0, // Initial prevalence
         2.0,         // Contact rate
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
@@ -33,8 +33,8 @@ EPIWORLD_TEST_CASE(
         7.0,         // Hospitalization duration
         2.0,         // Days undetected
         21,          // Quarantine period
-        .8,          // Quarantine willingness
-        .8,          // Isolation willingness
+        1.0,          // Quarantine willingness
+        1.0,          // Isolation willingness
         4,           // Isolation period
         0.0,         // Proportion vaccinated
         1.0,         // Contact tracing success rate
@@ -42,9 +42,9 @@ EPIWORLD_TEST_CASE(
     );
 
     // Adding a single entity (population group)
-    model_0.add_entity(Entity<>("Population", dist_factory<>(0, 3000)));
-    model_0.add_entity(Entity<>("Population", dist_factory<>(3000, 6000)));
-    model_0.add_entity(Entity<>("Population", dist_factory<>(6000, 9000)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(0, 300)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(300, 600)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(600, 900)));
 
 
     // Setting the distribution function of the initial cases
@@ -58,8 +58,11 @@ EPIWORLD_TEST_CASE(
     size_t nsims = 100; // Reduced for faster testing
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
-        
-    auto saver = tests_create_saver(transitions, R0s, n_seeds);
+    std::vector<std::vector<int>> final_distribution(nsims);
+
+    auto saver = tests_create_saver(
+        transitions, R0s, n_seeds, &final_distribution
+    );
 
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
     
@@ -150,6 +153,14 @@ EPIWORLD_TEST_CASE(
     #endif
     
     // Reproductive number
+    std::cout <<
+        "====================\n" <<
+        "In the case of R0, we don't expect to have a big difference\n" <<
+        "between quarantine and no quarantine. The biggest difference\n" <<
+        "is in the final size of the outbreak.\n" <<
+        "====================" <<
+        std::endl;
+
     std::cout << "Reproductive number: "
               << R0_observed << " (expected ~" << R0_theo << ")" << std::endl;
 
@@ -196,6 +207,15 @@ EPIWORLD_TEST_CASE(
     // Transition from isolated recovered to recovered (deterministic based on rash onset)
     std::cout << "Transition from isolated recovered to recovered: "
               << mat(5, 12) << " (expected to be faster than " << 1.0/model_0("Isolation period") << ")" << std::endl;
+
+    // Looking at the final outbreak size
+    std::vector< size_t > not_infected_states = {0u, 8u};
+    (void) test_compute_final_sizes(
+        final_distribution,
+        not_infected_states,
+        nsims, true
+    );
+
     #undef mat
     #ifndef CATCH_CONFIG_MAIN
     return 0;

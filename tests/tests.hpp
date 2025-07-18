@@ -86,9 +86,10 @@ inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
 inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
     std::vector<std::vector<epiworld_double>>& transitions,
     std::vector<epiworld_double>& R0s,
-    int n_seeds
+    int n_seeds,
+    std::vector<std::vector<int>>* final_distribution = nullptr
 ) {
-    return [&transitions, &R0s, n_seeds](size_t n, epiworld::Model<>* m) -> void {
+    return [&transitions, &R0s, n_seeds, final_distribution](size_t n, epiworld::Model<>* m) -> void {
         // Saving the transition probabilities
         transitions[n] = m->get_db().get_transition_probability(false, false);
 
@@ -96,8 +97,82 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
         auto rts = m->get_db().get_reproductive_number();      
         for (int i = 0; i < n_seeds; ++i)
             R0s[n_seeds * n + i] = static_cast<epiworld_double>(rts[{0, i, 0}]);
+    
+        // Should we get the final distribution?
+        if (final_distribution == nullptr)
+            return;
+        
+        m->get_db().get_today_total(
+            nullptr,
+            &(final_distribution->at(n))
+        );
     };
 };
+
+/**
+ * Computes the average and range of final outbreak sizes
+ * 
+ * This can be used to check the final outbreak sizes
+ * after running a model with multiple simulations.
+ * @param final_distribution The final distribution of the model.
+ * @param not_infected_states The states that are considered "not infected".
+ * @param nsims The number of simulations.
+ * @return A vector containing the final outbreak sizes for each simulation.
+ */
+inline std::vector< double > test_compute_final_sizes(
+    const std::vector<std::vector<int>>& final_distribution,
+    std::vector<size_t> not_infected_states,
+    size_t nsims,
+    bool print = true
+) {
+
+        // Looking at the final outbreak size
+    std::vector< double > outbreak_sizes(nsims, 0.0);
+    size_t n_states = final_distribution[0].size();
+    for (size_t i = 0; i < nsims; ++i)
+    {
+        for (size_t j = 0; j < n_states; ++j)
+        {
+
+            // We only count the states that are not considered "not infected"
+            if (
+                std::find(
+                    not_infected_states.begin(),
+                    not_infected_states.end(),
+                    j) ==
+                not_infected_states.end()
+            )
+            {
+                outbreak_sizes[i] += final_distribution[i][j];
+            }
+        }
+    }
+
+    // Sorting the outbreak sizes
+    std::sort(outbreak_sizes.begin(), outbreak_sizes.end());
+
+    // Identifying the 95% CI
+    size_t lower_bound = static_cast<size_t>(0.025 * nsims);
+    size_t upper_bound = static_cast<size_t>(0.975 * nsims);
+
+    // Filling the 95% CI
+    std::vector< double > res(3, 0.0);
+    res[0] = std::accumulate(
+        outbreak_sizes.begin(), outbreak_sizes.end(), 0.0
+    ) / static_cast<double>(nsims);
+    res[1] = outbreak_sizes[lower_bound];
+    res[2] = outbreak_sizes[upper_bound];
+    
+    if (print)
+    {
+        printf_epiworld(
+            "Final outbreak size (%i): %.2f [%.2f, %.2f]\n",
+            static_cast<int>(nsims), res[0], res[1], res[2]
+        );
+    }
+
+    return res;
+}
 
 /**
  * @brief Calculate the average transition probabilities from a vector of transitions.
