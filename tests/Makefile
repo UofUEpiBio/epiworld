@@ -72,3 +72,7 @@ callgrind: 05-mixing-with-size.cpp
 05b-mixing.o: 05b-mixing.cpp
 	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 05b-mixing.cpp \
 		-o 05b-mixing.o
+
+18-test-virus-handling.o: 18-test-virus-handling.cpp
+	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 18-test-virus-handling.cpp \
+		-o 18-test-virus-handling.o

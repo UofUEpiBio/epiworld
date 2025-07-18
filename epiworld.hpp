@@ -17,14 +17,17 @@
 #include <set>
 #include <type_traits>
 #include <cassert>
+#ifdef EPI_DEBUG_VIRUS
+#include <atomic>
+#endif
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 8
-#define EPIWORLD_VERSION_PATCH 3
+#define EPIWORLD_VERSION_MINOR 9
+#define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -79,6 +82,10 @@ namespace epiworld {
 #endif
 
 #define EPI_DEFAULT_TSEQ int
+
+#ifndef EPI_MAX_TRACKING
+    #define EPI_MAX_TRACKING 100
+#endif
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
@@ -196,12 +203,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -3722,8 +3729,8 @@ public:
      * corresponding date
      */
     ///@{
-    int get_today_total(std::string what) const;
-    int get_today_total(epiworld_fast_uint what) const;
+    int get_today_total(const std::string & what) const;
+    int get_today_total(const epiworld_fast_uint & what) const;
     void get_today_total(
         std::vector< std::string > * state = nullptr,
         std::vector< int > * counts = nullptr
@@ -3966,6 +3973,10 @@ public:
 
 #define EPI_DEFAULT_TSEQ int
 
+#ifndef EPI_MAX_TRACKING
+    #define EPI_MAX_TRACKING 100
+#endif
+
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
 
@@ -4082,12 +4093,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -4898,8 +4909,8 @@ public:
      * corresponding date
      */
     ///@{
-    int get_today_total(std::string what) const;
-    int get_today_total(epiworld_fast_uint what) const;
+    int get_today_total(const std::string & what) const;
+    int get_today_total(const epiworld_fast_uint & what) const;
     void get_today_total(
         std::vector< std::string > * state = nullptr,
         std::vector< int > * counts = nullptr
@@ -5121,10 +5132,12 @@ inline void DataBase<TSeq>::reset()
     hist_tool_counts.clear();    
 
     today_virus.resize(get_n_viruses());
-    std::fill(today_virus.begin(), today_virus.begin(), std::vector<int>(model->nstates, 0));
+    for (auto& virus_states : today_virus)
+        virus_states.assign(model->nstates, 0);
 
     today_tool.resize(get_n_tools());
-    std::fill(today_tool.begin(), today_tool.begin(), std::vector<int>(model->nstates, 0));
+    for (auto& tool_states : today_tool)
+        tool_states.assign(model->nstates, 0);
 
     hist_total_date.clear();
     hist_total_state.clear();
@@ -5301,7 +5314,7 @@ inline void DataBase<TSeq>::record()
             hist_total_counts.push_back(today_total[s]);
         }
 
-        for (auto cell : transition_matrix)
+        for (const auto& cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
 
         // Now the diagonal must reflect the state
@@ -5693,7 +5706,7 @@ inline void DataBase<TSeq>::record_transition(
 
 template<typename TSeq>
 inline int DataBase<TSeq>::get_today_total(
-    std::string what
+    const std::string & what
 ) const
 {
 
@@ -5779,8 +5792,7 @@ inline void DataBase<TSeq>::get_hist_virus(
 ) const {
 
     date = hist_virus_date;
-    std::vector< std::string > labels;
-    labels = model->states_labels;
+    const auto& labels = model->states_labels;
     
     id = hist_virus_id;
     state.resize(hist_virus_state.size(), "");
@@ -5803,8 +5815,7 @@ inline void DataBase<TSeq>::get_hist_tool(
 ) const {
 
     date = hist_tool_date;
-    std::vector< std::string > labels;
-    labels = model->states_labels;
+    const auto& labels = model->states_labels;
     
     id = hist_tool_id;
     state.resize(hist_tool_state.size(), "");
@@ -6364,7 +6375,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::get_transition_probability
     bool normalize
 ) const {
 
-    auto states_labels = model->get_states();
+    const auto& states_labels = model->get_states();
     size_t n_state = states_labels.size();
     size_t n_days   = model->get_ndays();
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
@@ -9050,6 +9061,10 @@ public:
 
 #define EPI_DEFAULT_TSEQ int
 
+#ifndef EPI_MAX_TRACKING
+    #define EPI_MAX_TRACKING 100
+#endif
+
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
 
@@ -9166,12 +9181,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -10599,16 +10614,36 @@ private:
         
 public:
 
+    #ifdef EPI_DEBUG_VIRUS
+    static std::atomic<int> counter_construct;          // Default and parameterized constructors
+    static std::atomic<int> counter_copy_construct;     // Copy constructor
+    static std::atomic<int> counter_move_construct;     // Move constructor
+    static std::atomic<int> counter_copy_assign;        // Copy assignment
+    static std::atomic<int> counter_move_assign;        // Move assignment
+    static std::atomic<int> counter_destruct;           // Destructor
+    #endif
+
     Virus();
 
     Virus(std::string name = "unknown virus");
-
+    
     Virus(
         std::string name,
         epiworld_double prevalence,
         bool as_proportion
-        );
+    );
+    
+    #ifdef EPI_DEBUG_VIRUS
+    
+    // Copy and move operations for debugging
+    Virus(const Virus<TSeq>& other);                    // Copy constructor
+    Virus(Virus<TSeq>&& other) noexcept;                // Move constructor
+    Virus<TSeq>& operator=(const Virus<TSeq>& other);   // Copy assignment
+    Virus<TSeq>& operator=(Virus<TSeq>&& other) noexcept; // Move assignment
 
+    ~Virus();
+    #endif
+    
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
@@ -10860,28 +10895,28 @@ public:
      */
     ///@{
     void add_tool(
-        ToolPtr<TSeq> tool,
+        ToolPtr<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
-        Tool<TSeq> tool,
+        const Tool<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        VirusPtr<TSeq> virus,
+        VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        Virus<TSeq> virus,
+        const Virus<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -11227,15 +11262,15 @@ inline void Model<TSeq>::events_add(
 
         Event<TSeq> & A = events.at(nactions - 1u);
 
-        A.agent      = agent_;
-        A.virus      = virus_;
-        A.tool       = tool_;
-        A.entity     = entity_;
-        A.new_state  = new_state_;
-        A.queue      = queue_;
-        A.call       = call_;
-        A.idx_agent  = idx_agent_;
-        A.idx_object = idx_object_;
+        A.agent      = std::move(agent_);
+        A.virus      = std::move(virus_);
+        A.tool       = std::move(tool_);
+        A.entity     = std::move(entity_);
+        A.new_state  = std::move(new_state_);
+        A.queue      = std::move(queue_);
+        A.call       = std::move(call_);
+        A.idx_agent  = std::move(idx_agent_);
+        A.idx_object = std::move(idx_object_);
 
     }
 
@@ -11891,11 +11926,12 @@ inline epiworld_double Model<TSeq>::rgamma() {
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
-    auto old_param = rgammad.param();
-    rgammad.param(std::gamma_distribution<>::param_type(alpha, beta));
-    epiworld_double ans = rgammad(*engine);
-    rgammad.param(old_param);
-    return ans;
+
+    return rgammad(
+        *engine,
+        std::gamma_distribution<>::param_type(alpha, beta)
+    );
+    
 }
 
 template<typename TSeq>
@@ -11905,11 +11941,12 @@ inline epiworld_double Model<TSeq>::rexp() {
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
-    auto old_param = rexpd.param();
-    rexpd.param(std::exponential_distribution<>::param_type(lambda));
-    epiworld_double ans = rexpd(*engine);
-    rexpd.param(old_param);
-    return ans;
+
+    return rexpd(
+        *engine,
+        std::exponential_distribution<>::param_type(lambda)
+    );
+
 }
 
 template<typename TSeq>
@@ -11919,11 +11956,11 @@ inline epiworld_double Model<TSeq>::rlognormal() {
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
-    auto old_param = rlognormald.param();
-    rlognormald.param(std::lognormal_distribution<>::param_type(mean, shape));
-    epiworld_double ans = rlognormald(*engine);
-    rlognormald.param(old_param);
-    return ans;
+    
+    return rlognormald(
+        *engine,
+        std::lognormal_distribution<>::param_type(mean, shape)
+    );
 }
 
 template<typename TSeq>
@@ -11933,11 +11970,15 @@ inline int Model<TSeq>::rbinom() {
 
 template<typename TSeq>
 inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
-    auto old_param = rbinomd.param();
-    rbinomd.param(std::binomial_distribution<>::param_type(n, p));
-    epiworld_double ans = rbinomd(*engine);
-    rbinomd.param(old_param);
-    return ans;
+
+    if (n == 0 || p == 0.0)
+        return 0;
+
+    return rbinomd(
+        *engine,
+        std::binomial_distribution<>::param_type(n, p)
+    );
+
 }
 
 template<typename TSeq>
@@ -11947,11 +11988,11 @@ inline int Model<TSeq>::rnbinom() {
 
 template<typename TSeq>
 inline int Model<TSeq>::rnbinom(int n, epiworld_double p) {
-    auto old_param = rnbinomd.param();
-    rnbinomd.param(std::negative_binomial_distribution<>::param_type(n, p));
-    int ans = rnbinomd(*engine);
-    rnbinomd.param(old_param);
-    return ans;
+
+    return rnbinomd(
+        *engine,
+        std::negative_binomial_distribution<>::param_type(n, p)
+    );
 }
 
 template<typename TSeq>
@@ -11961,11 +12002,12 @@ inline int Model<TSeq>::rgeom() {
 
 template<typename TSeq>
 inline int Model<TSeq>::rgeom(epiworld_double p) {
-    auto old_param = rgeomd.param();
-    rgeomd.param(std::geometric_distribution<>::param_type(p));
-    int ans = rgeomd(*engine);
-    rgeomd.param(old_param);
-    return ans;
+
+    return rgeomd(
+        *engine,
+        std::geometric_distribution<>::param_type(p)
+    );
+
 }
 
 template<typename TSeq>
@@ -11975,11 +12017,12 @@ inline int Model<TSeq>::rpoiss() {
 
 template<typename TSeq>
 inline int Model<TSeq>::rpoiss(epiworld_double lambda) {
-    auto old_param = rpoissd.param();
-    rpoissd.param(std::poisson_distribution<>::param_type(lambda));
-    int ans = rpoissd(*engine);
-    rpoissd.param(old_param);
-    return ans;
+    
+    return rpoissd(
+        *engine,
+        std::poisson_distribution<>::param_type(lambda)
+    );
+
 }
 
 template<typename TSeq>
@@ -12558,25 +12601,23 @@ inline void Model<TSeq>::run_multiple(
     }
         
 
-    // Figuring out how many replicates
+    // Figuring out how many replicates - distribute remainder evenly
     std::vector< size_t > nreplicates(nthreads, 0);
     std::vector< size_t > nreplicates_csum(nthreads, 0);
+    
+    size_t base_replicates = nexperiments / nthreads;
+    size_t remainder = nexperiments % nthreads;
+    
     size_t sums = 0u;
     for (int i = 0; i < nthreads; ++i)
     {
-        nreplicates[i] = static_cast<epiworld_fast_uint>(
-            std::floor(nexperiments/nthreads)
-            );
+        // Distribute remainder to first 'remainder' threads
+        nreplicates[i] = base_replicates + (static_cast<size_t>(i) < remainder ? 1 : 0);
         
         // This takes the cumsum
         nreplicates_csum[i] = sums;
-
         sums += nreplicates[i];
-
     }
-
-    if (sums < nexperiments)
-        nreplicates[nthreads - 1] += (nexperiments - sums);
 
     Progress pb_multiple(
         nreplicates[0u],
@@ -14348,16 +14389,36 @@ private:
         
 public:
 
+    #ifdef EPI_DEBUG_VIRUS
+    static std::atomic<int> counter_construct;          // Default and parameterized constructors
+    static std::atomic<int> counter_copy_construct;     // Copy constructor
+    static std::atomic<int> counter_move_construct;     // Move constructor
+    static std::atomic<int> counter_copy_assign;        // Copy assignment
+    static std::atomic<int> counter_move_assign;        // Move assignment
+    static std::atomic<int> counter_destruct;           // Destructor
+    #endif
+
     Virus();
 
     Virus(std::string name = "unknown virus");
-
+    
     Virus(
         std::string name,
         epiworld_double prevalence,
         bool as_proportion
-        );
+    );
+    
+    #ifdef EPI_DEBUG_VIRUS
+    
+    // Copy and move operations for debugging
+    Virus(const Virus<TSeq>& other);                    // Copy constructor
+    Virus(Virus<TSeq>&& other) noexcept;                // Move constructor
+    Virus<TSeq>& operator=(const Virus<TSeq>& other);   // Copy assignment
+    Virus<TSeq>& operator=(Virus<TSeq>&& other) noexcept; // Move assignment
 
+    ~Virus();
+    #endif
+    
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
     
@@ -14691,6 +14752,10 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
 
 #define EPI_DEFAULT_TSEQ int
 
+#ifndef EPI_MAX_TRACKING
+    #define EPI_MAX_TRACKING 100
+#endif
+
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
 
@@ -14807,12 +14872,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -15036,6 +15101,10 @@ template<typename TSeq>
 inline Virus<TSeq>::Virus()
 {
 
+    #ifdef EPI_DEBUG_VIRUS
+    counter_construct++;
+    #endif
+
     EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
         baseline_sequence = -1;
@@ -15051,6 +15120,10 @@ template<typename TSeq>
 inline Virus<TSeq>::Virus(
     std::string name
     ) {
+
+    #ifdef EPI_DEBUG_VIRUS
+    counter_construct++;
+    #endif
 
     EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
@@ -15071,6 +15144,10 @@ inline Virus<TSeq>::Virus(
     bool prevalence_as_proportion
     ) {
 
+    #ifdef EPI_DEBUG_VIRUS
+    counter_construct++;
+    #endif
+
     EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
     {
         baseline_sequence = -1;
@@ -15088,6 +15165,116 @@ inline Virus<TSeq>::Virus(
         )
     );
 }
+
+#ifdef EPI_DEBUG_VIRUS
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_construct = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_copy_construct = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_move_construct = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_copy_assign = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_move_assign = 0;
+
+template<typename TSeq>
+std::atomic<int> Virus<TSeq>::counter_destruct = 0;
+
+template<typename TSeq>
+inline Virus<TSeq>::~Virus()
+{
+    counter_destruct++;
+}
+
+// Copy constructor
+template<typename TSeq>
+inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
+    : agent(other.agent),
+      baseline_sequence(other.baseline_sequence),
+      virus_name(other.virus_name),
+      date(other.date),
+      id(other.id),
+      state_init(other.state_init),
+      state_post(other.state_post),
+      state_removed(other.state_removed),
+      queue_init(other.queue_init),
+      queue_post(other.queue_post),
+      queue_removed(other.queue_removed),
+      virus_functions(other.virus_functions)
+{
+    counter_copy_construct++;
+}
+
+// Move constructor
+template<typename TSeq>
+inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
+    : agent(other.agent),
+      baseline_sequence(std::move(other.baseline_sequence)),
+      virus_name(std::move(other.virus_name)),
+      date(other.date),
+      id(other.id),
+      state_init(other.state_init),
+      state_post(other.state_post),
+      state_removed(other.state_removed),
+      queue_init(other.queue_init),
+      queue_post(other.queue_post),
+      queue_removed(other.queue_removed),
+      virus_functions(std::move(other.virus_functions))
+{
+    counter_move_construct++;
+    // other.agent = nullptr;
+}
+
+// Copy assignment
+template<typename TSeq>
+inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
+{
+    if (this != &other) {
+        agent = other.agent;
+        baseline_sequence = other.baseline_sequence;
+        virus_name = other.virus_name;
+        date = other.date;
+        id = other.id;
+        state_init = other.state_init;
+        state_post = other.state_post;
+        state_removed = other.state_removed;
+        queue_init = other.queue_init;
+        queue_post = other.queue_post;
+        queue_removed = other.queue_removed;
+        virus_functions = other.virus_functions;
+        counter_copy_assign++;
+    }
+    return *this;
+}
+
+// Move assignment
+template<typename TSeq>
+inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
+{
+    if (this != &other) {
+        agent = other.agent;
+        baseline_sequence = std::move(other.baseline_sequence);
+        virus_name = std::move(other.virus_name);
+        date = other.date;
+        id = other.id;
+        state_init = other.state_init;
+        state_post = other.state_post;
+        state_removed = other.state_removed;
+        queue_init = other.queue_init;
+        queue_post = other.queue_post;
+        queue_removed = other.queue_removed;
+        virus_functions = std::move(other.virus_functions);
+        other.agent = nullptr;
+        counter_move_assign++;
+    }
+    return *this;
+}
+#endif
 
 template<typename TSeq>
 inline void Virus<TSeq>::mutate(
@@ -15427,7 +15614,7 @@ inline void Virus<TSeq>::set_post_immunity(
             if (__no_reinfect->get_id() == -99)
                 m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(__no_reinfect, m);
+            p->add_tool(*__no_reinfect, m);
 
             return;
 
@@ -15476,7 +15663,7 @@ inline void Virus<TSeq>::set_post_immunity(
             if (__no_reinfect->get_id() == -99)
                 m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(__no_reinfect, m);
+            p->add_tool(*__no_reinfect, m);
 
             return;
 
@@ -19381,6 +19568,10 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 
 #define EPI_DEFAULT_TSEQ int
 
+#ifndef EPI_MAX_TRACKING
+    #define EPI_MAX_TRACKING 100
+#endif
+
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
 
@@ -19497,12 +19688,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -19857,28 +20048,28 @@ public:
      */
     ///@{
     void add_tool(
-        ToolPtr<TSeq> tool,
+        ToolPtr<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
-        Tool<TSeq> tool,
+        const Tool<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        VirusPtr<TSeq> virus,
+        VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        Virus<TSeq> virus,
+        const Virus<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -20102,6 +20293,10 @@ public:
 
 #define EPI_DEFAULT_TSEQ int
 
+#ifndef EPI_MAX_TRACKING
+    #define EPI_MAX_TRACKING 100
+#endif
+
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
 
@@ -20218,12 +20413,12 @@ public:
      */
     Event(
         Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        VirusPtr<TSeq> & virus_,
+        ToolPtr<TSeq> & tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
+        EventFun<TSeq> & call_,
         int idx_agent_,
         int idx_object_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
@@ -20867,28 +21062,28 @@ public:
      */
     ///@{
     void add_tool(
-        ToolPtr<TSeq> tool,
+        ToolPtr<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
-        Tool<TSeq> tool,
+        const Tool<TSeq> & tool,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        VirusPtr<TSeq> virus,
+        VirusPtr<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
-        Virus<TSeq> virus,
+        const Virus<TSeq> & virus,
         Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
@@ -21068,7 +21263,7 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> *  p = a.agent;
-    VirusPtr<TSeq> v = a.virus;
+    VirusPtr<TSeq> & v = a.virus;
     
     m->get_db().record_transmission(
         v->get_agent() ? v->get_agent()->get_id() : -1,
@@ -21077,7 +21272,7 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
         v->get_date() 
     );
     
-    p->virus = std::make_shared< Virus<TSeq> >(*v);
+    p->virus = std::move(v);
     p->virus->set_date(m->today());
     p->virus->set_agent(p);
 
@@ -21098,11 +21293,11 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 
     // Lastly, we increase the daily count of the virus
     #ifdef EPI_DEBUG
-    m->get_db().today_virus.at(v->get_id()).at(
+    m->get_db().today_virus.at(p->virus->get_id()).at(
         a.new_state != -99 ? a.new_state : p->state
     )++;
     #else
-    m->get_db().today_virus[v->get_id()][
+    m->get_db().today_virus[p->virus->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
     #endif
@@ -21114,16 +21309,16 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 {
 
     Agent<TSeq> * p = a.agent;
-    ToolPtr<TSeq> t = a.tool;
+    ToolPtr<TSeq> & t = a.tool;
     
     // Update tool accounting
     p->n_tools++;
     size_t n_tools = p->n_tools;
 
     if (n_tools <= p->tools.size())
-        p->tools[n_tools - 1] = std::make_shared< Tool<TSeq> >(*t);
+        p->tools[n_tools - 1] = std::move(t);
     else
-        p->tools.push_back(std::make_shared< Tool<TSeq> >(*t));
+        p->tools.emplace_back(std::move(t));
 
     n_tools--;
 
@@ -21145,7 +21340,7 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
             );
     }
 
-    m->get_db().today_tool[t->get_id()][
+    m->get_db().today_tool[p->tools.back()->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
 
@@ -21552,7 +21747,7 @@ inline Agent<TSeq>::~Agent()
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
-    ToolPtr<TSeq> tool,
+    ToolPtr<TSeq> & tool,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -21572,7 +21767,7 @@ inline void Agent<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
-    Tool<TSeq> tool,
+    const Tool<TSeq> & tool,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -21584,7 +21779,7 @@ inline void Agent<TSeq>::add_tool(
 
 template<typename TSeq>
 inline void Agent<TSeq>::set_virus(
-    VirusPtr<TSeq> virus,
+    VirusPtr<TSeq> & virus,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -21611,7 +21806,7 @@ inline void Agent<TSeq>::set_virus(
 
 template<typename TSeq>
 inline void Agent<TSeq>::set_virus(
-    Virus<TSeq> virus,
+    const Virus<TSeq> & virus,
     Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -21642,8 +21837,16 @@ inline void Agent<TSeq>::add_entity(
          // model entity
     {
 
+        auto nullvirus = VirusPtr<TSeq>(nullptr);
+        auto nulltool = ToolPtr<TSeq>(nullptr);
+        auto call = EventFun<TSeq>(default_add_entity<TSeq>);
+
         Event<TSeq> a(
-                this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>,
+                this,
+                nullvirus,
+                nulltool,
+                &entity, state_new, queue,
+                call,
                 -1, -1
             );
 
@@ -29196,8 +29399,35 @@ using namespace epiworld;
     }
 
 /**
- * @file seirentitiesconnected.hpp
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
+ * @file seirmixingquarantine.hpp
+ * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing, quarantine, and contact tracing
+ */
+
+/**
+ * @brief SEIR model with mixing, quarantine, and contact tracing
+ * 
+ * This class implements a Susceptible-Exposed-Infected-Removed (SEIR) epidemiological model
+ * with additional features including:
+ * - Population mixing based on contact matrices
+ * - Quarantine measures for exposed contacts
+ * - Isolation policies for detected infected individuals
+ * - Contact tracing with configurable success rates
+ * - Hospitalization of severe cases
+ * - Individual willingness to comply with public health measures
+ * 
+ * The model supports 10 distinct states:
+ * - Susceptible: Individuals who can become infected
+ * - Exposed: Infected but not yet infectious (incubation period)
+ * - Infected: Infectious individuals in the community
+ * - Isolated: Detected infected individuals in self-isolation
+ * - Detected Hospitalized: Hospitalized individuals who were contact-traced
+ * - Quarantined Susceptible: Susceptible individuals in quarantine due to contact tracing
+ * - Quarantined Exposed: Exposed individuals in quarantine due to contact tracing
+ * - Isolated Recovered: Recovered individuals still in isolation
+ * - Hospitalized: Individuals requiring hospital care
+ * - Recovered: Individuals who have recovered and gained immunity
+ * 
+ * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixingQuarantine : public Model<TSeq> 
@@ -29238,14 +29468,20 @@ private:
 
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator
-    std::vector< bool > entity_quarantine_triggered; ///< Whether the quarantine process has started
-    std::vector< bool > entity_can_quarantine; ///< Whether the entity can quarantine
+    std::vector< bool > isolation_willingness; ///< Indicator for isolation willingness
+    std::vector< size_t > agent_quarantine_triggered; ///< Whether the quarantine process has started
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_onset; ///< Day of onset of the disease
     std::vector< int > day_exposed; ///< Day of exposure
 
     void m_quarantine_process();
     static void m_update_model(Model<TSeq> * m);
+
+    // We will limit tracking to up to EPI_MAX_TRACKING
+    std::vector< size_t > tracking_matrix; ///< Tracking matrix for agent interactions
+    std::vector< size_t > tracking_matrix_size; ///< Number of current interactions for each agent
+
+    void m_add_tracking(size_t infected_id, size_t agent_id);
 
 public:
 
@@ -29259,6 +29495,10 @@ public:
     static const int ISOLATED_RECOVERED      = 7;
     static const int HOSPITALIZED            = 8;
     static const int RECOVERED               = 9;
+
+    static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
+    static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
+    static const size_t QUARANTINE_PROCESS_DONE     = 2u;
 
     ModelSEIRMixingQuarantine() {};
     
@@ -29275,6 +29515,15 @@ public:
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model. Specified in
      * column-major order.
+     * @param hospitalization_rate The rate at which infected individuals are hospitalized.
+     * @param hospitalization_period The average duration of hospitalization in days.
+     * @param days_undetected The average number of days an infected individual remains undetected.
+     * @param quarantine_period The duration of quarantine in days for exposed contacts.
+     * @param quarantine_willingness The proportion of individuals willing to comply with quarantine measures.
+     * @param isolation_willingness The proportion of individuals willing to self-isolate when detected.
+     * @param isolation_period The duration of isolation in days for detected infected individuals.
+     * @param contact_tracing_success_rate The probability of successfully identifying and tracing contacts (default: 1.0).
+     * @param contact_tracing_days_prior The number of days prior to detection for which contacts are traced (default: 4).
      */
     ModelSEIRMixingQuarantine(
         ModelSEIRMixingQuarantine<TSeq> & model,
@@ -29286,14 +29535,16 @@ public:
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix,
-        std::vector< bool > entity_can_quarantine,
         epiworld_double hospitalization_rate,
         epiworld_double hospitalization_period,
         // Policy parameters
         epiworld_double days_undetected,
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
-        epiworld_fast_int isolation_period
+        epiworld_double isolation_willingness,
+        epiworld_fast_int isolation_period,
+        epiworld_double contact_tracing_success_rate = 1.0,
+        epiworld_fast_uint contact_tracing_days_prior = 4u
     );
     
     /**
@@ -29307,6 +29558,15 @@ public:
      * @param avg_incubation_days The average incubation period of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
+     * @param hospitalization_rate The rate at which infected individuals are hospitalized.
+     * @param hospitalization_period The average duration of hospitalization in days.
+     * @param days_undetected The average number of days an infected individual remains undetected.
+     * @param quarantine_period The duration of quarantine in days for exposed contacts.
+     * @param quarantine_willingness The proportion of individuals willing to comply with quarantine measures.
+     * @param isolation_willingness The proportion of individuals willing to self-isolate when detected.
+     * @param isolation_period The duration of isolation in days for detected infected individuals.
+     * @param contact_tracing_success_rate The probability of successfully identifying and tracing contacts (default: 1.0).
+     * @param contact_tracing_days_prior The number of days prior to detection for which contacts are traced (default: 4).
      */
     ModelSEIRMixingQuarantine(
         const std::string & vname,
@@ -29317,65 +29577,96 @@ public:
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix,
-        std::vector< bool > entity_can_quarantine,
         epiworld_double hospitalization_rate,
         epiworld_double hospitalization_period,
         // Policy parameters
         epiworld_double days_undetected,
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
-        epiworld_fast_int isolation_period
+        epiworld_double isolation_willingness,
+        epiworld_fast_int isolation_period,
+        epiworld_double contact_tracing_success_rate = 1.0,
+        epiworld_fast_uint contact_tracing_days_prior = 4u
     );
 
+    /**
+     * @brief Run the model simulation
+     * @param ndays Number of days to simulate
+     * @param seed Random seed for reproducibility (default: -1 for random seed)
+     * @return Reference to this model instance
+     */
     ModelSEIRMixingQuarantine<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
     );
 
+    /**
+     * @brief Reset the model to initial state
+     */
     void reset();
 
+    /**
+     * @brief Create a clone of this model
+     * @return Pointer to a new model instance with the same configuration
+     */
     Model<TSeq> * clone_ptr();
 
     /**
      * @brief Set the initial states of the model
-     * @param proportions_ Double vector with a single element:
-     * - The proportion of non-infected individuals who have recovered.
-    */
+     * @param proportions_ Double vector with two elements:
+     * - [0]: The proportion of initially infected individuals who start in the exposed state.
+     * - [1]: The proportion of initially non-infected individuals who have recovered (immune).
+     * @param queue_ Optional vector for queuing specifications (default: empty).
+     */
     ModelSEIRMixingQuarantine<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
     );
 
+    /**
+     * @brief Set the contact matrix for population mixing
+     * @param cmat Contact matrix specifying interaction rates between groups
+     */
     void set_contact_matrix(std::vector< double > cmat)
     {
         contact_matrix = cmat;
         return;
     };
 
-    void set_entity_can_quarantine(std::vector< bool > can_quarantine)
-    {
-        entity_can_quarantine = can_quarantine;
-        return;
-    };
-
+    /**
+     * @brief Get the current contact matrix
+     * @return Vector representing the contact matrix
+     */
     std::vector< double > get_contact_matrix() const
     {
         return contact_matrix;
     };
 
-    std::vector< bool > get_entity_can_quarantine() const
+    /**
+     * @brief Get the quarantine trigger status for all agents
+     * @return Vector indicating quarantine process status for each agent
+     */
+    std::vector< size_t > get_agent_quarantine_triggered() const
     {
-        return entity_can_quarantine;
+        return agent_quarantine_triggered;
     };
 
-    std::vector< bool > get_entity_quarantine_triggered() const
-    {
-        return entity_quarantine_triggered;
-    };
-
+    /**
+     * @brief Get the quarantine willingness for all agents
+     * @return Vector of boolean values indicating each agent's willingness to quarantine
+     */
     std::vector< bool > get_quarantine_willingness() const
     {
         return quarantine_willingness;
+    };
+
+    /**
+     * @brief Get the isolation willingness for all agents
+     * @return Vector of boolean values indicating each agent's willingness to self-isolate
+     */
+    std::vector< bool > get_isolation_willingness() const
+    {
+        return isolation_willingness;
     };
 
 };
@@ -29387,6 +29678,39 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_model(Model<TSeq> * m)
     model->m_quarantine_process();
     model->events_run();
     model->m_update_infected_list();
+    return;
+}
+
+template<typename TSeq>
+inline void ModelSEIRMixingQuarantine<TSeq>::m_add_tracking(
+    size_t infected_id,
+    size_t agent_id
+)
+{
+
+    // We avoid the math if there's no point in tracking anymore
+    if (
+        agent_quarantine_triggered[infected_id] >= 
+        ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_DONE
+    )
+        return;
+
+    // We avoid the math if the contact happened before
+    // the lower bound of the contact tracing
+    size_t days_since_onset = Model<TSeq>::today() - day_onset[infected_id];
+    if (days_since_onset > 
+        Model<TSeq>::par("Contact tracing days prior")
+    )
+        return;
+    
+
+    // If we are overflow, we start from the beginning
+    size_t loc = tracking_matrix_size[infected_id] % EPI_MAX_TRACKING;
+    tracking_matrix[MM(infected_id, loc, Model<TSeq>::size())] = agent_id;
+
+    // We increase the size of the tracking matrix
+    tracking_matrix_size[infected_id]++;
+
     return;
 }
 
@@ -29521,16 +29845,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
             std::string(".")
             );
 
-    
-    // Checking the quarantine variable
-    if (entity_can_quarantine.size() != this->entities.size())
-        throw std::length_error(
-            std::string("The entity_can_quarantine vector must have the same size as the number of entities. ") +
-            std::to_string(entity_can_quarantine.size()) +
-            std::string(" != ") + std::to_string(this->entities.size()) +
-            std::string(".")
-        );
-
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
         double sum = 0.0;
@@ -29598,15 +29912,20 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     // Setting up the quarantine parameters
     quarantine_willingness.resize(this->size(), false);
+    isolation_willingness.resize(this->size(), false);
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
+    {
         quarantine_willingness[idx] =
             Model<TSeq>::runif() < this->par("Quarantine willingness");
+        isolation_willingness[idx] =
+            Model<TSeq>::runif() < this->par("Isolation willingness");
+    }
 
-    entity_quarantine_triggered.resize(this->size(), false);
+    agent_quarantine_triggered.resize(this->size(), 0u);
     std::fill(
-        entity_quarantine_triggered.begin(),
-        entity_quarantine_triggered.end(),
-        false
+        agent_quarantine_triggered.begin(),
+        agent_quarantine_triggered.end(),
+        ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_INACTIVE
     );
 
     day_flagged.resize(this->size(), 0);
@@ -29629,7 +29948,14 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
         day_exposed.end(),
         0
     );
-    
+
+    // Tracking matrix
+    tracking_matrix.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
+    std::fill(tracking_matrix.begin(), tracking_matrix.end(), 0u);
+
+    tracking_matrix_size.resize(Model<TSeq>::size(), 0u);
+    std::fill(tracking_matrix_size.begin(), tracking_matrix_size.end(), 0u);
+
     return;
 
 }
@@ -29690,6 +30016,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
                 "Trying to add an extra element to a temporal array outside of the range."
             );
         #endif
+
+        // Adding the current agent to the tracked interactions
+        m_down->m_add_tracking(neighbor.get_id(), p->get_id());
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
@@ -29750,22 +30079,29 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
 
     GET_MODEL(m, model);
 
-    // Checking if the agent is detected
-    bool detected = false;
-    if (
-        (m->par("Isolation period") >= 0) &&
-        (m->runif() < 1.0/m->par("Days undetected")) &&
-        (p->get_n_entities() != 0u) &&
-        (model->entity_can_quarantine[p->get_entity(0u).get_id()]) 
-    )
-    {
-        
-        model->entity_quarantine_triggered[p->get_entity(0u).get_id()] = true;
-        detected = true;
+    // Sampling whether the agent is detected or not
+    bool detected = m->runif() < 1.0/m->par("Days undetected");
 
+    // If detected and the entity can quarantine, we start
+    // the quarantine process
+    if (detected)
+    {
+        model->agent_quarantine_triggered[p->get_id()] = 
+            ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE;
     }
 
-    // Odd: Die, Even: Recover
+    // Checking if the agent is willing to isolate individually
+    // This is separate from quarantine and can happen even if agent cannot quarantine
+    bool isolation_detected = (m->par("Isolation period") >= 0) &&
+        detected &&
+        (model->isolation_willingness[p->get_id()])
+    ;
+
+    // Recording the date of detection
+    if (isolation_detected)
+        model->day_flagged[p->get_id()] = m->today();
+
+    // Computing probabilities for state change
     const auto & v = p->get_virus();
     m->array_double_tmp[0] = 1.0 - (1.0 - v->get_prob_recovery(m)) *
         (1.0 - p->get_recovery_enhancer(v, m));
@@ -29775,7 +30111,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     
     if (which == 0) // Recovers
     {
-        if (detected)
+        if (isolation_detected)
         {
             p->change_state(
                 m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
@@ -29807,7 +30143,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
         }
 
     }
-    else if ((which == 2) && detected) // Nothing, but detected
+    else if ((which == 2) && isolation_detected) // Nothing, but detected
     {
         // If the agent is detected, it goes to isolation
         p->change_state(
@@ -29993,25 +30329,40 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_hospitalized(
 template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
 
-    int entity_num = -1;
-    for (auto & entity: Model<TSeq>::get_entities())
+    // Process entity-level quarantine
+    for (size_t agent_i = 0u; agent_i < Model<TSeq>::size(); ++agent_i)
     {
 
-        // Checking if the quarantine in the entity was triggered
+        // Checking if the quarantine in the agent was triggered
         // or not
-        if (!entity_quarantine_triggered[++entity_num])
-            return;
-
         if (
-            (this->par("Quarantine period") < 0) &&
-            (this->par("Isolation period") < 0)
+            agent_quarantine_triggered[agent_i] != 
+            ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE
         )
-            return;
+            continue;
 
-        for (auto i: entity.get_agents())
+        if (this->par("Quarantine period") < 0)
+            continue;
+
+        // Getting the number of contacts, if it is greater
+        // than the maximum, it means that we overflowed, so 
+        // we will only quarantine the first EPI_MAX_TRACKING
+        size_t n_contacts = this->tracking_matrix_size[agent_i];
+        if (n_contacts >= EPI_MAX_TRACKING)
+            n_contacts = EPI_MAX_TRACKING;
+
+        for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
 
-            auto & agent = Model<TSeq>::get_agent(i);
+            // Checking if we will detect the contact
+            if (Model<TSeq>::runif() > Model<TSeq>::par("Contact tracing success rate"))
+                continue;
+
+            size_t contact_id = this->tracking_matrix[
+                MM(agent_i, contact_i, Model<TSeq>::size())
+            ];
+
+            auto & agent = Model<TSeq>::get_agent(contact_id);
 
             if (agent.get_state() > INFECTED)
                 continue;
@@ -30021,7 +30372,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
                 continue;
 
             if (
-                quarantine_willingness[i] &&
+                quarantine_willingness[contact_id] &&
                 (Model<TSeq>::par("Quarantine period") >= 0))
             {
 
@@ -30029,12 +30380,18 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
                 {
                     case SUSCEPTIBLE:
                         agent.change_state(this, QUARANTINED_SUSCEPTIBLE);
+                        day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case EXPOSED:
                         agent.change_state(this, QUARANTINED_EXPOSED);
+                        day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case INFECTED:
-                        agent.change_state(this, ISOLATED);
+                        if (isolation_willingness[contact_id])
+                        {
+                            agent.change_state(this, ISOLATED);
+                            day_flagged[contact_id] = Model<TSeq>::today();
+                        }
                         break;
                     default:
                         throw std::logic_error(
@@ -30042,28 +30399,38 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
                         );
                 }
 
-                // And we add the day of quarantine
-                day_flagged[i] = Model<TSeq>::today();
-
             }
         }
 
         // Setting the quarantine process off
-        entity_quarantine_triggered[entity_num] = false;
+        agent_quarantine_triggered[agent_i] = 
+            ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_DONE;
     }
 
     return;
 }
 
 /**
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
+ * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing, quarantine, and contact tracing
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
- * @param vname std::string Name of the virus
- * @param prevalence Initial prevalence (proportion)
- * @param contact_rate Average number of contacts (interactions) per step.
- * @param transmission_rate Probability of transmission
- * @param recovery_rate Probability of recovery
+ * @param model A ModelSEIRMixingQuarantine<TSeq> object where to set up the SEIR model.
+ * @param vname Name of the virus
+ * @param n Number of agents in the population
+ * @param prevalence Initial prevalence (proportion of infected individuals)
+ * @param contact_rate Average number of contacts (interactions) per step
+ * @param transmission_rate Probability of transmission per contact
+ * @param avg_incubation_days Average incubation period in days
+ * @param recovery_rate Probability of recovery per day
+ * @param contact_matrix Contact matrix specifying mixing patterns between population groups
+ * @param hospitalization_rate Rate at which infected individuals are hospitalized
+ * @param hospitalization_period Average duration of hospitalization in days
+ * @param days_undetected Average number of days an infected individual remains undetected
+ * @param quarantine_period Duration of quarantine in days for exposed contacts
+ * @param quarantine_willingness Proportion of individuals willing to comply with quarantine
+ * @param isolation_willingness Proportion of individuals willing to self-isolate when detected
+ * @param isolation_period Duration of isolation in days for detected infected individuals
+ * @param contact_tracing_success_rate Probability of successfully identifying contacts during tracing
+ * @param contact_tracing_days_prior Number of days prior to detection for contact tracing
  */
 template<typename TSeq>
 inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
@@ -30076,20 +30443,21 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix,
-    std::vector< bool > entity_can_quarantine,
     epiworld_double hospitalization_rate,
     epiworld_double hospitalization_period,
     // Policy parameters
     epiworld_double days_undetected,
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
-    epiworld_fast_int isolation_period
+    epiworld_double isolation_willingness,
+    epiworld_fast_int isolation_period,
+    epiworld_double contact_tracing_success_rate,
+    epiworld_fast_uint contact_tracing_days_prior
     )
 {
 
     // Setting up the contact matrix
     this->contact_matrix = contact_matrix;
-    this->entity_can_quarantine = entity_can_quarantine;
 
     // Setting up parameters
     model.add_param(contact_rate, "Contact rate");
@@ -30103,7 +30471,16 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.add_param(
         quarantine_willingness, "Quarantine willingness"
     );
+    model.add_param(
+        isolation_willingness, "Isolation willingness"
+    );
     model.add_param(isolation_period, "Isolation period");
+    model.add_param(
+        contact_tracing_success_rate, "Contact tracing success rate"
+    );
+    model.add_param(
+        contact_tracing_days_prior, "Contact tracing days prior"
+    );
     
     // state
     model.add_state("Susceptible", m_update_susceptible);
@@ -30140,7 +30517,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     // Adding the empty population
     model.agents_empty_graph(n);
 
-    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) with Mixing");
+    model.set_name("SEIR with Mixing and Quarantine");
 
     return;
 
@@ -30156,19 +30533,20 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix,
-    std::vector< bool > entity_can_quarantine,
     epiworld_double hospitalization_rate,
     epiworld_double hospitalization_period,
     // Policy parameters
     epiworld_double days_undetected,
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
-    epiworld_fast_int isolation_period
+    epiworld_double isolation_willingness,
+    epiworld_fast_int isolation_period,
+    epiworld_double contact_tracing_success_rate,
+    epiworld_fast_uint contact_tracing_days_prior
     )
 {   
 
     this->contact_matrix = contact_matrix;
-    this->entity_can_quarantine = entity_can_quarantine;
 
     ModelSEIRMixingQuarantine(
         *this,
@@ -30180,14 +30558,16 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         avg_incubation_days,
         recovery_rate,
         contact_matrix,
-        entity_can_quarantine,
         hospitalization_rate,
         hospitalization_period,
         // Policy parameters
         days_undetected,
         quarantine_period,
         quarantine_willingness,
-        isolation_period
+        isolation_willingness,
+        isolation_period,
+        contact_tracing_success_rate,
+        contact_tracing_days_prior
     );
 
     return;

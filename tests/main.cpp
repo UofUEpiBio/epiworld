@@ -34,3 +34,5 @@
 #include "17a-mixing-quarantine.cpp"
 #include "17b-mixing-quarantine.cpp"
 #include "17c-mixing-quarantine.cpp"
+#include "17d-mixing-quarantine.cpp"
+#include "17e-mixing-quarantine.cpp"
