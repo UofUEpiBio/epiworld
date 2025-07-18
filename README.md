@@ -16,7 +16,7 @@ building complex models quickly. Here are some of its main features:
   - Models can have an arbitrary set of states.
   - Viruses and tools (e.g., vaccines, mask-wearing) can be designed to have arbitrary features.
   - Multiple tools and viruses can live in the same simulation.
-  - It is *FAST*: About 30 Million person/day simulations per second (see example below).
+  - It is *FAST*: Over 150 Million person/day simulations per second (see example below).
 
 Various examples can be found in the [examples](examples) folder.
 
@@ -67,9 +67,7 @@ Compiling (with `make helloworld.o`) and running the problem yields the followin
 ```bash
 _________________________________________________________________________
 Running the model...
-||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
- done.
-________________________________________________________________________________
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
@@ -79,15 +77,15 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 103.00ms
-Last run speed      : 96.34 million agents x day / second
+Last run elapsed t  : 44.00ms
+Last run speed      : 223.71 million agents x day / second
 Rewiring            : off
 
 Global events:
  (none)
 
 Virus(es):
- - COVID-19 (baseline prevalence: 1.00%)
+ - COVID-19
 
 Tool(s):
  (none)
@@ -102,9 +100,9 @@ Distribution of the population at time 100:
   - (2) Recovered   :      0 -> 97069
 
 Transition Probabilities:
- - Susceptible  0.96  0.04  0.00
- - Infected     0.00  0.70  0.30
- - Recovered    0.00  0.00  1.00
+ - Susceptible  0.96  0.04     -
+ - Infected        -  0.70  0.30
+ - Recovered       -     -  1.00
 ```
 
 
@@ -160,24 +158,27 @@ int main()
 Which should print something like the following:
 
 ```bash
-Running the model...
 _________________________________________________________________________
-||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
-
-________________________________________________________________________________
+Running the model...
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+_________________________________________________________________________
 SIMULATION STUDY
 
 Name of the model   : (none)
 Population size     : 100000
-Number of entitites : 0
+Agents' data        : (none)
+Number of entities  : 0
 Days (duration)     : 100 (of 100)
-Number of variants  : 1
-Last run elapsed t  : 209.00ms
-Last run speed      : 47.64 million agents x day / second
+Number of viruses   : 1
+Last run elapsed t  : 50.00ms
+Last run speed      : 196.85 million agents x day / second
 Rewiring            : off
 
+Global events:
+ (none)
+
 Virus(es):
- - covid 19 (baseline prevalence: 1000 seeds)
+ - covid 19
 
 Tool(s):
  (none)
@@ -186,14 +187,14 @@ Model parameters:
  (none)
 
 Distribution of the population at time 100:
- - (0) Susceptible :  99000 -> 2565
- - (1) Infected    :   1000 -> 366
- - (2) Recovered   :      0 -> 97069
+  - (0) Susceptible :  99000 -> 2565
+  - (1) Infected    :   1000 -> 366
+  - (2) Recovered   :      0 -> 97069
 
 Transition Probabilities:
- - Susceptible  0.96  0.04  0.00
- - Infected     0.00  0.70  0.30
- - Recovered    0.00  0.00  1.00
+ - Susceptible  0.96  0.04     -
+ - Infected        -  0.70  0.30
+ - Recovered       -     -  1.00
 ```
 
 Which took about 0.209 seconds (~ 47 million ppl x day / second).
