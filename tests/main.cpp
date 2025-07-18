@@ -36,4 +36,6 @@
 #include "17c-mixing-quarantine.cpp"
 #include "17d-mixing-quarantine.cpp"
 #include "17e-mixing-quarantine.cpp"
-#include "19-measles-mixing.cpp"
+#include "19a-measles-mixing.cpp"
+#include "19b-measles-mixing.cpp"
+

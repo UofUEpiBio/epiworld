@@ -585,7 +585,7 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     std::fill(
         agent_quarantine_triggered.begin(),
         agent_quarantine_triggered.end(),
-        ModelMeaslesMixing<TSeq>::QUARANTINE_PROCESS_INACTIVE
+        0u
     );
 
     day_flagged.resize(this->size(), 0);
