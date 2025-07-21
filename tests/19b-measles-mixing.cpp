@@ -18,7 +18,6 @@ EPIWORLD_TEST_CASE(
     std::vector<double> contact_matrix(9u, 1.0/3.0);
     
     epimodels::ModelMeaslesMixing<> model_0(
-        "Measles",   // Virus name
         900,        // Number of agents
         n_seeds / 900.0, // Initial prevalence
         2.0,         // Contact rate

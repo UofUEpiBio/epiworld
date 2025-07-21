@@ -122,7 +122,7 @@ model.print();
 
 ## Differences from Other Models
 
-### vs. ModelMeaslesQuarantine
+### vs. ModelMeaslesSchool
 - **Population Mixing**: Adds contact matrices for heterogeneous mixing
 - **Contact Tracing**: Enhanced contact tracing with configurable success rates
 - **Scalability**: Supports multiple population entities

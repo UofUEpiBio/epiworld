@@ -14,14 +14,14 @@
 
 using namespace epiworld;
 
-EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesQuarantineR0]") {
+EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesSchoolR0]") {
     
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 10;
     int n_threads = 2;
     int n_days = 90;
     size_t nsims = 400;
-    epimodels::ModelMeaslesQuarantine<> model_0(
+    epimodels::ModelMeaslesSchool<> model_0(
         5000,    // Number of agents
         n_seeds, // Number of initial cases
         2.5,     // Contact rate
