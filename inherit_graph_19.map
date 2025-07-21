@@ -19,7 +19,7 @@
 <area shape="rect" id="node18" href="$class_model_s_u_r_v.html" title=" " alt="" coords="220,848,367,875"/>
 <area shape="rect" id="node19" href="$classepiworld_1_1epimodels_1_1_model_diff_net.html" title="Template for a Network Diffusion Model." alt="" coords="215,899,371,941"/>
 <area shape="rect" id="node20" href="$classepiworld_1_1epimodels_1_1_model_measles_mixing.html" title="Measles model with population mixing, quarantine, and contact tracing." alt="" coords="219,964,368,1020"/>
-<area shape="rect" id="node21" href="$classepiworld_1_1epimodels_1_1_model_measles_quarantine.html" title="Template for a Measles model with quarantine." alt="" coords="206,1044,381,1100"/>
+<area shape="rect" id="node21" href="$classepiworld_1_1epimodels_1_1_model_measles_school.html" title="Template for a Measles model with quarantine." alt="" coords="217,1044,369,1100"/>
 <area shape="rect" id="node22" href="$classepiworld_1_1epimodels_1_1_model_s_e_i_r.html" title="Template for a Susceptible&#45;Exposed&#45;Infected&#45;Removed (SEIR) model." alt="" coords="220,1123,367,1165"/>
 <area shape="rect" id="node23" href="$classepiworld_1_1epimodels_1_1_model_s_e_i_r_c_o_n_n.html" title=" " alt="" coords="201,1189,386,1230"/>
 <area shape="rect" id="node24" href="$classepiworld_1_1epimodels_1_1_model_s_e_i_r_d.html" title="Template for a Susceptible&#45;Exposed&#45;Infected&#45;Removed&#45;Deceased (SEIRD) model." alt="" coords="216,1254,371,1295"/>

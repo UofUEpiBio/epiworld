@@ -76,20 +76,20 @@ $(function() {
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#if __cplusplus &gt;= 202302L</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;    <span class="comment">// C++23 or later</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">    #define GET_MODEL(model, output) \</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">        ModelMeaslesQuarantine&lt;TSeq&gt; * output = \</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">            dynamic_cast&lt;ModelMeaslesQuarantine&lt;TSeq&gt; *&gt;(model); \</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">        ModelMeaslesSchool&lt;TSeq&gt; * output = \</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">            dynamic_cast&lt;ModelMeaslesSchool&lt;TSeq&gt; *&gt;(model); \</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">        [[assume(output != nullptr)]]</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;    <span class="comment">// C++17 or C++20</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">    #define GET_MODEL(model, output) \</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">        ModelMeaslesQuarantine&lt;TSeq&gt; * output = \</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">            dynamic_cast&lt;ModelMeaslesQuarantine&lt;TSeq&gt; *&gt;(model); \</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">        ModelMeaslesSchool&lt;TSeq&gt; * output = \</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">            dynamic_cast&lt;ModelMeaslesSchool&lt;TSeq&gt; *&gt;(model); \</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">        assert(output != nullptr); </span><span class="comment">// Use assert for runtime checks</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#define LOCAL_UPDATE_FUN(name) \</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">    template&lt;typename TSeq&gt; \</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">    inline void ModelMeaslesQuarantine&lt;TSeq&gt;:: name \</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">    inline void ModelMeaslesSchool&lt;TSeq&gt;:: name \</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">    (epiworld::Agent&lt;TSeq&gt; * p, epiworld::Model&lt;TSeq&gt; * m)</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#define SAMPLE_FROM_PROBS(n, ans) \</span></div>
@@ -103,7 +103,7 @@ $(function() {
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">    }</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = EPI_DEFAULT_TSEQ&gt;</div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="class_model_measles_quarantine.html">   49</a></span>&#160;<span class="keyword">class </span><a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine</a>: <span class="keyword">public</span> <a class="code" href="class_model.html">Model</a>&lt;TSeq&gt; {</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="class_model_measles_school.html">   49</a></span>&#160;<span class="keyword">class </span><a class="code" href="class_model_measles_school.html">ModelMeaslesSchool</a>: <span class="keyword">public</span> <a class="code" href="class_model.html">Model</a>&lt;TSeq&gt; {</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
@@ -138,10 +138,10 @@ $(function() {
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> epiworld_fast_uint RECOVERED               = 12u;</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    </div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="comment">// Default constructor</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine</a>() {};</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool</a>() {};</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine</a>(</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;</a> &amp; model,</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool</a>(</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;</a> &amp; model,</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        epiworld_fast_uint n,</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        epiworld_fast_uint n_exposed,</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        <span class="comment">// Disease parameters</span></div>
@@ -162,7 +162,7 @@ $(function() {
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        epiworld_fast_int isolation_period</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    );</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine</a>(</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool</a>(</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        epiworld_fast_uint n,</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        epiworld_fast_uint n_exposed,</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;        <span class="comment">// Disease parameters</span></div>
@@ -183,24 +183,24 @@ $(function() {
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        epiworld_fast_int isolation_period</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    );</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
-<div class="line"><a name="l00159"></a><span class="lineno"><a class="line" href="class_model_measles_quarantine.html#ab8035186c8691a76abba09da184b4826">  159</a></span>&#160;    std::vector&lt;Agent&lt;TSeq&gt; *&gt; <a class="code" href="class_model_measles_quarantine.html#ab8035186c8691a76abba09da184b4826">infectious</a>; </div>
+<div class="line"><a name="l00159"></a><span class="lineno"><a class="line" href="class_model_measles_school.html#a315eaeb4a05b6fea4fe178323762532e">  159</a></span>&#160;    std::vector&lt;Agent&lt;TSeq&gt; *&gt; <a class="code" href="class_model_measles_school.html#a315eaeb4a05b6fea4fe178323762532e">infectious</a>; </div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160; </div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    <span class="keywordtype">bool</span> system_quarantine_triggered = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160; </div>
-<div class="line"><a name="l00163"></a><span class="lineno"><a class="line" href="class_model_measles_quarantine.html#a71053fccd21dafa183ea180ed2a572f4">  163</a></span>&#160;    std::vector&lt; int &gt; <a class="code" href="class_model_measles_quarantine.html#a71053fccd21dafa183ea180ed2a572f4">day_flagged</a>; </div>
-<div class="line"><a name="l00164"></a><span class="lineno"><a class="line" href="class_model_measles_quarantine.html#a9670da19d405b184014bf3111abf5e1f">  164</a></span>&#160;    std::vector&lt; int &gt; <a class="code" href="class_model_measles_quarantine.html#a9670da19d405b184014bf3111abf5e1f">day_rash_onset</a>; </div>
+<div class="line"><a name="l00163"></a><span class="lineno"><a class="line" href="class_model_measles_school.html#a51ac4c01ad951227c6f44e1afe2cb3b4">  163</a></span>&#160;    std::vector&lt; int &gt; <a class="code" href="class_model_measles_school.html#a51ac4c01ad951227c6f44e1afe2cb3b4">day_flagged</a>; </div>
+<div class="line"><a name="l00164"></a><span class="lineno"><a class="line" href="class_model_measles_school.html#a7124cdddb58f4806e9ce07a78658b189">  164</a></span>&#160;    std::vector&lt; int &gt; <a class="code" href="class_model_measles_school.html#a7124cdddb58f4806e9ce07a78658b189">day_rash_onset</a>; </div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160; </div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_model_measles_quarantine.html#aaaa64ccaff50d92ed9665409c09d2485">quarantine_agents</a>();</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_model_measles_school.html#adfb3cb74f1b5acd06b0b7e20d6f57123">quarantine_agents</a>();</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_model_measles_quarantine.html#adbf25714985ddb82738dba114f6c7299">reset</a>();</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_model_measles_school.html#a0fe503b7591fc2dc21ad80d64ca8dfdd">reset</a>();</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordtype">void</span> update_infectious();</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * <a class="code" href="class_model_measles_quarantine.html#a21e6b8cd704e13d99201c39a2ea559a6">clone_ptr</a>();</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * <a class="code" href="class_model_measles_school.html#a29d8e05d1f221eac10f66488122648d2">clone_ptr</a>();</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160; </div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;};</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160; </div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00194"></a><span class="lineno"><a class="line" href="class_model_measles_quarantine.html#aaaa64ccaff50d92ed9665409c09d2485">  194</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_quarantine.html#aaaa64ccaff50d92ed9665409c09d2485">ModelMeaslesQuarantine&lt;TSeq&gt;::quarantine_agents</a>() {</div>
+<div class="line"><a name="l00194"></a><span class="lineno"><a class="line" href="class_model_measles_school.html#adfb3cb74f1b5acd06b0b7e20d6f57123">  194</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_school.html#adfb3cb74f1b5acd06b0b7e20d6f57123">ModelMeaslesSchool&lt;TSeq&gt;::quarantine_agents</a>() {</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160; </div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    <span class="comment">// Iterating through the new cases</span></div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="keywordflow">if</span> (!system_quarantine_triggered)</div>
@@ -260,7 +260,7 @@ $(function() {
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160; </div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160; </div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::m_update_model</a>(<a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * m) {</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;::m_update_model</a>(<a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * m) {</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    </div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    model-&gt;quarantine_agents();</div>
@@ -271,7 +271,7 @@ $(function() {
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;}</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; </div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00265"></a><span class="lineno"><a class="line" href="class_model_measles_quarantine.html#adbf25714985ddb82738dba114f6c7299">  265</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_quarantine.html#adbf25714985ddb82738dba114f6c7299">ModelMeaslesQuarantine&lt;TSeq&gt;::reset</a>() {</div>
+<div class="line"><a name="l00265"></a><span class="lineno"><a class="line" href="class_model_measles_school.html#a0fe503b7591fc2dc21ad80d64ca8dfdd">  265</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_school.html#a0fe503b7591fc2dc21ad80d64ca8dfdd">ModelMeaslesSchool&lt;TSeq&gt;::reset</a>() {</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    </div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <a class="code" href="class_model.html#a9591eb76c7cf1ed7e1510342ff602d37">Model&lt;TSeq&gt;::reset</a>();</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160; </div>
@@ -295,7 +295,7 @@ $(function() {
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;}</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160; </div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::update_infectious</a>() {</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;::update_infectious</a>() {</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160; </div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;<span class="preprocessor">    #ifdef EPI_DEBUG</span></div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    <span class="comment">// All agents with state &gt;= EXPOSED should have a virus</span></div>
@@ -335,11 +335,11 @@ $(function() {
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;}</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00329"></a><span class="lineno"><a class="line" href="class_model_measles_quarantine.html#a21e6b8cd704e13d99201c39a2ea559a6">  329</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * <a class="code" href="class_model_measles_quarantine.html#a21e6b8cd704e13d99201c39a2ea559a6">ModelMeaslesQuarantine&lt;TSeq&gt;::clone_ptr</a>()</div>
+<div class="line"><a name="l00329"></a><span class="lineno"><a class="line" href="class_model_measles_school.html#a29d8e05d1f221eac10f66488122648d2">  329</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * <a class="code" href="class_model_measles_school.html#a29d8e05d1f221eac10f66488122648d2">ModelMeaslesSchool&lt;TSeq&gt;::clone_ptr</a>()</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;{</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;        </div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;</a> * ptr = <span class="keyword">new</span> <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;</a>(</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        *<span class="keyword">dynamic_cast&lt;</span><span class="keyword">const </span><a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;</a>*<span class="keyword">&gt;</span>(<span class="keyword">this</span>)</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;</a> * ptr = <span class="keyword">new</span> <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;</a>(</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        *<span class="keyword">dynamic_cast&lt;</span><span class="keyword">const </span><a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;</a>*<span class="keyword">&gt;</span>(<span class="keyword">this</span>)</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;        );</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">dynamic_cast&lt;</span> <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> *<span class="keyword">&gt;</span>(ptr);</div>
@@ -435,7 +435,7 @@ $(function() {
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;LOCAL_UPDATE_FUN(m_update_exposed) {</div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160; </div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; (1.0/p-&gt;get_virus()-&gt;get_incubation(m)))</div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::PRODROMAL</a>);</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;::PRODROMAL</a>);</div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160; </div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160; </div>
@@ -448,7 +448,7 @@ $(function() {
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160; </div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;        GET_MODEL(m, model);</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        model-&gt;day_rash_onset[p-&gt;get_id()] = m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>();</div>
-<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::RASH</a>);</div>
+<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;::RASH</a>);</div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160; </div>
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;    }</div>
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160; </div>
@@ -499,8 +499,8 @@ $(function() {
 <div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160;        p-&gt;rm_virus(</div>
 <div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;            m,</div>
 <div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;            detected ?</div>
-<div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;                ModelMeaslesQuarantine::ISOLATED_RECOVERED:</div>
-<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;                ModelMeaslesQuarantine::RECOVERED</div>
+<div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;                ModelMeaslesSchool::ISOLATED_RECOVERED:</div>
+<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;                ModelMeaslesSchool::RECOVERED</div>
 <div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;        );</div>
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;    }</div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (which == 1)</div>
@@ -510,8 +510,8 @@ $(function() {
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;        p-&gt;change_state(</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;            m,</div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;            detected ?</div>
-<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;                ModelMeaslesQuarantine::DETECTED_HOSPITALIZED :</div>
-<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;                ModelMeaslesQuarantine::HOSPITALIZED</div>
+<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;                ModelMeaslesSchool::DETECTED_HOSPITALIZED :</div>
+<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;                ModelMeaslesSchool::HOSPITALIZED</div>
 <div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;            );</div>
 <div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;    }</div>
 <div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (which != 0)</div>
@@ -522,7 +522,7 @@ $(function() {
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;    {</div>
 <div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;        <span class="comment">// If the agent is not hospitalized, then it is moved to</span></div>
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;        <span class="comment">// isolation.</span></div>
-<div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::ISOLATED);</div>
+<div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;        p-&gt;change_state(m, ModelMeaslesSchool::ISOLATED);</div>
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;    }</div>
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;    </div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;};</div>
@@ -554,12 +554,12 @@ $(function() {
 <div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        {</div>
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;            p-&gt;rm_virus(</div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;                m,</div>
-<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;                ModelMeaslesQuarantine::RECOVERED</div>
+<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;                ModelMeaslesSchool::RECOVERED</div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;            );</div>
 <div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        }</div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;        <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;            p-&gt;rm_virus(</div>
-<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;                m, ModelMeaslesQuarantine::ISOLATED_RECOVERED</div>
+<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;                m, ModelMeaslesSchool::ISOLATED_RECOVERED</div>
 <div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;            );</div>
 <div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;    }</div>
 <div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160; </div>
@@ -570,15 +570,15 @@ $(function() {
 <div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;            m,</div>
 <div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;            <span class="comment">// HOSPITALIZED </span></div>
 <div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;            unisolate ?</div>
-<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;                ModelMeaslesQuarantine::HOSPITALIZED :</div>
-<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;                ModelMeaslesQuarantine::DETECTED_HOSPITALIZED</div>
+<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;                ModelMeaslesSchool::HOSPITALIZED :</div>
+<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;                ModelMeaslesSchool::DETECTED_HOSPITALIZED</div>
 <div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;            );</div>
 <div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;    }</div>
 <div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;    <span class="comment">// If neither hospitalized nor recovered, then the agent is</span></div>
 <div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;    <span class="comment">// still under isolation, unless the quarantine period is over.</span></div>
 <div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> ((which == 0u) &amp;&amp; unisolate)</div>
 <div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;    {</div>
-<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RASH);</div>
+<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;        p-&gt;change_state(m, ModelMeaslesSchool::RASH);</div>
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;    }</div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160; </div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;}</div>
@@ -596,7 +596,7 @@ $(function() {
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;        <span class="keyword">true</span>: <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160; </div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;    <span class="keywordflow">if</span> (unisolate)</div>
-<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RECOVERED);</div>
+<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;        p-&gt;change_state(m, ModelMeaslesSchool::RECOVERED);</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160; </div>
 <div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;}</div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160; </div>
@@ -620,12 +620,12 @@ $(function() {
 <div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        <span class="keywordflow">if</span> (unquarantine)</div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;            p-&gt; change_state(</div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;                m,</div>
-<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;                ModelMeaslesQuarantine::PRODROMAL</div>
+<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;                ModelMeaslesSchool::PRODROMAL</div>
 <div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;            );</div>
 <div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;        <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;            p-&gt;change_state(</div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;                m,</div>
-<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;                ModelMeaslesQuarantine::QUARANTINED_PRODROMAL</div>
+<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;                ModelMeaslesSchool::QUARANTINED_PRODROMAL</div>
 <div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;            );</div>
 <div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160; </div>
 <div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;    }</div>
@@ -633,7 +633,7 @@ $(function() {
 <div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;    {</div>
 <div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;        p-&gt;change_state(</div>
 <div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;            m,</div>
-<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;            ModelMeaslesQuarantine::EXPOSED</div>
+<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;            ModelMeaslesSchool::EXPOSED</div>
 <div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;        );</div>
 <div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;    }</div>
 <div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160; </div>
@@ -646,7 +646,7 @@ $(function() {
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;        m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;get_id()];</div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    </div>
 <div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
-<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::SUSCEPTIBLE);</div>
+<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;        p-&gt;change_state(m, ModelMeaslesSchool::SUSCEPTIBLE);</div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160; </div>
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;}</div>
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160; </div>
@@ -666,13 +666,13 @@ $(function() {
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; (1.0/m-&gt;par(<span class="stringliteral">&quot;Prodromal period&quot;</span>)))</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;    {</div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;        model-&gt;day_rash_onset[p-&gt;get_id()] = m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>();</div>
-<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::ISOLATED);</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;        p-&gt;change_state(m, ModelMeaslesSchool::ISOLATED);</div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;    }</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;    <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;    {</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;        </div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        <span class="keywordflow">if</span> (unquarantine)</div>
-<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;            p-&gt;change_state(m, ModelMeaslesQuarantine::PRODROMAL);</div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;            p-&gt;change_state(m, ModelMeaslesSchool::PRODROMAL);</div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160; </div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;    }</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160; </div>
@@ -684,7 +684,7 @@ $(function() {
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;<a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;get_id()];</div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;    </div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
-<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        p-&gt;change_state(m, ModelMeaslesQuarantine::RECOVERED);</div>
+<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        p-&gt;change_state(m, ModelMeaslesSchool::RECOVERED);</div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160; </div>
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;}</div>
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160; </div>
@@ -692,7 +692,7 @@ $(function() {
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160; </div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;    <span class="comment">// The agent is removed from the system</span></div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Hospitalization period&quot;</span>))</div>
-<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;        p-&gt;rm_virus(m, ModelMeaslesQuarantine::RECOVERED);</div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;        p-&gt;rm_virus(m, ModelMeaslesSchool::RECOVERED);</div>
 <div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160; </div>
 <div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;    <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160; </div>
@@ -700,8 +700,8 @@ $(function() {
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160; </div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160; </div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00694"></a><span class="lineno"><a class="line" href="class_model_measles_quarantine.html#ae99078b141176000eb305ffb6920842f">  694</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::ModelMeaslesQuarantine</a>(</div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;    <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;</a> &amp; model,</div>
+<div class="line"><a name="l00694"></a><span class="lineno"><a class="line" href="class_model_measles_school.html#a47428ecd299303b65979779fffbcfaa7">  694</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;::ModelMeaslesSchool</a>(</div>
+<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;    <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;</a> &amp; model,</div>
 <div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;    epiworld_fast_uint n,</div>
 <div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;    epiworld_fast_uint n_exposed,</div>
 <div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;    <span class="comment">// Disease parameters</span></div>
@@ -803,7 +803,7 @@ $(function() {
 <div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;}</div>
 <div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160; </div>
 <div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine&lt;TSeq&gt;::ModelMeaslesQuarantine</a>(</div>
+<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;<span class="keyword">inline</span> <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool&lt;TSeq&gt;::ModelMeaslesSchool</a>(</div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;    epiworld_fast_uint n,</div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;    epiworld_fast_uint n_exposed,</div>
 <div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;    <span class="comment">// Disease parameters</span></div>
@@ -825,7 +825,7 @@ $(function() {
 <div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160; </div>
 <div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;) {</div>
 <div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160; </div>
-<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;    <a class="code" href="class_model_measles_quarantine.html">ModelMeaslesQuarantine</a>(</div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;    <a class="code" href="class_model_measles_school.html">ModelMeaslesSchool</a>(</div>
 <div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;        *<span class="keyword">this</span>,</div>
 <div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;        n,</div>
 <div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;        n_exposed,</div>
@@ -857,13 +857,13 @@ $(function() {
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
 <div class="ttc" id="aclass_model_html_a9591eb76c7cf1ed7e1510342ff602d37"><div class="ttname"><a href="class_model.html#a9591eb76c7cf1ed7e1510342ff602d37">Model::reset</a></div><div class="ttdeci">virtual void reset()</div><div class="ttdoc">Reset the model.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1964</div></div>
 <div class="ttc" id="aclass_model_html_aa3ce8d5f025e239f8090ab9645f3e917"><div class="ttname"><a href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model::today</a></div><div class="ttdeci">int today() const</div><div class="ttdoc">The current time of the model.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1316</div></div>
-<div class="ttc" id="aclass_model_measles_quarantine_html"><div class="ttname"><a href="class_model_measles_quarantine.html">ModelMeaslesQuarantine</a></div><div class="ttdoc">Template for a Measles model with quarantine.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:49</div></div>
-<div class="ttc" id="aclass_model_measles_quarantine_html_a21e6b8cd704e13d99201c39a2ea559a6"><div class="ttname"><a href="class_model_measles_quarantine.html#a21e6b8cd704e13d99201c39a2ea559a6">ModelMeaslesQuarantine::clone_ptr</a></div><div class="ttdeci">Model&lt; TSeq &gt; * clone_ptr()</div><div class="ttdoc">Advanced usage: Makes a copy of data and returns it as undeleted pointer.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:329</div></div>
-<div class="ttc" id="aclass_model_measles_quarantine_html_a71053fccd21dafa183ea180ed2a572f4"><div class="ttname"><a href="class_model_measles_quarantine.html#a71053fccd21dafa183ea180ed2a572f4">ModelMeaslesQuarantine::day_flagged</a></div><div class="ttdeci">std::vector&lt; int &gt; day_flagged</div><div class="ttdoc">Either detected or started quarantine.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:163</div></div>
-<div class="ttc" id="aclass_model_measles_quarantine_html_a9670da19d405b184014bf3111abf5e1f"><div class="ttname"><a href="class_model_measles_quarantine.html#a9670da19d405b184014bf3111abf5e1f">ModelMeaslesQuarantine::day_rash_onset</a></div><div class="ttdeci">std::vector&lt; int &gt; day_rash_onset</div><div class="ttdoc">Day of rash onset.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:164</div></div>
-<div class="ttc" id="aclass_model_measles_quarantine_html_aaaa64ccaff50d92ed9665409c09d2485"><div class="ttname"><a href="class_model_measles_quarantine.html#aaaa64ccaff50d92ed9665409c09d2485">ModelMeaslesQuarantine::quarantine_agents</a></div><div class="ttdeci">void quarantine_agents()</div><div class="ttdoc">Quarantine agents that are in the system.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:194</div></div>
-<div class="ttc" id="aclass_model_measles_quarantine_html_ab8035186c8691a76abba09da184b4826"><div class="ttname"><a href="class_model_measles_quarantine.html#ab8035186c8691a76abba09da184b4826">ModelMeaslesQuarantine::infectious</a></div><div class="ttdeci">std::vector&lt; Agent&lt; TSeq &gt; * &gt; infectious</div><div class="ttdoc">Agents infectious for contact.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:159</div></div>
-<div class="ttc" id="aclass_model_measles_quarantine_html_adbf25714985ddb82738dba114f6c7299"><div class="ttname"><a href="class_model_measles_quarantine.html#adbf25714985ddb82738dba114f6c7299">ModelMeaslesQuarantine::reset</a></div><div class="ttdeci">void reset()</div><div class="ttdoc">Reset the model.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:265</div></div>
+<div class="ttc" id="aclass_model_measles_school_html"><div class="ttname"><a href="class_model_measles_school.html">ModelMeaslesSchool</a></div><div class="ttdoc">Template for a Measles model with quarantine.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:49</div></div>
+<div class="ttc" id="aclass_model_measles_school_html_a0fe503b7591fc2dc21ad80d64ca8dfdd"><div class="ttname"><a href="class_model_measles_school.html#a0fe503b7591fc2dc21ad80d64ca8dfdd">ModelMeaslesSchool::reset</a></div><div class="ttdeci">void reset()</div><div class="ttdoc">Reset the model.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:265</div></div>
+<div class="ttc" id="aclass_model_measles_school_html_a29d8e05d1f221eac10f66488122648d2"><div class="ttname"><a href="class_model_measles_school.html#a29d8e05d1f221eac10f66488122648d2">ModelMeaslesSchool::clone_ptr</a></div><div class="ttdeci">Model&lt; TSeq &gt; * clone_ptr()</div><div class="ttdoc">Advanced usage: Makes a copy of data and returns it as undeleted pointer.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:329</div></div>
+<div class="ttc" id="aclass_model_measles_school_html_a315eaeb4a05b6fea4fe178323762532e"><div class="ttname"><a href="class_model_measles_school.html#a315eaeb4a05b6fea4fe178323762532e">ModelMeaslesSchool::infectious</a></div><div class="ttdeci">std::vector&lt; Agent&lt; TSeq &gt; * &gt; infectious</div><div class="ttdoc">Agents infectious for contact.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:159</div></div>
+<div class="ttc" id="aclass_model_measles_school_html_a51ac4c01ad951227c6f44e1afe2cb3b4"><div class="ttname"><a href="class_model_measles_school.html#a51ac4c01ad951227c6f44e1afe2cb3b4">ModelMeaslesSchool::day_flagged</a></div><div class="ttdeci">std::vector&lt; int &gt; day_flagged</div><div class="ttdoc">Either detected or started quarantine.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:163</div></div>
+<div class="ttc" id="aclass_model_measles_school_html_a7124cdddb58f4806e9ce07a78658b189"><div class="ttname"><a href="class_model_measles_school.html#a7124cdddb58f4806e9ce07a78658b189">ModelMeaslesSchool::day_rash_onset</a></div><div class="ttdeci">std::vector&lt; int &gt; day_rash_onset</div><div class="ttdoc">Day of rash onset.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:164</div></div>
+<div class="ttc" id="aclass_model_measles_school_html_adfb3cb74f1b5acd06b0b7e20d6f57123"><div class="ttname"><a href="class_model_measles_school.html#adfb3cb74f1b5acd06b0b7e20d6f57123">ModelMeaslesSchool::quarantine_agents</a></div><div class="ttdeci">void quarantine_agents()</div><div class="ttdoc">Quarantine agents that are in the system.</div><div class="ttdef"><b>Definition:</b> measlesquarantine.hpp:194</div></div>
 <div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:40</div></div>
 <div class="ttc" id="aclass_virus_html"><div class="ttname"><a href="class_virus.html">Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> virus-bones.hpp:41</div></div>
 <div class="ttc" id="aclassepiworld_1_1_agent_html"><div class="ttname"><a href="classepiworld_1_1_agent.html">epiworld::Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:10839</div></div>
