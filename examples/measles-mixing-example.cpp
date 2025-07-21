@@ -25,7 +25,6 @@ int main() {
     
     // Create the model
     epimodels::ModelMeaslesMixing<> model(
-        "Measles",        // Virus name
         1000,             // Population size
         0.005,            // Initial prevalence (0.5% infected)
         4.0,              // Contact rate (4 contacts per day)
