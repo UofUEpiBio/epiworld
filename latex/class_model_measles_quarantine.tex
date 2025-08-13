@@ -1,0 +1,239 @@
+\hypertarget{class_model_measles_quarantine}{}\doxysection{Model\+Measles\+Quarantine$<$ TSeq $>$ Class Template Reference}
+\label{class_model_measles_quarantine}\index{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}}
+
+
+Template for a Measles model with quarantine.  
+
+
+
+
+{\ttfamily \#include $<$measlesquarantine.\+hpp$>$}
+
+
+
+Inheritance diagram for Model\+Measles\+Quarantine$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{class_model_measles_quarantine__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Model\+Measles\+Quarantine$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{class_model_measles_quarantine__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{class_model_measles_quarantine_aaaa64ccaff50d92ed9665409c09d2485}{quarantine\+\_\+agents}} ()
+\begin{DoxyCompactList}\small\item\em Quarantine agents that are in the system. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_model_measles_quarantine_adbf25714985ddb82738dba114f6c7299}{reset}} ()
+\begin{DoxyCompactList}\small\item\em Reset the model. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a6c75cfafcaa4519ba76d5c5f53aea0a9}\label{class_model_measles_quarantine_a6c75cfafcaa4519ba76d5c5f53aea0a9}} 
+void {\bfseries update\+\_\+infectious} ()
+\item 
+\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_measles_quarantine_a21e6b8cd704e13d99201c39a2ea559a6}{clone\+\_\+ptr}} ()
+\begin{DoxyCompactList}\small\item\em Advanced usage\+: Makes a copy of data and returns it as undeleted pointer. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\textbf{ }\par
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_model_measles_quarantine_ae99078b141176000eb305ffb6920842f}{Model\+Measles\+Quarantine}} (\mbox{\hyperlink{class_model_measles_quarantine}{Model\+Measles\+Quarantine}}$<$ TSeq $>$ \&model, epiworld\+\_\+fast\+\_\+uint n, epiworld\+\_\+fast\+\_\+uint n\+\_\+exposed, epiworld\+\_\+double contact\+\_\+rate, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double vax\+\_\+efficacy, epiworld\+\_\+double vax\+\_\+reduction\+\_\+recovery\+\_\+rate, epiworld\+\_\+double incubation\+\_\+period, epiworld\+\_\+double prodromal\+\_\+period, epiworld\+\_\+double rash\+\_\+period, epiworld\+\_\+double days\+\_\+undetected, epiworld\+\_\+double hospitalization\+\_\+rate, epiworld\+\_\+double hospitalization\+\_\+period, epiworld\+\_\+double prop\+\_\+vaccinated, epiworld\+\_\+fast\+\_\+int quarantine\+\_\+period, epiworld\+\_\+double quarantine\+\_\+willingness, epiworld\+\_\+fast\+\_\+int isolation\+\_\+period)
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a9d3064ecc4de4635fff7afc734c1894b}\label{class_model_measles_quarantine_a9d3064ecc4de4635fff7afc734c1894b}} 
+{\bfseries Model\+Measles\+Quarantine} (epiworld\+\_\+fast\+\_\+uint n, epiworld\+\_\+fast\+\_\+uint n\+\_\+exposed, epiworld\+\_\+double contact\+\_\+rate, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double vax\+\_\+efficacy, epiworld\+\_\+double vax\+\_\+reduction\+\_\+recovery\+\_\+rate, epiworld\+\_\+double incubation\+\_\+period, epiworld\+\_\+double prodromal\+\_\+period, epiworld\+\_\+double rash\+\_\+period, epiworld\+\_\+double days\+\_\+undetected, epiworld\+\_\+double hospitalization\+\_\+rate, epiworld\+\_\+double hospitalization\+\_\+period, epiworld\+\_\+double prop\+\_\+vaccinated, epiworld\+\_\+fast\+\_\+int quarantine\+\_\+period, epiworld\+\_\+double quarantine\+\_\+willingness, epiworld\+\_\+fast\+\_\+int isolation\+\_\+period)
+\end{DoxyCompactItemize}
+
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_ab8035186c8691a76abba09da184b4826}\label{class_model_measles_quarantine_ab8035186c8691a76abba09da184b4826}} 
+std\+::vector$<$ \mbox{\hyperlink{class_agent}{Agent}}$<$ TSeq $>$ $\ast$ $>$ \mbox{\hyperlink{class_model_measles_quarantine_ab8035186c8691a76abba09da184b4826}{infectious}}
+\begin{DoxyCompactList}\small\item\em Agents infectious for contact. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a5fb3faa754f2bab2e538383a5d790361}\label{class_model_measles_quarantine_a5fb3faa754f2bab2e538383a5d790361}} 
+bool {\bfseries system\+\_\+quarantine\+\_\+triggered} = false
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a71053fccd21dafa183ea180ed2a572f4}\label{class_model_measles_quarantine_a71053fccd21dafa183ea180ed2a572f4}} 
+std\+::vector$<$ int $>$ \mbox{\hyperlink{class_model_measles_quarantine_a71053fccd21dafa183ea180ed2a572f4}{day\+\_\+flagged}}
+\begin{DoxyCompactList}\small\item\em Either detected or started quarantine. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a9670da19d405b184014bf3111abf5e1f}\label{class_model_measles_quarantine_a9670da19d405b184014bf3111abf5e1f}} 
+std\+::vector$<$ int $>$ \mbox{\hyperlink{class_model_measles_quarantine_a9670da19d405b184014bf3111abf5e1f}{day\+\_\+rash\+\_\+onset}}
+\begin{DoxyCompactList}\small\item\em Day of rash onset. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a599c2ce43e8417250a532a73f9766691}\label{class_model_measles_quarantine_a599c2ce43e8417250a532a73f9766691}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries SUSCEPTIBLE} = 0u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a75b95870c0e3f79505f1fa14f45fd604}\label{class_model_measles_quarantine_a75b95870c0e3f79505f1fa14f45fd604}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries EXPOSED} = 1u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_abab10cb92a9a73624a3f147a1ea32577}\label{class_model_measles_quarantine_abab10cb92a9a73624a3f147a1ea32577}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries PRODROMAL} = 2u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a66349b306fea65790a2ddcd00499da07}\label{class_model_measles_quarantine_a66349b306fea65790a2ddcd00499da07}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries RASH} = 3u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a7ce71bec75f5b59d1d3cf89cd57a4029}\label{class_model_measles_quarantine_a7ce71bec75f5b59d1d3cf89cd57a4029}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries ISOLATED} = 4u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a1a7b1a333f417487d7247ec1a184a858}\label{class_model_measles_quarantine_a1a7b1a333f417487d7247ec1a184a858}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries ISOLATED\+\_\+\+RECOVERED} = 5u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a2ee94a50f8a918ae65fbb596082de019}\label{class_model_measles_quarantine_a2ee94a50f8a918ae65fbb596082de019}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries DETECTED\+\_\+\+HOSPITALIZED} = 6u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a86ed14592ad7c709c81dc9f944e91fa0}\label{class_model_measles_quarantine_a86ed14592ad7c709c81dc9f944e91fa0}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+EXPOSED} = 7u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a4db8ed1a9e87eb377830f31fb5132117}\label{class_model_measles_quarantine_a4db8ed1a9e87eb377830f31fb5132117}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+SUSCEPTIBLE} = 8u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a1b93182755bfa035f3c07580464bc35b}\label{class_model_measles_quarantine_a1b93182755bfa035f3c07580464bc35b}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+PRODROMAL} = 9u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a8b15818dd1074e7f5f689866a803d9cb}\label{class_model_measles_quarantine_a8b15818dd1074e7f5f689866a803d9cb}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries QUARANTINED\+\_\+\+RECOVERED} = 10u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_aab2c13268a23a5441e2445cde9029079}\label{class_model_measles_quarantine_aab2c13268a23a5441e2445cde9029079}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries HOSPITALIZED} = 11u
+\item 
+\mbox{\Hypertarget{class_model_measles_quarantine_a0a13a0b48cc7175e9e13f9d69dab73d0}\label{class_model_measles_quarantine_a0a13a0b48cc7175e9e13f9d69dab73d0}} 
+static const epiworld\+\_\+fast\+\_\+uint {\bfseries RECOVERED} = 12u
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+\doxysubsection{Detailed Description}
+\subsubsection*{template$<$typename TSeq = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$\newline
+class Model\+Measles\+Quarantine$<$ TSeq $>$}
+
+Template for a Measles model with quarantine. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em TSeq} & The type of the sequence to be used.\\
+\hline
+\end{DoxyParams}
+This model can be described as a SEIHR model with isolation and quarantine. The infectious state is divided into prodromal and rash phases. Furthermore, the quarantine state includes exposed, susceptible, prodromal, and recovered states.
+
+The quarantine process is triggered any time that an agent with rash is detected. The agent is then isolated and all agents who are unvaccinated are quarantined. Isolated agents then may be moved out of the isolation in isolation\+\_\+period days. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_model_measles_quarantine_ae99078b141176000eb305ffb6920842f}\label{class_model_measles_quarantine_ae99078b141176000eb305ffb6920842f}} 
+\index{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}!ModelMeaslesQuarantine@{ModelMeaslesQuarantine}}
+\index{ModelMeaslesQuarantine@{ModelMeaslesQuarantine}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{ModelMeaslesQuarantine()}{ModelMeaslesQuarantine()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{class_model_measles_quarantine}{Model\+Measles\+Quarantine}}$<$ TSeq $>$\+::\mbox{\hyperlink{class_model_measles_quarantine}{Model\+Measles\+Quarantine}} (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_model_measles_quarantine}{Model\+Measles\+Quarantine}}$<$ TSeq $>$ \&}]{model,  }\item[{epiworld\+\_\+fast\+\_\+uint}]{n,  }\item[{epiworld\+\_\+fast\+\_\+uint}]{n\+\_\+exposed,  }\item[{epiworld\+\_\+double}]{contact\+\_\+rate,  }\item[{epiworld\+\_\+double}]{transmission\+\_\+rate,  }\item[{epiworld\+\_\+double}]{vax\+\_\+efficacy,  }\item[{epiworld\+\_\+double}]{vax\+\_\+reduction\+\_\+recovery\+\_\+rate,  }\item[{epiworld\+\_\+double}]{incubation\+\_\+period,  }\item[{epiworld\+\_\+double}]{prodromal\+\_\+period,  }\item[{epiworld\+\_\+double}]{rash\+\_\+period,  }\item[{epiworld\+\_\+double}]{days\+\_\+undetected,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+rate,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+period,  }\item[{epiworld\+\_\+double}]{prop\+\_\+vaccinated,  }\item[{epiworld\+\_\+fast\+\_\+int}]{quarantine\+\_\+period,  }\item[{epiworld\+\_\+double}]{quarantine\+\_\+willingness,  }\item[{epiworld\+\_\+fast\+\_\+int}]{isolation\+\_\+period }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em n} & The number of agents in the system. \\
+\hline
+{\em n\+\_\+exposed} & The number of exposed agents in the system. \\
+\hline
+{\em contact\+\_\+rate} & The rate of contact between agents. \\
+\hline
+{\em transmission\+\_\+rate} & The rate of transmission of the virus. \\
+\hline
+{\em vax\+\_\+efficacy} & The efficacy of the vaccine. \\
+\hline
+{\em vax\+\_\+reduction\+\_\+recovery\+\_\+rate} & The reduction in recovery rate due to the vaccine. \\
+\hline
+{\em incubation\+\_\+period} & The incubation period of the virus. \\
+\hline
+{\em prodromal\+\_\+period} & The prodromal period of the virus. \\
+\hline
+{\em rash\+\_\+period} & The rash period of the virus. \\
+\hline
+{\em days\+\_\+undetected} & The number of days the virus goes undetected. \\
+\hline
+{\em hospitalization\+\_\+rate} & The rate of hospitalization. \\
+\hline
+{\em hospitalization\+\_\+period} & The duration of hospitalization. \\
+\hline
+{\em prop\+\_\+vaccinated} & The proportion of vaccinated agents. \\
+\hline
+{\em quarantine\+\_\+period} & The number of days for quarantine. \\
+\hline
+{\em quarantine\+\_\+willingness} & The willingness to be quarantined. \\
+\hline
+{\em isolation\+\_\+period} & The number of days for isolation. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_model_measles_quarantine_a21e6b8cd704e13d99201c39a2ea559a6}\label{class_model_measles_quarantine_a21e6b8cd704e13d99201c39a2ea559a6}} 
+\index{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}}
+\index{clone\_ptr@{clone\_ptr}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{clone\_ptr()}{clone\_ptr()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_measles_quarantine}{Model\+Measles\+Quarantine}}$<$ TSeq $>$\+::clone\+\_\+ptr\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Advanced usage\+: Makes a copy of data and returns it as undeleted pointer. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em copy} & \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \mbox{\hyperlink{class_model_afd0c24e19b0a104e03d96ab4333725e5}{Model$<$ TSeq $>$}}.
+
+\mbox{\Hypertarget{class_model_measles_quarantine_aaaa64ccaff50d92ed9665409c09d2485}\label{class_model_measles_quarantine_aaaa64ccaff50d92ed9665409c09d2485}} 
+\index{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}!quarantine\_agents@{quarantine\_agents}}
+\index{quarantine\_agents@{quarantine\_agents}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{quarantine\_agents()}{quarantine\_agents()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{class_model_measles_quarantine}{Model\+Measles\+Quarantine}}$<$ TSeq $>$\+::quarantine\+\_\+agents\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Quarantine agents that are in the system. 
+
+The flow should be\+:
+\begin{DoxyItemize}
+\item The function only runs if the quarantine status is active.
+\item Agents who are in quarantine, isolation, removed, or hospitalized are ignored.
+\item Agents who are in the RASH state are isolated.
+\item Vaccinated agents are ignored.
+\item Susceptible, Exposed, and Prodromal agents are moved to the QUARANTINED\+\_\+$\ast$ state.
+\item At the end of the function, the quarantine status is set false. 
+\end{DoxyItemize}\mbox{\Hypertarget{class_model_measles_quarantine_adbf25714985ddb82738dba114f6c7299}\label{class_model_measles_quarantine_adbf25714985ddb82738dba114f6c7299}} 
+\index{ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}!reset@{reset}}
+\index{reset@{reset}!ModelMeaslesQuarantine$<$ TSeq $>$@{ModelMeaslesQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{reset()}{reset()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{class_model_measles_quarantine}{Model\+Measles\+Quarantine}}$<$ TSeq $>$\+::reset\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Reset the model. 
+
+Resetting the model will\+:
+\begin{DoxyItemize}
+\item clear the database
+\item restore the population (if {\ttfamily set\+\_\+backup()} was called before)
+\item re-\/distribute tools
+\item re-\/distribute viruses
+\item set the date to 0 
+\end{DoxyItemize}
+
+Reimplemented from \mbox{\hyperlink{class_model_a9591eb76c7cf1ed7e1510342ff602d37}{Model$<$ TSeq $>$}}.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+include/epiworld/models/measlesquarantine.\+hpp\end{DoxyCompactItemize}

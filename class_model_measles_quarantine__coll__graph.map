@@ -1,0 +1,5 @@
+<map id="ModelMeaslesQuarantine&lt; TSeq &gt;" name="ModelMeaslesQuarantine&lt; TSeq &gt;">
+<area shape="rect" id="node1" title="Template for a Measles model with quarantine." alt="" coords="5,171,175,212"/>
+<area shape="rect" id="node2" href="$class_model.html" title="Core class of epiworld." alt="" coords="35,95,145,121"/>
+<area shape="rect" id="node3" href="$class_progress.html" title="A simple progress bar." alt="" coords="53,5,127,32"/>
+</map>
