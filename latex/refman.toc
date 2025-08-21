@@ -16,7 +16,7 @@
 \contentsline {subsection}{\numberline {4.4.4}Vaccination}{9}{subsection.4.4.4}%
 \contentsline {section}{\numberline {4.5}Usage Example}{9}{section.4.5}%
 \contentsline {section}{\numberline {4.6}Differences from Other Models}{10}{section.4.6}%
-\contentsline {subsection}{\numberline {4.6.1}vs. Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Measles\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Quarantine}{10}{subsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.6.1}vs. Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Measles\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}School}{10}{subsection.4.6.1}%
 \contentsline {subsection}{\numberline {4.6.2}vs. Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}SEIRMixing\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Quarantine}{10}{subsection.4.6.2}%
 \contentsline {section}{\numberline {4.7}Testing}{10}{section.4.7}%
 \contentsline {chapter}{\numberline {5}epiworld c++ template library}{11}{chapter.5}%
@@ -179,12 +179,12 @@
 \contentsline {subsubsection}{\numberline {16.21.3.1}initial\_states\_fun}{98}{subsubsection.16.21.3.1}%
 \contentsline {subsubsection}{\numberline {16.21.3.2}rbinomd}{98}{subsubsection.16.21.3.2}%
 \contentsline {subsubsection}{\numberline {16.21.3.3}rexpd}{98}{subsubsection.16.21.3.3}%
-\contentsline {subsubsection}{\numberline {16.21.3.4}rgammad}{99}{subsubsection.16.21.3.4}%
+\contentsline {subsubsection}{\numberline {16.21.3.4}rgammad}{98}{subsubsection.16.21.3.4}%
 \contentsline {subsubsection}{\numberline {16.21.3.5}rgeomd}{99}{subsubsection.16.21.3.5}%
 \contentsline {subsubsection}{\numberline {16.21.3.6}rlognormald}{99}{subsubsection.16.21.3.6}%
 \contentsline {subsubsection}{\numberline {16.21.3.7}rnbinomd}{99}{subsubsection.16.21.3.7}%
 \contentsline {subsubsection}{\numberline {16.21.3.8}rnormd}{99}{subsubsection.16.21.3.8}%
-\contentsline {subsubsection}{\numberline {16.21.3.9}rpoissd}{100}{subsubsection.16.21.3.9}%
+\contentsline {subsubsection}{\numberline {16.21.3.9}rpoissd}{99}{subsubsection.16.21.3.9}%
 \contentsline {subsubsection}{\numberline {16.21.3.10}runifd}{100}{subsubsection.16.21.3.10}%
 \contentsline {subsubsection}{\numberline {16.21.3.11}time\_elapsed}{100}{subsubsection.16.21.3.11}%
 \contentsline {section}{\numberline {16.22}Model$<$ TSeq $>$ Class Template Reference}{100}{section.16.22}%
@@ -226,7 +226,7 @@
 \contentsline {subsubsection}{\numberline {16.27.2.2}ModelMeaslesMixing()\hspace {0.1cm}{\footnotesize \ttfamily [2/2]}}{125}{subsubsection.16.27.2.2}%
 \contentsline {subsection}{\numberline {16.27.3}Member Function Documentation}{126}{subsection.16.27.3}%
 \contentsline {subsubsection}{\numberline {16.27.3.1}clone\_ptr()}{126}{subsubsection.16.27.3.1}%
-\contentsline {subsubsection}{\numberline {16.27.3.2}get\_agent\_quarantine\_triggered()}{127}{subsubsection.16.27.3.2}%
+\contentsline {subsubsection}{\numberline {16.27.3.2}get\_agent\_quarantine\_triggered()}{126}{subsubsection.16.27.3.2}%
 \contentsline {subsubsection}{\numberline {16.27.3.3}get\_contact\_matrix()}{127}{subsubsection.16.27.3.3}%
 \contentsline {subsubsection}{\numberline {16.27.3.4}get\_isolation\_willingness()}{127}{subsubsection.16.27.3.4}%
 \contentsline {subsubsection}{\numberline {16.27.3.5}get\_quarantine\_willingness()}{127}{subsubsection.16.27.3.5}%
@@ -239,7 +239,7 @@
 \contentsline {subsubsection}{\numberline {16.28.2.1}ModelMeaslesMixing()\hspace {0.1cm}{\footnotesize \ttfamily [1/2]}}{132}{subsubsection.16.28.2.1}%
 \contentsline {subsubsection}{\numberline {16.28.2.2}ModelMeaslesMixing()\hspace {0.1cm}{\footnotesize \ttfamily [2/2]}}{133}{subsubsection.16.28.2.2}%
 \contentsline {subsection}{\numberline {16.28.3}Member Function Documentation}{134}{subsection.16.28.3}%
-\contentsline {subsubsection}{\numberline {16.28.3.1}clone\_ptr()}{135}{subsubsection.16.28.3.1}%
+\contentsline {subsubsection}{\numberline {16.28.3.1}clone\_ptr()}{134}{subsubsection.16.28.3.1}%
 \contentsline {subsubsection}{\numberline {16.28.3.2}get\_agent\_quarantine\_triggered()}{135}{subsubsection.16.28.3.2}%
 \contentsline {subsubsection}{\numberline {16.28.3.3}get\_contact\_matrix()}{135}{subsubsection.16.28.3.3}%
 \contentsline {subsubsection}{\numberline {16.28.3.4}get\_isolation\_willingness()}{135}{subsubsection.16.28.3.4}%
@@ -247,18 +247,18 @@
 \contentsline {subsubsection}{\numberline {16.28.3.6}initial\_states()}{136}{subsubsection.16.28.3.6}%
 \contentsline {subsubsection}{\numberline {16.28.3.7}run()}{136}{subsubsection.16.28.3.7}%
 \contentsline {subsubsection}{\numberline {16.28.3.8}set\_contact\_matrix()}{137}{subsubsection.16.28.3.8}%
-\contentsline {section}{\numberline {16.29}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::epimodels\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Measles\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Quarantine$<$ TSeq $>$ Class Template Reference}{137}{section.16.29}%
+\contentsline {section}{\numberline {16.29}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::epimodels\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Measles\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}School$<$ TSeq $>$ Class Template Reference}{137}{section.16.29}%
 \contentsline {subsection}{\numberline {16.29.1}Detailed Description}{139}{subsection.16.29.1}%
 \contentsline {subsection}{\numberline {16.29.2}Constructor \& Destructor Documentation}{139}{subsection.16.29.2}%
-\contentsline {subsubsection}{\numberline {16.29.2.1}ModelMeaslesQuarantine()}{139}{subsubsection.16.29.2.1}%
+\contentsline {subsubsection}{\numberline {16.29.2.1}ModelMeaslesSchool()}{139}{subsubsection.16.29.2.1}%
 \contentsline {subsection}{\numberline {16.29.3}Member Function Documentation}{140}{subsection.16.29.3}%
 \contentsline {subsubsection}{\numberline {16.29.3.1}clone\_ptr()}{140}{subsubsection.16.29.3.1}%
 \contentsline {subsubsection}{\numberline {16.29.3.2}quarantine\_agents()}{141}{subsubsection.16.29.3.2}%
 \contentsline {subsubsection}{\numberline {16.29.3.3}reset()}{141}{subsubsection.16.29.3.3}%
-\contentsline {section}{\numberline {16.30}Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Measles\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Quarantine$<$ TSeq $>$ Class Template Reference}{142}{section.16.30}%
+\contentsline {section}{\numberline {16.30}Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Measles\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}School$<$ TSeq $>$ Class Template Reference}{142}{section.16.30}%
 \contentsline {subsection}{\numberline {16.30.1}Detailed Description}{143}{subsection.16.30.1}%
 \contentsline {subsection}{\numberline {16.30.2}Constructor \& Destructor Documentation}{144}{subsection.16.30.2}%
-\contentsline {subsubsection}{\numberline {16.30.2.1}ModelMeaslesQuarantine()}{144}{subsubsection.16.30.2.1}%
+\contentsline {subsubsection}{\numberline {16.30.2.1}ModelMeaslesSchool()}{144}{subsubsection.16.30.2.1}%
 \contentsline {subsection}{\numberline {16.30.3}Member Function Documentation}{145}{subsection.16.30.3}%
 \contentsline {subsubsection}{\numberline {16.30.3.1}clone\_ptr()}{145}{subsubsection.16.30.3.1}%
 \contentsline {subsubsection}{\numberline {16.30.3.2}quarantine\_agents()}{145}{subsubsection.16.30.3.2}%
