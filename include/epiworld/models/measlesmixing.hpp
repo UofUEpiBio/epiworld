@@ -121,6 +121,7 @@ private:
     // We will limit tracking to up to EPI_MAX_TRACKING
     std::vector< size_t > tracking_matrix; ///< Tracking matrix for agent interactions
     std::vector< size_t > tracking_matrix_size; ///< Number of current interactions for each agent
+    std::vector< size_t > tracking_matrix_date; ///< Date of each interaction
 
     void m_add_tracking(size_t infectious_id, size_t agent_id);
 
@@ -150,7 +151,6 @@ public:
      * @brief Constructs a ModelMeaslesMixing object.
      *
      * @param model A reference to an existing ModelMeaslesMixing object.
-     * @param vname The name of the virus for the ModelMeaslesMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
      * @param contact_rate The contact rate between entities in the model.
@@ -175,7 +175,6 @@ public:
      */
     ModelMeaslesMixing(
         ModelMeaslesMixing<TSeq> & model,
-        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -202,7 +201,6 @@ public:
     /**
      * @brief Constructs a ModelMeaslesMixing object.
      *
-     * @param vname The name of the virus for the ModelMeaslesMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
      * @param contact_rate The contact rate between entities in the model.
@@ -225,7 +223,6 @@ public:
      * @param contact_tracing_days_prior The number of days prior to detection for which contacts are traced (default: 4).
      */
     ModelMeaslesMixing(
-        const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -353,20 +350,13 @@ inline void ModelMeaslesMixing<TSeq>::m_add_tracking(
         agent_quarantine_triggered[infectious_id] >= 
         ModelMeaslesMixing<TSeq>::QUARANTINE_PROCESS_DONE
     )
-        return;
-
-    // We avoid the math if the contact happened before
-    // the lower bound of the contact tracing
-    size_t days_since_rash = Model<TSeq>::today() - day_rash_onset[infectious_id];
-    if (days_since_rash > 
-        Model<TSeq>::par("Contact tracing days prior")
-    )
-        return;
-    
+        return;    
 
     // If we are overflow, we start from the beginning
     size_t loc = tracking_matrix_size[infectious_id] % EPI_MAX_TRACKING;
-    tracking_matrix[MM(infectious_id, loc, Model<TSeq>::size())] = agent_id;
+    loc = MM(infectious_id, loc, Model<TSeq>::size());
+    tracking_matrix[loc] = agent_id;
+    tracking_matrix_date[loc] = Model<TSeq>::today();
 
     // We increase the size of the tracking matrix
     tracking_matrix_size[infectious_id]++;
@@ -615,6 +605,9 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 
     tracking_matrix_size.resize(Model<TSeq>::size(), 0u);
     std::fill(tracking_matrix_size.begin(), tracking_matrix_size.end(), 0u);
+
+    tracking_matrix_date.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
+    std::fill(tracking_matrix_date.begin(), tracking_matrix_date.end(), 0u);
 
     return;
 
@@ -1040,16 +1033,25 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
+        // When the rash onset started (this is for contact tracing)
+        size_t day_rash_onset_agent_i = this->day_rash_onset[agent_i];
+
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
+
+            // Checking if the contact is within the contact tracing days prior
+            size_t loc = MM(agent_i, contact_i, Model<TSeq>::size());
+            bool within_days_prior =
+                (day_rash_onset_agent_i - tracking_matrix_date[loc]) <=
+                Model<TSeq>::par("Contact tracing days prior");
+            if (!within_days_prior)
+                continue;
 
             // Checking if we will detect the contact
             if (Model<TSeq>::runif() > Model<TSeq>::par("Contact tracing success rate"))
                 continue;
 
-            size_t contact_id = this->tracking_matrix[
-                MM(agent_i, contact_i, Model<TSeq>::size())
-            ];
+            size_t contact_id = this->tracking_matrix[loc];
 
             auto & agent = Model<TSeq>::get_agent(contact_id);
 
@@ -1107,7 +1109,6 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
  * @brief Template for a Measles model with population mixing, quarantine, and contact tracing
  * 
  * @param model A ModelMeaslesMixing<TSeq> object where to set up the model.
- * @param vname Name of the virus
  * @param n Number of agents in the population
  * @param prevalence Initial prevalence (proportion of infected individuals)
  * @param contact_rate Average number of contacts (interactions) per step
@@ -1132,7 +1133,6 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
 template<typename TSeq>
 inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     ModelMeaslesMixing<TSeq> & model,
-    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -1207,7 +1207,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    epiworld::Virus<TSeq> virus("Measles", prevalence, true);
     virus.set_state(
         ModelMeaslesMixing<TSeq>::EXPOSED,
         ModelMeaslesMixing<TSeq>::RECOVERED,
@@ -1243,7 +1243,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 
 template<typename TSeq>
 inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
-    const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -1272,7 +1271,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 
     ModelMeaslesMixing(
         *this,
-        vname,
         n,
         prevalence,
         contact_rate,
