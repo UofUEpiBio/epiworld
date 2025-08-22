@@ -1,6 +1,7 @@
 <map id="include/epiworld/models/seirmixingquarantine.hpp" name="include/epiworld/models/seirmixingquarantine.hpp">
-<area shape="rect" id="node1" title="Template for a Susceptible&#45;Exposed&#45;Infected&#45;Removed (SEIR) model with mixing, quarantine,..." alt="" coords="17,5,185,47"/>
-<area shape="rect" id="node2" href="$models_8hpp_source.html" title=" " alt="" coords="20,95,181,136"/>
-<area shape="rect" id="node3" href="$include_2epiworld_2epiworld_8hpp_source.html" title=" " alt="" coords="5,184,196,211"/>
-<area shape="rect" id="node4" href="$tests_8hpp_source.html" title=" " alt="" coords="47,259,155,285"/>
+<area shape="rect" id="node1" title="Template for a Susceptible&#45;Exposed&#45;Infected&#45;Removed (SEIR) model with mixing, quarantine,..." alt="" coords="69,5,237,47"/>
+<area shape="rect" id="node2" href="$models_8hpp_source.html" title=" " alt="" coords="72,95,233,136"/>
+<area shape="rect" id="node3" href="$include_2epiworld_2epiworld_8hpp_source.html" title=" " alt="" coords="124,184,315,211"/>
+<area shape="rect" id="node4" href="$cholera_8hpp_source.html" title=" " alt="" coords="5,259,167,300"/>
+<area shape="rect" id="node5" href="$tests_8hpp_source.html" title=" " alt="" coords="191,266,299,293"/>
 </map>
