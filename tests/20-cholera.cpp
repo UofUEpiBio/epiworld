@@ -11,6 +11,8 @@ EPIWORLD_TEST_CASE("Cholera", "[Cholera]") {
     // Queuing doesn't matter and get results that are meaningful
     epimodels::ModelCholera<> model_0(
         1000, // Agents
+        1,   // Initial prevalence
+        0.1,  // Environment load
         0.1,  // pp_t_rate
         0.2,  // e_t_rate
         0.3,  // hs_rate
@@ -18,6 +20,7 @@ EPIWORLD_TEST_CASE("Cholera", "[Cholera]") {
         0.6,  // rec_rate
         0.7,  // shedd_rate
         0.8,  // b_death_rate_env
+        0.1,  // eb_ingested
         0.9,  // i_growth_rate
         1.0,  // b_carry_capacity
         1.2,  // b_death_rate

@@ -13,8 +13,8 @@
     }
 
 
-#include <epiworld/epiworld.hpp>
-using namespace epiworld;
+// #include <epiworld/epiworld.hpp>
+// using namespace epiworld;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelCholera : public epiworld::Model<TSeq>
@@ -39,6 +39,7 @@ public:
      * @param rec_rate Recovery rate of humans.
      * @param shedd_rate Shedding rate of humans into the environment.
      * @param b_death_rate_env Bacterial death rate in the environment.
+     * @param eb_ingested Environmental vibrios ingested
      * @param i_growth_rate Bacterial growth rate.
      * @param b_carry_capacity Bacterial carrying capacity.
      * @param b_death_rate Bacterial death rate.
@@ -62,6 +63,7 @@ public:
         double rec_rate,
         double shedd_rate,
         double b_death_rate_env,
+        double eb_ingested,
         double i_growth_rate,
         double b_carry_capacity,
         // double ratio of time scale
@@ -88,6 +90,7 @@ public:
         double rec_rate,
         double shedd_rate,
         double b_death_rate_env,
+        double eb_ingested,
         double i_growth_rate,
         double b_carry_capacity,
         // double ratio of time scale
@@ -129,8 +132,9 @@ private:
     static void m_update_recovered(Agent<TSeq> * p, Model<TSeq> * m);
 
     // Environmental model
-    double env_vibrios_in_water;
     void m_update_envir();
+    double env_vibrios_in_water;
+    double env_vibrios_transmit_prob;
     
     // Within host model
     void m_update_hosts();
@@ -142,8 +146,31 @@ private:
     std::vector< size_t > infected_agents;
     size_t n_infected_agents;
     void m_update_infected_agents();
+    
 
 };
+
+template<typename TSeq>
+inline void ModelCholera<TSeq>::m_update_envir()
+{
+    env_vibrios_in_water += 
+        Model<TSeq>::par("Shedding rate") * n_infected_agents -
+        Model<TSeq>::par("Bacterial death rate in the environment") *
+            env_vibrios_in_water - 
+        Model<TSeq>::par("Environmental vibrios ingested") *
+            env_vibrios_in_water *
+            n_infected_agents;
+
+    env_vibrios_transmit_prob = env_vibrios_in_water /
+        (Model<TSeq>::par("Half saturation rate") + env_vibrios_in_water);
+
+    env_vibrios_transmit_prob = 1 - std::pow(
+        Model<TSeq>::par("Environment transmission rate"),
+        env_vibrios_transmit_prob
+    );
+
+    return;
+}
 
 template<typename TSeq>
 inline void ModelCholera<TSeq>::m_update_infected_agents()
@@ -179,7 +206,7 @@ inline size_t ModelCholera<TSeq>::m_sample_infected_agents()
 
     // If no agents are sampled, then return
     if (n_sampled == 0u)
-        return;
+        return 0u;
 
     for (size_t i = 0u; i < n_sampled; ++i)
     {
@@ -209,13 +236,13 @@ inline void ModelCholera<TSeq>::m_update_susceptible(
     auto & cholera_model = *dynamic_cast<ModelCholera<TSeq> *>(m);
 
     // If no agents, then figure out if transmitted from the water
-    if (n_infected_agents == 0u)
+    if (cholera_model.n_infected_agents == 0u)
     {
 
         // Does the person become infected from the water?
-        double p = Model<TSeq>::runif();
+        double prob = Model<TSeq>::runif();
 
-        if (p < cholera_model.par("Environment transmission rate"))
+        if (prob < cholera_model.env_vibrios_transmit_prob)
         {
             // The second virus is Cholera in water
             p->set_virus(&m->get_virus(1));
@@ -294,6 +321,7 @@ inline ModelCholera<TSeq>::ModelCholera(
     double rec_rate,
     double shedd_rate,
     double b_death_rate_env,
+    double eb_ingested,
     double i_growth_rate,
     double b_carry_capacity,
     // double ratio of time scale
@@ -319,6 +347,7 @@ inline ModelCholera<TSeq>::ModelCholera(
         rec_rate,
         shedd_rate,
         b_death_rate_env,
+        eb_ingested,
         i_growth_rate,
         b_carry_capacity,
         b_death_rate,
@@ -349,6 +378,7 @@ inline ModelCholera<TSeq>::ModelCholera(
     double rec_rate,
     double shedd_rate,
     double b_death_rate_env,
+    double eb_ingested,
     double i_growth_rate,
     double b_carry_capacity,
     // double ratio of time scale
@@ -364,17 +394,18 @@ inline ModelCholera<TSeq>::ModelCholera(
 
     // Adding statuses
     model.add_state("Susceptible");
-    model.add_state("Infected");
+    model.add_state("Infected", default_update_exposed<TSeq>);
     model.add_state("Recovered");
 
     // Setting up the parameters
     model.add_param(pp_t_rate, "Person-person transmission rate");
     model.add_param(e_t_rate, "Environment transmission rate");
-    model.add_param(hs_rate, "Human-to-sheep transmission rate");
+    model.add_param(hs_rate, "Half saturation rate");
     model.add_param(loss_rate_imm, "Loss of immunity rate");
     model.add_param(rec_rate, "Recovery rate");
     model.add_param(shedd_rate, "Shedding rate");
     model.add_param(b_death_rate_env, "Bacterial death rate in environment");
+    model.add_param(eb_ingested, "Environmental vibrios ingested");
     model.add_param(i_growth_rate, "Infection growth rate");
     model.add_param(b_carry_capacity, "Bacterial carrying capacity");
     model.add_param(b_death_rate, "Bacterial death rate");
@@ -388,20 +419,30 @@ inline ModelCholera<TSeq>::ModelCholera(
 
     // Creating viruses
     Virus<TSeq> host_virus("Cholera");
+    host_virus.set_state(
+        ModelCholera<TSeq>::INFECTED,
+        ModelCholera<TSeq>::RECOVERED
+    );
     host_virus.set_distribution(
         distribute_virus_randomly<TSeq>(
             prevalence,
             false
         )
     );
+    host_virus.set_prob_recovery(&model("Recovery rate"));
 
     Virus<TSeq> water_virus("Cholera in water");
+    water_virus.set_state(
+        ModelCholera<TSeq>::INFECTED,
+        ModelCholera<TSeq>::RECOVERED
+    );
     water_virus.set_distribution(
         distribute_virus_randomly<TSeq>(
             0,
             false
         )
     );
+    water_virus.set_prob_recovery(&model("Recovery rate"));
 
     // Adding the viruses to the model
     model.add_virus(host_virus);
