@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.8.22)  22 AUG 2025 00:12
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.8.22)  22 AUG 2025 00:39
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1996,7 +1996,7 @@ Package pdftex.def Info: class_model_cholera__coll__graph.pdf  used on input li
 ne 20.
 (pdftex.def)             Requested size: 196.0pt x 166.99916pt.
  [119] [120]
-Underfull \hbox (badness 10000) detected at line 119
+Underfull \hbox (badness 10000) detected at line 121
 [][][]
  []
 
@@ -4596,12 +4596,12 @@ Package pdftex.def Info: agent-meat-state_8hpp__incl.pdf  used on input line 16
 pdfTeX warning: pdflatex (file ./agent-meat-state_8hpp__dep__incl.pdf): PDF inc
 lusion: multiple pdfs with page group included in a single page
 >
-<agent-meat-state_8hpp__dep__incl.pdf, id=8959, 332.24126pt x 302.12875pt>
+<agent-meat-state_8hpp__dep__incl.pdf, id=8959, 223.83624pt x 223.83624pt>
 File: agent-meat-state_8hpp__dep__incl.pdf Graphic file (type pdf)
 <use agent-meat-state_8hpp__dep__incl.pdf>
 Package pdftex.def Info: agent-meat-state_8hpp__dep__incl.pdf  used on input li
 ne 24.
-(pdftex.def)             Requested size: 331.0pt x 301.01697pt.
+(pdftex.def)             Requested size: 223.0pt x 223.00572pt.
  [271
 
 ]
@@ -4625,21 +4625,21 @@ Underfull \hbox (badness 10000) detected at line 50
  []
 
 ) (./measlesmixing_8hpp.tex <./measlesmixing_8hpp__dep__incl.pdf>
-<measlesmixing_8hpp__dep__incl.pdf, id=8978, 313.17pt x 302.12875pt>
+<measlesmixing_8hpp__dep__incl.pdf, id=8978, 223.83624pt x 291.0875pt>
 File: measlesmixing_8hpp__dep__incl.pdf Graphic file (type pdf)
 <use measlesmixing_8hpp__dep__incl.pdf>
 Package pdftex.def Info: measlesmixing_8hpp__dep__incl.pdf  used on input line 
 13.
-(pdftex.def)             Requested size: 312.0pt x 301.01236pt.
+(pdftex.def)             Requested size: 223.0pt x 290.00745pt.
  [272]
 [273]) (./seirmixingquarantine_8hpp.tex <./seirmixingquarantine_8hpp__dep__incl
 .pdf>
-<seirmixingquarantine_8hpp__dep__incl.pdf, id=9008, 313.17pt x 302.12875pt>
+<seirmixingquarantine_8hpp__dep__incl.pdf, id=9008, 223.83624pt x 291.0875pt>
 File: seirmixingquarantine_8hpp__dep__incl.pdf Graphic file (type pdf)
 <use seirmixingquarantine_8hpp__dep__incl.pdf>
 Package pdftex.def Info: seirmixingquarantine_8hpp__dep__incl.pdf  used on inpu
 t line 13.
-(pdftex.def)             Requested size: 312.0pt x 301.01236pt.
+(pdftex.def)             Requested size: 223.0pt x 290.00745pt.
  [274]) [275] [276
 
 ] (./refman.ind
@@ -4807,7 +4807,7 @@ s/type1/urw/helvetic/uhvb8a.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic
 /uhvb8ac.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvbo8ac.pfb></usr
 /share/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texmf-dist/fo
 nts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on refman.pdf (298 pages, 1388119 bytes).
+Output written on refman.pdf (298 pages, 1387282 bytes).
 PDF statistics:
  10334 PDF objects out of 10688 (max. 8388607)
  9525 compressed objects within 96 object streams

@@ -23,10 +23,10 @@ Collaboration diagram for Model\+Cholera$<$ TSeq $>$\+:
 \doxysubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\hyperlink{class_model_cholera_ab165046ad3e1c6a9df11a04f883eae4b}{Model\+Cholera}} (size\+\_\+t n, size\+\_\+t prevalence, double env\+\_\+load, double pp\+\_\+t\+\_\+rate, double e\+\_\+t\+\_\+rate, double hs\+\_\+rate, double loss\+\_\+rate\+\_\+imm, double rec\+\_\+rate, double shedd\+\_\+rate, double b\+\_\+death\+\_\+rate\+\_\+env, double i\+\_\+growth\+\_\+rate, double b\+\_\+carry\+\_\+capacity, double b\+\_\+death\+\_\+rate, double pb\+\_\+contact\+\_\+rate, double p\+\_\+i\+\_\+rate, double cd\+\_\+size, double b\+\_\+size, double p\+\_\+death\+\_\+rate, double b\+\_\+death\+\_\+rate\+\_\+lysis, double nu)
+\mbox{\hyperlink{class_model_cholera_ae5fc291e07003369d9793d25f023a863}{Model\+Cholera}} (size\+\_\+t n, size\+\_\+t prevalence, double env\+\_\+load, double pp\+\_\+t\+\_\+rate, double e\+\_\+t\+\_\+rate, double hs\+\_\+rate, double loss\+\_\+rate\+\_\+imm, double rec\+\_\+rate, double shedd\+\_\+rate, double b\+\_\+death\+\_\+rate\+\_\+env, double eb\+\_\+ingested, double i\+\_\+growth\+\_\+rate, double b\+\_\+carry\+\_\+capacity, double b\+\_\+death\+\_\+rate, double pb\+\_\+contact\+\_\+rate, double p\+\_\+i\+\_\+rate, double cd\+\_\+size, double b\+\_\+size, double p\+\_\+death\+\_\+rate, double b\+\_\+death\+\_\+rate\+\_\+lysis, double nu)
 \item 
-\mbox{\Hypertarget{class_model_cholera_af763b4f394d7ed4e12e7fd1df8b8677c}\label{class_model_cholera_af763b4f394d7ed4e12e7fd1df8b8677c}} 
-{\bfseries Model\+Cholera} (\mbox{\hyperlink{class_model_cholera}{Model\+Cholera}}$<$ TSeq $>$ \&model, size\+\_\+t n, size\+\_\+t prevalence, double env\+\_\+load, double pp\+\_\+t\+\_\+rate, double e\+\_\+t\+\_\+rate, double hs\+\_\+rate, double loss\+\_\+rate\+\_\+imm, double rec\+\_\+rate, double shedd\+\_\+rate, double b\+\_\+death\+\_\+rate\+\_\+env, double i\+\_\+growth\+\_\+rate, double b\+\_\+carry\+\_\+capacity, double b\+\_\+death\+\_\+rate, double pb\+\_\+contact\+\_\+rate, double p\+\_\+i\+\_\+rate, double cd\+\_\+size, double b\+\_\+size, double p\+\_\+death\+\_\+rate, double b\+\_\+death\+\_\+rate\+\_\+lysis, double nu)
+\mbox{\Hypertarget{class_model_cholera_ac0a81c5ef09204741679703f0b68bc05}\label{class_model_cholera_ac0a81c5ef09204741679703f0b68bc05}} 
+{\bfseries Model\+Cholera} (\mbox{\hyperlink{class_model_cholera}{Model\+Cholera}}$<$ TSeq $>$ \&model, size\+\_\+t n, size\+\_\+t prevalence, double env\+\_\+load, double pp\+\_\+t\+\_\+rate, double e\+\_\+t\+\_\+rate, double hs\+\_\+rate, double loss\+\_\+rate\+\_\+imm, double rec\+\_\+rate, double shedd\+\_\+rate, double b\+\_\+death\+\_\+rate\+\_\+env, double eb\+\_\+ingested, double i\+\_\+growth\+\_\+rate, double b\+\_\+carry\+\_\+capacity, double b\+\_\+death\+\_\+rate, double pb\+\_\+contact\+\_\+rate, double p\+\_\+i\+\_\+rate, double cd\+\_\+size, double b\+\_\+size, double p\+\_\+death\+\_\+rate, double b\+\_\+death\+\_\+rate\+\_\+lysis, double nu)
 \item 
 \mbox{\Hypertarget{class_model_cholera_a5917079a6f05703e72bc475ca68e9097}\label{class_model_cholera_a5917079a6f05703e72bc475ca68e9097}} 
 \mbox{\hyperlink{class_model_cholera}{Model\+Cholera}}$<$ TSeq $>$ \& {\bfseries initial\+\_\+states} (std\+::vector$<$ double $>$ proportions\+\_\+, std\+::vector$<$ int $>$ queue\+\_\+=\{\})
@@ -34,7 +34,7 @@ Collaboration diagram for Model\+Cholera$<$ TSeq $>$\+:
 \mbox{\Hypertarget{class_model_cholera_a50a9cbff4145b6644b98b1fa56a61ab9}\label{class_model_cholera_a50a9cbff4145b6644b98b1fa56a61ab9}} 
 void \mbox{\hyperlink{class_model_cholera_a50a9cbff4145b6644b98b1fa56a61ab9}{reset}} ()
 \begin{DoxyCompactList}\small\item\em Reset the model to initial state. \end{DoxyCompactList}\item 
-\mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_cholera_a239e533a88471145a62e6366e2894179}{clone\+\_\+ptr}} ()
+\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_cholera_a239e533a88471145a62e6366e2894179}{clone\+\_\+ptr}} ()
 \begin{DoxyCompactList}\small\item\em Create a clone of this model. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \doxysubsection*{Static Public Attributes}
 \begin{DoxyCompactItemize}
@@ -52,12 +52,12 @@ static const int {\bfseries RECOVERED} = 2
 
 
 \doxysubsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{class_model_cholera_ab165046ad3e1c6a9df11a04f883eae4b}\label{class_model_cholera_ab165046ad3e1c6a9df11a04f883eae4b}} 
+\mbox{\Hypertarget{class_model_cholera_ae5fc291e07003369d9793d25f023a863}\label{class_model_cholera_ae5fc291e07003369d9793d25f023a863}} 
 \index{ModelCholera$<$ TSeq $>$@{ModelCholera$<$ TSeq $>$}!ModelCholera@{ModelCholera}}
 \index{ModelCholera@{ModelCholera}!ModelCholera$<$ TSeq $>$@{ModelCholera$<$ TSeq $>$}}
 \doxysubsubsection{\texorpdfstring{ModelCholera()}{ModelCholera()}}
 {\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-\mbox{\hyperlink{class_model_cholera}{Model\+Cholera}}$<$ TSeq $>$\+::\mbox{\hyperlink{class_model_cholera}{Model\+Cholera}} (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{n,  }\item[{size\+\_\+t}]{prevalence,  }\item[{double}]{env\+\_\+load,  }\item[{double}]{pp\+\_\+t\+\_\+rate,  }\item[{double}]{e\+\_\+t\+\_\+rate,  }\item[{double}]{hs\+\_\+rate,  }\item[{double}]{loss\+\_\+rate\+\_\+imm,  }\item[{double}]{rec\+\_\+rate,  }\item[{double}]{shedd\+\_\+rate,  }\item[{double}]{b\+\_\+death\+\_\+rate\+\_\+env,  }\item[{double}]{i\+\_\+growth\+\_\+rate,  }\item[{double}]{b\+\_\+carry\+\_\+capacity,  }\item[{double}]{b\+\_\+death\+\_\+rate,  }\item[{double}]{pb\+\_\+contact\+\_\+rate,  }\item[{double}]{p\+\_\+i\+\_\+rate,  }\item[{double}]{cd\+\_\+size,  }\item[{double}]{b\+\_\+size,  }\item[{double}]{p\+\_\+death\+\_\+rate,  }\item[{double}]{b\+\_\+death\+\_\+rate\+\_\+lysis,  }\item[{double}]{nu }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+\mbox{\hyperlink{class_model_cholera}{Model\+Cholera}}$<$ TSeq $>$\+::\mbox{\hyperlink{class_model_cholera}{Model\+Cholera}} (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{n,  }\item[{size\+\_\+t}]{prevalence,  }\item[{double}]{env\+\_\+load,  }\item[{double}]{pp\+\_\+t\+\_\+rate,  }\item[{double}]{e\+\_\+t\+\_\+rate,  }\item[{double}]{hs\+\_\+rate,  }\item[{double}]{loss\+\_\+rate\+\_\+imm,  }\item[{double}]{rec\+\_\+rate,  }\item[{double}]{shedd\+\_\+rate,  }\item[{double}]{b\+\_\+death\+\_\+rate\+\_\+env,  }\item[{double}]{eb\+\_\+ingested,  }\item[{double}]{i\+\_\+growth\+\_\+rate,  }\item[{double}]{b\+\_\+carry\+\_\+capacity,  }\item[{double}]{b\+\_\+death\+\_\+rate,  }\item[{double}]{pb\+\_\+contact\+\_\+rate,  }\item[{double}]{p\+\_\+i\+\_\+rate,  }\item[{double}]{cd\+\_\+size,  }\item[{double}]{b\+\_\+size,  }\item[{double}]{p\+\_\+death\+\_\+rate,  }\item[{double}]{b\+\_\+death\+\_\+rate\+\_\+lysis,  }\item[{double}]{nu }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
 
 
 \begin{DoxyParams}{Parameters}
@@ -80,6 +80,8 @@ static const int {\bfseries RECOVERED} = 2
 {\em shedd\+\_\+rate} & Shedding rate of humans into the environment. \\
 \hline
 {\em b\+\_\+death\+\_\+rate\+\_\+env} & Bacterial death rate in the environment. \\
+\hline
+{\em eb\+\_\+ingested} & Environmental vibrios ingested \\
 \hline
 {\em i\+\_\+growth\+\_\+rate} & Bacterial growth rate. \\
 \hline
@@ -110,7 +112,7 @@ static const int {\bfseries RECOVERED} = 2
 \index{clone\_ptr@{clone\_ptr}!ModelCholera$<$ TSeq $>$@{ModelCholera$<$ TSeq $>$}}
 \doxysubsubsection{\texorpdfstring{clone\_ptr()}{clone\_ptr()}}
 {\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-\mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_cholera}{Model\+Cholera}}$<$ TSeq $>$\+::clone\+\_\+ptr\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{class_model_cholera}{Model\+Cholera}}$<$ TSeq $>$\+::clone\+\_\+ptr\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
 
 
 
