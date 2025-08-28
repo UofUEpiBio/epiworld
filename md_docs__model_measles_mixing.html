@@ -67,7 +67,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>A comprehensive epidemiological model that combines measles-specific disease progression with population mixing and quarantine measures.</p>
-<h1><a class="anchor" id="autotoc_md3"></a>
+<h1><a class="anchor" id="autotoc_md19"></a>
 Overview</h1>
 <p><code><a class="el" href="class_model_measles_mixing.html" title="Measles model with population mixing, quarantine, and contact tracing.">ModelMeaslesMixing</a></code> implements a measles transmission model that extends the SEIR framework with:</p>
 <ul>
@@ -79,7 +79,7 @@ Overview</h1>
 <li><b>Quarantine measures</b>: Multiple quarantine states for exposed contacts</li>
 <li><b>Vaccination</b>: Vaccine distribution with configurable efficacy and recovery enhancement</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md4"></a>
+<h1><a class="anchor" id="autotoc_md20"></a>
 Disease States</h1>
 <p>The model includes 13 distinct states:</p>
 <ol type="1">
@@ -98,9 +98,9 @@ Disease States</h1>
 <li><b>Hospitalized</b> - Individuals requiring hospital care</li>
 <li><b>Recovered</b> - Immune individuals</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md5"></a>
+<h1><a class="anchor" id="autotoc_md21"></a>
 Key Features</h1>
-<h2><a class="anchor" id="autotoc_md6"></a>
+<h2><a class="anchor" id="autotoc_md22"></a>
 Disease Progression</h2>
 <ul>
 <li><b>Incubation Period</b>: Time from exposure to becoming infectious</li>
@@ -109,14 +109,14 @@ Disease Progression</h2>
 <li><b>Detection</b>: Probabilistic detection during rash period</li>
 <li><b>Hospitalization</b>: Some individuals require hospitalization</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md7"></a>
+<h2><a class="anchor" id="autotoc_md23"></a>
 Population Mixing</h2>
 <ul>
 <li><b>Contact Matrices</b>: Define mixing patterns between population groups</li>
 <li><b>Heterogeneous Mixing</b>: Different contact rates between groups</li>
 <li><b>Scalable</b>: Supports multiple population entities</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md8"></a>
+<h2><a class="anchor" id="autotoc_md24"></a>
 Public Health Measures</h2>
 <ul>
 <li><b>Contact Tracing</b>: Trace contacts of detected individuals</li>
@@ -124,9 +124,9 @@ Public Health Measures</h2>
 <li><b>Isolation</b>: Isolate detected cases with configurable willingness</li>
 <li><b>Vaccination</b>: Reduce susceptibility and enhance recovery</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md9"></a>
+<h1><a class="anchor" id="autotoc_md25"></a>
 Parameters</h1>
-<h2><a class="anchor" id="autotoc_md10"></a>
+<h2><a class="anchor" id="autotoc_md26"></a>
 Disease Parameters</h2>
 <ul>
 <li><code>contact_rate</code>: Average number of contacts per day</li>
@@ -137,14 +137,14 @@ Disease Parameters</h2>
 <li><code>hospitalization_rate</code>: Probability of hospitalization</li>
 <li><code>hospitalization_period</code>: Average hospitalization duration (days)</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md11"></a>
+<h2><a class="anchor" id="autotoc_md27"></a>
 Detection and Isolation</h2>
 <ul>
 <li><code>days_undetected</code>: Average time until detection during rash period</li>
 <li><code>isolation_period</code>: Duration of isolation for detected cases</li>
 <li><code>isolation_willingness</code>: Proportion willing to self-isolate</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md12"></a>
+<h2><a class="anchor" id="autotoc_md28"></a>
 Contact Tracing and Quarantine</h2>
 <ul>
 <li><code>contact_tracing_success_rate</code>: Probability of successfully tracing a contact</li>
@@ -152,14 +152,14 @@ Contact Tracing and Quarantine</h2>
 <li><code>quarantine_period</code>: Duration of quarantine for contacts</li>
 <li><code>quarantine_willingness</code>: Proportion willing to quarantine</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md13"></a>
+<h2><a class="anchor" id="autotoc_md29"></a>
 Vaccination</h2>
 <ul>
 <li><code>prop_vaccinated</code>: Proportion of population vaccinated</li>
 <li><code>vax_efficacy</code>: Vaccine efficacy (reduction in susceptibility)</li>
 <li><code>vax_reduction_recovery_rate</code>: Recovery enhancement from vaccination</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md14"></a>
+<h1><a class="anchor" id="autotoc_md30"></a>
 Usage Example</h1>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;epiworld.hpp&quot;</span></div>
 <div class="line"> </div>
@@ -198,16 +198,16 @@ Usage Example</h1>
 <div class="line">model.run(60, 123);</div>
 <div class="line">model.print();</div>
 <div class="ttc" id="aclass_entity_html"><div class="ttname"><a href="class_entity.html">Entity</a></div><div class="ttdef"><b>Definition:</b> entity-bones.hpp:20</div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md15"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md31"></a>
 Differences from Other Models</h1>
-<h2><a class="anchor" id="autotoc_md16"></a>
+<h2><a class="anchor" id="autotoc_md32"></a>
 vs. ModelMeaslesSchool</h2>
 <ul>
 <li><b>Population Mixing</b>: Adds contact matrices for heterogeneous mixing</li>
 <li><b>Contact Tracing</b>: Enhanced contact tracing with configurable success rates</li>
 <li><b>Scalability</b>: Supports multiple population entities</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md17"></a>
+<h2><a class="anchor" id="autotoc_md33"></a>
 vs. ModelSEIRMixingQuarantine</h2>
 <ul>
 <li><b>Disease-Specific States</b>: Uses Prodromal/Rash instead of generic Infected</li>
@@ -215,7 +215,7 @@ vs. ModelSEIRMixingQuarantine</h2>
 <li><b>Infectious Period</b>: Only Prodromal individuals are infectious</li>
 <li><b>Vaccination</b>: Includes vaccine distribution and efficacy</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md18"></a>
+<h1><a class="anchor" id="autotoc_md34"></a>
 Testing</h1>
 <p>The model includes comprehensive tests that verify:</p><ul>
 <li>Correct transition probabilities between states</li>

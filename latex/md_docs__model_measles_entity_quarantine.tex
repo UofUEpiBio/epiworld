@@ -1,0 +1,176 @@
+A comprehensive epidemiological model that implements measles transmission with entity-\/level quarantine measures, where quarantine duration varies based on vaccination prevalence within entities.\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md3}{}\doxysection{Overview}\label{md_docs__model_measles_entity_quarantine_autotoc_md3}
+{\ttfamily \mbox{\hyperlink{class_model_measles_entity_quarantine}{Model\+Measles\+Entity\+Quarantine}}} extends the measles transmission framework with\+:
+
+
+\begin{DoxyItemize}
+\item {\bfseries{Measles-\/specific disease progression}}\+: Susceptible → Exposed → Prodromal → Rash → Recovered
+\item {\bfseries{Population mixing}}\+: Uses contact matrices to model heterogeneous mixing between population groups
+\item {\bfseries{Infectious period}}\+: Agents are infectious during the Prodromal state
+\item {\bfseries{Detection and isolation}}\+: Detection occurs during the Rash state when symptoms become visible
+\item {\bfseries{Entity-\/level quarantine}}\+: When a case is detected, quarantine is applied to all eligible individuals within the same entity (no contact tracing)
+\item {\bfseries{Vaccination prevalence-\/based quarantine duration}}\+: Quarantine duration varies based on vaccination prevalence within each entity
+\item {\bfseries{Isolation policies}}\+: Individual isolation for detected cases
+\item {\bfseries{Hospitalization}}\+: Severe cases requiring hospital care
+\item {\bfseries{Individual willingness}}\+: Agents have individual willingness to comply with public health measures
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md4}{}\doxysection{Key Differences from Model\+Measles\+Mixing}\label{md_docs__model_measles_entity_quarantine_autotoc_md4}
+\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md5}{}\doxysubsection{vs. Model\+Measles\+Mixing}\label{md_docs__model_measles_entity_quarantine_autotoc_md5}
+
+\begin{DoxyItemize}
+\item {\bfseries{No Contact Tracing}}\+: Removes complex contact tracing mechanisms
+\item {\bfseries{Entity-\/\+Level Quarantine}}\+: Quarantine applies to entire entities rather than traced contacts
+\item {\bfseries{Dynamic Quarantine Duration}}\+: Quarantine duration varies based on real-\/time vaccination prevalence calculations
+\item {\bfseries{Simplified Quarantine Logic}}\+: More straightforward quarantine triggering and management
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md6}{}\doxysection{Disease States}\label{md_docs__model_measles_entity_quarantine_autotoc_md6}
+The model supports 13 distinct states\+:
+
+
+\begin{DoxyEnumerate}
+\item {\bfseries{Susceptible}}\+: Individuals who can become infected
+\item {\bfseries{Exposed}}\+: Infected but not yet infectious (incubation period)
+\item {\bfseries{Prodromal}}\+: Infectious individuals in the community (replaces \char`\"{}\+Infected\char`\"{} in SEIR)
+\item {\bfseries{Rash}}\+: Non-\/infectious individuals with visible symptoms (detection occurs here)
+\item {\bfseries{Isolated}}\+: Detected individuals in self-\/isolation
+\item {\bfseries{Isolated Recovered}}\+: Recovered individuals still in isolation
+\item {\bfseries{Detected Hospitalized}}\+: Hospitalized individuals who were detected
+\item {\bfseries{Quarantined Exposed}}\+: Exposed individuals in quarantine due to entity quarantine
+\item {\bfseries{Quarantined Susceptible}}\+: Susceptible individuals in quarantine due to entity quarantine
+\item {\bfseries{Quarantined Prodromal}}\+: Prodromal individuals in quarantine due to entity quarantine
+\item {\bfseries{Quarantined Recovered}}\+: Recovered individuals in quarantine due to entity quarantine
+\item {\bfseries{Hospitalized}}\+: Individuals requiring hospital care
+\item {\bfseries{Recovered}}\+: Individuals who have recovered and gained immunity
+\end{DoxyEnumerate}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md7}{}\doxysection{Parameters}\label{md_docs__model_measles_entity_quarantine_autotoc_md7}
+\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md8}{}\doxysubsection{Disease Parameters}\label{md_docs__model_measles_entity_quarantine_autotoc_md8}
+
+\begin{DoxyItemize}
+\item {\ttfamily contact\+\_\+rate}\+: Average number of contacts per day
+\item {\ttfamily transmission\+\_\+rate}\+: Probability of transmission per contact
+\item {\ttfamily incubation\+\_\+period}\+: Average incubation period in days
+\item {\ttfamily prodromal\+\_\+period}\+: Average prodromal period in days (infectious period)
+\item {\ttfamily rash\+\_\+period}\+: Average rash period in days
+\item {\ttfamily vax\+\_\+efficacy}\+: Vaccine efficacy for preventing infection
+\item {\ttfamily vax\+\_\+improved\+\_\+recovery}\+: Vaccine enhancement of recovery rate
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md9}{}\doxysubsection{Detection and Isolation}\label{md_docs__model_measles_entity_quarantine_autotoc_md9}
+
+\begin{DoxyItemize}
+\item {\ttfamily days\+\_\+undetected}\+: Average number of days an infected individual remains undetected
+\item {\ttfamily isolation\+\_\+willingness}\+: Proportion of individuals willing to self-\/isolate when detected
+\item {\ttfamily isolation\+\_\+period}\+: Duration of isolation in days for detected infected individuals
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md10}{}\doxysubsection{Entity-\/\+Level Quarantine}\label{md_docs__model_measles_entity_quarantine_autotoc_md10}
+
+\begin{DoxyItemize}
+\item {\ttfamily quarantine\+\_\+willingness}\+: Proportion of individuals willing to comply with quarantine measures
+\item {\ttfamily vaccination\+\_\+prevalence\+\_\+thresholds}\+: Vector of vaccination prevalence thresholds (0.\+0 to 1.\+0)
+\item {\ttfamily quarantine\+\_\+durations}\+: Vector of quarantine durations (days) corresponding to thresholds
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md11}{}\doxysubsection{Hospitalization}\label{md_docs__model_measles_entity_quarantine_autotoc_md11}
+
+\begin{DoxyItemize}
+\item {\ttfamily hospitalization\+\_\+rate}\+: Rate at which infected individuals are hospitalized
+\item {\ttfamily hospitalization\+\_\+period}\+: Average duration of hospitalization in days
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md12}{}\doxysubsection{Vaccination}\label{md_docs__model_measles_entity_quarantine_autotoc_md12}
+
+\begin{DoxyItemize}
+\item {\ttfamily prop\+\_\+vaccinated}\+: Initial proportion of vaccinated agents
+\item {\ttfamily vaccination\+\_\+prevalence\+\_\+thresholds}\+: Thresholds for determining quarantine duration
+\item {\ttfamily quarantine\+\_\+durations}\+: Corresponding quarantine durations for each threshold
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md13}{}\doxysection{Usage Example}\label{md_docs__model_measles_entity_quarantine_autotoc_md13}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include <epiworld/epiworld.hpp>}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keyword}{using namespace }epiworld;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Contact matrix for population mixing (3 entities example)}}
+\DoxyCodeLine{std::vector<double> contact\_matrix = \{}
+\DoxyCodeLine{    1.0, 0.5, 0.2,  \textcolor{comment}{// Entity 0 contacts}}
+\DoxyCodeLine{    0.5, 1.0, 0.3,  \textcolor{comment}{// Entity 1 contacts}}
+\DoxyCodeLine{    0.2, 0.3, 1.0   \textcolor{comment}{// Entity 2 contacts}}
+\DoxyCodeLine{\};}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Vaccination prevalence thresholds and corresponding quarantine durations}}
+\DoxyCodeLine{std::vector<double> vax\_thresholds = \{0.0, 0.5, 0.8\};}
+\DoxyCodeLine{std::vector<size\_t> quarantine\_durations = \{21, 14, 7\}; \textcolor{comment}{// Days}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Create the model}}
+\DoxyCodeLine{epimodels::ModelMeaslesEntityQuarantine<> model(}
+\DoxyCodeLine{    1000,            \textcolor{comment}{// Number of agents}}
+\DoxyCodeLine{    0.01,            \textcolor{comment}{// Initial prevalence}}
+\DoxyCodeLine{    2.0,             \textcolor{comment}{// Contact rate}}
+\DoxyCodeLine{    0.2,             \textcolor{comment}{// Transmission rate}}
+\DoxyCodeLine{    0.9,             \textcolor{comment}{// Vaccination efficacy}}
+\DoxyCodeLine{    0.3,             \textcolor{comment}{// Vaccination reduction recovery rate}}
+\DoxyCodeLine{    7.0,             \textcolor{comment}{// Incubation period}}
+\DoxyCodeLine{    4.0,             \textcolor{comment}{// Prodromal period}}
+\DoxyCodeLine{    5.0,             \textcolor{comment}{// Rash period}}
+\DoxyCodeLine{    contact\_matrix,  \textcolor{comment}{// Contact matrix}}
+\DoxyCodeLine{    0.2,             \textcolor{comment}{// Hospitalization rate}}
+\DoxyCodeLine{    7.0,             \textcolor{comment}{// Hospitalization duration}}
+\DoxyCodeLine{    3.0,             \textcolor{comment}{// Days undetected}}
+\DoxyCodeLine{    0.8,             \textcolor{comment}{// Quarantine willingness}}
+\DoxyCodeLine{    0.8,             \textcolor{comment}{// Isolation willingness}}
+\DoxyCodeLine{    4,               \textcolor{comment}{// Isolation period}}
+\DoxyCodeLine{    0.3,             \textcolor{comment}{// Proportion vaccinated}}
+\DoxyCodeLine{    vax\_thresholds,      \textcolor{comment}{// Vaccination prevalence thresholds}}
+\DoxyCodeLine{    quarantine\_durations \textcolor{comment}{// Quarantine durations}}
+\DoxyCodeLine{);}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Add population entities}}
+\DoxyCodeLine{model.add\_entity(\mbox{\hyperlink{class_entity}{Entity<>}}(\textcolor{stringliteral}{"{}Community A"{}}, dist\_factory<>(0, 300)));}
+\DoxyCodeLine{model.add\_entity(\mbox{\hyperlink{class_entity}{Entity<>}}(\textcolor{stringliteral}{"{}Community B"{}}, dist\_factory<>(300, 700)));}
+\DoxyCodeLine{model.add\_entity(\mbox{\hyperlink{class_entity}{Entity<>}}(\textcolor{stringliteral}{"{}Community C"{}}, dist\_factory<>(700, 1000)));}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Initialize entity data structures}}
+\DoxyCodeLine{model.initialize\_entity\_data();}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Run simulation}}
+\DoxyCodeLine{model.\mbox{\hyperlink{classepiworld_1_1_model_aa7d8311e60c5a6683f52868f4d1c099e}{run}}(60, 123);}
+\DoxyCodeLine{model.print();}
+
+\end{DoxyCode}
+\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md14}{}\doxysection{Quarantine Duration Logic}\label{md_docs__model_measles_entity_quarantine_autotoc_md14}
+The quarantine duration for each entity is determined dynamically based on vaccination prevalence\+:
+
+
+\begin{DoxyEnumerate}
+\item {\bfseries{Calculate vaccination prevalence}} for the entity (proportion of agents with vaccination tools)
+\item {\bfseries{Find matching threshold}} in the {\ttfamily vaccination\+\_\+prevalence\+\_\+thresholds} vector
+\item {\bfseries{Apply corresponding duration}} from the {\ttfamily quarantine\+\_\+durations} vector
+\end{DoxyEnumerate}
+
+For example, with thresholds {\ttfamily \mbox{[}0.\+0, 0.\+5, 0.\+8\mbox{]}} and durations {\ttfamily \mbox{[}21, 14, 7\mbox{]}}\+:
+\begin{DoxyItemize}
+\item \mbox{\hyperlink{class_entity}{Entity}} with 30\% vaccination → 21 days quarantine
+\item \mbox{\hyperlink{class_entity}{Entity}} with 60\% vaccination → 14 days quarantine ~\newline
+
+\item \mbox{\hyperlink{class_entity}{Entity}} with 90\% vaccination → 7 days quarantine
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md15}{}\doxysection{Entity-\/\+Level Quarantine Process}\label{md_docs__model_measles_entity_quarantine_autotoc_md15}
+When a case is detected (agent reaches Rash state)\+:
+
+
+\begin{DoxyEnumerate}
+\item {\bfseries{\mbox{\hyperlink{class_entity}{Entity}} quarantine triggered}} for the entity containing the detected case
+\item {\bfseries{All eligible agents}} in that entity are considered for quarantine\+:
+\begin{DoxyItemize}
+\item Must be in Susceptible, Exposed, Prodromal, or Rash state
+\item Vaccinated agents (those with tools) are exempt
+\item Subject to individual quarantine willingness
+\end{DoxyItemize}
+\item {\bfseries{Quarantine duration}} determined by current vaccination prevalence in the entity
+\item {\bfseries{State transitions}} to appropriate quarantined states
+\end{DoxyEnumerate}\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md16}{}\doxysection{Testing}\label{md_docs__model_measles_entity_quarantine_autotoc_md16}
+The model includes comprehensive tests that verify\+:
+\begin{DoxyItemize}
+\item Correct entity-\/level quarantine behavior
+\item Vaccination prevalence calculation accuracy
+\item Dynamic quarantine duration determination
+\item Population mixing functionality across multiple entities
+\item All disease state transitions function correctly
+\end{DoxyItemize}
+
+See {\ttfamily tests/20a-\/measles-\/entity-\/quarantine.\+cpp}, {\ttfamily tests/20b-\/measles-\/entity-\/quarantine.\+cpp}, and {\ttfamily tests/20c-\/measles-\/entity-\/quarantine.\+cpp} for test examples.\hypertarget{md_docs__model_measles_entity_quarantine_autotoc_md17}{}\doxysection{Implementation Notes}\label{md_docs__model_measles_entity_quarantine_autotoc_md17}
+
+\begin{DoxyItemize}
+\item {\bfseries{No Contact Tracing}}\+: Unlike {\ttfamily \mbox{\hyperlink{class_model_measles_mixing}{Model\+Measles\+Mixing}}}, this model does not implement contact tracing
+\item {\bfseries{Real-\/time Calculations}}\+: Vaccination prevalence and quarantine durations are calculated dynamically during simulation
+\item {\bfseries{\mbox{\hyperlink{class_entity}{Entity}} Initialization}}\+: Call {\ttfamily initialize\+\_\+entity\+\_\+data()} after adding all entities to set up mixing infrastructure
+\item {\bfseries{Memory Efficient}}\+: Removes tracking matrices and contact tracing data structures from the original model 
+\end{DoxyItemize}
