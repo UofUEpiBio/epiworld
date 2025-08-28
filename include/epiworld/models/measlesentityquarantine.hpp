@@ -138,7 +138,7 @@ public:
      * @param entity_id The ID of the entity
      * @return Quarantine duration in days
      */
-    size_t get_quarantine_duration_for_entity(size_t entity_id);
+    int get_quarantine_duration_for_entity(size_t entity_id);
 
     static const int SUSCEPTIBLE              = 0;
     static const int EXPOSED                  = 1;
@@ -206,7 +206,7 @@ public:
         epiworld_fast_int isolation_period,
         epiworld_double prop_vaccinated,
         std::vector< double > vaccination_prevalence_thresholds,
-        std::vector< size_t > quarantine_durations
+        std::vector< int > quarantine_durations
     );
     
     /**
@@ -252,7 +252,7 @@ public:
         epiworld_fast_int isolation_period,
         epiworld_double prop_vaccinated,
         std::vector< double > vaccination_prevalence_thresholds,
-        std::vector< size_t > quarantine_durations
+        std::vector< int > quarantine_durations
     );
 
     /**
@@ -418,15 +418,9 @@ inline double ModelMeaslesEntityQuarantine<TSeq>::calculate_entity_vaccination_p
 }
 
 template<typename TSeq>
-inline size_t ModelMeaslesEntityQuarantine<TSeq>::get_quarantine_duration_for_entity(size_t entity_id)
+inline int ModelMeaslesEntityQuarantine<TSeq>::get_quarantine_duration_for_entity(size_t entity_id)
 {
     double vaccination_prevalence = calculate_entity_vaccination_prevalence(entity_id);
-    
-    // Default quarantine duration if no thresholds are set
-    if (vaccination_prevalence_thresholds.empty() || quarantine_durations.empty())
-    {
-        return 21; // Default 21 days
-    }
     
     // Find the appropriate quarantine duration based on vaccination prevalence
     for (size_t i = 0; i < vaccination_prevalence_thresholds.size(); ++i)
@@ -515,7 +509,7 @@ inline void ModelMeaslesEntityQuarantine<TSeq>::m_quarantine_process() {
     {
 
         // Checking if the quarantine in the entity was triggered
-        // or not
+        // or not. We only start quarantine process if active
         if (
             entity_quarantine_triggered[entity_i] != 
             ModelMeaslesEntityQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE
@@ -523,7 +517,7 @@ inline void ModelMeaslesEntityQuarantine<TSeq>::m_quarantine_process() {
             continue;
 
         // Get quarantine duration for this entity based on vaccination prevalence
-        size_t quarantine_duration = get_quarantine_duration_for_entity(entity_i);
+        int quarantine_duration = get_quarantine_duration_for_entity(entity_i);
         
         if (quarantine_duration == 0)
             continue;
@@ -1012,7 +1006,7 @@ inline ModelMeaslesEntityQuarantine<TSeq>::ModelMeaslesEntityQuarantine(
     epiworld_fast_int isolation_period,
     epiworld_double prop_vaccinated,
     std::vector< double > vaccination_prevalence_thresholds,
-    std::vector< size_t > quarantine_durations
+    std::vector< int > quarantine_durations
     )
 {
 
@@ -1175,7 +1169,7 @@ inline ModelMeaslesEntityQuarantine<TSeq>::ModelMeaslesEntityQuarantine(
     epiworld_fast_int isolation_period,
     epiworld_double prop_vaccinated,
     std::vector< double > vaccination_prevalence_thresholds,
-    std::vector< size_t > quarantine_durations
+    std::vector< int > quarantine_durations
     )
 {   
 

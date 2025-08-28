@@ -11,6 +11,8 @@ EPIWORLD_TEST_CASE(
     "[ModelMeaslesEntityQuarantine]"
 ) {
     
+    int n_seeds = 5;
+
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix = {1.0};
     
@@ -20,7 +22,7 @@ EPIWORLD_TEST_CASE(
     
     epimodels::ModelMeaslesEntityQuarantine<> model_0(
         1000,        // Number of agents
-        5 / 1000.0,  // Initial prevalence
+        n_seeds / 1000.0,  // Initial prevalence
         2.0,         // Contact rate
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
@@ -46,8 +48,21 @@ EPIWORLD_TEST_CASE(
     // Initialize entity data structures after adding entities
     model_0.initialize_entity_data();
 
-    // Try to run the model for a few steps
-    model_0.run(5, 123);
+    // Setting the distribution function of the initial cases
+    model_0.get_virus(0).set_distribution(
+        [&n_seeds](Virus<> & v, Model<> * m) -> void {
+        for (int i = 0; i < n_seeds; ++i)
+            m->get_agents()[i].set_virus(v, m);
+        return;
+    });
+
+    size_t nsims = 400; // Reduced for faster testing
+    std::vector<std::vector<epiworld_double>> transitions(nsims);
+    std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
+        
+    auto saver = tests_create_saver(transitions, R0s, n_seeds);
+
+    model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
     
     #ifndef CATCH_CONFIG_MAIN
     model_0.print(false);
