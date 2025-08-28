@@ -119,15 +119,26 @@ private:
     std::vector< double > vaccination_prevalence_thresholds; ///< Vaccination prevalence thresholds
     std::vector< size_t > quarantine_durations; ///< Quarantine durations for each threshold
 
-    double calculate_entity_vaccination_prevalence(size_t entity_id);
-    size_t get_quarantine_duration_for_entity(size_t entity_id);
-
     void m_quarantine_process();
     static void m_update_model(Model<TSeq> * m);
 
 public:
 
     void initialize_entity_data();
+    
+    /**
+     * @brief Calculate vaccination prevalence within an entity
+     * @param entity_id The ID of the entity
+     * @return Vaccination prevalence (0.0 to 1.0)
+     */
+    double calculate_entity_vaccination_prevalence(size_t entity_id);
+    
+    /**
+     * @brief Get quarantine duration for an entity based on vaccination prevalence
+     * @param entity_id The ID of the entity
+     * @return Quarantine duration in days
+     */
+    size_t get_quarantine_duration_for_entity(size_t entity_id);
 
     static const int SUSCEPTIBLE              = 0;
     static const int EXPOSED                  = 1;
