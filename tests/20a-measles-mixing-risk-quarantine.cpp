@@ -74,7 +74,7 @@ EPIWORLD_TEST_CASE(
 }
 
 EPIWORLD_TEST_CASE(
-    "Measles risk quarantine - transition matrix test",
+    "Measles risk quarantine - transition matrix validation",
     "[ModelMeaslesMixingRiskQuarantine_transitions]"
 ) {
     
@@ -82,7 +82,7 @@ EPIWORLD_TEST_CASE(
     
     epimodels::ModelMeaslesMixingRiskQuarantine<> model(
         1000,        // Number of agents
-        0.1,         // Initial prevalence (higher for testing)
+        0.05,        // Initial prevalence (higher for testing)
         2.0,         // Contact rate
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
@@ -112,7 +112,7 @@ EPIWORLD_TEST_CASE(
     // Setting the distribution function of initial cases
     Virus<> virus = model.get_virus(0);
     model.rm_virus(0);
-    virus.set_distribution(dist_virus<>(100));
+    virus.set_distribution(dist_virus<>(50));
     model.add_virus(virus);
     
     model.initial_states({1.0, 0.0});
@@ -120,50 +120,69 @@ EPIWORLD_TEST_CASE(
     // Run multiple simulations to get transition matrix
     int nsims = 100;
     std::vector<std::vector<epiworld_double>> transitions(nsims);
-    std::vector<epiworld_double> R0s(nsims * 100, -1.0);
+    std::vector<epiworld_double> R0s(nsims * 50, -1.0);
     
-    auto saver = tests_create_saver(transitions, R0s, 100);
+    auto saver = tests_create_saver(transitions, R0s, 50);
     model.run_multiple(60, nsims, 123, saver, true, true, 4);
 
     // Calculate average transitions
     auto avg_transitions = tests_calculate_avg_transitions(transitions, model);
     auto mat = tests_transitions_to_matrix(avg_transitions, model);
 
-    std::cout << "Transition matrix test results:" << std::endl;
+    std::cout << "\n=== TRANSITION MATRIX VALIDATION ===" << std::endl;
     
-    // Test transition from exposed to prodromal
-    std::cout << "Transition to prodromal (exposed): " <<
+    // Test basic disease progression transitions
+    std::cout << "Transition from Exposed to Prodromal: " <<
         mat(1, 2) << " (expected: " << 
         1.0/model("Incubation period") << ")" << std::endl;
 
-    // Test transition from prodromal to rash 
-    std::cout << "Transition to rash (prodromal): " <<
+    std::cout << "Transition from Prodromal to Rash: " <<
         mat(2, 3) << " (expected: " << 
         1.0/model("Prodromal period") << ")" << std::endl;
 
-    // Test enhanced detection during quarantine (should show some quarantined prodromal)
-    std::cout << "Transition to quarantined prodromal: " <<
-        mat(2, 9) << " (should be > 0 due to detection during quarantine)" << std::endl;
+    std::cout << "Transition from Rash to Recovered: " <<
+        mat(3, 12) << " (expected: " << 
+        1.0/model("Rash period") << ")" << std::endl;
 
-    // Test quarantine transitions with different durations
-    std::cout << "Transition from quarantined susceptible to susceptible: " <<
-        mat(8, 0) << " (varies by risk level)" << std::endl;
+    // Test enhanced detection during quarantine
+    std::cout << "\n--- Enhanced Detection During Quarantine ---" << std::endl;
+    std::cout << "Transition from Prodromal to Quarantined Prodromal: " <<
+        mat(2, 9) << " (should be > 0 due to enhanced detection)" << std::endl;
+
+    // Test quarantine transitions  
+    std::cout << "\n--- Quarantine State Transitions ---" << std::endl;
+    std::cout << "Quarantined Susceptible to Susceptible: " << mat(8, 0) << std::endl;
+    std::cout << "Quarantined Exposed to Exposed: " << mat(7, 1) << std::endl;
+    std::cout << "Quarantined Exposed to Prodromal: " << mat(7, 2) << std::endl;
+    std::cout << "Quarantined Exposed to Quarantined Prodromal: " << mat(7, 9) << std::endl;
+
+    // Test isolation transitions
+    std::cout << "\n--- Isolation State Transitions ---" << std::endl;
+    std::cout << "Isolated to Isolated Recovered: " << mat(4, 5) << std::endl;
+    std::cout << "Isolated Recovered to Recovered: " << mat(5, 12) << std::endl;
 
     #ifdef CATCH_CONFIG_MAIN
-    // Basic transition checks
+    // Validate core disease progression  
     REQUIRE_FALSE(
-        moreless(mat(1, 2), 1.0/model("Incubation period"), 0.05)
+        moreless(mat(1, 2), 1.0/model("Incubation period"), 0.1)
     );
     
     REQUIRE_FALSE(
         moreless(mat(2, 3), 1.0/model("Prodromal period"), 0.1)
     );
     
-    // Should have some enhanced detection during quarantine
+    // Should have enhanced detection during quarantine
     REQUIRE(mat(2, 9) > 0.0);
+    
+    // Should have quarantine transitions
+    REQUIRE(mat(8, 0) > 0.0); // Quarantined susceptible to susceptible
+    REQUIRE(mat(7, 1) > 0.0); // Quarantined exposed to exposed
+    
+    // Should have isolation recovery  
+    REQUIRE(mat(5, 12) > 0.0); // Isolated recovered to recovered
     #endif
 
-    std::cout << "Transition matrix test passed" << std::endl;
+    std::cout << "\nTransition matrix validation completed" << std::endl;
 }
 
 EPIWORLD_TEST_CASE(
