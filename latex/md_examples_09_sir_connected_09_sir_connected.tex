@@ -19,8 +19,8 @@ The following are parameters used for both ABM and Compartmental models.
 \DoxyCodeLine{)}
 
 \end{DoxyCode}
-\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md55}{}\doxysection{Compartmental Models}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md55}
-\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md56}{}\doxysubsection{SIR Model}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md56}
+\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md61}{}\doxysection{Compartmental Models}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md61}
+\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md62}{}\doxysubsection{SIR Model}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md62}
 
 \begin{DoxyCode}{0}
 \DoxyCodeLine{library(deSolve)}
@@ -87,7 +87,7 @@ Now we visualize the model
 \end{DoxyCode}
 
 
-\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md57}{}\doxysubsection{SEIR Model}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md57}
+\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md63}{}\doxysubsection{SEIR Model}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md63}
 
 \begin{DoxyCode}{0}
 \DoxyCodeLine{\# Code adapted from}
@@ -156,7 +156,7 @@ Now we visualize the model
 \end{DoxyCode}
 
 
-\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md58}{}\doxysection{Agent-\/\+Based Model Approach}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md58}
+\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md64}{}\doxysection{Agent-\/\+Based Model Approach}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md64}
 Calculation of the expected number of days in state \$a\$ when prob of changing state equals \$\textbackslash{}alpha\$ is \$1/\textbackslash{}alpha\$
 
 
@@ -173,7 +173,7 @@ Calculation of the expected number of days in state \$a\$ when prob of changing 
 \end{DoxyCode}
  \begin{DoxyVerb}[1] -0.01049333
 \end{DoxyVerb}
- \hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md59}{}\doxysubsection{Mathematical preliminaries}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md59}
+ \hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md65}{}\doxysubsection{Mathematical preliminaries}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md65}
 That agent \$i\$ becomes infected can be computed as follows\+:
 
 At the same time, the probability of not becoming infected equals to the probability of no infected agent transmitting the infection. The probability that agent \$j\$ infects \$i\$ equals
@@ -184,7 +184,7 @@ With the above equation, we can now calculate the change in the number of suscep
 
 With the same parametrization in the canonical SIR model (Kermack and Mc\+Kendrick), the instantaneous change in the number of susceptible agents equals \$\textbackslash{}frac\{\textbackslash{}delta\}\{\textbackslash{}delta t\}S = -\/S \textbackslash{}beta I\$. Given \$S\$ and \$I\$, we can show that, as \$\textbackslash{}beta\textbackslash{}downarrow 0\$, i.\+e., the population grows, both rates converge to the same number. Formally\+:
 
-The same can be shown for the change in the number recovered.\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md60}{}\doxysubsection{Simulation study}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md60}
+The same can be shown for the change in the number recovered.\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md66}{}\doxysubsection{Simulation study}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md66}
 Now, what happens with {\ttfamily epiworld}.
 
 
@@ -225,8 +225,8 @@ Now, what happens with {\ttfamily epiworld}.
 \end{DoxyCode}
 
 
-\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md61}{}\doxysection{Comparing ABM with Compartmental Models}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md61}
-To this end, we will compare the results of the first run of the Compartmental model with 100 runs of the ABM, compute the confidence interval, and see how likely is the compartmental model to fall within the trajectory of the ABM simulation.\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md62}{}\doxysubsection{SIR}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md62}
+\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md67}{}\doxysection{Comparing ABM with Compartmental Models}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md67}
+To this end, we will compare the results of the first run of the Compartmental model with 100 runs of the ABM, compute the confidence interval, and see how likely is the compartmental model to fall within the trajectory of the ABM simulation.\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md68}{}\doxysubsection{SIR}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md68}
 
 \begin{DoxyCode}{0}
 \DoxyCodeLine{system("{}./09-\/sir-\/connected.o -\/n \$EPI\_N -\/b \$EPI\_BETA -\/d \$EPI\_NDAYS -\/p \$EPI\_0 -\/r \$EPI\_GAMMA -\/i 1.0 -\/s555599 -\/e 100"{})}
@@ -261,7 +261,7 @@ To this end, we will compare the results of the first run of the Compartmental m
 
 
 
-It seems that, although both yield the same equilibria, compartmental models reach the highest point of the simulation earlier. This makes sense as within a single day of the ABM simulation, compartmental models have more events taking place. Nonetheless, as predicted, as \$\textbackslash{}beta\textbackslash{}downarrow 0\$, the differences become lesser. Furthermore, we could use the fact that the transition rates are known to compute an adjustment.\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md63}{}\doxysubsection{SEIR}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md63}
+It seems that, although both yield the same equilibria, compartmental models reach the highest point of the simulation earlier. This makes sense as within a single day of the ABM simulation, compartmental models have more events taking place. Nonetheless, as predicted, as \$\textbackslash{}beta\textbackslash{}downarrow 0\$, the differences become lesser. Furthermore, we could use the fact that the transition rates are known to compute an adjustment.\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md69}{}\doxysubsection{SEIR}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md69}
 
 \begin{DoxyCode}{0}
 \DoxyCodeLine{system("{}./09-\/seir-\/connected.o -\/n \$EPI\_N -\/b \$EPI\_BETA -\/d \$EPI\_NDAYS -\/p \$EPI\_0 -\/r \$EPI\_GAMMA -\/i 1.0 -\/s555599 -\/e 100 -\/l \$EPI\_LATENCY"{})}
@@ -294,7 +294,7 @@ It seems that, although both yield the same equilibria, compartmental models rea
 \end{DoxyCode}
 
 
-\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md64}{}\doxysubsection{Rates}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md64}
+\hypertarget{md_examples_09_sir_connected_09_sir_connected_autotoc_md70}{}\doxysubsection{Rates}\label{md_examples_09_sir_connected_09_sir_connected_autotoc_md70}
 
 \begin{DoxyCode}{0}
 \DoxyCodeLine{S <-\/ 1000}

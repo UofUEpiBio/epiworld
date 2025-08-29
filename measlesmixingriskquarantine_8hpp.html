@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>epiworld: include/epiworld/models/measlesentityquarantine.hpp File Reference</title>
+<title>epiworld: include/epiworld/models/measlesmixingriskquarantine.hpp File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -68,33 +68,32 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">measlesentityquarantine.hpp File Reference</div>  </div>
+<div class="title">measlesmixingriskquarantine.hpp File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Template for a Measles model with entity-level quarantine.  
+<p>Template for a Measles model with population mixing and risk-based quarantine.  
 <a href="#details">More...</a></p>
 <div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><img src="measlesentityquarantine_8hpp__dep__incl.png" border="0" usemap="#ainclude_2epiworld_2models_2measlesentityquarantine_8hppdep" alt=""/></div>
-<map name="ainclude_2epiworld_2models_2measlesentityquarantine_8hppdep" id="ainclude_2epiworld_2models_2measlesentityquarantine_8hppdep">
-<area shape="rect" title="Template for a Measles model with entity&#45;level quarantine." alt="" coords="5,5,196,47"/>
-<area shape="rect" href="models_8hpp_source.html" title=" " alt="" coords="20,95,181,136"/>
-<area shape="rect" href="include_2epiworld_2epiworld_8hpp_source.html" title=" " alt="" coords="5,184,196,211"/>
-<area shape="rect" href="tests_8hpp_source.html" title=" " alt="" coords="47,259,155,285"/>
+<div class="center"><img src="measlesmixingriskquarantine_8hpp__dep__incl.png" border="0" usemap="#ainclude_2epiworld_2models_2measlesmixingriskquarantine_8hppdep" alt=""/></div>
+<map name="ainclude_2epiworld_2models_2measlesmixingriskquarantine_8hppdep" id="ainclude_2epiworld_2models_2measlesmixingriskquarantine_8hppdep">
+<area shape="rect" title="Template for a Measles model with population mixing and risk&#45;based quarantine." alt="" coords="5,5,223,47"/>
+<area shape="rect" href="models_8hpp_source.html" title=" " alt="" coords="33,95,195,136"/>
+<area shape="rect" href="include_2epiworld_2epiworld_8hpp_source.html" title=" " alt="" coords="19,184,209,211"/>
+<area shape="rect" href="tests_8hpp_source.html" title=" " alt="" coords="60,259,168,285"/>
 </map>
 </div>
 </div>
-<p><a href="measlesentityquarantine_8hpp_source.html">Go to the source code of this file.</a></p>
+<p><a href="measlesmixingriskquarantine_8hpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model_measles_entity_quarantine.html">ModelMeaslesEntityQuarantine&lt; TSeq &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Measles model with entity-level quarantine.  <a href="class_model_measles_entity_quarantine.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model_measles_mixing_risk_quarantine.html">ModelMeaslesMixingRiskQuarantine&lt; TSeq &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Measles model with population mixing and risk-based quarantine strategies.  <a href="class_model_measles_mixing_risk_quarantine.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -106,16 +105,9 @@ Macros</h2></td></tr>
 <tr class="separator:afe4a6775ab9b6c97ffa459e33bad497a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acd100adc82f9678acf826732feacd32d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><b>SAMPLE_FROM_PROBS</b>(n,  ans)</td></tr>
 <tr class="separator:acd100adc82f9678acf826732feacd32d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:a4a986c278dd6c95adce9cb9fe6fe50de"><td class="memTemplParams" colspan="2"><a id="a4a986c278dd6c95adce9cb9fe6fe50de"></a>
-template&lt;typename TSeq &gt; </td></tr>
-<tr class="memitem:a4a986c278dd6c95adce9cb9fe6fe50de"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>initialize_entity_data</b> (<a class="el" href="class_model_measles_entity_quarantine.html">ModelMeaslesEntityQuarantine</a>&lt; TSeq &gt; &amp;model)</td></tr>
-<tr class="separator:a4a986c278dd6c95adce9cb9fe6fe50de"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Template for a Measles model with entity-level quarantine. </p>
+<div class="textblock"><p>Template for a Measles model with population mixing and risk-based quarantine. </p>
 </div><h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="afe4a6775ab9b6c97ffa459e33bad497a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afe4a6775ab9b6c97ffa459e33bad497a">&#9670;&nbsp;</a></span>GET_MODEL</h2>
@@ -142,9 +134,9 @@ template&lt;typename TSeq &gt; </td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">        <span class="keyword">auto</span> * output = <span class="keyword">dynamic_cast&lt;</span> <a class="code" href="class_model_measles_entity_quarantine.html">ModelMeaslesEntityQuarantine&lt;TSeq&gt;</a> * <span class="keyword">&gt;</span>( (model) ); \</div>
+<b>Value:</b><div class="fragment"><div class="line">        <span class="keyword">auto</span> * output = <span class="keyword">dynamic_cast&lt;</span> <a class="code" href="class_model_measles_mixing_risk_quarantine.html">ModelMeaslesMixingRiskQuarantine&lt;TSeq&gt;</a> * <span class="keyword">&gt;</span>( (model) ); \</div>
 <div class="line">        assert((output) != <span class="keyword">nullptr</span>);</div>
-<div class="ttc" id="aclass_model_measles_entity_quarantine_html"><div class="ttname"><a href="class_model_measles_entity_quarantine.html">ModelMeaslesEntityQuarantine</a></div><div class="ttdoc">Measles model with entity-level quarantine.</div><div class="ttdef"><b>Definition:</b> measlesentityquarantine.hpp:72</div></div>
+<div class="ttc" id="aclass_model_measles_mixing_risk_quarantine_html"><div class="ttname"><a href="class_model_measles_mixing_risk_quarantine.html">ModelMeaslesMixingRiskQuarantine</a></div><div class="ttdoc">Measles model with population mixing and risk-based quarantine strategies.</div><div class="ttdef"><b>Definition:</b> measlesmixingriskquarantine.hpp:59</div></div>
 </div><!-- fragment -->
 </div>
 </div>

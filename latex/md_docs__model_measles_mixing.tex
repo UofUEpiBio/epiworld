@@ -1,4 +1,4 @@
-A comprehensive epidemiological model that combines measles-\/specific disease progression with population mixing and quarantine measures.\hypertarget{md_docs__model_measles_mixing_autotoc_md19}{}\doxysection{Overview}\label{md_docs__model_measles_mixing_autotoc_md19}
+A comprehensive epidemiological model that combines measles-\/specific disease progression with population mixing and quarantine measures.\hypertarget{md_docs__model_measles_mixing_autotoc_md3}{}\doxysection{Overview}\label{md_docs__model_measles_mixing_autotoc_md3}
 {\ttfamily \mbox{\hyperlink{class_model_measles_mixing}{Model\+Measles\+Mixing}}} implements a measles transmission model that extends the SEIR framework with\+:
 
 
@@ -10,7 +10,7 @@ A comprehensive epidemiological model that combines measles-\/specific disease p
 \item {\bfseries{Contact tracing}}\+: Comprehensive contact tracing with configurable success rates
 \item {\bfseries{Quarantine measures}}\+: Multiple quarantine states for exposed contacts
 \item {\bfseries{Vaccination}}\+: Vaccine distribution with configurable efficacy and recovery enhancement
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md20}{}\doxysection{Disease States}\label{md_docs__model_measles_mixing_autotoc_md20}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md4}{}\doxysection{Disease States}\label{md_docs__model_measles_mixing_autotoc_md4}
 The model includes 13 distinct states\+:
 
 
@@ -29,8 +29,8 @@ The model includes 13 distinct states\+:
 \item {\bfseries{Quarantined Recovered}} -\/ Recovered individuals in quarantine
 \item {\bfseries{Hospitalized}} -\/ Individuals requiring hospital care
 \item {\bfseries{Recovered}} -\/ Immune individuals
-\end{DoxyEnumerate}\hypertarget{md_docs__model_measles_mixing_autotoc_md21}{}\doxysection{Key Features}\label{md_docs__model_measles_mixing_autotoc_md21}
-\hypertarget{md_docs__model_measles_mixing_autotoc_md22}{}\doxysubsection{Disease Progression}\label{md_docs__model_measles_mixing_autotoc_md22}
+\end{DoxyEnumerate}\hypertarget{md_docs__model_measles_mixing_autotoc_md5}{}\doxysection{Key Features}\label{md_docs__model_measles_mixing_autotoc_md5}
+\hypertarget{md_docs__model_measles_mixing_autotoc_md6}{}\doxysubsection{Disease Progression}\label{md_docs__model_measles_mixing_autotoc_md6}
 
 \begin{DoxyItemize}
 \item {\bfseries{Incubation Period}}\+: Time from exposure to becoming infectious
@@ -38,21 +38,21 @@ The model includes 13 distinct states\+:
 \item {\bfseries{Rash Period}}\+: Duration of visible symptoms (detection window)
 \item {\bfseries{Detection}}\+: Probabilistic detection during rash period
 \item {\bfseries{Hospitalization}}\+: Some individuals require hospitalization
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md23}{}\doxysubsection{Population Mixing}\label{md_docs__model_measles_mixing_autotoc_md23}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md7}{}\doxysubsection{Population Mixing}\label{md_docs__model_measles_mixing_autotoc_md7}
 
 \begin{DoxyItemize}
 \item {\bfseries{Contact Matrices}}\+: Define mixing patterns between population groups
 \item {\bfseries{Heterogeneous Mixing}}\+: Different contact rates between groups
 \item {\bfseries{Scalable}}\+: Supports multiple population entities
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md24}{}\doxysubsection{Public Health Measures}\label{md_docs__model_measles_mixing_autotoc_md24}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md8}{}\doxysubsection{Public Health Measures}\label{md_docs__model_measles_mixing_autotoc_md8}
 
 \begin{DoxyItemize}
 \item {\bfseries{Contact Tracing}}\+: Trace contacts of detected individuals
 \item {\bfseries{Quarantine}}\+: Quarantine exposed contacts with configurable compliance
 \item {\bfseries{Isolation}}\+: Isolate detected cases with configurable willingness
 \item {\bfseries{Vaccination}}\+: Reduce susceptibility and enhance recovery
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md25}{}\doxysection{Parameters}\label{md_docs__model_measles_mixing_autotoc_md25}
-\hypertarget{md_docs__model_measles_mixing_autotoc_md26}{}\doxysubsection{Disease Parameters}\label{md_docs__model_measles_mixing_autotoc_md26}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md9}{}\doxysection{Parameters}\label{md_docs__model_measles_mixing_autotoc_md9}
+\hypertarget{md_docs__model_measles_mixing_autotoc_md10}{}\doxysubsection{Disease Parameters}\label{md_docs__model_measles_mixing_autotoc_md10}
 
 \begin{DoxyItemize}
 \item {\ttfamily contact\+\_\+rate}\+: Average number of contacts per day
@@ -62,26 +62,26 @@ The model includes 13 distinct states\+:
 \item {\ttfamily rash\+\_\+period}\+: Average rash period (days)
 \item {\ttfamily hospitalization\+\_\+rate}\+: Probability of hospitalization
 \item {\ttfamily hospitalization\+\_\+period}\+: Average hospitalization duration (days)
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md27}{}\doxysubsection{Detection and Isolation}\label{md_docs__model_measles_mixing_autotoc_md27}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md11}{}\doxysubsection{Detection and Isolation}\label{md_docs__model_measles_mixing_autotoc_md11}
 
 \begin{DoxyItemize}
 \item {\ttfamily days\+\_\+undetected}\+: Average time until detection during rash period
 \item {\ttfamily isolation\+\_\+period}\+: Duration of isolation for detected cases
 \item {\ttfamily isolation\+\_\+willingness}\+: Proportion willing to self-\/isolate
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md28}{}\doxysubsection{Contact Tracing and Quarantine}\label{md_docs__model_measles_mixing_autotoc_md28}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md12}{}\doxysubsection{Contact Tracing and Quarantine}\label{md_docs__model_measles_mixing_autotoc_md12}
 
 \begin{DoxyItemize}
 \item {\ttfamily contact\+\_\+tracing\+\_\+success\+\_\+rate}\+: Probability of successfully tracing a contact
 \item {\ttfamily contact\+\_\+tracing\+\_\+days\+\_\+prior}\+: Number of days to trace back
 \item {\ttfamily quarantine\+\_\+period}\+: Duration of quarantine for contacts
 \item {\ttfamily quarantine\+\_\+willingness}\+: Proportion willing to quarantine
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md29}{}\doxysubsection{Vaccination}\label{md_docs__model_measles_mixing_autotoc_md29}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md13}{}\doxysubsection{Vaccination}\label{md_docs__model_measles_mixing_autotoc_md13}
 
 \begin{DoxyItemize}
 \item {\ttfamily prop\+\_\+vaccinated}\+: Proportion of population vaccinated
 \item {\ttfamily vax\+\_\+efficacy}\+: Vaccine efficacy (reduction in susceptibility)
 \item {\ttfamily vax\+\_\+reduction\+\_\+recovery\+\_\+rate}\+: Recovery enhancement from vaccination
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md30}{}\doxysection{Usage Example}\label{md_docs__model_measles_mixing_autotoc_md30}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md14}{}\doxysection{Usage Example}\label{md_docs__model_measles_mixing_autotoc_md14}
 
 \begin{DoxyCode}{0}
 \DoxyCodeLine{\textcolor{preprocessor}{\#include "{}epiworld.hpp"{}}}
@@ -122,21 +122,21 @@ The model includes 13 distinct states\+:
 \DoxyCodeLine{model.print();}
 
 \end{DoxyCode}
-\hypertarget{md_docs__model_measles_mixing_autotoc_md31}{}\doxysection{Differences from Other Models}\label{md_docs__model_measles_mixing_autotoc_md31}
-\hypertarget{md_docs__model_measles_mixing_autotoc_md32}{}\doxysubsection{vs. Model\+Measles\+School}\label{md_docs__model_measles_mixing_autotoc_md32}
+\hypertarget{md_docs__model_measles_mixing_autotoc_md15}{}\doxysection{Differences from Other Models}\label{md_docs__model_measles_mixing_autotoc_md15}
+\hypertarget{md_docs__model_measles_mixing_autotoc_md16}{}\doxysubsection{vs. Model\+Measles\+School}\label{md_docs__model_measles_mixing_autotoc_md16}
 
 \begin{DoxyItemize}
 \item {\bfseries{Population Mixing}}\+: Adds contact matrices for heterogeneous mixing
 \item {\bfseries{Contact Tracing}}\+: Enhanced contact tracing with configurable success rates
 \item {\bfseries{Scalability}}\+: Supports multiple population entities
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md33}{}\doxysubsection{vs. Model\+SEIRMixing\+Quarantine}\label{md_docs__model_measles_mixing_autotoc_md33}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md17}{}\doxysubsection{vs. Model\+SEIRMixing\+Quarantine}\label{md_docs__model_measles_mixing_autotoc_md17}
 
 \begin{DoxyItemize}
 \item {\bfseries{Disease-\/\+Specific States}}\+: Uses Prodromal/\+Rash instead of generic Infected
 \item {\bfseries{Detection Timing}}\+: Detection occurs during Rash state, not Infected state
 \item {\bfseries{Infectious Period}}\+: Only Prodromal individuals are infectious
 \item {\bfseries{Vaccination}}\+: Includes vaccine distribution and efficacy
-\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md34}{}\doxysection{Testing}\label{md_docs__model_measles_mixing_autotoc_md34}
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_autotoc_md18}{}\doxysection{Testing}\label{md_docs__model_measles_mixing_autotoc_md18}
 The model includes comprehensive tests that verify\+:
 \begin{DoxyItemize}
 \item Correct transition probabilities between states
