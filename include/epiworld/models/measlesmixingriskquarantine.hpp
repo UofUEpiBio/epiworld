@@ -518,7 +518,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_agents(
             #ifdef EPI_DEBUG
             auto & a = this->population.at(infectious.at(entity_indices[g] + which));
             #else
-            auto & a = this->get_agent(infectious[entity_indices[g] + which]);
+            const auto & a = this->get_agent(infectious[entity_indices[g] + which]);
             #endif
 
             #ifdef EPI_DEBUG
@@ -643,19 +643,26 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
     }
     
     // Check for detection during active quarantine
-    if (quarantine_active && m->runif() < m->par("Detection rate quarantine")) {
-        p->change_state(m, QUARANTINED_PRODROMAL);
-        model->day_flagged[p->get_id()] = m->today();
-        return;
-    }
+    bool detect_it = (
+        quarantine_active &&
+        (m->runif() < m->par("Detection rate quarantine"))
+    );
 
     // Does the agent transition to rash?
     if (m->runif() < 1.0/m->par("Prodromal period"))
     {
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(m, RASH);
+        if (detect_it)
+        {
+            p->change_state(m, ISOLATED);
+        } else {
+            p->change_state(m, RASH);
+        }
+    } else if (detect_it)
+    {
+        p->change_state(m, QUARANTINED_PRODROMAL);
     }
-    
+
     return ;
 
 }
@@ -764,7 +771,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     else 
     {
         if (p->get_virus() != nullptr)
-            p->rm_virus(
+            p->change_state(
                 m,
                 ModelMeaslesMixingRiskQuarantine<TSeq>::DETECTED_HOSPITALIZED
             );
