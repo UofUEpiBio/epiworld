@@ -115,5 +115,7 @@ EPIWORLD_TEST_CASE(
 
     std::cout << "Quarantine duration comparison test completed" << std::endl;
 
+    #ifndef CATCH_CONFIG_MAIN
     return 0;
+    #endif
 }

@@ -20,6 +20,11 @@ using namespace epiworld;
         assert((output) != nullptr); // Use assert for runtime checks
 #endif
 
+/**
+ * @brief Macro to sample from a list of probabilities
+ * @return The index of the sampled probability; and the total length
+ * if none is found, returns n.
+ */
 #define SAMPLE_FROM_PROBS(n, ans) \
     size_t ans; \
     epiworld_double p_total = m->runif(); \
@@ -59,22 +64,35 @@ class ModelMeaslesMixingRiskQuarantine : public Model<TSeq>
 {
 private:
     
-    // Vector of vectors of infected agents (prodromal agents are infectious)     
+    // Vector of vectors of infected agents (prodromal agents are infectious)
     std::vector< size_t > infectious;
 
     // Number of infectious agents in each group
     std::vector< size_t > n_infectious_per_group;
     
     // Where the agents start in the `infectious` vector
-    std::vector< size_t > entity_indices;
+    std::vector< size_t > infectious_entity_indices;
 
+    // Update the list of infectious agents
     void m_update_infectious_list();
+
+    // Vector to hold sampled agents temporarily
     std::vector< size_t > sampled_agents;
-    size_t sample_agents(
+
+    /**
+     * @brief Sample infected agents based on contact matrix
+     * @param agent Pointer to the agent for whom contacts are being sampled.
+     * @param sampled_agents Vector to store the IDs of sampled agents.
+     * @return The number of sampled agents.
+     */
+    size_t sample_infectious_agents(
         Agent<TSeq> * agent,
         std::vector< size_t > & sampled_agents
         );
+
     std::vector< double > adjusted_contact_rate;
+
+    // Contact matrix (column-major order)
     std::vector< double > contact_matrix;
 
     #ifdef EPI_DEBUG
@@ -102,6 +120,7 @@ private:
     std::vector< int > day_rash_onset; ///< Day of rash onset
     std::vector< int > quarantine_risk_level; ///< Risk level assigned to each agent (0=low, 1=medium, 2=high)
 
+    bool system_quarantine_triggered = false; ///< Indicator if the system quarantine was triggered
     void m_quarantine_process();
     static void m_update_model(Model<TSeq> * m);
 
@@ -114,28 +133,28 @@ private:
 
 public:
 
-    static const int SUSCEPTIBLE              = 0;
-    static const int EXPOSED                  = 1;
-    static const int PRODROMAL                = 2;
-    static const int RASH                     = 3;
-    static const int ISOLATED                 = 4;
-    static const int ISOLATED_RECOVERED       = 5;
-    static const int DETECTED_HOSPITALIZED    = 6;
-    static const int QUARANTINED_EXPOSED      = 7;
-    static const int QUARANTINED_SUSCEPTIBLE  = 8;
-    static const int QUARANTINED_PRODROMAL    = 9;
-    static const int QUARANTINED_RECOVERED    = 10;
-    static const int HOSPITALIZED             = 11;
-    static const int RECOVERED                = 12;
+    static constexpr int SUSCEPTIBLE              = 0;
+    static constexpr int EXPOSED                  = 1;
+    static constexpr int PRODROMAL                = 2;
+    static constexpr int RASH                     = 3;
+    static constexpr int ISOLATED                 = 4;
+    static constexpr int ISOLATED_RECOVERED       = 5;
+    static constexpr int DETECTED_HOSPITALIZED    = 6;
+    static constexpr int QUARANTINED_EXPOSED      = 7;
+    static constexpr int QUARANTINED_SUSCEPTIBLE  = 8;
+    static constexpr int QUARANTINED_PRODROMAL    = 9;
+    static constexpr int QUARANTINED_RECOVERED    = 10;
+    static constexpr int HOSPITALIZED             = 11;
+    static constexpr int RECOVERED                = 12;
 
-    static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
-    static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
-    static const size_t QUARANTINE_PROCESS_DONE     = 2u;
+    static constexpr size_t QUARANTINE_PROCESS_INACTIVE = 0u;
+    static constexpr size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
+    static constexpr size_t QUARANTINE_PROCESS_DONE     = 2u;
 
     // Risk levels for quarantine
-    static const int RISK_LOW                 = 0;
-    static const int RISK_MEDIUM              = 1;
-    static const int RISK_HIGH                = 2;
+    static constexpr int RISK_LOW                 = 0;
+    static constexpr int RISK_MEDIUM              = 1;
+    static constexpr int RISK_HIGH                = 2;
 
     ModelMeaslesMixingRiskQuarantine() {};
     
@@ -312,6 +331,11 @@ public:
         return agent_quarantine_triggered;
     };
 
+    bool get_system_quarantine_triggered() const
+    {
+        return system_quarantine_triggered;
+    };
+
     /**
      * @brief Get the quarantine willingness for all agents
      * @return Vector of boolean values indicating each agent's willingness to quarantine
@@ -341,68 +365,13 @@ public:
 
 };
 
-// Static member definitions
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::SUSCEPTIBLE;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::EXPOSED;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::PRODROMAL;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::RASH;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::ISOLATED;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::ISOLATED_RECOVERED;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::DETECTED_HOSPITALIZED;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINED_EXPOSED;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINED_SUSCEPTIBLE;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINED_PRODROMAL;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINED_RECOVERED;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::HOSPITALIZED;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED;
-
-template<typename TSeq>
-const size_t ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINE_PROCESS_INACTIVE;
-
-template<typename TSeq>
-const size_t ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE;
-
-template<typename TSeq>
-const size_t ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINE_PROCESS_DONE;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::RISK_LOW;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::RISK_MEDIUM;
-
-template<typename TSeq>
-const int ModelMeaslesMixingRiskQuarantine<TSeq>::RISK_HIGH;
 
 // Implementation starts here
 
 template<typename TSeq>
-inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_model(Model<TSeq> * m)
+inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_model(
+    Model<TSeq> * m
+)
 {
     GET_MODEL(m, model);
     model->m_quarantine_process();
@@ -419,10 +388,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_add_tracking(
 {
 
     // We avoid the math if there's no point in tracking anymore
-    if (
-        agent_quarantine_triggered[infectious_id] >= 
-        ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINE_PROCESS_DONE
-    )
+    if (system_quarantine_triggered >= QUARANTINE_PROCESS_DONE)
         return;    
 
     // If we are overflow, we start from the beginning
@@ -442,21 +408,24 @@ template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_infectious_list()
 {
 
+    // Getting the agents from the model
     auto & agents = Model<TSeq>::get_agents();
 
+    // Resetting the infectious list (no infected agents)
     std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);
     
+    // Looping over agents to find the infectious ones
     for (const auto & a : agents)
     {
 
-        if (a.get_state() == ModelMeaslesMixingRiskQuarantine<TSeq>::PRODROMAL)
+        if (a.get_state() == PRODROMAL)
         {
             if (a.get_n_entities() > 0u)
             {
                 const auto & entity = a.get_entity(0u);
                 infectious[
                     // Position of the group in the `infectious` vector
-                    entity_indices[entity.get_id()] +
+                    infectious_entity_indices[entity.get_id()] +
                     // Position of the agent in the group
                     n_infectious_per_group[entity.get_id()]++
                 ] = a.get_id();
@@ -471,7 +440,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_infectious_list()
 }
 
 template<typename TSeq>
-inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_agents(
+inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
     Agent<TSeq> * agent,
     std::vector< size_t > & sampled_agents
     )
@@ -516,9 +485,13 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_agents(
                 which = static_cast<int>(group_size) - 1;
 
             #ifdef EPI_DEBUG
-            auto & a = this->population.at(infectious.at(entity_indices[g] + which));
+            auto & a = this->population.at(
+                infectious.at(infectious_entity_indices[g] + which)
+            );
             #else
-            const auto & a = this->get_agent(infectious[entity_indices[g] + which]);
+            const auto & a = this->get_agent(
+                infectious[infectious_entity_indices[g] + which]
+            );
             #endif
 
             #ifdef EPI_DEBUG
@@ -547,6 +520,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
+    // If the agent has no entities, then it can't be infected
+    // (e.g., isolated agents)
     if (p->get_n_entities() == 0)
         return;
 
@@ -554,7 +529,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
     // class
     GET_MODEL(m, m_down);
     
-    size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
+    // Sampling infected agents
+    size_t ndraws = m_down->sample_infectious_agents(p, m_down->sampled_agents);
 
     #ifdef EPI_DEBUG
     m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
@@ -568,8 +544,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
     for (size_t n = 0u; n < ndraws; ++n)
     {
 
+        // Getting the neighbor and its virus
         auto & neighbor = m->get_agent(m_down->sampled_agents[n]);
-
         auto & v = neighbor.get_virus();
 
         #ifdef EPI_DEBUG
@@ -580,6 +556,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
         #endif
 
         // Adding the current agent to the tracked interactions
+        // In this case, the infected neighbor is the one
+        // who interacts with the susceptible agent
         m_down->m_add_tracking(neighbor.get_id(), p->get_id());
             
         /* And it is a function of susceptibility_reduction as well */ 
@@ -599,11 +577,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
     if (which < 0)
         return;
 
-    p->set_virus(
-        *m->array_virus_tmp[which],
-        m,
-        ModelMeaslesMixingRiskQuarantine<TSeq>::EXPOSED
-        );
+    p->set_virus(*m->array_virus_tmp[which], m, EXPOSED);
 
     return; 
 
@@ -620,7 +594,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_exposed(
     // Does the agent become prodromal (infectious)?
     if (m->runif() < 1.0/(v->get_incubation(m)))
     {
-        p->change_state(m, ModelMeaslesMixingRiskQuarantine<TSeq>::PRODROMAL);
+        p->change_state(m, PRODROMAL);
         return;
     }
 
@@ -632,19 +606,10 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
 ) {
     
     GET_MODEL(m, model);
-
-    // Enhanced detection during active quarantine
-    bool quarantine_active = false;
-    for (size_t i = 0u; i < model->agent_quarantine_triggered.size(); ++i) {
-        if (model->agent_quarantine_triggered[i] == ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE) {
-            quarantine_active = true;
-            break;
-        }
-    }
     
     // Check for detection during active quarantine
     bool detect_it = (
-        quarantine_active &&
+        model->system_quarantine_triggered &&
         (m->runif() < m->par("Detection rate quarantine"))
     );
 
@@ -681,8 +646,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
         (m->runif() < 1.0/m->par("Days undetected"))
     )
     {
-        model->agent_quarantine_triggered[p->get_id()] = 
-            ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE;
+        model->agent_quarantine_triggered[p->get_id()] =
+            QUARANTINE_PROCESS_ACTIVE;
         detected = true;
     }
 
@@ -694,21 +659,11 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     
     if (which == 2) // Recovers
     {
-        p->rm_virus(
-            m,
-            detected ?
-                ModelMeaslesMixingRiskQuarantine<TSeq>::ISOLATED_RECOVERED:
-                ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED
-        );
+        p->rm_virus(m, detected ? ISOLATED_RECOVERED: RECOVERED);
     }
     else if (which == 1) // Hospitalized
     {
-        p->change_state(
-            m,
-            detected ?
-                ModelMeaslesMixingRiskQuarantine<TSeq>::DETECTED_HOSPITALIZED :
-                ModelMeaslesMixingRiskQuarantine<TSeq>::HOSPITALIZED
-        );
+        p->change_state(m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
     }
     else if (which != 0)
     {
@@ -718,7 +673,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     {
         // If the agent is not hospitalized or recovered, then it is moved to
         // isolation.
-        p->change_state(m, ModelMeaslesMixingRiskQuarantine<TSeq>::ISOLATED);
+        p->change_state(m, ISOLATED);
         model->day_flagged[p->get_id()] = m->today();
     }
     
@@ -754,34 +709,29 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     {
         if (unisolate)
         {
-            if (p->get_virus() != nullptr)
-                p->rm_virus(
-                    m,
-                    ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED
-                );
+            p->rm_virus(m, RECOVERED);
         }
         else
-            if (p->get_virus() != nullptr)
-                p->rm_virus(
-                    m,
-                    ModelMeaslesMixingRiskQuarantine<TSeq>::ISOLATED_RECOVERED
-                );
+            p->rm_virus(m, ISOLATED_RECOVERED);
     }
     // Moves to hospitalized
-    else 
+    else if (which == 1u)
     {
-        if (p->get_virus() != nullptr)
-            p->change_state(
-                m,
-                ModelMeaslesMixingRiskQuarantine<TSeq>::DETECTED_HOSPITALIZED
-            );
+        p->change_state(m, DETECTED_HOSPITALIZED);
     }
+    // Stays in rash, may or may not be released from isolation
+    else if ((which == 0u) && unisolate)
+    {
+        p->change_state(m, RASH);
+    }
+
 
 }
 
 template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated_recovered(
-    Agent<TSeq> * p, Model<TSeq> * m
+    Agent<TSeq> * p,
+    Model<TSeq> * m
 ) {
 
     GET_MODEL(m, model);
@@ -791,16 +741,14 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated_recovered(
     int days_since = m->today() - model->day_rash_onset[p->get_id()];
 
     if (m->par("Isolation period") <= days_since)
-        p->change_state(
-            m,
-            ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED
-        );
+        p->change_state(m, RECOVERED);
 
 }
 
 template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
-    Agent<TSeq> * p, Model<TSeq> * m
+    Agent<TSeq> * p,
+    Model<TSeq> * m
 ) {
 
     GET_MODEL(m, model);
@@ -821,16 +769,14 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (quarantine_period <= days_since)
-        p->change_state(
-            m,
-            ModelMeaslesMixingRiskQuarantine<TSeq>::SUSCEPTIBLE
-        );
+        p->change_state(m, SUSCEPTIBLE);
 
 }
 
 template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_exposed(
-    Agent<TSeq> * p, Model<TSeq> * m
+    Agent<TSeq> * p,
+    Model<TSeq> * m
 ) {
 
     GET_MODEL(m, model);
@@ -857,30 +803,25 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_exposed(
         // If the agent is unquarantined, it becomes prodromal
         if (quarantine_period <= days_since)
         {
-            p->change_state(
-                m, ModelMeaslesMixingRiskQuarantine<TSeq>::PRODROMAL
-            );
+            p->change_state(m, PRODROMAL);
         }
         else
         {
-            p->change_state(
-                m, ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINED_PRODROMAL
-            );
+            p->change_state(m, QUARANTINED_PRODROMAL);
         }
 
     }
     else if (quarantine_period <= days_since)
     {
-        p->change_state(
-            m, ModelMeaslesMixingRiskQuarantine<TSeq>::EXPOSED
-        );
+        p->change_state(m, EXPOSED);
     }
 
 }
 
 template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodromal(
-    Agent<TSeq> * p, Model<TSeq> * m
+    Agent<TSeq> * p,
+    Model<TSeq> * m
 ) {
 
     GET_MODEL(m, model);
@@ -904,13 +845,11 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodroma
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(m, ModelMeaslesMixingRiskQuarantine<TSeq>::ISOLATED);
+        p->change_state(m, ISOLATED);
     }
-    else
+    else if (quarantine_period <= days_since)
     {
-        
-        if (quarantine_period <= days_since)
-            p->change_state(m, ModelMeaslesMixingRiskQuarantine<TSeq>::PRODROMAL);
+        p->change_state(m, PRODROMAL);
 
     }
 
@@ -918,7 +857,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodroma
 
 template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_recovered(
-    Agent<TSeq> * p, Model<TSeq> * m
+    Agent<TSeq> * p,
+    Model<TSeq> * m
 ) {
 
     GET_MODEL(m, model);
@@ -939,21 +879,19 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_recovere
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (quarantine_period <= days_since)
-        p->change_state(
-            m,
-            ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED
-        );
+        p->change_state(m, RECOVERED);
 
 }
 
 template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_hospitalized(
-    Agent<TSeq> * p, Model<TSeq> * m
+    Agent<TSeq> * p,
+    Model<TSeq> * m
 ) {
 
     // The agent is removed from the system
     if (m->runif() < 1.0/m->par("Hospitalization period"))
-        p->rm_virus(m, ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED);
+        p->rm_virus(m, RECOVERED);
 
 };
 
@@ -966,10 +904,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
 
         // Checking if the quarantine in the agent was triggered
         // or not
-        if (
-            agent_quarantine_triggered[agent_i] != 
-            ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE
-        )
+        if (agent_quarantine_triggered[agent_i] != QUARANTINE_PROCESS_ACTIVE)
             continue;
 
         // Getting the number of contacts, if it is greater
@@ -1084,8 +1019,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         }
 
         // Setting the quarantine process off
-        agent_quarantine_triggered[agent_i] = 
-            ModelMeaslesMixingRiskQuarantine<TSeq>::QUARANTINE_PROCESS_DONE;
+        agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
     }
 
     return;
@@ -1351,29 +1285,25 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
     sampled_agents.resize(Model<TSeq>::size());
 
     // We only do it once
-    n_infectious_per_group.resize(this->entities.size(), 0u);
-    std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);
+    n_infectious_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infectious.resize(Model<TSeq>::size());
-    std::fill(infectious.begin(), infectious.end(), 0u);
+    infectious.assign(Model<TSeq>::size(), 0u);
 
     // This will say when do the groups start in the `infectious` vector
-    entity_indices.resize(this->entities.size(), 0u);
-    std::fill(entity_indices.begin(), entity_indices.end(), 0u);
+    infectious_entity_indices.assign(this->entities.size(), 0u);
     for (size_t i = 1u; i < this->entities.size(); ++i)
     {
 
-        entity_indices[i] +=
+        infectious_entity_indices[i] +=
             this->entities[i - 1].size() +
-            entity_indices[i - 1]
+            infectious_entity_indices[i - 1]
             ;
 
     }
     
     // Adjusting contact rate
-    adjusted_contact_rate.clear();
-    adjusted_contact_rate.resize(this->entities.size(), 0.0);
+    adjusted_contact_rate.assign(this->entities.size(), 0.0);
 
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
@@ -1402,55 +1332,15 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
             Model<TSeq>::runif() < this->par("Isolation willingness");
     }
 
-    agent_quarantine_triggered.resize(this->size(), 0u);
-    std::fill(
-        agent_quarantine_triggered.begin(),
-        agent_quarantine_triggered.end(),
-        0u
-    );
-
-    day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0
-    );
-
-    day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0
-    );
-
-    quarantine_risk_level.resize(this->size(), RISK_LOW);
-    std::fill(
-        quarantine_risk_level.begin(),
-        quarantine_risk_level.end(),
-        RISK_LOW
-    );
+    agent_quarantine_triggered.assign(this->size(), 0u);
+    day_flagged.assign(this->size(), 0);
+    day_rash_onset.assign(this->size(), 0);
+    quarantine_risk_level.assign(this->size(), RISK_LOW);
 
     // Setting up contact tracking matrix
-    tracking_matrix.resize(this->size() * EPI_MAX_TRACKING, 0u);
-    std::fill(
-        tracking_matrix.begin(),
-        tracking_matrix.end(),
-        0u
-    );
-
-    tracking_matrix_size.resize(this->size(), 0u);
-    std::fill(
-        tracking_matrix_size.begin(),
-        tracking_matrix_size.end(),
-        0u
-    );
-
-    tracking_matrix_date.resize(this->size() * EPI_MAX_TRACKING, 0u);
-    std::fill(
-        tracking_matrix_date.begin(),
-        tracking_matrix_date.end(),
-        0u
-    );
+    tracking_matrix.assign(this->size() * EPI_MAX_TRACKING, 0u);
+    tracking_matrix_size.assign(this->size(), 0u);
+    tracking_matrix_date.assign(this->size() * EPI_MAX_TRACKING, 0u);
 
     return;
 

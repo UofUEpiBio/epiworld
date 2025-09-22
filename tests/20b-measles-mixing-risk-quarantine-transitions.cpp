@@ -116,5 +116,7 @@ EPIWORLD_TEST_CASE(
 
     std::cout << "\nTransition matrix validation completed" << std::endl;
 
+    #ifndef CATCH_CONFIG_MAIN
     return 0;
+    #endif
 }

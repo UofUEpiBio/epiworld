@@ -66,5 +66,7 @@ EPIWORLD_TEST_CASE(
 
     std::cout << "Basic test passed - model runs successfully" << std::endl;
 
+    #ifndef CATCH_CONFIG_MAIN
     return 0;
+    #endif
 }
