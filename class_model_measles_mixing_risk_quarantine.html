@@ -124,6 +124,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memitem:a9e416bc155fcde39602db85ce493fe0c"><td class="memItemLeft" align="right" valign="top">std::vector&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model_measles_mixing_risk_quarantine.html#a9e416bc155fcde39602db85ce493fe0c">get_agent_quarantine_triggered</a> () const</td></tr>
 <tr class="memdesc:a9e416bc155fcde39602db85ce493fe0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the quarantine trigger status for all agents.  <a href="class_model_measles_mixing_risk_quarantine.html#a9e416bc155fcde39602db85ce493fe0c">More...</a><br /></td></tr>
 <tr class="separator:a9e416bc155fcde39602db85ce493fe0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88958b069c82ac45ac832d944296aa56"><td class="memItemLeft" align="right" valign="top"><a id="a88958b069c82ac45ac832d944296aa56"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>get_system_quarantine_triggered</b> () const</td></tr>
+<tr class="separator:a88958b069c82ac45ac832d944296aa56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fd195e45ff78226de053ef90e0770f1"><td class="memItemLeft" align="right" valign="top">std::vector&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_model_measles_mixing_risk_quarantine.html#a8fd195e45ff78226de053ef90e0770f1">get_quarantine_willingness</a> () const</td></tr>
 <tr class="memdesc:a8fd195e45ff78226de053ef90e0770f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the quarantine willingness for all agents.  <a href="class_model_measles_mixing_risk_quarantine.html#a8fd195e45ff78226de053ef90e0770f1">More...</a><br /></td></tr>
 <tr class="separator:a8fd195e45ff78226de053ef90e0770f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -546,63 +549,63 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><b>~Model</b> ()</td>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a2400bcb3369493cb0e98adb09e477139"><td class="memItemLeft" align="right" valign="top"><a id="a2400bcb3369493cb0e98adb09e477139"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>SUSCEPTIBLE</b> = 0</td></tr>
-<tr class="separator:a2400bcb3369493cb0e98adb09e477139"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af328cb7d6c529952f5a1085b42e30876"><td class="memItemLeft" align="right" valign="top"><a id="af328cb7d6c529952f5a1085b42e30876"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>EXPOSED</b> = 1</td></tr>
-<tr class="separator:af328cb7d6c529952f5a1085b42e30876"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a18acd12da9d3e3847d5b8a84ba6817ba"><td class="memItemLeft" align="right" valign="top"><a id="a18acd12da9d3e3847d5b8a84ba6817ba"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>PRODROMAL</b> = 2</td></tr>
-<tr class="separator:a18acd12da9d3e3847d5b8a84ba6817ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa595db6aa0117db9a24982dd63a039e1"><td class="memItemLeft" align="right" valign="top"><a id="aa595db6aa0117db9a24982dd63a039e1"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>RASH</b> = 3</td></tr>
-<tr class="separator:aa595db6aa0117db9a24982dd63a039e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af2e9adfb3c42adcccc33aa81d878078c"><td class="memItemLeft" align="right" valign="top"><a id="af2e9adfb3c42adcccc33aa81d878078c"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>ISOLATED</b> = 4</td></tr>
-<tr class="separator:af2e9adfb3c42adcccc33aa81d878078c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa9a126b39aefbce62da16bcd13a74c5b"><td class="memItemLeft" align="right" valign="top"><a id="aa9a126b39aefbce62da16bcd13a74c5b"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>ISOLATED_RECOVERED</b> = 5</td></tr>
-<tr class="separator:aa9a126b39aefbce62da16bcd13a74c5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4bb5a3bec57a222fba106155aa060f4"><td class="memItemLeft" align="right" valign="top"><a id="ae4bb5a3bec57a222fba106155aa060f4"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>DETECTED_HOSPITALIZED</b> = 6</td></tr>
-<tr class="separator:ae4bb5a3bec57a222fba106155aa060f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3ffcb1a3f3fbff26351a6786d7ca948"><td class="memItemLeft" align="right" valign="top"><a id="ae3ffcb1a3f3fbff26351a6786d7ca948"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_EXPOSED</b> = 7</td></tr>
-<tr class="separator:ae3ffcb1a3f3fbff26351a6786d7ca948"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5ecb644e6400c275bc180da794ebedeb"><td class="memItemLeft" align="right" valign="top"><a id="a5ecb644e6400c275bc180da794ebedeb"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_SUSCEPTIBLE</b> = 8</td></tr>
-<tr class="separator:a5ecb644e6400c275bc180da794ebedeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c3062f8ea466b4597117d31e42ed56e"><td class="memItemLeft" align="right" valign="top"><a id="a4c3062f8ea466b4597117d31e42ed56e"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_PRODROMAL</b> = 9</td></tr>
-<tr class="separator:a4c3062f8ea466b4597117d31e42ed56e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6d7d3297b9422575d82e8c71e2ea528b"><td class="memItemLeft" align="right" valign="top"><a id="a6d7d3297b9422575d82e8c71e2ea528b"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_RECOVERED</b> = 10</td></tr>
-<tr class="separator:a6d7d3297b9422575d82e8c71e2ea528b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf76a5e5a937804ec502112cec950f39"><td class="memItemLeft" align="right" valign="top"><a id="aaf76a5e5a937804ec502112cec950f39"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>HOSPITALIZED</b> = 11</td></tr>
-<tr class="separator:aaf76a5e5a937804ec502112cec950f39"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2be2aa573e594b06d2ad69ec3e239eec"><td class="memItemLeft" align="right" valign="top"><a id="a2be2aa573e594b06d2ad69ec3e239eec"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>RECOVERED</b> = 12</td></tr>
-<tr class="separator:a2be2aa573e594b06d2ad69ec3e239eec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5521c65e5f36e9fe2926fc14ab792c77"><td class="memItemLeft" align="right" valign="top"><a id="a5521c65e5f36e9fe2926fc14ab792c77"></a>
-static const size_t&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINE_PROCESS_INACTIVE</b> = 0u</td></tr>
-<tr class="separator:a5521c65e5f36e9fe2926fc14ab792c77"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71ba33c79848a62761751a24091e92e2"><td class="memItemLeft" align="right" valign="top"><a id="a71ba33c79848a62761751a24091e92e2"></a>
-static const size_t&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINE_PROCESS_ACTIVE</b> = 1u</td></tr>
-<tr class="separator:a71ba33c79848a62761751a24091e92e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:accd5bff58a3b7f2114196688e3d84045"><td class="memItemLeft" align="right" valign="top"><a id="accd5bff58a3b7f2114196688e3d84045"></a>
-static const size_t&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINE_PROCESS_DONE</b> = 2u</td></tr>
-<tr class="separator:accd5bff58a3b7f2114196688e3d84045"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a50105aa4bb7662fad3bffd391aaee164"><td class="memItemLeft" align="right" valign="top"><a id="a50105aa4bb7662fad3bffd391aaee164"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>RISK_LOW</b> = 0</td></tr>
-<tr class="separator:a50105aa4bb7662fad3bffd391aaee164"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a111368de2017cb598cd37a6d38e9af0d"><td class="memItemLeft" align="right" valign="top"><a id="a111368de2017cb598cd37a6d38e9af0d"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>RISK_MEDIUM</b> = 1</td></tr>
-<tr class="separator:a111368de2017cb598cd37a6d38e9af0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9be848ab44c77795fd2f0740052746af"><td class="memItemLeft" align="right" valign="top"><a id="a9be848ab44c77795fd2f0740052746af"></a>
-static const int&#160;</td><td class="memItemRight" valign="bottom"><b>RISK_HIGH</b> = 2</td></tr>
-<tr class="separator:a9be848ab44c77795fd2f0740052746af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a941661b3f91a4612b86c3dd9d1d02350"><td class="memItemLeft" align="right" valign="top"><a id="a941661b3f91a4612b86c3dd9d1d02350"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>SUSCEPTIBLE</b> = 0</td></tr>
+<tr class="separator:a941661b3f91a4612b86c3dd9d1d02350"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe20e7388d87b40b14ab2ebc6345ca42"><td class="memItemLeft" align="right" valign="top"><a id="abe20e7388d87b40b14ab2ebc6345ca42"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>EXPOSED</b> = 1</td></tr>
+<tr class="separator:abe20e7388d87b40b14ab2ebc6345ca42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29c8c20047235b2e9aec01d25606b335"><td class="memItemLeft" align="right" valign="top"><a id="a29c8c20047235b2e9aec01d25606b335"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>PRODROMAL</b> = 2</td></tr>
+<tr class="separator:a29c8c20047235b2e9aec01d25606b335"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a379e0d9ddb0e406988179976c799d9c1"><td class="memItemLeft" align="right" valign="top"><a id="a379e0d9ddb0e406988179976c799d9c1"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>RASH</b> = 3</td></tr>
+<tr class="separator:a379e0d9ddb0e406988179976c799d9c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6ff2aaba89f3e3f48873d6fe2853b1e"><td class="memItemLeft" align="right" valign="top"><a id="ae6ff2aaba89f3e3f48873d6fe2853b1e"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>ISOLATED</b> = 4</td></tr>
+<tr class="separator:ae6ff2aaba89f3e3f48873d6fe2853b1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92ac98ca675e562bca31d4131f5a4cc9"><td class="memItemLeft" align="right" valign="top"><a id="a92ac98ca675e562bca31d4131f5a4cc9"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>ISOLATED_RECOVERED</b> = 5</td></tr>
+<tr class="separator:a92ac98ca675e562bca31d4131f5a4cc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a137028cbcfa75f73ac8b48e2930664a9"><td class="memItemLeft" align="right" valign="top"><a id="a137028cbcfa75f73ac8b48e2930664a9"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>DETECTED_HOSPITALIZED</b> = 6</td></tr>
+<tr class="separator:a137028cbcfa75f73ac8b48e2930664a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31d1db73ea9731e75099e5c2e6e3d776"><td class="memItemLeft" align="right" valign="top"><a id="a31d1db73ea9731e75099e5c2e6e3d776"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_EXPOSED</b> = 7</td></tr>
+<tr class="separator:a31d1db73ea9731e75099e5c2e6e3d776"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6728bb8c4af4b39e3ba9551dfa07d345"><td class="memItemLeft" align="right" valign="top"><a id="a6728bb8c4af4b39e3ba9551dfa07d345"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_SUSCEPTIBLE</b> = 8</td></tr>
+<tr class="separator:a6728bb8c4af4b39e3ba9551dfa07d345"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae582fcf5b17e0a68f88c7d16c41b978a"><td class="memItemLeft" align="right" valign="top"><a id="ae582fcf5b17e0a68f88c7d16c41b978a"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_PRODROMAL</b> = 9</td></tr>
+<tr class="separator:ae582fcf5b17e0a68f88c7d16c41b978a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7dec19b9f0d2a1ac9719a366bb61fe3f"><td class="memItemLeft" align="right" valign="top"><a id="a7dec19b9f0d2a1ac9719a366bb61fe3f"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_RECOVERED</b> = 10</td></tr>
+<tr class="separator:a7dec19b9f0d2a1ac9719a366bb61fe3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a866e8aab94ac7f4d98447c1fee7d36b2"><td class="memItemLeft" align="right" valign="top"><a id="a866e8aab94ac7f4d98447c1fee7d36b2"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>HOSPITALIZED</b> = 11</td></tr>
+<tr class="separator:a866e8aab94ac7f4d98447c1fee7d36b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad982dd6ac8567696abae229cd0831943"><td class="memItemLeft" align="right" valign="top"><a id="ad982dd6ac8567696abae229cd0831943"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>RECOVERED</b> = 12</td></tr>
+<tr class="separator:ad982dd6ac8567696abae229cd0831943"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8afd865c4319688d3d62c3555e671bb5"><td class="memItemLeft" align="right" valign="top"><a id="a8afd865c4319688d3d62c3555e671bb5"></a>
+static constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINE_PROCESS_INACTIVE</b> = 0u</td></tr>
+<tr class="separator:a8afd865c4319688d3d62c3555e671bb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afdcef545417912c487cd235762621f29"><td class="memItemLeft" align="right" valign="top"><a id="afdcef545417912c487cd235762621f29"></a>
+static constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINE_PROCESS_ACTIVE</b> = 1u</td></tr>
+<tr class="separator:afdcef545417912c487cd235762621f29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37dd18a982c2a118d5ed6432cbe1703d"><td class="memItemLeft" align="right" valign="top"><a id="a37dd18a982c2a118d5ed6432cbe1703d"></a>
+static constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINE_PROCESS_DONE</b> = 2u</td></tr>
+<tr class="separator:a37dd18a982c2a118d5ed6432cbe1703d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace4bc5e812fe2ca1172c8b44ed6e0dad"><td class="memItemLeft" align="right" valign="top"><a id="ace4bc5e812fe2ca1172c8b44ed6e0dad"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>RISK_LOW</b> = 0</td></tr>
+<tr class="separator:ace4bc5e812fe2ca1172c8b44ed6e0dad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d5692ace828fdc125748369245d7669"><td class="memItemLeft" align="right" valign="top"><a id="a1d5692ace828fdc125748369245d7669"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>RISK_MEDIUM</b> = 1</td></tr>
+<tr class="separator:a1d5692ace828fdc125748369245d7669"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ce3e2257379fac67c61c4d8512ed038"><td class="memItemLeft" align="right" valign="top"><a id="a0ce3e2257379fac67c61c4d8512ed038"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>RISK_HIGH</b> = 2</td></tr>
+<tr class="separator:a0ce3e2257379fac67c61c4d8512ed038"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>

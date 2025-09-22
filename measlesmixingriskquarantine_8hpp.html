@@ -103,7 +103,8 @@ Macros</h2></td></tr>
 <tr class="separator:a2707ffdcdd046f7aea3054ce82bfb818"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe4a6775ab9b6c97ffa459e33bad497a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><b>GET_MODEL</b>(model,  output)</td></tr>
 <tr class="separator:afe4a6775ab9b6c97ffa459e33bad497a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acd100adc82f9678acf826732feacd32d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><b>SAMPLE_FROM_PROBS</b>(n,  ans)</td></tr>
+<tr class="memitem:acd100adc82f9678acf826732feacd32d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="measlesmixingriskquarantine_8hpp.html#acd100adc82f9678acf826732feacd32d">SAMPLE_FROM_PROBS</a>(n,  ans)</td></tr>
+<tr class="memdesc:acd100adc82f9678acf826732feacd32d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Macro to sample from a list of probabilities.  <a href="measlesmixingriskquarantine_8hpp.html#acd100adc82f9678acf826732feacd32d">More...</a><br /></td></tr>
 <tr class="separator:acd100adc82f9678acf826732feacd32d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -136,7 +137,7 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">        <span class="keyword">auto</span> * output = <span class="keyword">dynamic_cast&lt;</span> <a class="code" href="class_model_measles_mixing_risk_quarantine.html">ModelMeaslesMixingRiskQuarantine&lt;TSeq&gt;</a> * <span class="keyword">&gt;</span>( (model) ); \</div>
 <div class="line">        assert((output) != <span class="keyword">nullptr</span>);</div>
-<div class="ttc" id="aclass_model_measles_mixing_risk_quarantine_html"><div class="ttname"><a href="class_model_measles_mixing_risk_quarantine.html">ModelMeaslesMixingRiskQuarantine</a></div><div class="ttdoc">Measles model with population mixing and risk-based quarantine strategies.</div><div class="ttdef"><b>Definition:</b> measlesmixingriskquarantine.hpp:59</div></div>
+<div class="ttc" id="aclass_model_measles_mixing_risk_quarantine_html"><div class="ttname"><a href="class_model_measles_mixing_risk_quarantine.html">ModelMeaslesMixingRiskQuarantine</a></div><div class="ttdoc">Measles model with population mixing and risk-based quarantine strategies.</div><div class="ttdef"><b>Definition:</b> measlesmixingriskquarantine.hpp:64</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -174,6 +175,9 @@ Macros</h2></td></tr>
 <div class="line">        m-&gt;array_double_tmp[ans + 1] += m-&gt;array_double_tmp[ans]; \</div>
 <div class="line">    }</div>
 </div><!-- fragment -->
+<p>Macro to sample from a list of probabilities. </p>
+<dl class="section return"><dt>Returns</dt><dd>The index of the sampled probability; and the total length if none is found, returns n. </dd></dl>
+
 </div>
 </div>
 </div><!-- contents -->
