@@ -114,18 +114,29 @@ private:
 
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator for quarantine willingness
-    std::vector< bool > isolation_willingness; ///< Indicator for isolation willingness
-    std::vector< size_t > agent_quarantine_triggered; ///< Whether the quarantine process has started
-    std::vector< int > day_flagged; ///< Either detected or started quarantine
-    std::vector< int > day_rash_onset; ///< Day of rash onset
-    std::vector< int > quarantine_risk_level; ///< Risk level assigned to each agent (0=low, 1=medium, 2=high)
+    std::vector< bool > isolation_willingness;  ///< Indicator for isolation willingness
+    std::vector< int > day_flagged;             ///< Either detected or started quarantine
+    std::vector< int > day_rash_onset;          ///< Day of rash onset
 
-    bool system_quarantine_triggered = false; ///< Indicator if the system quarantine was triggered
+    std::vector< size_t > agents_triggered_contact_tracing; ///< List of agents that triggered contact tracing
+    size_t agents_triggered_contact_tracing_size = 0u;      ///< Number of agents that triggered contact tracing
+    std::vector< bool > agents_checked_contact_tracing;     ///< if an agent has been checked for contact tracing
+
+    // Add an agent to the list of those that triggered contact tracing
+    void m_add_contact_tracing(size_t agent_id);
+    
+    std::vector< int > quarantine_risk_level; ///< Risk level assigned to each agent (0=low, 1=medium, 2=high)
+    
+    /**
+     * @brief Run quarantine process using `agents_triggered_contact*` variables.
+     */
     void m_quarantine_process();
+
+
     static void m_update_model(Model<TSeq> * m);
 
     // We will limit tracking to up to EPI_MAX_TRACKING
-    std::vector< size_t > tracking_matrix; ///< Tracking matrix for agent interactions
+    std::vector< size_t > tracking_matrix;      ///< Tracking matrix for agent interactions
     std::vector< size_t > tracking_matrix_size; ///< Number of current interactions for each agent
     std::vector< size_t > tracking_matrix_date; ///< Date of each interaction
 
@@ -323,20 +334,6 @@ public:
     };
 
     /**
-     * @brief Get the quarantine trigger status for all agents
-     * @return Vector indicating quarantine process status for each agent
-     */
-    std::vector< size_t > get_agent_quarantine_triggered() const
-    {
-        return agent_quarantine_triggered;
-    };
-
-    bool get_system_quarantine_triggered() const
-    {
-        return system_quarantine_triggered;
-    };
-
-    /**
      * @brief Get the quarantine willingness for all agents
      * @return Vector of boolean values indicating each agent's willingness to quarantine
      */
@@ -352,15 +349,6 @@ public:
     std::vector< bool > get_isolation_willingness() const
     {
         return isolation_willingness;
-    };
-
-    /**
-     * @brief Get the risk levels assigned to all agents
-     * @return Vector of integers indicating each agent's risk level (0=low, 1=medium, 2=high)
-     */
-    std::vector< int > get_quarantine_risk_levels() const
-    {
-        return quarantine_risk_level;
     };
 
 };
@@ -386,10 +374,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_add_tracking(
     size_t agent_id
 )
 {
-
-    // We avoid the math if there's no point in tracking anymore
-    if (system_quarantine_triggered >= QUARANTINE_PROCESS_DONE)
-        return;    
 
     // If we are overflow, we start from the beginning
     size_t loc = tracking_matrix_size[infectious_id] % EPI_MAX_TRACKING;
@@ -608,10 +592,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
     GET_MODEL(m, model);
     
     // Check for detection during active quarantine
-    bool detect_it = (
-        model->system_quarantine_triggered &&
-        (m->runif() < m->par("Detection rate quarantine"))
-    );
+    bool detect_it = (m->runif() < m->par("Detection rate quarantine");
 
     // Does the agent transition to rash?
     if (m->runif() < 1.0/m->par("Prodromal period"))
@@ -646,8 +627,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
         (m->runif() < 1.0/m->par("Days undetected"))
     )
     {
-        model->agent_quarantine_triggered[p->get_id()] =
-            QUARANTINE_PROCESS_ACTIVE;
+        model->m_add_contact_tracing(p->get_id());
         detected = true;
     }
 
@@ -755,9 +735,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
 
     // Get the appropriate quarantine period based on risk level
     epiworld_double quarantine_period;
-    int risk_level = model->quarantine_risk_level[p->get_id()];
-    
-    if (risk_level == RISK_HIGH) {
+
+    if (model->quarantine_risk_level[p->get_id()] == RISK_HIGH) {
         quarantine_period = m->par("Quarantine period high");
     } else if (risk_level == RISK_MEDIUM) {
         quarantine_period = m->par("Quarantine period medium");
@@ -896,35 +875,60 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_hospitalized(
 };
 
 template<typename TSeq>
+inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_add_contact_tracing(size_t agent_id) {
+
+    this->agents_triggered_contact_tracing[
+        this->agents_triggered_contact_tracing_size++
+    ] = agent_id;
+
+    return;
+
+}
+
+template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
 
-    // Process entity-level quarantine
-    for (size_t agent_i = 0u; agent_i < Model<TSeq>::size(); ++agent_i)
-    {
+    // If no agents triggered contact tracing, then we skip
+    if (this->agents_triggered_contact_tracing_size == 0u)
+        return;
 
-        // Checking if the quarantine in the agent was triggered
-        // or not
-        if (agent_quarantine_triggered[agent_i] != QUARANTINE_PROCESS_ACTIVE)
-            continue;
+    // Check if any quarantine period is enabled for this risk level
+    bool quarantine_enabled = false;
+    switch (risk_level) {
+        case RISK_HIGH:
+            quarantine_enabled = (Model<TSeq>::par("Quarantine period high") >= 0);
+            break;
+        case RISK_MEDIUM:
+            quarantine_enabled = (Model<TSeq>::par("Quarantine period medium") >= 0);
+            break;
+        case RISK_LOW:
+            quarantine_enabled = (Model<TSeq>::par("Quarantine period low") >= 0);
+            break;
+        default:
+            break;
+    }
+
+    // Iterating over all agents to see who triggered contact tracing
+    for (auto & agent_i: this->agents_triggered_contact_tracing)
+    {
 
         // When the rash onset started (this is for contact tracing)
         size_t day_rash_onset_agent_i = this->day_rash_onset[agent_i];
 
         // Get the entity of the triggering agent for risk classification
-        auto & triggering_agent = Model<TSeq>::get_agent(agent_i);
-        int triggering_entity_id = (triggering_agent.get_n_entities() > 0) ? 
-            triggering_agent.get_entity(0).get_id() : -1;
+        auto & agent = Model<TSeq>::get_agent(agent_i);
+        int triggering_entity_id = (agent.get_n_entities() > 0) ? 
+            agent.get_entity(0).get_id() : -1;
 
         if (triggering_entity_id >= 0)
         {
             // Iterating over all neighbors in the entity to flag them
             for (auto & ith_member: triggering_agent.get_entity(0))
             {
-
                 auto & member = Model<TSeq>::get_agent(ith_member);
 
                 // Already did self
-                if (member.get_id() == triggering_agent.get_id())
+                if (member.get_id() == agent.get_id())
                     continue;
 
                 auto member_state = member.get_state();
@@ -994,82 +998,42 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
             // In the case that "Contact tracing days prior" is 1000,
             // then we will identify the contact.
             size_t loc = MM(agent_i, contact_i, Model<TSeq>::size());
-            bool within_days_prior =
-                (day_rash_onset_agent_i - tracking_matrix_date[loc]) <=
-                Model<TSeq>::par("Contact tracing days prior");
-
-            if (!within_days_prior)
+            size_t contact_id = this->tracking_matrix[loc];
+            auto & contact = Model<TSeq>::get_agent(contact_id);
+            auto contact_entity_id = contact.get_entity(0).get_id();
+            
+            // If it is a member of the same entity, then we skip it
+            if (
+                (triggering_entity_id >= 0) &&
+                (contact_entity_id == triggering_entity_id)
+            )
+                continue;
+            
+            // Did we pass the time window for contact tracing?
+            if (
+                (day_rash_onset_agent_i - tracking_matrix_date[loc]) >
+                Model<TSeq>::par("Contact tracing days prior")
+            )
                 continue;
 
             // Checking if we will detect the contact
-            if (Model<TSeq>::runif() > Model<TSeq>::par("Contact tracing success rate"))
+            if (
+                Model<TSeq>::runif() >
+                Model<TSeq>::par("Contact tracing success rate")
+            )
                 continue;
 
-            size_t contact_id = this->tracking_matrix[loc];
-
-            auto & agent = Model<TSeq>::get_agent(contact_id);
-
-            // If it is a member of the same entity, then we skip it
-            if (agent.get_entity(0).get_id() == triggering_entity_id)
-                continue;
-
-            if (agent.get_state() > RASH)
+            // If the agent is past rash, then it means it is 
+            // useless to quarantine it
+            if (contact.get_state() > RASH)
                 continue;
 
             // Agents with some tool won't be quarantined
-            if (agent.get_n_tools() != 0u)
+            if (contact.get_n_tools() != 0u)
                 continue;
-
-            // Determine risk level based on entity membership and vaccination status
-            int risk_level = RISK_LOW; // Default to low risk
-            
-            // Only unvaccinated agents are subject to risk-based quarantine
-            if (agent.get_n_tools() == 0u)
-            {
-                // Check if agent shares entity membership with triggering case
-                bool shares_entity = false;
-                if (triggering_entity_id != SIZE_MAX && agent.get_n_entities() > 0) {
-
-                    for (size_t e = 0; e < agent.get_n_entities(); ++e)
-                    {
-                        if (agent.get_entity(e).get_id() == triggering_entity_id)
-                        {
-
-                            shares_entity = true;
-                            break;
-
-                        }
-                    }
-
-                }
-                
-                if (shares_entity) {
-                    risk_level = RISK_HIGH;
-                } else {
-                    // Contact with infected but no shared entity
-                    risk_level = RISK_MEDIUM;
-                }
-
-            }
             
             // Store the risk level
-            quarantine_risk_level[contact_id] = risk_level;
-
-            // Check if any quarantine period is enabled for this risk level
-            bool quarantine_enabled = false;
-            switch (risk_level) {
-                case RISK_HIGH:
-                    quarantine_enabled = (Model<TSeq>::par("Quarantine period high") >= 0);
-                    break;
-                case RISK_MEDIUM:
-                    quarantine_enabled = (Model<TSeq>::par("Quarantine period medium") >= 0);
-                    break;
-                case RISK_LOW:
-                    quarantine_enabled = (Model<TSeq>::par("Quarantine period low") >= 0);
-                    break;
-                default:
-                    break;
-            }
+            quarantine_risk_level[contact_id] = RISK_MEDIUM;
 
             if (quarantine_willingness[contact_id] && quarantine_enabled)
             {
@@ -1095,18 +1059,17 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
                             day_flagged[contact_id] = Model<TSeq>::today();
                         }
                         break;
-                    default:
-                        throw std::logic_error(
-                            "The agent is not in a state that can be quarantined."
-                        );
                 }
 
             }
         }
 
-        // Setting the quarantine process off
-        agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
     }
+
+    // Last step, iterate through all agents, regardless of state,
+    // to see who will be quarantined as low-risk contacts
+    if (quarantine_enabled && (Model<TSeq>::par("Quarantine period low") >= 0))
+    {
 
     return;
 }
@@ -1421,6 +1384,12 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
     agent_quarantine_triggered.assign(this->size(), 0u);
     day_flagged.assign(this->size(), 0);
     day_rash_onset.assign(this->size(), 0);
+
+    // Variables about contact tracing
+    agents_triggered_contact_tracing.clear();
+    agents_triggered_contact_tracing_size = 0u;
+    agents_checked_contact_tracing.assign(this->size(), false);
+
     quarantine_risk_level.assign(this->size(), RISK_LOW);
 
     // Setting up contact tracking matrix
