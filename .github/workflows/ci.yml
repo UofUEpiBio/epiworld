@@ -16,6 +16,9 @@ on:
 jobs:
   test-macos:
     runs-on: macos-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
     strategy:
       matrix:
         include:
