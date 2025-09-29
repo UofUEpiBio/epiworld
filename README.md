@@ -269,34 +269,34 @@ $$ -->
 Nonetheless, the default behavior of the simulation model is to assume that individuals can acquire only one disease at a time, if any. This way, the actual probability is:
 
 <!-- $$
-P(Virus v|\mbox{at most one virus}) = P_{ivj}
+P(Virus v|\mbox{\text{at most one virus}}) = P_{ivj}
 $$ -->
 
-<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?P(Virus%20v%7C%5Cmbox%7Bat%20most%20one%20virus%7D)%20%3D%20P_%7Bivj%7D"></div>
+<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?P(Virus%20v%20%7C%20%5Cmbox%7Bat%20most%20one%20virus%7D)%20%3D%20P_%7Bivj%7D"></div>
 
 The latter is calculated using Bayes' rule
 
 <!-- $$
 \begin{align*}
-P_{ivj} & = P(at most one virus|Virus v) * P_v / P(at most one virus) \\
-        & = P(Only Virus v)/P_v * P(Virus v) / P(at most one virus) \\
-        & = P(Only Virus v)/P(at most one virus)
+P_{ivj} & = P(\text{at most one virus}|Virus v) * P_v / P(\text{at most one virus}) \\
+        & = P(\text{Only Virus} v)/P_v * P(text{Virus v}) / P(\text{at most one virus}) \\
+        & = P(\text{Only Virus} v)/P(\text{at most one virus})
 \end{align*}
 $$ -->
 
-<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign*%7D%0AP_%7Bivj%7D%20%26%20%3D%20P(at%20most%20one%20virus%7CVirus%20v)%20*%20P_v%20%2F%20P(at%20most%20one%20virus)%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P(Only%20Virus%20v)%2FP_v%20*%20P(Virus%20v)%20%2F%20P(at%20most%20one%20virus)%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P(Only%20Virus%20v)%2FP(at%20most%20one%20virus)%0A%5Cend%7Balign*%7D"></div>
+<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0AP_%7Bivj%7D%20%26%20%3D%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%7CVirus%20v%29%20%2A%20P_v%20%2F%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P%28%5Ctext%7BOnly%20Virus%7D%20v%29%2FP_v%20%2A%20P%28text%7BVirus%20v%7D%29%20%2F%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P%28%5Ctext%7BOnly%20Virus%7D%20v%29%2FP%28%5Ctext%7Bat%20most%20one%20virus%7D%29%0A%5Cend%7Balign%2A%7D"></div>
 
 
 Where
 
 <!-- $$
 \begin{align*}
-P(Only Virus V)      & = P_v * \prod_{m!=V} (1 - P_m) \\
-P(at most one virus) & = P(None) + \sum_{k \in viruses} P_k * \prod_{m != k} (1 - P_m) \\
-P(None)              & = \prod_{k \in Viruses} (1 - P_k)
+P(\text{Only Virus V})      & = P_v * \prod_{m!=V} (1 - P_m) \\
+P(\text{at most one virus}) & = P(None) + \sum_{k \in \text{viruses}} P_k * \prod_{m != k} (1 - P_m) \\
+P(\text{None})              & = \prod_{k \in \text{viruses}} (1 - P_k)
 \end{align*}
 $$ -->
 
-<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign*%7D%0AP(Only%20Virus%20V)%20%20%20%20%20%20%26%20%3D%20P_v%20*%20%5Cprod_%7Bm!%3DV%7D%20(1%20-%20P_m)%20%5C%5C%0AP(at%20most%20one%20virus)%20%26%20%3D%20P(None)%20%2B%20%5Csum_%7Bk%20%5Cin%20viruses%7D%20P_k%20*%20%5Cprod_%7Bm%20!%3D%20k%7D%20(1%20-%20P_m)%20%5C%5C%0AP(None)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20%5Cprod_%7Bk%20%5Cin%20Viruses%7D%20(1%20-%20P_k)%0A%5Cend%7Balign*%7D"></div>
+<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0AP%28%5Ctext%7BOnly%20Virus%20V%7D%29%20%20%20%20%20%20%26%20%3D%20P_v%20%2A%20%5Cprod_%7Bm%21%3DV%7D%20%281%20-%20P_m%29%20%5C%5C%0AP%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%26%20%3D%20P%28%5Ctext%7BNone%7D%29%20%2B%20%5Csum_%7Bk%20%5Cin%20%5Ctext%7Bviruses%7D%7D%20P_k%20%2A%20%5Cprod_%7Bm%20%21%3D%20k%7D%20%281%20-%20P_m%29%20%5C%5C%0AP%28%5Ctext%7BNone%7D%29%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20%5Cprod_%7Bk%20%5Cin%20%5Ctext%7Bviruses%7D%7D%20%281%20-%20P_k%29%0A%5Cend%7Balign%2A%7D"></div>
 
 This way, viruses with higher transmissibility will be more likely to be acquired when competing with other variants.
