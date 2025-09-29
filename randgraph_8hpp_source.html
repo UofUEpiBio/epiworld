@@ -107,7 +107,7 @@ $(function() {
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    std::vector&lt; epiworld_fast_uint &gt; non_isolates;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    std::vector&lt; epiworld_double &gt; weights;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    epiworld_double nedges = 0.0;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    </div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordflow">for</span> (epiworld_fast_uint i = 0u; i &lt; agents-&gt;size(); ++i)</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    {</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <span class="keywordflow">if</span> (agents-&gt;operator[](i).get_neighbors().size() &gt; 0u)</div>
@@ -175,14 +175,14 @@ $(function() {
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        <span class="comment">// When rewiring, we need to flip the individuals from the other</span></div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <span class="comment">// end as well, since we are dealing withi an undirected graph</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        </div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="comment">// Finding what neighbour is id0</span></div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        model-&gt;get_agents()[id0].swap_neighbors(</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            model-&gt;get_agents()[id1],</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            id01,</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;            id11</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;            );</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        </div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    }</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
@@ -207,14 +207,14 @@ $(function() {
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;{</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="comment">// Identifying individuals with degree &gt; 0</span></div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    std::vector&lt; epiworld_fast_int &gt; nties(agents-&gt;<a class="code" href="class_adj_list.html#a2bf3a057863c9dfb958d44ff370690d1">vcount</a>(), 0); </div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    std::vector&lt; epiworld_fast_int &gt; nties(agents-&gt;<a class="code" href="class_adj_list.html#a2bf3a057863c9dfb958d44ff370690d1">vcount</a>(), 0);</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160; </div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;<span class="preprocessor">    #ifdef EPI_DEBUG</span></div>
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    std::vector&lt; int &gt; _degree0(agents-&gt;<a class="code" href="class_adj_list.html#a2bf3a057863c9dfb958d44ff370690d1">vcount</a>(), 0);</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0u; i &lt; _degree0.size(); ++i)</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        _degree0[i] = agents-&gt;get_dat()[i].size();</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="preprocessor">    #endif</span></div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    </div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160; </div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    std::vector&lt; epiworld_fast_uint &gt; non_isolates;</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    non_isolates.reserve(nties.size());</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160; </div>
@@ -226,7 +226,7 @@ $(function() {
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160; </div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0u; i &lt; dat.size(); ++i)</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        nties[i] += dat[i].size();</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    </div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160; </div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keywordtype">bool</span> directed = agents-&gt;<a class="code" href="class_adj_list.html#a70e14a9f262278d028cecae547382049">is_directed</a>();</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0u; i &lt; dat.size(); ++i)</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    {</div>
@@ -235,13 +235,13 @@ $(function() {
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;            non_isolates.push_back(i);</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;            <span class="keywordflow">if</span> (directed)</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;            {</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                weights.push_back( </div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                weights.push_back(</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                    <span class="keyword">static_cast&lt;</span>epiworld_double<span class="keyword">&gt;</span>(nties[i])</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                );</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                nedges += <span class="keyword">static_cast&lt;</span>epiworld_double<span class="keyword">&gt;</span>(nties[i]);</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            }</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;            <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;                weights.push_back( </div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;                weights.push_back(</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;                    <span class="keyword">static_cast&lt;</span>epiworld_double<span class="keyword">&gt;</span>(nties[i])/2.0</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;                );</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                nedges += <span class="keyword">static_cast&lt;</span>epiworld_double<span class="keyword">&gt;</span>(nties[i]) / 2.0;</div>
@@ -318,7 +318,7 @@ $(function() {
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        <span class="comment">// When rewiring, we need to flip the individuals from the other</span></div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <span class="comment">// end as well, since we are dealing withi an undirected graph</span></div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        </div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160; </div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        <span class="comment">// Finding what neighbour is id0</span></div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        <span class="keywordflow">if</span> (!agents-&gt;<a class="code" href="class_adj_list.html#a70e14a9f262278d028cecae547382049">is_directed</a>())</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        {</div>
@@ -327,7 +327,7 @@ $(function() {
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;            std::map&lt;int,int&gt; &amp; p11 = agents-&gt;get_dat()[id11];</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            std::swap(p01[id0], p11[id1]);</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;            </div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160; </div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        }</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        <span class="comment">// Moving alter first</span></div>
@@ -341,8 +341,8 @@ $(function() {
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        <span class="keywordflow">if</span> (_degree0[_i] != <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(agents-&gt;get_dat()[_i].size()))</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;            <span class="keywordflow">throw</span> std::logic_error(</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                <span class="stringliteral">&quot;[epi-debug] Degree does not match afted rewire_degseq. &quot;</span> +</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                std::string(<span class="stringliteral">&quot;Expected: &quot;</span>) + </div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                std::to_string(_degree0[_i]) + </div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                std::string(<span class="stringliteral">&quot;Expected: &quot;</span>) +</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                std::to_string(_degree0[_i]) +</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                std::string(<span class="stringliteral">&quot;, observed: &quot;</span>) +</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                std::to_string(agents-&gt;get_dat()[_i].size())</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                );</div>
@@ -388,7 +388,7 @@ $(function() {
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            b = floor(model.runif() * n);</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            <span class="keywordflow">if</span> (b == a)</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                b++;</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;            </div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            <span class="keywordflow">if</span> (b &gt;= n)</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                b = 0u;</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;        }</div>
@@ -401,7 +401,7 @@ $(function() {
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <a class="code" href="class_adj_list.html">AdjList</a> al(source, target, <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(n), directed);</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160; </div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    <span class="keywordflow">return</span> al;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    </div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160; </div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;}</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160; </div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
@@ -451,7 +451,7 @@ $(function() {
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;    <a class="code" href="class_adj_list.html">AdjList</a> al(source, target, <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(n), directed);</div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160; </div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    <span class="keywordflow">return</span> al;</div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;    </div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160; </div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;}</div>
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160; </div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;<span class="keyword">inline</span> <a class="code" href="class_adj_list.html">AdjList</a> rgraph_ring_lattice(</div>
@@ -501,11 +501,11 @@ $(function() {
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160; </div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;    <span class="comment">// Creating the ring lattice</span></div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;    <a class="code" href="class_adj_list.html">AdjList</a> ring = rgraph_ring_lattice(n,k,directed);</div>
-<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;    </div>
+<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160; </div>
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;    <span class="comment">// Rewiring and returning</span></div>
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;    <span class="keywordflow">if</span> (k &gt; 0u)</div>
 <div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;        rewire_degseq(&amp;ring, &amp;model, p);</div>
-<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        </div>
+<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160; </div>
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;    <span class="keywordflow">return</span> ring;</div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160; </div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;}</div>
@@ -535,7 +535,7 @@ $(function() {
 <div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;                <span class="keywordflow">if</span> (k == j)</div>
 <div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;                    <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160; </div>
-<div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160;                <span class="comment">// Exists the loop in case there are no more </span></div>
+<div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160;                <span class="comment">// Exists the loop in case there are no more</span></div>
 <div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;                <span class="comment">// nodes available</span></div>
 <div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;                <span class="keywordflow">if</span> ((i + k) &gt;= n)</div>
 <div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;                    <span class="keywordflow">break</span>;</div>
@@ -547,7 +547,7 @@ $(function() {
 <div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;            <span class="comment">// No more nodes left to build connections</span></div>
 <div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;            <span class="keywordflow">if</span> (++cum_node_count &gt;= n)</div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;            </div>
+<div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160; </div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;        }</div>
 <div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160; </div>
 <div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;        <span class="comment">// Connections between this and the previou sone</span></div>
@@ -567,9 +567,9 @@ $(function() {
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;        }</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160; </div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        i += blocksize;</div>
-<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;        </div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160; </div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;    }</div>
-<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        </div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160; </div>
 <div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="class_adj_list.html">AdjList</a>(source_, target_, n, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160; </div>
 <div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;}</div>

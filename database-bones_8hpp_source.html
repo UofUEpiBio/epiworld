@@ -108,7 +108,7 @@ $(function() {
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * model;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="comment">// Variants information </span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="comment">// Variants information</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    MapVec_type&lt;int,int&gt; virus_id; </div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    std::vector&lt; std::string &gt; virus_name;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    std::vector&lt; TSeq&gt; virus_sequence;</div>
@@ -134,7 +134,7 @@ $(function() {
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="comment">// Totals</span></div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">int</span> today_total_nviruses_active = 0;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    </div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordtype">int</span> sampling_freq = 1;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="comment">// Variants history</span></div>
@@ -200,8 +200,8 @@ $(function() {
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <a class="code" href="class_data_base.html">DataBase</a>(<span class="keyword">const</span> <a class="code" href="class_data_base.html">DataBase&lt;TSeq&gt;</a> &amp; db);</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="comment">// DataBase&lt;TSeq&gt; &amp; operator=(const DataBase&lt;TSeq&gt; &amp; m);</span></div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_data_base.html#a7961eba429b909eff0e0fa966ee81011">record_virus</a>(<a class="code" href="class_virus.html">Virus&lt;TSeq&gt;</a> &amp; v); </div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keywordtype">void</span> record_tool(<a class="code" href="class_tool.html">Tool&lt;TSeq&gt;</a> &amp; t); </div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_data_base.html#a7961eba429b909eff0e0fa966ee81011">record_virus</a>(<a class="code" href="class_virus.html">Virus&lt;TSeq&gt;</a> &amp; v);</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keywordtype">void</span> record_tool(<a class="code" href="class_tool.html">Tool&lt;TSeq&gt;</a> &amp; t);</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    <span class="keywordtype">void</span> set_seq_hasher(std::function&lt;std::vector&lt;int&gt;(TSeq)&gt; fun);</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_model.html#a9591eb76c7cf1ed7e1510342ff602d37">reset</a>();</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <a class="code" href="class_model.html">Model&lt;TSeq&gt;</a> * get_model();</div>
@@ -283,7 +283,7 @@ $(function() {
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        std::string fn_reproductive_number,</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        std::string fn_generation_time</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        ) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    </div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160; </div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="comment">    /***</span></div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="comment">     * @brief Record a transmission event</span></div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<span class="comment">     * @param i,j Integers. Id of the source and target agents.</span></div>
@@ -297,7 +297,7 @@ $(function() {
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; </div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    <span class="keywordtype">size_t</span> <a class="code" href="class_data_base.html#ace337931bf21b1bc080fbf6e374d5d1c">get_n_viruses</a>() <span class="keyword">const</span>; </div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;    <span class="keywordtype">size_t</span> <a class="code" href="class_data_base.html#a4e61509ecd31d16fa4f7b235c7989251">get_n_tools</a>() <span class="keyword">const</span>; </div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    </div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160; </div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="class_model.html#adc8d49825ecf57ac045a4c93e4d63924">set_user_data</a>(std::vector&lt; std::string &gt; names);</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="keywordtype">void</span> add_user_data(std::vector&lt; epiworld_double &gt; x);</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <span class="keywordtype">void</span> add_user_data(epiworld_fast_uint j, epiworld_double x);</div>
@@ -345,7 +345,7 @@ $(function() {
 <div class="ttc" id="aclass_model_html"><div class="ttname"><a href="class_model.html">Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:91</div></div>
 <div class="ttc" id="aclass_model_html_a573869d1fe944d8a8345dc4a5bfc31bc"><div class="ttname"><a href="class_model.html#a573869d1fe944d8a8345dc4a5bfc31bc">Model::write_data</a></div><div class="ttdeci">void write_data(std::string fn_virus_info, std::string fn_virus_hist, std::string fn_tool_info, std::string fn_tool_hist, std::string fn_total_hist, std::string fn_transmission, std::string fn_transition, std::string fn_reproductive_number, std::string fn_generation_time) const</div><div class="ttdoc">Wrapper of DataBase::write_data</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1845</div></div>
 <div class="ttc" id="aclass_model_html_a9591eb76c7cf1ed7e1510342ff602d37"><div class="ttname"><a href="class_model.html#a9591eb76c7cf1ed7e1510342ff602d37">Model::reset</a></div><div class="ttdeci">virtual void reset()</div><div class="ttdoc">Reset the model.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1964</div></div>
-<div class="ttc" id="aclass_model_html_adc8d49825ecf57ac045a4c93e4d63924"><div class="ttname"><a href="class_model.html#adc8d49825ecf57ac045a4c93e4d63924">Model::set_user_data</a></div><div class="ttdeci">void set_user_data(std::vector&lt; std::string &gt; names)</div><div class="ttdoc">[@</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:2273</div></div>
+<div class="ttc" id="aclass_model_html_adc8d49825ecf57ac045a4c93e4d63924"><div class="ttname"><a href="class_model.html#adc8d49825ecf57ac045a4c93e4d63924">Model::set_user_data</a></div><div class="ttdeci">void set_user_data(std::vector&lt; std::string &gt; names)</div><div class="ttdoc">[@</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:2283</div></div>
 <div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:40</div></div>
 <div class="ttc" id="aclass_user_data_html"><div class="ttname"><a href="class_user_data.html">UserData</a></div><div class="ttdoc">Personalized data by the user.</div><div class="ttdef"><b>Definition:</b> userdata-bones.hpp:17</div></div>
 <div class="ttc" id="aclass_virus_html"><div class="ttname"><a href="class_virus.html">Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> virus-bones.hpp:41</div></div>
