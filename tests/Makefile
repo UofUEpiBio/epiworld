@@ -19,7 +19,7 @@ all: main.o
 
 # Special cases
 main.a: | dirsetup main.cpp
-	$(CLANG) $(CXXFLAGS) $(OPTFLAGS) $(OPENMP) -Wall -Wextra -Wpedantic $< -o $@
+	$(CLANG) $(CXXFLAGS) $(OPTFLAGS) $(OPENMP) -Wall -Wextra -Wpedantic main.cpp -o $@
 
 callgrind: 05-mixing-with-size.o
 	rm -f callgrind.out.* && \
