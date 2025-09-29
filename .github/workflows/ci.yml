@@ -35,7 +35,7 @@ jobs:
 
       - name: Check
         env:
-          CXX_STD: ${{ matrix.std }}
+          CXX_STD: -std=${{ matrix.std }}
         run: |
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
           cd tests && make main.a && ./main.a
