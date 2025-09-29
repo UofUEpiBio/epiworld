@@ -3,7 +3,7 @@
 
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
- * 
+ *
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param prevalence epiworld_double Initial prevalence the immune system
@@ -39,7 +39,7 @@ public:
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate
     );
-    
+
     epiworld::UpdateFun<TSeq> update_exposed_seir = [](
         epiworld::Agent<TSeq> * p,
         epiworld::Model<TSeq> * m
@@ -52,9 +52,9 @@ public:
         if (m->runif() < 1.0/(v->get_incubation(m)))
             p->change_state(m, ModelSEIR<TSeq>::INFECTED);
 
-        return;    
+        return;
     };
-      
+
 
     epiworld::UpdateFun<TSeq> update_infected_seir = [](
         epiworld::Agent<TSeq> * p,
@@ -64,7 +64,7 @@ public:
         if (m->runif() < (m->par("Recovery rate")))
             p->rm_virus(m);
 
-        return;    
+        return;
     };
 
     /**
@@ -110,14 +110,14 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_incubation(&model("Incubation days"));
     virus.set_prob_recovery(&model("Recovery rate"));
-    
+
     // Adding the tool and the virus
     model.add_virus(virus);
-    
+
     model.set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
     return;
-   
+
 }
 
 template<typename TSeq>
