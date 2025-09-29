@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.9.29)  29 SEP 2025 19:24
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.9.29)  29 SEP 2025 19:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -2121,42 +2121,47 @@ Package textcomp Warning: Symbol \textrightarrow not provided by
 (textcomp)                font family phv in TS1 encoding.
 (textcomp)                Default family used instead on input line 121.
 
-[122] [123] [124] [125]
-Underfull \hbox (badness 10000) detected at line 324
+[122]
+Underfull \hbox (badness 10000) in paragraph at lines 134--135
+
+ []
+
+[123] [124] [125]
+Underfull \hbox (badness 10000) detected at line 325
 [][][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 335--337
+Underfull \hbox (badness 10000) in paragraph at lines 336--338
 \T1/pcr/m/n/8 std[]::vector$\OML/cmm/m/it/8 <$ \T1/pcr/m/n/8 size[]_[]t $\OML/c
 mm/m/it/8 >$ []$<$ \T1/pcr/m/n/8 TSeq $\OML/cmm/m/it/8 >$[]\T1/pcr/m/n/8 ::get[
 ]_[]agent[]_[]quarantine[]
  []
 
 
-Underfull \hbox (badness 10000) detected at line 342
+Underfull \hbox (badness 10000) detected at line 343
 [][][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 349--351
+Underfull \hbox (badness 10000) in paragraph at lines 350--352
 \T1/pcr/m/n/8 std[]::vector$\OML/cmm/m/it/8 <$ \T1/pcr/m/n/8 double $\OML/cmm/m
 /it/8 >$ []$<$ \T1/pcr/m/n/8 TSeq $\OML/cmm/m/it/8 >$[]\T1/pcr/m/n/8 ::get[]_[]
 contact[]_[]matrix ( )
  []
 
 [126]
-Underfull \hbox (badness 10000) detected at line 356
+Underfull \hbox (badness 10000) detected at line 357
 [][][]
  []
 
 
-Underfull \hbox (badness 10000) detected at line 370
+Underfull \hbox (badness 10000) detected at line 371
 [][][]
  []
 
 
-Underfull \hbox (badness 10000) detected at line 384
+Underfull \hbox (badness 10000) detected at line 385
 [][][]
  []
 
@@ -2166,7 +2171,7 @@ Overfull \hbox (3.9776pt too wide) in paragraph at lines 1--1
  []
 
 [127]
-Underfull \hbox (badness 10000) detected at line 431
+Underfull \hbox (badness 10000) detected at line 432
 [][][]
  []
 
@@ -2257,35 +2262,40 @@ Package textcomp Warning: Symbol \textrightarrow not provided by
 (textcomp)                font family phv in TS1 encoding.
 (textcomp)                Default family used instead on input line 121.
 
+
+Underfull \hbox (badness 10000) in paragraph at lines 134--135
+
+ []
+
 [131] [132] [133]
-Underfull \hbox (badness 10000) detected at line 324
+Underfull \hbox (badness 10000) detected at line 325
 [][][]
  []
 
 [134]
-Underfull \hbox (badness 10000) in paragraph at lines 335--337
+Underfull \hbox (badness 10000) in paragraph at lines 336--338
 \T1/pcr/m/n/8 std[]::vector$\OML/cmm/m/it/8 <$ \T1/pcr/m/n/8 size[]_[]t $\OML/c
 mm/m/it/8 >$ []$<$ \T1/pcr/m/n/8 TSeq $\OML/cmm/m/it/8 >$[]\T1/pcr/m/n/8 ::get[
 ]_[]agent[]_[]quarantine[]_[]triggered ( ) const
  []
 
 
-Underfull \hbox (badness 10000) detected at line 342
+Underfull \hbox (badness 10000) detected at line 343
 [][][]
  []
 
 
-Underfull \hbox (badness 10000) detected at line 356
+Underfull \hbox (badness 10000) detected at line 357
 [][][]
  []
 
 
-Underfull \hbox (badness 10000) detected at line 370
+Underfull \hbox (badness 10000) detected at line 371
 [][][]
  []
 
 
-Underfull \hbox (badness 10000) detected at line 384
+Underfull \hbox (badness 10000) detected at line 385
 [][][]
  []
 
@@ -2295,7 +2305,7 @@ Overfull \hbox (3.9776pt too wide) in paragraph at lines 1--1
  []
 
 [136]
-Underfull \hbox (badness 10000) detected at line 431
+Underfull \hbox (badness 10000) detected at line 432
 [][][]
  []
 
@@ -4746,7 +4756,7 @@ s/type1/urw/helvetic/uhvb8a.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic
 /uhvb8ac.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvbo8ac.pfb></usr
 /share/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texmf-dist/fo
 nts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on refman.pdf (294 pages, 1367050 bytes).
+Output written on refman.pdf (294 pages, 1367039 bytes).
 PDF statistics:
  10234 PDF objects out of 10688 (max. 8388607)
  9437 compressed objects within 95 object streams
