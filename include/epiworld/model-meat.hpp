@@ -2043,6 +2043,16 @@ inline void Model<TSeq>::reset() {
 // Too big to keep here
 #include "model-meat-print.hpp"
 
+template<typename TSeq>
+inline epiworld_fast_int Model<TSeq>::state_of(std::string_view name) {
+    for (std::size_t i = 0; i < states_labels.size(); ++i) {
+        if (states_labels[i] == name) {
+            return static_cast<epiworld_fast_int>(i);
+        }
+    }
+
+    throw std::logic_error("The state " + std::string(name) + " was not found.");
+}
 
 template<typename TSeq>
 inline epiworld_fast_int Model<TSeq>::add_state(

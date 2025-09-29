@@ -553,16 +553,7 @@ public:
      * states and their labels.
      */
     ///@{
-    virtual epiworld_fast_int state_of(std::string_view name) {
-        for (std::size_t i = 0; i < states_labels.size(); ++i) {
-            if (states_labels[i] == name) {
-                return static_cast<epiworld_fast_int>(i);
-            }
-        }
-
-        throw std::logic_error("The state " + std::string(name) + " was not found.");
-    }
-
+    epiworld_fast_int state_of(std::string_view name);
     epiworld_fast_int add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
     const std::vector< std::string > & get_states() const;
     size_t get_n_states() const;

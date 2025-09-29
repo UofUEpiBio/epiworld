@@ -35,7 +35,7 @@ inline void rewire_degseq(
     std::vector< epiworld_fast_uint > non_isolates;
     std::vector< epiworld_double > weights;
     epiworld_double nedges = 0.0;
-    
+
     for (epiworld_fast_uint i = 0u; i < agents->size(); ++i)
     {
         if (agents->operator[](i).get_neighbors().size() > 0u)
@@ -103,14 +103,14 @@ inline void rewire_degseq(
 
         // When rewiring, we need to flip the individuals from the other
         // end as well, since we are dealing withi an undirected graph
-        
+
         // Finding what neighbour is id0
         model->get_agents()[id0].swap_neighbors(
             model->get_agents()[id1],
             id01,
             id11
             );
-        
+
 
     }
 
@@ -135,14 +135,14 @@ inline void rewire_degseq(
 {
 
     // Identifying individuals with degree > 0
-    std::vector< epiworld_fast_int > nties(agents->vcount(), 0); 
+    std::vector< epiworld_fast_int > nties(agents->vcount(), 0);
 
     #ifdef EPI_DEBUG
     std::vector< int > _degree0(agents->vcount(), 0);
     for (size_t i = 0u; i < _degree0.size(); ++i)
         _degree0[i] = agents->get_dat()[i].size();
     #endif
-    
+
     std::vector< epiworld_fast_uint > non_isolates;
     non_isolates.reserve(nties.size());
 
@@ -154,7 +154,7 @@ inline void rewire_degseq(
 
     for (size_t i = 0u; i < dat.size(); ++i)
         nties[i] += dat[i].size();
-    
+
     bool directed = agents->is_directed();
     for (size_t i = 0u; i < dat.size(); ++i)
     {
@@ -163,13 +163,13 @@ inline void rewire_degseq(
             non_isolates.push_back(i);
             if (directed)
             {
-                weights.push_back( 
+                weights.push_back(
                     static_cast<epiworld_double>(nties[i])
                 );
                 nedges += static_cast<epiworld_double>(nties[i]);
             }
             else {
-                weights.push_back( 
+                weights.push_back(
                     static_cast<epiworld_double>(nties[i])/2.0
                 );
                 nedges += static_cast<epiworld_double>(nties[i]) / 2.0;
@@ -246,7 +246,7 @@ inline void rewire_degseq(
 
         // When rewiring, we need to flip the individuals from the other
         // end as well, since we are dealing withi an undirected graph
-        
+
         // Finding what neighbour is id0
         if (!agents->is_directed())
         {
@@ -255,7 +255,7 @@ inline void rewire_degseq(
             std::map<int,int> & p11 = agents->get_dat()[id11];
 
             std::swap(p01[id0], p11[id1]);
-            
+
         }
 
         // Moving alter first
@@ -269,8 +269,8 @@ inline void rewire_degseq(
         if (_degree0[_i] != static_cast<int>(agents->get_dat()[_i].size()))
             throw std::logic_error(
                 "[epi-debug] Degree does not match afted rewire_degseq. " +
-                std::string("Expected: ") + 
-                std::to_string(_degree0[_i]) + 
+                std::string("Expected: ") +
+                std::to_string(_degree0[_i]) +
                 std::string(", observed: ") +
                 std::to_string(agents->get_dat()[_i].size())
                 );
@@ -316,7 +316,7 @@ inline AdjList rgraph_bernoulli(
             b = floor(model.runif() * n);
             if (b == a)
                 b++;
-            
+
             if (b >= n)
                 b = 0u;
         }
@@ -329,7 +329,7 @@ inline AdjList rgraph_bernoulli(
     AdjList al(source, target, static_cast<int>(n), directed);
 
     return al;
-    
+
 }
 
 template<typename TSeq>
@@ -379,7 +379,7 @@ inline AdjList rgraph_bernoulli2(
     AdjList al(source, target, static_cast<int>(n), directed);
 
     return al;
-    
+
 }
 
 inline AdjList rgraph_ring_lattice(
@@ -420,14 +420,14 @@ inline AdjList rgraph_ring_lattice(
 
 /**
  * @brief Smallworld network (Watts-Strogatz)
- * 
- * @tparam TSeq 
- * @param n 
- * @param k 
- * @param p 
- * @param directed 
- * @param model 
- * @return AdjList 
+ *
+ * @tparam TSeq
+ * @param n
+ * @param k
+ * @param p
+ * @param directed
+ * @param model
+ * @return AdjList
  */
 template<typename TSeq>
 inline AdjList rgraph_smallworld(
@@ -440,27 +440,27 @@ inline AdjList rgraph_smallworld(
 
     // Creating the ring lattice
     AdjList ring = rgraph_ring_lattice(n,k,directed);
-    
+
     // Rewiring and returning
     if (k > 0u)
         rewire_degseq(&ring, &model, p);
-        
+
     return ring;
 
 }
 
 /**
  * @brief Generates a blocked network
- * 
+ *
  * Since block sizes and number of connections between blocks are fixed,
  * this routine is fully deterministic.
- * 
- * @tparam TSeq 
+ *
+ * @tparam TSeq
  * @param n Size of the network
  * @param blocksize Size of the block.
  * @param ncons Number of connections between blocks
  * @param model A model
- * @return AdjList 
+ * @return AdjList
  */
 template<typename TSeq>
 inline AdjList rgraph_blocked(
@@ -487,7 +487,7 @@ inline AdjList rgraph_blocked(
                 if (k == j)
                     continue;
 
-                // Exists the loop in case there are no more 
+                // Exists the loop in case there are no more
                 // nodes available
                 if ((i + k) >= n)
                     break;
@@ -499,7 +499,7 @@ inline AdjList rgraph_blocked(
             // No more nodes left to build connections
             if (++cum_node_count >= n)
                 break;
-            
+
         }
 
         // Connections between this and the previou sone
@@ -519,9 +519,9 @@ inline AdjList rgraph_blocked(
         }
 
         i += blocksize;
-        
+
     }
-        
+
     return AdjList(source_, target_, n, false);
 
 }
