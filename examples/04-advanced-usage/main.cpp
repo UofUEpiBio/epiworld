@@ -103,9 +103,7 @@ int main() {
 
     // Initializing and printing information about the model ------------------
     model.queuing_off(); // Not working with rewiring just yet.
-    model.set_rewire_fun(static_cast<void(*)(std::vector<epiworld::Agent<DAT>>*, epiworld::Model<DAT>*, epiworld_double)>(
-        &epiworld::rewire_degseq<DAT>
-    ));
+    model.set_rewire_fun(&epiworld::rewire_degseq<DAT>);
     model.set_rewire_prop(0.10);
 
     // Screen information
