@@ -18,7 +18,7 @@ all: main.o
 		-fdelete-null-pointer-checks -pedantic $< -o $@
 
 # Special cases
-main.a: dirsetup .WAIT main.cpp
+main.a: | dirsetup main.cpp
 	$(CLANG) $(CXXFLAGS) $(OPTFLAGS) $(OPENMP) -Wall -Wextra -Wpedantic $< -o $@
 
 callgrind: 05-mixing-with-size.o
