@@ -18,7 +18,7 @@ all: main.o
 		-fdelete-null-pointer-checks -pedantic $< -o $@
 
 # Special cases
-main.a: main.cpp
+main.a: dirsetup .WAIT main.cpp
 	$(CLANG) $(CXXFLAGS) $(OPTFLAGS) $(OPENMP) -Wall -Wextra -Wpedantic $< -o $@
 
 callgrind: 05-mixing-with-size.o
@@ -34,11 +34,13 @@ coverage: clean
 	gcov -r main.cpp && ls -allt && \
 	rm -f catch*.hpp.gcov *cpp.gcov
 
-clean:
-	rm -f *.o *.a *.so *.out *.exe *.gcda *.gcno *.gcov
-	rm -fr *-saves/
+dirsetup:
 	for file in *.cpp; do \
 		mkdir -p "$${file%.cpp}-saves"; \
 	done
 
-.PHONY: all clean coverage callgrind
+clean:
+	rm -f *.o *.a *.so *.out *.exe *.gcda *.gcno *.gcov
+	rm -fr *-saves/
+
+.PHONY: all clean dirsetup coverage callgrind
