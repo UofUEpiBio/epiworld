@@ -278,13 +278,13 @@ The latter is calculated using Bayes' rule
 
 <!-- $$
 \begin{align*}
-P_{ivj} & = P(\text{at most one virus}|Virus v) * P_v / P(\text{at most one virus}) \\
-        & = P(\text{Only Virus} v)/P_v * P(text{Virus v}) / P(\text{at most one virus}) \\
-        & = P(\text{Only Virus} v)/P(\text{at most one virus})
+P_{ivj} & = P(\text{at most one virus}|\text{Virus v}) * P_v / P(\text{at most one virus}) \\
+        & = P(\text{Only Virus v})/P_v * P(\text{Virus v}) / P(\text{at most one virus}) \\
+        & = P(\text{Only Virus v})/P(\text{at most one virus})
 \end{align*}
 $$ -->
 
-<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0AP_%7Bivj%7D%20%26%20%3D%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%7CVirus%20v%29%20%2A%20P_v%20%2F%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P%28%5Ctext%7BOnly%20Virus%7D%20v%29%2FP_v%20%2A%20P%28text%7BVirus%20v%7D%29%20%2F%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P%28%5Ctext%7BOnly%20Virus%7D%20v%29%2FP%28%5Ctext%7Bat%20most%20one%20virus%7D%29%0A%5Cend%7Balign%2A%7D"></div>
+<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0AP_%7Bivj%7D%20%26%20%3D%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%7C%5Ctext%7BVirus%20v%7D%29%20%2A%20P_v%20%2F%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P%28%5Ctext%7BOnly%20Virus%20v%7D%29%2FP_v%20%2A%20P%28%5Ctext%7BVirus%20v%7D%29%20%2F%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P%28%5Ctext%7BOnly%20Virus%20v%7D%29%2FP%28%5Ctext%7Bat%20most%20one%20virus%7D%29%0A%5Cend%7Balign%2A%7D"></div>
 
 
 Where
