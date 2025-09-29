@@ -14,40 +14,48 @@ on:
   pull_request:
 
 jobs:
-  test-macos:
-    runs-on: macos-latest
+  test:
+    runs-on: ${{ matrix.os }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: false
     strategy:
       matrix:
         include:
-          - llvm: 14
+          # macOS configurations
+          - os: macos-latest
+            llvm: 14
             std: c++20
-          - llvm: 18
+            container: ''
+          - os: macos-latest
+            llvm: 18
             std: c++2b
+            container: ''
+          # Ubuntu configuration
+          - os: ubuntu-latest
+            llvm: ''
+            std: ''
+            container: gvegayon/epiworld:latest
+
+    container: ${{ matrix.container || '' }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install LLVM
+      - name: Install LLVM (macOS only)
+        if: runner.os == 'macOS'
         run: brew install llvm@${{ matrix.llvm }}
 
-      - name: Check
+      - name: Check (macOS)
+        if: runner.os == 'macOS'
         env:
           CXX_STD: -std=${{ matrix.std }}
         run: |
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
           cd tests && make main.a && ./main.a
 
-  test-ubuntu:
-    runs-on: ubuntu-latest
-    container: gvegayon/epiworld:latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check
+      - name: Check (Ubuntu)
+        if: runner.os == 'Linux'
         env:
           OPENMP: -fopenmp
         run: |
