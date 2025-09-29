@@ -13,6 +13,7 @@ all: main.o
 
 # Generic rule: .cpp -> .o (actually executable here, not object file)
 %.o: %.cpp
+	mkdir -p "$(basename file)-saves"; \
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(OPENMP) -Wnull-dereference \
 		-fdelete-null-pointer-checks -pedantic $< -o $@
 
