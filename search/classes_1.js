@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['database_132',['DataBase',['../class_data_base.html',1,'DataBase&lt; TSeq &gt;'],['../classepiworld_1_1_data_base.html',1,'epiworld::DataBase&lt; TSeq &gt;']]]
+  ['communityhospmodel_130',['CommunityHospModel',['../class_community_hosp_model.html',1,'']]]
 ];

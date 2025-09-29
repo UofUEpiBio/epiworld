@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['randgraph_166',['RandGraph',['../class_rand_graph.html',1,'']]]
+  ['queue_164',['Queue',['../classepiworld_1_1_queue.html',1,'epiworld::Queue&lt; TSeq &gt;'],['../class_queue.html',1,'Queue&lt; TSeq &gt;']]]
 ];

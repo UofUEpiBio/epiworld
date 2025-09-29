@@ -441,9 +441,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>write_edgelist</b> (s
 <tr class="memitem:ab1673a3703c74384eade35ca25cdc750 inherit pub_methods_classepiworld_1_1_model"><td class="memItemLeft" align="right" valign="top"><a id="ab1673a3703c74384eade35ca25cdc750"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>write_edgelist</b> (std::vector&lt; int &gt; &amp;source, std::vector&lt; int &gt; &amp;target) const</td></tr>
 <tr class="separator:ab1673a3703c74384eade35ca25cdc750 inherit pub_methods_classepiworld_1_1_model"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4a925f77087c2cc4fe21eb9671b5f49 inherit pub_methods_classepiworld_1_1_model"><td class="memItemLeft" align="right" valign="top"><a id="aa4a925f77087c2cc4fe21eb9671b5f49"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>add_state</b> (std::string lab, UpdateFun&lt; EPI_DEFAULT_TSEQ &gt; fun=nullptr)</td></tr>
-<tr class="separator:aa4a925f77087c2cc4fe21eb9671b5f49 inherit pub_methods_classepiworld_1_1_model"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c025c98069185744a15ca58f206888c inherit pub_methods_classepiworld_1_1_model"><td class="memItemLeft" align="right" valign="top"><a id="a9c025c98069185744a15ca58f206888c"></a>
+virtual epiworld_fast_int&#160;</td><td class="memItemRight" valign="bottom"><b>state_of</b> (std::string_view <a class="el" href="classepiworld_1_1_model.html#a4af72bcd59626f5c6cb52fc10fc30c04">name</a>)</td></tr>
+<tr class="separator:a9c025c98069185744a15ca58f206888c inherit pub_methods_classepiworld_1_1_model"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a770b029eb270b7335c96b6dd524fa31a inherit pub_methods_classepiworld_1_1_model"><td class="memItemLeft" align="right" valign="top"><a id="a770b029eb270b7335c96b6dd524fa31a"></a>
+epiworld_fast_int&#160;</td><td class="memItemRight" valign="bottom"><b>add_state</b> (std::string lab, UpdateFun&lt; EPI_DEFAULT_TSEQ &gt; fun=nullptr)</td></tr>
+<tr class="separator:a770b029eb270b7335c96b6dd524fa31a inherit pub_methods_classepiworld_1_1_model"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af372433843a655e8d93f6ee3e7498bc1 inherit pub_methods_classepiworld_1_1_model"><td class="memItemLeft" align="right" valign="top"><a id="af372433843a655e8d93f6ee3e7498bc1"></a>
 const std::vector&lt; std::string &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_states</b> () const</td></tr>
 <tr class="separator:af372433843a655e8d93f6ee3e7498bc1 inherit pub_methods_classepiworld_1_1_model"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -564,45 +567,45 @@ std::vector&lt; <a class="el" href="classepiworld_1_1_virus.html">Virus</a>&lt; 
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a310a11241de22b61fd0107f17db87705"><td class="memItemLeft" align="right" valign="top"><a id="a310a11241de22b61fd0107f17db87705"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>SUSCEPTIBLE</b> = 0u</td></tr>
-<tr class="separator:a310a11241de22b61fd0107f17db87705"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae5ceddabe68ce6b983f165aef94f294e"><td class="memItemLeft" align="right" valign="top"><a id="ae5ceddabe68ce6b983f165aef94f294e"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>EXPOSED</b> = 1u</td></tr>
-<tr class="separator:ae5ceddabe68ce6b983f165aef94f294e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8f0cd328641b9b20ac3b481b9eada170"><td class="memItemLeft" align="right" valign="top"><a id="a8f0cd328641b9b20ac3b481b9eada170"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>PRODROMAL</b> = 2u</td></tr>
-<tr class="separator:a8f0cd328641b9b20ac3b481b9eada170"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3c27ca8b5c61ea52e2fe61e3a4382227"><td class="memItemLeft" align="right" valign="top"><a id="a3c27ca8b5c61ea52e2fe61e3a4382227"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>RASH</b> = 3u</td></tr>
-<tr class="separator:a3c27ca8b5c61ea52e2fe61e3a4382227"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb874b9ee0af728645779fe89c47fc48"><td class="memItemLeft" align="right" valign="top"><a id="abb874b9ee0af728645779fe89c47fc48"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>ISOLATED</b> = 4u</td></tr>
-<tr class="separator:abb874b9ee0af728645779fe89c47fc48"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa01d312fb3654ba879bf1d0dc9b81b80"><td class="memItemLeft" align="right" valign="top"><a id="aa01d312fb3654ba879bf1d0dc9b81b80"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>ISOLATED_RECOVERED</b> = 5u</td></tr>
-<tr class="separator:aa01d312fb3654ba879bf1d0dc9b81b80"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af7330d2a301a67be9cedd958a23c222f"><td class="memItemLeft" align="right" valign="top"><a id="af7330d2a301a67be9cedd958a23c222f"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>DETECTED_HOSPITALIZED</b> = 6u</td></tr>
-<tr class="separator:af7330d2a301a67be9cedd958a23c222f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa5dff9129f284e4b5571b0997f4be49d"><td class="memItemLeft" align="right" valign="top"><a id="aa5dff9129f284e4b5571b0997f4be49d"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_EXPOSED</b> = 7u</td></tr>
-<tr class="separator:aa5dff9129f284e4b5571b0997f4be49d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6d5123a69f168a3756b4d73e2b39ef46"><td class="memItemLeft" align="right" valign="top"><a id="a6d5123a69f168a3756b4d73e2b39ef46"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_SUSCEPTIBLE</b> = 8u</td></tr>
-<tr class="separator:a6d5123a69f168a3756b4d73e2b39ef46"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a47508336f11983c883a65e3f5c807c9a"><td class="memItemLeft" align="right" valign="top"><a id="a47508336f11983c883a65e3f5c807c9a"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_PRODROMAL</b> = 9u</td></tr>
-<tr class="separator:a47508336f11983c883a65e3f5c807c9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7ab3ad6b7f61d463481a3b50e9f75bf"><td class="memItemLeft" align="right" valign="top"><a id="aa7ab3ad6b7f61d463481a3b50e9f75bf"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_RECOVERED</b> = 10u</td></tr>
-<tr class="separator:aa7ab3ad6b7f61d463481a3b50e9f75bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03666cab9d87d262d4f919b58040880e"><td class="memItemLeft" align="right" valign="top"><a id="a03666cab9d87d262d4f919b58040880e"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>HOSPITALIZED</b> = 11u</td></tr>
-<tr class="separator:a03666cab9d87d262d4f919b58040880e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5e9c5cda2805e35c7253110d1fbd434e"><td class="memItemLeft" align="right" valign="top"><a id="a5e9c5cda2805e35c7253110d1fbd434e"></a>
-static constexpr epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>RECOVERED</b> = 12u</td></tr>
-<tr class="separator:a5e9c5cda2805e35c7253110d1fbd434e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae54a06b9e5b6f9ddb9dfb3c6365f1d80"><td class="memItemLeft" align="right" valign="top"><a id="ae54a06b9e5b6f9ddb9dfb3c6365f1d80"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>SUSCEPTIBLE</b> = 0u</td></tr>
+<tr class="separator:ae54a06b9e5b6f9ddb9dfb3c6365f1d80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8417e115769423592f6e96015141bf6"><td class="memItemLeft" align="right" valign="top"><a id="aa8417e115769423592f6e96015141bf6"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>EXPOSED</b> = 1u</td></tr>
+<tr class="separator:aa8417e115769423592f6e96015141bf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a443cd38a6a442814c5a693dea055a157"><td class="memItemLeft" align="right" valign="top"><a id="a443cd38a6a442814c5a693dea055a157"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>PRODROMAL</b> = 2u</td></tr>
+<tr class="separator:a443cd38a6a442814c5a693dea055a157"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0adbc9d67efacc185dff49aaabaf1966"><td class="memItemLeft" align="right" valign="top"><a id="a0adbc9d67efacc185dff49aaabaf1966"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>RASH</b> = 3u</td></tr>
+<tr class="separator:a0adbc9d67efacc185dff49aaabaf1966"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8918c8d8f9d2c84c3efd19c895c00e2c"><td class="memItemLeft" align="right" valign="top"><a id="a8918c8d8f9d2c84c3efd19c895c00e2c"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>ISOLATED</b> = 4u</td></tr>
+<tr class="separator:a8918c8d8f9d2c84c3efd19c895c00e2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a599baa6d9c44320fa3b7bf86675e8a"><td class="memItemLeft" align="right" valign="top"><a id="a4a599baa6d9c44320fa3b7bf86675e8a"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>ISOLATED_RECOVERED</b> = 5u</td></tr>
+<tr class="separator:a4a599baa6d9c44320fa3b7bf86675e8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a839ee0ff6775aa4e712aec508bb92229"><td class="memItemLeft" align="right" valign="top"><a id="a839ee0ff6775aa4e712aec508bb92229"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>DETECTED_HOSPITALIZED</b> = 6u</td></tr>
+<tr class="separator:a839ee0ff6775aa4e712aec508bb92229"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91e591e52c2bc31d21cf8590a7718fdd"><td class="memItemLeft" align="right" valign="top"><a id="a91e591e52c2bc31d21cf8590a7718fdd"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_EXPOSED</b> = 7u</td></tr>
+<tr class="separator:a91e591e52c2bc31d21cf8590a7718fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1014a7c827505189c1fd57cd704feed"><td class="memItemLeft" align="right" valign="top"><a id="ab1014a7c827505189c1fd57cd704feed"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_SUSCEPTIBLE</b> = 8u</td></tr>
+<tr class="separator:ab1014a7c827505189c1fd57cd704feed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac21b90d1bb6064d11e2b841ac39a1a07"><td class="memItemLeft" align="right" valign="top"><a id="ac21b90d1bb6064d11e2b841ac39a1a07"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_PRODROMAL</b> = 9u</td></tr>
+<tr class="separator:ac21b90d1bb6064d11e2b841ac39a1a07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a373495ef198b02de8d732295d542f56f"><td class="memItemLeft" align="right" valign="top"><a id="a373495ef198b02de8d732295d542f56f"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>QUARANTINED_RECOVERED</b> = 10u</td></tr>
+<tr class="separator:a373495ef198b02de8d732295d542f56f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a238b17fc338d4fe03816e21f6551584f"><td class="memItemLeft" align="right" valign="top"><a id="a238b17fc338d4fe03816e21f6551584f"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>HOSPITALIZED</b> = 11u</td></tr>
+<tr class="separator:a238b17fc338d4fe03816e21f6551584f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25ffb6499c51a7216b924529fd26496f"><td class="memItemLeft" align="right" valign="top"><a id="a25ffb6499c51a7216b924529fd26496f"></a>
+static const epiworld_fast_uint&#160;</td><td class="memItemRight" valign="bottom"><b>RECOVERED</b> = 12u</td></tr>
+<tr class="separator:a25ffb6499c51a7216b924529fd26496f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
