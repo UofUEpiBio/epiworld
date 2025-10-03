@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['operator_28_29_88',['operator()',['../classepiworld_1_1_agent.html#a370107b9e18076bce06f7bffb32f2757',1,'epiworld::Agent::operator()()'],['../class_agent.html#a370107b9e18076bce06f7bffb32f2757',1,'Agent::operator()()']]],
-  ['operator_3d_3d_89',['operator==',['../classepiworld_1_1_data_base.html#ab387bebbab95525c452660a7701c457d',1,'epiworld::DataBase::operator==()'],['../class_data_base.html#ab387bebbab95525c452660a7701c457d',1,'DataBase::operator==(const DataBase&lt; TSeq &gt; &amp;other) const'],['../class_data_base.html#a707b63e79214f82c5efb85fc04ccee11',1,'DataBase::operator==(const DataBase&lt; std::vector&lt; int &gt;&gt; &amp;other) const'],['../class_data_base.html#a707b63e79214f82c5efb85fc04ccee11',1,'DataBase::operator==(const DataBase&lt; std::vector&lt; int &gt;&gt; &amp;other) const']]]
+  ['persontools_89',['PersonTools',['../classepiworld_1_1_person_tools.html',1,'epiworld::PersonTools&lt; TSeq &gt;'],['../class_person_tools.html',1,'PersonTools&lt; TSeq &gt;']]],
+  ['progress_90',['Progress',['../classepiworld_1_1_progress.html',1,'epiworld::Progress'],['../class_progress.html',1,'Progress']]]
 ];

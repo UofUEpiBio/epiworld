@@ -1,8 +1,4 @@
 var searchData=
 [
-  ['today_118',['today',['../classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917',1,'epiworld::Model::today()'],['../class_model.html#aa3ce8d5f025e239f8090ab9645f3e917',1,'Model::today()']]],
-  ['tool_119',['Tool',['../classepiworld_1_1_tool.html',1,'epiworld::Tool&lt; TSeq &gt;'],['../class_tool.html',1,'Tool&lt; TSeq &gt;']]],
-  ['toolfunctions_120',['ToolFunctions',['../classepiworld_1_1_tool_functions.html',1,'epiworld::ToolFunctions&lt; TSeq &gt;'],['../class_tool_functions.html',1,'ToolFunctions&lt; TSeq &gt;']]],
-  ['tools_121',['Tools',['../classepiworld_1_1_tools.html',1,'epiworld::Tools&lt; TSeq &gt;'],['../class_tools.html',1,'Tools&lt; TSeq &gt;']]],
-  ['tools_5fconst_122',['Tools_const',['../classepiworld_1_1_tools__const.html',1,'epiworld::Tools_const&lt; TSeq &gt;'],['../class_tools__const.html',1,'Tools_const&lt; TSeq &gt;']]]
+  ['userdata_120',['UserData',['../classepiworld_1_1_user_data.html',1,'epiworld::UserData&lt; TSeq &gt;'],['../class_user_data.html',1,'UserData&lt; TSeq &gt;'],['../classepiworld_1_1_user_data.html#adee45d65067910e75af85ed06aa4eaf4',1,'epiworld::UserData::UserData()'],['../class_user_data.html#adee45d65067910e75af85ed06aa4eaf4',1,'UserData::UserData()']]]
 ];
