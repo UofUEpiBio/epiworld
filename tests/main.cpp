@@ -39,3 +39,6 @@
 #include "19a-measles-mixing.cpp"
 #include "19b-measles-mixing.cpp"
 #include "19c-measles-mixing.cpp"
+#include "20a-measles-mixing-risk-quarantine-basic.cpp"
+#include "20b-measles-mixing-risk-quarantine-transitions.cpp"
+#include "20d-measles-mixing-risk-quarantine-durations.cpp"
