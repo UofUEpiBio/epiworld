@@ -1,5 +1,14 @@
 // Minimal test for rewire_degseq fix
 // This test directly verifies the core fix without requiring full compilation of all models
+//
+// This test validates that the rewire_degseq function:
+// 1. Preserves the degree sequence (each node maintains its original number of connections)
+// 2. Actually changes the network structure (nodes connect to different neighbors)
+// 3. Maintains graph symmetry for undirected networks
+//
+// The test creates a ring lattice and applies rewiring, then checks all three properties.
+// 
+// To run: g++ -std=c++17 -O2 test-rewire-simple.cpp -o test-rewire-simple.o && ./test-rewire-simple.o
 
 #include <iostream>
 #include <vector>
