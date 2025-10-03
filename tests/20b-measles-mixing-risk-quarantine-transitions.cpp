@@ -11,10 +11,11 @@ EPIWORLD_TEST_CASE(
     "[ModelMeaslesMixingRiskQuarantine_transitions]"
 ) {
     
-    std::vector<double> contact_matrix = {1.0};
+    // Contact matrix for 3 groups with equal mixing
+    std::vector<double> contact_matrix(9u, 1.0/3.0);
     
     epimodels::ModelMeaslesMixingRiskQuarantine<> model(
-        1000,        // Number of agents
+        300,        // Number of agents
         0.05,        // Initial prevalence (higher for testing)
         2.0,         // Contact rate
         0.2,         // Transmission rate
@@ -40,12 +41,12 @@ EPIWORLD_TEST_CASE(
     );
 
     // Adding a single entity
-    model.add_entity(Entity<>("Population", dist_factory<>(0, 1000)));
+    model.add_entity(Entity<>("Population", dist_factory<>(0, 99)));
+    model.add_entity(Entity<>("Population", dist_factory<>(100, 199)));
+    model.add_entity(Entity<>("Population", dist_factory<>(200, 299)));
 
-    // Setting the distribution function of initial cases
-    model.get_virus(0).set_distribution(dist_virus<>(50));
-    
-    model.initial_states({1.0, 0.0});
+    // Moving the virus to the first agent
+    model.get_virus(0).set_distribution(dist_virus<>(0));
 
     // Run multiple simulations to get transition matrix
     int nsims = 100;
@@ -54,6 +55,9 @@ EPIWORLD_TEST_CASE(
     
     auto saver = tests_create_saver(transitions, R0s, 50);
     model.run_multiple(60, nsims, 123, saver, true, true, 4);
+
+    // Briefly printing the model
+    model.print(false);
 
     // Calculate average transitions
     auto avg_transitions = tests_calculate_avg_transitions(transitions, model);
