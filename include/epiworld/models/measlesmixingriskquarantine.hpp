@@ -592,7 +592,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
     GET_MODEL(m, model);
     
     // Check for detection during active quarantine
-    bool detect_it = (m->runif() < m->par("Detection rate quarantine");
+    bool detect_it = (m->runif() < m->par("Detection rate quarantine"));
 
     // Does the agent transition to rash?
     if (m->runif() < 1.0/m->par("Prodromal period"))
@@ -738,7 +738,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
 
     if (model->quarantine_risk_level[p->get_id()] == RISK_HIGH) {
         quarantine_period = m->par("Quarantine period high");
-    } else if (risk_level == RISK_MEDIUM) {
+    } else if (model->quarantine_risk_level[p->get_id()] == RISK_MEDIUM) {
         quarantine_period = m->par("Quarantine period medium");
     } else {
         quarantine_period = m->par("Quarantine period low");
