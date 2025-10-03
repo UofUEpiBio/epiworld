@@ -56,14 +56,14 @@ Template for a Measles model with population mixing and risk-\/based quarantine.
 
 {\bfseries Value\+:}
 \begin{DoxyCode}{0}
-\DoxyCodeLine{    \textcolor{keywordtype}{size\_t} ans; \(\backslash\)}
+\DoxyCodeLine{    \textcolor{keywordtype}{int} ans; \(\backslash\)}
 \DoxyCodeLine{    epiworld\_double p\_total = m-\/>runif(); \(\backslash\)}
-\DoxyCodeLine{    for (ans = 0u; ans < n; ++ans) \(\backslash\)}
+\DoxyCodeLine{    for (ans = 0; ans < static\_cast<int>(n); ans++) \(\backslash\)}
 \DoxyCodeLine{    \{ \(\backslash\)}
 \DoxyCodeLine{        if (p\_total < m-\/>array\_double\_tmp[ans]) \(\backslash\)}
 \DoxyCodeLine{            break; \(\backslash\)}
 \DoxyCodeLine{        m-\/>array\_double\_tmp[ans + 1] += m-\/>array\_double\_tmp[ans]; \(\backslash\)}
-\DoxyCodeLine{    \}}
+\DoxyCodeLine{    \};}
 
 \end{DoxyCode}
 
