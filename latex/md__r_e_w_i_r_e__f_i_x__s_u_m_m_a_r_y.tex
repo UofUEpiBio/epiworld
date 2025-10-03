@@ -1,0 +1,63 @@
+\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md95}{}\doxysection{Problem}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md95}
+The {\ttfamily rewire\+\_\+degseq} function in {\ttfamily \mbox{\hyperlink{randgraph_8hpp_source}{randgraph.\+hpp}}} was incorrectly swapping edge {\bfseries{weights}} instead of actually {\bfseries{rewiring}} the network connections. This meant that\+:
+\begin{DoxyItemize}
+\item The network structure (who connects to whom) remained unchanged
+\item Only the weight values stored in the adjacency maps were being swapped
+\end{DoxyItemize}\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md96}{}\doxysection{Root Cause}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md96}
+In the \mbox{\hyperlink{class_adj_list}{Adj\+List}} version\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{// OLD CODE (incorrect):}}
+\DoxyCodeLine{std::swap(p0[id01], p1[id11]);  \textcolor{comment}{// This only swaps the weights!}}
+
+\end{DoxyCode}
+
+
+The code was swapping the VALUES in the map (the weights), not the KEYS (the neighbor IDs).\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md97}{}\doxysection{Solution}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md97}
+The fix properly rewires edges by\+:
+\begin{DoxyEnumerate}
+\item Saving the edge weights
+\item Removing the old edges from the adjacency lists
+\item Adding new edges with the swapped connections
+\item For undirected graphs, also updating the reverse edges
+\item Checking for duplicate edges before swapping to preserve the degree sequence
+\end{DoxyEnumerate}\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md98}{}\doxysubsection{Adj\+List Version Changes}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md98}
+
+\begin{DoxyItemize}
+\item Replace {\ttfamily std\+::swap(p0\mbox{[}id01\mbox{]}, p1\mbox{[}id11\mbox{]})} with proper edge removal and addition
+\item Add duplicate edge detection to skip rewires that would create parallel edges
+\item Ensure both directions are updated for undirected graphs
+\end{DoxyItemize}\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md99}{}\doxysubsection{Agent Vector Version Changes}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md99}
+
+\begin{DoxyItemize}
+\item Fixed bug where {\ttfamily model-\/$>$get\+\_\+agents()\mbox{[}id0\mbox{]}} should have been {\ttfamily model-\/$>$get\+\_\+agents()\mbox{[}non\+\_\+isolates\mbox{[}id0\mbox{]}\mbox{]}}
+\item Added duplicate edge detection before calling {\ttfamily swap\+\_\+neighbors()}
+\item The {\ttfamily swap\+\_\+neighbors()} function itself was already correctly implemented
+\end{DoxyItemize}\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md100}{}\doxysection{Testing}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md100}
+A standalone test ({\ttfamily test-\/rewire-\/simple.\+cpp}) was created to verify\+:
+\begin{DoxyEnumerate}
+\item {\bfseries{Degree preservation}}\+: Each node maintains its original number of connections
+\item {\bfseries{\mbox{\hyperlink{class_network}{Network}} structure change}}\+: The rewiring actually changes who connects to whom
+\item {\bfseries{Graph symmetry}}\+: For undirected graphs, if A connects to B, then B connects to A
+\end{DoxyEnumerate}\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md101}{}\doxysubsection{Test Results}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md101}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=== Testing rewire\_degseq fix ===}
+\DoxyCodeLine{Degrees preserved: YES}
+\DoxyCodeLine{Nodes with changed neighbors: 15 out of 20}
+\DoxyCodeLine{Graph symmetric: YES}
+\DoxyCodeLine{}
+\DoxyCodeLine{PASS: All tests successful!}
+
+\end{DoxyCode}
+\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md102}{}\doxysection{Files Modified}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md102}
+
+\begin{DoxyItemize}
+\item {\ttfamily \mbox{\hyperlink{randgraph_8hpp_source}{include/epiworld/randgraph.\+hpp}}}\+: Fixed both {\ttfamily rewire\+\_\+degseq} implementations
+\item {\ttfamily tests/test-\/rewire-\/simple.\+cpp}\+: Standalone test to verify the fix
+\end{DoxyItemize}\hypertarget{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md103}{}\doxysection{Notes}\label{md__r_e_w_i_r_e__f_i_x__s_u_m_m_a_r_y_autotoc_md103}
+
+\begin{DoxyItemize}
+\item The main test suite has pre-\/existing compilation errors in unrelated models that prevent it from compiling
+\item The standalone test validates the core fix without requiring the full test infrastructure
+\item The fix is minimal and surgical, changing only what\textquotesingle{}s necessary to correct the rewiring logic 
+\end{DoxyItemize}

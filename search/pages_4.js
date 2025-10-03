@@ -1,7 +1,4 @@
 var searchData=
 [
-  ['mit_20license_263',['MIT License',['../md__l_i_c_e_n_s_e.html',1,'']]],
-  ['mixing_20probabilities_20in_20connected_20model_264',['Mixing probabilities in connected model',['../md_paper_mixing.html',1,'']]],
-  ['model1_265',['model1',['../md_model1.html',1,'']]],
-  ['modelmeaslesmixing_266',['ModelMeaslesMixing',['../md_docs__model_measles_mixing.html',1,'']]]
+  ['general_20parameters_277',['General parameters',['../md_examples_09_sir_connected_09_sir_connected.html',1,'']]]
 ];
