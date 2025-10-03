@@ -1,6 +1,7 @@
 #ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #endif
+
 
 #include "tests.hpp"
 
@@ -12,11 +13,13 @@ EPIWORLD_TEST_CASE(
 ) {
     
     // Contact matrix for 3 groups with equal mixing
+    size_t nsims = 200;
+    size_t n     = 600;
     std::vector<double> contact_matrix(9u, 1.0/3.0);
     
     epimodels::ModelMeaslesMixingRiskQuarantine<> model(
-        300,        // Number of agents
-        0.05,        // Initial prevalence (higher for testing)
+        n,         // Number of agents
+        1.0/300.0,   // Initial prevalence (higher for testing)
         2.0,         // Contact rate
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
@@ -41,15 +44,16 @@ EPIWORLD_TEST_CASE(
     );
 
     // Adding a single entity
-    model.add_entity(Entity<>("Population", dist_factory<>(0, 99)));
-    model.add_entity(Entity<>("Population", dist_factory<>(100, 199)));
-    model.add_entity(Entity<>("Population", dist_factory<>(200, 299)));
+    model.add_entity(Entity<>("Population", dist_factory<>(0, n/3 - 1)));
+    model.add_entity(Entity<>("Population", dist_factory<>(n/3, 2*n/3 - 1)));
+    model.add_entity(Entity<>("Population", dist_factory<>(2*n/3, n - 1)));
 
     // Moving the virus to the first agent
-    model.get_virus(0).set_distribution(dist_virus<>(0));
+    model.get_virus(0).set_distribution(
+        distribute_virus_randomly<>(10.0, false)
+    );
 
     // Run multiple simulations to get transition matrix
-    int nsims = 100;
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * 50, -1.0);
     
@@ -61,59 +65,87 @@ EPIWORLD_TEST_CASE(
 
     // Calculate average transitions
     auto avg_transitions = tests_calculate_avg_transitions(transitions, model);
+
+    tests_print_avg_transitions(avg_transitions, model);
     #define mat(i, j) avg_transitions[j * model.get_n_states() + i]
 
     std::cout << "\n=== TRANSITION MATRIX VALIDATION ===" << std::endl;
     
-    // Test basic disease progression transitions
+    // From exposed
     std::cout << "Transition from Exposed to Prodromal: " <<
-        mat(1, 2) << " (expected: " << 
+        mat(1, 2) + mat(1, 9) << " (expected: " << 
         1.0/model("Incubation period") << ")" << std::endl;
 
+    // From prodromal
     std::cout << "Transition from Prodromal to Rash: " <<
-        mat(2, 3) << " (expected: " << 
+        mat(2, 3) + mat(2, 4) << " (expected: " << 
         1.0/model("Prodromal period") << ")" << std::endl;
 
+    // From Rash
     std::cout << "Transition from Rash to Recovered: " <<
-        mat(3, 12) << " (expected: " << 
-        1.0/model("Rash period") << ")" << std::endl;
+        mat(3, 12) + mat(3, 5) << " (expected: " << 
+        (1.0 - model("Hospitalization rate") - 1.0/model("Rash period")) << ")" << std::endl;
 
-    // Test enhanced detection during quarantine
-    std::cout << "\n--- Enhanced Detection During Quarantine ---" << std::endl;
-    std::cout << "Transition from Prodromal to Quarantined Prodromal: " <<
-        mat(2, 9) << " (should be > 0 due to enhanced detection)" << std::endl;
+    std::cout << "Transition from Rash to Hospitalized: " <<
+        mat(3, 6) + mat(3, 11) << " (expected: " <<
+        model("Hospitalization rate") << ")" << std::endl;
 
-    // Test quarantine transitions  
-    std::cout << "\n--- Quarantine State Transitions ---" << std::endl;
-    std::cout << "Quarantined Susceptible to Susceptible: " << mat(8, 0) << std::endl;
-    std::cout << "Quarantined Exposed to Exposed: " << mat(7, 1) << std::endl;
-    std::cout << "Quarantined Exposed to Prodromal: " << mat(7, 2) << std::endl;
-    std::cout << "Quarantined Exposed to Quarantined Prodromal: " << mat(7, 9) << std::endl;
+    // Isolated
+    std::cout << "Transition from Isolated to hospitalized: " <<
+        mat(4, 6) + mat(4, 11) << " (expected: " <<
+        model("Hospitalization rate") << ")" << std::endl;
+    
+    // Quarantined Exposed
+    std::cout << "Transition from Quarantined Exposed to Prodromal: " <<
+        mat(7, 2) + mat(7, 9) << " (expected: " <<
+        1.0/model("Incubation period") << ")" << std::endl;
 
-    // Test isolation transitions
-    std::cout << "\n--- Isolation State Transitions ---" << std::endl;
-    std::cout << "Isolated to Isolated Recovered: " << mat(4, 5) << std::endl;
-    std::cout << "Isolated Recovered to Recovered: " << mat(5, 12) << std::endl;
+    // Quarantined Prodromal
+    std::cout << "Transition from Quarantined Prodromal to Rash: " <<
+        mat(9, 3) + mat(9, 4) << " (expected: " <<
+        1.0/model("Prodromal period") << ")" << std::endl;
+
+    // From Hospitalized
+    std::cout << "Transition from Hospitalized to Recovered: " <<
+        mat(11, 12) << " (expected: " <<
+        1.0/model("Hospitalization period") << ")" << std::endl;
 
     #ifdef CATCH_CONFIG_MAIN
     // Validate core disease progression  
     REQUIRE_FALSE(
-        moreless(mat(1, 2), 1.0/model("Incubation period"), 0.1)
+        moreless(mat(1, 2) + mat(1, 9), 1.0/model("Incubation period"), 0.1)
     );
-    
+
     REQUIRE_FALSE(
-        moreless(mat(2, 3), 1.0/model("Prodromal period"), 0.1)
+        moreless(mat(2, 3) + mat(2, 4), 1.0/model("Prodromal period"), 0.1)
     );
-    
-    // Should have enhanced detection during quarantine
-    REQUIRE(mat(2, 9) > 0.0);
-    
-    // Should have quarantine transitions
-    REQUIRE(mat(8, 0) > 0.0); // Quarantined susceptible to susceptible
-    REQUIRE(mat(7, 1) > 0.0); // Quarantined exposed to exposed
-    
-    // Should have isolation recovery  
-    REQUIRE(mat(5, 12) > 0.0); // Isolated recovered to recovered
+
+    double p_recovered = 1.0 - (
+        1.0/model("Rash period") + model("Hospitalization rate")
+    );
+    REQUIRE_FALSE(
+        moreless(mat(3, 12) + mat(3, 5), p_recovered, 0.1)
+    );
+
+    REQUIRE_FALSE(
+        moreless(mat(3, 6) + mat(3, 11), model("Hospitalization rate"), 0.1)
+    );
+
+    REQUIRE_FALSE(
+        moreless(mat(4, 6) + mat(4, 11), model("Hospitalization rate"), 0.1)
+    );
+
+    REQUIRE_FALSE(
+        moreless(mat(7, 2) + mat(7, 9), 1.0/model("Incubation period"), 0.1)
+    );
+
+    REQUIRE_FALSE(
+        moreless(mat(9, 3) + mat(9, 4), 1.0/model("Prodromal period"), 0.1)
+    );
+
+    REQUIRE_FALSE(
+        moreless(mat(11, 12), 1.0/model("Hospitalization period"), 0.1)
+    );
     #endif
 
     #undef mat

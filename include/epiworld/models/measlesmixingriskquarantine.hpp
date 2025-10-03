@@ -26,14 +26,14 @@ using namespace epiworld;
  * if none is found, returns n.
  */
 #define SAMPLE_FROM_PROBS(n, ans) \
-    size_t ans; \
+    int ans; \
     epiworld_double p_total = m->runif(); \
-    for (ans = 0u; ans < n; ++ans) \
+    for (ans = 0; ans < static_cast<int>(n); ans++) \
     { \
         if (p_total < m->array_double_tmp[ans]) \
             break; \
         m->array_double_tmp[ans + 1] += m->array_double_tmp[ans]; \
-    }
+    };
 
 /**
  * @file measlesmixingriskquarantine.hpp
@@ -362,6 +362,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_model(
 )
 {
     GET_MODEL(m, model);
+    model->events_run();
     model->m_quarantine_process();
     model->events_run();
     model->m_update_infectious_list();
@@ -645,16 +646,16 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     {
         p->change_state(m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
     }
-    else if (which != 0)
-    {
-        throw std::logic_error("The roulette returned an unexpected value.");
-    }
-    else if ((which == 0u) && detected)
+    else if ((which == 0) && detected)
     {
         // If the agent is not hospitalized or recovered, then it is moved to
         // isolation.
         p->change_state(m, ISOLATED);
         model->day_flagged[p->get_id()] = m->today();
+    }
+    else if (which != 0)
+    {
+        throw std::logic_error("The roulette returned an unexpected value.");
     }
     
     return ;
@@ -1481,5 +1482,8 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
     return *this;
 
 }
+
+#undef SAMPLE_FROM_PROBS
+#undef GET_MODEL
 
 #endif

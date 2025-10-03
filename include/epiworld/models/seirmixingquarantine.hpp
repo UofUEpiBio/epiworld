@@ -1222,4 +1222,5 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 }
 #undef MM
 #undef GET_MODEL
+#undef SAMPLE_FROM_PROBS
 #endif
