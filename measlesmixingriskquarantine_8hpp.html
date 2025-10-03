@@ -166,14 +166,14 @@ Macros</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">    <span class="keywordtype">size_t</span> ans; \</div>
+<b>Value:</b><div class="fragment"><div class="line">    <span class="keywordtype">int</span> ans; \</div>
 <div class="line">    epiworld_double p_total = m-&gt;runif(); \</div>
-<div class="line">    for (ans = 0u; ans &lt; n; ++ans) \</div>
+<div class="line">    for (ans = 0; ans &lt; static_cast&lt;int&gt;(n); ans++) \</div>
 <div class="line">    { \</div>
 <div class="line">        if (p_total &lt; m-&gt;array_double_tmp[ans]) \</div>
 <div class="line">            break; \</div>
 <div class="line">        m-&gt;array_double_tmp[ans + 1] += m-&gt;array_double_tmp[ans]; \</div>
-<div class="line">    }</div>
+<div class="line">    };</div>
 </div><!-- fragment -->
 <p>Macro to sample from a list of probabilities. </p>
 <dl class="section return"><dt>Returns</dt><dd>The index of the sampled probability; and the total length if none is found, returns n. </dd></dl>
