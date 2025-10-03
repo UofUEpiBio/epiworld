@@ -42,4 +42,5 @@
 #include "20a-measles-mixing-risk-quarantine-basic.cpp"
 #include "20b-measles-mixing-risk-quarantine-transitions.cpp"
 #include "20d-measles-mixing-risk-quarantine-durations.cpp"
-#include "21-rewire-degseq.cpp"
+#include "21a-rewire-degseq.cpp"
+#include "21b-rewire-degseq.cpp"

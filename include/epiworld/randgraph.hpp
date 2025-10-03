@@ -107,6 +107,18 @@ inline void rewire_degseq(
         size_t neighbor_id_01 = neighbors_p0[id01]->get_id();
         size_t neighbor_id_11 = neighbors_p1[id11]->get_id();
 
+        // Check if the swap would create self-loops or invalid configurations
+        // After swap: p0 will be connected to neighbor_id_11, p1 to neighbor_id_01
+        // Skip if:
+        // 1. neighbor_id_01 == neighbor_id_11 (swapping the same neighbor)
+        // 2. neighbor_id_01 == non_isolates[id1] (p1's new neighbor would be p1 itself)
+        // 3. neighbor_id_11 == non_isolates[id0] (p0's new neighbor would be p0 itself)
+        if (neighbor_id_01 == neighbor_id_11 ||
+            neighbor_id_01 == non_isolates[id1] ||
+            neighbor_id_11 == non_isolates[id0]) {
+            continue;
+        }
+
         // Check if the swap would create duplicate edges
         // After swap: p0 will be connected to neighbor_id_11, p1 to neighbor_id_01
         bool would_create_duplicate = false;
@@ -276,9 +288,21 @@ inline void rewire_degseq(
         // When rewiring, we need to actually swap the edges, not just the weights
         // We'll swap edges: (id0, id01) <-> (id1, id11)
         // After swap: (id0, id11) and (id1, id01)
-        // But first, check if the swap would create duplicate edges
+        // But first, check if the swap would create duplicate or self-loop edges
+        
+        // Check for self-loops (new edge would connect node to itself)
+        if (id01 == non_isolates[id1] || id11 == non_isolates[id0]) {
+            continue;
+        }
+        
+        // Check for duplicate edges (new edge already exists)
         if (p0.find(id11) != p0.end() || p1.find(id01) != p1.end()) {
             continue; // Skip this rewire attempt to avoid duplicate edges
+        }
+        
+        // Check if we're trying to swap the same neighbor
+        if (id01 == id11) {
+            continue;
         }
         
         // Save the weights before removing edges
