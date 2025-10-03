@@ -76,20 +76,20 @@ private:
 
 public:
 
-    static const epiworld_fast_uint SUSCEPTIBLE             = 0u;
-    static const epiworld_fast_uint EXPOSED                 = 1u;
-    static const epiworld_fast_uint PRODROMAL               = 2u;
-    static const epiworld_fast_uint RASH                    = 3u;
-    static const epiworld_fast_uint ISOLATED                = 4u;
-    static const epiworld_fast_uint ISOLATED_RECOVERED      = 5u;
-    static const epiworld_fast_uint DETECTED_HOSPITALIZED   = 6u;
-    static const epiworld_fast_uint QUARANTINED_EXPOSED     = 7u;
-    static const epiworld_fast_uint QUARANTINED_SUSCEPTIBLE = 8u;
-    static const epiworld_fast_uint QUARANTINED_PRODROMAL   = 9u;
-    static const epiworld_fast_uint QUARANTINED_RECOVERED   = 10u;
-    static const epiworld_fast_uint HOSPITALIZED            = 11u;
-    static const epiworld_fast_uint RECOVERED               = 12u;
-
+    static constexpr epiworld_fast_uint SUSCEPTIBLE             = 0u;
+    static constexpr epiworld_fast_uint EXPOSED                 = 1u;
+    static constexpr epiworld_fast_uint PRODROMAL               = 2u;
+    static constexpr epiworld_fast_uint RASH                    = 3u;
+    static constexpr epiworld_fast_uint ISOLATED                = 4u;
+    static constexpr epiworld_fast_uint ISOLATED_RECOVERED      = 5u;
+    static constexpr epiworld_fast_uint DETECTED_HOSPITALIZED   = 6u;
+    static constexpr epiworld_fast_uint QUARANTINED_EXPOSED     = 7u;
+    static constexpr epiworld_fast_uint QUARANTINED_SUSCEPTIBLE = 8u;
+    static constexpr epiworld_fast_uint QUARANTINED_PRODROMAL   = 9u;
+    static constexpr epiworld_fast_uint QUARANTINED_RECOVERED   = 10u;
+    static constexpr epiworld_fast_uint HOSPITALIZED            = 11u;
+    static constexpr epiworld_fast_uint RECOVERED               = 12u;
+    
     // Default constructor
     ModelMeaslesSchool() {};
 
