@@ -184,7 +184,7 @@ inline void rewire_degseq(
         _degree0[i] = agents->get_dat()[i].size();
     #endif
     
-    std::vector< epiworld_fast_uint > non_isolates;
+    std::vector< int > non_isolates;
     non_isolates.reserve(nties.size());
 
     std::vector< epiworld_double > weights;
