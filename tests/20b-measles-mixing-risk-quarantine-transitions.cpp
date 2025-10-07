@@ -54,9 +54,9 @@ EPIWORLD_TEST_CASE(
 
     // Run multiple simulations to get transition matrix
     std::vector<std::vector<epiworld_double>> transitions(nsims);
-    std::vector<epiworld_double> R0s(nsims * 50, -1.0);
-    
-    auto saver = tests_create_saver(transitions, R0s, 50);
+    std::vector<epiworld_double> R0s(nsims * 10, -1.0);
+
+    auto saver = tests_create_saver(transitions, R0s, 10);
     model.run_multiple(60, nsims, 123, saver, true, true, 4);
 
     // Briefly printing the model
