@@ -18,12 +18,11 @@ EPIWORLD_TEST_CASE(
     std::vector<double> contact_matrix(9u, 1.0/3.0);
     
     epimodels::ModelMeaslesMixingRiskQuarantine<> model(
-        n,         // Number of agents
-        1.0/300.0,   // Initial prevalence (higher for testing)
+        n,           // Number of agents
+        0.1 ,        // Initial prevalence
         2.0,         // Contact rate
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
-        0.3,         // Vaccination reduction recovery rate
         7.0,         // Incubation period
         4.0,         // Prodromal period
         5.0,         // Rash period
@@ -109,8 +108,62 @@ EPIWORLD_TEST_CASE(
     std::cout << "Transition from Hospitalized to Recovered: " <<
         mat(11, 12) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
+        
+    // Some transitions should be zero. Building a vector of the transitions
+    // we expect not to be zero, so the rest should be zero.
+    std::set< std::pair<size_t, size_t> > non_zero_transitions = {
+        // From exposed
+        {0, 0}, {0, 1}, {0, 7}, {0, 8},
+        // From Exposed
+        {1, 1}, {1, 2}, {1, 7}, {1, 9},
+        // From Prodromal
+        {2, 2}, {2, 3}, {2, 4}, {2, 9},
+        // From Rash
+        {3, 3}, {3, 4}, {3, 5}, {3, 6}, {3, 11}, {3, 12},
+        // From isolated
+        {4, 4}, {4, 5}, {4, 6}, {4, 11}, {4, 12}, {4, 3},
+        // From isolated recovered
+        {5, 5}, {5, 12},
+        // From detected hospitalized
+        {6, 6}, {6, 11}, {6, 12},
+        // From quarantined exposed
+        {7, 7}, {7, 1}, {7, 2}, {7, 9}, 
+        // From quarantined susceptible
+        {8, 8}, {8, 0},
+        // From quarantined prodromal
+        {9, 9}, {9, 2}, {9, 3}, {9, 4},
+        // From quarantined recovered
+        {10, 10}, {10, 12},
+        // From hospitalized
+        {11, 11}, {11, 12},
+        // From recovered
+        {12, 12}
+    };
+
+    auto nstates = model.get_n_states();
+    size_t n_nonzero_that_should_be_zero = 0u;
+    std::set< std::pair<size_t, size_t> > found_nonzero_that_should_be_zero;
+    for (size_t i = 0; i < nstates; ++i)
+    {
+        for (size_t j = 0; j < nstates; ++j)
+        {
+            // Finding transition
+            if (non_zero_transitions.find({i, j}) == non_zero_transitions.end())
+            {
+                if (mat(i, j) > 1e-10)
+                {
+                    n_nonzero_that_should_be_zero++;
+                    found_nonzero_that_should_be_zero.insert({i, j});
+                }
+            }
+        }
+    }
 
     #ifdef CATCH_CONFIG_MAIN
+
+    // Validating zero transitions  
+    REQUIRE(n_nonzero_that_should_be_zero == 0u);
+
     // Validate core disease progression  
     REQUIRE_FALSE(
         moreless(mat(1, 2) + mat(1, 9), 1.0/model("Incubation period"), 0.1)

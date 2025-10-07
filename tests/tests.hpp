@@ -94,10 +94,26 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
         transitions[n] = m->get_db().get_transition_probability(false, false);
 
         // Recording the R0 from the index case
-        auto rts = m->get_db().get_reproductive_number();      
-        for (int i = 0; i < n_seeds; ++i)
-            R0s[n_seeds * n + i] = static_cast<epiworld_double>(rts[{0, i, 0}]);
-    
+        auto rts = m->get_db().get_reproductive_number();
+        int i = 0;
+        for (auto & rt: rts) {
+            if (
+                // Cannot be the model (the source)
+                (rt.first[1] >= 0) &&
+                // The exposure date is zero
+                (rt.first[2] == 0)
+            )
+                R0s[n_seeds * n + i++] = static_cast<epiworld_double>(rt.second);
+        }
+
+        if (i != n_seeds) {
+            throw std::runtime_error(
+                "The number of seeds (" + std::to_string(n_seeds) +
+                ") does not match the number of index cases (" +
+                std::to_string(i) + ")."
+            );
+        }
+        
         // Should we get the final distribution?
         if (final_distribution == nullptr)
             return;
@@ -114,7 +130,8 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
  * 
  * This can be used to check the final outbreak sizes
  * after running a model with multiple simulations.
- * @param final_distribution The final distribution of the model.
+ * @param final_distribution The final distribution of the model. As generated
+ * by the `tests_create_saver` function.
  * @param not_infected_states The states that are considered "not infected".
  * @param nsims The number of simulations.
  * @return A vector containing the final outbreak sizes for each simulation.
@@ -126,7 +143,7 @@ inline std::vector< double > test_compute_final_sizes(
     bool print = true
 ) {
 
-        // Looking at the final outbreak size
+    // Looking at the final outbreak size
     std::vector< double > outbreak_sizes(nsims, 0.0);
     size_t n_states = final_distribution[0].size();
     for (size_t i = 0; i < nsims; ++i)
@@ -184,8 +201,8 @@ inline std::vector< double > test_compute_final_sizes(
 template<typename ModelType>
 inline std::vector<epiworld_double> tests_calculate_avg_transitions(
     const std::vector<std::vector<epiworld_double>>& transitions,
-    const ModelType & model)
-{
+    const ModelType & model
+) {
     if (transitions.empty())
         return {};
         

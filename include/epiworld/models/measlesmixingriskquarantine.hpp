@@ -144,28 +144,28 @@ private:
 
 public:
 
-    static constexpr int SUSCEPTIBLE              = 0;
-    static constexpr int EXPOSED                  = 1;
-    static constexpr int PRODROMAL                = 2;
-    static constexpr int RASH                     = 3;
-    static constexpr int ISOLATED                 = 4;
-    static constexpr int ISOLATED_RECOVERED       = 5;
-    static constexpr int DETECTED_HOSPITALIZED    = 6;
-    static constexpr int QUARANTINED_EXPOSED      = 7;
-    static constexpr int QUARANTINED_SUSCEPTIBLE  = 8;
-    static constexpr int QUARANTINED_PRODROMAL    = 9;
-    static constexpr int QUARANTINED_RECOVERED    = 10;
-    static constexpr int HOSPITALIZED             = 11;
-    static constexpr int RECOVERED                = 12;
+    static constexpr int SUSCEPTIBLE             = 0;
+    static constexpr int EXPOSED                 = 1;
+    static constexpr int PRODROMAL               = 2;
+    static constexpr int RASH                    = 3;
+    static constexpr int ISOLATED                = 4;
+    static constexpr int ISOLATED_RECOVERED      = 5;
+    static constexpr int DETECTED_HOSPITALIZED   = 6;
+    static constexpr int QUARANTINED_EXPOSED     = 7;
+    static constexpr int QUARANTINED_SUSCEPTIBLE = 8;
+    static constexpr int QUARANTINED_PRODROMAL   = 9;
+    static constexpr int QUARANTINED_RECOVERED   = 10;
+    static constexpr int HOSPITALIZED            = 11;
+    static constexpr int RECOVERED               = 12;
 
     static constexpr size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static constexpr size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
     static constexpr size_t QUARANTINE_PROCESS_DONE     = 2u;
 
     // Risk levels for quarantine
-    static constexpr int RISK_LOW                 = 0;
-    static constexpr int RISK_MEDIUM              = 1;
-    static constexpr int RISK_HIGH                = 2;
+    static constexpr int RISK_LOW    = 0;
+    static constexpr int RISK_MEDIUM = 1;
+    static constexpr int RISK_HIGH   = 2;
 
     ModelMeaslesMixingRiskQuarantine() {};
     
@@ -178,7 +178,6 @@ public:
      * @param contact_rate The contact rate between entities in the model.
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param vax_efficacy The efficacy of the vaccine.
-     * @param vax_reduction_recovery_rate The reduction in recovery rate due to the vaccine.
      * @param incubation_period The incubation period of the disease in the model.
      * @param prodromal_period The prodromal period of the disease in the model.
      * @param rash_period The rash period of the disease in the model.
@@ -205,7 +204,6 @@ public:
         epiworld_double contact_rate,
         epiworld_double transmission_rate,
         epiworld_double vax_efficacy,
-        epiworld_double vax_reduction_recovery_rate,
         epiworld_double incubation_period,
         epiworld_double prodromal_period,
         epiworld_double rash_period,
@@ -234,7 +232,6 @@ public:
      * @param contact_rate The contact rate between entities in the model.
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param vax_efficacy The efficacy of the vaccine.
-     * @param vax_reduction_recovery_rate The reduction in recovery rate due to the vaccine.
      * @param incubation_period The incubation period of the disease in the model.
      * @param prodromal_period The prodromal period of the disease in the model.
      * @param rash_period The rash period of the disease in the model.
@@ -259,7 +256,6 @@ public:
         epiworld_double contact_rate,
         epiworld_double transmission_rate,
         epiworld_double vax_efficacy,
-        epiworld_double vax_reduction_recovery_rate,
         epiworld_double incubation_period,
         epiworld_double prodromal_period,
         epiworld_double rash_period,
@@ -1130,34 +1126,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     return;
 }
 
-/**
- * @brief Template for a Measles model with population mixing and risk-based quarantine
- * 
- * @param model A ModelMeaslesMixingRiskQuarantine<TSeq> object where to set up the model.
- * @param n Number of agents in the population
- * @param prevalence Initial prevalence (proportion of infected individuals)
- * @param contact_rate Average number of contacts (interactions) per step
- * @param transmission_rate Probability of transmission per contact
- * @param vax_efficacy The efficacy of the vaccine
- * @param vax_reduction_recovery_rate The reduction in recovery rate due to the vaccine
- * @param incubation_period Average incubation period in days
- * @param prodromal_period Average prodromal period in days
- * @param rash_period Average rash period in days
- * @param contact_matrix Contact matrix specifying mixing patterns between population groups
- * @param hospitalization_rate Rate at which infected individuals are hospitalized
- * @param hospitalization_period Average duration of hospitalization in days
- * @param days_undetected Average number of days an infected individual remains undetected
- * @param quarantine_period_high Duration of quarantine in days for high-risk contacts
- * @param quarantine_period_medium Duration of quarantine in days for medium-risk contacts
- * @param quarantine_period_low Duration of quarantine in days for low-risk contacts
- * @param quarantine_willingness Proportion of individuals willing to comply with quarantine
- * @param isolation_willingness Proportion of individuals willing to self-isolate when detected
- * @param isolation_period Duration of isolation in days for detected infected individuals
- * @param prop_vaccinated Proportion of vaccinated agents
- * @param detection_rate_quarantine Detection rate during active quarantine periods
- * @param contact_tracing_success_rate Probability of successfully identifying contacts during tracing
- * @param contact_tracing_days_prior Number of days prior to detection for contact tracing
- */
 template<typename TSeq>
 inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     ModelMeaslesMixingRiskQuarantine<TSeq> & model,
@@ -1166,7 +1134,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     epiworld_double contact_rate,
     epiworld_double transmission_rate,
     epiworld_double vax_efficacy,
-    epiworld_double vax_reduction_recovery_rate,
     epiworld_double incubation_period,
     epiworld_double prodromal_period,
     epiworld_double rash_period,
@@ -1219,7 +1186,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     );
     model.add_param(prop_vaccinated, "Vaccination rate");
     model.add_param(vax_efficacy, "Vax efficacy");
-    model.add_param(vax_reduction_recovery_rate, "Vax improved recovery");
     
     // state
     model.add_state("Susceptible", m_update_susceptible);
@@ -1257,7 +1223,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     // Designing the vaccine
     Tool<> vaccine("Vaccine");
     vaccine.set_susceptibility_reduction(&model("Vax efficacy"));
-    vaccine.set_recovery_enhancer(&model("Vax improved recovery"));
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );
@@ -1282,7 +1247,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     epiworld_double contact_rate,
     epiworld_double transmission_rate,
     epiworld_double vax_efficacy,
-    epiworld_double vax_reduction_recovery_rate,
     epiworld_double incubation_period,
     epiworld_double prodromal_period,
     epiworld_double rash_period,
@@ -1313,7 +1277,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
         contact_rate,
         transmission_rate,
         vax_efficacy,
-        vax_reduction_recovery_rate,
         incubation_period,
         prodromal_period,
         rash_period,
