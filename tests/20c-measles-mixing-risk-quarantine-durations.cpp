@@ -37,7 +37,7 @@ inline auto test_model_builder_20d(
         0.1,            // Initial prevalence
         c_rate,         // Contact rate
         p_infect,       // Transmission rate
-        0.9,            // Vaccination efficacy
+        0.95,            // Vaccination efficacy
         7.0,            // Incubation period
         4.0,            // Prodromal period
         5.0,            // Rash period
@@ -51,9 +51,9 @@ inline auto test_model_builder_20d(
         .9,             // Quarantine willingness
         .9,             // Isolation willingness
         4,              // Isolation period
-        0.0,            // Proportion vaccinated
-        0.1,            // Detection rate during quarantine
-        1.0,            // Contact tracing success rate
+        0.5,            // Proportion vaccinated
+        0.9,            // Detection rate during quarantine
+        0.9,            // Contact tracing success rate
         4u              // Contact tracing days prior
     );
 
@@ -78,6 +78,7 @@ EPIWORLD_TEST_CASE(
     // Contact matrix for 3 groups with equal mixing
     int nsims = 400;
     size_t n  = 600;
+    double n_seeds = 1.0;
     std::vector<double> contact_matrix(9u, 1.0/3.0);
 
     auto model_uniform = test_model_builder_20d(n, {21, 21, 21});
@@ -86,19 +87,19 @@ EPIWORLD_TEST_CASE(
 
     // Run simulations
     std::vector<std::vector<epiworld_double>> transitions_uniform(nsims);
-    std::vector<epiworld_double> R0s_uniform(nsims * 10, -1.0);
+    std::vector<epiworld_double> R0s_uniform(nsims * n_seeds, -1.0);
     std::vector< std::vector< int > > final_distribution_uniform(nsims);
     
     std::vector<std::vector<epiworld_double>> transitions_varied(nsims);
-    std::vector<epiworld_double> R0s_varied(nsims * 10, -1.0);
+    std::vector<epiworld_double> R0s_varied(nsims * n_seeds, -1.0);
     std::vector< std::vector< int > > final_distribution_varied(nsims);
 
     auto saver_uniform = tests_create_saver(
-        transitions_uniform, R0s_uniform, 1,
+        transitions_uniform, R0s_uniform, static_cast<int>(n_seeds),
         &final_distribution_uniform
     );
     auto saver_varied = tests_create_saver(
-        transitions_varied, R0s_varied, 1,
+        transitions_varied, R0s_varied, static_cast<int>(n_seeds),
         &final_distribution_varied
     );
 

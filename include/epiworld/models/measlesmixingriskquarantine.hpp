@@ -4,7 +4,7 @@
 using namespace epiworld;
 
 #define MM(i, j, n) \
-    j * n + i
+    (j * n + i)
 
 #if __cplusplus >= 202302L
     // C++23 or later
@@ -19,6 +19,19 @@ using namespace epiworld;
         auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
         assert((output) != nullptr); // Use assert for runtime checks
 #endif
+
+
+// Get the appropriate quarantine period based on risk level
+#define PARSE_QUARANTINE_PERIOD(model, var_q_period, var_risk) \
+    epiworld_double var_q_period; \
+    auto var_risk = model->quarantine_risk_level[p->get_id()]; \
+    if (var_risk == RISK_HIGH) { \
+        var_q_period = m->par("Quarantine period high"); \
+    } else if (var_risk == RISK_MEDIUM) { \
+        var_q_period = m->par("Quarantine period medium"); \
+    } else { \
+        var_q_period = m->par("Quarantine period low"); \
+    }
 
 /**
  * @brief Macro to sample from a list of probabilities
@@ -358,10 +371,14 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_model(
 )
 {
     GET_MODEL(m, model);
-    model->events_run();
+
+    // This will move agents between states
     model->m_quarantine_process();
-    model->events_run();
+
+    // Updating the list of infectious agents. This is needed
+    // for the transmission dynamics.
     model->m_update_infectious_list();
+
     return;
 }
 
@@ -576,7 +593,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_exposed(
     if (m->runif() < 1.0/(v->get_incubation(m)))
     {
         p->change_state(m, PRODROMAL);
-        return;
     }
 
 }
@@ -595,12 +611,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
     if (m->runif() < 1.0/m->par("Prodromal period"))
     {
         model->day_rash_onset[p->get_id()] = m->today();
-        if (detect_it)
-        {
-            p->change_state(m, ISOLATED);
-        } else {
-            p->change_state(m, RASH);
-        }
+        p->change_state(m, detect_it ? ISOLATED : RASH);
+        
     } else if (detect_it)
     {
         p->change_state(m, QUARANTINED_PRODROMAL);
@@ -684,12 +696,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     // Recovers
     if (which == 2u)
     {
-        if (unisolate)
-        {
-            p->rm_virus(m, RECOVERED);
-        }
-        else
-            p->rm_virus(m, ISOLATED_RECOVERED);
+        p->rm_virus(m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
     }
     // Moves to hospitalized
     else if (which == 1u)
@@ -731,16 +738,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
     GET_MODEL(m, model);
 
     // Get the appropriate quarantine period based on risk level
-    epiworld_double quarantine_period;
-    auto risk_level = model->quarantine_risk_level[p->get_id()];
-
-    if (risk_level == RISK_HIGH) {
-        quarantine_period = m->par("Quarantine period high");
-    } else if (risk_level == RISK_MEDIUM) {
-        quarantine_period = m->par("Quarantine period medium");
-    } else {
-        quarantine_period = m->par("Quarantine period low");
-    }
+    PARSE_QUARANTINE_PERIOD(model, quarantine_period, risk_level);
 
     // Figuring out if the agent can be released from quarantine
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -759,16 +757,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_exposed(
     GET_MODEL(m, model);
 
     // Get the appropriate quarantine period based on risk level
-    epiworld_double quarantine_period;
-    int risk_level = model->quarantine_risk_level[p->get_id()];
-    
-    if (risk_level == RISK_HIGH) {
-        quarantine_period = m->par("Quarantine period high");
-    } else if (risk_level == RISK_MEDIUM) {
-        quarantine_period = m->par("Quarantine period medium");
-    } else {
-        quarantine_period = m->par("Quarantine period low");
-    }
+    PARSE_QUARANTINE_PERIOD(model, quarantine_period, risk_level);
 
     // Figuring out if the agent can be released from quarantine
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -778,14 +767,12 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_exposed(
     {
 
         // If the agent is unquarantined, it becomes prodromal
-        if (quarantine_period <= days_since)
-        {
-            p->change_state(m, PRODROMAL);
-        }
-        else
-        {
-            p->change_state(m, QUARANTINED_PRODROMAL);
-        }
+        p->change_state(
+            m,
+            (quarantine_period <= days_since) ?
+            PRODROMAL : QUARANTINED_PRODROMAL
+        );
+        
 
     }
     else if (quarantine_period <= days_since)
@@ -804,16 +791,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodroma
     GET_MODEL(m, model);
 
     // Get the appropriate quarantine period based on risk level
-    epiworld_double quarantine_period;
-    int risk_level = model->quarantine_risk_level[p->get_id()];
-    
-    if (risk_level == RISK_HIGH) {
-        quarantine_period = m->par("Quarantine period high");
-    } else if (risk_level == RISK_MEDIUM) {
-        quarantine_period = m->par("Quarantine period medium");
-    } else {
-        quarantine_period = m->par("Quarantine period low");
-    }
+    PARSE_QUARANTINE_PERIOD(model, quarantine_period, risk_level);
 
     // Figuring out if the agent can be released from quarantine
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -841,16 +819,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_recovere
     GET_MODEL(m, model);
 
     // Get the appropriate quarantine period based on risk level
-    epiworld_double quarantine_period;
-    int risk_level = model->quarantine_risk_level[p->get_id()];
-    
-    if (risk_level == RISK_HIGH) {
-        quarantine_period = m->par("Quarantine period high");
-    } else if (risk_level == RISK_MEDIUM) {
-        quarantine_period = m->par("Quarantine period medium");
-    } else {
-        quarantine_period = m->par("Quarantine period low");
-    }
+    PARSE_QUARANTINE_PERIOD(model, quarantine_period, risk_level);
 
     // Figuring out if the agent can be released from quarantine
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -1037,24 +1006,24 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
             if (quarantine_willingness[contact_id] && quarantine_enabled)
             {
 
-                switch (agent.get_state())
+                switch (contact.get_state())
                 {
                     case SUSCEPTIBLE:
-                        agent.change_state(this, QUARANTINED_SUSCEPTIBLE);
+                        contact.change_state(this, QUARANTINED_SUSCEPTIBLE);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case EXPOSED:
-                        agent.change_state(this, QUARANTINED_EXPOSED);
+                        contact.change_state(this, QUARANTINED_EXPOSED);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case PRODROMAL:
-                        agent.change_state(this, QUARANTINED_PRODROMAL);
+                        contact.change_state(this, QUARANTINED_PRODROMAL);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case RASH:
                         if (isolation_willingness[contact_id])
                         {
-                            agent.change_state(this, ISOLATED);
+                            contact.change_state(this, ISOLATED);
                             day_flagged[contact_id] = Model<TSeq>::today();
                         }
                         break;
@@ -1122,6 +1091,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         }
 
     }
+
+    // Applying the changes
+    Model<TSeq>::events_run();
 
     return;
 }
@@ -1265,12 +1237,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     epiworld_double detection_rate_quarantine,
     epiworld_double contact_tracing_success_rate,
     epiworld_fast_uint contact_tracing_days_prior
-    )
-{   
-
-    this->contact_matrix = contact_matrix;
-
-    ModelMeaslesMixingRiskQuarantine(
+    ) : ModelMeaslesMixingRiskQuarantine<TSeq>(
         *this,
         n,
         prevalence,
@@ -1295,11 +1262,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
         detection_rate_quarantine,
         contact_tracing_success_rate,
         contact_tracing_days_prior
-    );
-
-    return;
-
-}
+    ) {};
 
 template<typename TSeq>
 inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine<TSeq>::run(
@@ -1446,6 +1409,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
 
 }
 
+#undef PARSE_QUARANTINE_PERIOD
 #undef SAMPLE_FROM_PROBS
 #undef GET_MODEL
 
