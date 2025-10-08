@@ -305,7 +305,7 @@
   \item {GET\_MODEL}
     \subitem {measlesmixing.hpp}, \hyperpage{293}
     \subitem {measlesmixingriskquarantine.hpp}, \hyperpage{295}
-    \subitem {seirmixingquarantine.hpp}, \hyperpage{296}
+    \subitem {seirmixingquarantine.hpp}, \hyperpage{297}
   \item {get\_n\_infected}
     \subitem {epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}, 
 		\hyperpage{224}
@@ -406,6 +406,7 @@
     \subitem {SAMPLE\_FROM\_PROBS}, \hyperpage{294}
   \item {measlesmixingriskquarantine.hpp}
     \subitem {GET\_MODEL}, \hyperpage{295}
+    \subitem {PARSE\_QUARANTINE\_PERIOD}, \hyperpage{295}
     \subitem {SAMPLE\_FROM\_PROBS}, \hyperpage{295}
   \item {Model$<$ TSeq $>$}, \hyperpage{108}
     \subitem {add\_globalevent}, \hyperpage{117}
@@ -587,6 +588,8 @@
 
   \indexspace
 
+  \item {PARSE\_QUARANTINE\_PERIOD}
+    \subitem {measlesmixingriskquarantine.hpp}, \hyperpage{295}
   \item {PersonTools$<$ TSeq $>$}, \hyperpage{266}
   \item {Progress}, \hyperpage{266}
 
@@ -694,7 +697,7 @@
     \subitem {sample\_virus\_single}, \hyperpage{49}
   \item {SAMPLETYPE}, \hyperpage{269}
   \item {seirmixingquarantine.hpp}
-    \subitem {GET\_MODEL}, \hyperpage{296}
+    \subitem {GET\_MODEL}, \hyperpage{297}
     \subitem {SAMPLE\_FROM\_PROBS}, \hyperpage{297}
   \item {set\_agents\_data}
     \subitem {epiworld::Model$<$ TSeq $>$}, \hyperpage{104}

@@ -565,10 +565,12 @@
 \indexentry{include/epiworld/models/measlesmixingriskquarantine.hpp@{include/epiworld/models/measlesmixingriskquarantine.hpp}|hyperpage}{294}
 \indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{295}
 \indexentry{GET\_MODEL@{GET\_MODEL}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{295}
+\indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!PARSE\_QUARANTINE\_PERIOD@{PARSE\_QUARANTINE\_PERIOD}|hyperpage}{295}
+\indexentry{PARSE\_QUARANTINE\_PERIOD@{PARSE\_QUARANTINE\_PERIOD}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{295}
 \indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{295}
 \indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{295}
 \indexentry{include/epiworld/models/seirmixingquarantine.hpp@{include/epiworld/models/seirmixingquarantine.hpp}|hyperpage}{296}
-\indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{296}
-\indexentry{GET\_MODEL@{GET\_MODEL}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{296}
+\indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{297}
+\indexentry{GET\_MODEL@{GET\_MODEL}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{297}
 \indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{297}
 \indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{297}

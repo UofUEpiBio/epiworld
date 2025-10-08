@@ -573,10 +573,11 @@
 \contentsline {subsection}{\numberline {18.3.1}Detailed Description}{295}{subsection.18.3.1}%
 \contentsline {subsection}{\numberline {18.3.2}Macro Definition Documentation}{295}{subsection.18.3.2}%
 \contentsline {subsubsection}{\numberline {18.3.2.1}GET\_MODEL}{295}{subsubsection.18.3.2.1}%
-\contentsline {subsubsection}{\numberline {18.3.2.2}SAMPLE\_FROM\_PROBS}{295}{subsubsection.18.3.2.2}%
+\contentsline {subsubsection}{\numberline {18.3.2.2}PARSE\_QUARANTINE\_PERIOD}{295}{subsubsection.18.3.2.2}%
+\contentsline {subsubsection}{\numberline {18.3.2.3}SAMPLE\_FROM\_PROBS}{296}{subsubsection.18.3.2.3}%
 \contentsline {section}{\numberline {18.4}include/epiworld/models/seirmixingquarantine.hpp File Reference}{296}{section.18.4}%
-\contentsline {subsection}{\numberline {18.4.1}Detailed Description}{296}{subsection.18.4.1}%
-\contentsline {subsection}{\numberline {18.4.2}Macro Definition Documentation}{296}{subsection.18.4.2}%
+\contentsline {subsection}{\numberline {18.4.1}Detailed Description}{297}{subsection.18.4.1}%
+\contentsline {subsection}{\numberline {18.4.2}Macro Definition Documentation}{297}{subsection.18.4.2}%
 \contentsline {subsubsection}{\numberline {18.4.2.1}GET\_MODEL}{297}{subsubsection.18.4.2.1}%
 \contentsline {subsubsection}{\numberline {18.4.2.2}SAMPLE\_FROM\_PROBS}{297}{subsubsection.18.4.2.2}%
 \contentsline {chapter}{Index}{299}{section*.363}%
