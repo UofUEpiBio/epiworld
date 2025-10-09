@@ -22,11 +22,15 @@ inline auto test_model_builder_20d(
 {
 
     // More contact within groups
-    std::vector<double> contact_matrix = {
-        .8, .1, .1,
-        .1, .8, .1,
-        .1, .1, .8
-    };
+    // According to Toth and others, 83% of contacts are within the same class
+    // (for school-aged children). 17% are with other classes.
+    // double seventeen = .17 / 2.0;
+    // std::vector<double> contact_matrix = {
+    //     .83, seventeen, seventeen,
+    //     seventeen, .83, seventeen,
+    //     seventeen, seventeen, .83
+    // };
+    std::vector<double> contact_matrix(9u, 1.0/3.0);
 
     double R0       = 4.0;
     double c_rate   = 10.0;
@@ -54,7 +58,7 @@ inline auto test_model_builder_20d(
         0.5,            // Proportion vaccinated
         0.9,            // Detection rate during quarantine
         0.9,            // Contact tracing success rate
-        4u              // Contact tracing days prior
+        7u            // Contact tracing days prior
     );
 
     model.add_entity(Entity<>("Population", dist_factory<>(0, n/3 - 1)));
@@ -76,14 +80,13 @@ EPIWORLD_TEST_CASE(
 ) {
 
     // Contact matrix for 3 groups with equal mixing
-    int nsims = 400;
+    int nsims = 1000;
     size_t n  = 600;
     double n_seeds = 1.0;
     std::vector<double> contact_matrix(9u, 1.0/3.0);
 
     auto model_uniform = test_model_builder_20d(n, {21, 21, 21});
-    auto model_varied  = test_model_builder_20d(n, {21, 14, 7});
-    
+    auto model_varied  = test_model_builder_20d(n, {21, 21, 21});
 
     // Run simulations
     std::vector<std::vector<epiworld_double>> transitions_uniform(nsims);
@@ -104,7 +107,7 @@ EPIWORLD_TEST_CASE(
     );
 
     model_uniform.run_multiple(60, nsims, 123, saver_uniform, true, true, N_THREADS);
-    model_varied.run_multiple(60, nsims, 456, saver_varied, true, true, N_THREADS);
+    model_varied.run_multiple(60, nsims, 123, saver_varied, true, true, N_THREADS);
 
     // Computing the mean R0 and 95% CI
     auto sizes_uniform = test_compute_final_sizes(
