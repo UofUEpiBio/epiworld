@@ -52,7 +52,9 @@ std\+::vector$<$ double $>$ \mbox{\hyperlink{class_model_measles_mixing_risk_qua
 std\+::vector$<$ bool $>$ \mbox{\hyperlink{class_model_measles_mixing_risk_quarantine_a8fd195e45ff78226de053ef90e0770f1}{get\+\_\+quarantine\+\_\+willingness}} () const
 \begin{DoxyCompactList}\small\item\em Get the quarantine willingness for all agents. \end{DoxyCompactList}\item 
 std\+::vector$<$ bool $>$ \mbox{\hyperlink{class_model_measles_mixing_risk_quarantine_aa8dd3d212f01cb23ec2ed11ca8126416}{get\+\_\+isolation\+\_\+willingness}} () const
-\begin{DoxyCompactList}\small\item\em Get the isolation willingness for all agents. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Get the isolation willingness for all agents. \end{DoxyCompactList}\item 
+const std\+::vector$<$ int $>$ \& \mbox{\hyperlink{class_model_measles_mixing_risk_quarantine_aba8c7e8c00a9a09115f820cc669575ea}{get\+\_\+quarantine\+\_\+risk\+\_\+level}} () const
+\begin{DoxyCompactList}\small\item\em Get the risk level assigned to each agent for quarantine purposes. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \doxysubsection*{Static Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
@@ -310,6 +312,20 @@ Get the isolation willingness for all agents.
 
 \begin{DoxyReturn}{Returns}
 Vector of boolean values indicating each agent\textquotesingle{}s willingness to self-\/isolate 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_model_measles_mixing_risk_quarantine_aba8c7e8c00a9a09115f820cc669575ea}\label{class_model_measles_mixing_risk_quarantine_aba8c7e8c00a9a09115f820cc669575ea}} 
+\index{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!get\_quarantine\_risk\_level@{get\_quarantine\_risk\_level}}
+\index{get\_quarantine\_risk\_level@{get\_quarantine\_risk\_level}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_quarantine\_risk\_level()}{get\_quarantine\_risk\_level()}}
+{\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
+const std\+::vector$<$ int $>$\& \mbox{\hyperlink{class_model_measles_mixing_risk_quarantine}{Model\+Measles\+Mixing\+Risk\+Quarantine}}$<$ TSeq $>$\+::get\+\_\+quarantine\+\_\+risk\+\_\+level (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the risk level assigned to each agent for quarantine purposes. 
+
+\begin{DoxyReturn}{Returns}
+Vector of integers representing risk levels (0=low, 1=medium, 2=high) 
 \end{DoxyReturn}
 \mbox{\Hypertarget{class_model_measles_mixing_risk_quarantine_a8fd195e45ff78226de053ef90e0770f1}\label{class_model_measles_mixing_risk_quarantine_a8fd195e45ff78226de053ef90e0770f1}} 
 \index{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!get\_quarantine\_willingness@{get\_quarantine\_willingness}}
