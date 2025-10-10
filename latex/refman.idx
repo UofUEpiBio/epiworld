@@ -268,19 +268,21 @@
 \indexentry{clone\_ptr@{clone\_ptr}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{159}
 \indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!get\_contact\_matrix@{get\_contact\_matrix}|hyperpage}{159}
 \indexentry{get\_contact\_matrix@{get\_contact\_matrix}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{159}
+\indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!get\_days\_quarantine\_triggered@{get\_days\_quarantine\_triggered}|hyperpage}{159}
+\indexentry{get\_days\_quarantine\_triggered@{get\_days\_quarantine\_triggered}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{159}
 \indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!get\_isolation\_willingness@{get\_isolation\_willingness}|hyperpage}{159}
 \indexentry{get\_isolation\_willingness@{get\_isolation\_willingness}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{159}
-\indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!get\_quarantine\_risk\_level@{get\_quarantine\_risk\_level}|hyperpage}{159}
-\indexentry{get\_quarantine\_risk\_level@{get\_quarantine\_risk\_level}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{159}
+\indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!get\_quarantine\_risk\_level@{get\_quarantine\_risk\_level}|hyperpage}{160}
+\indexentry{get\_quarantine\_risk\_level@{get\_quarantine\_risk\_level}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{160}
 \indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!get\_quarantine\_willingness@{get\_quarantine\_willingness}|hyperpage}{160}
 \indexentry{get\_quarantine\_willingness@{get\_quarantine\_willingness}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{160}
 \indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{160}
 \indexentry{initial\_states@{initial\_states}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{160}
-\indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!run@{run}|hyperpage}{160}
-\indexentry{run@{run}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{160}
+\indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!run@{run}|hyperpage}{161}
+\indexentry{run@{run}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{161}
 \indexentry{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}!set\_contact\_matrix@{set\_contact\_matrix}|hyperpage}{161}
 \indexentry{set\_contact\_matrix@{set\_contact\_matrix}!ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$@{ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}|hyperpage}{161}
-\indexentry{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$}|hyperpage}{161}
+\indexentry{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$}|hyperpage}{162}
 \indexentry{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$}!ModelMeaslesSchool@{ModelMeaslesSchool}|hyperpage}{164}
 \indexentry{ModelMeaslesSchool@{ModelMeaslesSchool}!epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$}|hyperpage}{164}
 \indexentry{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{165}
@@ -567,12 +569,10 @@
 \indexentry{include/epiworld/models/measlesmixingriskquarantine.hpp@{include/epiworld/models/measlesmixingriskquarantine.hpp}|hyperpage}{294}
 \indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{295}
 \indexentry{GET\_MODEL@{GET\_MODEL}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{295}
-\indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!PARSE\_QUARANTINE\_PERIOD@{PARSE\_QUARANTINE\_PERIOD}|hyperpage}{295}
-\indexentry{PARSE\_QUARANTINE\_PERIOD@{PARSE\_QUARANTINE\_PERIOD}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{295}
 \indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{295}
 \indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{295}
 \indexentry{include/epiworld/models/seirmixingquarantine.hpp@{include/epiworld/models/seirmixingquarantine.hpp}|hyperpage}{296}
-\indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{297}
-\indexentry{GET\_MODEL@{GET\_MODEL}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{297}
+\indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{296}
+\indexentry{GET\_MODEL@{GET\_MODEL}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{296}
 \indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{297}
 \indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{297}

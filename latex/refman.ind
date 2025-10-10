@@ -132,7 +132,7 @@
     \subitem {run}, \hyperpage{153}
     \subitem {set\_contact\_matrix}, \hyperpage{153}
   \item {epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$}, 
-		\hyperpage{161}
+		\hyperpage{162}
     \subitem {clone\_ptr}, \hyperpage{165}
     \subitem {ModelMeaslesSchool}, \hyperpage{164}
     \subitem {quarantine\_agents}, \hyperpage{165}
@@ -288,6 +288,9 @@
     \subitem {ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}, 
 		\hyperpage{159}
     \subitem {ModelSEIRMixingQuarantine$<$ TSeq $>$}, \hyperpage{216}
+  \item {get\_days\_quarantine\_triggered}
+    \subitem {ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}, 
+		\hyperpage{159}
   \item {get\_generation\_time}
     \subitem {DataBase$<$ TSeq $>$}, \hyperpage{70}
     \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{75}
@@ -305,14 +308,14 @@
   \item {GET\_MODEL}
     \subitem {measlesmixing.hpp}, \hyperpage{293}
     \subitem {measlesmixingriskquarantine.hpp}, \hyperpage{295}
-    \subitem {seirmixingquarantine.hpp}, \hyperpage{297}
+    \subitem {seirmixingquarantine.hpp}, \hyperpage{296}
   \item {get\_n\_infected}
     \subitem {epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}, 
 		\hyperpage{225}
     \subitem {ModelSIRCONN$<$ TSeq $>$}, \hyperpage{228}
   \item {get\_quarantine\_risk\_level}
     \subitem {ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}, 
-		\hyperpage{159}
+		\hyperpage{160}
   \item {get\_quarantine\_risk\_levels}
     \subitem {epiworld::epimodels::ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}, 
 		\hyperpage{152}
@@ -409,7 +412,6 @@
     \subitem {SAMPLE\_FROM\_PROBS}, \hyperpage{294}
   \item {measlesmixingriskquarantine.hpp}
     \subitem {GET\_MODEL}, \hyperpage{295}
-    \subitem {PARSE\_QUARANTINE\_PERIOD}, \hyperpage{295}
     \subitem {SAMPLE\_FROM\_PROBS}, \hyperpage{295}
   \item {Model$<$ TSeq $>$}, \hyperpage{108}
     \subitem {add\_globalevent}, \hyperpage{117}
@@ -458,12 +460,13 @@
   \item {ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}, \hyperpage{154}
     \subitem {clone\_ptr}, \hyperpage{159}
     \subitem {get\_contact\_matrix}, \hyperpage{159}
+    \subitem {get\_days\_quarantine\_triggered}, \hyperpage{159}
     \subitem {get\_isolation\_willingness}, \hyperpage{159}
-    \subitem {get\_quarantine\_risk\_level}, \hyperpage{159}
+    \subitem {get\_quarantine\_risk\_level}, \hyperpage{160}
     \subitem {get\_quarantine\_willingness}, \hyperpage{160}
     \subitem {initial\_states}, \hyperpage{160}
     \subitem {ModelMeaslesMixingRiskQuarantine}, \hyperpage{156, 157}
-    \subitem {run}, \hyperpage{160}
+    \subitem {run}, \hyperpage{161}
     \subitem {set\_contact\_matrix}, \hyperpage{161}
   \item {ModelMeaslesSchool}
     \subitem {epiworld::epimodels::ModelMeaslesSchool$<$ TSeq $>$}, 
@@ -592,8 +595,6 @@
 
   \indexspace
 
-  \item {PARSE\_QUARANTINE\_PERIOD}
-    \subitem {measlesmixingriskquarantine.hpp}, \hyperpage{295}
   \item {PersonTools$<$ TSeq $>$}, \hyperpage{267}
   \item {Progress}, \hyperpage{267}
 
@@ -677,7 +678,7 @@
 		\hyperpage{210}
     \subitem {ModelMeaslesMixing$<$ TSeq $>$}, \hyperpage{144}
     \subitem {ModelMeaslesMixingRiskQuarantine$<$ TSeq $>$}, 
-		\hyperpage{160}
+		\hyperpage{161}
     \subitem {ModelSEIRMixingQuarantine$<$ TSeq $>$}, \hyperpage{218}
   \item {run\_multiple}
     \subitem {epiworld::Model$<$ TSeq $>$}, \hyperpage{104}
@@ -701,7 +702,7 @@
     \subitem {sample\_virus\_single}, \hyperpage{49}
   \item {SAMPLETYPE}, \hyperpage{270}
   \item {seirmixingquarantine.hpp}
-    \subitem {GET\_MODEL}, \hyperpage{297}
+    \subitem {GET\_MODEL}, \hyperpage{296}
     \subitem {SAMPLE\_FROM\_PROBS}, \hyperpage{297}
   \item {set\_agents\_data}
     \subitem {epiworld::Model$<$ TSeq $>$}, \hyperpage{104}

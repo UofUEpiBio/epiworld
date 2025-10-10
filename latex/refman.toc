@@ -288,17 +288,18 @@
 \contentsline {subsection}{\numberline {17.30.1}Detailed Description}{156}{subsection.17.30.1}%
 \contentsline {subsection}{\numberline {17.30.2}Constructor \& Destructor Documentation}{156}{subsection.17.30.2}%
 \contentsline {subsubsection}{\numberline {17.30.2.1}ModelMeaslesMixingRiskQuarantine()\hspace {0.1cm}{\footnotesize \ttfamily [1/2]}}{156}{subsubsection.17.30.2.1}%
-\contentsline {subsubsection}{\numberline {17.30.2.2}ModelMeaslesMixingRiskQuarantine()\hspace {0.1cm}{\footnotesize \ttfamily [2/2]}}{157}{subsubsection.17.30.2.2}%
+\contentsline {subsubsection}{\numberline {17.30.2.2}ModelMeaslesMixingRiskQuarantine()\hspace {0.1cm}{\footnotesize \ttfamily [2/2]}}{158}{subsubsection.17.30.2.2}%
 \contentsline {subsection}{\numberline {17.30.3}Member Function Documentation}{159}{subsection.17.30.3}%
 \contentsline {subsubsection}{\numberline {17.30.3.1}clone\_ptr()}{159}{subsubsection.17.30.3.1}%
 \contentsline {subsubsection}{\numberline {17.30.3.2}get\_contact\_matrix()}{159}{subsubsection.17.30.3.2}%
-\contentsline {subsubsection}{\numberline {17.30.3.3}get\_isolation\_willingness()}{159}{subsubsection.17.30.3.3}%
-\contentsline {subsubsection}{\numberline {17.30.3.4}get\_quarantine\_risk\_level()}{160}{subsubsection.17.30.3.4}%
-\contentsline {subsubsection}{\numberline {17.30.3.5}get\_quarantine\_willingness()}{160}{subsubsection.17.30.3.5}%
-\contentsline {subsubsection}{\numberline {17.30.3.6}initial\_states()}{160}{subsubsection.17.30.3.6}%
-\contentsline {subsubsection}{\numberline {17.30.3.7}run()}{161}{subsubsection.17.30.3.7}%
-\contentsline {subsubsection}{\numberline {17.30.3.8}set\_contact\_matrix()}{161}{subsubsection.17.30.3.8}%
-\contentsline {section}{\numberline {17.31}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::epimodels\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Measles\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}School$<$ TSeq $>$ Class Template Reference}{161}{section.17.31}%
+\contentsline {subsubsection}{\numberline {17.30.3.3}get\_days\_quarantine\_triggered()}{159}{subsubsection.17.30.3.3}%
+\contentsline {subsubsection}{\numberline {17.30.3.4}get\_isolation\_willingness()}{160}{subsubsection.17.30.3.4}%
+\contentsline {subsubsection}{\numberline {17.30.3.5}get\_quarantine\_risk\_level()}{160}{subsubsection.17.30.3.5}%
+\contentsline {subsubsection}{\numberline {17.30.3.6}get\_quarantine\_willingness()}{160}{subsubsection.17.30.3.6}%
+\contentsline {subsubsection}{\numberline {17.30.3.7}initial\_states()}{160}{subsubsection.17.30.3.7}%
+\contentsline {subsubsection}{\numberline {17.30.3.8}run()}{161}{subsubsection.17.30.3.8}%
+\contentsline {subsubsection}{\numberline {17.30.3.9}set\_contact\_matrix()}{161}{subsubsection.17.30.3.9}%
+\contentsline {section}{\numberline {17.31}epiworld\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::epimodels\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}::Model\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Measles\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}School$<$ TSeq $>$ Class Template Reference}{162}{section.17.31}%
 \contentsline {subsection}{\numberline {17.31.1}Detailed Description}{163}{subsection.17.31.1}%
 \contentsline {subsection}{\numberline {17.31.2}Constructor \& Destructor Documentation}{164}{subsection.17.31.2}%
 \contentsline {subsubsection}{\numberline {17.31.2.1}ModelMeaslesSchool()}{164}{subsubsection.17.31.2.1}%
@@ -574,11 +575,10 @@
 \contentsline {subsection}{\numberline {18.3.1}Detailed Description}{295}{subsection.18.3.1}%
 \contentsline {subsection}{\numberline {18.3.2}Macro Definition Documentation}{295}{subsection.18.3.2}%
 \contentsline {subsubsection}{\numberline {18.3.2.1}GET\_MODEL}{295}{subsubsection.18.3.2.1}%
-\contentsline {subsubsection}{\numberline {18.3.2.2}PARSE\_QUARANTINE\_PERIOD}{295}{subsubsection.18.3.2.2}%
-\contentsline {subsubsection}{\numberline {18.3.2.3}SAMPLE\_FROM\_PROBS}{296}{subsubsection.18.3.2.3}%
+\contentsline {subsubsection}{\numberline {18.3.2.2}SAMPLE\_FROM\_PROBS}{295}{subsubsection.18.3.2.2}%
 \contentsline {section}{\numberline {18.4}include/epiworld/models/seirmixingquarantine.hpp File Reference}{296}{section.18.4}%
-\contentsline {subsection}{\numberline {18.4.1}Detailed Description}{297}{subsection.18.4.1}%
-\contentsline {subsection}{\numberline {18.4.2}Macro Definition Documentation}{297}{subsection.18.4.2}%
+\contentsline {subsection}{\numberline {18.4.1}Detailed Description}{296}{subsection.18.4.1}%
+\contentsline {subsection}{\numberline {18.4.2}Macro Definition Documentation}{296}{subsection.18.4.2}%
 \contentsline {subsubsection}{\numberline {18.4.2.1}GET\_MODEL}{297}{subsubsection.18.4.2.1}%
 \contentsline {subsubsection}{\numberline {18.4.2.2}SAMPLE\_FROM\_PROBS}{297}{subsubsection.18.4.2.2}%
 \contentsline {chapter}{Index}{299}{section*.363}%
