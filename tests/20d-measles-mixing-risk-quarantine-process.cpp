@@ -21,6 +21,7 @@ EPI_NEW_GLOBALFUN(count_risk, int)
         counts[r]++;
 
     // Appending to global variable
+    counts_risk.push_back(static_cast<double>(m->today()));
     counts_risk.push_back(static_cast<double>(counts[0]));
     counts_risk.push_back(static_cast<double>(counts[1]));
     counts_risk.push_back(static_cast<double>(counts[2]));
@@ -35,12 +36,18 @@ EPIWORLD_TEST_CASE(
 ) {
     
     // Contact matrix for 3 groups with equal mixing
-    size_t nsims = 200;
-    size_t n     = 20;
-    std::vector<double> contact_matrix(9u, 0.0);
-    contact_matrix[0] = 1.0;
-    contact_matrix[4] = 1.0;
-    contact_matrix[8] = 1.0;
+    size_t n = 100;
+
+    // More contact within groups
+    // According to Toth and others, 83% of contacts are within the same class
+    // (for school-aged children). 17% are with other classes.
+    double rate_self = 1.0;
+    double rate_others = (1.0 - rate_self) / 2.0;
+    std::vector<double> contact_matrix = {
+        rate_self, rate_others, rate_others,
+        rate_others, rate_self, rate_others,
+        rate_others, rate_others, rate_self
+    };
 
     double R0 = 15;
     double c_rate = 10.0;
@@ -81,8 +88,10 @@ EPIWORLD_TEST_CASE(
 
     // Moving the virus to the first agent
     model.get_virus(0).set_distribution(
-        distribute_virus_to_set<>({2u})
+        distribute_virus_to_set<>({0u})
     );
+
+    model.verbose_off();
 
     model.run(100, 233);
 
@@ -97,15 +106,41 @@ EPIWORLD_TEST_CASE(
     );  
 
     // Priting the counts
-    for (size_t i = 0; i < counts_risk.size()/3; ++i)
+    auto quarantine_days = model.get_days_quarantine_triggered();
+
+    std::set< size_t > days_set(
+        quarantine_days.begin(),
+        quarantine_days.end()
+        );
+
+    std::cout << std::endl << "Day Susceptible LowRisk MidRisk HighRisk\n";
+    for (size_t i = 0; i < counts_risk.size()/4; ++i)
     {
-        std::cout << i << "\t"
-                  << counts_risk[3*i + 0] << "\t"
-                  << counts_risk[3*i + 1] << "\t"
-                  << counts_risk[3*i + 2] << "\n";
+        if (days_set.find(counts_risk[4*i + 0]) != days_set.end())
+            std::cout << "Quarantine: ";
+        else
+            continue;
+        
+        printf(" %3.0f ", counts_risk[4*i + 0]);
+        printf(" %3.0f ", counts_risk[4*i + 1]);
+        printf(" %3.0f ", counts_risk[4*i + 2]);
+        printf(" %3.0f ", counts_risk[4*i + 3]);
+        std::cout << std::endl;
+        
     }
 
-    model.print();
+    #ifdef CATCH_CONFIG_MAIN
+    std::vector< size_t > expected_first_quarantine = {100, 0, 0};
+
+    size_t day_first_quarantine = quarantine_days[0u] - 1u;
+    std::vector< size_t > observed_first_quarantine = {
+        static_cast< size_t >(counts_risk[4*day_first_quarantine + 1]),
+        static_cast< size_t >(counts_risk[4*day_first_quarantine + 2]),
+        static_cast< size_t >(counts_risk[4*day_first_quarantine + 3])
+    };
+
+    REQUIRE(observed_first_quarantine == expected_first_quarantine);
+    #endif
 
     #ifndef CATCH_CONFIG_MAIN
     return 0;

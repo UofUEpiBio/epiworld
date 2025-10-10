@@ -12,6 +12,7 @@
                 "-g",
                 "${file}",
                 "-fopenmp",
+                "-std=c++17",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],

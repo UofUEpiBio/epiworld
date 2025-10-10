@@ -18,19 +18,6 @@
         assert((output) != nullptr); // Use assert for runtime checks
 #endif
 
-
-// Get the appropriate quarantine period based on risk level
-#define PARSE_QUARANTINE_PERIOD(model, var_q_period, var_risk) \
-    epiworld_double var_q_period; \
-    auto var_risk = model->quarantine_risk_level[p->get_id()]; \
-    if (var_risk == RISK_HIGH) { \
-        var_q_period = m->par("Quarantine period high"); \
-    } else if (var_risk == RISK_MEDIUM) { \
-        var_q_period = m->par("Quarantine period medium"); \
-    } else { \
-        var_q_period = m->par("Quarantine period low"); \
-    }
-
 /**
  * @brief Macro to sample from a list of probabilities
  * @return The index of the sampled probability; and the total length
@@ -82,6 +69,8 @@ private:
     
     // Where the agents start in the `infectious` vector
     std::vector< size_t > infectious_entity_indices;
+
+    double m_get_risk_period(size_t agent_id);
 
     // Update the list of infectious agents
     void m_update_infectious_list();
@@ -147,6 +136,8 @@ private:
     std::vector< size_t > tracking_matrix_date; ///< Date of each interaction
 
     void m_add_tracking(size_t infectious_id, size_t agent_id);
+
+    std::vector< size_t > days_quarantine_triggered; ///< Days when quarantine was triggered
 
 public:
 
@@ -330,7 +321,7 @@ public:
      * @brief Get the current contact matrix
      * @return Vector representing the contact matrix
      */
-    std::vector< double > get_contact_matrix() const
+    auto get_contact_matrix() const
     {
         return contact_matrix;
     };
@@ -339,7 +330,7 @@ public:
      * @brief Get the quarantine willingness for all agents
      * @return Vector of boolean values indicating each agent's willingness to quarantine
      */
-    std::vector< bool > get_quarantine_willingness() const
+    auto get_quarantine_willingness() const
     {
         return quarantine_willingness;
     };
@@ -348,7 +339,7 @@ public:
      * @brief Get the isolation willingness for all agents
      * @return Vector of boolean values indicating each agent's willingness to self-isolate
      */
-    std::vector< bool > get_isolation_willingness() const
+    auto get_isolation_willingness() const
     {
         return isolation_willingness;
     };
@@ -357,9 +348,19 @@ public:
      * @brief Get the risk level assigned to each agent for quarantine purposes
      * @return Vector of integers representing risk levels (0=low, 1=medium, 2=high)
      */
-    const std::vector< int > & get_quarantine_risk_level() const
+    const auto & get_quarantine_risk_level() const
     {
         return quarantine_risk_level;
+    };
+
+
+    /**
+     * @brief Get the total number of quarantines that have occurred
+     * @return The number of quarantines
+     */
+    auto get_days_quarantine_triggered() const
+    {
+        return days_quarantine_triggered;
     };
 
 };
@@ -404,6 +405,25 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_add_tracking(
     return;
 }
 
+template<typename TSeq>
+inline double ModelMeaslesMixingRiskQuarantine<TSeq>::m_get_risk_period(size_t agent_id)
+{
+
+    double risk_period = 0.0;
+
+    // Getting the risk level
+    int risk_level = quarantine_risk_level[agent_id];
+
+    if (risk_level == RISK_HIGH)
+        risk_period = this->par("Quarantine period high");
+    else if (risk_level == RISK_MEDIUM)
+        risk_period = this->par("Quarantine period medium");
+    else
+        risk_period = this->par("Quarantine period low");
+
+    return risk_period;
+
+}
 
 template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_infectious_list()
@@ -608,7 +628,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
     GET_MODEL(m, model);
     
     // Check for detection during active quarantine
-    bool detect_it = (m->runif() < m->par("Detection rate quarantine"));
+    bool detect_it = (model->get_days_quarantine_triggered().size() > 0u) &&
+        (m->runif() < m->par("Detection rate quarantine"));
 
     // Does the agent transition to rash?
     if (m->runif() < 1.0/m->par("Prodromal period"))
@@ -741,7 +762,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
     GET_MODEL(m, model);
 
     // Get the appropriate quarantine period based on risk level
-    PARSE_QUARANTINE_PERIOD(model, quarantine_period, risk_level);
+    auto quarantine_period = model->m_get_risk_period(p->get_id());
 
     // Figuring out if the agent can be released from quarantine
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -760,7 +781,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_exposed(
     GET_MODEL(m, model);
 
     // Get the appropriate quarantine period based on risk level
-    PARSE_QUARANTINE_PERIOD(model, quarantine_period, risk_level);
+    auto quarantine_period = model->m_get_risk_period(p->get_id());
 
     // Figuring out if the agent can be released from quarantine
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -794,7 +815,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodroma
     GET_MODEL(m, model);
 
     // Get the appropriate quarantine period based on risk level
-    PARSE_QUARANTINE_PERIOD(model, quarantine_period, risk_level);
+    auto quarantine_period = model->m_get_risk_period(p->get_id());
 
     // Figuring out if the agent can be released from quarantine
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -822,7 +843,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_recovere
     GET_MODEL(m, model);
 
     // Get the appropriate quarantine period based on risk level
-    PARSE_QUARANTINE_PERIOD(model, quarantine_period, risk_level);
+    auto quarantine_period = model->m_get_risk_period(p->get_id());
 
     // Figuring out if the agent can be released from quarantine
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -862,6 +883,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     if (agents_triggered_contact_tracing_size == 0u)
         return;
 
+    // We increase the number of quarantines
+    days_quarantine_triggered.push_back(Model<TSeq>::today());
+
     // Check if any quarantine period is enabled for this risk level
     std::vector< bool > can_quarantine(
         Model<TSeq>::size(), false
@@ -888,7 +912,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     }
 
     #ifdef EPI_DEBUG
-    std::unordered_map< std::pair<size_t, size_t>, bool> success_contact;
+    std::map< std::pair<size_t, size_t>, bool> success_contact;
     #endif
 
     // Checking the risk levels
@@ -939,10 +963,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
             )
                 continue;
 
-            #ifdef EPI_DEBUG
-            success_contact[{agent_i_idx, contact_id}] = true;
-            #endif
-
             // When did we have contact?
             double days_since_contact =
                 static_cast<double>(this->day_rash_onset[agent_i_idx]) -
@@ -951,6 +971,11 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
             // If the contact is outside of the tracing window, we skip it
             if (days_since_contact > param_days_prior)
                 continue;
+
+            #ifdef EPI_DEBUG
+            auto pair = std::make_pair(agent_i_idx, contact_id);
+            success_contact[pair] = true;
+            #endif
 
             // Setting the risk level to medium if not already high
             if (quarantine_risk_level[contact_id] < RISK_HIGH)
@@ -1000,23 +1025,26 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     std::set< size_t > contacted_agents;
     for (size_t i = 0u; i < agents_triggered_contact_tracing_size; ++i)
     {
-        auto & agent_i = Model<TSeq>::get_agent(
-            agents_triggered_contact_tracing[i]
-        );
+
+        auto agent_i_idx = agents_triggered_contact_tracing[i];
+
+        auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
 
         // We also check who are the contacted agents
-        size_t n_contacts = tracking_matrix_size[agent_i.get_id()];
+        size_t n_contacts = tracking_matrix_size[agent_i_idx];
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
         for (size_t contact_j_idx = 0u; contact_j_idx < n_contacts; ++contact_j_idx)
         {
+
             // Getting the location in the matrix
-            size_t loc = MM(agent_i.get_id(), contact_j_idx, Model<TSeq>::size());
+            size_t loc = MM(agent_i_idx, contact_j_idx, Model<TSeq>::size());
             size_t contact_id = this->tracking_matrix[loc];
 
             // Was the contact successful?
-            if (!success_contact[{agent_i.get_id(), contact_id}])
+            auto pair = std::make_pair(agent_i_idx, contact_id);
+            if (!success_contact[pair])
                 continue;
 
             contacted_agents.insert(contact_id);
@@ -1080,6 +1108,15 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         // If has a tool, then skip (is vaxxed)
         if (agent_i.get_n_tools() != 0u)
             continue;
+
+        // Checking the agent is not in a group that triggered
+        // contact tracing
+        if (agent_i.get_n_entities() != 0u)
+        {
+            size_t group_id = agent_i.get_entity(0u).get_id();
+            if (groups_ids.find(group_id) != groups_ids.end())
+                continue;
+        }
 
         if (quarantine_risk_level[agent_i_idx] != RISK_MEDIUM)
             throw std::logic_error(
@@ -1376,6 +1413,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
     tracking_matrix_size.assign(this->size(), 0u);
     tracking_matrix_date.assign(this->size() * EPI_MAX_TRACKING, 0u);
 
+    // Resetting the number of quarantines
+    days_quarantine_triggered.clear();
+
     return;
 
 }
@@ -1407,7 +1447,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
 
 }
 
-#undef PARSE_QUARANTINE_PERIOD
 #undef SAMPLE_FROM_PROBS
 #undef GET_MODEL
 
