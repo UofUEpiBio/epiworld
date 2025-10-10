@@ -13,8 +13,8 @@ EPIWORLD_TEST_CASE(
 ) {
     
     // Contact matrix for 3 groups with equal mixing
-    size_t nsims = 200;
-    size_t n     = 600;
+    size_t nsims = 400;
+    size_t n     = 300;
     std::vector<double> contact_matrix(9u, 1.0/3.0);
     
     epimodels::ModelMeaslesMixingRiskQuarantine<> model(

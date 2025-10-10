@@ -37,7 +37,10 @@ EPIWORLD_TEST_CASE(
     // Contact matrix for 3 groups with equal mixing
     size_t nsims = 200;
     size_t n     = 20;
-    std::vector<double> contact_matrix(9u, 1.0/3.0);
+    std::vector<double> contact_matrix(9u, 0.0);
+    contact_matrix[0] = 1.0;
+    contact_matrix[4] = 1.0;
+    contact_matrix[8] = 1.0;
 
     double R0 = 15;
     double c_rate = 10.0;
@@ -62,7 +65,7 @@ EPIWORLD_TEST_CASE(
         .9,          // Quarantine willingness
         .9,          // Isolation willingness
         4,           // Isolation period
-        1.0,         // Proportion vaccinated
+        0.5,         // Proportion vaccinated
         0.1,         // Detection rate during quarantine
         1.0,         // Contact tracing success rate
         4u           // Contact tracing days prior
@@ -78,7 +81,7 @@ EPIWORLD_TEST_CASE(
 
     // Moving the virus to the first agent
     model.get_virus(0).set_distribution(
-        distribute_virus_to_set<>({0u})
+        distribute_virus_to_set<>({2u})
     );
 
     model.run(100, 233);

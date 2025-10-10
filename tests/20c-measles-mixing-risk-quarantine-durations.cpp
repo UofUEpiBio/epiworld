@@ -17,20 +17,10 @@ using namespace epiworld;
  */
 inline auto test_model_builder_20d(
     size_t n,
+    std::vector< double > contact_matrix,
     std::vector< int > durations = {21, 14, 7}
 )
 {
-
-    // More contact within groups
-    // According to Toth and others, 83% of contacts are within the same class
-    // (for school-aged children). 17% are with other classes.
-    // double seventeen = .17 / 2.0;
-    // std::vector<double> contact_matrix = {
-    //     .83, seventeen, seventeen,
-    //     seventeen, .83, seventeen,
-    //     seventeen, seventeen, .83
-    // };
-    std::vector<double> contact_matrix(9u, 1.0/3.0);
 
     double R0       = 4.0;
     double c_rate   = 10.0;
@@ -57,8 +47,8 @@ inline auto test_model_builder_20d(
         4,              // Isolation period
         0.5,            // Proportion vaccinated
         0.9,            // Detection rate during quarantine
-        0.9,            // Contact tracing success rate
-        7u            // Contact tracing days prior
+        1.0,            // Contact tracing success rate
+        7u              // Contact tracing days prior
     );
 
     model.add_entity(Entity<>("Population", dist_factory<>(0, n/3 - 1)));
@@ -83,10 +73,19 @@ EPIWORLD_TEST_CASE(
     int nsims = 1000;
     size_t n  = 600;
     double n_seeds = 1.0;
-    std::vector<double> contact_matrix(9u, 1.0/3.0);
+    
+    // More contact within groups
+    // According to Toth and others, 83% of contacts are within the same class
+    // (for school-aged children). 17% are with other classes.
+    double seventeen = .17 / 2.0;
+    std::vector<double> contact_matrix = {
+        .83, seventeen, seventeen,
+        seventeen, .83, seventeen,
+        seventeen, seventeen, .83
+    };
 
-    auto model_uniform = test_model_builder_20d(n, {21, 21, 21});
-    auto model_varied  = test_model_builder_20d(n, {21, 21, 21});
+    auto model_uniform = test_model_builder_20d(n, contact_matrix, {21, 21, 21});
+    auto model_varied  = test_model_builder_20d(n, contact_matrix, {21, 14, 21});
 
     // Run simulations
     std::vector<std::vector<epiworld_double>> transitions_uniform(nsims);
@@ -130,6 +129,9 @@ EPIWORLD_TEST_CASE(
         nsims,
         true
     );
+
+    // model_uniform.print();
+    // model_varied.print();
 
     #ifdef CATCH_CONFIG_MAIN
     // Should see some difference in outbreak sizes due to different quarantine strategies

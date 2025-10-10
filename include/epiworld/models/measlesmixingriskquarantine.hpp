@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
-using namespace epiworld;
-
 #define MM(i, j, n) \
     (j * n + i)
 
@@ -76,7 +74,6 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
 {
 private:
-    
     // Vector of vectors of infected agents (prodromal agents are infectious)
     std::vector< size_t > infectious;
 
@@ -366,7 +363,6 @@ public:
     };
 
 };
-
 
 // Implementation starts here
 
@@ -867,13 +863,36 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         return;
 
     // Check if any quarantine period is enabled for this risk level
-    bool quarantine_enabled = false;
-    std::vector< bool > agent_checked(
+    std::vector< bool > can_quarantine(
         Model<TSeq>::size(), false
     );
 
+    // Assigning all individuals who are not currently in quarantine/isolation
+    // a low level
+    for (auto & agent: Model<TSeq>::get_agents())
+    {
+
+        auto state = agent.get_state();
+
+        if (
+            (state == SUSCEPTIBLE) ||
+            (state == EXPOSED) ||
+            (state == PRODROMAL) ||
+            (state == RASH)
+        )
+        {
+            quarantine_risk_level[agent.get_id()] = RISK_LOW;
+            can_quarantine[agent.get_id()] = true;
+        }
+
+    }
+
+    #ifdef EPI_DEBUG
+    std::unordered_map< std::pair<size_t, size_t>, bool> success_contact;
+    #endif
+
     // Checking the risk levels
-    quarantine_risk_level.assign(Model<TSeq>::size(), RISK_LOW);
+    // quarantine_risk_level.assign(Model<TSeq>::size(), RISK_LOW);
     double param_days_prior = Model<TSeq>::par("Contact tracing days prior");
     for (size_t i = 0u; i < agents_triggered_contact_tracing_size; ++i)
     {
@@ -887,7 +906,14 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         if (agent_i.get_n_entities() != 0u)
         {
             for (auto & agent_j_idx: agent_i.get_entity(0))
-                quarantine_risk_level[agent_j_idx] = RISK_HIGH;
+            {
+
+                // Only if not already checked we set to high risk
+                if (can_quarantine[agent_j_idx])
+                    quarantine_risk_level[agent_j_idx] = RISK_HIGH;
+                
+
+            }
         }
 
         // (B) Checking the contacts
@@ -902,12 +928,20 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
             size_t loc = MM(agent_i_idx, contact_j_idx, Model<TSeq>::size());
             size_t contact_id = this->tracking_matrix[loc];
 
+            // Checked agents should not be considered
+            if (!can_quarantine[contact_id])
+                continue;
+
             // Will we detect the contact?
             if (
                 Model<TSeq>::runif() >
                 Model<TSeq>::par("Contact tracing success rate")
             )
                 continue;
+
+            #ifdef EPI_DEBUG
+            success_contact[{agent_i_idx, contact_id}] = true;
+            #endif
 
             // When did we have contact?
             double days_since_contact =
@@ -930,45 +964,129 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     for (auto & agent: Model<TSeq>::get_agents())
     {
 
+        // Only if not already checked
+        if (!can_quarantine[agent.get_id()])
+            continue;
+
         // If has a tool, then skip (is vaxxed)
         if (agent.get_n_tools() != 0u)
             continue;
 
-        switch (agent.get_state())
+        if (quarantine_willingness[agent.get_id()] == false)
+            continue;
+
+        // Setting the day flagged to today
+        day_flagged[agent.get_id()] = Model<TSeq>::today();
+
+        auto state = agent.get_state();
+        if (state == SUSCEPTIBLE)
+            agent.change_state(this, QUARANTINED_SUSCEPTIBLE);
+        else if (state == EXPOSED)
+            agent.change_state(this, QUARANTINED_EXPOSED);
+        else if (state == PRODROMAL)
+            agent.change_state(this, QUARANTINED_PRODROMAL);
+        else if (state == RASH)
+            agent.change_state(this, ISOLATED);
+        else
+            throw std::logic_error(
+                "An agent in an unexpected state is being quarantined."
+            );
+    }
+
+    #ifdef EPI_DEBUG
+    // Agents in groups that triggered the quarantine level, who are not
+    // quarantined should be in RISK_HIGH
+    std::set< size_t > groups_ids;
+    std::set< size_t > contacted_agents;
+    for (size_t i = 0u; i < agents_triggered_contact_tracing_size; ++i)
+    {
+        auto & agent_i = Model<TSeq>::get_agent(
+            agents_triggered_contact_tracing[i]
+        );
+
+        // We also check who are the contacted agents
+        size_t n_contacts = tracking_matrix_size[agent_i.get_id()];
+        if (n_contacts >= EPI_MAX_TRACKING)
+            n_contacts = EPI_MAX_TRACKING;
+
+        for (size_t contact_j_idx = 0u; contact_j_idx < n_contacts; ++contact_j_idx)
         {
-            case SUSCEPTIBLE:
-                if (quarantine_willingness[agent.get_id()])
-                {
-                    agent.change_state(this, QUARANTINED_SUSCEPTIBLE);
-                    day_flagged[agent.get_id()] = Model<TSeq>::today();
-                }
-                break;
-            case EXPOSED:
-                if (quarantine_willingness[agent.get_id()])
-                {
-                    agent.change_state(this, QUARANTINED_EXPOSED);
-                    day_flagged[agent.get_id()] = Model<TSeq>::today();
-                }
-                break;
-            case PRODROMAL:
-                if (quarantine_willingness[agent.get_id()])
-                {
-                    agent.change_state(this, QUARANTINED_PRODROMAL);
-                    day_flagged[agent.get_id()] = Model<TSeq>::today();
-                }
-                break;
-            case RASH:
-                if (isolation_willingness[agent.get_id()])
-                {
-                    agent.change_state(this, ISOLATED);
-                    day_flagged[agent.get_id()] = Model<TSeq>::today();
-                }
-                break;
-            default:
-                break;
+            // Getting the location in the matrix
+            size_t loc = MM(agent_i.get_id(), contact_j_idx, Model<TSeq>::size());
+            size_t contact_id = this->tracking_matrix[loc];
+
+            // Was the contact successful?
+            if (!success_contact[{agent_i.get_id(), contact_id}])
+                continue;
+
+            contacted_agents.insert(contact_id);
         }
+
+        if (agent_i.get_n_entities() == 0u)
+            continue;
+
+        groups_ids.insert(agent_i.get_entity(0u).get_id());
         
     }
+
+    // Iterating over the agents in those groups, if they in the states
+    // SUSCEPTIBLE, EXPOSED, PRODROMAL, or RASH, they should be in
+    // RISK_HIGH
+    for (auto & group: groups_ids)
+    {
+        for (auto & agent_i_idx: Model<TSeq>::get_entity(group))
+        {
+
+            auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
+            auto state = agent_i.get_state();
+
+            // If not in any of these states, we skip
+            if (
+                (state != SUSCEPTIBLE) &&
+                (state != EXPOSED) &&
+                (state != PRODROMAL) &&
+                (state != RASH)
+            )
+                continue;
+
+            // If has a tool, then skip (is vaxxed)
+            if (agent_i.get_n_tools() != 0u)
+                continue;
+
+            if (quarantine_risk_level[agent_i_idx] != RISK_HIGH)
+                throw std::logic_error(
+                    "An agent in a group that triggered contact tracing is not in RISK_HIGH."
+                );
+
+        }
+    }
+
+    // Now, agents who were not members of the groups that triggered
+    // contact tracing, but were contacted by them should be at least
+    // in RISK_MEDIUM
+    for (auto & agent_i_idx: contacted_agents)
+    {
+        auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
+        auto state = agent_i.get_state();
+        // If not in any of these states, we skip
+        if (
+            (state != SUSCEPTIBLE) &&
+            (state != EXPOSED) &&
+            (state != PRODROMAL) &&
+            (state != RASH)
+        )
+            continue;
+
+        // If has a tool, then skip (is vaxxed)
+        if (agent_i.get_n_tools() != 0u)
+            continue;
+
+        if (quarantine_risk_level[agent_i_idx] != RISK_MEDIUM)
+            throw std::logic_error(
+                "An agent who was contacted by an infectious agent is not in at least RISK_MEDIUM."
+            );
+    }
+    #endif
     
     // Applying the changes and resetting the number of agents
     // who triggered contact tracing
