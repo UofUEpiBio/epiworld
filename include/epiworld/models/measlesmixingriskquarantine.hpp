@@ -131,11 +131,7 @@ private:
     static void m_update_model(Model<TSeq> * m);
 
     // We will limit tracking to up to EPI_MAX_TRACKING
-    std::vector< size_t > tracking_matrix;      ///< Tracking matrix for agent interactions
-    std::vector< size_t > tracking_matrix_size; ///< Number of current interactions for each agent
-    std::vector< size_t > tracking_matrix_date; ///< Date of each interaction
-
-    void m_add_tracking(size_t infectious_id, size_t agent_id);
+    ContactTracing contact_tracing;
 
     std::vector< size_t > days_quarantine_triggered; ///< Days when quarantine was triggered
 
@@ -385,27 +381,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_model(
 }
 
 template<typename TSeq>
-inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_add_tracking(
-    size_t infectious_id,
-    size_t agent_id
-)
-{
-
-    // If we are overflow, we start from the beginning 
-    size_t loc = tracking_matrix_size[infectious_id] % EPI_MAX_TRACKING;
-    
-    // Storing the information
-    loc = COL_MAJOR_POS(infectious_id, loc, Model<TSeq>::size());
-    tracking_matrix[loc] = agent_id;
-    tracking_matrix_date[loc] = Model<TSeq>::today();
-
-    // We increase the size of the tracking matrix
-    tracking_matrix_size[infectious_id]++;
-
-    return;
-}
-
-template<typename TSeq>
 inline double ModelMeaslesMixingRiskQuarantine<TSeq>::m_get_risk_period(size_t agent_id)
 {
 
@@ -516,7 +491,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
             #endif
 
             #ifdef EPI_DEBUG
-            if (a.get_state() != ModelMeaslesMixingRiskQuarantine<TSeq>::PRODROMAL)
+            if (a.get_state() != PRODROMAL)
                 throw std::logic_error(
                     "The agent is not in prodromal state, but it should be."
                 );
@@ -579,7 +554,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
         // Adding the current agent to the tracked interactions
         // In this case, the infected neighbor is the one
         // who interacts with the susceptible agent
-        m_down->m_add_tracking(neighbor.get_id(), p->get_id());
+        m_down->contact_tracing.add_contact(neighbor.get_id(), p->get_id(), m->today());
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
@@ -600,7 +575,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
 
     p->set_virus(*m->array_virus_tmp[which], m, EXPOSED);
 
-    return; 
+    return;
 
 }
 
@@ -637,7 +612,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(m, detect_it ? ISOLATED : RASH);
 
-
         if (detect_it)
             model->m_add_contact_tracing(p->get_id());
         
@@ -663,6 +637,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     {
         model->m_add_contact_tracing(p->get_id());
         detected = true;
+        model->day_flagged[p->get_id()] = m->today();
     }
 
     // Computing probabilities for state change
@@ -681,10 +656,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     }
     else if ((which == 0) && detected)
     {
-        // If the agent is not hospitalized or recovered, then it is moved to
-        // isolation.
         p->change_state(m, ISOLATED);
-        model->day_flagged[p->get_id()] = m->today();
     }
     else if (which != 0)
     {
@@ -923,7 +895,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     #endif
 
     // Checking the risk levels
-    // quarantine_risk_level.assign(Model<TSeq>::size(), RISK_LOW);
     double param_days_prior = Model<TSeq>::par("Contact tracing days prior");
     for (size_t i = 0u; i < agents_triggered_contact_tracing_size; ++i)
     {
@@ -939,6 +910,18 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
             for (auto & agent_j_idx: agent_i.get_entity(0))
             {
 
+                #ifdef EPI_DEBUG
+                auto & agent_j = Model<TSeq>::get_agent(agent_j_idx);
+                if (
+                    agent_j.get_entity(0u).get_id() !=
+                    agent_i.get_entity(0u).get_id()
+                )
+                    throw std::logic_error(
+                        "An agent in a group has a different group id."
+                    );
+                #endif
+
+
                 // Only if not already checked we set to high risk
                 if (can_quarantine[agent_j_idx])
                     quarantine_risk_level[agent_j_idx] = RISK_HIGH;
@@ -948,7 +931,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         }
 
         // (B) Checking the contacts
-        size_t n_contacts = tracking_matrix_size[agent_i_idx];
+        size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -956,8 +939,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            size_t loc = COL_MAJOR_POS(agent_i_idx, contact_j_idx, Model<TSeq>::size());
-            size_t contact_id = this->tracking_matrix[loc];
+            auto [contact_id, contact_date] = contact_tracing.get_contact(
+                agent_i_idx, contact_j_idx
+            );
 
             // Checked agents should not be considered
             if (!can_quarantine[contact_id])
@@ -970,10 +954,11 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
             )
                 continue;
 
-            // When did we have contact?
+            // How many days since they contacted relative to the rash onset?
+            // (recall that, in this model, the rash period is not infectious)
             double days_since_contact =
                 static_cast<double>(this->day_rash_onset[agent_i_idx]) -
-                static_cast<double>(this->tracking_matrix_date[loc]);
+                static_cast<double>(contact_date);
 
             // If the contact is outside of the tracing window, we skip it
             if (days_since_contact > param_days_prior)
@@ -1038,7 +1023,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
 
         // We also check who are the contacted agents
-        size_t n_contacts = tracking_matrix_size[agent_i_idx];
+        size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -1046,8 +1031,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            size_t loc = COL_MAJOR_POS(agent_i_idx, contact_j_idx, Model<TSeq>::size());
-            size_t contact_id = this->tracking_matrix[loc];
+            auto [contact_id, contact_date] = contact_tracing.get_contact(
+                agent_i_idx, contact_j_idx
+            );
 
             // Was the contact successful?
             auto pair = std::make_pair(agent_i_idx, contact_id);
@@ -1103,14 +1089,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     {
         auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
         auto state = agent_i.get_state();
-        // If not in any of these states, we skip
-        if (
-            (state != SUSCEPTIBLE) &&
-            (state != EXPOSED) &&
-            (state != PRODROMAL) &&
-            (state != RASH)
-        )
-            continue;
 
         // If has a tool, then skip (is vaxxed)
         if (agent_i.get_n_tools() != 0u)
@@ -1422,10 +1400,11 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
     quarantine_risk_level.assign(this->size(), RISK_LOW);
 
     // Setting up contact tracking matrix
-    tracking_matrix.assign(this->size() * EPI_MAX_TRACKING, 0u);
-    tracking_matrix_size.assign(this->size(), 0u);
-    tracking_matrix_date.assign(this->size() * EPI_MAX_TRACKING, 0u);
-
+    contact_tracing.reset(
+        this->size(),
+        EPI_MAX_TRACKING
+    );
+    
     // Resetting the number of quarantines
     days_quarantine_triggered.clear();
 

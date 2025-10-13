@@ -16,17 +16,29 @@ private:
 
 public:
 
+    ContactTracing();
     ContactTracing(size_t n_agents, size_t max_contacts);
     void add_contact(size_t agent_a, size_t agent_b, size_t day);
     size_t get_n_contacts(size_t agent);
     std::pair<size_t, size_t> get_contact(size_t agent, size_t idx);
 
-    void reset();
+    void reset(
+        size_t n_agents,
+        size_t max_contacts
+    );
+
+    void print(size_t agent);
 };
 
 inline size_t ContactTracing::get_location(size_t row, size_t col) const
 {
     return col * n_agents + row;
+}
+
+inline ContactTracing::ContactTracing()
+{
+    n_agents = 0u;
+    max_contacts = 0u;
 }
 
 inline ContactTracing::ContactTracing(size_t n_agents, size_t max_contacts)
@@ -72,11 +84,34 @@ inline std::pair< size_t, size_t> ContactTracing::get_contact(size_t agent, size
     return { contact_matrix[array_location], contact_date[array_location] };
 }
 
-inline void ContactTracing::reset()
+inline void ContactTracing::reset(size_t n_agents, size_t max_contacts)
 {
+
+    this->n_agents = n_agents;
+    this->max_contacts = max_contacts;
+
     contact_matrix.assign(n_agents * max_contacts, 0u);
     contacts_per_agent.assign(n_agents, 0u);
     contact_date.assign(n_agents * max_contacts, 0u);
+}
+
+inline void ContactTracing::print(size_t agent)
+{
+
+    size_t n_contacts = contacts_per_agent[agent];
+    if (n_contacts > max_contacts)
+        n_contacts = max_contacts;
+
+    std::cout << "Agent " << agent << " has " << n_contacts << " contacts: ";
+    for (size_t i = 0u; i < n_contacts; ++i)
+    {
+        auto [contact_id, contact_day] = get_contact(agent, i);
+        std::cout << "(" << contact_id << ", day " << contact_day << ") ";
+    }
+    std::cout << std::endl;
+
+    return;
+
 }
 
 #endif
