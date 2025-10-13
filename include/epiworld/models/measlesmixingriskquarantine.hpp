@@ -1,7 +1,7 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
-#define MM(i, j, n) \
+#define COL_MAJOR_POS(i, j, n) \
     (j * n + i)
 
 #if __cplusplus >= 202302L
@@ -395,7 +395,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_add_tracking(
     size_t loc = tracking_matrix_size[infectious_id] % EPI_MAX_TRACKING;
     
     // Storing the information
-    loc = MM(infectious_id, loc, Model<TSeq>::size());
+    loc = COL_MAJOR_POS(infectious_id, loc, Model<TSeq>::size());
     tracking_matrix[loc] = agent_id;
     tracking_matrix_date[loc] = Model<TSeq>::today();
 
@@ -487,7 +487,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
         int nsamples = epiworld::Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
-                MM(agent_group_id, g, ngroups)
+                COL_MAJOR_POS(agent_group_id, g, ngroups)
             ]
         );
 
@@ -956,7 +956,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            size_t loc = MM(agent_i_idx, contact_j_idx, Model<TSeq>::size());
+            size_t loc = COL_MAJOR_POS(agent_i_idx, contact_j_idx, Model<TSeq>::size());
             size_t contact_id = this->tracking_matrix[loc];
 
             // Checked agents should not be considered
@@ -1046,7 +1046,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            size_t loc = MM(agent_i_idx, contact_j_idx, Model<TSeq>::size());
+            size_t loc = COL_MAJOR_POS(agent_i_idx, contact_j_idx, Model<TSeq>::size());
             size_t contact_id = this->tracking_matrix[loc];
 
             // Was the contact successful?
@@ -1344,13 +1344,13 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
         double sum = 0.0;
         for (size_t j = 0u; j < this->entities.size(); ++j)
         {
-            if (this->contact_matrix[MM(i, j, nentities)] < 0.0)
+            if (this->contact_matrix[COL_MAJOR_POS(i, j, nentities)] < 0.0)
                 throw std::range_error(
                     std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->contact_matrix[MM(i, j, nentities)]) +
+                    std::to_string(this->contact_matrix[COL_MAJOR_POS(i, j, nentities)]) +
                     std::string(" < 0.")
                     );
-            sum += this->contact_matrix[MM(i, j, nentities)];
+            sum += this->contact_matrix[COL_MAJOR_POS(i, j, nentities)];
         }
         if (sum < 0.999 || sum > 1.001)
             throw std::range_error(
