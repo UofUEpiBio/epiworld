@@ -82,9 +82,9 @@ $(function() {
 <div class="line">    EPI_0     = EPI_0,</div>
 <div class="line">    EPI_NDAYS = EPI_NDAYS</div>
 <div class="line">)</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md61"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md39"></a>
 Compartmental Models</h1>
-<h2><a class="anchor" id="autotoc_md62"></a>
+<h2><a class="anchor" id="autotoc_md40"></a>
 SIR Model</h2>
 <div class="fragment"><div class="line">library(deSolve)</div>
 <div class="line">library(ggplot2)</div>
@@ -134,7 +134,7 @@ SIR Model</h2>
 <div class="line">    geom_line(aes(colour = state)) +</div>
 <div class="line">    labs(title = &quot;Compartmental SIR&quot;)</div>
 </div><!-- fragment --><p><img src="09-sir-connected_files/figure-commonmark/visualize-1.png" alt="" class="inline"/></p>
-<h2><a class="anchor" id="autotoc_md63"></a>
+<h2><a class="anchor" id="autotoc_md41"></a>
 SEIR Model</h2>
 <div class="fragment"><div class="line"># Code adapted from</div>
 <div class="line"># Chapter 2: SIR</div>
@@ -186,7 +186,7 @@ SEIR Model</h2>
 <div class="line">    geom_line(aes(colour = state)) +</div>
 <div class="line">    labs(title = &quot;Compartmental SEIR&quot;)</div>
 </div><!-- fragment --><p><img src="09-sir-connected_files/figure-commonmark/visualize-seir-1.png" alt="" class="inline"/></p>
-<h1><a class="anchor" id="autotoc_md64"></a>
+<h1><a class="anchor" id="autotoc_md42"></a>
 Agent-Based Model Approach</h1>
 <p>Calculation of the expected number of days in state $a$ when prob of changing state equals $\alpha$ is $1/\alpha$</p>
 <div class="fragment"><div class="line">set.seed(712)</div>
@@ -198,7 +198,7 @@ Agent-Based Model Approach</h1>
 <div class="line"> </div>
 <div class="line">mean(dat) - 1 / a</div>
 </div><!-- fragment --> <pre class="fragment">[1] -0.01049333
-</pre> <h2><a class="anchor" id="autotoc_md65"></a>
+</pre> <h2><a class="anchor" id="autotoc_md43"></a>
 Mathematical preliminaries</h2>
 <p>That agent $i$ becomes infected can be computed as follows:</p>
 <p>At the same time, the probability of not becoming infected equals to the probability of no infected agent transmitting the infection. The probability that agent $j$ infects $i$ equals</p>
@@ -206,7 +206,7 @@ Mathematical preliminaries</h2>
 <p>With the above equation, we can now calculate the change in the number of susceptible agents. In this case, it equals the expected number of new infections:</p>
 <p>With the same parametrization in the canonical SIR model (Kermack and McKendrick), the instantaneous change in the number of susceptible agents equals $\frac{\delta}{\delta t}S = -S \beta I$. Given $S$ and $I$, we can show that, as $\beta\downarrow 0$, i.e., the population grows, both rates converge to the same number. Formally:</p>
 <p>The same can be shown for the change in the number recovered.</p>
-<h2><a class="anchor" id="autotoc_md66"></a>
+<h2><a class="anchor" id="autotoc_md44"></a>
 Simulation study</h2>
 <p>Now, what happens with <code>epiworld</code>.</p>
 <div class="fragment"><div class="line">system(&quot;./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599&quot;)</div>
@@ -223,10 +223,10 @@ Simulation study</h2>
 <div class="line">    geom_line(aes(colour = state)) +</div>
 <div class="line">    labs(title = &quot;ABM SEIR&quot;)</div>
 </div><!-- fragment --><p><img src="09-sir-connected_files/figure-commonmark/abm-seir-1.png" alt="" class="inline"/></p>
-<h1><a class="anchor" id="autotoc_md67"></a>
+<h1><a class="anchor" id="autotoc_md45"></a>
 Comparing ABM with Compartmental Models</h1>
 <p>To this end, we will compare the results of the first run of the Compartmental model with 100 runs of the ABM, compute the confidence interval, and see how likely is the compartmental model to fall within the trajectory of the ABM simulation.</p>
-<h2><a class="anchor" id="autotoc_md68"></a>
+<h2><a class="anchor" id="autotoc_md46"></a>
 SIR</h2>
 <div class="fragment"><div class="line">system(&quot;./09-sir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100&quot;)</div>
 </div><!-- fragment --><div class="fragment"><div class="line">library(ggplot2)</div>
@@ -250,7 +250,7 @@ SIR</h2>
 <div class="line">    geom_line(aes(x = date, y = compartmental, colour = sprintf(&quot;%s (compt)&quot;, state)))</div>
 </div><!-- fragment --><p><img src="09-sir-connected_files/figure-commonmark/experiment100-1.png" alt="" class="inline"/></p>
 <p>It seems that, although both yield the same equilibria, compartmental models reach the highest point of the simulation earlier. This makes sense as within a single day of the ABM simulation, compartmental models have more events taking place. Nonetheless, as predicted, as $\beta\downarrow 0$, the differences become lesser. Furthermore, we could use the fact that the transition rates are known to compute an adjustment.</p>
-<h2><a class="anchor" id="autotoc_md69"></a>
+<h2><a class="anchor" id="autotoc_md47"></a>
 SEIR</h2>
 <div class="fragment"><div class="line">system(&quot;./09-seir-connected.o -n $EPI_N -b $EPI_BETA -d $EPI_NDAYS -p $EPI_0 -r $EPI_GAMMA -i 1.0 -s555599 -e 100 -l $EPI_LATENCY&quot;)</div>
 </div><!-- fragment --><div class="fragment"><div class="line">library(ggplot2)</div>
@@ -273,7 +273,7 @@ SEIR</h2>
 <div class="line">    geom_ribbon(aes(ymin = min, ymax = max, colour = state), alpha = 0.1) +</div>
 <div class="line">    geom_line(aes(x = date, y = compartmental, colour = sprintf(&quot;%s (compt)&quot;, state)))</div>
 </div><!-- fragment --><p><img src="09-sir-connected_files/figure-commonmark/experiment100-seir-1.png" alt="" class="inline"/></p>
-<h2><a class="anchor" id="autotoc_md70"></a>
+<h2><a class="anchor" id="autotoc_md48"></a>
 Rates</h2>
 <div class="fragment"><div class="line">S &lt;- 1000</div>
 <div class="line">rate_comp &lt;- function(I,B) S * B * I</div>
