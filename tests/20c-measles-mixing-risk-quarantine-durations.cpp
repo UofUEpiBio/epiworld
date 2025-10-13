@@ -1,8 +1,10 @@
 #define EPI_DEBUG
 #ifndef CATCH_CONFIG_MAIN
 #define N_THREADS 8
+#define N_SIMS 1000
 #else
 #define N_THREADS 4
+#define N_SIMS 400
 #endif
 
 #include "tests.hpp"
@@ -42,18 +44,18 @@ inline auto test_model_builder_20d(
         durations[0],   // Quarantine period high risk
         durations[1],   // Quarantine period medium risk (same as high)
         durations[2],   // Quarantine period low risk (same as high)
-        .9,             // Quarantine willingness
-        .9,             // Isolation willingness
+        1.0,             // Quarantine willingness
+        1.0,             // Isolation willingness
         4,              // Isolation period
         0.3,            // Proportion vaccinated
-        0.5,            // Detection rate during quarantine
+        0.2,            // Detection rate during quarantine
         1.0,            // Contact tracing success rate
         7u              // Contact tracing days prior
     );
 
-    model.add_entity(Entity<>("Population", dist_factory<>(0, n/3 - 1)));
-    model.add_entity(Entity<>("Population", dist_factory<>(n/3, 2*n/3 - 1)));
-    model.add_entity(Entity<>("Population", dist_factory<>(2*n/3, n - 1)));
+    model.add_entity(Entity<>("Population", dist_factory<>(0, n/3)));
+    model.add_entity(Entity<>("Population", dist_factory<>(n/3, 2*n/3)));
+    model.add_entity(Entity<>("Population", dist_factory<>(2*n/3, n)));
 
     // Moving the virus to the first agent
     model.get_virus(0).set_distribution(
@@ -70,7 +72,7 @@ EPIWORLD_TEST_CASE(
 ) {
 
     // Contact matrix for 3 groups with equal mixing
-    int nsims = 400;
+    int nsims = N_SIMS;
     size_t n  = 600;
     double n_seeds = 1.0;
     
@@ -86,9 +88,9 @@ EPIWORLD_TEST_CASE(
     };
 
     auto model_uniform = test_model_builder_20d(n, contact_matrix, {21, 21, 21});
-    auto model_high = test_model_builder_20d(n, contact_matrix, {7, 21, 21});
-    auto model_mid = test_model_builder_20d(n, contact_matrix, {21, 7, 21});
-    auto model_low = test_model_builder_20d(n, contact_matrix, {21, 21, 7});
+    auto model_high    = test_model_builder_20d(n, contact_matrix, { 7, 21, 21});
+    auto model_mid     = test_model_builder_20d(n, contact_matrix, {21,  0, 21});
+    auto model_low     = test_model_builder_20d(n, contact_matrix, {21, 21,  7});
 
     // Run simulations
     std::vector<std::vector<epiworld_double>>

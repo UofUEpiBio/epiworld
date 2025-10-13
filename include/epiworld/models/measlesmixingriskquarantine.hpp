@@ -626,20 +626,21 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
 ) {
     
     GET_MODEL(m, model);
-    
-    // Check for detection during active quarantine
-    bool detect_it = (model->get_days_quarantine_triggered().size() > 0u) &&
-        (m->runif() < m->par("Detection rate quarantine"));
 
     // Does the agent transition to rash?
     if (m->runif() < 1.0/m->par("Prodromal period"))
     {
+        // Check for detection during active quarantine
+        bool detect_it = (model->get_days_quarantine_triggered().size() > 0u) &&
+            (m->runif() < m->par("Detection rate quarantine"));
+
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(m, detect_it ? ISOLATED : RASH);
+
+
+        if (detect_it)
+            model->m_add_contact_tracing(p->get_id());
         
-    } else if (detect_it)
-    {
-        p->change_state(m, QUARANTINED_PRODROMAL);
     }
 
     return ;
@@ -823,8 +824,13 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodroma
     // Develops rash?
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
+        
+        // Developing Rash automatically triggers contact tracing
+        model->m_add_contact_tracing(p->get_id());
+        
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(m, ISOLATED);
+        
     }
     else if (quarantine_period <= days_since)
     {
@@ -886,7 +892,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     // We increase the number of quarantines
     days_quarantine_triggered.push_back(Model<TSeq>::today());
 
-    // Check if any quarantine period is enabled for this risk level
+    // This vector indicates whether an agent can be quarantined
+    // (i.e., is not already in quarantine or isolation)
     std::vector< bool > can_quarantine(
         Model<TSeq>::size(), false
     );
@@ -1123,6 +1130,12 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
                 "An agent who was contacted by an infectious agent is not in at least RISK_MEDIUM."
             );
     }
+
+    // Tabulating the number of agents per group
+    std::vector< size_t > n_agents_per_group(Model<TSeq>::entities.size(), 0u);
+    for (auto i: quarantine_risk_level)
+        n_agents_per_group[i]++;
+
     #endif
     
     // Applying the changes and resetting the number of agents
