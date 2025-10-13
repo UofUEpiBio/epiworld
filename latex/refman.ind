@@ -56,15 +56,16 @@
     \subitem {ModelSIRDCONN$<$ TSeq $>$}, \hyperpage{239}
     \subitem {ModelSIRLogit$<$ TSeq $>$}, \hyperpage{246}
     \subitem {ModelSIRMixing$<$ TSeq $>$}, \hyperpage{253}
+  \item {ContactTracing}, \hyperpage{67}
 
   \indexspace
 
-  \item {DataBase$<$ TSeq $>$}, \hyperpage{67}
+  \item {DataBase$<$ TSeq $>$}, \hyperpage{68}
     \subitem {get\_generation\_time}, \hyperpage{70}
     \subitem {get\_reproductive\_number}, \hyperpage{70}
-    \subitem {get\_transition\_probability}, \hyperpage{70}
+    \subitem {get\_transition\_probability}, \hyperpage{71}
     \subitem {get\_transmissions}, \hyperpage{71}
-    \subitem {operator==}, \hyperpage{71, 72}
+    \subitem {operator==}, \hyperpage{72}
     \subitem {record\_virus}, \hyperpage{72}
   \item {default\_rm\_entity}
     \subitem {Agent$<$ TSeq $>$}, \hyperpage{60}
@@ -334,7 +335,7 @@
     \subitem {DataBase$<$ TSeq $>$}, \hyperpage{70}
     \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{75}
   \item {get\_transition\_probability}
-    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{70}
+    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{71}
     \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{76}
   \item {get\_transmissions}
     \subitem {DataBase$<$ TSeq $>$}, \hyperpage{71}
@@ -590,7 +591,7 @@
     \subitem {Agent$<$ TSeq $>$}, \hyperpage{58}
     \subitem {epiworld::Agent$<$ TSeq $>$}, \hyperpage{63}
   \item {operator==}
-    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{71, 72}
+    \subitem {DataBase$<$ TSeq $>$}, \hyperpage{72}
     \subitem {epiworld::DataBase$<$ TSeq $>$}, \hyperpage{77}
 
   \indexspace

@@ -42,17 +42,18 @@
 \indexentry{epiworld::AgentsSample$<$ TSeq $>$@{epiworld::AgentsSample$<$ TSeq $>$}|hyperpage}{66}
 \indexentry{epiworld::AgentsSample$<$ TSeq $>$@{epiworld::AgentsSample$<$ TSeq $>$}!AgentsSample@{AgentsSample}|hyperpage}{67}
 \indexentry{AgentsSample@{AgentsSample}!epiworld::AgentsSample$<$ TSeq $>$@{epiworld::AgentsSample$<$ TSeq $>$}|hyperpage}{67}
-\indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{67}
+\indexentry{ContactTracing@{ContactTracing}|hyperpage}{67}
+\indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{68}
 \indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_generation\_time@{get\_generation\_time}|hyperpage}{70}
 \indexentry{get\_generation\_time@{get\_generation\_time}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{70}
 \indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_reproductive\_number@{get\_reproductive\_number}|hyperpage}{70}
 \indexentry{get\_reproductive\_number@{get\_reproductive\_number}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{70}
-\indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_transition\_probability@{get\_transition\_probability}|hyperpage}{70}
-\indexentry{get\_transition\_probability@{get\_transition\_probability}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{70}
+\indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_transition\_probability@{get\_transition\_probability}|hyperpage}{71}
+\indexentry{get\_transition\_probability@{get\_transition\_probability}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{71}
 \indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_transmissions@{get\_transmissions}|hyperpage}{71}
 \indexentry{get\_transmissions@{get\_transmissions}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{71}
-\indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!operator==@{operator==}|hyperpage}{71}
-\indexentry{operator==@{operator==}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{71}
+\indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!operator==@{operator==}|hyperpage}{72}
+\indexentry{operator==@{operator==}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{72}
 \indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!operator==@{operator==}|hyperpage}{72}
 \indexentry{operator==@{operator==}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}|hyperpage}{72}
 \indexentry{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!operator==@{operator==}|hyperpage}{72}
