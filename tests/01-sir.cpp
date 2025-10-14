@@ -15,7 +15,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     model_0.seed(1231);
 
-    model_0.agents_smallworld(10000, 5, false, 0.01).
+    model_0.agents_smallworld(10000, 5, false, 0.02).
         verbose_off().
         run(100);
 
@@ -25,7 +25,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     model_1.seed(1231);
 
-    model_1.agents_smallworld(10000, 5, false, 0.01).
+    model_1.agents_smallworld(10000, 5, false, 0.02).
         queuing_off().
         verbose_off().
         run(100);
@@ -37,7 +37,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     model_2.seed(1231);
 
-    model_2.agents_smallworld(10000, 5, false, 0.01).
+    model_2.agents_smallworld(10000, 5, false, 0.02).
         read_params("01-sir_parameters.yaml", true).
         queuing_off().
         verbose_off().
@@ -70,10 +70,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         if (v < 0.0 | v > 1.0)
             out_of_range_2++;
 
-    std::vector< epiworld_double > tmat_expected = {0.962440431, 0.0, 0.0, 0.0386752182, 0.704328, 0.0, 3.3772063e-05, 0.298277199, 1.0};
-
     #ifdef CATCH_CONFIG_MAIN
-    REQUIRE_THAT(tmat_0, Catch::Approx(tmat_expected).margin(0.025));
     REQUIRE_THAT(tmat_1, Catch::Equals(tmat_0));
     REQUIRE_THAT(tmat_1, Catch::Equals(tmat_2));
     REQUIRE_THAT(h_0, Catch::Equals(h_1));

@@ -1,13 +1,13 @@
-[![Tests and coverage](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml/badge.svg)](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml) 
-[![C++ Documentation](https://img.shields.io/badge/Docs-Doxygen-brightgreen)](https://UofUEpi.github.io/epiworld) 
-![GitHub Release](https://img.shields.io/github/v/release/UofUEpiBio/epiworld) 
+[![Tests and coverage](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml/badge.svg)](https://github.com/UofUEpi/epiworld/actions/workflows/ci.yml)
+[![C++ Documentation](https://img.shields.io/badge/Docs-Doxygen-brightgreen)](https://UofUEpi.github.io/epiworld)
+![GitHub Release](https://img.shields.io/github/v/release/UofUEpiBio/epiworld)
 [![codecov](https://codecov.io/gh/UofUEpiBio/epiworld/graph/badge.svg?token=CPDYG4HA0B)](https://codecov.io/gh/UofUEpiBio/epiworld)
 [![ForeSITE Group](https://github.com/EpiForeSITE/software/blob/e82ed88f75e0fe5c0a1a3b38c2b94509f122019c/docs/assets/foresite-software-badge.svg)](https://github.com/EpiForeSITE)
 
 # epiworld
 
 This C++ library provides a general framework for epidemiologic simulation. The
-core principle of `epiworld` is fast epidemiological prototyping for 
+core principle of `epiworld` is fast epidemiological prototyping for
 building complex models quickly. Here are some of its main features:
 
   - It only depends on the standard library (C++11 required.)
@@ -137,11 +137,11 @@ int main()
 
     virus.set_prob_infecting(.90);
     virus.set_prob_recovery(.30);
-    
+
     virus.set_status(1, 2);
 
     model.default_add_virus<TSeq>n(virus, 1000);
-    
+
     // Generating a random pop from a smallworld network
     model.agents_smallworld(100000, 4L, false, .01);
 
@@ -151,7 +151,7 @@ int main()
     // Running the model
     model.run();
     model.print();
-  
+
 }
 ```
 
@@ -215,7 +215,7 @@ according to a user-defined function.
 
 4. **Lock the results**: The current date is incremented in one unit, and
   the changes (exposition, new infections, recoveries, etc.) are recorded
-  in the database. 
+  in the database.
 
 5. (optional) **Mutate Variants**: When defined, variants can mutate, with the new
 variants appearing the next day.
@@ -233,7 +233,7 @@ changes:
 
 - **Lose a virus (`rm_virus()`)**: Removing a virus from the agent. Losing a virus
 triggers a call to the virus's `postrecovery()` function, which can, for example,
-result in gaining immunity to that variant. 
+result in gaining immunity to that variant.
 
 - **Acquire a tool (`add_tool()`)**: For example, mask-wearing, vaccines, etc.
 
@@ -247,56 +247,56 @@ to "ICU," etc.
 
 Any action in the model can trigger a change in its queuing system. By default, becoming exposed makes the agent (and its neighbors) active in the queuing system. Likewise, losing all viruses could make the agent and its neighbors inactive.
 
-<!-- 
+<!--
 ## Tools -->
 
 ## Contagion
 
 Susceptible individuals can acquire a virus from any of their infected connections. The probability that susceptible individual `i` gets the virus `v` from individual `j` depends on how three things:
 
-1. The transmissibility of the virus, <!-- $P_v \in [0,1]$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=P_v%20%5Cin%20%5B0%2C1%5D">,
-2. The contagion reduction factor of `i`, <!-- $C_r \in [0,1]$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=C_r%20%5Cin%20%5B0%2C1%5D">, and
-3. The host's transmission reduction factor, <!-- $T_r \in [0,1]$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=T_r%20%5Cin%20%5B0%2C1%5D">.
+1. The transmissibility of the virus, <!-- $P_v \in [0,1]$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?P_v%20%5Cin%20%5B0%2C1%5D">,
+2. The contagion reduction factor of `i`, <!-- $C_r \in [0,1]$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?C_r%20%5Cin%20%5B0%2C1%5D">, and
+3. The host's transmission reduction factor, <!-- $T_r \in [0,1]$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?T_r%20%5Cin%20%5B0%2C1%5D">.
 
-The last two are computed from <!-- $i$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=i"> and <!-- $j$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=j">'s tools. Ultimately, the probability of <!-- $i$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=i"> getting virus $v$ from <!-- $j$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=j"> equals:
+The last two are computed from <!-- $i$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?i"> and <!-- $j$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?j">'s tools. Ultimately, the probability of <!-- $i$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?i"> getting virus $v$ from <!-- $j$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?j"> equals:
 
 <!-- $$
-P(Virus v) = P_v * (1 - C_r) *(1 - T_r) 
-$$ --> 
+P(Virus v) = P_v * (1 - C_r) *(1 - T_r)
+$$ -->
 
-<div align="center"><img style="background: white;" src="https://render.githubusercontent.com/render/math?math=P(Virus%20v)%20%3D%20P_v%20*%20(1%20-%20C_r)%20*(1%20-%20T_r)%20"></div>
+<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?P(Virus%20v)%20%3D%20P_v%20*%20(1%20-%20C_r)%20*(1%20-%20T_r)%20"></div>
 
 Nonetheless, the default behavior of the simulation model is to assume that individuals can acquire only one disease at a time, if any. This way, the actual probability is:
 
 <!-- $$
-P(Virus v|\mbox{at most one virus}) = P_{ivj}
-$$ --> 
+P(Virus v|\mbox{\text{at most one virus}}) = P_{ivj}
+$$ -->
 
-<div align="center"><img style="background: white;" src="https://render.githubusercontent.com/render/math?math=P(Virus%20v%7C%5Cmbox%7Bat%20most%20one%20virus%7D)%20%3D%20P_%7Bivj%7D"></div>
+<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?P(Virus%20v%20%7C%20%5Cmbox%7Bat%20most%20one%20virus%7D)%20%3D%20P_%7Bivj%7D"></div>
 
 The latter is calculated using Bayes' rule
 
 <!-- $$
 \begin{align*}
-P_{ivj} & = P(at most one virus|Virus v) * P_v / P(at most one virus) \\
-        & = P(Only Virus v)/P_v * P(Virus v) / P(at most one virus) \\
-        & = P(Only Virus v)/P(at most one virus)
+P_{ivj} & = P(\text{at most one virus}|\text{Virus v}) * P_v / P(\text{at most one virus}) \\
+        & = P(\text{Only Virus v})/P_v * P(\text{Virus v}) / P(\text{at most one virus}) \\
+        & = P(\text{Only Virus v})/P(\text{at most one virus})
 \end{align*}
-$$ --> 
+$$ -->
 
-<div align="center"><img style="background: white;" src="https://render.githubusercontent.com/render/math?math=%5Cbegin%7Balign*%7D%0AP_%7Bivj%7D%20%26%20%3D%20P(at%20most%20one%20virus%7CVirus%20v)%20*%20P_v%20%2F%20P(at%20most%20one%20virus)%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P(Only%20Virus%20v)%2FP_v%20*%20P(Virus%20v)%20%2F%20P(at%20most%20one%20virus)%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P(Only%20Virus%20v)%2FP(at%20most%20one%20virus)%0A%5Cend%7Balign*%7D"></div>
+<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0AP_%7Bivj%7D%20%26%20%3D%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%7C%5Ctext%7BVirus%20v%7D%29%20%2A%20P_v%20%2F%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P%28%5Ctext%7BOnly%20Virus%20v%7D%29%2FP_v%20%2A%20P%28%5Ctext%7BVirus%20v%7D%29%20%2F%20P%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%26%20%3D%20P%28%5Ctext%7BOnly%20Virus%20v%7D%29%2FP%28%5Ctext%7Bat%20most%20one%20virus%7D%29%0A%5Cend%7Balign%2A%7D"></div>
 
 
 Where
 
 <!-- $$
 \begin{align*}
-P(Only Virus V)      & = P_v * \prod_{m!=V} (1 - P_m) \\
-P(at most one virus) & = P(None) + \sum_{k \in viruses} P_k * \prod_{m != k} (1 - P_m) \\
-P(None)              & = \prod_{k \in Viruses} (1 - P_k)
+P(\text{Only Virus V})      & = P_v * \prod_{m!=V} (1 - P_m) \\
+P(\text{at most one virus}) & = P(None) + \sum_{k \in \text{viruses}} P_k * \prod_{m != k} (1 - P_m) \\
+P(\text{None})              & = \prod_{k \in \text{viruses}} (1 - P_k)
 \end{align*}
-$$ --> 
+$$ -->
 
-<div align="center"><img style="background: white;" src="https://render.githubusercontent.com/render/math?math=%5Cbegin%7Balign*%7D%0AP(Only%20Virus%20V)%20%20%20%20%20%20%26%20%3D%20P_v%20*%20%5Cprod_%7Bm!%3DV%7D%20(1%20-%20P_m)%20%5C%5C%0AP(at%20most%20one%20virus)%20%26%20%3D%20P(None)%20%2B%20%5Csum_%7Bk%20%5Cin%20viruses%7D%20P_k%20*%20%5Cprod_%7Bm%20!%3D%20k%7D%20(1%20-%20P_m)%20%5C%5C%0AP(None)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20%5Cprod_%7Bk%20%5Cin%20Viruses%7D%20(1%20-%20P_k)%0A%5Cend%7Balign*%7D"></div>
+<div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign%2A%7D%0AP%28%5Ctext%7BOnly%20Virus%20V%7D%29%20%20%20%20%20%20%26%20%3D%20P_v%20%2A%20%5Cprod_%7Bm%21%3DV%7D%20%281%20-%20P_m%29%20%5C%5C%0AP%28%5Ctext%7Bat%20most%20one%20virus%7D%29%20%26%20%3D%20P%28%5Ctext%7BNone%7D%29%20%2B%20%5Csum_%7Bk%20%5Cin%20%5Ctext%7Bviruses%7D%7D%20P_k%20%2A%20%5Cprod_%7Bm%20%21%3D%20k%7D%20%281%20-%20P_m%29%20%5C%5C%0AP%28%5Ctext%7BNone%7D%29%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20%5Cprod_%7Bk%20%5Cin%20%5Ctext%7Bviruses%7D%7D%20%281%20-%20P_k%29%0A%5Cend%7Balign%2A%7D"></div>
 
 This way, viruses with higher transmissibility will be more likely to be acquired when competing with other variants.

@@ -1314,4 +1314,5 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 }
 #undef MM
 #undef GET_MODEL
+#undef SAMPLE_FROM_PROBS
 #endif
