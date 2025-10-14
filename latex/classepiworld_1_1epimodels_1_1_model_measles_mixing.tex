@@ -1,0 +1,458 @@
+\hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing}{}\doxysection{epiworld\+::epimodels\+::Model\+Measles\+Mixing$<$ TSeq $>$ Class Template Reference}
+\label{classepiworld_1_1epimodels_1_1_model_measles_mixing}\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+
+
+Measles model with population mixing, quarantine, and contact tracing.  
+
+
+
+
+{\ttfamily \#include $<$epiworld.\+hpp$>$}
+
+
+
+Inheritance diagram for epiworld\+::epimodels\+::Model\+Measles\+Mixing$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classepiworld_1_1epimodels_1_1_model_measles_mixing__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for epiworld\+::epimodels\+::Model\+Measles\+Mixing$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classepiworld_1_1epimodels_1_1_model_measles_mixing__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_a5b0aff8c8565e24855efac8c99090208}{Model\+Measles\+Mixing}} (\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$ \&model, epiworld\+\_\+fast\+\_\+uint n, epiworld\+\_\+double prevalence, epiworld\+\_\+double contact\+\_\+rate, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double vax\+\_\+efficacy, epiworld\+\_\+double vax\+\_\+reduction\+\_\+recovery\+\_\+rate, epiworld\+\_\+double incubation\+\_\+period, epiworld\+\_\+double prodromal\+\_\+period, epiworld\+\_\+double rash\+\_\+period, std\+::vector$<$ double $>$ contact\+\_\+matrix, epiworld\+\_\+double hospitalization\+\_\+rate, epiworld\+\_\+double hospitalization\+\_\+period, epiworld\+\_\+double days\+\_\+undetected, epiworld\+\_\+fast\+\_\+int quarantine\+\_\+period, epiworld\+\_\+double quarantine\+\_\+willingness, epiworld\+\_\+double isolation\+\_\+willingness, epiworld\+\_\+fast\+\_\+int isolation\+\_\+period, epiworld\+\_\+double prop\+\_\+vaccinated, epiworld\+\_\+double contact\+\_\+tracing\+\_\+success\+\_\+rate=1.\+0, epiworld\+\_\+fast\+\_\+uint contact\+\_\+tracing\+\_\+days\+\_\+prior=4u)
+\begin{DoxyCompactList}\small\item\em Constructs a \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}} object. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_a5b302c3fab5e426225324547803956e4}{Model\+Measles\+Mixing}} (epiworld\+\_\+fast\+\_\+uint n, epiworld\+\_\+double prevalence, epiworld\+\_\+double contact\+\_\+rate, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double vax\+\_\+efficacy, epiworld\+\_\+double vax\+\_\+reduction\+\_\+recovery\+\_\+rate, epiworld\+\_\+double incubation\+\_\+period, epiworld\+\_\+double prodromal\+\_\+period, epiworld\+\_\+double rash\+\_\+period, std\+::vector$<$ double $>$ contact\+\_\+matrix, epiworld\+\_\+double hospitalization\+\_\+rate, epiworld\+\_\+double hospitalization\+\_\+period, epiworld\+\_\+double days\+\_\+undetected, epiworld\+\_\+fast\+\_\+int quarantine\+\_\+period, epiworld\+\_\+double quarantine\+\_\+willingness, epiworld\+\_\+double isolation\+\_\+willingness, epiworld\+\_\+fast\+\_\+int isolation\+\_\+period, epiworld\+\_\+double prop\+\_\+vaccinated, epiworld\+\_\+double contact\+\_\+tracing\+\_\+success\+\_\+rate=1.\+0, epiworld\+\_\+fast\+\_\+uint contact\+\_\+tracing\+\_\+days\+\_\+prior=4u)
+\begin{DoxyCompactList}\small\item\em Constructs a \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}} object. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$ \& \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_a94e8ad8e59f9f7be0cb208961fc0c567}{run}} (epiworld\+\_\+fast\+\_\+uint ndays, int seed=-\/1)
+\begin{DoxyCompactList}\small\item\em Run the model simulation. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_acc369b62fe74e8427371b45205c7a1b1}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_acc369b62fe74e8427371b45205c7a1b1}} 
+void \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_acc369b62fe74e8427371b45205c7a1b1}{reset}} ()
+\begin{DoxyCompactList}\small\item\em Reset the model to initial state. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_aa35063312b970034fdd67144ed575a50}{clone\+\_\+ptr}} ()
+\begin{DoxyCompactList}\small\item\em Create a clone of this model. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$ \& \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_a0bc57866d2602214dbd98e2510b3e97f}{initial\+\_\+states}} (std\+::vector$<$ double $>$ proportions\+\_\+, std\+::vector$<$ int $>$ queue\+\_\+=\{\})
+\begin{DoxyCompactList}\small\item\em Set the initial states of the model. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1a069154b90f0f228df94b20fe1d4007}{set\+\_\+contact\+\_\+matrix}} (std\+::vector$<$ double $>$ cmat)
+\begin{DoxyCompactList}\small\item\em Set the contact matrix for population mixing. \end{DoxyCompactList}\item 
+std\+::vector$<$ double $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_a263c83d5483da0bd576f2bbf4ada80ac}{get\+\_\+contact\+\_\+matrix}} () const
+\begin{DoxyCompactList}\small\item\em Get the current contact matrix. \end{DoxyCompactList}\item 
+std\+::vector$<$ size\+\_\+t $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_ac98b97f1139c208a5be6cf9f40f6d436}{get\+\_\+agent\+\_\+quarantine\+\_\+triggered}} () const
+\begin{DoxyCompactList}\small\item\em Get the quarantine trigger status for all agents. \end{DoxyCompactList}\item 
+std\+::vector$<$ bool $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_a2eebb3f8a1ff27baefc2805009e9fa19}{get\+\_\+quarantine\+\_\+willingness}} () const
+\begin{DoxyCompactList}\small\item\em Get the quarantine willingness for all agents. \end{DoxyCompactList}\item 
+std\+::vector$<$ bool $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1b08d8103e0a6a6305b17250d7ad7536}{get\+\_\+isolation\+\_\+willingness}} () const
+\begin{DoxyCompactList}\small\item\em Get the isolation willingness for all agents. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a2182df247a31803069c1f098cf404380}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a2182df247a31803069c1f098cf404380}} 
+static const int {\bfseries SUSCEPTIBLE} = 0
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a3e5b646faaae27bf224a470b82e5cb6a}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a3e5b646faaae27bf224a470b82e5cb6a}} 
+static const int {\bfseries EXPOSED} = 1
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1ea24f86e2156a11b94eb12b600d30aa}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1ea24f86e2156a11b94eb12b600d30aa}} 
+static const int {\bfseries PRODROMAL} = 2
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a80bf3f7b96fa508f7884726aa84de8b6}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a80bf3f7b96fa508f7884726aa84de8b6}} 
+static const int {\bfseries RASH} = 3
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a3b55b37972caea76edd2c022d12ddceb}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a3b55b37972caea76edd2c022d12ddceb}} 
+static const int {\bfseries ISOLATED} = 4
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a9dc36ca56742688ac3856255faeac489}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a9dc36ca56742688ac3856255faeac489}} 
+static const int {\bfseries ISOLATED\+\_\+\+RECOVERED} = 5
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a2e731b2fd41c9b5ecd14a343d08fbb05}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a2e731b2fd41c9b5ecd14a343d08fbb05}} 
+static const int {\bfseries DETECTED\+\_\+\+HOSPITALIZED} = 6
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1bb4f9ba088fd65749542a3fb2168b75}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1bb4f9ba088fd65749542a3fb2168b75}} 
+static const int {\bfseries QUARANTINED\+\_\+\+EXPOSED} = 7
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1c1eac236c0fcee79c6e102a6b9de10f}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1c1eac236c0fcee79c6e102a6b9de10f}} 
+static const int {\bfseries QUARANTINED\+\_\+\+SUSCEPTIBLE} = 8
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_adad4f28b51ee3659ca73913a6611279f}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_adad4f28b51ee3659ca73913a6611279f}} 
+static const int {\bfseries QUARANTINED\+\_\+\+PRODROMAL} = 9
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a98048a5a60c6a8859f01a93cc1ea0295}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a98048a5a60c6a8859f01a93cc1ea0295}} 
+static const int {\bfseries QUARANTINED\+\_\+\+RECOVERED} = 10
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a239f0e5ff90192b9a0a36c356eb611d9}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a239f0e5ff90192b9a0a36c356eb611d9}} 
+static const int {\bfseries HOSPITALIZED} = 11
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a7620d7de0881017ec9cee162224ae055}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a7620d7de0881017ec9cee162224ae055}} 
+static const int {\bfseries RECOVERED} = 12
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_ae3aa6161bbe4acf9e9a1970e9f9f994c}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_ae3aa6161bbe4acf9e9a1970e9f9f994c}} 
+static const size\+\_\+t {\bfseries QUARANTINE\+\_\+\+PROCESS\+\_\+\+INACTIVE} = 0u
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_ab0685be644125e18978de68305f00c76}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_ab0685be644125e18978de68305f00c76}} 
+static const size\+\_\+t {\bfseries QUARANTINE\+\_\+\+PROCESS\+\_\+\+ACTIVE} = 1u
+\item 
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_ae8e434b2d5b13dbda96f8a400e140887}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_ae8e434b2d5b13dbda96f8a400e140887}} 
+static const size\+\_\+t {\bfseries QUARANTINE\+\_\+\+PROCESS\+\_\+\+DONE} = 2u
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+\doxysubsection{Detailed Description}
+\subsubsection*{template$<$typename TSeq = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$\newline
+class epiworld\+::epimodels\+::\+Model\+Measles\+Mixing$<$ TSeq $>$}
+
+Measles model with population mixing, quarantine, and contact tracing. 
+
+This class implements a Measles epidemiological model based on the SEIR framework with additional features including\+:
+\begin{DoxyItemize}
+\item Population mixing based on contact matrices
+\item Measles-\/specific disease progression\+: Susceptible → Exposed → Prodromal → Rash
+\item Prodromal individuals are infectious (replace the \char`\"{}\+Infected\char`\"{} state in SEIR)
+\item Rash individuals are no longer infectious but can be detected for isolation
+\item Quarantine measures for exposed contacts during contact tracing
+\item Isolation policies for detected individuals during the rash state
+\item Contact tracing with configurable success rates
+\item Hospitalization of severe cases
+\item Individual willingness to comply with public health measures
+\end{DoxyItemize}
+
+The model supports 13 distinct states\+:
+\begin{DoxyItemize}
+\item Susceptible\+: Individuals who can become infected
+\item Exposed\+: Infected but not yet infectious (incubation period)
+\item Prodromal\+: Infectious individuals in the community (replaces \char`\"{}\+Infected\char`\"{} in SEIR)
+\item Rash\+: Non-\/infectious individuals with visible symptoms (detection occurs here)
+\item Isolated\+: Detected individuals in self-\/isolation
+\item Isolated Recovered\+: Recovered individuals still in isolation
+\item Detected Hospitalized\+: Hospitalized individuals who were contact-\/traced
+\item Quarantined Exposed\+: Exposed individuals in quarantine due to contact tracing
+\item Quarantined Susceptible\+: Susceptible individuals in quarantine due to contact tracing
+\item Quarantined Prodromal\+: Prodromal individuals in quarantine due to contact tracing
+\item Quarantined Recovered\+: Recovered individuals in quarantine due to contact tracing
+\item Hospitalized\+: Individuals requiring hospital care
+\item Recovered\+: Individuals who have recovered and gained immunity
+\end{DoxyItemize}
+
+
+\begin{DoxyTemplParams}{Template Parameters}
+{\em TSeq} & Type for genetic sequences (default\+: EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ) \\
+\hline
+\end{DoxyTemplParams}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a5b0aff8c8565e24855efac8c99090208}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a5b0aff8c8565e24855efac8c99090208}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!ModelMeaslesMixing@{ModelMeaslesMixing}}
+\index{ModelMeaslesMixing@{ModelMeaslesMixing}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{ModelMeaslesMixing()}{ModelMeaslesMixing()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$\+::\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}} (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$ \&}]{model,  }\item[{epiworld\+\_\+fast\+\_\+uint}]{n,  }\item[{epiworld\+\_\+double}]{prevalence,  }\item[{epiworld\+\_\+double}]{contact\+\_\+rate,  }\item[{epiworld\+\_\+double}]{transmission\+\_\+rate,  }\item[{epiworld\+\_\+double}]{vax\+\_\+efficacy,  }\item[{epiworld\+\_\+double}]{vax\+\_\+reduction\+\_\+recovery\+\_\+rate,  }\item[{epiworld\+\_\+double}]{incubation\+\_\+period,  }\item[{epiworld\+\_\+double}]{prodromal\+\_\+period,  }\item[{epiworld\+\_\+double}]{rash\+\_\+period,  }\item[{std\+::vector$<$ double $>$}]{contact\+\_\+matrix,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+rate,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+period,  }\item[{epiworld\+\_\+double}]{days\+\_\+undetected,  }\item[{epiworld\+\_\+fast\+\_\+int}]{quarantine\+\_\+period,  }\item[{epiworld\+\_\+double}]{quarantine\+\_\+willingness,  }\item[{epiworld\+\_\+double}]{isolation\+\_\+willingness,  }\item[{epiworld\+\_\+fast\+\_\+int}]{isolation\+\_\+period,  }\item[{epiworld\+\_\+double}]{prop\+\_\+vaccinated,  }\item[{epiworld\+\_\+double}]{contact\+\_\+tracing\+\_\+success\+\_\+rate = {\ttfamily 1.0},  }\item[{epiworld\+\_\+fast\+\_\+uint}]{contact\+\_\+tracing\+\_\+days\+\_\+prior = {\ttfamily 4u} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Constructs a \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}} object. 
+
+Template for a Measles model with population mixing, quarantine, and contact tracing.
+
+
+\begin{DoxyParams}{Parameters}
+{\em model} & A reference to an existing \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}} object. \\
+\hline
+{\em n} & The number of entities in the model. \\
+\hline
+{\em prevalence} & The initial prevalence of the disease in the model. \\
+\hline
+{\em contact\+\_\+rate} & The contact rate between entities in the model. \\
+\hline
+{\em transmission\+\_\+rate} & The transmission rate of the disease in the model. \\
+\hline
+{\em vax\+\_\+efficacy} & The efficacy of the vaccine. \\
+\hline
+{\em vax\+\_\+reduction\+\_\+recovery\+\_\+rate} & The reduction in recovery rate due to the vaccine. \\
+\hline
+{\em incubation\+\_\+period} & The incubation period of the disease in the model. \\
+\hline
+{\em prodromal\+\_\+period} & The prodromal period of the disease in the model. \\
+\hline
+{\em rash\+\_\+period} & The rash period of the disease in the model. \\
+\hline
+{\em contact\+\_\+matrix} & The contact matrix between entities in the model. Specified in column-\/major order. \\
+\hline
+{\em hospitalization\+\_\+rate} & The rate at which infected individuals are hospitalized. \\
+\hline
+{\em hospitalization\+\_\+period} & The average duration of hospitalization in days. \\
+\hline
+{\em days\+\_\+undetected} & The average number of days an infected individual remains undetected. \\
+\hline
+{\em quarantine\+\_\+period} & The duration of quarantine in days for exposed contacts. \\
+\hline
+{\em quarantine\+\_\+willingness} & The proportion of individuals willing to comply with quarantine measures. \\
+\hline
+{\em isolation\+\_\+willingness} & The proportion of individuals willing to self-\/isolate when detected. \\
+\hline
+{\em isolation\+\_\+period} & The duration of isolation in days for detected infected individuals. \\
+\hline
+{\em prop\+\_\+vaccinated} & The proportion of vaccinated agents. \\
+\hline
+{\em contact\+\_\+tracing\+\_\+success\+\_\+rate} & The probability of successfully identifying and tracing contacts (default\+: 1.\+0). \\
+\hline
+{\em contact\+\_\+tracing\+\_\+days\+\_\+prior} & The number of days prior to detection for which contacts are traced (default\+: 4).\\
+\hline
+{\em model} & A Model\+Measles\+Mixing$<$\+TSeq$>$ object where to set up the model. \\
+\hline
+{\em n} & Number of agents in the population \\
+\hline
+{\em prevalence} & Initial prevalence (proportion of infected individuals) \\
+\hline
+{\em contact\+\_\+rate} & Average number of contacts (interactions) per step \\
+\hline
+{\em transmission\+\_\+rate} & Probability of transmission per contact \\
+\hline
+{\em vax\+\_\+efficacy} & The efficacy of the vaccine \\
+\hline
+{\em vax\+\_\+reduction\+\_\+recovery\+\_\+rate} & The reduction in recovery rate due to the vaccine \\
+\hline
+{\em incubation\+\_\+period} & Average incubation period in days \\
+\hline
+{\em prodromal\+\_\+period} & Average prodromal period in days \\
+\hline
+{\em rash\+\_\+period} & Average rash period in days \\
+\hline
+{\em contact\+\_\+matrix} & Contact matrix specifying mixing patterns between population groups \\
+\hline
+{\em hospitalization\+\_\+rate} & Rate at which infected individuals are hospitalized \\
+\hline
+{\em hospitalization\+\_\+period} & Average duration of hospitalization in days \\
+\hline
+{\em days\+\_\+undetected} & Average number of days an infected individual remains undetected \\
+\hline
+{\em quarantine\+\_\+period} & Duration of quarantine in days for exposed contacts \\
+\hline
+{\em quarantine\+\_\+willingness} & Proportion of individuals willing to comply with quarantine \\
+\hline
+{\em isolation\+\_\+willingness} & Proportion of individuals willing to self-\/isolate when detected \\
+\hline
+{\em isolation\+\_\+period} & Duration of isolation in days for detected infected individuals \\
+\hline
+{\em prop\+\_\+vaccinated} & Proportion of vaccinated agents \\
+\hline
+{\em contact\+\_\+tracing\+\_\+success\+\_\+rate} & Probability of successfully identifying contacts during tracing \\
+\hline
+{\em contact\+\_\+tracing\+\_\+days\+\_\+prior} & Number of days prior to detection for contact tracing \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a5b302c3fab5e426225324547803956e4}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a5b302c3fab5e426225324547803956e4}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!ModelMeaslesMixing@{ModelMeaslesMixing}}
+\index{ModelMeaslesMixing@{ModelMeaslesMixing}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{ModelMeaslesMixing()}{ModelMeaslesMixing()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$\+::\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}} (\begin{DoxyParamCaption}\item[{epiworld\+\_\+fast\+\_\+uint}]{n,  }\item[{epiworld\+\_\+double}]{prevalence,  }\item[{epiworld\+\_\+double}]{contact\+\_\+rate,  }\item[{epiworld\+\_\+double}]{transmission\+\_\+rate,  }\item[{epiworld\+\_\+double}]{vax\+\_\+efficacy,  }\item[{epiworld\+\_\+double}]{vax\+\_\+reduction\+\_\+recovery\+\_\+rate,  }\item[{epiworld\+\_\+double}]{incubation\+\_\+period,  }\item[{epiworld\+\_\+double}]{prodromal\+\_\+period,  }\item[{epiworld\+\_\+double}]{rash\+\_\+period,  }\item[{std\+::vector$<$ double $>$}]{contact\+\_\+matrix,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+rate,  }\item[{epiworld\+\_\+double}]{hospitalization\+\_\+period,  }\item[{epiworld\+\_\+double}]{days\+\_\+undetected,  }\item[{epiworld\+\_\+fast\+\_\+int}]{quarantine\+\_\+period,  }\item[{epiworld\+\_\+double}]{quarantine\+\_\+willingness,  }\item[{epiworld\+\_\+double}]{isolation\+\_\+willingness,  }\item[{epiworld\+\_\+fast\+\_\+int}]{isolation\+\_\+period,  }\item[{epiworld\+\_\+double}]{prop\+\_\+vaccinated,  }\item[{epiworld\+\_\+double}]{contact\+\_\+tracing\+\_\+success\+\_\+rate = {\ttfamily 1.0},  }\item[{epiworld\+\_\+fast\+\_\+uint}]{contact\+\_\+tracing\+\_\+days\+\_\+prior = {\ttfamily 4u} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Constructs a \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}} object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em n} & The number of entities in the model. \\
+\hline
+{\em prevalence} & The initial prevalence of the disease in the model. \\
+\hline
+{\em contact\+\_\+rate} & The contact rate between entities in the model. \\
+\hline
+{\em transmission\+\_\+rate} & The transmission rate of the disease in the model. \\
+\hline
+{\em vax\+\_\+efficacy} & The efficacy of the vaccine. \\
+\hline
+{\em vax\+\_\+reduction\+\_\+recovery\+\_\+rate} & The reduction in recovery rate due to the vaccine. \\
+\hline
+{\em incubation\+\_\+period} & The incubation period of the disease in the model. \\
+\hline
+{\em prodromal\+\_\+period} & The prodromal period of the disease in the model. \\
+\hline
+{\em rash\+\_\+period} & The rash period of the disease in the model. \\
+\hline
+{\em contact\+\_\+matrix} & The contact matrix between entities in the model. \\
+\hline
+{\em hospitalization\+\_\+rate} & The rate at which infected individuals are hospitalized. \\
+\hline
+{\em hospitalization\+\_\+period} & The average duration of hospitalization in days. \\
+\hline
+{\em days\+\_\+undetected} & The average number of days an infected individual remains undetected. \\
+\hline
+{\em quarantine\+\_\+period} & The duration of quarantine in days for exposed contacts. \\
+\hline
+{\em quarantine\+\_\+willingness} & The proportion of individuals willing to comply with quarantine measures. \\
+\hline
+{\em isolation\+\_\+willingness} & The proportion of individuals willing to self-\/isolate when detected. \\
+\hline
+{\em isolation\+\_\+period} & The duration of isolation in days for detected infected individuals. \\
+\hline
+{\em prop\+\_\+vaccinated} & The proportion of vaccinated agents. \\
+\hline
+{\em contact\+\_\+tracing\+\_\+success\+\_\+rate} & The probability of successfully identifying and tracing contacts (default\+: 1.\+0). \\
+\hline
+{\em contact\+\_\+tracing\+\_\+days\+\_\+prior} & The number of days prior to detection for which contacts are traced (default\+: 4). \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_aa35063312b970034fdd67144ed575a50}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_aa35063312b970034fdd67144ed575a50}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}}
+\index{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{clone\_ptr()}{clone\_ptr()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$ TSeq $>$ $\ast$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$\+::clone\+\_\+ptr\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Create a clone of this model. 
+
+\begin{DoxyReturn}{Returns}
+Pointer to a new model instance with the same configuration 
+\end{DoxyReturn}
+
+
+Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model_afd0c24e19b0a104e03d96ab4333725e5}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
+
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_ac98b97f1139c208a5be6cf9f40f6d436}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_ac98b97f1139c208a5be6cf9f40f6d436}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!get\_agent\_quarantine\_triggered@{get\_agent\_quarantine\_triggered}}
+\index{get\_agent\_quarantine\_triggered@{get\_agent\_quarantine\_triggered}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_agent\_quarantine\_triggered()}{get\_agent\_quarantine\_triggered()}}
+{\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
+std\+::vector$<$ size\+\_\+t $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{epiworld\+::epimodels\+::\+Model\+Measles\+Mixing}}$<$ TSeq $>$\+::get\+\_\+agent\+\_\+quarantine\+\_\+triggered (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the quarantine trigger status for all agents. 
+
+\begin{DoxyReturn}{Returns}
+Vector indicating quarantine process status for each agent 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a263c83d5483da0bd576f2bbf4ada80ac}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a263c83d5483da0bd576f2bbf4ada80ac}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!get\_contact\_matrix@{get\_contact\_matrix}}
+\index{get\_contact\_matrix@{get\_contact\_matrix}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_contact\_matrix()}{get\_contact\_matrix()}}
+{\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
+std\+::vector$<$ double $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{epiworld\+::epimodels\+::\+Model\+Measles\+Mixing}}$<$ TSeq $>$\+::get\+\_\+contact\+\_\+matrix (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the current contact matrix. 
+
+\begin{DoxyReturn}{Returns}
+Vector representing the contact matrix 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1b08d8103e0a6a6305b17250d7ad7536}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1b08d8103e0a6a6305b17250d7ad7536}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!get\_isolation\_willingness@{get\_isolation\_willingness}}
+\index{get\_isolation\_willingness@{get\_isolation\_willingness}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_isolation\_willingness()}{get\_isolation\_willingness()}}
+{\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
+std\+::vector$<$ bool $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{epiworld\+::epimodels\+::\+Model\+Measles\+Mixing}}$<$ TSeq $>$\+::get\+\_\+isolation\+\_\+willingness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the isolation willingness for all agents. 
+
+\begin{DoxyReturn}{Returns}
+Vector of boolean values indicating each agent\textquotesingle{}s willingness to self-\/isolate 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a2eebb3f8a1ff27baefc2805009e9fa19}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a2eebb3f8a1ff27baefc2805009e9fa19}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!get\_quarantine\_willingness@{get\_quarantine\_willingness}}
+\index{get\_quarantine\_willingness@{get\_quarantine\_willingness}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_quarantine\_willingness()}{get\_quarantine\_willingness()}}
+{\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
+std\+::vector$<$ bool $>$ \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{epiworld\+::epimodels\+::\+Model\+Measles\+Mixing}}$<$ TSeq $>$\+::get\+\_\+quarantine\+\_\+willingness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the quarantine willingness for all agents. 
+
+\begin{DoxyReturn}{Returns}
+Vector of boolean values indicating each agent\textquotesingle{}s willingness to quarantine 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a0bc57866d2602214dbd98e2510b3e97f}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a0bc57866d2602214dbd98e2510b3e97f}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!initial\_states@{initial\_states}}
+\index{initial\_states@{initial\_states}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{initial\_states()}{initial\_states()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$ \& \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$\+::initial\+\_\+states (\begin{DoxyParamCaption}\item[{std\+::vector$<$ double $>$}]{proportions\+\_\+,  }\item[{std\+::vector$<$ int $>$}]{queue\+\_\+ = {\ttfamily \{\}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Set the initial states of the model. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em proportions\+\_\+} & Double vector with two elements\+:
+\begin{DoxyItemize}
+\item \mbox{[}0\mbox{]}\+: The proportion of initially infected individuals who start in the exposed state.
+\item \mbox{[}1\mbox{]}\+: The proportion of initially non-\/infected individuals who have recovered (immune). 
+\end{DoxyItemize}\\
+\hline
+{\em queue\+\_\+} & Optional vector for queuing specifications (default\+: empty). \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
+
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a94e8ad8e59f9f7be0cb208961fc0c567}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a94e8ad8e59f9f7be0cb208961fc0c567}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!run@{run}}
+\index{run@{run}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{run()}{run()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$ \& \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{Model\+Measles\+Mixing}}$<$ TSeq $>$\+::run (\begin{DoxyParamCaption}\item[{epiworld\+\_\+fast\+\_\+uint}]{ndays,  }\item[{int}]{seed = {\ttfamily -\/1} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Run the model simulation. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em ndays} & Number of days to simulate \\
+\hline
+{\em seed} & Random seed for reproducibility (default\+: -\/1 for random seed) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to this model instance 
+\end{DoxyReturn}
+
+
+Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model_aa7d8311e60c5a6683f52868f4d1c099e}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
+
+\mbox{\Hypertarget{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1a069154b90f0f228df94b20fe1d4007}\label{classepiworld_1_1epimodels_1_1_model_measles_mixing_a1a069154b90f0f228df94b20fe1d4007}} 
+\index{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}!set\_contact\_matrix@{set\_contact\_matrix}}
+\index{set\_contact\_matrix@{set\_contact\_matrix}!epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$@{epiworld::epimodels::ModelMeaslesMixing$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{set\_contact\_matrix()}{set\_contact\_matrix()}}
+{\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
+void \mbox{\hyperlink{classepiworld_1_1epimodels_1_1_model_measles_mixing}{epiworld\+::epimodels\+::\+Model\+Measles\+Mixing}}$<$ TSeq $>$\+::set\+\_\+contact\+\_\+matrix (\begin{DoxyParamCaption}\item[{std\+::vector$<$ double $>$}]{cmat }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Set the contact matrix for population mixing. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em cmat} & Contact matrix specifying interaction rates between groups \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+epiworld.\+hpp\end{DoxyCompactItemize}

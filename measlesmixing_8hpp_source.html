@@ -103,7 +103,7 @@ $(function() {
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">    }</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq = EPI_DEFAULT_TSEQ&gt;</div>
-<div class="line"><a name="l00071"></a><span class="lineno"><a class="line" href="class_model_measles_mixing.html">   71</a></span>&#160;<span class="keyword">class </span><a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing</a> : <span class="keyword">public</span> Model&lt;TSeq&gt;</div>
+<div class="line"><a name="l00071"></a><span class="lineno"><a class="line" href="class_model_measles_mixing.html">   71</a></span>&#160;<span class="keyword">class </span><a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing</a> : <span class="keyword">public</span> <a class="code" href="classepiworld_1_1_model.html">Model</a>&lt;TSeq&gt;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;{</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
@@ -119,7 +119,7 @@ $(function() {
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keywordtype">void</span> m_update_infectious_list();</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    std::vector&lt; size_t &gt; sampled_agents;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordtype">size_t</span> sample_agents(</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * agent,</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * agent,</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        std::vector&lt; size_t &gt; &amp; sampled_agents</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        );</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    std::vector&lt; double &gt; adjusted_contact_rate;</div>
@@ -130,17 +130,17 @@ $(function() {
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="preprocessor">    #endif</span></div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="comment">// Update functions</span></div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_susceptible(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_exposed(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_prodromal(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_rash(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_isolated(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_isolated_recovered(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_quarantine_suscep(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_quarantine_exposed(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_quarantine_prodromal(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_quarantine_recovered(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_hospitalized(<a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m);</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_susceptible(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_exposed(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_prodromal(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_rash(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_isolated(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_isolated_recovered(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_quarantine_suscep(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_quarantine_exposed(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_quarantine_prodromal(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_quarantine_recovered(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_hospitalized(<a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="comment">// Data about the quarantine process</span></div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    std::vector&lt; bool &gt; quarantine_willingness; </div>
@@ -151,7 +151,7 @@ $(function() {
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    std::vector&lt; int &gt; day_exposed; </div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keywordtype">void</span> m_quarantine_process();</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_model(Model&lt;TSeq&gt; * m);</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> m_update_model(<a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m);</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="comment">// We will limit tracking to up to EPI_MAX_TRACKING</span></div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    std::vector&lt; size_t &gt; tracking_matrix; </div>
@@ -238,7 +238,7 @@ $(function() {
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160; </div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="keywordtype">void</span> reset();</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160; </div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    Model&lt;TSeq&gt; * clone_ptr();</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * clone_ptr();</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160; </div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;</a> &amp; initial_states(</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        std::vector&lt; double &gt; proportions_,</div>
@@ -274,11 +274,11 @@ $(function() {
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;};</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160; </div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_model</a>(Model&lt;TSeq&gt; * m)</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_model</a>(<a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m)</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;{</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    model-&gt;m_quarantine_process();</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    model-&gt;events_run();</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    model-&gt;<a class="code" href="classepiworld_1_1_model.html#a800647b05836b20054f1f2049a41787f">events_run</a>();</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    model-&gt;m_update_infectious_list();</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;}</div>
@@ -299,9 +299,9 @@ $(function() {
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160; </div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;    <span class="comment">// If we are overflow, we start from the beginning</span></div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    <span class="keywordtype">size_t</span> loc = tracking_matrix_size[infectious_id] % EPI_MAX_TRACKING;</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    loc = MM(infectious_id, loc, Model&lt;TSeq&gt;::size());</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    loc = MM(infectious_id, loc, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::size</a>());</div>
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;    tracking_matrix[loc] = agent_id;</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    tracking_matrix_date[loc] = <a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    tracking_matrix_date[loc] = <a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160; </div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    <span class="comment">// We increase the size of the tracking matrix</span></div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    tracking_matrix_size[infectious_id]++;</div>
@@ -314,7 +314,7 @@ $(function() {
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_infectious_list</a>()</div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;{</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160; </div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    <span class="keyword">auto</span> &amp; agents = <a class="code" href="class_model.html#a077f3c2f03c119d038909cb34aa1aade">Model&lt;TSeq&gt;::get_agents</a>();</div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    <span class="keyword">auto</span> &amp; agents = <a class="code" href="classepiworld_1_1_model.html#a077f3c2f03c119d038909cb34aa1aade">Model&lt;TSeq&gt;::get_agents</a>();</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160; </div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);</div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160; </div>
@@ -344,7 +344,7 @@ $(function() {
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160; </div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::sample_agents</a>(</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;    epiworld::Agent&lt;TSeq&gt; * agent,</div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">epiworld::Agent&lt;TSeq&gt;</a> * agent,</div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;    std::vector&lt; size_t &gt; &amp; sampled_agents</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;    )</div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;{</div>
@@ -362,7 +362,7 @@ $(function() {
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;            <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160; </div>
 <div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        <span class="comment">// How many from this entity?</span></div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        <span class="keywordtype">int</span> nsamples = epiworld::Model&lt;TSeq&gt;::rbinom(</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        <span class="keywordtype">int</span> nsamples = <a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;TSeq&gt;::rbinom</a>(</div>
 <div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;            group_size,</div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;            adjusted_contact_rate[g] * contact_matrix[</div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;                MM(agent_group_id, g, ngroups)</div>
@@ -377,7 +377,7 @@ $(function() {
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        {</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160; </div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;            <span class="comment">// Randomly selecting an agent</span></div>
-<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;            <span class="keywordtype">int</span> which = epiworld::Model&lt;TSeq&gt;::runif() * group_size;</div>
+<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;            <span class="keywordtype">int</span> which = <a class="code" href="classepiworld_1_1_model.html">epiworld::Model&lt;TSeq&gt;::runif</a>() * group_size;</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160; </div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;            <span class="comment">// Correcting overflow error</span></div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;            <span class="keywordflow">if</span> (which &gt;= <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(group_size))</div>
@@ -397,7 +397,7 @@ $(function() {
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;<span class="preprocessor">            #endif</span></div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160; </div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;            <span class="comment">// Can&#39;t sample itself</span></div>
-<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;            <span class="keywordflow">if</span> (a.get_id() == agent-&gt;get_id())</div>
+<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;            <span class="keywordflow">if</span> (a.get_id() == agent-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>())</div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;                <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160; </div>
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;            sampled_agents[samp_id++] = a.get_id();</div>
@@ -417,7 +417,7 @@ $(function() {
 <div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;)</div>
 <div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;{</div>
 <div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160; </div>
-<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;    <a class="code" href="class_model.html#aa7d8311e60c5a6683f52868f4d1c099e">Model&lt;TSeq&gt;::run</a>(ndays, seed);</div>
+<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;    <a class="code" href="classepiworld_1_1_model.html#aa7d8311e60c5a6683f52868f4d1c099e">Model&lt;TSeq&gt;::run</a>(ndays, seed);</div>
 <div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160; </div>
 <div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;    <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160; </div>
@@ -427,7 +427,7 @@ $(function() {
 <div class="line"><a name="l00482"></a><span class="lineno"><a class="line" href="class_model_measles_mixing.html#acc369b62fe74e8427371b45205c7a1b1">  482</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html#acc369b62fe74e8427371b45205c7a1b1">ModelMeaslesMixing&lt;TSeq&gt;::reset</a>()</div>
 <div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;{</div>
 <div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160; </div>
-<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;    <a class="code" href="class_model.html#a9591eb76c7cf1ed7e1510342ff602d37">Model&lt;TSeq&gt;::reset</a>();</div>
+<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;    <a class="code" href="classepiworld_1_1_model.html#a9591eb76c7cf1ed7e1510342ff602d37">Model&lt;TSeq&gt;::reset</a>();</div>
 <div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160; </div>
 <div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;    <span class="comment">// Checking contact matrix&#39;s rows add to one</span></div>
 <div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;    <span class="keywordtype">size_t</span> nentities = this-&gt;entities.size();</div>
@@ -462,14 +462,14 @@ $(function() {
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;    }</div>
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160; </div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;    <span class="comment">// Do it the first time only</span></div>
-<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;    sampled_agents.resize(Model&lt;TSeq&gt;::size());</div>
+<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;    sampled_agents.resize(<a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::size</a>());</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160; </div>
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    <span class="comment">// We only do it once</span></div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;    n_infectious_per_group.resize(this-&gt;entities.size(), 0u);</div>
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);</div>
 <div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160; </div>
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;    <span class="comment">// We are assuming one agent per entity</span></div>
-<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;    infectious.resize(Model&lt;TSeq&gt;::size());</div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;    infectious.resize(<a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::size</a>());</div>
 <div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;    std::fill(infectious.begin(), infectious.end(), 0u);</div>
 <div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160; </div>
 <div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;    <span class="comment">// This will say when do the groups start in the `infectious` vector</span></div>
@@ -493,7 +493,7 @@ $(function() {
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;    {</div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160; </div>
 <div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        adjusted_contact_rate[i] =</div>
-<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;            Model&lt;TSeq&gt;::get_param(<span class="stringliteral">&quot;Contact rate&quot;</span>) /</div>
+<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;            <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::get_param</a>(<span class="stringliteral">&quot;Contact rate&quot;</span>) /</div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;                <span class="keyword">static_cast&lt;</span> epiworld_double <span class="keyword">&gt;</span> (this-&gt;get_entity(i).size());</div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160; </div>
 <div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160; </div>
@@ -511,9 +511,9 @@ $(function() {
 <div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> idx = 0; idx &lt; quarantine_willingness.size(); ++idx)</div>
 <div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;    {</div>
 <div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;        quarantine_willingness[idx] =</div>
-<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;            Model&lt;TSeq&gt;::runif() &lt; this-&gt;par(<span class="stringliteral">&quot;Quarantine willingness&quot;</span>);</div>
+<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;            <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::runif</a>() &lt; this-&gt;par(<span class="stringliteral">&quot;Quarantine willingness&quot;</span>);</div>
 <div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;        isolation_willingness[idx] =</div>
-<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;            Model&lt;TSeq&gt;::runif() &lt; this-&gt;par(<span class="stringliteral">&quot;Isolation willingness&quot;</span>);</div>
+<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;            <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::runif</a>() &lt; this-&gt;par(<span class="stringliteral">&quot;Isolation willingness&quot;</span>);</div>
 <div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    }</div>
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160; </div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;    agent_quarantine_triggered.resize(this-&gt;size(), 0u);</div>
@@ -545,13 +545,13 @@ $(function() {
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;    );</div>
 <div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160; </div>
 <div class="line"><a name="l00602"></a><span class="lineno">  602</span>&#160;    <span class="comment">// Tracking matrix</span></div>
-<div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;    tracking_matrix.resize(EPI_MAX_TRACKING * Model&lt;TSeq&gt;::size(), 0u);</div>
+<div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;    tracking_matrix.resize(EPI_MAX_TRACKING * <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::size</a>(), 0u);</div>
 <div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;    std::fill(tracking_matrix.begin(), tracking_matrix.end(), 0u);</div>
 <div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160; </div>
-<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;    tracking_matrix_size.resize(Model&lt;TSeq&gt;::size(), 0u);</div>
+<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;    tracking_matrix_size.resize(<a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::size</a>(), 0u);</div>
 <div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;    std::fill(tracking_matrix_size.begin(), tracking_matrix_size.end(), 0u);</div>
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160; </div>
-<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;    tracking_matrix_date.resize(EPI_MAX_TRACKING * Model&lt;TSeq&gt;::size(), 0u);</div>
+<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;    tracking_matrix_date.resize(EPI_MAX_TRACKING * <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::size</a>(), 0u);</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;    std::fill(tracking_matrix_date.begin(), tracking_matrix_date.end(), 0u);</div>
 <div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160; </div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;    <span class="keywordflow">return</span>;</div>
@@ -559,7 +559,7 @@ $(function() {
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;}</div>
 <div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160; </div>
 <div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
-<div class="line"><a name="l00617"></a><span class="lineno"><a class="line" href="class_model_measles_mixing.html#aa35063312b970034fdd67144ed575a50">  617</a></span>&#160;<span class="keyword">inline</span> Model&lt;TSeq&gt; * <a class="code" href="class_model_measles_mixing.html#aa35063312b970034fdd67144ed575a50">ModelMeaslesMixing&lt;TSeq&gt;::clone_ptr</a>()</div>
+<div class="line"><a name="l00617"></a><span class="lineno"><a class="line" href="class_model_measles_mixing.html#aa35063312b970034fdd67144ed575a50">  617</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * <a class="code" href="class_model_measles_mixing.html#aa35063312b970034fdd67144ed575a50">ModelMeaslesMixing&lt;TSeq&gt;::clone_ptr</a>()</div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;{</div>
 <div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160; </div>
 <div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;    <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;</a> * ptr = <span class="keyword">new</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;</a>(</div>
@@ -574,13 +574,13 @@ $(function() {
 <div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;        assert(ptr != <span class="keyword">nullptr</span>); <span class="comment">// Use assert for runtime checks</span></div>
 <div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;<span class="preprocessor">    #endif</span></div>
 <div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160; </div>
-<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">dynamic_cast&lt;</span> Model&lt;TSeq&gt; *<span class="keyword">&gt;</span>(ptr);</div>
+<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">dynamic_cast&lt;</span> <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> *<span class="keyword">&gt;</span>(ptr);</div>
 <div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160; </div>
 <div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;}</div>
 <div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160; </div>
 <div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_susceptible</a>(</div>
-<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;) {</div>
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160; </div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;    <span class="keywordflow">if</span> (p-&gt;get_n_entities() == 0)</div>
@@ -616,7 +616,7 @@ $(function() {
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;<span class="preprocessor">        #endif</span></div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160; </div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        <span class="comment">// Adding the current agent to the tracked interactions</span></div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        m_down-&gt;m_add_tracking(neighbor.get_id(), p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>());</div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        m_down-&gt;m_add_tracking(neighbor.get_id(), p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>());</div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160; </div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;        <span class="comment">/* And it is a function of susceptibility_reduction as well */</span></div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;        m-&gt;array_double_tmp[nviruses_tmp] =</div>
@@ -647,7 +647,7 @@ $(function() {
 <div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160; </div>
 <div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_exposed</a>(</div>
-<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;) {</div>
 <div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160; </div>
 <div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;    <span class="comment">// Getting the virus</span></div>
@@ -669,7 +669,7 @@ $(function() {
 <div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160; </div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_prodromal</a>(</div>
-<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;) {</div>
 <div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160; </div>
 <div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;    GET_MODEL(m, model);</div>
@@ -677,7 +677,7 @@ $(function() {
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;    <span class="comment">// Does the agent transition to rash?</span></div>
 <div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Prodromal period&quot;</span>))</div>
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;    {</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;        model-&gt;day_rash_onset[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()] = m-&gt;today();</div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;        model-&gt;day_rash_onset[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()] = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>();</div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::RASH</a>);</div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;    }</div>
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160; </div>
@@ -687,7 +687,7 @@ $(function() {
 <div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160; </div>
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_rash</a>(</div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;) {</div>
 <div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160; </div>
 <div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;    GET_MODEL(m, model);</div>
@@ -699,7 +699,7 @@ $(function() {
 <div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;        (m-&gt;runif() &lt; 1.0/m-&gt;par(<span class="stringliteral">&quot;Days undetected&quot;</span>))</div>
 <div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;    )</div>
 <div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;    {</div>
-<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;        model-&gt;agent_quarantine_triggered[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()] =</div>
+<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;        model-&gt;agent_quarantine_triggered[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()] =</div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;            <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::QUARANTINE_PROCESS_ACTIVE</a>;</div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;        detected = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;    }</div>
@@ -737,7 +737,7 @@ $(function() {
 <div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;        <span class="comment">// If the agent is not hospitalized or recovered, then it is moved to</span></div>
 <div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;        <span class="comment">// isolation.</span></div>
 <div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::ISOLATED</a>);</div>
-<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;        model-&gt;day_flagged[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()] = m-&gt;today();</div>
+<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;        model-&gt;day_flagged[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()] = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>();</div>
 <div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;    }</div>
 <div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160; </div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;    return ;</div>
@@ -746,14 +746,14 @@ $(function() {
 <div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160; </div>
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_isolated</a>(</div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;) {</div>
 <div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160; </div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160; </div>
 <div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;    <span class="comment">// Figuring out if the agent can be released from isolation</span></div>
 <div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;    <span class="comment">// if the isolation period is over.</span></div>
-<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_rash_onset[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
+<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_rash_onset[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
 <div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160; </div>
 <div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;    <span class="keywordtype">bool</span> unisolate =</div>
 <div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Isolation period&quot;</span>) &lt;= days_since) ?</div>
@@ -810,14 +810,14 @@ $(function() {
 <div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160; </div>
 <div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_quarantine_suscep</a>(</div>
-<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;) {</div>
 <div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160; </div>
 <div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160; </div>
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;    <span class="comment">// Figuring out if the agent can be released from quarantine</span></div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;    <span class="comment">// if the quarantine period is over.</span></div>
-<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_flagged[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
 <div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160; </div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;    <span class="keywordtype">bool</span> unquarantine =</div>
 <div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &lt;= days_since) ?</div>
@@ -834,14 +834,14 @@ $(function() {
 <div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160; </div>
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_quarantine_exposed</a>(</div>
-<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;) {</div>
 <div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160; </div>
 <div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160; </div>
 <div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;    <span class="comment">// Figuring out if the agent can be released from quarantine</span></div>
 <div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;    <span class="comment">// if the quarantine period is over.</span></div>
-<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_flagged[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
+<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
 <div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160; </div>
 <div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;    <span class="keywordtype">bool</span> unquarantine =</div>
 <div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &lt;= days_since) ?</div>
@@ -876,14 +876,14 @@ $(function() {
 <div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160; </div>
 <div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_quarantine_prodromal</a>(</div>
-<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;) {</div>
 <div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160; </div>
 <div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160; </div>
 <div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;    <span class="comment">// Otherwise, these are moved to the prodromal period, if</span></div>
 <div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;    <span class="comment">// the quarantine period is over.</span></div>
-<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_flagged[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
+<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
 <div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160; </div>
 <div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;    <span class="keywordtype">bool</span> unquarantine =</div>
 <div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &lt;= days_since) ?</div>
@@ -892,7 +892,7 @@ $(function() {
 <div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;    <span class="comment">// Develops rash?</span></div>
 <div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160;    <span class="keywordflow">if</span> (m-&gt;runif() &lt; (1.0/m-&gt;par(<span class="stringliteral">&quot;Prodromal period&quot;</span>)))</div>
 <div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;    {</div>
-<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;        model-&gt;day_rash_onset[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()] = m-&gt;today();</div>
+<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;        model-&gt;day_rash_onset[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()] = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>();</div>
 <div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::ISOLATED</a>);</div>
 <div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;    }</div>
 <div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;    <span class="keywordflow">else</span></div>
@@ -907,11 +907,11 @@ $(function() {
 <div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160; </div>
 <div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_quarantine_recovered</a>(</div>
-<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;) {</div>
 <div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160; </div>
 <div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;    GET_MODEL(m, model);</div>
-<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_flagged[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
+<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_flagged[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
 <div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160; </div>
 <div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;    <span class="keywordflow">if</span> (days_since &gt;= m-&gt;par(<span class="stringliteral">&quot;Quarantine period&quot;</span>))</div>
 <div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;        p-&gt;change_state(m, <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::RECOVERED</a>);</div>
@@ -920,14 +920,14 @@ $(function() {
 <div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160; </div>
 <div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_isolated_recovered</a>(</div>
-<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;) {</div>
 <div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160; </div>
 <div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;    GET_MODEL(m, model);</div>
 <div class="line"><a name="l00982"></a><span class="lineno">  982</span>&#160; </div>
 <div class="line"><a name="l00983"></a><span class="lineno">  983</span>&#160;    <span class="comment">// Figuring out if the agent can be released from isolation</span></div>
 <div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;    <span class="comment">// if the isolation period is over.</span></div>
-<div class="line"><a name="l00985"></a><span class="lineno">  985</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;today() - model-&gt;day_rash_onset[p-&gt;<a class="code" href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
+<div class="line"><a name="l00985"></a><span class="lineno">  985</span>&#160;    <span class="keywordtype">int</span> days_since = m-&gt;<a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">today</a>() - model-&gt;day_rash_onset[p-&gt;<a class="code" href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">get_id</a>()];</div>
 <div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160; </div>
 <div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;    <span class="keywordtype">bool</span> unisolate =</div>
 <div class="line"><a name="l00988"></a><span class="lineno">  988</span>&#160;        (m-&gt;par(<span class="stringliteral">&quot;Isolation period&quot;</span>) &lt;= days_since) ?</div>
@@ -944,7 +944,7 @@ $(function() {
 <div class="line"><a name="l00999"></a><span class="lineno">  999</span>&#160; </div>
 <div class="line"><a name="l01000"></a><span class="lineno"> 1000</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSeq&gt;</div>
 <div class="line"><a name="l01001"></a><span class="lineno"> 1001</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::m_update_hospitalized</a>(</div>
-<div class="line"><a name="l01002"></a><span class="lineno"> 1002</span>&#160;    <a class="code" href="class_agent.html">Agent&lt;TSeq&gt;</a> * p, Model&lt;TSeq&gt; * m</div>
+<div class="line"><a name="l01002"></a><span class="lineno"> 1002</span>&#160;    <a class="code" href="classepiworld_1_1_agent.html">Agent&lt;TSeq&gt;</a> * p, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;</a> * m</div>
 <div class="line"><a name="l01003"></a><span class="lineno"> 1003</span>&#160;) {</div>
 <div class="line"><a name="l01004"></a><span class="lineno"> 1004</span>&#160; </div>
 <div class="line"><a name="l01005"></a><span class="lineno"> 1005</span>&#160;    <span class="comment">// The agent is removed from the system</span></div>
@@ -985,20 +985,20 @@ $(function() {
 <div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;        {</div>
 <div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160; </div>
 <div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;            <span class="comment">// Checking if the contact is within the contact tracing days prior</span></div>
-<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;            <span class="keywordtype">size_t</span> loc = MM(agent_i, contact_i, Model&lt;TSeq&gt;::size());</div>
+<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;            <span class="keywordtype">size_t</span> loc = MM(agent_i, contact_i, <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::size</a>());</div>
 <div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;            <span class="keywordtype">bool</span> within_days_prior =</div>
 <div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;                (day_rash_onset_agent_i - tracking_matrix_date[loc]) &lt;=</div>
-<div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;                Model&lt;TSeq&gt;::par(<span class="stringliteral">&quot;Contact tracing days prior&quot;</span>);</div>
+<div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;                <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::par</a>(<span class="stringliteral">&quot;Contact tracing days prior&quot;</span>);</div>
 <div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;            <span class="keywordflow">if</span> (!within_days_prior)</div>
 <div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;                <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160; </div>
 <div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;            <span class="comment">// Checking if we will detect the contact</span></div>
-<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;            <span class="keywordflow">if</span> (Model&lt;TSeq&gt;::runif() &gt; Model&lt;TSeq&gt;::par(<span class="stringliteral">&quot;Contact tracing success rate&quot;</span>))</div>
+<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::runif</a>() &gt; <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::par</a>(<span class="stringliteral">&quot;Contact tracing success rate&quot;</span>))</div>
 <div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;                <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160; </div>
 <div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;            <span class="keywordtype">size_t</span> contact_id = this-&gt;tracking_matrix[loc];</div>
 <div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160; </div>
-<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;            <span class="keyword">auto</span> &amp; agent = Model&lt;TSeq&gt;::get_agent(contact_id);</div>
+<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;            <span class="keyword">auto</span> &amp; agent = <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::get_agent</a>(contact_id);</div>
 <div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160; </div>
 <div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;            <span class="keywordflow">if</span> (agent.get_state() &gt; RASH)</div>
 <div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160;                <span class="keywordflow">continue</span>;</div>
@@ -1009,28 +1009,28 @@ $(function() {
 <div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160; </div>
 <div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160;            <span class="keywordflow">if</span> (</div>
 <div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;                quarantine_willingness[contact_id] &amp;&amp;</div>
-<div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160;                (Model&lt;TSeq&gt;::par(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &gt;= 0))</div>
+<div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160;                (<a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::par</a>(<span class="stringliteral">&quot;Quarantine period&quot;</span>) &gt;= 0))</div>
 <div class="line"><a name="l01068"></a><span class="lineno"> 1068</span>&#160;            {</div>
 <div class="line"><a name="l01069"></a><span class="lineno"> 1069</span>&#160; </div>
 <div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;                <span class="keywordflow">switch</span> (agent.get_state())</div>
 <div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160;                {</div>
 <div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;                    <span class="keywordflow">case</span> SUSCEPTIBLE:</div>
 <div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160;                        agent.change_state(<span class="keyword">this</span>, QUARANTINED_SUSCEPTIBLE);</div>
-<div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;                        day_flagged[contact_id] = <a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
+<div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;                        day_flagged[contact_id] = <a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
 <div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160;                        <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01076"></a><span class="lineno"> 1076</span>&#160;                    <span class="keywordflow">case</span> EXPOSED:</div>
 <div class="line"><a name="l01077"></a><span class="lineno"> 1077</span>&#160;                        agent.change_state(<span class="keyword">this</span>, QUARANTINED_EXPOSED);</div>
-<div class="line"><a name="l01078"></a><span class="lineno"> 1078</span>&#160;                        day_flagged[contact_id] = <a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
+<div class="line"><a name="l01078"></a><span class="lineno"> 1078</span>&#160;                        day_flagged[contact_id] = <a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
 <div class="line"><a name="l01079"></a><span class="lineno"> 1079</span>&#160;                        <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01080"></a><span class="lineno"> 1080</span>&#160;                    <span class="keywordflow">case</span> PRODROMAL:</div>
 <div class="line"><a name="l01081"></a><span class="lineno"> 1081</span>&#160;                        agent.change_state(<span class="keyword">this</span>, QUARANTINED_PRODROMAL);</div>
-<div class="line"><a name="l01082"></a><span class="lineno"> 1082</span>&#160;                        day_flagged[contact_id] = <a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
+<div class="line"><a name="l01082"></a><span class="lineno"> 1082</span>&#160;                        day_flagged[contact_id] = <a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
 <div class="line"><a name="l01083"></a><span class="lineno"> 1083</span>&#160;                        <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01084"></a><span class="lineno"> 1084</span>&#160;                    <span class="keywordflow">case</span> RASH:</div>
 <div class="line"><a name="l01085"></a><span class="lineno"> 1085</span>&#160;                        <span class="keywordflow">if</span> (isolation_willingness[contact_id])</div>
 <div class="line"><a name="l01086"></a><span class="lineno"> 1086</span>&#160;                        {</div>
 <div class="line"><a name="l01087"></a><span class="lineno"> 1087</span>&#160;                            agent.change_state(<span class="keyword">this</span>, ISOLATED);</div>
-<div class="line"><a name="l01088"></a><span class="lineno"> 1088</span>&#160;                            day_flagged[contact_id] = <a class="code" href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
+<div class="line"><a name="l01088"></a><span class="lineno"> 1088</span>&#160;                            day_flagged[contact_id] = <a class="code" href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model&lt;TSeq&gt;::today</a>();</div>
 <div class="line"><a name="l01089"></a><span class="lineno"> 1089</span>&#160;                        }</div>
 <div class="line"><a name="l01090"></a><span class="lineno"> 1090</span>&#160;                        <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01091"></a><span class="lineno"> 1091</span>&#160;                    <span class="keywordflow">default</span>:</div>
@@ -1123,11 +1123,11 @@ $(function() {
 <div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;    model.add_state(<span class="stringliteral">&quot;Recovered&quot;</span>);</div>
 <div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160; </div>
 <div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;    <span class="comment">// Global function</span></div>
-<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;    model.add_globalevent(this-&gt;m_update_model, <span class="stringliteral">&quot;Update infected individuals&quot;</span>);</div>
-<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;    model.queuing_off();</div>
+<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;    model.<a class="code" href="classepiworld_1_1_model.html#a51ab3b98ed8ce29868974d88680c5f26">add_globalevent</a>(this-&gt;m_update_model, <span class="stringliteral">&quot;Update infected individuals&quot;</span>);</div>
+<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;    model.<a class="code" href="classepiworld_1_1_model.html#a8822ff230b2c4804d0ae28db014520d1">queuing_off</a>();</div>
 <div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160; </div>
 <div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;    <span class="comment">// Preparing the virus -------------------------------------------</span></div>
-<div class="line"><a name="l01210"></a><span class="lineno"> 1210</span>&#160;    epiworld::Virus&lt;TSeq&gt; virus(<span class="stringliteral">&quot;Measles&quot;</span>, prevalence, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l01210"></a><span class="lineno"> 1210</span>&#160;    <a class="code" href="classepiworld_1_1_virus.html">epiworld::Virus&lt;TSeq&gt;</a> virus(<span class="stringliteral">&quot;Measles&quot;</span>, prevalence, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l01211"></a><span class="lineno"> 1211</span>&#160;    virus.set_state(</div>
 <div class="line"><a name="l01212"></a><span class="lineno"> 1212</span>&#160;        <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::EXPOSED</a>,</div>
 <div class="line"><a name="l01213"></a><span class="lineno"> 1213</span>&#160;        <a class="code" href="class_model_measles_mixing.html">ModelMeaslesMixing&lt;TSeq&gt;::RECOVERED</a>,</div>
@@ -1141,7 +1141,7 @@ $(function() {
 <div class="line"><a name="l01221"></a><span class="lineno"> 1221</span>&#160;    model.add_virus(virus);</div>
 <div class="line"><a name="l01222"></a><span class="lineno"> 1222</span>&#160; </div>
 <div class="line"><a name="l01223"></a><span class="lineno"> 1223</span>&#160;    <span class="comment">// Designing the vaccine</span></div>
-<div class="line"><a name="l01224"></a><span class="lineno"> 1224</span>&#160;    <a class="code" href="class_tool.html">Tool&lt;&gt;</a> vaccine(<span class="stringliteral">&quot;Vaccine&quot;</span>);</div>
+<div class="line"><a name="l01224"></a><span class="lineno"> 1224</span>&#160;    <a class="code" href="classepiworld_1_1_tool.html">Tool&lt;&gt;</a> vaccine(<span class="stringliteral">&quot;Vaccine&quot;</span>);</div>
 <div class="line"><a name="l01225"></a><span class="lineno"> 1225</span>&#160;    vaccine.set_susceptibility_reduction(&amp;model(<span class="stringliteral">&quot;Vax efficacy&quot;</span>));</div>
 <div class="line"><a name="l01226"></a><span class="lineno"> 1226</span>&#160;    vaccine.set_recovery_enhancer(&amp;model(<span class="stringliteral">&quot;Vax improved recovery&quot;</span>));</div>
 <div class="line"><a name="l01227"></a><span class="lineno"> 1227</span>&#160;    vaccine.set_distribution(</div>
@@ -1150,12 +1150,12 @@ $(function() {
 <div class="line"><a name="l01230"></a><span class="lineno"> 1230</span>&#160; </div>
 <div class="line"><a name="l01231"></a><span class="lineno"> 1231</span>&#160;    model.add_tool(vaccine);</div>
 <div class="line"><a name="l01232"></a><span class="lineno"> 1232</span>&#160; </div>
-<div class="line"><a name="l01233"></a><span class="lineno"> 1233</span>&#160;    model.queuing_off(); <span class="comment">// No queuing need</span></div>
+<div class="line"><a name="l01233"></a><span class="lineno"> 1233</span>&#160;    model.<a class="code" href="classepiworld_1_1_model.html#a8822ff230b2c4804d0ae28db014520d1">queuing_off</a>(); <span class="comment">// No queuing need</span></div>
 <div class="line"><a name="l01234"></a><span class="lineno"> 1234</span>&#160; </div>
 <div class="line"><a name="l01235"></a><span class="lineno"> 1235</span>&#160;    <span class="comment">// Adding the empty population</span></div>
 <div class="line"><a name="l01236"></a><span class="lineno"> 1236</span>&#160;    model.agents_empty_graph(n);</div>
 <div class="line"><a name="l01237"></a><span class="lineno"> 1237</span>&#160; </div>
-<div class="line"><a name="l01238"></a><span class="lineno"> 1238</span>&#160;    model.set_name(<span class="stringliteral">&quot;Measles with Mixing and Quarantine&quot;</span>);</div>
+<div class="line"><a name="l01238"></a><span class="lineno"> 1238</span>&#160;    model.<a class="code" href="classepiworld_1_1_model.html#a453485b4cfe2a51addf33003f8d70c36">set_name</a>(<span class="stringliteral">&quot;Measles with Mixing and Quarantine&quot;</span>);</div>
 <div class="line"><a name="l01239"></a><span class="lineno"> 1239</span>&#160; </div>
 <div class="line"><a name="l01240"></a><span class="lineno"> 1240</span>&#160;    <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l01241"></a><span class="lineno"> 1241</span>&#160; </div>
@@ -1225,7 +1225,7 @@ $(function() {
 <div class="line"><a name="l01305"></a><span class="lineno"> 1305</span>&#160;)</div>
 <div class="line"><a name="l01306"></a><span class="lineno"> 1306</span>&#160;{</div>
 <div class="line"><a name="l01307"></a><span class="lineno"> 1307</span>&#160; </div>
-<div class="line"><a name="l01308"></a><span class="lineno"> 1308</span>&#160;    <a class="code" href="class_model.html#a6a3e893c076226874afbf0c0b20804ac">Model&lt;TSeq&gt;::initial_states_fun</a> =</div>
+<div class="line"><a name="l01308"></a><span class="lineno"> 1308</span>&#160;    <a class="code" href="classepiworld_1_1_model.html">Model&lt;TSeq&gt;::initial_states_fun</a> =</div>
 <div class="line"><a name="l01309"></a><span class="lineno"> 1309</span>&#160;        create_init_function_seir&lt;TSeq&gt;(proportions_)</div>
 <div class="line"><a name="l01310"></a><span class="lineno"> 1310</span>&#160;        ;</div>
 <div class="line"><a name="l01311"></a><span class="lineno"> 1311</span>&#160; </div>
@@ -1236,13 +1236,6 @@ $(function() {
 <div class="line"><a name="l01316"></a><span class="lineno"> 1316</span>&#160;<span class="preprocessor">#undef GET_MODEL</span></div>
 <div class="line"><a name="l01317"></a><span class="lineno"> 1317</span>&#160;<span class="preprocessor">#undef SAMPLE_FROM_PROBS</span></div>
 <div class="line"><a name="l01318"></a><span class="lineno"> 1318</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="ttc" id="aclass_agent_html"><div class="ttname"><a href="class_agent.html">Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> agent-bones.hpp:66</div></div>
-<div class="ttc" id="aclass_agent_html_a3763f12b56e8dd7f0e23bbca4f183c8a"><div class="ttname"><a href="class_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">Agent::get_id</a></div><div class="ttdeci">int get_id() const</div><div class="ttdoc">Id of the individual.</div><div class="ttdef"><b>Definition:</b> agent-meat.hpp:465</div></div>
-<div class="ttc" id="aclass_model_html_a077f3c2f03c119d038909cb34aa1aade"><div class="ttname"><a href="class_model.html#a077f3c2f03c119d038909cb34aa1aade">Model::get_agents</a></div><div class="ttdeci">std::vector&lt; Agent&lt; TSeq &gt; &gt; &amp; get_agents()</div><div class="ttdoc">Returns a reference to the vector of agents.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:582</div></div>
-<div class="ttc" id="aclass_model_html_a6a3e893c076226874afbf0c0b20804ac"><div class="ttname"><a href="class_model.html#a6a3e893c076226874afbf0c0b20804ac">Model::initial_states_fun</a></div><div class="ttdeci">std::function&lt; void(Model&lt; TSeq &gt; *)&gt; initial_states_fun</div><div class="ttdef"><b>Definition:</b> model-bones.hpp:175</div></div>
-<div class="ttc" id="aclass_model_html_a9591eb76c7cf1ed7e1510342ff602d37"><div class="ttname"><a href="class_model.html#a9591eb76c7cf1ed7e1510342ff602d37">Model::reset</a></div><div class="ttdeci">virtual void reset()</div><div class="ttdoc">Reset the model.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1964</div></div>
-<div class="ttc" id="aclass_model_html_aa3ce8d5f025e239f8090ab9645f3e917"><div class="ttname"><a href="class_model.html#aa3ce8d5f025e239f8090ab9645f3e917">Model::today</a></div><div class="ttdeci">int today() const</div><div class="ttdoc">The current time of the model.</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1316</div></div>
-<div class="ttc" id="aclass_model_html_aa7d8311e60c5a6683f52868f4d1c099e"><div class="ttname"><a href="class_model.html#aa7d8311e60c5a6683f52868f4d1c099e">Model::run</a></div><div class="ttdeci">virtual Model&lt; TSeq &gt; &amp; run(epiworld_fast_uint ndays, int seed=-1)</div><div class="ttdoc">Runs the simulation (after initialization)</div><div class="ttdef"><b>Definition:</b> model-meat.hpp:1366</div></div>
 <div class="ttc" id="aclass_model_measles_mixing_html"><div class="ttname"><a href="class_model_measles_mixing.html">ModelMeaslesMixing</a></div><div class="ttdoc">Measles model with population mixing, quarantine, and contact tracing.</div><div class="ttdef"><b>Definition:</b> measlesmixing.hpp:72</div></div>
 <div class="ttc" id="aclass_model_measles_mixing_html_a062cf1fccb546b01bd8767a544c7b751"><div class="ttname"><a href="class_model_measles_mixing.html#a062cf1fccb546b01bd8767a544c7b751">ModelMeaslesMixing::get_contact_matrix</a></div><div class="ttdeci">std::vector&lt; double &gt; get_contact_matrix() const</div><div class="ttdoc">Get the current contact matrix.</div><div class="ttdef"><b>Definition:</b> measlesmixing.hpp:297</div></div>
 <div class="ttc" id="aclass_model_measles_mixing_html_a0bc57866d2602214dbd98e2510b3e97f"><div class="ttname"><a href="class_model_measles_mixing.html#a0bc57866d2602214dbd98e2510b3e97f">ModelMeaslesMixing::initial_states</a></div><div class="ttdeci">ModelMeaslesMixing&lt; TSeq &gt; &amp; initial_states(std::vector&lt; double &gt; proportions_, std::vector&lt; int &gt; queue_={})</div><div class="ttdoc">Set the initial states of the model.</div><div class="ttdef"><b>Definition:</b> measlesmixing.hpp:1302</div></div>
@@ -1253,7 +1246,19 @@ $(function() {
 <div class="ttc" id="aclass_model_measles_mixing_html_ae9e100494448c115ee02275ce76517fc"><div class="ttname"><a href="class_model_measles_mixing.html#ae9e100494448c115ee02275ce76517fc">ModelMeaslesMixing::get_quarantine_willingness</a></div><div class="ttdeci">std::vector&lt; bool &gt; get_quarantine_willingness() const</div><div class="ttdoc">Get the quarantine willingness for all agents.</div><div class="ttdef"><b>Definition:</b> measlesmixing.hpp:315</div></div>
 <div class="ttc" id="aclass_model_measles_mixing_html_af1274da39068e771bf73d1a721815dee"><div class="ttname"><a href="class_model_measles_mixing.html#af1274da39068e771bf73d1a721815dee">ModelMeaslesMixing::set_contact_matrix</a></div><div class="ttdeci">void set_contact_matrix(std::vector&lt; double &gt; cmat)</div><div class="ttdoc">Set the contact matrix for population mixing.</div><div class="ttdef"><b>Definition:</b> measlesmixing.hpp:287</div></div>
 <div class="ttc" id="aclass_model_measles_mixing_html_af5f3fb87703d2ede94f23175d36dd728"><div class="ttname"><a href="class_model_measles_mixing.html#af5f3fb87703d2ede94f23175d36dd728">ModelMeaslesMixing::get_isolation_willingness</a></div><div class="ttdeci">std::vector&lt; bool &gt; get_isolation_willingness() const</div><div class="ttdoc">Get the isolation willingness for all agents.</div><div class="ttdef"><b>Definition:</b> measlesmixing.hpp:324</div></div>
-<div class="ttc" id="aclass_tool_html"><div class="ttname"><a href="class_tool.html">Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> tool-bones.hpp:40</div></div>
+<div class="ttc" id="aclassepiworld_1_1_agent_html"><div class="ttname"><a href="classepiworld_1_1_agent.html">epiworld::Agent</a></div><div class="ttdoc">Agent (agents)</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:10914</div></div>
+<div class="ttc" id="aclassepiworld_1_1_agent_html_a3763f12b56e8dd7f0e23bbca4f183c8a"><div class="ttname"><a href="classepiworld_1_1_agent.html#a3763f12b56e8dd7f0e23bbca4f183c8a">epiworld::Agent::get_id</a></div><div class="ttdeci">int get_id() const</div><div class="ttdoc">Id of the individual.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:22130</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html"><div class="ttname"><a href="classepiworld_1_1_model.html">epiworld::Model</a></div><div class="ttdoc">Core class of epiworld.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:8398</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_a077f3c2f03c119d038909cb34aa1aade"><div class="ttname"><a href="classepiworld_1_1_model.html#a077f3c2f03c119d038909cb34aa1aade">epiworld::Model::get_agents</a></div><div class="ttdeci">std::vector&lt; Agent&lt; TSeq &gt; &gt; &amp; get_agents()</div><div class="ttdoc">Returns a reference to the vector of agents.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:11720</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_a453485b4cfe2a51addf33003f8d70c36"><div class="ttname"><a href="classepiworld_1_1_model.html#a453485b4cfe2a51addf33003f8d70c36">epiworld::Model::set_name</a></div><div class="ttdeci">void set_name(std::string name)</div><div class="ttdoc">Set the name object.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:13935</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_a51ab3b98ed8ce29868974d88680c5f26"><div class="ttname"><a href="classepiworld_1_1_model.html#a51ab3b98ed8ce29868974d88680c5f26">epiworld::Model::add_globalevent</a></div><div class="ttdeci">void add_globalevent(std::function&lt; void(Model&lt; TSeq &gt; *)&gt; fun, std::string name=&quot;A global action&quot;, int date=-99)</div><div class="ttdoc">Set a global action.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:13758</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_a800647b05836b20054f1f2049a41787f"><div class="ttname"><a href="classepiworld_1_1_model.html#a800647b05836b20054f1f2049a41787f">epiworld::Model::events_run</a></div><div class="ttdeci">void events_run()</div><div class="ttdoc">Executes the stored action.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:11357</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_a8822ff230b2c4804d0ae28db014520d1"><div class="ttname"><a href="classepiworld_1_1_model.html#a8822ff230b2c4804d0ae28db014520d1">epiworld::Model::queuing_off</a></div><div class="ttdeci">Model&lt; TSeq &gt; &amp; queuing_off()</div><div class="ttdoc">Deactivates the queuing system.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:13863</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_a9591eb76c7cf1ed7e1510342ff602d37"><div class="ttname"><a href="classepiworld_1_1_model.html#a9591eb76c7cf1ed7e1510342ff602d37">epiworld::Model::reset</a></div><div class="ttdeci">virtual void reset()</div><div class="ttdoc">Reset the model.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:13102</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_aa3ce8d5f025e239f8090ab9645f3e917"><div class="ttname"><a href="classepiworld_1_1_model.html#aa3ce8d5f025e239f8090ab9645f3e917">epiworld::Model::today</a></div><div class="ttdeci">int today() const</div><div class="ttdoc">The current time of the model.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:12454</div></div>
+<div class="ttc" id="aclassepiworld_1_1_model_html_aa7d8311e60c5a6683f52868f4d1c099e"><div class="ttname"><a href="classepiworld_1_1_model.html#aa7d8311e60c5a6683f52868f4d1c099e">epiworld::Model::run</a></div><div class="ttdeci">virtual Model&lt; TSeq &gt; &amp; run(epiworld_fast_uint ndays, int seed=-1)</div><div class="ttdoc">Runs the simulation (after initialization)</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:12504</div></div>
+<div class="ttc" id="aclassepiworld_1_1_tool_html"><div class="ttname"><a href="classepiworld_1_1_tool.html">epiworld::Tool</a></div><div class="ttdoc">Tools for defending the agent against the virus.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:16271</div></div>
+<div class="ttc" id="aclassepiworld_1_1_virus_html"><div class="ttname"><a href="classepiworld_1_1_virus.html">epiworld::Virus</a></div><div class="ttdoc">Virus.</div><div class="ttdef"><b>Definition:</b> epiworld.hpp:10663</div></div>
 <div class="ttc" id="ameaslesmixingriskquarantine_8hpp_html_acd100adc82f9678acf826732feacd32d"><div class="ttname"><a href="measlesmixingriskquarantine_8hpp.html#acd100adc82f9678acf826732feacd32d">SAMPLE_FROM_PROBS</a></div><div class="ttdeci">#define SAMPLE_FROM_PROBS(n, ans)</div><div class="ttdoc">Macro to sample from a list of probabilities.</div><div class="ttdef"><b>Definition:</b> measlesmixingriskquarantine.hpp:28</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
