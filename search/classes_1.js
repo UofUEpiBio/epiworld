@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['contacttracing_138',['ContactTracing',['../class_contact_tracing.html',1,'']]]
+  ['communityhospmodel_131',['CommunityHospModel',['../class_community_hosp_model.html',1,'']]]
 ];
