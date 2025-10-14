@@ -92,7 +92,7 @@ namespace epiworld {
     #include "agent-meat.hpp"
 
     #include "agentssample-bones.hpp"
-
+    
     #include "models/models.hpp"
 
 }
