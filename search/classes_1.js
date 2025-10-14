@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['contacttracing_130',['ContactTracing',['../class_contact_tracing.html',1,'ContactTracing'],['../classepiworld_1_1_contact_tracing.html',1,'epiworld::ContactTracing']]]
+  ['database_129',['DataBase',['../class_data_base.html',1,'DataBase&lt; TSeq &gt;'],['../classepiworld_1_1_data_base.html',1,'epiworld::DataBase&lt; TSeq &gt;']]]
 ];
