@@ -1,7 +1,7 @@
 #define EPI_DEBUG
 #ifndef CATCH_CONFIG_MAIN
 #define N_THREADS 9
-#define N_SIMS 1000
+#define N_SIMS 2000
 #else
 #define N_THREADS 4
 #define N_SIMS 400
@@ -44,8 +44,8 @@ inline auto test_model_builder_20d(
         durations[0],   // Quarantine period high risk
         durations[1],   // Quarantine period medium risk (same as high)
         durations[2],   // Quarantine period low risk (same as high)
-        1.0,             // Quarantine willingness
-        1.0,             // Isolation willingness
+        1.0,            // Quarantine willingness
+        1.0,            // Isolation willingness
         4,              // Isolation period
         0.3,            // Proportion vaccinated
         0.0,            // Detection rate during quarantine
@@ -88,9 +88,9 @@ EPIWORLD_TEST_CASE(
     };
 
     auto model_uniform = test_model_builder_20d(n, contact_matrix, {21, 21, 21});
-    auto model_high    = test_model_builder_20d(n, contact_matrix, { 7, 21, 21});
-    auto model_mid     = test_model_builder_20d(n, contact_matrix, {21,  7, 21});
-    auto model_low     = test_model_builder_20d(n, contact_matrix, {21, 21,  7});
+    auto model_high    = test_model_builder_20d(n, contact_matrix, { 0, 21, 21});
+    auto model_mid     = test_model_builder_20d(n, contact_matrix, {21,  0, 21});
+    auto model_low     = test_model_builder_20d(n, contact_matrix, {21, 21,  0});
 
     // Run simulations
     std::vector<std::vector<epiworld_double>>
