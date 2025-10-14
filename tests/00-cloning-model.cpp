@@ -6,12 +6,12 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
     epiworld::Model<> m;
 
-    m.add_state("Susceptible", default_update_susceptible<>);
-    m.add_state("Recovered");
+    auto susceptible_state = m.add_state("Susceptible", default_update_susceptible<>);
+    auto recovered_state = m.add_state("Recovered");
 
     epiworld::Virus<> v("covid 19", 0.5, true);
     epiworld::Tool<> t("vax", .5, true);
-    v.set_state(0, 1);
+    v.set_state(susceptible_state, recovered_state);
 
     m.seed(1333);
     m.agents_smallworld(1000);
@@ -23,7 +23,7 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     epiworld::Model<> m2 = m;
 
     // Printing the addresses
-    std::cout << 
+    std::cout <<
         "Model           : " << &m <<", " << &m2 << std::endl <<
         "DataBases.model : " << m.get_db().get_model() <<", " << m2.get_db().get_model() << std::endl;
 
@@ -46,7 +46,7 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     // std::cout << "Agent[0] in m2 tools : " <<
     //     // m2.get_agents()[0u].get_virus()->get_agent() << ", " <<
     //     m2.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
-            
+
 
     #ifndef CATCH_CONFIG_MAIN
     return 0;

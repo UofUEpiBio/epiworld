@@ -9,3 +9,5 @@ tests/*
 !tests/*.cpp
 .vscode
 *.o
+.zed/
+.cache/
