@@ -1,4 +1,25 @@
 var searchData=
 [
-  ['lfmcmc_139',['LFMCMC',['../classepiworld_1_1_l_f_m_c_m_c.html',1,'epiworld::LFMCMC&lt; TData &gt;'],['../class_l_f_m_c_m_c.html',1,'LFMCMC&lt; TData &gt;']]]
+  ['model_138',['Model',['../class_model.html',1,'']]],
+  ['model_3c_20epi_5fdefault_5ftseq_20_3e_139',['Model&lt; EPI_DEFAULT_TSEQ &gt;',['../class_model.html',1,'']]],
+  ['modeldiagram_140',['ModelDiagram',['../class_model_diagram.html',1,'']]],
+  ['modeldiffnet_141',['ModelDiffNet',['../class_model_diff_net.html',1,'']]],
+  ['modelmeaslesmixing_142',['ModelMeaslesMixing',['../class_model_measles_mixing.html',1,'']]],
+  ['modelmeaslesmixingriskquarantine_143',['ModelMeaslesMixingRiskQuarantine',['../class_model_measles_mixing_risk_quarantine.html',1,'']]],
+  ['modelmeaslesschool_144',['ModelMeaslesSchool',['../class_model_measles_school.html',1,'']]],
+  ['modelseir_145',['ModelSEIR',['../class_model_s_e_i_r.html',1,'']]],
+  ['modelseirconn_146',['ModelSEIRCONN',['../class_model_s_e_i_r_c_o_n_n.html',1,'']]],
+  ['modelseird_147',['ModelSEIRD',['../class_model_s_e_i_r_d.html',1,'']]],
+  ['modelseirdconn_148',['ModelSEIRDCONN',['../class_model_s_e_i_r_d_c_o_n_n.html',1,'']]],
+  ['modelseirmixing_149',['ModelSEIRMixing',['../class_model_s_e_i_r_mixing.html',1,'']]],
+  ['modelseirmixingquarantine_150',['ModelSEIRMixingQuarantine',['../class_model_s_e_i_r_mixing_quarantine.html',1,'']]],
+  ['modelsir_151',['ModelSIR',['../class_model_s_i_r.html',1,'']]],
+  ['modelsirconn_152',['ModelSIRCONN',['../class_model_s_i_r_c_o_n_n.html',1,'']]],
+  ['modelsird_153',['ModelSIRD',['../class_model_s_i_r_d.html',1,'']]],
+  ['modelsirdconn_154',['ModelSIRDCONN',['../class_model_s_i_r_d_c_o_n_n.html',1,'']]],
+  ['modelsirlogit_155',['ModelSIRLogit',['../class_model_s_i_r_logit.html',1,'']]],
+  ['modelsirmixing_156',['ModelSIRMixing',['../class_model_s_i_r_mixing.html',1,'']]],
+  ['modelsis_157',['ModelSIS',['../class_model_s_i_s.html',1,'']]],
+  ['modelsisd_158',['ModelSISD',['../class_model_s_i_s_d.html',1,'']]],
+  ['modelsurv_159',['ModelSURV',['../class_model_s_u_r_v.html',1,'']]]
 ];

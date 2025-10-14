@@ -23,8 +23,9 @@ Collaboration diagram for Model\+SURV$<$ TSeq $>$\+:
 \doxysubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-void \mbox{\hyperlink{class_model_s_u_r_v_a153c9b414205cf40ad85a74607af78fe}{reset}} ()
-\begin{DoxyCompactList}\small\item\em Reset the model. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\mbox{\Hypertarget{class_model_s_u_r_v_a153c9b414205cf40ad85a74607af78fe}\label{class_model_s_u_r_v_a153c9b414205cf40ad85a74607af78fe}} 
+void {\bfseries reset} ()
+\end{DoxyCompactItemize}
 \begin{Indent}\textbf{ Construct a new Model\+SURV object}\par
 {\em The \mbox{\hyperlink{class_model_s_u_r_v}{Model\+SURV}} class simulates a survaillence model where agents can be isolated, even if asyptomatic.
 
@@ -93,32 +94,6 @@ An object of class {\ttfamily epiworld\+\_\+surv}
 \mbox{\Hypertarget{class_model_s_u_r_v_a5d5f9125242078b05b47504bce2f1f2f}\label{class_model_s_u_r_v_a5d5f9125242078b05b47504bce2f1f2f}} 
 std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{class_model_s_u_r_v_a5d5f9125242078b05b47504bce2f1f2f}{days\+\_\+latent\+\_\+and\+\_\+infectious}}
 \begin{DoxyCompactList}\small\item\em Vector of days spent in latent and infectious states A row-\/major matrix. \end{DoxyCompactList}\end{DoxyCompactItemize}
-\doxysubsection*{Additional Inherited Members}
-
-
-\doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{class_model_s_u_r_v_a153c9b414205cf40ad85a74607af78fe}\label{class_model_s_u_r_v_a153c9b414205cf40ad85a74607af78fe}} 
-\index{ModelSURV$<$ TSeq $>$@{ModelSURV$<$ TSeq $>$}!reset@{reset}}
-\index{reset@{reset}!ModelSURV$<$ TSeq $>$@{ModelSURV$<$ TSeq $>$}}
-\doxysubsubsection{\texorpdfstring{reset()}{reset()}}
-{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
-void \mbox{\hyperlink{class_model_s_u_r_v}{Model\+SURV}}$<$ TSeq $>$\+::reset\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
-
-
-
-Reset the model. 
-
-Resetting the model will\+:
-\begin{DoxyItemize}
-\item clear the database
-\item restore the population (if {\ttfamily set\+\_\+backup()} was called before)
-\item re-\/distribute tools
-\item re-\/distribute viruses
-\item set the date to 0 
-\end{DoxyItemize}
-
-Reimplemented from \mbox{\hyperlink{classepiworld_1_1_model_a9591eb76c7cf1ed7e1510342ff602d37}{epiworld\+::\+Model$<$ EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ $>$}}.
-
 
 
 The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}

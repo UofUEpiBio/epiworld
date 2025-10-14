@@ -1,4 +1,8 @@
 var searchData=
 [
-  ['userdata_172',['UserData',['../classepiworld_1_1_user_data.html',1,'epiworld::UserData&lt; TSeq &gt;'],['../class_user_data.html',1,'UserData&lt; TSeq &gt;']]]
+  ['vechasher_171',['vecHasher',['../structvec_hasher.html',1,'']]],
+  ['virus_172',['Virus',['../class_virus.html',1,'']]],
+  ['viruses_173',['Viruses',['../class_viruses.html',1,'']]],
+  ['viruses_5fconst_174',['Viruses_const',['../class_viruses__const.html',1,'']]],
+  ['virusfunctions_175',['VirusFunctions',['../class_virus_functions.html',1,'']]]
 ];

@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classepiworld_1_1_data_base.html" title="Statistical data about the process." alt="" coords="5,5,139,47"/>
+<area shape="rect" id="node1" href="$class_model.html" title=" " alt="" coords="5,104,161,145"/>
+<area shape="rect" id="node2" href="$class_model_measles_mixing.html" title="Measles model with population mixing, quarantine, and contact tracing." alt="" coords="254,5,397,47"/>
+<area shape="rect" id="node3" href="$class_model_measles_mixing_risk_quarantine.html" title="Measles model with population mixing and risk&#45;based quarantine strategies." alt="" coords="209,71,441,112"/>
+<area shape="rect" id="node4" href="$class_model_measles_school.html" title="Template for a Measles model with quarantine." alt="" coords="252,136,399,177"/>
+<area shape="rect" id="node5" href="$class_model_s_e_i_r_mixing_quarantine.html" title="SEIR model with mixing, quarantine, and contact tracing." alt="" coords="232,201,419,243"/>
 </map>
