@@ -92,8 +92,6 @@ namespace epiworld {
     #include "agent-meat.hpp"
 
     #include "agentssample-bones.hpp"
-
-    #include "contacttracing-bones.hpp"
     
     #include "models/models.hpp"
 
