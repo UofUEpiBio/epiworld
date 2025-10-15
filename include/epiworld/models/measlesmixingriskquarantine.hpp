@@ -932,7 +932,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
 
         // (B) Checking the contacts
         size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
-        if (n_contacts >= EPI_MAX_TRACKING)
+        if (n_contacts > EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
         for (size_t contact_j_idx = 0u; contact_j_idx < n_contacts; ++contact_j_idx)
@@ -1003,7 +1003,10 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         else if (state == PRODROMAL)
             agent.change_state(this, QUARANTINED_PRODROMAL);
         else if (state == RASH)
-            agent.change_state(this, ISOLATED);
+        {
+            if (isolation_willingness[agent.get_id()])
+                agent.change_state(this, ISOLATED);
+        }
         else
             throw std::logic_error(
                 "An agent in an unexpected state is being quarantined."
