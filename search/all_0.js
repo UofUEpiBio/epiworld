@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['add_5fcontact_0',['add_contact',['../class_contact_tracing.html#aac4ecbde27b3781c510aa029a5bf2294',1,'ContactTracing']]],
+  ['add_5fcontact_0',['add_contact',['../class_contact_tracing.html#aac4ecbde27b3781c510aa029a5bf2294',1,'ContactTracing::add_contact()'],['../classepiworld_1_1_contact_tracing.html#aac4ecbde27b3781c510aa029a5bf2294',1,'epiworld::ContactTracing::add_contact()']]],
   ['add_5fglobalevent_1',['add_globalevent',['../class_model.html#a51ab3b98ed8ce29868974d88680c5f26',1,'Model::add_globalevent()'],['../classepiworld_1_1_model.html#a51ab3b98ed8ce29868974d88680c5f26',1,'epiworld::Model::add_globalevent()']]],
   ['adjlist_2',['AdjList',['../class_adj_list.html',1,'AdjList'],['../class_adj_list.html#ab5db009a48beaaed1076f23517e0a8cd',1,'AdjList::AdjList()'],['../classepiworld_1_1_adj_list.html#ab5db009a48beaaed1076f23517e0a8cd',1,'epiworld::AdjList::AdjList()'],['../classepiworld_1_1_adj_list.html',1,'epiworld::AdjList']]],
   ['agent_3',['Agent',['../class_agent.html',1,'Agent&lt; TSeq &gt;'],['../classepiworld_1_1_agent.html',1,'epiworld::Agent&lt; TSeq &gt;']]],

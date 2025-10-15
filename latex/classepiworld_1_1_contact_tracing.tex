@@ -1,0 +1,157 @@
+\hypertarget{classepiworld_1_1_contact_tracing}{}\doxysection{epiworld\+::Contact\+Tracing Class Reference}
+\label{classepiworld_1_1_contact_tracing}\index{epiworld::ContactTracing@{epiworld::ContactTracing}}
+
+
+Class for tracing contacts between agents.  
+
+
+
+
+{\ttfamily \#include $<$epiworld.\+hpp$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classepiworld_1_1_contact_tracing_a66608003067d48338ccff2bf1949d7f8}{Contact\+Tracing}} (size\+\_\+t n\+\_\+agents, size\+\_\+t max\+\_\+contacts)
+\begin{DoxyCompactList}\small\item\em Construct a new Contact Tracing object. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classepiworld_1_1_contact_tracing_aac4ecbde27b3781c510aa029a5bf2294}{add\+\_\+contact}} (size\+\_\+t agent\+\_\+a, size\+\_\+t agent\+\_\+b, size\+\_\+t day)
+\begin{DoxyCompactList}\small\item\em Add a contact between two agents at a given day. \end{DoxyCompactList}\item 
+size\+\_\+t \mbox{\hyperlink{classepiworld_1_1_contact_tracing_aee3241a291dee83b77819e07fb0e5981}{get\+\_\+n\+\_\+contacts}} (size\+\_\+t agent)
+\begin{DoxyCompactList}\small\item\em Get the number of contacts for an agent. \end{DoxyCompactList}\item 
+std\+::pair$<$ size\+\_\+t, size\+\_\+t $>$ \mbox{\hyperlink{classepiworld_1_1_contact_tracing_ab6ac800253f03774222dbe8af8e102e2}{get\+\_\+contact}} (size\+\_\+t agent, size\+\_\+t idx)
+\begin{DoxyCompactList}\small\item\em Get the contact object. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classepiworld_1_1_contact_tracing_ae631e4b3be04ef74918ca5a5be2ffb95}{reset}} (size\+\_\+t n\+\_\+agents, size\+\_\+t max\+\_\+contacts)
+\begin{DoxyCompactList}\small\item\em Reset the contact tracing data. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classepiworld_1_1_contact_tracing_a30866fdcdc61538c4cc141f7aeb9321a}{print}} (size\+\_\+t agent)
+\begin{DoxyCompactList}\small\item\em Print the contacts of an agent. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Class for tracing contacts between agents. 
+
+The class assumes that contacts are stored in a matrix-\/like structure, where rows are agents and columns are contacts in a column-\/major format. Each entry stores the id of the contact and the day of the contact is stored in a parallel array.
+
+The maximum number of contacts per agent is fixed at initialization time. If more contacts are added, they will overwrite previous contacts in a circular buffer fashion. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classepiworld_1_1_contact_tracing_a66608003067d48338ccff2bf1949d7f8}\label{classepiworld_1_1_contact_tracing_a66608003067d48338ccff2bf1949d7f8}} 
+\index{epiworld::ContactTracing@{epiworld::ContactTracing}!ContactTracing@{ContactTracing}}
+\index{ContactTracing@{ContactTracing}!epiworld::ContactTracing@{epiworld::ContactTracing}}
+\doxysubsubsection{\texorpdfstring{ContactTracing()}{ContactTracing()}}
+{\footnotesize\ttfamily Contact\+Tracing\+::\+Contact\+Tracing (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{n\+\_\+agents,  }\item[{size\+\_\+t}]{max\+\_\+contacts }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Construct a new Contact Tracing object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em n\+\_\+agents} & Agents in the system, usually {\ttfamily \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$TSeq$>$\+::size()}. \\
+\hline
+{\em max\+\_\+contacts} & Maximum number of contacts to track per agent. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classepiworld_1_1_contact_tracing_aac4ecbde27b3781c510aa029a5bf2294}\label{classepiworld_1_1_contact_tracing_aac4ecbde27b3781c510aa029a5bf2294}} 
+\index{epiworld::ContactTracing@{epiworld::ContactTracing}!add\_contact@{add\_contact}}
+\index{add\_contact@{add\_contact}!epiworld::ContactTracing@{epiworld::ContactTracing}}
+\doxysubsubsection{\texorpdfstring{add\_contact()}{add\_contact()}}
+{\footnotesize\ttfamily void Contact\+Tracing\+::add\+\_\+contact (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{agent\+\_\+a,  }\item[{size\+\_\+t}]{agent\+\_\+b,  }\item[{size\+\_\+t}]{day }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Add a contact between two agents at a given day. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em agent\+\_\+a} & \mbox{\hyperlink{classepiworld_1_1_agent}{Agent}} id (usually infectious agent) \\
+\hline
+{\em agent\+\_\+b} & \mbox{\hyperlink{classepiworld_1_1_agent}{Agent}} id (usually susceptible agent) \\
+\hline
+{\em day} & Day of the contact (usually \mbox{\hyperlink{classepiworld_1_1_model_aa3ce8d5f025e239f8090ab9645f3e917}{Model$<$\+TSeq$>$\+::today()}}). \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classepiworld_1_1_contact_tracing_ab6ac800253f03774222dbe8af8e102e2}\label{classepiworld_1_1_contact_tracing_ab6ac800253f03774222dbe8af8e102e2}} 
+\index{epiworld::ContactTracing@{epiworld::ContactTracing}!get\_contact@{get\_contact}}
+\index{get\_contact@{get\_contact}!epiworld::ContactTracing@{epiworld::ContactTracing}}
+\doxysubsubsection{\texorpdfstring{get\_contact()}{get\_contact()}}
+{\footnotesize\ttfamily std\+::pair$<$ size\+\_\+t, size\+\_\+t $>$ Contact\+Tracing\+::get\+\_\+contact (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{agent,  }\item[{size\+\_\+t}]{idx }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the contact object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em agent} & Source agent (id) \\
+\hline
+{\em idx} & Index of the contact (0 to get\+\_\+n\+\_\+contacts(agent)-\/1) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+std\+::pair$<$size\+\_\+t, size\+\_\+t$>$ with (contact\+\_\+id, contact\+\_\+day) 
+\end{DoxyReturn}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em std\+::out\+\_\+of\+\_\+range} & if idx is out of range. \\
+\hline
+\end{DoxyExceptions}
+\mbox{\Hypertarget{classepiworld_1_1_contact_tracing_aee3241a291dee83b77819e07fb0e5981}\label{classepiworld_1_1_contact_tracing_aee3241a291dee83b77819e07fb0e5981}} 
+\index{epiworld::ContactTracing@{epiworld::ContactTracing}!get\_n\_contacts@{get\_n\_contacts}}
+\index{get\_n\_contacts@{get\_n\_contacts}!epiworld::ContactTracing@{epiworld::ContactTracing}}
+\doxysubsubsection{\texorpdfstring{get\_n\_contacts()}{get\_n\_contacts()}}
+{\footnotesize\ttfamily size\+\_\+t Contact\+Tracing\+::get\+\_\+n\+\_\+contacts (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{agent }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the number of contacts for an agent. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em agent} & \mbox{\hyperlink{classepiworld_1_1_agent}{Agent}} id \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+size\+\_\+t Number of contacts recorded for that agent (can be more than max\+\_\+contacts) 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classepiworld_1_1_contact_tracing_a30866fdcdc61538c4cc141f7aeb9321a}\label{classepiworld_1_1_contact_tracing_a30866fdcdc61538c4cc141f7aeb9321a}} 
+\index{epiworld::ContactTracing@{epiworld::ContactTracing}!print@{print}}
+\index{print@{print}!epiworld::ContactTracing@{epiworld::ContactTracing}}
+\doxysubsubsection{\texorpdfstring{print()}{print()}}
+{\footnotesize\ttfamily void Contact\+Tracing\+::print (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{agent }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Print the contacts of an agent. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em agent} & \mbox{\hyperlink{classepiworld_1_1_agent}{Agent}} id \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classepiworld_1_1_contact_tracing_ae631e4b3be04ef74918ca5a5be2ffb95}\label{classepiworld_1_1_contact_tracing_ae631e4b3be04ef74918ca5a5be2ffb95}} 
+\index{epiworld::ContactTracing@{epiworld::ContactTracing}!reset@{reset}}
+\index{reset@{reset}!epiworld::ContactTracing@{epiworld::ContactTracing}}
+\doxysubsubsection{\texorpdfstring{reset()}{reset()}}
+{\footnotesize\ttfamily void Contact\+Tracing\+::reset (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{n\+\_\+agents,  }\item[{size\+\_\+t}]{max\+\_\+contacts }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Reset the contact tracing data. 
+
+Usually called by {\ttfamily \mbox{\hyperlink{classepiworld_1_1_model}{Model}}$<$TSeq$>$\+::reset()}.
+
+
+\begin{DoxyParams}{Parameters}
+{\em n\+\_\+agents} & Number of agents \\
+\hline
+{\em max\+\_\+contacts} & Maximum number of contacts to track per agent \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+epiworld.\+hpp\end{DoxyCompactItemize}
