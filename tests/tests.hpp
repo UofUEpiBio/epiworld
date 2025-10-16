@@ -184,7 +184,7 @@ inline std::vector< double > test_compute_final_sizes(
     if (print)
     {
         printf_epiworld(
-            "Final outbreak size (%i): %.2f [%.2f, %.2f] (median: %.2f)\n",
+            "Final size (%i): %.2f [%.2f, %.2f] (median: %.2f)\n",
             static_cast<int>(nsims), res[0], res[1], res[2], outbreak_sizes[mid_point]
         );
 
