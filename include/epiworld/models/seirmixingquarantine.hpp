@@ -492,7 +492,7 @@ inline Model<TSeq> * ModelSEIRMixingQuarantine<TSeq>::clone_ptr()
 
     #if __cplusplus >= 202302L
         // C++23 or later
-        [[assume(ptr != nullptr)]]
+        [[assume(ptr != nullptr)]];
     #else
         // C++17 or C++20
         assert(ptr != nullptr); // Use assert for runtime checks
