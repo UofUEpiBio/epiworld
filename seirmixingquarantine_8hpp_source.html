@@ -84,7 +84,7 @@ $(function() {
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">        auto * output = dynamic_cast&lt; ModelSEIRMixingQuarantine&lt;TSeq&gt; * &gt;( (model) ); \</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">        </span><span class="comment">/*Using the [[assume(...)]] to avoid the compiler warning \</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">        if the standard is C++23 or later */</span><span class="preprocessor"> \</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">        [[assume((output) != nullptr)]]</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">        [[assume((output) != nullptr)]];</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    <span class="comment">// C++17 or C++20</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">    #define GET_MODEL(model, output) \</span></div>
