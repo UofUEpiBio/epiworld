@@ -434,172 +434,162 @@
 \indexentry{epiworld::epimodels::ModelSEIRMixingQuarantine$<$ TSeq $>$@{epiworld::epimodels::ModelSEIRMixingQuarantine$<$ TSeq $>$}!set\_contact\_matrix@{set\_contact\_matrix}|hyperpage}{215}
 \indexentry{set\_contact\_matrix@{set\_contact\_matrix}!epiworld::epimodels::ModelSEIRMixingQuarantine$<$ TSeq $>$@{epiworld::epimodels::ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{215}
 \indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{216}
+\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}|hyperpage}{217}
+\indexentry{ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{217}
 \indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}|hyperpage}{218}
 \indexentry{ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{218}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}|hyperpage}{220}
-\indexentry{ModelSEIRMixingQuarantine@{ModelSEIRMixingQuarantine}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{220}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{221}
-\indexentry{clone\_ptr@{clone\_ptr}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{221}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!get\_agent\_quarantine\_triggered@{get\_agent\_quarantine\_triggered}|hyperpage}{221}
-\indexentry{get\_agent\_quarantine\_triggered@{get\_agent\_quarantine\_triggered}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{221}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!get\_contact\_matrix@{get\_contact\_matrix}|hyperpage}{221}
-\indexentry{get\_contact\_matrix@{get\_contact\_matrix}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{221}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!get\_isolation\_willingness@{get\_isolation\_willingness}|hyperpage}{222}
-\indexentry{get\_isolation\_willingness@{get\_isolation\_willingness}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{222}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!get\_quarantine\_willingness@{get\_quarantine\_willingness}|hyperpage}{222}
-\indexentry{get\_quarantine\_willingness@{get\_quarantine\_willingness}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{222}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{222}
-\indexentry{initial\_states@{initial\_states}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{222}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!run@{run}|hyperpage}{223}
-\indexentry{run@{run}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{223}
-\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!set\_contact\_matrix@{set\_contact\_matrix}|hyperpage}{223}
-\indexentry{set\_contact\_matrix@{set\_contact\_matrix}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{223}
-\indexentry{epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}|hyperpage}{224}
-\indexentry{epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{225}
-\indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}|hyperpage}{225}
-\indexentry{ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}|hyperpage}{225}
-\indexentry{ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{227}
-\indexentry{initial\_states@{initial\_states}!ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}|hyperpage}{227}
-\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{228}
-\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!ModelSIRCONN@{ModelSIRCONN}|hyperpage}{229}
-\indexentry{ModelSIRCONN@{ModelSIRCONN}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{229}
-\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{229}
-\indexentry{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{229}
-\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!get\_n\_infected@{get\_n\_infected}|hyperpage}{230}
-\indexentry{get\_n\_infected@{get\_n\_infected}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{230}
-\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{230}
-\indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{230}
-\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!reset@{reset}|hyperpage}{230}
-\indexentry{reset@{reset}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{230}
-\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{231}
-\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!ModelSIRCONN@{ModelSIRCONN}|hyperpage}{232}
-\indexentry{ModelSIRCONN@{ModelSIRCONN}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{232}
-\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{233}
-\indexentry{clone\_ptr@{clone\_ptr}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{233}
-\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!get\_n\_infected@{get\_n\_infected}|hyperpage}{233}
-\indexentry{get\_n\_infected@{get\_n\_infected}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{233}
-\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{233}
-\indexentry{initial\_states@{initial\_states}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{233}
-\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!reset@{reset}|hyperpage}{234}
-\indexentry{reset@{reset}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{234}
-\indexentry{epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}|hyperpage}{234}
-\indexentry{epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}!ModelSIRD@{ModelSIRD}|hyperpage}{235}
-\indexentry{ModelSIRD@{ModelSIRD}!epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}|hyperpage}{235}
-\indexentry{epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{237}
-\indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}|hyperpage}{237}
-\indexentry{ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}|hyperpage}{237}
-\indexentry{ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}!ModelSIRD@{ModelSIRD}|hyperpage}{239}
-\indexentry{ModelSIRD@{ModelSIRD}!ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}|hyperpage}{239}
-\indexentry{ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{239}
-\indexentry{initial\_states@{initial\_states}!ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}|hyperpage}{239}
-\indexentry{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{240}
-\indexentry{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}!ModelSIRDCONN@{ModelSIRDCONN}|hyperpage}{241}
-\indexentry{ModelSIRDCONN@{ModelSIRDCONN}!epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{241}
-\indexentry{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{242}
-\indexentry{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{242}
-\indexentry{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}!reset@{reset}|hyperpage}{242}
-\indexentry{reset@{reset}!epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{242}
-\indexentry{ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{243}
-\indexentry{ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}!ModelSIRDCONN@{ModelSIRDCONN}|hyperpage}{244}
-\indexentry{ModelSIRDCONN@{ModelSIRDCONN}!ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{244}
-\indexentry{ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{244}
-\indexentry{clone\_ptr@{clone\_ptr}!ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{244}
-\indexentry{ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}!reset@{reset}|hyperpage}{245}
-\indexentry{reset@{reset}!ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{245}
-\indexentry{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}|hyperpage}{245}
-\indexentry{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}!ModelSIRLogit@{ModelSIRLogit}|hyperpage}{247}
-\indexentry{ModelSIRLogit@{ModelSIRLogit}!epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}|hyperpage}{247}
-\indexentry{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{248}
-\indexentry{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}|hyperpage}{248}
-\indexentry{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}!reset@{reset}|hyperpage}{248}
-\indexentry{reset@{reset}!epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}|hyperpage}{248}
-\indexentry{ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}|hyperpage}{249}
-\indexentry{ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}!ModelSIRLogit@{ModelSIRLogit}|hyperpage}{250}
-\indexentry{ModelSIRLogit@{ModelSIRLogit}!ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}|hyperpage}{250}
-\indexentry{ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{251}
-\indexentry{clone\_ptr@{clone\_ptr}!ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}|hyperpage}{251}
-\indexentry{ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}!reset@{reset}|hyperpage}{251}
-\indexentry{reset@{reset}!ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}|hyperpage}{251}
-\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{252}
-\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!ModelSIRMixing@{ModelSIRMixing}|hyperpage}{253}
-\indexentry{ModelSIRMixing@{ModelSIRMixing}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{253}
-\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!ModelSIRMixing@{ModelSIRMixing}|hyperpage}{254}
-\indexentry{ModelSIRMixing@{ModelSIRMixing}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{254}
-\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{254}
-\indexentry{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{254}
-\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{255}
-\indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{255}
-\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!reset@{reset}|hyperpage}{255}
-\indexentry{reset@{reset}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{255}
-\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{256}
-\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!ModelSIRMixing@{ModelSIRMixing}|hyperpage}{257}
-\indexentry{ModelSIRMixing@{ModelSIRMixing}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{257}
-\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!ModelSIRMixing@{ModelSIRMixing}|hyperpage}{258}
-\indexentry{ModelSIRMixing@{ModelSIRMixing}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{258}
-\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{258}
-\indexentry{clone\_ptr@{clone\_ptr}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{258}
-\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{258}
-\indexentry{initial\_states@{initial\_states}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{258}
-\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!reset@{reset}|hyperpage}{259}
-\indexentry{reset@{reset}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{259}
-\indexentry{epiworld::epimodels::ModelSIS$<$ TSeq $>$@{epiworld::epimodels::ModelSIS$<$ TSeq $>$}|hyperpage}{259}
-\indexentry{ModelSIS$<$ TSeq $>$@{ModelSIS$<$ TSeq $>$}|hyperpage}{262}
-\indexentry{epiworld::epimodels::ModelSISD$<$ TSeq $>$@{epiworld::epimodels::ModelSISD$<$ TSeq $>$}|hyperpage}{263}
-\indexentry{ModelSISD$<$ TSeq $>$@{ModelSISD$<$ TSeq $>$}|hyperpage}{265}
-\indexentry{epiworld::epimodels::ModelSURV$<$ TSeq $>$@{epiworld::epimodels::ModelSURV$<$ TSeq $>$}|hyperpage}{266}
-\indexentry{epiworld::epimodels::ModelSURV$<$ TSeq $>$@{epiworld::epimodels::ModelSURV$<$ TSeq $>$}!reset@{reset}|hyperpage}{268}
-\indexentry{reset@{reset}!epiworld::epimodels::ModelSURV$<$ TSeq $>$@{epiworld::epimodels::ModelSURV$<$ TSeq $>$}|hyperpage}{268}
-\indexentry{ModelSURV$<$ TSeq $>$@{ModelSURV$<$ TSeq $>$}|hyperpage}{269}
-\indexentry{ModelSURV$<$ TSeq $>$@{ModelSURV$<$ TSeq $>$}!reset@{reset}|hyperpage}{270}
-\indexentry{reset@{reset}!ModelSURV$<$ TSeq $>$@{ModelSURV$<$ TSeq $>$}|hyperpage}{270}
-\indexentry{Network$<$ Nettype, Nodetype, Edgetype $>$@{Network$<$ Nettype, Nodetype, Edgetype $>$}|hyperpage}{271}
-\indexentry{epiworld::PersonTools$<$ TSeq $>$@{epiworld::PersonTools$<$ TSeq $>$}|hyperpage}{271}
-\indexentry{PersonTools$<$ TSeq $>$@{PersonTools$<$ TSeq $>$}|hyperpage}{272}
-\indexentry{epiworld::Progress@{epiworld::Progress}|hyperpage}{272}
-\indexentry{Progress@{Progress}|hyperpage}{272}
-\indexentry{epiworld::Queue$<$ TSeq $>$@{epiworld::Queue$<$ TSeq $>$}|hyperpage}{273}
-\indexentry{Queue$<$ TSeq $>$@{Queue$<$ TSeq $>$}|hyperpage}{273}
-\indexentry{RandGraph@{RandGraph}|hyperpage}{274}
-\indexentry{epiworld::SAMPLETYPE@{epiworld::SAMPLETYPE}|hyperpage}{275}
-\indexentry{SAMPLETYPE@{SAMPLETYPE}|hyperpage}{275}
-\indexentry{TestResults@{TestResults}|hyperpage}{275}
-\indexentry{epiworld::Tool$<$ TSeq $>$@{epiworld::Tool$<$ TSeq $>$}|hyperpage}{275}
-\indexentry{Tool$<$ TSeq $>$@{Tool$<$ TSeq $>$}|hyperpage}{277}
-\indexentry{epiworld::ToolFunctions$<$ TSeq $>$@{epiworld::ToolFunctions$<$ TSeq $>$}|hyperpage}{278}
-\indexentry{ToolFunctions$<$ TSeq $>$@{ToolFunctions$<$ TSeq $>$}|hyperpage}{279}
-\indexentry{epiworld::Tools$<$ TSeq $>$@{epiworld::Tools$<$ TSeq $>$}|hyperpage}{280}
-\indexentry{Tools$<$ TSeq $>$@{Tools$<$ TSeq $>$}|hyperpage}{280}
-\indexentry{epiworld::Tools\_const$<$ TSeq $>$@{epiworld::Tools\_const$<$ TSeq $>$}|hyperpage}{281}
-\indexentry{Tools\_const$<$ TSeq $>$@{Tools\_const$<$ TSeq $>$}|hyperpage}{282}
-\indexentry{epiworld::UserData$<$ TSeq $>$@{epiworld::UserData$<$ TSeq $>$}|hyperpage}{283}
-\indexentry{epiworld::UserData$<$ TSeq $>$@{epiworld::UserData$<$ TSeq $>$}!UserData@{UserData}|hyperpage}{284}
-\indexentry{UserData@{UserData}!epiworld::UserData$<$ TSeq $>$@{epiworld::UserData$<$ TSeq $>$}|hyperpage}{284}
-\indexentry{UserData$<$ TSeq $>$@{UserData$<$ TSeq $>$}|hyperpage}{284}
-\indexentry{UserData$<$ TSeq $>$@{UserData$<$ TSeq $>$}!UserData@{UserData}|hyperpage}{286}
-\indexentry{UserData@{UserData}!UserData$<$ TSeq $>$@{UserData$<$ TSeq $>$}|hyperpage}{286}
-\indexentry{epiworld::vecHasher$<$ T $>$@{epiworld::vecHasher$<$ T $>$}|hyperpage}{286}
-\indexentry{vecHasher$<$ T $>$@{vecHasher$<$ T $>$}|hyperpage}{287}
-\indexentry{epiworld::Virus$<$ TSeq $>$@{epiworld::Virus$<$ TSeq $>$}|hyperpage}{287}
-\indexentry{Virus$<$ TSeq $>$@{Virus$<$ TSeq $>$}|hyperpage}{289}
-\indexentry{epiworld::Viruses$<$ TSeq $>$@{epiworld::Viruses$<$ TSeq $>$}|hyperpage}{292}
-\indexentry{Viruses$<$ TSeq $>$@{Viruses$<$ TSeq $>$}|hyperpage}{292}
-\indexentry{epiworld::Viruses\_const$<$ TSeq $>$@{epiworld::Viruses\_const$<$ TSeq $>$}|hyperpage}{293}
-\indexentry{Viruses\_const$<$ TSeq $>$@{Viruses\_const$<$ TSeq $>$}|hyperpage}{294}
-\indexentry{epiworld::VirusFunctions$<$ TSeq $>$@{epiworld::VirusFunctions$<$ TSeq $>$}|hyperpage}{295}
-\indexentry{VirusFunctions$<$ TSeq $>$@{VirusFunctions$<$ TSeq $>$}|hyperpage}{295}
-\indexentry{include/epiworld/agent-\/meat-\/state.hpp@{include/epiworld/agent-\/meat-\/state.hpp}|hyperpage}{297}
-\indexentry{include/epiworld/models/measlesmixing.hpp@{include/epiworld/models/measlesmixing.hpp}|hyperpage}{299}
-\indexentry{measlesmixing.hpp@{measlesmixing.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{299}
-\indexentry{GET\_MODEL@{GET\_MODEL}!measlesmixing.hpp@{measlesmixing.hpp}|hyperpage}{299}
-\indexentry{measlesmixing.hpp@{measlesmixing.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{300}
-\indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!measlesmixing.hpp@{measlesmixing.hpp}|hyperpage}{300}
-\indexentry{include/epiworld/models/measlesmixingriskquarantine.hpp@{include/epiworld/models/measlesmixingriskquarantine.hpp}|hyperpage}{300}
-\indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{301}
-\indexentry{GET\_MODEL@{GET\_MODEL}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{301}
-\indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{301}
-\indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{301}
-\indexentry{include/epiworld/models/seirmixingquarantine.hpp@{include/epiworld/models/seirmixingquarantine.hpp}|hyperpage}{302}
-\indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{302}
-\indexentry{GET\_MODEL@{GET\_MODEL}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{302}
-\indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{303}
-\indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{303}
+\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{220}
+\indexentry{clone\_ptr@{clone\_ptr}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{220}
+\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{220}
+\indexentry{initial\_states@{initial\_states}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{220}
+\indexentry{ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}!reset@{reset}|hyperpage}{220}
+\indexentry{reset@{reset}!ModelSEIRMixingQuarantine$<$ TSeq $>$@{ModelSEIRMixingQuarantine$<$ TSeq $>$}|hyperpage}{220}
+\indexentry{epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}|hyperpage}{221}
+\indexentry{epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{222}
+\indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIR$<$ TSeq $>$@{epiworld::epimodels::ModelSIR$<$ TSeq $>$}|hyperpage}{222}
+\indexentry{ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}|hyperpage}{223}
+\indexentry{ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{224}
+\indexentry{initial\_states@{initial\_states}!ModelSIR$<$ TSeq $>$@{ModelSIR$<$ TSeq $>$}|hyperpage}{224}
+\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{225}
+\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!ModelSIRCONN@{ModelSIRCONN}|hyperpage}{226}
+\indexentry{ModelSIRCONN@{ModelSIRCONN}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{226}
+\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{227}
+\indexentry{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{227}
+\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!get\_n\_infected@{get\_n\_infected}|hyperpage}{227}
+\indexentry{get\_n\_infected@{get\_n\_infected}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{227}
+\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{228}
+\indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{228}
+\indexentry{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}!reset@{reset}|hyperpage}{228}
+\indexentry{reset@{reset}!epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRCONN$<$ TSeq $>$}|hyperpage}{228}
+\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{229}
+\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!ModelSIRCONN@{ModelSIRCONN}|hyperpage}{230}
+\indexentry{ModelSIRCONN@{ModelSIRCONN}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{230}
+\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{230}
+\indexentry{clone\_ptr@{clone\_ptr}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{230}
+\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!get\_n\_infected@{get\_n\_infected}|hyperpage}{231}
+\indexentry{get\_n\_infected@{get\_n\_infected}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{231}
+\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{231}
+\indexentry{initial\_states@{initial\_states}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{231}
+\indexentry{ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}!reset@{reset}|hyperpage}{231}
+\indexentry{reset@{reset}!ModelSIRCONN$<$ TSeq $>$@{ModelSIRCONN$<$ TSeq $>$}|hyperpage}{231}
+\indexentry{epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}|hyperpage}{232}
+\indexentry{epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}!ModelSIRD@{ModelSIRD}|hyperpage}{233}
+\indexentry{ModelSIRD@{ModelSIRD}!epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}|hyperpage}{233}
+\indexentry{epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{234}
+\indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIRD$<$ TSeq $>$@{epiworld::epimodels::ModelSIRD$<$ TSeq $>$}|hyperpage}{234}
+\indexentry{ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}|hyperpage}{234}
+\indexentry{ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}!ModelSIRD@{ModelSIRD}|hyperpage}{235}
+\indexentry{ModelSIRD@{ModelSIRD}!ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}|hyperpage}{235}
+\indexentry{ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{236}
+\indexentry{initial\_states@{initial\_states}!ModelSIRD$<$ TSeq $>$@{ModelSIRD$<$ TSeq $>$}|hyperpage}{236}
+\indexentry{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{237}
+\indexentry{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}!ModelSIRDCONN@{ModelSIRDCONN}|hyperpage}{238}
+\indexentry{ModelSIRDCONN@{ModelSIRDCONN}!epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{238}
+\indexentry{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{238}
+\indexentry{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{238}
+\indexentry{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}!reset@{reset}|hyperpage}{239}
+\indexentry{reset@{reset}!epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$@{epiworld::epimodels::ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{239}
+\indexentry{ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{239}
+\indexentry{ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}!ModelSIRDCONN@{ModelSIRDCONN}|hyperpage}{240}
+\indexentry{ModelSIRDCONN@{ModelSIRDCONN}!ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{240}
+\indexentry{ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{241}
+\indexentry{clone\_ptr@{clone\_ptr}!ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{241}
+\indexentry{ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}!reset@{reset}|hyperpage}{241}
+\indexentry{reset@{reset}!ModelSIRDCONN$<$ TSeq $>$@{ModelSIRDCONN$<$ TSeq $>$}|hyperpage}{241}
+\indexentry{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}|hyperpage}{242}
+\indexentry{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}!ModelSIRLogit@{ModelSIRLogit}|hyperpage}{244}
+\indexentry{ModelSIRLogit@{ModelSIRLogit}!epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}|hyperpage}{244}
+\indexentry{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{245}
+\indexentry{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}|hyperpage}{245}
+\indexentry{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}!reset@{reset}|hyperpage}{245}
+\indexentry{reset@{reset}!epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$@{epiworld::epimodels::ModelSIRLogit$<$ TSeq $>$}|hyperpage}{245}
+\indexentry{ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}|hyperpage}{246}
+\indexentry{ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}!ModelSIRLogit@{ModelSIRLogit}|hyperpage}{247}
+\indexentry{ModelSIRLogit@{ModelSIRLogit}!ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}|hyperpage}{247}
+\indexentry{ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{248}
+\indexentry{clone\_ptr@{clone\_ptr}!ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}|hyperpage}{248}
+\indexentry{ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}!reset@{reset}|hyperpage}{248}
+\indexentry{reset@{reset}!ModelSIRLogit$<$ TSeq $>$@{ModelSIRLogit$<$ TSeq $>$}|hyperpage}{248}
+\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{249}
+\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!ModelSIRMixing@{ModelSIRMixing}|hyperpage}{250}
+\indexentry{ModelSIRMixing@{ModelSIRMixing}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{250}
+\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!ModelSIRMixing@{ModelSIRMixing}|hyperpage}{251}
+\indexentry{ModelSIRMixing@{ModelSIRMixing}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{251}
+\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{251}
+\indexentry{clone\_ptr@{clone\_ptr}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{251}
+\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{252}
+\indexentry{initial\_states@{initial\_states}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{252}
+\indexentry{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}!reset@{reset}|hyperpage}{252}
+\indexentry{reset@{reset}!epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$@{epiworld::epimodels::ModelSIRMixing$<$ TSeq $>$}|hyperpage}{252}
+\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{253}
+\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!ModelSIRMixing@{ModelSIRMixing}|hyperpage}{254}
+\indexentry{ModelSIRMixing@{ModelSIRMixing}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{254}
+\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!ModelSIRMixing@{ModelSIRMixing}|hyperpage}{255}
+\indexentry{ModelSIRMixing@{ModelSIRMixing}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{255}
+\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!clone\_ptr@{clone\_ptr}|hyperpage}{255}
+\indexentry{clone\_ptr@{clone\_ptr}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{255}
+\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!initial\_states@{initial\_states}|hyperpage}{255}
+\indexentry{initial\_states@{initial\_states}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{255}
+\indexentry{ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}!reset@{reset}|hyperpage}{256}
+\indexentry{reset@{reset}!ModelSIRMixing$<$ TSeq $>$@{ModelSIRMixing$<$ TSeq $>$}|hyperpage}{256}
+\indexentry{epiworld::epimodels::ModelSIS$<$ TSeq $>$@{epiworld::epimodels::ModelSIS$<$ TSeq $>$}|hyperpage}{256}
+\indexentry{ModelSIS$<$ TSeq $>$@{ModelSIS$<$ TSeq $>$}|hyperpage}{259}
+\indexentry{epiworld::epimodels::ModelSISD$<$ TSeq $>$@{epiworld::epimodels::ModelSISD$<$ TSeq $>$}|hyperpage}{260}
+\indexentry{ModelSISD$<$ TSeq $>$@{ModelSISD$<$ TSeq $>$}|hyperpage}{262}
+\indexentry{epiworld::epimodels::ModelSURV$<$ TSeq $>$@{epiworld::epimodels::ModelSURV$<$ TSeq $>$}|hyperpage}{263}
+\indexentry{epiworld::epimodels::ModelSURV$<$ TSeq $>$@{epiworld::epimodels::ModelSURV$<$ TSeq $>$}!reset@{reset}|hyperpage}{265}
+\indexentry{reset@{reset}!epiworld::epimodels::ModelSURV$<$ TSeq $>$@{epiworld::epimodels::ModelSURV$<$ TSeq $>$}|hyperpage}{265}
+\indexentry{ModelSURV$<$ TSeq $>$@{ModelSURV$<$ TSeq $>$}|hyperpage}{266}
+\indexentry{ModelSURV$<$ TSeq $>$@{ModelSURV$<$ TSeq $>$}!reset@{reset}|hyperpage}{267}
+\indexentry{reset@{reset}!ModelSURV$<$ TSeq $>$@{ModelSURV$<$ TSeq $>$}|hyperpage}{267}
+\indexentry{Network$<$ Nettype, Nodetype, Edgetype $>$@{Network$<$ Nettype, Nodetype, Edgetype $>$}|hyperpage}{268}
+\indexentry{epiworld::PersonTools$<$ TSeq $>$@{epiworld::PersonTools$<$ TSeq $>$}|hyperpage}{268}
+\indexentry{PersonTools$<$ TSeq $>$@{PersonTools$<$ TSeq $>$}|hyperpage}{269}
+\indexentry{epiworld::Progress@{epiworld::Progress}|hyperpage}{269}
+\indexentry{Progress@{Progress}|hyperpage}{269}
+\indexentry{epiworld::Queue$<$ TSeq $>$@{epiworld::Queue$<$ TSeq $>$}|hyperpage}{270}
+\indexentry{Queue$<$ TSeq $>$@{Queue$<$ TSeq $>$}|hyperpage}{270}
+\indexentry{RandGraph@{RandGraph}|hyperpage}{271}
+\indexentry{epiworld::SAMPLETYPE@{epiworld::SAMPLETYPE}|hyperpage}{272}
+\indexentry{SAMPLETYPE@{SAMPLETYPE}|hyperpage}{272}
+\indexentry{TestResults@{TestResults}|hyperpage}{272}
+\indexentry{epiworld::Tool$<$ TSeq $>$@{epiworld::Tool$<$ TSeq $>$}|hyperpage}{272}
+\indexentry{Tool$<$ TSeq $>$@{Tool$<$ TSeq $>$}|hyperpage}{274}
+\indexentry{epiworld::ToolFunctions$<$ TSeq $>$@{epiworld::ToolFunctions$<$ TSeq $>$}|hyperpage}{275}
+\indexentry{ToolFunctions$<$ TSeq $>$@{ToolFunctions$<$ TSeq $>$}|hyperpage}{276}
+\indexentry{epiworld::Tools$<$ TSeq $>$@{epiworld::Tools$<$ TSeq $>$}|hyperpage}{277}
+\indexentry{Tools$<$ TSeq $>$@{Tools$<$ TSeq $>$}|hyperpage}{277}
+\indexentry{epiworld::Tools\_const$<$ TSeq $>$@{epiworld::Tools\_const$<$ TSeq $>$}|hyperpage}{278}
+\indexentry{Tools\_const$<$ TSeq $>$@{Tools\_const$<$ TSeq $>$}|hyperpage}{279}
+\indexentry{epiworld::UserData$<$ TSeq $>$@{epiworld::UserData$<$ TSeq $>$}|hyperpage}{280}
+\indexentry{epiworld::UserData$<$ TSeq $>$@{epiworld::UserData$<$ TSeq $>$}!UserData@{UserData}|hyperpage}{281}
+\indexentry{UserData@{UserData}!epiworld::UserData$<$ TSeq $>$@{epiworld::UserData$<$ TSeq $>$}|hyperpage}{281}
+\indexentry{UserData$<$ TSeq $>$@{UserData$<$ TSeq $>$}|hyperpage}{281}
+\indexentry{UserData$<$ TSeq $>$@{UserData$<$ TSeq $>$}!UserData@{UserData}|hyperpage}{283}
+\indexentry{UserData@{UserData}!UserData$<$ TSeq $>$@{UserData$<$ TSeq $>$}|hyperpage}{283}
+\indexentry{epiworld::vecHasher$<$ T $>$@{epiworld::vecHasher$<$ T $>$}|hyperpage}{283}
+\indexentry{vecHasher$<$ T $>$@{vecHasher$<$ T $>$}|hyperpage}{284}
+\indexentry{epiworld::Virus$<$ TSeq $>$@{epiworld::Virus$<$ TSeq $>$}|hyperpage}{284}
+\indexentry{Virus$<$ TSeq $>$@{Virus$<$ TSeq $>$}|hyperpage}{286}
+\indexentry{epiworld::Viruses$<$ TSeq $>$@{epiworld::Viruses$<$ TSeq $>$}|hyperpage}{289}
+\indexentry{Viruses$<$ TSeq $>$@{Viruses$<$ TSeq $>$}|hyperpage}{289}
+\indexentry{epiworld::Viruses\_const$<$ TSeq $>$@{epiworld::Viruses\_const$<$ TSeq $>$}|hyperpage}{290}
+\indexentry{Viruses\_const$<$ TSeq $>$@{Viruses\_const$<$ TSeq $>$}|hyperpage}{291}
+\indexentry{epiworld::VirusFunctions$<$ TSeq $>$@{epiworld::VirusFunctions$<$ TSeq $>$}|hyperpage}{292}
+\indexentry{VirusFunctions$<$ TSeq $>$@{VirusFunctions$<$ TSeq $>$}|hyperpage}{292}
+\indexentry{include/epiworld/agent-\/meat-\/state.hpp@{include/epiworld/agent-\/meat-\/state.hpp}|hyperpage}{293}
+\indexentry{include/epiworld/models/measlesmixing.hpp@{include/epiworld/models/measlesmixing.hpp}|hyperpage}{295}
+\indexentry{measlesmixing.hpp@{measlesmixing.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{295}
+\indexentry{GET\_MODEL@{GET\_MODEL}!measlesmixing.hpp@{measlesmixing.hpp}|hyperpage}{295}
+\indexentry{measlesmixing.hpp@{measlesmixing.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{296}
+\indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!measlesmixing.hpp@{measlesmixing.hpp}|hyperpage}{296}
+\indexentry{include/epiworld/models/measlesmixingriskquarantine.hpp@{include/epiworld/models/measlesmixingriskquarantine.hpp}|hyperpage}{296}
+\indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{297}
+\indexentry{GET\_MODEL@{GET\_MODEL}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{297}
+\indexentry{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{297}
+\indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}|hyperpage}{297}
+\indexentry{include/epiworld/models/seirmixingquarantine.hpp@{include/epiworld/models/seirmixingquarantine.hpp}|hyperpage}{298}
+\indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!GET\_MODEL@{GET\_MODEL}|hyperpage}{298}
+\indexentry{GET\_MODEL@{GET\_MODEL}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{298}
+\indexentry{seirmixingquarantine.hpp@{seirmixingquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}|hyperpage}{299}
+\indexentry{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!seirmixingquarantine.hpp@{seirmixingquarantine.hpp}|hyperpage}{299}
