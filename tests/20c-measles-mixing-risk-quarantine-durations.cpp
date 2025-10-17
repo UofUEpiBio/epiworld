@@ -143,10 +143,6 @@ EPIWORLD_TEST_CASE(
     auto model_only_high = test_model_builder_20d("Only high", n, contact_matrix, {21,  0,  0});
     auto model_only_mid = test_model_builder_20d("Only mid", n, contact_matrix, { 0, 21,  0});
     auto model_only_low = test_model_builder_20d("Only low", n, contact_matrix, { 0,  0, 21});
-
-    
-
-
     
     // model_uniform.print();
     // model_varied.print();
