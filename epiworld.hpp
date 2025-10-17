@@ -29956,10 +29956,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_add_tracking(
 {
 
     // We avoid the math if there's no point in tracking anymore
-    if (
-        agent_quarantine_triggered[infected_id] >=
-        ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_DONE
-    )
+    if (agent_quarantine_triggered[infected_id] >= QUARANTINE_PROCESS_DONE)
         return;
 
     // We avoid the math if the contact happened before
@@ -30618,11 +30615,12 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
+        auto success_rate = this->par("Contact tracing success rate");
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
 
             // Checking if we will detect the contact
-            if (Model<TSeq>::runif() > Model<TSeq>::par("Contact tracing success rate"))
+            if (Model<TSeq>::runif() > success_rate)
                 continue;
 
             size_t contact_id = this->tracking_matrix[
@@ -30638,9 +30636,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
             if (agent.get_n_tools() != 0u)
                 continue;
 
-            if (
-                quarantine_willingness[contact_id] &&
-                (Model<TSeq>::par("Quarantine period") >= 0))
+            if (quarantine_willingness[contact_id])
             {
 
                 switch (agent.get_state())
@@ -30670,8 +30666,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         }
 
         // Setting the quarantine process off
-        agent_quarantine_triggered[agent_i] =
-            ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_DONE;
+        agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
     }
 
     return;
