@@ -758,7 +758,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     model.add_param(hospitalization_period, "Hospitalization period");
     model.add_param(prop_vaccinated, "Vaccination rate");
     model.add_param(vax_efficacy, "Vax efficacy");
-    model.add_param(vax_reduction_recovery_rate, "Vax improved recovery");
+    model.add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
 
     // Designing the disease
     Virus<> measles("Measles");
