@@ -775,7 +775,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     // Designing the vaccine
     Tool<> vaccine("Vaccine");
     vaccine.set_susceptibility_reduction(&model("Vax efficacy"));
-    vaccine.set_recovery_enhancer(&model("Vax improved recovery"));
+    vaccine.set_recovery_enhancer(&model("(IGNORED) Vax improved recovery"));
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );
