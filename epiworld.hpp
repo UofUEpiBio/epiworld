@@ -871,7 +871,7 @@ private:
     int last_loc;     ///< Last location of the bar
     int cur_loc;      ///< Last location of the bar
     int i;            ///< Current iteration step
-    
+
 public:
     Progress() {};
     Progress(int n_, int width_);
@@ -879,7 +879,7 @@ public:
 
     void start();
     void next();
-    void end();
+    
 
 };
 
@@ -925,17 +925,14 @@ inline void Progress::next() {
     { 
         printf_epiworld("|");
     }
+
+    if (i == n)
+    {
+        printf_epiworld(" done.\n");
+    }
     #endif
 
     last_loc = cur_loc;
-
-}
-
-inline void Progress::end() {
-
-    #ifndef EPI_DEBUG
-    printf_epiworld(" done.\n");
-    #endif
 
 }
 
@@ -2492,9 +2489,6 @@ inline void LFMCMC<TData>::run(
    
     // Init progress bar
     progress_bar = Progress(m_n_samples, 80);
-    if (verbose) { 
-        progress_bar.next(); 
-    }
 
     // Run LFMCMC
     for (size_t i = 1u; i < m_n_samples; ++i)
@@ -2556,9 +2550,9 @@ inline void LFMCMC<TData>::run(
         for (size_t k = 0u; k < m_n_params; ++k)
             m_all_accepted_params[i * m_n_params + k] = m_current_accepted_params[k];
 
-        if (verbose) { 
-            progress_bar.next(); 
-        }
+        if (verbose)
+           progress_bar.next();
+
     }
 
     // End timing
@@ -12754,7 +12748,7 @@ inline void Model<TSeq>::run_multiple(
 
                 // Only the first one prints
                 if (verbose)
-                    pb_multiple.next();                
+                    pb_multiple.next();
 
             } else {
 
@@ -12765,8 +12759,6 @@ inline void Model<TSeq>::run_multiple(
                     fun(sim_id, these[iam - 1]);
 
             }
-
-            
 
         }
         
@@ -12818,9 +12810,6 @@ inline void Model<TSeq>::run_multiple(
     
     }
     #endif
-
-    if (verbose)
-        pb_multiple.end();
 
     if (old_verb)
         verbose_on();
