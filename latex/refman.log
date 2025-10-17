@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.10.16)  16 OCT 2025 16:49
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.10.17)  17 OCT 2025 17:38
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -4756,7 +4756,7 @@ Chapter 18.
 pdfTeX warning: pdflatex (file ./agent-meat-state_8hpp__incl.pdf): PDF inclusio
 n: multiple pdfs with page group included in a single page
 >
-<agent-meat-state_8hpp__incl.pdf, id=9601, 416.55624pt x 167.62625pt>
+<agent-meat-state_8hpp__incl.pdf, id=9599, 416.55624pt x 167.62625pt>
 File: agent-meat-state_8hpp__incl.pdf Graphic file (type pdf)
 <use agent-meat-state_8hpp__incl.pdf>
 Package pdftex.def Info: agent-meat-state_8hpp__incl.pdf  used on input line 16
@@ -4767,7 +4767,7 @@ Package pdftex.def Info: agent-meat-state_8hpp__incl.pdf  used on input line 16
 pdfTeX warning: pdflatex (file ./agent-meat-state_8hpp__dep__incl.pdf): PDF inc
 lusion: multiple pdfs with page group included in a single page
 >
-<agent-meat-state_8hpp__dep__incl.pdf, id=9616, 223.83624pt x 223.83624pt>
+<agent-meat-state_8hpp__dep__incl.pdf, id=9614, 223.83624pt x 223.83624pt>
 File: agent-meat-state_8hpp__dep__incl.pdf Graphic file (type pdf)
 <use agent-meat-state_8hpp__dep__incl.pdf>
 Package pdftex.def Info: agent-meat-state_8hpp__dep__incl.pdf  used on input li
@@ -4794,7 +4794,7 @@ Underfull \hbox (badness 10000) detected at line 50
  []
 
 ) (./measlesmixing_8hpp.tex <./measlesmixing_8hpp__dep__incl.pdf>
-<measlesmixing_8hpp__dep__incl.pdf, id=9634, 223.83624pt x 291.0875pt>
+<measlesmixing_8hpp__dep__incl.pdf, id=9632, 223.83624pt x 291.0875pt>
 File: measlesmixing_8hpp__dep__incl.pdf Graphic file (type pdf)
 <use measlesmixing_8hpp__dep__incl.pdf>
 Package pdftex.def Info: measlesmixing_8hpp__dep__incl.pdf  used on input line 
@@ -4803,7 +4803,7 @@ Package pdftex.def Info: measlesmixing_8hpp__dep__incl.pdf  used on input line
  [292]
 [293]) (./measlesmixingriskquarantine_8hpp.tex <./measlesmixingriskquarantine_8
 hpp__dep__incl.pdf>
-<measlesmixingriskquarantine_8hpp__dep__incl.pdf, id=9663, 243.91125pt x 291.08
+<measlesmixingriskquarantine_8hpp__dep__incl.pdf, id=9661, 243.91125pt x 291.08
 75pt>
 File: measlesmixingriskquarantine_8hpp__dep__incl.pdf Graphic file (type pdf)
 <use measlesmixingriskquarantine_8hpp__dep__incl.pdf>
@@ -5086,10 +5086,10 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 23732 strings out of 480478
- 533742 string characters out of 5905923
- 808123 words of memory out of 5000000
- 35742 multiletter control sequences out of 15000+600000
+ 23728 strings out of 480478
+ 533522 string characters out of 5905923
+ 808013 words of memory out of 5000000
+ 35740 multiletter control sequences out of 15000+600000
  604548 words of font info for 116 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,16n,96p,3218b,718s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -5110,10 +5110,10 @@ s/type1/urw/helvetic/uhvb8a.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic
 /uhvb8ac.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvbo8ac.pfb></usr
 /share/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texmf-dist/fo
 nts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on refman.pdf (321 pages, 1452815 bytes).
+Output written on refman.pdf (321 pages, 1452640 bytes).
 PDF statistics:
- 11088 PDF objects out of 12825 (max. 8388607)
- 10209 compressed objects within 103 object streams
- 3451 named destinations out of 3580 (max. 500000)
+ 11085 PDF objects out of 12825 (max. 8388607)
+ 10206 compressed objects within 103 object streams
+ 3449 named destinations out of 3580 (max. 500000)
  5117 words of extra memory for PDF output out of 10000 (max. 10000000)
 
