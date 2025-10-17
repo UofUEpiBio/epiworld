@@ -26,14 +26,15 @@ EPIWORLD_TEST_CASE(
         4.0,   // epiworld_double avg_incubation_days,
         1.0/3.5,// epiworld_double recovery_rate,
         contact_matrix,
-        {true, true, true}, // Entity can quarantine
         .1, // Hospitalization rate
         4, // Hospitalization period
         -1, // Days undetected (negative means no quarantine)
         4, // Quarantine period
         .9, // Quarantine willingness
         1.0, // Isolation willingness
-        10 // Isolation period
+        10, // Isolation period
+        1.0, // Contact tracing success rate
+        4 // Contact tracing days prior
     );
 
     // Copy the original virus

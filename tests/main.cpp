@@ -34,8 +34,13 @@
 #include "17a-mixing-quarantine.cpp"
 #include "17b-mixing-quarantine.cpp"
 #include "17c-mixing-quarantine.cpp"
-#include "17d-mixing-quarantine.cpp"
-#include "17e-mixing-quarantine.cpp"
+
+// These two tests are excluded b/c they used a version
+// of the model that featured parameters that were later
+// removed (entity_can_quarantine).
+// Will be re-added with updated versions later.
+// #include "17d-mixing-quarantine.cpp"
+// #include "17e-mixing-quarantine.cpp"
 #include "19a-measles-mixing.cpp"
 #include "19b-measles-mixing.cpp"
 #include "19c-measles-mixing.cpp"
