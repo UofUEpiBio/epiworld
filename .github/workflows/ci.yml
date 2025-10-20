@@ -45,6 +45,7 @@ jobs:
       - name: Check
         run: |
           cd tests
+          make clean
           bash -c 'make main.o'
           ./main.o
 
