@@ -32,7 +32,9 @@ EPIWORLD_TEST_CASE(
         4, // Quarantine period
         .9, // Quarantine willingness
         1.0, // Isolation willingness
-        10 // Isolation period
+        10, // Isolation period
+        1.0, // Contact tracing success rate
+        4 // Contact tracing days prior
     );
 
     // Copy the original virus

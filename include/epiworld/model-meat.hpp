@@ -1504,7 +1504,10 @@ inline void Model<TSeq>::run_multiple(
     }
     // #endif
 
-    EPI_DEBUG_NOTIFY_ACTIVE()
+    if (verbose)
+    {
+        EPI_DEBUG_NOTIFY_ACTIVE()
+    }
 
     bool old_verb = this->verbose;
     verbose_off();
@@ -1625,8 +1628,6 @@ inline void Model<TSeq>::run_multiple(
 
             }
 
-
-
         }
 
     }
@@ -1677,9 +1678,6 @@ inline void Model<TSeq>::run_multiple(
 
     }
     #endif
-
-    if (verbose)
-        pb_multiple.end();
 
     if (old_verb)
         verbose_on();

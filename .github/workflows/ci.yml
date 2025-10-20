@@ -14,42 +14,48 @@ on:
   pull_request:
 
 jobs:
-  test-macos:
-    runs-on: macos-latest
+  test:
+    runs-on: ${{ matrix.os }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
+    strategy:
+      matrix:
+        include:
+          # macOS configurations
+          - os: macos-latest
+            llvm: 14
+            std: c++20
+            container: ''
+          - os: macos-latest
+            llvm: 18
+            std: c++2b
+            container: ''
+          # Ubuntu configuration
+          - os: ubuntu-latest
+            llvm: ''
+            std: ''
+            container: gvegayon/epiworld:latest
+
+    container: ${{ matrix.container || '' }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check
+      - name: Install LLVM (macOS only)
+        if: runner.os == 'macOS'
+        run: brew install llvm@${{ matrix.llvm }}
+
+      - name: Check (macOS)
+        if: runner.os == 'macOS'
         env:
-          CXX_STD: -std=c++20
+          CXX_STD: -std=${{ matrix.std }}
         run: |
-          brew install llvm@14 
-          echo 'export PATH="/usr/local/opt/llvm@14/bin:$PATH"' >> /Users/runner/.bash_profile
+          echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
           cd tests && make main.a && ./main.a
 
-  test-macos-clang18:
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check
-        env:
-          CXX_STD: -std=c++2b
-        run: |
-          brew install llvm@18 
-          echo 'export PATH="/usr/local/opt/llvm@18/bin:$PATH"' >> /Users/runner/.bash_profile
-          cd tests && make main.a && ./main.a
-
-  test-ubuntu:
-    runs-on: ubuntu-latest
-    container: gvegayon/epiworld:latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check
+      - name: Check (Ubuntu)
+        if: runner.os == 'Linux'
         env:
           OPENMP: -fopenmp
         run: |
@@ -72,7 +78,7 @@ jobs:
       - name: Getting epiworldR
         run: |
           install2.r knitr rmarkdown tinytest netplot igraph data.table DiagrammeR
-          apt-get update && apt-get install -y --no-install-recommends pandoc 
+          apt-get update && apt-get install -y --no-install-recommends pandoc
           cp -r include/epiworld/ r-pkg/inst/include/epiworld/
           R CMD build r-pkg
           R CMD check --no-manual epiworldR_*.tar.gz
@@ -90,18 +96,26 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11.0
+          python-version: 3.13.0
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Copy headers
         run: cp -r include/epiworld py-pkg/include
 
-      - name: Build and install
+      - name: Create venv and install package
         working-directory: ./py-pkg
-        run: pip install --verbose .[test]
-        
-      - name: Test
+        run: |
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install --verbose .[test]
+
+      - name: Run tests
         working-directory: ./py-pkg
-        run: pytest
+        run: |
+          source .venv/bin/activate
+          uv run -m pytest
 
   test-epiworld-r-valgrind:
     runs-on: ubuntu-latest

@@ -21,6 +21,7 @@ EPIWORLD_TEST_CASE(
         4.0,                        // epiworld_double avg_incubation_days,
         1.0/3.5,                    // epiworld_double recovery_rate,
         contact_matrix,
+        {true, true, true},         // All entities can quarantine
         .2,                         // Hospitalization rate
         4,                          // Hospitalization period
         1.5,                        // Days undetected
@@ -41,6 +42,7 @@ EPIWORLD_TEST_CASE(
         4.0,                        // epiworld_double avg_incubation_days,
         1.0/3.5,                    // epiworld_double recovery_rate,
         contact_matrix,
+        {true, true, false},        // Third entity CANNOT quarantine
         .2,                         // Hospitalization rate
         4,                          // Hospitalization period
         1.5,                        // Days undetected
@@ -168,6 +170,22 @@ EPIWORLD_TEST_CASE(
               << (double)willing_noq/isolation_will_noq.size()
               << ")" << std::endl;
 
+    // Check entity quarantine capabilities
+    auto entity_can_quar_low = 
+        model_low_isolation.get_entity_can_quarantine();
+    auto entity_can_quar_noq = 
+        model_no_quarantine.get_entity_can_quarantine();
+    
+    std::cout << "\nEntity quarantine capabilities:" << std::endl;
+    std::cout << "Model 1: [" << entity_can_quar_low[0] << ", "
+              << entity_can_quar_low[1]
+              << ", " << entity_can_quar_low[2]
+              << "] (all can quarantine)" << std::endl;
+    std::cout << "Model 2: [" << entity_can_quar_noq[0] << ", "
+              << entity_can_quar_noq[1]
+              << ", " << entity_can_quar_noq[2]
+              << "] (third cannot quarantine)" << std::endl;
+
     #ifdef CATCH_CONFIG_MAIN
     
     // Test A: Lower isolation willingness should result in fewer agents 
@@ -189,6 +207,15 @@ EPIWORLD_TEST_CASE(
     REQUIRE(prop_low >= 0.6);
     REQUIRE(prop_low <= 0.8);
     REQUIRE(prop_noq >= 0.95);
+    
+    // Test D: Verify entity quarantine settings are correct
+    REQUIRE(entity_can_quar_low[0] == true);
+    REQUIRE(entity_can_quar_low[1] == true);
+    REQUIRE(entity_can_quar_low[2] == true);
+    
+    REQUIRE(entity_can_quar_noq[0] == true);
+    REQUIRE(entity_can_quar_noq[1] == true);
+    REQUIRE(entity_can_quar_noq[2] == false);
     
     #endif
 

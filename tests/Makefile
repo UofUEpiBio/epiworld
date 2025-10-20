@@ -1,3 +1,5 @@
+CXX_FLAGS_DEBUG=-Wall -Wextra -O0 -g -pedantic -fopenmp
+
 ifndef CXX_STD
 	CXX_STD := c++23
 endif
@@ -40,4 +42,25 @@ clean:
 		mkdir -p "$${file%.cpp}-saves"; \
 	done
 
-.PHONY: all clean coverage callgrind
+# What's the -ftest-coverage flag?
+# https://stackoverflow.com/questions/9842759/what-is-ftest-coverage-option-in-gcov
+
+.PHONY: all clean coverage
+
+05-mixing-with-size.o: 05-mixing-with-size.cpp
+	g++ $(CXX_FLAGS_DEBUG) 05-mixing-with-size.cpp -o 05-mixing-with-size.o
+
+callgrind: 05-mixing-with-size.cpp
+	rm -f callgrind.out.* && \
+	g++ $(CXX_FLAGS_DEBUG) 05-mixing-with-size.cpp -o 05-mixing-with-size.o && \
+	valgrind --tool=callgrind ./05-mixing-with-size.o && \
+	callgrind_annotate callgrind.out.* > callgrind_report.txt
+
+
+05b-mixing.o: 05b-mixing.cpp
+	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 05b-mixing.cpp \
+		-o 05b-mixing.o
+
+18-test-virus-handling.o: 18-test-virus-handling.cpp
+	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 18-test-virus-handling.cpp \
+		-o 18-test-virus-handling.o

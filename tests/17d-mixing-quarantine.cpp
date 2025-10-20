@@ -32,7 +32,9 @@ EPIWORLD_TEST_CASE(
         15, // Quarantine period
         .9, // Quarantine willingness
         1.0, // Isolation willingness
-        4 // Isolation period
+        4, // Isolation period
+        1.0, // Contact tracing success rate,
+        4 // Contact tracing days prior
     );
 
     // Copy the original virus
@@ -142,6 +144,11 @@ EPIWORLD_TEST_CASE(
     // Checking the results
     #endif
 
+    // Changing whether the entity 0 can be quarantined
+    model.set_entity_can_quarantine(
+        {false, true, true}
+    );
+
     // Restarting the quarantine counts
     std::fill(quarantined_counts.begin(), quarantined_counts.end(), 0.0);
 
@@ -164,7 +171,7 @@ EPIWORLD_TEST_CASE(
 
     // Checking the results
     #ifdef CATCH_CONFIG_MAIN
-    quarantined_counts_expected = {1.0/3.0, 1.0/3.0, 1.0/3.0};
+    quarantined_counts_expected = {0.0, 0.5, 0.5};
     REQUIRE_THAT(
         quarantined_counts,
         Catch::Approx(quarantined_counts_expected).margin(0.05)
