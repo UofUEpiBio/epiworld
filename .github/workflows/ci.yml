@@ -45,7 +45,9 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
-          cd tests && make main.a && ./main.a
+          cd tests
+          make main.o
+          ./main.o
 
       - name: Check (Ubuntu)
         if: runner.os == 'Linux'
