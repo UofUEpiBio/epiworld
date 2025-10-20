@@ -18,7 +18,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: false
     strategy:
       matrix:
         include:
@@ -39,18 +38,11 @@ jobs:
 
       - name: Install LLVM (macOS only)
         if: runner.os == 'macOS'
-        run: brew install llvm@${{ matrix.llvm }}
-
-      - name: Check (macOS)
-        if: runner.os == 'macOS'
         run: |
+          brew install llvm@${{ matrix.llvm }}
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
-          cd tests
-          make main.o
-          ./main.o
 
       - name: Check (Ubuntu)
-        if: runner.os == 'Linux'
         env:
           OPENMP: -fopenmp
         run: |
