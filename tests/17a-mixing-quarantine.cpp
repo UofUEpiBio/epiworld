@@ -29,7 +29,9 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         4,      // epiworld_fast_int quarantine_period,
         .9,     // epiworld_double quarantine_willingness,
         1.0,     // epiworld_double isolation_willingness,
-        10      // epiworld_fast_int isolation_period
+        10,      // epiworld_fast_int isolation_period
+        1.0,    // epiworld_double contact_tracing_success_rate,
+        4       // epiworld_fast_uint contact_tracing_days_prior
     );
 
     // Copy the original virus
