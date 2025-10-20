@@ -42,12 +42,10 @@ jobs:
           brew install llvm@${{ matrix.llvm }}
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
 
-      - name: Check (Ubuntu)
-        env:
-          OPENMP: -fopenmp
+      - name: Check
         run: |
           cd tests
-          make main.o
+          bash -c 'make main.o'
           ./main.o
 
   test-epiworld-r:
