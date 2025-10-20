@@ -22,19 +22,14 @@ jobs:
     strategy:
       matrix:
         include:
-          # macOS configurations
           - os: macos-latest
             llvm: 14
-            std: c++20
             container: ''
           - os: macos-latest
             llvm: 18
-            std: c++2b
             container: ''
-          # Ubuntu configuration
           - os: ubuntu-latest
             llvm: ''
-            std: ''
             container: gvegayon/epiworld:latest
 
     container: ${{ matrix.container || '' }}
@@ -48,8 +43,6 @@ jobs:
 
       - name: Check (macOS)
         if: runner.os == 'macOS'
-        env:
-          CXX_STD: -std=${{ matrix.std }}
         run: |
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
           cd tests && make main.a && ./main.a
