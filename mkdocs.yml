@@ -22,7 +22,11 @@ theme:
 
 nav:
   - Home: index.md
-  - API Reference: api/index.md
+  - API Reference: 
+    - Overview: api/index.md
+    - Classes: epiworld/annotated.md
+    - Files: epiworld/files.md
+    - Namespaces: epiworld/namespaces.md
 
 plugins:
   - search
