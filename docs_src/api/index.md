@@ -12,4 +12,4 @@ The API documentation is organized by namespace and class hierarchy. Navigate th
 - **Viruses**: Disease agents with configurable properties
 - **Entities**: Groups or populations in the simulation
 
-For more details, explore the generated API documentation below.
+For more details, explore the generated API documentation.

@@ -10,9 +10,9 @@ site_dir: site
 
 theme:
   name: material
-  palette:
-    primary: blue
-    accent: light-blue
+  # palette:
+  #   primary: blue
+  #   accent: light-blue
   features:
     - navigation.tabs
     - navigation.sections
@@ -21,8 +21,9 @@ theme:
     - search.highlight
 
 nav:
-  - Home: index.md
+  - Home: index.html
   - API Reference: 
+    - Models: epiworld/modules.md
     - Overview: api/index.md
     - Classes: epiworld/annotated.md
     - Files: epiworld/files.md

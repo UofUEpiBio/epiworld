@@ -44,6 +44,8 @@
  * detected. The agent is then isolated and all agents who are unvaccinated are
  * quarantined. Isolated agents then may be moved out of the isolation in
  * isolation_period days.
+ * 
+ * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelMeaslesSchool: public Model<TSeq> {

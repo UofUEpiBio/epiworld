@@ -3,6 +3,7 @@
 
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * @ingroup basic_compartmental
  * 
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus

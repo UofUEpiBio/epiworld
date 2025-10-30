@@ -3,6 +3,7 @@
 
 /**
  * @brief Template for a Susceptible-Infected-Susceptible (SIS) model
+ * @ingroup basic_compartmental
  * 
  * @param vname std::string Name of the virus
  * @param initial_prevalence epiworld_double Initial prevalence
