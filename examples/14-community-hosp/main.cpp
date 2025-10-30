@@ -1,5 +1,4 @@
-// #include "../../include/epiworld/epiworld.hpp"
-#include "../../epiworld.hpp"
+#include "../../include/epiworld/epiworld.hpp"
 
 /***
  * A concrete example with a model that includes two populations.
@@ -10,16 +9,20 @@
 
 using namespace epiworld;
 
-enum States : size_t {
-    Susceptible = 0u,
-    Infected,
-    Infected_Hospitalized
+class CommunityHospModel : public Model<int> {
+public:
+    unsigned long long susceptible_state;
+    unsigned long long infected_state;
+    unsigned long long infected_hospitalized_state;
+
+    CommunityHospModel();
 };
 
-// A sampler that excludes infected from the hospital
-auto sampler_suscept = sampler::make_sample_virus_neighbors<>(
-    {States::Infected_Hospitalized}
-    );
+// Given a model, return a sampler that excludes infected from the hospital
+auto get_sampler_suscept = [](CommunityHospModel* m) {
+    return sampler::make_sample_virus_neighbors<>(
+        {m->infected_hospitalized_state});
+};
 
 /**
  * - Susceptibles only live in the community.
@@ -29,14 +32,14 @@ auto sampler_suscept = sampler::make_sample_virus_neighbors<>(
 
 inline void update_susceptible(Agent<int> * p, Model<int> * m)
 {
-
-    auto virus = sampler_suscept(p, m);
+    auto hm = static_cast<CommunityHospModel*>(m);
+    auto virus = get_sampler_suscept(hm)(p, m);
     if (virus != nullptr)
     {
         if (m->par("Prob hospitalization") > m->runif())
-            p->set_virus(*virus, m, States::Infected_Hospitalized);
+            p->set_virus(*virus, m, hm->infected_hospitalized_state);
         else
-            p->set_virus(*virus, m, States::Infected);
+            p->set_virus(*virus, m, hm->infected_state);
     }
 
 
@@ -46,15 +49,16 @@ inline void update_susceptible(Agent<int> * p, Model<int> * m)
 
 /**
  * Infected individuals may:
- * 
+ *
  * - Stay the same
  * - Recover
  * - Be hospitalized
- * 
+ *
  * Notice that the roulette makes the probabilities to sum to 1.
  */
 inline void update_infected(Agent<int> * p, Model<int> * m)
 {
+    auto hm = static_cast<CommunityHospModel*>(m);
 
     // Vector of probabilities
     std::vector< epiworld_double > probs = {
@@ -69,9 +73,9 @@ inline void update_infected(Agent<int> * p, Model<int> * m)
     int res = roulette<>(probs, m);
 
     if (res == 0)
-        p->change_state(m, States::Infected_Hospitalized);
+        p->change_state(m, hm->infected_hospitalized_state);
     else if (res == 1)
-        p->rm_virus(m, States::Susceptible);
+        p->rm_virus(m, hm->susceptible_state);
 
     return;
 
@@ -85,33 +89,32 @@ inline void update_infected(Agent<int> * p, Model<int> * m)
  */
 inline void update_infected_hospitalized(Agent<int> * p, Model<int> * m)
 {
+    auto hm = static_cast<CommunityHospModel*>(m);
 
     if (m->par("Prob recovery") > m->runif()) {
-        p->rm_virus(m, States::Susceptible);
+        p->rm_virus(m, hm->susceptible_state);
     } else if (m->par("Discharge infected") > m->runif()) {
-        p->change_state(m, States::Infected);
+        p->change_state(m, hm->infected_state);
     }
-    
+
     return;
 
 }
 
+CommunityHospModel::CommunityHospModel() : Model<int>()
+{
+    this->susceptible_state = this->add_state("Susceptible", update_susceptible);
+    this->infected_state = this->add_state("Infected", update_infected);
+    this->infected_hospitalized_state = this->add_state(
+        "Infected (hospitalized)", update_infected_hospitalized);
+}
+
 int main() {
-
-    // Using the mixing model as a baseline
-    Model<> model;
-
-    // model.add_state("Susceptible", default_update_susceptible<>); // State 0
-    model.add_state("Susceptible", update_susceptible); // State 0
-    model.add_state("Infected", update_infected);       // State 1
-    model.add_state(
-        "Infected (hospitalized)",
-        update_infected_hospitalized
-        ); // State 2         
+    auto model = CommunityHospModel();
 
     // Adding a new virus
     Virus<> mrsa("MRSA");
-    mrsa.set_state(1, 0, 0);
+    mrsa.set_state(model.infected_state, model.susceptible_state, model.susceptible_state);
     mrsa.set_prob_infecting(.1);
     mrsa.set_prob_recovery(.33);
     mrsa.set_distribution(distribute_virus_randomly<>(0.01));
@@ -119,7 +122,7 @@ int main() {
     model.add_virus(mrsa);
 
     // Add a population
-    model.agents_smallworld(1000, 4, 0.1, false);
+    model.agents_smallworld(1000, 4, false, 0.1);
 
     model.add_param(0.1, "Prob hospitalization");
     model.add_param(0.33, "Prob recovery");
