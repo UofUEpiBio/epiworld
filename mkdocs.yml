@@ -1,0 +1,43 @@
+site_name: Epiworld
+site_description: A general framework for epidemiologic simulation
+site_url: https://UofUEpi.github.io/epiworld
+
+repo_name: UofUEpiBio/epiworld
+repo_url: https://github.com/UofUEpiBio/epiworld
+
+docs_dir: docs_src
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    primary: blue
+    accent: light-blue
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - API Reference: api/index.md
+
+plugins:
+  - search
+  - mkdoxy:
+      projects:
+        epiworld:
+          src-dirs: include/epiworld
+          full-doc: true
+          doxy-cfg:
+            FILE_PATTERNS: "*.hpp *.h"
+            RECURSIVE: YES
+            EXTRACT_ALL: YES
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
