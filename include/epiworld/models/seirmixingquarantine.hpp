@@ -60,6 +60,7 @@ using namespace epiworld;
  * - Recovered: Individuals who have recovered and gained immunity
  *
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
+ * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixingQuarantine : public Model<TSeq>

@@ -3,6 +3,7 @@
 
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
+ * @ingroup death_compartmental
 */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRD : public epiworld::Model<TSeq>

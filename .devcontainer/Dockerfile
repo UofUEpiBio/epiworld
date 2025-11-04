@@ -12,9 +12,10 @@ RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
 
 RUN apt-get update && apt-get install heaptrack \
     r-base -y --no-install-recommends
-# [Optional] Uncomment this section to install additional vcpkg ports.
-# RUN su vscode -c "${VCPKG_ROOT}/vcpkg install <your-port-name-here>"
 
-# [Optional] Uncomment this section to install additional packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
+RUN sudo apt-get install -y doxygen graphviz
+
+RUN apt-get install -y --no-install-recommends pip 
+
+RUN pip3 install --break-system-packages mkdocs mkdocs-material mkdoxy
+

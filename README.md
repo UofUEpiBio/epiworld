@@ -2,9 +2,9 @@
 [![C++ Documentation](https://img.shields.io/badge/Docs-Doxygen-brightgreen)](https://UofUEpi.github.io/epiworld)
 ![GitHub Release](https://img.shields.io/github/v/release/UofUEpiBio/epiworld)
 [![codecov](https://codecov.io/gh/UofUEpiBio/epiworld/graph/badge.svg?token=CPDYG4HA0B)](https://codecov.io/gh/UofUEpiBio/epiworld)
-[![ForeSITE Group](https://github.com/EpiForeSITE/software/blob/e82ed88f75e0fe5c0a1a3b38c2b94509f122019c/docs/assets/foresite-software-badge.svg)](https://github.com/EpiForeSITE)
+[![ForeSITE Group](https://github.com/EpiForeSITE/software/raw/e82ed88f75e0fe5c0a1a3b38c2b94509f122019c/docs/assets/foresite-software-badge.svg)](https://github.com/EpiForeSITE)
 
-# epiworld
+# epiworld <img src="assets/branding/epiworld.png" width="200px" alt="epiworld logo" align="right">
 
 This C++ library provides a general framework for epidemiologic simulation. The
 core principle of `epiworld` is fast epidemiological prototyping for

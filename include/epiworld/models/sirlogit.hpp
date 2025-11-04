@@ -6,6 +6,7 @@
 
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * @ingroup special_models
  * 
  * @details
  * In this model, infection and recoveru probabilities are computed

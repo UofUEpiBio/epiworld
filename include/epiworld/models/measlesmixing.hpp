@@ -66,6 +66,7 @@ using namespace epiworld;
  * - Recovered: Individuals who have recovered and gained immunity
  *
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
+ * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelMeaslesMixing : public Model<TSeq>

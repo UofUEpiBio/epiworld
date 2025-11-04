@@ -56,6 +56,7 @@
  * Susceptible → Exposed → Prodromal → Rash → Recovered
  * 
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
+ * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 

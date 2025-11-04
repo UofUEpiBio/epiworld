@@ -11,3 +11,11 @@ tests/*
 *.o
 .zed/
 .cache/
+
+# MkDocs generated files
+site/
+
+# Old Doxygen files (if generated)
+docs/html/
+docs/latex/
+docs/xml/
