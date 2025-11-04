@@ -42,9 +42,6 @@ clean:
 		mkdir -p "$${file%.cpp}-saves"; \
 	done
 
-# What's the -ftest-coverage flag?
-# https://stackoverflow.com/questions/9842759/what-is-ftest-coverage-option-in-gcov
-
 .PHONY: all clean coverage
 
 05-mixing-with-size.o: 05-mixing-with-size.cpp
