@@ -1,0 +1,55 @@
+flowchart LR
+
+    %% Disease progression states
+    subgraph Main[Disease Progression]
+        S[Susceptible]
+        E[Exposed]
+        P[Prodromal]
+        Ra[Rash]
+        Re[Recovered]
+        H[Hospitalized]
+    end
+
+    S --> E
+    E --> P
+    P --> Ra
+    Ra --> Re
+    
+    Ra --> H
+    H --> Re
+
+    %% Quarantine states
+    Qe[Quarantined<br>Exposed]
+    Qs[Quarantined<br>Susceptible]
+    Qp[Quarantined<br>Prodromal]
+    I[Isolated]
+    Ih[Isolated<br>Hospitalized]
+    Ir[Isolated<br>Recovered]
+
+    %% Isolation process
+    Ra --> I
+    I --> Ra
+    I --> Re
+    I --> Ih
+
+    I --> Ir
+    Ih --> Ir
+    Ih --> Re
+    Ir --> Re
+
+    %% Quarantine process
+    S --> Qs
+    Qs --> S
+
+    E --> Qe
+    Qe --> E
+    Qe --> Qp
+    Qp --> I
+    Qp --> Ra
+
+    P --> Qp
+    Qp --> P
+
+
+    
+
