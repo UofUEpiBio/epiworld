@@ -71,7 +71,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing : public Model<TSeq>
+class ModelMeaslesMixing : public epiworld::Model<TSeq>
 {
 private:
 

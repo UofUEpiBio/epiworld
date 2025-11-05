@@ -57,6 +57,8 @@ nav:
 
 plugins:
   - search
+  - api-autonav
+  - mkdocstrings
   - mkdoxy:
       projects:
         epiworld:

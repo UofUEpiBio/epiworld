@@ -61,7 +61,7 @@
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
+class ModelMeaslesMixingRiskQuarantine : public epiworld::Model<TSeq> 
 {
 private:
     // Vector of vectors of infected agents (prodromal agents are infectious)
