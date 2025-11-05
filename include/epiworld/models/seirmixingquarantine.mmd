@@ -24,7 +24,7 @@ flowchart TB
     Ir[Isolated<br>Recovered]
 
     %% Infected to
-    In --> I
+    In <==> I
     In --> Ir
     In --> Dh
 
@@ -33,15 +33,13 @@ flowchart TB
     I --> Ir
     I --> H
     I --> Dh
-    I --> In
 
     %% Susceptible quarantined
-    S --> Qs
-    Qs --> S
+    S <==> Qs
 
     %% Exposed
-    E --> Qe
-    Qe --> E
+    E <==> Qe
+
     Qe --> I
     Qe --> In
 

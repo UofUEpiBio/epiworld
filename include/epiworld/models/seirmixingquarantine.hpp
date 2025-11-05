@@ -65,7 +65,7 @@ using namespace epiworld;
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRMixingQuarantine : public Model<TSeq>
+class ModelSEIRMixingQuarantine : public epiworld::Model<TSeq>
 {
 private:
 
