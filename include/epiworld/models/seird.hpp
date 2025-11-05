@@ -3,6 +3,9 @@
 
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
+ * 
+ * ![Model Diagram](../assets/img/seird.png)
+ * 
  * @ingroup death_compartmental
 */
 template<typename TSeq = EPI_DEFAULT_TSEQ>

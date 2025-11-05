@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 examples:
 	cd examples && $(MAKE) -B
 all-examples:
@@ -31,3 +33,11 @@ image=intel/oneapi-basekit:devel-ubuntu22.04
 oneapi:
 	docker run --cap-add=SYS_ADMIN --cap-add=SYS_PTRACE \
 		--device=/dev/dri -it "${image}"
+
+diagrams:
+	cd include/epiworld/models && \
+	for file in *.mmd; do \
+		echo "Processing $$file..."; \
+		cat "$$file" | base64 -w0 | xargs -I {} curl -s "https://mermaid.ink/img/{}" > "$${file%.mmd}.png"; \
+	done && \
+	mv *.png ../../../docs_src/assets/img/

@@ -45,6 +45,8 @@
  * quarantined. Isolated agents then may be moved out of the isolation in
  * isolation_period days.
  * 
+ * ![Model Diagram](../assets/img/measlesschool.png)
+ * 
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>

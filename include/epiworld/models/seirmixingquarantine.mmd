@@ -1,0 +1,52 @@
+flowchart TB
+
+    %% Disease progression states
+    subgraph Main[Disease Progression]
+        direction TB
+        S[Susceptible]
+        E[Exposed]
+        In[Infected]
+        H[Hospitalized]
+        R[Recovered]
+    end
+
+    S --> E
+    E --> In
+    In --> H
+    H --> R
+    In --> R
+
+    %% Quarantine states
+    Dh[Detected<br>Hospitalized]
+    Qs[Quarantined<br>Susceptible]
+    Qe[Quarantined<br>Exposed]
+    I[Isolated]
+    Ir[Isolated<br>Recovered]
+
+    %% Infected to
+    In --> I
+    In --> Ir
+    In --> Dh
+
+    %% Isolated to
+    I --> R
+    I --> Ir
+    I --> H
+    I --> Dh
+    I --> In
+
+    %% Susceptible quarantined
+    S --> Qs
+    Qs --> S
+
+    %% Exposed
+    E --> Qe
+    Qe --> E
+    Qe --> I
+    Qe --> In
+
+    Dh --> R
+
+    %% Isolated recovered
+    Ir --> R
+    

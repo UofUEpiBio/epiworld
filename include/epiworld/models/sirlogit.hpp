@@ -6,6 +6,9 @@
 
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * 
+ * ![Model Diagram](../assets/img/sirlogit.png)
+ * 
  * @ingroup special_models
  * 
  * @details

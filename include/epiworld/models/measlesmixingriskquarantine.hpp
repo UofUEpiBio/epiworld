@@ -55,6 +55,8 @@
  * Disease progression follows the same states as ModelMeaslesMixing:
  * Susceptible → Exposed → Prodromal → Rash → Recovered
  * 
+ * ![Model Diagram](../assets/img/measlesmixingriskquarantine.png)
+ * 
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup disease_specific
  */
