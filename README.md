@@ -12,24 +12,24 @@ building complex models quickly. Here are some of its main features:
 
   - It only depends on the standard library (C++11 required.)
   - It is a template library.
-  - It is header-only ([single file](epiworld.hpp)).
+  - It is header-only ([single file](https://github.com/UofUEpiBio/epiworld/tree/master/epiworld.hpp)).
   - Models can have an arbitrary set of states.
   - Viruses and tools (e.g., vaccines, mask-wearing) can be designed to have arbitrary features.
   - Multiple tools and viruses can live in the same simulation.
   - It is *FAST*: Over 150 Million person/day simulations per second (see example below).
 
-Various examples can be found in the [examples](examples) folder.
+Various examples can be found in the [examples](https://github.com/UofUEpiBio/epiworld/tree/master/examples) folder.
 
 ## Hello world
 
 Here is a simple SIR model implemented with `epiworld`. The source code
-can be found [here](helloworld.cpp), and you can compile the code as follows:
+can be found [here](https://github.com/UofUEpiBio/epiworld/tree/master/helloworld.cpp), and you can compile the code as follows:
 
 ```bash
 g++ -std=c++17 -O2 readme.cpp -o readme.o
 ```
 
-As you can see in [`helloworld.cpp`](helloworld.cpp), to use `epiworld` you only need to incorporate the single header file [`epiworld.hpp`](epiworld.hpp):
+As you can see in [`helloworld.cpp`](https://github.com/UofUEpiBio/epiworld/tree/master/helloworld.cpp), to use `epiworld` you only need to incorporate the single header file [`epiworld.hpp`](https://github.com/UofUEpiBio/epiworld/tree/master/epiworld.hpp):
 
 ```cpp
 #include "epiworld.hpp"
@@ -108,7 +108,7 @@ Transition Probabilities:
 
 ## Building from scratch
 
-One of the best things about epiworld is the capability to build models from scratch. Here is one example ([readme.cpp](readme.cpp)):
+One of the best things about epiworld is the capability to build models from scratch. Here is one example ([readme.cpp](https://github.com/UofUEpiBio/epiworld/tree/master/readme.cpp)):
 
 ```cpp
 #include "epiworld.hpp"

@@ -88,16 +88,17 @@
  * surveillance mechanisms that can be used across different epidemiological models.
  * 
  * Available model categories include:
- * - Basic compartmental models (SIS, SIR, SEIR)
- * - Models with death compartments (SIRD, SISD, SEIRD)
- * - Connected population models (SIRConnected, SEIRConnected, SIRDConnected, SEIRDConnected)
- * - Logistic regression models (SIRLogit)
- * - Mixing population models (SEIRMixing, SIRMixing)
- * - Quarantine models (SEIRMixingQuarantine)
- * - School-specific models (MeaslesSchool)
- * - Disease-specific models (MeaslesMixing, MeaslesMixingRiskQuarantine)
- * - Diffusion network models (DiffNet)
- * - Surveillance systems
+ * 
+ *   - Basic compartmental models (SIS, SIR, SEIR)
+ *   - Models with death compartments (SIRD, SISD, SEIRD)
+ *   - Connected population models (SIRConnected, SEIRConnected, SIRDConnected, SEIRDConnected)
+ *   - Logistic regression models (SIRLogit)
+ *   - Mixing population models (SEIRMixing, SIRMixing)
+ *   - Quarantine models (SEIRMixingQuarantine)
+ *   - School-specific models (MeaslesSchool)
+ *   - Disease-specific models (MeaslesMixing, MeaslesMixingRiskQuarantine)
+ *   - Diffusion network models (DiffNet)
+ *   - Surveillance systems
  * 
  */
 namespace epimodels {

@@ -16,7 +16,7 @@
  * @param recovery_rate epiworld_double Recovery rate of the virus.
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIR : public Model<TSeq>
+class ModelSEIR : public epiworld::Model<TSeq>
 {
 
 public:
