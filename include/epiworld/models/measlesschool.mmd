@@ -28,10 +28,13 @@ flowchart TB
     Ir[Isolated<br>Recovered]
 
     %% Isolation process
-    Ra --> I
-    I --> Ra
+    Ra <==> I
+    Ra --> Ir
+    Ra --> Ih
+
     I --> Re
     I --> Ih
+    I --> H
 
     I --> Ir
     Ih --> Ir
@@ -39,17 +42,14 @@ flowchart TB
     Ir --> Re
 
     %% Quarantine process
-    S --> Qs
-    Qs --> S
+    S <==> Qs
+    E <==> Qe
 
-    E --> Qe
-    Qe --> E
     Qe --> Qp
     Qp --> I
     Qp --> Ra
 
-    P --> Qp
-    Qp --> P
+    P <==> Qp
 
 
     
