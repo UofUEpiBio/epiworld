@@ -23,15 +23,23 @@ $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_TEST_HOOKS)
 	$(V)printf "MAKEFLAGS     += --no-builtin-rules --no-builtin-variables\n" >> $@
 	$(V)printf "\n" >> $@
 	$(V)all_tests=$$( ( $($(NAME)_BUILD_DIR)/$(NAME) -l || true ) | \
-		perl -nE 'if (/^ {2}(\S.*)$$/) { $$s = $$1; $$s =~ s/^\s+|\s+$$//g; say $$s }'); \
-    test_targets=''; \
-    echo "$$all_tests" | while IFS= read -r test; do \
-        rule_name=$$(echo -n "$$test" | sha256sum | cut -d' ' -f1); \
+	    perl -nE 'if (/^ {2}(\S.*)$$/) { $$s = $$1; $$s =~ s/^\s+|\s+$$//g; say $$s }'); \
+	printf '%s\n' "$$all_tests" > $@.tmp; \
+    test_targets=""; \
+    while IFS= read -r test; do \
+        rule_name=$$(printf '%s' "$$test" | sha256sum | cut -d' ' -f1); \
         test_targets="$$test_targets $$rule_name"; \
-        cat share/mk/test-frag.mk | sed "s/%RULE_NAME%/$$rule_name/g" | sed "s/%HUMAN_NAME%/$$test/g" | sed "s|%BINARY%|$(abspath $($(NAME)_BUILD_DIR))/$(NAME)|g" | sed "s|%BUILD_DIR%|$(abspath $($(NAME)_BUILD_DIR))|g" | sed "s|%SOURCE_DIR%|$(abspath $($(NAME)_SOURCE_DIR))|g" | sed "s|%COV_DIR%|$(abspath $($(NAME)_COV_DIR))|g" >> $@; \
+        cat share/mk/test-frag.mk | \
+            sed "s/%RULE_NAME%/$$rule_name/g" | \
+            sed "s/%HUMAN_NAME%/$$test/g" | \
+            sed "s|%BINARY%|$(abspath $($(NAME)_BUILD_DIR))/$(NAME)|g" | \
+            sed "s|%BUILD_DIR%|$(abspath $($(NAME)_BUILD_DIR))|g" | \
+            sed "s|%SOURCE_DIR%|$(abspath $($(NAME)_SOURCE_DIR))|g" | \
+            sed "s|%COV_DIR%|$(abspath $($(NAME)_COV_DIR))|g" >> $@; \
         printf "\n\n" >> $@; \
-    done; \
-    printf "all: $$test_targets\n" >> $@; \
+    done < $@.tmp; \
+    rm -f $@.tmp; \
+    printf 'all:%s\n' "$$test_targets" >> $@
 
 # Call into the generated test Makefile to run all tests.
 # Then, if coverage is enabled, aggregate the coverage data.
