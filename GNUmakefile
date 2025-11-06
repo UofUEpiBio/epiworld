@@ -18,7 +18,7 @@ CXX ?= c++
 # Non-critical tooling.
 DOXYGEN            ?= doxygen
 MKDOCS             ?= mkdocs
-LCOV 			   ?= lcov
+LCOV               ?= lcov
 VALGRIND           ?= valgrind
 CALLGRIND_ANNOTATE ?= callgrind_annotate
 
