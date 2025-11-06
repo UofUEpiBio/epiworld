@@ -30,6 +30,7 @@
 #   17a-mixing-quarantine.cpp \
 #   17b-mixing-quarantine.cpp \
 #   17c-mixing-quarantine.cpp \
+#   18-test-virus-handling.cpp \
 
 $(NAME)_SOURCES := \
 	main.cpp \
