@@ -70,11 +70,7 @@ jobs:
 
     steps:
       - name: Comment on PR with artifact link
-        uses: CDCgov/cfa-actions/post-artifact@main
+        uses: CDCgov/cfa-actions/post-artifact@v1.5.0
         with:
           artifact-name: documentation-site-pr-${{ github.event.pull_request.number }}
-          message: |
-            📚 Documentation preview built successfully!
-            
-            Download the artifact to view the documentation locally.
           github-token: ${{ secrets.GITHUB_TOKEN }}
