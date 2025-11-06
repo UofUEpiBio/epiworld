@@ -40,18 +40,18 @@ $($(NAME)_SOURCE_DIR)-test: override NAME := $(NAME)
 $($(NAME)_SOURCE_DIR)-test: $($(NAME)_BUILD_DIR)/test.mk
 	$(SAY) "SUITE" $@
 	$(V)mkdir -p $($(NAME)_TEST_DIR)
-	$(V)$(MAKE) -$(MAKEFLAGS) \
-	    -C $($(NAME)_TEST_DIR) \
-		-f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
-	    V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
+	$(V)$(MAKE) \
+        -C $($(NAME)_TEST_DIR) \
+        -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
+        V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
 
 ifneq ($(WITH_COVERAGE),)
 	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/en-total.info'
-	$(V)args=(); \
-	for f in "$($(NAME)_COV_DIR)/coverage-*.info"; do \
-	    args+=(--add-tracefile "$$f"); \
+	$(V)args=""; \
+	for f in $($(NAME)_COV_DIR)/coverage-*.info; do \
+	    args="$$args --add-tracefile $$f"; \
 	done; \
-	exec $(LCOV) "$${args[@]}" \
+	exec $(LCOV) $$args \
 	    --output-file '$($(NAME)_COV_DIR)/coverage.info' \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
 	sed -i '' 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' '$($(NAME)_COV_DIR)/coverage.info'
