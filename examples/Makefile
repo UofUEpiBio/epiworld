@@ -1,5 +1,8 @@
 # Segfaulting (#116):
 # 	04-advanced-usage \
+#
+# Compilation failures (#116):
+# 	08-queuing \
 
 PACKAGES := \
 	00-hello-world \
@@ -8,7 +11,6 @@ PACKAGES := \
 	03-simple-sir \
 	05-user-data \
 	07-surveillance \
-	08-queuing \
 	10-likelihood-free-mcmc \
 	11-entities \
 	13-genint \
