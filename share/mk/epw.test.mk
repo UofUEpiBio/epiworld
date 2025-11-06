@@ -22,7 +22,7 @@ $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_TEST_HOOKS)
 	$(V)printf ".DEFAULT_GOAL := all\n" >> $@
 	$(V)printf "MAKEFLAGS     += --no-builtin-rules --no-builtin-variables\n" >> $@
 	$(V)printf "\n" >> $@
-	$(V)all_tests=$$(( $($(NAME)_BUILD_DIR)/$(NAME) -l || true ) | \
+	$(V)all_tests=$$( ( $($(NAME)_BUILD_DIR)/$(NAME) -l || true ) | \
 		perl -nE 'if (/^ {2}(\S.*)$$/) { $$s = $$1; $$s =~ s/^\s+|\s+$$//g; say $$s }'); \
     test_targets=''; \
     while IFS= read -r test; do \
