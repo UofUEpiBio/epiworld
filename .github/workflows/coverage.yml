@@ -20,7 +20,7 @@ jobs:
 
       - name: Generate coverage
         run: |
-          VERBOSE=1 WITH_COVERAGE=1 make coverage -j4
+          VERBOSE=1 WITH_COVERAGE=1 make test -j4
           
       - name: Upload coverage
         uses: codecov/codecov-action@v3
