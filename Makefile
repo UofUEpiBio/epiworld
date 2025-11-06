@@ -1,4 +1,13 @@
-SHELL := /bin/bash
+help:
+	@echo "Makefile targets:"
+	@echo "  examples          - Build all example programs"
+	@echo "  all-examples     - Build all example programs (force rebuild)"
+	@echo "  epiworld.hpp     - Generate the epiworld.hpp header file"
+	@echo "  docs             - Build the documentation site"
+	@echo "  docs-serve       - Serve the documentation site locally"
+	@echo "  docs-clean       - Clean the generated documentation site"
+	@echo "  oneapi           - Start a Docker container with Intel oneAPI environment"
+	@echo "  diagrams         - Generate diagrams from Mermaid files"
 
 examples:
 	cd examples && $(MAKE) -B
