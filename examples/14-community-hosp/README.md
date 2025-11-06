@@ -1,11 +1,12 @@
-## Example: 14-community-hosp
+## Example: `14-community-hosp`
 
 Output from the program:
 
 ```
 _________________________________________________________________________
 Running the model...
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||________________________________________________________________________________
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
@@ -15,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 6.00ms
-Last run speed      : 15.46 million agents x day / second
+Last run elapsed t  : 19.00ms
+Last run speed      : 5.19 million agents x day / second
 Rewiring            : off
 
 Global events:

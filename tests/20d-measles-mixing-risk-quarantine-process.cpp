@@ -7,7 +7,7 @@
 
 using namespace epiworld;
 
-std::vector< double > counts_risk;
+inline std::vector< double > counts_risk;
 
 EPI_NEW_GLOBALFUN(count_risk, int)
 {
@@ -129,7 +129,6 @@ EPIWORLD_TEST_CASE(
         
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     std::vector< size_t > expected_first_quarantine = {100, 0, 0};
 
     size_t day_first_quarantine = quarantine_days[0u] - 1u;
@@ -140,9 +139,4 @@ EPIWORLD_TEST_CASE(
     };
 
     REQUIRE(observed_first_quarantine == expected_first_quarantine);
-    #endif
-
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
 }

@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -119,18 +115,14 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
     bool avg_matches_p = std::abs(avg_change_percent - p) <= tolerance;
 
     // Verify that degrees were preserved
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(degrees_preserved == n_iterations);
-    #endif
     
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(avg_matches_p);
     INFO("Average change percentage: " << avg_change_percent << ", expected: " << p);
-    #else
+    
     if (!avg_matches_p) {
-        std::cout << "FAIL: Average edge change rate (" << avg_change_percent << ") is not close enough to p=" << p << std::endl;
-        std::cout << "Tolerance was set to ±" << tolerance << std::endl;
-        return 1;
+        FAIL("FAIL: Average edge change rate (" << avg_change_percent << ") is not close enough to p=" << p << "\n"
+             << "Tolerance was set to ±" << tolerance);
     }
     
     std::cout << "PASS: Rewire degseq test successful" << std::endl;
@@ -138,6 +130,4 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
     std::cout << "  - Average rewiring rate: " << avg_change_percent << std::endl;
     std::cout << "  - Number of iterations: " << n_iterations << std::endl;
     std::cout << "  - Edges per network: " << edges_baseline.size() << std::endl;
-    return 0;
-    #endif
 }

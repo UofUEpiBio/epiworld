@@ -51,23 +51,16 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     auto tmat_0_not_norm = model_0.get_db().get_transition_probability(false, false);
     auto tmat_1_not_norm = model_1.get_db().get_transition_probability(false, false);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(tmat_1, Catch::Equals(tmat_0));
     REQUIRE_THAT(h_0, Catch::Equals(h_1));
     REQUIRE(out_of_range_0 == 0);
     REQUIRE(out_of_range_1 == 0);
     REQUIRE_THAT(tmat_1_not_norm, Catch::Equals(tmat_0_not_norm));
-    #else
-    model_0.print(false);
-    model_1.print(false);
-    #endif 
 
     // Checking that the history matches the expected values
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 100) || (h_0[2u] != 4950))
         );
-    #endif
 
     // Trying out the SEIR model now -------------------------------------------
     epimodels::ModelSEIR<> model_2(
@@ -85,11 +78,9 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     h_0.clear();
     model_2.get_db().get_hist_total(nullptr, nullptr, &h_0);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 70) || (h_0[2u] != 30) || (h_0[3u] != 4950))
         );
-    #endif
 
     // Trying SIRCONN ----------------------------------------------------------
     epimodels::ModelSIRCONN<> model_3(
@@ -104,11 +95,9 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     h_0.clear();
     model_3.get_db().get_hist_total(nullptr, nullptr, &h_0);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 100) || (h_0[2u] != 4950))
         );
-    #endif
 
     // Trying SEIRCONN ---------------------------------------------------------
     epimodels::ModelSEIRCONN<> model_4(
@@ -123,11 +112,9 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     h_0.clear();
     model_4.get_db().get_hist_total(nullptr, nullptr, &h_0);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 70) || (h_0[2u] != 30) || (h_0[3u] != 4950))
         );
-    #endif
 
     // Trying SIRD -------------------------------------------------------------
     epimodels::ModelSIRD<> model_5(
@@ -143,7 +130,6 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     h_0.clear();
     model_5.get_db().get_hist_total(nullptr, nullptr, &h_0);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(
         (
             moreless(h_0[0u], 4700) || 
@@ -151,7 +137,6 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
             moreless(h_0[2u], 4705) || 
             moreless(h_0[3u], 495))
         );
-    #endif
 
     // Trying SEIRD -------------------------------------------------------------
     epimodels::ModelSEIRD<> model_6(
@@ -167,7 +152,6 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     h_0.clear();
     model_6.get_db().get_hist_total(nullptr, nullptr, &h_0);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(
         (
             moreless(h_0[0u], 7200) ||
@@ -177,7 +161,6 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
             moreless(h_0[4u], 900)
             )
         );
-    #endif
 
     // Trying SEIRDCONN --------------------------------------------------------
     epimodels::ModelSEIRDCONN<> model_7(
@@ -192,7 +175,6 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     h_0.clear();
     model_7.get_db().get_hist_total(nullptr, nullptr, &h_0);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(
         (
             moreless(h_0[0u], 7200) ||
@@ -202,10 +184,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
             moreless(h_0[4u], 900)
             )
         );
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

@@ -20,13 +20,14 @@ jobs:
 
       - name: Generate coverage
         run: |
-          cd tests
-          make coverage
-
-      - uses: codecov/codecov-action@v3
+          VERBOSE=1 WITH_COVERAGE=1 make coverage -j4
+          
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
         with:
-          # gcov: true
-          directory: tests
-          gcov_ignore: tests/tests.hpp
-          verbose: true # optional (default = false)
+          files: ./build/tests/.coverage/coverage.info
+          flags: unittests
+          name: codecov-upload
+          fail_ci_if_error: true
+          verbose: true
           token: ${{ secrets.CODECOV_TOKEN }}

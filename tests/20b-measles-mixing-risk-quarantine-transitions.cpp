@@ -159,8 +159,6 @@ EPIWORLD_TEST_CASE(
         }
     }
 
-    #ifdef CATCH_CONFIG_MAIN
-
     // Validating zero transitions  
     REQUIRE(n_nonzero_that_should_be_zero == 0u);
 
@@ -199,13 +197,10 @@ EPIWORLD_TEST_CASE(
     REQUIRE_FALSE(
         moreless(mat(11, 12), 1.0/model("Hospitalization period"), 0.1)
     );
-    #endif
 
     #undef mat
 
     std::cout << "\nTransition matrix validation completed" << std::endl;
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 }

@@ -1,77 +1,56 @@
-CXX_FLAGS_DEBUG=-std=c++23 -Wall -Wextra -O0 -g -pedantic -fopenmp
+# Segfaulting (#116):
+# 	01b-sir.cpp \
+# 	01c-sir.cpp \
+#   02-reproducible-sir.cpp \
+#   02-reproducible-sirconn.cpp \
+# 	04-initial-dist.cpp \
+# 	05b-mixing.cpp \
+# 	05c-mixing.cpp \
+# 	07-entitifuns.cpp \
+# 	10-generation-interval.cpp \
+# 	12-diagrams.cpp \
+# 	15-edgelist-after-run-multiple.cpp \
+# 	16-multiple-events.cpp \
+# 	19a-measles-mixing.cpp \
+# 	19b-measles-mixing.cpp \
+# 	19c-measles-mixing.cpp \
+# 	20a-measles-mixing-risk-quarantine-basic.cpp \
+#	20b-measles-mixing-risk-quarantine-transitions.cpp \
+#	20c-measles-mixing-risk-quarantine-durations.cpp \
+#	20d-measles-mixing-risk-quarantine-process.cpp \
+# 
+# Failing (#116):
+# 	05-mixing.cpp \
+#   06-mixing.cpp \
+#   09-distribution-tools-and-viruses.cpp \
+#   13-rt.cpp \
+#   14a-measles.cpp \
+#   14b-measles.cpp \
+#   14c-measles.cpp \
+#   17a-mixing-quarantine.cpp \
+#   17b-mixing-quarantine.cpp \
+#   17c-mixing-quarantine.cpp \
 
-ifndef CXX_STD
-	CXX_STD=-std=c++23
-endif
+$(NAME)_SOURCES := \
+	main.cpp \
+	00-cloning-model.cpp \
+	00-lfmcmc.cpp \
+	01-model-methods.cpp \
+	01-sir.cpp \
+	01-sirconnected.cpp \
+	11-random-numbers.cpp \
+	21a-rewire-degseq.cpp \
+	21b-rewire-degseq.cpp
+	
+$(NAME)_TEST_HOOKS := \
+	relocate-all-$(NAME)-resources
 
-all: main.o
-
-main.o: main.cpp clean
-	g++ $(CXX_STD) -Wunused -Wall -Wextra -Wnull-dereference \
-		-fdelete-null-pointer-checks -O2 $(OPENMP) -g -pedantic \
-		$(CXX_FLAGS) \
-		main.cpp -o main.o
-
-main.a: main.cpp clean
-	clang++ $(CXX_STD) -Wall -Wextra $(OPENMP) -Wpedantic -O2 main.cpp -o main.a
-
-00-lfmcmc.o: 00-lfmcmc.cpp
-	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 00-lfmcmc.cpp -o 00-lfmcmc.o
-
-# Compile 02-reproducible-sirconn.cpp
-02-reproducible-sirconn.o: 02-reproducible-sirconn.cpp
-	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 02-reproducible-sirconn.cpp -o 02-reproducible-sirconn.o
-
-02.o: 02-reproducible.cpp
-	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 02-reproducible.cpp -o 02.o
-
-01c.o: 01c-sir.cpp
-	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 01c-sir.cpp -o 01c.o
-
-05-mixing.o: 05-mixing.cpp
-	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 05-mixing.cpp -o 05-mixing.o
-
-# Check coverage using the main.o target
-coverage: clean
-	g++ $(CXX_STD) -O2 -g -fprofile-arcs -ftest-coverage main.cpp -o main.o && \
-	./main.o && \
-	mv main.o-main.gcda main.gcda && \
-	mv main.o-main.gcno main.gcno && \
-	gcov -r main.cpp && ls -allt && \
-	rm -f catch*.hpp.gcov *cpp.gcov # && \
-	# mkdir -p gcov-files && rm -f gcov-files/* && \
-	# mv *.hpp.gcov gcov-files/ && rm -f *.gcov
-
-
-# Create folders named after the *.cpp files in the current directory
-# and append "-saves" to the folder name
-# e.g. 01-sir.cpp -> 01-sir-saves
-clean:
-	rm -f *.o *.a *.so *.out *.exe *.gcda *.gcno *.gcov
-	rm -fr *-saves/
-	for file in *.cpp; do \
-		mkdir -p "$${file%.cpp}-saves"; \
-	done
-
-# What's the -ftest-coverage flag?
-# https://stackoverflow.com/questions/9842759/what-is-ftest-coverage-option-in-gcov
-
-.PHONY: all clean coverage
-
-05-mixing-with-size.o: 05-mixing-with-size.cpp
-	g++ $(CXX_FLAGS_DEBUG) 05-mixing-with-size.cpp -o 05-mixing-with-size.o
-
-callgrind: 05-mixing-with-size.cpp
-	rm -f callgrind.out.* && \
-	g++ $(CXX_FLAGS_DEBUG) 05-mixing-with-size.cpp -o 05-mixing-with-size.o && \
-	valgrind --tool=callgrind ./05-mixing-with-size.o && \
-	callgrind_annotate callgrind.out.* > callgrind_report.txt
-
-
-05b-mixing.o: 05b-mixing.cpp
-	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 05b-mixing.cpp \
-		-o 05b-mixing.o
-
-18-test-virus-handling.o: 18-test-virus-handling.cpp
-	g++ $(CXX_STD) -Wall -Wextra -O2 -g $(OPENMP) -pedantic 18-test-virus-handling.cpp \
-		-o 18-test-virus-handling.o
+include share/mk/epw.test.mk
+	
+# HOOK: Relocate all resource files to the test directory.
+.PHONY: relocate-all-$(NAME)-resources
+relocate-all-$(NAME)-resources: override NAME := $(NAME)
+relocate-all-$(NAME)-resources:
+	$(SAY) "HOOK" $@
+	$(V) mkdir -p $($(NAME)_TEST_DIR)
+	$(V) cp $($(NAME)_SOURCE_DIR)/resources/*  $($(NAME)_TEST_DIR)/

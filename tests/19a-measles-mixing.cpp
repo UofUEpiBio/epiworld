@@ -96,7 +96,6 @@ EPIWORLD_TEST_CASE(
     );
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
-    #ifdef CATCH_CONFIG_MAIN
 
     // R0 - should be approximately equal to theoretical value
     REQUIRE_FALSE(moreless(R0_observed, R0_theo, 0.3));
@@ -132,7 +131,6 @@ EPIWORLD_TEST_CASE(
 
     // Transition from hospitalized to recovered
     REQUIRE_FALSE(moreless(mat(11, 12), 1.0/model_0("Hospitalization period"), 0.1));
-    #endif
     
     // Reproductive number
     std::cout << "Reproductive number: "
@@ -166,8 +164,6 @@ EPIWORLD_TEST_CASE(
     std::cout << "Transition from hospitalized to recovered: "
               << mat(11, 12) << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
     #undef mat
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
     
 }

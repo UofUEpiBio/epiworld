@@ -84,10 +84,6 @@ EPIWORLD_TEST_CASE(
     );
     model_0.run_multiple(60, nsims, 1231, saver_no_quarantine, true, true, 4);
 
-    #ifndef CATCH_CONFIG_MAIN
-    model_0.print(false);
-    #endif
-
     // Looking at the final outbreak size without quarantine
     auto stats_without_quarantine = test_compute_final_sizes(
         final_distribution,
@@ -115,10 +111,8 @@ EPIWORLD_TEST_CASE(
         nsims, false
     );
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(stats_without_quarantine[0] > stats_with_quarantine[0]);
     REQUIRE(stats_with_quarantine[0] > stats_long_contact_tracing[0]);
-    #endif
 
     // Printing information
     std::cout << "========================================================" <<
@@ -141,9 +135,7 @@ EPIWORLD_TEST_CASE(
         std::endl;
 
     #undef mat
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
     
 }
 

@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -70,7 +66,6 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         if (v < 0.0 | v > 1.0)
             out_of_range_2++;
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(tmat_1, Catch::Equals(tmat_0));
     REQUIRE_THAT(tmat_1, Catch::Equals(tmat_2));
     REQUIRE_THAT(h_0, Catch::Equals(h_1));
@@ -79,11 +74,6 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     REQUIRE(out_of_range_1 == 0);
     REQUIRE(out_of_range_2 == 0);
     REQUIRE_THROWS(model_2.read_params("bad_params_test.yaml", true));
-    #else
-    model_0.print(false);
-    model_1.print(false);
-    model_2.print(false);
-    #endif 
 
     model_0.draw(epiworld::DiagramType::Mermaid);
 
@@ -96,8 +86,6 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     epiworld::ModelDiagram diagram;
     diagram.draw_from_file(epiworld::DiagramType::Mermaid, "01-sir_transitions.txt");
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

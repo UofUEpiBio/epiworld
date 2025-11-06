@@ -76,20 +76,14 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
                 std::cout << "Files " << file_0 << " and " << file_1 << " are different" << std::endl;
             }
 
-            #ifdef CATCH_CONFIG_MAIN
-            #ifndef EPI_DEBUG
             REQUIRE_THAT(file0, Catch::Equals(file1));
-            #endif
-            #endif
 
 
         }
     }
 
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }
 

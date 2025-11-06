@@ -19,8 +19,6 @@ EPIWORLD_TEST_CASE("SIR multiple", "[SIR-multiple]") {
 
     model_0.run_multiple(100, 10, 1231, nullptr, true, true, 2);
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

@@ -116,7 +116,6 @@ EPIWORLD_TEST_CASE(
         mat(6, 2) + mat(6, 3) << " (expected: " << 
         1.0/model("Avg. Incubation days") << ")" << std::endl;
 
-    #ifdef CATCH_CONFIG_MAIN
     // Transition to infected
     REQUIRE_FALSE(
         moreless(mat(1, 2) + mat(1, 3), 1.0/model("Avg. Incubation days"), 0.05)
@@ -149,11 +148,8 @@ EPIWORLD_TEST_CASE(
             1.0/model("Avg. Incubation days"), 0.05
         )
     );
-    #endif
     
     #undef mat
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

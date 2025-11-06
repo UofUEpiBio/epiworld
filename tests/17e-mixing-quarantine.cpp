@@ -186,8 +186,6 @@ EPIWORLD_TEST_CASE(
               << ", " << entity_can_quar_noq[2]
               << "] (third cannot quarantine)" << std::endl;
 
-    #ifdef CATCH_CONFIG_MAIN
-    
     // Test A: Lower isolation willingness should result in fewer agents 
     // willing to isolate
     REQUIRE(willing_low < willing_noq);
@@ -217,13 +215,10 @@ EPIWORLD_TEST_CASE(
     REQUIRE(entity_can_quar_noq[1] == true);
     REQUIRE(entity_can_quar_noq[2] == false);
     
-    #endif
 
     #undef mat_low
     #undef mat_noq
     
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

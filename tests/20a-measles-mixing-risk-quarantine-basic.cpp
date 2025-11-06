@@ -1,9 +1,4 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#define N_THREADS 8
-#else
 #define N_THREADS 4
-#endif
 
 #include "tests.hpp"
 
@@ -109,7 +104,6 @@ EPIWORLD_TEST_CASE(
         mat(11, 12) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
 
-    #ifdef CATCH_CONFIG_MAIN
     // Validating some transitions -------------------------------
     REQUIRE_FALSE(
         moreless(mat(1, 2), 1.0/model("Incubation period"), 0.1)
@@ -134,11 +128,8 @@ EPIWORLD_TEST_CASE(
     REQUIRE_FALSE(
         moreless(mat(11, 12), 1.0/model("Hospitalization period"), 0.1)
     );
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 }
 
 #undef mat

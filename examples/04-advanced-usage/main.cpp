@@ -103,7 +103,20 @@ int main() {
     
     // Initializing and printing information about the model ------------------
     model.queuing_off(); // Not working with rewiring just yet.
-    model.set_rewire_fun(epiworld::rewire_degseq<DAT>);  
+    model.set_rewire_fun(
+        [](std::vector<epiworld::Agent<DAT>>* agents,
+           epiworld::Model<std::vector<int>>* m,
+           float p)
+        {
+            epiworld::rewire_degseq<DAT>(
+                reinterpret_cast<epiworld::AdjList*>(agents),
+                m,
+                p
+            );
+        }
+    );
+
+
     model.set_rewire_prop(0.10);
 
     // Screen information
@@ -114,18 +127,18 @@ int main() {
 
     // Writing off the results
     model.write_data(
-        "variants_info.txt",
-        "variants.txt",
-        "tool_info.txt",
-        "tool_hist.txt",
-        "total.txt",
-        "transmisions.txt",
-        "transition.txt",
-        "reproductive.txt",
+        "examples/04-advanced-usage/variants_info.txt",
+        "examples/04-advanced-usage/variants.txt",
+        "examples/04-advanced-usage/tool_info.txt",
+        "examples/04-advanced-usage/tool_hist.txt",
+        "examples/04-advanced-usage/total.txt",
+        "examples/04-advanced-usage/transmisions.txt",
+        "examples/04-advanced-usage/transition.txt",
+        "examples/04-advanced-usage/reproductive.txt",
         ""
     );
 
-    model.write_edgelist("simple-world-edgelist.txt");
+    model.write_edgelist("examples/04-advanced-usage/simple-world-edgelist.txt");
 
     model.print();
 

@@ -1,0 +1,37 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
+    strategy:
+      matrix:
+        include:
+          # macOS configurations
+          - os: macos-latest
+            llvm: 14
+          - os: macos-latest
+            llvm: 18
+          # Ubuntu configuration
+          - os: ubuntu-latest
+            llvm: 18
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm@${{ matrix.llvm }}
+          echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
+
+      - name: Run Test Suite
+        run: |
+          make test -j4

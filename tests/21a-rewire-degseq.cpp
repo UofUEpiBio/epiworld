@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -86,31 +82,25 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network", "[rewir
     
     bool structure_changed = (different_edges > 0);
     
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(same_num_edges);
     REQUIRE(degrees_preserved);
     REQUIRE(structure_changed);
-    #else
+    
     if (!same_num_edges) {
-        std::cout << "FAIL: Different number of edges!" << std::endl;
-        std::cout << "Model 0 (p=0): " << source_0.size() << " edges" << std::endl;
-        std::cout << "Model 1 (p=0.5): " << source_1.size() << " edges" << std::endl;
-        return 1;
+        FAIL("Different number of edges!\nModel 0 (p=0): " << source_0.size() << " edges\nModel 1 (p=0.5): " << source_1.size() << " edges");
     }
+    
     if (!degrees_preserved) {
-        std::cout << "FAIL: Degrees were not preserved!" << std::endl;
-        return 1;
+        FAIL("Degrees were not preserved!");
     }
+    
     if (!structure_changed) {
-        std::cout << "FAIL: Network structure did not change!" << std::endl;
-        return 1;
+        FAIL("Network structure did not change!");
     }
     
     std::cout << "PASS: Rewire degseq test successful" << std::endl;
     std::cout << "  - Same number of edges: " << source_0.size() << std::endl;
     std::cout << "  - Degrees preserved: YES" << std::endl;
     std::cout << "  - Different edges: " << different_edges << " out of " << edges_0.size() << std::endl;
-    return 0;
-    #endif
 
 }

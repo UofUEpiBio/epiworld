@@ -55,10 +55,8 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
         if (id)
             ntrue++;
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(nrepeats == 0);
     REQUIRE(ntrue == static_cast<int>(model.size()));
-    #endif
 
     // Distributing entities among agents in a small population:
     // On average, x% should have 1 and y% two
@@ -104,11 +102,9 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
             n2++;
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(std::fabs(n0 - std::pow(1.0-p, 2.0) * N) < 100);
     REQUIRE(std::fabs(n1 - 2.0 * p * (1.0-p) * N) < 100);
     REQUIRE(std::fabs(n2 - std::pow(p, 2.0) * N) < 100);
-    #endif
 
     // Checking distribution via sets
     std::vector< std::vector< size_t > > dist = {
@@ -141,13 +137,9 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
         model3.get_entity(1).get_agents()
     };
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(dist[0] == dist2[0]);
     REQUIRE(dist[1] == dist2[1]);
-    #endif
     
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

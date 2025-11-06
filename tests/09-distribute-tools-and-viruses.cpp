@@ -91,16 +91,12 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
         std::inserter(diff_tool, diff_tool.begin())
     );
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(got_it.size() > 0);
     REQUIRE(got_it == got_it1);
 
     REQUIRE(got_tool.size() > 0);
     REQUIRE(got_tool == got_tool1);
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

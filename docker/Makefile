@@ -1,11 +1,11 @@
-DIR_UP := $(shell cd .. && pwd)
-CMD="podman"
+DOCKER_IMG ?= gvegayon/epiworld:latest
+DOCKER_CMD ?= podman
 
-build:
-	${CMD} build -t gvegayon/epiworld:latest .
+docker-build:
+	$(DOCKER_CMD) build -t $(DOCKER_IMG) $(ROOT_SOURCE_DIR)/docker
 
-run:
-	${CMD} run -i --rm -v $(DIR_UP):/home -w /home gvegayon/epiworld:latest
+docker-run:
+	$(DOCKER_CMD) run -i --rm -v $(abspath $(ROOT_SOURCE_DIR)):/home -w /home $(DOCKER_IMG)
 
-push:
-	${CMD} push gvegayon/epiworld:latest
+docker-push:
+	$(DOCKER_CMD) push $(DOCKER_IMG)

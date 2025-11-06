@@ -1,0 +1,43 @@
+name: EpiworldPy Integration Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test-epiworld-py:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: UofUEpiBio/epiworldPy
+          path: ./py-pkg
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.0
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Copy headers
+        run: cp -r include/epiworld py-pkg/include
+
+      - name: Create venv and install package
+        working-directory: ./py-pkg
+        run: |
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install --verbose .[test]
+
+      - name: Run tests
+        working-directory: ./py-pkg
+        run: |
+          source .venv/bin/activate
+          uv run -m pytest
+
+  

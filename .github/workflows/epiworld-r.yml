@@ -1,0 +1,48 @@
+name: EpiworldR Integration Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test-epiworld-r:
+    runs-on: ubuntu-latest
+    container: rocker/r2u:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: UofUEpiBio/epiworldR
+          path: ./r-pkg
+
+      - name: Getting epiworldR
+        run: |
+          install2.r knitr rmarkdown tinytest netplot igraph data.table DiagrammeR
+          apt-get update && apt-get install -y --no-install-recommends pandoc
+          cp -r include/epiworld/ r-pkg/inst/include/epiworld/
+          R CMD build r-pkg
+          R CMD check --no-manual epiworldR_*.tar.gz
+          
+  test-epiworld-r-valgrind:
+    runs-on: ubuntu-latest
+    container: rocker/r2u:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: UofUEpiBio/epiworldR
+          path: ./r-pkg
+
+      - name: Getting epiworldR
+        run: |
+          install2.r knitr rmarkdown tinytest netplot igraph data.table DiagrammeR
+          apt-get update && apt-get install -y --no-install-recommends \
+            pandoc valgrind
+          cp -r include/epiworld/ r-pkg/inst/include/epiworld/
+          R CMD build r-pkg
+          R CMD check --no-manual --use-valgrind epiworldR_*.tar.gz

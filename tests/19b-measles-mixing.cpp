@@ -65,10 +65,6 @@ EPIWORLD_TEST_CASE(
 
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
     
-    #ifndef CATCH_CONFIG_MAIN
-    model_0.print(false);
-    #endif
-
     // Calculate average transitions
     auto avg_transitions = tests_calculate_avg_transitions(
         transitions, model_0
@@ -98,7 +94,6 @@ EPIWORLD_TEST_CASE(
     );
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
-    #ifdef CATCH_CONFIG_MAIN
 
     // R0 - should be approximately equal to theoretical value
     REQUIRE_FALSE(moreless(R0_observed, R0_theo, 0.3));
@@ -149,7 +144,6 @@ EPIWORLD_TEST_CASE(
 
     // Transition from detected hospitalized to recovered
     REQUIRE_FALSE(moreless(mat(6, 12), 1.0/model_0("Hospitalization period"), 0.1));
-    #endif
     
     // Reproductive number
     std::cout <<
@@ -216,9 +210,7 @@ EPIWORLD_TEST_CASE(
     );
 
     #undef mat
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
     
 }
 

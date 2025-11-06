@@ -1,10 +1,13 @@
-main.o: main.cpp
-	g++ -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize  main.cpp -o main.o
-README.md: main.o
-	echo "## Example: 04-advanced-usage" > README.md && \
-	echo "" >> README.md && \
-	echo "Output from the program:" >> README.md && \
-	echo "" >> README.md && \
-	echo "\`\`\`" >> README.md && \
-	./main.o >> README.md && \
-	echo "\`\`\`" >> README.md
+$(NAME)_SOURCES := \
+	main.cpp
+
+$(NAME)_README_HOOKS := \
+	relocate-$(NAME)-resources	
+	
+include share/mk/epw.example.mk
+
+.PHONY: relocate-$(NAME)-resources
+relocate-$(NAME)-resources: override NAME := $(NAME)
+relocate-$(NAME)-resources:
+	$(SAY) "HOOK" $@
+	$(V)cp -r $($(NAME)_SOURCE_DIR)/resources/* $($(NAME)_EXAMPLE_DIR)

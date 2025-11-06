@@ -147,17 +147,13 @@ EPIWORLD_TEST_CASE(
     // model_uniform.print();
     // model_varied.print();
 
-    #ifdef CATCH_CONFIG_MAIN
     // Should see some difference in outbreak sizes due to different quarantine strategies
     // (This is exploratory - the direction depends on specific parameters)
     REQUIRE(model_no_quar.sizes[0] > model_only_high.sizes[0]);
     REQUIRE(model_no_quar.sizes[0] > model_only_mid.sizes[0]);
     REQUIRE(model_no_quar.sizes[0] > model_only_low.sizes[0]);
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 }
 
 #undef N_DAYS

@@ -53,13 +53,9 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
         " (expected: " << R0 << ")" << std::endl;
 
     
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(n_seed == n_seeds);
     REQUIRE_FALSE(moreless(rts/static_cast<double>(n_seed), R0, 0.05));
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }
