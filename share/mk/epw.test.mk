@@ -25,12 +25,12 @@ $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_TEST_HOOKS)
 	$(V)all_tests=$$( ( $($(NAME)_BUILD_DIR)/$(NAME) -l || true ) | \
 		perl -nE 'if (/^ {2}(\S.*)$$/) { $$s = $$1; $$s =~ s/^\s+|\s+$$//g; say $$s }'); \
     test_targets=''; \
-    while IFS= read -r test; do \
+    echo "$$all_tests" | while IFS= read -r test; do \
         rule_name=$$(echo -n "$$test" | sha256sum | cut -d' ' -f1); \
         test_targets="$$test_targets $$rule_name"; \
         cat share/mk/test-frag.mk | sed "s/%RULE_NAME%/$$rule_name/g" | sed "s/%HUMAN_NAME%/$$test/g" | sed "s|%BINARY%|$(abspath $($(NAME)_BUILD_DIR))/$(NAME)|g" | sed "s|%BUILD_DIR%|$(abspath $($(NAME)_BUILD_DIR))|g" | sed "s|%SOURCE_DIR%|$(abspath $($(NAME)_SOURCE_DIR))|g" | sed "s|%COV_DIR%|$(abspath $($(NAME)_COV_DIR))|g" >> $@; \
         printf "\n\n" >> $@; \
-    done <<< "$$all_tests"; \
+    done; \
     printf "all: $$test_targets\n" >> $@; \
 
 # Call into the generated test Makefile to run all tests.
