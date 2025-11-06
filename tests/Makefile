@@ -11,13 +11,13 @@
 # 	12-diagrams.cpp \
 # 	15-edgelist-after-run-multiple.cpp \
 # 	16-multiple-events.cpp \
-# 	19a-measles-mixing.cpp \
-# 	19b-measles-mixing.cpp \
-# 	19c-measles-mixing.cpp \
-# 	20a-measles-mixing-risk-quarantine-basic.cpp \
-#	20b-measles-mixing-risk-quarantine-transitions.cpp \
-#	20c-measles-mixing-risk-quarantine-durations.cpp \
-#	20d-measles-mixing-risk-quarantine-process.cpp \
+# 	18a-measles-mixing.cpp \
+# 	18b-measles-mixing.cpp \
+# 	18c-measles-mixing.cpp \
+# 	19a-measles-mixing-risk-quarantine-basic.cpp \
+#	19b-measles-mixing-risk-quarantine-transitions.cpp \
+#	19c-measles-mixing-risk-quarantine-durations.cpp \
+#	19d-measles-mixing-risk-quarantine-process.cpp \
 # 
 # Failing (#116):
 # 	05-mixing.cpp \
@@ -30,7 +30,6 @@
 #   17a-mixing-quarantine.cpp \
 #   17b-mixing-quarantine.cpp \
 #   17c-mixing-quarantine.cpp \
-#   18-test-virus-handling.cpp \
 
 $(NAME)_SOURCES := \
 	main.cpp \
@@ -40,8 +39,9 @@ $(NAME)_SOURCES := \
 	01-sir.cpp \
 	01-sirconnected.cpp \
 	11-random-numbers.cpp \
-	21a-rewire-degseq.cpp \
-	21b-rewire-degseq.cpp
+	17a-mixing-quarantine.cpp \
+	20a-rewire-degseq.cpp \
+	20b-rewire-degseq.cpp
 	
 $(NAME)_TEST_HOOKS := \
 	relocate-all-$(NAME)-resources
