@@ -3,7 +3,6 @@
 # should be easy to use; if you use this in your own projects, please credit the
 # original author. Thanks!
 
-include share/mk/contrib.gmsl.mk
 include share/mk/epw.util.mk
 
 # Makefile settings.

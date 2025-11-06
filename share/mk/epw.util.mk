@@ -20,8 +20,6 @@ endef
 
 # PEEK - Parameterized "function" that results in the value at the top of the
 #   specified colon-delimited stack.
-#
-# TODO: Use GMSL version.
 define PEEK
 $(lastword $(subst :, ,${1}))
 endef
@@ -29,16 +27,12 @@ endef
 # POP - Parameterized "function" that pops the top value off of the specified
 #   colon-delimited stack, and results in the new value of the stack. Note that
 #   the popped value cannot be obtained using this function; use peek for that.
-#
-# TODO: Use GMSL version.
 define POP
 ${1:%:$(lastword $(subst :, ,${1}))=%}
 endef
 
 # PUSH - Parameterized "function" that pushes a value onto the specified colon-
 #   delimited stack, and results in the new value of the stack.
-#
-# TODO: Use GMSL version.
 define PUSH
 ${2:%=${1}:%}
 endef
