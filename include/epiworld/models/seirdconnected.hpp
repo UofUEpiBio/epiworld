@@ -3,6 +3,9 @@
 
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model with connected population
+ * 
+ * ![Model Diagram](../assets/img/seirdconnected.png)
+ * 
  * @ingroup connected_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>

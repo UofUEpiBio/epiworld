@@ -21,6 +21,9 @@
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
+ * 
+ * ![Model Diagram](../assets/img/seirmixing.png)
+ * 
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>

@@ -3,6 +3,9 @@
 
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * 
+ * ![Model Diagram](../assets/img/sir.png)
+ * 
  * @ingroup basic_compartmental
  * 
  * @param model A Model<TSeq> object where to set up the SIR.

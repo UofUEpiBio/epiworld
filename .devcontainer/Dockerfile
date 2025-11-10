@@ -17,5 +17,5 @@ RUN sudo apt-get install -y doxygen graphviz
 
 RUN apt-get install -y --no-install-recommends pip 
 
-RUN pip3 install --break-system-packages mkdocs mkdocs-material mkdoxy
+RUN pip3 install --break-system-packages mkdocs mkdocs-material mkdoxy mkdocs-api-autonav
 

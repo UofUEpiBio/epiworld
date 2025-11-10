@@ -21,9 +21,35 @@ theme:
     - search.highlight
 
 nav:
-  - Home: index.html
+  - Home: README.md
+  - Models:
+    - Overview: epiworld/modules.md
+    - Basic Compartmental Models:
+        - SIS: epiworld/classModelSIS.md
+        - SIR: epiworld/classModelSIR.md
+        - SEIR: epiworld/classModelSEIR.md
+    - Models with Death Compartment:
+        - SIRD: epiworld/classModelSIRD.md
+        - SISD: epiworld/classModelSISD.md
+        - SEIRD: epiworld/classModelSEIRD.md
+    - Connected Population Models:
+        - SIR Connected: epiworld/classModelSIRCONN.md
+        - SEIR Connected: epiworld/classModelSEIRCONN.md
+        - SIRD Connected: epiworld/classModelSIRDCONN.md
+        - SEIRD Connected: epiworld/classModelSEIRDCONN.md
+    - Population Mixing Models:
+        - SEIR Mixing: epiworld/classModelSEIRMixing.md
+        - SIR Mixing: epiworld/classModelSIRMixing.md
+        - SEIR Mixing Quarantine: epiworld/classModelSEIRMixingQuarantine.md
+    - Disease-Specific Models:
+        - Measles School: epiworld/classModelMeaslesSchool.md
+        - Measles Mixing: epiworld/classModelMeaslesMixing.md
+        - Measles Mixing Risk Quarantine: epiworld/classModelMeaslesMixingRiskQuarantine.md
+    - Specialized Models:
+        - SIR Logit: epiworld/classModelSIRLogit.md
+        - Diffusion Network: epiworld/classModelDiffNet.md
+        - Surveillance: epiworld/classModelSURV.md
   - API Reference: 
-    - Models: epiworld/modules.md
     - Overview: api/index.md
     - Classes: epiworld/annotated.md
     - Files: epiworld/files.md
@@ -51,3 +77,13 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - toc:
       permalink: true
+
+validation:
+  nav:
+    omitted_files: info
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    absolute_links: warn
+    unrecognized_links: warn

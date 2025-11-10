@@ -3,6 +3,9 @@
 
 /**
  * @brief Template for a Susceptible-Infected-Susceptible-Deceased (SISD) model
+ * 
+ * ![Model Diagram](../assets/img/sisd.png)
+ * 
  * @ingroup death_compartmental
  * 
  * @param vname std::string Name of the virus

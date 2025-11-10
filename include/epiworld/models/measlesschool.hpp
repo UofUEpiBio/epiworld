@@ -45,10 +45,12 @@
  * quarantined. Isolated agents then may be moved out of the isolation in
  * isolation_period days.
  * 
+ * ![Model Diagram](../assets/img/measlesschool.png)
+ * 
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool: public Model<TSeq> {
+class ModelMeaslesSchool: public epiworld::Model<TSeq> {
 
 private:
 
@@ -78,6 +80,11 @@ private:
 
 public:
 
+    /**
+     * @name Model States
+     * @brief The different states of the model.
+     */
+    ///@{
     static constexpr epiworld_fast_uint SUSCEPTIBLE             = 0u;
     static constexpr epiworld_fast_uint EXPOSED                 = 1u;
     static constexpr epiworld_fast_uint PRODROMAL               = 2u;
@@ -91,6 +98,7 @@ public:
     static constexpr epiworld_fast_uint QUARANTINED_RECOVERED   = 10u;
     static constexpr epiworld_fast_uint HOSPITALIZED            = 11u;
     static constexpr epiworld_fast_uint RECOVERED               = 12u;
+    ///@}
     
     // Default constructor
     ModelMeaslesSchool() {};
