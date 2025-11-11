@@ -64,7 +64,7 @@ nav:
     - Random Graph Generation: impl/6. Random Graph Generation.md
     - Data Collection and Analysis: impl/7. Data Collection and Analysis.md
     - Random Number Generation and Statistical Functions: impl/8. Random Number Generation and Statistical Functions.md
-    - Reproducability and run_multiple: impl/9. Reproducibility and run_multiple.md
+    - Reproducibility and run_multiple: impl/9. Reproducibility and run_multiple.md
     - Mixing and Entity Distribution: impl/10. Mixing and Entity Distribution.md
     - Virus and Tool Distribution Functions: impl/11. Virus and Tool Distribution Functions.md
     - Generation Interval and Reproductive Number Calculation: impl/12. Generation Interval and Reproductive Number Calculation.md
