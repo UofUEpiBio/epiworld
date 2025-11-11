@@ -1,0 +1,303 @@
+{
+  "repo_notes": [
+    {
+      "content": "Focus on architectural description as well as code. Subsystems and modules should be described in why they do what they do, as opposed to just how to interface with them on a functional basis."
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "Introduce epiworld: a C++ header-only library for fast agent-based epidemiological modeling, covering its purpose, features, and design philosophy",
+      "page_notes": [
+        {
+          "content": "Include the date of generation, or the latest commit hash."
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Installation, basic setup, and hello world example showing how to run a simple SIR simulation",
+      "parent": "Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "System Architecture",
+      "purpose": "High-level overview of how Model, Agent, Virus, Tool, Entity, and Database components fit together",
+      "parent": "Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Core Components",
+      "purpose": "Detailed documentation of the fundamental building blocks of the simulation engine",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Model Class",
+      "purpose": "The central orchestrator that manages simulation state, runs the main loop, and coordinates all components",
+      "parent": "Core Components",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Agent Class",
+      "purpose": "Individual entities in the simulation with states, viruses, tools, neighbors, and entity memberships",
+      "parent": "Core Components",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Virus Class",
+      "purpose": "Disease definitions with transmission, recovery, death, incubation parameters, and mutation capabilities",
+      "parent": "Core Components",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Tool Class",
+      "purpose": "Interventions like vaccines and masks that modify susceptibility, transmission, recovery, and mortality",
+      "parent": "Core Components",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Entity Class",
+      "purpose": "Agent groupings for households, schools, workplaces, and other population structures",
+      "parent": "Core Components",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Database and Metrics",
+      "purpose": "Recording simulation history, state transitions, reproductive numbers, and other epidemiological metrics",
+      "parent": "Core Components",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Pre-built Models",
+      "purpose": "Ready-to-use epidemiological model implementations ranging from basic to specialized",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Basic Compartmental Models",
+      "purpose": "SIS, SIR, and SEIR models for simple epidemic dynamics",
+      "parent": "Pre-built Models",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Models with Mortality",
+      "purpose": "SIRD, SISD, and SEIRD models that include death as a distinct outcome",
+      "parent": "Pre-built Models",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Connected Population Models",
+      "purpose": "Well-mixed population variants (SIRCONN, SEIRDCONN, etc.) without explicit networks",
+      "parent": "Pre-built Models",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Mixing Models",
+      "purpose": "SEIRMixing and SIRMixing with contact matrices for heterogeneous populations",
+      "parent": "Pre-built Models",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Disease-Specific Models",
+      "purpose": "Measles (with contact tracing and risk-based quarantine) and Surveillance models",
+      "parent": "Pre-built Models",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Network Structures",
+      "purpose": "Creating and managing population contact networks for agent-based models",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Graph Representation",
+      "purpose": "AdjList class and adjacency list data structure for efficient neighbor access",
+      "parent": "Network Structures",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Random Graph Generation",
+      "purpose": "Generating Bernoulli, ring lattice, Watts-Strogatz small-world, and blocked networks",
+      "parent": "Network Structures",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Network Rewiring",
+      "purpose": "Degree-preserving rewiring algorithms for dynamic network structures",
+      "parent": "Network Structures",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Running Simulations",
+      "purpose": "Executing models, controlling simulation flow, and managing output",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Simulation Execution",
+      "purpose": "Using run() and run_multiple() methods, including parallel execution with OpenMP",
+      "parent": "Running Simulations",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Event System",
+      "purpose": "Event queuing and execution mechanism for consistent state changes across agents",
+      "parent": "Running Simulations",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Data Output and Visualization",
+      "purpose": "Printing results, writing data files, and generating Mermaid diagrams",
+      "parent": "Running Simulations",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Queuing Optimization",
+      "purpose": "Performance optimization through selective agent activation based on infection status",
+      "parent": "Running Simulations",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Advanced Features",
+      "purpose": "Sophisticated analysis tools and specialized capabilities beyond basic simulation",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "LFMCMC Parameter Inference",
+      "purpose": "Likelihood-free Markov Chain Monte Carlo for calibrating models to observed data",
+      "parent": "Advanced Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Generation Intervals",
+      "purpose": "Computing and analyzing generation time distributions for epidemic characterization",
+      "parent": "Advanced Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Contact Tracing and Quarantine",
+      "purpose": "Implementing contact tracing, risk stratification, and isolation strategies",
+      "parent": "Advanced Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Population Mixing Patterns",
+      "purpose": "Using contact matrices to model heterogeneous mixing between population groups",
+      "parent": "Advanced Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}
