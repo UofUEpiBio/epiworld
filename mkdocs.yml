@@ -55,21 +55,21 @@ nav:
     - Files: epiworld/files.md
     - Namespaces: epiworld/namespaces.md
   - Implementation:
-    - Overview: api/index.md
-    - Library Architecture: 1. Library Architecture.md
-    - Performance Optimization: 2. Performance Optimization.md
-    - Extending the Library: 3. Extending the Library.md
-    - Core Simulation Models: 4. Core Simulation Models.md
-    - Queueing System: 5. Queueing System.md
-    - Random Graph Generation: 6. Random Graph Generation.md
-    - Data Collection and Analysis: 7. Data Collection and Analysis.md
-    - Random Number Generation and Statistical Functions: 8. Random Number Generation and Statistical Functions.md
-    - Reproducability and run_multiple: 9. Reproducibility and run_multiple.md
-    - Mixing and Entity Distribution: 10. Mixing and Entity Distribution.md
-    - Virus and Tool Distribution Functions: 11. Virus and Tool Distribution Functions.md
-    - Generation Interval and Reproductive Number Calculation: 12. Generation Interval and Reproductive Number Calculation.md
-    - Events and Multi-Event Handling: 13. Events and Multi-Event Handling.md
-    - Quarantine, Isolation, and Contact Tracing Modules: 14. Quarantine, Isolation, and Contact Tracing Modules.md
+    - Overview: impl/index.md
+    - Library Architecture: impl/1. Library Architecture.md
+    - Performance Optimization: impl/2. Performance Optimization.md
+    - Extending the Library: impl/3. Extending the Library.md
+    - Core Simulation Models: impl/4. Core Simulation Models.md
+    - Queueing System: impl/5. Queueing System.md
+    - Random Graph Generation: impl/6. Random Graph Generation.md
+    - Data Collection and Analysis: impl/7. Data Collection and Analysis.md
+    - Random Number Generation and Statistical Functions: impl/8. Random Number Generation and Statistical Functions.md
+    - Reproducability and run_multiple: impl/9. Reproducibility and run_multiple.md
+    - Mixing and Entity Distribution: impl/10. Mixing and Entity Distribution.md
+    - Virus and Tool Distribution Functions: impl/11. Virus and Tool Distribution Functions.md
+    - Generation Interval and Reproductive Number Calculation: impl/12. Generation Interval and Reproductive Number Calculation.md
+    - Events and Multi-Event Handling: impl/13. Events and Multi-Event Handling.md
+    - Quarantine, Isolation, and Contact Tracing Modules: impl/14. Quarantine, Isolation, and Contact Tracing Modules.md
 
 plugins:
   - search
