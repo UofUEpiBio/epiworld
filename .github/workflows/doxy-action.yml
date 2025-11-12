@@ -1,4 +1,4 @@
-name: MkDocs Documentation
+name: Zensical Documentation
 
 on:
   push:
@@ -32,10 +32,22 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y doxygen graphviz
-          pip install mkdocs mkdocs-material mkdoxy
+          pip install mkdocs mkdocs-material mkdoxy zensical
       
-      - name: Build MkDocs site
-        run: mkdocs build
+      - name: Generate API documentation with mkdoxy
+        run: |
+          # Build with mkdocs to generate API docs using mkdoxy plugin
+          mkdocs build --quiet
+          # Copy generated API docs to source directory for Zensical
+          mkdir -p docs_src/epiworld
+          cp -r site/epiworld/* docs_src/epiworld/
+          # Copy README.md to docs_src/index.md for Zensical (symlinks may not work)
+          cp README.md docs_src/index.md
+          # Clean the site directory for Zensical build
+          rm -rf site
+      
+      - name: Build Zensical site
+        run: zensical build -f mkdocs.yml
       
       - name: Upload artifact for GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'

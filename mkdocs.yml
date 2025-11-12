@@ -21,7 +21,7 @@ theme:
     - search.highlight
 
 nav:
-  - Home: README.md
+  - Home: index.md
   - Models:
     - Overview: epiworld/modules.md
     - Basic Compartmental Models:

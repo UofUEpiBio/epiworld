@@ -12,8 +12,10 @@ tests/*
 .zed/
 .cache/
 
-# MkDocs generated files
+# MkDocs/Zensical generated files
 site/
+docs_src/epiworld/
+docs_src/index.md
 
 # Old Doxygen files (if generated)
 docs/html/
