@@ -23,37 +23,37 @@ theme:
 nav:
   - Home: index.md
   - Models:
-    - Overview: epiworld/modules.md
+    - Overview: epiworld/modules/
     - Basic Compartmental Models:
-        - SIS: epiworld/classModelSIS.md
-        - SIR: epiworld/classModelSIR.md
-        - SEIR: epiworld/classModelSEIR.md
+        - SIS: epiworld/classModelSIS/
+        - SIR: epiworld/classModelSIR/
+        - SEIR: epiworld/classModelSEIR/
     - Models with Death Compartment:
-        - SIRD: epiworld/classModelSIRD.md
-        - SISD: epiworld/classModelSISD.md
-        - SEIRD: epiworld/classModelSEIRD.md
+        - SIRD: epiworld/classModelSIRD/
+        - SISD: epiworld/classModelSISD/
+        - SEIRD: epiworld/classModelSEIRD/
     - Connected Population Models:
-        - SIR Connected: epiworld/classModelSIRCONN.md
-        - SEIR Connected: epiworld/classModelSEIRCONN.md
-        - SIRD Connected: epiworld/classModelSIRDCONN.md
-        - SEIRD Connected: epiworld/classModelSEIRDCONN.md
+        - SIR Connected: epiworld/classModelSIRCONN/
+        - SEIR Connected: epiworld/classModelSEIRCONN/
+        - SIRD Connected: epiworld/classModelSIRDCONN/
+        - SEIRD Connected: epiworld/classModelSEIRDCONN/
     - Population Mixing Models:
-        - SEIR Mixing: epiworld/classModelSEIRMixing.md
-        - SIR Mixing: epiworld/classModelSIRMixing.md
-        - SEIR Mixing Quarantine: epiworld/classModelSEIRMixingQuarantine.md
+        - SEIR Mixing: epiworld/classModelSEIRMixing/
+        - SIR Mixing: epiworld/classModelSIRMixing/
+        - SEIR Mixing Quarantine: epiworld/classModelSEIRMixingQuarantine/
     - Disease-Specific Models:
-        - Measles School: epiworld/classModelMeaslesSchool.md
-        - Measles Mixing: epiworld/classModelMeaslesMixing.md
-        - Measles Mixing Risk Quarantine: epiworld/classModelMeaslesMixingRiskQuarantine.md
+        - Measles School: epiworld/classModelMeaslesSchool/
+        - Measles Mixing: epiworld/classModelMeaslesMixing/
+        - Measles Mixing Risk Quarantine: epiworld/classModelMeaslesMixingRiskQuarantine/
     - Specialized Models:
-        - SIR Logit: epiworld/classModelSIRLogit.md
-        - Diffusion Network: epiworld/classModelDiffNet.md
-        - Surveillance: epiworld/classModelSURV.md
+        - SIR Logit: epiworld/classModelSIRLogit/
+        - Diffusion Network: epiworld/classModelDiffNet/
+        - Surveillance: epiworld/classModelSURV/
   - API Reference: 
     - Overview: api/index.md
-    - Classes: epiworld/annotated.md
-    - Files: epiworld/files.md
-    - Namespaces: epiworld/namespaces.md
+    - Classes: epiworld/annotated/
+    - Files: epiworld/files/
+    - Namespaces: epiworld/namespaces/
   - Implementation:
     - Overview: impl/index.md
     - Library Architecture: impl/1. Library Architecture.md
