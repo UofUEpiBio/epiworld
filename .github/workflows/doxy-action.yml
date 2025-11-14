@@ -41,6 +41,9 @@ jobs:
           # Copy generated API docs to source directory for Zensical
           mkdir -p docs_src/epiworld
           cp -r site/epiworld/* docs_src/epiworld/
+          # Copy mkdocs assets (CSS, JS) to docs_src so Zensical includes them
+          # The mkdoxy-generated HTML pages reference these assets at ../../assets/
+          cp -r site/assets docs_src/assets
           # Copy README.md to docs_src/index.md for Zensical (symlinks may not work)
           cp README.md docs_src/index.md
           # Clean the site directory for Zensical build
