@@ -3,6 +3,7 @@
 ![GitHub Release](https://img.shields.io/github/v/release/UofUEpiBio/epiworld)
 [![codecov](https://codecov.io/gh/UofUEpiBio/epiworld/graph/badge.svg?token=CPDYG4HA0B)](https://codecov.io/gh/UofUEpiBio/epiworld)
 [![ForeSITE Group](https://github.com/EpiForeSITE/software/raw/e82ed88f75e0fe5c0a1a3b38c2b94509f122019c/docs/assets/foresite-software-badge.svg)](https://github.com/EpiForeSITE)
+[![DeepWiki](https://img.shields.io/badge/Wiki-DeepWiki-blue)](https://github.com/UofUEpiBio/epiworld/wiki)
 
 # epiworld <img src="assets/branding/epiworld.png" width="200px" alt="epiworld logo" align="right">
 
