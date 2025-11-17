@@ -12,17 +12,11 @@ tests/*
 .zed/
 .cache/
 
-# MkDocs/Zensical generated files
+# Zensical generated files
 site/
-docs_src/epiworld/
 docs_src/index.md
-# MkDocs-generated assets (but keep source images in docs_src/assets/{branding,img})
-docs_src/assets/stylesheets/
-docs_src/assets/javascripts/
-docs_src/assets/.doxy/
-docs_src/assets/images/
 
-# Old Doxygen files (if generated)
+# Doxygen generated files
 docs/html/
 docs/latex/
 docs/xml/

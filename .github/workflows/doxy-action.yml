@@ -32,25 +32,23 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y doxygen graphviz
-          pip install mkdocs mkdocs-material mkdoxy zensical
+          pip install zensical
       
-      - name: Generate API documentation with mkdoxy
+      - name: Generate API documentation with Doxygen
         run: |
-          # Build with mkdocs to generate API docs using mkdoxy plugin
-          mkdocs build --quiet
-          # Copy generated API docs to source directory for Zensical
-          mkdir -p docs_src/epiworld
-          cp -r site/epiworld/* docs_src/epiworld/
-          # Copy mkdocs assets (CSS, JS) to docs_src so Zensical includes them
-          # The mkdoxy-generated HTML pages reference these assets at ../../assets/
-          cp -r site/assets docs_src/assets
+          # Generate Doxygen documentation
+          doxygen Doxyfile
           # Copy README.md to docs_src/index.md for Zensical (symlinks may not work)
           cp README.md docs_src/index.md
-          # Clean the site directory for Zensical build
-          rm -rf site
       
       - name: Build Zensical site
         run: zensical build -f mkdocs.yml
+      
+      - name: Integrate Doxygen documentation
+        run: |
+          # Copy Doxygen HTML output to the Zensical site
+          mkdir -p site/api/doxygen
+          cp -r docs/html/* site/api/doxygen/
       
       - name: Upload artifact for GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
