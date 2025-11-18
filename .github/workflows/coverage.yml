@@ -19,7 +19,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: apt-get update && apt-get install -y lcov
+        run: |
+          apt-get update && \
+          apt-get install -y software-properties-common && \
+          add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
+          apt-get update && \
+          apt-get install -y lcov gcc-14 g++-14 && \
+          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 && \
+          update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100        
 
       - name: Generate coverage
         run: |
