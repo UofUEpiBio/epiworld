@@ -34,4 +34,10 @@ jobs:
 
       - name: Run Test Suite
         run: |
-          VERBOSE=1 make test -j4
+          if [ "$(uname)" = "Darwin" ]; then
+            CORES=$(sysctl -n hw.ncpu)
+          else
+            CORES=$(nproc)
+          fi
+      
+          VERBOSE=1 make test -j"$CORES"

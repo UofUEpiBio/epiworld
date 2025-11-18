@@ -31,7 +31,13 @@ jobs:
 
       - name: Generate coverage
         run: |
-          VERBOSE=1 WITH_COVERAGE=1 make test -j4
+          if [ "$(uname)" = "Darwin" ]; then
+            CORES=$(sysctl -n hw.ncpu)
+          else
+            CORES=$(nproc)
+          fi
+        
+          VERBOSE=1 WITH_COVERAGE=1 make test -j"$CORES"
           
       - name: Upload coverage
         uses: codecov/codecov-action@v3
