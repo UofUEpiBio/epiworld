@@ -13,9 +13,9 @@ ifeq ($(WITH_COVERAGE),1)
 	$(V)for f in %BUILD_DIR%/*.gcno; do \
         ln -sf "$$(realpath $$f)" "$(SILO)/$$(basename $$f)"; \
     done
-	$(V)$(LCOV) --capture --directory "$(SILO)" --output-file "$(SILO)/coverage.info.all" --quiet \
+	$(V)$(LCOV) --capture --directory "$(SILO)" --output-file "$(SILO)/coverage.info.all" --quiet --gcov-args ' --quiet' \
 	    --ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version
-	$(V)$(LCOV) --extract "$(SILO)/coverage.info.all" "%SOURCE_DIR%" --output-file "%COV_DIR%/coverage-%RULE_NAME%.info" --quiet \
+	$(V)$(LCOV) --extract "$(SILO)/coverage.info.all" "%SOURCE_DIR%" --output-file "%COV_DIR%/coverage-%RULE_NAME%.info" --quiet --gcov-args ' --quiet' \
 	    --ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version
 endif
 
