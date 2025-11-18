@@ -4,9 +4,9 @@ include share/mk/epw.compile.mk
 
 # Pick our linker based on what languages this program is made of.
 ifneq ($(strip $(filter %.cpp,$($(NAME)_SOURCES))),)
-	$(NAME)_LINKER = $(CXX)
+	$(NAME)_LINKER := $(CXX)
 else
-	$(NAME)_LINKER = $(CC)
+	$(NAME)_LINKER := $(CC)
 endif
 
 include share/mk/epw.artifact.mk
