@@ -1,7 +1,7 @@
-#define EPI_DEBUG
-
 #include "tests.hpp"
+
 using namespace epiworld;
+
 EPIWORLD_TEST_CASE(
     "SEIRMixingQuarantine isolation willingness testing",
     "[SEIR-mixing-quarantine-isolation-willingness]")

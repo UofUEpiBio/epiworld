@@ -4,9 +4,9 @@
 %COV_DIR%/coverage-%RULE_NAME%.info: %BINARY%
 	$(SAY) 'TEST' '%HUMAN_NAME%'
 	$(V)mkdir -p $(SILO)
-	$(V)GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(SILO)' %BINARY% -n '%HUMAN_NAME%' --use-colour yes >$(TTYP) 2>&1
-	$(V)cat '$(TTYP)'
-	$(V)rm '$(TTYP)'
+	$(V)GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(SILO)' %BINARY% '%HUMAN_NAME%' --use-colour yes >$(TTYP) 2>&1; \
+	cat '$(TTYP)'; \
+	rm '$(TTYP)'
 
 ifeq ($(WITH_COVERAGE),1)
 	$(SAY) 'LCOV' '$(SILO)/coverage.info'

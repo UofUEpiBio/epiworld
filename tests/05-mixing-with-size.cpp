@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 // Function to get current memory usage in kilobytes

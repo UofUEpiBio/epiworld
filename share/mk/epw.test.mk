@@ -41,6 +41,21 @@ $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_TEST_HOOKS)
     rm -f $@.tmp; \
     printf 'all:%s\n' "$$test_targets" >> $@
 
+# Loop over all test suites and add a target to run them.
+define run-test-rule
+$(NAME)-$(basename $(1)): $($(NAME)_BUILD_DIR)/test.mk
+	$(SAY) "TEST" $(basename $(1))
+	$(V)$(MAKE) \
+        -C $($(NAME)_TEST_DIR) \
+        -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk $(MAKEFLAGS) \
+        V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'\
+        $(shell printf '$(basename $(1))' | sha256sum | cut -d' ' -f1)
+
+ 
+endef
+
+$(eval $(foreach src,$($(NAME)_SOURCES),$(call run-test-rule,$(src))))
+
 # Call into the generated test Makefile to run all tests.
 # Then, if coverage is enabled, aggregate the coverage data.
 .PHONY: $($(NAME)_SOURCE_DIR)-test

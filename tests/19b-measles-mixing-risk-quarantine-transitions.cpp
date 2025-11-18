@@ -1,8 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
-#endif
-
-
 #include "tests.hpp"
 
 using namespace epiworld;

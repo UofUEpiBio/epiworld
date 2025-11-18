@@ -1,4 +1,3 @@
-#define EPI_DEBUG
 #ifndef CATCH_CONFIG_MAIN
 #define N_THREADS 9
 #define N_SIMS 500
@@ -158,4 +157,3 @@ EPIWORLD_TEST_CASE(
 
 #undef N_DAYS
 #undef N_THREADS
-#undef EPI_DEBUG

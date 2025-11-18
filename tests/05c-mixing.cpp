@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 #define calc_r0(ans_observed, ans_expected, r0, model) \
@@ -26,12 +22,9 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
 
     // Testing reproductive number in plain scenario
     int n_infected = 1;
-    #ifdef EPI_DEBUG
     int n_agents = 2000;
-    #else
-    int n_agents = 4000;
-    #endif
     size_t nsims = 400;
+   
     epimodels::ModelSIRMixing<> model_1(
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
