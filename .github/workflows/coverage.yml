@@ -26,7 +26,8 @@ jobs:
           apt-get update && \
           apt-get install -y lcov gcc-14 g++-14 && \
           update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 && \
-          update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100        
+          update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100 && \
+          update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100        
 
       - name: Generate coverage
         run: |
