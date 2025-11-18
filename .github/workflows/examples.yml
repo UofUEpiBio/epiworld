@@ -11,5 +11,5 @@ jobs:
 
       - name: Check
         run: |
-          make examples
+          VERBOSE=1 make examples
   
