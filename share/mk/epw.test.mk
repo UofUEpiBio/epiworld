@@ -77,7 +77,7 @@ ifneq ($(WITH_COVERAGE),)
 	exec $(LCOV) $$args \
 	    --output-file '$($(NAME)_COV_DIR)/coverage.info' \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
-	sed -i '' 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' '$($(NAME)_COV_DIR)/coverage.info'
+	perl -pi -e 's|SF:/__w/epiworld/epiworld/|SF:./|g' ./build/tests/.coverage/coverage.info
 endif
 
 TEST_TARGETS += $($(NAME)_SOURCE_DIR)-test	
