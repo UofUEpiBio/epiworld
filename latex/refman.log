@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.11.18)  18 NOV 2025 17:34
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Alpine Linux) (preloaded format=pdflatex 2025.11.18)  18 NOV 2025 19:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -5269,7 +5269,7 @@ s/type1/urw/helvetic/uhvb8a.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic
 /uhvb8ac.pfb></usr/share/texmf-dist/fonts/type1/urw/helvetic/uhvbo8ac.pfb></usr
 /share/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texmf-dist/fo
 nts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on refman.pdf (313 pages, 1448847 bytes).
+Output written on refman.pdf (313 pages, 1448857 bytes).
 PDF statistics:
  11017 PDF objects out of 12825 (max. 8388607)
  10147 compressed objects within 102 object streams
