@@ -37,6 +37,7 @@ endif
 
 ifeq ($(WITH_OPENMP),1)
 	EXTRA_COMMON_FLAGS += -fopenmp
+	EXTRA_COMMON_LDFLAGS += -fopenmp
 endif
 
 ifeq ($(WITH_COVERAGE),1)
