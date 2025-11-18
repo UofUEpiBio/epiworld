@@ -1,0 +1,75 @@
+\hypertarget{measlesmixingriskquarantine_8hpp}{}\doxysection{include/epiworld/models/measlesmixingriskquarantine.hpp File Reference}
+\label{measlesmixingriskquarantine_8hpp}\index{include/epiworld/models/measlesmixingriskquarantine.hpp@{include/epiworld/models/measlesmixingriskquarantine.hpp}}
+
+
+Template for a Measles model with population mixing and risk-\/based quarantine.  
+
+
+This graph shows which files directly or indirectly include this file\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=243pt]{measlesmixingriskquarantine_8hpp__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{class_model_measles_mixing_risk_quarantine}{Model\+Measles\+Mixing\+Risk\+Quarantine$<$ TSeq $>$}}
+\begin{DoxyCompactList}\small\item\em Measles model with population mixing and risk-\/based quarantine strategies. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{measlesmixingriskquarantine_8hpp_aeacb2e24aa6a8c28c757c1fcf443d3db}\label{measlesmixingriskquarantine_8hpp_aeacb2e24aa6a8c28c757c1fcf443d3db}} 
+\#define {\bfseries COL\+\_\+\+MAJOR\+\_\+\+POS}(i,  j,  n)~    (j $\ast$ n + i)
+\item 
+\#define {\bfseries GET\+\_\+\+MODEL}(model,  output)
+\item 
+\#define \mbox{\hyperlink{measlesmixingriskquarantine_8hpp_acd100adc82f9678acf826732feacd32d}{SAMPLE\+\_\+\+FROM\+\_\+\+PROBS}}(n,  ans)
+\begin{DoxyCompactList}\small\item\em Macro to sample from a list of probabilities. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Template for a Measles model with population mixing and risk-\/based quarantine. 
+
+
+
+\doxysubsection{Macro Definition Documentation}
+\mbox{\Hypertarget{measlesmixingriskquarantine_8hpp_afe4a6775ab9b6c97ffa459e33bad497a}\label{measlesmixingriskquarantine_8hpp_afe4a6775ab9b6c97ffa459e33bad497a}} 
+\index{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!GET\_MODEL@{GET\_MODEL}}
+\index{GET\_MODEL@{GET\_MODEL}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}}
+\doxysubsubsection{\texorpdfstring{GET\_MODEL}{GET\_MODEL}}
+{\footnotesize\ttfamily \#define GET\+\_\+\+MODEL(\begin{DoxyParamCaption}\item[{}]{model,  }\item[{}]{output }\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{        \textcolor{keyword}{auto} * output = \textcolor{keyword}{dynamic\_cast<} \mbox{\hyperlink{class_model_measles_mixing_risk_quarantine}{ModelMeaslesMixingRiskQuarantine<TSeq>}} * \textcolor{keyword}{>}( (model) ); \(\backslash\)}
+\DoxyCodeLine{        assert((output) != \textcolor{keyword}{nullptr});}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{measlesmixingriskquarantine_8hpp_acd100adc82f9678acf826732feacd32d}\label{measlesmixingriskquarantine_8hpp_acd100adc82f9678acf826732feacd32d}} 
+\index{measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}!SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}}
+\index{SAMPLE\_FROM\_PROBS@{SAMPLE\_FROM\_PROBS}!measlesmixingriskquarantine.hpp@{measlesmixingriskquarantine.hpp}}
+\doxysubsubsection{\texorpdfstring{SAMPLE\_FROM\_PROBS}{SAMPLE\_FROM\_PROBS}}
+{\footnotesize\ttfamily \#define SAMPLE\+\_\+\+FROM\+\_\+\+PROBS(\begin{DoxyParamCaption}\item[{}]{n,  }\item[{}]{ans }\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{    \textcolor{keywordtype}{int} ans; \(\backslash\)}
+\DoxyCodeLine{    epiworld\_double p\_total = m-\/>runif(); \(\backslash\)}
+\DoxyCodeLine{    for (ans = 0; ans < static\_cast<int>(n); ans++) \(\backslash\)}
+\DoxyCodeLine{    \{ \(\backslash\)}
+\DoxyCodeLine{        if (p\_total < m-\/>array\_double\_tmp[ans]) \(\backslash\)}
+\DoxyCodeLine{            break; \(\backslash\)}
+\DoxyCodeLine{        m-\/>array\_double\_tmp[ans + 1] += m-\/>array\_double\_tmp[ans]; \(\backslash\)}
+\DoxyCodeLine{    \};}
+
+\end{DoxyCode}
+
+
+Macro to sample from a list of probabilities. 
+
+\begin{DoxyReturn}{Returns}
+The index of the sampled probability; and the total length if none is found, returns n. 
+\end{DoxyReturn}

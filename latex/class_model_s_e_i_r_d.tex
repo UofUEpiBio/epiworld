@@ -1,0 +1,169 @@
+\hypertarget{class_model_s_e_i_r_d}{}\doxysection{Model\+SEIRD$<$ TSeq $>$ Class Template Reference}
+\label{class_model_s_e_i_r_d}\index{ModelSEIRD$<$ TSeq $>$@{ModelSEIRD$<$ TSeq $>$}}
+
+
+Template for a Susceptible-\/\+Exposed-\/\+Infected-\/\+Removed-\/\+Deceased (SEIRD) model.  
+
+
+
+
+{\ttfamily \#include $<$seird.\+hpp$>$}
+
+
+
+Inheritance diagram for Model\+SEIRD$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{class_model_s_e_i_r_d__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Model\+SEIRD$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{class_model_s_e_i_r_d__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_model_s_e_i_r_d_a31dbc41fb62f30a072274ddddda497c7}{Model\+SEIRD}} (\mbox{\hyperlink{class_model_s_e_i_r_d}{Model\+SEIRD}}$<$ TSeq $>$ \&model, const std\+::string \&vname, epiworld\+\_\+double prevalence, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double avg\+\_\+incubation\+\_\+days, epiworld\+\_\+double recovery\+\_\+rate, epiworld\+\_\+double death\+\_\+rate)
+\begin{DoxyCompactList}\small\item\em Constructor for the SEIRD model. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_model_s_e_i_r_d_a6cc32d0aeb08a666ef59d818d02a52b8}{Model\+SEIRD}} (const std\+::string \&vname, epiworld\+\_\+double prevalence, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double avg\+\_\+incubation\+\_\+days, epiworld\+\_\+double recovery\+\_\+rate, epiworld\+\_\+double death\+\_\+rate)
+\begin{DoxyCompactList}\small\item\em Constructor for the SEIRD model. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a87ac3a88b073466b3b0f14ccad490076}\label{class_model_s_e_i_r_d_a87ac3a88b073466b3b0f14ccad490076}} 
+\mbox{\hyperlink{class_model_s_e_i_r_d}{Model\+SEIRD}}$<$ TSeq $>$ \& {\bfseries initial\+\_\+states} (std\+::vector$<$ double $>$ proportions\+\_\+, std\+::vector$<$ int $>$ queue\+\_\+=\{\})
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+epiworld\+::\+Update\+Fun$<$ TSeq $>$ {\bfseries update\+\_\+exposed\+\_\+seir}
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a93e3c03218c59b504001c2b79fa77616}\label{class_model_s_e_i_r_d_a93e3c03218c59b504001c2b79fa77616}} 
+epiworld\+::\+Update\+Fun$<$ TSeq $>$ {\bfseries update\+\_\+infected}
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a17ae5521e1759a6248156e06b8d9505b}\label{class_model_s_e_i_r_d_a17ae5521e1759a6248156e06b8d9505b}} 
+static const int {\bfseries SUSCEPTIBLE} = 0
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a9f8c460c28240b60b8201cd12e508b89}\label{class_model_s_e_i_r_d_a9f8c460c28240b60b8201cd12e508b89}} 
+static const int {\bfseries EXPOSED} = 1
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a5b5a1505474e119f118abe28e001a24a}\label{class_model_s_e_i_r_d_a5b5a1505474e119f118abe28e001a24a}} 
+static const int {\bfseries INFECTED} = 2
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a5b2e48244afced4e82349fb8786c8bd1}\label{class_model_s_e_i_r_d_a5b2e48244afced4e82349fb8786c8bd1}} 
+static const int {\bfseries REMOVED} = 3
+\item 
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a5ebbbace8b3ac4379fe3ac8cf0af5080}\label{class_model_s_e_i_r_d_a5ebbbace8b3ac4379fe3ac8cf0af5080}} 
+static const int {\bfseries DECEASED} = 4
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+\doxysubsection{Detailed Description}
+\subsubsection*{template$<$typename TSeq = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$\newline
+class Model\+SEIRD$<$ TSeq $>$}
+
+Template for a Susceptible-\/\+Exposed-\/\+Infected-\/\+Removed-\/\+Deceased (SEIRD) model. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a31dbc41fb62f30a072274ddddda497c7}\label{class_model_s_e_i_r_d_a31dbc41fb62f30a072274ddddda497c7}} 
+\index{ModelSEIRD$<$ TSeq $>$@{ModelSEIRD$<$ TSeq $>$}!ModelSEIRD@{ModelSEIRD}}
+\index{ModelSEIRD@{ModelSEIRD}!ModelSEIRD$<$ TSeq $>$@{ModelSEIRD$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{ModelSEIRD()}{ModelSEIRD()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{class_model_s_e_i_r_d}{Model\+SEIRD}}$<$ TSeq $>$\+::\mbox{\hyperlink{class_model_s_e_i_r_d}{Model\+SEIRD}} (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_model_s_e_i_r_d}{Model\+SEIRD}}$<$ TSeq $>$ \&}]{model,  }\item[{const std\+::string \&}]{vname,  }\item[{epiworld\+\_\+double}]{prevalence,  }\item[{epiworld\+\_\+double}]{transmission\+\_\+rate,  }\item[{epiworld\+\_\+double}]{avg\+\_\+incubation\+\_\+days,  }\item[{epiworld\+\_\+double}]{recovery\+\_\+rate,  }\item[{epiworld\+\_\+double}]{death\+\_\+rate }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Constructor for the SEIRD model. 
+
+
+\begin{DoxyTemplParams}{Template Parameters}
+{\em TSeq} & Type of the sequence used in the model. \\
+\hline
+\end{DoxyTemplParams}
+
+\begin{DoxyParams}{Parameters}
+{\em model} & Reference to the SEIRD model. \\
+\hline
+{\em vname} & Name of the model. \\
+\hline
+{\em prevalence} & Prevalence of the disease. \\
+\hline
+{\em transmission\+\_\+rate} & Transmission rate of the disease. \\
+\hline
+{\em avg\+\_\+incubation\+\_\+days} & Average incubation period of the disease. \\
+\hline
+{\em recovery\+\_\+rate} & Recovery rate of the disease. \\
+\hline
+{\em death\+\_\+rate} & Death rate of the disease. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a6cc32d0aeb08a666ef59d818d02a52b8}\label{class_model_s_e_i_r_d_a6cc32d0aeb08a666ef59d818d02a52b8}} 
+\index{ModelSEIRD$<$ TSeq $>$@{ModelSEIRD$<$ TSeq $>$}!ModelSEIRD@{ModelSEIRD}}
+\index{ModelSEIRD@{ModelSEIRD}!ModelSEIRD$<$ TSeq $>$@{ModelSEIRD$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{ModelSEIRD()}{ModelSEIRD()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+\mbox{\hyperlink{class_model_s_e_i_r_d}{Model\+SEIRD}}$<$ TSeq $>$\+::\mbox{\hyperlink{class_model_s_e_i_r_d}{Model\+SEIRD}} (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{vname,  }\item[{epiworld\+\_\+double}]{prevalence,  }\item[{epiworld\+\_\+double}]{transmission\+\_\+rate,  }\item[{epiworld\+\_\+double}]{avg\+\_\+incubation\+\_\+days,  }\item[{epiworld\+\_\+double}]{recovery\+\_\+rate,  }\item[{epiworld\+\_\+double}]{death\+\_\+rate }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Constructor for the SEIRD model. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em vname} & Name of the model. \\
+\hline
+{\em prevalence} & Initial prevalence of the disease. \\
+\hline
+{\em transmission\+\_\+rate} & Transmission rate of the disease. \\
+\hline
+{\em avg\+\_\+incubation\+\_\+days} & Average incubation period of the disease. \\
+\hline
+{\em recovery\+\_\+rate} & Recovery rate of the disease. \\
+\hline
+{\em death\+\_\+rate} & Death rate of the disease. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_model_s_e_i_r_d_a68a053ac9d069499381e44f72711a103}\label{class_model_s_e_i_r_d_a68a053ac9d069499381e44f72711a103}} 
+\index{ModelSEIRD$<$ TSeq $>$@{ModelSEIRD$<$ TSeq $>$}!update\_exposed\_seir@{update\_exposed\_seir}}
+\index{update\_exposed\_seir@{update\_exposed\_seir}!ModelSEIRD$<$ TSeq $>$@{ModelSEIRD$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{update\_exposed\_seir}{update\_exposed\_seir}}
+{\footnotesize\ttfamily template$<$typename TSeq  = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$ \\
+epiworld\+::\+Update\+Fun$<$TSeq$>$ \mbox{\hyperlink{class_model_s_e_i_r_d}{Model\+SEIRD}}$<$ TSeq $>$\+::update\+\_\+exposed\+\_\+seir}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{= [](}
+\DoxyCodeLine{    \mbox{\hyperlink{classepiworld_1_1_agent}{epiworld::Agent<TSeq>}} * p,}
+\DoxyCodeLine{    \mbox{\hyperlink{classepiworld_1_1_model}{epiworld::Model<TSeq>}} * m}
+\DoxyCodeLine{  ) -\/> \textcolor{keywordtype}{void} \{}
+\DoxyCodeLine{}
+\DoxyCodeLine{    }
+\DoxyCodeLine{    \textcolor{keyword}{auto} v = p-\/>get\_virus();}
+\DoxyCodeLine{}
+\DoxyCodeLine{    }
+\DoxyCodeLine{    \textcolor{keywordflow}{if} (m-\/>runif() < 1.0/(v-\/>get\_incubation(m)))}
+\DoxyCodeLine{      p-\/>change\_state(m, \mbox{\hyperlink{class_model_s_e_i_r_d}{ModelSEIRD<TSeq>::INFECTED}});}
+\DoxyCodeLine{}
+\DoxyCodeLine{    \textcolor{keywordflow}{return};}
+\DoxyCodeLine{  \}}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+include/epiworld/models/seird.\+hpp\end{DoxyCompactItemize}

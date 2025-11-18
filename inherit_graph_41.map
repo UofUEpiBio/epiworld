@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$class_model.html" title="Core class of epiworld." alt="" coords="5,46,116,73"/>
+<area shape="rect" id="node2" href="$class_model_measles_mixing_risk_quarantine.html" title="Measles model with population mixing and risk&#45;based quarantine strategies." alt="" coords="164,5,396,47"/>
+<area shape="rect" id="node3" href="$class_model_measles_school.html" title="Template for a Measles model with quarantine." alt="" coords="207,71,353,112"/>
+</map>

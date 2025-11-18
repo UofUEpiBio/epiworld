@@ -1,0 +1,196 @@
+A comprehensive epidemiological model that extends measles transmission modeling with risk-\/stratified quarantine strategies.\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md19}{}\doxysection{Overview}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md19}
+{\ttfamily \mbox{\hyperlink{class_model_measles_mixing_risk_quarantine}{Model\+Measles\+Mixing\+Risk\+Quarantine}}} implements a measles transmission model based on the {\ttfamily \mbox{\hyperlink{class_model_measles_mixing}{Model\+Measles\+Mixing}}} framework, with enhanced quarantine policies that vary based on exposure risk levels. This allows for targeted public health interventions that can optimize resource allocation and epidemic control.\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md20}{}\doxysubsection{Key Features}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md20}
+
+\begin{DoxyItemize}
+\item {\bfseries{Measles-\/specific disease progression}}\+: Susceptible → Exposed → Prodromal → Rash → Recovered
+\item {\bfseries{Population mixing}}\+: Uses contact matrices to model heterogeneous mixing between population groups ~\newline
+
+\item {\bfseries{Risk-\/stratified quarantine}}\+: Three-\/tier system (high/medium/low risk) with customizable durations
+\item {\bfseries{Enhanced detection}}\+: Detection rate parameter that activates during quarantine periods
+\item {\bfseries{Contact tracing}}\+: Comprehensive contact tracing with configurable success rates
+\item {\bfseries{Entity-\/based risk assessment}}\+: Risk levels determined by shared entity membership
+\item {\bfseries{Vaccination effects}}\+: Vaccine distribution with configurable efficacy
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md21}{}\doxysection{Disease States}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md21}
+The model includes 13 distinct states\+:
+
+
+\begin{DoxyEnumerate}
+\item {\bfseries{Susceptible}} -\/ Can become infected
+\item {\bfseries{Exposed}} -\/ Infected but not yet infectious (incubation period) ~\newline
+
+\item {\bfseries{Prodromal}} -\/ Infectious individuals (replaces \char`\"{}\+Infected\char`\"{} in standard SEIR)
+\item {\bfseries{Rash}} -\/ Non-\/infectious with visible symptoms (detection occurs here)
+\item {\bfseries{Isolated}} -\/ Detected individuals in self-\/isolation
+\item {\bfseries{Isolated Recovered}} -\/ Recovered individuals still in isolation
+\item {\bfseries{Detected Hospitalized}} -\/ Hospitalized individuals who were contact-\/traced
+\item {\bfseries{Quarantined Exposed}} -\/ Exposed individuals in quarantine
+\item {\bfseries{Quarantined Susceptible}} -\/ Susceptible individuals in quarantine
+\item {\bfseries{Quarantined Prodromal}} -\/ Prodromal individuals in quarantine ~\newline
+
+\item {\bfseries{Quarantined Recovered}} -\/ Recovered individuals in quarantine
+\item {\bfseries{Hospitalized}} -\/ Individuals requiring hospital care
+\item {\bfseries{Recovered}} -\/ Individuals who have recovered and gained immunity
+\end{DoxyEnumerate}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md22}{}\doxysection{Risk Classification System}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md22}
+When the quarantine process is triggered by a detected case, contacts are classified into three risk levels\+:\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md23}{}\doxysubsection{High Risk}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md23}
+
+\begin{DoxyItemize}
+\item {\bfseries{Definition}}\+: Unvaccinated agents who share entity membership with the case that triggered quarantine
+\item {\bfseries{Rationale}}\+: Highest transmission risk due to close, prolonged contact within same household/workplace/school
+\item {\bfseries{Default quarantine duration}}\+: 21 days (configurable)
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md24}{}\doxysubsection{Medium Risk}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md24}
+
+\begin{DoxyItemize}
+\item {\bfseries{Definition}}\+: Unvaccinated agents who had contact with infected individuals but don\textquotesingle{}t share entity membership
+\item {\bfseries{Rationale}}\+: Moderate transmission risk from community contact
+\item {\bfseries{Default quarantine duration}}\+: 14 days (configurable)
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md25}{}\doxysubsection{Low Risk}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md25}
+
+\begin{DoxyItemize}
+\item {\bfseries{Definition}}\+: All other unvaccinated agents
+\item {\bfseries{Rationale}}\+: Lowest transmission risk, potential for community spread
+\item {\bfseries{Default quarantine duration}}\+: 7 days (configurable)
+\end{DoxyItemize}
+
+{\bfseries{Note}}\+: Vaccinated agents (those with tools) are not subject to quarantine regardless of contact patterns.\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md26}{}\doxysection{Enhanced Detection}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md26}
+The model includes an enhanced detection mechanism that operates during active quarantine periods\+:
+
+
+\begin{DoxyItemize}
+\item {\bfseries{Detection rate quarantine}}\+: Additional parameter specifying detection probability for prodromal individuals during active quarantine
+\item {\bfseries{Mechanism}}\+: When any quarantine process is active, prodromal individuals have an additional chance of being detected and moved to quarantined prodromal state
+\item {\bfseries{Purpose}}\+: Models increased surveillance and testing during outbreak response
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md27}{}\doxysection{Parameters}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md27}
+\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md28}{}\doxysubsection{Disease Parameters}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md28}
+
+\begin{DoxyItemize}
+\item {\bfseries{Contact rate}}\+: Average number of contacts per step
+\item {\bfseries{Transmission rate}}\+: Probability of transmission per contact
+\item {\bfseries{Incubation period}}\+: Average time from exposure to becoming infectious
+\item {\bfseries{Prodromal period}}\+: Average duration of infectious period
+\item {\bfseries{Rash period}}\+: Average duration of rash symptoms
+\item {\bfseries{Hospitalization rate}}\+: Probability of requiring hospitalization
+\item {\bfseries{Hospitalization period}}\+: Average duration of hospital stay
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md29}{}\doxysubsection{Detection and Isolation}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md29}
+
+\begin{DoxyItemize}
+\item {\bfseries{Days undetected}}\+: Average time before rash cases are detected
+\item {\bfseries{Isolation period}}\+: Duration of isolation for detected cases
+\item {\bfseries{Isolation willingness}}\+: Proportion willing to self-\/isolate when detected
+\item {\bfseries{Detection rate quarantine}}\+: Detection rate during active quarantine periods
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md30}{}\doxysubsection{Risk-\/based Quarantine}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md30}
+
+\begin{DoxyItemize}
+\item {\bfseries{Quarantine period high}}\+: Duration for high-\/risk contacts (days)
+\item {\bfseries{Quarantine period medium}}\+: Duration for medium-\/risk contacts (days) ~\newline
+
+\item {\bfseries{Quarantine period low}}\+: Duration for low-\/risk contacts (days)
+\item {\bfseries{Quarantine willingness}}\+: Proportion willing to comply with quarantine
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md31}{}\doxysubsection{Contact Tracing}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md31}
+
+\begin{DoxyItemize}
+\item {\bfseries{Contact tracing success rate}}\+: Probability of successfully identifying contacts
+\item {\bfseries{Contact tracing days prior}}\+: Number of days prior to detection for tracing
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md32}{}\doxysubsection{Vaccination}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md32}
+
+\begin{DoxyItemize}
+\item {\bfseries{Vaccination rate}}\+: Proportion of agents initially vaccinated
+\item {\bfseries{Vax efficacy}}\+: Vaccine effectiveness in preventing infection
+\item {\bfseries{Vax improved recovery}}\+: Enhanced recovery rate for vaccinated individuals
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md33}{}\doxysection{Usage Example}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md33}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include <epiworld/epiworld.hpp>}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Contact matrix for 3 population groups}}
+\DoxyCodeLine{std::vector<double> contact\_matrix = \{}
+\DoxyCodeLine{    0.8, 0.1, 0.1,  \textcolor{comment}{// Group 1 mixing}}
+\DoxyCodeLine{    0.1, 0.8, 0.1,  \textcolor{comment}{// Group 2 mixing  }}
+\DoxyCodeLine{    0.1, 0.1, 0.8   \textcolor{comment}{// Group 3 mixing}}
+\DoxyCodeLine{\};}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Create model with risk-\/based quarantine}}
+\DoxyCodeLine{epimodels::ModelMeaslesMixingRiskQuarantine<> model(}
+\DoxyCodeLine{    1000,        \textcolor{comment}{// Population size}}
+\DoxyCodeLine{    0.01,        \textcolor{comment}{// Initial prevalence}}
+\DoxyCodeLine{    2.0,         \textcolor{comment}{// Contact rate}}
+\DoxyCodeLine{    0.2,         \textcolor{comment}{// Transmission rate}}
+\DoxyCodeLine{    0.9,         \textcolor{comment}{// Vaccination efficacy}}
+\DoxyCodeLine{    0.3,         \textcolor{comment}{// Vaccine recovery enhancement}}
+\DoxyCodeLine{    7.0,         \textcolor{comment}{// Incubation period}}
+\DoxyCodeLine{    4.0,         \textcolor{comment}{// Prodromal period}}
+\DoxyCodeLine{    5.0,         \textcolor{comment}{// Rash period}}
+\DoxyCodeLine{    contact\_matrix, \textcolor{comment}{// Contact matrix}}
+\DoxyCodeLine{    0.2,         \textcolor{comment}{// Hospitalization rate}}
+\DoxyCodeLine{    7.0,         \textcolor{comment}{// Hospitalization duration  }}
+\DoxyCodeLine{    3.0,         \textcolor{comment}{// Days undetected}}
+\DoxyCodeLine{    21,          \textcolor{comment}{// Quarantine period high risk}}
+\DoxyCodeLine{    14,          \textcolor{comment}{// Quarantine period medium risk}}
+\DoxyCodeLine{    7,           \textcolor{comment}{// Quarantine period low risk}}
+\DoxyCodeLine{    0.8,         \textcolor{comment}{// Quarantine willingness}}
+\DoxyCodeLine{    0.8,         \textcolor{comment}{// Isolation willingness}}
+\DoxyCodeLine{    4,           \textcolor{comment}{// Isolation period}}
+\DoxyCodeLine{    0.1,         \textcolor{comment}{// Proportion vaccinated}}
+\DoxyCodeLine{    0.15,        \textcolor{comment}{// Detection rate during quarantine}}
+\DoxyCodeLine{    1.0,         \textcolor{comment}{// Contact tracing success rate}}
+\DoxyCodeLine{    4u           \textcolor{comment}{// Contact tracing days prior}}
+\DoxyCodeLine{);}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Add population entities}}
+\DoxyCodeLine{model.add\_entity(\mbox{\hyperlink{class_entity}{Entity<>}}(\textcolor{stringliteral}{"{}Households"{}}, dist\_factory<>(0, 400)));}
+\DoxyCodeLine{model.add\_entity(\mbox{\hyperlink{class_entity}{Entity<>}}(\textcolor{stringliteral}{"{}Schools"{}}, dist\_factory<>(400, 700)));  }
+\DoxyCodeLine{model.add\_entity(\mbox{\hyperlink{class_entity}{Entity<>}}(\textcolor{stringliteral}{"{}Workplaces"{}}, dist\_factory<>(700, 1000)));}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Set initial conditions}}
+\DoxyCodeLine{model.initial\_states(\{1.0, 0.0\}); \textcolor{comment}{// All infected start as exposed}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Run simulation}}
+\DoxyCodeLine{model.run(60, 123);}
+\DoxyCodeLine{model.print();}
+
+\end{DoxyCode}
+\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md34}{}\doxysection{Differences from Other Models}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md34}
+\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md35}{}\doxysubsection{vs. Model\+Measles\+Mixing}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md35}
+
+\begin{DoxyItemize}
+\item {\bfseries{Risk-\/stratified quarantine}}\+: Three different quarantine durations based on exposure risk
+\item {\bfseries{Enhanced detection}}\+: Additional detection during active quarantine periods ~\newline
+
+\item {\bfseries{Entity-\/based risk assessment}}\+: Risk levels determined by shared entity membership
+\item {\bfseries{Flexible quarantine policies}}\+: Each risk level can have different quarantine duration or be disabled
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md36}{}\doxysubsection{vs. Model\+Measles\+School}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md36}
+
+\begin{DoxyItemize}
+\item {\bfseries{Population mixing}}\+: Supports contact matrices for heterogeneous mixing
+\item {\bfseries{Risk stratification}}\+: Multiple quarantine strategies rather than uniform approach
+\item {\bfseries{Enhanced contact tracing}}\+: Risk-\/based contact management
+\item {\bfseries{Scalability}}\+: Supports multiple population entities with different mixing patterns
+\end{DoxyItemize}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md37}{}\doxysection{Testing}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md37}
+The model includes comprehensive tests that verify\+:
+\begin{DoxyItemize}
+\item Correct transition probabilities between all 13 states
+\item Proper risk level assignment (high/medium/low)
+\item Enhanced detection mechanism during quarantine periods
+\item Different quarantine durations for different risk levels
+\item Comparison of uniform vs. risk-\/stratified quarantine strategies
+\item Population mixing functionality with multiple entities
+\end{DoxyItemize}
+
+See {\ttfamily tests/20a-\/measles-\/mixing-\/risk-\/quarantine.\+cpp} for test examples.\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md38}{}\doxysection{Applications}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md38}
+This model is particularly useful for\+:
+
+
+\begin{DoxyEnumerate}
+\item {\bfseries{Outbreak response planning}}\+: Comparing different quarantine strategies
+\item {\bfseries{Resource optimization}}\+: Allocating quarantine resources based on transmission risk
+\item {\bfseries{Policy evaluation}}\+: Assessing effectiveness of risk-\/stratified interventions
+\item {\bfseries{Contact tracing optimization}}\+: Understanding impact of enhanced detection during outbreaks
+\item {\bfseries{Vaccination strategy}}\+: Evaluating how vaccination coverage affects quarantine effectiveness
+\end{DoxyEnumerate}\hypertarget{md_docs__model_measles_mixing_risk_quarantine_autotoc_md39}{}\doxysection{Implementation Notes}\label{md_docs__model_measles_mixing_risk_quarantine_autotoc_md39}
+
+\begin{DoxyItemize}
+\item Risk levels are assigned dynamically when quarantine is triggered
+\item Vaccinated agents are excluded from quarantine regardless of contact patterns
+\item Enhanced detection only operates when at least one quarantine process is active
+\item Quarantine durations can be set to -\/1 to disable quarantine for specific risk levels
+\item The model maintains backward compatibility with uniform quarantine by setting all periods equal 
+\end{DoxyItemize}

@@ -1,0 +1,341 @@
+\hypertarget{class_data_base}{}\doxysection{Data\+Base$<$ TSeq $>$ Class Template Reference}
+\label{class_data_base}\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+
+
+Statistical data about the process.  
+
+
+
+
+{\ttfamily \#include $<$database-\/bones.\+hpp$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_data_base_a79d1a9e201a14c212bd194e0f15e36c4}\label{class_data_base_a79d1a9e201a14c212bd194e0f15e36c4}} 
+{\bfseries Data\+Base} (\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ \&m)
+\item 
+\mbox{\Hypertarget{class_data_base_a148ac9438b0fefbe68ec6896d5d4aa3d}\label{class_data_base_a148ac9438b0fefbe68ec6896d5d4aa3d}} 
+{\bfseries Data\+Base} (const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$ \&db)
+\item 
+void \mbox{\hyperlink{class_data_base_a7961eba429b909eff0e0fa966ee81011}{record\+\_\+virus}} (\mbox{\hyperlink{class_virus}{Virus}}$<$ TSeq $>$ \&v)
+\begin{DoxyCompactList}\small\item\em Registering a new variant. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_data_base_a40faac70770ad43b91c632f0cabd32c1}\label{class_data_base_a40faac70770ad43b91c632f0cabd32c1}} 
+void {\bfseries record\+\_\+tool} (\mbox{\hyperlink{class_tool}{Tool}}$<$ TSeq $>$ \&t)
+\item 
+\mbox{\Hypertarget{class_data_base_afedaad92aba2739b6120cc8b28b37b87}\label{class_data_base_afedaad92aba2739b6120cc8b28b37b87}} 
+void {\bfseries set\+\_\+seq\+\_\+hasher} (std\+::function$<$ std\+::vector$<$ int $>$(TSeq)$>$ fun)
+\item 
+\mbox{\Hypertarget{class_data_base_ac93d6520b274826bfe176b86a7b93230}\label{class_data_base_ac93d6520b274826bfe176b86a7b93230}} 
+void {\bfseries reset} ()
+\item 
+\mbox{\Hypertarget{class_data_base_aba63e968d7e260a136e46b7b97c81996}\label{class_data_base_aba63e968d7e260a136e46b7b97c81996}} 
+\mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$ {\bfseries get\+\_\+model} ()
+\item 
+\mbox{\Hypertarget{class_data_base_ac16dedc536fafea456c2ac3ff50ef7b7}\label{class_data_base_ac16dedc536fafea456c2ac3ff50ef7b7}} 
+void {\bfseries record} ()
+\item 
+\mbox{\Hypertarget{class_data_base_aab9773f0305630dc3684a8757bbfe053}\label{class_data_base_aab9773f0305630dc3684a8757bbfe053}} 
+const std\+::vector$<$ TSeq $>$ \& {\bfseries get\+\_\+sequence} () const
+\item 
+\mbox{\Hypertarget{class_data_base_a713d3c4620585cbbcbef4cd43c48bc29}\label{class_data_base_a713d3c4620585cbbcbef4cd43c48bc29}} 
+const std\+::vector$<$ int $>$ \& {\bfseries get\+\_\+nexposed} () const
+\item 
+\mbox{\Hypertarget{class_data_base_a743d5061724b6cb3c8d669195fc995be}\label{class_data_base_a743d5061724b6cb3c8d669195fc995be}} 
+size\+\_\+t {\bfseries size} () const
+\item 
+\mbox{\Hypertarget{class_data_base_ad6e2991cc53669a6e15b9da5bb1a6d65}\label{class_data_base_ad6e2991cc53669a6e15b9da5bb1a6d65}} 
+void {\bfseries write\+\_\+data} (std\+::string fn\+\_\+virus\+\_\+info, std\+::string fn\+\_\+virus\+\_\+hist, std\+::string fn\+\_\+tool\+\_\+info, std\+::string fn\+\_\+tool\+\_\+hist, std\+::string fn\+\_\+total\+\_\+hist, std\+::string fn\+\_\+transmission, std\+::string fn\+\_\+transition, std\+::string fn\+\_\+reproductive\+\_\+number, std\+::string fn\+\_\+generation\+\_\+time) const
+\item 
+\mbox{\Hypertarget{class_data_base_ad4f17453e8aa41a2e5dcd3762390ecbc}\label{class_data_base_ad4f17453e8aa41a2e5dcd3762390ecbc}} 
+void {\bfseries record\+\_\+transmission} (int i, int j, int virus, int i\+\_\+expo\+\_\+date)
+\item 
+\mbox{\Hypertarget{class_data_base_ace337931bf21b1bc080fbf6e374d5d1c}\label{class_data_base_ace337931bf21b1bc080fbf6e374d5d1c}} 
+size\+\_\+t \mbox{\hyperlink{class_data_base_ace337931bf21b1bc080fbf6e374d5d1c}{get\+\_\+n\+\_\+viruses}} () const
+\begin{DoxyCompactList}\small\item\em Get the number of viruses. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_data_base_a4e61509ecd31d16fa4f7b235c7989251}\label{class_data_base_a4e61509ecd31d16fa4f7b235c7989251}} 
+size\+\_\+t \mbox{\hyperlink{class_data_base_a4e61509ecd31d16fa4f7b235c7989251}{get\+\_\+n\+\_\+tools}} () const
+\begin{DoxyCompactList}\small\item\em Get the number of tools. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_data_base_aa9eb9d5d0eb39102963b652a287afd8d}\label{class_data_base_aa9eb9d5d0eb39102963b652a287afd8d}} 
+void {\bfseries set\+\_\+user\+\_\+data} (std\+::vector$<$ std\+::string $>$ names)
+\item 
+\mbox{\Hypertarget{class_data_base_aad73c23ac66404f0f97a5d4b015c0e7c}\label{class_data_base_aad73c23ac66404f0f97a5d4b015c0e7c}} 
+void {\bfseries add\+\_\+user\+\_\+data} (std\+::vector$<$ epiworld\+\_\+double $>$ x)
+\item 
+\mbox{\Hypertarget{class_data_base_a669bdbe255eb3b3026e2337805b6eeb5}\label{class_data_base_a669bdbe255eb3b3026e2337805b6eeb5}} 
+void {\bfseries add\+\_\+user\+\_\+data} (epiworld\+\_\+fast\+\_\+uint j, epiworld\+\_\+double x)
+\item 
+\mbox{\Hypertarget{class_data_base_a3323ea7c7b2fbd8366ac7e8efd5528b8}\label{class_data_base_a3323ea7c7b2fbd8366ac7e8efd5528b8}} 
+\mbox{\hyperlink{class_user_data}{User\+Data}}$<$ TSeq $>$ \& {\bfseries get\+\_\+user\+\_\+data} ()
+\item 
+std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{class_data_base_a936612806b51d4b737c78166e71e9579}{get\+\_\+transition\+\_\+probability}} (bool print=true, bool normalize=true) const
+\begin{DoxyCompactList}\small\item\em Calculates the transition probabilities. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{class_data_base_ab387bebbab95525c452660a7701c457d}{operator==}} (const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$ \&other) const
+\item 
+\mbox{\Hypertarget{class_data_base_ac5d9c063be411ebe4fb7e2a08468eaf2}\label{class_data_base_ac5d9c063be411ebe4fb7e2a08468eaf2}} 
+bool {\bfseries operator!=} (const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$ \&other) const
+\item 
+bool \mbox{\hyperlink{class_data_base_a707b63e79214f82c5efb85fc04ccee11}{operator==}} (const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ std\+::vector$<$ int $>$$>$ \&other) const
+\item 
+bool \mbox{\hyperlink{class_data_base_a707b63e79214f82c5efb85fc04ccee11}{operator==}} (const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ std\+::vector$<$ int $>$$>$ \&other) const
+\end{DoxyCompactItemize}
+\begin{Indent}\textbf{ Get recorded information from the model}\par
+{\em 
+\begin{DoxyParams}{Parameters}
+{\em what} & std\+::string, The state, e.\+g., 0, 1, 2, ... \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+In {\ttfamily get\+\_\+today\+\_\+total}, the current counts of {\ttfamily what}. 
+
+In {\ttfamily get\+\_\+today\+\_\+virus}, the current counts of {\ttfamily what} for each virus. 
+
+In {\ttfamily get\+\_\+hist\+\_\+total}, the time series of {\ttfamily what} 
+
+In {\ttfamily get\+\_\+hist\+\_\+virus}, the time series of what for each virus. 
+
+In {\ttfamily get\+\_\+hist\+\_\+total\+\_\+date} and {\ttfamily get\+\_\+hist\+\_\+virus\+\_\+date} the corresponding date 
+\end{DoxyReturn}
+}\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_data_base_a90815a104ed3026cc4b579db27932b41}\label{class_data_base_a90815a104ed3026cc4b579db27932b41}} 
+int {\bfseries get\+\_\+today\+\_\+total} (const std\+::string \&what) const
+\item 
+\mbox{\Hypertarget{class_data_base_af4e06a3a12469d4ab238f3d9b23fdff7}\label{class_data_base_af4e06a3a12469d4ab238f3d9b23fdff7}} 
+int {\bfseries get\+\_\+today\+\_\+total} (const epiworld\+\_\+fast\+\_\+uint \&what) const
+\item 
+\mbox{\Hypertarget{class_data_base_a955d50821777e0815707e34d64916ceb}\label{class_data_base_a955d50821777e0815707e34d64916ceb}} 
+void {\bfseries get\+\_\+today\+\_\+total} (std\+::vector$<$ std\+::string $>$ $\ast$state=nullptr, std\+::vector$<$ int $>$ $\ast$counts=nullptr) const
+\item 
+\mbox{\Hypertarget{class_data_base_a92e3111f8ea87e1c73d9254ea00dab63}\label{class_data_base_a92e3111f8ea87e1c73d9254ea00dab63}} 
+void {\bfseries get\+\_\+today\+\_\+virus} (std\+::vector$<$ std\+::string $>$ \&state, std\+::vector$<$ int $>$ \&id, std\+::vector$<$ int $>$ \&counts) const
+\item 
+\mbox{\Hypertarget{class_data_base_a7cb1040704dab7fa872646e9c0b7426e}\label{class_data_base_a7cb1040704dab7fa872646e9c0b7426e}} 
+void {\bfseries get\+\_\+today\+\_\+transition\+\_\+matrix} (std\+::vector$<$ int $>$ \&counts) const
+\item 
+\mbox{\Hypertarget{class_data_base_a274a3571fca8e7274748f32307203cc5}\label{class_data_base_a274a3571fca8e7274748f32307203cc5}} 
+void {\bfseries get\+\_\+hist\+\_\+total} (std\+::vector$<$ int $>$ $\ast$date, std\+::vector$<$ std\+::string $>$ $\ast$state, std\+::vector$<$ int $>$ $\ast$counts) const
+\item 
+\mbox{\Hypertarget{class_data_base_a0106e84e9a1221a5217e5e21f3f14a8b}\label{class_data_base_a0106e84e9a1221a5217e5e21f3f14a8b}} 
+void {\bfseries get\+\_\+hist\+\_\+virus} (std\+::vector$<$ int $>$ \&date, std\+::vector$<$ int $>$ \&id, std\+::vector$<$ std\+::string $>$ \&state, std\+::vector$<$ int $>$ \&counts) const
+\item 
+\mbox{\Hypertarget{class_data_base_ae5071b8dbd92e223d8b1c93428a7ddb1}\label{class_data_base_ae5071b8dbd92e223d8b1c93428a7ddb1}} 
+void {\bfseries get\+\_\+hist\+\_\+tool} (std\+::vector$<$ int $>$ \&date, std\+::vector$<$ int $>$ \&id, std\+::vector$<$ std\+::string $>$ \&state, std\+::vector$<$ int $>$ \&counts) const
+\item 
+\mbox{\Hypertarget{class_data_base_a1c952a7084d8936d6ce4f43db5ac525d}\label{class_data_base_a1c952a7084d8936d6ce4f43db5ac525d}} 
+void {\bfseries get\+\_\+hist\+\_\+transition\+\_\+matrix} (std\+::vector$<$ std\+::string $>$ \&state\+\_\+from, std\+::vector$<$ std\+::string $>$ \&state\+\_\+to, std\+::vector$<$ int $>$ \&date, std\+::vector$<$ int $>$ \&counts, bool skip\+\_\+zeros) const
+\end{DoxyCompactItemize}
+\end{Indent}
+\textbf{ }\par
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{class_data_base_a2b855969ae8aca805a8ee1713519c52d}{get\+\_\+transmissions}} (std\+::vector$<$ int $>$ \&date, std\+::vector$<$ int $>$ \&source, std\+::vector$<$ int $>$ \&target, std\+::vector$<$ int $>$ \&virus, std\+::vector$<$ int $>$ \&source\+\_\+exposure\+\_\+date) const
+\begin{DoxyCompactList}\small\item\em Get the transmissions object. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_data_base_a27e7711d13db3beaf7d555a71ce9eaca}\label{class_data_base_a27e7711d13db3beaf7d555a71ce9eaca}} 
+void {\bfseries get\+\_\+transmissions} (int $\ast$date, int $\ast$source, int $\ast$target, int $\ast$virus, int $\ast$source\+\_\+exposure\+\_\+date) const
+\end{DoxyCompactItemize}
+
+\textbf{ }\par
+\begin{DoxyCompactItemize}
+\item 
+Map\+Vec\+\_\+type$<$ int, int $>$ \mbox{\hyperlink{class_data_base_ae6cf5bfd5a3587d92f2349c3395f1186}{get\+\_\+reproductive\+\_\+number}} () const
+\begin{DoxyCompactList}\small\item\em Computes the reproductive number of each case. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_data_base_a35022413f30f8f4befdad3dabfbd2dcc}\label{class_data_base_a35022413f30f8f4befdad3dabfbd2dcc}} 
+void {\bfseries get\+\_\+reproductive\+\_\+number} (std\+::string fn) const
+\end{DoxyCompactItemize}
+
+\textbf{ }\par
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{class_data_base_a0269b69656879cd7477e859d774cc1f7}{get\+\_\+generation\+\_\+time}} (std\+::vector$<$ int $>$ \&agent\+\_\+id, std\+::vector$<$ int $>$ \&virus\+\_\+id, std\+::vector$<$ int $>$ \&time, std\+::vector$<$ int $>$ \&gentime) const
+\begin{DoxyCompactList}\small\item\em Get the generation time. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_data_base_a3bc5af34f99d2509cc203f2081e3a4b2}\label{class_data_base_a3bc5af34f99d2509cc203f2081e3a4b2}} 
+void \mbox{\hyperlink{class_data_base_a3bc5af34f99d2509cc203f2081e3a4b2}{get\+\_\+generation\+\_\+time}} (std\+::string fn) const
+\begin{DoxyCompactList}\small\item\em Write the generation time to a file. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_data_base_aa4532e80368ab60b4fda5bb917f6f0ca}\label{class_data_base_aa4532e80368ab60b4fda5bb917f6f0ca}} 
+class {\bfseries Model$<$ TSeq $>$}
+\item 
+\mbox{\Hypertarget{class_data_base_a2691a1b8ffc94e33acfedc1b7ad3d151}\label{class_data_base_a2691a1b8ffc94e33acfedc1b7ad3d151}} 
+void {\bfseries default\+\_\+add\+\_\+virus} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
+\item 
+\mbox{\Hypertarget{class_data_base_a4dcb2ffcfccdbdd8e9878a2fea3334ba}\label{class_data_base_a4dcb2ffcfccdbdd8e9878a2fea3334ba}} 
+void {\bfseries default\+\_\+add\+\_\+tool} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
+\item 
+\mbox{\Hypertarget{class_data_base_a9310ac4067690f7debee532b4440f6b2}\label{class_data_base_a9310ac4067690f7debee532b4440f6b2}} 
+void {\bfseries default\+\_\+rm\+\_\+virus} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
+\item 
+\mbox{\Hypertarget{class_data_base_ac94ff8addd602f970c8a6f5150b8ab29}\label{class_data_base_ac94ff8addd602f970c8a6f5150b8ab29}} 
+void {\bfseries default\+\_\+rm\+\_\+tool} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
+\item 
+\mbox{\Hypertarget{class_data_base_ab8c9d3a9231f2b64da69e3e20ef1a506}\label{class_data_base_ab8c9d3a9231f2b64da69e3e20ef1a506}} 
+void {\bfseries default\+\_\+change\+\_\+state} (\mbox{\hyperlink{struct_event}{Event}}$<$ TSeq $>$ \&a, \mbox{\hyperlink{class_model}{Model}}$<$ TSeq $>$ $\ast$m)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+\subsubsection*{template$<$typename TSeq$>$\newline
+class Data\+Base$<$ TSeq $>$}
+
+Statistical data about the process. 
+
+
+\begin{DoxyTemplParams}{Template Parameters}
+{\em TSeq} & \\
+\hline
+\end{DoxyTemplParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_data_base_a0269b69656879cd7477e859d774cc1f7}\label{class_data_base_a0269b69656879cd7477e859d774cc1f7}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_generation\_time@{get\_generation\_time}}
+\index{get\_generation\_time@{get\_generation\_time}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_generation\_time()}{get\_generation\_time()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::get\+\_\+generation\+\_\+time (\begin{DoxyParamCaption}\item[{std\+::vector$<$ int $>$ \&}]{agent\+\_\+id,  }\item[{std\+::vector$<$ int $>$ \&}]{virus\+\_\+id,  }\item[{std\+::vector$<$ int $>$ \&}]{time,  }\item[{std\+::vector$<$ int $>$ \&}]{gentime }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the generation time. 
+
+Calculates the generating time 
+\begin{DoxyParams}{Parameters}
+{\em agent\+\_\+id,virus\+\_\+id,time,gentime} & vectors where to save the values\\
+\hline
+\end{DoxyParams}
+The generation time is the time between the infection of the source and the infection of the target. \mbox{\Hypertarget{class_data_base_ae6cf5bfd5a3587d92f2349c3395f1186}\label{class_data_base_ae6cf5bfd5a3587d92f2349c3395f1186}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_reproductive\_number@{get\_reproductive\_number}}
+\index{get\_reproductive\_number@{get\_reproductive\_number}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_reproductive\_number()}{get\_reproductive\_number()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+Map\+Vec\+\_\+type$<$ int, int $>$ \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::get\+\_\+reproductive\+\_\+number\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Computes the reproductive number of each case. 
+
+By definition, whereas it computes R0 (basic reproductive number) or Rt/R (the effective reproductive number) will depend on whether the virus is allowed to circulate naïvely or not, respectively.
+
+
+\begin{DoxyParams}{Parameters}
+{\em fn} & File where to write out the reproductive number.\\
+\hline
+\end{DoxyParams}
+In the case of {\ttfamily Map\+Vec\+\_\+type$<$int,int$>$}, the key is a vector of 3 integers\+:
+\begin{DoxyItemize}
+\item \mbox{\hyperlink{class_virus}{Virus}} id
+\item Source id
+\item Date when the source was infected 
+\end{DoxyItemize}\mbox{\Hypertarget{class_data_base_a936612806b51d4b737c78166e71e9579}\label{class_data_base_a936612806b51d4b737c78166e71e9579}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_transition\_probability@{get\_transition\_probability}}
+\index{get\_transition\_probability@{get\_transition\_probability}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_transition\_probability()}{get\_transition\_probability()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+std\+::vector$<$ epiworld\+\_\+double $>$ \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::get\+\_\+transition\+\_\+probability (\begin{DoxyParamCaption}\item[{bool}]{print = {\ttfamily true},  }\item[{bool}]{normalize = {\ttfamily true} }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Calculates the transition probabilities. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em print} & Print the transition matrix. \\
+\hline
+{\em normalize} & Normalize the transition matrix. Otherwise, it returns raw counts.\\
+\hline
+\end{DoxyParams}
+The transition matrix is the matrix of the counts of transitions from one state to another. So the ij-\/th element of the matrix is the number of transitions from state i to state j (when not normalized), or the probability of transitioning from state i to state j (when normalized). \begin{DoxyReturn}{Returns}
+std\+::vector$<$ epiworld\+\_\+double $>$ 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_data_base_a2b855969ae8aca805a8ee1713519c52d}\label{class_data_base_a2b855969ae8aca805a8ee1713519c52d}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!get\_transmissions@{get\_transmissions}}
+\index{get\_transmissions@{get\_transmissions}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{get\_transmissions()}{get\_transmissions()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::get\+\_\+transmissions (\begin{DoxyParamCaption}\item[{std\+::vector$<$ int $>$ \&}]{date,  }\item[{std\+::vector$<$ int $>$ \&}]{source,  }\item[{std\+::vector$<$ int $>$ \&}]{target,  }\item[{std\+::vector$<$ int $>$ \&}]{virus,  }\item[{std\+::vector$<$ int $>$ \&}]{source\+\_\+exposure\+\_\+date }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Get the transmissions object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em date} & \\
+\hline
+{\em source} & \\
+\hline
+{\em target} & \\
+\hline
+{\em virus} & \\
+\hline
+{\em source\+\_\+exposure\+\_\+date} & \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_data_base_a707b63e79214f82c5efb85fc04ccee11}\label{class_data_base_a707b63e79214f82c5efb85fc04ccee11}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!operator==@{operator==}}
+\index{operator==@{operator==}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{operator==()}{operator==()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily bool \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ std\+::vector$<$ int $>$ $>$\+::operator== (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ std\+::vector$<$ int $>$$>$ \&}]{other }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+$<$ Date of the transmission eve,
+
+$<$ Id of the sour,
+
+$<$ Id of the targ,
+
+$<$ Id of the varia,
+
+$<$ Date when the source acquired the varia,\mbox{\Hypertarget{class_data_base_a707b63e79214f82c5efb85fc04ccee11}\label{class_data_base_a707b63e79214f82c5efb85fc04ccee11}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!operator==@{operator==}}
+\index{operator==@{operator==}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{operator==()}{operator==()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily bool \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ std\+::vector$<$ int $>$ $>$\+::operator== (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ std\+::vector$<$ int $>$$>$ \&}]{other }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+$<$ Date of the transmission eve,
+
+$<$ Id of the sour,
+
+$<$ Id of the targ,
+
+$<$ Id of the varia,
+
+$<$ Date when the source acquired the varia,\mbox{\Hypertarget{class_data_base_ab387bebbab95525c452660a7701c457d}\label{class_data_base_ab387bebbab95525c452660a7701c457d}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!operator==@{operator==}}
+\index{operator==@{operator==}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{operator==()}{operator==()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+bool \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::operator== (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$ \&}]{other }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+$<$ Date of the transmission eve
+
+$<$ Id of the sour
+
+$<$ Id of the targ
+
+$<$ Id of the varia
+
+$<$ Date when the source acquired the varia\mbox{\Hypertarget{class_data_base_a7961eba429b909eff0e0fa966ee81011}\label{class_data_base_a7961eba429b909eff0e0fa966ee81011}} 
+\index{DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}!record\_virus@{record\_virus}}
+\index{record\_virus@{record\_virus}!DataBase$<$ TSeq $>$@{DataBase$<$ TSeq $>$}}
+\doxysubsubsection{\texorpdfstring{record\_virus()}{record\_virus()}}
+{\footnotesize\ttfamily template$<$typename TSeq $>$ \\
+void \mbox{\hyperlink{class_data_base}{Data\+Base}}$<$ TSeq $>$\+::record\+\_\+virus (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_virus}{Virus}}$<$ TSeq $>$ \&}]{v }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Registering a new variant. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em v} & Pointer to the new virus. Since viruses are originated in the agent, the numbers simply move around. From the parent virus to the new virus. And the total number of infected does not change. \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/epiworld/database-\/bones.\+hpp\item 
+include/epiworld/database-\/meat.\+hpp\end{DoxyCompactItemize}

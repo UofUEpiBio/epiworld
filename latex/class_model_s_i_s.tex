@@ -1,0 +1,74 @@
+\hypertarget{class_model_s_i_s}{}\doxysection{Model\+SIS$<$ TSeq $>$ Class Template Reference}
+\label{class_model_s_i_s}\index{ModelSIS$<$ TSeq $>$@{ModelSIS$<$ TSeq $>$}}
+
+
+Template for a Susceptible-\/\+Infected-\/\+Susceptible (SIS) model.  
+
+
+
+
+{\ttfamily \#include $<$sis.\+hpp$>$}
+
+
+
+Inheritance diagram for Model\+SIS$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=187pt]{class_model_s_i_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Model\+SIS$<$ TSeq $>$\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=187pt]{class_model_s_i_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_model_s_i_s_a7d0f69523c700c07bae53710031e5c0c}\label{class_model_s_i_s_a7d0f69523c700c07bae53710031e5c0c}} 
+{\bfseries Model\+SIS} (\mbox{\hyperlink{class_model_s_i_s}{Model\+SIS}}$<$ TSeq $>$ \&model, const std\+::string \&vname, epiworld\+\_\+double prevalence, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double recovery\+\_\+rate)
+\item 
+\mbox{\Hypertarget{class_model_s_i_s_ae578d199830f18613d02b641b2a127a5}\label{class_model_s_i_s_ae578d199830f18613d02b641b2a127a5}} 
+{\bfseries Model\+SIS} (const std\+::string \&vname, epiworld\+\_\+double prevalence, epiworld\+\_\+double transmission\+\_\+rate, epiworld\+\_\+double recovery\+\_\+rate)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_model_s_i_s_a051c5b4c083b540e89f1efab450ba148}\label{class_model_s_i_s_a051c5b4c083b540e89f1efab450ba148}} 
+static const int {\bfseries SUSCEPTIBLE} = 0
+\item 
+\mbox{\Hypertarget{class_model_s_i_s_aae2f529531f7356f655596e586bb54b6}\label{class_model_s_i_s_aae2f529531f7356f655596e586bb54b6}} 
+static const int {\bfseries INFECTED} = 1
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+\doxysubsection{Detailed Description}
+\subsubsection*{template$<$typename TSeq = EPI\+\_\+\+DEFAULT\+\_\+\+TSEQ$>$\newline
+class Model\+SIS$<$ TSeq $>$}
+
+Template for a Susceptible-\/\+Infected-\/\+Susceptible (SIS) model. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em vname} & std\+::string Name of the virus \\
+\hline
+{\em initial\+\_\+prevalence} & epiworld\+\_\+double Initial prevalence \\
+\hline
+{\em initial\+\_\+efficacy} & epiworld\+\_\+double Initial susceptibility\+\_\+reduction of the immune system \\
+\hline
+{\em initial\+\_\+recovery} & epiworld\+\_\+double Initial recovery\+\_\+rate rate of the immune system \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+include/epiworld/models/sis.\+hpp\end{DoxyCompactItemize}
