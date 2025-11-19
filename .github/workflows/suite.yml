@@ -29,7 +29,7 @@ jobs:
       - name: Install LLVM (macOS only)
         if: runner.os == 'macOS'
         run: |
-          brew install llvm@${{ matrix.llvm }}
+          brew install llvm@${{ matrix.llvm }} lcov
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
 
       - name: Run Test Suite
