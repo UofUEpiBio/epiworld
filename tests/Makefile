@@ -39,6 +39,9 @@ $(NAME)_SOURCES := \
 	19d-measles-mixing-risk-quarantine-process.cpp \
 	20a-rewire-degseq.cpp \
 	20b-rewire-degseq.cpp
+
+$(NAME)_CXXFLAGS := \
+	-O2
 	
 $(NAME)_TEST_HOOKS := \
 	make-all-$(NAME)-dirs \
