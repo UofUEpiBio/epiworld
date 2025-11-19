@@ -68,7 +68,7 @@ $($(NAME)_SOURCE_DIR)-test: $($(NAME)_BUILD_DIR)/test.mk
         -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
         V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
 
-ifneq ($(WITH_COVERAGE),)
+ifeq ($(WITH_COVERAGE),1)
 	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/en-total.info'
 	$(V)args=""; \
 	for f in $($(NAME)_COV_DIR)/coverage-*.info; do \
