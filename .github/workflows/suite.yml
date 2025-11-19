@@ -36,6 +36,7 @@ jobs:
         run: |
           if [ "$(uname)" = "Darwin" ]; then
             CORES=$(sysctl -n hw.ncpu)
+            export WITH_OPENMP=0
           else
             CORES=$(nproc)
           fi
