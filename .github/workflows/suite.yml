@@ -38,4 +38,4 @@ jobs:
             CORES=$(nproc)
           fi
       
-          VERBOSE=1 make test -j"$CORES"
+          VERBOSE=1 WITH_COVERAGE=0 make test -j"$CORES"
