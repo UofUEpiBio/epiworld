@@ -48,7 +48,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     for (const auto & a : model.get_agents())
     {
-        if (a.get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+        if (a.get_state() != model.state_of("Susceptible"))
         {
             if (a.get_entity(0).get_id() == 0)
             {
@@ -57,9 +57,9 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
             }
 
             n_wrong++;
-            
+
         }
-            
+
     }
 
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3000));
@@ -85,8 +85,8 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
         if (a.get_id() == 0)
         {
             n_right++;
-        } 
-        else if (a.get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+        }
+        else if (a.get_state() != model.state_of("Susceptible"))
         {
             if (a.get_entity(0).get_id() == 1)
             {
@@ -95,9 +95,9 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
             }
 
             n_wrong++;
-            
+
         }
-            
+
     }
 
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3001));

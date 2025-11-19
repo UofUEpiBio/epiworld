@@ -2,6 +2,8 @@
 .cache/
 
 build/
+site/
+docs/
 __pycache__/
 *.dSYM/
 

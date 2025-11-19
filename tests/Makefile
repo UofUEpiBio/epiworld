@@ -39,30 +39,6 @@ $(NAME)_SOURCES := \
 	19d-measles-mixing-risk-quarantine-process.cpp \
 	20a-rewire-degseq.cpp \
 	20b-rewire-degseq.cpp
-    
-#    00-cloning-model.cpp \
-#    01b-sir.cpp \
-#    01c-sir.cpp \
-#    02-reproducible-sir.cpp \
-#    02-reproducible-sirconn.cpp \
-#    04-initial-dist.cpp \
-#    05b-mixing.cpp \
-#    05c-mixing.cpp \
-#    07-entitifuns.cpp \
-#    10-generation-interval.cpp \
-#    12-diagrams.cpp \
-#    15-edgelist-after-run-multiple.cpp \
-#    16-multiple-events.cpp \
-#    18a-measles-mixing.cpp \
-#    18b-measles-mixing.cpp \
-#    18c-measles-mixing.cpp \
-#    19a-measles-mixing-risk-quarantine-basic.cpp \
-#    19b-measles-mixing-risk-quarantine-transitions.cpp \
-#    19c-measles-mixing-risk-quarantine-durations.cpp \
-#    19d-measles-mixing-risk-quarantine-process.cpp
-	
-#$(NAME)_CXXFLAGS := \
-#	-DEPI_DEBUG	
 	
 $(NAME)_TEST_HOOKS := \
 	make-all-$(NAME)-dirs \

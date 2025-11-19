@@ -1,42 +1,76 @@
-# This is a basic workflow to help you get started with Actions
+name: MkDocs Documentation
 
-name: Doxygen docs
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
-# Controls when the action will run. 
-on: [push, pull_request]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  # This workflow contains a single job called "build"
-  deploy:
-    # The type of runner that the job will run on
+  build:
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Build Doxygen
-        uses: mattnotmitt/doxygen-action@v1.3.1
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          working-directory: '.'
-          doxyfile-path: './Doxyfile'
-          enable-latex: true
-
-      # - name: Mathjax & design
-      #   run: |
-      #     sudo mv mathjax docs/
-      #     sudo mv design docs/
-      - name: Sorting pages
+          python-version: '3.x'
+      
+      - name: Install dependencies
         run: |
-          sudo mv docs/html/* docs/
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+          pip install mkdocs mkdocs-material mkdoxy
       
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Build MkDocs site
+        run: mkdocs build
+      
+      - name: Upload artifact for GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/
-
+          path: site/
       
+      - name: Upload artifact for preview
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site-pr-${{ github.event.pull_request.number }}
+          path: site/
 
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  post-artifact:
+    if: github.event_name == 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Comment on PR with artifact link
+        uses: CDCgov/cfa-actions/post-artifact@v1.5.0
+        with:
+          artifact-name: documentation-site-pr-${{ github.event.pull_request.number }}
+          gh-token: ${{ secrets.GITHUB_TOKEN }}

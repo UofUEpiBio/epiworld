@@ -6,13 +6,13 @@ EPIWORLD_TEST_CASE(
     "Quarantine works (size comparison)",
     "[ModelMeaslesMixing-On-size]"
 ) {
-    
+
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 5;
-    
+
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix(9u, 1.0/3.0);
-    
+
     epimodels::ModelMeaslesMixing<> model_0(
         900,        // Number of agents
         n_seeds / 900.0, // Initial prevalence
@@ -60,13 +60,13 @@ EPIWORLD_TEST_CASE(
     );
 
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
-    
+
     #ifndef CATCH_CONFIG_MAIN
     model_0.print(false);
     #endif
 
     // Looking at the final outbreak size
-    std::vector< size_t > not_infected_states = {0u, 8u};
+    std::vector< size_t > not_infected_states = {epimodels::ModelMeaslesMixing<>::SUSCEPTIBLE, epimodels::ModelMeaslesMixing<>::QUARANTINED_SUSCEPTIBLE};
     auto stats_with_quarantine = test_compute_final_sizes(
         final_distribution,
         not_infected_states,
@@ -131,7 +131,4 @@ EPIWORLD_TEST_CASE(
         std::endl;
 
     #undef mat
-
-    
 }
-

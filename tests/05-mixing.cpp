@@ -47,7 +47,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     for (const auto & a : model.get_agents())
     {
-        if (a.get_state() != epimodels::ModelSEIRMixing<>::SUSCEPTIBLE)
+        if (a.get_state() != model.state_of("Susceptible"))
         {
             if (a.get_entity(0).get_id() == 0)
             {
@@ -56,9 +56,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
             }
 
             n_wrong++;
-            
+
         }
-            
+
     }
 
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3000));
@@ -84,8 +84,8 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         if (a.get_id() == 0)
         {
             n_right++;
-        } 
-        else if (a.get_state() != epimodels::ModelSEIRMixing<>::SUSCEPTIBLE)
+        }
+        else if (a.get_state() != model.state_of("Susceptible"))
         {
             if (a.get_entity(0).get_id() == 1)
             {
@@ -94,9 +94,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
             }
 
             n_wrong++;
-            
+
         }
-            
+
     }
 
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3001));
@@ -149,7 +149,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     for (const auto & a: agents3)
         counts[a]++;
-    
+
     double n0 = 0, n1 = 0, n2 = 0, n3 = 0;
     for (const auto & c: counts)
     {

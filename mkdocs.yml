@@ -1,0 +1,105 @@
+site_name: Epiworld
+site_description: A general framework for epidemiologic simulation
+site_url: https://UofUEpi.github.io/epiworld
+
+repo_name: UofUEpiBio/epiworld
+repo_url: https://github.com/UofUEpiBio/epiworld
+
+docs_dir: docs_src
+site_dir: site
+
+theme:
+  name: material
+  # palette:
+  #   primary: blue
+  #   accent: light-blue
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+
+nav:
+  - Home: README.md
+  - Models:
+    - Overview: epiworld/modules.md
+    - Basic Compartmental Models:
+        - SIS: epiworld/classModelSIS.md
+        - SIR: epiworld/classModelSIR.md
+        - SEIR: epiworld/classModelSEIR.md
+    - Models with Death Compartment:
+        - SIRD: epiworld/classModelSIRD.md
+        - SISD: epiworld/classModelSISD.md
+        - SEIRD: epiworld/classModelSEIRD.md
+    - Connected Population Models:
+        - SIR Connected: epiworld/classModelSIRCONN.md
+        - SEIR Connected: epiworld/classModelSEIRCONN.md
+        - SIRD Connected: epiworld/classModelSIRDCONN.md
+        - SEIRD Connected: epiworld/classModelSEIRDCONN.md
+    - Population Mixing Models:
+        - SEIR Mixing: epiworld/classModelSEIRMixing.md
+        - SIR Mixing: epiworld/classModelSIRMixing.md
+        - SEIR Mixing Quarantine: epiworld/classModelSEIRMixingQuarantine.md
+    - Disease-Specific Models:
+        - Measles School: epiworld/classModelMeaslesSchool.md
+        - Measles Mixing: epiworld/classModelMeaslesMixing.md
+        - Measles Mixing Risk Quarantine: epiworld/classModelMeaslesMixingRiskQuarantine.md
+    - Specialized Models:
+        - SIR Logit: epiworld/classModelSIRLogit.md
+        - Diffusion Network: epiworld/classModelDiffNet.md
+        - Surveillance: epiworld/classModelSURV.md
+  - API Reference: 
+    - Overview: api/index.md
+    - Classes: epiworld/annotated.md
+    - Files: epiworld/files.md
+    - Namespaces: epiworld/namespaces.md
+  - Implementation:
+    - Overview: impl/index.md
+    - Library Architecture: impl/1. Library Architecture.md
+    - Performance Optimization: impl/2. Performance Optimization.md
+    - Extending the Library: impl/3. Extending the Library.md
+    - Core Simulation Models: impl/4. Core Simulation Models.md
+    - Queueing System: impl/5. Queueing System.md
+    - Random Graph Generation: impl/6. Random Graph Generation.md
+    - Data Collection and Analysis: impl/7. Data Collection and Analysis.md
+    - Random Number Generation and Statistical Functions: impl/8. Random Number Generation and Statistical Functions.md
+    - Reproducibility and run_multiple: impl/9. Reproducibility and run_multiple.md
+    - Mixing and Entity Distribution: impl/10. Mixing and Entity Distribution.md
+    - Virus and Tool Distribution Functions: impl/11. Virus and Tool Distribution Functions.md
+    - Generation Interval and Reproductive Number Calculation: impl/12. Generation Interval and Reproductive Number Calculation.md
+    - Events and Multi-Event Handling: impl/13. Events and Multi-Event Handling.md
+    - Quarantine, Isolation, and Contact Tracing Modules: impl/14. Quarantine, Isolation, and Contact Tracing Modules.md
+
+plugins:
+  - search
+  - mkdoxy:
+      projects:
+        epiworld:
+          src-dirs: include/epiworld
+          full-doc: true
+          doxy-cfg:
+            FILE_PATTERNS: "*.hpp *.h"
+            RECURSIVE: YES
+            EXTRACT_ALL: YES
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+
+validation:
+  nav:
+    omitted_files: info
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    absolute_links: warn
+    unrecognized_links: warn

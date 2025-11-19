@@ -7,13 +7,13 @@ static DAT base_seq = {true, false, false, true, true, false, true, false, true,
 
 // Defining mutation and transmission functions
 EPI_NEW_MUTFUN(covid19_mut, DAT) {
-    
+
     if (EPI_RUNIF() < m->par("Mutation rate"))
     {
         // Picking a location at random
         int idx = std::floor(EPI_RUNIF() * v.get_sequence()->size());
         DAT tmp_seq = *v.get_sequence();
-        tmp_seq[idx] = !v.get_sequence()->at(idx); 
+        tmp_seq[idx] = !v.get_sequence()->at(idx);
 
         // Updating its sequence
         v.set_sequence(tmp_seq);
@@ -22,7 +22,7 @@ EPI_NEW_MUTFUN(covid19_mut, DAT) {
     }
 
     return false;
-    
+
 }
 
 // Post covid recovery
@@ -41,9 +41,9 @@ int main() {
     epiworld::Model<DAT> model;
 
     model.add_state("Susceptible", epiworld::default_update_susceptible<DAT>);
-    model.add_state("Exposed", epiworld::default_update_exposed<DAT>);
-    model.add_state("Recovered");
-    model.add_state("Removed");
+    auto exposed_state = model.add_state("Exposed", epiworld::default_update_exposed<DAT>);
+    auto recovered_state = model.add_state("Recovered");
+    auto removed_state = model.add_state("Removed");
 
     model.agents_from_adjlist(
         "edgelist.txt", // Filepath
@@ -52,7 +52,7 @@ int main() {
         false           // Directed?
         );
 
-    // Setting up the model parameters 
+    // Setting up the model parameters
     model.add_param(0.001, "Mutation rate");
     model.add_param(0.90, "vax efficacy");
     model.add_param(0.0001, "vax death");
@@ -66,10 +66,10 @@ int main() {
     epiworld::Virus<DAT> covid19("COVID19", 0.01, true);
     covid19.set_sequence(base_seq);
     covid19.set_mutation(covid19_mut);
-    covid19.set_post_recovery(post_covid); 
+    covid19.set_post_recovery(post_covid);
     covid19.set_prob_death(&model("virus death"));
 
-    covid19.set_state(1,2,3);
+    covid19.set_state(exposed_state, recovered_state, removed_state);
 
     // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine", 0.5, true);
@@ -77,7 +77,7 @@ int main() {
     vaccine.set_recovery_enhancer(0.4);
     vaccine.set_death_reduction(&model("vax death"));
     vaccine.set_transmission_reduction(0.5);
-    
+
     epiworld::Tool<DAT> mask("Face masks", 0.5, true);
     mask.set_susceptibility_reduction(0.8);
     mask.set_transmission_reduction(0.05);
@@ -94,13 +94,13 @@ int main() {
     post_immunity.set_susceptibility_reduction(1.0);
 
     // Adding the virus and the tools to the model ----------------------------
-    model.add_virus(covid19); 
+    model.add_virus(covid19);
 
     model.add_tool(immune);
     model.add_tool(vaccine);
     model.add_tool(mask);
     model.add_tool(post_immunity);
-    
+
     // Initializing and printing information about the model ------------------
     model.queuing_off(); // Not working with rewiring just yet.
     model.set_rewire_fun(

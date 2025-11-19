@@ -1,0 +1,14 @@
+flowchart LR
+
+    %% Disease progression states
+    subgraph Main[Disease Progression]
+        direction LR
+        S[Susceptible]
+        E[Exposed]
+        I[Infected]
+        R[Recovered]
+    end
+
+    S --> E
+    E --> I
+    I --> R
