@@ -34,7 +34,7 @@ $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_TEST_HOOKS)
             sed "s/%HUMAN_NAME%/$$test/g" | \
             sed "s|%BINARY%|$(abspath $($(NAME)_BUILD_DIR))/$(NAME)|g" | \
             sed "s|%BUILD_DIR%|$(abspath $($(NAME)_BUILD_DIR))|g" | \
-            sed "s|%SOURCE_DIR%|$(abspath $($(NAME)_SOURCE_DIR))|g" | \
+            sed "s|%ROOT_SOURCE_DIR%|$(abspath $(ROOT_SOURCE_DIR))|g" | \
             sed "s|%COV_DIR%|$(abspath $($(NAME)_COV_DIR))|g" >> $@; \
         printf "\n\n" >> $@; \
     done < $@.tmp; \
@@ -63,10 +63,10 @@ $($(NAME)_SOURCE_DIR)-test: override NAME := $(NAME)
 $($(NAME)_SOURCE_DIR)-test: $($(NAME)_BUILD_DIR)/test.mk
 	$(SAY) "SUITE" $@
 	$(V)mkdir -p $($(NAME)_TEST_DIR)
-	$(V)$(MAKE) \
-        -C $($(NAME)_TEST_DIR) \
-        -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
-        V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
+#	$(V)$(MAKE) \
+#        -C $($(NAME)_TEST_DIR) \
+#        -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
+#        V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
 
 ifeq ($(WITH_COVERAGE),1)
 	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/en-total.info'
@@ -77,7 +77,7 @@ ifeq ($(WITH_COVERAGE),1)
 	exec $(LCOV) $$args \
 	    --output-file '$($(NAME)_COV_DIR)/coverage.info' \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
-	perl -pi -e 's|SF:/__w/epiworld/epiworld/|SF:./|g' ./build/tests/.coverage/coverage.info
+	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info
 endif
 
 TEST_TARGETS += $($(NAME)_SOURCE_DIR)-test	

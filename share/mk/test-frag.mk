@@ -15,7 +15,7 @@ ifeq ($(WITH_COVERAGE),1)
     done
 	$(V)$(LCOV) --capture --directory "$(SILO)" --output-file "$(SILO)/coverage.info.all" --quiet \
 	    --ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
-	$(V)$(LCOV) --extract "$(SILO)/coverage.info.all" "%SOURCE_DIR%" --output-file "%COV_DIR%/coverage-%RULE_NAME%.info" --quiet \
+	$(V)$(LCOV) --extract "$(SILO)/coverage.info.all" "%ROOT_SOURCE_DIR%" --output-file "%COV_DIR%/coverage-%RULE_NAME%.info" --quiet \
 	    --ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
 endif
 
