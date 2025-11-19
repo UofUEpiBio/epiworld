@@ -8,9 +8,6 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: false
     strategy:
       matrix:
         include:
