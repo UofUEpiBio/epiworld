@@ -70,14 +70,22 @@ $($(NAME)_SOURCE_DIR)-test: $($(NAME)_BUILD_DIR)/test.mk
 
 ifeq ($(WITH_COVERAGE),1)
 	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/en-total.info'
-	$(V)args=""; \
+	$(V)merge_args=""; \
 	for f in $($(NAME)_COV_DIR)/coverage-*.info; do \
-	    args="$$args --add-tracefile $$f"; \
+	    merge_args="$$merge_args --add-tracefile $$f"; \
 	done; \
-	exec $(LCOV) $$args \
-	    --output-file '$($(NAME)_COV_DIR)/coverage.info' \
+	$(LCOV) $$merge_args \
+	    --output-file '$($(NAME)_COV_DIR)/coverage.info.all' \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
-	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info
+	$(V)filter_args=""; \
+	for d in $($(NAME)_COV_DIRS_EXCLUDE); do \
+	    filter_args="$$filter_args $$(realpath $$d)/*"; \
+	done; \
+	$(LCOV) --remove '$($(NAME)_COV_DIR)/coverage.info.all' $$filter_args \
+	    --output-file '$($(NAME)_COV_DIR)/coverage.info.filt' \
+	    --ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
+	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info.filt
+	mv '$($(NAME)_COV_DIR)/coverage.info.filt' '$($(NAME)_COV_DIR)/coverage.info';
 endif
 
 TEST_TARGETS += $($(NAME)_SOURCE_DIR)-test	

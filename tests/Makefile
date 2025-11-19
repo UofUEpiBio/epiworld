@@ -42,6 +42,9 @@ $(NAME)_SOURCES := \
 
 $(NAME)_CXXFLAGS := \
 	-O2
+
+$(NAME)_COV_DIRS_EXCLUDE := \
+	$(ROOT_SOURCE_DIR)/include/catch2
 	
 $(NAME)_TEST_HOOKS := \
 	make-all-$(NAME)-dirs \
