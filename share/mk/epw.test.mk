@@ -63,10 +63,10 @@ $($(NAME)_SOURCE_DIR)-test: override NAME := $(NAME)
 $($(NAME)_SOURCE_DIR)-test: $($(NAME)_BUILD_DIR)/test.mk
 	$(SAY) "SUITE" $@
 	$(V)mkdir -p $($(NAME)_TEST_DIR)
-#	$(V)$(MAKE) \
-#        -C $($(NAME)_TEST_DIR) \
-#        -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
-#        V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
+	$(V)$(MAKE) \
+        -C $($(NAME)_TEST_DIR) \
+        -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
+        V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
 
 ifeq ($(WITH_COVERAGE),1)
 	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/en-total.info'
