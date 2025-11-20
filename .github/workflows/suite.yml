@@ -62,7 +62,7 @@ jobs:
             export PKG_CONFIG_PATH="$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH"
           fi
           
-          cpanm --notest XML::LibXML
+          cpanm --notest --installdeps .
 
       - name: Run test suite
         run: |
@@ -74,3 +74,10 @@ jobs:
           fi
       
           VERBOSE=1 WITH_COVERAGE=0 make test -j"$CORES"
+          
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: success() || failure() 
+        with:
+          report_paths: 'build/tests/.test/report.xml'
+      
