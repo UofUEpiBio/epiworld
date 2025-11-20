@@ -7,9 +7,7 @@ include share/mk/epw.util.mk
 
 # Makefile settings.
 .SUFFIXES:
-MAKEFLAGS             += --no-builtin-rules --no-builtin-variables
-.DEFAULT_GOAL         := all
-V                     := $(if $(VERBOSE),,@)
+.DEFAULT_GOAL := all
 
 # Critical tooling.
 CC  ?= cc
@@ -22,9 +20,23 @@ LCOV               ?= lcov
 VALGRIND           ?= valgrind
 CALLGRIND_ANNOTATE ?= callgrind_annotate
 
+# Control flags.
+
+# Verbosity.
+V := $(if $(VERBOSE),,@)
+
+# Run tests in parallel.
+PARALLEL_TESTS ?= 1
+
 # Compilation flags.
+
+# Build profile: debug or release.
 BUILD_PROFILE ?= debug
+
+# Enable OpenMP support.
 WITH_OPENMP   ?= 1
+
+# Enable code coverage support.
 WITH_COVERAGE ?= 0
 
 ifeq ($(BUILD_PROFILE),debug)

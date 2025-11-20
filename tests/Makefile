@@ -43,9 +43,8 @@ $(NAME)_SOURCES := \
 $(NAME)_CXXFLAGS := \
 	-O2
 
-$(NAME)_COV_DIRS_EXCLUDE := \
-	$($(NAME)_SOURCE_DIR) \
-	$(ROOT_SOURCE_DIR)/include/catch2
+$(NAME)_COV_DIRS := \
+	$(ROOT_SOURCE_DIR)/include/epiworld
 	
 $(NAME)_TEST_HOOKS := \
 	make-all-$(NAME)-dirs \

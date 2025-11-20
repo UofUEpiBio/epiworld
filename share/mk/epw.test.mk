@@ -14,13 +14,13 @@ $(NAME)_COV_DIR := $($(NAME)_BUILD_DIR)/.coverage
 # will be run in its own rule. This also allows us to easily add new test cases without
 # modifying the Makefile, as the test cases are discovered at build time.
 $($(NAME)_BUILD_DIR)/test.mk: override NAME := $(NAME)
-$($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_TEST_HOOKS)
+$($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME)
 	$(SAY) "GEN" $@
+	$(V)mkdir -p $($(NAME)_BUILD_DIR)
 	$(V)printf "# Auto-generated test Makefile for $(NAME)\n" > $@
 	$(V)printf "\n" >> $@
 	$(V)printf ".SUFFIXES:\n" >> $@
 	$(V)printf ".DEFAULT_GOAL := all\n" >> $@
-	$(V)printf "MAKEFLAGS     += --no-builtin-rules --no-builtin-variables\n" >> $@
 	$(V)printf "\n" >> $@
 	$(V)all_tests=$$( ( $($(NAME)_BUILD_DIR)/$(NAME) -l || true ) | \
 	    perl -nE 'if (/^ {2}(\S.*)$$/) { $$s = $$1; $$s =~ s/^\s+|\s+$$//g; say $$s }'); \
@@ -34,12 +34,15 @@ $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_TEST_HOOKS)
             sed "s/%HUMAN_NAME%/$$test/g" | \
             sed "s|%BINARY%|$(abspath $($(NAME)_BUILD_DIR))/$(NAME)|g" | \
             sed "s|%BUILD_DIR%|$(abspath $($(NAME)_BUILD_DIR))|g" | \
-            sed "s|%ROOT_SOURCE_DIR%|$(abspath $(ROOT_SOURCE_DIR))|g" | \
-            sed "s|%COV_DIR%|$(abspath $($(NAME)_COV_DIR))|g" >> $@; \
+            sed "s|%TEST_DIR%|$(abspath $($(NAME)_TEST_DIR))|g" | \
+            sed "s|%COV_DIR%|$(abspath $($(NAME)_COV_DIR))|g" | \
+            sed "s|%COV_DIRS%|$(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d)))|g" >> $@; \
         printf "\n\n" >> $@; \
     done < $@.tmp; \
     rm -f $@.tmp; \
     printf 'all:%s\n' "$$test_targets" >> $@
+
+-include $($(NAME)_BUILD_DIR)/test.mk
 
 # Loop over all test suites and add a target to run them.
 define run-test-rule
@@ -60,14 +63,19 @@ $(eval $(foreach src,$($(NAME)_SOURCES),$(call run-test-rule,$(src))))
 # Then, if coverage is enabled, aggregate the coverage data.
 .PHONY: $($(NAME)_SOURCE_DIR)-test
 $($(NAME)_SOURCE_DIR)-test: override NAME := $(NAME)
-$($(NAME)_SOURCE_DIR)-test: $($(NAME)_BUILD_DIR)/test.mk
+$($(NAME)_SOURCE_DIR)-test: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_BUILD_DIR)/test.mk | $($(NAME)_TEST_HOOKS)
 	$(SAY) "SUITE" $@
 	$(V)mkdir -p $($(NAME)_TEST_DIR)
-	$(V)$(MAKE) \
-        -C $($(NAME)_TEST_DIR) \
-        -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
-        V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
-
+	
+ifeq ($(PARALLEL_TESTS),1)
+	$(V)export OMP_NUM_THREADS=1; \
+	$(MAKE) \
+		-C $($(NAME)_TEST_DIR) \
+		-f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
+		V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
+        
+	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-combine.pl $($(NAME)_TEST_DIR)/report-*.xml > $(abspath $($(NAME)_TEST_DIR))/report.xml
+	
 ifeq ($(WITH_COVERAGE),1)
 	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/en-total.info'
 	$(V)merge_args=""; \
@@ -75,18 +83,39 @@ ifeq ($(WITH_COVERAGE),1)
 	    merge_args="$$merge_args --add-tracefile $$f"; \
 	done; \
 	$(LCOV) $$merge_args \
-	    --output-file '$($(NAME)_COV_DIR)/coverage.info.all' \
+		--output-file '$($(NAME)_COV_DIR)/coverage.info' \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
-	$(V)filter_args=""; \
-	for d in $($(NAME)_COV_DIRS_EXCLUDE); do \
-	    filter_args="$$filter_args $$(realpath $$d)/*"; \
-	done; \
-	$(LCOV) --remove '$($(NAME)_COV_DIR)/coverage.info.all' $$filter_args \
-	    --output-file '$($(NAME)_COV_DIR)/coverage.info.filt' \
-	    --ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
-	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info.filt
-	mv '$($(NAME)_COV_DIR)/coverage.info.filt' '$($(NAME)_COV_DIR)/coverage.info';
+	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info
+endif	
+
+else
+	$(V)mkdir -p $($(NAME)_TEST_DIR)
+	$(V)cd $($(NAME)_TEST_DIR) && \
+	GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(abspath $($(NAME)_COV_DIR))' $(abspath $($(NAME)_BUILD_DIR)/$(NAME)) \
+		--reporter junit \
+		--out $(abspath $($(NAME)_TEST_DIR))/report.xml
+
+ifeq ($(WITH_COVERAGE),1)
+	$(V)for f in $($(NAME)_BUILD_DIR)/*.gcno; do \
+		ln -sf "$$(realpath $$f)" "$(abspath $($(NAME)_COV_DIR))/$$(basename $$f)"; \
+	done
+	$(SAY) 'LCOV' '$(abspath $($(NAME)_COV_DIR))/coverage.info'
+	$(V)$(LCOV) --capture --directory "$(abspath $($(NAME)_COV_DIR))" --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info.all" --quiet \
+		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
+	$(V)$(LCOV) --extract "$(abspath $($(NAME)_COV_DIR))/coverage.info.all" $(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d))) --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
+		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
 endif
+
+endif
+
+	$(SAY) "REPORT" $($(NAME)_TEST_DIR)/report.xml
+	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-genhtml.pl $($(NAME)_TEST_DIR)/report.xml > $($(NAME)_TEST_DIR)/report.html
+	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-okay.pl $($(NAME)_TEST_DIR)/report.xml; \
+	if [ x$$? -eq x0 ]; then \
+	    perl $(ROOT_SOURCE_DIR)/script/junit-report.pl --short $($(NAME)_TEST_DIR)/report.xml; \
+	else \
+    	perl $(ROOT_SOURCE_DIR)/script/junit-report.pl $($(NAME)_TEST_DIR)/report.xml; \
+    fi
 
 TEST_TARGETS += $($(NAME)_SOURCE_DIR)-test	
 
