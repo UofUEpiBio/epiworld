@@ -41,7 +41,7 @@ jobs:
           sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-${{ matrix.llvm }} 100 && \
           sudo update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-${{ matrix.llvm }} 100 && \
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-${{ matrix.llvm }} 100 && \
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-${{ matrix.llvm }} 100 && \
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-${{ matrix.llvm }} 100
 
       - name: Run test suite
         run: |
