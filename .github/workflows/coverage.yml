@@ -13,7 +13,6 @@ on: [push, pull_request]
 jobs:        
   coverage:
     runs-on: ubuntu-latest
-    container: gvegayon/epiworld:latest
     
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +23,7 @@ jobs:
           apt-get install -y software-properties-common && \
           add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
           apt-get update && \
-          apt-get install -y lcov gcc-14 g++-14 && \
+          apt-get install -y lcov gcc-14 g++-14 libxml-libxml-perl && \
           update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 && \
           update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100 && \
           update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100        
