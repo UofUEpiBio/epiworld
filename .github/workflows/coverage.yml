@@ -23,10 +23,12 @@ jobs:
           sudo apt-get install -y software-properties-common && \
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
           sudo apt-get update && \
-          sudo apt-get install -y lcov gcc-14 g++-14 libxml-libxml-perl && \
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 && \
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100 && \
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100       
+          sudo apt-get install -y lcov libomp-dev clang-18 clang-tools-18 llvm-18 libxml-libxml-perl && \
+          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100 && \
+          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-18 100 && \
+          sudo update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-18 100 && \
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-18 100 && \
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-18 100       
 
       - name: Generate coverage
         run: |
