@@ -111,7 +111,7 @@ endif
 	$(SAY) "REPORT" $($(NAME)_TEST_DIR)/report.xml
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-genhtml.pl $($(NAME)_TEST_DIR)/report.xml > $($(NAME)_TEST_DIR)/report.html
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-okay.pl $($(NAME)_TEST_DIR)/report.xml; \
-	if [ x$$? -eq x0 ]; then \
+	if [ $$? -eq 0 ]; then \
 	    perl $(ROOT_SOURCE_DIR)/script/junit-report.pl --short $($(NAME)_TEST_DIR)/report.xml; \
 	else \
     	perl $(ROOT_SOURCE_DIR)/script/junit-report.pl $($(NAME)_TEST_DIR)/report.xml; \
