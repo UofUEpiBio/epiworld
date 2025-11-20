@@ -42,8 +42,6 @@ $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME)
     rm -f $@.tmp; \
     printf 'all:%s\n' "$$test_targets" >> $@
 
--include $($(NAME)_BUILD_DIR)/test.mk
-
 # Loop over all test suites and add a target to run them.
 define run-test-rule
 $(NAME)-$(basename $(1)): $($(NAME)_BUILD_DIR)/test.mk
