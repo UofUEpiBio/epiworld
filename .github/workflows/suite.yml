@@ -26,16 +26,15 @@ jobs:
       - name: Install macOS dependencies
         if: runner.os == 'macOS'
         run: |
-          brew install llvm@${{ matrix.llvm }} perl-xml-parser
-          echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
-          echo "export PERL5LIB=\"$(brew --prefix perl-xml-parser):$PERL5LIB\"" >> $HOME/.bash_profile
+          brew install \
+            llvm@${{ matrix.llvm }} \
+            libxml2 \
+            cpanminus
+          echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $GITHUB_PATH
 
       - name: Install Ubuntu dependencies
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update && \
-          sudo apt-get install -y software-properties-common && \
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
           sudo apt-get update && \
           sudo apt-get install -y \
             libomp-dev \
@@ -51,6 +50,12 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-${{ matrix.llvm }} 100 && \
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-${{ matrix.llvm }} 100
 
+      - name: Cache cpanm
+        uses: actions/cache@v4
+        with:
+          path: ~/.cpanm
+          key: ${{ runner.os }}-cpanm-${{ hashFiles('cpanfile*') }}
+
       - name: Install Perl modules
         run: |
           if [ "$(uname)" = "Darwin" ]; then
@@ -58,12 +63,6 @@ jobs:
           fi
           
           cpanm --notest XML::LibXML
-        
-      - name: Cache cpanm
-        uses: actions/cache@v4
-        with:
-          path: ~/.cpanm
-          key: ${{ runner.os }}-cpanm-${{ hashFiles('cpanfile*') }}
 
       - name: Run test suite
         run: |
