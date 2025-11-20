@@ -10,8 +10,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
-        llvm: [14, 18]
+        include:
+          # macOS configurations
+          - os: macos-latest
+            llvm: 14
+          - os: macos-latest
+            llvm: 18
+          # Ubuntu configuration
+          - os: ubuntu-latest
+            llvm: 18
 
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +26,7 @@ jobs:
       - name: Install macOS dependencies
         if: runner.os == 'macOS'
         run: |
-          brew install llvm@${{ matrix.llvm }} perl-xml-parser
+          brew install llvm@${{ matrix.llvm }} lcov perl-xml-parser
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
 
       - name: Install Ubuntu dependencies
@@ -29,9 +36,10 @@ jobs:
           sudo apt-get install -y software-properties-common && \
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
           sudo apt-get update && \
-          sudo apt-get install -y clang-${{ matrix.llvm }} clang-tools-${{ matrix.llvm }} llvm-${{ matrix.llvm }} && \
-          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-${{ matrix.llvm }} 100 && \
-          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-${{ matrix.llvm }} 100
+          sudo apt-get install -y lcov gcc-${{ matrix.llvm }} g++-${{ matrix.llvm }} libxml-libxml-perl && \
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ matrix.llvm }} 100 && \
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ matrix.llvm }} 100 && \
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ matrix.llvm }} 100
 
       - name: Run test suite
         run: |
@@ -42,6 +50,4 @@ jobs:
             CORES=$(nproc)
           fi
       
-          export CC=cc
-          export CXX=c++
           VERBOSE=1 WITH_COVERAGE=0 make test -j"$CORES"
