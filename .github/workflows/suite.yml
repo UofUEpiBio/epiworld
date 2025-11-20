@@ -37,11 +37,33 @@ jobs:
           sudo apt-get install -y software-properties-common && \
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
           sudo apt-get update && \
-          sudo apt-get install -y libomp-dev clang-${{ matrix.llvm }} clang-tools-${{ matrix.llvm }} llvm-${{ matrix.llvm }} libxml-libxml-perl && \
+          sudo apt-get install -y \
+            libomp-dev \
+            clang-${{ matrix.llvm }} \
+            clang-tools-${{ matrix.llvm }} \
+            llvm-${{ matrix.llvm }} \
+            libxml2 \
+            libxml2-dev \
+            zlib1g-dev \
+            cpanminus && \
           sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-${{ matrix.llvm }} 100 && \
           sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-${{ matrix.llvm }} 100 && \
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-${{ matrix.llvm }} 100 && \
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-${{ matrix.llvm }} 100
+
+      - name: Install Perl modules
+        run: |
+          if [ "$(uname)" = "Darwin" ]; then
+            export PKG_CONFIG_PATH="$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH"
+          fi
+          
+          cpanm --notest XML::LibXML
+        
+      - name: Cache cpanm
+        uses: actions/cache@v4
+        with:
+          path: ~/.cpanm
+          key: ${{ runner.os }}-cpanm-${{ hashFiles('cpanfile*') }}
 
       - name: Run test suite
         run: |
