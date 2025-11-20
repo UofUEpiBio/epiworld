@@ -23,23 +23,23 @@ jobs:
           sudo apt-get install -y \
             libomp-dev \
             lcov \
-            clang-${{ matrix.llvm }} \
-            clang-tools-${{ matrix.llvm }} \
-            llvm-${{ matrix.llvm }} \
+            clang-18 \
+            clang-tools-18 \
+            llvm-18 \
             libxml2 \
             libxml2-dev \
             zlib1g-dev \
             cpanminus && \
-          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-${{ matrix.llvm }} 100 && \
-          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-${{ matrix.llvm }} 100 && \
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-${{ matrix.llvm }} 100 && \
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-${{ matrix.llvm }} 100
+          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100 && \
+          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-18 100 && \
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-18 100 && \
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-18 100
 
       - name: Cache cpanm
         uses: actions/cache@v4
         with:
           path: ~/.cpanm
-          key: ${{ runner.os }}-llvm${{ matrix.llvm }}-cpanm-${{ hashFiles('cpanfile*') }}
+          key: ${{ runner.os }}-llvm18-cpanm-${{ hashFiles('cpanfile*') }}
 
       - name: Install Perl modules
         run: |
