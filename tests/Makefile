@@ -44,6 +44,7 @@ $(NAME)_CXXFLAGS := \
 	-O2
 
 $(NAME)_COV_DIRS := \
+	$($(NAME)_SOURCE_DIR) \
 	$(ROOT_SOURCE_DIR)/include/epiworld
 	
 $(NAME)_TEST_HOOKS := \
