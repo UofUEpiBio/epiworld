@@ -28,7 +28,7 @@ jobs:
         run: |
           brew install llvm@${{ matrix.llvm }} perl-xml-parser
           echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $HOME/.bash_profile
-          echo "export PERL5LIB="$(brew --prefix perl-xml-parser):$PERL5LIB"
+          echo "export PERL5LIB=\"$(brew --prefix perl-xml-parser):$PERL5LIB\"" >> $HOME/.bash_profile
 
       - name: Install Ubuntu dependencies
         if: runner.os == 'Linux'
