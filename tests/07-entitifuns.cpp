@@ -13,7 +13,7 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        40.0,  // epiworld_double contact_rate,
+        {40.0},  // std::vector<epiworld_double> contact_rate,
         1.0,   // epiworld_double transmission_rate,
         1.0/2.0// epiworld_double recovery_rate
     );
@@ -70,7 +70,7 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
         "Flu", // std::string vname,
         N, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        10.0,  // epiworld_double contact_rate,
+        {10.0},  // std::vector<epiworld_double> contact_rate,
         1.0,   // epiworld_double transmission_rate,
         1.0/2.0// epiworld_double recovery_rate
     );
@@ -121,7 +121,7 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
         "Flu", // std::string vname,
         N, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        10.0,  // epiworld_double contact_rate,
+        {10.0},  // std::vector<epiworld_double> contact_rate,
         1.0,   // epiworld_double transmission_rate,
         1.0/2.0// epiworld_double recovery_rate
     );

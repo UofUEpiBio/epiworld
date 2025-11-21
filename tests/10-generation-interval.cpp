@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
 
     // Creating model engine
     epimodels::ModelSIRCONN<> model(
-        "a virus", S, p_r, contact_rate, p_i, p_r
+        "a virus", S, p_r, {contact_rate}, p_i, p_r
     );
 
     model.seed(3123);

@@ -93,7 +93,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     // Trying SIRCONN ----------------------------------------------------------
     epimodels::ModelSIRCONN<> model_3(
-        "a virus", 10000, 0.01, 2, .5, .3
+        "a virus", 10000, 0.01, {2}, .5, .3
         );
 
     model_3.initial_states({.5}).
