@@ -67,7 +67,7 @@ public:
      * @param vname The name of the ModelSIRMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
-     * @param contact_rate The contact rate between entities in the model.
+     * @param contact_rate The contact rate(s) - can be a single value (uniform) or a vector matching the number of entities.
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
@@ -77,7 +77,7 @@ public:
         const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
+        std::vector<epiworld_double> contact_rate,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix
@@ -89,7 +89,7 @@ public:
      * @param vname The name of the ModelSIRMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
-     * @param contact_rate The contact rate between entities in the model.
+     * @param contact_rate The contact rate(s) - can be a single value (uniform) or a vector matching the number of entities.
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
@@ -98,7 +98,7 @@ public:
         const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
+        std::vector<epiworld_double> contact_rate,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix
@@ -308,10 +308,43 @@ inline void ModelSIRMixing<TSeq>::reset()
     adjusted_contact_rate.clear();
     adjusted_contact_rate.resize(this->entities.size(), 0.0);
 
+    // Check if we have per-entity contact rates
+    const auto & contact_rates_vec = Model<TSeq>::get_contact_rates();
+    
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
+        epiworld_double entity_contact_rate;
+        
+        if (contact_rates_vec.size() > 0u)
+        {
+            // Use per-entity contact rate
+            if (contact_rates_vec.size() == 1u)
+            {
+                // Uniform rate
+                entity_contact_rate = contact_rates_vec[0u];
+            }
+            else if (contact_rates_vec.size() == this->entities.size())
+            {
+                // Per-entity rate
+                entity_contact_rate = contact_rates_vec[i];
+            }
+            else
+            {
+                throw std::length_error(
+                    "contact_rate should be of length 1 (uniform) or match number of entities. " +
+                    std::to_string(contact_rates_vec.size()) + " != 1 or " + 
+                    std::to_string(this->entities.size())
+                );
+            }
+        }
+        else
+        {
+            // Use global parameter for backward compatibility
+            entity_contact_rate = Model<TSeq>::get_param("Contact rate");
+        }
+        
         adjusted_contact_rate[i] =
-            Model<TSeq>::get_param("Contact rate") /
+            entity_contact_rate /
                 static_cast< epiworld_double > (this->get_entity(i).size());
 
         // Possibly correcting for a small number of agents
@@ -353,7 +386,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
+    std::vector<epiworld_double> contact_rate,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix
@@ -362,6 +395,10 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
     // Setting up the contact matrix
     this->contact_matrix = contact_matrix;
+
+    // Store contact rates for later use in reset()
+    // For mixing models, this will be per-entity
+    model.set_contact_rates(contact_rate);
 
     epiworld::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
@@ -474,7 +511,8 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         };
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
+    // Store the first value for backward compatibility
+    model.add_param(contact_rate[0u], "Contact rate");
     model.add_param(transmission_rate, "Prob. Transmission");
     model.add_param(recovery_rate, "Prob. Recovery");
 
@@ -527,7 +565,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
+    std::vector<epiworld_double> contact_rate,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix
@@ -535,6 +573,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 {
 
     this->contact_matrix = contact_matrix;
+    this->set_contact_rates(contact_rate);
 
     ModelSIRMixing(
         *this,

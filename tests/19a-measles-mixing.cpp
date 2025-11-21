@@ -20,7 +20,7 @@ EPIWORLD_TEST_CASE(
     epimodels::ModelMeaslesMixing<> model_0(
         1000,        // Number of agents
         n_seeds / 1000.0, // Initial prevalence
-        2.0,         // Contact rate
+        {2.0},       // Contact rate (vector)
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
         0.3,         // Vaccination reduction recovery rate
