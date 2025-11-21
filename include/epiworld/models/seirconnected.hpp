@@ -30,7 +30,7 @@ public:
         const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
+        std::vector<epiworld_double> contact_rate,
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate
@@ -40,7 +40,7 @@ public:
         const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
+        std::vector<epiworld_double> contact_rate,
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate
@@ -94,11 +94,15 @@ inline void ModelSEIRCONN<TSeq>::update_infected()
         }
     }
 
-    Model<TSeq>::set_rand_binom(
-        this->get_n_infected(),
-        static_cast<double>(Model<TSeq>::par("Contact rate"))/
-            static_cast<double>(Model<TSeq>::size())
-    );
+    // For backward compatibility: if no contact rates set, use the parameter
+    if (Model<TSeq>::get_contact_rates().size() == 0u)
+    {
+        Model<TSeq>::set_rand_binom(
+            this->get_n_infected(),
+            static_cast<double>(Model<TSeq>::par("Contact rate"))/
+                static_cast<double>(Model<TSeq>::size())
+        );
+    }
 
     return;
 
@@ -156,7 +160,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
+    std::vector<epiworld_double> contact_rate,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate
@@ -169,14 +173,29 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         ) -> void
         {
 
-            // Sampling how many individuals
-            int ndraw = m->rbinom();
+            // Drawing number of contacts
+            int ndraw;
+            ModelSEIRCONN<TSeq> * model = dynamic_cast<ModelSEIRCONN<TSeq> *>(m);
+            size_t ninfected = model->get_n_infected();
+
+            // Check if we have heterogeneous contact rates
+            if (m->get_contact_rates().size() > 0u)
+            {
+                // Use per-agent contact rate
+                epiworld_double contact_rate_i = m->get_contact_rate(p->get_id());
+                ndraw = m->rbinom(
+                    ninfected,
+                    contact_rate_i / static_cast<double>(m->size())
+                );
+            }
+            else
+            {
+                // Use global contact rate (backward compatibility)
+                ndraw = m->rbinom();
+            }
 
             if (ndraw == 0)
                 return;
-
-            ModelSEIRCONN<TSeq> * model = dynamic_cast<ModelSEIRCONN<TSeq> *>(m);
-            size_t ninfected = model->get_n_infected();
 
             // Drawing from the set
             int nviruses_tmp = 0;
@@ -310,7 +329,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         };
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
+    model.add_param(contact_rate[0u], "Contact rate");
     model.add_param(transmission_rate, "Prob. Transmission");
     model.add_param(recovery_rate, "Prob. Recovery");
     model.add_param(avg_incubation_days, "Avg. Incubation days");
@@ -357,6 +376,26 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     // Adding the empty population
     model.agents_empty_graph(n);
 
+    // Store contact rates if vector has more than 1 element
+    // Validation will happen during reset/initialization
+    if (contact_rate.size() == 1u)
+    {
+        // Uniform contact rate - expand to n agents
+        model.set_contact_rates(std::vector<epiworld_double>(n, contact_rate[0u]));
+    }
+    else if (contact_rate.size() == n)
+    {
+        // Per-agent contact rates
+        model.set_contact_rates(contact_rate);
+    }
+    else
+    {
+        throw std::length_error(
+            "contact_rate should be of length 1 (uniform) or n (per-agent). " +
+            std::to_string(contact_rate.size()) + " != 1 or " + std::to_string(n)
+        );
+    }
+
     model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) (connected)");
 
     return;
@@ -368,7 +407,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
+    std::vector<epiworld_double> contact_rate,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate
