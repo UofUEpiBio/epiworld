@@ -570,9 +570,9 @@ inline void ModelMeaslesMixing<TSeq>::reset()
             else
             {
                 throw std::length_error(
-                    "contact_rate should be of length 1 (uniform) or match number of entities. " +
-                    std::to_string(contact_rates_vec.size()) + " != 1 or " + 
-                    std::to_string(this->entities.size())
+                    "Contact rate vector size (" +
+                    std::to_string(contact_rates_vec.size()) + ") must be 1 (uniform) or " + 
+                    std::to_string(this->entities.size()) + " (per-entity)"
                 );
             }
         }

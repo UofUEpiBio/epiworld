@@ -324,8 +324,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     model.add_state("Recovered");
 
     // Setting up parameters
-    // For contact_rate, we store the first value as a parameter for backward compatibility
-    // The actual per-agent rates are stored in the contact_rates vector
+    // The "Contact rate" parameter stores the first value for backward compatibility
+    // The actual per-agent rates are in the contact_rates vector
     model.add_param(contact_rate[0u], "Contact rate");
     model.add_param(transmission_rate, "Transmission rate");
     model.add_param(recovery_rate, "Recovery rate");

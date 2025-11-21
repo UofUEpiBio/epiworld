@@ -151,13 +151,11 @@ EPIWORLD_TEST_CASE("Heterogeneous Contact Rates - Mixing Models", "[heterogeneou
     // Count infections per entity
     int infected_e0 = 0, infected_e1 = 0, infected_e2 = 0;
     for (const auto & agent : model_het.get_agents()) {
-        if (agent.get_state() != 0) { // Not susceptible
-            if (agent.get_n_entities() > 0) {
-                int entity_id = agent.get_entity(0).get_id();
-                if (entity_id == 0) infected_e0++;
-                else if (entity_id == 1) infected_e1++;
-                else if (entity_id == 2) infected_e2++;
-            }
+        if (agent.get_state() != 0 && agent.get_n_entities() > 0) { // Not susceptible and has entity
+            int entity_id = agent.get_entity(0).get_id();
+            if (entity_id == 0) infected_e0++;
+            else if (entity_id == 1) infected_e1++;
+            else if (entity_id == 2) infected_e2++;
         }
     }
     

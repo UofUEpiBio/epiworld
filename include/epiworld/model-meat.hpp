@@ -2225,7 +2225,10 @@ inline epiworld_double Model<TSeq>::get_contact_rate(size_t i) const
         throw std::logic_error("Contact rates have not been set.");
     
     if (i >= contact_rates.size())
-        throw std::range_error("Index out of range for contact_rates.");
+        throw std::range_error(
+            "Index " + std::to_string(i) + " out of range for contact_rates [0, " + 
+            std::to_string(contact_rates.size()) + ")"
+        );
     
     return contact_rates[i];
 }
