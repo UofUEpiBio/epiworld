@@ -180,7 +180,7 @@ public:
         ModelMeaslesMixing<TSeq> & model,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
+        std::vector<epiworld_double> contact_rate,
         epiworld_double transmission_rate,
         epiworld_double vax_efficacy,
         epiworld_double vax_reduction_recovery_rate,
@@ -228,7 +228,7 @@ public:
     ModelMeaslesMixing(
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
+        std::vector<epiworld_double> contact_rate,
         epiworld_double transmission_rate,
         epiworld_double vax_efficacy,
         epiworld_double vax_reduction_recovery_rate,
@@ -547,11 +547,49 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     adjusted_contact_rate.clear();
     adjusted_contact_rate.resize(this->entities.size(), 0.0);
 
+    // Check if we have per-entity contact rates
+    auto & contact_rates_vec = Model<TSeq>::get_contact_rates();
+    
+    // If we have a single uniform rate, sync it with the parameter for backward compatibility
+    if (contact_rates_vec.size() == 1u)
+    {
+        contact_rates_vec[0u] = Model<TSeq>::get_param("Contact rate");
+    }
+    
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
+        epiworld_double entity_contact_rate;
+        
+        if (contact_rates_vec.size() > 0u)
+        {
+            // Use per-entity contact rate
+            if (contact_rates_vec.size() == 1u)
+            {
+                // Uniform rate (already synced with parameter above)
+                entity_contact_rate = contact_rates_vec[0u];
+            }
+            else if (contact_rates_vec.size() == this->entities.size())
+            {
+                // Per-entity rate
+                entity_contact_rate = contact_rates_vec[i];
+            }
+            else
+            {
+                throw std::length_error(
+                    "Contact rate vector size (" +
+                    std::to_string(contact_rates_vec.size()) + ") must be 1 (uniform) or " + 
+                    std::to_string(this->entities.size()) + " (per-entity)"
+                );
+            }
+        }
+        else
+        {
+            // Use global parameter for backward compatibility
+            entity_contact_rate = Model<TSeq>::get_param("Contact rate");
+        }
 
         adjusted_contact_rate[i] =
-            Model<TSeq>::get_param("Contact rate") /
+            entity_contact_rate /
                 static_cast< epiworld_double > (this->get_entity(i).size());
 
 
@@ -1138,7 +1176,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     ModelMeaslesMixing<TSeq> & model,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
+    std::vector<epiworld_double> contact_rate,
     epiworld_double transmission_rate,
     epiworld_double vax_efficacy,
     epiworld_double vax_reduction_recovery_rate,
@@ -1163,8 +1201,15 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     // Setting up the contact matrix
     this->contact_matrix = contact_matrix;
 
+    // Store contact rates for later use in reset()
+    model.set_contact_rates(contact_rate);
+
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
+    // Validate contact_rate vector is not empty
+    if (contact_rate.empty())
+        throw std::length_error("contact_rate vector cannot be empty");
+    
+    model.add_param(contact_rate[0u], "Contact rate");
     model.add_param(transmission_rate, "Transmission rate");
     model.add_param(incubation_period, "Incubation period");
     model.add_param(prodromal_period, "Prodromal period");
@@ -1248,7 +1293,7 @@ template<typename TSeq>
 inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
+    std::vector<epiworld_double> contact_rate,
     epiworld_double transmission_rate,
     epiworld_double vax_efficacy,
     epiworld_double vax_reduction_recovery_rate,
@@ -1271,6 +1316,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 {
 
     this->contact_matrix = contact_matrix;
+    this->set_contact_rates(contact_rate);
 
     ModelMeaslesMixing(
         *this,

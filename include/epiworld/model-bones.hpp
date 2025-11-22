@@ -132,6 +132,18 @@ protected:
     size_t agents_data_ncols = 0u;
     ///@}
 
+    /**
+     * @name Contact rates
+     *
+     * @details Optionally, a model can specify per-agent or per-entity
+     * contact rates. This vector is lazily initialized when needed.
+     * For connected models: length n (agents)
+     * For mixing models: length matching number of entities
+     */
+    ///@{
+    std::vector< epiworld_double > contact_rates = {};
+    ///@}
+
     bool directed = false;
 
     std::vector< VirusPtr<TSeq> > viruses = {};
@@ -628,6 +640,23 @@ public:
         std::string * unit_abbr = nullptr,
         bool print = true
     ) const;
+
+    /**
+     * @name Contact rates
+     *
+     * @details Functions to set and get heterogeneous contact rates.
+     * Contact rates can be specified per agent (for connected models) or
+     * per entity (for mixing models). The vector is lazily initialized.
+     *
+     * @param rates Vector of contact rates
+     * @return The contact rates vector
+     */
+    ///@{
+    void set_contact_rates(const std::vector< epiworld_double > & rates);
+    std::vector< epiworld_double > & get_contact_rates();
+    const std::vector< epiworld_double > & get_contact_rates() const;
+    epiworld_double get_contact_rate(size_t i) const;
+    ///@}
 
     /**
      * @name Set the user data object

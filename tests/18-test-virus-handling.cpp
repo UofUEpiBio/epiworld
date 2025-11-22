@@ -32,7 +32,7 @@ EPIWORLD_TEST_CASE(
         "TestModel",                // std::string vname
         n,                        // epiworld_fast_uint n
         1.0/static_cast<double>(n),                       // epiworld_double prevalence
-        4,                        // epiworld_double contact_rate
+        {4},                        // std::vector<epiworld_double> contact_rate
         0.5,                        // epiworld_double transmission_rate
         1.0/7.0                      // epiworld_double recovery_rate
     );

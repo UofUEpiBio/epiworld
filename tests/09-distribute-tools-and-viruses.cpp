@@ -9,7 +9,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
 
     epimodels::ModelSIRCONN<> model_0(
-        "a virus", 10000u, 0.01, 4.0, 1.0, 1.0/10000.0
+        "a virus", 10000u, 0.01, {4.0}, 1.0, 1.0/10000.0
     );
     
     Tool<> tool("vax");
@@ -39,7 +39,7 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
     }
 
     epimodels::ModelSIRCONN<> model_1(
-        "a virus", 10000u, 0.01, 4.0, 1.0, 1.0/10000.0
+        "a virus", 10000u, 0.01, {4.0}, 1.0, 1.0/10000.0
     );
 
     model_1.get_virus(0).set_distribution(

@@ -32,7 +32,7 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
         static_cast<double>(n_infected)/n_agents,  // epiworld_double prevalence,
-        1.0,  // epiworld_double contact_rate,
+        {1.0},  // std::vector<epiworld_double> contact_rate,
         0.1,   // epiworld_double transmission_rate,
         7.0,   // epiworld_double avg_incubation_days,
         1.0/7.0,// epiworld_double recovery_rate,

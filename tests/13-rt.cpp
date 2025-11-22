@@ -17,7 +17,7 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
 
     // Creating a simple ModelSIR model
     epimodels::ModelSIRCONN<> model_0(
-        "a virus", n, static_cast<double>(n_seeds)/n, crate, trate, rrate
+        "a virus", n, static_cast<double>(n_seeds)/n, {crate}, trate, rrate
     );
 
     // Function to distribute the virus to the first 10 agents

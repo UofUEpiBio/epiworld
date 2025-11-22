@@ -2199,6 +2199,41 @@ inline epiworld_double Model<TSeq>::par(std::string pname) const
     return iter->second;
 }
 
+template<typename TSeq>
+inline void Model<TSeq>::set_contact_rates(const std::vector< epiworld_double > & rates)
+{
+    contact_rates = rates;
+    return;
+}
+
+template<typename TSeq>
+inline std::vector< epiworld_double > & Model<TSeq>::get_contact_rates()
+{
+    return contact_rates;
+}
+
+template<typename TSeq>
+inline const std::vector< epiworld_double > & Model<TSeq>::get_contact_rates() const
+{
+    return contact_rates;
+}
+
+template<typename TSeq>
+inline epiworld_double Model<TSeq>::get_contact_rate(size_t i) const
+{
+    if (contact_rates.size() == 0u)
+        throw std::logic_error("Contact rates have not been set.");
+    
+    if (i >= contact_rates.size())
+        throw std::range_error(
+            "Index " + std::to_string(i) + " out of range for contact_rates [0, " + 
+            std::to_string(contact_rates.size()) + ")"
+        );
+    
+    return contact_rates[i];
+}
+
+
 #define DURCAST(tunit,txtunit) {\
         elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
             time_end - time_start).count(); \

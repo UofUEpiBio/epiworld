@@ -35,13 +35,13 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
     );
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIRCONN<> model_0("a virus", 1000, 0.01, 2, .3, .3);
+    epimodels::ModelSIRCONN<> model_0("a virus", 1000, 0.01, {2}, .3, .3);
     model_0.seed(112);
     model_0.verbose_off();
     model_0.print(true); // print before run
     model_0.run_multiple(100, 4, 1231, sav_0, true, true, 1);
 
-    epimodels::ModelSIRCONN<> model_1("a virus", 1000, 0.01, 2, .3, .3);
+    epimodels::ModelSIRCONN<> model_1("a virus", 1000, 0.01, {2}, .3, .3);
     model_1.seed(112);
     model_1.verbose_off();
     model_1.run_multiple(100, 4, 1231, sav_1, true, true, 2);

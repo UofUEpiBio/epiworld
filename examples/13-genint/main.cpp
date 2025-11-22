@@ -23,7 +23,7 @@ int main()
         "avirus",
         popsize,
         50.0/popsize,
-        r,
+        {r},
         p_i,
         p_r
     );
@@ -61,7 +61,7 @@ int main()
         "avirus",
         popsize,
         50.0/popsize,
-        r,
+        {r},
         p_i,
         incubation,
         p_r
