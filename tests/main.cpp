@@ -50,4 +50,5 @@
 #include "20d-measles-mixing-risk-quarantine-process.cpp"
 #include "21a-rewire-degseq.cpp"
 #include "21b-rewire-degseq.cpp"
-#include "22-globalevents.cpp"
+#include "22a-globalevents.cpp"
+#include "22b-globalevents.cpp"
