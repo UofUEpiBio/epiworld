@@ -19,3 +19,6 @@ site/
 docs/html/
 docs/latex/
 docs/xml/
+
+# CodeQL generated files
+_codeql_detected_source_root

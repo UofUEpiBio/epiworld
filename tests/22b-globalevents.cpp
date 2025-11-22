@@ -22,7 +22,6 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
     // Threshold for validating transmission reduction after intervention
     const double TRANSMISSION_REDUCTION_THRESHOLD = 0.05;
 
-    // We'll track whether transmissions occur before and after the intervention
     int nexperiments = 10;
     int ndays = 40;
     int intervention_day = 20;
@@ -30,32 +29,13 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
     int total_transmissions_before = 0;
     int total_transmissions_after = 0;
 
-    // Run experiments to collect data
-    for (int exp = 0; exp < nexperiments; ++exp) {
-        // Create a fresh SIR model for each experiment
-        epimodels::ModelSIR<> model(
-            "virus", 0.05, 0.7, 0.15  // Parameters tuned for observable spread
-        );
-
-        model.seed(1000 + exp);
-        model.agents_smallworld(1000, 8, false, 0.02);
-        model.verbose_off();
-
-        // Add a global event that sets transmission rate to 0 on the intervention day
-        model.add_globalevent(
-            [intervention_day](Model<>* m) -> void {
-                m->set_param("Transmission rate", 0.0);
-            },
-            "Stop transmission",
-            intervention_day
-        );
-
-        // Run the model
-        model.run(ndays);
-
+    // Create a saver function to collect transmission data from each experiment
+    auto saver = [&total_transmissions_before, &total_transmissions_after, intervention_day](
+        size_t n, Model<>* m) -> void {
+        
         // Get transmission data
         std::vector<int> trans_date, trans_source, trans_target, trans_virus, trans_source_exposure;
-        model.get_db().get_transmissions(
+        m->get_db().get_transmissions(
             trans_date, trans_source, trans_target, trans_virus, trans_source_exposure
         );
         
@@ -72,7 +52,27 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
                 // as they may occur during the transition period (see comment above).
             }
         }
-    }
+    };
+
+    // Create a single SIR model
+    epimodels::ModelSIR<> model(
+        "virus", 0.05, 0.7, 0.15  // Parameters tuned for observable spread
+    );
+
+    model.agents_smallworld(1000, 8, false, 0.02);
+    model.verbose_off();
+
+    // Add a global event that sets transmission rate to 0 on the intervention day
+    model.add_globalevent(
+        [intervention_day](Model<>* m) -> void {
+            m->set_param("Transmission rate", 0.0);
+        },
+        "Stop transmission",
+        intervention_day
+    );
+
+    // Run multiple experiments with the saver function
+    model.run_multiple(ndays, nexperiments, 1000, saver, true, false, 1);
 
     #ifdef CATCH_CONFIG_MAIN
     // We should have transmissions before the intervention
