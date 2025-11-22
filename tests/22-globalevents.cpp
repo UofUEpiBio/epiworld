@@ -44,10 +44,8 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
     // Add a global event that runs on specific days (10, 20, 30)
     for (int day : {10, 20, 30}) {
         model.add_globalevent(
-            [&specific_event_days, day](Model<>* m) -> void {
-                if (m->today() == day) {
-                    specific_event_days.push_back(day);
-                }
+            [&specific_event_days](Model<>* m) -> void {
+                specific_event_days.push_back(m->today());
             },
             "Specific day event " + std::to_string(day),
             day  // Run on specific day
@@ -140,6 +138,9 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
  */
 EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][parameters]") {
 
+    // Threshold for validating transmission reduction after intervention
+    const double TRANSMISSION_REDUCTION_THRESHOLD = 0.05;
+
     // We'll track whether transmissions occur before and after the intervention
     int nexperiments = 10;
     int ndays = 40;
@@ -178,12 +179,16 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
         );
         
         // Count transmissions before and after intervention
+        // Transmissions on the intervention day are counted as "before" since
+        // the global event runs after update_state() on that day
         for (size_t i = 0; i < trans_date.size(); ++i) {
-            if (trans_date[i] <= intervention_day) {
+            if (trans_date[i] < intervention_day) {
                 total_transmissions_before++;
-            } else {
+            } else if (trans_date[i] > intervention_day) {
                 total_transmissions_after++;
             }
+            // Note: Transmissions exactly on intervention_day are excluded from both
+            // as they may occur during the transition period
         }
     }
 
@@ -191,7 +196,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
         "GlobalEvent parameter modification test:\n"
         "  Total transmissions before intervention (days 1-%d): %d\n"
         "  Total transmissions after intervention (days %d-%d): %d\n",
-        intervention_day,
+        intervention_day - 1,
         total_transmissions_before,
         intervention_day + 1,
         ndays,
@@ -202,11 +207,9 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
     // We should have transmissions before the intervention
     REQUIRE(total_transmissions_before > 0);
     
-    // After setting transmission to 0 on day 20, there should be NO new transmissions
-    // on day 21 or later (transmission happens during update_state, which occurs
-    // before run_globalevents, so day 21 should already have rate = 0)
-    // However, we allow for a small number due to timing of when the rate change takes effect
-    REQUIRE(total_transmissions_after < total_transmissions_before * 0.05);
+    // After setting transmission to 0, there should be NO or very few transmissions
+    // We use a threshold to allow for any edge cases
+    REQUIRE(total_transmissions_after < static_cast<int>(total_transmissions_before * TRANSMISSION_REDUCTION_THRESHOLD));
     #endif
 
     #ifndef CATCH_CONFIG_MAIN
