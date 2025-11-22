@@ -13,7 +13,7 @@ using namespace epiworld;
  * 1. An event with a specific day is called only on that day
  * 2. An event with day < 0 is called every day
  * 
- * Note: Due to how the model initializes, global events start being called
+ * Note: Due to how the model initialize, global events start being called
  * from day 1 (not day 0). Day 0 is the initial state before any updates.
  */
 EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {

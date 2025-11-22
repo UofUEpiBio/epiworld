@@ -67,9 +67,10 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
                 total_transmissions_before++;
             } else if (trans_date[i] > intervention_day) {
                 total_transmissions_after++;
+            } else if (trans_date[i] == intervention_day) {
+                // Explicitly exclude transmissions on intervention_day from both counts,
+                // as they may occur during the transition period (see comment above).
             }
-            // Note: Transmissions exactly on intervention_day are excluded from both
-            // as they may occur during the transition period
         }
     }
 
