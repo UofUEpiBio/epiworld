@@ -315,7 +315,13 @@ inline void ModelSEIRMixing<TSeq>::reset()
     adjusted_contact_rate.resize(this->entities.size(), 0.0);
 
     // Check if we have per-entity contact rates
-    const auto & contact_rates_vec = Model<TSeq>::get_contact_rates();
+    auto & contact_rates_vec = Model<TSeq>::get_contact_rates();
+    
+    // If we have a single uniform rate, sync it with the parameter for backward compatibility
+    if (contact_rates_vec.size() == 1u)
+    {
+        contact_rates_vec[0u] = Model<TSeq>::get_param("Contact rate");
+    }
     
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
@@ -326,7 +332,7 @@ inline void ModelSEIRMixing<TSeq>::reset()
             // Use per-entity contact rate
             if (contact_rates_vec.size() == 1u)
             {
-                // Uniform rate
+                // Uniform rate (already synced with parameter above)
                 entity_contact_rate = contact_rates_vec[0u];
             }
             else if (contact_rates_vec.size() == this->entities.size())
