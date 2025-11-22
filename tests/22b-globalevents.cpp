@@ -11,16 +11,13 @@ using namespace epiworld;
  * 
  * This test verifies that:
  * 1. A GlobalEvent can change the transmission rate to 0 on day 20
- * 2. After the intervention, transmission should stop (or be minimal)
+ * 2. After the intervention, transmission should stop completely
  * 
  * Note: We verify this by checking the transmission database, not just
  * the infected counts, since infected individuals remain in that state
  * until recovery.
  */
 EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][parameters]") {
-
-    // Threshold for validating transmission reduction after intervention
-    const double TRANSMISSION_REDUCTION_THRESHOLD = 0.05;
 
     int nexperiments = 10;
     int ndays = 40;
@@ -78,9 +75,8 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
     // We should have transmissions before the intervention
     REQUIRE(total_transmissions_before > 0);
     
-    // After setting transmission to 0, there should be NO or very few transmissions
-    // We use a threshold to allow for any edge cases
-    REQUIRE(total_transmissions_after < static_cast<int>(total_transmissions_before * TRANSMISSION_REDUCTION_THRESHOLD));
+    // After setting transmission to 0, there should be NO transmissions
+    REQUIRE(total_transmissions_after == 0);
     #else
     // Print for standalone execution
     printf_epiworld(
