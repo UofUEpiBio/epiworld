@@ -324,6 +324,10 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     model.add_state("Recovered");
 
     // Setting up parameters
+    // Validate contact_rate vector is not empty
+    if (contact_rate.empty())
+        throw std::length_error("contact_rate vector cannot be empty");
+    
     // The "Contact rate" parameter stores the first value for backward compatibility
     // The actual per-agent rates are in the contact_rates vector
     model.add_param(contact_rate[0u], "Contact rate");

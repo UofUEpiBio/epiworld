@@ -27,7 +27,7 @@ int main() {
     epimodels::ModelMeaslesMixing<> model(
         1000,             // Population size
         0.005,            // Initial prevalence (0.5% infected)
-        4.0,              // Contact rate (4 contacts per day)
+        {4.0},            // Contact rate (4 contacts per day, as vector)
         0.9,              // Transmission rate (90% transmission per contact)
         0.95,             // Vaccine efficacy (95% effective)
         0.5,              // Vaccine recovery enhancement (50% faster recovery)

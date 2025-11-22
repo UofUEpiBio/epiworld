@@ -550,6 +550,10 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
         };
 
     // Setting up parameters
+    // Validate contact_rate vector is not empty
+    if (contact_rate.empty())
+        throw std::length_error("contact_rate vector cannot be empty");
+    
     model.add_param(contact_rate[0u], "Contact rate");
     model.add_param(transmission_rate, "Prob. Transmission");
     model.add_param(recovery_rate, "Prob. Recovery");

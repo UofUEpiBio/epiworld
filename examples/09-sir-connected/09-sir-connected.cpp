@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
         "a virus",    // Name of the virus
         popsize,
         preval,       // Initial prevalence
-        beta,         // Reproductive number
+        {beta},       // Reproductive number (as vector)
         prob_infect,  // Prob of transmission
         prob_recovery // Prob of recovery
     );
