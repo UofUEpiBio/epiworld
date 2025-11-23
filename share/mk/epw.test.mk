@@ -67,7 +67,15 @@ ifeq ($(PARALLEL_TESTS),1)
 		V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
         
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-combine.pl $($(NAME)_TEST_DIR)/report-*.xml > $(abspath $($(NAME)_TEST_DIR))/report.xml
-	
+else
+	$(V)mkdir -p $($(NAME)_TEST_DIR)
+	$(V)cd $($(NAME)_TEST_DIR) && \
+	GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(abspath $($(NAME)_COV_DIR))' $(abspath $($(NAME)_BUILD_DIR)/$(NAME)) \
+		--reporter junit \
+		--out $(abspath $($(NAME)_TEST_DIR))/report.xml
+endif
+
+ifeq ($(PARALLEL_TESTS),1)
 ifeq ($(WITH_COVERAGE),1)
 	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/coverage.info'
 	$(V)merge_args=""; \
@@ -79,15 +87,8 @@ ifeq ($(WITH_COVERAGE),1)
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
 	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info
 endif	
-
 else
-	$(V)mkdir -p $($(NAME)_TEST_DIR)
-	$(V)cd $($(NAME)_TEST_DIR) && \
-	GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(abspath $($(NAME)_COV_DIR))' $(abspath $($(NAME)_BUILD_DIR)/$(NAME)) \
-		--reporter junit \
-		--out $(abspath $($(NAME)_TEST_DIR))/report.xml
-
-ifeq ($(WITH_COVERAGE),1)
+ifeq ($(and $(WITH_COVERAGE),1))
 	$(V)for f in $($(NAME)_BUILD_DIR)/*.gcno; do \
 		ln -sf "$$(realpath $$f)" "$(abspath $($(NAME)_COV_DIR))/$$(basename $$f)"; \
 	done
@@ -97,7 +98,6 @@ ifeq ($(WITH_COVERAGE),1)
 	$(V)$(LCOV) --extract "$(abspath $($(NAME)_COV_DIR))/coverage.info" $(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d))) --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
 endif
-
 endif
 
 TEST_TARGETS += $(NAME)-test	
