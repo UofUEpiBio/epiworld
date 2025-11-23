@@ -11,3 +11,9 @@ __pycache__/
 *.csv
 $*
 *.o
+
+docs/html/
+docs/latex/
+docs/xml/
+
+_codeql_detected_source_root
