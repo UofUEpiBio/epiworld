@@ -3,44 +3,21 @@ include share/mk/epw.prog.mk
 $(NAME)_TEST_DIR := $($(NAME)_BUILD_DIR)/.test
 $(NAME)_COV_DIR := $($(NAME)_BUILD_DIR)/.coverage
 	
-# This looks complicated, but all it's really doing is:
+# This calls into a Perl script, which:
 # 
-#   1. Run the test suite with the -l flag to list all test cases.
-#   2. For each test case, generate a Makefile rule that runs that test case.
-#   3. Create a target "all" that depends on all the test case rules.
-#   4. The generated Makefile is stored in the build directory as test.mk.
+#   1. Runs the test suite with the -l flag to list all test cases.
+#   2. For each test case, generates a Makefile rule that runs that test case.
+#   3. Creates a target "all" that depends on all the test case rules.
 # 
-# This means that we can run tests in parallel using `make -j` and each test case
-# will be run in its own rule. This also allows us to easily add new test cases without
+# The generated Makefile is then stored in the build directory as test.mk. This
+# means that we can run tests in parallel using `make -j` and each test case will
+# be run in its own rule. This also allows us to easily add new test cases without
 # modifying the Makefile, as the test cases are discovered at build time.
 $($(NAME)_BUILD_DIR)/test.mk: override NAME := $(NAME)
 $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME)
 	$(SAY) "GEN" $@
 	$(V)mkdir -p $($(NAME)_BUILD_DIR)
-	$(V)printf "# Auto-generated test Makefile for $(NAME)\n" > $@
-	$(V)printf "\n" >> $@
-	$(V)printf ".SUFFIXES:\n" >> $@
-	$(V)printf ".DEFAULT_GOAL := all\n" >> $@
-	$(V)printf "\n" >> $@
-	$(V)all_tests=$$( ( $($(NAME)_BUILD_DIR)/$(NAME) -l || true ) | \
-	    perl -nE 'if (/^ {2}(\S.*)$$/) { $$s = $$1; $$s =~ s/^\s+|\s+$$//g; say $$s }'); \
-	printf '%s\n' "$$all_tests" > $@.tmp; \
-    test_targets=""; \
-    while IFS= read -r test; do \
-        rule_name=$$(printf '%s' "$$test" | sha256sum | cut -d' ' -f1); \
-        test_targets="$$test_targets $$rule_name"; \
-        cat share/mk/test-frag.mk | \
-            sed "s/%RULE_NAME%/$$rule_name/g" | \
-            sed "s/%HUMAN_NAME%/$$test/g" | \
-            sed "s|%BINARY%|$(abspath $($(NAME)_BUILD_DIR))/$(NAME)|g" | \
-            sed "s|%BUILD_DIR%|$(abspath $($(NAME)_BUILD_DIR))|g" | \
-            sed "s|%TEST_DIR%|$(abspath $($(NAME)_TEST_DIR))|g" | \
-            sed "s|%COV_DIR%|$(abspath $($(NAME)_COV_DIR))|g" | \
-            sed "s|%COV_DIRS%|$(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d)))|g" >> $@; \
-        printf "\n\n" >> $@; \
-    done < $@.tmp; \
-    rm -f $@.tmp; \
-    printf 'all:%s\n' "$$test_targets" >> $@
+	$(V)perl script/gen-test-runner.pl '$(NAME)' '$($(NAME)_BUILD_DIR)' $($(NAME)_COV_DIRS) > $@
 
 # Loop over all test suites and add a target to run them.
 define run-test-rule
@@ -59,9 +36,26 @@ $(eval $(foreach src,$($(NAME)_SOURCES),$(call run-test-rule,$(src))))
 
 # Call into the generated test Makefile to run all tests.
 # Then, if coverage is enabled, aggregate the coverage data.
-.PHONY: $($(NAME)_SOURCE_DIR)-test
-$($(NAME)_SOURCE_DIR)-test: override NAME := $(NAME)
-$($(NAME)_SOURCE_DIR)-test: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_BUILD_DIR)/test.mk | $($(NAME)_TEST_HOOKS)
+.PHONY: $(NAME)-test
+$(NAME)-test: override NAME := $(NAME)
+$(NAME)-test: $(NAME)-test-gen-report
+
+.PHONY: $(NAME)-test-gen-report
+$(NAME)-test-gen-report: override NAME := $(NAME)
+$(NAME)-test-gen-report: $(NAME)-tests-all
+	$(SAY) "REPORT" $($(NAME)_TEST_DIR)/report.html
+	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-genhtml.pl $($(NAME)_TEST_DIR)/report.xml > $($(NAME)_TEST_DIR)/report.html
+	$(SAY) "REPORT" $($(NAME)_TEST_DIR)/report.xml
+	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-okay.pl $($(NAME)_TEST_DIR)/report.xml; \
+	if [ $$? -eq 0 ]; then \
+		perl $(ROOT_SOURCE_DIR)/script/junit-report.pl --short $($(NAME)_TEST_DIR)/report.xml; \
+	else \
+		perl $(ROOT_SOURCE_DIR)/script/junit-report.pl $($(NAME)_TEST_DIR)/report.xml; \
+	fi
+	
+.PHONY: $(NAME)-tests-all
+$(NAME)-tests-all: override NAME := $(NAME)
+$(NAME)-tests-all: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_BUILD_DIR)/test.mk | $($(NAME)_TEST_HOOKS)
 	$(SAY) "SUITE" $@
 	$(V)mkdir -p $($(NAME)_TEST_DIR)
 	
@@ -75,7 +69,7 @@ ifeq ($(PARALLEL_TESTS),1)
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-combine.pl $($(NAME)_TEST_DIR)/report-*.xml > $(abspath $($(NAME)_TEST_DIR))/report.xml
 	
 ifeq ($(WITH_COVERAGE),1)
-	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/en-total.info'
+	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/coverage.info'
 	$(V)merge_args=""; \
 	for f in $($(NAME)_COV_DIR)/coverage-*.info; do \
 	    merge_args="$$merge_args --add-tracefile $$f"; \
@@ -98,24 +92,12 @@ ifeq ($(WITH_COVERAGE),1)
 		ln -sf "$$(realpath $$f)" "$(abspath $($(NAME)_COV_DIR))/$$(basename $$f)"; \
 	done
 	$(SAY) 'LCOV' '$(abspath $($(NAME)_COV_DIR))/coverage.info'
-	$(V)$(LCOV) --capture --directory "$(abspath $($(NAME)_COV_DIR))" --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info.all" --quiet \
+	$(V)$(LCOV) --capture --directory "$(abspath $($(NAME)_COV_DIR))" --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
-	$(V)$(LCOV) --extract "$(abspath $($(NAME)_COV_DIR))/coverage.info.all" $(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d))) --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
+	$(V)$(LCOV) --extract "$(abspath $($(NAME)_COV_DIR))/coverage.info" $(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d))) --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
 endif
 
 endif
 
-	$(SAY) "REPORT" $($(NAME)_TEST_DIR)/report.xml
-	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-genhtml.pl $($(NAME)_TEST_DIR)/report.xml > $($(NAME)_TEST_DIR)/report.html
-	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-okay.pl $($(NAME)_TEST_DIR)/report.xml; \
-	if [ $$? -eq 0 ]; then \
-	    perl $(ROOT_SOURCE_DIR)/script/junit-report.pl --short $($(NAME)_TEST_DIR)/report.xml; \
-	else \
-    	perl $(ROOT_SOURCE_DIR)/script/junit-report.pl $($(NAME)_TEST_DIR)/report.xml; \
-    fi
-
-TEST_TARGETS += $($(NAME)_SOURCE_DIR)-test	
-
-#$(V)cd $($(NAME)_TEST_DIR) && $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/$(NAME) \
-	#--warn NoAssertions --order rand --shard-index 0 --shard-count 3 --rng-seed 0xBEEF
+TEST_TARGETS += $(NAME)-test	
