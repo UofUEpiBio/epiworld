@@ -85,19 +85,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network", "[rewir
     REQUIRE(same_num_edges);
     REQUIRE(degrees_preserved);
     REQUIRE(structure_changed);
-    
-    if (!same_num_edges) {
-        FAIL("Different number of edges!\nModel 0 (p=0): " << source_0.size() << " edges\nModel 1 (p=0.5): " << source_1.size() << " edges");
-    }
-    
-    if (!degrees_preserved) {
-        FAIL("Degrees were not preserved!");
-    }
-    
-    if (!structure_changed) {
-        FAIL("Network structure did not change!");
-    }
-    
+
     std::cout << "PASS: Rewire degseq test successful" << std::endl;
     std::cout << "  - Same number of edges: " << source_0.size() << std::endl;
     std::cout << "  - Degrees preserved: YES" << std::endl;
