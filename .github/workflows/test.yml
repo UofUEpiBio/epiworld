@@ -47,9 +47,19 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-${{ matrix.llvm }} 100 && \
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-${{ matrix.llvm }} 100
 
-      - uses: ./.github/actions/perl-setup
+      - name: Cache cpanm
+        uses: actions/cache@v4
         with:
-          llvm: ${{ matrix.llvm }} 
+          path: ~/.cpanm
+          key: "${{ runner.os }}-llvm${{ inputs.llvm }}-cpanm-${{ hashFiles('cpanfile') }}"
+  
+      - name: Install Perl modules
+        shell: bash
+        run: |
+          if [ "$(uname)" = "Darwin" ]; then
+            export PKG_CONFIG_PATH="$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH"
+          fi
+          cpanm --notest --installdeps .
 
       - name: Run test suite
         run: |
