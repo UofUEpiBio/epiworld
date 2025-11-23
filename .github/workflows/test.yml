@@ -8,14 +8,10 @@ jobs:
     strategy:
       matrix:
         include:
-          # macOS configurations
-          - os: macos-latest
-            llvm: 14
-          - os: macos-latest
-            llvm: 18
-          # Ubuntu configuration
           - os: ubuntu-latest
             llvm: 18
+          - os: ubuntu-latest
+            llvm: 14
 
     steps:
       - uses: actions/checkout@v4
