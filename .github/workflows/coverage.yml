@@ -27,7 +27,7 @@ jobs:
             clang-tools-18 \
             llvm-18 \
             libxml-libxml-perl \
-            cpanm && \
+            cpanminus && \
           sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100 && \
           sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-18 100 && \
           sudo update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-18 100 && \
