@@ -120,11 +120,6 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
     REQUIRE(avg_matches_p);
     INFO("Average change percentage: " << avg_change_percent << ", expected: " << p);
     
-    if (!avg_matches_p) {
-        FAIL("FAIL: Average edge change rate (" << avg_change_percent << ") is not close enough to p=" << p << "\n"
-             << "Tolerance was set to ±" << tolerance);
-    }
-    
     std::cout << "PASS: Rewire degseq test successful" << std::endl;
     std::cout << "  - Target rewiring rate (p): " << p << std::endl;
     std::cout << "  - Average rewiring rate: " << avg_change_percent << std::endl;
