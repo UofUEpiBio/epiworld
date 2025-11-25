@@ -8,6 +8,10 @@ jobs:
     strategy:
       matrix:
         include:
+          - os: macos-latest
+            llvm: 18
+          - os: macos-latest
+            llvm: 14
           - os: ubuntu-latest
             llvm: 18
           - os: ubuntu-latest
