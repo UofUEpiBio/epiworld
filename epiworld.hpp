@@ -14774,7 +14774,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
                 );
 
             // Correcting for possible overflow
-            if ((loc > 0) && (loc >= n_available))
+            if (loc >= n_available)
                 loc = n_available - 1;
 
             Agent<TSeq> & agent = population[idx[loc]];
@@ -14861,8 +14861,8 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
                     floor(model->runif() * n--)
                     );
 
-                if ((loc > 0) && (loc == n))
-                    loc--;
+                if (loc >= n)
+                    loc = n - 1;
                 
                 population[idx[loc]].set_virus(
                     virus,
@@ -16601,8 +16601,8 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
                     floor(model->runif() * n--)
                     );
 
-                if ((loc > 0) && (loc == n))
-                    loc--;
+                if (loc >= n)
+                    loc = n - 1;
                 
                 population[idx[loc]].add_tool(
                     tool,
@@ -16684,8 +16684,8 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
                     floor(model->runif() * n--)
                     );
 
-                if ((loc > 0) && (loc == n))
-                    loc--;
+                if (loc >= n)
+                    loc = n - 1;
                 
                 population[idx[loc]].add_tool(
                     tool,
