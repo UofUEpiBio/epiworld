@@ -902,7 +902,7 @@ inline void DataBase<TSeq>::write_data(
 
         file_virus_info <<
         #ifdef EPI_DEBUG
-            "thread" << "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
+            "thread " << "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
         #else
             "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
         #endif
