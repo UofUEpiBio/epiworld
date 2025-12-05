@@ -950,8 +950,8 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_virus_date[i] << " " <<
                 hist_virus_id[i] << " \"" <<
-                virus_name[hist_virus_id[i]] << "\" " <<
-                model->states_labels[hist_virus_state[i]] << " " <<
+                virus_name[hist_virus_id[i]] << "\" \"" <<
+                model->states_labels[hist_virus_state[i]] << "\" " <<
                 hist_virus_counts[i] << "\n";
     }
 
