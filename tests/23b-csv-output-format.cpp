@@ -71,12 +71,12 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         std::cout << "   Header: " << header << std::endl;
         std::cout << "   Sample: " << line << std::endl;
         
-        // Should have quotes around virus name (2 quotes)
+        // Should have quotes around virus name (exactly 2 quotes for virus name)
         int quote_count = std::count(line.begin(), line.end(), '"');
-        std::cout << "   Quote count: " << quote_count << " (expected: >= 2)" << std::endl;
+        std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
         
         #ifdef CATCH_CONFIG_MAIN
-        REQUIRE(quote_count >= 2);
+        REQUIRE(quote_count == 2);
         #endif
     }
 
