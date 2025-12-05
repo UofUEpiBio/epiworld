@@ -163,6 +163,14 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
                 throw std::range_error("Proportions must be between 0 and 1");
         }
     }
+    else
+    {
+        for (auto p: prevalence)
+        {
+            if (p < 0.0)
+                throw std::range_error("Count values in prevalence must be non-negative");
+        }
+    }
 
     return [prevalence, as_proportion](
         Virus<TSeq> & virus, Model<TSeq> * model
