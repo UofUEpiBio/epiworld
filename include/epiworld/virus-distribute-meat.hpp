@@ -134,4 +134,88 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
 
 }
 
+/**
+ * Function template to distribute a virus to agents in each entity of a model.
+ * 
+ * @tparam TSeq The sequence type used in the model.
+ * @param prevalence A vector of prevalences for each entity in the model.
+ * @param as_proportion Flag indicating whether the prevalences are given as
+ * proportions or absolute values.
+ * @return A lambda function that distributes the virus to agents in each entity
+ * of the model.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
+    std::vector< double > prevalence,
+    bool as_proportion = true
+)
+{
+
+    // Checking proportions are within range
+    if (prevalence.size() == 0)
+        throw std::range_error("Prevalence vector cannot be empty");
+
+    if (as_proportion)
+    {
+        for (auto p: prevalence)
+        {
+            if ((p < 0.0) || (p > 1.0))
+                throw std::range_error("Proportions must be between 0 and 1");
+        }
+    }
+
+    return [prevalence, as_proportion](
+        Virus<TSeq> & virus, Model<TSeq> * model
+    ) -> void 
+    { 
+
+        // Checking the number of entities
+        if (prevalence.size() != model->get_entities().size())
+            throw std::range_error(
+                "Prevalence vector size (" + std::to_string(prevalence.size()) +
+                ") does not match number of entities (" + std::to_string(model->get_entities().size()) + ")"
+                );
+
+        // Adding action
+        auto & entities = model->get_entities();
+        auto & population = model->get_agents();
+        for (size_t e = 0; e < entities.size(); ++e)
+        {
+            auto & entity_e = entities[e];
+            auto & agent_ids = entity_e.get_agents();
+            double prevalence_e = prevalence[e];
+            size_t n = agent_ids.size();
+            size_t n_to_distribute;
+            if (as_proportion)
+                n_to_distribute = static_cast<size_t>(std::floor(prevalence_e * n));
+            else
+                n_to_distribute = static_cast<size_t>(prevalence_e);
+
+            if (n_to_distribute > n)
+                n_to_distribute = n;
+
+            std::vector< size_t > idx = agent_ids;
+            for (size_t i = 0u; i < n_to_distribute; ++i)
+            {
+                size_t loc = static_cast<epiworld_fast_uint>(
+                    floor(model->runif() * n--)
+                    );
+
+                if ((loc > 0) && (loc == n))
+                    loc--;
+                
+                population[idx[loc]].set_virus(
+                    virus,
+                    const_cast< Model<TSeq> * >(model)
+                    );
+                
+                std::swap(idx[loc], idx[n]);
+
+            }
+        }
+    };
+
+}
+
+
 #endif
