@@ -14774,7 +14774,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
                 );
 
             // Correcting for possible overflow
-            if (loc >= n_available)
+            if ((n_available > 0) && (loc >= n_available))
                 loc = n_available - 1;
 
             Agent<TSeq> & agent = population[idx[loc]];
@@ -14823,6 +14823,14 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
                 throw std::range_error("Proportions must be between 0 and 1");
         }
     }
+    else
+    {
+        for (auto p: prevalence)
+        {
+            if (p < 0.0)
+                throw std::range_error("Count values in prevalence must be non-negative");
+        }
+    }
 
     return [prevalence, as_proportion](
         Virus<TSeq> & virus, Model<TSeq> * model
@@ -14861,7 +14869,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
                     floor(model->runif() * n--)
                     );
 
-                if (loc >= n)
+                if ((n > 0) && (loc >= n))
                     loc = n - 1;
                 
                 population[idx[loc]].set_virus(
@@ -16601,7 +16609,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
                     floor(model->runif() * n--)
                     );
 
-                if (loc >= n)
+                if ((n > 0) && (loc >= n))
                     loc = n - 1;
                 
                 population[idx[loc]].add_tool(
@@ -16646,6 +16654,14 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
                 throw std::range_error("Proportions must be between 0 and 1");
         }
     }
+    else
+    {
+        for (auto p: prevalence)
+        {
+            if (p < 0.0)
+                throw std::range_error("Count values in prevalence must be non-negative");
+        }
+    }
 
     return [prevalence, as_proportion](
         Tool<TSeq> & tool, Model<TSeq> * model
@@ -16684,7 +16700,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
                     floor(model->runif() * n--)
                     );
 
-                if (loc >= n)
+                if ((n > 0) && (loc >= n))
                     loc = n - 1;
                 
                 population[idx[loc]].add_tool(
