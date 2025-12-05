@@ -2024,9 +2024,9 @@ inline void Model<TSeq>::reset() {
         queue.reset();
 
     // Re distributing tools and virus
+    dist_entities();
     dist_virus();
     dist_tools();
-    dist_entities();
 
     // Distributing initial state, if specified
     initial_states_fun(this);
