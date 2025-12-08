@@ -26,15 +26,15 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Write all data types to files
     model.write_data(
-        "csv_test_virus_info.csv",
-        "csv_test_virus_hist.csv",
-        "csv_test_tool_info.csv",
-        "csv_test_tool_hist.csv",
-        "csv_test_total_hist.csv",
-        "csv_test_transmission.csv",
-        "csv_test_transition.csv",
-        "csv_test_reproductive.csv",
-        "csv_test_generation.csv"
+        "24b-csv-output-format-saves/csv_test_virus_info.csv",
+        "24b-csv-output-format-saves/csv_test_virus_hist.csv",
+        "24b-csv-output-format-saves/csv_test_tool_info.csv",
+        "24b-csv-output-format-saves/csv_test_tool_hist.csv",
+        "24b-csv-output-format-saves/csv_test_total_hist.csv",
+        "24b-csv-output-format-saves/csv_test_transmission.csv",
+        "24b-csv-output-format-saves/csv_test_transition.csv",
+        "24b-csv-output-format-saves/csv_test_reproductive.csv",
+        "24b-csv-output-format-saves/csv_test_generation.csv"
     );
 
     std::cout << "\nCSV Format Validation Test:" << std::endl;
@@ -42,7 +42,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Test 1: virus_hist - should have quotes around virus name AND state
     {
-        std::ifstream file("csv_test_virus_hist.csv");
+        std::ifstream file("24b-csv-output-format-saves/csv_test_virus_hist.csv");
         std::string header, line;
         std::getline(file, header);
         std::getline(file, line);
@@ -62,7 +62,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Test 2: virus_info - should have quotes around virus name
     {
-        std::ifstream file("csv_test_virus_info.csv");
+        std::ifstream file("24b-csv-output-format-saves/csv_test_virus_info.csv");
         std::string header, line;
         std::getline(file, header);
         std::getline(file, line);
@@ -82,7 +82,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Test 3: tool_hist - should have quotes around state
     {
-        std::ifstream file("csv_test_tool_hist.csv");
+        std::ifstream file("24b-csv-output-format-saves/csv_test_tool_hist.csv");
         if (file.good()) {
             std::string header, line;
             std::getline(file, header);
@@ -106,7 +106,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Test 4: total_hist - should have quotes around state
     {
-        std::ifstream file("csv_test_total_hist.csv");
+        std::ifstream file("24b-csv-output-format-saves/csv_test_total_hist.csv");
         std::string header, line;
         std::getline(file, header);
         std::getline(file, line);
@@ -126,7 +126,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Test 5: transmission - should have quotes around virus name
     {
-        std::ifstream file("csv_test_transmission.csv");
+        std::ifstream file("24b-csv-output-format-saves/csv_test_transmission.csv");
         std::string header, line;
         std::getline(file, header);
         if (std::getline(file, line)) {
@@ -148,7 +148,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Test 6: transition - should have quotes around both from and to states
     {
-        std::ifstream file("csv_test_transition.csv");
+        std::ifstream file("24b-csv-output-format-saves/csv_test_transition.csv");
         std::string header, line;
         std::getline(file, header);
         if (std::getline(file, line)) {
@@ -170,7 +170,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Test 7: reproductive_number - should have quotes around virus name
     {
-        std::ifstream file("csv_test_reproductive.csv");
+        std::ifstream file("24b-csv-output-format-saves/csv_test_reproductive.csv");
         std::string header, line;
         std::getline(file, header);
         if (std::getline(file, line)) {
@@ -192,7 +192,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Test 8: generation_time - no string fields, just numeric IDs
     {
-        std::ifstream file("csv_test_generation.csv");
+        std::ifstream file("24b-csv-output-format-saves/csv_test_generation.csv");
         std::string header, line;
         std::getline(file, header);
         if (std::getline(file, line)) {

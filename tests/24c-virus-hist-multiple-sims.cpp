@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
     int nsims = 2;
     
     // Create a saver function that writes virus history
-    const char* test_prefix = "run_multiple_test-%i";
+    const char* test_prefix = "24c-virus-hist-multiple-sims-saves/run_multiple_test-%i";
     auto saver = make_save_run<>(
         test_prefix,
         false,  // total_hist
@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
 
     // Check each simulation's output file
     for (int sim = 0; sim < nsims; ++sim) {
-        std::string filename = std::string("run_multiple_test-") + 
+        std::string filename = std::string("24c-virus-hist-multiple-sims-saves/run_multiple_test-") + 
                                std::to_string(sim) + "_virus_hist.csv";
         
         std::ifstream file(filename);
@@ -65,7 +65,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         }
         
         // Count lines in file (excluding header)
-        int line_count = -1;  // Start at -1 to exclude header
+        int line_count = 0;  // Counter for data lines (header already read separately)
         std::string line;
         std::set<int> dates_in_file;
         
