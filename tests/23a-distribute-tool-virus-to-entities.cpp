@@ -1,0 +1,95 @@
+#ifndef CATCH_CONFIG_MAIN
+#define EPI_DEBUG
+#endif
+
+#include "tests.hpp"
+
+using namespace epiworld;
+
+EPIWORLD_TEST_CASE("distribute_tool_virus_to_entities_proportions", "[distribute-entities-proportions]") {
+
+    // Create a basic SIR model
+    epimodels::ModelSIRCONN<> model(
+        "test virus", 500, 0.0, 0.9, 0.0, 0.0
+    );
+
+    // Set seed for reproducibility
+    model.seed(123);
+
+    // Create 5 entities with 100 agents each (500 total)
+    std::vector<int> entity_ranges = {0, 100, 200, 300, 400, 500};
+    for (size_t i = 0; i < entity_ranges.size() - 1; ++i) {
+        Entity<> e("Entity " + std::to_string(i), 
+                   dist_factory<>(entity_ranges[i], entity_ranges[i+1]));
+        model.add_entity(e);
+    }
+
+    // Create tool with distribution function
+    Tool<> tool("Test Tool");
+    tool.set_transmission_reduction(0.0);
+    tool.set_susceptibility_reduction(0.0);
+    std::vector<double> tool_prevalence = {1.0, 0.5, 0.25, 0.15, 0.0};
+    tool.set_distribution(
+        distribute_tool_to_entities<>(tool_prevalence, true)
+    );
+    model.add_tool(tool);
+
+    // Create virus with distribution function
+    Virus<> virus = model.get_virus(0);
+    virus.set_distribution(
+        distribute_virus_to_entities<>(tool_prevalence, true)
+    );
+    model.rm_virus(0);
+    model.add_virus(virus);
+
+    // Run model multiple times to collect statistics
+    int n_runs = 100;
+    std::vector<int> virus_counts_by_entity(5, 0);
+    std::vector<int> tool_counts_by_entity(5, 0);
+
+    // Create saver to record initial state
+    auto saver = [&virus_counts_by_entity, &tool_counts_by_entity](
+        size_t, Model<>* m
+    ) -> void {
+        // Record counts at time 0
+        auto & population = m->get_agents();
+        for (size_t e = 0; e < m->get_entities().size(); ++e) {
+            auto & entity_agents = m->get_entity(e).get_agents();
+            for (auto agent_id : entity_agents) {
+                if (population[agent_id].get_virus() != nullptr) {
+                    virus_counts_by_entity[e]++;
+                }
+                if (population[agent_id].get_n_tools() > 0) {
+                    tool_counts_by_entity[e]++;
+                }
+            }
+        }
+    };
+
+    // Run multiple times
+    model.run_multiple(1, n_runs, 123, saver, true, true, 1);
+
+    // Calculate averages
+    std::vector<double> avg_virus_by_entity(5);
+    std::vector<double> avg_tool_by_entity(5);
+    for (size_t i = 0; i < 5; ++i) {
+        avg_virus_by_entity[i] = static_cast<double>(virus_counts_by_entity[i]) / n_runs;
+        avg_tool_by_entity[i] = static_cast<double>(tool_counts_by_entity[i]) / n_runs;
+    }
+
+    // Expected values for each entity (100 agents * prevalence)
+    std::vector<double> expected_counts = {100.0, 50.0, 25.0, 15.0, 0.0};
+
+    // Allow for statistical variation (±20% tolerance for stochastic test)
+    #ifdef CATCH_CONFIG_MAIN
+    for (size_t i = 0; i < 5; ++i) {
+        // Check that virus distribution follows expected pattern
+        // Allow for statistical variation: 20% of expected or at least 2 agents
+        double tolerance = expected_counts[i] * 0.20 + 2;
+        REQUIRE(std::abs(avg_virus_by_entity[i] - expected_counts[i]) <= tolerance);
+
+        // Check that tool distribution follows expected pattern
+        REQUIRE(std::abs(avg_tool_by_entity[i] - expected_counts[i]) <= tolerance);
+    }
+    #endif
+}
