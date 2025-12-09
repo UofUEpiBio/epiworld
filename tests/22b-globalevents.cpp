@@ -28,7 +28,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
 
     // Create a saver function to collect transmission data from each experiment
     auto saver = [&total_transmissions_before, &total_transmissions_after, intervention_day](
-        size_t n, Model<>* m) -> void {
+        size_t, Model<>* m) -> void {
         
         // Get transmission data
         std::vector<int> trans_date, trans_source, trans_target, trans_virus, trans_source_exposure;

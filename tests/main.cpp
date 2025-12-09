@@ -52,3 +52,9 @@
 #include "21b-rewire-degseq.cpp"
 #include "22a-globalevents.cpp"
 #include "22b-globalevents.cpp"
+#include "23a-distribute-tool-virus-to-entities.cpp"
+#include "23b-distribute-tool-virus-to-entities.cpp"
+#include "24a-virus-hist-single-run.cpp"
+#include "24b-csv-output-format.cpp"
+#include "24c-virus-hist-multiple-sims.cpp"
+

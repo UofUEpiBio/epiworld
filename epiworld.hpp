@@ -26,7 +26,7 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 10
+#define EPIWORLD_VERSION_MINOR 11
 #define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
@@ -963,6 +963,15 @@ enum class DiagramType {
     Mermaid, DOT
 };
 
+/**
+ * @brief Class to create model diagrams from transition data
+ * 
+ * This class reads transition data from epidemiological model simulations
+ * and generates visual diagrams representing the state transitions.
+ * It supports multiple diagram formats, including Mermaid and DOT.
+ * 
+ * @ingroup model_utilities
+ */
 class ModelDiagram {
 private:
 
@@ -5980,7 +5989,7 @@ inline void DataBase<TSeq>::write_data(
 
         file_virus_info <<
         #ifdef EPI_DEBUG
-            "thread" << "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
+            "thread " << "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
         #else
             "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
         #endif
@@ -6028,8 +6037,8 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_virus_date[i] << " " <<
                 hist_virus_id[i] << " \"" <<
-                virus_name[hist_virus_id[i]] << "\" " <<
-                model->states_labels[hist_virus_state[i]] << " " <<
+                virus_name[hist_virus_id[i]] << "\" \"" <<
+                model->states_labels[hist_virus_state[i]] << "\" " <<
                 hist_virus_counts[i] << "\n";
     }
 
@@ -10636,6 +10645,14 @@ class Virus;
 template<typename TSeq>
 class Model;
 
+/**
+ * @brief Class containing virus functions
+ * @details
+ * Provides a way to share virus-related functions across multiple Virus instances.
+ * This is particularly useful when viruses are cloned or copied, ensuring that
+ * they all reference the same set of functions without duplicating them.
+ * @tparam TSeq Type for genetic sequences
+ */
 template<typename TSeq>
 class VirusFunctions {
 public:
@@ -13166,9 +13183,9 @@ inline void Model<TSeq>::reset() {
         queue.reset();
 
     // Re distributing tools and virus
+    dist_entities();
     dist_virus();
     dist_tools();
-    dist_entities();
 
     // Distributing initial state, if specified
     initial_states_fun(this);
@@ -14419,6 +14436,14 @@ class Virus;
 template<typename TSeq>
 class Model;
 
+/**
+ * @brief Class containing virus functions
+ * @details
+ * Provides a way to share virus-related functions across multiple Virus instances.
+ * This is particularly useful when viruses are cloned or copied, ensuring that
+ * they all reference the same set of functions without duplicating them.
+ * @tparam TSeq Type for genetic sequences
+ */
 template<typename TSeq>
 class VirusFunctions {
 public:
@@ -14749,7 +14774,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
                 );
 
             // Correcting for possible overflow
-            if ((loc > 0) && (loc >= n_available))
+            if ((n_available > 0) && (loc >= n_available))
                 loc = n_available - 1;
 
             Agent<TSeq> & agent = population[idx[loc]];
@@ -14768,6 +14793,98 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
     };
 
 }
+
+/**
+ * Function template to distribute a virus to agents in each entity of a model.
+ * 
+ * @tparam TSeq The sequence type used in the model.
+ * @param prevalence A vector of prevalences for each entity in the model.
+ * @param as_proportion Flag indicating whether the prevalences are given as
+ * proportions or absolute values.
+ * @return A lambda function that distributes the virus to agents in each entity
+ * of the model.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
+    std::vector< double > prevalence,
+    bool as_proportion = true
+)
+{
+
+    // Checking proportions are within range
+    if (prevalence.size() == 0)
+        throw std::range_error("Prevalence vector cannot be empty");
+
+    if (as_proportion)
+    {
+        for (auto p: prevalence)
+        {
+            if ((p < 0.0) || (p > 1.0))
+                throw std::range_error("Proportions must be between 0 and 1");
+        }
+    }
+    else
+    {
+        for (auto p: prevalence)
+        {
+            if (p < 0.0)
+                throw std::range_error("Count values in prevalence must be non-negative");
+        }
+    }
+
+    return [prevalence, as_proportion](
+        Virus<TSeq> & virus, Model<TSeq> * model
+    ) -> void 
+    { 
+
+        // Checking the number of entities
+        if (prevalence.size() != model->get_entities().size())
+            throw std::range_error(
+                "Prevalence vector size (" + std::to_string(prevalence.size()) +
+                ") does not match number of entities (" + std::to_string(model->get_entities().size()) + ")"
+                );
+
+        // Adding action
+        auto & entities = model->get_entities();
+        auto & population = model->get_agents();
+        for (size_t e = 0; e < entities.size(); ++e)
+        {
+            auto & entity_e = entities[e];
+            auto & agent_ids = entity_e.get_agents();
+            double prevalence_e = prevalence[e];
+            size_t n = agent_ids.size();
+            size_t n_to_distribute;
+            if (as_proportion)
+                n_to_distribute = static_cast<size_t>(std::floor(prevalence_e * n));
+            else
+                n_to_distribute = static_cast<size_t>(prevalence_e);
+
+            if (n_to_distribute > n)
+                n_to_distribute = n;
+
+            std::vector< size_t > idx = agent_ids;
+            for (size_t i = 0u; i < n_to_distribute; ++i)
+            {
+                size_t loc = static_cast<epiworld_fast_uint>(
+                    floor(model->runif() * n--)
+                    );
+
+                if ((n > 0) && (loc >= n))
+                    loc = n - 1;
+                
+                population[idx[loc]].set_virus(
+                    virus,
+                    const_cast< Model<TSeq> * >(model)
+                    );
+                
+                std::swap(idx[loc], idx[n]);
+
+            }
+        }
+    };
+
+}
+
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -16492,8 +16609,8 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
                     floor(model->runif() * n--)
                     );
 
-                if ((loc > 0) && (loc == n))
-                    loc--;
+                if ((n > 0) && (loc >= n))
+                    loc = n - 1;
                 
                 population[idx[loc]].add_tool(
                     tool,
@@ -16505,6 +16622,97 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
             }
 
         };
+
+}
+
+/**
+ * Function template to distribute a tool to agents in each entity of a model.
+ * 
+ * @tparam TSeq The sequence type used in the model.
+ * @param prevalence A vector of prevalences for each entity in the model.
+ * @param as_proportion Flag indicating whether the prevalences are given as
+ * proportions or absolute values.
+ * @return A lambda function that distributes the tool to agents in each entity
+ * of the model.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
+    std::vector< double > prevalence,
+    bool as_proportion = true
+)
+{
+
+    // Checking proportions are within range
+    if (prevalence.size() == 0)
+        throw std::range_error("Prevalence vector cannot be empty");
+
+    if (as_proportion)
+    {
+        for (auto p: prevalence)
+        {
+            if ((p < 0.0) || (p > 1.0))
+                throw std::range_error("Proportions must be between 0 and 1");
+        }
+    }
+    else
+    {
+        for (auto p: prevalence)
+        {
+            if (p < 0.0)
+                throw std::range_error("Count values in prevalence must be non-negative");
+        }
+    }
+
+    return [prevalence, as_proportion](
+        Tool<TSeq> & tool, Model<TSeq> * model
+    ) -> void 
+    { 
+
+        // Checking the number of entities
+        if (prevalence.size() != model->get_entities().size())
+            throw std::range_error(
+                "Prevalence vector size (" + std::to_string(prevalence.size()) +
+                ") does not match number of entities (" + std::to_string(model->get_entities().size()) + ")"
+                );
+
+        // Adding action
+        auto & entities = model->get_entities();
+        auto & population = model->get_agents();
+        for (size_t e = 0; e < entities.size(); ++e)
+        {
+            auto & entity_e = entities[e];
+            auto & agent_ids = entity_e.get_agents();
+            double prevalence_e = prevalence[e];
+            size_t n = agent_ids.size();
+            size_t n_to_distribute;
+            if (as_proportion)
+                n_to_distribute = static_cast<size_t>(std::floor(prevalence_e * n));
+            else
+                n_to_distribute = static_cast<size_t>(prevalence_e);
+
+            if (n_to_distribute > n)
+                n_to_distribute = n;
+
+            std::vector< size_t > idx = agent_ids;
+            for (size_t i = 0u; i < n_to_distribute; ++i)
+            {
+                size_t loc = static_cast<epiworld_fast_uint>(
+                    floor(model->runif() * n--)
+                    );
+
+                if ((n > 0) && (loc >= n))
+                    loc = n - 1;
+                
+                population[idx[loc]].add_tool(
+                    tool,
+                    const_cast< Model<TSeq> * >(model)
+                    );
+                
+                std::swap(idx[loc], idx[n]);
+
+            }
+        }
+    };
 
 }
 #endif
@@ -23462,16 +23670,17 @@ inline void ContactTracing::print(size_t agent)
  * surveillance mechanisms that can be used across different epidemiological models.
  * 
  * Available model categories include:
- * - Basic compartmental models (SIS, SIR, SEIR)
- * - Models with death compartments (SIRD, SISD, SEIRD)
- * - Connected population models (SIRConnected, SEIRConnected, SIRDConnected, SEIRDConnected)
- * - Logistic regression models (SIRLogit)
- * - Mixing population models (SEIRMixing, SIRMixing)
- * - Quarantine models (SEIRMixingQuarantine)
- * - School-specific models (MeaslesSchool)
- * - Disease-specific models (MeaslesMixing, MeaslesMixingRiskQuarantine)
- * - Diffusion network models (DiffNet)
- * - Surveillance systems
+ * 
+ *   - Basic compartmental models (SIS, SIR, SEIR)
+ *   - Models with death compartments (SIRD, SISD, SEIRD)
+ *   - Connected population models (SIRConnected, SEIRConnected, SIRDConnected, SEIRDConnected)
+ *   - Logistic regression models (SIRLogit)
+ *   - Mixing population models (SEIRMixing, SIRMixing)
+ *   - Quarantine models (SEIRMixingQuarantine)
+ *   - School-specific models (MeaslesSchool)
+ *   - Disease-specific models (MeaslesMixing, MeaslesMixingRiskQuarantine)
+ *   - Diffusion network models (DiffNet)
+ *   - Surveillance systems
  * 
  */
 namespace epimodels {
@@ -29026,7 +29235,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool: public Model<TSeq> {
+class ModelMeaslesSchool: public epiworld::Model<TSeq> {
 
 private:
 
@@ -29056,6 +29265,11 @@ private:
 
 public:
 
+    /**
+     * @name Model States
+     * @brief The different states of the model.
+     */
+    ///@{
     static constexpr epiworld_fast_uint SUSCEPTIBLE             = 0u;
     static constexpr epiworld_fast_uint EXPOSED                 = 1u;
     static constexpr epiworld_fast_uint PRODROMAL               = 2u;
@@ -29069,6 +29283,7 @@ public:
     static constexpr epiworld_fast_uint QUARANTINED_RECOVERED   = 10u;
     static constexpr epiworld_fast_uint HOSPITALIZED            = 11u;
     static constexpr epiworld_fast_uint RECOVERED               = 12u;
+    ///@}
     
     // Default constructor
     ModelMeaslesSchool() {};
@@ -29909,7 +30124,7 @@ using namespace epiworld;
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRMixingQuarantine : public Model<TSeq>
+class ModelSEIRMixingQuarantine : public epiworld::Model<TSeq>
 {
 private:
 
@@ -31157,7 +31372,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing : public Model<TSeq>
+class ModelMeaslesMixing : public epiworld::Model<TSeq>
 {
 private:
 
@@ -32486,7 +32701,7 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
+class ModelMeaslesMixingRiskQuarantine : public epiworld::Model<TSeq> 
 {
 private:
     // Vector of vectors of infected agents (prodromal agents are infectious)

@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     for (const auto & a : model.get_agents())
     {
-        if (a.get_state() != model.state_of("Susceptible"))
+        if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
         {
             if (a.get_entity(0).get_id() == 0)
             {
@@ -92,7 +92,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
         {
             n_right++;
         }
-        else if (a.get_state() != model.state_of("Susceptible"))
+        else if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
         {
             if (a.get_entity(0).get_id() == 1)
             {
