@@ -5935,7 +5935,7 @@ inline void DataBase<TSeq>::get_outbreak_size(
 
     // Extracting useful sizes
     size_t n_state   = model->get_n_states();
-    size_t n_days    = model->get_ndays();
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
     size_t n_viruses = model->get_n_viruses();
     
     // Making room
