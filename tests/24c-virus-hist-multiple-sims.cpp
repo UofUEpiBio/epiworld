@@ -40,7 +40,8 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         false,  // transmission
         false,  // transition
         false,  // reproductive
-        false   // generation
+        false,  // generation
+        false   // outbreak_size
     );
     
     model.run_multiple(ndays, nsims, 123, saver);
@@ -77,10 +78,11 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
             line_count++;
             // Extract date (first column after thread column in debug mode)
             std::istringstream iss(line);
-            int thread_id, date;
             #ifdef EPI_DEBUG
+            int thread_id, date;
             iss >> thread_id >> date;
             #else
+            int date;
             iss >> date;
             #endif
             dates_in_file.insert(date);

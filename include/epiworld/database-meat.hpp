@@ -819,6 +819,41 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
 }
 
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_outbreak_size(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & outbreak_size
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_state   = model->get_n_states();
+    size_t n_days    = model->get_ndays();
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days, 0);
+    virus_id.assign(n_days * n_viruses, 0);
+    outbreak_size.assign(n_days * n_viruses, 0);
+
+    for (size_t i = 0u; i < hist_virus_id.size(); ++i)
+    {
+
+        // With more viruses, there are more days
+        auto location = hist_virus_date[i] + hist_virus_id[i] * n_days;
+
+        date[location] = hist_virus_date[i];
+        virus_id[location] = hist_virus_id[i];
+        outbreak_size[location] += hist_virus_counts[i];
+
+    }
+
+    return;
+    
+}
+
 template<typename TSeq>
 inline void DataBase<TSeq>::get_transmissions(
     std::vector<int> & date,
@@ -882,7 +917,8 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_transmission,
     std::string fn_transition,
     std::string fn_reproductive_number,
-    std::string fn_generation_time
+    std::string fn_generation_time,
+    std::string fn_outbreak_size
 ) const
 {
 
@@ -1138,6 +1174,45 @@ inline void DataBase<TSeq>::write_data(
 
     if (fn_generation_time != "")
         get_generation_time(fn_generation_time);
+
+    if (fn_outbreak_size != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > outbreak_size;
+
+        get_outbreak_size(date, virus_id, outbreak_size);
+
+        std::ofstream file_outbreak_size(fn_outbreak_size, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_outbreak_size)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_outbreak_size +
+                "\" for writing.")
+                ;
+        }
+
+        file_outbreak_size <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "outbreak_size\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            if (outbreak_size[i] > 0)
+                file_outbreak_size <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    outbreak_size[i] << "\n";
+        }
+
+    }
 
 }
 
