@@ -163,7 +163,7 @@ public:
      * @return In `get_hist_virus`, the time series of what for each virus.
      * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
-     * @return In `get_outbreak_size`, the outbreak size for each virus at each
+     * @return In `get_active_cases`, the outbreak size for each virus at each
      * point in time.
      */
     ///@{
@@ -212,10 +212,16 @@ public:
         bool skip_zeros
     ) const;
 
+    void get_active_cases(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & count
+    ) const;
+
     void get_outbreak_size(
         std::vector< int > & date,
         std::vector< int > & virus_id,
-        std::vector< int > & outbreak_size
+        std::vector< int > & size
     ) const;
     ///@}
 
@@ -256,6 +262,7 @@ public:
         std::string fn_transition,
         std::string fn_reproductive_number,
         std::string fn_generation_time,
+        std::string fn_active_cases,
         std::string fn_outbreak_size
         ) const;
 

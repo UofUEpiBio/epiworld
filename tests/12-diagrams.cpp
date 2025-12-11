@@ -24,7 +24,7 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
     std::cout << "Printing transitions from file" << std::endl;
 
     model_0.write_data(
-        "", "", "", "", "", "", "01-sir_transitions.txt", "", "", ""
+        "", "", "", "", "", "", "01-sir_transitions.txt", "", "", "", ""
     );
     epiworld::ModelDiagram diagram;
     diagram.draw_from_file(epiworld::DiagramType::Mermaid, "01-sir_transitions.txt");

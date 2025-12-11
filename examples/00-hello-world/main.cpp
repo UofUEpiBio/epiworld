@@ -47,6 +47,7 @@ int main()
         "transitions.txt",
         "reproductive.txt",
         "generation_time.txt",
+        "active_cases.txt",
         "outbreak_size.txt"
         );
 
