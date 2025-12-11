@@ -20,7 +20,9 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
         false, // bool transition,
         true,  // bool reproductive
         true,  // bool generation,
-        true   // bool outbreak_size
+        false, // bool active_cases
+        true,  // bool outbreak_size
+        false  // bool hospitalizations
     );
 
     auto sav_1 = epiworld::make_save_run<>(
@@ -34,7 +36,9 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
         false, // bool transition,
         true,  // bool reproductive
         true,  // bool generation,
-        true   // bool outbreak_size
+        false, // bool active_cases
+        true,  // bool outbreak_size
+        false  // bool hospitalizations
     );
 
 

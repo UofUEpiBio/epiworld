@@ -71,7 +71,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool reproductive = false,
     bool generation = false,
     bool active_cases = false,
-    bool outbreak_size = false
+    bool outbreak_size = false,
+    bool hospitalizations = false
     );
 
 // template<typename TSeq>
@@ -493,6 +494,7 @@ public:
      * @param fn_generation_time Filename. Generation time data.
      * @param fn_active_cases Filename. Active cases data.
      * @param fn_outbreak_size Filename. Outbreak size data.
+     * @param fn_hospitalizations Filename. Hospitalization incidence data.
      */
     void write_data(
         std::string fn_virus_info,
@@ -505,7 +507,8 @@ public:
         std::string fn_reproductive_number,
         std::string fn_generation_time,
         std::string fn_active_cases,
-        std::string fn_outbreak_size
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations
         ) const;
 
     /**
@@ -757,6 +760,24 @@ public:
         bool self = false
     );
 
+    /**
+     * @brief Get the hospitalization incidence
+     * @param date Date of the hospitalization
+     * @param virus_id Virus at the time of hospitalization
+     * @param counts Total hospitalizations
+     * @details
+     * This virtual method extracts hospitalization events from the transition matrix.
+     * The default implementation identifies all transitions to states containing
+     * "ospitalized" (matching both "Hospitalized" and "Detected Hospitalized").
+     * Only counts NEW hospitalizations—transitions from non-hospitalized states to hospitalized states.
+     * Re-hospitalizations (transitions between hospitalized states) are excluded.
+     * Models can override this method for custom hospitalization tracking.
+     */
+    virtual void get_hospitalizations(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & counts
+    ) const;
 
 };
 

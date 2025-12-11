@@ -12,12 +12,12 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
     // Saver function
     auto saver_0 = epiworld::make_save_run<>(
         std::string("01c-sir-saves/%lu-episims-0"),
-        true, true, true, false, true, true, true, true, true, false, false
+        true, true, true, false, true, true, true, true, true, false, false, false
         );
 
     auto saver_1 = epiworld::make_save_run<>(
         std::string("01c-sir-saves/%lu-episims-1"),
-        true, true, true, false, true, true, true, true, true, false, false
+        true, true, true, false, true, true, true, true, true, false, false, false
         );
 
     // Queuing doesn't matter and get results that are meaningful
