@@ -41,6 +41,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         false,  // transition
         false,  // reproductive
         false,  // generation
+        false,  // active_cases
         false   // outbreak_size
     );
     
