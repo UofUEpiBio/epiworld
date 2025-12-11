@@ -3730,8 +3730,8 @@ public:
      * @return In `get_hist_virus`, the time series of what for each virus.
      * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
-     * @return In `get_active_cases`, the outbreak size for each virus at each
-     * point in time.
+     * @return In `get_active_cases`, the number of active cases (currently infected individuals)
+     * for each virus at each point in time.
      */
     ///@{
     int get_today_total(const std::string & what) const;
@@ -4926,8 +4926,8 @@ public:
      * @return In `get_hist_virus`, the time series of what for each virus.
      * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
-     * @return In `get_active_cases`, the outbreak size for each virus at each
-     * point in time.
+     * @return In `get_active_cases`, the number of active cases (currently infected individuals)
+     * for each virus at each point in time.
      */
     ///@{
     int get_today_total(const std::string & what) const;
@@ -5952,7 +5952,7 @@ inline void DataBase<TSeq>::get_active_cases(
     size_t n_viruses = model->get_n_viruses();
     
     // Making room
-    date.assign(n_days, 0);
+    date.assign(n_days * n_viruses, 0);
     virus_id.assign(n_days * n_viruses, 0);
     count.assign(n_days * n_viruses, 0);
 
@@ -5985,7 +5985,7 @@ inline void DataBase<TSeq>::get_outbreak_size(
     size_t n_viruses = model->get_n_viruses();
     
     // Making room
-    date.assign(n_days, 0);
+    date.assign(n_days * n_viruses, 0);
     virus_id.assign(n_days * n_viruses, 0);
     outbreak_size.assign(n_days * n_viruses, 0);
 
@@ -11512,7 +11512,7 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         if (what_to_save[9u])
         {
 
-            active_cases = fmt + std::string("_exposed_count.csv");
+            active_cases = fmt + std::string("_active_cases.csv");
             snprintf(buff, sizeof(buff), active_cases.c_str(), niter);
             active_cases = buff;
 
