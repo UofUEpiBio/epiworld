@@ -766,8 +766,10 @@ public:
      * @param virus_id Virus at the time of hospitalization
      * @param counts Total hospitalizations
      * @details
-     * This is a virtual method that should be overridden by models that track
-     * hospitalizations. The default implementation throws an exception.
+     * This virtual method extracts hospitalization events from the transition matrix.
+     * The default implementation identifies all transitions to states containing
+     * "ospitalized" (matching both "Hospitalized" and "Detected Hospitalized").
+     * Models can override this method for custom hospitalization tracking.
      */
     virtual void get_hospitalizations(
         std::vector< int > & date,

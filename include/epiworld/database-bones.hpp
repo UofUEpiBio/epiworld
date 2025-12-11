@@ -358,7 +358,10 @@ public:
      * @param counts Total hospitalizations
      * @details
      * This function extracts hospitalization events from the transition matrix.
-     * It identifies all transitions to states containing "Hospitalized" in their name.
+     * It identifies all transitions to states containing "ospitalized" in their name,
+     * which matches both "Hospitalized" and "Detected Hospitalized" states.
+     * If the model does not implement hospitalization tracking, this function
+     * delegates to the model's virtual get_hospitalizations() method.
      */
     void get_hospitalizations(
         std::vector< int > & date,

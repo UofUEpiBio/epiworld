@@ -55,15 +55,7 @@ EPIWORLD_TEST_CASE("Hospitalization file output", "[hospitalizations-output]") {
     model.run(ndays, 123);
 
     // Write data including hospitalizations
-    std::string test_dir = "25c-hospitalizations-output-saves";
-    std::string hosp_file = test_dir + "/test_hospitalizations.csv";
-    
-    // Create directory if it doesn't exist
-    #ifndef _WIN32
-    system(("mkdir -p " + test_dir).c_str());
-    #else
-    system(("mkdir " + test_dir).c_str());
-    #endif
+    std::string hosp_file = "25c-hospitalizations-output-saves/test_hospitalizations.csv";
 
     model.write_data(
         "",  // virus_info

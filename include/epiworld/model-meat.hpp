@@ -2756,6 +2756,7 @@ inline void Model<TSeq>::get_hospitalizations(
     for (size_t i = 0u; i < state_to.size(); ++i)
     {
         // Check if the destination state contains "Hospitalized"
+        // Using "ospitalized" to match both "Hospitalized" and "Detected Hospitalized"
         if (state_to[i].find("ospitalized") != std::string::npos)
         {
             // For now, we assume virus_id = 0 (single virus)

@@ -1336,7 +1336,9 @@ inline void DataBase<TSeq>::write_data(
         }
         catch (const std::logic_error&)
         {
-            // Model doesn't support hospitalizations, skip silently
+            // Model doesn't support hospitalizations, skip silently.
+            // This allows write_data to be called with fn_hospitalizations
+            // even on models without hospitalization states.
         }
 
     }
