@@ -57,4 +57,7 @@
 #include "24a-virus-hist-single-run.cpp"
 #include "24b-csv-output-format.cpp"
 #include "24c-virus-hist-multiple-sims.cpp"
+#include "25-hospitalizations.cpp"
+#include "25b-hospitalizations-measles.cpp"
+#include "25c-hospitalizations-output.cpp"
 
