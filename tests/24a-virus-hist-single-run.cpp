@@ -17,7 +17,7 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
 
     // Create a simple SIR model
     epimodels::ModelSIR<> model(
-        "test virus", 0.5, 0.9, 0.1
+        "test virus", 0.1, 0.3, 0.1
     );
 
     model.seed(1231);
@@ -65,6 +65,54 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
     
     // Total entries should be (ndays + 1) * nstates
     REQUIRE(virus_date.size() == static_cast<size_t>((ndays + 1) * nstates));
+    #endif
+
+    // We now verify that the outbreak size matches the total infected count
+    std::vector<int> total_date, total_counts;
+    std::vector<std::string> total_state;
+    model.get_db().get_hist_total(
+        &total_date,
+        &total_state,
+        &total_counts
+    );
+
+    // Collapsing total infected counts per day
+    std::vector<int> total_infected_per_day(ndays + 1, 0);
+    auto total_active_cases = total_infected_per_day;
+    for (size_t i = 0; i < total_date.size(); ++i)
+    {
+        if (
+            (total_state[i] == "Infected") ||
+            (total_state[i] == "Recovered")
+        )
+        {
+            total_infected_per_day[total_date[i]] += total_counts[i];
+        }
+
+        if (total_state[i] == "Infected")
+        {
+            total_active_cases[total_date[i]] += total_counts[i];
+        }
+
+    }
+
+    std::vector<int> exposed_date, exposed_virus_id, active_cases;
+    model.get_db().get_active_cases(
+        exposed_date,
+        exposed_virus_id,
+        active_cases
+    );
+
+    std::vector< int > outbreak_date, outbreak_virus_id, outbreak_size;
+    model.get_db().get_outbreak_size(
+        outbreak_date,
+        outbreak_virus_id,
+        outbreak_size
+    );
+
+    #ifdef CATCH_CONFIG_MAIN
+    REQUIRE(outbreak_size == total_infected_per_day);
+    REQUIRE(active_cases == total_active_cases);
     #endif
 
     #ifndef CATCH_CONFIG_MAIN

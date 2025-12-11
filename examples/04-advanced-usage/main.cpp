@@ -122,6 +122,8 @@ int main() {
         "transmisions.txt",
         "transition.txt",
         "reproductive.txt",
+        "",
+        "",
         ""
     );
 

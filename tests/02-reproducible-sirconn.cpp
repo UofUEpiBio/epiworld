@@ -19,7 +19,9 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
         false, // bool tool_hist,
         true , // bool transmission,
         false, // bool transition,
-        true   // bool reproductive
+        true,  // bool reproductive
+        true,  // bool generation,
+        true   // bool outbreak_size
     );
 
     auto sav_1 = make_save_run<>(
@@ -31,7 +33,9 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
         false, // bool tool_hist,
         true , // bool transmission,
         false, // bool transition,
-        true   // bool reproductive
+        true,  // bool reproductive
+        true,  // bool generation,
+        true   // bool outbreak_size
     );
 
     // Queuing doesn't matter and get results that are meaningful

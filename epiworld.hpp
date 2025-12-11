@@ -3730,6 +3730,8 @@ public:
      * @return In `get_hist_virus`, the time series of what for each virus.
      * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
+     * @return In `get_active_cases`, the number of active cases (currently infected individuals)
+     * for each virus at each point in time.
      */
     ///@{
     int get_today_total(const std::string & what) const;
@@ -3776,6 +3778,18 @@ public:
         std::vector< int > & counts,
         bool skip_zeros
     ) const;
+
+    void get_active_cases(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & count
+    ) const;
+
+    void get_outbreak_size(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & size
+    ) const;
     ///@}
 
     /**
@@ -3814,7 +3828,9 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size
         ) const;
 
     /***
@@ -4910,6 +4926,8 @@ public:
      * @return In `get_hist_virus`, the time series of what for each virus.
      * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
+     * @return In `get_active_cases`, the number of active cases (currently infected individuals)
+     * for each virus at each point in time.
      */
     ///@{
     int get_today_total(const std::string & what) const;
@@ -4956,6 +4974,18 @@ public:
         std::vector< int > & counts,
         bool skip_zeros
     ) const;
+
+    void get_active_cases(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & count
+    ) const;
+
+    void get_outbreak_size(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & size
+    ) const;
     ///@}
 
     /**
@@ -4994,7 +5024,9 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size
         ) const;
 
     /***
@@ -5906,6 +5938,82 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
 }
 
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_active_cases(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & count
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days * n_viruses, 0);
+    virus_id.assign(n_days * n_viruses, 0);
+    count.assign(n_days * n_viruses, 0);
+
+    for (size_t i = 0u; i < hist_virus_id.size(); ++i)
+    {
+
+        // With more viruses, there are more days
+        auto location = hist_virus_date[i] + hist_virus_id[i] * n_days;
+
+        date[location] = hist_virus_date[i];
+        virus_id[location] = hist_virus_id[i];
+        count[location] += hist_virus_counts[i];
+
+    }
+
+    return;
+    
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_outbreak_size(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & outbreak_size
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days * n_viruses, 0);
+    virus_id.assign(n_days * n_viruses, 0);
+    outbreak_size.assign(n_days * n_viruses, 0);
+
+    for (size_t i = 0u; i < transmission_date.size(); ++i)
+    {
+
+        // With more viruses, there are more days
+        auto location = transmission_date[i] + transmission_virus[i] * n_days;
+
+        date[location] = transmission_date[i];
+        virus_id[location] = transmission_virus[i];
+        outbreak_size[location] += 1;
+    }
+
+    // Now, we generate the cumulative sum
+    for (size_t v = 0u; v < n_viruses; ++v)
+    {
+        for (size_t d = 1u; d < n_days; ++d)
+        {
+            auto location = d + v * n_days;
+            outbreak_size[location] += outbreak_size[location - 1u];
+        }
+    }
+
+    return;
+    
+}
+
 template<typename TSeq>
 inline void DataBase<TSeq>::get_transmissions(
     std::vector<int> & date,
@@ -5969,7 +6077,9 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_transmission,
     std::string fn_transition,
     std::string fn_reproductive_number,
-    std::string fn_generation_time
+    std::string fn_generation_time,
+    std::string fn_active_cases,
+    std::string fn_outbreak_size
 ) const
 {
 
@@ -6225,6 +6335,82 @@ inline void DataBase<TSeq>::write_data(
 
     if (fn_generation_time != "")
         get_generation_time(fn_generation_time);
+
+    if (fn_active_cases != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > count;
+        get_active_cases(date, virus_id, count);
+
+        std::ofstream file_active_cases(fn_active_cases, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_active_cases)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_active_cases +
+                "\" for writing.")
+                ;
+        }
+
+        file_active_cases <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "active_cases\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            if (count[i] > 0)
+                file_active_cases <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    count[i] << "\n";
+        }
+
+    }
+
+    if (fn_outbreak_size != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > outbreak_size;
+        get_outbreak_size(date, virus_id, outbreak_size);
+
+        std::ofstream file_outbreak_size(fn_outbreak_size, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_outbreak_size)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_outbreak_size +
+                "\" for writing.")
+                ;
+        }
+
+        file_outbreak_size <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "outbreak_size\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            if (outbreak_size[i] > 0)
+                file_outbreak_size <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    outbreak_size[i] << "\n";
+        }
+
+    }
 
 }
 
@@ -8383,7 +8569,9 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transmission = false,
     bool transition = false,
     bool reproductive = false,
-    bool generation = false
+    bool generation = false,
+    bool active_cases = false,
+    bool outbreak_size = false
     );
 
 // template<typename TSeq>
@@ -8802,6 +8990,9 @@ public:
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
      * @param fn_reproductive_number Filename. Case by case reproductive number
+     * @param fn_generation_time Filename. Generation time data.
+     * @param fn_active_cases Filename. Active cases data.
+     * @param fn_outbreak_size Filename. Outbreak size data.
      */
     void write_data(
         std::string fn_virus_info,
@@ -8812,7 +9003,9 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size
         ) const;
 
     /**
@@ -9704,7 +9897,9 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transmission = false,
     bool transition = false,
     bool reproductive = false,
-    bool generation = false
+    bool generation = false,
+    bool active_cases = false,
+    bool outbreak_size = false
     );
 
 // template<typename TSeq>
@@ -10123,6 +10318,9 @@ public:
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
      * @param fn_reproductive_number Filename. Case by case reproductive number
+     * @param fn_generation_time Filename. Generation time data.
+     * @param fn_active_cases Filename. Active cases data.
+     * @param fn_outbreak_size Filename. Outbreak size data.
      */
     void write_data(
         std::string fn_virus_info,
@@ -10133,7 +10331,9 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size
         ) const;
 
     /**
@@ -11204,7 +11404,9 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transmission,
     bool transition,
     bool reproductive,
-    bool generation
+    bool generation,
+    bool active_cases,
+    bool outbreak_size
     )
 {
 
@@ -11227,7 +11429,9 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         transmission,
         transition,
         reproductive,
-        generation
+        generation,
+        active_cases,
+        outbreak_size
     };
 
     std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
@@ -11243,6 +11447,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         std::string transition = "";
         std::string reproductive = "";
         std::string generation = "";
+        std::string active_cases = "";
+        std::string outbreak_size = "";
 
         char buff[1024u];
         if (what_to_save[0u])
@@ -11303,7 +11509,22 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
             generation = buff;
 
         }
+        if (what_to_save[9u])
+        {
 
+            active_cases = fmt + std::string("_active_cases.csv");
+            snprintf(buff, sizeof(buff), active_cases.c_str(), niter);
+            active_cases = buff;
+
+        }
+        if (what_to_save[10u])
+        {
+
+            outbreak_size = fmt + std::string("_outbreak_size.csv");
+            snprintf(buff, sizeof(buff), outbreak_size.c_str(), niter);
+            outbreak_size = buff;
+
+        }
 
         m->write_data(
             virus_info,
@@ -11314,7 +11535,9 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
             transmission,
             transition,
             reproductive,
-            generation
+            generation,
+            active_cases,
+            outbreak_size
         );
 
     };
@@ -13008,7 +13231,9 @@ inline void Model<TSeq>::write_data(
     std::string fn_transmission,
     std::string fn_transition,
     std::string fn_reproductive_number,
-    std::string fn_generation_time
+    std::string fn_generation_time,
+    std::string fn_active_cases,
+    std::string fn_outbreak_size
     ) const
 {
 
@@ -13016,7 +13241,8 @@ inline void Model<TSeq>::write_data(
         fn_virus_info, fn_virus_hist,
         fn_tool_info, fn_tool_hist,
         fn_total_hist, fn_transmission, fn_transition,
-        fn_reproductive_number, fn_generation_time
+        fn_reproductive_number, fn_generation_time,
+        fn_active_cases, fn_outbreak_size
         );
 
 }
@@ -18683,7 +18909,9 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transmission = false,
     bool transition = false,
     bool reproductive = false,
-    bool generation = false
+    bool generation = false,
+    bool active_cases = false,
+    bool outbreak_size = false
     );
 
 // template<typename TSeq>
@@ -19102,6 +19330,9 @@ public:
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
      * @param fn_reproductive_number Filename. Case by case reproductive number
+     * @param fn_generation_time Filename. Generation time data.
+     * @param fn_active_cases Filename. Active cases data.
+     * @param fn_outbreak_size Filename. Outbreak size data.
      */
     void write_data(
         std::string fn_virus_info,
@@ -19112,7 +19343,9 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size
         ) const;
 
     /**

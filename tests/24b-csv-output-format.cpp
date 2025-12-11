@@ -34,7 +34,9 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         "24b-csv-output-format-saves/csv_test_transmission.csv",
         "24b-csv-output-format-saves/csv_test_transition.csv",
         "24b-csv-output-format-saves/csv_test_reproductive.csv",
-        "24b-csv-output-format-saves/csv_test_generation.csv"
+        "24b-csv-output-format-saves/csv_test_generation.csv",
+        "24b-csv-output-format-saves/csv_test_active_cases.csv",
+        "24b-csv-output-format-saves/csv_test_outbreak_size.csv"
     );
 
     std::cout << "\nCSV Format Validation Test:" << std::endl;
