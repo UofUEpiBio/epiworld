@@ -769,6 +769,8 @@ public:
      * This virtual method extracts hospitalization events from the transition matrix.
      * The default implementation identifies all transitions to states containing
      * "ospitalized" (matching both "Hospitalized" and "Detected Hospitalized").
+     * Only counts NEW hospitalizations—transitions from non-hospitalized states to hospitalized states.
+     * Re-hospitalizations (transitions between hospitalized states) are excluded.
      * Models can override this method for custom hospitalization tracking.
      */
     virtual void get_hospitalizations(

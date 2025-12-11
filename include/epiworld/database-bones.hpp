@@ -360,6 +360,8 @@ public:
      * This function extracts hospitalization events from the transition matrix.
      * It identifies all transitions to states containing "ospitalized" in their name,
      * which matches both "Hospitalized" and "Detected Hospitalized" states.
+     * Only counts NEW hospitalizations: transitions from non-hospitalized states to hospitalized states.
+     * Re-hospitalizations (transitions between hospitalized states) are excluded.
      * If the model does not implement hospitalization tracking, this function
      * delegates to the model's virtual get_hospitalizations() method.
      */

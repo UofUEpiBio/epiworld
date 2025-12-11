@@ -105,7 +105,7 @@ EPIWORLD_TEST_CASE("Hospitalization file output", "[hospitalizations-output]") {
         }
     }
     
-    // Should have some data lines (we had 17 hospitalizations in the previous test)
+    // Should have some data lines (at least one hospitalization event expected)
     REQUIRE(data_lines > 0);
     
     std::cout << "Hospitalization file output test passed:" << std::endl;

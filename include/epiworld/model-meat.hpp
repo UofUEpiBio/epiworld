@@ -2732,16 +2732,6 @@ inline void Model<TSeq>::get_hospitalizations(
     virus_id.clear();
     counts.clear();
 
-    // Pre-extract hospitalized state names to avoid regex in the loop
-    // Using "ospitalized" to match both "Hospitalized" and "Detected Hospitalized"
-    const auto & state_labels = get_states();
-    std::vector<bool> is_hospitalized_state(state_labels.size(), false);
-    
-    for (size_t s = 0u; s < state_labels.size(); ++s)
-    {
-        if (state_labels[s].find("ospitalized") != std::string::npos)
-            is_hospitalized_state[s] = true;
-    }
 
     // Get the transition matrix
     std::vector< std::string > state_from;
