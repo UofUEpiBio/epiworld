@@ -83,8 +83,10 @@ EPIWORLD_TEST_CASE("Hospitalization tracking", "[hospitalizations]") {
     for (size_t i = 0u; i < state_to.size(); ++i)
     {
         // Check if the destination state contains "ospitalized"
+        // and the source state does NOT contain "ospitalized" (avoid re-hospitalization)
         // Using "ospitalized" to match both "Hospitalized" and "Detected Hospitalized"
-        if (state_to[i].find("ospitalized") != std::string::npos)
+        if ((state_to[i].find("ospitalized") != std::string::npos) &&
+            (state_from[i].find("ospitalized") == std::string::npos))
         {
             int v_id = 0; // Single virus model
             int d = trans_date[i];

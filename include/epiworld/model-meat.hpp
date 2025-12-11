@@ -2732,6 +2732,17 @@ inline void Model<TSeq>::get_hospitalizations(
     virus_id.clear();
     counts.clear();
 
+    // Pre-extract hospitalized state names to avoid regex in the loop
+    // Using "ospitalized" to match both "Hospitalized" and "Detected Hospitalized"
+    const auto & state_labels = get_states();
+    std::vector<bool> is_hospitalized_state(state_labels.size(), false);
+    
+    for (size_t s = 0u; s < state_labels.size(); ++s)
+    {
+        if (state_labels[s].find("ospitalized") != std::string::npos)
+            is_hospitalized_state[s] = true;
+    }
+
     // Get the transition matrix
     std::vector< std::string > state_from;
     std::vector< std::string > state_to;
@@ -2755,9 +2766,10 @@ inline void Model<TSeq>::get_hospitalizations(
     // Process transitions
     for (size_t i = 0u; i < state_to.size(); ++i)
     {
-        // Check if the destination state contains "Hospitalized"
-        // Using "ospitalized" to match both "Hospitalized" and "Detected Hospitalized"
-        if (state_to[i].find("ospitalized") != std::string::npos)
+        // Check if the destination state contains "ospitalized"
+        // and the source state does NOT contain "ospitalized" (avoid re-hospitalization)
+        if ((state_to[i].find("ospitalized") != std::string::npos) &&
+            (state_from[i].find("ospitalized") == std::string::npos))
         {
             // For now, we assume virus_id = 0 (single virus)
             // This matches the pattern in get_active_cases

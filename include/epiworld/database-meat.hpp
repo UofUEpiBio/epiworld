@@ -1300,45 +1300,35 @@ inline void DataBase<TSeq>::write_data(
         std::vector< int > virus_id;
         std::vector< int > counts;
         
-        // Try to get hospitalizations, but catch if not implemented
-        try
+        get_hospitalizations(date, virus_id, counts);
+
+        std::ofstream file_hospitalizations(fn_hospitalizations, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_hospitalizations)
         {
-            get_hospitalizations(date, virus_id, counts);
-
-            std::ofstream file_hospitalizations(fn_hospitalizations, std::ios_base::out);
-            // Repeat the same error if the file doesn't exists
-            if (!file_hospitalizations)
-            {
-                throw std::runtime_error(
-                    "Could not open file \"" + fn_hospitalizations +
-                    "\" for writing.")
-                    ;
-            }
-
-            file_hospitalizations <<
-                #ifdef EPI_DEBUG
-                "thread " << 
-                #endif
-                "date " << "virus_id virus " << "hospitalizations\n";
-
-            for (size_t i = 0u; i < date.size(); ++i)
-            {
-                if (counts[i] > 0)
-                    file_hospitalizations <<
-                        #ifdef EPI_DEBUG
-                        EPI_GET_THREAD_ID() << " " <<
-                        #endif
-                        date[i] << " " <<
-                        virus_id[i] << " \"" <<
-                        virus_name[virus_id[i]] << "\" " <<
-                        counts[i] << "\n";
-            }
+            throw std::runtime_error(
+                "Could not open file \"" + fn_hospitalizations +
+                "\" for writing.")
+                ;
         }
-        catch (const std::logic_error&)
+
+        file_hospitalizations <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "hospitalizations\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
         {
-            // Model doesn't support hospitalizations, skip silently.
-            // This allows write_data to be called with fn_hospitalizations
-            // even on models without hospitalization states.
+            if (counts[i] > 0)
+                file_hospitalizations <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    counts[i] << "\n";
         }
 
     }

@@ -508,7 +508,7 @@ public:
         std::string fn_generation_time,
         std::string fn_active_cases,
         std::string fn_outbreak_size,
-        std::string fn_hospitalizations = ""
+        std::string fn_hospitalizations
         ) const;
 
     /**
