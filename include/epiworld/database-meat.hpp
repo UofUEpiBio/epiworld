@@ -833,7 +833,7 @@ inline void DataBase<TSeq>::get_active_cases(
     size_t n_viruses = model->get_n_viruses();
     
     // Making room
-    date.assign(n_days, 0);
+    date.assign(n_days * n_viruses, 0);
     virus_id.assign(n_days * n_viruses, 0);
     count.assign(n_days * n_viruses, 0);
 
@@ -866,7 +866,7 @@ inline void DataBase<TSeq>::get_outbreak_size(
     size_t n_viruses = model->get_n_viruses();
     
     // Making room
-    date.assign(n_days, 0);
+    date.assign(n_days * n_viruses, 0);
     virus_id.assign(n_days * n_viruses, 0);
     outbreak_size.assign(n_days * n_viruses, 0);
 

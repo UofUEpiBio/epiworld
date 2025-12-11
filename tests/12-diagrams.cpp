@@ -32,7 +32,7 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
     model_0.run_multiple(
         100, 10, 1231, make_save_run<>(
             "12-diagrams-saves/%i",
-            false, false, false, false, false, false, true, false, false, false
+            false, false, false, false, false, false, true, false, false, false, false
         )
     );
 

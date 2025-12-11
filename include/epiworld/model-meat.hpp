@@ -153,7 +153,7 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         if (what_to_save[9u])
         {
 
-            active_cases = fmt + std::string("_exposed_count.csv");
+            active_cases = fmt + std::string("_active_cases.csv");
             snprintf(buff, sizeof(buff), active_cases.c_str(), niter);
             active_cases = buff;
 

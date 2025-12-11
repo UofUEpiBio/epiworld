@@ -163,8 +163,8 @@ public:
      * @return In `get_hist_virus`, the time series of what for each virus.
      * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
-     * @return In `get_active_cases`, the outbreak size for each virus at each
-     * point in time.
+     * @return In `get_active_cases`, the number of active cases (currently infected individuals)
+     * for each virus at each point in time.
      */
     ///@{
     int get_today_total(const std::string & what) const;
