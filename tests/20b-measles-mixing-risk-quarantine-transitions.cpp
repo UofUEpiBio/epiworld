@@ -81,18 +81,24 @@ EPIWORLD_TEST_CASE(
         1.0/model("Prodromal period") << ")" << std::endl;
 
     // From Rash
+    // With pre-computed hospitalization:
+    // - Recovery from rash happens at rate 1/Rash period
+    // - Of those recovering, Hospitalization rate fraction go to hospitalized
+    double p_recovered_from_rash = (1.0/model("Rash period")) * (1.0 - model("Hospitalization rate"));
+    double p_hospitalized_from_rash = (1.0/model("Rash period")) * model("Hospitalization rate");
+    
     std::cout << "Transition from Rash to Recovered: " <<
         mat(3, 12) + mat(3, 5) << " (expected: " << 
-        (1.0 - model("Hospitalization rate") - 1.0/model("Rash period")) << ")" << std::endl;
+        p_recovered_from_rash << ")" << std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
         mat(3, 6) + mat(3, 11) << " (expected: " <<
-        model("Hospitalization rate") << ")" << std::endl;
+        p_hospitalized_from_rash << ")" << std::endl;
 
     // Isolated
     std::cout << "Transition from Isolated to hospitalized: " <<
         mat(4, 6) + mat(4, 11) << " (expected: " <<
-        model("Hospitalization rate") << ")" << std::endl;
+        p_hospitalized_from_rash << ")" << std::endl;
     
     // Quarantined Exposed
     std::cout << "Transition from Quarantined Exposed to Prodromal: " <<
@@ -173,19 +179,23 @@ EPIWORLD_TEST_CASE(
         moreless(mat(2, 3) + mat(2, 4), 1.0/model("Prodromal period"), 0.1)
     );
 
-    double p_recovered = 1.0 - (
-        1.0/model("Rash period") + model("Hospitalization rate")
-    );
+    // With pre-computed hospitalization, the probabilities are now:
+    // - Recovery from rash happens at rate 1/Rash period
+    // - Of those recovering, (1 - Hospitalization rate) go to recovered
+    // - Of those recovering, Hospitalization rate fraction go to hospitalized
+    double p_recovered_check = (1.0/model("Rash period")) * (1.0 - model("Hospitalization rate"));
+    double p_hospitalized_check = (1.0/model("Rash period")) * model("Hospitalization rate");
+    
     REQUIRE_FALSE(
-        moreless(mat(3, 12) + mat(3, 5), p_recovered, 0.1)
+        moreless(mat(3, 12) + mat(3, 5), p_recovered_check, 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(3, 6) + mat(3, 11), model("Hospitalization rate"), 0.1)
+        moreless(mat(3, 6) + mat(3, 11), p_hospitalized_check, 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(4, 6) + mat(4, 11), model("Hospitalization rate"), 0.1)
+        moreless(mat(4, 6) + mat(4, 11), p_hospitalized_check, 0.1)
     );
 
     REQUIRE_FALSE(

@@ -172,6 +172,7 @@ public:
 
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_rash_onset; ///< Day of rash onset
+    std::vector< bool > hospitalize_if_infected; ///< Pre-computed indicator for hospitalization if infected
 
     /**
      * @brief Quarantine agents that are in the system.
@@ -289,6 +290,14 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
         day_rash_onset.begin(),
         day_rash_onset.end(),
         0);
+
+    // Pre-compute hospitalization status for each agent
+    this->hospitalize_if_infected.resize(this->size(), false);
+    for (size_t idx = 0; idx < this->size(); ++idx)
+    {
+        hospitalize_if_infected[idx] =
+            Model<TSeq>::runif() < this->par("Hospitalization rate");
+    }
 
     this->m_update_model(dynamic_cast<Model<TSeq>*>(this));
     return;
@@ -486,43 +495,32 @@ LOCAL_UPDATE_FUN(m_update_rash) {
 
     }
 
-    // Probability of Staying in the rash period vs becoming
-    // hospitalized
-    m->array_double_tmp[0] = 1.0/m->par("Rash period");
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
-
-    // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
-
-    // Recovers
-    if (which == 2)
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        p->rm_virus(
-            m,
-            detected ?
-                ModelMeaslesSchool::ISOLATED_RECOVERED:
-                ModelMeaslesSchool::RECOVERED
-        );
-    }
-    else if (which == 1)
-    {
-        // If hospitalized, then the agent is removed from the system
-        // effectively
-        p->change_state(
-            m,
-            detected ?
-                ModelMeaslesSchool::DETECTED_HOSPITALIZED :
-                ModelMeaslesSchool::HOSPITALIZED
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
+        {
+            p->change_state(
+                m,
+                detected ?
+                    ModelMeaslesSchool::DETECTED_HOSPITALIZED :
+                    ModelMeaslesSchool::HOSPITALIZED
             );
+        }
+        else
+        {
+            p->rm_virus(
+                m,
+                detected ?
+                    ModelMeaslesSchool::ISOLATED_RECOVERED:
+                    ModelMeaslesSchool::RECOVERED
+            );
+        }
     }
-    else if (which != 0)
+    else if (detected)
     {
-        throw std::logic_error("The roulette returned an unexpected value.");
-    }
-    else if ((which == 0u) && detected)
-    {
-        // If the agent is not hospitalized, then it is moved to
-        // isolation.
+        // If still in rash but detected, move to isolation
         p->change_state(m, ModelMeaslesSchool::ISOLATED);
     }
 
@@ -540,44 +538,31 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
         (m->par("Isolation period") <= days_since) ?
         true: false;
 
-    // Probability of staying in the rash period vs becoming
-    // hospitalized
-    m->array_double_tmp[0] = 1.0/m->par("Rash period");
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
-
-    // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
-
-    // Recovers
-    if (which == 2u)
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        if (unisolate)
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
         {
-            p->rm_virus(
+            p->change_state(
                 m,
-                ModelMeaslesSchool::RECOVERED
+                unisolate ?
+                    ModelMeaslesSchool::HOSPITALIZED :
+                    ModelMeaslesSchool::DETECTED_HOSPITALIZED
             );
         }
         else
+        {
             p->rm_virus(
-                m, ModelMeaslesSchool::ISOLATED_RECOVERED
+                m,
+                unisolate ?
+                    ModelMeaslesSchool::RECOVERED :
+                    ModelMeaslesSchool::ISOLATED_RECOVERED
             );
+        }
     }
-
-    // If hospitalized, then the agent is removed from the system
-    else if (which == 1u)
-    {
-        p->change_state(
-            m,
-            // HOSPITALIZED
-            unisolate ?
-                ModelMeaslesSchool::HOSPITALIZED :
-                ModelMeaslesSchool::DETECTED_HOSPITALIZED
-            );
-    }
-    // If neither hospitalized nor recovered, then the agent is
-    // still under isolation, unless the quarantine period is over.
-    else if ((which == 0u) && unisolate)
+    // Stays in rash, may or may not be released from isolation
+    else if (unisolate)
     {
         p->change_state(m, ModelMeaslesSchool::RASH);
     }
