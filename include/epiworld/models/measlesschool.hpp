@@ -279,17 +279,8 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
 
     this->system_quarantine_triggered = false;
 
-    this->day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0);
-
-    this->day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0);
+    this->day_flagged.assign(this->size(), 0);
+    this->day_rash_onset.assign(this->size(), 0);
 
     // Pre-compute hospitalization status for each agent
     this->hospitalize_if_infected.resize(this->size(), false);

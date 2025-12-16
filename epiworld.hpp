@@ -29590,6 +29590,7 @@ public:
 
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_rash_onset; ///< Day of rash onset
+    std::vector< bool > hospitalize_if_infected; ///< Pre-computed indicator for hospitalization if infected
 
     /**
      * @brief Quarantine agents that are in the system.
@@ -29696,17 +29697,16 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
 
     this->system_quarantine_triggered = false;
 
-    this->day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0);
+    this->day_flagged.assign(this->size(), 0);
+    this->day_rash_onset.assign(this->size(), 0);
 
-    this->day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0);
+    // Pre-compute hospitalization status for each agent
+    this->hospitalize_if_infected.resize(this->size(), false);
+    for (size_t idx = 0; idx < this->size(); ++idx)
+    {
+        hospitalize_if_infected[idx] =
+            Model<TSeq>::runif() < this->par("Hospitalization rate");
+    }
 
     this->m_update_model(dynamic_cast<Model<TSeq>*>(this));
     return;
@@ -29904,43 +29904,32 @@ LOCAL_UPDATE_FUN(m_update_rash) {
 
     }
 
-    // Probability of Staying in the rash period vs becoming
-    // hospitalized
-    m->array_double_tmp[0] = 1.0/m->par("Rash period");
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
-
-    // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
-
-    // Recovers
-    if (which == 2)
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        p->rm_virus(
-            m,
-            detected ?
-                ModelMeaslesSchool::ISOLATED_RECOVERED:
-                ModelMeaslesSchool::RECOVERED
-        );
-    }
-    else if (which == 1)
-    {
-        // If hospitalized, then the agent is removed from the system
-        // effectively
-        p->change_state(
-            m,
-            detected ?
-                ModelMeaslesSchool::DETECTED_HOSPITALIZED :
-                ModelMeaslesSchool::HOSPITALIZED
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
+        {
+            p->change_state(
+                m,
+                detected ?
+                    ModelMeaslesSchool::DETECTED_HOSPITALIZED :
+                    ModelMeaslesSchool::HOSPITALIZED
             );
+        }
+        else
+        {
+            p->rm_virus(
+                m,
+                detected ?
+                    ModelMeaslesSchool::ISOLATED_RECOVERED:
+                    ModelMeaslesSchool::RECOVERED
+            );
+        }
     }
-    else if (which != 0)
+    else if (detected)
     {
-        throw std::logic_error("The roulette returned an unexpected value.");
-    }
-    else if ((which == 0u) && detected)
-    {
-        // If the agent is not hospitalized, then it is moved to
-        // isolation.
+        // If still in rash but detected, move to isolation
         p->change_state(m, ModelMeaslesSchool::ISOLATED);
     }
 
@@ -29958,44 +29947,31 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
         (m->par("Isolation period") <= days_since) ?
         true: false;
 
-    // Probability of staying in the rash period vs becoming
-    // hospitalized
-    m->array_double_tmp[0] = 1.0/m->par("Rash period");
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
-
-    // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
-
-    // Recovers
-    if (which == 2u)
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        if (unisolate)
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
         {
-            p->rm_virus(
+            p->change_state(
                 m,
-                ModelMeaslesSchool::RECOVERED
+                unisolate ?
+                    ModelMeaslesSchool::HOSPITALIZED :
+                    ModelMeaslesSchool::DETECTED_HOSPITALIZED
             );
         }
         else
+        {
             p->rm_virus(
-                m, ModelMeaslesSchool::ISOLATED_RECOVERED
+                m,
+                unisolate ?
+                    ModelMeaslesSchool::RECOVERED :
+                    ModelMeaslesSchool::ISOLATED_RECOVERED
             );
+        }
     }
-
-    // If hospitalized, then the agent is removed from the system
-    else if (which == 1u)
-    {
-        p->change_state(
-            m,
-            // HOSPITALIZED
-            unisolate ?
-                ModelMeaslesSchool::HOSPITALIZED :
-                ModelMeaslesSchool::DETECTED_HOSPITALIZED
-            );
-    }
-    // If neither hospitalized nor recovered, then the agent is
-    // still under isolation, unless the quarantine period is over.
-    else if ((which == 0u) && unisolate)
+    // Stays in rash, may or may not be released from isolation
+    else if (unisolate)
     {
         p->change_state(m, ModelMeaslesSchool::RASH);
     }
@@ -31647,6 +31623,7 @@ private:
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator for quarantine willingness
     std::vector< bool > isolation_willingness; ///< Indicator for isolation willingness
+    std::vector< bool > hospitalize_if_infected; ///< Pre-computed indicator for hospitalization if infected
     std::vector< size_t > agent_quarantine_triggered; ///< Whether the quarantine process has started
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_rash_onset; ///< Day of rash onset
@@ -31861,6 +31838,15 @@ public:
     std::vector< bool > get_isolation_willingness() const
     {
         return isolation_willingness;
+    };
+
+    /**
+     * @brief Get the hospitalization status for all agents
+     * @return Vector of boolean values indicating which agents will be hospitalized if infected
+     */
+    std::vector< bool > get_hospitalize_if_infected() const
+    {
+        return hospitalize_if_infected;
     };
 
 };
@@ -32098,53 +32084,28 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     this->m_update_infectious_list();
 
     // Setting up the quarantine parameters
-    quarantine_willingness.resize(this->size(), false);
-    isolation_willingness.resize(this->size(), false);
+    quarantine_willingness.assign(this->size(), false);
+    isolation_willingness.assign(this->size(), false);
+    hospitalize_if_infected.assign(this->size(), false);
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
             Model<TSeq>::runif() < this->par("Quarantine willingness");
         isolation_willingness[idx] =
             Model<TSeq>::runif() < this->par("Isolation willingness");
+        hospitalize_if_infected[idx] =
+            Model<TSeq>::runif() < this->par("Hospitalization rate");
     }
 
-    agent_quarantine_triggered.resize(this->size(), 0u);
-    std::fill(
-        agent_quarantine_triggered.begin(),
-        agent_quarantine_triggered.end(),
-        0u
-    );
-
-    day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0
-    );
-
-    day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0
-    );
-
-    day_exposed.resize(this->size(), 0);
-    std::fill(
-        day_exposed.begin(),
-        day_exposed.end(),
-        0
-    );
-
+    agent_quarantine_triggered.assign(this->size(), 0u);
+    day_flagged.assign(this->size(), 0);
+    day_rash_onset.assign(this->size(), 0);
+    day_exposed.assign(this->size(), 0);
+    
     // Tracking matrix
-    tracking_matrix.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix.begin(), tracking_matrix.end(), 0u);
-
-    tracking_matrix_size.resize(Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix_size.begin(), tracking_matrix_size.end(), 0u);
-
-    tracking_matrix_date.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix_date.begin(), tracking_matrix_date.end(), 0u);
+    tracking_matrix.assign(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
+    tracking_matrix_size.assign(Model<TSeq>::size(), 0u);
+    tracking_matrix_date.assign(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
 
     return;
 
@@ -32296,38 +32257,32 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
         detected = true;
     }
 
-    // Computing probabilities for state change
-    m->array_double_tmp[0] = 1.0/m->par("Rash period"); // Recovery
-    m->array_double_tmp[1] = m->par("Hospitalization rate"); // Hospitalization
-
-    SAMPLE_FROM_PROBS(2, which);
-
-    if (which == 2) // Recovers
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        p->rm_virus(
-            m,
-            detected ?
-                ModelMeaslesMixing<TSeq>::ISOLATED_RECOVERED:
-                ModelMeaslesMixing<TSeq>::RECOVERED
-        );
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
+        {
+            p->change_state(
+                m,
+                detected ?
+                    ModelMeaslesMixing<TSeq>::DETECTED_HOSPITALIZED :
+                    ModelMeaslesMixing<TSeq>::HOSPITALIZED
+            );
+        }
+        else
+        {
+            p->rm_virus(
+                m,
+                detected ?
+                    ModelMeaslesMixing<TSeq>::ISOLATED_RECOVERED:
+                    ModelMeaslesMixing<TSeq>::RECOVERED
+            );
+        }
     }
-    else if (which == 1) // Hospitalized
+    else if (detected)
     {
-        p->change_state(
-            m,
-            detected ?
-                ModelMeaslesMixing<TSeq>::DETECTED_HOSPITALIZED :
-                ModelMeaslesMixing<TSeq>::HOSPITALIZED
-        );
-    }
-    else if (which != 0)
-    {
-        throw std::logic_error("The roulette returned an unexpected value.");
-    }
-    else if ((which == 0u) && detected)
-    {
-        // If the agent is not hospitalized or recovered, then it is moved to
-        // isolation.
+        // If still in rash but detected, move to isolation
         p->change_state(m, ModelMeaslesMixing<TSeq>::ISOLATED);
         model->day_flagged[p->get_id()] = m->today();
     }
@@ -32351,46 +32306,31 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
         (m->par("Isolation period") <= days_since) ?
         true: false;
 
-    // Sampling from the probabilities of recovery
-    m->array_double_tmp[0] = 1.0/m->par("Rash period");
-
-    // And hospitalization
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
-
-    SAMPLE_FROM_PROBS(2, which);
-
-    // Recovers
-    if (which == 2)
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        if (unisolate)
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
+        {
+            p->change_state(
+                m,
+                unisolate ?
+                    ModelMeaslesMixing<TSeq>::HOSPITALIZED :
+                    ModelMeaslesMixing<TSeq>::DETECTED_HOSPITALIZED
+            );
+        }
+        else
         {
             p->rm_virus(
                 m,
-                ModelMeaslesMixing<TSeq>::RECOVERED
-            );
-        }
-        else
-            p->rm_virus(
-                m, ModelMeaslesMixing<TSeq>::ISOLATED_RECOVERED
-            );
-    }
-    else if (which == 1)
-    {
-
-        if (unisolate)
-        {
-            p->change_state(
-                m, ModelMeaslesMixing<TSeq>::HOSPITALIZED
-            );
-        }
-        else
-        {
-            p->change_state(
-                m, ModelMeaslesMixing<TSeq>::DETECTED_HOSPITALIZED
+                unisolate ?
+                    ModelMeaslesMixing<TSeq>::RECOVERED :
+                    ModelMeaslesMixing<TSeq>::ISOLATED_RECOVERED
             );
         }
     }
-    else if ((which == 0) && unisolate)
+    // Stays in rash, may or may not be released from isolation
+    else if (unisolate)
     {
         p->change_state(
             m, ModelMeaslesMixing<TSeq>::RASH
@@ -32990,6 +32930,7 @@ private:
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator for quarantine willingness
     std::vector< bool > isolation_willingness;  ///< Indicator for isolation willingness
+    std::vector< bool > hospitalize_if_infected; ///< Pre-computed indicator for hospitalization if infected
     std::vector< int > day_flagged;             ///< Either detected or started quarantine
     std::vector< int > day_rash_onset;          ///< Day of rash onset
 
@@ -33214,6 +33155,15 @@ public:
     auto get_isolation_willingness() const
     {
         return isolation_willingness;
+    };
+
+    /**
+     * @brief Get the hospitalization status for all agents
+     * @return Vector of boolean values indicating which agents will be hospitalized if infected
+     */
+    auto get_hospitalize_if_infected() const
+    {
+        return hospitalize_if_infected;
     };
 
     /**
@@ -33516,27 +33466,23 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
         model->day_flagged[p->get_id()] = m->today();
     }
 
-    // Computing probabilities for state change
-    m->array_double_tmp[0] = 1.0/m->par("Rash period"); // Recovery
-    m->array_double_tmp[1] = m->par("Hospitalization rate"); // Hospitalization
-        
-    SAMPLE_FROM_PROBS(2, which);
-    
-    if (which == 2) // Recovers
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        p->rm_virus(m, detected ? ISOLATED_RECOVERED: RECOVERED);
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
+        {
+            p->change_state(m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
+        }
+        else
+        {
+            p->rm_virus(m, detected ? ISOLATED_RECOVERED : RECOVERED);
+        }
     }
-    else if (which == 1) // Hospitalized
+    else if (detected)
     {
-        p->change_state(m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
-    }
-    else if ((which == 0) && detected)
-    {
+        // If still in rash but detected, move to isolation
         p->change_state(m, ISOLATED);
-    }
-    else if (which != 0)
-    {
-        throw std::logic_error("The roulette returned an unexpected value.");
     }
     
     return ;
@@ -33558,26 +33504,21 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
         (m->par("Isolation period") <= days_since) ?
         true: false;
 
-    // Probability of staying in the rash period vs becoming
-    // hospitalized
-    m->array_double_tmp[0] = 1.0/m->par("Rash period");
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
-
-    // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
-
-    // Recovers
-    if (which == 2u)
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        p->rm_virus(m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
-    }
-    // Moves to hospitalized
-    else if (which == 1u)
-    {
-        p->change_state(m, DETECTED_HOSPITALIZED);
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
+        {
+            p->change_state(m, DETECTED_HOSPITALIZED);
+        }
+        else
+        {
+            p->rm_virus(m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
+        }
     }
     // Stays in rash, may or may not be released from isolation
-    else if ((which == 0u) && unisolate)
+    else if (unisolate)
     {
         p->change_state(m, RASH);
     }
@@ -34258,14 +34199,17 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
     this->m_update_infectious_list();
 
     // Setting up the quarantine parameters
-    quarantine_willingness.resize(this->size(), false);
-    isolation_willingness.resize(this->size(), false);
+    quarantine_willingness.assign(this->size(), false);
+    isolation_willingness.assign(this->size(), false);
+    hospitalize_if_infected.assign(this->size(), false);
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
             Model<TSeq>::runif() < this->par("Quarantine willingness");
         isolation_willingness[idx] =
             Model<TSeq>::runif() < this->par("Isolation willingness");
+        hospitalize_if_infected[idx] =
+            Model<TSeq>::runif() < this->par("Hospitalization rate");
     }
 
     day_flagged.assign(this->size(), 0);

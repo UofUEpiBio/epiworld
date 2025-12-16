@@ -1386,9 +1386,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
     this->m_update_infectious_list();
 
     // Setting up the quarantine parameters
-    quarantine_willingness.resize(this->size(), false);
-    isolation_willingness.resize(this->size(), false);
-    hospitalize_if_infected.resize(this->size(), false);
+    quarantine_willingness.assign(this->size(), false);
+    isolation_willingness.assign(this->size(), false);
+    hospitalize_if_infected.assign(this->size(), false);
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =

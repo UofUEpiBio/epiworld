@@ -574,9 +574,9 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     this->m_update_infectious_list();
 
     // Setting up the quarantine parameters
-    quarantine_willingness.resize(this->size(), false);
-    isolation_willingness.resize(this->size(), false);
-    hospitalize_if_infected.resize(this->size(), false);
+    quarantine_willingness.assign(this->size(), false);
+    isolation_willingness.assign(this->size(), false);
+    hospitalize_if_infected.assign(this->size(), false);
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
@@ -587,43 +587,15 @@ inline void ModelMeaslesMixing<TSeq>::reset()
             Model<TSeq>::runif() < this->par("Hospitalization rate");
     }
 
-    agent_quarantine_triggered.resize(this->size(), 0u);
-    std::fill(
-        agent_quarantine_triggered.begin(),
-        agent_quarantine_triggered.end(),
-        0u
-    );
-
-    day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0
-    );
-
-    day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0
-    );
-
-    day_exposed.resize(this->size(), 0);
-    std::fill(
-        day_exposed.begin(),
-        day_exposed.end(),
-        0
-    );
-
+    agent_quarantine_triggered.assign(this->size(), 0u);
+    day_flagged.assign(this->size(), 0);
+    day_rash_onset.assign(this->size(), 0);
+    day_exposed.assign(this->size(), 0);
+    
     // Tracking matrix
-    tracking_matrix.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix.begin(), tracking_matrix.end(), 0u);
-
-    tracking_matrix_size.resize(Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix_size.begin(), tracking_matrix_size.end(), 0u);
-
-    tracking_matrix_date.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix_date.begin(), tracking_matrix_date.end(), 0u);
+    tracking_matrix.assign(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
+    tracking_matrix_size.assign(Model<TSeq>::size(), 0u);
+    tracking_matrix_date.assign(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
 
     return;
 
