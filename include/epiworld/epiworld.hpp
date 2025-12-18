@@ -94,6 +94,7 @@ namespace epiworld {
     #include "agentssample-bones.hpp"
 
     #include "contacttracing-bones.hpp"
+    #include "hospitalizationstracker-bones.hpp"
     #include "models/models.hpp"
 
 }
