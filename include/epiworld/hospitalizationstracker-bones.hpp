@@ -25,7 +25,6 @@ class HospitalizationsTracker {
 private:
 
     std::vector<int> _date;           ///< Date of hospitalization
-    std::vector<int> _hospitalized;   ///< Count of hospitalized (always 1 per record)
     std::vector<int> _virus_id;       ///< ID of the virus causing hospitalization
     std::vector<int> _tool_id;        ///< ID of the tool (-1 if no tools)
     std::vector<double> _tool_weight; ///< Weight for the tool (1/N where N is tool count)
@@ -87,7 +86,6 @@ template<typename TSeq>
 inline void HospitalizationsTracker<TSeq>::reset()
 {
     _date.clear();
-    _hospitalized.clear();
     _virus_id.clear();
     _tool_id.clear();
     _tool_weight.clear();
@@ -114,7 +112,6 @@ inline void HospitalizationsTracker<TSeq>::record(
     {
         // No tools: single record with tool_id = -1 and weight = 1.0
         _date.push_back(current_date);
-        _hospitalized.push_back(1);
         _virus_id.push_back(v_id);
         _tool_id.push_back(-1);
         _tool_weight.push_back(1.0);
@@ -126,7 +123,6 @@ inline void HospitalizationsTracker<TSeq>::record(
         for (size_t i = 0u; i < n_tools; ++i)
         {
             _date.push_back(current_date);
-            _hospitalized.push_back(1);
             _virus_id.push_back(v_id);
             _tool_id.push_back(agent.get_tool(static_cast<int>(i))->get_id());
             _tool_weight.push_back(weight);
@@ -153,6 +149,8 @@ inline void HospitalizationsTracker<TSeq>::get(
     
     // Use a map to aggregate by (date, virus_id, tool_id)
     // Key: (date, virus_id, tool_id), Value: sum of tool_weight
+    // Note: We use std::map (not unordered_map) to ensure consistent, 
+    // ordered output which is useful for reproducibility and debugging.
     std::map<std::tuple<int, int, int>, double> aggregated;
     
     for (size_t i = 0u; i < _date.size(); ++i)
