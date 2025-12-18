@@ -42,7 +42,8 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         false,  // reproductive
         false,  // generation
         false,  // active_cases
-        false   // outbreak_size
+        false,  // outbreak_size
+        false   // hospitalizations
     );
     
     model.run_multiple(ndays, nsims, 123, saver);

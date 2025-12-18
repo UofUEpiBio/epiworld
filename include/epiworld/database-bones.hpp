@@ -265,7 +265,8 @@ public:
         std::string fn_reproductive_number,
         std::string fn_generation_time,
         std::string fn_active_cases,
-        std::string fn_outbreak_size
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations
         ) const;
 
     /***
@@ -351,6 +352,26 @@ public:
         std::string fn
     ) const; ///< Write the generation time to a file
     ///@}
+
+    /**
+     * @brief Get the hospitalization incidence
+     * @param date Date of the hospitalization
+     * @param virus_id Virus at the time of hospitalization
+     * @param counts Total hospitalizations
+     * @details
+     * This function extracts hospitalization events from the transition matrix.
+     * It identifies all transitions to states containing "ospitalized" in their name,
+     * which matches both "Hospitalized" and "Detected Hospitalized" states.
+     * Only counts NEW hospitalizations: transitions from non-hospitalized states to hospitalized states.
+     * Re-hospitalizations (transitions between hospitalized states) are excluded.
+     * If the model does not implement hospitalization tracking, this function
+     * delegates to the model's virtual get_hospitalizations() method.
+     */
+    void get_hospitalizations(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & counts
+    ) const;
 
 };
 

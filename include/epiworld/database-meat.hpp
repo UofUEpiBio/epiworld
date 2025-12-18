@@ -1005,7 +1005,8 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_reproductive_number,
     std::string fn_generation_time,
     std::string fn_active_cases,
-    std::string fn_outbreak_size
+    std::string fn_outbreak_size,
+    std::string fn_hospitalizations
 ) const
 {
 
@@ -1334,6 +1335,45 @@ inline void DataBase<TSeq>::write_data(
                     virus_id[i] << " \"" <<
                     virus_name[virus_id[i]] << "\" " <<
                     outbreak_size[i] << "\n";
+        }
+
+    }
+
+    if (fn_hospitalizations != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > counts;
+        
+        get_hospitalizations(date, virus_id, counts);
+
+        std::ofstream file_hospitalizations(fn_hospitalizations, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_hospitalizations)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_hospitalizations +
+                "\" for writing.")
+                ;
+        }
+
+        file_hospitalizations <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "hospitalizations\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            if (counts[i] > 0)
+                file_hospitalizations <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    counts[i] << "\n";
         }
 
     }
@@ -2126,6 +2166,18 @@ inline void DataBase<TSeq>::get_generation_time(
 
     return;
 
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hospitalizations(
+    std::vector< int > & date,
+    std::vector< int > & virus_id,
+    std::vector< int > & counts
+) const
+{
+    // Delegate to the model's implementation
+    model->get_hospitalizations(date, virus_id, counts);
+    return;
 }
 
 #undef VECT_MATCH
