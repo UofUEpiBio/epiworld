@@ -56,18 +56,22 @@ public:
     void record(Agent<TSeq> & agent, Model<TSeq> & model);
 
     /**
-     * @brief Get the summary of hospitalizations.
+     * @brief Get the full time series of hospitalizations.
      * 
+     * @param ndays Number of days in the simulation (0 to ndays-1).
      * @param date Output vector for dates.
      * @param virus_id Output vector for virus IDs.
      * @param tool_id Output vector for tool IDs.
      * @param tool_weight Output vector for summed tool weights.
      * 
      * @details
-     * Returns aggregated data grouped by (date, virus_id, tool_id) with
-     * tool_weight summed across all matching records.
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1, with tool_weight = 0.0 for days with no 
+     * hospitalizations for that combination.
      */
     void get(
+        int ndays,
         std::vector<int> & date,
         std::vector<int> & virus_id,
         std::vector<int> & tool_id,

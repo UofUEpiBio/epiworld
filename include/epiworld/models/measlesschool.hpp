@@ -214,7 +214,7 @@ public:
     Model<TSeq> * clone_ptr();
 
     /**
-     * @brief Get hospitalization data.
+     * @brief Get the full time series of hospitalization data.
      * 
      * @param date Output vector for dates.
      * @param virus_id Output vector for virus IDs.
@@ -222,8 +222,10 @@ public:
      * @param tool_weight Output vector for summed tool weights.
      * 
      * @details
-     * Returns aggregated hospitalization data grouped by (date, virus_id, tool_id)
-     * with tool_weight summed across all matching records.
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1, with tool_weight = 0.0 for days with no 
+     * hospitalizations for that combination.
      */
     void get_hospitalizations(
         std::vector<int> & date,
@@ -391,7 +393,10 @@ inline void ModelMeaslesSchool<TSeq>::get_hospitalizations(
     std::vector<double> & tool_weight
 ) const
 {
-    _hospitalizations.get(date, virus_id, tool_id, tool_weight);
+    // Get the number of days from the model and add 1 since days are 0-indexed
+    // today() returns the last day, so we need today() + 1 for the full count
+    int ndays = this->today() + 1;
+    _hospitalizations.get(ndays, date, virus_id, tool_id, tool_weight);
 }
 
 template<typename TSeq>

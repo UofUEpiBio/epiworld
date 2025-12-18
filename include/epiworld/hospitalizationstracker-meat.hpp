@@ -52,6 +52,7 @@ inline void HospitalizationsTracker<TSeq>::record(
 
 template<typename TSeq>
 inline void HospitalizationsTracker<TSeq>::get(
+    int ndays,
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & tool_id,
@@ -64,28 +65,50 @@ inline void HospitalizationsTracker<TSeq>::get(
     tool_id.clear();
     tool_weight.clear();
     
-    if (_date.empty())
+    if (ndays <= 0)
         return;
     
-    // Use a map to aggregate by (date, virus_id, tool_id)
+    // First, aggregate by (date, virus_id, tool_id) to get the sum of weights
     // Key: (date, virus_id, tool_id), Value: sum of tool_weight
-    // Note: We use std::map (not unordered_map) to ensure consistent, 
-    // ordered output which is useful for reproducibility and debugging.
     std::map<std::tuple<int, int, int>, double> aggregated;
+    
+    // Collect unique (virus_id, tool_id) combinations
+    std::set<std::pair<int, int>> unique_combinations;
     
     for (size_t i = 0u; i < _date.size(); ++i)
     {
         auto key = std::make_tuple(_date[i], _virus_id[i], _tool_id[i]);
         aggregated[key] += _tool_weight[i];
+        unique_combinations.insert(std::make_pair(_virus_id[i], _tool_id[i]));
     }
     
-    // Convert map to output vectors
-    for (const auto & entry : aggregated)
+    // If no hospitalizations occurred, still output the full time series 
+    // with a single combination (virus_id=-1, tool_id=-1) and zeros
+    if (unique_combinations.empty())
     {
-        date.push_back(std::get<0>(entry.first));
-        virus_id.push_back(std::get<1>(entry.first));
-        tool_id.push_back(std::get<2>(entry.first));
-        tool_weight.push_back(entry.second);
+        unique_combinations.insert(std::make_pair(-1, -1));
+    }
+    
+    // For each unique (virus_id, tool_id) combination, output all days
+    for (const auto & combo : unique_combinations)
+    {
+        int v_id = combo.first;
+        int t_id = combo.second;
+        
+        for (int d = 0; d < ndays; ++d)
+        {
+            date.push_back(d);
+            virus_id.push_back(v_id);
+            tool_id.push_back(t_id);
+            
+            // Look up the weight for this (date, virus_id, tool_id) combination
+            auto key = std::make_tuple(d, v_id, t_id);
+            auto it = aggregated.find(key);
+            if (it != aggregated.end())
+                tool_weight.push_back(it->second);
+            else
+                tool_weight.push_back(0.0);
+        }
     }
 }
 
