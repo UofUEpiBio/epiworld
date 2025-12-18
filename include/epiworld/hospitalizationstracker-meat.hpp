@@ -8,7 +8,7 @@ inline void HospitalizationsTracker<TSeq>::reset()
     _date.clear();
     _virus_id.clear();
     _tool_id.clear();
-    _tool_weight.clear();
+    _weight.clear();
 }
 
 template<typename TSeq>
@@ -34,18 +34,18 @@ inline void HospitalizationsTracker<TSeq>::record(
         _date.push_back(current_date);
         _virus_id.push_back(v_id);
         _tool_id.push_back(-1);
-        _tool_weight.push_back(1.0);
+        _weight.push_back(1.0);
     }
     else
     {
         // Multiple tools: one record per tool with weight = 1/N
-        double weight = 1.0 / static_cast<double>(n_tools);
+        double w = 1.0 / static_cast<double>(n_tools);
         for (size_t i = 0u; i < n_tools; ++i)
         {
             _date.push_back(current_date);
             _virus_id.push_back(v_id);
             _tool_id.push_back(agent.get_tool(static_cast<int>(i))->get_id());
-            _tool_weight.push_back(weight);
+            _weight.push_back(w);
         }
     }
 }
@@ -56,20 +56,20 @@ inline void HospitalizationsTracker<TSeq>::get(
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & tool_id,
-    std::vector<double> & tool_weight
+    std::vector<double> & weight
 ) const
 {
     // Clear output vectors
     date.clear();
     virus_id.clear();
     tool_id.clear();
-    tool_weight.clear();
+    weight.clear();
     
     if (ndays <= 0)
         return;
     
     // First, aggregate by (date, virus_id, tool_id) to get the sum of weights
-    // Key: (date, virus_id, tool_id), Value: sum of tool_weight
+    // Key: (date, virus_id, tool_id), Value: sum of weight
     std::map<std::tuple<int, int, int>, double> aggregated;
     
     // Collect unique (virus_id, tool_id) combinations
@@ -78,7 +78,7 @@ inline void HospitalizationsTracker<TSeq>::get(
     for (size_t i = 0u; i < _date.size(); ++i)
     {
         auto key = std::make_tuple(_date[i], _virus_id[i], _tool_id[i]);
-        aggregated[key] += _tool_weight[i];
+        aggregated[key] += _weight[i];
         unique_combinations.insert(std::make_pair(_virus_id[i], _tool_id[i]));
     }
     
@@ -105,9 +105,9 @@ inline void HospitalizationsTracker<TSeq>::get(
             auto key = std::make_tuple(d, v_id, t_id);
             auto it = aggregated.find(key);
             if (it != aggregated.end())
-                tool_weight.push_back(it->second);
+                weight.push_back(it->second);
             else
-                tool_weight.push_back(0.0);
+                weight.push_back(0.0);
         }
     }
 }

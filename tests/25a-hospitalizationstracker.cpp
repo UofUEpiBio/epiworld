@@ -40,9 +40,9 @@ EPIWORLD_TEST_CASE(
     std::vector<int> dates;
     std::vector<int> virus_ids;
     std::vector<int> tool_ids;
-    std::vector<double> tool_weights;
+    std::vector<double> weights;
     
-    model.get_hospitalizations(dates, virus_ids, tool_ids, tool_weights);
+    model.get_hospitalizations(dates, virus_ids, tool_ids, weights);
 
     #ifndef CATCH_CONFIG_MAIN
     std::cout << "Number of hospitalization records: " << dates.size() << std::endl;
@@ -53,7 +53,7 @@ EPIWORLD_TEST_CASE(
         std::cout << "Date: " << dates[i] 
                   << ", Virus ID: " << virus_ids[i]
                   << ", Tool ID: " << tool_ids[i]
-                  << ", Tool Weight: " << tool_weights[i]
+                  << ", Weight: " << weights[i]
                   << std::endl;
     }
     #endif
@@ -62,7 +62,7 @@ EPIWORLD_TEST_CASE(
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE(dates.size() == virus_ids.size());
     REQUIRE(dates.size() == tool_ids.size());
-    REQUIRE(dates.size() == tool_weights.size());
+    REQUIRE(dates.size() == weights.size());
     
     // The output should contain entries for all days (full time series)
     // For each unique (virus_id, tool_id) combination, there should be
@@ -102,11 +102,11 @@ EPIWORLD_TEST_CASE(
     }
     #endif
 
-    // Verify that tool_weights are non-negative (can be 0 for days with no hospitalizations)
+    // Verify that weights are non-negative (can be 0 for days with no hospitalizations)
     #ifdef CATCH_CONFIG_MAIN
-    for (size_t i = 0; i < tool_weights.size(); ++i)
+    for (size_t i = 0; i < weights.size(); ++i)
     {
-        REQUIRE(tool_weights[i] >= 0.0);
+        REQUIRE(weights[i] >= 0.0);
     }
     #endif
 
@@ -116,9 +116,9 @@ EPIWORLD_TEST_CASE(
     std::vector<int> dates2;
     std::vector<int> virus_ids2;
     std::vector<int> tool_ids2;
-    std::vector<double> tool_weights2;
+    std::vector<double> weights2;
     
-    model.get_hospitalizations(dates2, virus_ids2, tool_ids2, tool_weights2);
+    model.get_hospitalizations(dates2, virus_ids2, tool_ids2, weights2);
 
     #ifndef CATCH_CONFIG_MAIN
     std::cout << "\nAfter second run:" << std::endl;
@@ -130,7 +130,7 @@ EPIWORLD_TEST_CASE(
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE(dates2.size() == virus_ids2.size());
     REQUIRE(dates2.size() == tool_ids2.size());
-    REQUIRE(dates2.size() == tool_weights2.size());
+    REQUIRE(dates2.size() == weights2.size());
     #endif
 
     #ifndef CATCH_CONFIG_MAIN
