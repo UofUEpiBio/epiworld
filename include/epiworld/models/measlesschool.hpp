@@ -83,6 +83,16 @@ private:
      */
     static void m_update_model(Model<TSeq> * m);
 
+    /**
+     * @brief Records a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * 
+     * @details
+     * This method is used internally to record hospitalization events.
+     */
+    void m_record_hospitalization(Agent<TSeq> & agent);
+
 public:
 
     /**
@@ -221,16 +231,6 @@ public:
         std::vector<int> & tool_id,
         std::vector<double> & tool_weight
     ) const;
-
-    /**
-     * @brief Records a hospitalization event for an agent.
-     * 
-     * @param agent Reference to the agent being hospitalized.
-     * 
-     * @details
-     * This method is used internally to record hospitalization events.
-     */
-    void record_hospitalization(Agent<TSeq> & agent);
 
 };
 
@@ -395,7 +395,7 @@ inline void ModelMeaslesSchool<TSeq>::get_hospitalizations(
 }
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::record_hospitalization(Agent<TSeq> & agent)
+inline void ModelMeaslesSchool<TSeq>::m_record_hospitalization(Agent<TSeq> & agent)
 {
     _hospitalizations.record(agent, *this);
 }
@@ -561,7 +561,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     {
         // If hospitalized, then the agent is removed from the system
         // effectively
-        model->record_hospitalization(*p);
+        model->m_record_hospitalization(*p);
         p->change_state(
             m,
             detected ?
@@ -621,7 +621,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     // If hospitalized, then the agent is removed from the system
     else if (which == 1u)
     {
-        model->record_hospitalization(*p);
+        model->m_record_hospitalization(*p);
         p->change_state(
             m,
             // HOSPITALIZED
