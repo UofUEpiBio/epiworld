@@ -3676,13 +3676,15 @@ private:
     void update_virus(
         epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo = false
     );
 
     void update_tool(
         epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo = false
     );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
@@ -4872,13 +4874,15 @@ private:
     void update_virus(
         epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo = false
     );
 
     void update_tool(
         epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo = false
     );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
@@ -5318,6 +5322,14 @@ inline void DataBase<TSeq>::record()
                 hist_virus_date.push_back(model->today());
                 hist_virus_id.push_back(p.second);
                 hist_virus_state.push_back(s);
+
+                #ifdef EPI_DEBUG
+                if (today_virus[p.second][s] < 0)
+                    throw std::logic_error(
+                        "The count of viruses in DataBase::record cannot be negative."
+                    );
+                #endif
+
                 hist_virus_counts.push_back(today_virus[p.second][s]);
 
             }
@@ -5509,6 +5521,11 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
             today_virus[old_id][tmp_state]--;
             today_virus[new_id][tmp_state]++;
 
+            #ifdef EPI_DEBUG
+            if (today_virus[old_id][tmp_state] < 0)
+                throw std::logic_error("An entry in today_virus is negative.");
+            #endif
+
         }
 
     }
@@ -5687,11 +5704,27 @@ template<typename TSeq>
 inline void DataBase<TSeq>::update_virus(
         epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo
 ) {
 
-    today_virus[virus_id][prev_state]--;
-    today_virus[virus_id][new_state]++;
+    if (undo)
+    {
+        today_virus[virus_id][prev_state]++;
+        today_virus[virus_id][new_state]--;
+    }
+    else
+    {
+        today_virus[virus_id][prev_state]--;
+        today_virus[virus_id][new_state]++;
+    }
+
+    #ifdef EPI_DEBUG
+    if (today_virus[virus_id][prev_state] < 0)
+        throw std::logic_error("An entry in today_virus is negative.");
+    if (today_virus[virus_id][new_state] < 0)
+        throw std::logic_error("An entry in today_virus is negative (new_state).");
+    #endif
 
     return;
     
@@ -5701,12 +5734,20 @@ template<typename TSeq>
 inline void DataBase<TSeq>::update_tool(
         epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo
 ) {
 
-
-    today_tool[tool_id][prev_state]--;    
-    today_tool[tool_id][new_state]++;
+    if (undo)
+    {
+        today_tool[tool_id][prev_state]++;
+        today_tool[tool_id][new_state]--;
+    }
+    else
+    {
+        today_tool[tool_id][prev_state]--;
+        today_tool[tool_id][new_state]++;
+    }
 
     return;
 
@@ -5776,19 +5817,24 @@ inline void DataBase<TSeq>::get_today_virus(
     std::vector< int > & counts
     ) const
 {
-      
-    state.resize(today_virus.size(), "");
-    id.resize(today_virus.size(), 0);
-    counts.resize(today_virus.size(),0);
+    
+    // Total entries = number of viruses × number of states
+    size_t n_viruses = today_virus.size();
+    size_t n_states = model->states_labels.size();
+    size_t total_entries = n_viruses * n_states;
 
-    int n = 0u;
-    for (epiworld_fast_uint v = 0u; v < today_virus.size(); ++v)
-        for (epiworld_fast_uint s = 0u; s < model->states_labels.size(); ++s)
+    state.resize(total_entries, "");
+    id.resize(total_entries, 0);
+    counts.resize(total_entries, 0);
+
+    size_t n = 0u;
+    for (epiworld_fast_uint v = 0u; v < n_viruses; ++v)
+        for (epiworld_fast_uint s = 0u; s < n_states; ++s)
         {
             state[n]   = model->states_labels[s];
-            id[n]       = static_cast<int>(v);
-            counts[n++] = today_virus[v][s];
-
+            id[n]      = static_cast<int>(v);
+            counts[n]  = today_virus[v][s];
+            ++n;
         }
 
 }
@@ -5986,18 +6032,21 @@ inline void DataBase<TSeq>::get_outbreak_size(
     
     // Making room
     date.assign(n_days * n_viruses, 0);
+    std::iota(date.begin(), date.end(), 0);
+
     virus_id.assign(n_days * n_viruses, 0);
+    for (size_t v = 0u; v < n_viruses; ++v)
+        for (size_t d = 0u; d < n_days; ++d)
+            virus_id[d + v * n_days] = static_cast<int>(v);
+
     outbreak_size.assign(n_days * n_viruses, 0);
 
+    // With more viruses, there are more days;
     for (size_t i = 0u; i < transmission_date.size(); ++i)
     {
-
-        // With more viruses, there are more days
-        auto location = transmission_date[i] + transmission_virus[i] * n_days;
-
-        date[location] = transmission_date[i];
-        virus_id[location] = transmission_virus[i];
-        outbreak_size[location] += 1;
+        outbreak_size[
+            transmission_date[i] + transmission_virus[i] * n_days
+        ] += 1;
     }
 
     // Now, we generate the cumulative sum
@@ -21821,10 +21870,12 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For tool counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         for (size_t i = 0u; i < p->n_tools; ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
     }
@@ -21870,10 +21921,12 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For virus counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         if (p->virus)
             db.update_virus(
                 p->virus->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
     }
@@ -21904,10 +21957,12 @@ inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
         auto & db = model->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For tool counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         for (size_t i = 0u; i < p->n_tools; ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
     }
@@ -21949,10 +22004,12 @@ inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For virus counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         if (p->virus)
             db.update_virus(
                 p->virus->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
     }
@@ -21981,15 +22038,17 @@ inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m)
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For virus and tool counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         if (p->virus)
             db.update_virus(
-                p->virus->get_id(), p->state_prev, a.new_state
+                p->virus->get_id(), p->state, a.new_state
             );
 
         for (size_t i = 0u; i < p->n_tools; ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
 
