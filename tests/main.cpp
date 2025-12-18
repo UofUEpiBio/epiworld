@@ -58,4 +58,6 @@
 #include "24a-virus-hist-single-run.cpp"
 #include "24b-csv-output-format.cpp"
 #include "24c-virus-hist-multiple-sims.cpp"
+#include "25a-hospitalizationstracker.cpp"
+#include "25b-hospitalizationstracker-validation.cpp"
 
