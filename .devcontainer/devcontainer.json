@@ -26,7 +26,10 @@
 				"ms-vscode.cpptools-extension-pack",
                 "bierner.markdown-mermaid",
                 "github.vscode-github-actions"
-			]
+			], "settings": {
+				"workbench.colorTheme": "Monokai"
+			}
+
 		}
 	},
 	// "features": {
