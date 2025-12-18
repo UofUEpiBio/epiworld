@@ -80,9 +80,14 @@ EPIWORLD_TEST_CASE(
 
     // Checking especific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
-    double p_recovered = 1.0 - (
-        1.0/model_0("Rash period") + model_0("Hospitalization rate")
-    );
+    
+    // With pre-computed hospitalization, the probabilities are now:
+    // - Recovery from rash happens at rate 1/Rash period
+    // - Of those recovering, (1 - Hospitalization rate) go to recovered
+    // - Of those recovering, Hospitalization rate fraction go to hospitalized
+    double p_recovered = (1.0/model_0("Rash period")) * (1.0 - model_0("Hospitalization rate"));
+    double p_hospitalized = (1.0/model_0("Rash period")) * model_0("Hospitalization rate");
+    
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
     #ifdef CATCH_CONFIG_MAIN
@@ -108,11 +113,10 @@ EPIWORLD_TEST_CASE(
 
     // Transition to hospitalized
     REQUIRE_FALSE(
-        moreless(mat(3, 6) + mat(3, 11), model_0("Hospitalization rate"),
-        0.05)
+        moreless(mat(3, 6) + mat(3, 11), p_hospitalized, 0.05)
     );
     REQUIRE_FALSE(
-        moreless(mat(4, 6) + mat(4, 11), model_0("Hospitalization rate"), 0.05)
+        moreless(mat(4, 6) + mat(4, 11), p_hospitalized, 0.05)
     );
 
     // Transition to recovered
@@ -139,15 +143,15 @@ EPIWORLD_TEST_CASE(
               << mat(3, 4) + mat(3, 5) + mat(3, 6) << " (expected ~" << 1.0/model_0("Days undetected") << ")" << std::endl;
 
     // Transition to hospitalized
-    std::cout << "Transition to hospitalized (prodromal): "
-              << mat(3, 6) + mat(3, 11) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
     std::cout << "Transition to hospitalized (rash): "
-              << mat(4, 6) + mat(4, 11) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
+              << mat(3, 6) + mat(3, 11) << " (expected ~" << p_hospitalized << ")" << std::endl;
+    std::cout << "Transition to hospitalized (isolated): "
+              << mat(4, 6) + mat(4, 11) << " (expected ~" << p_hospitalized << ")" << std::endl;
 
     // Transition to recovered    
-    std::cout << "Transition to recovered (prodromal): "
-              << mat(3, 5) + mat(3, 12) << " (expected ~" << p_recovered << ")" << std::endl;
     std::cout << "Transition to recovered (rash): "
+              << mat(3, 5) + mat(3, 12) << " (expected ~" << p_recovered << ")" << std::endl;
+    std::cout << "Transition to recovered (isolated): "
               << mat(4, 5) + mat(4, 12) << " (expected ~" << p_recovered << ")" << std::endl;
 
     // Transition from hospitalized to recovered

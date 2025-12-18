@@ -82,6 +82,13 @@ EPIWORLD_TEST_CASE(
     std::cout << "Average R0 from index cases: " <<
         avg_R0 <<  " vs expected " << R0 << std::endl;
 
+    // With pre-computed hospitalization, the probabilities are now:
+    // - Recovery from rash happens at rate 1/Rash period
+    // - Of those recovering, (1 - Hospitalization rate) go to recovered
+    // - Of those recovering, Hospitalization rate fraction go to hospitalized
+    double p_recovered = (1.0/model("Rash period")) * (1.0 - model("Hospitalization rate"));
+    double p_hospitalized = (1.0/model("Rash period")) * model("Hospitalization rate");
+
     // Looking into the transition matrix -----------------------
 
     // From Exposed
@@ -97,12 +104,11 @@ EPIWORLD_TEST_CASE(
     // From Rash
     std::cout << "Transition from Rash to Recovery: " <<
         mat(3, 12) << " (expected: " <<
-        (1.0 - model("Hospitalization rate") - 1.0/model("Rash period")) << ")" <<
-        std::endl;
+        p_recovered << ")" << std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
         mat(3, 11) << " (expected: " <<
-        model("Hospitalization rate") << ")" << std::endl;
+        p_hospitalized << ")" << std::endl;
 
     // From hospitalized
     std::cout << "Transition from Hospitalized to Recovery: " <<
@@ -120,15 +126,11 @@ EPIWORLD_TEST_CASE(
     );
 
     REQUIRE_FALSE(
-        moreless(
-            mat(3, 12),
-            (1.0 - model("Hospitalization rate") - 1.0/model("Rash period")),
-            0.1
-        )
+        moreless(mat(3, 12), p_recovered, 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(3, 11), model("Hospitalization rate"), 0.1)
+        moreless(mat(3, 11), p_hospitalized, 0.1)
     );
 
     REQUIRE_FALSE(

@@ -91,9 +91,14 @@ EPIWORLD_TEST_CASE(
 
     // Checking specific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
-    double p_recovered = 1.0 - (
-        1.0/model_0("Rash period") + model_0("Hospitalization rate")
-    );
+    
+    // With pre-computed hospitalization, the probabilities are now:
+    // - Recovery from rash happens at rate 1/Rash period
+    // - Of those recovering, (1 - Hospitalization rate) go to recovered
+    // - Of those recovering, Hospitalization rate fraction go to hospitalized
+    double p_recovered = (1.0/model_0("Rash period")) * (1.0 - model_0("Hospitalization rate"));
+    double p_hospitalized = (1.0/model_0("Rash period")) * model_0("Hospitalization rate");
+    
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
     #ifdef CATCH_CONFIG_MAIN
@@ -119,11 +124,10 @@ EPIWORLD_TEST_CASE(
 
     // Transition to hospitalized from rash
     REQUIRE_FALSE(
-        moreless(mat(3, 6) + mat(3, 11), model_0("Hospitalization rate"),
-        0.1)
+        moreless(mat(3, 6) + mat(3, 11), p_hospitalized, 0.1)
     );
     REQUIRE_FALSE(
-        moreless(mat(4, 6) + mat(4, 11), model_0("Hospitalization rate"), 0.1)
+        moreless(mat(4, 6) + mat(4, 11), p_hospitalized, 0.1)
     );
 
     // Transition to recovered from rash
@@ -152,9 +156,9 @@ EPIWORLD_TEST_CASE(
 
     // Transition to hospitalized from rash
     std::cout << "Transition to hospitalized (rash): "
-              << mat(3, 6) + mat(3, 11) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
+              << mat(3, 6) + mat(3, 11) << " (expected ~" << p_hospitalized << ")" << std::endl;
     std::cout << "Transition to hospitalized (isolated): "
-              << mat(4, 6) + mat(4, 11) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
+              << mat(4, 6) + mat(4, 11) << " (expected ~" << p_hospitalized << ")" << std::endl;
 
     // Transition to recovered from rash    
     std::cout << "Transition to recovered (rash): "

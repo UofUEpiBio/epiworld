@@ -117,6 +117,7 @@ private:
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator for quarantine willingness
     std::vector< bool > isolation_willingness;  ///< Indicator for isolation willingness
+    std::vector< bool > hospitalize_if_infected; ///< Pre-computed indicator for hospitalization if infected
     std::vector< int > day_flagged;             ///< Either detected or started quarantine
     std::vector< int > day_rash_onset;          ///< Day of rash onset
 
@@ -341,6 +342,15 @@ public:
     auto get_isolation_willingness() const
     {
         return isolation_willingness;
+    };
+
+    /**
+     * @brief Get the hospitalization status for all agents
+     * @return Vector of boolean values indicating which agents will be hospitalized if infected
+     */
+    auto get_hospitalize_if_infected() const
+    {
+        return hospitalize_if_infected;
     };
 
     /**
@@ -643,27 +653,23 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
         model->day_flagged[p->get_id()] = m->today();
     }
 
-    // Computing probabilities for state change
-    m->array_double_tmp[0] = 1.0/m->par("Rash period"); // Recovery
-    m->array_double_tmp[1] = m->par("Hospitalization rate"); // Hospitalization
-        
-    SAMPLE_FROM_PROBS(2, which);
-    
-    if (which == 2) // Recovers
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        p->rm_virus(m, detected ? ISOLATED_RECOVERED: RECOVERED);
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
+        {
+            p->change_state(m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
+        }
+        else
+        {
+            p->rm_virus(m, detected ? ISOLATED_RECOVERED : RECOVERED);
+        }
     }
-    else if (which == 1) // Hospitalized
+    else if (detected)
     {
-        p->change_state(m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
-    }
-    else if ((which == 0) && detected)
-    {
+        // If still in rash but detected, move to isolation
         p->change_state(m, ISOLATED);
-    }
-    else if (which != 0)
-    {
-        throw std::logic_error("The roulette returned an unexpected value.");
     }
     
     return ;
@@ -685,26 +691,21 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
         (m->par("Isolation period") <= days_since) ?
         true: false;
 
-    // Probability of staying in the rash period vs becoming
-    // hospitalized
-    m->array_double_tmp[0] = 1.0/m->par("Rash period");
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
-
-    // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
-
-    // Recovers
-    if (which == 2u)
+    // Does the agent recover from rash?
+    if (m->runif() < 1.0/m->par("Rash period"))
     {
-        p->rm_virus(m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
-    }
-    // Moves to hospitalized
-    else if (which == 1u)
-    {
-        p->change_state(m, DETECTED_HOSPITALIZED);
+        // Check pre-computed hospitalization: if marked, go to hospitalized
+        if (model->hospitalize_if_infected[p->get_id()])
+        {
+            p->change_state(m, DETECTED_HOSPITALIZED);
+        }
+        else
+        {
+            p->rm_virus(m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
+        }
     }
     // Stays in rash, may or may not be released from isolation
-    else if ((which == 0u) && unisolate)
+    else if (unisolate)
     {
         p->change_state(m, RASH);
     }
@@ -1385,14 +1386,17 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
     this->m_update_infectious_list();
 
     // Setting up the quarantine parameters
-    quarantine_willingness.resize(this->size(), false);
-    isolation_willingness.resize(this->size(), false);
+    quarantine_willingness.assign(this->size(), false);
+    isolation_willingness.assign(this->size(), false);
+    hospitalize_if_infected.assign(this->size(), false);
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
             Model<TSeq>::runif() < this->par("Quarantine willingness");
         isolation_willingness[idx] =
             Model<TSeq>::runif() < this->par("Isolation willingness");
+        hospitalize_if_infected[idx] =
+            Model<TSeq>::runif() < this->par("Hospitalization rate");
     }
 
     day_flagged.assign(this->size(), 0);
