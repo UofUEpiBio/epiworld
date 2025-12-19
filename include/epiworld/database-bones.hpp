@@ -133,7 +133,7 @@ public:
     #endif
 
     DataBase() = delete;
-    DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
+    DataBase(Model<TSeq> & m) : model(&m), m_hospitalizations(), user_data(m) {};
     DataBase(const DataBase<TSeq> & db);
     // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
 
