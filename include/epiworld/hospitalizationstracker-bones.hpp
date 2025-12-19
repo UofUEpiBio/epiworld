@@ -1,6 +1,12 @@
 #ifndef EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
 #define EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
 
+template<typename TSeq>
+class Agent;
+
+template<typename TSeq>
+class Model;
+
 /**
  * @brief Class to track hospitalizations in an epidemiological model.
  * 

@@ -55,11 +55,6 @@ class ModelMeaslesSchool: public epiworld::Model<TSeq> {
 private:
 
     /**
-     * @brief Tracker for hospitalization events.
-     */
-    HospitalizationsTracker<TSeq> _hospitalizations;
-
-    /**
      * @brief The function that updates the model.
      */
     ///@{
@@ -82,16 +77,6 @@ private:
      * This function is called at the end of each day.
      */
     static void m_update_model(Model<TSeq> * m);
-
-    /**
-     * @brief Records a hospitalization event for an agent.
-     * 
-     * @param agent Reference to the agent being hospitalized.
-     * 
-     * @details
-     * This method is used internally to record hospitalization events.
-     */
-    void m_record_hospitalization(Agent<TSeq> & agent);
 
 public:
 
@@ -213,27 +198,6 @@ public:
 
     Model<TSeq> * clone_ptr();
 
-    /**
-     * @brief Get the full time series of hospitalization data.
-     * 
-     * @param date Output vector for dates.
-     * @param virus_id Output vector for virus IDs.
-     * @param tool_id Output vector for tool IDs.
-     * @param weight Output vector for summed weights.
-     * 
-     * @details
-     * Returns the full time series of hospitalization data. For each unique 
-     * (virus_id, tool_id) combination observed, returns an entry for every 
-     * day from 0 to ndays-1, with weight = 0.0 for days with no 
-     * hospitalizations for that combination.
-     */
-    void get_hospitalizations(
-        std::vector<int> & date,
-        std::vector<int> & virus_id,
-        std::vector<int> & tool_id,
-        std::vector<double> & weight
-    ) const;
-
 };
 
 template<typename TSeq>
@@ -326,8 +290,6 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
         day_rash_onset.end(),
         0);
 
-    this->_hospitalizations.reset();
-
     this->m_update_model(dynamic_cast<Model<TSeq>*>(this));
     return;
 
@@ -383,26 +345,6 @@ inline Model<TSeq> * ModelMeaslesSchool<TSeq>::clone_ptr()
 
     return dynamic_cast< Model<TSeq> *>(ptr);
 
-}
-
-template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::get_hospitalizations(
-    std::vector<int> & date,
-    std::vector<int> & virus_id,
-    std::vector<int> & tool_id,
-    std::vector<double> & weight
-) const
-{
-    // Get the number of days from the model and add 1 since days are 0-indexed
-    // today() returns the last day, so we need today() + 1 for the full count
-    int ndays = this->today() + 1;
-    _hospitalizations.get(ndays, date, virus_id, tool_id, weight);
-}
-
-template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::m_record_hospitalization(Agent<TSeq> & agent)
-{
-    _hospitalizations.record(agent, *this);
 }
 
 LOCAL_UPDATE_FUN(m_update_susceptible) {
@@ -566,7 +508,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     {
         // If hospitalized, then the agent is removed from the system
         // effectively
-        model->m_record_hospitalization(*p);
+        model->record_hospitalization(*p);
         p->change_state(
             m,
             detected ?
@@ -626,7 +568,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     // If hospitalized, then the agent is removed from the system
     else if (which == 1u)
     {
-        model->m_record_hospitalization(*p);
+        model->record_hospitalization(*p);
         p->change_state(
             m,
             // HOSPITALIZED

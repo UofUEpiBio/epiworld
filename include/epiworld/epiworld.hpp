@@ -53,6 +53,9 @@ namespace epiworld {
 
     #include "seq_processing.hpp"
 
+    #include "hospitalizationstracker-bones.hpp"
+    #include "hospitalizationstracker-meat.hpp"
+
     #include "database-bones.hpp"
     #include "database-meat.hpp"
     #include "adjlist-bones.hpp"
@@ -94,8 +97,6 @@ namespace epiworld {
     #include "agentssample-bones.hpp"
 
     #include "contacttracing-bones.hpp"
-    #include "hospitalizationstracker-bones.hpp"
-    #include "hospitalizationstracker-meat.hpp"
     
     #include "models/models.hpp"
 

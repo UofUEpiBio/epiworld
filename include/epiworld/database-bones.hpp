@@ -41,6 +41,8 @@ class DataBase {
 private:
     Model<TSeq> * model;
 
+    HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
+
     // Variants information
     MapVec_type<int,int> virus_id; ///< The squence is the key
     std::vector< std::string > virus_name;
@@ -265,7 +267,8 @@ public:
         std::string fn_reproductive_number,
         std::string fn_generation_time,
         std::string fn_active_cases,
-        std::string fn_outbreak_size
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations = ""
         ) const;
 
     /***
@@ -351,6 +354,43 @@ public:
         std::string fn
     ) const; ///< Write the generation time to a file
     ///@}
+
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * 
+     * @details
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record_hospitalization(Agent<TSeq> & agent);
+
+    /**
+     * @brief Get the full time series of hospitalization data.
+     * 
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param weight Output vector for summed weights.
+     * 
+     * @details
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1, with weight = 0.0 for days with no 
+     * hospitalizations for that combination.
+     */
+    void get_hospitalizations(
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<double> & weight
+    ) const;
 
 };
 
