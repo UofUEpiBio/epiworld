@@ -1347,8 +1347,9 @@ inline void DataBase<TSeq>::write_data(
         std::vector< int > date;
         std::vector< int > virus_id;
         std::vector< int > tool_id;
+        std::vector< int > count;
         std::vector< double > weight;
-        get_hospitalizations(date, virus_id, tool_id, weight);
+        get_hospitalizations(date, virus_id, tool_id, count, weight);
 
         std::ofstream file_hospitalizations(fn_hospitalizations, std::ios_base::out);
         // Repeat the same error if the file doesn't exists
@@ -1364,12 +1365,12 @@ inline void DataBase<TSeq>::write_data(
             #ifdef EPI_DEBUG
             "thread " << 
             #endif
-            "date " << "virus_id " << "tool_id " << "weight\n";
+            "date " << "virus_id " << "tool_id " << "count " << "weight\n";
 
         for (size_t i = 0u; i < date.size(); ++i)
         {
-            // Only write non-zero weights
-            if (weight[i] > 0.0)
+            // Only write non-zero counts or weights
+            if (count[i] > 0 || weight[i] > 0.0)
                 file_hospitalizations <<
                     #ifdef EPI_DEBUG
                     EPI_GET_THREAD_ID() << " " <<
@@ -1377,6 +1378,7 @@ inline void DataBase<TSeq>::write_data(
                     date[i] << " " <<
                     virus_id[i] << " " <<
                     tool_id[i] << " " <<
+                    count[i] << " " <<
                     weight[i] << "\n";
         }
 
@@ -2183,13 +2185,14 @@ inline void DataBase<TSeq>::get_hospitalizations(
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & tool_id,
+    std::vector<int> & count,
     std::vector<double> & weight
 ) const
 {
     // Get the number of days from the model and add 1 since days are 0-indexed
     // today() returns the last day, so we need today() + 1 for the full count
     int ndays = model->today() + 1;
-    m_hospitalizations.get(ndays, date, virus_id, tool_id, weight);
+    m_hospitalizations.get(ndays, date, virus_id, tool_id, count, weight);
 }
 
 #undef VECT_MATCH

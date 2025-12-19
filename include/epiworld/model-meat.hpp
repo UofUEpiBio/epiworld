@@ -2731,10 +2731,11 @@ inline void Model<TSeq>::get_hospitalizations(
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & tool_id,
+    std::vector<int> & count,
     std::vector<double> & weight
 ) const
 {
-    db.get_hospitalizations(date, virus_id, tool_id, weight);
+    db.get_hospitalizations(date, virus_id, tool_id, count, weight);
 }
 
 #undef VECT_MATCH

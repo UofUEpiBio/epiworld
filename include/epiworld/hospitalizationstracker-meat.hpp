@@ -56,6 +56,7 @@ inline void HospitalizationsTracker<TSeq>::get(
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & tool_id,
+    std::vector<int> & count,
     std::vector<double> & weight
 ) const
 {
@@ -63,14 +64,15 @@ inline void HospitalizationsTracker<TSeq>::get(
     date.clear();
     virus_id.clear();
     tool_id.clear();
+    count.clear();
     weight.clear();
     
     if (ndays <= 0)
         return;
     
-    // First, aggregate by (date, virus_id, tool_id) to get the sum of weights
-    // Key: (date, virus_id, tool_id), Value: sum of weight
-    std::map<std::tuple<int, int, int>, double> aggregated;
+    // First, aggregate by (date, virus_id, tool_id) to get count and sum of weights
+    // Key: (date, virus_id, tool_id), Value: (count, sum of weight)
+    std::map<std::tuple<int, int, int>, std::pair<int, double>> aggregated;
     
     // Collect unique (virus_id, tool_id) combinations
     std::set<std::pair<int, int>> unique_combinations;
@@ -78,7 +80,8 @@ inline void HospitalizationsTracker<TSeq>::get(
     for (size_t i = 0u; i < _date.size(); ++i)
     {
         auto key = std::make_tuple(_date[i], _virus_id[i], _tool_id[i]);
-        aggregated[key] += _weight[i];
+        aggregated[key].first += 1;  // Count
+        aggregated[key].second += _weight[i];  // Weight
         unique_combinations.insert(std::make_pair(_virus_id[i], _tool_id[i]));
     }
     
@@ -101,13 +104,19 @@ inline void HospitalizationsTracker<TSeq>::get(
             virus_id.push_back(v_id);
             tool_id.push_back(t_id);
             
-            // Look up the weight for this (date, virus_id, tool_id) combination
+            // Look up the count and weight for this (date, virus_id, tool_id) combination
             auto key = std::make_tuple(d, v_id, t_id);
             auto it = aggregated.find(key);
             if (it != aggregated.end())
-                weight.push_back(it->second);
+            {
+                count.push_back(it->second.first);
+                weight.push_back(it->second.second);
+            }
             else
+            {
+                count.push_back(0);
                 weight.push_back(0.0);
+            }
         }
     }
 }
