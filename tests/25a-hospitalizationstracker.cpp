@@ -40,9 +40,10 @@ EPIWORLD_TEST_CASE(
     std::vector<int> dates;
     std::vector<int> virus_ids;
     std::vector<int> tool_ids;
+    std::vector<int> counts;
     std::vector<double> weights;
     
-    model.get_hospitalizations(dates, virus_ids, tool_ids, weights);
+    model.get_hospitalizations(dates, virus_ids, tool_ids, counts, weights);
 
     #ifndef CATCH_CONFIG_MAIN
     std::cout << "Number of hospitalization records: " << dates.size() << std::endl;
@@ -53,6 +54,7 @@ EPIWORLD_TEST_CASE(
         std::cout << "Date: " << dates[i] 
                   << ", Virus ID: " << virus_ids[i]
                   << ", Tool ID: " << tool_ids[i]
+                  << ", Count: " << counts[i]
                   << ", Weight: " << weights[i]
                   << std::endl;
     }
@@ -62,6 +64,7 @@ EPIWORLD_TEST_CASE(
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE(dates.size() == virus_ids.size());
     REQUIRE(dates.size() == tool_ids.size());
+    REQUIRE(dates.size() == counts.size());
     REQUIRE(dates.size() == weights.size());
     
     // The output should contain entries for all days (full time series)
@@ -116,9 +119,10 @@ EPIWORLD_TEST_CASE(
     std::vector<int> dates2;
     std::vector<int> virus_ids2;
     std::vector<int> tool_ids2;
+    std::vector<int> counts2;
     std::vector<double> weights2;
     
-    model.get_hospitalizations(dates2, virus_ids2, tool_ids2, weights2);
+    model.get_hospitalizations(dates2, virus_ids2, tool_ids2, counts2, weights2);
 
     #ifndef CATCH_CONFIG_MAIN
     std::cout << "\nAfter second run:" << std::endl;
@@ -130,6 +134,7 @@ EPIWORLD_TEST_CASE(
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE(dates2.size() == virus_ids2.size());
     REQUIRE(dates2.size() == tool_ids2.size());
+    REQUIRE(dates2.size() == counts2.size());
     REQUIRE(dates2.size() == weights2.size());
     #endif
 

@@ -1,6 +1,12 @@
 #ifndef EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
 #define EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
 
+template<typename TSeq>
+class Agent;
+
+template<typename TSeq>
+class Model;
+
 /**
  * @brief Class to track hospitalizations in an epidemiological model.
  * 
@@ -62,19 +68,30 @@ public:
      * @param date Output vector for dates.
      * @param virus_id Output vector for virus IDs.
      * @param tool_id Output vector for tool IDs.
-     * @param weight Output vector for summed weights.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution 
+     *   based on tool distribution).
      * 
      * @details
      * Returns the full time series of hospitalization data. For each unique 
      * (virus_id, tool_id) combination observed, returns an entry for every 
-     * day from 0 to ndays-1, with weight = 0.0 for days with no 
-     * hospitalizations for that combination.
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
      */
     void get(
         int ndays,
         std::vector<int> & date,
         std::vector<int> & virus_id,
         std::vector<int> & tool_id,
+        std::vector<int> & count,
         std::vector<double> & weight
     ) const;
 

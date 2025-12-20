@@ -110,9 +110,10 @@ EPIWORLD_TEST_CASE(
     std::vector<int> dates;
     std::vector<int> virus_ids;
     std::vector<int> tool_ids;
+    std::vector<int> tool_counts;
     std::vector<double> tool_weights;
     
-    model.get_hospitalizations(dates, virus_ids, tool_ids, tool_weights);
+    model.get_hospitalizations(dates, virus_ids, tool_ids, tool_counts, tool_weights);
     
     // Convert the built-in tracker data to a map for comparison
     // (only non-zero entries)
