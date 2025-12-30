@@ -17,23 +17,8 @@ $($(NAME)_BUILD_DIR)/test.mk: override NAME := $(NAME)
 $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME)
 	$(SAY) "GEN" $@
 	$(V)mkdir -p $($(NAME)_BUILD_DIR)
-	$(V)perl script/gen-test-runner.pl '$(NAME)' '$($(NAME)_BUILD_DIR)' $($(NAME)_COV_DIRS) > $@
-
-# Loop over all test suites and add a target to run them.
-define run-test-rule
-$(NAME)-$(basename $(1)): $($(NAME)_BUILD_DIR)/test.mk
-	$(SAY) "TEST" $(basename $(1))
-	$(V)$(MAKE) \
-        -C $($(NAME)_TEST_DIR) \
-        -f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk $(MAKEFLAGS) \
-        V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'\
-        $(shell printf '$(basename $(1))' | sha256sum | cut -d' ' -f1)
-
- 
-endef
-
-$(eval $(foreach src,$($(NAME)_SOURCES),$(call run-test-rule,$(src))))
-
+	$(V)perl script/test-gen-runner.pl '$(NAME)' '$($(NAME)_BUILD_DIR)' $($(NAME)_COV_DIRS) > $@
+	
 # Call into the generated test Makefile to run all tests.
 # Then, if coverage is enabled, aggregate the coverage data.
 .PHONY: $(NAME)-test
@@ -101,3 +86,9 @@ endif
 endif
 
 TEST_TARGETS += $(NAME)-test	
+
+TEST_FILES += $(addprefix $($(NAME)_SOURCE_DIR)/,$($(NAME)_SOURCES))
+$(foreach src,$(addprefix $($(NAME)_SOURCE_DIR)/,$($(NAME)_SOURCES)), \
+  $(eval $(src)_HAS_TESTS := \
+     $(shell cat $(src) | perl $(ROOT_SOURCE_DIR)/script/test-list-defined.pl)) \
+)

@@ -1,21 +1,61 @@
-FROM mcr.microsoft.com/devcontainers/cpp:1-ubuntu-24.04
+FROM ubuntu:24.04
 
-ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
+# Build arguments
+ARG LLVM_VERSION=18
+ARG PYTHON_VERSION=3.12
 
-# Optionally install the cmake for vcpkg
-COPY ./reinstall-cmake.sh /tmp/
+# Environment variables
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
-        chmod +x /tmp/reinstall-cmake.sh && /tmp/reinstall-cmake.sh ${REINSTALL_CMAKE_VERSION_FROM_SOURCE}; \
-    fi \
-    && rm -f /tmp/reinstall-cmake.sh
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN apt-get update && apt-get install heaptrack \
-    r-base -y --no-install-recommends
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        build-essentials \
+        make \
+        perl \
+        git \
+        pkg-config \
+        doxygen \
+        graphviz \
+        lcov \
+        libxml-libxml-perl \
+        cpanminus \
+        libomp-${LLVM_VERSION}-dev \
+        clang-${LLVM_VERSION} \
+        clang-tools-${LLVM_VERSION} \
+        llvm-${LLVM_VERSION} && \
+    update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100 && \
+    update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-18 100 && \
+    update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-18 100 && \
+    update-alternatives --install /usr/bin/gcov gcov /usr/bin/llvm-cov-18 100 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-18 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-18 100 && \
+    cpanm --notest --installdeps . && \
+    uv python install ${PYTHON_VERSION} && \
+    uv python set-default ${PYTHON_VERSION} && \
+    uv install \
+        mkdocs \
+        mkdocs-material \
+        mkdoxy \
+        mkdocs-api-autonav && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN sudo apt-get install -y doxygen graphviz
+# Save core count for later use
+RUN nproc --all > /tmp/core_count
 
-RUN apt-get install -y --no-install-recommends pip 
+# Create a non-root user
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
 
-RUN pip3 install --break-system-packages mkdocs mkdocs-material mkdoxy mkdocs-api-autonav
-
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/90-nopasswd \
+    && chmod 0440 /etc/sudoers.d/90-nopasswd
+    
+USER $USERNAME

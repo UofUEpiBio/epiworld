@@ -58,9 +58,9 @@ ifeq ($(WITH_COVERAGE),1)
 endif
 
 COMMON_FLAGS ?= -Wall -Wextra -g $(EXTRA_COMMON_FLAGS)
-CFLAGS       ?= -std=c11 $(COMMON_FLAGS)
-CXXFLAGS     ?= -std=c++17 $(COMMON_FLAGS)
-LDFLAGS	     ?= $(EXTRA_COMMON_LDFLAGS)
+CFLAGS       += -std=c11 $(COMMON_FLAGS)
+CXXFLAGS     += -std=c++17 $(COMMON_FLAGS)
+LDFLAGS	     += $(EXTRA_COMMON_LDFLAGS)
 
 # Package tracking.
 DIRECTORY_STACK  := .
@@ -68,6 +68,9 @@ ROOT_SOURCE_DIR  := .
 ROOT_BUILD_DIR   := $(ROOT_SOURCE_DIR)/build
 
 # Target tracking.
+ALL_PROGRAMS     :=
+TEST_FILES       :=
+
 EXAMPLE_TARGETS  :=
 README_TARGETS   :=
 TEST_TARGETS	 :=
@@ -102,6 +105,7 @@ define INCLUDE_PACKAGE
 	include $$($$(NAME)_SOURCE_DIR)/Makefile
     $$(foreach package,$$(PACKAGES),$$(eval $$(call INCLUDE_PACKAGE,$$(package))))
 
+    $(if $(VERBOSE),$$(info Included package: '$$(NAME)' from '$$($$(NAME)_SOURCE_DIR)'))
     DIRECTORY_STACK := $$(call POP,$$(DIRECTORY_STACK))
 endef
 
@@ -131,16 +135,20 @@ test: tests
 
 .PHONY: all
 all:
-	@printf "The below target groups are available:\n"
-	@printf "\n"
-	@printf "  - examples:     Build all examples.\n"
-	@printf "  - readmes:      Populate all READMEs.\n"
-	@printf "\n"
 	@printf "To build a specific target, run:\n"	
 	@printf "\n"
 	@printf "\t$(MAKE) <target>\n"
 	@printf "\n"
 	@printf "See the README for project documentation.\n"
+
+# Emit our internal databases of what we know about.
+.PHONY: program-database
+program-database:
+	$(V)$(foreach program,$(ALL_PROGRAMS),printf "D %s: %s\n" $(program) '$($(program)_DISPATCHES)';)
+	
+.PHONY: test-database
+test-database:
+	$(V)$(foreach test,$(TEST_FILES),printf "T %s: %s\n" $(test) '$($(test)_HAS_TESTS)';)
 	
 # While not actually phony, we should always rebuild the amalgam when requested.
 .PHONY: $(ROOT_BUILD_DIR)/epiworld.hpp
