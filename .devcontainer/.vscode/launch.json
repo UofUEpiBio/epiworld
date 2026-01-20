@@ -1,24 +1,38 @@
 {
-    "version": "0.2.0",
-    "configurations": [
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "(test) run in current file",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/tests/tests",
+      "cwd": "${workspaceFolder}/build/tests/.test",
+      "preLaunchTask": "build-tests",
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "args": [
+        "${input:FindTestNames}"
+      ],
+      "MIMode": "lldb",
+      "setupCommands": [
         {
-            "name": "C/C++: g++ build and debug active file",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
-            "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "preLaunchTask": "C/C++: g++ build active file for debug",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-    ]
+          "description": "Enable pretty-printing for lldb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "FindTestNames",
+      "type": "command",
+      "command": "shellCommand.execute",
+      "args": {
+        "command": "perl ${workspaceFolder}/script/test-list-defined.pl < ${file}",
+        "description": "Select test names",
+        "useFirstResult": true,
+      }
+    }
+  ]
 }
