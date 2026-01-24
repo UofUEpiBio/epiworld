@@ -39,28 +39,31 @@ WITH_OPENMP   ?= 1
 # Enable code coverage support.
 WITH_COVERAGE ?= 0
 
+CFLAGS   :=
+CXXFLAGS :=
+LDFLAGS  :=
+
 ifeq ($(BUILD_PROFILE),debug)
-    EXTRA_COMMON_FLAGS += -O0 -DDEBUG -Wno-unused-parameter -fno-omit-frame-pointer -fstack-protector-all
+    CFLAGS += -g -O0 -DDEBUG -Wno-unused-parameter -fno-omit-frame-pointer -fstack-protector-all -Wall -Wextra
+    CXXFLAGS += -g -O0 -DDEBUG -Wno-unused-parameter -fno-omit-frame-pointer -fstack-protector-all -Wall -Wextra
 else ifeq ($(BUILD_PROFILE),release)
-    EXTRA_COMMON_FLAGS += -O3 -DNDEBUG -Wno-unused-parameter -ftree-vectorize -funroll-loops -ffast-math -march=native 
+    CFLAGS += -O3 -DNDEBUG -Wno-unused-parameter -ftree-vectorize -funroll-loops -ffast-math -march=native
+    CXXFLAGS += -O3 -DNDEBUG -Wno-unused-parameter -ftree-vectorize -funroll-loops -ffast-math -march=native 
 else
     $(error "Unknown BUILD_PROFILE: '$(BUILD_PROFILE)'. Valid options are 'debug' and 'release'.")
 endif
 
 ifeq ($(WITH_OPENMP),1)
-    EXTRA_COMMON_FLAGS += -fopenmp
-    EXTRA_COMMON_LDFLAGS += -fopenmp
+    CFLAGS   += -fopenmp -fopenmp=libomp
+    CXXFLAGS += -fopenmp -fopenmp=libomp
+    LDFLAGS  += -fopenmp -fopenmp=libomp
 endif
 
 ifeq ($(WITH_COVERAGE),1)
-    EXTRA_COMMON_FLAGS   += --coverage
-    EXTRA_COMMON_LDFLAGS += --coverage
+    CFLAGS   += --coverage
+    CXXFLAGS += --coverage
+    LDFLAGS  += --coverage
 endif
-
-COMMON_FLAGS ?= -Wall -Wextra -g $(EXTRA_COMMON_FLAGS)
-CFLAGS       += -std=c11 $(COMMON_FLAGS)
-CXXFLAGS     += -std=c++17 $(COMMON_FLAGS)
-LDFLAGS	     += $(EXTRA_COMMON_LDFLAGS)
 
 # Package tracking.
 DIRECTORY_STACK  := .
@@ -119,8 +122,12 @@ examples: $(EXAMPLE_TARGETS)
 .PHONY: readmes
 readmes: $(README_TARGETS)
 
+.PHONY: test
+test: $(TEST_TARGETS)
+
 .PHONY: tests
-tests: $(TEST_TARGETS)
+tests:
+	$(error cannot build tests separately, yet)
 
 # Aliases
 # And this is where it all begins...
@@ -129,9 +136,6 @@ example: examples
 	
 .PHONY: readme
 readme: readmes
-
-.PHONY: test
-test: tests
 
 .PHONY: all
 all:

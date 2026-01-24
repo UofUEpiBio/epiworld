@@ -15,7 +15,7 @@ $($(NAME)_BUILD_DIR)/$(NAME): override NAME := $(NAME)
 $($(NAME)_BUILD_DIR)/$(NAME): $($(NAME)_OBJS)
 	$(SAY) "LD" $@
 	$(V)mkdir -p $(dir $@)
-	$(V)$(strip $($(NAME)_LINKER) -o $@ $(LDFLAGS) $($(NAME)_LDFLAGS) $($(NAME)_OBJS))
+	$(V)$($(NAME)_LINKER) -o $@ $(LDFLAGS) $($(NAME)_LDFLAGS) $($(NAME)_OBJS)
 	
 ALL_PROGRAMS                            += $($(NAME)_BUILD_DIR)/$(NAME)
 $($(NAME)_BUILD_DIR)/$(NAME)_DISPATCHES := $(addprefix $($(NAME)_SOURCE_DIR)/,$($(NAME)_SOURCES))

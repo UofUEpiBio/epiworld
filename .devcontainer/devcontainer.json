@@ -3,24 +3,26 @@
 {
 	"name": "Epiworld Dev Container",
 	"build": {
-		"dockerfile": "Dockerfile"
+		"dockerfile": "Dockerfile",
+		"context": ".."
 	},
 
-	"postCreateCommand": ".devcontainer/post-create.sh",
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
 
 	"customizations": {
 		"vscode": {
 			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-vscode.cpptools-extension-pack",
+				"github.vscode-github-actions",
+
 				"llvm-vs-code-extensions.vscode-clangd",
 				"matepek.vscode-catch2-test-adapter",
-				"github.vscode-github-actions",
 				"bierner.markdown-mermaid",
 				"augustocdias.tasks-shell-input"
 			]
 		}
 	},
-	
-	"mounts": [
-        "source=${localWorkspaceFolder}/.devcontainer/.vscode,target=/workspaces/${localWorkspaceFolderBasename}/.vscode,type=bind,consistency=cached"
-    ]
+
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }

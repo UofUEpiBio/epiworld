@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "(test) run in current file",
+      "name": "(test) debug run in current file",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/tests/tests",
@@ -13,10 +13,10 @@
       "args": [
         "${input:FindTestNames}"
       ],
-      "MIMode": "lldb",
+      "MIMode": "gdb",
       "setupCommands": [
         {
-          "description": "Enable pretty-printing for lldb",
+          "description": "Enable pretty-printing for gdb",
           "text": "-enable-pretty-printing",
           "ignoreFailures": true
         }
