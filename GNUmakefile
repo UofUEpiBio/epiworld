@@ -40,21 +40,21 @@ WITH_OPENMP   ?= 1
 WITH_COVERAGE ?= 0
 
 ifeq ($(BUILD_PROFILE),debug)
-	EXTRA_COMMON_FLAGS += -O0 -DDEBUG -Wno-unused-parameter
+    EXTRA_COMMON_FLAGS += -O0 -DDEBUG -Wno-unused-parameter -fno-omit-frame-pointer -fstack-protector-all
 else ifeq ($(BUILD_PROFILE),release)
-	EXTRA_COMMON_FLAGS += -O3 -DNDEBUG -ftree-vectorize -funroll-loops -ffast-math -march=native 
+    EXTRA_COMMON_FLAGS += -O3 -DNDEBUG -Wno-unused-parameter -ftree-vectorize -funroll-loops -ffast-math -march=native 
 else
-	$(error "Unknown BUILD_PROFILE: '$(BUILD_PROFILE)'. Valid options are 'debug' and 'release'.")
+    $(error "Unknown BUILD_PROFILE: '$(BUILD_PROFILE)'. Valid options are 'debug' and 'release'.")
 endif
 
 ifeq ($(WITH_OPENMP),1)
-	EXTRA_COMMON_FLAGS += -fopenmp
-	EXTRA_COMMON_LDFLAGS += -fopenmp
+    EXTRA_COMMON_FLAGS += -fopenmp
+    EXTRA_COMMON_LDFLAGS += -fopenmp
 endif
 
 ifeq ($(WITH_COVERAGE),1)
-	EXTRA_COMMON_FLAGS   += --coverage
-	EXTRA_COMMON_LDFLAGS += --coverage
+    EXTRA_COMMON_FLAGS   += --coverage
+    EXTRA_COMMON_LDFLAGS += --coverage
 endif
 
 COMMON_FLAGS ?= -Wall -Wextra -g $(EXTRA_COMMON_FLAGS)

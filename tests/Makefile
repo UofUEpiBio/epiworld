@@ -1,11 +1,11 @@
 $(NAME)_SOURCES := \
-    main.cpp \
+	main.cpp \
    	00-cloning-model.cpp \
-    00-lfmcmc.cpp \
-    01-model-methods.cpp \
-    01-sample.cpp \
-    01-sir.cpp \
-    01-sirconnected.cpp \
+	00-lfmcmc.cpp \
+	01-model-methods.cpp \
+	01-sample.cpp \
+	01-sir.cpp \
+	01-sirconnected.cpp \
 	01b-sir.cpp \
 	01c-sir.cpp \
 	02-reproducible-sir.cpp \
@@ -25,6 +25,7 @@ $(NAME)_SOURCES := \
 	14a-measles.cpp \
 	14b-measles.cpp \
 	14c-measles.cpp \
+	14d-measles.cpp \
 	15-edgelist-after-run-multiple.cpp \
 	16-multiple-events.cpp \
 	17a-mixing-quarantine.cpp \
@@ -38,7 +39,16 @@ $(NAME)_SOURCES := \
 	19c-measles-mixing-risk-quarantine-durations.cpp \
 	19d-measles-mixing-risk-quarantine-process.cpp \
 	20a-rewire-degseq.cpp \
-	20b-rewire-degseq.cpp
+	20b-rewire-degseq.cpp \
+	22b-globalevents.cpp \
+	23a-distribute-tool-virus-to-entities.cpp \
+	23b-distribute-tool-virus-to-entities.cpp \
+	24a-virus-hist-single-run.cpp \
+	24b-csv-output-format.cpp \
+	24c-virus-hist-multiple-sims.cpp \
+	25a-hospitalizationstracker.cpp \
+	25b-hospitalizationstracker-validation.cpp
+
 
 $(NAME)_CXXFLAGS := \
 	-O2

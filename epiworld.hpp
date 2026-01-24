@@ -26,7 +26,7 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 10
+#define EPIWORLD_VERSION_MINOR 11
 #define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
@@ -963,6 +963,15 @@ enum class DiagramType {
     Mermaid, DOT
 };
 
+/**
+ * @brief Class to create model diagrams from transition data
+ * 
+ * This class reads transition data from epidemiological model simulations
+ * and generates visual diagrams representing the state transitions.
+ * It supports multiple diagram formats, including Mermaid and DOT.
+ * 
+ * @ingroup model_utilities
+ */
 class ModelDiagram {
 private:
 
@@ -3550,6 +3559,279 @@ inline std::string default_seq_writer<int>(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -include/epiworld/hospitalizationstracker-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
+#define EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
+
+template<typename TSeq>
+class Agent;
+
+template<typename TSeq>
+class Model;
+
+/**
+ * @brief Class to track hospitalizations in an epidemiological model.
+ * 
+ * @details
+ * This class keeps track of hospitalizations in a model. For each hospitalized
+ * agent, it records the date, virus ID, and tool IDs with appropriate weights.
+ * 
+ * Since agents always have at most one virus but may have multiple tools,
+ * if an agent has N tools, then N records are created, each with weight
+ * equal to 1/N. If the agent has no tools, a single record is created with
+ * tool_id = -1 and weight = 1.0.
+ * 
+ * The `get()` method returns a summary of the hospitalizations grouped by
+ * date, virus_id, and tool_id, with weight summed across all matching
+ * records.
+ * 
+ * @tparam TSeq Type of sequence (should match `TSeq` across the model)
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class HospitalizationsTracker {
+
+private:
+
+    std::vector<int> _date;           ///< Date of hospitalization
+    std::vector<int> _virus_id;       ///< ID of the virus causing hospitalization
+    std::vector<int> _tool_id;        ///< ID of the tool (-1 if no tools)
+    std::vector<double> _weight;      ///< Weight for the tool (1/N where N is tool count)
+
+public:
+
+    HospitalizationsTracker() = default;
+
+    /**
+     * @brief Reset the tracker by clearing all data.
+     */
+    void reset();
+
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * @param model Reference to the model.
+     * 
+     * @details
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record(Agent<TSeq> & agent, Model<TSeq> & model);
+
+    /**
+     * @brief Get the full time series of hospitalizations.
+     * 
+     * @param ndays Number of days in the simulation (0 to ndays-1).
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution 
+     *   based on tool distribution).
+     * 
+     * @details
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
+     */
+    void get(
+        int ndays,
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<int> & count,
+        std::vector<double> & weight
+    ) const;
+
+    /**
+     * @brief Get the number of raw records in the tracker.
+     * @return Number of records.
+     */
+    size_t size() const;
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/hospitalizationstracker-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/hospitalizationstracker-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_HOSPITALIZATIONSTRACKER_MEAT_HPP
+#define EPIWORLD_HOSPITALIZATIONSTRACKER_MEAT_HPP
+
+
+template<typename TSeq>
+inline void HospitalizationsTracker<TSeq>::reset()
+{
+    _date.clear();
+    _virus_id.clear();
+    _tool_id.clear();
+    _weight.clear();
+}
+
+template<typename TSeq>
+inline void HospitalizationsTracker<TSeq>::record(
+    Agent<TSeq> & agent,
+    Model<TSeq> & model
+)
+{
+    int current_date = model.today();
+    
+    // Get the virus ID (-1 if no virus)
+    int v_id = -1;
+    auto & virus = agent.get_virus();
+    if (virus != nullptr)
+        v_id = virus->get_id();
+    
+    // Get the number of tools
+    size_t n_tools = agent.get_n_tools();
+    
+    if (n_tools == 0u)
+    {
+        // No tools: single record with tool_id = -1 and weight = 1.0
+        _date.push_back(current_date);
+        _virus_id.push_back(v_id);
+        _tool_id.push_back(-1);
+        _weight.push_back(1.0);
+    }
+    else
+    {
+        // Multiple tools: one record per tool with weight = 1/N
+        double w = 1.0 / static_cast<double>(n_tools);
+        for (size_t i = 0u; i < n_tools; ++i)
+        {
+            _date.push_back(current_date);
+            _virus_id.push_back(v_id);
+            _tool_id.push_back(agent.get_tool(static_cast<int>(i))->get_id());
+            _weight.push_back(w);
+        }
+    }
+}
+
+template<typename TSeq>
+inline void HospitalizationsTracker<TSeq>::get(
+    int ndays,
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & tool_id,
+    std::vector<int> & count,
+    std::vector<double> & weight
+) const
+{
+    // Clear output vectors
+    date.clear();
+    virus_id.clear();
+    tool_id.clear();
+    count.clear();
+    weight.clear();
+    
+    if (ndays <= 0)
+        return;
+    
+    // First, aggregate by (date, virus_id, tool_id) to get count and sum of weights
+    // Key: (date, virus_id, tool_id), Value: (count, sum of weight)
+    std::map<std::tuple<int, int, int>, std::pair<int, double>> aggregated;
+    
+    // Collect unique (virus_id, tool_id) combinations
+    std::set<std::pair<int, int>> unique_combinations;
+    
+    for (size_t i = 0u; i < _date.size(); ++i)
+    {
+        auto key = std::make_tuple(_date[i], _virus_id[i], _tool_id[i]);
+        aggregated[key].first += 1;  // Count
+        aggregated[key].second += _weight[i];  // Weight
+        unique_combinations.insert(std::make_pair(_virus_id[i], _tool_id[i]));
+    }
+    
+    // If no hospitalizations occurred, still output the full time series 
+    // with a single combination (virus_id=-1, tool_id=-1) and zeros
+    if (unique_combinations.empty())
+    {
+        unique_combinations.insert(std::make_pair(-1, -1));
+    }
+    
+    // For each unique (virus_id, tool_id) combination, output all days
+    for (const auto & combo : unique_combinations)
+    {
+        int v_id = combo.first;
+        int t_id = combo.second;
+        
+        for (int d = 0; d < ndays; ++d)
+        {
+            date.push_back(d);
+            virus_id.push_back(v_id);
+            tool_id.push_back(t_id);
+            
+            // Look up the count and weight for this (date, virus_id, tool_id) combination
+            auto key = std::make_tuple(d, v_id, t_id);
+            auto it = aggregated.find(key);
+            if (it != aggregated.end())
+            {
+                count.push_back(it->second.first);
+                weight.push_back(it->second.second);
+            }
+            else
+            {
+                count.push_back(0);
+                weight.push_back(0.0);
+            }
+        }
+    }
+}
+
+template<typename TSeq>
+inline size_t HospitalizationsTracker<TSeq>::size() const
+{
+    return _date.size();
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/hospitalizationstracker-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -include/epiworld/database-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3598,6 +3880,8 @@ class DataBase {
     friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
+
+    HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
 
     // Variants information
     MapVec_type<int,int> virus_id; ///< The squence is the key
@@ -3667,13 +3951,15 @@ private:
     void update_virus(
         epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo = false
     );
 
     void update_tool(
         epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo = false
     );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
@@ -3687,7 +3973,7 @@ public:
     #endif
 
     DataBase() = delete;
-    DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
+    DataBase(Model<TSeq> & m) : model(&m), m_hospitalizations(), user_data(m) {};
     DataBase(const DataBase<TSeq> & db);
     // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
 
@@ -3721,6 +4007,8 @@ public:
      * @return In `get_hist_virus`, the time series of what for each virus.
      * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
+     * @return In `get_active_cases`, the number of active cases (currently infected individuals)
+     * for each virus at each point in time.
      */
     ///@{
     int get_today_total(const std::string & what) const;
@@ -3767,6 +4055,18 @@ public:
         std::vector< int > & counts,
         bool skip_zeros
     ) const;
+
+    void get_active_cases(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & count
+    ) const;
+
+    void get_outbreak_size(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & size
+    ) const;
     ///@}
 
     /**
@@ -3805,7 +4105,10 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations
         ) const;
 
     /***
@@ -3891,6 +4194,54 @@ public:
         std::string fn
     ) const; ///< Write the generation time to a file
     ///@}
+
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * 
+     * @details
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record_hospitalization(Agent<TSeq> & agent);
+
+    /**
+     * @brief Get the full time series of hospitalization data.
+     * 
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution
+     *   based on tool distribution).
+     * 
+     * @details
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
+     */
+    void get_hospitalizations(
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<int> & count,
+        std::vector<double> & weight
+    ) const;
 
 };
 
@@ -4779,6 +5130,8 @@ class DataBase {
 private:
     Model<TSeq> * model;
 
+    HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
+
     // Variants information
     MapVec_type<int,int> virus_id; ///< The squence is the key
     std::vector< std::string > virus_name;
@@ -4847,13 +5200,15 @@ private:
     void update_virus(
         epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo = false
     );
 
     void update_tool(
         epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo = false
     );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
@@ -4867,7 +5222,7 @@ public:
     #endif
 
     DataBase() = delete;
-    DataBase(Model<TSeq> & m) : model(&m), user_data(m) {};
+    DataBase(Model<TSeq> & m) : model(&m), m_hospitalizations(), user_data(m) {};
     DataBase(const DataBase<TSeq> & db);
     // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
 
@@ -4901,6 +5256,8 @@ public:
      * @return In `get_hist_virus`, the time series of what for each virus.
      * @return In `get_hist_total_date` and `get_hist_virus_date` the
      * corresponding date
+     * @return In `get_active_cases`, the number of active cases (currently infected individuals)
+     * for each virus at each point in time.
      */
     ///@{
     int get_today_total(const std::string & what) const;
@@ -4947,6 +5304,18 @@ public:
         std::vector< int > & counts,
         bool skip_zeros
     ) const;
+
+    void get_active_cases(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & count
+    ) const;
+
+    void get_outbreak_size(
+        std::vector< int > & date,
+        std::vector< int > & virus_id,
+        std::vector< int > & size
+    ) const;
     ///@}
 
     /**
@@ -4985,7 +5354,10 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations
         ) const;
 
     /***
@@ -5072,6 +5444,54 @@ public:
     ) const; ///< Write the generation time to a file
     ///@}
 
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * 
+     * @details
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record_hospitalization(Agent<TSeq> & agent);
+
+    /**
+     * @brief Get the full time series of hospitalization data.
+     * 
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution
+     *   based on tool distribution).
+     * 
+     * @details
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
+     */
+    void get_hospitalizations(
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<int> & count,
+        std::vector<double> & weight
+    ) const;
+
 };
 
 
@@ -5145,12 +5565,15 @@ inline void DataBase<TSeq>::reset()
     transmission_target.clear();
     transmission_source_exposure_date.clear();
 
+    m_hospitalizations.reset();
+
     return;
 
 }
 
 template<typename TSeq>
 inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
+    m_hospitalizations(db.m_hospitalizations),
     virus_id(db.virus_id),
     virus_name(db.virus_name),
     virus_sequence(db.virus_sequence),
@@ -5277,6 +5700,14 @@ inline void DataBase<TSeq>::record()
                 hist_virus_date.push_back(model->today());
                 hist_virus_id.push_back(p.second);
                 hist_virus_state.push_back(s);
+
+                #ifdef EPI_DEBUG
+                if (today_virus[p.second][s] < 0)
+                    throw std::logic_error(
+                        "The count of viruses in DataBase::record cannot be negative."
+                    );
+                #endif
+
                 hist_virus_counts.push_back(today_virus[p.second][s]);
 
             }
@@ -5468,6 +5899,11 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
             today_virus[old_id][tmp_state]--;
             today_virus[new_id][tmp_state]++;
 
+            #ifdef EPI_DEBUG
+            if (today_virus[old_id][tmp_state] < 0)
+                throw std::logic_error("An entry in today_virus is negative.");
+            #endif
+
         }
 
     }
@@ -5646,11 +6082,27 @@ template<typename TSeq>
 inline void DataBase<TSeq>::update_virus(
         epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo
 ) {
 
-    today_virus[virus_id][prev_state]--;
-    today_virus[virus_id][new_state]++;
+    if (undo)
+    {
+        today_virus[virus_id][prev_state]++;
+        today_virus[virus_id][new_state]--;
+    }
+    else
+    {
+        today_virus[virus_id][prev_state]--;
+        today_virus[virus_id][new_state]++;
+    }
+
+    #ifdef EPI_DEBUG
+    if (today_virus[virus_id][prev_state] < 0)
+        throw std::logic_error("An entry in today_virus is negative.");
+    if (today_virus[virus_id][new_state] < 0)
+        throw std::logic_error("An entry in today_virus is negative (new_state).");
+    #endif
 
     return;
     
@@ -5660,12 +6112,20 @@ template<typename TSeq>
 inline void DataBase<TSeq>::update_tool(
         epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo
 ) {
 
-
-    today_tool[tool_id][prev_state]--;    
-    today_tool[tool_id][new_state]++;
+    if (undo)
+    {
+        today_tool[tool_id][prev_state]++;
+        today_tool[tool_id][new_state]--;
+    }
+    else
+    {
+        today_tool[tool_id][prev_state]--;
+        today_tool[tool_id][new_state]++;
+    }
 
     return;
 
@@ -5735,19 +6195,24 @@ inline void DataBase<TSeq>::get_today_virus(
     std::vector< int > & counts
     ) const
 {
-      
-    state.resize(today_virus.size(), "");
-    id.resize(today_virus.size(), 0);
-    counts.resize(today_virus.size(),0);
+    
+    // Total entries = number of viruses × number of states
+    size_t n_viruses = today_virus.size();
+    size_t n_states = model->states_labels.size();
+    size_t total_entries = n_viruses * n_states;
 
-    int n = 0u;
-    for (epiworld_fast_uint v = 0u; v < today_virus.size(); ++v)
-        for (epiworld_fast_uint s = 0u; s < model->states_labels.size(); ++s)
+    state.resize(total_entries, "");
+    id.resize(total_entries, 0);
+    counts.resize(total_entries, 0);
+
+    size_t n = 0u;
+    for (epiworld_fast_uint v = 0u; v < n_viruses; ++v)
+        for (epiworld_fast_uint s = 0u; s < n_states; ++s)
         {
             state[n]   = model->states_labels[s];
-            id[n]       = static_cast<int>(v);
-            counts[n++] = today_virus[v][s];
-
+            id[n]      = static_cast<int>(v);
+            counts[n]  = today_virus[v][s];
+            ++n;
         }
 
 }
@@ -5897,6 +6362,85 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
 }
 
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_active_cases(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & count
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days * n_viruses, 0);
+    virus_id.assign(n_days * n_viruses, 0);
+    count.assign(n_days * n_viruses, 0);
+
+    for (size_t i = 0u; i < hist_virus_id.size(); ++i)
+    {
+
+        // With more viruses, there are more days
+        auto location = hist_virus_date[i] + hist_virus_id[i] * n_days;
+
+        date[location] = hist_virus_date[i];
+        virus_id[location] = hist_virus_id[i];
+        count[location] += hist_virus_counts[i];
+
+    }
+
+    return;
+    
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_outbreak_size(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & outbreak_size
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days * n_viruses, 0);
+    std::iota(date.begin(), date.end(), 0);
+
+    virus_id.assign(n_days * n_viruses, 0);
+    for (size_t v = 0u; v < n_viruses; ++v)
+        for (size_t d = 0u; d < n_days; ++d)
+            virus_id[d + v * n_days] = static_cast<int>(v);
+
+    outbreak_size.assign(n_days * n_viruses, 0);
+
+    // With more viruses, there are more days;
+    for (size_t i = 0u; i < transmission_date.size(); ++i)
+    {
+        outbreak_size[
+            transmission_date[i] + transmission_virus[i] * n_days
+        ] += 1;
+    }
+
+    // Now, we generate the cumulative sum
+    for (size_t v = 0u; v < n_viruses; ++v)
+    {
+        for (size_t d = 1u; d < n_days; ++d)
+        {
+            auto location = d + v * n_days;
+            outbreak_size[location] += outbreak_size[location - 1u];
+        }
+    }
+
+    return;
+    
+}
+
 template<typename TSeq>
 inline void DataBase<TSeq>::get_transmissions(
     std::vector<int> & date,
@@ -5960,7 +6504,10 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_transmission,
     std::string fn_transition,
     std::string fn_reproductive_number,
-    std::string fn_generation_time
+    std::string fn_generation_time,
+    std::string fn_active_cases,
+    std::string fn_outbreak_size,
+    std::string fn_hospitalizations
 ) const
 {
 
@@ -5980,7 +6527,7 @@ inline void DataBase<TSeq>::write_data(
 
         file_virus_info <<
         #ifdef EPI_DEBUG
-            "thread" << "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
+            "thread " << "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
         #else
             "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
         #endif
@@ -6028,8 +6575,8 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_virus_date[i] << " " <<
                 hist_virus_id[i] << " \"" <<
-                virus_name[hist_virus_id[i]] << "\" " <<
-                model->states_labels[hist_virus_state[i]] << " " <<
+                virus_name[hist_virus_id[i]] << "\" \"" <<
+                model->states_labels[hist_virus_state[i]] << "\" " <<
                 hist_virus_counts[i] << "\n";
     }
 
@@ -6216,6 +6763,124 @@ inline void DataBase<TSeq>::write_data(
 
     if (fn_generation_time != "")
         get_generation_time(fn_generation_time);
+
+    if (fn_active_cases != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > count;
+        get_active_cases(date, virus_id, count);
+
+        std::ofstream file_active_cases(fn_active_cases, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_active_cases)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_active_cases +
+                "\" for writing.")
+                ;
+        }
+
+        file_active_cases <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "active_cases\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            if (count[i] > 0)
+                file_active_cases <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    count[i] << "\n";
+        }
+
+    }
+
+    if (fn_outbreak_size != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > outbreak_size;
+        get_outbreak_size(date, virus_id, outbreak_size);
+
+        std::ofstream file_outbreak_size(fn_outbreak_size, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_outbreak_size)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_outbreak_size +
+                "\" for writing.")
+                ;
+        }
+
+        file_outbreak_size <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "outbreak_size\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            if (outbreak_size[i] > 0)
+                file_outbreak_size <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    outbreak_size[i] << "\n";
+        }
+
+    }
+
+    if (fn_hospitalizations != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > tool_id;
+        std::vector< int > count;
+        std::vector< double > weight;
+        get_hospitalizations(date, virus_id, tool_id, count, weight);
+
+        std::ofstream file_hospitalizations(fn_hospitalizations, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_hospitalizations)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_hospitalizations +
+                "\" for writing.")
+                ;
+        }
+
+        file_hospitalizations <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id " << "tool_id " << "count " << "weight\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            // Only write non-zero counts or weights
+            if (count[i] > 0 || weight[i] > 0.0)
+                file_hospitalizations <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " " <<
+                    tool_id[i] << " " <<
+                    count[i] << " " <<
+                    weight[i] << "\n";
+        }
+
+    }
 
 }
 
@@ -7005,6 +7670,27 @@ inline void DataBase<TSeq>::get_generation_time(
 
     return;
 
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::record_hospitalization(Agent<TSeq> & agent)
+{
+    m_hospitalizations.record(agent, *model);
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hospitalizations(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & tool_id,
+    std::vector<int> & count,
+    std::vector<double> & weight
+) const
+{
+    // Get the number of days from the model and add 1 since days are 0-indexed
+    // today() returns the last day, so we need today() + 1 for the full count
+    int ndays = model->today() + 1;
+    m_hospitalizations.get(ndays, date, virus_id, tool_id, count, weight);
 }
 
 #undef VECT_MATCH
@@ -8374,7 +9060,10 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transmission = false,
     bool transition = false,
     bool reproductive = false,
-    bool generation = false
+    bool generation = false,
+    bool active_cases = false,
+    bool outbreak_size = false,
+    bool hospitalizations = false
     );
 
 // template<typename TSeq>
@@ -8793,6 +9482,10 @@ public:
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
      * @param fn_reproductive_number Filename. Case by case reproductive number
+     * @param fn_generation_time Filename. Generation time data.
+     * @param fn_active_cases Filename. Active cases data.
+     * @param fn_outbreak_size Filename. Outbreak size data.
+     * @param fn_hospitalizations Filename. Hospitalization data.
      */
     void write_data(
         std::string fn_virus_info,
@@ -8803,7 +9496,10 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations
         ) const;
 
     /**
@@ -9054,6 +9750,56 @@ public:
         const std::string & fn_output = "",
         bool self = false
     );
+
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * 
+     * @details
+     * This is a wrapper for `DataBase::record_hospitalization()`.
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record_hospitalization(Agent<TSeq> & agent);
+
+    /**
+     * @brief Get the full time series of hospitalization data.
+     * 
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution
+     *   based on tool distribution).
+     * 
+     * @details
+     * This is a wrapper for `DataBase::get_hospitalizations()`.
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
+     */
+    void get_hospitalizations(
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<int> & count,
+        std::vector<double> & weight
+    ) const;
 
 
 };
@@ -9695,7 +10441,10 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transmission = false,
     bool transition = false,
     bool reproductive = false,
-    bool generation = false
+    bool generation = false,
+    bool active_cases = false,
+    bool outbreak_size = false,
+    bool hospitalizations = false
     );
 
 // template<typename TSeq>
@@ -10114,6 +10863,10 @@ public:
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
      * @param fn_reproductive_number Filename. Case by case reproductive number
+     * @param fn_generation_time Filename. Generation time data.
+     * @param fn_active_cases Filename. Active cases data.
+     * @param fn_outbreak_size Filename. Outbreak size data.
+     * @param fn_hospitalizations Filename. Hospitalization data.
      */
     void write_data(
         std::string fn_virus_info,
@@ -10124,7 +10877,10 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations
         ) const;
 
     /**
@@ -10375,6 +11131,56 @@ public:
         const std::string & fn_output = "",
         bool self = false
     );
+
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * 
+     * @details
+     * This is a wrapper for `DataBase::record_hospitalization()`.
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record_hospitalization(Agent<TSeq> & agent);
+
+    /**
+     * @brief Get the full time series of hospitalization data.
+     * 
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution
+     *   based on tool distribution).
+     * 
+     * @details
+     * This is a wrapper for `DataBase::get_hospitalizations()`.
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
+     */
+    void get_hospitalizations(
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<int> & count,
+        std::vector<double> & weight
+    ) const;
 
 
 };
@@ -10636,6 +11442,14 @@ class Virus;
 template<typename TSeq>
 class Model;
 
+/**
+ * @brief Class containing virus functions
+ * @details
+ * Provides a way to share virus-related functions across multiple Virus instances.
+ * This is particularly useful when viruses are cloned or copied, ensuring that
+ * they all reference the same set of functions without duplicating them.
+ * @tparam TSeq Type for genetic sequences
+ */
 template<typename TSeq>
 class VirusFunctions {
 public:
@@ -11187,7 +12001,10 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transmission,
     bool transition,
     bool reproductive,
-    bool generation
+    bool generation,
+    bool active_cases,
+    bool outbreak_size,
+    bool hospitalizations
     )
 {
 
@@ -11210,7 +12027,10 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         transmission,
         transition,
         reproductive,
-        generation
+        generation,
+        active_cases,
+        outbreak_size,
+        hospitalizations
     };
 
     std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
@@ -11226,6 +12046,9 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         std::string transition = "";
         std::string reproductive = "";
         std::string generation = "";
+        std::string active_cases = "";
+        std::string outbreak_size = "";
+        std::string hospitalizations = "";
 
         char buff[1024u];
         if (what_to_save[0u])
@@ -11286,7 +12109,30 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
             generation = buff;
 
         }
+        if (what_to_save[9u])
+        {
 
+            active_cases = fmt + std::string("_active_cases.csv");
+            snprintf(buff, sizeof(buff), active_cases.c_str(), niter);
+            active_cases = buff;
+
+        }
+        if (what_to_save[10u])
+        {
+
+            outbreak_size = fmt + std::string("_outbreak_size.csv");
+            snprintf(buff, sizeof(buff), outbreak_size.c_str(), niter);
+            outbreak_size = buff;
+
+        }
+        if (what_to_save[11u])
+        {
+
+            hospitalizations = fmt + std::string("_hospitalizations.csv");
+            snprintf(buff, sizeof(buff), hospitalizations.c_str(), niter);
+            hospitalizations = buff;
+
+        }
 
         m->write_data(
             virus_info,
@@ -11297,7 +12143,10 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
             transmission,
             transition,
             reproductive,
-            generation
+            generation,
+            active_cases,
+            outbreak_size,
+            hospitalizations
         );
 
     };
@@ -12991,7 +13840,10 @@ inline void Model<TSeq>::write_data(
     std::string fn_transmission,
     std::string fn_transition,
     std::string fn_reproductive_number,
-    std::string fn_generation_time
+    std::string fn_generation_time,
+    std::string fn_active_cases,
+    std::string fn_outbreak_size,
+    std::string fn_hospitalizations
     ) const
 {
 
@@ -12999,7 +13851,9 @@ inline void Model<TSeq>::write_data(
         fn_virus_info, fn_virus_hist,
         fn_tool_info, fn_tool_hist,
         fn_total_hist, fn_transmission, fn_transition,
-        fn_reproductive_number, fn_generation_time
+        fn_reproductive_number, fn_generation_time,
+        fn_active_cases, fn_outbreak_size,
+        fn_hospitalizations
         );
 
 }
@@ -13166,9 +14020,9 @@ inline void Model<TSeq>::reset() {
         queue.reset();
 
     // Re distributing tools and virus
+    dist_entities();
     dist_virus();
     dist_tools();
-    dist_entities();
 
     // Distributing initial state, if specified
     initial_states_fun(this);
@@ -14145,6 +14999,24 @@ inline void Model<TSeq>::draw(
 
 }
 
+template<typename TSeq>
+inline void Model<TSeq>::record_hospitalization(Agent<TSeq> & agent)
+{
+    db.record_hospitalization(agent);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::get_hospitalizations(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & tool_id,
+    std::vector<int> & count,
+    std::vector<double> & weight
+) const
+{
+    db.get_hospitalizations(date, virus_id, tool_id, count, weight);
+}
+
 #undef VECT_MATCH
 #undef DURCAST
 #undef CASES_PAR
@@ -14419,6 +15291,14 @@ class Virus;
 template<typename TSeq>
 class Model;
 
+/**
+ * @brief Class containing virus functions
+ * @details
+ * Provides a way to share virus-related functions across multiple Virus instances.
+ * This is particularly useful when viruses are cloned or copied, ensuring that
+ * they all reference the same set of functions without duplicating them.
+ * @tparam TSeq Type for genetic sequences
+ */
 template<typename TSeq>
 class VirusFunctions {
 public:
@@ -14749,7 +15629,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
                 );
 
             // Correcting for possible overflow
-            if ((loc > 0) && (loc >= n_available))
+            if ((n_available > 0) && (loc >= n_available))
                 loc = n_available - 1;
 
             Agent<TSeq> & agent = population[idx[loc]];
@@ -14768,6 +15648,98 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
     };
 
 }
+
+/**
+ * Function template to distribute a virus to agents in each entity of a model.
+ * 
+ * @tparam TSeq The sequence type used in the model.
+ * @param prevalence A vector of prevalences for each entity in the model.
+ * @param as_proportion Flag indicating whether the prevalences are given as
+ * proportions or absolute values.
+ * @return A lambda function that distributes the virus to agents in each entity
+ * of the model.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
+    std::vector< double > prevalence,
+    bool as_proportion = true
+)
+{
+
+    // Checking proportions are within range
+    if (prevalence.size() == 0)
+        throw std::range_error("Prevalence vector cannot be empty");
+
+    if (as_proportion)
+    {
+        for (auto p: prevalence)
+        {
+            if ((p < 0.0) || (p > 1.0))
+                throw std::range_error("Proportions must be between 0 and 1");
+        }
+    }
+    else
+    {
+        for (auto p: prevalence)
+        {
+            if (p < 0.0)
+                throw std::range_error("Count values in prevalence must be non-negative");
+        }
+    }
+
+    return [prevalence, as_proportion](
+        Virus<TSeq> & virus, Model<TSeq> * model
+    ) -> void 
+    { 
+
+        // Checking the number of entities
+        if (prevalence.size() != model->get_entities().size())
+            throw std::range_error(
+                "Prevalence vector size (" + std::to_string(prevalence.size()) +
+                ") does not match number of entities (" + std::to_string(model->get_entities().size()) + ")"
+                );
+
+        // Adding action
+        auto & entities = model->get_entities();
+        auto & population = model->get_agents();
+        for (size_t e = 0; e < entities.size(); ++e)
+        {
+            auto & entity_e = entities[e];
+            auto & agent_ids = entity_e.get_agents();
+            double prevalence_e = prevalence[e];
+            size_t n = agent_ids.size();
+            size_t n_to_distribute;
+            if (as_proportion)
+                n_to_distribute = static_cast<size_t>(std::floor(prevalence_e * n));
+            else
+                n_to_distribute = static_cast<size_t>(prevalence_e);
+
+            if (n_to_distribute > n)
+                n_to_distribute = n;
+
+            std::vector< size_t > idx = agent_ids;
+            for (size_t i = 0u; i < n_to_distribute; ++i)
+            {
+                size_t loc = static_cast<epiworld_fast_uint>(
+                    floor(model->runif() * n--)
+                    );
+
+                if ((n > 0) && (loc >= n))
+                    loc = n - 1;
+                
+                population[idx[loc]].set_virus(
+                    virus,
+                    const_cast< Model<TSeq> * >(model)
+                    );
+                
+                std::swap(idx[loc], idx[n]);
+
+            }
+        }
+    };
+
+}
+
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -16492,8 +17464,8 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
                     floor(model->runif() * n--)
                     );
 
-                if ((loc > 0) && (loc == n))
-                    loc--;
+                if ((n > 0) && (loc >= n))
+                    loc = n - 1;
                 
                 population[idx[loc]].add_tool(
                     tool,
@@ -16505,6 +17477,97 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
             }
 
         };
+
+}
+
+/**
+ * Function template to distribute a tool to agents in each entity of a model.
+ * 
+ * @tparam TSeq The sequence type used in the model.
+ * @param prevalence A vector of prevalences for each entity in the model.
+ * @param as_proportion Flag indicating whether the prevalences are given as
+ * proportions or absolute values.
+ * @return A lambda function that distributes the tool to agents in each entity
+ * of the model.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
+    std::vector< double > prevalence,
+    bool as_proportion = true
+)
+{
+
+    // Checking proportions are within range
+    if (prevalence.size() == 0)
+        throw std::range_error("Prevalence vector cannot be empty");
+
+    if (as_proportion)
+    {
+        for (auto p: prevalence)
+        {
+            if ((p < 0.0) || (p > 1.0))
+                throw std::range_error("Proportions must be between 0 and 1");
+        }
+    }
+    else
+    {
+        for (auto p: prevalence)
+        {
+            if (p < 0.0)
+                throw std::range_error("Count values in prevalence must be non-negative");
+        }
+    }
+
+    return [prevalence, as_proportion](
+        Tool<TSeq> & tool, Model<TSeq> * model
+    ) -> void 
+    { 
+
+        // Checking the number of entities
+        if (prevalence.size() != model->get_entities().size())
+            throw std::range_error(
+                "Prevalence vector size (" + std::to_string(prevalence.size()) +
+                ") does not match number of entities (" + std::to_string(model->get_entities().size()) + ")"
+                );
+
+        // Adding action
+        auto & entities = model->get_entities();
+        auto & population = model->get_agents();
+        for (size_t e = 0; e < entities.size(); ++e)
+        {
+            auto & entity_e = entities[e];
+            auto & agent_ids = entity_e.get_agents();
+            double prevalence_e = prevalence[e];
+            size_t n = agent_ids.size();
+            size_t n_to_distribute;
+            if (as_proportion)
+                n_to_distribute = static_cast<size_t>(std::floor(prevalence_e * n));
+            else
+                n_to_distribute = static_cast<size_t>(prevalence_e);
+
+            if (n_to_distribute > n)
+                n_to_distribute = n;
+
+            std::vector< size_t > idx = agent_ids;
+            for (size_t i = 0u; i < n_to_distribute; ++i)
+            {
+                size_t loc = static_cast<epiworld_fast_uint>(
+                    floor(model->runif() * n--)
+                    );
+
+                if ((n > 0) && (loc >= n))
+                    loc = n - 1;
+                
+                population[idx[loc]].add_tool(
+                    tool,
+                    const_cast< Model<TSeq> * >(model)
+                    );
+                
+                std::swap(idx[loc], idx[n]);
+
+            }
+        }
+    };
 
 }
 #endif
@@ -18475,7 +19538,10 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool transmission = false,
     bool transition = false,
     bool reproductive = false,
-    bool generation = false
+    bool generation = false,
+    bool active_cases = false,
+    bool outbreak_size = false,
+    bool hospitalizations = false
     );
 
 // template<typename TSeq>
@@ -18894,6 +19960,10 @@ public:
      * @param fn_transmission Filename. Transmission history.
      * @param fn_transition   Filename. Markov transition history.
      * @param fn_reproductive_number Filename. Case by case reproductive number
+     * @param fn_generation_time Filename. Generation time data.
+     * @param fn_active_cases Filename. Active cases data.
+     * @param fn_outbreak_size Filename. Outbreak size data.
+     * @param fn_hospitalizations Filename. Hospitalization data.
      */
     void write_data(
         std::string fn_virus_info,
@@ -18904,7 +19974,10 @@ public:
         std::string fn_transmission,
         std::string fn_transition,
         std::string fn_reproductive_number,
-        std::string fn_generation_time
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations
         ) const;
 
     /**
@@ -19155,6 +20228,56 @@ public:
         const std::string & fn_output = "",
         bool self = false
     );
+
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * 
+     * @details
+     * This is a wrapper for `DataBase::record_hospitalization()`.
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record_hospitalization(Agent<TSeq> & agent);
+
+    /**
+     * @brief Get the full time series of hospitalization data.
+     * 
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution
+     *   based on tool distribution).
+     * 
+     * @details
+     * This is a wrapper for `DataBase::get_hospitalizations()`.
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
+     */
+    void get_hospitalizations(
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<int> & count,
+        std::vector<double> & weight
+    ) const;
 
 
 };
@@ -21380,10 +22503,12 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For tool counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         for (size_t i = 0u; i < p->n_tools; ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
     }
@@ -21429,10 +22554,12 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For virus counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         if (p->virus)
             db.update_virus(
                 p->virus->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
     }
@@ -21463,10 +22590,12 @@ inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
         auto & db = model->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For tool counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         for (size_t i = 0u; i < p->n_tools; ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
     }
@@ -21508,10 +22637,12 @@ inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For virus counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         if (p->virus)
             db.update_virus(
                 p->virus->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
     }
@@ -21540,15 +22671,17 @@ inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m)
         auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
+        // For virus and tool counts, use current state (p->state) not state_prev
+        // because state_prev may be stale if multiple changes occurred today
         if (p->virus)
             db.update_virus(
-                p->virus->get_id(), p->state_prev, a.new_state
+                p->virus->get_id(), p->state, a.new_state
             );
 
         for (size_t i = 0u; i < p->n_tools; ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
-                p->state_prev,
+                p->state,
                 a.new_state
             );
 
@@ -23363,6 +24496,7 @@ inline void ContactTracing::print(size_t agent)
 //////////////////////////////////////////////////////////////////////////////*/
 
 
+    
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -23462,16 +24596,17 @@ inline void ContactTracing::print(size_t agent)
  * surveillance mechanisms that can be used across different epidemiological models.
  * 
  * Available model categories include:
- * - Basic compartmental models (SIS, SIR, SEIR)
- * - Models with death compartments (SIRD, SISD, SEIRD)
- * - Connected population models (SIRConnected, SEIRConnected, SIRDConnected, SEIRDConnected)
- * - Logistic regression models (SIRLogit)
- * - Mixing population models (SEIRMixing, SIRMixing)
- * - Quarantine models (SEIRMixingQuarantine)
- * - School-specific models (MeaslesSchool)
- * - Disease-specific models (MeaslesMixing, MeaslesMixingRiskQuarantine)
- * - Diffusion network models (DiffNet)
- * - Surveillance systems
+ * 
+ *   - Basic compartmental models (SIS, SIR, SEIR)
+ *   - Models with death compartments (SIRD, SISD, SEIRD)
+ *   - Connected population models (SIRConnected, SEIRConnected, SIRDConnected, SEIRDConnected)
+ *   - Logistic regression models (SIRLogit)
+ *   - Mixing population models (SEIRMixing, SIRMixing)
+ *   - Quarantine models (SEIRMixingQuarantine)
+ *   - School-specific models (MeaslesSchool)
+ *   - Disease-specific models (MeaslesMixing, MeaslesMixingRiskQuarantine)
+ *   - Diffusion network models (DiffNet)
+ *   - Surveillance systems
  * 
  */
 namespace epimodels {
@@ -29026,7 +30161,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool: public Model<TSeq> {
+class ModelMeaslesSchool: public epiworld::Model<TSeq> {
 
 private:
 
@@ -29056,6 +30191,11 @@ private:
 
 public:
 
+    /**
+     * @name Model States
+     * @brief The different states of the model.
+     */
+    ///@{
     static constexpr epiworld_fast_uint SUSCEPTIBLE             = 0u;
     static constexpr epiworld_fast_uint EXPOSED                 = 1u;
     static constexpr epiworld_fast_uint PRODROMAL               = 2u;
@@ -29069,6 +30209,7 @@ public:
     static constexpr epiworld_fast_uint QUARANTINED_RECOVERED   = 10u;
     static constexpr epiworld_fast_uint HOSPITALIZED            = 11u;
     static constexpr epiworld_fast_uint RECOVERED               = 12u;
+    ///@}
     
     // Default constructor
     ModelMeaslesSchool() {};
@@ -29478,6 +30619,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     {
         // If hospitalized, then the agent is removed from the system
         // effectively
+        model->record_hospitalization(*p);
         p->change_state(
             m,
             detected ?
@@ -29537,6 +30679,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     // If hospitalized, then the agent is removed from the system
     else if (which == 1u)
     {
+        model->record_hospitalization(*p);
         p->change_state(
             m,
             // HOSPITALIZED
@@ -29909,7 +31052,7 @@ using namespace epiworld;
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRMixingQuarantine : public Model<TSeq>
+class ModelSEIRMixingQuarantine : public epiworld::Model<TSeq>
 {
 private:
 
@@ -31157,7 +32300,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing : public Model<TSeq>
+class ModelMeaslesMixing : public epiworld::Model<TSeq>
 {
 private:
 
@@ -31865,6 +33008,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     }
     else if (which == 1) // Hospitalized
     {
+        m->record_hospitalization(*p);
         p->change_state(
             m,
             detected ?
@@ -31929,6 +33073,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
     else if (which == 1)
     {
 
+        m->record_hospitalization(*p);
         if (unisolate)
         {
             p->change_state(
@@ -32486,7 +33631,7 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
+class ModelMeaslesMixingRiskQuarantine : public epiworld::Model<TSeq> 
 {
 private:
     // Vector of vectors of infected agents (prodromal agents are infectious)
@@ -33080,6 +34225,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     }
     else if (which == 1) // Hospitalized
     {
+        m->record_hospitalization(*p);
         p->change_state(m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
     }
     else if ((which == 0) && detected)
@@ -33126,6 +34272,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     // Moves to hospitalized
     else if (which == 1u)
     {
+        m->record_hospitalization(*p);
         p->change_state(m, DETECTED_HOSPITALIZED);
     }
     // Stays in rash, may or may not be released from isolation

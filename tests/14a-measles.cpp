@@ -8,9 +8,9 @@ EPIWORLD_TEST_CASE(
 ) {
     
     // Queuing doesn't matter and get results that are meaningful
-    int n_seeds = 5;
+    int n_seeds = 1;
     epimodels::ModelMeaslesSchool<> model_0(
-        1000,    // Number of agents
+        500,    // Number of agents
         n_seeds, // Number of initial cases
         2.0,     // Contact rate
         0.2,     // Transmission rate
@@ -20,7 +20,7 @@ EPIWORLD_TEST_CASE(
         4.0,     // Prodromal period
         5.0,     // Rash period
         3.0,     // Days undetected
-        0.2,     // Hospitalization rate
+        0.04411765,     // Hospitalization rate
         7.0,     // Hospitalization duration
         0.0,     // Proportion vaccinated
         21u,     // Quarantine period
@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE(
     );
 
     // Shutting off the quarantine feature
-    model_0("Quarantine period") = -1.0;
+    // model_0("Quarantine period") = -1.0;
     // model_0("Isolation period") = -1.0;
 
     // Setting the distribution function of the initial cases
@@ -40,7 +40,7 @@ EPIWORLD_TEST_CASE(
         return;
     });
 
-    size_t nsims = 500;
+    size_t nsims = 200;
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
         

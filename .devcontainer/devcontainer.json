@@ -14,7 +14,7 @@
 				"llvm-vs-code-extensions.vscode-clangd",
 				"matepek.vscode-catch2-test-adapter",
 				"github.vscode-github-actions",
-                "bierner.markdown-mermaid",
+				"bierner.markdown-mermaid",
 				"augustocdias.tasks-shell-input"
 			]
 		}

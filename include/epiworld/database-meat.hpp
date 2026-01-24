@@ -67,12 +67,15 @@ inline void DataBase<TSeq>::reset()
     transmission_target.clear();
     transmission_source_exposure_date.clear();
 
+    m_hospitalizations.reset();
+
     return;
 
 }
 
 template<typename TSeq>
 inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
+    m_hospitalizations(db.m_hospitalizations),
     virus_id(db.virus_id),
     virus_name(db.virus_name),
     virus_sequence(db.virus_sequence),
@@ -199,6 +202,14 @@ inline void DataBase<TSeq>::record()
                 hist_virus_date.push_back(model->today());
                 hist_virus_id.push_back(p.second);
                 hist_virus_state.push_back(s);
+
+                #ifdef EPI_DEBUG
+                if (today_virus[p.second][s] < 0)
+                    throw std::logic_error(
+                        "The count of viruses in DataBase::record cannot be negative."
+                    );
+                #endif
+
                 hist_virus_counts.push_back(today_virus[p.second][s]);
 
             }
@@ -390,6 +401,11 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
             today_virus[old_id][tmp_state]--;
             today_virus[new_id][tmp_state]++;
 
+            #ifdef EPI_DEBUG
+            if (today_virus[old_id][tmp_state] < 0)
+                throw std::logic_error("An entry in today_virus is negative.");
+            #endif
+
         }
 
     }
@@ -568,11 +584,27 @@ template<typename TSeq>
 inline void DataBase<TSeq>::update_virus(
         epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo
 ) {
 
-    today_virus[virus_id][prev_state]--;
-    today_virus[virus_id][new_state]++;
+    if (undo)
+    {
+        today_virus[virus_id][prev_state]++;
+        today_virus[virus_id][new_state]--;
+    }
+    else
+    {
+        today_virus[virus_id][prev_state]--;
+        today_virus[virus_id][new_state]++;
+    }
+
+    #ifdef EPI_DEBUG
+    if (today_virus[virus_id][prev_state] < 0)
+        throw std::logic_error("An entry in today_virus is negative.");
+    if (today_virus[virus_id][new_state] < 0)
+        throw std::logic_error("An entry in today_virus is negative (new_state).");
+    #endif
 
     return;
     
@@ -582,12 +614,20 @@ template<typename TSeq>
 inline void DataBase<TSeq>::update_tool(
         epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state
+        epiworld_fast_uint new_state,
+        bool undo
 ) {
 
-
-    today_tool[tool_id][prev_state]--;    
-    today_tool[tool_id][new_state]++;
+    if (undo)
+    {
+        today_tool[tool_id][prev_state]++;
+        today_tool[tool_id][new_state]--;
+    }
+    else
+    {
+        today_tool[tool_id][prev_state]--;
+        today_tool[tool_id][new_state]++;
+    }
 
     return;
 
@@ -657,19 +697,24 @@ inline void DataBase<TSeq>::get_today_virus(
     std::vector< int > & counts
     ) const
 {
-      
-    state.resize(today_virus.size(), "");
-    id.resize(today_virus.size(), 0);
-    counts.resize(today_virus.size(),0);
+    
+    // Total entries = number of viruses × number of states
+    size_t n_viruses = today_virus.size();
+    size_t n_states = model->states_labels.size();
+    size_t total_entries = n_viruses * n_states;
 
-    int n = 0u;
-    for (epiworld_fast_uint v = 0u; v < today_virus.size(); ++v)
-        for (epiworld_fast_uint s = 0u; s < model->states_labels.size(); ++s)
+    state.resize(total_entries, "");
+    id.resize(total_entries, 0);
+    counts.resize(total_entries, 0);
+
+    size_t n = 0u;
+    for (epiworld_fast_uint v = 0u; v < n_viruses; ++v)
+        for (epiworld_fast_uint s = 0u; s < n_states; ++s)
         {
             state[n]   = model->states_labels[s];
-            id[n]       = static_cast<int>(v);
-            counts[n++] = today_virus[v][s];
-
+            id[n]      = static_cast<int>(v);
+            counts[n]  = today_virus[v][s];
+            ++n;
         }
 
 }
@@ -819,6 +864,85 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
 }
 
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_active_cases(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & count
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days * n_viruses, 0);
+    virus_id.assign(n_days * n_viruses, 0);
+    count.assign(n_days * n_viruses, 0);
+
+    for (size_t i = 0u; i < hist_virus_id.size(); ++i)
+    {
+
+        // With more viruses, there are more days
+        auto location = hist_virus_date[i] + hist_virus_id[i] * n_days;
+
+        date[location] = hist_virus_date[i];
+        virus_id[location] = hist_virus_id[i];
+        count[location] += hist_virus_counts[i];
+
+    }
+
+    return;
+    
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_outbreak_size(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & outbreak_size
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days * n_viruses, 0);
+    std::iota(date.begin(), date.end(), 0);
+
+    virus_id.assign(n_days * n_viruses, 0);
+    for (size_t v = 0u; v < n_viruses; ++v)
+        for (size_t d = 0u; d < n_days; ++d)
+            virus_id[d + v * n_days] = static_cast<int>(v);
+
+    outbreak_size.assign(n_days * n_viruses, 0);
+
+    // With more viruses, there are more days;
+    for (size_t i = 0u; i < transmission_date.size(); ++i)
+    {
+        outbreak_size[
+            transmission_date[i] + transmission_virus[i] * n_days
+        ] += 1;
+    }
+
+    // Now, we generate the cumulative sum
+    for (size_t v = 0u; v < n_viruses; ++v)
+    {
+        for (size_t d = 1u; d < n_days; ++d)
+        {
+            auto location = d + v * n_days;
+            outbreak_size[location] += outbreak_size[location - 1u];
+        }
+    }
+
+    return;
+    
+}
+
 template<typename TSeq>
 inline void DataBase<TSeq>::get_transmissions(
     std::vector<int> & date,
@@ -882,7 +1006,10 @@ inline void DataBase<TSeq>::write_data(
     std::string fn_transmission,
     std::string fn_transition,
     std::string fn_reproductive_number,
-    std::string fn_generation_time
+    std::string fn_generation_time,
+    std::string fn_active_cases,
+    std::string fn_outbreak_size,
+    std::string fn_hospitalizations
 ) const
 {
 
@@ -902,7 +1029,7 @@ inline void DataBase<TSeq>::write_data(
 
         file_virus_info <<
         #ifdef EPI_DEBUG
-            "thread" << "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
+            "thread " << "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
         #else
             "virus_id " << "virus " << "virus_sequence " << "date_recorded " << "parent\n";
         #endif
@@ -950,8 +1077,8 @@ inline void DataBase<TSeq>::write_data(
                 #endif
                 hist_virus_date[i] << " " <<
                 hist_virus_id[i] << " \"" <<
-                virus_name[hist_virus_id[i]] << "\" " <<
-                model->states_labels[hist_virus_state[i]] << " " <<
+                virus_name[hist_virus_id[i]] << "\" \"" <<
+                model->states_labels[hist_virus_state[i]] << "\" " <<
                 hist_virus_counts[i] << "\n";
     }
 
@@ -1138,6 +1265,124 @@ inline void DataBase<TSeq>::write_data(
 
     if (fn_generation_time != "")
         get_generation_time(fn_generation_time);
+
+    if (fn_active_cases != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > count;
+        get_active_cases(date, virus_id, count);
+
+        std::ofstream file_active_cases(fn_active_cases, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_active_cases)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_active_cases +
+                "\" for writing.")
+                ;
+        }
+
+        file_active_cases <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "active_cases\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            if (count[i] > 0)
+                file_active_cases <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    count[i] << "\n";
+        }
+
+    }
+
+    if (fn_outbreak_size != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > outbreak_size;
+        get_outbreak_size(date, virus_id, outbreak_size);
+
+        std::ofstream file_outbreak_size(fn_outbreak_size, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_outbreak_size)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_outbreak_size +
+                "\" for writing.")
+                ;
+        }
+
+        file_outbreak_size <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id virus " << "outbreak_size\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            if (outbreak_size[i] > 0)
+                file_outbreak_size <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " \"" <<
+                    virus_name[virus_id[i]] << "\" " <<
+                    outbreak_size[i] << "\n";
+        }
+
+    }
+
+    if (fn_hospitalizations != "")
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > tool_id;
+        std::vector< int > count;
+        std::vector< double > weight;
+        get_hospitalizations(date, virus_id, tool_id, count, weight);
+
+        std::ofstream file_hospitalizations(fn_hospitalizations, std::ios_base::out);
+        // Repeat the same error if the file doesn't exists
+        if (!file_hospitalizations)
+        {
+            throw std::runtime_error(
+                "Could not open file \"" + fn_hospitalizations +
+                "\" for writing.")
+                ;
+        }
+
+        file_hospitalizations <<
+            #ifdef EPI_DEBUG
+            "thread " << 
+            #endif
+            "date " << "virus_id " << "tool_id " << "count " << "weight\n";
+
+        for (size_t i = 0u; i < date.size(); ++i)
+        {
+            // Only write non-zero counts or weights
+            if (count[i] > 0 || weight[i] > 0.0)
+                file_hospitalizations <<
+                    #ifdef EPI_DEBUG
+                    EPI_GET_THREAD_ID() << " " <<
+                    #endif
+                    date[i] << " " <<
+                    virus_id[i] << " " <<
+                    tool_id[i] << " " <<
+                    count[i] << " " <<
+                    weight[i] << "\n";
+        }
+
+    }
 
 }
 
@@ -1927,6 +2172,27 @@ inline void DataBase<TSeq>::get_generation_time(
 
     return;
 
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::record_hospitalization(Agent<TSeq> & agent)
+{
+    m_hospitalizations.record(agent, *model);
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hospitalizations(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & tool_id,
+    std::vector<int> & count,
+    std::vector<double> & weight
+) const
+{
+    // Get the number of days from the model and add 1 since days are 0-indexed
+    // today() returns the last day, so we need today() + 1 for the full count
+    int ndays = model->today() + 1;
+    m_hospitalizations.get(ndays, date, virus_id, tool_id, count, weight);
 }
 
 #undef VECT_MATCH

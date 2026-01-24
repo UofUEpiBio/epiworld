@@ -135,6 +135,9 @@ int main() {
         "examples/04-advanced-usage/transmisions.txt",
         "examples/04-advanced-usage/transition.txt",
         "examples/04-advanced-usage/reproductive.txt",
+	"",
+	"",
+	"",
         ""
     );
 

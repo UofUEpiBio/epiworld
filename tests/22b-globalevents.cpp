@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -28,7 +24,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
 
     // Create a saver function to collect transmission data from each experiment
     auto saver = [&total_transmissions_before, &total_transmissions_after, intervention_day](
-        size_t n, Model<>* m) -> void {
+        size_t, Model<>* m) -> void {
         
         // Get transmission data
         std::vector<int> trans_date, trans_source, trans_target, trans_virus, trans_source_exposure;
@@ -39,12 +35,12 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
         // Count transmissions before and after intervention
         // Transmissions on the intervention day are counted as "before" since
         // the global event runs after update_state() on that day
-        for (size_t i = 0; i < trans_date.size(); ++i) {
-            if (trans_date[i] < intervention_day) {
+        for (int i : trans_date) {
+            if (i < intervention_day) {
                 total_transmissions_before++;
-            } else if (trans_date[i] > intervention_day) {
+            } else if (i > intervention_day) {
                 total_transmissions_after++;
-            } else if (trans_date[i] == intervention_day) {
+            } else if (i == intervention_day) {
                 // Explicitly exclude transmissions on intervention_day from both counts,
                 // as they may occur during the transition period (see comment above).
             }
@@ -71,27 +67,9 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
     // Run multiple experiments with the saver function
     model.run_multiple(ndays, nexperiments, 1000, saver, true, false, 1);
 
-    #ifdef CATCH_CONFIG_MAIN
     // We should have transmissions before the intervention
     REQUIRE(total_transmissions_before > 0);
     
     // After setting transmission to 0, there should be NO transmissions
     REQUIRE(total_transmissions_after == 0);
-    #else
-    // Print for standalone execution
-    printf_epiworld(
-        "GlobalEvent parameter modification test:\n"
-        "  Total transmissions before intervention (days 1-%d): %d\n"
-        "  Total transmissions after intervention (days %d-%d): %d\n",
-        intervention_day - 1,
-        total_transmissions_before,
-        intervention_day + 1,
-        ndays,
-        total_transmissions_after
-    );
-    #endif
-
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
 }
