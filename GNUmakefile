@@ -54,9 +54,9 @@ else
 endif
 
 ifeq ($(WITH_OPENMP),1)
-    CFLAGS   += -fopenmp -fopenmp=libomp
-    CXXFLAGS += -fopenmp -fopenmp=libomp
-    LDFLAGS  += -fopenmp -fopenmp=libomp
+    CFLAGS   += -fopenmp
+    CXXFLAGS += -fopenmp
+    LDFLAGS  += -fopenmp
 endif
 
 ifeq ($(WITH_COVERAGE),1)
