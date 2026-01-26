@@ -4,7 +4,7 @@
 define COMPILE_C_CMDS
 	$(SAY) "CC" $$@
 	$(V)mkdir -p $$(dir $$@)
-	$(V)$$(strip $($CC) -o $$@ -c -MD $(CFLAGS) $($(NAME)_CFLAGS) $$($$<.CFLAGS) \
+	$(V)$$(strip $(CC) -o $$@ -c -MD $(CFLAGS) $($(NAME)_CFLAGS) $$($$<.CFLAGS) \
 		-I$(ROOT_BUILD_DIR) -I$(ROOT_BUILD_DIR)/include \
 		-I$($(NAME)_BUILD_DIR) -I$($(NAME)_BUILD_DIR)/include \
 		$(addprefix -I,$($(NAME)_INCLUDE)) $$<)
