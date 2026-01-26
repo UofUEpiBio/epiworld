@@ -1,5 +1,5 @@
-#ifndef EPIWORLD_LFMCMC_BONES_HPP
-#define EPIWORLD_LFMCMC_BONES_HPP
+#ifndef EPIWORLD_MATH_LFMCMC_BONES_HPP
+#define EPIWORLD_MATH_LFMCMC_BONES_HPP
 
 #include "epiworld/config.hpp"
 #include "epiworld/progress.hpp"
@@ -7,18 +7,23 @@
 #include <chrono>
 #include <random>
 
+namespace epiworld::math::lfmcmc {
 template<typename TData>
 class LFMCMC;
 
+/// @brief Simulation function type for LFMCMC.
 template<typename TData>
 using LFMCMCSimFun = std::function<TData(const std::vector< epiworld_double >&,LFMCMC<TData>*)>;
 
+/// @brief Summary function type for LFMCMC.
 template<typename TData>
 using LFMCMCSummaryFun = std::function<void(std::vector< epiworld_double >&,const TData&,LFMCMC<TData>*)>;
 
+/// @brief Proposal function type for LFMCMC.
 template<typename TData>
 using LFMCMCProposalFun = std::function<void(std::vector< epiworld_double >&,const std::vector< epiworld_double >&,LFMCMC<TData>*)>;
 
+/// @brief Kernel function type for LFMCMC.
 template<typename TData>
 using LFMCMCKernelFun = std::function<epiworld_double(const std::vector< epiworld_double >&,const std::vector< epiworld_double >&,epiworld_double,LFMCMC<TData>*)>;
 
@@ -33,7 +38,7 @@ template<typename TData>
 inline void proposal_fun_normal(
     std::vector< epiworld_double >& new_params,
     const std::vector< epiworld_double >& old_params,
-    LFMCMC<TData>* m
+    LFMCMC<TData>* model
 );
 
 /**
@@ -51,8 +56,8 @@ inline void proposal_fun_normal(
 template<typename TData>
 inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
     epiworld_double scale,
-    epiworld_double lb = std::numeric_limits<epiworld_double>::min(),
-    epiworld_double ub = std::numeric_limits<epiworld_double>::max()
+    epiworld_double lower_bound = std::numeric_limits<epiworld_double>::min(),
+    epiworld_double upper_bound = std::numeric_limits<epiworld_double>::max()
 );
 
 /**
@@ -70,7 +75,7 @@ template<typename TData>
 inline void proposal_fun_unif(
     std::vector< epiworld_double >& new_params,
     const std::vector< epiworld_double >& old_params,
-    LFMCMC<TData>* m
+    LFMCMC<TData>* model
 );
 
 /**
@@ -88,7 +93,7 @@ inline epiworld_double kernel_fun_uniform(
     const std::vector< epiworld_double >& simulated_stats,
     const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
-    LFMCMC<TData>* m
+    LFMCMC<TData>* model
 );
 
 /**
@@ -107,7 +112,7 @@ inline epiworld_double kernel_fun_gaussian(
     const std::vector< epiworld_double >& simulated_stats,
     const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
-    LFMCMC<TData>* m
+    LFMCMC<TData>* model
 );
 
 /**
@@ -179,7 +184,7 @@ private:
         std::chrono::duration<epiworld_double,std::micro>::zero();
 
     inline void get_elapsed_time(
-        std::string unit,
+        std::string const& unit,
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
         bool print
@@ -228,13 +233,13 @@ public:
     ///@{
     void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
     std::shared_ptr< std::mt19937 > & get_rand_endgine();
-    void seed(epiworld_fast_uint s);
+    void seed(epiworld_fast_uint seed);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
     epiworld_double rnorm();
     epiworld_double rgamma();
-    epiworld_double runif(epiworld_double lb, epiworld_double ub);
-    epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
+    epiworld_double runif(epiworld_double lower_bound, epiworld_double upper_bound);
+    epiworld_double rnorm(epiworld_double mean, epiworld_double std);
     epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
     ///@}
 
@@ -270,8 +275,8 @@ public:
     // Printing
     LFMCMC<TData> & verbose_off();
     LFMCMC<TData> & verbose_on();
-    void print(size_t burnin = 0u) const;
-
+    void print(size_t burnin = 0) const;
 };
+}
 
-#endif
+#endif /* !EPIWORLD_MATH_LFMCMC_BONES_HPP */
