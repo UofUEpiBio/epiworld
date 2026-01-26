@@ -27,7 +27,7 @@ jobs:
             llvm@${{ matrix.llvm }} \
             libxml2 \
             cpanminus
-          echo "export PATH=\"/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH\"" >> $GITHUB_PATH
+          echo "export PATH=\"$(brew --prefix llvm@${{ matrix.llvm }})/bin:$PATH\"" >> $GITHUB_PATH
 
       - name: Install Ubuntu dependencies
         if: runner.os == 'Linux'
