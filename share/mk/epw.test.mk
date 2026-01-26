@@ -73,7 +73,7 @@ ifeq ($(WITH_COVERAGE),1)
 	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info
 endif	
 else
-ifeq ($(and $(WITH_COVERAGE),1))
+ifeq ($(WITH_COVERAGE),1)
 	$(V)for f in $($(NAME)_BUILD_DIR)/*.gcno; do \
 		ln -sf "$$(realpath $$f)" "$(abspath $($(NAME)_COV_DIR))/$$(basename $$f)"; \
 	done
