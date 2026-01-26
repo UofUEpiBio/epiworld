@@ -4,6 +4,31 @@
 #include <cmath>
 #include <stdexcept>
 
+#include "epiworld/config.hpp"
+
+/// @brief Constant for the lower quantile of a 95% credible interval
+const epiworld_double CI95_LOWER_QUANTILE = 0.025;
+
+/// @brief Constant for the upper quantile of a 95% credible interval
+const epiworld_double CI95_UPPER_QUANTILE = 0.975;
+
+/**
+ * @brief Compute the quantile index for a given quantile and number of samples
+ * 
+ * @param quantile Quantile to compute (between 0 and 1)
+ * @param n_samples Number of samples
+ * @return size_t Index corresponding to the quantile
+ */
+inline size_t quantile_index_of(epiworld_double quantile, size_t n_samples)
+{
+    if (n_samples == 0) {
+        throw std::invalid_argument("n_samples must be > 0");
+    }
+
+    auto idx = static_cast<size_t>(std::floor(quantile * static_cast<epiworld_double>(n_samples)));
+    return std::min(idx, n_samples - 1);
+};
+
 // Implementing the factorial function
 /**
  * @brief Compute the log of the factorial
