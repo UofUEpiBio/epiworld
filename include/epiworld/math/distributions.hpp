@@ -1,6 +1,9 @@
 #ifndef EPIWORLD_MATH_DISTRIBUTIONS_HPP
 #define EPIWORLD_MATH_DISTRIBUTIONS_HPP
 
+#include <cmath>
+#include <stdexcept>
+
 // Implementing the factorial function
 /**
  * @brief Compute the log of the factorial
@@ -94,7 +97,7 @@ inline double dgenint(
         }
     }
 
-    double g_dbl = static_cast<double>(g);
+    auto g_dbl = static_cast<double>(g);
 
     if (normalizing < 0.0)
     {
@@ -106,7 +109,7 @@ inline double dgenint(
         for (int i = 1; i <= max_days; ++i)
         {
 
-            double i_dbl = static_cast<double>(i);
+            auto i_dbl = static_cast<double>(i);
 
             normalizing -= std::exp(
                 log1_p_r * (i_dbl - 1.0) +
