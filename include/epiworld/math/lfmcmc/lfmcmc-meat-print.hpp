@@ -1,6 +1,12 @@
 #ifndef LFMCMC_MEAT_PRINT_HPP
 #define LFMCMC_MEAT_PRINT_HPP
 
+#include <stdexcept>
+#include <algorithm>
+#include <string>
+
+#include "epiworld/math/lfmcmc/lfmcmc-bones.hpp"
+
 template<typename TData>
 inline void LFMCMC<TData>::print(size_t burnin) const
 {
@@ -23,7 +29,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
     }
 
-    epiworld_double n_samples_dbl = static_cast< epiworld_double >(
+    auto n_samples_dbl = static_cast< epiworld_double >(
         n_samples_print
         );
 
@@ -77,7 +83,7 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     printf_epiworld("N Samples (after burn-in period) : %zu\n", m_n_samples - burnin);
 
     std::string abbr;
-    epiworld_double elapsed;
+    epiworld_double elapsed = 0.0;
     get_elapsed_time("auto", &elapsed, &abbr, false);
     printf_epiworld("Elapsed t : %.2f%s\n\n", elapsed, abbr.c_str());
     
@@ -89,19 +95,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     // Figuring out format
     std::string fmt_params;
     
-    int nchar_par_num = 0;
+    size_t nchar_par_num = 0;
     for (auto & n : summ_params)
     {
-        
-        int tmp_nchar;
-        
-        if (std::abs(n) < 1) {
-            // std::log10(<1) will return negative number
-            // std::log10(0) will return -inf and throw a runtime error
-            tmp_nchar = 0;
-        } else {
-            tmp_nchar = std::floor(std::log10(std::abs(n)));
-        }
+        size_t tmp_nchar= std::abs(n) < 1 ? 0 : (size_t)(std::log10(std::abs(n)));
 
         if (nchar_par_num < tmp_nchar)
             nchar_par_num = tmp_nchar;
@@ -111,10 +108,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
 
     if (m_param_names.size() != 0u)
     {
-        int nchar_par = 0;
-        for (auto & n : m_param_names)
+        size_t nchar_par = 0;
+        for (auto const& n : m_param_names)
         {
-            int tmp_nchar = n.length();
+            size_t tmp_nchar = n.length();
             if (nchar_par < tmp_nchar)
                 nchar_par = tmp_nchar;
         }
@@ -167,17 +164,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     // Statistics
     ////////////////////////////////////////////////////////////////////////////
     printf_epiworld("\nStatistics:\n");
-    int nchar = 0;
+    size_t nchar = 0;
     for (auto & s : summ_stats)
     {
-        int tmp_nchar;
-        if (std::abs(s) < 1) {
-            // std::log10(<1) will return negative number
-            // std::log10(0) will return -inf and throw a runtime error
-            tmp_nchar = 0;
-        } else {
-            tmp_nchar = std::floor(std::log10(std::abs(s)));
-        }
+        size_t tmp_nchar = std::abs(s) >= 1 ? (size_t)(std::log10(std::abs(s))) : 0;
     
         if (nchar < tmp_nchar)
             nchar = tmp_nchar;
@@ -191,10 +181,10 @@ inline void LFMCMC<TData>::print(size_t burnin) const
     std::string fmt_stats;
     if (m_stat_names.size() != 0u)
     {
-        int nchar_stats = 0;
-        for (auto & n : m_stat_names)
+        size_t nchar_stats = 0;
+        for (auto const& n : m_stat_names)
         {
-            int tmp_nchar = n.length();
+            size_t tmp_nchar = n.length();
             if (nchar_stats < tmp_nchar)
                 nchar_stats = tmp_nchar;
         }

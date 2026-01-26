@@ -1,7 +1,10 @@
 #ifndef EPIWORLD_LFMCMC_MEAT_HPP
 #define EPIWORLD_LFMCMC_MEAT_HPP
 
-#include "lfmcmc-bones.hpp"
+#include <chrono>
+#include <stdexcept>
+
+#include "epiworld/math/lfmcmc/lfmcmc-bones.hpp"
 
 /**
  * @brief Proposal function
@@ -55,8 +58,10 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
 
         // Checking boundaries
         epiworld_double d = ub - lb;
-        int odd;
-        epiworld_double d_above, d_below;
+        int odd = 0;
+        epiworld_double d_above = NAN;
+        epiworld_double d_below = NAN;
+        
         for (auto & p : new_params)
         {
 
@@ -67,8 +72,8 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
                 odd     = static_cast<int>(std::floor(d_above / d)) % 2;
                 d_above = d_above - std::floor(d_above / d) * d;
 
-                p = (lb + d_above) * odd +
-                    (ub - d_above) * (1 - odd);
+                p = (lb + d_above) * static_cast<epiworld_double>(odd) +
+                    (ub - d_above) * static_cast<epiworld_double>(1 - odd);
 
             // Correcting if parameter goes below upper bound
             } else if (p < lb)
@@ -77,8 +82,8 @@ inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
                 int odd = static_cast<int>(std::floor(d_below / d)) % 2;
                 d_below = d_below - std::floor(d_below / d) * d;
 
-                p = (ub - d_below) * odd +
-                    (lb + d_below) * (1 - odd);
+                p = (ub - d_below) * static_cast<epiworld_double>(odd) +
+                    (lb + d_below) * static_cast<epiworld_double>(1 - odd);
             }
 
         }
@@ -141,13 +146,13 @@ inline epiworld_double kernel_fun_uniform(
 
     epiworld_double ans = 0.0;
     for (size_t p = 0u; p < m->get_n_params(); ++p)
-        ans += std::pow(observed_stats[p] - simulated_stats[p], 2.0);
+        ans += static_cast<epiworld_double>(std::pow(observed_stats[p] - simulated_stats[p], 2));
 
     return std::sqrt(ans) < epsilon ? 1.0 : 0.0;
 
 }
 
-#define sqrt2pi() 2.5066282746310002416
+constexpr epiworld_double sqrt2pi = 2.5066282746310002416;
 
 /**
  * @brief Gaussian kernel
@@ -170,12 +175,11 @@ inline epiworld_double kernel_fun_gaussian(
 
     epiworld_double ans = 0.0;
     for (size_t p = 0u; p < m->get_n_params(); ++p)
-        ans += std::pow(observed_stats[p] - simulated_stats[p], 2.0);
+        ans += static_cast<epiworld_double>(std::pow(observed_stats[p] - simulated_stats[p], 2));
 
-    return std::exp(
-        -.5 * (ans/std::pow(1 + std::pow(epsilon, 2.0)/3.0, 2.0))
-        ) / sqrt2pi() ;
-
+    return static_cast<epiworld_double>(std::exp(
+        -0.5 * (ans/std::pow(1 + std::pow(epsilon, 2)/3, 2)) // NOLINT
+    ) / sqrt2pi);
 }
 
 
@@ -206,7 +210,7 @@ inline void LFMCMC<TData>::set_kernel_fun(LFMCMCKernelFun<TData> fun)
 
 template<typename TData>
 inline void LFMCMC<TData>::run(
-    std::vector< epiworld_double > params_init_,
+    const std::vector< epiworld_double > &params_init_,
     size_t n_samples_,
     epiworld_double epsilon_,
     int seed
@@ -271,7 +275,7 @@ inline void LFMCMC<TData>::run(
         m_all_sample_params[k] = m_initial_params[k];
    
     // Init progress bar
-    progress_bar = Progress(m_n_samples, 80);
+    progress_bar = Progress(m_n_samples, EPIWORLD_PROGRESS_BAR_WIDTH);
 
     // Run LFMCMC
     for (size_t i = 1u; i < m_n_samples; ++i)
@@ -432,10 +436,15 @@ inline std::shared_ptr< std::mt19937 > & LFMCMC<TData>::get_rand_endgine()
 
 // Step 4: Accept/reject, and go back to step 1
 
-#define DURCAST(tunit,txtunit) {\
-        elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
-            m_end_time - m_start_time).count(); \
-        abbr_unit     = txtunit;}
+template <typename Duration>
+inline epiworld_double durcast_fn(
+    const std::chrono::steady_clock::time_point& start,
+    const std::chrono::steady_clock::time_point& end
+) {
+    epiworld_double elapsed = std::chrono::duration_cast<Duration>(end - start).count();
+    
+    return elapsed;
+}
 
 template<typename TData>
 inline void LFMCMC<TData>::get_elapsed_time(
@@ -446,44 +455,63 @@ inline void LFMCMC<TData>::get_elapsed_time(
 ) const {
 
     // Preparing the result
-    epiworld_double elapsed;
+    epiworld_double elapsed = 0.0;
     std::string abbr_unit;
 
     // Figuring out the length
     if (unit == "auto")
     {
-
         size_t tlength = std::to_string(
             static_cast<int>(floor(m_elapsed_time.count()))
             ).length();
         
-        if (tlength <= 1)
+        if (tlength <= 1) {
             unit = "nanoseconds";
-        else if (tlength <= 3)
+        }
+        else if (tlength <= 3) {
             unit = "microseconds";
-        else if (tlength <= 6)
+        }
+        else if (tlength <= 6) {
             unit = "milliseconds";
-        else if (tlength <= 8)
+        }
+        else if (tlength <= 8) {
             unit = "seconds";
-        else if (tlength <= 9)
+        }
+        else if (tlength <= 9) {
             unit = "minutes";
-        else 
+        }
+        else {
             unit = "hours";
-
+        }
     }
 
-    if (unit == "nanoseconds")       DURCAST(nanoseconds,"ns")
-    else if (unit == "microseconds") DURCAST(microseconds,"\xC2\xB5s")
-    else if (unit == "milliseconds") DURCAST(milliseconds,"ms")
-    else if (unit == "seconds")      DURCAST(seconds,"s")
-    else if (unit == "minutes")      DURCAST(minutes,"m")
-    else if (unit == "hours")        DURCAST(hours,"h")
-    else
+    if (unit == "nanoseconds") {
+        elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(m_end_time - m_start_time).count();
+        abbr_unit = "ns";
+    } else if (unit == "microseconds") {
+        elapsed = std::chrono::duration_cast<std::chrono::microseconds>(m_end_time - m_start_time).count();
+        abbr_unit = "\xC2\xB5s";
+    } else if (unit == "milliseconds") {
+        elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(m_end_time - m_start_time).count();
+        abbr_unit = "ms";
+    } else if (unit == "seconds") {
+        elapsed = std::chrono::duration_cast<std::chrono::seconds>(m_end_time - m_start_time).count();
+        abbr_unit = "s";
+    } else if (unit == "minutes") {
+        elapsed = std::chrono::duration_cast<std::chrono::minutes>(m_end_time - m_start_time).count();
+        abbr_unit = "m";
+    } else if (unit == "hours") {
+        elapsed = std::chrono::duration_cast<std::chrono::hours>(m_end_time - m_start_time).count();
+        abbr_unit = "h";
+    } else {
         throw std::range_error("The time unit " + unit + " is not supported.");
+    }
 
+    abbr_unit = unit;
 
     if (last_elapsed != nullptr)
         *last_elapsed = elapsed;
+
     if (unit_abbr != nullptr)
         *unit_abbr = abbr_unit;
 
@@ -494,8 +522,6 @@ inline void LFMCMC<TData>::get_elapsed_time(
 }
 
 #undef DURCAST
-
-#include "lfmcmc-meat-print.hpp"
 
 template<typename TData>
 inline void LFMCMC<TData>::chrono_start() {
@@ -509,7 +535,7 @@ inline void LFMCMC<TData>::chrono_end() {
 }
 
 template<typename TData>
-inline void LFMCMC<TData>::set_params_names(std::vector< std::string > names)
+inline void LFMCMC<TData>::set_params_names(const std::vector< std::string > &names)
 {
 
     if (names.size() != m_n_params)
@@ -519,7 +545,7 @@ inline void LFMCMC<TData>::set_params_names(std::vector< std::string > names)
 
 }
 template<typename TData>
-inline void LFMCMC<TData>::set_stats_names(std::vector< std::string > names)
+inline void LFMCMC<TData>::set_stats_names(const std::vector< std::string > &names)
 {
 
     if (names.size() != m_n_stats)
@@ -575,4 +601,4 @@ inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
     return *this;
 }
 
-#endif
+#endif // EPIWORLD_LFMCMC_MEAT_HPP  
