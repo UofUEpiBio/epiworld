@@ -1,4 +1,3 @@
-#define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 // Original data will be an integer vector
@@ -127,21 +126,21 @@ int main() {
 
     // Writing off the results
     model.write_data(
-        "examples/04-advanced-usage/variants_info.txt",
-        "examples/04-advanced-usage/variants.txt",
-        "examples/04-advanced-usage/tool_info.txt",
-        "examples/04-advanced-usage/tool_hist.txt",
-        "examples/04-advanced-usage/total.txt",
-        "examples/04-advanced-usage/transmisions.txt",
-        "examples/04-advanced-usage/transition.txt",
-        "examples/04-advanced-usage/reproductive.txt",
-	"",
-	"",
-	"",
-        ""
+        "variants_info.txt",
+        "variants.txt",
+        "tool_info.txt",
+        "tool_hist.txt",
+        "total.txt",
+        "transmisions.txt",
+        "transition.txt",
+        "reproductive.txt",
+        "generation_time.txt",
+	    "active_cases.txt",
+	    "outbreak_size.txt",
+        "hospitalizations.txt"
     );
 
-    model.write_edgelist("examples/04-advanced-usage/simple-world-edgelist.txt");
+    model.write_edgelist("simple-world-edgelist.txt");
 
     model.print();
 

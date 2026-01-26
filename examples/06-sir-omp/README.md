@@ -1,4 +1,4 @@
-## Example: 06-sir-omp
+## Example: `06-sir-omp`
 
 Output from the program:
 
@@ -14,8 +14,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 272.00ms
-Last run speed      : 91.69 million agents x day / second
+Last run elapsed t  : 1.00s
+Last run speed      : 17.62 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -32,12 +32,12 @@ Model parameters:
  - Transmission rate : 0.9000
 
 Distribution of the population at time 100:
-  - (0) Susceptible : 247500 -> 7640
-  - (1) Infected    :   2500 -> 908
-  - (2) Recovered   :      0 -> 241452
+  - (0) Susceptible : 247500 -> 3
+  - (1) Infected    :   2500 -> 2
+  - (2) Recovered   :      0 -> 249995
 
 Transition Probabilities:
- - Susceptible  0.96  0.04     -
+ - Susceptible  0.94  0.06     -
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 
@@ -51,8 +51,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 260.00ms
-Last run speed      : 95.80 million agents x day / second
+Last run elapsed t  : 1.00s
+Last run speed      : 17.88 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -69,12 +69,12 @@ Model parameters:
  - Transmission rate : 0.9000
 
 Distribution of the population at time 100:
-  - (0) Susceptible : 247500 -> 7167
-  - (1) Infected    :   2500 -> 876
-  - (2) Recovered   :      0 -> 241957
+  - (0) Susceptible : 247500 -> 43
+  - (1) Infected    :   2500 -> 7
+  - (2) Recovered   :      0 -> 249950
 
 Transition Probabilities:
- - Susceptible  0.97  0.03     -
+ - Susceptible  0.94  0.06     -
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 
@@ -88,8 +88,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 258.00ms
-Last run speed      : 96.63 million agents x day / second
+Last run elapsed t  : 1.00s
+Last run speed      : 17.92 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -106,12 +106,12 @@ Model parameters:
  - Transmission rate : 0.9000
 
 Distribution of the population at time 100:
-  - (0) Susceptible : 247500 -> 6076
-  - (1) Infected    :   2500 -> 814
-  - (2) Recovered   :      0 -> 243110
+  - (0) Susceptible : 247500 -> 83
+  - (1) Infected    :   2500 -> 17
+  - (2) Recovered   :      0 -> 249900
 
 Transition Probabilities:
- - Susceptible  0.96  0.04     -
+ - Susceptible  0.94  0.06     -
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 
@@ -125,8 +125,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 257.00ms
-Last run speed      : 97.00 million agents x day / second
+Last run elapsed t  : 1.00s
+Last run speed      : 17.87 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -143,18 +143,18 @@ Model parameters:
  - Transmission rate : 0.9000
 
 Distribution of the population at time 100:
-  - (0) Susceptible : 247500 -> 5738
-  - (1) Infected    :   2500 -> 765
-  - (2) Recovered   :      0 -> 243497
+  - (0) Susceptible : 247500 -> 55
+  - (1) Infected    :   2500 -> 9
+  - (2) Recovered   :      0 -> 249936
 
 Transition Probabilities:
- - Susceptible  0.96  0.04     -
+ - Susceptible  0.94  0.06     -
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 
-last run elapsed time : 272.00ms.
-last run elapsed time : 260.00ms.
-last run elapsed time : 258.00ms.
-last run elapsed time : 257.00ms.
-Elapsed time: 280 milliseconds
+last run elapsed time : 1418.00ms.
+last run elapsed time : 1398.00ms.
+last run elapsed time : 1394.00ms.
+last run elapsed time : 1398.00ms.
+Elapsed time: 1445 milliseconds
 ```

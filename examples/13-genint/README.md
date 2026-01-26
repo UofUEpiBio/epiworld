@@ -16,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 200 (of 200)
 Number of viruses   : 1
-Last run elapsed t  : 1.00s
-Last run speed      : 16.78 million agents x day / second
+Last run elapsed t  : 3.00s
+Last run speed      : 6.29 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -35,9 +35,9 @@ Model parameters:
  - Transmission rate : 0.1000
 
 Distribution of the population at time 200:
-  - (0) Susceptible :  99950 -> 205
+  - (0) Susceptible :  99950 -> 245
   - (1) Infected    :     50 -> 0
-  - (2) Recovered   :      0 -> 99795
+  - (2) Recovered   :      0 -> 99755
 
 Transition Probabilities:
  - Susceptible  0.93  0.07     -
@@ -57,8 +57,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 200 (of 200)
 Number of viruses   : 1
-Last run elapsed t  : 1.00s
-Last run speed      : 17.10 million agents x day / second
+Last run elapsed t  : 3.00s
+Last run speed      : 5.13 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -77,10 +77,10 @@ Model parameters:
  - Prob. Transmission   : 0.1000
 
 Distribution of the population at time 200:
-  - (0) Susceptible :  99950 -> 194
+  - (0) Susceptible :  99950 -> 198
   - (1) Exposed     :     50 -> 0
   - (2) Infected    :      0 -> 0
-  - (3) Recovered   :      0 -> 99806
+  - (3) Recovered   :      0 -> 99802
 
 Transition Probabilities:
  - Susceptible  0.96  0.04     -     -
@@ -88,8 +88,8 @@ Transition Probabilities:
  - Infected        -     -  0.86  0.14
  - Recovered       -     -     -  1.00
 
-SIR Gen. Int. (obs)       : 1.82675
-SIR Gen. Int. (expected)  : 2.48956
-SEIR Gen. Int. (obs)      : 3.73379
-SEIR Gen. Int. (expected) : 4.49268
+SIR Gen. Int. (obs)       : 1.82584
+SIR Gen. Int. (expected)  : 2.49883
+SEIR Gen. Int. (obs)      : 3.74669
+SEIR Gen. Int. (expected) : 4.49706
 ```

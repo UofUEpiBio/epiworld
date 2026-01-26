@@ -13,8 +13,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 1.00ms
-Last run speed      : 26.55 million agents x day / second
+Last run elapsed t  : 3.00ms
+Last run speed      : 15.91 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -47,16 +47,16 @@ LIKELIHOOD-FREE MARKOV CHAIN MONTE CARLO
 
 N Samples (total) : 2000
 N Samples (after burn-in period) : 2000
-Elapsed t : 6.00s
+Elapsed t : 8.00s
 
 Parameters:
-  -Immune recovery :  0.56 [ 0.34,  0.77] (initial :  0.50)
-  -Infectiousness  :  0.19 [ 0.15,  0.63] (initial :  0.50)
+  -Immune recovery :  0.75 [ 0.22,  1.00] (initial :  0.50)
+  -Infectiousness  :  0.24 [ 0.08,  0.65] (initial :  0.50)
 
 Statistics:
-  -Susceptible :  664.87 [   4.00,  707.00] (Observed:  697.00)
-  -Infected    :    2.26 [   0.00,    0.00] (Observed:    0.00)
-  -Recovered   :  332.38 [ 293.00,  986.00] (Observed:  303.00)
+  -Susceptible :  670.44 [  16.00,  712.00] (Observed:  697.00)
+  -Infected    :    0.63 [   0.00,    0.00] (Observed:    0.00)
+  -Recovered   :  328.42 [ 288.00,  970.00] (Observed:  303.00)
 ___________________________________________
 
 ```

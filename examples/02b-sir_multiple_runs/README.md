@@ -3,7 +3,7 @@
 Output from the program:
 
 ```
-Starting multiple runs (100)
+Starting multiple runs (100) using 1 thread(s)
 _________________________________________________________________________
 _________________________________________________________________________
 ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
@@ -18,9 +18,9 @@ Number of entities  : 0
 Days (duration)     : 60 (of 60)
 Number of viruses   : 1
 Last run elapsed t  : 0.00s
-Total elapsed t     : 3.00s (100 runs)
-Last run speed      : 18.84 million agents x day / second
-Average run speed   : 18.81 million agents x day / second
+Total elapsed t     : 4.00s (100 runs)
+Last run speed      : 13.08 million agents x day / second
+Average run speed   : 13.02 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -47,7 +47,7 @@ Transition Probabilities:
  - Recovered       -     -  1.00
 
 last run elapsed time : 0.00s
-total elapsed time    : 3.00s
+total elapsed time    : 4.00s
 total runs            : 100
-mean run elapsed time : 0.03s
+mean run elapsed time : 0.04s
 ```

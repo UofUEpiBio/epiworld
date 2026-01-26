@@ -16,7 +16,7 @@ Number of entities  : 0
 Days (duration)     : 112 (of 112)
 Number of viruses   : 1
 Last run elapsed t  : 1.00ms
-Last run speed      : 14.28 million agents x day / second
+Last run speed      : 13.10 million agents x day / second
 Rewiring            : off
 
 Global events:
