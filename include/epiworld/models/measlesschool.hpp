@@ -1,6 +1,18 @@
 #ifndef MEASLESQUARANTINE_HPP
 #define MEASLESQUARANTINE_HPP
 
+#include <stdexcept>
+#include <cmath>
+
+#include <epiworld/config.hpp>
+#include <epiworld/agent-bones.hpp>
+#include <epiworld/model-bones.hpp>
+#include <epiworld/virus-bones.hpp>
+#include <epiworld/viruses-bones.hpp>
+#include <epiworld/tool-bones.hpp>
+#include <epiworld/models/init-functions.hpp>
+
+namespace epiworld::models {
 #if __cplusplus >= 202302L
     // C++23 or later
     #define GET_MODEL(model, output) \
@@ -12,22 +24,22 @@
     #define GET_MODEL(model, output) \
         ModelMeaslesSchool<TSeq> * output = \
             dynamic_cast<ModelMeaslesSchool<TSeq> *>(model); \
-        assert(output != nullptr); // Use assert for runtime checks
+        assert((output) != nullptr); // Use assert for runtime checks
 #endif
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
     inline void ModelMeaslesSchool<TSeq>:: name \
-    (epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m)
+    (Agent<TSeq> * p, Model<TSeq> * m)
 
 #define SAMPLE_FROM_PROBS(n, ans) \
     size_t ans; \
     epiworld_double p_total = m->runif(); \
-    for (ans = 0u; ans < n; ++ans) \
+    for ((ans) = 0u; (ans) < (n); ++(ans)) \
     { \
-        if (p_total < m->array_double_tmp[ans]) \
+        if (p_total < m->array_double_tmp[(ans)]) \
             break; \
-        m->array_double_tmp[ans + 1] += m->array_double_tmp[ans]; \
+        m->array_double_tmp[(ans) + 1] += m->array_double_tmp[(ans)]; \
     }
 
 /**
@@ -50,7 +62,7 @@
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool: public epiworld::Model<TSeq> {
+class ModelMeaslesSchool: public Model<TSeq> {
 
 private:
 
@@ -101,7 +113,7 @@ public:
     ///@}
     
     // Default constructor
-    ModelMeaslesSchool() {};
+    ModelMeaslesSchool() = default;
 
     /**
      * @param n The number of agents in the system.
@@ -339,7 +351,7 @@ template<typename TSeq>
 inline Model<TSeq> * ModelMeaslesSchool<TSeq>::clone_ptr()
 {
 
-    ModelMeaslesSchool<TSeq> * ptr = new ModelMeaslesSchool<TSeq>(
+    auto * ptr = new ModelMeaslesSchool<TSeq>(
         *dynamic_cast<const ModelMeaslesSchool<TSeq>*>(this)
         );
 
@@ -379,7 +391,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
         if (which == static_cast<int>(n_infectious))
             --which;
 
-        epiworld::Agent<> & neighbor = *model->infectious[which];
+        Agent<> & neighbor = *model->infectious[which];
 
         // Can't sample itself
         if (neighbor.get_id() == p->get_id())
@@ -855,4 +867,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 #undef SAMPLE_FROM_PROBS
 #undef LOCAL_UPDATE_FUN
 #undef GET_MODEL
+
+}
+
 #endif

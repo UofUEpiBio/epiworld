@@ -1,19 +1,30 @@
 #ifndef EPIWORLD_CONFIG_HPP
 #define EPIWORLD_CONFIG_HPP
 
-#ifndef printf_epiworld
-    #define printf_epiworld fflush(stdout);printf
+#include <memory>
+#include <cstdio>
+#include <cstdarg>
+#include <functional>
+
+#ifdef DEBUG
+    #define EPI_DEBUG
 #endif
+
+inline int printf_epiworld(const char* format, ...) {
+    fflush(stdout);
+    va_list args = {};
+    va_start(args, format);
+    int ret = vprintf(format, args);
+    va_end(args);
+
+    return ret;
+}
 
 // In case the user has a way to stop the program
 // This is called during `run_multiple()` and it is
 // passed the simulation number.
 #ifndef EPI_CHECK_USER_INTERRUPT
     #define EPI_CHECK_USER_INTERRUPT(a)
-#endif
-
-#ifndef EPIWORLD_MAXNEIGHBORS
-    #define EPIWORLD_MAXNEIGHBORS 1048576
 #endif
 
 #if defined(_OPENMP) || defined(__OPENMP)
@@ -23,23 +34,15 @@
 //     #define omp_set_num_threads() 1
 #endif
 
-#ifndef epiworld_double
-    #define epiworld_double float
-#endif
+using epiworld_double = float;
+using epiworld_fast_int = int;
+using epiworld_fast_uint = unsigned long long int;
+using EPI_DEFAULT_TSEQ = int;
 
-#ifndef epiworld_fast_int
-    #define epiworld_fast_int int
-#endif
-
-#ifndef epiworld_fast_uint
-    #define epiworld_fast_uint unsigned long long int
-#endif
-
-#define EPI_DEFAULT_TSEQ int
-
-#ifndef EPI_MAX_TRACKING
-    #define EPI_MAX_TRACKING 200
-#endif
+constexpr int EPI_MAX_TRACKING = 200;
+constexpr int EPIWORLD_PROGRESS_BAR_WIDTH = 80;
+constexpr int EPIWORLD_PROGRESS_MIN_WIDTH = 7;
+constexpr int EPIWORLD_MAXNEIGHBORS = 1048576;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
@@ -168,7 +171,6 @@ public:
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
         new_state(new_state_),
         queue(queue_), call(call_), idx_agent(idx_agent_), idx_object(idx_object_) {
-            return;
         };
 };
 
@@ -179,37 +181,14 @@ public:
  * rates take when no value has been specified in the model.
  */
 ///@{
-#ifndef DEFAULT_TOOL_CONTAGION_REDUCTION
-    #define DEFAULT_TOOL_CONTAGION_REDUCTION    0.0
-#endif
-
-#ifndef DEFAULT_TOOL_TRANSMISSION_REDUCTION
-    #define DEFAULT_TOOL_TRANSMISSION_REDUCTION 0.0
-#endif
-
-#ifndef DEFAULT_TOOL_RECOVERY_ENHANCER
-    #define DEFAULT_TOOL_RECOVERY_ENHANCER      0.0
-#endif
-
-#ifndef DEFAULT_TOOL_DEATH_REDUCTION
-    #define DEFAULT_TOOL_DEATH_REDUCTION        0.0
-#endif
-
-#ifndef EPI_DEFAULT_VIRUS_PROB_INFECTION
-    #define EPI_DEFAULT_VIRUS_PROB_INFECTION    1.0
-#endif
-
-#ifndef EPI_DEFAULT_VIRUS_PROB_RECOVERY
-    #define EPI_DEFAULT_VIRUS_PROB_RECOVERY     0.1428
-#endif
-
-#ifndef EPI_DEFAULT_VIRUS_PROB_DEATH
-    #define EPI_DEFAULT_VIRUS_PROB_DEATH        0.0
-#endif
-
-#ifndef EPI_DEFAULT_INCUBATION_DAYS
-    #define EPI_DEFAULT_INCUBATION_DAYS         7.0
-#endif
+constexpr epiworld_double DEFAULT_TOOL_CONTAGION_REDUCTION    = 0.0;
+constexpr epiworld_double DEFAULT_TOOL_TRANSMISSION_REDUCTION = 0.0;
+constexpr epiworld_double DEFAULT_TOOL_RECOVERY_ENHANCER      = 0.0;
+constexpr epiworld_double DEFAULT_TOOL_DEATH_REDUCTION        = 0.0;
+constexpr epiworld_double EPI_DEFAULT_VIRUS_PROB_INFECTION    = 1.0;
+constexpr epiworld_double EPI_DEFAULT_VIRUS_PROB_RECOVERY     = 0.1428;
+constexpr epiworld_double EPI_DEFAULT_VIRUS_PROB_DEATH        = 0.0;
+constexpr epiworld_double EPI_DEFAULT_INCUBATION_DAYS         = 7.0;
 ///@}
 
 #ifdef EPI_DEBUG
@@ -222,13 +201,13 @@ public:
         EPI_DEBUG_PRINTF("DEBUGGING ON (compiled with EPI_DEBUG defined)%s\n", "");
 
     #define EPI_DEBUG_ALL_NON_NEGATIVE(vect) \
-        for (auto & v : vect) \
+        for (auto & v : (vect)) \
             if (static_cast<double>(v) < 0.0) \
                 throw EPI_DEBUG_ERROR(std::logic_error, "A negative value not allowed.");
 
     #define EPI_DEBUG_SUM_DBL(vect, num) \
         double _epi_debug_sum = 0.0; \
-        for (auto & v : vect) \
+        for (auto & v : (vect)) \
         {   \
             _epi_debug_sum += static_cast<double>(v);\
             if (_epi_debug_sum > static_cast<double>(num)) \
@@ -237,7 +216,7 @@ public:
 
     #define EPI_DEBUG_SUM_INT(vect, num) \
         int _epi_debug_sum = 0; \
-        for (auto & v : vect) \
+        for (auto & v : (vect)) \
         {   \
             _epi_debug_sum += static_cast<int>(v);\
             if (_epi_debug_sum > static_cast<int>(num)) \
@@ -245,14 +224,14 @@ public:
         }
 
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c) \
-        if (a.size() != b.size())  {\
+        if ((a).size() != (b).size())  {\
             EPI_DEBUG_PRINTF("In '%s'", std::string(c).c_str()); \
             EPI_DEBUG_PRINTF("Size of vector a: %lu\n", (a).size());\
             EPI_DEBUG_PRINTF("Size of vector b: %lu\n", (b).size());\
             throw EPI_DEBUG_ERROR(std::length_error, "The vectors do not match size."); \
         }\
-        for (int _i = 0; _i < static_cast<int>(a.size()); ++_i) \
-            if (a[_i] != b[_i]) {\
+        for (int _i = 0; _i < static_cast<int>((a).size()); ++_i) \
+            if ((a)[_i] != (b)[_i]) {\
                 EPI_DEBUG_PRINTF("In '%s'", std::string(c).c_str()); \
                 EPI_DEBUG_PRINTF("Iterating the last 5 values%s:\n", ""); \
                 for (int _j = std::max(0, static_cast<int>(_i) - 4); _j <= _i; ++_j) \
@@ -260,8 +239,8 @@ public:
                     EPI_DEBUG_PRINTF( \
                         "a[%i]: %i; b[%i]: %i\n", \
                         _j, \
-                        static_cast<int>(a[_j]), \
-                        _j, static_cast<int>(b[_j])); \
+                        static_cast<int>((a)[_j]), \
+                        _j, static_cast<int>((b)[_j])); \
                 } \
                 throw EPI_DEBUG_ERROR(std::logic_error, "The vectors do not match."); \
             }
@@ -281,13 +260,11 @@ public:
     #define EPI_DEBUG_SUM_DBL(vect, num)
     #define EPI_DEBUG_SUM_INT(vect, num)
     #define EPI_DEBUG_VECTOR_MATCH_INT(a, b, c)
-    #define EPI_DEBUG_FAIL_AT_TRUE(a, b) \
-        if (a) \
-            return false;
-    #define epiexception(a) a
+    #define EPI_DEBUG_FAIL_AT_TRUE(a, b)
 #endif
 
 #if defined(EPI_DEBUG_NO_THREAD_ID) || (!defined(__OPENMP) && !defined(_OPENMP))
+// NOLINTNEXTLINE
     #define EPI_GET_THREAD_ID() 0
 #else
     #define EPI_GET_THREAD_ID() omp_get_thread_num()

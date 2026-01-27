@@ -39,8 +39,8 @@ WITH_OPENMP   ?= 1
 # Enable code coverage support.
 WITH_COVERAGE ?= 0
 
-CFLAGS   := -std=c11
-CXXFLAGS := -std=c++17
+CFLAGS   := -std=c11 -I./include/
+CXXFLAGS := -std=c++17 -I./include/
 LDFLAGS  :=
 
 ifeq ($(BUILD_PROFILE),debug)

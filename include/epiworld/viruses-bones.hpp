@@ -214,5 +214,11 @@ inline void Viruses_const<TSeq>::print() const noexcept
 
 }
 
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+VirusToAgentFun<TSeq> distribute_virus_randomly(
+    epiworld_double prevalence,
+    bool prevalence_as_proportion = true,
+    std::vector< size_t > agents_ids = {}
+);
 
 #endif

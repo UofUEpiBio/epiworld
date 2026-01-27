@@ -1,20 +1,32 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
+#include <stdexcept>
+#include <map>
+#include <set>
+
+#include <epiworld/config.hpp>
+#include <epiworld/model-bones.hpp>
+#include <epiworld/contacttracing-bones.hpp>
+#include <epiworld/virus-bones.hpp>
+#include <epiworld/tool-bones.hpp>
+#include <epiworld/models/init-functions.hpp>
+
+namespace epiworld::models {
 #define COL_MAJOR_POS(i, j, n) \
-    (j * n + i)
+    ((j) * (n) + (i))
 
 #if __cplusplus >= 202302L
     // C++23 or later
     #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
+        auto * (output) = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
         /*Using the [[assume(...)]] to avoid the compiler warning \
         if the standard is C++23 or later */ \
         [[assume((output) != nullptr)]];
 #else
     // C++17 or C++20
     #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
+        auto * (output) = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
         assert((output) != nullptr); // Use assert for runtime checks
 #endif
 
@@ -26,11 +38,11 @@
 #define SAMPLE_FROM_PROBS(n, ans) \
     int ans; \
     epiworld_double p_total = m->runif(); \
-    for (ans = 0; ans < static_cast<int>(n); ans++) \
+    for ((ans) = 0; (ans) < static_cast<int>(n); (ans)++) \
     { \
-        if (p_total < m->array_double_tmp[ans]) \
+        if (p_total < m->array_double_tmp[(ans)]) \
             break; \
-        m->array_double_tmp[ans + 1] += m->array_double_tmp[ans]; \
+        m->array_double_tmp[(ans) + 1] += m->array_double_tmp[(ans)]; \
     };
 
 /**
@@ -61,7 +73,7 @@
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine : public epiworld::Model<TSeq> 
+class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
 {
 private:
     // Vector of vectors of infected agents (prodromal agents are infectious)
@@ -163,7 +175,7 @@ public:
     static constexpr int RISK_MEDIUM = 1;
     static constexpr int RISK_HIGH   = 2;
 
-    ModelMeaslesMixingRiskQuarantine() {};
+    ModelMeaslesMixingRiskQuarantine() = default;
     
     /**
      * @brief Constructs a ModelMeaslesMixingRiskQuarantine object.
@@ -462,7 +474,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 COL_MAJOR_POS(agent_group_id, g, ngroups)
@@ -477,7 +489,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -1213,7 +1225,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles", prevalence, true);
     virus.set_state(
         ModelMeaslesMixingRiskQuarantine<TSeq>::EXPOSED,
         ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED,
@@ -1241,9 +1253,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     model.agents_empty_graph(n);
 
     model.set_name("Measles with Mixing and Risk-based Quarantine");
-
-    return;
-
 }
 
 template<typename TSeq>
@@ -1424,7 +1433,7 @@ template<typename TSeq>
 inline Model<TSeq> * ModelMeaslesMixingRiskQuarantine<TSeq>::clone_ptr()
 {
     
-    ModelMeaslesMixingRiskQuarantine<TSeq> * ptr = new ModelMeaslesMixingRiskQuarantine<TSeq>(
+    auto * ptr = new ModelMeaslesMixingRiskQuarantine<TSeq>(
         *dynamic_cast<const ModelMeaslesMixingRiskQuarantine<TSeq>*>(this)
         );
 
@@ -1449,5 +1458,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
 
 #undef SAMPLE_FROM_PROBS
 #undef GET_MODEL
+
+}
 
 #endif

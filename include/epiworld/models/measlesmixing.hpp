@@ -1,39 +1,48 @@
+
+/**
+ * @file measlesmixing.hpp
+ * @brief Template for a Measles model with population mixing, quarantine, and contact tracing
+ */
+
 #ifndef EPIWORLD_MODELS_MEASLESMIXING_HPP
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
 
-using namespace epiworld;
+#include <vector>
+#include <cassert>
+#include <stdexcept>
 
+#include <epiworld/config.hpp>
+#include <epiworld/tool-bones.hpp>
+#include <epiworld/tools-bones.hpp>
+#include <epiworld/model-bones.hpp>
+
+namespace epiworld::models {
 #define MM(i, j, n) \
-    j * n + i
+    j * (n) + i
 
 #if __cplusplus >= 202302L
     // C++23 or later
     #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
+        auto * (output) = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
         /*Using the [[assume(...)]] to avoid the compiler warning \
         if the standard is C++23 or later */ \
         [[assume((output) != nullptr)]];
 #else
     // C++17 or C++20
     #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
+        auto * (output) = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
         assert((output) != nullptr); // Use assert for runtime checks
 #endif
 
 #define SAMPLE_FROM_PROBS(n, ans) \
     size_t ans; \
     epiworld_double p_total = m->runif(); \
-    for (ans = 0u; ans < n; ++ans) \
+    for ((ans) = 0u; (ans) < (n); ++(ans)) \
     { \
-        if (p_total < m->array_double_tmp[ans]) \
+        if (p_total < m->array_double_tmp[(ans)]) \
             break; \
-        m->array_double_tmp[ans + 1] += m->array_double_tmp[ans]; \
+        m->array_double_tmp[(ans) + 1] += m->array_double_tmp[(ans)]; \
     }
-
-/**
- * @file measlesmixing.hpp
- * @brief Template for a Measles model with population mixing, quarantine, and contact tracing
- */
 
 /**
  * @brief Measles model with population mixing, quarantine, and contact tracing
@@ -71,7 +80,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing : public epiworld::Model<TSeq>
+class ModelMeaslesMixing : public Model<TSeq>
 {
 private:
 
@@ -148,7 +157,7 @@ public:
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
     static const size_t QUARANTINE_PROCESS_DONE     = 2u;
 
-    ModelMeaslesMixing() {};
+    ModelMeaslesMixing() = default;
 
     /**
      * @brief Constructs a ModelMeaslesMixing object.
@@ -297,7 +306,7 @@ public:
      * @brief Get the current contact matrix
      * @return Vector representing the contact matrix
      */
-    std::vector< double > get_contact_matrix() const
+    [[nodiscard]] std::vector< double > get_contact_matrix() const
     {
         return contact_matrix;
     };
@@ -306,7 +315,7 @@ public:
      * @brief Get the quarantine trigger status for all agents
      * @return Vector indicating quarantine process status for each agent
      */
-    std::vector< size_t > get_agent_quarantine_triggered() const
+    [[nodiscard]] std::vector< size_t > get_agent_quarantine_triggered() const
     {
         return agent_quarantine_triggered;
     };
@@ -315,7 +324,7 @@ public:
      * @brief Get the quarantine willingness for all agents
      * @return Vector of boolean values indicating each agent's willingness to quarantine
      */
-    std::vector< bool > get_quarantine_willingness() const
+    [[nodiscard]] std::vector< bool > get_quarantine_willingness() const
     {
         return quarantine_willingness;
     };
@@ -324,7 +333,7 @@ public:
      * @brief Get the isolation willingness for all agents
      * @return Vector of boolean values indicating each agent's willingness to self-isolate
      */
-    std::vector< bool > get_isolation_willingness() const
+    [[nodiscard]] std::vector< bool > get_isolation_willingness() const
     {
         return isolation_willingness;
     };
@@ -402,7 +411,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_infectious_list()
 
 template<typename TSeq>
 inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
-    epiworld::Agent<TSeq> * agent,
+    Agent<TSeq> * agent,
     std::vector< size_t > & sampled_agents
     )
 {
@@ -420,7 +429,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 MM(agent_group_id, g, ngroups)
@@ -435,7 +444,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -611,18 +620,15 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 
     tracking_matrix_date.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
     std::fill(tracking_matrix_date.begin(), tracking_matrix_date.end(), 0u);
-
-    return;
-
 }
 
 template<typename TSeq>
 inline Model<TSeq> * ModelMeaslesMixing<TSeq>::clone_ptr()
 {
 
-    ModelMeaslesMixing<TSeq> * ptr = new ModelMeaslesMixing<TSeq>(
+    auto* ptr = new ModelMeaslesMixing<TSeq>(
         *dynamic_cast<const ModelMeaslesMixing<TSeq>*>(this)
-        );
+    );
 
     #if __cplusplus >= 202302L
         // C++23 or later
@@ -1212,7 +1218,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles", prevalence, true);
     virus.set_state(
         ModelMeaslesMixing<TSeq>::EXPOSED,
         ModelMeaslesMixing<TSeq>::RECOVERED,
@@ -1320,4 +1326,7 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 #undef MM
 #undef GET_MODEL
 #undef SAMPLE_FROM_PROBS
+
+}
+
 #endif

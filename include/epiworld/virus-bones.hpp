@@ -1,6 +1,14 @@
 #ifndef EPIWORLD_VIRUS_HPP
 #define EPIWORLD_VIRUS_HPP
 
+#include <string>
+
+#include <epiworld/config.hpp>
+#include <epiworld/epiworld-macros.hpp> 
+#include <epiworld/agent-bones.hpp>
+#include <epiworld/virus-bones.hpp>
+#include <epiworld/model-bones.hpp>
+
 template<typename TSeq>
 class Agent;
 
@@ -94,8 +102,6 @@ public:
         bool as_proportion
     );
     
-    #ifdef EPI_DEBUG_VIRUS
-    
     // Copy and move operations for debugging
     Virus(const Virus<TSeq>& other);                    // Copy constructor
     Virus(Virus<TSeq>&& other) noexcept;                // Move constructor
@@ -103,7 +109,6 @@ public:
     Virus<TSeq>& operator=(Virus<TSeq>&& other) noexcept; // Move assignment
 
     ~Virus();
-    #endif
     
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);

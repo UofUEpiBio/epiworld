@@ -1,0 +1,32 @@
+HeaderFileExtensions: [ 'h', 'hpp' ]
+ImplementationFileExtensions: [ 'c', 'cpp', 'ipp' ]
+WarningsAsErrors: 'bugprone-*,modernize-*'
+HeaderFilterRegex: '^(frontends/cpp)/'
+FormatStyle: file
+ExtraArgs:
+  - "-std=c++17"
+
+Checks: >
+  clang-analyzer-*,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  -misc-no-recursion,
+  modernize-*,
+  -modernize-use-if-init,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  bugprone-*,
+  -bugprone-move-forwarding-reference,
+  -bugprone-easily-swappable-parameters,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-pro-type-*,
+  -cppcoreguidelines-pro-bounds-*,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-macro-usage,
+  readability-*,
+  -readability-function-cognitive-complexity,
+
+CheckOptions:
+  - key: misc-unused-headers.HeaderFileExtensions
+    value: 'h;hh;hpp;inc;ipp;inl;tcc'

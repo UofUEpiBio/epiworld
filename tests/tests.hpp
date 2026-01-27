@@ -1,8 +1,6 @@
 #ifndef EPIWORLD_TESTS_HPP
 #define EPIWORLD_TESTS_HPP
 
-#define epiworld_double double
-
 #include <vector>
 #include <iostream>
 #include <type_traits>
@@ -11,8 +9,8 @@
     #include <omp.h>
 #endif
 
-#include "../include/catch2/catch.hpp"
-#include "../include/epiworld/epiworld.hpp"
+#include <catch2/catch.hpp>
+#include <epiworld/epiworld.hpp>
 
 /**
  * Returns true if the absolute difference between a and b is greater than eps.
