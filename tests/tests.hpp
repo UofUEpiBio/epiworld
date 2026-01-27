@@ -11,6 +11,8 @@
 #endif
 #include "../include/epiworld/epiworld.hpp"
 
+
+
 /**
  * Returns true if the absolute difference between a and b is greater than eps.
  */
@@ -87,9 +89,10 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
     std::vector<std::vector<epiworld_double>>& transitions,
     std::vector<epiworld_double>& R0s,
     int n_seeds,
-    std::vector<std::vector<int>>* final_distribution = nullptr
+    std::vector<std::vector<int>>* final_distribution = nullptr,
+    std::vector< double > * outbreak_sizes = nullptr
 ) {
-    return [&transitions, &R0s, n_seeds, final_distribution](size_t n, epiworld::Model<>* m) -> void {
+    return [&transitions, &R0s, n_seeds, final_distribution, outbreak_sizes](size_t n, epiworld::Model<>* m) -> void {
         // Saving the transition probabilities
         transitions[n] = m->get_db().get_transition_probability(false, false);
 
@@ -114,6 +117,14 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
             );
         }
         
+        if (outbreak_sizes != nullptr)
+        {
+            std::vector< int > date,virus,outbreak;
+            m->get_db().get_outbreak_size(date, virus, outbreak);
+
+            outbreak_sizes->at(n) = outbreak.back();
+        }
+
         // Should we get the final distribution?
         if (final_distribution == nullptr)
             return;
@@ -203,7 +214,8 @@ inline std::vector< double > test_compute_final_sizes(
 template<typename ModelType>
 inline std::vector<epiworld_double> tests_calculate_avg_transitions(
     const std::vector<std::vector<epiworld_double>>& transitions,
-    const ModelType & model
+    const ModelType & model,
+    std::vector< double > * outbreak_sizes = nullptr
 ) {
     if (transitions.empty())
         return {};

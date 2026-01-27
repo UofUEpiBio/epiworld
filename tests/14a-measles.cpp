@@ -16,7 +16,7 @@ EPIWORLD_TEST_CASE(
     epimodels::ModelMeaslesSchool<> model_0(
         500,    // Number of agents
         n_seeds, // Number of initial cases
-        2.0,     // Contact rate
+        18.0,     // Contact rate
         0.2,     // Transmission rate
         0.9,     // Vaccination efficacy
         0.3,     // Vaccination reduction recovery rate
@@ -47,8 +47,9 @@ EPIWORLD_TEST_CASE(
     size_t nsims = 200;
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
+    std::vector< double > outbreak_sizes(nsims, 0.0);
         
-    auto saver = tests_create_saver(transitions, R0s, n_seeds);
+    auto saver = tests_create_saver(transitions, R0s, n_seeds, nullptr, &outbreak_sizes);
 
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
     
@@ -153,6 +154,12 @@ EPIWORLD_TEST_CASE(
     // Transition from hospitalized to recovered
     std::cout << "Transition from hospitalized to recovered: "
               << mat(11, 12) << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
+
+
+    std::cout << "Outbreak size: " <<
+        static_cast<double>(
+            std::accumulate(outbreak_sizes.begin(), outbreak_sizes.end(), 0.0)
+        ) / static_cast<double>(nsims) << std::endl;
     #undef mat
     #ifndef CATCH_CONFIG_MAIN
     return 0;

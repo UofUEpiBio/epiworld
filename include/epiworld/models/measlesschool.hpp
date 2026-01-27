@@ -319,7 +319,7 @@ inline void ModelMeaslesSchool<TSeq>::update_infectious() {
         if (s == PRODROMAL)
             this->infectious.push_back(&agent);
 
-        if (s < RASH)
+        if ((s < RASH)) // || (s == RECOVERED))
             ++n_available;
 
     }
