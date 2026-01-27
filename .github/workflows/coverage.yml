@@ -8,25 +8,63 @@
 
 name: Code coverage
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:        
   coverage:
     runs-on: ubuntu-latest
-    container: gvegayon/epiworld:latest
     
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && \
+          sudo apt-get install -y \
+            lcov \
+            libomp-18-dev \
+            clang-18 \
+            clang-tools-18 \
+            llvm-18 \
+            libxml-libxml-perl \
+            cpanminus && \
+          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100 && \
+          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-18 100 && \
+          sudo update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-18 100 && \
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/llvm-cov-18 100 && \
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-18 100 && \
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-18 100       
+
+      - name: Cache cpanm
+        uses: actions/cache@v4
+        with:
+          path: ~/.cpanm
+          key: "${{ runner.os }}-llvm18-cpanm-${{ hashFiles('cpanfile') }}"
+  
+      - name: Install Perl modules
+        shell: bash
+        run: |
+          if [ "$(uname)" = "Darwin" ]; then
+            export PKG_CONFIG_PATH="$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH"
+          fi
+          cpanm --notest --installdeps .
+
       - name: Generate coverage
         run: |
-          cd tests
-          make coverage
-
-      - uses: codecov/codecov-action@v3
+          if [ "$(uname)" = "Darwin" ]; then
+            CORES=$(sysctl -n hw.ncpu)
+          else
+            CORES=$(nproc)
+          fi
+        
+          VERBOSE=1 WITH_COVERAGE=1 make test -j"$CORES"
+          
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
         with:
-          # gcov: true
-          directory: tests
-          gcov_ignore: tests/tests.hpp
-          verbose: true # optional (default = false)
+          files: ./build/tests/.coverage/coverage.info
+          flags: unittests
+          name: codecov-upload
+          fail_ci_if_error: true
+          verbose: true
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -164,7 +164,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     )
 {
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
+    epiworld::math::lfmcmc::UpdateFun<TSeq> update_susceptible = [](
         epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
         ) -> void
         {

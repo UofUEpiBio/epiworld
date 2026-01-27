@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -66,9 +62,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3000));
-    #endif
 
     // Reruning the model where individuals from group 0 transmit all to group 1
     contact_matrix[0] = 0.0;
@@ -106,9 +100,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3001));
-    #endif
 
     // Rerunning with plain mixing
     std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
@@ -126,14 +118,10 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
         static_cast<int>(model.size())
         };
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(totals, Catch::Equals(expected_totals));
-    #endif
 
 
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

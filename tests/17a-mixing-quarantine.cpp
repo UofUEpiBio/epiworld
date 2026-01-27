@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -74,9 +70,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
             
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE((n_wrong != 0));
-    #endif
 
     // Reruning the model where individuals from group 0 transmit all to group 1
     contact_matrix[0] = 0.0;
@@ -114,9 +108,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
             
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE((n_wrong != 0));
-    #endif
 
     // Rerunning with plain mixing
     std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
@@ -139,9 +131,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     totals[totals.size() - 1] += totals[totals.size() - 2];
     totals[totals.size() - 2] = 0;
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(totals, Catch::Equals(expected_totals));
-    #endif
 
     // If entities don't have a dist function, then it should be
     // OK
@@ -187,12 +177,8 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
             n3++;
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(!(n0 == 4000 && n1 == 6000 && n2 == 0 && n3 == 0));
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

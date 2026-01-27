@@ -1,4 +1,3 @@
-
 #ifndef EPIWORLD_TOOL_BONES_HPP
 #define EPIWORLD_TOOL_BONES_HPP
 
@@ -131,5 +130,11 @@ public:
     void set_distribution(ToolToAgentFun<TSeq> fun);
 
 };
+
+ToolToAgentFun<TSeq> distribute_tool_randomly(
+    epiworld_double prevalence,
+    bool as_proportion = true,
+    std::vector< size_t > agents_ids = {}
+);
 
 #endif

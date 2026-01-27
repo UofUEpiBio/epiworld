@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -83,18 +79,7 @@ EPIWORLD_TEST_CASE(
 
     int total_transmissions = static_cast<int>(trans_date.size());
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(final_outbreak_size == total_transmissions);
-    #else
-    if (final_outbreak_size != total_transmissions)
-    {
-        std::cerr << "Outbreak size mismatch! "
-                    << "get_outbreak_size()=" << final_outbreak_size
-                    << " vs total_transmissions=" << total_transmissions
-                    << std::endl;
-        throw std::logic_error("Outbreak size mismatch");
-    }
-    #endif
 
     // =====================================================================
     // Test 2: Outbreak size should match "ever infected" count
@@ -111,18 +96,7 @@ EPIWORLD_TEST_CASE(
             ever_infected += counts[i];
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(final_outbreak_size == ever_infected);
-    #else
-    if (final_outbreak_size != ever_infected)
-    {
-        std::cerr << "Ever infected mismatch! "
-                    << "outbreak_size=" << final_outbreak_size
-                    << " vs ever_infected=" << ever_infected
-                    << std::endl;
-        throw std::logic_error("Ever infected mismatch");
-    }
-    #endif
 
     // =====================================================================
     // Test 3: All virus history counts must be non-negative
@@ -133,19 +107,9 @@ EPIWORLD_TEST_CASE(
     std::vector<int> hist_counts;
     db.get_hist_virus(hist_date, hist_id, hist_state, hist_counts);
 
-    for (size_t i = 0; i < hist_counts.size(); ++i)
+    for (int hist_count : hist_counts)
     {
-        #ifdef CATCH_CONFIG_MAIN
-        REQUIRE(hist_counts[i] >= 0);
-        #else
-        if (hist_counts[i] < 0)
-        {
-            std::cerr << "Negative virus count at day "
-                        << hist_date[i] << ", state " << hist_state[i]
-                        << ", count=" << hist_counts[i] << std::endl;
-            throw std::logic_error("Negative virus history count");
-        }
-        #endif
+        REQUIRE(hist_count >= 0);
     }
 
     // =====================================================================
@@ -165,21 +129,5 @@ EPIWORLD_TEST_CASE(
 
     int active_cases_final = active_count[ndays];
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(virus_hist_sum_final == active_cases_final);
-    #else
-    if (virus_hist_sum_final != active_cases_final)
-    {
-        std::cerr << "Active cases mismatch! "
-                    << "virus_hist_sum=" << virus_hist_sum_final
-                    << " vs get_active_cases()=" << active_cases_final
-                    << std::endl;
-        throw std::logic_error("Active cases mismatch");
-    }
-    #endif
-
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
-    
 }

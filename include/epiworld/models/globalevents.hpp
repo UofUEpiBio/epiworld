@@ -1,6 +1,13 @@
 #ifndef EPIWORLD_GLOBALEVENTS_HPP
 #define EPIWORLD_GLOBALEVENTS_HPP
 
+#include <functional>
+#include <cmath>
+#include <string>
+
+#include "epiworld/model-bones.hpp"
+
+
 // This function creates a global action that distributes a tool
 // to agents with probability p.
 /**
@@ -15,10 +22,10 @@
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalevent_tool(
     Tool<TSeq> & tool,
-    double p
+    double prob
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [p,&tool](
+    std::function<void(Model<TSeq>*)> fun = [prob,&tool](
         Model<TSeq> * model
         ) -> void {
 
@@ -26,14 +33,15 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool(
         {
 
             // Check if the agent has the tool
-            if (agent.has_tool(tool))
+            if (agent.has_tool(tool)) {
                 continue;
+            }
 
             // Adding the tool
-            if (model->runif() < p)
+            if (model->runif() < prob) {
                 agent.add_tool(tool, model);
-            
-        
+            }
+    
         }
 
         #ifdef EPIWORLD_DEBUG
@@ -65,8 +73,8 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool(
 template<typename TSeq>
 inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
     Tool<TSeq> & tool,
-    std::vector< size_t > vars,
-    std::vector< double > coefs
+    std::vector< size_t > const& vars,
+    std::vector< double > const& coefs
 ) {
 
     std::function<void(Model<TSeq>*)> fun = [coefs,vars,&tool](
@@ -77,8 +85,9 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
         {
 
             // Check if the agent has the tool
-            if (agent.has_tool(tool))
+            if (agent.has_tool(tool)) {
                 continue;
+            }
 
             // Computing the probability using a logit. Uses OpenMP reduction
             // to sum the coefficients.
@@ -86,16 +95,16 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
             #if defined(__OPENMP) || defined(_OPENMP)
             #pragma omp parallel for reduction(+:p)
             #endif
-            for (size_t i = 0u; i < coefs.size(); ++i)
-                p += coefs.at(i) * agent(vars[i]);
+            for (size_t coef = 0; coef < coefs.size(); ++coef) {
+                p += coefs.at(coef) * agent(vars[coef]);
+            }
 
             p = 1.0 / (1.0 + std::exp(-p));
 
             // Adding the tool
-            if (model->runif() < p)
+            if (model->runif() < p) {
                 agent.add_tool(tool, model);
-            
-        
+            }
         }
 
         #ifdef EPIWORLD_DEBUG

@@ -42,15 +42,11 @@ EPIWORLD_TEST_CASE("Multiple events", "[multi-events]") {
     auto tprobs = model_0.get_db().get_transition_probability(false, true);
     std::vector<epiworld_double> tprob_expected = {0.0, 0.0, 1.0, 0.5, .5, 0.0, 0.5, 0.5, 0.0};
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THAT(
         tprobs,
         Catch::Approx(tprob_expected).margin(0.05)
     );
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

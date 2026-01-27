@@ -1,23 +1,29 @@
-#ifndef EPIWORLD_LFMCMC_BONES_HPP
-#define EPIWORLD_LFMCMC_BONES_HPP
+#ifndef EPIWORLD_MATH_LFMCMC_BONES_HPP
+#define EPIWORLD_MATH_LFMCMC_BONES_HPP
 
-#ifndef epiworld_double
-    #define epiworld_double float
-#endif
+#include "epiworld/config.hpp"
+#include "epiworld/progress.hpp"
 
+#include <chrono>
+#include <random>
 
+namespace epiworld::math::lfmcmc {
 template<typename TData>
 class LFMCMC;
 
+/// @brief Simulation function type for LFMCMC.
 template<typename TData>
 using LFMCMCSimFun = std::function<TData(const std::vector< epiworld_double >&,LFMCMC<TData>*)>;
 
+/// @brief Summary function type for LFMCMC.
 template<typename TData>
 using LFMCMCSummaryFun = std::function<void(std::vector< epiworld_double >&,const TData&,LFMCMC<TData>*)>;
 
+/// @brief Proposal function type for LFMCMC.
 template<typename TData>
 using LFMCMCProposalFun = std::function<void(std::vector< epiworld_double >&,const std::vector< epiworld_double >&,LFMCMC<TData>*)>;
 
+/// @brief Kernel function type for LFMCMC.
 template<typename TData>
 using LFMCMCKernelFun = std::function<epiworld_double(const std::vector< epiworld_double >&,const std::vector< epiworld_double >&,epiworld_double,LFMCMC<TData>*)>;
 
@@ -32,7 +38,7 @@ template<typename TData>
 inline void proposal_fun_normal(
     std::vector< epiworld_double >& new_params,
     const std::vector< epiworld_double >& old_params,
-    LFMCMC<TData>* m
+    LFMCMC<TData>* model
 );
 
 /**
@@ -50,8 +56,8 @@ inline void proposal_fun_normal(
 template<typename TData>
 inline LFMCMCProposalFun<TData> make_proposal_norm_reflective(
     epiworld_double scale,
-    epiworld_double lb = std::numeric_limits<epiworld_double>::min(),
-    epiworld_double ub = std::numeric_limits<epiworld_double>::max()
+    epiworld_double lower_bound = std::numeric_limits<epiworld_double>::min(),
+    epiworld_double upper_bound = std::numeric_limits<epiworld_double>::max()
 );
 
 /**
@@ -69,7 +75,7 @@ template<typename TData>
 inline void proposal_fun_unif(
     std::vector< epiworld_double >& new_params,
     const std::vector< epiworld_double >& old_params,
-    LFMCMC<TData>* m
+    LFMCMC<TData>* model
 );
 
 /**
@@ -87,7 +93,7 @@ inline epiworld_double kernel_fun_uniform(
     const std::vector< epiworld_double >& simulated_stats,
     const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
-    LFMCMC<TData>* m
+    LFMCMC<TData>* model
 );
 
 /**
@@ -106,7 +112,7 @@ inline epiworld_double kernel_fun_gaussian(
     const std::vector< epiworld_double >& simulated_stats,
     const std::vector< epiworld_double >& observed_stats,
     epiworld_double epsilon,
-    LFMCMC<TData>* m
+    LFMCMC<TData>* model
 );
 
 /**
@@ -178,7 +184,7 @@ private:
         std::chrono::duration<epiworld_double,std::micro>::zero();
 
     inline void get_elapsed_time(
-        std::string unit,
+        std::string const& unit,
         epiworld_double * last_elapsed,
         std::string * unit_abbr,
         bool print
@@ -194,15 +200,19 @@ private:
 public:
 
     void run(
-        std::vector< epiworld_double > params_init_,
+        const std::vector< epiworld_double > &params_init_,
         size_t n_samples_,
         epiworld_double epsilon_,
         int seed = -1
         );
 
-    LFMCMC() {};
-    LFMCMC(const TData & observed_data_) : m_observed_data(observed_data_) {};
-    ~LFMCMC() {};
+    LFMCMC() = default;
+    LFMCMC(const LFMCMC &) = delete;
+    LFMCMC(LFMCMC &&) = delete;
+    LFMCMC &operator=(const LFMCMC &) = delete;
+    LFMCMC &operator=(LFMCMC &&) = delete;
+    LFMCMC(const TData &observed_data_) : m_observed_data(observed_data_) {};
+    ~LFMCMC() = default;
 
     // Setting LFMCMC variables
     void set_observed_data(const TData & observed_data_) {m_observed_data = observed_data_;};
@@ -212,8 +222,8 @@ public:
     void set_summary_fun(LFMCMCSummaryFun<TData> fun);
     void set_kernel_fun(LFMCMCKernelFun<TData> fun);
 
-    void set_params_names(std::vector< std::string > names);
-    void set_stats_names(std::vector< std::string > names);
+    void set_params_names(const std::vector< std::string > &names);
+    void set_stats_names(const std::vector< std::string > &names);
     
     /**
      * @name Random number generation
@@ -223,39 +233,39 @@ public:
     ///@{
     void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
     std::shared_ptr< std::mt19937 > & get_rand_endgine();
-    void seed(epiworld_fast_uint s);
+    void seed(epiworld_fast_uint seed);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
     epiworld_double rnorm();
     epiworld_double rgamma();
-    epiworld_double runif(epiworld_double lb, epiworld_double ub);
-    epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
+    epiworld_double runif(epiworld_double lower_bound, epiworld_double upper_bound);
+    epiworld_double rnorm(epiworld_double mean, epiworld_double std);
     epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
     ///@}
 
     // Accessing parameters of the function
-    size_t get_n_samples() const {return m_n_samples;};
-    size_t get_n_stats() const {return m_n_stats;};
-    size_t get_n_params() const {return m_n_params;};
-    epiworld_double get_epsilon() const {return m_epsilon;};
+    [[nodiscard]] size_t get_n_samples() const {return m_n_samples;};
+    [[nodiscard]] size_t get_n_stats() const {return m_n_stats;};
+    [[nodiscard]] size_t get_n_params() const {return m_n_params;};
+    [[nodiscard]] epiworld_double get_epsilon() const {return m_epsilon;};
 
-    const std::vector< epiworld_double > & get_initial_params() const {return m_initial_params;};
-    const std::vector< epiworld_double > & get_current_proposed_params() const {return m_current_proposed_params;};
-    const std::vector< epiworld_double > & get_current_accepted_params() const {return m_current_accepted_params;};
-    const std::vector< epiworld_double > & get_current_proposed_stats() const {return m_current_proposed_stats;};
-    const std::vector< epiworld_double > & get_current_accepted_stats() const {return m_current_accepted_stats;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_initial_params() const {return m_initial_params;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_current_proposed_params() const {return m_current_proposed_params;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_current_accepted_params() const {return m_current_accepted_params;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_current_proposed_stats() const {return m_current_proposed_stats;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_current_accepted_stats() const {return m_current_accepted_stats;};
 
-    const std::vector< epiworld_double > & get_observed_stats() const {return m_observed_stats;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_observed_stats() const {return m_observed_stats;};
 
-    const std::vector< epiworld_double > & get_all_sample_params() const {return m_all_sample_params;};
-    const std::vector< epiworld_double > & get_all_sample_stats() const {return m_all_sample_stats;};
-    const std::vector< bool >            & get_all_sample_acceptance() const {return m_all_sample_acceptance;};
-    const std::vector< epiworld_double > & get_all_sample_drawn_prob() const {return m_all_sample_drawn_prob;};
-    const std::vector< epiworld_double > & get_all_sample_kernel_scores() const {return m_all_sample_kernel_scores;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_all_sample_params() const {return m_all_sample_params;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_all_sample_stats() const {return m_all_sample_stats;};
+    [[nodiscard]] const std::vector< bool >            & get_all_sample_acceptance() const {return m_all_sample_acceptance;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_all_sample_drawn_prob() const {return m_all_sample_drawn_prob;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_all_sample_kernel_scores() const {return m_all_sample_kernel_scores;};
 
-    const std::vector< epiworld_double > & get_all_accepted_params() const {return m_all_accepted_params;};
-    const std::vector< epiworld_double > & get_all_accepted_stats() const {return m_all_accepted_stats;};
-    const std::vector< epiworld_double > & get_all_accepted_kernel_scores() const {return m_all_accepted_kernel_scores;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_all_accepted_params() const {return m_all_accepted_params;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_all_accepted_stats() const {return m_all_accepted_stats;};
+    [[nodiscard]] const std::vector< epiworld_double > & get_all_accepted_kernel_scores() const {return m_all_accepted_kernel_scores;};
     
     std::vector< TData > * get_simulated_data() const {return m_simulated_data;};
 
@@ -265,8 +275,8 @@ public:
     // Printing
     LFMCMC<TData> & verbose_off();
     LFMCMC<TData> & verbose_on();
-    void print(size_t burnin = 0u) const;
-
+    void print(size_t burnin = 0) const;
 };
+}
 
-#endif
+#endif /* !EPIWORLD_MATH_LFMCMC_BONES_HPP */

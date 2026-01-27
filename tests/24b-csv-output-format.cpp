@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -58,9 +54,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         int quote_count = std::count(line.begin(), line.end(), '"');
         std::cout << "   Quote count: " << quote_count << " (expected: 4)" << std::endl;
         
-        #ifdef CATCH_CONFIG_MAIN
         REQUIRE(quote_count == 4);
-        #endif
     }
 
     // Test 2: virus_info - should have quotes around virus name
@@ -78,9 +72,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         int quote_count = std::count(line.begin(), line.end(), '"');
         std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
         
-        #ifdef CATCH_CONFIG_MAIN
         REQUIRE(quote_count == 2);
-        #endif
     }
 
     // Test 3: tool_hist - should have quotes around state
@@ -98,9 +90,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
                 int quote_count = std::count(line.begin(), line.end(), '"');
                 std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
                 
-                #ifdef CATCH_CONFIG_MAIN
                 REQUIRE(quote_count == 2);
-                #endif
             } else {
                 std::cout << "\n3. tool_hist: No data (model has no tools)" << std::endl;
             }
@@ -122,9 +112,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         int quote_count = std::count(line.begin(), line.end(), '"');
         std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
         
-        #ifdef CATCH_CONFIG_MAIN
         REQUIRE(quote_count == 2);
-        #endif
     }
 
     // Test 5: transmission - should have quotes around virus name
@@ -141,9 +129,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
             int quote_count = std::count(line.begin(), line.end(), '"');
             std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
             
-            #ifdef CATCH_CONFIG_MAIN
             REQUIRE(quote_count == 2);
-            #endif
         } else {
             std::cout << "\n5. transmission: No transmissions recorded" << std::endl;
         }
@@ -163,9 +149,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
             int quote_count = std::count(line.begin(), line.end(), '"');
             std::cout << "   Quote count: " << quote_count << " (expected: 4)" << std::endl;
             
-            #ifdef CATCH_CONFIG_MAIN
             REQUIRE(quote_count == 4);
-            #endif
         } else {
             std::cout << "\n6. transition: No transitions recorded" << std::endl;
         }
@@ -185,9 +169,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
             int quote_count = std::count(line.begin(), line.end(), '"');
             std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
             
-            #ifdef CATCH_CONFIG_MAIN
             REQUIRE(quote_count == 2);
-            #endif
         } else {
             std::cout << "\n7. reproductive_number: No data" << std::endl;
         }
@@ -209,9 +191,4 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
     }
 
     std::cout << "\nAll CSV formats validated!" << std::endl;
-
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
-
 }

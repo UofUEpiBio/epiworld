@@ -1,24 +1,19 @@
-examples/*/*
-!*.md
-!Makefile
-!*.cpp
-.Rproj.user
-.Rhistory
-tests/*
-!tests/
-!tests/*.cpp
-.vscode
-*.o
 .zed/
 .cache/
 
-# MkDocs generated files
+build/
 site/
+docs/
+__pycache__/
+*.dSYM/
 
-# Old Doxygen files (if generated)
+*.txt
+*.csv
+$*
+*.o
+
 docs/html/
 docs/latex/
 docs/xml/
 
-# CodeQL generated files
 _codeql_detected_source_root

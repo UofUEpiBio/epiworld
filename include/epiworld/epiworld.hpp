@@ -5,6 +5,7 @@
 #include <random>
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <map>
 #include <unordered_map>
 #include <chrono>
@@ -33,9 +34,12 @@ static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
 static const int epiworld_version_patch = EPIWORLD_VERSION_PATCH;
 
-namespace epiworld {
+#include <epiworld/math/lfmcmc/lfmcmc.hpp>
 
-    #include "config.hpp"
+namespace epiworld {
+    // TOOD: MUST BE INCLUDED FIRST
+    #include <epiworld/config.hpp>
+
     #include "epiworld-macros.hpp"
 
     #include "misc.hpp"
@@ -45,8 +49,6 @@ namespace epiworld {
     #include "modeldiagram-meat.hpp"
 
     #include "math/distributions.hpp"
-
-    #include "math/lfmcmc.hpp"
 
     #include "userdata-bones.hpp"
     #include "userdata-meat.hpp"

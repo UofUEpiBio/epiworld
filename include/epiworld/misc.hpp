@@ -1,6 +1,18 @@
 #ifndef EPIWORLD_MISC_HPP
 #define EPIWORLD_MISC_HPP
 
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <cmath>
+#include <map>
+#include <regex>
+#include <fstream>
+
+#include <epiworld/config.hpp>
+#include <epiworld/model-bones.hpp>
+#include <epiworld/agent-bones.hpp>
+
 template<typename TSeq>
 class Model;
 
@@ -14,20 +26,25 @@ class Agent;
  */
 template <typename T>
 struct vecHasher {
+    ///@brief Operator to hash a vector.
     std::size_t operator()(std::vector< T > const&  dat) const noexcept {
+        const auto hash_magic = 0x9e3779b9;
+        const auto hash_lshift = 6;
+        const auto hash_rshift = 2;
 
         std::hash< T > hasher;
-        std::size_t hash = hasher(dat[0u]);
+        std::size_t hash = hasher(dat[0]);
 
         // ^ makes bitwise XOR
         // 0x9e3779b9 is a 32 bit constant (comes from the golden ratio)
         // << is a shift operator, something like lhs * 2^(rhs)
-        if (dat.size() > 1u)
-            for (epiworld_fast_uint i = 1u; i < dat.size(); ++i)
-                hash ^= hasher(dat[i]) + 0x9e3779b9 + (hash<<6) + (hash>>2);
+        if (dat.size() > 1) {
+            for (epiworld_fast_uint i = 1; i < dat.size(); ++i) {
+                hash ^= hasher(dat[i]) + hash_magic + (hash<<hash_lshift) + (hash>>hash_rshift);
+            }
+        }
 
         return hash;
-
     }
 };
 
@@ -57,10 +74,11 @@ inline TSeq default_sequence(int seq_count);
 template<>
 inline bool default_sequence(int seq_count) {
 
-    if (seq_count == 2)
+    if (seq_count == 2) {
         throw std::logic_error("Maximum number of sequence created.");
+    }
 
-    return seq_count++ ? false : true;
+    return seq_count++ == 0;
 }
 
 template<>
@@ -76,10 +94,11 @@ inline epiworld_double default_sequence(int seq_count) {
 template<>
 inline std::vector<bool> default_sequence(int seq_count) {
 
-    if (seq_count == 2)
+    if (seq_count == 2) {
         throw std::logic_error("Maximum number of sequence created.");
+    }
 
-    return {seq_count++ ? false : true};
+    return {seq_count++ == 0};
 }
 
 template<>
@@ -102,13 +121,9 @@ inline std::vector<epiworld_double> default_sequence(int seq_count) {
  * @return `true` if `a in b`, and `false` otherwise.
  */
 template<typename Ta>
-inline bool IN(const Ta & a, const std::vector< Ta > & b) noexcept
+inline bool IN(const Ta & sub, const std::vector< Ta > & par) noexcept
 {
-    for (const auto & i : b)
-        if (a == i)
-            return true;
-
-    return false;
+    return std::find(par.begin(), par.end(), sub) != par.end();
 }
 
 /**
@@ -127,53 +142,57 @@ inline bool IN(const Ta & a, const std::vector< Ta > & b) noexcept
 template<typename TSeq = EPI_DEFAULT_TSEQ, typename TDbl = epiworld_double >
 inline int roulette(
     const std::vector< TDbl > & probs,
-    Model<TSeq> * m
+    Model<TSeq> * model
     )
 {
 
     // Step 1: Computing the prob on none
     TDbl p_none = 1.0;
-    std::vector< int > certain_infection;
+    const TDbl epsilon = 1e-100; // TODO: This seems really small.
+    std::vector< epiworld_fast_uint > certain_infection;
     certain_infection.reserve(probs.size());
 
-    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
+    for (epiworld_fast_uint prob = 0; prob < probs.size(); ++prob)
     {
-        p_none *= (1.0 - probs[p]);
+        p_none *= (1.0 - probs[prob]);
 
-        if (probs[p] > (1 - 1e-100))
-            certain_infection.push_back(p);
+        if (probs[prob] > (1 - epsilon)) {
+            certain_infection.push_back(prob);
+        }
 
     }
 
-    TDbl r = static_cast<TDbl>(m->runif());
+    TDbl coin = static_cast<TDbl>(model->runif());
     // If there are one or more probs that go close to 1, sample
     // uniformly
-    if (certain_infection.size() > 0)
-        return certain_infection[std::floor(r * certain_infection.size())];
+    if (certain_infection.size() > 0) {
+        return certain_infection[std::floor(coin * certain_infection.size())];
+    }
 
     // Step 2: Calculating the prob of none or single
     std::vector< TDbl > probs_only_p(probs.size());
     TDbl p_none_or_single = p_none;
-    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
+
+    for (epiworld_fast_uint prob = 0; prob < probs.size(); ++prob)
     {
-        probs_only_p[p] = probs[p] * (p_none / (1.0 - probs[p]));
-        p_none_or_single += probs_only_p[p];
+        probs_only_p[prob] = probs[prob] * (p_none / (1.0 - probs[prob]));
+        p_none_or_single += probs_only_p[prob];
     }
 
     // Step 3: Roulette
     TDbl cumsum = p_none/p_none_or_single;
-    if (r < cumsum)
+    if (coin < cumsum)
     {
         return -1;
     }
 
-    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
+    for (epiworld_fast_uint prob = 0; prob < probs.size(); ++prob)
     {
         // If it yield here, then bingo, the individual will acquire the disease
-        cumsum += probs_only_p[p]/(p_none_or_single);
-        if (r < cumsum)
-            return static_cast<int>(p);
-
+        cumsum += probs_only_p[prob]/(p_none_or_single);
+        if (coin < cumsum) {
+            return static_cast<int>(prob);
+        }
     }
 
 
@@ -181,84 +200,90 @@ inline int roulette(
     printf_epiworld("[epi-debug] roulette::cumsum = %.4f\n", cumsum);
     #endif
 
-    return static_cast<int>(probs.size() - 1u);
+    return static_cast<int>(probs.size() - 1);
 
 }
 
 template<typename TSeq>
-inline int roulette(std::vector< double > & probs, Model<TSeq> * m)
+inline int roulette(std::vector< double > & probs, Model<TSeq> * model)
 {
-    return roulette<TSeq, double>(probs, m);
+    return roulette<TSeq, double>(probs, model);
 }
 
 template<typename TSeq>
-inline int roulette(std::vector< float > & probs, Model<TSeq> * m)
+inline int roulette(std::vector< float > & probs, Model<TSeq> * model)
 {
-    return roulette<TSeq, float>(probs, m);
+    return roulette<TSeq, float>(probs, model);
 }
 
 
 template<typename TSeq>
 inline int roulette(
     epiworld_fast_uint nelements,
-    Model<TSeq> * m
+    Model<TSeq> * model
     )
 {
 
-    if ((nelements * 2) > m->array_double_tmp.size())
+    if ((nelements * 2) > model->array_double_tmp.size())
     {
         throw std::logic_error(
             "Trying to sample from more data than there is in roulette!" +
             std::to_string(nelements) + " vs " +
-            std::to_string(m->array_double_tmp.size())
-            );
+            std::to_string(model->array_double_tmp.size())
+        );
     }
 
     // Step 1: Computing the prob on none
     epiworld_double p_none = 1.0;
-    epiworld_fast_uint ncertain = 0u;
-    // std::vector< int > certain_infection;
-    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
-    {
-        p_none *= (1.0 - m->array_double_tmp[p]);
+    epiworld_fast_uint ncertain = 0;
+    const epiworld_double epsilon = 1e-100; // TODO: This seems really small.
 
-        if (m->array_double_tmp[p] > (1 - 1e-100))
-            m->array_double_tmp[nelements + ncertain++] = p;
-            // certain_infection.push_back(p);
+    // std::vector< int > certain_infection;
+    for (epiworld_fast_uint param = 0; param < nelements; ++param)
+    {
+        p_none *= (1.0 - model->array_double_tmp[param]);
+
+        if (model->array_double_tmp[param] > (1 - epsilon)) {
+            model->array_double_tmp[nelements + ncertain++] = param;
+        }
 
     }
 
-    epiworld_double r = m->runif();
+    epiworld_double coin = model->runif();
     // If there are one or more probs that go close to 1, sample
     // uniformly
-    if (ncertain > 0u)
-        return m->array_double_tmp[nelements + std::floor(ncertain * r)]; //    certain_infection[std::floor(r * certain_infection.size())];
+    if (ncertain > 0) {
+        return model->array_double_tmp[nelements + static_cast<epiworld_fast_uint>(static_cast<epiworld_double>(ncertain) * coin)]; //    certain_infection[std::floor(r * certain_infection.size())];
+    }
 
     // Step 2: Calculating the prob of none or single
     // std::vector< epiworld_double > probs_only_p;
     epiworld_double p_none_or_single = p_none;
-    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
+    for (epiworld_fast_uint param = 0; param < nelements; ++param)
     {
-        m->array_double_tmp[nelements + p] =
-            m->array_double_tmp[p] * (p_none / (1.0 - m->array_double_tmp[p]));
-        p_none_or_single += m->array_double_tmp[nelements + p];
+        model->array_double_tmp[nelements + param] =
+            model->array_double_tmp[param] * (p_none / (1.0 - model->array_double_tmp[param]));
+
+        p_none_or_single += model->array_double_tmp[nelements + param];
     }
 
     // Step 3: Roulette
     epiworld_double cumsum = p_none/p_none_or_single;
-    if (r < cumsum)
+    if (coin < cumsum) {
         return -1;
+    }
 
-    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
+    for (epiworld_fast_uint param = 0; param < nelements; ++param)
     {
         // If it yield here, then bingo, the individual will acquire the disease
-        cumsum += m->array_double_tmp[nelements + p]/(p_none_or_single);
-        if (r < cumsum)
-            return static_cast<int>(p);
+        cumsum += model->array_double_tmp[nelements + param]/(p_none_or_single);
+        if (coin < cumsum) {
+            return static_cast<int>(param);
+        }
 
     }
 
-    return static_cast<int>(nelements - 1u);
+    return static_cast<int>(nelements - 1);
 
 }
 
@@ -275,19 +300,19 @@ inline int roulette(
  * ```
  *
  * @tparam T Type of the parameter
- * @param fn Path to the file containing the parameters
+ * @param source Path to the file containing the parameters
  * @return std::map<std::string, T>
  */
 template <typename T>
-inline std::map< std::string, T > read_yaml(std::string fn)
+inline std::map< std::string, T > read_yaml(std::string const& source)
 {
+    std::ifstream paramsfile(source);
 
-    std::ifstream paramsfile(fn);
+    if (!paramsfile) {
+        throw std::logic_error("The file " + source + " was not found.");
+    }
 
-    if (!paramsfile)
-        throw std::logic_error("The file " + fn + " was not found.");
-
-    std::regex pattern("^([^:]+)\\s*[:]\\s*([-]?[0-9]+|[-]?[0-9]*\\.[0-9]+)?\\s*$");
+    std::regex pattern(R"(^([^:]+)\s*[:]\s*([-]?[0-9]+|[-]?[0-9]*\.[0-9]+)?\s*$)");
 
     std::string line;
     std::smatch match;
@@ -300,23 +325,25 @@ inline std::map< std::string, T > read_yaml(std::string fn)
     {
 
         // Is it a comment or an empty line?
-        if (std::regex_match(line, std::regex("^([*].+|//.+|#.+|\\s*)$")))
+        if (std::regex_match(line, std::regex("^([*].+|//.+|#.+|\\s*)$"))) {
             continue;
+        }
 
         // Finding the pattern, if it doesn't match, then error
         std::regex_match(line, match, pattern);
 
-        if (match.empty())
+        if (match.empty()) {
             throw std::logic_error("Line has invalid format:\n" + line);
+        }
 
         // Capturing the number
-        std::string anumber = match[2u].str() + match[3u].str();
+        std::string anumber = match[2].str() + match[3].str();
         T tmp_num = static_cast<T>(
             std::strtod(anumber.c_str(), nullptr)
             );
 
         std::string pname = std::regex_replace(
-            match[1u].str(),
+            match[1].str(),
             std::regex("^\\s+|\\s+$"),
             "");
 

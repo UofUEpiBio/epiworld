@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -17,8 +13,6 @@ EPIWORLD_TEST_CASE("SIS and SISD", "[SISD-multiple]") {
 
     model_0.run_multiple(100, 10, 1231, nullptr, true, true, 1);
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }
