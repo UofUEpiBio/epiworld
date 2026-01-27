@@ -1,26 +1,35 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-#
-# See https://github.com/r-lib/actions/tree/master/examples#readme for
-# additional example workflows available for the R community.
-
 name: Examples
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
-  test-ubuntu:
-    container: gvegayon/epiworld:latest
+  examples:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check
-        env:
-          OPENMP: -fopenmp
+      - name: Install Ubuntu dependencies
+        if: runner.os == 'Linux'
         run: |
-          make all-examples
+          sudo apt-get update && \
+          sudo apt-get install -y cpanminus
+
+      - name: Cache cpanm
+        uses: actions/cache@v4
+        with:
+          path: ~/.cpanm
+          key: "${{ runner.os }}-llvm18-cpanm-${{ hashFiles('cpanfile') }}"
+  
+      - name: Install Perl modules
+        shell: bash
+        run: |
+          if [ "$(uname)" = "Darwin" ]; then
+            export PKG_CONFIG_PATH="$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH"
+          fi
+          cpanm --notest --installdeps .
+
+      - name: Check
+        run: |
+          VERBOSE=1 make examples
   

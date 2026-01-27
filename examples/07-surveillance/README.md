@@ -1,4 +1,4 @@
-## Example: 07-surveillance
+## Example: `07-surveillance`
 
 Output from the program:
 
@@ -48,8 +48,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 4.00ms
-Last run speed      : 210.35 million agents x day / second
+Last run elapsed t  : 87.00ms
+Last run speed      : 11.39 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -73,22 +73,22 @@ Model parameters:
  - Vax redux transmission : 0.5000
 
 Distribution of the population at time 100:
-  - (0) Susceptible           :  9990 -> 9313
-  - (1) Latent                :    10 -> 14
-  - (2) Symptomatic           :     0 -> 35
-  - (3) Symptomatic isolated  :     0 -> 0
-  - (4) Asymptomatic          :     0 -> 17
-  - (5) Asymptomatic isolated :     0 -> 1
-  - (6) Recovered             :     0 -> 616
-  - (7) Removed               :     0 -> 4
+  - (0) Susceptible           :  9990 -> 8210
+  - (1) Latent                :    10 -> 72
+  - (2) Symptomatic           :     0 -> 140
+  - (3) Symptomatic isolated  :     0 -> 2
+  - (4) Asymptomatic          :     0 -> 78
+  - (5) Asymptomatic isolated :     0 -> 0
+  - (6) Recovered             :     0 -> 1481
+  - (7) Removed               :     0 -> 17
 
 Transition Probabilities:
  - Susceptible            1.00  0.00     -  0.00     -     -     -     -
- - Latent                    -  0.66  0.25  0.00  0.09     -     -     -
- - Symptomatic               -     -  0.90  0.00     -     -  0.10  0.00
- - Symptomatic isolated      -     -     -  0.85     -     -  0.15     -
- - Asymptomatic              -     -     -     -  0.90  0.00  0.10     -
- - Asymptomatic isolated     -     -     -     -     -  1.00     -     -
+ - Latent                    -  0.64  0.25  0.00  0.10  0.00  0.00     -
+ - Symptomatic               -     -  0.91  0.00     -     -  0.09  0.00
+ - Symptomatic isolated      -     -     -  0.89     -     -  0.11     -
+ - Asymptomatic              -     -     -     -  0.90  0.00  0.09  0.00
+ - Asymptomatic isolated     -     -     -     -     -  0.89  0.11     -
  - Recovered                 -     -     -     -     -     -  1.00     -
  - Removed                   -     -     -     -     -     -     -  1.00
 

@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -56,7 +52,6 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
     model.run(ndays);
 
     // Verify daily event was called for all days (1 to ndays, inclusive)
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(static_cast<int>(daily_event_days.size()) == ndays);
     
     // Verify daily event was called for each day (starting from 1, not 0)
@@ -71,21 +66,4 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
     // Verify specific events were called on correct days
     std::vector<int> expected_specific = {10, 20, 30};
     REQUIRE_THAT(specific_event_days, Catch::Equals(expected_specific));
-    #else
-    // Print for standalone execution
-    printf_epiworld(
-        "GlobalEvent timing test completed:\n"
-        "  Daily events called %zu times (expected %d)\n"
-        "  Specific events called on days:",
-        daily_event_days.size(), ndays
-    );
-    for (auto day : specific_event_days) {
-        printf_epiworld(" %d", day);
-    }
-    printf_epiworld("\n");
-    #endif
-
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
 }

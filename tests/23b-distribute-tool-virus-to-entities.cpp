@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -81,7 +77,6 @@ EPIWORLD_TEST_CASE("distribute_tool_virus_to_entities_counts", "[distribute-enti
     std::vector<double> expected_counts = {10.0, 5.0, 2.0, 1.0, 0.0};
 
     // With exact counts, the results should be deterministic (no variation)
-    #ifdef CATCH_CONFIG_MAIN
     for (size_t i = 0; i < 5; ++i) {
         // Check that virus distribution matches exactly
         REQUIRE(avg_virus_by_entity[i] == expected_counts[i]);
@@ -89,5 +84,4 @@ EPIWORLD_TEST_CASE("distribute_tool_virus_to_entities_counts", "[distribute-enti
         // Check that tool distribution matches exactly
         REQUIRE(avg_tool_by_entity[i] == expected_counts[i]);
     }
-    #endif
 }

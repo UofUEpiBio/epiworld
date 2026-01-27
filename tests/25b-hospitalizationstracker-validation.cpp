@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -127,7 +123,6 @@ EPIWORLD_TEST_CASE(
         }
     }
     
-    #ifndef CATCH_CONFIG_MAIN
     std::cout << "GlobalEvent tracking results:" << std::endl;
     for (const auto & entry : global_event_tracking)
     {
@@ -147,10 +142,7 @@ EPIWORLD_TEST_CASE(
                   << ", Weight: " << entry.second
                   << std::endl;
     }
-    #endif
     
-    // Compare the two tracking methods
-    #ifdef CATCH_CONFIG_MAIN
     // Both maps should have the same number of non-zero entries
     REQUIRE(global_event_tracking.size() == tracker_data.size());
     
@@ -161,41 +153,5 @@ EPIWORLD_TEST_CASE(
         REQUIRE(it != tracker_data.end());
         REQUIRE(std::abs(it->second - entry.second) < 0.0001);
     }
-    #endif
-    
-    #ifndef CATCH_CONFIG_MAIN
-    // Verify manually
-    bool match = true;
-    if (global_event_tracking.size() != tracker_data.size())
-    {
-        std::cout << "ERROR: Size mismatch! GlobalEvent: " << global_event_tracking.size()
-                  << ", Tracker: " << tracker_data.size() << std::endl;
-        match = false;
-    }
-    else
-    {
-        for (const auto & entry : global_event_tracking)
-        {
-            auto it = tracker_data.find(entry.first);
-            if (it == tracker_data.end())
-            {
-                std::cout << "ERROR: Key not found in tracker!" << std::endl;
-                match = false;
-                break;
-            }
-            if (std::abs(it->second - entry.second) >= 0.0001)
-            {
-                std::cout << "ERROR: Value mismatch!" << std::endl;
-                match = false;
-                break;
-            }
-        }
-    }
-    
-    if (match)
-        std::cout << "\nVALIDATION PASSED: Both tracking methods match!" << std::endl;
-    
-    return 0;
-    #endif
-    
+       
 }

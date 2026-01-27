@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -130,7 +126,6 @@ EPIWORLD_TEST_CASE(
         quarantined_counts[i] /= total_quarantined;
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     auto quarantined_counts_expected = std::vector< double >(3, 1.0/3.0);
     auto prob_seed_expected = std::vector< double >(3, 1.0/3.0);
     REQUIRE_THAT(
@@ -142,7 +137,6 @@ EPIWORLD_TEST_CASE(
         Catch::Approx(prob_seed_expected).margin(0.05)
     );
     // Checking the results
-    #endif
 
     // Changing whether the entity 0 can be quarantined
     model.set_entity_can_quarantine(
@@ -170,18 +164,14 @@ EPIWORLD_TEST_CASE(
     }
 
     // Checking the results
-    #ifdef CATCH_CONFIG_MAIN
     quarantined_counts_expected = {0.0, 0.5, 0.5};
     REQUIRE_THAT(
         quarantined_counts,
         Catch::Approx(quarantined_counts_expected).margin(0.05)
     );
-    #endif
 
     
     #undef mat
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

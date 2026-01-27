@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -46,13 +42,9 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
     std::cout << "Printing transitions from multiple files" << std::endl;
     diagram.draw_from_files(epiworld::DiagramType::Mermaid, files);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_THROWS(diagram.draw_from_file(epiworld::DiagramType::Mermaid, "non_existant_file.txt"));
-    #endif 
 
     
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }
