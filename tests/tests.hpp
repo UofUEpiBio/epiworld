@@ -214,8 +214,7 @@ inline std::vector< double > test_compute_final_sizes(
 template<typename ModelType>
 inline std::vector<epiworld_double> tests_calculate_avg_transitions(
     const std::vector<std::vector<epiworld_double>>& transitions,
-    const ModelType & model,
-    std::vector< double > * outbreak_sizes = nullptr
+    const ModelType & model
 ) {
     if (transitions.empty())
         return {};

@@ -16,7 +16,7 @@ EPIWORLD_TEST_CASE(
     epimodels::ModelMeaslesSchool<> model_0(
         500,    // Number of agents
         n_seeds, // Number of initial cases
-        18.0,     // Contact rate
+        2.0,     // Contact rate
         0.2,     // Transmission rate
         0.9,     // Vaccination efficacy
         0.3,     // Vaccination reduction recovery rate
