@@ -122,6 +122,12 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
             std::vector< int > date,virus,outbreak;
             m->get_db().get_outbreak_size(date, virus, outbreak);
 
+            if (outbreak.empty())
+            {
+                throw std::runtime_error(
+                    "get_outbreak_size returned an empty outbreak vector."
+                );
+            }
             outbreak_sizes->at(n) = outbreak.back();
         }
 
