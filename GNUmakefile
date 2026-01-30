@@ -126,8 +126,7 @@ readmes: $(README_TARGETS)
 test: $(TEST_TARGETS)
 
 .PHONY: tests
-tests:
-	$(error cannot build tests separately, yet)
+tests: test
 
 # Aliases
 # And this is where it all begins...
