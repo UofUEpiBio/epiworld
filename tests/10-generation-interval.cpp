@@ -1,7 +1,7 @@
 #include "tests.hpp"
 
-double p_0_approx_sim_global;
-double p_0_approx_analy_global;
+inline double p_0_approx_sim_global;
+inline double p_0_approx_analy_global;
 
 
 using namespace epiworld;
@@ -105,9 +105,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
     printf("Mean GI (expected)   : %.4f\n", expected_mean);
     printf("Ratio (sim/expected) : %.4f\n", mean/expected_mean);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(moreless(mean/expected_mean, 1.00, 0.01));
-    #endif
 
     // Printing out the first 20 of the distribution
     printf("         Expected | Simulated | AbsDiff\n");
@@ -121,14 +119,10 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
             std::abs(distribution_expected[i] - distribution[i])
             );
 
-        #ifdef CATCH_CONFIG_MAIN
         REQUIRE_FALSE(moreless(distribution_expected[i], distribution[i], 0.01));
-        #endif
     }
 
     
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

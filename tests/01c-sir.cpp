@@ -1,8 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
-#define EPI_DEBUG_NO_THREAD_ID
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -67,17 +62,13 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
             if (fn0 != fn1)
                 printf("Models ARE NOT equal in file %s %lu\n", f.c_str(), i);
 
-            #ifdef CATCH_CONFIG_MAIN
             REQUIRE(fn0 == fn1);
-            #endif 
         }
         
     }
 
 
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

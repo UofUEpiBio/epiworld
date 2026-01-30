@@ -48,8 +48,6 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     //     m2.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
 
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }
