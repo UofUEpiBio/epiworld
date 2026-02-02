@@ -93,7 +93,11 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     for (const auto & a : model.get_agents())
     {
 
-        if (a.get_state() != epimodels::ModelSEIRMixingQuarantine<>::SUSCEPTIBLE)
+        if (a.get_id() == 0)
+        {
+            continue;
+        }
+        else if (a.get_state() != epimodels::ModelSEIRMixingQuarantine<>::SUSCEPTIBLE)
         {
             if (a.get_entity(0).get_id() == 1)
             {

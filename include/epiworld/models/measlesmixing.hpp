@@ -14,8 +14,7 @@ using namespace epiworld;
 #elif defined(__GNUC__) && __GNUC__ >= 13
     // GCC 13 or later
     #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >(
-    (model) ); \
+        auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
             [[assume((output) != nullptr)]];
 #else
     #define GET_MODEL(model, output) \

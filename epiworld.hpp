@@ -27,7 +27,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 11
-#define EPIWORLD_VERSION_PATCH 1
+#define EPIWORLD_VERSION_PATCH 2
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -16090,8 +16090,7 @@ template<typename TSeq>
 inline VirusFun<TSeq> virus_fun_logit(
     std::vector< int > vars,
     std::vector< double > coefs,
-    Model<TSeq> * model,
-    bool logit = true
+    Model<TSeq> * model
 ) {
 
     // Checking that there are features
@@ -17648,10 +17647,10 @@ inline ToolFun<TSeq> tool_fun_logit(
         coefs_f.push_back(static_cast<epiworld_double>(c));
 
     ToolFun<TSeq> fun_ = [coefs_f,vars](
-        Tool<TSeq>& tool,
+        Tool<TSeq>&,
         Agent<TSeq> * agent,
-        VirusPtr<TSeq> virus,
-        Model<TSeq> * model
+        VirusPtr<TSeq>,
+        Model<TSeq> *
         ) -> epiworld_double {
 
         size_t K = coefs_f.size();
@@ -25710,7 +25709,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     epiworld_double prob_symptoms,
     epiworld_double prop_vaccinated,
     epiworld_double prop_vax_redux_transm,
-    epiworld_double prop_vax_redux_infect,
+    epiworld_double,
     epiworld_double surveillance_prob,
     epiworld_double prob_transmission,
     epiworld_double prob_death,
@@ -25914,7 +25913,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_param(prob_noreinfect, "Prob. no reinfect");
 
     // Virus ------------------------------------------------------------------
-    epiworld::Virus<TSeq> covid("Covid19", prevalence, false);
+    epiworld::Virus<TSeq> covid(vname, prevalence, false);
     covid.set_state(LATENT, RECOVERED, REMOVED);
     covid.set_post_immunity(&model("Prob. no reinfect"));
     covid.set_prob_death(&model("Prob. death"));
@@ -28894,18 +28893,18 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 #define MM(i, j, n) \
     j * n + i
 
-#if __cplusplus >= 202302L
-    // C++23 or later
+#if defined(__clang__)
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
-        /*Using the [[assume(...)]] to avoid the compiler warning \
-        if the standard is C++23 or later */ \
+        __builtin_assume((output) != nullptr);
+#elif defined(__GNUC__) && __GNUC__ >= 13
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
         [[assume((output) != nullptr)]];
 #else
-    // C++17 or C++20
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
-        assert((output) != nullptr); // Use assert for runtime checks
+        assert((output) != nullptr);
 #endif
 
 /**
@@ -29232,8 +29231,11 @@ inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
         *dynamic_cast<const ModelSEIRMixing<TSeq>*>(this)
         );
 
-    #if __cplusplus >= 202302L
-        // C++23 or later
+    #if defined(__clang__)
+        // Clang
+        __builtin_assume(ptr != nullptr);
+    #elif defined(__GNUC__) && __GNUC__ >= 13
+        // GCC 13 or later
         [[assume(ptr != nullptr)]];
     #else
         // C++17 or C++20
@@ -29524,18 +29526,21 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_SIRMIXING_HPP
 #define EPIWORLD_MODELS_SIRMIXING_HPP
 
-#if __cplusplus >= 202302L
-    // C++23 or later
+#if defined(__clang__)
+    // Clang
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelSIRMixing<TSeq> * >( (model) ); \
-        /*Using the [[assume(...)]] to avoid the compiler warning \
-        if the standard is C++23 or later */ \
+        __builtin_assume((output) != nullptr);
+#elif defined(__GNUC__) && __GNUC__ >= 13
+    // GCC 13 or later
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelSIRMixing<TSeq> * >( (model) ); \
         [[assume((output) != nullptr)]];
 #else
     // C++17 or C++20
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelSIRMixing<TSeq> * >( (model) ); \
-        assert((output) != nullptr); // Use assert for runtime checks
+        assert((output) != nullptr);
 #endif
 
 /**
@@ -30112,8 +30117,14 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #ifndef MEASLESQUARANTINE_HPP
 #define MEASLESQUARANTINE_HPP
 
-#if __cplusplus >= 202302L
-    // C++23 or later
+#if defined(__clang__)
+    // Clang
+    #define GET_MODEL(model, output) \
+        ModelMeaslesSchool<TSeq> * output = \
+            dynamic_cast<ModelMeaslesSchool<TSeq> *>(model); \
+        __builtin_assume(output != nullptr);
+#elif defined(__GNUC__) && __GNUC__ >= 13
+    // GCC 13 or later
     #define GET_MODEL(model, output) \
         ModelMeaslesSchool<TSeq> * output = \
             dynamic_cast<ModelMeaslesSchool<TSeq> *>(model); \
@@ -31000,18 +31011,18 @@ using namespace epiworld;
 #define MM(i, j, n) \
     j * n + i
 
-#if __cplusplus >= 202302L
-    // C++23 or later
+#if defined(__clang__)
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelSEIRMixingQuarantine<TSeq> * >( (model) ); \
-        /*Using the [[assume(...)]] to avoid the compiler warning \
-        if the standard is C++23 or later */ \
+        __builtin_assume((output) != nullptr);
+#elif defined(__GNUC__) && __GNUC__ >= 13
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelSEIRMixingQuarantine<TSeq> * >( (model) ); \
         [[assume((output) != nullptr)]];
 #else
-    // C++17 or C++20
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelSEIRMixingQuarantine<TSeq> * >( (model) ); \
-        assert((output) != nullptr); // Use assert for runtime checks
+        assert((output) != nullptr);
 #endif
 
 #define SAMPLE_FROM_PROBS(n, ans) \
@@ -31594,8 +31605,11 @@ inline Model<TSeq> * ModelSEIRMixingQuarantine<TSeq>::clone_ptr()
         *dynamic_cast<const ModelSEIRMixingQuarantine<TSeq>*>(this)
         );
 
-    #if __cplusplus >= 202302L
-        // C++23 or later
+    #if defined(__clang__)
+        // Clang
+        __builtin_assume(ptr != nullptr);
+    #elif defined(__GNUC__) && __GNUC__ >= 13
+        // GCC 13 or later
         [[assume(ptr != nullptr)]];
     #else
         // C++17 or C++20
@@ -32242,19 +32256,22 @@ using namespace epiworld;
 #define MM(i, j, n) \
     j * n + i
 
-#if __cplusplus >= 202302L
-    // C++23 or later
+#if defined(__clang__)
+    // Clang
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
-        /*Using the [[assume(...)]] to avoid the compiler warning \
-        if the standard is C++23 or later */ \
-        [[assume((output) != nullptr)]];
+        __builtin_assume((output) != nullptr);
+#elif defined(__GNUC__) && __GNUC__ >= 13
+    // GCC 13 or later
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
+            [[assume((output) != nullptr)]];
 #else
-    // C++17 or C++20
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
         assert((output) != nullptr); // Use assert for runtime checks
 #endif
+
 
 #define SAMPLE_FROM_PROBS(n, ans) \
     size_t ans; \
@@ -32869,8 +32886,11 @@ inline Model<TSeq> * ModelMeaslesMixing<TSeq>::clone_ptr()
         *dynamic_cast<const ModelMeaslesMixing<TSeq>*>(this)
         );
 
-    #if __cplusplus >= 202302L
-        // C++23 or later
+    #if defined(__clang__)
+        // Clang
+        __builtin_assume(ptr != nullptr);
+    #elif defined(__GNUC__) && __GNUC__ >= 13
+        // GCC 13 or later
         [[assume(ptr != nullptr)]];
     #else
         // C++17 or C++20
@@ -33590,15 +33610,17 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 #define COL_MAJOR_POS(i, j, n) \
     (j * n + i)
 
-#if __cplusplus >= 202302L
-    // C++23 or later
+#if defined(__clang__)
+    // Clang
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
-        /*Using the [[assume(...)]] to avoid the compiler warning \
-        if the standard is C++23 or later */ \
+        __builtin_assume((output) != nullptr);
+#elif defined(__GNUC__) && __GNUC__ >= 13
+    // GCC 13 or later
+    #define GET_MODEL(model, output) \
+        auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
         [[assume((output) != nullptr)]];
 #else
-    // C++17 or C++20
     #define GET_MODEL(model, output) \
         auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
         assert((output) != nullptr); // Use assert for runtime checks
