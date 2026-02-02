@@ -61,7 +61,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
 
     // Add a global event that sets transmission rate to 0 on the intervention day
     model.add_globalevent(
-        [intervention_day](Model<>* m) -> void {
+        [](Model<>* m) -> void {
             m->set_param("Transmission rate", 0.0);
         },
         "Stop transmission",

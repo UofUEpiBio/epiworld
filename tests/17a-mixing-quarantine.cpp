@@ -55,7 +55,6 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     model.print();
 
     // Getting all agents
-    int n_right = 0;
     int n_wrong = 0;
 
     for (const auto & a : model.get_agents())
@@ -64,7 +63,6 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         {
             if (a.get_entity(0).get_id() == 0)
             {
-                n_right++;
                 continue;
             }
 
@@ -90,21 +88,15 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     model.print();
 
     // Getting all agents
-    n_right = 0;
     n_wrong = 0;
 
     for (const auto & a : model.get_agents())
     {
 
-        if (a.get_id() == 0)
-        {
-            n_right++;
-        } 
-        else if (a.get_state() != epimodels::ModelSEIRMixingQuarantine<>::SUSCEPTIBLE)
+        if (a.get_state() != epimodels::ModelSEIRMixingQuarantine<>::SUSCEPTIBLE)
         {
             if (a.get_entity(0).get_id() == 1)
             {
-                n_right++;
                 continue;
             }
 

@@ -109,12 +109,6 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
     }
     double avg_change_percent = sum / n_iterations;
     
-    // Calculate standard deviation
-    double sum_squared_diff = 0.0;
-    for (double pct : change_percentages) {
-        sum_squared_diff += (pct - avg_change_percent) * (pct - avg_change_percent);
-    }
-    
     // Check if average change percentage is close to p (within tolerance)
     bool avg_matches_p = std::abs(avg_change_percent - p) <= tolerance;
 
