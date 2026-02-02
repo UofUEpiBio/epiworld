@@ -1,7 +1,7 @@
 // #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/epiworld/epiworld.hpp"
 
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #include "../../include/epiworld/math/lfmcmc.hpp"
 
 
