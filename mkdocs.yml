@@ -70,6 +70,7 @@ nav:
     - Generation Interval and Reproductive Number Calculation: impl/12. Generation Interval and Reproductive Number Calculation.md
     - Events and Multi-Event Handling: impl/13. Events and Multi-Event Handling.md
     - Quarantine, Isolation, and Contact Tracing Modules: impl/14. Quarantine, Isolation, and Contact Tracing Modules.md
+    - Sampling Contacts: impl/15. Sampling Contacts.md
 
 plugins:
   - search
@@ -89,10 +90,20 @@ markdown_extensions:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: math
+          class: arithmatex
+          format: !!python/object/apply:pymdownx.arithmatex.arithmatex_fenced_format {kwds: {mode: generic, tag: div}}
   - pymdownx.inlinehilite
+  - pymdownx.arithmatex:
+      generic: true
   - toc:
       permalink: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
 validation:
   nav:
