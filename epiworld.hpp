@@ -30449,8 +30449,12 @@ inline void ModelMeaslesSchool<TSeq>::update_infectious() {
 
     // Assumes fixed contact rate throughout the simulation
     // but corrects for the number of available agents.
-    double p_contact = this->par("Contact rate")/
-        static_cast< epiworld_double >(n_available);
+    double p_contact = 0.0;
+    if (n_available > 0)
+    {
+        p_contact = this->par("Contact rate")/
+            static_cast< epiworld_double >(n_available);
+    }
 
     // Notice this is for sampling with replacement
     // from the list of infected individuals.
