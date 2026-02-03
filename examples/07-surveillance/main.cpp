@@ -1,4 +1,4 @@
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;

@@ -1,6 +1,5 @@
 #ifndef CATCH_CONFIG_MAIN
 #define EPI_DEBUG
-#include "epiworld/models/measlesmixing.hpp"
 #endif
 
 #include "tests.hpp"

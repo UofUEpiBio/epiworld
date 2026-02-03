@@ -1,11 +1,10 @@
-#define EPI_DEBUG
 #ifndef CATCH_CONFIG_MAIN
-#define N_THREADS 9
-#define N_SIMS 500
-
+    #define EPI_DEBUG
+    #define N_THREADS 9
+    #define N_SIMS 500
 #else
-#define N_THREADS 4
-#define N_SIMS 400
+    #define N_THREADS 4
+    #define N_SIMS 400
 #endif
 
 #define N_DAYS 120

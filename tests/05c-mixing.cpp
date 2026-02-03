@@ -58,7 +58,7 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims, -1.0);
-    auto saver = [&transitions, &R0s, n_infected](size_t n, Model<>* m) -> void{
+    auto saver = [&transitions, &R0s](size_t n, Model<>* m) -> void{
 
         // Saving the transition probabilities
         transitions[n] = m->get_db().get_transition_probability(false, false);

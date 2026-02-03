@@ -6,7 +6,7 @@ endif
 
 CXX       := g++
 CLANG     := clang++
-CXXFLAGS  := -std=$(CXX_STD) -Wall -Wextra -O0 -g -pedantic
+CXXFLAGS  := -std=$(CXX_STD) -Wall -Wextra -O2 -g -pedantic
 OPTFLAGS  := -O2 -g
 OPENMP    := $(OPENMP)
 
