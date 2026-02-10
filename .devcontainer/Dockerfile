@@ -1,7 +1,6 @@
-FROM ubuntu:24.04
+FROM mcr.microsoft.com/devcontainers/cpp:1-ubuntu-24.04
 
 # Build arguments
-ARG LLVM_VERSION=18
 ARG PYTHON_VERSION=3.12
 ARG USERNAME=dev
 
@@ -29,19 +28,7 @@ RUN apt-get update && \
         lcov \
         gdb \
         libxml-libxml-perl \
-        cpanminus \
-        libomp-${LLVM_VERSION}-dev \
-        clang-${LLVM_VERSION} \
-        clang-tools-${LLVM_VERSION} \
-        clangd-${LLVM_VERSION} \
-        llvm-${LLVM_VERSION} && \
-    update-alternatives --install /usr/bin/cc cc /usr/bin/clang-${LLVM_VERSION} 100 && \
-    update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-${LLVM_VERSION} 100 && \
-    update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-${LLVM_VERSION} 100 && \
-    update-alternatives --install /usr/bin/gcov gcov /usr/bin/llvm-cov-${LLVM_VERSION} 100 && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-${LLVM_VERSION} 100 && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-${LLVM_VERSION} 100 && \
-    update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-${LLVM_VERSION} 100 && \
+        cpanminus && \
     cpanm --verbose --notest --installdeps /tmp && \
     uv python install ${PYTHON_VERSION} && \
     uv tool install --python ${PYTHON_VERSION} mkdocs \
