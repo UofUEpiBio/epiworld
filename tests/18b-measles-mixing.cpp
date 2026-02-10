@@ -16,7 +16,7 @@ EPIWORLD_TEST_CASE(
     epimodels::ModelMeaslesMixing<> model_0(
         900,        // Number of agents
         n_seeds / 900.0, // Initial prevalence
-        2.0,         // Contact rate
+        4.0,         // Contact rate
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
         0.3,         // Vaccination reduction recovery rate
@@ -50,7 +50,7 @@ EPIWORLD_TEST_CASE(
         return;
     });
 
-    size_t nsims = 100; // Reduced for faster testing
+    size_t nsims = 200; // Reduced for faster testing
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
     std::vector<std::vector<int>> final_distribution(nsims);

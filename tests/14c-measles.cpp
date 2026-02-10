@@ -49,7 +49,7 @@ EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesSchoolR0]") {
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
-    auto saver = [&transitions, &R0s, n_seeds](size_t n, Model<>* m) -> void{
+    auto saver = [&R0s, n_seeds](size_t n, Model<>* m) -> void{
 
         // Recording the R0 from the index case
         auto rts = m->get_db().get_reproductive_number();      

@@ -31,7 +31,7 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
 
     auto repnum = model_0.get_db().get_reproductive_number();
 
-    int n_seed = -1, n_records = 0;
+    int n_seed = -1;
     double rts = 0.0;
     for (auto & i: repnum)
     {
@@ -40,7 +40,6 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
         else if (i.first[1] < n_seeds)
         {
             rts += static_cast<double>(i.second);
-            ++n_records;
         }
     }
 
