@@ -47,8 +47,8 @@ ifeq ($(BUILD_PROFILE),debug)
     CFLAGS += -g -O0 -DDEBUG -Wno-unused-parameter -fno-omit-frame-pointer -fstack-protector-all -Wall -Wextra
     CXXFLAGS += -g -O0 -DDEBUG -Wno-unused-parameter -fno-omit-frame-pointer -fstack-protector-all -Wall -Wextra
 else ifeq ($(BUILD_PROFILE),release)
-    CFLAGS += -O3 -DNDEBUG -Wno-unused-parameter -ftree-vectorize -funroll-loops -ffast-math -march=native
-    CXXFLAGS += -O3 -DNDEBUG -Wno-unused-parameter -ftree-vectorize -funroll-loops -ffast-math -march=native 
+    CFLAGS += -O2 -g -pedantic -Wno-unused-parameter -fdelete-null-pointer-checks -ffast-math
+    CXXFLAGS += -O2 -g -pedantic -Wno-unused-paramete -fdelete-null-pointer-checks -ffast-math
 else
     $(error "Unknown BUILD_PROFILE: '$(BUILD_PROFILE)'. Valid options are 'debug' and 'release'.")
 endif
