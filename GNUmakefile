@@ -48,7 +48,7 @@ ifeq ($(BUILD_PROFILE),debug)
     CXXFLAGS += -g -O0 -DDEBUG -Wno-unused-parameter -fno-omit-frame-pointer -fstack-protector-all -Wall -Wextra
 else ifeq ($(BUILD_PROFILE),release)
     CFLAGS += -O2 -g -pedantic -Wno-unused-parameter -fdelete-null-pointer-checks -ffast-math
-    CXXFLAGS += -O2 -g -pedantic -Wno-unused-paramete -fdelete-null-pointer-checks -ffast-math
+    CXXFLAGS += -O2 -g -pedantic -Wno-unused-parameter -fdelete-null-pointer-checks -ffast-math
 else
     $(error "Unknown BUILD_PROFILE: '$(BUILD_PROFILE)'. Valid options are 'debug' and 'release'.")
 endif
