@@ -68,6 +68,7 @@ make-all-$(NAME)-dirs:
 	$(V) mkdir -p $($(NAME)_TEST_DIR)
 	$(V)for f in "$($(NAME)_SOURCE_DIR)"/*.cpp; do \
 	    mkdir -p "$($(NAME)_TEST_DIR)/$$(basename "$$f" .cpp)-saves"; \
+	done
 	
 # HOOK: Relocate all resource files to the test directory.
 .PHONY: relocate-all-$(NAME)-resources

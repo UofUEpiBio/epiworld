@@ -42,7 +42,7 @@ void summary_fun(vec_double & res, const vec_double & p, LFMCMC<vec_double> * m)
 }
 
 EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
-    
+
     auto rand = std::make_shared<std::mt19937>();
     rand->seed(91231);
     std::normal_distribution<epiworld_double> rnorm(5, 1.5);

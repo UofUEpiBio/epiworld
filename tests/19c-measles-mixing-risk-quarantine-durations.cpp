@@ -1,12 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-    #define EPI_DEBUG
-    #define N_THREADS 9
-    #define N_SIMS 500
-#else
-    #define N_THREADS 4
-    #define N_SIMS 400
-#endif
-
 #define N_DAYS 120
 
 #include "tests.hpp"
@@ -32,7 +23,7 @@ inline TestResults test_model_builder_20d(
     size_t n,
     std::vector< double > contact_matrix,
     std::vector< int > durations = {21, 14, 7},
-    size_t nsims = N_SIMS
+    size_t nsims = 400
 )
 {
 
@@ -85,7 +76,7 @@ inline TestResults test_model_builder_20d(
 
     model.verbose_off();
 
-    model.run_multiple(N_DAYS, nsims, 123, saver, true, false, N_THREADS);
+    model.run_multiple(N_DAYS, nsims, 123, saver, true, false);
 
     std::cout << test_name << ": " <<
         model("Quarantine period high") << ", " <<
