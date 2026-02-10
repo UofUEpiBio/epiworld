@@ -50,10 +50,6 @@ $(NAME)_SOURCES := \
 	25a-hospitalizationstracker.cpp \
 	25b-hospitalizationstracker-validation.cpp
 
-
-$(NAME)_CXXFLAGS := \
-	-O2
-
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
 	$(ROOT_SOURCE_DIR)/include/epiworld
