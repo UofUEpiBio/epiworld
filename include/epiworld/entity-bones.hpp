@@ -29,9 +29,7 @@ class Entity {
 private:
     
     int id = -1;
-    std::vector< size_t > agents;   ///< Vector of agents
-    std::vector< size_t > agents_location; ///< Location where the entity is stored in the agent
-    size_t n_agents = 0u;
+    std::vector< std::reference_wrapper<Agent<TSeq>> > agents;   ///< Vector of agents
 
     int max_capacity = -1;
     std::string entity_name = "Unnamed entity";
@@ -72,11 +70,11 @@ public:
     void set_location(std::vector< epiworld_double > loc);
     std::vector< epiworld_double > & get_location();
 
-    typename std::vector< size_t >::iterator begin();
-    typename std::vector< size_t >::iterator end();
+    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator begin();
+    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator end();
 
-    typename std::vector< size_t >::const_iterator begin() const;
-    typename std::vector< size_t >::const_iterator end() const;
+    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator begin() const;
+    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator end() const;
 
     size_t operator[](size_t i);
 
@@ -102,7 +100,8 @@ public:
      */
     void distribute(Model<TSeq> * model);
 
-    std::vector< size_t > & get_agents();
+    std::vector< std::reference_wrapper<Agent<TSeq>> > & get_agents();
+    std::vector< size_t > get_agents_ids() const;
 
     void print() const;
     void set_distribution(EntityToAgentFun<TSeq> fun);

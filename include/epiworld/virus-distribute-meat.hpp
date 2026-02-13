@@ -190,6 +190,8 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
         for (size_t e = 0; e < entities.size(); ++e)
         {
             auto & entity_e = entities[e];
+            auto & agents_ids = entity_e.get_agents_ids();
+
             auto & agent_ids = entity_e.get_agents();
             double prevalence_e = prevalence[e];
             size_t n = agent_ids.size();

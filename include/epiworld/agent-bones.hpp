@@ -87,9 +87,7 @@ private:
     std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
-    std::vector< size_t > entities;
-    std::vector< size_t > entities_locations;
-    size_t n_entities = 0u;
+    std::vector< std::reference_wrapper<Entity<TSeq>> > entities;
 
     unsigned int state = 0u;
     unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
@@ -282,8 +280,8 @@ public:
     double operator[](size_t j) const;
     ///@}
 
-    Entities<TSeq> get_entities();
-    const Entities_const<TSeq> get_entities() const;
+    std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities();
+    const std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities() const;
     const Entity<TSeq> & get_entity(size_t i) const;
     Entity<TSeq> & get_entity(size_t i);
     size_t get_n_entities() const;

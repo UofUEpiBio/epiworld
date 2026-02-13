@@ -152,13 +152,13 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     std::vector< int > counts(model.size(), 0);
     for (const auto & a: agents1)
-        counts[a]++;
+        counts[a.get().get_id()]++;
 
     for (const auto & a: agents2)
-        counts[a]++;
+        counts[a.get().get_id()]++;
 
     for (const auto & a: agents3)
-        counts[a]++;
+        counts[a.get().get_id()]++;
 
     double n0 = 0, n1 = 0, n2 = 0, n3 = 0;
     for (const auto & c: counts)

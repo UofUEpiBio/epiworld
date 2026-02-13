@@ -12,7 +12,6 @@
 #include "userdata-bones.hpp"
 #include "adjlist-bones.hpp"
 #include "model-bones.hpp"
-#include "entities-bones.hpp"
 #include "virus-bones.hpp"
 #include "agent-bones.hpp"
 

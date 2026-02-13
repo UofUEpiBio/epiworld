@@ -86,8 +86,6 @@ namespace epiworld {
     #include "entity-bones.hpp"
     #include "entity-distribute-meat.hpp"
     #include "entity-meat.hpp"
-
-    #include "entities-bones.hpp"
     
     #include "agent-meat-virus-sampling.hpp"
     #include "agent-meat-state.hpp"
