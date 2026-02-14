@@ -1,11 +1,12 @@
-## Example: 14-community-hosp
+## Example: `14-community-hosp`
 
 Output from the program:
 
 ```
 _________________________________________________________________________
 Running the model...
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||________________________________________________________________________________
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
@@ -15,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 6.00ms
-Last run speed      : 15.46 million agents x day / second
+Last run elapsed t  : 4.00ms
+Last run speed      : 21.75 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -34,13 +35,13 @@ Model parameters:
  - Prob recovery        : 0.3300
 
 Distribution of the population at time 100:
-  - (0) Susceptible             :  990 -> 937
-  - (1) Infected                :   10 -> 49
-  - (2) Infected (hospitalized) :    0 -> 14
+  - (0) Susceptible             :  990 -> 1000
+  - (1) Infected                :   10 -> 0
+  - (2) Infected (hospitalized) :    0 -> 0
 
 Transition Probabilities:
- - Susceptible              0.98  0.02  0.00
- - Infected                 0.32  0.62  0.07
- - Infected (hospitalized)  0.35  0.07  0.58
+ - Susceptible              1.00  0.00  0.00
+ - Infected                 0.26  0.69  0.05
+ - Infected (hospitalized)  0.39     -  0.61
 
 ```

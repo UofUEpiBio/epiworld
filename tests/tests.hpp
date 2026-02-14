@@ -1,6 +1,7 @@
 #ifndef EPIWORLD_TESTS_HPP
 #define EPIWORLD_TESTS_HPP
 
+#define epiworld_double double
 
 #include <vector>
 #include <iostream>
@@ -9,6 +10,8 @@
 #if defined(_OPENMP)
     #include <omp.h>
 #endif
+
+#include "../include/catch2/catch.hpp"
 #include "../include/epiworld/epiworld.hpp"
 
 
@@ -22,7 +25,7 @@ inline bool moreless(T a, T b, T eps = static_cast<T>(1))
     return(std::abs(a-b) > eps);
 }
 
-std::string file_reader(std::string fname)
+inline std::string file_reader(std::string fname)
 {
     // Create a text string, which is used to output the text file
     std::string myText, res;
@@ -298,18 +301,7 @@ void inline tests_print_avg_transitions(
     }
 }
 
-#ifndef CATCH_CONFIG_MAIN
 
-    
-    #define EPIWORLD_TEST_CASE(desc, tag) \
-        int main() 
-
-    
-#else
-
-    #define EPIWORLD_TEST_CASE(desc, tag) \
-        TEST_CASE(desc, tag) 
-
-#endif
+#define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
 
 #endif

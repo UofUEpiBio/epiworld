@@ -1,11 +1,8 @@
-#ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 // Function to get current memory usage in kilobytes
 size_t get_memory_usage() {
+#ifdef __linux__
     std::ifstream proc_status("/proc/self/status");
     std::string line;
     size_t memory = 0;
@@ -20,6 +17,9 @@ size_t get_memory_usage() {
     }
 
     return memory; // Returns KB
+#else
+    return 0;
+#endif /* __linux__ */
 }
 
 using namespace epiworld;
@@ -108,7 +108,6 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     std::cout << "Memory after: " << memory_after << " KB" << std::endl;
     std::cout << "Memory used: " << (memory_after - memory_before) << " KB" << std::endl;
    
-    #ifdef EPI_DEBUG
     std::cout << "sizeof(int)    :" << sizeof(int) << std::endl;
     std::cout << "sizeof(size_t) :" << sizeof(size_t) << std::endl;
     std::cout << "sizeof(short)  :" << sizeof(double) << std::endl;
@@ -122,12 +121,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     // std::cout << 
     //     "Address of model.virus_functions " << &model.get_virus(0).virus_functions << std::endl <<
     //     "Address of v.virus_functions     "     << &v->virus_functions << std::endl;
-    #endif
 
     model.print();
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

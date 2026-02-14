@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -53,9 +49,7 @@ EPIWORLD_TEST_CASE(
 
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
     
-    #ifndef CATCH_CONFIG_MAIN
     model_0.print(false);
-    #endif
 
     // Calculate average transitions
     auto avg_transitions = tests_calculate_avg_transitions(
@@ -86,7 +80,6 @@ EPIWORLD_TEST_CASE(
     );
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
-    #ifdef CATCH_CONFIG_MAIN
 
     // R0
     REQUIRE_FALSE(moreless(R0_observed, R0_theo, 0.1));
@@ -122,7 +115,6 @@ EPIWORLD_TEST_CASE(
 
     // Transition from hospitalized to recovered
     REQUIRE_FALSE(moreless(mat(11, 12), 1.0/model_0("Hospitalization period"), 0.05));
-    #endif
     // Reproductive number
     std::cout << "Reproductive number: "
               << R0_observed << " (expected ~" << R0_theo << ")" << std::endl;
@@ -161,8 +153,6 @@ EPIWORLD_TEST_CASE(
             std::accumulate(outbreak_sizes.begin(), outbreak_sizes.end(), 0.0)
         ) / static_cast<double>(nsims) << std::endl;
     #undef mat
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
     
 }

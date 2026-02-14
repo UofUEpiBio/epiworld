@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -45,7 +41,6 @@ EPIWORLD_TEST_CASE(
     
     model.get_hospitalizations(dates, virus_ids, tool_ids, counts, weights);
 
-    #ifndef CATCH_CONFIG_MAIN
     std::cout << "Number of hospitalization records: " << dates.size() << std::endl;
     
     // Print the hospitalization data
@@ -58,10 +53,8 @@ EPIWORLD_TEST_CASE(
                   << ", Weight: " << weights[i]
                   << std::endl;
     }
-    #endif
 
     // All vectors should have the same size
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(dates.size() == virus_ids.size());
     REQUIRE(dates.size() == tool_ids.size());
     REQUIRE(dates.size() == counts.size());
@@ -103,15 +96,12 @@ EPIWORLD_TEST_CASE(
             REQUIRE(days_for_combo[static_cast<size_t>(d)] == d);
         }
     }
-    #endif
 
     // Verify that weights are non-negative (can be 0 for days with no hospitalizations)
-    #ifdef CATCH_CONFIG_MAIN
-    for (size_t i = 0; i < weights.size(); ++i)
+    for (double weight : weights)
     {
-        REQUIRE(weights[i] >= 0.0);
+        REQUIRE(weight >= 0.0);
     }
-    #endif
 
     // Test reset functionality by running the model again
     model.run(simulation_days, 54321);  // Different seed
@@ -124,22 +114,14 @@ EPIWORLD_TEST_CASE(
     
     model.get_hospitalizations(dates2, virus_ids2, tool_ids2, counts2, weights2);
 
-    #ifndef CATCH_CONFIG_MAIN
     std::cout << "\nAfter second run:" << std::endl;
     std::cout << "Number of hospitalization records: " << dates2.size() << std::endl;
-    #endif
 
     // Both runs should have independent hospitalization data
     // The reset() is called automatically before run(), so the data should be fresh
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(dates2.size() == virus_ids2.size());
     REQUIRE(dates2.size() == tool_ids2.size());
     REQUIRE(dates2.size() == counts2.size());
     REQUIRE(dates2.size() == weights2.size());
-    #endif
-
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
     
 }

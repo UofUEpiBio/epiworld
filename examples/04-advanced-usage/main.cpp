@@ -1,4 +1,3 @@
-// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 // Original data will be an integer vector
@@ -103,7 +102,20 @@ int main() {
 
     // Initializing and printing information about the model ------------------
     model.queuing_off(); // Not working with rewiring just yet.
-    model.set_rewire_fun(&epiworld::rewire_degseq<DAT>);
+    model.set_rewire_fun(
+        [](std::vector<epiworld::Agent<DAT>>* agents,
+           epiworld::Model<std::vector<int>>* m,
+           float p)
+        {
+            epiworld::rewire_degseq<DAT>(
+                reinterpret_cast<epiworld::AdjList*>(agents),
+                m,
+                p
+            );
+        }
+    );
+
+
     model.set_rewire_prop(0.10);
 
     // Screen information
@@ -122,10 +134,10 @@ int main() {
         "transmisions.txt",
         "transition.txt",
         "reproductive.txt",
-        "",
-        "",
-        "",
-        ""
+        "generation_time.txt",
+	    "active_cases.txt",
+	    "outbreak_size.txt",
+        "hospitalizations.txt"
     );
 
     model.write_edgelist("simple-world-edgelist.txt");
