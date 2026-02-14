@@ -940,7 +940,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         // check that later
         if (agent_i.get_n_entities() != 0u)
         {
-            for (auto & agent_j: agent_i.get_entity(0))
+            for (const Agent<TSeq> & agent_j: agent_i.get_entity(0))
             {
 
                 #ifdef EPI_DEBUG

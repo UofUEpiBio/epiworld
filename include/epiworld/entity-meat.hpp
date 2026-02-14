@@ -248,9 +248,9 @@ inline std::vector< std::reference_wrapper<Agent<TSeq>> > & Entity<TSeq>::get_ag
 template<typename TSeq>
 inline std::vector< size_t > Entity<TSeq>::get_agents_ids() const
 {
-    std::vector< size_t > res(agents.size());
-    for (size_t i = 0u; i < agents.size(); ++i)
-        res[i] = agents[i].get_id();
+    std::vector< size_t > res;
+    for (const Agent<TSeq> & agent: agents)
+        res.push_back(agent.get_id());
 
     return res;
 }

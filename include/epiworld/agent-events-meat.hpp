@@ -226,13 +226,13 @@ inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
 
         if (p->get_n_entities() > e->size()) // Slower search through the agent
         {
-            for (const auto & agent: e->get_agents())
+            for (const Agent<TSeq> & agent: e->get_agents())
                 if(agent.get_id() == p->get_id())
                     throw std::logic_error("An entity cannot be reassigned to an agent.");
         }
         else                                 // Slower search through the entity
         {
-            for (const auto & entity: p->get_entities())
+            for (const Entity<TSeq> & entity: p->get_entities())
                 if(entity.get_id() == e->get_id())
                     throw std::logic_error("An entity cannot be reassigned to an agent.");
         }
