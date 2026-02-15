@@ -18148,7 +18148,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
         return [from, to](Entity<TSeq> & e, Model<TSeq> * m) -> void {
 
             auto & agents = m->get_agents();
-            for (size_t i = from; i < to; ++i)
+            for (int i = from; i < to; ++i)
             {
                 if (agents[i].get_n_entities() == 0)
                     e.add_agent(&agents[i], m);
@@ -18169,7 +18169,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
         return [from, to](Entity<TSeq> & e, Model<TSeq> * m) -> void {
 
             auto & agents = m->get_agents();
-            for (size_t i = from; i < to; ++i)
+            for (int i = from; i < to; ++i)
             {
                 e.add_agent(&agents[i], m);
             }
@@ -21999,14 +21999,35 @@ inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> *)
 {
     
     Agent<TSeq> &  p = *a.agent;    
     Entity<TSeq> & e = *a.entity;
     
-    std::remove(p.entities.begin(), p.entities.end(), std::ref(e));
-    std::remove(e.agents.begin(), e.agents.end(), std::ref(p));
+    // Remove entity from agent's entity list
+    p.entities.erase(
+        std::remove_if(
+            p.entities.begin(),
+            p.entities.end(),
+            [&e](const std::reference_wrapper<Entity<TSeq>> & entity_ref) {
+                return entity_ref.get().get_id() == e.get_id();
+            }
+        ),
+        p.entities.end()
+    );
+
+    // Remove agent from entity's agent list
+    e.agents.erase(
+        std::remove_if(
+            e.agents.begin(),
+            e.agents.end(),
+            [&p](const std::reference_wrapper<Agent<TSeq>> & agent_ref) {
+                return agent_ref.get().get_id() == p.get_id();
+            }
+        ),
+        e.agents.end()
+    );
 
     return;
 
@@ -22390,7 +22411,7 @@ inline void Agent<TSeq>::rm_entity(
 
     // Looking for entity location in the agent
     int entity_idx = -1;
-    for (auto & a_entity: entities)
+    for (Entity<TSeq> & a_entity: entities)
     {
         if (a_entity.get_id() == entity.get_id())
         {

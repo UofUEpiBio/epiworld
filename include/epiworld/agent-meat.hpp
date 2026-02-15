@@ -375,7 +375,7 @@ inline void Agent<TSeq>::rm_entity(
 
     // Looking for entity location in the agent
     int entity_idx = -1;
-    for (auto & a_entity: entities)
+    for (Entity<TSeq> & a_entity: entities)
     {
         if (a_entity.get_id() == entity.get_id())
         {

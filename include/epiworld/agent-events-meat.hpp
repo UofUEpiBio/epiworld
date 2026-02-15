@@ -247,14 +247,35 @@ inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> *)
 {
     
     Agent<TSeq> &  p = *a.agent;    
     Entity<TSeq> & e = *a.entity;
     
-    std::remove(p.entities.begin(), p.entities.end(), std::ref(e));
-    std::remove(e.agents.begin(), e.agents.end(), std::ref(p));
+    // Remove entity from agent's entity list
+    p.entities.erase(
+        std::remove_if(
+            p.entities.begin(),
+            p.entities.end(),
+            [&e](const std::reference_wrapper<Entity<TSeq>> & entity_ref) {
+                return entity_ref.get().get_id() == e.get_id();
+            }
+        ),
+        p.entities.end()
+    );
+
+    // Remove agent from entity's agent list
+    e.agents.erase(
+        std::remove_if(
+            e.agents.begin(),
+            e.agents.end(),
+            [&p](const std::reference_wrapper<Agent<TSeq>> & agent_ref) {
+                return agent_ref.get().get_id() == p.get_id();
+            }
+        ),
+        e.agents.end()
+    );
 
     return;
 

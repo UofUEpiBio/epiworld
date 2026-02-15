@@ -60,4 +60,4 @@
 #include "24c-virus-hist-multiple-sims.cpp"
 #include "25a-hospitalizationstracker.cpp"
 #include "25b-hospitalizationstracker-validation.cpp"
-
+#include "26-entity-add-rm.cpp"
