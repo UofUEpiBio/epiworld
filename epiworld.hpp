@@ -9132,7 +9132,6 @@ protected:
     std::vector< ToolPtr<TSeq> > tools = {};
 
     std::vector< Entity<TSeq> > entities = {};
-    std::vector< Entity<TSeq> > entities_backup = {};
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
 
@@ -10513,7 +10512,6 @@ protected:
     std::vector< ToolPtr<TSeq> > tools = {};
 
     std::vector< Entity<TSeq> > entities = {};
-    std::vector< Entity<TSeq> > entities_backup = {};
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
 
@@ -11540,6 +11538,8 @@ private:
     std::vector< ToolPtr<TSeq> > tools;
     unsigned int n_tools = 0u;
 
+    void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
+
 public:
 
     Agent();
@@ -11684,8 +11684,6 @@ public:
         );
 
     const unsigned int & get_state() const;
-
-    void reset();
 
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
@@ -12172,7 +12170,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     viruses(model.viruses),
     tools(model.tools),
     entities(model.entities),
-    entities_backup(model.entities_backup),
     rewire_fun(model.rewire_fun),
     rewire_prop(model.rewire_prop),
     parameters(model.parameters),
@@ -12228,7 +12225,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     tools(std::move(model.tools)),
     // Entities
     entities(std::move(model.entities)),
-    entities_backup(std::move(model.entities_backup)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
     runifd(std::move(model.runifd)),
@@ -12286,7 +12282,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     tools                         = m.tools;
 
     entities        = m.entities;
-    entities_backup = m.entities_backup;
 
     rewire_fun  = m.rewire_fun;
     rewire_prop = m.rewire_prop;
@@ -12583,9 +12578,6 @@ inline void Model<TSeq>::set_backup()
 
     if (population_backup.size() == 0u)
         population_backup = std::vector< Agent<TSeq> >(population);
-
-    if (entities_backup.size() == 0u)
-        entities_backup = std::vector< Entity<TSeq> >(entities);
 
 }
 
@@ -13764,22 +13756,6 @@ inline void Model<TSeq>::reset() {
     }
     #endif
 
-    if (entities_backup.size())
-    {
-        entities = entities_backup;
-
-        #ifdef EPI_DEBUG
-        for (size_t i = 0; i < entities.size(); ++i)
-        {
-
-            if (entities[i] != (entities_backup)[i])
-                throw std::logic_error("Model::reset entities don't match.");
-
-        }
-        #endif
-
-    }
-
     for (auto & e: entities)
         e.reset();
 
@@ -14671,26 +14647,6 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         other.entities,
         "entities don't match"
     )
-
-    if ((entities_backup.size() != 0) & (other.entities_backup.size() != 0))
-    {
-
-        for (size_t i = 0u; i < entities_backup.size(); ++i)
-        {
-
-            EPI_DEBUG_FAIL_AT_TRUE(
-                entities_backup[i] != other.entities_backup[i],
-                "Model:: entities_backup[i] don't match"
-            )
-
-        }
-
-    } else if ((entities_backup.size() == 0) & (other.entities_backup.size() != 0)) {
-        EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
-    } else if ((entities_backup.size() != 0) & (other.entities_backup.size() == 0))
-    {
-        EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
-    }
 
     EPI_DEBUG_FAIL_AT_TRUE(
         rewire_prop != other.rewire_prop,
@@ -18000,6 +17956,8 @@ private:
 
     EntityToAgentFun<TSeq> dist_fun = nullptr;
 
+    void reset();
+
 public:
 
 
@@ -18041,8 +17999,6 @@ public:
     void set_queue(epiworld_fast_int init, epiworld_fast_int post);
     void get_state(epiworld_fast_int * init, epiworld_fast_int * post);
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
-
-    void reset();
 
     bool operator==(const Entity<TSeq> & other) const;
     bool operator!=(const Entity<TSeq> & other) const {return !operator==(other);};
@@ -18453,7 +18409,7 @@ inline bool Entity<TSeq>::operator==(const Entity<TSeq> & other) const
 
     for (size_t i = 0u; i < agents.size(); ++i)
     {
-        if (agents[i] != other.agents[i])
+        if (agents[i].get() != other.agents[i].get())
             return false;
     }
 
@@ -19161,7 +19117,6 @@ protected:
     std::vector< ToolPtr<TSeq> > tools = {};
 
     std::vector< Entity<TSeq> > entities = {};
-    std::vector< Entity<TSeq> > entities_backup = {};
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
 
@@ -20797,6 +20752,8 @@ private:
     std::vector< ToolPtr<TSeq> > tools;
     unsigned int n_tools = 0u;
 
+    void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
+
 public:
 
     Agent();
@@ -20941,8 +20898,6 @@ public:
         );
 
     const unsigned int & get_state() const;
-
-    void reset();
 
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
@@ -21583,6 +21538,8 @@ private:
     std::vector< ToolPtr<TSeq> > tools;
     unsigned int n_tools = 0u;
 
+    void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
+
 public:
 
     Agent();
@@ -21727,8 +21684,6 @@ public:
         );
 
     const unsigned int & get_state() const;
-
-    void reset();
 
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
@@ -22986,7 +22941,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     for (size_t i = 0u; i < entities.size(); ++i)
     {
         EPI_DEBUG_FAIL_AT_TRUE(
-            entities[i] != other.entities[i],
+            entities[i].get() != other.entities[i].get(),
             "Agent:: entities[i] don't match"
         )
     }

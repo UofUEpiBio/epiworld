@@ -44,6 +44,8 @@ private:
 
     EntityToAgentFun<TSeq> dist_fun = nullptr;
 
+    void reset();
+
 public:
 
 
@@ -85,8 +87,6 @@ public:
     void set_queue(epiworld_fast_int init, epiworld_fast_int post);
     void get_state(epiworld_fast_int * init, epiworld_fast_int * post);
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
-
-    void reset();
 
     bool operator==(const Entity<TSeq> & other) const;
     bool operator!=(const Entity<TSeq> & other) const {return !operator==(other);};

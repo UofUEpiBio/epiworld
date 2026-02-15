@@ -188,7 +188,7 @@ inline bool Entity<TSeq>::operator==(const Entity<TSeq> & other) const
 
     for (size_t i = 0u; i < agents.size(); ++i)
     {
-        if (agents[i] != other.agents[i])
+        if (agents[i].get() != other.agents[i].get())
             return false;
     }
 

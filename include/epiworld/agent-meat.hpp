@@ -926,7 +926,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     for (size_t i = 0u; i < entities.size(); ++i)
     {
         EPI_DEBUG_FAIL_AT_TRUE(
-            entities[i] != other.entities[i],
+            entities[i].get() != other.entities[i].get(),
             "Agent:: entities[i] don't match"
         )
     }

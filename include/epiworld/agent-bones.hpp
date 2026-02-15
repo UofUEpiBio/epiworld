@@ -100,6 +100,8 @@ private:
     std::vector< ToolPtr<TSeq> > tools;
     unsigned int n_tools = 0u;
 
+    void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
+
 public:
 
     Agent();
@@ -244,8 +246,6 @@ public:
         );
 
     const unsigned int & get_state() const;
-
-    void reset();
 
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
