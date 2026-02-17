@@ -157,6 +157,54 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     #endif
 
     // Now test with run_multiple() using 2 threads
+    // Factory function to create and configure a model with entities and global events
+    auto create_test_model = [&contact_matrix]() -> epimodels::ModelSEIRMixing<> {
+        epimodels::ModelSEIRMixing<> m(
+            "TestVirus",
+            100,
+            0.01,
+            5.0,
+            0.5,
+            2.0,
+            0.3,
+            contact_matrix
+        );
+        m.seed(12345);
+        m.verbose_off();
+
+        // Add entities
+        Entity<> e0("Entity0", distribute_entity_to_range<>(0, 50));
+        Entity<> e1("Entity1", distribute_entity_to_range<>(50, 100));
+        m.add_entity(e0);
+        m.add_entity(e1);
+
+        // Add global event
+        // Note: No moved flag needed since date parameter ensures it only runs on day 5
+        m.add_globalevent(
+            [](Model<>* model_ptr) -> void {
+                Entity<> & entity0 = model_ptr->get_entity(0);
+                Entity<> & entity1 = model_ptr->get_entity(1);
+
+                for (size_t i = 0; i < 5; ++i)
+                {
+                    Agent<> & agent = model_ptr->get_agent(i);
+                    agent.rm_entity(entity0, model_ptr);
+                    agent.add_entity(entity1, model_ptr);
+                }
+
+                for (size_t i = 5; i < 10; ++i)
+                {
+                    Agent<> & agent = model_ptr->get_agent(i);
+                    agent.rm_entity(entity0, model_ptr);
+                }
+            },
+            "Move agents between entities",
+            5
+        );
+
+        return m;
+    };
+
     // Create savers to capture results from both runs
     auto saver_1thread = epiworld::make_save_run<>(
         "26-entity-add-rm-saves/main_out_1thread_%li",
@@ -186,93 +234,9 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         false  // outbreak_size
     );
 
-    // Model with 1 thread
-    epimodels::ModelSEIRMixing<> model_1thread(
-        "TestVirus",
-        100,
-        0.01,
-        5.0,
-        0.5,
-        2.0,
-        0.3,
-        contact_matrix
-    );
-    model_1thread.seed(12345);
-    model_1thread.verbose_off();
-
-    // Add entities to model_1thread
-    Entity<> e0_1thread("Entity0", distribute_entity_to_range<>(0, 50));
-    Entity<> e1_1thread("Entity1", distribute_entity_to_range<>(50, 100));
-    model_1thread.add_entity(e0_1thread);
-    model_1thread.add_entity(e1_1thread);
-
-    // Add global event to model_1thread
-    // Note: No moved flag needed since date parameter ensures it only runs on day 5
-    model_1thread.add_globalevent(
-        [](Model<>* m) -> void {
-            Entity<> & entity0 = m->get_entity(0);
-            Entity<> & entity1 = m->get_entity(1);
-
-            for (size_t i = 0; i < 5; ++i)
-            {
-                Agent<> & agent = m->get_agent(i);
-                agent.rm_entity(entity0, m);
-                agent.add_entity(entity1, m);
-            }
-
-            for (size_t i = 5; i < 10; ++i)
-            {
-                Agent<> & agent = m->get_agent(i);
-                agent.rm_entity(entity0, m);
-            }
-        },
-        "Move agents between entities",
-        5
-    );
-
-    // Model with 2 threads
-    epimodels::ModelSEIRMixing<> model_2thread(
-        "TestVirus",
-        100,
-        0.01,
-        5.0,
-        0.5,
-        2.0,
-        0.3,
-        contact_matrix
-    );
-    model_2thread.seed(12345);
-    model_2thread.verbose_off();
-
-    // Add entities to model_2thread
-    Entity<> e0_2thread("Entity0", distribute_entity_to_range<>(0, 50));
-    Entity<> e1_2thread("Entity1", distribute_entity_to_range<>(50, 100));
-    model_2thread.add_entity(e0_2thread);
-    model_2thread.add_entity(e1_2thread);
-
-    // Add global event to model_2thread
-    // Note: No moved flag needed since date parameter ensures it only runs on day 5
-    model_2thread.add_globalevent(
-        [](Model<>* m) -> void {
-            Entity<> & entity0 = m->get_entity(0);
-            Entity<> & entity1 = m->get_entity(1);
-
-            for (size_t i = 0; i < 5; ++i)
-            {
-                Agent<> & agent = m->get_agent(i);
-                agent.rm_entity(entity0, m);
-                agent.add_entity(entity1, m);
-            }
-
-            for (size_t i = 5; i < 10; ++i)
-            {
-                Agent<> & agent = m->get_agent(i);
-                agent.rm_entity(entity0, m);
-            }
-        },
-        "Move agents between entities",
-        5
-    );
+    // Create models using the factory function
+    auto model_1thread = create_test_model();
+    auto model_2thread = create_test_model();
 
     // Run multiple simulations with 1 thread and 2 threads
     model_1thread.run_multiple(10, 10, 1231, saver_1thread, true, false, 1);
