@@ -156,4 +156,119 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     }
     #endif
 
+    // Now test with run_multiple() using 2 threads
+    // Factory function to create and configure a model with entities and global events
+    auto create_test_model = [&contact_matrix]() -> epimodels::ModelSEIRMixing<> {
+        epimodels::ModelSEIRMixing<> m(
+            "TestVirus",
+            100,
+            0.01,
+            5.0,
+            0.5,
+            2.0,
+            0.3,
+            contact_matrix
+        );
+        m.seed(12345);
+        m.verbose_off();
+
+        // Add entities
+        Entity<> e0("Entity0", distribute_entity_to_range<>(0, 50));
+        Entity<> e1("Entity1", distribute_entity_to_range<>(50, 100));
+        m.add_entity(e0);
+        m.add_entity(e1);
+
+        // Add global event
+        // Note: No moved flag needed since date parameter ensures it only runs on day 5
+        m.add_globalevent(
+            [](Model<>* model_ptr) -> void {
+                Entity<> & entity0 = model_ptr->get_entity(0);
+                Entity<> & entity1 = model_ptr->get_entity(1);
+
+                for (size_t i = 0; i < 5; ++i)
+                {
+                    Agent<> & agent = model_ptr->get_agent(i);
+                    agent.rm_entity(entity0, model_ptr);
+                    agent.add_entity(entity1, model_ptr);
+                }
+
+                for (size_t i = 5; i < 10; ++i)
+                {
+                    Agent<> & agent = model_ptr->get_agent(i);
+                    agent.rm_entity(entity0, model_ptr);
+                }
+            },
+            "Move agents between entities",
+            5
+        );
+
+        return m;
+    };
+
+    // Create savers to capture results from both runs
+    auto saver_1thread = epiworld::make_save_run<>(
+        "26-entity-add-rm-saves/main_out_1thread_%li",
+        true,  // total_hist
+        false, // variant_info
+        false, // variant_hist
+        false, // tool_info
+        false, // tool_hist
+        false, // transmission
+        false, // transition
+        false, // reproductive
+        false, // generation
+        false  // outbreak_size
+    );
+
+    auto saver_2thread = epiworld::make_save_run<>(
+        "26-entity-add-rm-saves/main_out_2thread_%li",
+        true,  // total_hist
+        false, // variant_info
+        false, // variant_hist
+        false, // tool_info
+        false, // tool_hist
+        false, // transmission
+        false, // transition
+        false, // reproductive
+        false, // generation
+        false  // outbreak_size
+    );
+
+    // Create models using the factory function
+    auto model_1thread = create_test_model();
+    auto model_2thread = create_test_model();
+
+    // Run multiple simulations with 1 thread and 2 threads
+    model_1thread.run_multiple(10, 10, 1231, saver_1thread, true, false, 1);
+    model_2thread.run_multiple(10, 10, 1231, saver_2thread, true, false, 2);
+
+    // Compare the results from both runs
+    for (size_t i = 0u; i < 10u; ++i)
+    {
+        std::string file_1thread = "26-entity-add-rm-saves/main_out_1thread_" + std::to_string(i) + "_total_hist.csv";
+        std::string file_2thread = "26-entity-add-rm-saves/main_out_2thread_" + std::to_string(i) + "_total_hist.csv";
+
+        auto content_1thread = file_reader(file_1thread);
+        auto content_2thread = file_reader(file_2thread);
+
+        #ifdef CATCH_CONFIG_MAIN
+        REQUIRE_THAT(content_1thread, Catch::Equals(content_2thread));
+        #else
+        if (content_1thread != content_2thread)
+        {
+            printf_epiworld(
+                "Files %s and %s are different\n",
+                file_1thread.c_str(), file_2thread.c_str()
+            );
+            throw std::logic_error("Multi-threading test failed - results differ!");
+        }
+        #endif
+    }
+
+    #ifdef CATCH_CONFIG_MAIN
+    // Success message for multi-threading test
+    #else
+    printf_epiworld("Multi-threading test completed successfully!\n");
+    #endif
+
 }
