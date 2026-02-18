@@ -34,19 +34,19 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
 
     std::vector< bool > ids(model.size(), false);
     int nrepeats = 0;
-    for (const auto & a: agents1)
+    for (const Agent<> & a: agents1)
     {
-        if (ids[a])
+        if (ids[a.get_id()])
             nrepeats++;
         else
-            ids[a] = true;
+            ids[a.get_id()] = true;
     }
-    for (const auto & a: agents2)
+    for (const Agent<> & a: agents2)
     {
-        if (ids[a])
+        if (ids[a.get_id()])
             nrepeats++;
         else
-            ids[a] = true;
+            ids[a.get_id()] = true;
     }
 
     // Accumulate ids if they are true
@@ -87,11 +87,11 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     auto agents4 = model2.get_entity(1).get_agents();
 
     std::vector< int > counts(model2.size(), 0);
-    for (const auto & a: agents3)
-        counts[a]++;
+    for (const Agent<> & a: agents3)
+        counts[a.get_id()]++;
 
-    for (const auto & a: agents4)
-        counts[a]++;
+    for (const Agent<> & a: agents4)
+        counts[a.get_id()]++;
     
     double n0 = 0, n1 = 0, n2 = 0;
     for (const auto & c: counts)
@@ -112,8 +112,8 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
 
     // Checking distribution via sets
     std::vector< std::vector< size_t > > dist = {
-        model.get_entity(0).get_agents(),
-        model.get_entity(1).get_agents()
+        model.get_entity(0).get_agents_ids(),
+        model.get_entity(1).get_agents_ids()
     };
 
     // Creating a copy of the model
@@ -137,8 +137,8 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
 
     // Should match the results!
     std::vector< std::vector< size_t > > dist2 = {
-        model3.get_entity(0).get_agents(),
-        model3.get_entity(1).get_agents()
+        model3.get_entity(0).get_agents_ids(),
+        model3.get_entity(1).get_agents_ids()
     };
 
     #ifdef CATCH_CONFIG_MAIN

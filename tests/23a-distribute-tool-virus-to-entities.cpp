@@ -52,14 +52,13 @@ EPIWORLD_TEST_CASE("distribute_tool_virus_to_entities_proportions", "[distribute
         size_t, Model<>* m
     ) -> void {
         // Record counts at time 0
-        auto & population = m->get_agents();
         for (size_t e = 0; e < m->get_entities().size(); ++e) {
-            auto & entity_agents = m->get_entity(e).get_agents();
-            for (auto agent_id : entity_agents) {
-                if (population[agent_id].get_virus() != nullptr) {
+
+            for (const Agent<> & agent : m->get_entity(e)) {
+                if (agent.get_virus() != nullptr) {
                     virus_counts_by_entity[e]++;
                 }
-                if (population[agent_id].get_n_tools() > 0) {
+                if (agent.get_n_tools() > 0) {
                     tool_counts_by_entity[e]++;
                 }
             }

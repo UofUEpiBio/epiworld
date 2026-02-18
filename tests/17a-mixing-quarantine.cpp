@@ -57,7 +57,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     // Getting all agents
     int n_wrong = 0;
 
-    for (const auto & a : model.get_agents())
+    for (const Agent<> & a : model.get_agents())
     {
         if (a.get_state() != epimodels::ModelSEIRMixingQuarantine<>::SUSCEPTIBLE)
         {
@@ -90,7 +90,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     // Getting all agents
     n_wrong = 0;
 
-    for (const auto & a : model.get_agents())
+    for (const Agent<> & a : model.get_agents())
     {
 
         if (a.get_id() == 0)
@@ -161,14 +161,14 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     auto agents3 = model.get_entity(2).get_agents();
 
     std::vector< int > counts(model.size(), 0);
-    for (const auto & a: agents1)
-        counts[a]++;
+    for (const Agent<> & a: agents1)
+        counts[a.get_id()]++;
 
-    for (const auto & a: agents2)
-        counts[a]++;
+    for (const Agent<> & a: agents2)
+        counts[a.get_id()]++;
 
-    for (const auto & a: agents3)
-        counts[a]++;
+    for (const Agent<> & a: agents3)
+        counts[a.get_id()]++;
     
     double n0 = 0, n1 = 0, n2 = 0, n3 = 0;
     for (const auto & c: counts)
