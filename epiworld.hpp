@@ -11508,7 +11508,6 @@ class Agent {
     friend class Tools<TSeq>;
     friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
-    friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
@@ -20722,7 +20721,6 @@ class Agent {
     friend class Tools<TSeq>;
     friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
-    friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
@@ -21508,7 +21506,6 @@ class Agent {
     friend class Tools<TSeq>;
     friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
-    friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
@@ -22380,11 +22377,11 @@ inline void Agent<TSeq>::rm_entity(
     if (entity_idx >= entities.size())
         throw std::range_error(
             "The Entity you want to remove is out of range. This Agent only has " +
-            std::to_string(entities.size()) + " entitites."
+            std::to_string(entities.size()) + " entity(ies)."
         );
     else if (entities.size() == 0u)
         throw std::logic_error(
-            "There is entity to remove here!"
+            "There is no entity to remove here!"
         );
 
     model->events_add(
@@ -22410,17 +22407,12 @@ inline void Agent<TSeq>::rm_entity(
 {
 
     // Looking for entity location in the agent
-    int entity_idx = -1;
-    for (Entity<TSeq> & a_entity: entities)
-    {
-        if (a_entity.get_id() == entity.get_id())
-        {
-            entity_idx++;
-            break;
-        }
-    }
+    // bool found = false;
+    bool found = std::find_if(entities.begin(), entities.end(), [&entity](const Entity<TSeq> & e) {
+        return e.get_id() == entity.get_id();
+    }) != entities.end();
 
-    if (entity_idx == -1)
+    if (!found)
         throw std::logic_error(
             std::string("The agent ") +
             std::to_string(id) +
@@ -23229,21 +23221,21 @@ inline AgentsSample<TSeq>::AgentsSample(
 
     // Computing the cumulative sum of counts across entities
     size_t agents_in_entities = 0;
-    Entities<TSeq> entities_a = agent->get_entities();
+    const auto & entities_a = agent->get_entities();
 
     std::vector< size_t > cum_agents_count(entities_a.size(), 0);
     int idx = -1;
-    for (auto & e : entities_a)
+    for (const Entity<TSeq> & e : entities_a)
     {
         if (++idx == 0)
-            cum_agents_count[idx] = (e->size() - 1u);
+            cum_agents_count[idx] = (e.size() - 1u);
         else
             cum_agents_count[idx] = (
-                (e->size() - 1u) + 
+                (e.size() - 1u) + 
                 cum_agents_count[idx - 1]
             );
 
-        agents_in_entities += (e->size() - 1u);
+        agents_in_entities += (e.size() - 1u);
     }
 
     if (truncate)
@@ -23394,12 +23386,11 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
             agents_left->reserve(entity->size());
 
             // Iterating through the agents in the entity
-            int a_i = -1;
-            for (const Agent<TSeq> & agent: entity->get_agents())
+            for (size_t a_i = 0u; a_i < entity->size(); ++a_i)
             {
-                size_t s = agent.get_state();
+                size_t s = entity->agents[a_i].get().get_state();
                 if (std::find(states.begin(), states.end(), s) != states.end())
-                    agents_left->push_back(++a_i);
+                    agents_left->push_back(a_i);
 
             }
 
