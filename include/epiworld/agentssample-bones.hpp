@@ -358,7 +358,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
             agents_left->reserve(entity->size());
 
             // Iterating through the agents in the entity
-            size_t a_i = -1;
+            int a_i = -1;
             for (const Agent<TSeq> & agent: entity->get_agents())
             {
                 size_t s = agent.get_state();
