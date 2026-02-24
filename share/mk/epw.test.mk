@@ -27,7 +27,7 @@ $(NAME)-test: $(NAME)-test-gen-report
 
 .PHONY: $(NAME)-test-gen-report
 $(NAME)-test-gen-report: override NAME := $(NAME)
-$(NAME)-test-gen-report: $(NAME)-tests-all
+$(NAME)-test-gen-report: $(NAME)-tests
 	$(SAY) "REPORT" $($(NAME)_TEST_DIR)/report.html
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-genhtml.pl $($(NAME)_TEST_DIR)/report.xml > $($(NAME)_TEST_DIR)/report.html
 	$(SAY) "REPORT" $($(NAME)_TEST_DIR)/report.xml
@@ -38,29 +38,44 @@ $(NAME)-test-gen-report: $(NAME)-tests-all
 		perl $(ROOT_SOURCE_DIR)/script/junit-report.pl $($(NAME)_TEST_DIR)/report.xml; \
 	fi
 	
-.PHONY: $(NAME)-tests-all
-$(NAME)-tests-all: override NAME := $(NAME)
-$(NAME)-tests-all: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_BUILD_DIR)/test.mk | $($(NAME)_TEST_HOOKS)
+.PHONY: $(NAME)-tests
+$(NAME)-tests: override NAME := $(NAME)
+$(NAME)-tests: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_BUILD_DIR)/test.mk | $($(NAME)_TEST_HOOKS)
 	$(SAY) "SUITE" $@
 	$(V)mkdir -p $($(NAME)_TEST_DIR)
 	
-ifeq ($(PARALLEL_TESTS),1)
+ifneq ($(TESTS),)
+	$(V)echo "Running tests: $(TESTS)"
+	$(V)mkdir -p $($(NAME)_TEST_DIR)
+	$(V)cd $($(NAME)_TEST_DIR) && \
+	IFS=';'; \
+	set -- $(TESTS); \
+	GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(abspath $($(NAME)_COV_DIR))' $(abspath $($(NAME)_BUILD_DIR)/$(NAME)) \
+		--reporter junit \
+		--out $(abspath $($(NAME)_TEST_DIR))/report.xml \
+		"$$@"
+else
 	$(V)export OMP_NUM_THREADS=1; \
 	$(MAKE) \
 		-C $($(NAME)_TEST_DIR) \
 		-f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
-		V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)'
+		V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)' TESTS='$(TESTS)'
         
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-combine.pl $($(NAME)_TEST_DIR)/report-*.xml > $(abspath $($(NAME)_TEST_DIR))/report.xml
-else
-	$(V)mkdir -p $($(NAME)_TEST_DIR)
-	$(V)cd $($(NAME)_TEST_DIR) && \
-	GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(abspath $($(NAME)_COV_DIR))' $(abspath $($(NAME)_BUILD_DIR)/$(NAME)) \
-		--reporter junit \
-		--out $(abspath $($(NAME)_TEST_DIR))/report.xml
 endif
 
-ifeq ($(PARALLEL_TESTS),1)
+ifneq ($(TESTS),1)
+ifeq ($(WITH_COVERAGE),1)
+	$(V)for f in $($(NAME)_BUILD_DIR)/*.gcno; do \
+		ln -sf "$$(realpath $$f)" "$(abspath $($(NAME)_COV_DIR))/$$(basename $$f)"; \
+	done
+	$(SAY) 'LCOV' '$(abspath $($(NAME)_COV_DIR))/coverage.info'
+	$(V)$(LCOV) --capture --directory "$(abspath $($(NAME)_COV_DIR))" --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
+		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
+	$(V)$(LCOV) --extract "$(abspath $($(NAME)_COV_DIR))/coverage.info" $(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d))) --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
+		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
+endif
+else
 ifeq ($(WITH_COVERAGE),1)
 	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/coverage.info'
 	$(V)merge_args=""; \
@@ -71,17 +86,6 @@ ifeq ($(WITH_COVERAGE),1)
 		--output-file '$($(NAME)_COV_DIR)/coverage.info' \
 		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
 	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info
-endif	
-else
-ifeq ($(WITH_COVERAGE),1)
-	$(V)for f in $($(NAME)_BUILD_DIR)/*.gcno; do \
-		ln -sf "$$(realpath $$f)" "$(abspath $($(NAME)_COV_DIR))/$$(basename $$f)"; \
-	done
-	$(SAY) 'LCOV' '$(abspath $($(NAME)_COV_DIR))/coverage.info'
-	$(V)$(LCOV) --capture --directory "$(abspath $($(NAME)_COV_DIR))" --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
-		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
-	$(V)$(LCOV) --extract "$(abspath $($(NAME)_COV_DIR))/coverage.info" $(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d))) --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
-		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
 endif
 endif
 

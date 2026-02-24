@@ -25,8 +25,8 @@ CALLGRIND_ANNOTATE ?= callgrind_annotate
 # Verbosity.
 V := $(if $(VERBOSE),,@)
 
-# Run tests in parallel.
-PARALLEL_TESTS ?= 1
+# Tests to run in the suite.
+TESTS :=
 
 # Compilation flags.
 
@@ -74,9 +74,10 @@ ROOT_BUILD_DIR   := $(ROOT_SOURCE_DIR)/build
 ALL_PROGRAMS     :=
 TEST_FILES       :=
 
-EXAMPLE_TARGETS  :=
-README_TARGETS   :=
-TEST_TARGETS	 :=
+EXAMPLE_TARGETS     :=
+EXAMPLE_RUN_TARGETS := 
+README_TARGETS      :=
+TEST_TARGETS	    :=
 
 # What packages to include.
 ALL_PACKAGES := examples tests 
@@ -117,7 +118,7 @@ $(foreach package,$(PACKAGES),$(eval $(call INCLUDE_PACKAGE,$(package))))
 
 # And this is where it all begins...
 .PHONY: examples
-examples: $(EXAMPLE_TARGETS)
+examples: $(EXAMPLE_RUN_TARGETS)
 	
 .PHONY: readmes
 readmes: $(README_TARGETS)
@@ -142,7 +143,22 @@ all:
 	@printf "\n"
 	@printf "\t$(MAKE) <target>\n"
 	@printf "\n"
-	@printf "See the README for project documentation.\n"
+	@printf "Run \`make examples' to run all examples, or you can run any specific set of examples with the below targets:\n\n"
+	@for target in $(EXAMPLE_RUN_TARGETS); do \
+	    printf "  - %s\n" $$target; \
+	done
+	@printf "\n"
+	@printf "Run \`make readmes' to regenerate all READMES, or you can regenerate any specific set of example READMEs with the below targets:\n\n"
+	@for target in $(README_TARGETS); do \
+	    printf "  - %s\n" $$target; \
+	done
+	@printf "\n"
+	@printf "Run \`make test' to run all tests, or you can run any specific suite of tests with the below targets:\n\n"
+	@for target in $(TEST_TARGETS); do \
+	    printf "  - %s\n" $$target; \
+	done
+	@printf "\n"
+	@printf "See the README for project documentation, or DEVELOPERS for more information.\n"
 
 # Emit our internal databases of what we know about.
 .PHONY: program-database
