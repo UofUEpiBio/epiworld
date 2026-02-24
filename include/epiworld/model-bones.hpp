@@ -192,6 +192,10 @@ protected:
     // std::chrono::milliseconds
     std::chrono::duration<epiworld_double,std::micro> time_elapsed =
         std::chrono::duration<epiworld_double,std::micro>::zero();
+    std::chrono::duration<epiworld_double,std::micro> time_elapsed_setup =
+        std::chrono::duration<epiworld_double,std::micro>::zero();
+    std::chrono::duration<epiworld_double,std::micro> time_elapsed_last_setup =
+        std::chrono::duration<epiworld_double,std::micro>::zero();
     epiworld_fast_uint n_replicates = 0u;
     void chrono_start();
     void chrono_end();
@@ -631,6 +635,14 @@ public:
     ///@}
 
     void get_elapsed(
+        std::string unit = "auto",
+        epiworld_double * last_elapsed = nullptr,
+        epiworld_double * total_elapsed = nullptr,
+        std::string * unit_abbr = nullptr,
+        bool print = true
+    ) const;
+
+    void get_elapsed_setup(
         std::string unit = "auto",
         epiworld_double * last_elapsed = nullptr,
         epiworld_double * total_elapsed = nullptr,

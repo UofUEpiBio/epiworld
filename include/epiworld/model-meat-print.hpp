@@ -85,6 +85,12 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         std::string abbr;
         epiworld_double elapsed;
         epiworld_double total;
+        get_elapsed_setup("auto", &elapsed, &total, &abbr, false);
+        printf_epiworld("Last run setup t    : %.2f%s\n", elapsed, abbr.c_str());
+        if (n_replicates > 1u)
+        {
+            printf_epiworld("Total setup t       : %.2f%s (%i runs)\n", total, abbr.c_str(), static_cast<int>(n_replicates));
+        }
         get_elapsed("auto", &elapsed, &total, &abbr, false);
         printf_epiworld("Last run elapsed t  : %.2f%s\n", elapsed, abbr.c_str());
         if (n_replicates > 1u)
@@ -110,6 +116,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         }
 
     } else {
+        printf_epiworld("Last run setup t    : -\n");
         printf_epiworld("Last run elapsed t  : -\n");
     }
     

@@ -1460,8 +1460,13 @@ inline Model<TSeq> & Model<TSeq>::run(
 
     }
 
-    // Starting first infection and tools
-    reset();
+    // Starting first infection and tools - measure setup time
+    {
+        auto tp = std::chrono::steady_clock::now();
+        reset();
+        time_elapsed_last_setup = std::chrono::steady_clock::now() - tp;
+    }
+    time_elapsed_setup += time_elapsed_last_setup;
 
     // Initializing the simulation
     chrono_start();
@@ -2222,6 +2227,11 @@ inline epiworld_double Model<TSeq>::par(std::string pname) const
         elapsed_total = std::chrono::duration_cast<std::chrono:: tunit>(time_elapsed).count(); \
         abbr_unit     = txtunit;}
 
+#define DURCAST_SETUP(tunit,txtunit) {\
+        elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(time_elapsed_last_setup).count(); \
+        elapsed_total = std::chrono::duration_cast<std::chrono:: tunit>(time_elapsed_setup).count(); \
+        abbr_unit     = txtunit;}
+
 template<typename TSeq>
 inline void Model<TSeq>::get_elapsed(
     std::string unit,
@@ -2291,6 +2301,78 @@ inline void Model<TSeq>::get_elapsed(
 
     } else {
         printf_epiworld("last run elapsed time : %.2f%s.\n", elapsed, abbr_unit.c_str());
+    }
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::get_elapsed_setup(
+    std::string unit,
+    epiworld_double * last_elapsed,
+    epiworld_double * total_elapsed,
+    std::string * unit_abbr,
+    bool print
+) const {
+
+    // Preparing the result
+    epiworld_double elapsed, elapsed_total;
+    std::string abbr_unit;
+
+    // Figuring out the length
+    if (unit == "auto")
+    {
+
+        size_t tlength = std::to_string(
+            static_cast<int>(floor(time_elapsed_setup.count()))
+            ).length();
+
+        if (tlength <= 1)
+            unit = "nanoseconds";
+        else if (tlength <= 3)
+            unit = "microseconds";
+        else if (tlength <= 6)
+            unit = "milliseconds";
+        else if (tlength <= 8)
+            unit = "seconds";
+        else if (tlength <= 9)
+            unit = "minutes";
+        else
+            unit = "hours";
+
+    }
+
+    if (unit == "nanoseconds")       DURCAST_SETUP(nanoseconds,"ns")
+    else if (unit == "microseconds") DURCAST_SETUP(microseconds,"\xC2\xB5s")
+    else if (unit == "milliseconds") DURCAST_SETUP(milliseconds,"ms")
+    else if (unit == "seconds")      DURCAST_SETUP(seconds,"s")
+    else if (unit == "minutes")      DURCAST_SETUP(minutes,"m")
+    else if (unit == "hours")        DURCAST_SETUP(hours,"h")
+    else
+        throw std::range_error("The time unit " + unit + " is not supported.");
+
+
+    if (last_elapsed != nullptr)
+        *last_elapsed = elapsed;
+    if (total_elapsed != nullptr)
+        *total_elapsed = elapsed_total;
+    if (unit_abbr != nullptr)
+        *unit_abbr = abbr_unit;
+
+    if (!print)
+        return;
+
+    if (n_replicates > 1u)
+    {
+        printf_epiworld("last run setup time   : %.2f%s\n",
+            elapsed, abbr_unit.c_str());
+        printf_epiworld("total setup time      : %.2f%s\n",
+            elapsed_total, abbr_unit.c_str());
+        printf_epiworld("total runs            : %i\n",
+            static_cast<int>(n_replicates));
+        printf_epiworld("mean run setup time   : %.2f%s\n",
+            elapsed_total/static_cast<epiworld_double>(n_replicates), abbr_unit.c_str());
+
+    } else {
+        printf_epiworld("last run setup time   : %.2f%s.\n", elapsed, abbr_unit.c_str());
     }
 }
 
