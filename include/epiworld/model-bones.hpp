@@ -144,8 +144,8 @@ protected:
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
 
-    std::uniform_real_distribution<> runifd      =
-        std::uniform_real_distribution<> (0.0, 1.0);
+    epiworld_double runifd_a = 0.0;
+    epiworld_double runifd_b = 1.0;
     std::normal_distribution<>       rnormd      =
         std::normal_distribution<>(0.0);
     std::gamma_distribution<>        rgammad     =

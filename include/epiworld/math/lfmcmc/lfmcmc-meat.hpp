@@ -347,7 +347,7 @@ inline void LFMCMC<TData>::run(
 template<typename TData>
 inline epiworld_double LFMCMC<TData>::runif()
 {
-    return runifd->operator()(*m_engine);
+    return runif_mt19937(*m_engine);
 }
 
 template<typename TData>
@@ -356,7 +356,7 @@ inline epiworld_double LFMCMC<TData>::runif(
     epiworld_double ub
 )
 {
-    return runifd->operator()(*m_engine) * (ub - lb) + lb;
+    return runif_mt19937(*m_engine) * (ub - lb) + lb;
 }
 
 template<typename TData>

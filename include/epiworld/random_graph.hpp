@@ -1,11 +1,11 @@
 #ifndef EPIWORLD_RANDOM_GRAPH_HPP
 #define EPIWORLD_RANDOM_GRAPH_HPP
 
+
 class RandGraph {
 
 private:
     std::shared_ptr< std::mt19937 > engine;
-    std::uniform_real_distribution<> unifd;
     int N = 0;
     bool initialized = false;
 
@@ -44,7 +44,7 @@ inline epiworld_double RandGraph::runif() {
     if (!initialized)
         throw std::logic_error("The object has not been initialized");
 
-    return unifd(*engine);
+    return runif_mt19937(*engine);
 
 }
 

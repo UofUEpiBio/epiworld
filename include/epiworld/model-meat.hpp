@@ -500,7 +500,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     entities(std::move(model.entities)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
-    runifd(std::move(model.runifd)),
+    runifd_a(model.runifd_a),
+    runifd_b(model.runifd_b),
     rnormd(std::move(model.rnormd)),
     rgammad(std::move(model.rgammad)),
     rlognormald(std::move(model.rlognormald)),
@@ -732,7 +733,8 @@ inline void Model<TSeq>::set_rand_norm(epiworld_double mean, epiworld_double sd)
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_unif(epiworld_double a, epiworld_double b)
 {
-    runifd  = std::uniform_real_distribution<>(a, b);
+    runifd_a = a;
+    runifd_b = b;
 }
 
 template<typename TSeq>
@@ -863,13 +865,14 @@ inline std::shared_ptr< std::mt19937 > & Model<TSeq>::get_rand_endgine()
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return runifd(*engine);
+    epiworld_double res = runif_mt19937(*engine);
+    return res * (runifd_b - runifd_a) + runifd_a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return runifd(*engine) * (b - a) + a;
+    return runif_mt19937(*engine) * (b - a) + a;
 }
 
 template<typename TSeq>

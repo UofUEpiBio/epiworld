@@ -3,6 +3,7 @@
 #include <memory>
 #include <stdexcept>
 #include <random>
+#include <cmath>
 #include <fstream>
 #include <string>
 #include <map>
@@ -41,6 +42,7 @@ namespace epiworld {
     #include "misc.hpp"
     #include "progress.hpp"
 
+    #include "rng-utils.hpp"
     #include "modeldiagram-bones.hpp"
     #include "modeldiagram-meat.hpp"
 
