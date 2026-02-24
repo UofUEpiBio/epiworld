@@ -27,8 +27,8 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 11
-#define EPIWORLD_VERSION_PATCH 2
+#define EPIWORLD_VERSION_MINOR 12
+#define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -87,8 +87,6 @@ namespace epiworld {
     #include "entity-bones.hpp"
     #include "entity-distribute-meat.hpp"
     #include "entity-meat.hpp"
-
-    #include "entities-bones.hpp"
     
     #include "agent-meat-virus-sampling.hpp"
     #include "agent-meat-state.hpp"

@@ -5,6 +5,7 @@
 #include <random>
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <map>
 #include <unordered_map>
 #include <chrono>
@@ -26,8 +27,8 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 11
-#define EPIWORLD_VERSION_PATCH 2
+#define EPIWORLD_VERSION_MINOR 12
+#define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
 static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
@@ -38,7 +39,7 @@ namespace epiworld {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/config.hpp-
+ Start of -./include/epiworld/config.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -343,7 +344,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/config.hpp-
+ End of -./include/epiworld/config.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -352,7 +353,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/epiworld-macros.hpp-
+ Start of -./include/epiworld/epiworld-macros.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -487,7 +488,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/epiworld-macros.hpp-
+ End of -./include/epiworld/epiworld-macros.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -497,7 +498,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/misc.hpp-
+ Start of -./include/epiworld/misc.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -838,7 +839,7 @@ inline std::map< std::string, T > read_yaml(std::string fn)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/misc.hpp-
+ End of -./include/epiworld/misc.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -847,7 +848,7 @@ inline std::map< std::string, T > read_yaml(std::string fn)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/progress.hpp-
+ Start of -./include/epiworld/progress.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -940,7 +941,7 @@ inline void Progress::next() {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/progress.hpp-
+ End of -./include/epiworld/progress.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -950,7 +951,7 @@ inline void Progress::next() {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/modeldiagram-bones.hpp-
+ Start of -./include/epiworld/modeldiagram-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1067,7 +1068,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/modeldiagram-bones.hpp-
+ End of -./include/epiworld/modeldiagram-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1076,7 +1077,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/modeldiagram-meat.hpp-
+ Start of -./include/epiworld/modeldiagram-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1430,7 +1431,7 @@ inline void ModelDiagram::draw_from_data(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/modeldiagram-meat.hpp-
+ End of -./include/epiworld/modeldiagram-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1440,7 +1441,7 @@ inline void ModelDiagram::draw_from_data(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/math/distributions.hpp-
+ Start of -./include/epiworld/math/distributions.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1617,7 +1618,7 @@ inline double gen_int_mean(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/math/distributions.hpp-
+ End of -./include/epiworld/math/distributions.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1627,7 +1628,7 @@ inline double gen_int_mean(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/math/lfmcmc.hpp-
+ Start of -./include/epiworld/math/lfmcmc.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3082,7 +3083,7 @@ inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/math/lfmcmc.hpp-
+ End of -./include/epiworld/math/lfmcmc.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3092,7 +3093,7 @@ inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/userdata-bones.hpp-
+ Start of -./include/epiworld/userdata-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3201,7 +3202,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/userdata-bones.hpp-
+ End of -./include/epiworld/userdata-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3210,7 +3211,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/userdata-meat.hpp-
+ Start of -./include/epiworld/userdata-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3436,7 +3437,7 @@ inline void UserData<TSeq>::print() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/userdata-meat.hpp-
+ End of -./include/epiworld/userdata-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3446,7 +3447,7 @@ inline void UserData<TSeq>::print() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/seq_processing.hpp-
+ Start of -./include/epiworld/seq_processing.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3549,7 +3550,7 @@ inline std::string default_seq_writer<int>(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/seq_processing.hpp-
+ End of -./include/epiworld/seq_processing.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3559,7 +3560,7 @@ inline std::string default_seq_writer<int>(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/hospitalizationstracker-bones.hpp-
+ Start of -./include/epiworld/hospitalizationstracker-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3674,7 +3675,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/hospitalizationstracker-bones.hpp-
+ End of -./include/epiworld/hospitalizationstracker-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3683,7 +3684,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/hospitalizationstracker-meat.hpp-
+ Start of -./include/epiworld/hospitalizationstracker-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3822,7 +3823,7 @@ inline size_t HospitalizationsTracker<TSeq>::size() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/hospitalizationstracker-meat.hpp-
+ End of -./include/epiworld/hospitalizationstracker-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3832,7 +3833,7 @@ inline size_t HospitalizationsTracker<TSeq>::size() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/database-bones.hpp-
+ Start of -./include/epiworld/database-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4250,7 +4251,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/database-bones.hpp-
+ End of -./include/epiworld/database-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4259,7 +4260,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/database-meat.hpp-
+ Start of -./include/epiworld/database-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -7699,7 +7700,7 @@ inline void DataBase<TSeq>::get_hospitalizations(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/database-meat.hpp-
+ End of -./include/epiworld/database-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -7708,7 +7709,7 @@ inline void DataBase<TSeq>::get_hospitalizations(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/adjlist-bones.hpp-
+ Start of -./include/epiworld/adjlist-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -7795,7 +7796,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/adjlist-bones.hpp-
+ End of -./include/epiworld/adjlist-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -7804,7 +7805,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/adjlist-meat.hpp-
+ Start of -./include/epiworld/adjlist-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8035,7 +8036,7 @@ inline bool AdjList::is_directed() const {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/adjlist-meat.hpp-
+ End of -./include/epiworld/adjlist-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8045,7 +8046,7 @@ inline bool AdjList::is_directed() const {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/randgraph.hpp-
+ Start of -./include/epiworld/randgraph.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8245,6 +8246,9 @@ inline void rewire_degseq(
 
     epiworld_double nedges = 0.0;
     auto & dat = agents->get_dat();
+
+    if (dat.size() > nties.size())
+        throw std::logic_error("Inconsistent adjacency list data.");
 
     for (size_t i = 0u; i < dat.size(); ++i)
         nties[i] += dat[i].size();
@@ -8658,7 +8662,7 @@ inline AdjList rgraph_blocked(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/randgraph.hpp-
+ End of -./include/epiworld/randgraph.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8668,7 +8672,7 @@ inline AdjList rgraph_blocked(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/queue-bones.hpp-
+ Start of -./include/epiworld/queue-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8805,7 +8809,7 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/queue-bones.hpp-
+ End of -./include/epiworld/queue-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8815,7 +8819,7 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/globalevent-bones.hpp-
+ Start of -./include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8877,7 +8881,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/globalevent-bones.hpp-
+ End of -./include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8886,7 +8890,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/globalevent-meat.hpp-
+ Start of -./include/epiworld/globalevent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8973,7 +8977,7 @@ inline bool GlobalEvent<TSeq>::operator!=(const GlobalEvent<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/globalevent-meat.hpp-
+ End of -./include/epiworld/globalevent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8983,7 +8987,7 @@ inline bool GlobalEvent<TSeq>::operator!=(const GlobalEvent<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/model-bones.hpp-
+ Start of -./include/epiworld/model-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9132,7 +9136,6 @@ protected:
     std::vector< ToolPtr<TSeq> > tools = {};
 
     std::vector< Entity<TSeq> > entities = {};
-    std::vector< Entity<TSeq> > entities_backup = {};
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
 
@@ -9808,7 +9811,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/model-bones.hpp-
+ End of -./include/epiworld/model-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9817,7 +9820,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/model-meat.hpp-
+ Start of -./include/epiworld/model-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -10513,7 +10516,6 @@ protected:
     std::vector< ToolPtr<TSeq> > tools = {};
 
     std::vector< Entity<TSeq> > entities = {};
-    std::vector< Entity<TSeq> > entities_backup = {};
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
 
@@ -11198,232 +11200,6 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entities-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_ENTITIES_BONES_HPP
-#define EPIWORLD_ENTITIES_BONES_HPP
-
-template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Agent;
-
-
-/**
- * @brief Set of Entities (useful for building iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Entities {
-    friend class Entity<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    std::vector< Entity<TSeq> * >  dat;
-    const size_t n_entities;
-
-public:
-
-    Entities() = delete;
-    Entities(Agent<TSeq> & p);
-
-    typename std::vector< Entity<TSeq> * >::iterator begin();
-    typename std::vector< Entity<TSeq> * >::iterator end();
-
-    Entity<TSeq> & operator()(size_t i);
-    Entity<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    bool operator==(const Entities<TSeq> & other) const;
-
-};
-
-template<typename TSeq>
-inline Entities<TSeq>::Entities(Agent<TSeq> & p) :
-    n_entities(p.get_n_entities())
-{
-
-    dat.reserve(n_entities);
-    for (size_t i = 0u; i < n_entities; ++i)
-        dat.push_back(&p.get_entity(i));
-
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::begin()
-{
-
-    if (n_entities == 0u)
-        return dat.end();
-    
-    return dat.begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::end()
-{
-     
-    return begin() + n_entities;
-}
-
-template<typename TSeq>
-inline Entity<TSeq> & Entities<TSeq>::operator()(size_t i)
-{
-
-    if (i >= n_entities)
-        throw std::range_error("Entity index out of range.");
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline Entity<TSeq> & Entities<TSeq>::operator[](size_t i)
-{
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline size_t Entities<TSeq>::size() const noexcept 
-{
-    return n_entities;
-}
-
-template<typename TSeq>
-inline bool Entities<TSeq>::operator==(const Entities<TSeq> & other) const
-{
-
-    if (n_entities != other.n_entities)
-        return false;
-
-    for (size_t i = 0u; i < dat.size(); ++i)
-    {
-        if (dat[i] != other.dat[i])
-            return false;
-    }
-
-    return true;
-}
-
-/**
- * @brief Set of Entities (const) (useful for iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Entities_const {
-    friend class Virus<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    const std::vector< Entity<TSeq>* > dat;
-    const size_t n_entities;
-
-public:
-
-    Entities_const() = delete;
-    Entities_const(const Agent<TSeq> & p);
-
-    typename std::vector< Entity<TSeq>* >::const_iterator begin();
-    typename std::vector< Entity<TSeq>* >::const_iterator end();
-
-    const Entity<TSeq> & operator()(size_t i);
-    const Entity<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    bool operator==(const Entities_const<TSeq> & other) const;
-
-};
-
-template<typename TSeq>
-inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p) :
-    n_entities(p.get_n_entities())
-{
-
-    dat.reserve(n_entities);
-    for (size_t i = 0u; i < n_entities; ++i)
-        dat.push_back(&p.get_entity(i));
-
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::begin() {
-
-    if (n_entities == 0u)
-        return dat.end();
-    
-    return dat.begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::end() {
-     
-    return begin() + n_entities;
-}
-
-template<typename TSeq>
-inline const Entity<TSeq> & Entities_const<TSeq>::operator()(size_t i)
-{
-
-    if (i >= n_entities)
-        throw std::range_error("Entity index out of range.");
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline const Entity<TSeq> & Entities_const<TSeq>::operator[](size_t i)
-{
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline size_t Entities_const<TSeq>::size() const noexcept 
-{
-    return n_entities;
-}
-
-template<typename TSeq>
-inline bool Entities_const<TSeq>::operator==(const Entities_const<TSeq> & other) const
-{
-    
-    if (n_entities != other.n_entities)
-        return false;
-
-    for (size_t i = 0u; i < dat.size(); ++i)
-    {
-        if (dat[i] != other.dat[i])
-            return false;
-    }
-
-    return true;
-}
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/entities-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
  Start of -include/epiworld/virus-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -11736,7 +11512,6 @@ class Agent {
     friend class Tools<TSeq>;
     friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
-    friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
@@ -11753,9 +11528,7 @@ private:
     std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
-    std::vector< size_t > entities;
-    std::vector< size_t > entities_locations;
-    size_t n_entities = 0u;
+    std::vector< std::reference_wrapper<Entity<TSeq>> > entities;
 
     unsigned int state = 0u;
     unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
@@ -11767,6 +11540,8 @@ private:
 
     std::vector< ToolPtr<TSeq> > tools;
     unsigned int n_tools = 0u;
+
+    void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
 
 public:
 
@@ -11913,8 +11688,6 @@ public:
 
     const unsigned int & get_state() const;
 
-    void reset();
-
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
     bool has_tool(const Tool<TSeq> & t) const;
@@ -11948,8 +11721,8 @@ public:
     double operator[](size_t j) const;
     ///@}
 
-    Entities<TSeq> get_entities();
-    const Entities_const<TSeq> get_entities() const;
+    std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities();
+    const std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities() const;
     const Entity<TSeq> & get_entity(size_t i) const;
     Entity<TSeq> & get_entity(size_t i);
     size_t get_n_entities() const;
@@ -12400,7 +12173,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     viruses(model.viruses),
     tools(model.tools),
     entities(model.entities),
-    entities_backup(model.entities_backup),
     rewire_fun(model.rewire_fun),
     rewire_prop(model.rewire_prop),
     parameters(model.parameters),
@@ -12456,7 +12228,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     tools(std::move(model.tools)),
     // Entities
     entities(std::move(model.entities)),
-    entities_backup(std::move(model.entities_backup)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
     runifd(std::move(model.runifd)),
@@ -12514,7 +12285,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     tools                         = m.tools;
 
     entities        = m.entities;
-    entities_backup = m.entities_backup;
 
     rewire_fun  = m.rewire_fun;
     rewire_prop = m.rewire_prop;
@@ -12811,9 +12581,6 @@ inline void Model<TSeq>::set_backup()
 
     if (population_backup.size() == 0u)
         population_backup = std::vector< Agent<TSeq> >(population);
-
-    if (entities_backup.size() == 0u)
-        entities_backup = std::vector< Entity<TSeq> >(entities);
 
 }
 
@@ -13992,22 +13759,6 @@ inline void Model<TSeq>::reset() {
     }
     #endif
 
-    if (entities_backup.size())
-    {
-        entities = entities_backup;
-
-        #ifdef EPI_DEBUG
-        for (size_t i = 0; i < entities.size(); ++i)
-        {
-
-            if (entities[i] != (entities_backup)[i])
-                throw std::logic_error("Model::reset entities don't match.");
-
-        }
-        #endif
-
-    }
-
     for (auto & e: entities)
         e.reset();
 
@@ -14900,26 +14651,6 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "entities don't match"
     )
 
-    if ((entities_backup.size() != 0) & (other.entities_backup.size() != 0))
-    {
-
-        for (size_t i = 0u; i < entities_backup.size(); ++i)
-        {
-
-            EPI_DEBUG_FAIL_AT_TRUE(
-                entities_backup[i] != other.entities_backup[i],
-                "Model:: entities_backup[i] don't match"
-            )
-
-        }
-
-    } else if ((entities_backup.size() == 0) & (other.entities_backup.size() != 0)) {
-        EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
-    } else if ((entities_backup.size() != 0) & (other.entities_backup.size() == 0))
-    {
-        EPI_DEBUG_FAIL_AT_TRUE(true, "entities_backup don't match")
-    }
-
     EPI_DEBUG_FAIL_AT_TRUE(
         rewire_prop != other.rewire_prop,
         "Model:: rewire_prop don't match"
@@ -15026,7 +14757,7 @@ inline void Model<TSeq>::get_hospitalizations(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/model-meat.hpp-
+ End of -./include/epiworld/model-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15036,7 +14767,7 @@ inline void Model<TSeq>::get_hospitalizations(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/viruses-bones.hpp-
+ Start of -./include/epiworld/viruses-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15263,7 +14994,7 @@ inline void Viruses_const<TSeq>::print() const noexcept
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/viruses-bones.hpp-
+ End of -./include/epiworld/viruses-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15273,7 +15004,7 @@ inline void Viruses_const<TSeq>::print() const noexcept
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/virus-bones.hpp-
+ Start of -./include/epiworld/virus-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15498,7 +15229,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/virus-bones.hpp-
+ End of -./include/epiworld/virus-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15507,7 +15238,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/virus-distribute-meat.hpp-
+ Start of -./include/epiworld/virus-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15705,9 +15436,9 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
         for (size_t e = 0; e < entities.size(); ++e)
         {
             auto & entity_e = entities[e];
-            auto & agent_ids = entity_e.get_agents();
+            auto agents_ids = entity_e.get_agents_ids();
             double prevalence_e = prevalence[e];
-            size_t n = agent_ids.size();
+            size_t n = agents_ids.size();
             size_t n_to_distribute;
             if (as_proportion)
                 n_to_distribute = static_cast<size_t>(std::floor(prevalence_e * n));
@@ -15717,7 +15448,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
             if (n_to_distribute > n)
                 n_to_distribute = n;
 
-            std::vector< size_t > idx = agent_ids;
+            std::vector< size_t > idx = agents_ids;
             for (size_t i = 0u; i < n_to_distribute; ++i)
             {
                 size_t loc = static_cast<epiworld_fast_uint>(
@@ -15745,7 +15476,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/virus-distribute-meat.hpp-
+ End of -./include/epiworld/virus-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15754,7 +15485,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/virus-meat.hpp-
+ Start of -./include/epiworld/virus-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -16967,7 +16698,7 @@ inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/virus-meat.hpp-
+ End of -./include/epiworld/virus-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -16977,7 +16708,7 @@ inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/tools-bones.hpp-
+ Start of -./include/epiworld/tools-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17196,7 +16927,7 @@ inline void Tools_const<TSeq>::print() const noexcept
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/tools-bones.hpp-
+ End of -./include/epiworld/tools-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17206,7 +16937,7 @@ inline void Tools_const<TSeq>::print() const noexcept
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/tool-bones.hpp-
+ Start of -./include/epiworld/tool-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17350,7 +17081,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/tool-bones.hpp-
+ End of -./include/epiworld/tool-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17359,7 +17090,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/tool-distribute-meat.hpp-
+ Start of -./include/epiworld/tool-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17535,7 +17266,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
         for (size_t e = 0; e < entities.size(); ++e)
         {
             auto & entity_e = entities[e];
-            auto & agent_ids = entity_e.get_agents();
+            auto agent_ids = entity_e.get_agents_ids();
             double prevalence_e = prevalence[e];
             size_t n = agent_ids.size();
             size_t n_to_distribute;
@@ -17573,7 +17304,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/tool-distribute-meat.hpp-
+ End of -./include/epiworld/tool-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17582,7 +17313,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/tool-meat.hpp-
+ Start of -./include/epiworld/tool-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18166,7 +17897,7 @@ inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/tool-meat.hpp-
+ End of -./include/epiworld/tool-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18176,7 +17907,7 @@ inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entity-bones.hpp-
+ Start of -./include/epiworld/entity-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18213,9 +17944,7 @@ class Entity {
 private:
     
     int id = -1;
-    std::vector< size_t > agents;   ///< Vector of agents
-    std::vector< size_t > agents_location; ///< Location where the entity is stored in the agent
-    size_t n_agents = 0u;
+    std::vector< std::reference_wrapper<Agent<TSeq>> > agents;   ///< Vector of agents
 
     int max_capacity = -1;
     std::string entity_name = "Unnamed entity";
@@ -18229,6 +17958,8 @@ private:
     epiworld_fast_int queue_post = 0; ///< Change of state when removed from agent.
 
     EntityToAgentFun<TSeq> dist_fun = nullptr;
+
+    void reset();
 
 public:
 
@@ -18248,6 +17979,8 @@ public:
             entity_name(name),
             dist_fun(fun)
         {};
+
+    ~Entity() = default;
     
     void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
     void add_agent(Agent<TSeq> * p, Model<TSeq> * model);
@@ -18256,11 +17989,11 @@ public:
     void set_location(std::vector< epiworld_double > loc);
     std::vector< epiworld_double > & get_location();
 
-    typename std::vector< size_t >::iterator begin();
-    typename std::vector< size_t >::iterator end();
+    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator begin();
+    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator end();
 
-    typename std::vector< size_t >::const_iterator begin() const;
-    typename std::vector< size_t >::const_iterator end() const;
+    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator begin() const;
+    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator end() const;
 
     size_t operator[](size_t i);
 
@@ -18271,8 +18004,6 @@ public:
     void set_queue(epiworld_fast_int init, epiworld_fast_int post);
     void get_state(epiworld_fast_int * init, epiworld_fast_int * post);
     void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
-
-    void reset();
 
     bool operator==(const Entity<TSeq> & other) const;
     bool operator!=(const Entity<TSeq> & other) const {return !operator==(other);};
@@ -18286,7 +18017,8 @@ public:
      */
     void distribute(Model<TSeq> * model);
 
-    std::vector< size_t > & get_agents();
+    std::vector< std::reference_wrapper<Agent<TSeq>> > & get_agents();
+    std::vector< size_t > get_agents_ids() const;
 
     void print() const;
     void set_distribution(EntityToAgentFun<TSeq> fun);
@@ -18298,7 +18030,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/entity-bones.hpp-
+ End of -./include/epiworld/entity-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18307,7 +18039,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entity-distribute-meat.hpp-
+ Start of -./include/epiworld/entity-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18421,7 +18153,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
         return [from, to](Entity<TSeq> & e, Model<TSeq> * m) -> void {
 
             auto & agents = m->get_agents();
-            for (size_t i = from; i < to; ++i)
+            for (int i = from; i < to; ++i)
             {
                 if (agents[i].get_n_entities() == 0)
                     e.add_agent(&agents[i], m);
@@ -18442,7 +18174,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
         return [from, to](Entity<TSeq> & e, Model<TSeq> * m) -> void {
 
             auto & agents = m->get_agents();
-            for (size_t i = from; i < to; ++i)
+            for (int i = from; i < to; ++i)
             {
                 e.add_agent(&agents[i], m);
             }
@@ -18477,7 +18209,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_set(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/entity-distribute-meat.hpp-
+ End of -./include/epiworld/entity-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18486,7 +18218,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_set(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entity-meat.hpp-
+ Start of -./include/epiworld/entity-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18519,13 +18251,13 @@ inline void Entity<TSeq>::add_agent(
 template<typename TSeq>
 inline void Entity<TSeq>::rm_agent(size_t idx, Model<TSeq> * model)
 {
-    if (idx >= n_agents)
+    if (idx >= size())
         throw std::out_of_range(
             "Trying to remove agent "+ std::to_string(idx) +
-            " out of " + std::to_string(n_agents)
+            " out of " + std::to_string(size())
             );
 
-    model->get_agents()[agents[idx]].rm_entity(*this, model);
+    agents[idx].rm_entity(*this, model);
 
     return;
 }
@@ -18533,7 +18265,7 @@ inline void Entity<TSeq>::rm_agent(size_t idx, Model<TSeq> * model)
 template<typename TSeq>
 inline size_t Entity<TSeq>::size() const noexcept
 {
-    return n_agents;
+    return agents.size();
 }
 
 template<typename TSeq>
@@ -18549,52 +18281,52 @@ inline std::vector< epiworld_double > & Entity<TSeq>::get_location()
 }
 
 template<typename TSeq>
-inline typename std::vector< size_t >::iterator Entity<TSeq>::begin()
+inline typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator Entity<TSeq>::begin()
 {
 
-    if (n_agents == 0)
-        return typename std::vector< size_t >::iterator{};
+    if (agents.size() == 0)
+        return typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator{};
 
     return agents.begin();
 
 }
 
 template<typename TSeq>
-inline typename std::vector< size_t >::iterator Entity<TSeq>::end()
+inline typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator Entity<TSeq>::end()
 {
-    if (n_agents == 0)
-        return typename std::vector< size_t >::iterator{};
+    if (agents.size() == 0)
+        return typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator{};
 
-    return agents.begin() + n_agents;
+    return agents.begin() + agents.size();
 }
 
 template<typename TSeq>
-inline typename std::vector< size_t >::const_iterator Entity<TSeq>::begin() const
+inline typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator Entity<TSeq>::begin() const
 {
 
-    if (n_agents == 0)
-        return typename std::vector< size_t >::const_iterator{};
+    if (agents.size() == 0)
+        return typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator{};
 
     return agents.begin();
 
 }
 
 template<typename TSeq>
-inline typename std::vector< size_t >::const_iterator Entity<TSeq>::end() const
+inline typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator Entity<TSeq>::end() const
 {
-    if (n_agents == 0)
-        return typename std::vector< size_t >::const_iterator{};
+    if (agents.size() == 0)
+        return typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator{};
 
-    return agents.begin() + n_agents;
+    return agents.begin() + agents.size();
 }
 
 template<typename TSeq>
 size_t Entity<TSeq>::operator[](size_t i)
 {
-    if (n_agents <= i)
+    if (agents.size() <= i)
         throw std::logic_error(
             "There are not that many agents in this entity. " +
-            std::to_string(n_agents) + " <= " + std::to_string(i)
+            std::to_string(agents.size()) + " <= " + std::to_string(i)
             );
 
     return i;
@@ -18665,8 +18397,6 @@ inline void Entity<TSeq>::reset()
 {
 
     this->agents.clear();
-    this->n_agents = 0u;
-    this->agents_location.clear();
 
     return;
 
@@ -18679,12 +18409,12 @@ inline bool Entity<TSeq>::operator==(const Entity<TSeq> & other) const
     if (id != other.id)
         return false;
 
-    if (n_agents != other.n_agents)
+    if (agents.size() != other.agents.size())
         return false;
 
-    for (size_t i = 0u; i < n_agents; ++i)
+    for (size_t i = 0u; i < agents.size(); ++i)
     {
-        if (agents[i] != other.agents[i])
+        if (agents[i].get() != other.agents[i].get())
             return false;
     }
 
@@ -18736,9 +18466,19 @@ inline void Entity<TSeq>::distribute(Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline std::vector< size_t > & Entity<TSeq>::get_agents()
+inline std::vector< std::reference_wrapper<Agent<TSeq>> > & Entity<TSeq>::get_agents()
 {
     return agents;
+}
+
+template<typename TSeq>
+inline std::vector< size_t > Entity<TSeq>::get_agents_ids() const
+{
+    std::vector< size_t > res;
+    for (const Agent<TSeq> & agent: agents)
+        res.push_back(agent.get_id());
+
+    return res;
 }
 
 template<typename TSeq>
@@ -18749,7 +18489,7 @@ inline void Entity<TSeq>::print() const
         "Entity '%s' (id %i) with %i agents.\n",
         this->entity_name.c_str(),
         static_cast<int>(id),
-        static_cast<int>(n_agents)
+        static_cast<int>(agents.size())
     );
 }
 
@@ -18763,234 +18503,7 @@ inline void Entity<TSeq>::set_distribution(EntityToAgentFun<TSeq> fun)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/entity-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/entities-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_ENTITIES_BONES_HPP
-#define EPIWORLD_ENTITIES_BONES_HPP
-
-template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Agent;
-
-
-/**
- * @brief Set of Entities (useful for building iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Entities {
-    friend class Entity<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    std::vector< Entity<TSeq> * >  dat;
-    const size_t n_entities;
-
-public:
-
-    Entities() = delete;
-    Entities(Agent<TSeq> & p);
-
-    typename std::vector< Entity<TSeq> * >::iterator begin();
-    typename std::vector< Entity<TSeq> * >::iterator end();
-
-    Entity<TSeq> & operator()(size_t i);
-    Entity<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    bool operator==(const Entities<TSeq> & other) const;
-
-};
-
-template<typename TSeq>
-inline Entities<TSeq>::Entities(Agent<TSeq> & p) :
-    n_entities(p.get_n_entities())
-{
-
-    dat.reserve(n_entities);
-    for (size_t i = 0u; i < n_entities; ++i)
-        dat.push_back(&p.get_entity(i));
-
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::begin()
-{
-
-    if (n_entities == 0u)
-        return dat.end();
-    
-    return dat.begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::end()
-{
-     
-    return begin() + n_entities;
-}
-
-template<typename TSeq>
-inline Entity<TSeq> & Entities<TSeq>::operator()(size_t i)
-{
-
-    if (i >= n_entities)
-        throw std::range_error("Entity index out of range.");
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline Entity<TSeq> & Entities<TSeq>::operator[](size_t i)
-{
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline size_t Entities<TSeq>::size() const noexcept 
-{
-    return n_entities;
-}
-
-template<typename TSeq>
-inline bool Entities<TSeq>::operator==(const Entities<TSeq> & other) const
-{
-
-    if (n_entities != other.n_entities)
-        return false;
-
-    for (size_t i = 0u; i < dat.size(); ++i)
-    {
-        if (dat[i] != other.dat[i])
-            return false;
-    }
-
-    return true;
-}
-
-/**
- * @brief Set of Entities (const) (useful for iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Entities_const {
-    friend class Virus<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    const std::vector< Entity<TSeq>* > dat;
-    const size_t n_entities;
-
-public:
-
-    Entities_const() = delete;
-    Entities_const(const Agent<TSeq> & p);
-
-    typename std::vector< Entity<TSeq>* >::const_iterator begin();
-    typename std::vector< Entity<TSeq>* >::const_iterator end();
-
-    const Entity<TSeq> & operator()(size_t i);
-    const Entity<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    bool operator==(const Entities_const<TSeq> & other) const;
-
-};
-
-template<typename TSeq>
-inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p) :
-    n_entities(p.get_n_entities())
-{
-
-    dat.reserve(n_entities);
-    for (size_t i = 0u; i < n_entities; ++i)
-        dat.push_back(&p.get_entity(i));
-
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::begin() {
-
-    if (n_entities == 0u)
-        return dat.end();
-    
-    return dat.begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::end() {
-     
-    return begin() + n_entities;
-}
-
-template<typename TSeq>
-inline const Entity<TSeq> & Entities_const<TSeq>::operator()(size_t i)
-{
-
-    if (i >= n_entities)
-        throw std::range_error("Entity index out of range.");
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline const Entity<TSeq> & Entities_const<TSeq>::operator[](size_t i)
-{
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline size_t Entities_const<TSeq>::size() const noexcept 
-{
-    return n_entities;
-}
-
-template<typename TSeq>
-inline bool Entities_const<TSeq>::operator==(const Entities_const<TSeq> & other) const
-{
-    
-    if (n_entities != other.n_entities)
-        return false;
-
-    for (size_t i = 0u; i < dat.size(); ++i)
-    {
-        if (dat[i] != other.dat[i])
-            return false;
-    }
-
-    return true;
-}
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/entities-bones.hpp-
+ End of -./include/epiworld/entity-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -19000,7 +18513,7 @@ inline bool Entities_const<TSeq>::operator==(const Entities_const<TSeq> & other)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agent-meat-virus-sampling.hpp-
+ Start of -./include/epiworld/agent-meat-virus-sampling.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -19439,7 +18952,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agent-meat-virus-sampling.hpp-
+ End of -./include/epiworld/agent-meat-virus-sampling.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -19448,7 +18961,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agent-meat-state.hpp-
+ Start of -./include/epiworld/agent-meat-state.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -19609,7 +19122,6 @@ protected:
     std::vector< ToolPtr<TSeq> > tools = {};
 
     std::vector< Entity<TSeq> > entities = {};
-    std::vector< Entity<TSeq> > entities_backup = {};
 
     std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
 
@@ -21128,7 +20640,7 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agent-meat-state.hpp-
+ End of -./include/epiworld/agent-meat-state.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -21137,7 +20649,7 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agent-bones.hpp-
+ Start of -./include/epiworld/agent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -21215,7 +20727,6 @@ class Agent {
     friend class Tools<TSeq>;
     friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
-    friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
@@ -21232,9 +20743,7 @@ private:
     std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
-    std::vector< size_t > entities;
-    std::vector< size_t > entities_locations;
-    size_t n_entities = 0u;
+    std::vector< std::reference_wrapper<Entity<TSeq>> > entities;
 
     unsigned int state = 0u;
     unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
@@ -21246,6 +20755,8 @@ private:
 
     std::vector< ToolPtr<TSeq> > tools;
     unsigned int n_tools = 0u;
+
+    void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
 
 public:
 
@@ -21392,8 +20903,6 @@ public:
 
     const unsigned int & get_state() const;
 
-    void reset();
-
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
     bool has_tool(const Tool<TSeq> & t) const;
@@ -21427,8 +20936,8 @@ public:
     double operator[](size_t j) const;
     ///@}
 
-    Entities<TSeq> get_entities();
-    const Entities_const<TSeq> get_entities() const;
+    std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities();
+    const std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities() const;
     const Entity<TSeq> & get_entity(size_t i) const;
     Entity<TSeq> & get_entity(size_t i);
     size_t get_n_entities() const;
@@ -21444,7 +20953,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agent-bones.hpp-
+ End of -./include/epiworld/agent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -21453,7 +20962,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agent-meat.hpp-
+ Start of -./include/epiworld/agent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -21925,232 +21434,6 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entities-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_ENTITIES_BONES_HPP
-#define EPIWORLD_ENTITIES_BONES_HPP
-
-template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Agent;
-
-
-/**
- * @brief Set of Entities (useful for building iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Entities {
-    friend class Entity<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    std::vector< Entity<TSeq> * >  dat;
-    const size_t n_entities;
-
-public:
-
-    Entities() = delete;
-    Entities(Agent<TSeq> & p);
-
-    typename std::vector< Entity<TSeq> * >::iterator begin();
-    typename std::vector< Entity<TSeq> * >::iterator end();
-
-    Entity<TSeq> & operator()(size_t i);
-    Entity<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    bool operator==(const Entities<TSeq> & other) const;
-
-};
-
-template<typename TSeq>
-inline Entities<TSeq>::Entities(Agent<TSeq> & p) :
-    n_entities(p.get_n_entities())
-{
-
-    dat.reserve(n_entities);
-    for (size_t i = 0u; i < n_entities; ++i)
-        dat.push_back(&p.get_entity(i));
-
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::begin()
-{
-
-    if (n_entities == 0u)
-        return dat.end();
-    
-    return dat.begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::iterator Entities<TSeq>::end()
-{
-     
-    return begin() + n_entities;
-}
-
-template<typename TSeq>
-inline Entity<TSeq> & Entities<TSeq>::operator()(size_t i)
-{
-
-    if (i >= n_entities)
-        throw std::range_error("Entity index out of range.");
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline Entity<TSeq> & Entities<TSeq>::operator[](size_t i)
-{
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline size_t Entities<TSeq>::size() const noexcept 
-{
-    return n_entities;
-}
-
-template<typename TSeq>
-inline bool Entities<TSeq>::operator==(const Entities<TSeq> & other) const
-{
-
-    if (n_entities != other.n_entities)
-        return false;
-
-    for (size_t i = 0u; i < dat.size(); ++i)
-    {
-        if (dat[i] != other.dat[i])
-            return false;
-    }
-
-    return true;
-}
-
-/**
- * @brief Set of Entities (const) (useful for iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Entities_const {
-    friend class Virus<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    const std::vector< Entity<TSeq>* > dat;
-    const size_t n_entities;
-
-public:
-
-    Entities_const() = delete;
-    Entities_const(const Agent<TSeq> & p);
-
-    typename std::vector< Entity<TSeq>* >::const_iterator begin();
-    typename std::vector< Entity<TSeq>* >::const_iterator end();
-
-    const Entity<TSeq> & operator()(size_t i);
-    const Entity<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    bool operator==(const Entities_const<TSeq> & other) const;
-
-};
-
-template<typename TSeq>
-inline Entities_const<TSeq>::Entities_const(const Agent<TSeq> & p) :
-    n_entities(p.get_n_entities())
-{
-
-    dat.reserve(n_entities);
-    for (size_t i = 0u; i < n_entities; ++i)
-        dat.push_back(&p.get_entity(i));
-
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::begin() {
-
-    if (n_entities == 0u)
-        return dat.end();
-    
-    return dat.begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< Entity<TSeq>* >::const_iterator Entities_const<TSeq>::end() {
-     
-    return begin() + n_entities;
-}
-
-template<typename TSeq>
-inline const Entity<TSeq> & Entities_const<TSeq>::operator()(size_t i)
-{
-
-    if (i >= n_entities)
-        throw std::range_error("Entity index out of range.");
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline const Entity<TSeq> & Entities_const<TSeq>::operator[](size_t i)
-{
-
-    return *dat[i];
-
-}
-
-template<typename TSeq>
-inline size_t Entities_const<TSeq>::size() const noexcept 
-{
-    return n_entities;
-}
-
-template<typename TSeq>
-inline bool Entities_const<TSeq>::operator==(const Entities_const<TSeq> & other) const
-{
-    
-    if (n_entities != other.n_entities)
-        return false;
-
-    for (size_t i = 0u; i < dat.size(); ++i)
-    {
-        if (dat[i] != other.dat[i])
-            return false;
-    }
-
-    return true;
-}
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/entities-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
  Start of -include/epiworld/agent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22229,7 +21512,6 @@ class Agent {
     friend class Tools<TSeq>;
     friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
-    friend class Entities<TSeq>;
     friend class AgentsSample<TSeq>;
     friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
@@ -22246,9 +21528,7 @@ private:
     std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
-    std::vector< size_t > entities;
-    std::vector< size_t > entities_locations;
-    size_t n_entities = 0u;
+    std::vector< std::reference_wrapper<Entity<TSeq>> > entities;
 
     unsigned int state = 0u;
     unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
@@ -22260,6 +21540,8 @@ private:
 
     std::vector< ToolPtr<TSeq> > tools;
     unsigned int n_tools = 0u;
+
+    void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
 
 public:
 
@@ -22406,8 +21688,6 @@ public:
 
     const unsigned int & get_state() const;
 
-    void reset();
-
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;
     bool has_tool(const Tool<TSeq> & t) const;
@@ -22441,8 +21721,8 @@ public:
     double operator[](size_t j) const;
     ///@}
 
-    Entities<TSeq> get_entities();
-    const Entities_const<TSeq> get_entities() const;
+    std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities();
+    const std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities() const;
     const Entity<TSeq> & get_entity(size_t i) const;
     Entity<TSeq> & get_entity(size_t i);
     size_t get_n_entities() const;
@@ -22701,111 +21981,56 @@ inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
 
         if (p->get_n_entities() > e->size()) // Slower search through the agent
         {
-            for (size_t i = 0u; i < e->size(); ++i)
-                if(static_cast<int>(e->operator[](i)) == p->get_id())
+            for (const Agent<TSeq> & agent: e->get_agents())
+                if(agent.get_id() == p->get_id())
                     throw std::logic_error("An entity cannot be reassigned to an agent.");
         }
         else                                 // Slower search through the entity
         {
-            for (size_t i = 0u; i < p->get_n_entities(); ++i)
-                if(p->get_entity(i).get_id() == e->get_id())
+            for (const Entity<TSeq> & entity: p->get_entities())
+                if(entity.get_id() == e->get_id())
                     throw std::logic_error("An entity cannot be reassigned to an agent.");
         }
 
         // It means that agent and entity were not associated.
     }
 
-    // Adding the entity to the agent
-    if (++p->n_entities <= p->entities.size())
-    {
-
-        p->entities[p->n_entities - 1]           = e->get_id();
-        p->entities_locations[p->n_entities - 1] = e->n_agents;
-
-    } else
-    {
-        p->entities.push_back(e->get_id());
-        p->entities_locations.push_back(e->n_agents);
-    }
-
-    // Adding the agent to the entity
-    // Adding the entity to the agent
-    if (++e->n_agents <= e->agents.size())
-    {
-
-        e->agents[e->n_agents - 1]          = p->get_id();
-        // Adjusted by '-1' since the list of entities in the agent just grew.
-        e->agents_location[e->n_agents - 1] = p->n_entities - 1;
-
-    } else
-    {
-        e->agents.push_back(p->get_id());
-        e->agents_location.push_back(p->n_entities - 1);
-    }
-
-    // Today was the last modification
-    // e->date_last_add_or_remove = m->today();
+    // Adding the to agent and the entity
+    p->entities.push_back(std::ref(*e));
+    e->agents.push_back(std::ref(*p));
     
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m)
+inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> *)
 {
     
-    Agent<TSeq> *  p = a.agent;    
-    Entity<TSeq> * e = a.entity;
-    size_t idx_agent_in_entity = a.idx_agent;
-    size_t idx_entity_in_agent = a.idx_object;
+    Agent<TSeq> &  p = *a.agent;    
+    Entity<TSeq> & e = *a.entity;
+    
+    // Remove entity from agent's entity list
+    p.entities.erase(
+        std::remove_if(
+            p.entities.begin(),
+            p.entities.end(),
+            [&e](const std::reference_wrapper<Entity<TSeq>> & entity_ref) {
+                return entity_ref.get().get_id() == e.get_id();
+            }
+        ),
+        p.entities.end()
+    );
 
-    if (--p->n_entities > 0)
-    {
-
-        // When we move the end entity to the new location, the 
-        // moved entity needs to reflect the change, i.e., where the
-        // entity will now be located in the agent
-        size_t agent_location_in_last_entity  =
-            p->entities_locations[p->n_entities];
-
-        Entity<TSeq> * last_entity =
-            &m->get_entity(p->entities[p->n_entities]); ///< Last entity of the agent
-
-        // The end entity will be located where the removed was
-        last_entity->agents_location[agent_location_in_last_entity] =
-            idx_entity_in_agent;
-
-        // We now make the swap
-        std::swap(
-            p->entities[p->n_entities],
-            p->entities[idx_entity_in_agent]
-        );
-
-    }
-
-    if (--e->n_agents > 0)
-    {
-
-        // When we move the end agent to the new location, the 
-        // moved agent needs to reflect the change, i.e., where the
-        // agent will now be located in the entity
-        size_t entity_location_in_last_agent = e->agents_location[e->n_agents];
-        
-        Agent<TSeq> * last_agent  =
-            &m->get_agents()[e->agents[e->n_agents]]; ///< Last agent of the entity
-
-        // The end entity will be located where the removed was
-        last_agent->entities_locations[entity_location_in_last_agent] =
-            idx_agent_in_entity;
-
-        // We now make the swap
-        std::swap(
-            e->agents[e->n_agents],
-            e->agents[idx_agent_in_entity]
-        );
-
-    }
-
-    // Setting the date of the last removal
-    // e->date_last_add_or_remove = m->today();
+    // Remove agent from entity's agent list
+    e.agents.erase(
+        std::remove_if(
+            e.agents.begin(),
+            e.agents.end(),
+            [&p](const std::reference_wrapper<Agent<TSeq>> & agent_ref) {
+                return agent_ref.get().get_id() == p.get_id();
+            }
+        ),
+        e.agents.end()
+    );
 
     return;
 
@@ -22834,8 +22059,6 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     neighbors_locations(std::move(p.neighbors_locations)),
     n_neighbors(p.n_neighbors),
     entities(std::move(p.entities)),
-    entities_locations(std::move(p.entities_locations)),
-    n_entities(p.n_entities),
     state(p.state),
     state_prev(p.state_prev), 
     state_last_changed(p.state_last_changed),
@@ -22873,9 +22096,7 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     neighbors(nullptr),
     neighbors_locations(nullptr),
     n_neighbors(p.n_neighbors),
-    entities(p.entities),
-    entities_locations(p.entities_locations),
-    n_entities(p.n_entities)
+    entities(p.entities)
 {
 
     if (n_neighbors > 0u)
@@ -22936,8 +22157,6 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     }
     
     entities = other_agent.entities;
-    entities_locations = other_agent.entities_locations;
-    n_entities = other_agent.n_entities;
 
     state              = other_agent.state;
     state_prev         = other_agent.state_prev;
@@ -23161,14 +22380,14 @@ inline void Agent<TSeq>::rm_entity(
 )
 {
 
-    if (entity_idx >= n_entities)
+    if (entity_idx >= entities.size())
         throw std::range_error(
             "The Entity you want to remove is out of range. This Agent only has " +
-            std::to_string(n_entities) + " entitites."
+            std::to_string(entities.size()) + " entity(ies)."
         );
-    else if (n_entities == 0u)
+    else if (entities.size() == 0u)
         throw std::logic_error(
-            "There is entity to remove here!"
+            "There is no entity to remove here!"
         );
 
     model->events_add(
@@ -23179,8 +22398,8 @@ inline void Agent<TSeq>::rm_entity(
         state_new,
         queue, 
         default_rm_entity<TSeq>,
-        entities_locations[entity_idx],
-        entity_idx
+        -1,
+        -1
     );
 }
 
@@ -23194,17 +22413,12 @@ inline void Agent<TSeq>::rm_entity(
 {
 
     // Looking for entity location in the agent
-    int entity_idx = -1;
-    for (size_t i = 0u; i < n_entities; ++i)
-    {
-        if (static_cast<int>(entities[i]) == entity.get_id())
-        {
-            entity_idx = i;
-            break;
-        }
-    }
+    // bool found = false;
+    bool found = std::find_if(entities.begin(), entities.end(), [&entity](const Entity<TSeq> & e) {
+        return e.get_id() == entity.get_id();
+    }) != entities.end();
 
-    if (entity_idx == -1)
+    if (!found)
         throw std::logic_error(
             std::string("The agent ") +
             std::to_string(id) +
@@ -23221,8 +22435,8 @@ inline void Agent<TSeq>::rm_entity(
         state_new,
         queue, 
         default_rm_entity<TSeq>,
-        entities_locations[entity_idx],
-        entity_idx
+        -1,
+        -1
     );
 }
 
@@ -23490,8 +22704,6 @@ inline void Agent<TSeq>::reset()
     n_tools = 0u;
 
     this->entities.clear();
-    this->entities_locations.clear();
-    this->n_entities = 0u;
 
     this->state = 0u;
     this->state_prev = 0u;
@@ -23565,7 +22777,7 @@ inline bool Agent<TSeq>::has_entity(epiworld_fast_uint t) const
 {
 
     for (auto & entity : entities)
-        if (entity == t)
+        if (entity.get_id() == t)
             return true;
 
     return false;
@@ -23577,7 +22789,7 @@ inline bool Agent<TSeq>::has_entity(std::string name) const
 {
 
     for (auto & entity : entities)
-        if (model->get_entity(entity).get_name() == name)
+        if (entity.get_name() == name)
             return true;
 
     return false;
@@ -23680,45 +22892,45 @@ inline double Agent<TSeq>::operator[](size_t j) const
 }
 
 template<typename TSeq>
-inline Entities<TSeq> Agent<TSeq>::get_entities()
+inline std::vector< std::reference_wrapper<Entity<TSeq>> > Agent<TSeq>::get_entities()
 {
-    return Entities<TSeq>(*this);
+    return entities;
 }
 
 template<typename TSeq>
-inline const Entities_const<TSeq> Agent<TSeq>::get_entities() const
+inline const std::vector< std::reference_wrapper<Entity<TSeq>> > Agent<TSeq>::get_entities() const
 {
-    return Entities_const<TSeq>(*this);
+    return entities;
 }
 
 template<typename TSeq>
 inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i) const
 {
-    if (n_entities == 0)
+    if (entities.size() == 0)
         throw std::range_error("Agent id " + std::to_string(id) + " has no entities.");
 
-    if (i >= n_entities)
+    if (i >= entities.size())
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return model->get_entity(entities[i]);
+    return entities[i];
 }
 
 template<typename TSeq>
 inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i)
 {
-    if (n_entities == 0)
+    if (entities.size() == 0)
         throw std::range_error("Agent id " + std::to_string(id) + " has no entities.");
 
-    if (i >= n_entities)
+    if (i >= entities.size())
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return model->get_entity(entities[i]);
+    return entities[i];
 }
 
 template<typename TSeq>
 inline size_t Agent<TSeq>::get_n_entities() const
 {
-    return n_entities;
+    return entities.size();
 }
 
 template<typename TSeq>
@@ -23740,15 +22952,15 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     }
     
     EPI_DEBUG_FAIL_AT_TRUE(
-        n_entities != other.n_entities,
+        entities.size() != other.entities.size(),
         "Agent:: n_entities don't match"
         )
     
     
-    for (size_t i = 0u; i < n_entities; ++i)
+    for (size_t i = 0u; i < entities.size(); ++i)
     {
         EPI_DEBUG_FAIL_AT_TRUE(
-            entities[i] != other.entities[i],
+            entities[i].get() != other.entities[i].get(),
             "Agent:: entities[i] don't match"
         )
     }
@@ -23804,7 +23016,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agent-meat.hpp-
+ End of -./include/epiworld/agent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -23814,7 +23026,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agentssample-bones.hpp-
+ Start of -./include/epiworld/agentssample-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -24015,21 +23227,21 @@ inline AgentsSample<TSeq>::AgentsSample(
 
     // Computing the cumulative sum of counts across entities
     size_t agents_in_entities = 0;
-    Entities<TSeq> entities_a = agent->get_entities();
+    const auto & entities_a = agent->get_entities();
 
     std::vector< size_t > cum_agents_count(entities_a.size(), 0);
     int idx = -1;
-    for (auto & e : entities_a)
+    for (const Entity<TSeq> & e : entities_a)
     {
         if (++idx == 0)
-            cum_agents_count[idx] = (e->size() - 1u);
+            cum_agents_count[idx] = (e.size() - 1u);
         else
             cum_agents_count[idx] = (
-                (e->size() - 1u) + 
+                (e.size() - 1u) + 
                 cum_agents_count[idx - 1]
             );
 
-        agents_in_entities += (e->size() - 1u);
+        agents_in_entities += (e.size() - 1u);
     }
 
     if (truncate)
@@ -24182,7 +23394,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
             // Iterating through the agents in the entity
             for (size_t a_i = 0u; a_i < entity->size(); ++a_i)
             {
-                size_t s = model->population[entity->agents[a_i]].get_state();
+                size_t s = entity->agents[a_i].get().get_state();
                 if (std::find(states.begin(), states.end(), s) != states.end())
                     agents_left->push_back(a_i);
 
@@ -24271,9 +23483,12 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
         for (size_t i = 0u; i < n; ++i)
         {
 
-            size_t ith_ = static_cast<size_t>(model->runif() * ((*agents_left_n)--));
+            size_t ith_ = static_cast<size_t>(
+                model->runif() * ((*agents_left_n)--)
+            );
+
             size_t ith  = agents_left->operator[](ith_);
-            agents->operator[](i) = &model->population[entity->agents[ith]];
+            agents->operator[](i) = &(entity->agents[ith].get());
 
             #ifdef EPI_DEBUG
             if (__sampled[ith])
@@ -24297,7 +23512,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agentssample-bones.hpp-
+ End of -./include/epiworld/agentssample-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -24307,7 +23522,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/contacttracing-bones.hpp-
+ Start of -./include/epiworld/contacttracing-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -24489,7 +23704,7 @@ inline void ContactTracing::print(size_t agent)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/contacttracing-bones.hpp-
+ End of -./include/epiworld/contacttracing-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -24499,7 +23714,7 @@ inline void ContactTracing::print(size_t agent)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/models/models.hpp-
+ Start of -./include/epiworld/models/models.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -31364,10 +30579,13 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected_list()
 
     std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
 
-    for (auto & a : agents)
+    // Resetting the number of available contacts
+    adjusted_contact_rate.assign(this->entities.size(), 0.0);
+
+    for (const auto & a : agents)
     {
 
-        if (a.get_state() == ModelSEIRMixingQuarantine<TSeq>::INFECTED)
+        if (a.get_state() == INFECTED)
         {
             if (a.get_n_entities() > 0u)
             {
@@ -31382,6 +30600,29 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected_list()
             }
         }
 
+        // Setting how many agents are available for contact
+        if (
+            ((a.get_state() < ISOLATED) || (a.get_state() == RECOVERED)) &&
+            (a.get_n_entities() > 0u)
+        )
+        {
+            adjusted_contact_rate[
+                a.get_entity(0u).get_id()
+            ] += 1.0;
+        }
+
+    }
+
+    // This simplifies calculations later
+    for (auto & rate: adjusted_contact_rate)
+    {
+        if (rate > 0.0)
+            rate = Model<TSeq>::get_param("Contact rate") / rate;
+        else
+            rate = 0.0;  // No available contacts in this group
+
+        if (rate > 1.0)
+            rate = 1.0;
     }
 
     return;
@@ -31531,23 +30772,23 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     }
 
-    // Adjusting contact rate
-    adjusted_contact_rate.clear();
-    adjusted_contact_rate.resize(this->entities.size(), 0.0);
+    // // Adjusting contact rate
+    // adjusted_contact_rate.clear();
+    // adjusted_contact_rate.resize(this->entities.size(), 0.0);
 
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
+    // for (size_t i = 0u; i < this->entities.size(); ++i)
+    // {
 
-        adjusted_contact_rate[i] =
-            Model<TSeq>::get_param("Contact rate") /
-                static_cast< epiworld_double > (this->get_entity(i).size());
+    //     adjusted_contact_rate[i] =
+    //         Model<TSeq>::get_param("Contact rate") /
+    //             static_cast< epiworld_double > (this->get_entity(i).size());
 
 
-        // Possibly correcting for a small number of agents
-        if (adjusted_contact_rate[i] > 1.0)
-            adjusted_contact_rate[i] = 1.0;
+    //     // Possibly correcting for a small number of agents
+    //     if (adjusted_contact_rate[i] > 1.0)
+    //         adjusted_contact_rate[i] = 1.0;
 
-    }
+    // }
 
     this->m_update_infected_list();
 
@@ -34550,11 +33791,10 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         // check that later
         if (agent_i.get_n_entities() != 0u)
         {
-            for (auto & agent_j_idx: agent_i.get_entity(0))
+            for (const Agent<TSeq> & agent_j: agent_i.get_entity(0))
             {
 
                 #ifdef EPI_DEBUG
-                auto & agent_j = Model<TSeq>::get_agent(agent_j_idx);
                 if (
                     agent_j.get_entity(0u).get_id() !=
                     agent_i.get_entity(0u).get_id()
@@ -34566,6 +33806,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
 
 
                 // Only if not already checked we set to high risk
+                size_t agent_j_idx = agent_j.get_id();
                 if (can_quarantine[agent_j_idx])
                     quarantine_risk_level[agent_j_idx] = RISK_HIGH;
                 
@@ -35088,7 +34329,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/models/models.hpp-
+ End of -./include/epiworld/models/models.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
