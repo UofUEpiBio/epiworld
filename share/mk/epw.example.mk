@@ -2,7 +2,7 @@ include share/mk/epw.prog.mk
 
 $(NAME)_EXAMPLE_DIR := $($(NAME)_BUILD_DIR)/.example
 EXAMPLE_TARGETS += $($(NAME)_BUILD_DIR)/$(NAME)
-EXAMPLE_RUN_TARGETS += run-example-$(NAME)
+EXAMPLE_RUN_TARGETS += example-$(NAME)-run
 README_TARGETS += $($(NAME)_SOURCE_DIR)/README.md
 
 .PHONY: mk-$(NAME)-working-dir

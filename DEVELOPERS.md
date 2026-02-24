@@ -102,7 +102,7 @@ make build/examples/00-hello-world/00-hello-world
 
 Run a specific example:
 ```bash
-make run-example-00-hello-world
+make example-00-hello-world-run
 ```
 
 ## Running Tests
@@ -150,7 +150,7 @@ This runs each example and captures its output to create documentation.
 
 Each example can be run directly:
 ```bash
-make run-example-<example-name>
+make example-<example-name>-run
 ```
 
 Example names include:
