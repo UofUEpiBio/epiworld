@@ -113,6 +113,16 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
                 static_cast<double>(n_replicates) /
                 static_cast<double>(total)
             );
+
+            // Wall-clock time for the entire run_multiple call (if used)
+            if (time_elapsed_run_multiple.count() > 0.0)
+            {
+                std::string abbr_wc;
+                epiworld_double wc;
+                get_elapsed_run_multiple("auto", &wc, &abbr_wc, false);
+                printf_epiworld("run_multiple wall t : %.2f%s (%i runs)\n",
+                    wc, abbr_wc.c_str(), static_cast<int>(n_replicates));
+            }
         }
 
     } else {

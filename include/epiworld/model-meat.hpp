@@ -1522,6 +1522,9 @@ inline void Model<TSeq>::run_multiple(
 )
 {
 
+    // Start wall-clock timer for the entire run_multiple call
+    auto run_multiple_start = std::chrono::steady_clock::now();
+
     if (seed_ >= 0)
         this->seed(seed_);
 
@@ -1714,6 +1717,10 @@ inline void Model<TSeq>::run_multiple(
 
     if (old_verb)
         verbose_on();
+
+    // Record total wall-clock time for this run_multiple call
+    time_elapsed_run_multiple +=
+        std::chrono::steady_clock::now() - run_multiple_start;
 
     return;
 
@@ -2374,6 +2381,63 @@ inline void Model<TSeq>::get_elapsed_setup(
     } else {
         printf_epiworld("last run setup time   : %.2f%s.\n", elapsed, abbr_unit.c_str());
     }
+}
+
+#define DURCAST_RUNMULTIPLE(tunit,txtunit) {\
+        elapsed_val   = std::chrono::duration_cast<std::chrono:: tunit>(time_elapsed_run_multiple).count(); \
+        abbr_unit     = txtunit;}
+
+template<typename TSeq>
+inline void Model<TSeq>::get_elapsed_run_multiple(
+    std::string unit,
+    epiworld_double * elapsed,
+    std::string * unit_abbr,
+    bool print
+) const {
+
+    epiworld_double elapsed_val;
+    std::string abbr_unit;
+
+    // Auto-select unit based on total run_multiple duration
+    if (unit == "auto")
+    {
+        size_t tlength = std::to_string(
+            static_cast<int>(floor(time_elapsed_run_multiple.count()))
+            ).length();
+
+        if (tlength <= 1)
+            unit = "nanoseconds";
+        else if (tlength <= 3)
+            unit = "microseconds";
+        else if (tlength <= 6)
+            unit = "milliseconds";
+        else if (tlength <= 8)
+            unit = "seconds";
+        else if (tlength <= 9)
+            unit = "minutes";
+        else
+            unit = "hours";
+    }
+
+    if (unit == "nanoseconds")       DURCAST_RUNMULTIPLE(nanoseconds,"ns")
+    else if (unit == "microseconds") DURCAST_RUNMULTIPLE(microseconds,"\xC2\xB5s")
+    else if (unit == "milliseconds") DURCAST_RUNMULTIPLE(milliseconds,"ms")
+    else if (unit == "seconds")      DURCAST_RUNMULTIPLE(seconds,"s")
+    else if (unit == "minutes")      DURCAST_RUNMULTIPLE(minutes,"m")
+    else if (unit == "hours")        DURCAST_RUNMULTIPLE(hours,"h")
+    else
+        throw std::range_error("The time unit " + unit + " is not supported.");
+
+    if (elapsed != nullptr)
+        *elapsed = elapsed_val;
+    if (unit_abbr != nullptr)
+        *unit_abbr = abbr_unit;
+
+    if (!print)
+        return;
+
+    printf_epiworld("run_multiple wall-clock time : %.2f%s\n",
+        elapsed_val, abbr_unit.c_str());
 }
 
 template<typename TSeq>
