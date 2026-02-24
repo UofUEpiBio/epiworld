@@ -857,22 +857,28 @@ inline void Model<TSeq>::set_backup()
 }
 
 template<typename TSeq>
-inline std::shared_ptr< std::mt19937 > & Model<TSeq>::get_rand_endgine()
+inline std::shared_ptr< epi_xoshiro256ss > & Model<TSeq>::get_rand_endgine()
 {
     return engine;
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng)
+{
+    engine = eng;
+}
+
+template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    epiworld_double res = runif_mt19937(*engine);
+    epiworld_double res = runif_epi(*engine);
     return res * (runifd_b - runifd_a) + runifd_a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return runif_mt19937(*engine) * (b - a) + a;
+    return runif_epi(*engine) * (b - a) + a;
 }
 
 template<typename TSeq>

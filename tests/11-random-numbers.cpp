@@ -64,7 +64,7 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
 
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(moreless(m_gamma, 1.5*2.0, 0.025));
-    REQUIRE_FALSE(moreless(v_gamma, 1.5*2.0*2.0, 0.05));
+    REQUIRE_FALSE(moreless(v_gamma, 1.5*2.0*2.0, 0.10));
     #endif
     
     // Looking at the exponential

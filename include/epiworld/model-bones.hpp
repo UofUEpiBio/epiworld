@@ -142,7 +142,7 @@ protected:
 
     std::vector< Entity<TSeq> > entities = {};
 
-    std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
+    std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
     epiworld_double runifd_a = 0.0;
     epiworld_double runifd_b = 1.0;
@@ -293,8 +293,8 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
-    std::shared_ptr< std::mt19937 > & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng);
+    std::shared_ptr< epi_xoshiro256ss > & get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
