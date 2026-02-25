@@ -527,6 +527,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
                     std::ref(entities[i])
                 );
         }
+
+        // Update model pointers for backup agents to point to this model
+        for (auto & agent : population_backup)
+            agent.model = this;
     }
 
 }
@@ -579,6 +583,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 
     // Update model pointers for moved agents
     for (auto & p : population)
+        p.model = this;
+
+    for (auto & p : population_backup)
         p.model = this;
 
     db.model = this;
@@ -692,6 +699,10 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
                     std::ref(entities[i])
                 );
         }
+
+        // Update model pointers for backup agents to point to this model
+        for (auto & agent : population_backup)
+            agent.model = this;
     }
 
     return *this;

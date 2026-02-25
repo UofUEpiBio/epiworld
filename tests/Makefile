@@ -17,7 +17,6 @@ all: main.o
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(OPENMP) -Wnull-dereference \
 		-fsanitize=thread \
-		-g \
 		$< -o $@
 
 # Special cases
