@@ -6,7 +6,7 @@ endif
 
 CXX       := g++
 CLANG     := clang++
-CXXFLAGS  := -std=$(CXX_STD) -Wall -Wextra -O2 -g -pedantic
+CXXFLAGS  := -std=$(CXX_STD) -Wall -Wextra -pedantic
 OPTFLAGS  := -O2 -g
 OPENMP    := $(OPENMP)
 
@@ -16,7 +16,9 @@ all: main.o
 # Generic rule: .cpp -> .o (actually executable here, not object file)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(OPENMP) -Wnull-dereference \
-		-fdelete-null-pointer-checks -pedantic $< -o $@
+		-fsanitize=thread \
+		-g \
+		$< -o $@
 
 # Special cases
 main.a: main.cpp

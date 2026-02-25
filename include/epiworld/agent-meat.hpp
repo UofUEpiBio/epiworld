@@ -9,7 +9,6 @@
 #include "agent-events-meat.hpp"
 
 // To large to add directly here
-
 template<typename TSeq>
 inline Agent<TSeq>::Agent() {}
 
@@ -51,6 +50,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     
 }
 
+// Copy constructor
 template<typename TSeq>
 inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     model(p.model),
