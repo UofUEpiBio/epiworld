@@ -16,7 +16,6 @@ all: main.o
 # Generic rule: .cpp -> .o (actually executable here, not object file)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(OPENMP) -Wnull-dereference \
-		-fsanitize=thread \
 		-g \
 		$< -o $@
 

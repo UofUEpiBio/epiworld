@@ -67,15 +67,15 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
             for (size_t i = 0; i < 5; ++i)
             {
                 Agent<> & agent = m->get_agent(i);
-                agent.rm_entity(entity0, m);
-                agent.add_entity(entity1, m);
+                agent.rm_entity(entity0);
+                agent.add_entity(entity1);
             }
 
             // Remove agents 5-9 from Entity 0 (leave them without entity)
             for (size_t i = 5; i < 10; ++i)
             {
                 Agent<> & agent = m->get_agent(i);
-                agent.rm_entity(entity0, m);
+                agent.rm_entity(entity0);
             }
         },
         "Move agents between entities",
@@ -116,7 +116,7 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     {
         const Agent<> & agent = model.get_agent(i);
         REQUIRE(agent.get_n_entities() == 1);
-        REQUIRE(agent.get_entity(0).get_id() == 1);
+        REQUIRE(agent.get_entity(0, model).get_id() == 1);
     }
 
     // Agents 5-9 should have no entity
@@ -131,7 +131,7 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     {
         const Agent<> & agent = model.get_agent(i);
         REQUIRE(agent.get_n_entities() == 1);
-        REQUIRE(agent.get_entity(0).get_id() == 0);
+        REQUIRE(agent.get_entity(0, model).get_id() == 0);
     }
 
     // Agents 50-99 should still be in Entity 1
@@ -139,7 +139,7 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     {
         const Agent<> & agent = model.get_agent(i);
         REQUIRE(agent.get_n_entities() == 1);
-        REQUIRE(agent.get_entity(0).get_id() == 1);
+        REQUIRE(agent.get_entity(0, model).get_id() == 1);
     }
     #else
     printf_epiworld(
@@ -188,14 +188,14 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
                 for (size_t i = 0; i < 5; ++i)
                 {
                     Agent<> & agent = model_ptr->get_agent(i);
-                    agent.rm_entity(entity0, model_ptr);
-                    agent.add_entity(entity1, model_ptr);
+                    agent.rm_entity(entity0);
+                    agent.add_entity(entity1);
                 }
 
                 for (size_t i = 5; i < 10; ++i)
                 {
                     Agent<> & agent = model_ptr->get_agent(i);
-                    agent.rm_entity(entity0, model_ptr);
+                    agent.rm_entity(entity0);
                 }
             },
             "Move agents between entities",

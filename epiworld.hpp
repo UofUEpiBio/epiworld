@@ -26,7 +26,7 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 12
+#define EPIWORLD_VERSION_MINOR 13
 #define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
@@ -9087,6 +9087,12 @@ class Model {
     friend class AgentsSample<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
+
+    template<typename T>
+    friend class ModelScope;
+
+    static thread_local Model<TSeq> * current_instance_;
+
 protected:
 
     std::string name = ""; ///< Name of the model
@@ -9260,6 +9266,21 @@ public:
     virtual ~Model() {};
 
     /**
+     * @brief Returns a reference to the Model currently in scope on this
+     * thread (set by ModelScope, typically at the start of run()).
+     *
+     * @throws std::logic_error (in EPI_DEBUG mode) if called outside of a
+     * simulation scope.
+     */
+    static Model<TSeq> & the();
+
+    /**
+     * @brief Returns a pointer to the Model currently in scope, or nullptr
+     * if no model is in scope.
+     */
+    static Model<TSeq> * the_ptr();
+
+    /**
      * @name Set the backup object
      * @details `backup` can be used to restore the entire object
      * after a run. This can be useful if the user wishes to have
@@ -9403,6 +9424,7 @@ public:
     std::vector< Entity<TSeq> > & get_entities();
 
     Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr);
+    const Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr) const;
 
     Model<TSeq> & agents_smallworld(
         epiworld_fast_uint n = 1000,
@@ -9801,6 +9823,34 @@ public:
     ) const;
 
 
+};
+
+/**
+ * @brief RAII guard that sets the thread_local Model pointer for the
+ *        duration of a scope (e.g., Model::run).
+ *
+ * When a ModelScope is created, it saves the current thread_local model
+ * pointer and replaces it with the provided model. When it is destroyed,
+ * the previous pointer is restored. This supports nesting.
+ */
+template<typename TSeq>
+class ModelScope {
+public:
+    explicit ModelScope(Model<TSeq> * m)
+        : prev_(Model<TSeq>::current_instance_)
+    {
+        Model<TSeq>::current_instance_ = m;
+    }
+
+    ~ModelScope() {
+        Model<TSeq>::current_instance_ = prev_;
+    }
+
+    ModelScope(const ModelScope &) = delete;
+    ModelScope & operator=(const ModelScope &) = delete;
+
+private:
+    Model<TSeq> * prev_;
 };
 
 #endif
@@ -10467,6 +10517,12 @@ class Model {
     friend class AgentsSample<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
+
+    template<typename T>
+    friend class ModelScope;
+
+    static thread_local Model<TSeq> * current_instance_;
+
 protected:
 
     std::string name = ""; ///< Name of the model
@@ -10640,6 +10696,21 @@ public:
     virtual ~Model() {};
 
     /**
+     * @brief Returns a reference to the Model currently in scope on this
+     * thread (set by ModelScope, typically at the start of run()).
+     *
+     * @throws std::logic_error (in EPI_DEBUG mode) if called outside of a
+     * simulation scope.
+     */
+    static Model<TSeq> & the();
+
+    /**
+     * @brief Returns a pointer to the Model currently in scope, or nullptr
+     * if no model is in scope.
+     */
+    static Model<TSeq> * the_ptr();
+
+    /**
      * @name Set the backup object
      * @details `backup` can be used to restore the entire object
      * after a run. This can be useful if the user wishes to have
@@ -10783,6 +10854,7 @@ public:
     std::vector< Entity<TSeq> > & get_entities();
 
     Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr);
+    const Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr) const;
 
     Model<TSeq> & agents_smallworld(
         epiworld_fast_uint n = 1000,
@@ -11183,6 +11255,34 @@ public:
 
 };
 
+/**
+ * @brief RAII guard that sets the thread_local Model pointer for the
+ *        duration of a scope (e.g., Model::run).
+ *
+ * When a ModelScope is created, it saves the current thread_local model
+ * pointer and replaces it with the provided model. When it is destroyed,
+ * the previous pointer is restored. This supports nesting.
+ */
+template<typename TSeq>
+class ModelScope {
+public:
+    explicit ModelScope(Model<TSeq> * m)
+        : prev_(Model<TSeq>::current_instance_)
+    {
+        Model<TSeq>::current_instance_ = m;
+    }
+
+    ~ModelScope() {
+        Model<TSeq>::current_instance_ = prev_;
+    }
+
+    ModelScope(const ModelScope &) = delete;
+    ModelScope & operator=(const ModelScope &) = delete;
+
+private:
+    Model<TSeq> * prev_;
+};
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -11517,14 +11617,12 @@ class Agent {
     friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
-    
-    Model<TSeq> * model;
 
     std::vector< size_t > * neighbors = nullptr;
     std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
-    std::vector< std::reference_wrapper<Entity<TSeq>> > entities;
+    std::vector< size_t > entities; ///< Entity IDs (indices into Model::entities)
 
     unsigned int state = 0u;
     unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
@@ -11560,74 +11658,64 @@ public:
     ///@{
     void add_tool(
         ToolPtr<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
         const Tool<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
         VirusPtr<TSeq> & virus,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
         const Virus<TSeq> & virus,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_entity(
         Entity<TSeq> & entity,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void rm_tool(
         epiworld_fast_uint tool_idx,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_tool(
         ToolPtr<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_virus(
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         epiworld_fast_uint entity_idx,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         Entity<TSeq> & entity,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
-    void rm_agent_by_virus(Model<TSeq> * model); ///< Agent removed by virus
+    void rm_agent_by_virus(); ///< Agent removed by virus
     ///@}
     
     /**
@@ -11637,10 +11725,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
     ///@}
 
     int get_id() const; ///< Id of the individual
@@ -11677,7 +11765,6 @@ public:
     size_t get_n_neighbors() const;
 
     void change_state(
-        Model<TSeq> * model,
         epiworld_fast_uint new_state,
         epiworld_fast_int queue = 0
         );
@@ -11717,10 +11804,13 @@ public:
     double operator[](size_t j) const;
     ///@}
 
-    std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities();
-    const std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities() const;
+    const std::vector< size_t > & get_entities() const;
     const Entity<TSeq> & get_entity(size_t i) const;
     Entity<TSeq> & get_entity(size_t i);
+
+    const Entity<TSeq> & get_entity(size_t i, const Model<TSeq> & model) const;
+    Entity<TSeq> & get_entity(size_t i, Model<TSeq> & model);
+
     size_t get_n_entities() const;
 
     bool operator==(const Agent<TSeq> & other) const;
@@ -11740,6 +11830,28 @@ public:
 //////////////////////////////////////////////////////////////////////////////*/
 
 
+
+// Static thread_local member definition
+template<typename TSeq>
+thread_local Model<TSeq> * Model<TSeq>::current_instance_ = nullptr;
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::the() {
+    #ifdef EPI_DEBUG
+    if (current_instance_ == nullptr)
+        throw std::logic_error(
+            "Model::the() called outside of a simulation scope. "
+            "This method can only be called during Model::run() "
+            "or within a ModelScope."
+        );
+    #endif
+    return *current_instance_;
+}
+
+template<typename TSeq>
+inline Model<TSeq> * Model<TSeq>::the_ptr() {
+    return current_instance_;
+}
 
 /**
  * @brief Function factory for saving model runs
@@ -12187,10 +12299,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-
-    // Removing old neighbors
-    for (auto & p : population)
-        p.model = this;
+    current_instance_ = this;
 
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
@@ -12204,6 +12313,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     agents_data = model.agents_data;
     agents_data_ncols = model.agents_data_ncols;
 
+    // Entity-agent relationships now use size_t IDs, so they copy
+    // correctly without any rebinding needed.
+
 }
 
 template<typename TSeq>
@@ -12215,6 +12327,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     name(std::move(model.name)),
     db(std::move(model.db)),
     population(std::move(model.population)),
+    population_backup(std::move(model.population_backup)),
     agents_data(std::move(model.agents_data)),
     agents_data_ncols(std::move(model.agents_data_ncols)),
     directed(std::move(model.directed)),
@@ -12251,6 +12364,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
+    current_instance_ = this;
+
     db.model = this;
     db.user_data.model = this;
 
@@ -12262,13 +12377,12 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 {
+    current_instance_ = this;
+
     name = m.name;
 
     population        = m.population;
     population_backup = m.population_backup;
-
-    for (auto & p : population)
-        p.model = this;
 
     db = m.db;
     db.model = this;
@@ -12317,6 +12431,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     array_double_tmp.resize(static_cast<size_t>(1024u), 0.0);
     array_virus_tmp.resize(1024u);
+
+    // Entity-agent relationships now use size_t IDs, so they copy
+    // correctly without any rebinding needed.
 
     return *this;
 
@@ -12408,6 +12525,24 @@ inline Entity<TSeq> & Model<TSeq>::get_entity(size_t i, int * entity_pos)
 }
 
 template<typename TSeq>
+inline const Entity<TSeq> & Model<TSeq>::get_entity(size_t i, int * entity_pos) const
+{
+    for (size_t j = 0u; j < entities.size(); ++j)
+        if (entities[j].get_id() == static_cast<int>(i))
+        {
+
+            if (entity_pos)
+                *entity_pos = j;
+
+            return entities[j];
+
+        }
+
+    throw std::range_error("The entity with id " + std::to_string(i) + " was not found.");
+
+}
+
+template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::agents_smallworld(
     epiworld_fast_uint n,
     epiworld_fast_uint k,
@@ -12415,6 +12550,8 @@ inline Model<TSeq> & Model<TSeq>::agents_smallworld(
     epiworld_double p
 )
 {
+    ModelScope<TSeq> scope_(this);
+
     agents_from_adjlist(
         rgraph_smallworld(n, k, p, d, *this)
     );
@@ -12428,6 +12565,8 @@ inline void Model<TSeq>::agents_empty_graph(
 )
 {
 
+    ModelScope<TSeq> scope_(this);
+
     // Resizing the people
     population.clear();
     population.resize(n, Agent<TSeq>());
@@ -12437,7 +12576,6 @@ inline void Model<TSeq>::agents_empty_graph(
     for (auto & p : population)
     {
         p.id = i++;
-        p.model = this;
     }
 
 
@@ -12845,6 +12983,8 @@ inline void Model<TSeq>::load_agents_entities_ties(
     )
 {
 
+    ModelScope<TSeq> scope_(this);
+
     int i,j;
     std::ifstream filei(fn);
 
@@ -12902,6 +13042,8 @@ inline void Model<TSeq>::load_agents_entities_ties(
     const std::vector< int > & entities_ids
 ) {
 
+    ModelScope<TSeq> scope_(this);
+
     // Checking the size
     if (agents_ids.size() != entities_ids.size())
         throw std::length_error(
@@ -12926,6 +13068,8 @@ inline void Model<TSeq>::load_agents_entities_ties(
     const int * entities_ids,
     size_t n
 ) {
+
+    ModelScope<TSeq> scope_(this);
 
     auto get_agent = [agents_ids](int i) -> int {
         return *(agents_ids + i);
@@ -13001,6 +13145,8 @@ inline void Model<TSeq>::agents_from_adjlist(
     bool directed
     ) {
 
+    ModelScope<TSeq> scope_(this);
+
     AdjList al;
     al.read_edgelist(fn, size, skip, directed);
     this->agents_from_adjlist(al);
@@ -13015,6 +13161,8 @@ inline void Model<TSeq>::agents_from_edgelist(
     bool directed
 ) {
 
+    ModelScope<TSeq> scope_(this);
+
     AdjList al(source, target, size, directed);
     agents_from_adjlist(al);
 
@@ -13022,6 +13170,8 @@ inline void Model<TSeq>::agents_from_edgelist(
 
 template<typename TSeq>
 inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
+
+    ModelScope<TSeq> scope_(this);
 
     // Resizing the people
     agents_empty_graph(al.vcount());
@@ -13032,7 +13182,6 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
     {
 
         // population[i].id    = i;
-        population[i].model = this;
 
         for (const auto & link: tmpdat[i])
         {
@@ -13122,6 +13271,10 @@ inline Model<TSeq> & Model<TSeq>::run(
     int seed
 )
 {
+
+    // Set this model as the current model in scope for this thread.
+    // This enables Model::the() calls from agents, entities, etc.
+    ModelScope<TSeq> scope_(this);
 
     if (size() == 0u)
         throw std::logic_error("There are no agents in this model!");
@@ -13278,20 +13431,14 @@ inline void Model<TSeq>::run_multiple(
     nthreads =
         static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
 
-    // Generating copies of the model
+    // Generating copies of the model (done serially to avoid races on original)
     std::vector< Model<TSeq> * > these(
         std::max(nthreads - 1, 0)
     );
 
-    #pragma omp parallel for shared(these, nthreads)
-    for (size_t i = 0u; i < static_cast<size_t>(nthreads); ++i)
+    for (size_t i = 1u; i < static_cast<size_t>(nthreads); ++i)
     {
-
-        if (i == 0)
-            continue;
-
         these[i - 1] = clone_ptr();
-
     }
 
 
@@ -13389,7 +13536,7 @@ inline void Model<TSeq>::run_multiple(
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
 
-    #pragma omp parallel for shared(these)
+    // Cleanup clones (done serially to avoid races)
     for (int i = 1; i < nthreads; ++i)
     {
         delete these[i - 1];
@@ -13720,16 +13867,14 @@ inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 template<typename TSeq>
 inline void Model<TSeq>::reset() {
 
+    ModelScope<TSeq> scope_(this);
+
     // Restablishing people
     pb = Progress(ndays, 80);
 
     if (population_backup.size())
     {
         population = population_backup;
-
-        // Ensuring the population is poiting to the model
-        for (auto & p : population)
-            p.model = this;
 
         #ifdef EPI_DEBUG
         for (size_t i = 0; i < population.size(); ++i)
@@ -15268,8 +15413,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_set(
         for (auto i: agents_ids)
         {
             model->get_agent(i).set_virus(
-                virus,
-                const_cast<Model<TSeq> * >(model)
+                virus
                 );
         }
     };
@@ -15363,8 +15507,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
             
             // Adding action
             agent.set_virus(
-                virus,
-                const_cast<Model<TSeq> * >(model)
+                virus
                 );
 
             // Adjusting sample
@@ -15455,8 +15598,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
                     loc = n - 1;
                 
                 population[idx[loc]].set_virus(
-                    virus,
-                    const_cast< Model<TSeq> * >(model)
+                    virus
                     );
                 
                 std::swap(idx[loc], idx[n]);
@@ -16399,7 +16541,7 @@ inline void Virus<TSeq>::set_post_immunity(
             if (__no_reinfect->get_id() == -99)
                 m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(*__no_reinfect, m);
+            p->add_tool(*__no_reinfect);
 
             return;
 
@@ -16448,7 +16590,7 @@ inline void Virus<TSeq>::set_post_immunity(
             if (__no_reinfect->get_id() == -99)
                 m->get_db().record_tool(*__no_reinfect);
 
-            p->add_tool(*__no_reinfect, m);
+            p->add_tool(*__no_reinfect);
 
             return;
 
@@ -17123,8 +17265,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_set(
         for (auto i: agents_ids)
         {
             model->get_agent(i).add_tool(
-                tool,
-                const_cast<Model<TSeq> * >(model)
+                tool
                 );
         }
     };
@@ -17194,8 +17335,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
                     loc = n - 1;
                 
                 population[idx[loc]].add_tool(
-                    tool,
-                    const_cast< Model<TSeq> * >(model)
+                    tool
                     );
                 
                 std::swap(idx[loc], idx[n]);
@@ -17285,8 +17425,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
                     loc = n - 1;
                 
                 population[idx[loc]].add_tool(
-                    tool,
-                    const_cast< Model<TSeq> * >(model)
+                    tool
                     );
                 
                 std::swap(idx[loc], idx[n]);
@@ -17940,7 +18079,7 @@ class Entity {
 private:
     
     int id = -1;
-    std::vector< std::reference_wrapper<Agent<TSeq>> > agents;   ///< Vector of agents
+    std::vector< size_t > agents;   ///< Agent IDs (indices into Model::population)
 
     int max_capacity = -1;
     std::string entity_name = "Unnamed entity";
@@ -17976,18 +18115,18 @@ public:
             dist_fun(fun)
         {};
     
-    void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
-    void add_agent(Agent<TSeq> * p, Model<TSeq> * model);
-    void rm_agent(size_t idx, Model<TSeq> * model);
+    void add_agent(Agent<TSeq> & p);
+    void add_agent(Agent<TSeq> * p);
+    void rm_agent(size_t idx);
     size_t size() const noexcept;
     void set_location(std::vector< epiworld_double > loc);
     std::vector< epiworld_double > & get_location();
 
-    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator begin();
-    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator end();
+    typename std::vector< size_t >::iterator begin();
+    typename std::vector< size_t >::iterator end();
 
-    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator begin() const;
-    typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator end() const;
+    typename std::vector< size_t >::const_iterator begin() const;
+    typename std::vector< size_t >::const_iterator end() const;
 
     size_t operator[](size_t i);
 
@@ -18011,8 +18150,8 @@ public:
      */
     void distribute(Model<TSeq> * model);
 
-    std::vector< std::reference_wrapper<Agent<TSeq>> > & get_agents();
-    std::vector< size_t > get_agents_ids() const;
+    const std::vector< size_t > & get_agents() const;
+    const std::vector< size_t > & get_agents_ids() const;
 
     void print() const;
     void set_distribution(EntityToAgentFun<TSeq> fun);
@@ -18114,7 +18253,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
             if ((loc > 0) && (loc >= n_left))
                 loc = n_left - 1;
 
-            m->get_agent(idx[loc]).add_entity(e, m);
+            m->get_agent(idx[loc]).add_entity(e);
 
             std::swap(idx[loc], idx[n_left]);
 
@@ -18150,7 +18289,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
             for (int i = from; i < to; ++i)
             {
                 if (agents[i].get_n_entities() == 0)
-                    e.add_agent(&agents[i], m);
+                    e.add_agent(&agents[i]);
                 else
                     throw std::logic_error(
                         "Agent " + std::to_string(i) + " already has an entity."
@@ -18170,9 +18309,9 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
             auto & agents = m->get_agents();
             for (int i = from; i < to; ++i)
             {
-                e.add_agent(&agents[i], m);
+                e.add_agent(&agents[i]);
             }
-            
+
             return;
 
         };
@@ -18192,7 +18331,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_set(
 
         for (const auto & i: *idx_shared)
         {
-            e.add_agent(&m->get_agent(i), m);
+            e.add_agent(&m->get_agent(i));
         }
 
     };
@@ -18223,27 +18362,25 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_set(
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(
-    Agent<TSeq> & p,
-    Model<TSeq> * model
+    Agent<TSeq> & p
     )
 {
 
     // Need to add it to the events, through the individual
-    p.add_entity(*this, model);    
+    p.add_entity(*this);
 
 }
 
 template<typename TSeq>
 inline void Entity<TSeq>::add_agent(
-    Agent<TSeq> * p,
-    Model<TSeq> * model
+    Agent<TSeq> * p
     )
 {
-    p->add_entity(*this, model);
+    p->add_entity(*this);
 }
 
 template<typename TSeq>
-inline void Entity<TSeq>::rm_agent(size_t idx, Model<TSeq> * model)
+inline void Entity<TSeq>::rm_agent(size_t idx)
 {
     if (idx >= size())
         throw std::out_of_range(
@@ -18251,7 +18388,7 @@ inline void Entity<TSeq>::rm_agent(size_t idx, Model<TSeq> * model)
             " out of " + std::to_string(size())
             );
 
-    agents[idx].rm_entity(*this, model);
+    Model<TSeq>::the().population[agents[idx]].rm_entity(*this);
 
     return;
 }
@@ -18275,41 +18412,41 @@ inline std::vector< epiworld_double > & Entity<TSeq>::get_location()
 }
 
 template<typename TSeq>
-inline typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator Entity<TSeq>::begin()
+inline typename std::vector< size_t >::iterator Entity<TSeq>::begin()
 {
 
     if (agents.size() == 0)
-        return typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator{};
+        return typename std::vector< size_t >::iterator{};
 
     return agents.begin();
 
 }
 
 template<typename TSeq>
-inline typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator Entity<TSeq>::end()
+inline typename std::vector< size_t >::iterator Entity<TSeq>::end()
 {
     if (agents.size() == 0)
-        return typename std::vector< std::reference_wrapper<Agent<TSeq>> >::iterator{};
+        return typename std::vector< size_t >::iterator{};
 
     return agents.begin() + agents.size();
 }
 
 template<typename TSeq>
-inline typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator Entity<TSeq>::begin() const
+inline typename std::vector< size_t >::const_iterator Entity<TSeq>::begin() const
 {
 
     if (agents.size() == 0)
-        return typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator{};
+        return typename std::vector< size_t >::const_iterator{};
 
     return agents.begin();
 
 }
 
 template<typename TSeq>
-inline typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator Entity<TSeq>::end() const
+inline typename std::vector< size_t >::const_iterator Entity<TSeq>::end() const
 {
     if (agents.size() == 0)
-        return typename std::vector< std::reference_wrapper<Agent<TSeq>> >::const_iterator{};
+        return typename std::vector< size_t >::const_iterator{};
 
     return agents.begin() + agents.size();
 }
@@ -18323,7 +18460,7 @@ size_t Entity<TSeq>::operator[](size_t i)
             std::to_string(agents.size()) + " <= " + std::to_string(i)
             );
 
-    return i;
+    return agents[i];
 }
 
 template<typename TSeq>
@@ -18408,7 +18545,7 @@ inline bool Entity<TSeq>::operator==(const Entity<TSeq> & other) const
 
     for (size_t i = 0u; i < agents.size(); ++i)
     {
-        if (agents[i].get() != other.agents[i].get())
+        if (agents[i] != other.agents[i])
             return false;
     }
 
@@ -18460,19 +18597,15 @@ inline void Entity<TSeq>::distribute(Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline std::vector< std::reference_wrapper<Agent<TSeq>> > & Entity<TSeq>::get_agents()
+inline const std::vector< size_t > & Entity<TSeq>::get_agents() const
 {
     return agents;
 }
 
 template<typename TSeq>
-inline std::vector< size_t > Entity<TSeq>::get_agents_ids() const
+inline const std::vector< size_t > & Entity<TSeq>::get_agents_ids() const
 {
-    std::vector< size_t > res;
-    for (const Agent<TSeq> & agent: agents)
-        res.push_back(agent.get_id());
-
-    return res;
+    return agents;
 }
 
 template<typename TSeq>
@@ -18567,9 +18700,9 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                     
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        (1.0 - p->get_susceptibility_reduction(v)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor->get_transmission_reduction(v)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -18586,7 +18719,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 if (which < 0)
                     return;
 
-                p->set_virus(*m->array_virus_tmp[which], m);
+                p->set_virus(*m->array_virus_tmp[which]);
 
                 return; 
             };
@@ -18650,9 +18783,9 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        (1.0 - p->get_susceptibility_reduction(v)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor->get_transmission_reduction(v)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -18669,7 +18802,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 if (which < 0)
                     return;
 
-                p->set_virus(*m->array_virus_tmp[which], m); 
+                p->set_virus(*m->array_virus_tmp[which]); 
 
                 return;
 
@@ -18729,9 +18862,9 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                         
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        (1.0 - p->get_susceptibility_reduction(v)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor->get_transmission_reduction(v)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -18817,9 +18950,9 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                         
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        (1.0 - p->get_susceptibility_reduction(v)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor->get_transmission_reduction(v)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -18893,9 +19026,9 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, m)) * 
+            (1.0 - p->get_susceptibility_reduction(v)) * 
             v->get_prob_infecting(m) * 
-            (1.0 - neighbor->get_transmission_reduction(v, m)) 
+            (1.0 - neighbor->get_transmission_reduction(v)) 
             ; 
     
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -19071,6 +19204,12 @@ class Model {
     friend class AgentsSample<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
+
+    template<typename T>
+    friend class ModelScope;
+
+    static thread_local Model<TSeq> * current_instance_;
+
 protected:
 
     std::string name = ""; ///< Name of the model
@@ -19244,6 +19383,21 @@ public:
     virtual ~Model() {};
 
     /**
+     * @brief Returns a reference to the Model currently in scope on this
+     * thread (set by ModelScope, typically at the start of run()).
+     *
+     * @throws std::logic_error (in EPI_DEBUG mode) if called outside of a
+     * simulation scope.
+     */
+    static Model<TSeq> & the();
+
+    /**
+     * @brief Returns a pointer to the Model currently in scope, or nullptr
+     * if no model is in scope.
+     */
+    static Model<TSeq> * the_ptr();
+
+    /**
      * @name Set the backup object
      * @details `backup` can be used to restore the entire object
      * after a run. This can be useful if the user wishes to have
@@ -19387,6 +19541,7 @@ public:
     std::vector< Entity<TSeq> > & get_entities();
 
     Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr);
+    const Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr) const;
 
     Model<TSeq> & agents_smallworld(
         epiworld_fast_uint n = 1000,
@@ -19787,6 +19942,34 @@ public:
 
 };
 
+/**
+ * @brief RAII guard that sets the thread_local Model pointer for the
+ *        duration of a scope (e.g., Model::run).
+ *
+ * When a ModelScope is created, it saves the current thread_local model
+ * pointer and replaces it with the provided model. When it is destroyed,
+ * the previous pointer is restored. This supports nesting.
+ */
+template<typename TSeq>
+class ModelScope {
+public:
+    explicit ModelScope(Model<TSeq> * m)
+        : prev_(Model<TSeq>::current_instance_)
+    {
+        Model<TSeq>::current_instance_ = m;
+    }
+
+    ~ModelScope() {
+        Model<TSeq>::current_instance_ = prev_;
+    }
+
+    ModelScope(const ModelScope &) = delete;
+    ModelScope & operator=(const ModelScope &) = delete;
+
+private:
+    Model<TSeq> * prev_;
+};
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -19860,9 +20043,9 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                     
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        (1.0 - p->get_susceptibility_reduction(v)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor->get_transmission_reduction(v)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -19879,7 +20062,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 if (which < 0)
                     return;
 
-                p->set_virus(*m->array_virus_tmp[which], m);
+                p->set_virus(*m->array_virus_tmp[which]);
 
                 return; 
             };
@@ -19943,9 +20126,9 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        (1.0 - p->get_susceptibility_reduction(v)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor->get_transmission_reduction(v)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -19962,7 +20145,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
                 if (which < 0)
                     return;
 
-                p->set_virus(*m->array_virus_tmp[which], m); 
+                p->set_virus(*m->array_virus_tmp[which]); 
 
                 return;
 
@@ -20022,9 +20205,9 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                         
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        (1.0 - p->get_susceptibility_reduction(v)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor->get_transmission_reduction(v)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -20110,9 +20293,9 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
                         
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
+                        (1.0 - p->get_susceptibility_reduction(v)) * 
                         v->get_prob_infecting(m) * 
-                        (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                        (1.0 - neighbor->get_transmission_reduction(v)) 
                         ; 
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -20186,9 +20369,9 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, m)) * 
+            (1.0 - p->get_susceptibility_reduction(v)) * 
             v->get_prob_infecting(m) * 
-            (1.0 - neighbor->get_transmission_reduction(v, m)) 
+            (1.0 - neighbor->get_transmission_reduction(v)) 
             ; 
     
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -20583,7 +20766,7 @@ inline void default_update_susceptible(
     if (virus == nullptr)
         return;
 
-    p->set_virus(*virus, m); 
+    p->set_virus(*virus);
 
     return;
 
@@ -20601,11 +20784,11 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
     // Die
     auto & virus = p->get_virus();
     m->array_double_tmp[0u] = 
-        virus->get_prob_death(m) * (1.0 - p->get_death_reduction(virus, m)); 
+        virus->get_prob_death(m) * (1.0 - p->get_death_reduction(virus));
 
     // Recover
-    m->array_double_tmp[1u] = 
-        1.0 - (1.0 - virus->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(virus, m)); 
+    m->array_double_tmp[1u] =
+        1.0 - (1.0 - virus->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(virus)); 
     
 
     // Running the roulette
@@ -20618,11 +20801,11 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
     if (which == 0u) // If odd
     {
 
-        p->rm_agent_by_virus(m);
+        p->rm_agent_by_virus();
         
     } else {
 
-        p->rm_virus(m);
+        p->rm_virus();
 
     }
 
@@ -20730,14 +20913,12 @@ class Agent {
     friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
-    
-    Model<TSeq> * model;
 
     std::vector< size_t > * neighbors = nullptr;
     std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
-    std::vector< std::reference_wrapper<Entity<TSeq>> > entities;
+    std::vector< size_t > entities; ///< Entity IDs (indices into Model::entities)
 
     unsigned int state = 0u;
     unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
@@ -20773,74 +20954,64 @@ public:
     ///@{
     void add_tool(
         ToolPtr<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
         const Tool<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
         VirusPtr<TSeq> & virus,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
         const Virus<TSeq> & virus,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_entity(
         Entity<TSeq> & entity,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void rm_tool(
         epiworld_fast_uint tool_idx,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_tool(
         ToolPtr<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_virus(
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         epiworld_fast_uint entity_idx,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         Entity<TSeq> & entity,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
-    void rm_agent_by_virus(Model<TSeq> * model); ///< Agent removed by virus
+    void rm_agent_by_virus(); ///< Agent removed by virus
     ///@}
     
     /**
@@ -20850,10 +21021,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
     ///@}
 
     int get_id() const; ///< Id of the individual
@@ -20890,7 +21061,6 @@ public:
     size_t get_n_neighbors() const;
 
     void change_state(
-        Model<TSeq> * model,
         epiworld_fast_uint new_state,
         epiworld_fast_int queue = 0
         );
@@ -20930,10 +21100,13 @@ public:
     double operator[](size_t j) const;
     ///@}
 
-    std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities();
-    const std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities() const;
+    const std::vector< size_t > & get_entities() const;
     const Entity<TSeq> & get_entity(size_t i) const;
     Entity<TSeq> & get_entity(size_t i);
+
+    const Entity<TSeq> & get_entity(size_t i, const Model<TSeq> & model) const;
+    Entity<TSeq> & get_entity(size_t i, Model<TSeq> & model);
+
     size_t get_n_entities() const;
 
     bool operator==(const Agent<TSeq> & other) const;
@@ -21515,14 +21688,12 @@ class Agent {
     friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
     friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
-    
-    Model<TSeq> * model;
 
     std::vector< size_t > * neighbors = nullptr;
     std::vector< size_t > * neighbors_locations = nullptr;
     size_t n_neighbors = 0u;
 
-    std::vector< std::reference_wrapper<Entity<TSeq>> > entities;
+    std::vector< size_t > entities; ///< Entity IDs (indices into Model::entities)
 
     unsigned int state = 0u;
     unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
@@ -21558,74 +21729,64 @@ public:
     ///@{
     void add_tool(
         ToolPtr<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_tool(
         const Tool<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
         VirusPtr<TSeq> & virus,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void set_virus(
         const Virus<TSeq> & virus,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void add_entity(
         Entity<TSeq> & entity,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
 
     void rm_tool(
         epiworld_fast_uint tool_idx,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_tool(
         ToolPtr<TSeq> & tool,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_virus(
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         epiworld_fast_uint entity_idx,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
     void rm_entity(
         Entity<TSeq> & entity,
-        Model<TSeq> * model,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
     );
 
-    void rm_agent_by_virus(Model<TSeq> * model); ///< Agent removed by virus
+    void rm_agent_by_virus(); ///< Agent removed by virus
     ///@}
     
     /**
@@ -21635,10 +21796,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> v);
     ///@}
 
     int get_id() const; ///< Id of the individual
@@ -21675,7 +21836,6 @@ public:
     size_t get_n_neighbors() const;
 
     void change_state(
-        Model<TSeq> * model,
         epiworld_fast_uint new_state,
         epiworld_fast_int queue = 0
         );
@@ -21715,10 +21875,13 @@ public:
     double operator[](size_t j) const;
     ///@}
 
-    std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities();
-    const std::vector< std::reference_wrapper<Entity<TSeq>> > get_entities() const;
+    const std::vector< size_t > & get_entities() const;
     const Entity<TSeq> & get_entity(size_t i) const;
     Entity<TSeq> & get_entity(size_t i);
+
+    const Entity<TSeq> & get_entity(size_t i, const Model<TSeq> & model) const;
+    Entity<TSeq> & get_entity(size_t i, Model<TSeq> & model);
+
     size_t get_n_entities() const;
 
     bool operator==(const Agent<TSeq> & other) const;
@@ -21975,14 +22138,14 @@ inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
 
         if (p->get_n_entities() > e->size()) // Slower search through the agent
         {
-            for (const Agent<TSeq> & agent: e->get_agents())
-                if(agent.get_id() == p->get_id())
+            for (size_t agent_id : e->get_agents())
+                if(static_cast<int>(agent_id) == p->get_id())
                     throw std::logic_error("An entity cannot be reassigned to an agent.");
         }
         else                                 // Slower search through the entity
         {
-            for (const Entity<TSeq> & entity: p->get_entities())
-                if(entity.get_id() == e->get_id())
+            for (size_t entity_id : p->get_entities())
+                if(static_cast<int>(entity_id) == e->get_id())
                     throw std::logic_error("An entity cannot be reassigned to an agent.");
         }
 
@@ -21990,38 +22153,34 @@ inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
     }
 
     // Adding the to agent and the entity
-    p->entities.push_back(std::ref(*e));
-    e->agents.push_back(std::ref(*p));
-    
+    p->entities.push_back(static_cast<size_t>(e->get_id()));
+    e->agents.push_back(static_cast<size_t>(p->get_id()));
+
 }
 
 template<typename TSeq>
 inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> *)
 {
-    
-    Agent<TSeq> &  p = *a.agent;    
+
+    Agent<TSeq> &  p = *a.agent;
     Entity<TSeq> & e = *a.entity;
-    
+
     // Remove entity from agent's entity list
     p.entities.erase(
-        std::remove_if(
+        std::remove(
             p.entities.begin(),
             p.entities.end(),
-            [&e](const std::reference_wrapper<Entity<TSeq>> & entity_ref) {
-                return entity_ref.get().get_id() == e.get_id();
-            }
+            static_cast<size_t>(e.get_id())
         ),
         p.entities.end()
     );
 
     // Remove agent from entity's agent list
     e.agents.erase(
-        std::remove_if(
+        std::remove(
             e.agents.begin(),
             e.agents.end(),
-            [&p](const std::reference_wrapper<Agent<TSeq>> & agent_ref) {
-                return agent_ref.get().get_id() == p.get_id();
-            }
+            static_cast<size_t>(p.get_id())
         ),
         e.agents.end()
     );
@@ -22042,13 +22201,11 @@ inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> *)
 
 
 // To large to add directly here
-
 template<typename TSeq>
 inline Agent<TSeq>::Agent() {}
 
 template<typename TSeq>
 inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
-    model(p.model),
     neighbors(std::move(p.neighbors)),
     neighbors_locations(std::move(p.neighbors_locations)),
     n_neighbors(p.n_neighbors),
@@ -22084,9 +22241,9 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     
 }
 
+// Copy constructor
 template<typename TSeq>
 inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
-    model(p.model),
     neighbors(nullptr),
     neighbors_locations(nullptr),
     n_neighbors(p.n_neighbors),
@@ -22127,10 +22284,8 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
 template<typename TSeq>
 inline Agent<TSeq> & Agent<TSeq>::operator=(
     const Agent<TSeq> & other_agent
-) 
+)
 {
-
-    model = other_agent.model;
 
     n_neighbors = other_agent.n_neighbors;
     if (neighbors != nullptr)
@@ -22190,18 +22345,19 @@ inline Agent<TSeq>::~Agent()
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
     ToolPtr<TSeq> & tool,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 ) {
 
+    auto & model = Model<TSeq>::the();
+
     // Checking the virus exists
-    if (tool->get_id() >= static_cast<int>(model->get_db().get_n_tools()))
-        throw std::range_error("The tool with id: " + std::to_string(tool->get_id()) + 
-            " has not been registered. There are only " + std::to_string(model->get_n_tools()) + 
+    if (tool->get_id() >= static_cast<int>(model.get_db().get_n_tools()))
+        throw std::range_error("The tool with id: " + std::to_string(tool->get_id()) +
+            " has not been registered. There are only " + std::to_string(model.get_n_tools()) +
             " included in the model.");
 
-    model->events_add(
+    model.events_add(
         this, nullptr, tool, nullptr, state_new, queue, default_add_tool<TSeq>, -1, -1
         );
 
@@ -22210,28 +22366,28 @@ inline void Agent<TSeq>::add_tool(
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
     const Tool<TSeq> & tool,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
     ToolPtr<TSeq> tool_ptr = std::make_shared< Tool<TSeq> >(tool);
-    add_tool(tool_ptr, model, state_new, queue);
+    add_tool(tool_ptr, state_new, queue);
 }
 
 template<typename TSeq>
 inline void Agent<TSeq>::set_virus(
     VirusPtr<TSeq> & virus,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
 
+    auto & model = Model<TSeq>::the();
+
     // Checking the virus exists
-    if (virus->get_id() >= static_cast<int>(model->get_db().get_n_viruses()))
-        throw std::range_error("The virus with id: " + std::to_string(virus->get_id()) + 
-            " has not been registered. There are only " + std::to_string(model->get_n_viruses()) + 
+    if (virus->get_id() >= static_cast<int>(model.get_db().get_n_viruses()))
+        throw std::range_error("The virus with id: " + std::to_string(virus->get_id()) +
+            " has not been registered. There are only " + std::to_string(model.get_n_viruses()) +
             " included in the model.");
 
     if (state_new == -99)
@@ -22240,7 +22396,7 @@ inline void Agent<TSeq>::set_virus(
     if (queue == -99)
         virus->get_queue(&queue, nullptr, nullptr);
 
-    model->events_add(
+    model.events_add(
         this, virus, nullptr, nullptr, state_new, queue, default_add_virus<TSeq>, -1, -1
         );
 
@@ -22249,23 +22405,23 @@ inline void Agent<TSeq>::set_virus(
 template<typename TSeq>
 inline void Agent<TSeq>::set_virus(
     const Virus<TSeq> & virus,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
     VirusPtr<TSeq> virus_ptr = std::make_shared< Virus<TSeq> >(virus);
-    set_virus(virus_ptr, model, state_new, queue);
+    set_virus(virus_ptr, state_new, queue);
 }
 
 template<typename TSeq>
 inline void Agent<TSeq>::add_entity(
     Entity<TSeq> & entity,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
+
+    auto * model = Model<TSeq>::the_ptr();
 
     if (model != nullptr)
     {
@@ -22275,8 +22431,8 @@ inline void Agent<TSeq>::add_entity(
         );
 
     }
-    else // If no model is passed, then we assume that we only need to add the
-         // model entity
+    else // If no model is in scope, then we assume that we only need to add the
+         // entity directly (pre-simulation setup)
     {
 
         auto nullvirus = VirusPtr<TSeq>(nullptr);
@@ -22301,7 +22457,6 @@ inline void Agent<TSeq>::add_entity(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_tool(
     epiworld_fast_uint tool_idx,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
@@ -22313,7 +22468,7 @@ inline void Agent<TSeq>::rm_tool(
             std::to_string(n_tools) + " tools."
         );
 
-    model->events_add(
+    Model<TSeq>::the().events_add(
         this, nullptr, tools[tool_idx], nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
         );
 
@@ -22322,7 +22477,6 @@ inline void Agent<TSeq>::rm_tool(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_tool(
     ToolPtr<TSeq> & tool,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
@@ -22331,7 +22485,7 @@ inline void Agent<TSeq>::rm_tool(
     if (tool->agent != this)
         throw std::logic_error("Cannot remove a virus from another agent!");
 
-    model->events_add(
+    Model<TSeq>::the().events_add(
         this, nullptr, tool, nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
         );
 
@@ -22339,7 +22493,6 @@ inline void Agent<TSeq>::rm_tool(
 
 template<typename TSeq>
 inline void Agent<TSeq>::rm_virus(
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
@@ -22356,19 +22509,18 @@ inline void Agent<TSeq>::rm_virus(
     if (queue == -99)
         virus->get_queue(nullptr, &queue, nullptr);
 
-    model->events_add(
+    Model<TSeq>::the().events_add(
         this, virus, nullptr, nullptr,
         state_new,
         queue,
         default_rm_virus<TSeq>, -1, -1
         );
-    
+
 }
 
 template<typename TSeq>
 inline void Agent<TSeq>::rm_entity(
     epiworld_fast_uint entity_idx,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
@@ -22384,13 +22536,14 @@ inline void Agent<TSeq>::rm_entity(
             "There is no entity to remove here!"
         );
 
-    model->events_add(
+    auto & model = Model<TSeq>::the();
+    model.events_add(
         this,
         nullptr,
         nullptr,
-        &model->get_entity(entity_idx),
+        &model.get_entity(entities[entity_idx]),
         state_new,
-        queue, 
+        queue,
         default_rm_entity<TSeq>,
         -1,
         -1
@@ -22400,17 +22553,16 @@ inline void Agent<TSeq>::rm_entity(
 template<typename TSeq>
 inline void Agent<TSeq>::rm_entity(
     Entity<TSeq> & entity,
-    Model<TSeq> * model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
 {
 
     // Looking for entity location in the agent
-    // bool found = false;
-    bool found = std::find_if(entities.begin(), entities.end(), [&entity](const Entity<TSeq> & e) {
-        return e.get_id() == entity.get_id();
-    }) != entities.end();
+    bool found = std::find(
+        entities.begin(), entities.end(),
+        static_cast<size_t>(entity.get_id())
+    ) != entities.end();
 
     if (!found)
         throw std::logic_error(
@@ -22421,13 +22573,14 @@ inline void Agent<TSeq>::rm_entity(
             std::string("\".")
             );
 
-    model->events_add(
+    auto & model = Model<TSeq>::the();
+    model.events_add(
         this,
         nullptr,
         nullptr,
-        &model->entities[entity.get_id()],
+        &model.entities[entity.get_id()],
         state_new,
-        queue, 
+        queue,
         default_rm_entity<TSeq>,
         -1,
         -1
@@ -22435,12 +22588,10 @@ inline void Agent<TSeq>::rm_entity(
 }
 
 template<typename TSeq>
-inline void Agent<TSeq>::rm_agent_by_virus(
-    Model<TSeq> * model
-)
+inline void Agent<TSeq>::rm_agent_by_virus()
 {
 
-    model->events_add(
+    Model<TSeq>::the().events_add(
         this, virus, nullptr, nullptr,
         virus->state_removed,
         virus->queue_removed,
@@ -22451,35 +22602,35 @@ inline void Agent<TSeq>::rm_agent_by_virus(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> v,
-    Model<TSeq> * model
+    VirusPtr<TSeq> v
 ) {
 
-    return model->susceptibility_reduction_mixer(this, v, model);
+    auto & model = Model<TSeq>::the();
+    return model.susceptibility_reduction_mixer(this, v, &model);
 }
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> v,
-    Model<TSeq> * model
+    VirusPtr<TSeq> v
 ) {
-    return model->transmission_reduction_mixer(this, v, model);
+    auto & model = Model<TSeq>::the();
+    return model.transmission_reduction_mixer(this, v, &model);
 }
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> v,
-    Model<TSeq> * model
+    VirusPtr<TSeq> v
 ) {
-    return model->recovery_enhancer_mixer(this, v, model);
+    auto & model = Model<TSeq>::the();
+    return model.recovery_enhancer_mixer(this, v, &model);
 }
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> v,
-    Model<TSeq> * model
+    VirusPtr<TSeq> v
 ) {
-    return model->death_reduction_mixer(this, v, model);
+    auto & model = Model<TSeq>::the();
+    return model.death_reduction_mixer(this, v, &model);
 }
 
 template<typename TSeq>
@@ -22621,7 +22772,7 @@ inline void Agent<TSeq>::swap_neighbors(
         );
 
     // Getting the agents
-    auto & pop = model->population;
+    auto & pop = Model<TSeq>::the().population;
     auto & neigh_this  = pop[(*neighbors)[n_this]];
     auto & neigh_other = pop[(*other.neighbors)[n_other]];
 
@@ -22632,7 +22783,7 @@ inline void Agent<TSeq>::swap_neighbors(
     // Changing ids
     std::swap((*neighbors)[n_this], (*other.neighbors)[n_other]);
 
-    if (!model->directed)
+    if (!Model<TSeq>::the().directed)
     {
         std::swap(
             (*neigh_this.neighbors)[loc_this_in_neigh],
@@ -22655,7 +22806,7 @@ inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors()
 {
     std::vector< Agent<TSeq> * > res(n_neighbors, nullptr);
     for (size_t i = 0u; i < n_neighbors; ++i)
-        res[i] = &model->population[(*neighbors)[i]];
+        res[i] = &Model<TSeq>::the().population[(*neighbors)[i]];
 
     return res;
 }
@@ -22668,17 +22819,16 @@ inline size_t Agent<TSeq>::get_n_neighbors() const
 
 template<typename TSeq>
 inline void Agent<TSeq>::change_state(
-    Model<TSeq> * model,
     epiworld_fast_uint new_state,
     epiworld_fast_int queue
     )
 {
 
-    model->events_add(
+    Model<TSeq>::the().events_add(
         this, nullptr, nullptr, nullptr, new_state, queue,
         default_change_state<TSeq>, -1, -1
     );
-    
+
     return;
 
 }
@@ -22770,8 +22920,8 @@ template<typename TSeq>
 inline bool Agent<TSeq>::has_entity(epiworld_fast_uint t) const
 {
 
-    for (auto & entity : entities)
-        if (entity.get_id() == t)
+    for (auto & entity_id : entities)
+        if (entity_id == static_cast<size_t>(t))
             return true;
 
     return false;
@@ -22782,8 +22932,8 @@ template<typename TSeq>
 inline bool Agent<TSeq>::has_entity(std::string name) const
 {
 
-    for (auto & entity : entities)
-        if (entity.get_name() == name)
+    for (auto & entity_id : entities)
+        if (Model<TSeq>::the().get_entity(entity_id).get_name() == name)
             return true;
 
     return false;
@@ -22801,7 +22951,7 @@ inline void Agent<TSeq>::print(
         printf_epiworld(
             "Agent: %i, state: %s (%i), Has virus: %s, NTools: %ii NNeigh: %i\n",
             static_cast<int>(id),
-            model->states_labels[state].c_str(),
+            Model<TSeq>::the().states_labels[state].c_str(),
             static_cast<int>(state),
             virus == nullptr ? std::string("no").c_str() : std::string("yes").c_str(),
             static_cast<int>(n_tools),
@@ -22813,13 +22963,13 @@ inline void Agent<TSeq>::print(
         printf_epiworld("Information about agent id %i\n",
             static_cast<int>(this->id));
         printf_epiworld("  State        : %s (%i)\n",
-            model->states_labels[state].c_str(), static_cast<int>(state));
+            Model<TSeq>::the().states_labels[state].c_str(), static_cast<int>(state));
         printf_epiworld("  Has virus    : %s\n", virus == nullptr ?
             std::string("no").c_str() : std::string("yes").c_str());
         printf_epiworld("  Tool count   : %i\n", static_cast<int>(n_tools));
         printf_epiworld("  Neigh. count : %i\n", static_cast<int>(n_neighbors));
 
-        size_t nfeats = model->get_agents_data_ncols();
+        size_t nfeats = Model<TSeq>::the().get_agents_data_ncols();
         if (nfeats > 0)
         {
 
@@ -22855,44 +23005,42 @@ template<typename TSeq>
 inline double & Agent<TSeq>::operator()(size_t j)
 {
 
-    if (model->agents_data_ncols <= j)
+    auto & m = Model<TSeq>::the();
+    if (m.agents_data_ncols <= j)
         throw std::logic_error("The requested feature of the agent is out of range.");
 
-    return *(model->agents_data + j * model->size() + id);
+    return *(m.agents_data + j * m.size() + id);
 
 }
 
 template<typename TSeq>
 inline double & Agent<TSeq>::operator[](size_t j)
 {
-    return *(model->agents_data + j * model->size() + id);
+    auto & m = Model<TSeq>::the();
+    return *(m.agents_data + j * m.size() + id);
 }
 
 template<typename TSeq>
 inline double Agent<TSeq>::operator()(size_t j) const
 {
 
-    if (model->agents_data_ncols <= j)
+    auto & m = Model<TSeq>::the();
+    if (m.agents_data_ncols <= j)
         throw std::logic_error("The requested feature of the agent is out of range.");
 
-    return *(model->agents_data + j * model->size() + id);
+    return *(m.agents_data + j * m.size() + id);
 
 }
 
 template<typename TSeq>
 inline double Agent<TSeq>::operator[](size_t j) const
 {
-    return *(model->agents_data + j * model->size() + id);
+    auto & m = Model<TSeq>::the();
+    return *(m.agents_data + j * m.size() + id);
 }
 
 template<typename TSeq>
-inline std::vector< std::reference_wrapper<Entity<TSeq>> > Agent<TSeq>::get_entities()
-{
-    return entities;
-}
-
-template<typename TSeq>
-inline const std::vector< std::reference_wrapper<Entity<TSeq>> > Agent<TSeq>::get_entities() const
+inline const std::vector< size_t > & Agent<TSeq>::get_entities() const
 {
     return entities;
 }
@@ -22906,7 +23054,7 @@ inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i) const
     if (i >= entities.size())
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return entities[i];
+    return Model<TSeq>::the().get_entity(entities[i]);
 }
 
 template<typename TSeq>
@@ -22918,7 +23066,31 @@ inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i)
     if (i >= entities.size())
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return entities[i];
+    return Model<TSeq>::the().get_entity(entities[i]);
+}
+
+template<typename TSeq>
+inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i, const Model<TSeq> & model) const
+{
+    if (entities.size() == 0)
+        throw std::range_error("Agent id " + std::to_string(id) + " has no entities.");
+
+    if (i >= entities.size())
+        throw std::range_error("Trying to get to an agent's entity outside of the range.");
+
+    return model.get_entity(entities[i]);
+}
+
+template<typename TSeq>
+inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i, Model<TSeq> & model)
+{
+    if (entities.size() == 0)
+        throw std::range_error("Agent id " + std::to_string(id) + " has no entities.");
+
+    if (i >= entities.size())
+        throw std::range_error("Trying to get to an agent's entity outside of the range.");
+
+    return model.get_entity(entities[i]);
 }
 
 template<typename TSeq>
@@ -22949,12 +23121,12 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
         entities.size() != other.entities.size(),
         "Agent:: n_entities don't match"
         )
-    
-    
+
+
     for (size_t i = 0u; i < entities.size(); ++i)
     {
         EPI_DEBUG_FAIL_AT_TRUE(
-            entities[i].get() != other.entities[i].get(),
+            entities[i] != other.entities[i],
             "Agent:: entities[i] don't match"
         )
     }
@@ -23388,7 +23560,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
             // Iterating through the agents in the entity
             for (size_t a_i = 0u; a_i < entity->size(); ++a_i)
             {
-                size_t s = entity->agents[a_i].get().get_state();
+                size_t s = model->population[entity->agents[a_i]].get_state();
                 if (std::find(states.begin(), states.end(), s) != states.end())
                     agents_left->push_back(a_i);
 
@@ -23482,7 +23654,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
             );
 
             size_t ith  = agents_left->operator[](ith_);
-            agents->operator[](i) = &(entity->agents[ith].get());
+            agents->operator[](i) = &model->population[entity->agents[ith]];
 
             #ifdef EPI_DEBUG
             if (__sampled[ith])
@@ -23885,8 +24057,8 @@ inline std::function<void(Model<TSeq>*)> create_init_function_sir(
 
         // Setting up the initial states
         for (auto & agent : sample)
-            agent->change_state(model, 2, Queue<TSeq>::NoOne);
-        
+            agent->change_state(2, Queue<TSeq>::NoOne);
+
         // Running the events
         model->events_run();
 
@@ -23901,7 +24073,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_sir(
 /**
  * @brief Creates an initial function for the SIR-like models
  * @ingroup model_utilities
- * 
+ *
  * The function is used for the initial states of the model.
 */
 template<typename TSeq>
@@ -23951,7 +24123,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_sird(
         // we only need to change recovered
         size_t nrecovered = prop[0u] * tot_left * n;
         size_t ndeceased  = prop[01] * tot_left * n;
-        
+
         AgentsSample<TSeq> sample_recover(
             *model,
             nrecovered,
@@ -23961,7 +24133,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_sird(
 
         // Setting up the initial states
         for (auto & agent : sample_recover)
-            agent->change_state(model, 2, Queue<TSeq>::NoOne);
+            agent->change_state(2, Queue<TSeq>::NoOne);
 
         AgentsSample<TSeq> sample_deceased(
             *model,
@@ -23972,7 +24144,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_sird(
 
         // Setting up the initial states
         for (auto & agent : sample_deceased)
-            agent->change_state(model, 3, Queue<TSeq>::NoOne);
+            agent->change_state(3, Queue<TSeq>::NoOne);
         
         // Running the events
         model->events_run();
@@ -24040,7 +24212,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seir(
 
         // Setting up the initial states
         for (auto & agent : sample_suscept)
-            agent->change_state(model, 3, Queue<TSeq>::NoOne);
+            agent->change_state(3, Queue<TSeq>::NoOne);
 
         AgentsSample<TSeq> sample_exposed(
             *model,
@@ -24051,8 +24223,8 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seir(
 
         // Setting up the initial states
         for (auto & agent : sample_exposed)
-            agent->change_state(model, 2, Queue<TSeq>::NoOne);
-        
+            agent->change_state(2, Queue<TSeq>::NoOne);
+
         // Running the events
         model->events_run();
 
@@ -24067,7 +24239,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seir(
 /**
  * @brief Creates an initial function for the SEIR-like models
  * @ingroup model_utilities
- * 
+ *
  * The function is used for the initial states of the model.
 */
 template<typename TSeq>
@@ -24125,7 +24297,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seird(
 
         // Setting up the initial states
         for (auto & agent : sample_suscept)
-            agent->change_state(model, 3, Queue<TSeq>::NoOne);
+            agent->change_state(3, Queue<TSeq>::NoOne);
 
         AgentsSample<TSeq> sample_exposed(
             *model,
@@ -24136,7 +24308,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seird(
 
         // Setting up the initial states
         for (auto & agent : sample_exposed)
-            agent->change_state(model, 2, Queue<TSeq>::NoOne);
+            agent->change_state(2, Queue<TSeq>::NoOne);
 
         // Running the events
         model->events_run();
@@ -24148,10 +24320,10 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seird(
             {0u},
             true
             );
-        
+
         // Setting up the initial states
         for (auto & agent : sample_deceased)
-            agent->change_state(model, 4, Queue<TSeq>::NoOne);
+            agent->change_state(4, Queue<TSeq>::NoOne);
         
         // Running the events
         model->events_run();
@@ -24218,7 +24390,7 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool(
 
             // Adding the tool
             if (model->runif() < p)
-                agent.add_tool(tool, model);
+                agent.add_tool(tool);
             
         
         }
@@ -24280,7 +24452,7 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
 
             // Adding the tool
             if (model->runif() < p)
-                agent.add_tool(tool, model);
+                agent.add_tool(tool);
             
         
         }
@@ -24659,7 +24831,7 @@ public:
 
         // Does the agent become infected?
         if (m->runif() < 1.0/(v->get_incubation(m)))
-            p->change_state(m, ModelSEIR<TSeq>::INFECTED);
+            p->change_state(ModelSEIR<TSeq>::INFECTED);
 
         return;
     };
@@ -24671,7 +24843,7 @@ public:
     ) -> void {
         // Does the agent recover?
         if (m->runif() < (m->par("Recovery rate")))
-            p->rm_virus(m);
+            p->rm_virus();
 
         return;
     };
@@ -24940,9 +25112,9 @@ inline ModelSURV<TSeq>::ModelSURV(
                 
             /* And it is a function of susceptibility_reduction as well */ 
             epiworld_double tmp_transmission = 
-                (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                v->get_prob_infecting(m) * 
-                (1.0 - neighbor->get_transmission_reduction(v, m)) 
+                (1.0 - p->get_susceptibility_reduction(v)) *
+                v->get_prob_infecting(m) *
+                (1.0 - neighbor->get_transmission_reduction(v)) 
                 ; 
         
             m->array_double_tmp[nviruses_tmp]  = tmp_transmission;
@@ -24959,7 +25131,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         if (which < 0)
             return;
 
-        p->set_virus(*m->array_virus_tmp[which], m); 
+        p->set_virus(*m->array_virus_tmp[which]);
         return;
 
     };
@@ -24973,7 +25145,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         ModelSURV<TSeq> * model_surv = dynamic_cast<ModelSURV<TSeq> *>(m);
 
         epiworld::VirusPtr<TSeq> & v = p->get_virus(); 
-        epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
+        epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v));
         
         epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
         epiworld_fast_uint state = p->get_state();
@@ -25000,7 +25172,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         // If past days infected + latent, then bye.
         if (days_since_exposed >= dat[p->get_id() * 2u + 1u])
         {
-            p->rm_virus(m);
+            p->rm_virus();
             return;
         }
 
@@ -25010,9 +25182,9 @@ inline ModelSURV<TSeq>::ModelSURV(
 
             // Will be symptomatic?
             if (EPI_RUNIF() < m->par("Prob of symptoms"))
-                p->change_state(m, ModelSURV<TSeq>::SYMPTOMATIC);
+                p->change_state(ModelSURV<TSeq>::SYMPTOMATIC);
             else
-                p->change_state(m, ModelSURV<TSeq>::ASYMPTOMATIC);
+                p->change_state(ModelSURV<TSeq>::ASYMPTOMATIC);
             
             return;
 
@@ -25021,7 +25193,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         // Otherwise, it can be removed
         if (EPI_RUNIF() < p_die)
         {
-            p->change_state(m, ModelSURV<TSeq>::REMOVED, -1);
+            p->change_state(ModelSURV<TSeq>::REMOVED, -1);
             return;
         }
         
@@ -25075,11 +25247,11 @@ inline ModelSURV<TSeq>::ModelSURV(
                 if (p->get_state() == ModelSURV<TSeq>::ASYMPTOMATIC)
                 {
                     ndetected_asympt += 1.0;
-                    p->change_state(m, ModelSURV<TSeq>::ASYMPTOMATIC_ISOLATED);
+                    p->change_state(ModelSURV<TSeq>::ASYMPTOMATIC_ISOLATED);
                 }
                 else 
                 {
-                    p->change_state(m, ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED);
+                    p->change_state(ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED);
                 }
 
             }
@@ -25446,10 +25618,10 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                    v->get_prob_infecting(m) * 
-                    (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                    ; 
+                    (1.0 - p->get_susceptibility_reduction(v)) *
+                    v->get_prob_infecting(m) *
+                    (1.0 - neighbor.get_transmission_reduction(v))
+                    ;
             
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);
                  
@@ -25465,7 +25637,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             if (which < 0)
                 return;
 
-            p->set_virus(*m->array_virus_tmp[which], m);
+            p->set_virus(*m->array_virus_tmp[which]);
 
             return; 
 
@@ -25487,7 +25659,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 // Recover
                 m->array_double_tmp[n_events++] = 
                     1.0 - (1.0 - p->get_virus()->get_prob_recovery(m)) *
-                        (1.0 - p->get_recovery_enhancer(p->get_virus(), m)); 
+                        (1.0 - p->get_recovery_enhancer(p->get_virus()));
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -25511,7 +25683,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                     return;
 
                 // Which roulette happen?
-                p->rm_virus(m);
+                p->rm_virus();
 
                 return ;
 
@@ -25887,10 +26059,10 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                    v->get_prob_infecting(m) * 
-                    (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                    ; 
+                    (1.0 - p->get_susceptibility_reduction(v)) *
+                    v->get_prob_infecting(m) *
+                    (1.0 - neighbor.get_transmission_reduction(v))
+                    ;
             
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
@@ -25908,7 +26080,6 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
             p->set_virus(
                 *m->array_virus_tmp[which],
-                m,
                 ModelSEIRCONN<TSeq>::EXPOSED
                 );
 
@@ -25932,7 +26103,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (m->runif() < 1.0/(v->get_incubation(m)))
                 {
 
-                    p->change_state(m, ModelSEIRCONN<TSeq>::INFECTED);
+                    p->change_state(ModelSEIRCONN<TSeq>::INFECTED);
                     return;
 
                 }
@@ -25948,7 +26119,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
                 // Recover
                 m->array_double_tmp[n_events++] = 
-                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -25972,7 +26143,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     return;
 
                 // Which roulette happen?
-                p->rm_virus(m);
+                p->rm_virus();
 
                 return ;
 
@@ -26505,7 +26676,7 @@ public:
 
     // Does the agent become infected?
     if (m->runif() < 1.0/(v->get_incubation(m)))
-      p->change_state(m, ModelSEIRD<TSeq>::INFECTED);
+      p->change_state(ModelSEIRD<TSeq>::INFECTED);
 
     return;
   };
@@ -26522,11 +26693,11 @@ public:
       
     // Die
     m->array_double_tmp[n_events++] = 
-      v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
+      v->get_prob_death(m) * (1.0 - p->get_death_reduction(v));
     
     // Recover
     m->array_double_tmp[n_events++] = 
-      1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
+      1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
     
     
 #ifdef EPI_DEBUG
@@ -26554,11 +26725,11 @@ public:
     if ((which % 2) == 0) // If odd
     {
       
-      p->rm_agent_by_virus(m);
+      p->rm_agent_by_virus();
       
     } else {
       
-      p->rm_virus(m);
+      p->rm_virus();
       
     }
     
@@ -26874,10 +27045,10 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                         
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                        v->get_prob_infecting(m) * 
-                        (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                        ; 
+                        (1.0 - p->get_susceptibility_reduction(v)) *
+                        v->get_prob_infecting(m) *
+                        (1.0 - neighbor.get_transmission_reduction(v))
+                        ;
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
 
@@ -26894,7 +27065,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
             if (which < 0)
                 return;
 
-            p->set_virus(*m->array_virus_tmp[which], m);
+            p->set_virus(*m->array_virus_tmp[which]);
 
             return; 
 
@@ -26917,11 +27088,11 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                     
                 // Die
                 m->array_double_tmp[n_events++] = 
-                v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
+                v->get_prob_death(m) * (1.0 - p->get_death_reduction(v));
                 
                 // Recover
                 m->array_double_tmp[n_events++] = 
-                1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
+                1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
                 
     #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -26948,11 +27119,11 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                 if ((which % 2) == 0) // If odd
                 {
                     
-                    p->rm_agent_by_virus(m);
+                    p->rm_agent_by_virus();
                     
                 } else {
                     
-                    p->rm_virus(m);
+                    p->rm_virus();
                     
                 }
 
@@ -27260,10 +27431,10 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                     
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                    v->get_prob_infecting(m) * 
-                    (1.0 - neighbor.get_transmission_reduction(v, m)) 
-                    ; 
+                    (1.0 - p->get_susceptibility_reduction(v)) *
+                    v->get_prob_infecting(m) *
+                    (1.0 - neighbor.get_transmission_reduction(v))
+                    ;
             
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);
             }
@@ -27280,7 +27451,6 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
             p->set_virus(
                 *m->array_virus_tmp[which],
-                m,
                 ModelSEIRDCONN<TSeq>::EXPOSED
                 );
 
@@ -27304,7 +27474,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 if (m->runif() < 1.0/(v->get_incubation(m)))
                 {
 
-                    p->change_state(m, ModelSEIRDCONN<TSeq>::INFECTED);
+                    p->change_state(ModelSEIRDCONN<TSeq>::INFECTED);
                     return;
 
                 }
@@ -27319,11 +27489,11 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 
                 // Die
                 m->array_double_tmp[n_events++] = 
-                    v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, m)); 
+                    v->get_prob_death(m) * (1.0 - p->get_death_reduction(v));
                 
                 // Recover
                 m->array_double_tmp[n_events++] = 
-                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m)); 
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
                                 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -27350,11 +27520,11 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 if ((which % 2) == 0) // If odd
                 {
                 
-                    p->rm_agent_by_virus(m);
+                    p->rm_agent_by_virus();
                 
                 } else {
                 
-                    p->rm_virus(m);
+                    p->rm_virus();
                 
                 }
 
@@ -27725,9 +27895,9 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
                     baseline +
-                    (1.0 - p->get_susceptibility_reduction(v, m)) * 
-                    v->get_prob_infecting(m) * 
-                    (1.0 - neighbor->get_transmission_reduction(v, m))  *
+                    (1.0 - p->get_susceptibility_reduction(v)) *
+                    v->get_prob_infecting(m) *
+                    (1.0 - neighbor->get_transmission_reduction(v))  *
                     coef_exposure
                     ; 
 
@@ -27749,7 +27919,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             if (which < 0)
                 return;
 
-            p->set_virus(*m->array_virus_tmp[which], m);
+            p->set_virus(*m->array_virus_tmp[which]);
 
             return;
 
@@ -27775,7 +27945,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             prob = 1.0/(1.0 + std::exp(-prob));
 
             if (prob > m->runif())
-                p->rm_virus(m);
+                p->rm_virus();
             
             return;
 
@@ -27968,8 +28138,8 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     
                 /* And it is a function of susceptibility_reduction as well */ 
                 double p_i =
-                    (1.0 - agent.get_susceptibility_reduction(v, m)) * 
-                    (1.0 - agent.get_transmission_reduction(v, m)) 
+                    (1.0 - agent.get_susceptibility_reduction(v)) *
+                    (1.0 - agent.get_transmission_reduction(v)) 
                     ; 
             
                 size_t vid = v->get_id();
@@ -28014,7 +28184,6 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
         // Otherwise, it is adopted from any of the neighbors
         agent.set_virus(
             *innovations.at(which),
-            m,
             ModelDiffNet::ADOPTER
         );
 
@@ -28522,9 +28691,9 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
                 /* And it is a function of susceptibility_reduction as well */
                 m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v, m)) *
+                    (1.0 - p->get_susceptibility_reduction(v)) *
                     v->get_prob_infecting(m) *
-                    (1.0 - neighbor.get_transmission_reduction(v, m))
+                    (1.0 - neighbor.get_transmission_reduction(v))
                     ;
 
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -28539,7 +28708,6 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
             p->set_virus(
                 *m->array_virus_tmp[which],
-                m,
                 ModelSEIRMixing<TSeq>::EXPOSED
                 );
 
@@ -28563,7 +28731,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
                 if (m->runif() < 1.0/(v->get_incubation(m)))
                 {
 
-                    p->change_state(m, ModelSEIRMixing<TSeq>::INFECTED);
+                    p->change_state(ModelSEIRMixing<TSeq>::INFECTED);
                     return;
 
                 }
@@ -28579,7 +28747,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
                 // Recover
                 m->array_double_tmp[n_events++] =
-                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m));
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -28603,7 +28771,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
                     return;
 
                 // Which roulette happen?
-                p->rm_virus(m);
+                p->rm_virus();
 
                 return ;
 
@@ -29134,9 +29302,9 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
                 /* And it is a function of susceptibility_reduction as well */
                 m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v, m)) *
+                    (1.0 - p->get_susceptibility_reduction(v)) *
                     v->get_prob_infecting(m) *
-                    (1.0 - neighbor.get_transmission_reduction(v, m))
+                    (1.0 - neighbor.get_transmission_reduction(v))
                     ;
 
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -29151,7 +29319,6 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
             p->set_virus(
                 *m->array_virus_tmp[which],
-                m,
                 ModelSIRMixing<TSeq>::INFECTED
                 );
 
@@ -29175,7 +29342,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
                 // Recover
                 m->array_double_tmp[n_events++] =
-                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m));
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -29199,7 +29366,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
                     return;
 
                 // Which roulette happen?
-                p->rm_virus(m);
+                p->rm_virus();
 
                 return ;
 
@@ -29571,11 +29738,11 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
         {
 
             if (agent_state == SUSCEPTIBLE)
-                this->get_agent(i).change_state(this, QUARANTINED_SUSCEPTIBLE);
+                this->get_agent(i).change_state(QUARANTINED_SUSCEPTIBLE);
             else if (agent_state == EXPOSED)
-                this->get_agent(i).change_state(this, QUARANTINED_EXPOSED);
+                this->get_agent(i).change_state(QUARANTINED_EXPOSED);
             else if (agent_state == PRODROMAL)
-                this->get_agent(i).change_state(this, QUARANTINED_PRODROMAL);
+                this->get_agent(i).change_state(QUARANTINED_PRODROMAL);
 
             // And we add the day of quarantine
             this->day_flagged[i] = this->today();
@@ -29750,9 +29917,9 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, m)) *
+            (1.0 - p->get_susceptibility_reduction(v)) *
             v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v, m))
+            (1.0 - neighbor.get_transmission_reduction(v))
             ;
 
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -29769,7 +29936,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
     if (which < 0)
         return;
 
-    p->set_virus(*m->array_virus_tmp[which], m);
+    p->set_virus(*m->array_virus_tmp[which]);
 
     return;
 
@@ -29778,7 +29945,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
 LOCAL_UPDATE_FUN(m_update_exposed) {
 
     if (m->runif() < (1.0/p->get_virus()->get_incubation(m)))
-        p->change_state(m, ModelMeaslesSchool<TSeq>::PRODROMAL);
+        p->change_state(ModelMeaslesSchool<TSeq>::PRODROMAL);
 
     return;
 
@@ -29791,7 +29958,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
 
         GET_MODEL(m, model);
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(m, ModelMeaslesSchool<TSeq>::RASH);
+        p->change_state(ModelMeaslesSchool<TSeq>::RASH);
 
     }
 
@@ -29840,7 +30007,6 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     if (which == 2)
     {
         p->rm_virus(
-            m,
             detected ?
                 ModelMeaslesSchool::ISOLATED_RECOVERED:
                 ModelMeaslesSchool::RECOVERED
@@ -29852,7 +30018,6 @@ LOCAL_UPDATE_FUN(m_update_rash) {
         // effectively
         model->record_hospitalization(*p);
         p->change_state(
-            m,
             detected ?
                 ModelMeaslesSchool::DETECTED_HOSPITALIZED :
                 ModelMeaslesSchool::HOSPITALIZED
@@ -29866,7 +30031,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     {
         // If the agent is not hospitalized, then it is moved to
         // isolation.
-        p->change_state(m, ModelMeaslesSchool::ISOLATED);
+        p->change_state(ModelMeaslesSchool::ISOLATED);
     }
 
 };
@@ -29897,13 +30062,12 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
         if (unisolate)
         {
             p->rm_virus(
-                m,
                 ModelMeaslesSchool::RECOVERED
             );
         }
         else
             p->rm_virus(
-                m, ModelMeaslesSchool::ISOLATED_RECOVERED
+                ModelMeaslesSchool::ISOLATED_RECOVERED
             );
     }
 
@@ -29912,7 +30076,6 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     {
         model->record_hospitalization(*p);
         p->change_state(
-            m,
             // HOSPITALIZED
             unisolate ?
                 ModelMeaslesSchool::HOSPITALIZED :
@@ -29923,7 +30086,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     // still under isolation, unless the quarantine period is over.
     else if ((which == 0u) && unisolate)
     {
-        p->change_state(m, ModelMeaslesSchool::RASH);
+        p->change_state(ModelMeaslesSchool::RASH);
     }
 
 }
@@ -29941,7 +30104,7 @@ LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
         true: false;
 
     if (unisolate)
-        p->change_state(m, ModelMeaslesSchool::RECOVERED);
+        p->change_state(ModelMeaslesSchool::RECOVERED);
 
 }
 
@@ -29963,13 +30126,11 @@ LOCAL_UPDATE_FUN(m_update_q_exposed) {
         // the prodromal period. Otherwise, they are moved to the
         // quarantined prodromal period.
         if (unquarantine)
-            p-> change_state(
-                m,
+            p->change_state(
                 ModelMeaslesSchool::PRODROMAL
             );
         else
             p->change_state(
-                m,
                 ModelMeaslesSchool::QUARANTINED_PRODROMAL
             );
 
@@ -29977,7 +30138,6 @@ LOCAL_UPDATE_FUN(m_update_q_exposed) {
     else if (unquarantine)
     {
         p->change_state(
-            m,
             ModelMeaslesSchool::EXPOSED
         );
     }
@@ -29991,7 +30151,7 @@ LOCAL_UPDATE_FUN(m_update_q_susceptible) {
         m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))
-        p->change_state(m, ModelMeaslesSchool::SUSCEPTIBLE);
+        p->change_state(ModelMeaslesSchool::SUSCEPTIBLE);
 
 }
 
@@ -30011,13 +30171,13 @@ LOCAL_UPDATE_FUN(m_update_q_prodromal) {
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(m, ModelMeaslesSchool::ISOLATED);
+        p->change_state(ModelMeaslesSchool::ISOLATED);
     }
     else
     {
 
         if (unquarantine)
-            p->change_state(m, ModelMeaslesSchool::PRODROMAL);
+            p->change_state(ModelMeaslesSchool::PRODROMAL);
 
     }
 
@@ -30029,7 +30189,7 @@ LOCAL_UPDATE_FUN(m_update_q_recovered) {
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))
-        p->change_state(m, ModelMeaslesSchool::RECOVERED);
+        p->change_state(ModelMeaslesSchool::RECOVERED);
 
 }
 
@@ -30037,7 +30197,7 @@ LOCAL_UPDATE_FUN(m_update_hospitalized) {
 
     // The agent is removed from the system
     if (m->runif() < 1.0/m->par("Hospitalization period"))
-        p->rm_virus(m, ModelMeaslesSchool::RECOVERED);
+        p->rm_virus(ModelMeaslesSchool::RECOVERED);
 
     return;
 
@@ -30901,9 +31061,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, m)) *
+            (1.0 - p->get_susceptibility_reduction(v)) *
             v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v, m))
+            (1.0 - neighbor.get_transmission_reduction(v))
             ;
 
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -30918,7 +31078,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
 
     p->set_virus(
         *m->array_virus_tmp[which],
-        m,
         ModelSEIRMixingQuarantine<TSeq>::EXPOSED
         );
 
@@ -30938,12 +31097,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_exposed(
     if (m->runif() < 1.0/(v->get_incubation(m)))
     {
 
-        p->change_state(m, ModelSEIRMixingQuarantine<TSeq>::INFECTED);
+        p->change_state(ModelSEIRMixingQuarantine<TSeq>::INFECTED);
 
         GET_MODEL(m, model);
         model->day_onset[p->get_id()] = m->today();
-
-        return;
 
     }
 
@@ -30983,7 +31140,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     // Computing probabilities for state change
     const auto & v = p->get_virus();
     m->array_double_tmp[0] = 1.0 - (1.0 - v->get_prob_recovery(m)) *
-        (1.0 - p->get_recovery_enhancer(v, m));
+        (1.0 - p->get_recovery_enhancer(v));
     m->array_double_tmp[1] = m->par("Hospitalization rate");
 
     SAMPLE_FROM_PROBS(2, which);
@@ -30993,13 +31150,13 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
         if (isolation_detected)
         {
             p->change_state(
-                m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
+                ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
             );
         }
         else
         {
             p->rm_virus(
-                m, ModelSEIRMixingQuarantine<TSeq>::RECOVERED
+                ModelSEIRMixingQuarantine<TSeq>::RECOVERED
             );
         }
 
@@ -31011,13 +31168,13 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
         if (detected)
         {
             p->change_state(
-                m, ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
+                ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
             );
         }
         else
         {
             p->change_state(
-                m, ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
+                ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
             );
         }
 
@@ -31026,7 +31183,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     {
         // If the agent is detected, it goes to isolation
         p->change_state(
-            m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED
+            ModelSEIRMixingQuarantine<TSeq>::ISOLATED
         );
 
     }
@@ -31053,7 +31210,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated(
     // Sampling from the probabilities of recovery
     m->array_double_tmp[0] = 1.0 -
         (1.0 - p->get_virus()->get_prob_recovery(m)) *
-        (1.0 - p->get_recovery_enhancer(p->get_virus(), m));
+        (1.0 - p->get_recovery_enhancer(p->get_virus()));
 
     // And hospitalization
     m->array_double_tmp[1] = m->par("Hospitalization rate");
@@ -31066,13 +31223,12 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated(
         if (unisolate)
         {
             p->rm_virus(
-                m,
                 ModelSEIRMixingQuarantine<TSeq>::RECOVERED
             );
         }
         else
             p->rm_virus(
-                m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
+                ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
             );
     }
     else if (which == 1)
@@ -31081,20 +31237,20 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated(
         if (unisolate)
         {
             p->change_state(
-                m, ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
+                ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
             );
         }
         else
         {
             p->change_state(
-                m, ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
+                ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
             );
         }
     }
     else if ((which == 2) && unisolate)
     {
         p->change_state(
-            m, ModelSEIRMixingQuarantine<TSeq>::INFECTED
+            ModelSEIRMixingQuarantine<TSeq>::INFECTED
         );
     }
 
@@ -31119,7 +31275,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_quarantine_suscep(
     if (unquarantine)
     {
         p->change_state(
-            m, ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE
+            ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE
         );
     }
 
@@ -31150,13 +31306,13 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_quarantine_exposed(
         if (unquarantine)
         {
             p->change_state(
-                m, ModelSEIRMixingQuarantine<TSeq>::INFECTED
+                ModelSEIRMixingQuarantine<TSeq>::INFECTED
             );
         }
         else
         {
             p->change_state(
-                m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED
+                ModelSEIRMixingQuarantine<TSeq>::ISOLATED
             );
         }
 
@@ -31164,7 +31320,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_quarantine_exposed(
     else if (unquarantine)
     {
         p->change_state(
-            m, ModelSEIRMixingQuarantine<TSeq>::EXPOSED
+            ModelSEIRMixingQuarantine<TSeq>::EXPOSED
         );
     }
 
@@ -31188,7 +31344,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated_recovered(
     if (unisolate)
     {
         p->change_state(
-            m, ModelSEIRMixingQuarantine<TSeq>::RECOVERED
+            ModelSEIRMixingQuarantine<TSeq>::RECOVERED
         );
     }
 
@@ -31201,7 +31357,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_hospitalized(
 
     // The agent is removed from the system
     if (m->runif() < 1.0/m->par("Hospitalization period"))
-        p->rm_virus(m, ModelSEIRMixingQuarantine<TSeq>::RECOVERED);
+        p->rm_virus(ModelSEIRMixingQuarantine<TSeq>::RECOVERED);
 
 };
 
@@ -31257,17 +31413,17 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
                 switch (agent.get_state())
                 {
                     case SUSCEPTIBLE:
-                        agent.change_state(this, QUARANTINED_SUSCEPTIBLE);
+                        agent.change_state(QUARANTINED_SUSCEPTIBLE);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case EXPOSED:
-                        agent.change_state(this, QUARANTINED_EXPOSED);
+                        agent.change_state(QUARANTINED_EXPOSED);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case INFECTED:
                         if (isolation_willingness[contact_id])
                         {
-                            agent.change_state(this, ISOLATED);
+                            agent.change_state(ISOLATED);
                             day_flagged[contact_id] = Model<TSeq>::today();
                         }
                         break;
@@ -32182,9 +32338,9 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, m)) *
+            (1.0 - p->get_susceptibility_reduction(v)) *
             v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v, m))
+            (1.0 - neighbor.get_transmission_reduction(v))
             ;
 
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -32199,7 +32355,6 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
 
     p->set_virus(
         *m->array_virus_tmp[which],
-        m,
         ModelMeaslesMixing<TSeq>::EXPOSED
         );
 
@@ -32219,7 +32374,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_exposed(
     if (m->runif() < 1.0/(v->get_incubation(m)))
     {
 
-        p->change_state(m, ModelMeaslesMixing<TSeq>::PRODROMAL);
+        p->change_state(ModelMeaslesMixing<TSeq>::PRODROMAL);
 
         return;
 
@@ -32240,7 +32395,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_prodromal(
     if (m->runif() < 1.0/m->par("Prodromal period"))
     {
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(m, ModelMeaslesMixing<TSeq>::RASH);
+        p->change_state(ModelMeaslesMixing<TSeq>::RASH);
     }
 
     return ;
@@ -32275,7 +32430,6 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     if (which == 2) // Recovers
     {
         p->rm_virus(
-            m,
             detected ?
                 ModelMeaslesMixing<TSeq>::ISOLATED_RECOVERED:
                 ModelMeaslesMixing<TSeq>::RECOVERED
@@ -32285,7 +32439,6 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     {
         m->record_hospitalization(*p);
         p->change_state(
-            m,
             detected ?
                 ModelMeaslesMixing<TSeq>::DETECTED_HOSPITALIZED :
                 ModelMeaslesMixing<TSeq>::HOSPITALIZED
@@ -32299,7 +32452,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     {
         // If the agent is not hospitalized or recovered, then it is moved to
         // isolation.
-        p->change_state(m, ModelMeaslesMixing<TSeq>::ISOLATED);
+        p->change_state(ModelMeaslesMixing<TSeq>::ISOLATED);
         model->day_flagged[p->get_id()] = m->today();
     }
 
@@ -32336,13 +32489,12 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
         if (unisolate)
         {
             p->rm_virus(
-                m,
                 ModelMeaslesMixing<TSeq>::RECOVERED
             );
         }
         else
             p->rm_virus(
-                m, ModelMeaslesMixing<TSeq>::ISOLATED_RECOVERED
+                ModelMeaslesMixing<TSeq>::ISOLATED_RECOVERED
             );
     }
     else if (which == 1)
@@ -32352,20 +32504,20 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
         if (unisolate)
         {
             p->change_state(
-                m, ModelMeaslesMixing<TSeq>::HOSPITALIZED
+                ModelMeaslesMixing<TSeq>::HOSPITALIZED
             );
         }
         else
         {
             p->change_state(
-                m, ModelMeaslesMixing<TSeq>::DETECTED_HOSPITALIZED
+                ModelMeaslesMixing<TSeq>::DETECTED_HOSPITALIZED
             );
         }
     }
     else if ((which == 0) && unisolate)
     {
         p->change_state(
-            m, ModelMeaslesMixing<TSeq>::RASH
+            ModelMeaslesMixing<TSeq>::RASH
         );
     }
 
@@ -32390,7 +32542,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_suscep(
     if (unquarantine)
     {
         p->change_state(
-            m, ModelMeaslesMixing<TSeq>::SUSCEPTIBLE
+            ModelMeaslesMixing<TSeq>::SUSCEPTIBLE
         );
     }
 
@@ -32418,13 +32570,13 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_exposed(
         if (unquarantine)
         {
             p->change_state(
-                m, ModelMeaslesMixing<TSeq>::PRODROMAL
+                ModelMeaslesMixing<TSeq>::PRODROMAL
             );
         }
         else
         {
             p->change_state(
-                m, ModelMeaslesMixing<TSeq>::QUARANTINED_PRODROMAL
+                ModelMeaslesMixing<TSeq>::QUARANTINED_PRODROMAL
             );
         }
 
@@ -32432,7 +32584,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_exposed(
     else if (unquarantine)
     {
         p->change_state(
-            m, ModelMeaslesMixing<TSeq>::EXPOSED
+            ModelMeaslesMixing<TSeq>::EXPOSED
         );
     }
 
@@ -32457,13 +32609,13 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_prodromal(
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(m, ModelMeaslesMixing<TSeq>::ISOLATED);
+        p->change_state(ModelMeaslesMixing<TSeq>::ISOLATED);
     }
     else
     {
 
         if (unquarantine)
-            p->change_state(m, ModelMeaslesMixing<TSeq>::PRODROMAL);
+            p->change_state(ModelMeaslesMixing<TSeq>::PRODROMAL);
 
     }
 
@@ -32478,7 +32630,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_recovered(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))
-        p->change_state(m, ModelMeaslesMixing<TSeq>::RECOVERED);
+        p->change_state(ModelMeaslesMixing<TSeq>::RECOVERED);
 
 };
 
@@ -32500,7 +32652,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated_recovered(
     if (unisolate)
     {
         p->change_state(
-            m, ModelMeaslesMixing<TSeq>::RECOVERED
+            ModelMeaslesMixing<TSeq>::RECOVERED
         );
     }
 
@@ -32513,7 +32665,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_hospitalized(
 
     // The agent is removed from the system
     if (m->runif() < 1.0/m->par("Hospitalization period"))
-        p->rm_virus(m, ModelMeaslesMixing<TSeq>::RECOVERED);
+        p->rm_virus(ModelMeaslesMixing<TSeq>::RECOVERED);
 
 };
 
@@ -32579,21 +32731,21 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
                 switch (agent.get_state())
                 {
                     case SUSCEPTIBLE:
-                        agent.change_state(this, QUARANTINED_SUSCEPTIBLE);
+                        agent.change_state(QUARANTINED_SUSCEPTIBLE);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case EXPOSED:
-                        agent.change_state(this, QUARANTINED_EXPOSED);
+                        agent.change_state(QUARANTINED_EXPOSED);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case PRODROMAL:
-                        agent.change_state(this, QUARANTINED_PRODROMAL);
+                        agent.change_state(QUARANTINED_PRODROMAL);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case RASH:
                         if (isolation_willingness[contact_id])
                         {
-                            agent.change_state(this, ISOLATED);
+                            agent.change_state(ISOLATED);
                             day_flagged[contact_id] = Model<TSeq>::today();
                         }
                         break;
@@ -33434,9 +33586,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, m)) * 
-            v->get_prob_infecting(m) * 
-            (1.0 - neighbor.get_transmission_reduction(v, m)) 
+            (1.0 - p->get_susceptibility_reduction(v)) *
+            v->get_prob_infecting(m) *
+            (1.0 - neighbor.get_transmission_reduction(v)) 
             ; 
     
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -33449,7 +33601,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
     if (which < 0)
         return;
 
-    p->set_virus(*m->array_virus_tmp[which], m, EXPOSED);
+    p->set_virus(*m->array_virus_tmp[which], EXPOSED);
 
     return;
 
@@ -33466,7 +33618,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_exposed(
     // Does the agent become prodromal (infectious)?
     if (m->runif() < 1.0/(v->get_incubation(m)))
     {
-        p->change_state(m, PRODROMAL);
+        p->change_state(PRODROMAL);
     }
 
 }
@@ -33486,7 +33638,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
             (m->runif() < m->par("Detection rate quarantine"));
 
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(m, detect_it ? ISOLATED : RASH);
+        p->change_state(detect_it ? ISOLATED : RASH);
 
         if (detect_it)
             model->m_add_contact_tracing(p->get_id());
@@ -33524,16 +33676,16 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     
     if (which == 2) // Recovers
     {
-        p->rm_virus(m, detected ? ISOLATED_RECOVERED: RECOVERED);
+        p->rm_virus(detected ? ISOLATED_RECOVERED: RECOVERED);
     }
     else if (which == 1) // Hospitalized
     {
         m->record_hospitalization(*p);
-        p->change_state(m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
+        p->change_state(detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
     }
     else if ((which == 0) && detected)
     {
-        p->change_state(m, ISOLATED);
+        p->change_state(ISOLATED);
     }
     else if (which != 0)
     {
@@ -33570,18 +33722,18 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     // Recovers
     if (which == 2u)
     {
-        p->rm_virus(m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
+        p->rm_virus(unisolate ? RECOVERED : ISOLATED_RECOVERED);
     }
     // Moves to hospitalized
     else if (which == 1u)
     {
         m->record_hospitalization(*p);
-        p->change_state(m, DETECTED_HOSPITALIZED);
+        p->change_state(DETECTED_HOSPITALIZED);
     }
     // Stays in rash, may or may not be released from isolation
     else if ((which == 0u) && unisolate)
     {
-        p->change_state(m, RASH);
+        p->change_state(RASH);
     }
 
 
@@ -33600,7 +33752,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated_recovered(
     int days_since = m->today() - model->day_rash_onset[p->get_id()];
 
     if (m->par("Isolation period") <= days_since)
-        p->change_state(m, RECOVERED);
+        p->change_state(RECOVERED);
 
 }
 
@@ -33619,7 +33771,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (quarantine_period <= days_since)
-        p->change_state(m, SUSCEPTIBLE);
+        p->change_state(SUSCEPTIBLE);
 
 }
 
@@ -33643,7 +33795,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_exposed(
 
         // If the agent is unquarantined, it becomes prodromal
         p->change_state(
-            m,
             (quarantine_period <= days_since) ?
             PRODROMAL : QUARANTINED_PRODROMAL
         );
@@ -33652,7 +33803,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_exposed(
     }
     else if (quarantine_period <= days_since)
     {
-        p->change_state(m, EXPOSED);
+        p->change_state(EXPOSED);
     }
 
 }
@@ -33679,12 +33830,12 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodroma
         model->m_add_contact_tracing(p->get_id());
         
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(m, ISOLATED);
+        p->change_state(ISOLATED);
         
     }
     else if (quarantine_period <= days_since)
     {
-        p->change_state(m, PRODROMAL);
+        p->change_state(PRODROMAL);
 
     }
 
@@ -33705,7 +33856,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_recovere
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (quarantine_period <= days_since)
-        p->change_state(m, RECOVERED);
+        p->change_state(RECOVERED);
 
 }
 
@@ -33717,7 +33868,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_hospitalized(
 
     // The agent is removed from the system
     if (m->runif() < 1.0/m->par("Hospitalization period"))
-        p->rm_virus(m, RECOVERED);
+        p->rm_virus(RECOVERED);
 
 };
 
@@ -33785,10 +33936,11 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         // check that later
         if (agent_i.get_n_entities() != 0u)
         {
-            for (const Agent<TSeq> & agent_j: agent_i.get_entity(0))
+            for (size_t agent_j_idx: agent_i.get_entity(0))
             {
 
                 #ifdef EPI_DEBUG
+                auto & agent_j = Model<TSeq>::get_agent(agent_j_idx);
                 if (
                     agent_j.get_entity(0u).get_id() !=
                     agent_i.get_entity(0u).get_id()
@@ -33800,10 +33952,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
 
 
                 // Only if not already checked we set to high risk
-                size_t agent_j_idx = agent_j.get_id();
                 if (can_quarantine[agent_j_idx])
                     quarantine_risk_level[agent_j_idx] = RISK_HIGH;
-                
+
 
             }
         }
@@ -33875,15 +34026,15 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
 
         auto state = agent.get_state();
         if (state == SUSCEPTIBLE)
-            agent.change_state(this, QUARANTINED_SUSCEPTIBLE);
+            agent.change_state(QUARANTINED_SUSCEPTIBLE);
         else if (state == EXPOSED)
-            agent.change_state(this, QUARANTINED_EXPOSED);
+            agent.change_state(QUARANTINED_EXPOSED);
         else if (state == PRODROMAL)
-            agent.change_state(this, QUARANTINED_PRODROMAL);
+            agent.change_state(QUARANTINED_PRODROMAL);
         else if (state == RASH)
         {
             if (isolation_willingness[agent.get_id()])
-                agent.change_state(this, ISOLATED);
+                agent.change_state(ISOLATED);
         }
         else
             throw std::logic_error(

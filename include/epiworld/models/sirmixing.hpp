@@ -400,9 +400,9 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
                 /* And it is a function of susceptibility_reduction as well */
                 m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v, m)) *
+                    (1.0 - p->get_susceptibility_reduction(v)) *
                     v->get_prob_infecting(m) *
-                    (1.0 - neighbor.get_transmission_reduction(v, m))
+                    (1.0 - neighbor.get_transmission_reduction(v))
                     ;
 
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -417,7 +417,6 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
             p->set_virus(
                 *m->array_virus_tmp[which],
-                m,
                 ModelSIRMixing<TSeq>::INFECTED
                 );
 
@@ -441,7 +440,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
                 // Recover
                 m->array_double_tmp[n_events++] =
-                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, m));
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -465,7 +464,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
                     return;
 
                 // Which roulette happen?
-                p->rm_virus(m);
+                p->rm_virus();
 
                 return ;
 

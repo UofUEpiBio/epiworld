@@ -54,7 +54,8 @@ EPIWORLD_TEST_CASE("distribute_tool_virus_to_entities_proportions", "[distribute
         // Record counts at time 0
         for (size_t e = 0; e < m->get_entities().size(); ++e) {
 
-            for (const Agent<> & agent : m->get_entity(e)) {
+            for (size_t agent_id : m->get_entity(e)) {
+                auto & agent = m->get_agent(agent_id);
                 if (agent.get_virus() != nullptr) {
                     virus_counts_by_entity[e]++;
                 }
