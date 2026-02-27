@@ -3,9 +3,10 @@
 Output from the program:
 
 ```
-Running the model...
-DEBUGGING ON (compiled with EPI_DEBUG defined)
-________________________________________________________________________________
+_________________________________________________________________________
+|Running the model...
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+|________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
@@ -15,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 41.00ms
-Last run speed      : 60.90 million agents x day / second
+Last run elapsed t  : 34.00ms
+Last run speed      : 72.07 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -38,7 +39,7 @@ Distribution of the population at time 50:
   - (2) Recovered   :     0 -> 50000
 
 Transition Probabilities:
- - Susceptible  0.86  0.14     -
+ - Susceptible  0.75  0.25     -
  - Infected        -  0.50  0.50
  - Recovered       -     -  1.00
 

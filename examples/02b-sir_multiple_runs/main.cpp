@@ -43,7 +43,8 @@ int main() {
         123,
         record,           // Function to call after each experiment
         true,             // Whether to reset the population
-        true              // Whether to print a progress bar
+        true,             // Whether to print a progress bar
+        2u                // How many threads to use
     );
 
     sir.print();

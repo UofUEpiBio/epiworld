@@ -18,10 +18,10 @@ epiworld.hpp:
 	Rscript --vanilla --verbose epiworld-hpp.R
 
 readme.o: readme.cpp epiworld.hpp
-	g++ -std=c++17 -O2 readme.cpp -o readme.o
+	g++ -std=c++20 -O3 readme.cpp -o readme.o
 
 helloworld.o: helloworld.cpp epiworld.hpp
-	g++ -std=c++17 -O2 helloworld.cpp -o helloworld.o
+	g++ -std=c++20 -O3 helloworld.cpp -o helloworld.o
 
 # Documentation targets
 docs: docs-mkdocs

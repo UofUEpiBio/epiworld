@@ -1,5 +1,5 @@
 main.o: main.cpp
-	g++ -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize  main.cpp -o main.o
+	g++ -std=c++17 -Wall -pedantic -g -O3 -ftree-vectorize  -fopenmp main.cpp -o main.o
 README.md: main.o
 	echo "## Example: 13-genint" > README.md && \
 	echo "" >> README.md && \

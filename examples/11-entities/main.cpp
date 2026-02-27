@@ -10,7 +10,7 @@ EntityToAgentFun<TSeq> dist_factory(int from, int to) {
             auto & agents = m->get_agents();
             for (size_t i = from; i < to; ++i)
             {
-                e.add_agent(&agents[i], m);
+                e.add_agent(&agents[i]);
             }
             
             return;

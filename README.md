@@ -27,7 +27,7 @@ Here is a simple SIR model implemented with `epiworld`. The source code
 can be found [here](https://github.com/UofUEpiBio/epiworld/tree/master/helloworld.cpp), and you can compile the code as follows:
 
 ```bash
-g++ -std=c++17 -O2 readme.cpp -o readme.o
+g++ -std=c++20 -O3 readme.cpp -o readme.o
 ```
 
 As you can see in [`helloworld.cpp`](https://github.com/UofUEpiBio/epiworld/tree/master/helloworld.cpp), to use `epiworld` you only need to incorporate the single header file [`epiworld.hpp`](https://github.com/UofUEpiBio/epiworld/tree/master/epiworld.hpp):
@@ -68,7 +68,8 @@ Compiling (with `make helloworld.o`) and running the problem yields the followin
 ```bash
 _________________________________________________________________________
 Running the model...
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||________________________________________________________________________________
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
@@ -78,8 +79,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 44.00ms
-Last run speed      : 223.71 million agents x day / second
+Last run elapsed t  : 50.00ms
+Last run speed      : 196.66 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -96,12 +97,12 @@ Model parameters:
  - Transmission rate : 0.9000
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  99000 -> 2565
-  - (1) Infected    :   1000 -> 366
-  - (2) Recovered   :      0 -> 97069
+  - (0) Susceptible :  99000 -> 23
+  - (1) Infected    :   1000 -> 1
+  - (2) Recovered   :      0 -> 99976
 
 Transition Probabilities:
- - Susceptible  0.96  0.04     -
+ - Susceptible  0.94  0.06     -
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 ```
@@ -161,8 +162,9 @@ Which should print something like the following:
 ```bash
 _________________________________________________________________________
 Running the model...
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-_________________________________________________________________________
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+________________________________________________________________________________
+________________________________________________________________________________
 SIMULATION STUDY
 
 Name of the model   : (none)
@@ -171,8 +173,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 50.00ms
-Last run speed      : 196.85 million agents x day / second
+Last run elapsed t  : 52.00ms
+Last run speed      : 190.50 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -188,17 +190,17 @@ Model parameters:
  (none)
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  99000 -> 2565
-  - (1) Infected    :   1000 -> 366
-  - (2) Recovered   :      0 -> 97069
+  - (0) Susceptible :  99000 -> 23
+  - (1) Infected    :   1000 -> 1
+  - (2) Recovered   :      0 -> 99976
 
 Transition Probabilities:
- - Susceptible  0.96  0.04     -
+ - Susceptible  0.94  0.06     -
  - Infected        -  0.70  0.30
- - Recovered       -     -  1.00
+ - Recovered       -     -  1.0
 ```
 
-Which took about 0.209 seconds (~ 47 million ppl x day / second).
+Which took about 0.052 seconds (~ 190 million ppl x day / second).
 
 ## Simulation Steps
 

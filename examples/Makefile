@@ -1,5 +1,5 @@
 VPATH = ../include/epiworld
-CPPFLAGS= -std=c++17 -Wall -pedantic -g -O2 -ftree-vectorize 
+CPPFLAGS= -std=c++17 -Wall -pedantic -g -O3 -ftree-vectorize  -fopenmp
 GPP=g++
 # icpx take a look at ~/.profile
 # # /opt/intel/oneapi/setvars.sh 
@@ -10,6 +10,14 @@ ALL_EXAMPLES=00-hello-world 01-sir 02-sir_multiple_runs 02b-sir_multiple_runs \
 	     03-simple-sir 04-advanced-usage 05-user-data 06-sir-omp 06b-sir-omp \
 	     07-surveillance 10-likelihood-free-mcmc 11-entities 13-genint \
 		 14-community-hosp
+
+help:
+	@echo "Available targets:"
+	@echo "  all-examples   - Build and run all examples"
+	@echo "  all-readme     - Generate README.md for all examples"
+	@echo "  clean          - Remove all object files"
+	@echo "  mem-usage      - Analyze memory usage with Valgrind massif"
+	@echo "  allmake        - Create Makefiles for all examples"
 
 all-examples:
 	for f in $(ALL_EXAMPLES); do \
@@ -49,4 +57,4 @@ clean:
 mem-usage:
 	valgrind --tool=massif ./sir.o && echo "Now use ms_print to see the memory usage"
 
-.PHONY: clean check checkv mem-usage all-examples
+.PHONY: clean mem-usage all-examples
