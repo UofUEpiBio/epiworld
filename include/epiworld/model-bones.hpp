@@ -100,7 +100,7 @@ class Model {
     template<typename T>
     friend class ModelScope;
 
-    static thread_local Model<TSeq> * current_instance_;
+    inline static thread_local Model<TSeq> * current_instance_ = nullptr;
 
 protected:
 

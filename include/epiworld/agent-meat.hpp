@@ -386,7 +386,7 @@ inline void Agent<TSeq>::rm_entity(
         this,
         nullptr,
         nullptr,
-        &model.entities[entity.get_id()],
+        &model.get_entity(entity.get_id()),
         state_new,
         queue,
         default_rm_entity<TSeq>,
@@ -617,6 +617,13 @@ inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors()
         res[i] = &Model<TSeq>::the().population[(*neighbors)[i]];
 
     return res;
+}
+
+template<typename TSeq>
+inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors(Model<TSeq> & model)
+{
+    ModelScope<TSeq> scope_(&model);
+    return get_neighbors();
 }
 
 template<typename TSeq>

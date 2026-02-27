@@ -56,9 +56,6 @@ template<typename TSeq>
 inline typename std::vector< size_t >::iterator Entity<TSeq>::begin()
 {
 
-    if (agents.size() == 0)
-        return typename std::vector< size_t >::iterator{};
-
     return agents.begin();
 
 }
@@ -66,18 +63,12 @@ inline typename std::vector< size_t >::iterator Entity<TSeq>::begin()
 template<typename TSeq>
 inline typename std::vector< size_t >::iterator Entity<TSeq>::end()
 {
-    if (agents.size() == 0)
-        return typename std::vector< size_t >::iterator{};
-
-    return agents.begin() + agents.size();
+    return agents.end();
 }
 
 template<typename TSeq>
 inline typename std::vector< size_t >::const_iterator Entity<TSeq>::begin() const
 {
-
-    if (agents.size() == 0)
-        return typename std::vector< size_t >::const_iterator{};
 
     return agents.begin();
 
@@ -86,10 +77,7 @@ inline typename std::vector< size_t >::const_iterator Entity<TSeq>::begin() cons
 template<typename TSeq>
 inline typename std::vector< size_t >::const_iterator Entity<TSeq>::end() const
 {
-    if (agents.size() == 0)
-        return typename std::vector< size_t >::const_iterator{};
-
-    return agents.begin() + agents.size();
+    return agents.end();
 }
 
 template<typename TSeq>

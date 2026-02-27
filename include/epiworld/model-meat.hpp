@@ -15,20 +15,16 @@
 #include "virus-bones.hpp"
 #include "agent-bones.hpp"
 
-// Static thread_local member definition
-template<typename TSeq>
-thread_local Model<TSeq> * Model<TSeq>::current_instance_ = nullptr;
-
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::the() {
-    #ifdef EPI_DEBUG
+
     if (current_instance_ == nullptr)
         throw std::logic_error(
             "Model::the() called outside of a simulation scope. "
             "This method can only be called during Model::run() "
             "or within a ModelScope."
         );
-    #endif
+    
     return *current_instance_;
 }
 
@@ -482,8 +478,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_double_tmp(model.array_double_tmp.size()),
     array_virus_tmp(model.array_virus_tmp.size())
 {
-
-    current_instance_ = this;
 
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function

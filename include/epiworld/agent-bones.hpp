@@ -224,6 +224,7 @@ public:
     );
 
     std::vector< Agent<TSeq> * > get_neighbors();
+    std::vector< Agent<TSeq> * > get_neighbors(Model<TSeq> & model);
     size_t get_n_neighbors() const;
 
     void change_state(

@@ -9091,7 +9091,7 @@ class Model {
     template<typename T>
     friend class ModelScope;
 
-    static thread_local Model<TSeq> * current_instance_;
+    inline static thread_local Model<TSeq> * current_instance_ = nullptr;
 
 protected:
 
@@ -10521,7 +10521,7 @@ class Model {
     template<typename T>
     friend class ModelScope;
 
-    static thread_local Model<TSeq> * current_instance_;
+    inline static thread_local Model<TSeq> * current_instance_ = nullptr;
 
 protected:
 
@@ -11762,6 +11762,7 @@ public:
     );
 
     std::vector< Agent<TSeq> * > get_neighbors();
+    std::vector< Agent<TSeq> * > get_neighbors(Model<TSeq> & model);
     size_t get_n_neighbors() const;
 
     void change_state(
@@ -11831,20 +11832,16 @@ public:
 
 
 
-// Static thread_local member definition
-template<typename TSeq>
-thread_local Model<TSeq> * Model<TSeq>::current_instance_ = nullptr;
-
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::the() {
-    #ifdef EPI_DEBUG
+
     if (current_instance_ == nullptr)
         throw std::logic_error(
             "Model::the() called outside of a simulation scope. "
             "This method can only be called during Model::run() "
             "or within a ModelScope."
         );
-    #endif
+    
     return *current_instance_;
 }
 
@@ -12298,8 +12295,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_double_tmp(model.array_double_tmp.size()),
     array_virus_tmp(model.array_virus_tmp.size())
 {
-
-    current_instance_ = this;
 
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
@@ -18415,9 +18410,6 @@ template<typename TSeq>
 inline typename std::vector< size_t >::iterator Entity<TSeq>::begin()
 {
 
-    if (agents.size() == 0)
-        return typename std::vector< size_t >::iterator{};
-
     return agents.begin();
 
 }
@@ -18425,18 +18417,12 @@ inline typename std::vector< size_t >::iterator Entity<TSeq>::begin()
 template<typename TSeq>
 inline typename std::vector< size_t >::iterator Entity<TSeq>::end()
 {
-    if (agents.size() == 0)
-        return typename std::vector< size_t >::iterator{};
-
-    return agents.begin() + agents.size();
+    return agents.end();
 }
 
 template<typename TSeq>
 inline typename std::vector< size_t >::const_iterator Entity<TSeq>::begin() const
 {
-
-    if (agents.size() == 0)
-        return typename std::vector< size_t >::const_iterator{};
 
     return agents.begin();
 
@@ -18445,10 +18431,7 @@ inline typename std::vector< size_t >::const_iterator Entity<TSeq>::begin() cons
 template<typename TSeq>
 inline typename std::vector< size_t >::const_iterator Entity<TSeq>::end() const
 {
-    if (agents.size() == 0)
-        return typename std::vector< size_t >::const_iterator{};
-
-    return agents.begin() + agents.size();
+    return agents.end();
 }
 
 template<typename TSeq>
@@ -19208,7 +19191,7 @@ class Model {
     template<typename T>
     friend class ModelScope;
 
-    static thread_local Model<TSeq> * current_instance_;
+    inline static thread_local Model<TSeq> * current_instance_ = nullptr;
 
 protected:
 
@@ -21058,6 +21041,7 @@ public:
     );
 
     std::vector< Agent<TSeq> * > get_neighbors();
+    std::vector< Agent<TSeq> * > get_neighbors(Model<TSeq> & model);
     size_t get_n_neighbors() const;
 
     void change_state(
@@ -21833,6 +21817,7 @@ public:
     );
 
     std::vector< Agent<TSeq> * > get_neighbors();
+    std::vector< Agent<TSeq> * > get_neighbors(Model<TSeq> & model);
     size_t get_n_neighbors() const;
 
     void change_state(
@@ -22578,7 +22563,7 @@ inline void Agent<TSeq>::rm_entity(
         this,
         nullptr,
         nullptr,
-        &model.entities[entity.get_id()],
+        &model.get_entity(entity.get_id()),
         state_new,
         queue,
         default_rm_entity<TSeq>,
@@ -22809,6 +22794,13 @@ inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors()
         res[i] = &Model<TSeq>::the().population[(*neighbors)[i]];
 
     return res;
+}
+
+template<typename TSeq>
+inline std::vector< Agent<TSeq> *> Agent<TSeq>::get_neighbors(Model<TSeq> & model)
+{
+    ModelScope<TSeq> scope_(&model);
+    return get_neighbors();
 }
 
 template<typename TSeq>
