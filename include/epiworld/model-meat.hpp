@@ -542,8 +542,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-    current_instance_ = this;
-
     db.model = this;
     db.user_data.model = this;
 
@@ -555,7 +553,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 {
-    current_instance_ = this;
 
     name = m.name;
 
