@@ -81,9 +81,7 @@ EPIWORLD_TEST_CASE(
 
     // Checking especific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
-    double p_recovered = 1.0 - (
-        1.0/model_0("Rash period") + model_0("Hospitalization rate")
-    );
+    double p_recovered = 1.0/model_0("Rash period");
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
     #ifdef CATCH_CONFIG_MAIN

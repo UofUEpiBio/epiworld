@@ -90,9 +90,13 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
     std::vector<epiworld_double>& R0s,
     int n_seeds,
     std::vector<std::vector<int>>* final_distribution = nullptr,
-    std::vector< double > * outbreak_sizes = nullptr
+    std::vector< double > * outbreak_sizes = nullptr,
+    std::vector< double > * hospitalizations = nullptr
 ) {
-    return [&transitions, &R0s, n_seeds, final_distribution, outbreak_sizes](size_t n, epiworld::Model<>* m) -> void {
+    return [
+        &transitions, &R0s, n_seeds, final_distribution,
+        outbreak_sizes, hospitalizations
+    ](size_t n, epiworld::Model<>* m) -> void {
         // Saving the transition probabilities
         transitions[n] = m->get_db().get_transition_probability(false, false);
 
@@ -131,6 +135,28 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
             outbreak_sizes->at(n) = outbreak.back();
         }
 
+        if (hospitalizations != nullptr)
+        {
+            std::vector< int > date, virus, tool_id, hospitalizations_vec;
+            std::vector< double > weight;
+            m->get_hospitalizations(date, virus, tool_id, hospitalizations_vec, weight);
+
+            if (hospitalizations_vec.empty())
+            {
+                hospitalizations->at(n) = 0.0;
+            }
+            else
+            {
+                hospitalizations->at(n) = static_cast<double>(
+                    std::accumulate(
+                        weight.begin(),
+                        weight.end(),
+                        0.0
+                    )
+                );
+            }
+        }
+
         // Should we get the final distribution?
         if (final_distribution == nullptr)
             return;
@@ -139,6 +165,7 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
             nullptr,
             &(final_distribution->at(n))
         );
+
     };
 };
 
