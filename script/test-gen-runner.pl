@@ -87,7 +87,7 @@ sub apply_template {
     return $template;
 }
 
-# TODO: Hash colisions are probably unlikely, but possible if we grow large.
+# TODO: Hash collisions are probably unlikely, but possible if we grow large.
 for my $test (@tests) {
     my $rule = sha256_hex($test);
     push @targets, $rule;
