@@ -55,8 +55,10 @@ EPIWORLD_TEST_CASE(
     // Run multiple simulations to get transition matrix
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * 10, -1.0);
+    std::vector< double > outbreak_sizes(nsims, 0.0);
+    std::vector< double > hospitalizations(nsims, 0.0);
 
-    auto saver = tests_create_saver(transitions, R0s, 10);
+    auto saver = tests_create_saver(transitions, R0s, 10, nullptr, &outbreak_sizes, &hospitalizations);
     model.run_multiple(60, nsims, 123, saver, true, true, 4);
 
     // Briefly printing the model
@@ -67,6 +69,19 @@ EPIWORLD_TEST_CASE(
 
     tests_print_avg_transitions(avg_transitions, model);
     #define mat(i, j) avg_transitions[j * model.get_n_states() + i]
+
+    // Average hospitalizations
+    double obs_hosp_probability = 0.0;
+    for (auto i = 0u; i < hospitalizations.size(); ++i)
+    {
+        if (hospitalizations[i] >= 0.0)
+            obs_hosp_probability += hospitalizations[i]/outbreak_sizes[i];
+        else
+            throw std::range_error(
+                "The number of hospitalizations is negative. This should not happen."
+            );
+    }
+    obs_hosp_probability /= static_cast<epiworld_double>(nsims);
 
     std::cout << "\n=== TRANSITION MATRIX VALIDATION ===" << std::endl;
     
@@ -173,9 +188,7 @@ EPIWORLD_TEST_CASE(
         moreless(mat(2, 3) + mat(2, 4), 1.0/model("Prodromal period"), 0.1)
     );
 
-    double p_recovered = 1.0 - (
-        1.0/model("Rash period") + model("Hospitalization rate")
-    );
+    double p_recovered = 1.0/model("Rash period");
     REQUIRE_FALSE(
         moreless(mat(3, 12) + mat(3, 5), p_recovered, 0.1)
     );
@@ -199,9 +212,26 @@ EPIWORLD_TEST_CASE(
     REQUIRE_FALSE(
         moreless(mat(11, 12), 1.0/model("Hospitalization period"), 0.1)
     );
+
+    // Hospitalization probability
+    REQUIRE_FALSE(
+        moreless(
+            model("Hospitalization rate")/(
+                model("Hospitalization rate") + p_recovered
+            ),
+            obs_hosp_probability,
+            0.1
+        )
+    );
     #endif
 
     #undef mat
+
+    // Hospitalization probability
+    std::cout << "Hospitalization probability: " <<
+        model("Hospitalization rate")/(
+            model("Hospitalization rate") + p_recovered
+        ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     std::cout << "\nTransition matrix validation completed" << std::endl;
 

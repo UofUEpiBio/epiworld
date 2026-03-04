@@ -58,12 +58,14 @@ EPIWORLD_TEST_CASE(
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
     std::vector<std::vector<int>> final_distribution(nsims);
+    std::vector< double > outbreak_sizes(nsims, 0.0);
+    std::vector< double > hospitalizations(nsims, 0.0);
 
     auto saver = tests_create_saver(
-        transitions, R0s, n_seeds, &final_distribution
+        transitions, R0s, n_seeds, &final_distribution, &outbreak_sizes, &hospitalizations
     );
 
-    model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
+    model_0.run_multiple(200, nsims, 1231, saver, true, true, 4);
     
     #ifndef CATCH_CONFIG_MAIN
     model_0.print(false);
@@ -91,11 +93,22 @@ EPIWORLD_TEST_CASE(
     }
     R0_observed /= static_cast<epiworld_double>(nsims * n_seeds);
 
+    // Average hospitalizations
+    double obs_hosp_probability = 0.0;
+    for (auto i = 0u; i < hospitalizations.size(); ++i)
+    {
+        if (hospitalizations[i] >= 0.0)
+            obs_hosp_probability += hospitalizations[i]/outbreak_sizes[i];
+        else
+            throw std::range_error(
+                "The number of hospitalizations is negative. This should not happen."
+            );
+    }
+    obs_hosp_probability /= static_cast<epiworld_double>(nsims);
+
     // Checking specific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
-    double p_recovered = 1.0 - (
-        1.0/model_0("Rash period") + model_0("Hospitalization rate")
-    );
+    double p_recovered = 1.0/model_0("Rash period");
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
     #ifdef CATCH_CONFIG_MAIN
@@ -149,6 +162,17 @@ EPIWORLD_TEST_CASE(
 
     // Transition from detected hospitalized to recovered
     REQUIRE_FALSE(moreless(mat(6, 12), 1.0/model_0("Hospitalization period"), 0.1));
+
+    // Hospitalization probability
+    REQUIRE_FALSE(
+        moreless(
+            model_0("Hospitalization rate")/(
+                model_0("Hospitalization rate") + p_recovered
+            ),
+            obs_hosp_probability,
+            0.1
+        )
+    );
     #endif
     
     // Reproductive number
@@ -206,6 +230,12 @@ EPIWORLD_TEST_CASE(
     // Transition from isolated recovered to recovered (deterministic based on rash onset)
     std::cout << "Transition from isolated recovered to recovered: "
               << mat(5, 12) << " (expected to be faster than " << 1.0/model_0("Isolation period") << ")" << std::endl;
+
+    // Hospitalization probability
+    std::cout << "Hospitalization probability: "
+              << model_0("Hospitalization rate")/(
+                  model_0("Hospitalization rate") + p_recovered
+              ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     // Looking at the final outbreak size
     std::vector< size_t > not_infected_states = {0u, 8u};

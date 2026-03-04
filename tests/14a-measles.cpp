@@ -48,8 +48,9 @@ EPIWORLD_TEST_CASE(
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
     std::vector< double > outbreak_sizes(nsims, 0.0);
+    std::vector< double > hospitalizations(nsims, 0.0);
         
-    auto saver = tests_create_saver(transitions, R0s, n_seeds, nullptr, &outbreak_sizes);
+    auto saver = tests_create_saver(transitions, R0s, n_seeds, nullptr, &outbreak_sizes, &hospitalizations);
 
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
     
@@ -78,6 +79,19 @@ EPIWORLD_TEST_CASE(
             );
     }
     R0_observed /= static_cast<epiworld_double>(nsims * n_seeds);
+
+    // Average hospitalizations
+    double obs_hosp_probability = 0.0;
+    for (auto i = 0u; i < hospitalizations.size(); ++i)
+    {
+        if (hospitalizations[i] >= 0.0)
+            obs_hosp_probability += hospitalizations[i]/outbreak_sizes[i];
+        else
+            throw std::range_error(
+                "The number of hospitalizations is negative. This should not happen."
+            );
+    }
+    obs_hosp_probability /= static_cast<epiworld_double>(nsims);
 
     // Checking especific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
@@ -120,6 +134,17 @@ EPIWORLD_TEST_CASE(
 
     // Transition from hospitalized to recovered
     REQUIRE_FALSE(moreless(mat(11, 12), 1.0/model_0("Hospitalization period"), 0.05));
+
+    // Hospitalization probability
+    REQUIRE_FALSE(
+        moreless(
+            model_0("Hospitalization rate")/(
+                model_0("Hospitalization rate") + p_recovered
+            ),
+            obs_hosp_probability,
+            0.05
+        )
+    );
     #endif
     // Reproductive number
     std::cout << "Reproductive number: "
@@ -153,6 +178,12 @@ EPIWORLD_TEST_CASE(
     std::cout << "Transition from hospitalized to recovered: "
               << mat(11, 12) << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
 
+
+    // Hospitalization probability
+    std::cout << "Hospitalization probability: "
+              << model_0("Hospitalization rate")/(
+                  model_0("Hospitalization rate") + p_recovered
+              ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     std::cout << "Outbreak size: " <<
         static_cast<double>(

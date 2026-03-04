@@ -64,8 +64,10 @@ EPIWORLD_TEST_CASE(
     
     std::vector< std::vector< epiworld_double > > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * 5, -1.0);
+    std::vector< double > outbreak_sizes(nsims, 0.0);
+    std::vector< double > hospitalizations(nsims, 0.0);
 
-    auto saver = tests_create_saver(transitions, R0s, 5);
+    auto saver = tests_create_saver(transitions, R0s, 5, nullptr, &outbreak_sizes, &hospitalizations);
 
     // Run simulation
     model.run_multiple(100, nsims, 123, saver, true, true, N_THREADS);
@@ -77,6 +79,19 @@ EPIWORLD_TEST_CASE(
     // Averaging R0
     auto avg_R0 = std::accumulate(R0s.begin(), R0s.end(), 0.0) /
         static_cast<epiworld_double>(R0s.size());
+
+    // Average hospitalizations
+    double obs_hosp_probability = 0.0;
+    for (auto i = 0u; i < hospitalizations.size(); ++i)
+    {
+        if (hospitalizations[i] >= 0.0)
+            obs_hosp_probability += hospitalizations[i]/outbreak_sizes[i];
+        else
+            throw std::range_error(
+                "The number of hospitalizations is negative. This should not happen."
+            );
+    }
+    obs_hosp_probability /= static_cast<epiworld_double>(nsims);
 
     #define mat(i, j) tmat[(j)*model.get_n_states() + (i)]
     std::cout << "Average R0 from index cases: " <<
@@ -97,7 +112,7 @@ EPIWORLD_TEST_CASE(
     // From Rash
     std::cout << "Transition from Rash to Recovery: " <<
         mat(3, 12) << " (expected: " <<
-        (1.0 - model("Hospitalization rate") - 1.0/model("Rash period")) << ")" <<
+        1.0/model("Rash period") << ")" <<
         std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
@@ -108,6 +123,13 @@ EPIWORLD_TEST_CASE(
     std::cout << "Transition from Hospitalized to Recovery: " <<
         mat(11, 12) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
+
+    // Hospitalization probability
+    double p_recovered = 1.0/model("Rash period");
+    std::cout << "Hospitalization probability: " <<
+        model("Hospitalization rate")/(
+            model("Hospitalization rate") + p_recovered
+        ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     #ifdef CATCH_CONFIG_MAIN
     // Validating some transitions -------------------------------
@@ -122,7 +144,7 @@ EPIWORLD_TEST_CASE(
     REQUIRE_FALSE(
         moreless(
             mat(3, 12),
-            (1.0 - model("Hospitalization rate") - 1.0/model("Rash period")),
+            1.0/model("Rash period"),
             0.1
         )
     );
@@ -133,6 +155,17 @@ EPIWORLD_TEST_CASE(
 
     REQUIRE_FALSE(
         moreless(mat(11, 12), 1.0/model("Hospitalization period"), 0.1)
+    );
+
+    // Hospitalization probability
+    REQUIRE_FALSE(
+        moreless(
+            model("Hospitalization rate")/(
+                model("Hospitalization rate") + p_recovered
+            ),
+            obs_hosp_probability,
+            0.1
+        )
     );
     #endif
 
