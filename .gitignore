@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 examples/*/*
 !*.md
 !Makefile
@@ -15,7 +13,6 @@ tests/callgrind*.txt
 !tests/*.yaml
 .vscode
 *.o
->>>>>>> master
 .zed/
 .cache/
 
