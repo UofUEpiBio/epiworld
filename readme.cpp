@@ -14,13 +14,13 @@ int main()
     model.add_state("Infected", default_update_exposed<>);
     model.add_state("Recovered");
 
-    // Desgining a virus: This virus will:
+    // Designing a virus: This virus will:
     // - Have a 10% transmission rate
     // - Have a 30% recovery rate
     // - Infected individuals become "Infected" (status 1)
     // - Recovered individuals become "Recovered" (status 2)
     // 100 individuals will have the virus from the beginning.
-    Virus<> virus("covid 19", 1000, false);
+    Virus<> virus("covid 19", 100, false);
 
     virus.set_prob_infecting(.10);
     virus.set_prob_recovery(.30);

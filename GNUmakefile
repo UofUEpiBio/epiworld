@@ -176,7 +176,7 @@ $(ROOT_BUILD_DIR)/epiworld.hpp: $(ROOT_SOURCE_DIR)/script/amalgamate.pl
 	@mkdir -p $(ROOT_BUILD_DIR)
 	$(V)perl $(ROOT_SOURCE_DIR)/script/amalgamate.pl $(ROOT_SOURCE_DIR)/include/epiworld epiworld.hpp \
 	    > $(ROOT_BUILD_DIR)/epiworld.hpp
-	$(V)mv $(ROOT_BUILD_DIR)/epiworld.hpp $(ROOT_SOURCE_DIR)/epiworld.hpp
+	$(V)cp $(ROOT_BUILD_DIR)/epiworld.hpp $(ROOT_SOURCE_DIR)/epiworld.hpp
 
 # TODO: I haven't seen a good reason why we should clean each artifact instead of just nuking
 #  the build directory.

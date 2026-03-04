@@ -27,7 +27,7 @@ Here is a simple SIR model implemented with `epiworld`. The source code
 can be found [here](https://github.com/UofUEpiBio/epiworld/tree/master/helloworld.cpp), and you can compile the code as follows:
 
 ```bash
-g++ -std=c++20 -O3 readme.cpp -o readme.o
+g++ -std=c++20 -O3 helloworld.cpp -o helloworld.o
 ```
 
 As you can see in [`helloworld.cpp`](https://github.com/UofUEpiBio/epiworld/tree/master/helloworld.cpp), to use `epiworld` you only need to incorporate the single header file [`epiworld.hpp`](https://github.com/UofUEpiBio/epiworld/tree/master/epiworld.hpp):
@@ -129,13 +129,13 @@ int main()
     model.add_state("Infected", default_update_exposed<>);
     model.add_state("Recovered");
 
-    // Desgining a virus: This virus will:
+    // Designing a virus: This virus will:
     // - Have a 10% transmission rate
     // - Have a 30% recovery rate
     // - Infected individuals become "Infected" (status 1)
     // - Recovered individuals become "Recovered" (status 2)
     // 100 individuals will have the virus from the beginning.
-    Virus<> virus("covid 19", 1000, false);
+    Virus<> virus("covid 19", 100, false);
 
     virus.set_prob_infecting(.10);
     virus.set_prob_recovery(.30);
@@ -170,8 +170,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 61.00ms
-Last run speed      : 162.19 million agents x day / second
+Last run elapsed t  : 24.00ms
+Last run speed      : 401.91 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -187,17 +187,17 @@ Model parameters:
  (none)
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  99000 -> 41957
-  - (1) Infected    :   1000 -> 70
-  - (2) Recovered   :      0 -> 57973
+  - (0) Susceptible :  99900 -> 78866
+  - (1) Infected    :    100 -> 625
+  - (2) Recovered   :      0 -> 20509
 
 Transition Probabilities:
- - Susceptible  0.99  0.01     -
+ - Susceptible  1.00  0.00     -
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 ```
 
-Which took about 0.061 seconds (~ 162 million agents x day / second).
+Which took about 0.024 seconds (~ 401 million agents x day / second).
 
 ## Simulation Steps
 
