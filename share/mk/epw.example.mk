@@ -20,7 +20,6 @@ example-$(NAME)-run: $($(NAME)_BUILD_DIR)/$(NAME) | mk-$(NAME)-working-dir
 $($(NAME)_SOURCE_DIR)/README.md: override NAME := $(NAME)
 $($(NAME)_SOURCE_DIR)/README.md: $($(NAME)_BUILD_DIR)/$(NAME) | mk-$(NAME)-working-dir $($(NAME)_README_HOOKS)
 	$(SAY) "GEN" $@
-	$(V)cd $($(NAME)_EXAMPLE_DIR)
 	$(V)printf "## Example: \`$(NAME)\`\n" > $@
 	$(V)printf "\n" >> $@
 	$(V)printf "Output from the program:\n\n" >> $@
