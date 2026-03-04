@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -54,7 +50,6 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
     std::cout << "  Virus history size: " << virus_date.size() << std::endl;
     std::cout << "  Unique dates: " << unique_dates.size() << " (expected " << (ndays + 1) << ")" << std::endl;
 
-    #ifdef CATCH_CONFIG_MAIN
     // Should have data from all days (0 to ndays inclusive)
     REQUIRE(unique_dates.size() == static_cast<size_t>(ndays + 1));
     
@@ -65,7 +60,6 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
     
     // Total entries should be (ndays + 1) * nstates
     REQUIRE(virus_date.size() == static_cast<size_t>((ndays + 1) * nstates));
-    #endif
 
     // We now verify that the outbreak size matches the total infected count
     std::vector<int> total_date, total_counts;
@@ -110,13 +104,6 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
         outbreak_size
     );
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE(outbreak_size == total_infected_per_day);
     REQUIRE(active_cases == total_active_cases);
-    #endif
-
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
-
 }

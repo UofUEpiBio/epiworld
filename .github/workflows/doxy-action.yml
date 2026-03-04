@@ -1,10 +1,6 @@
 name: MkDocs Documentation
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
+on: [pull_request]
 
 permissions:
   contents: read

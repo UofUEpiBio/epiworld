@@ -1,29 +1,31 @@
-examples/*/*
-!*.md
-!Makefile
-!*.cpp
-.Rproj.user
-.Rhistory
-tests/*
-!tests/
-!tests/*.cpp
-!tests/Makefile
-tests/callgrind*.txt
-!tests/*.R
-!tests/*.yaml
-.vscode
-*.o
 .zed/
 .cache/
 
-# MkDocs generated files
+build/
 site/
+docs/
+__pycache__/
+*.dSYM/
 
-# Old Doxygen files (if generated)
+*.txt
+*.csv
+$*
+*.o
+
 docs/html/
 docs/latex/
 docs/xml/
 
-# CodeQL generated files
 _codeql_detected_source_root
-tests/*-saves/
+
+# We only care about code
+tests/
+!tests/*.hpp
+!tests/*.cpp
+
+examples/
+!examples/**/*.hpp
+!examples/**/*.cpp
+
+# This is mounted from the container
+.vscode/

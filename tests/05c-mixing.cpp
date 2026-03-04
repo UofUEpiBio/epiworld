@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 #define calc_r0(ans_observed, ans_expected, r0, model) \
@@ -26,12 +22,9 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
 
     // Testing reproductive number in plain scenario
     int n_infected = 1;
-    #ifdef EPI_DEBUG
     int n_agents = 2000;
-    #else
-    int n_agents = 4000;
-    #endif
     size_t nsims = 400;
+   
     epimodels::ModelSIRMixing<> model_1(
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
@@ -146,26 +139,18 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs4, R0_exp4, R0s, model_1);
     
-    #ifdef EPI_DEBUG
-    model_1.print();
-    #endif
-
     std::cout << "Testing R0 in SIRMixing" << std::endl;
     std::cout << "R0 obs " << R0_obs1 << " vs exp " << R0_exp1 << std::endl;
     std::cout << "R0 obs " << R0_obs2 << " vs exp " << R0_exp2 << std::endl;
     std::cout << "R0 obs " << R0_obs3 << " vs exp " << R0_exp3 << std::endl;
     std::cout << "R0 obs " << R0_obs4 << " vs exp " << R0_exp4 << std::endl;
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(moreless(R0_obs1, R0_exp1, 0.2));
     REQUIRE_FALSE(moreless(R0_obs2, R0_exp2, 0.2));
     REQUIRE_FALSE(moreless(R0_obs3, R0_exp3, 0.2));
     REQUIRE_FALSE(moreless(R0_obs4, R0_exp4, 0.2));
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }
 

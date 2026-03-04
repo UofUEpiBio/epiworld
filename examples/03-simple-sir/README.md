@@ -1,11 +1,12 @@
-## Example: 03-simple-sir
+## Example: `03-simple-sir`
 
 Output from the program:
 
 ```
 _________________________________________________________________________
 Running the model...
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||________________________________________________________________________________
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
@@ -15,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 7.00ms
-Last run speed      : 14.17 million agents x day / second
+Last run elapsed t  : 6.00ms
+Last run speed      : 15.99 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -32,9 +33,9 @@ Model parameters:
  (none)
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  950 -> 460
+  - (0) Susceptible :  950 -> 588
   - (1) Infected    :   50 -> 0
-  - (2) Removed     :    0 -> 540
+  - (2) Removed     :    0 -> 412
 
 Transition Probabilities:
  - Susceptible  0.99  0.01     -

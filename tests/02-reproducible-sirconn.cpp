@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -96,8 +92,6 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
     // #endif 
 
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

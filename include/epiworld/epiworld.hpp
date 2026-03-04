@@ -6,6 +6,7 @@
 #include <cmath>
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <map>
 #include <unordered_map>
 #include <chrono>

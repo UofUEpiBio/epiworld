@@ -64,6 +64,8 @@ public:
             entity_name(name),
             dist_fun(fun)
         {};
+
+    ~Entity() = default;
     
     void add_agent(Agent<TSeq> & p, Model<TSeq> * model);
     void add_agent(Agent<TSeq> * p, Model<TSeq> * model);

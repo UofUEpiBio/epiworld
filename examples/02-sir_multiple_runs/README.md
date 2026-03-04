@@ -1,4 +1,4 @@
-## Example: 02-sir_multiple_runs
+## Example: `02-sir_multiple_runs`
 
 Output from the program:
 
@@ -104,18 +104,18 @@ Replicate 97 done
 Replicate 98 done
 Replicate 99 done
 last run elapsed time : 0.00ms
-total elapsed time    : 4.00ms
+total elapsed time    : 27.00ms
 total runs            : 100
-mean run elapsed time : 0.04ms
+mean run elapsed time : 0.27ms
 Susceptible, Infected, Recovered, 
-990, 0, 10, 
-990, 0, 10, 
-990, 0, 10, 
-990, 0, 10, 
-990, 0, 10, 
-990, 0, 10, 
-990, 0, 10, 
-990, 0, 10, 
-990, 0, 10, 
-990, 0, 10, 
+2, 5, 993, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 0, 1000, 
+0, 6, 994, 
+0, 0, 1000, 
+0, 0, 1000, 
+3, 10, 987, 
+0, 8, 992, 
+0, 1, 999, 
 ```

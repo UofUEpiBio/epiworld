@@ -1,12 +1,8 @@
-
-//#define EPI_DEBUG
-
-#include "../include/epiworld/epiworld.hpp"
+#include "tests.hpp"
 
 using namespace epiworld;
 
-int main()
-{
+EPIWORLD_TEST_CASE("sample", "[model-methods]") {
 
     // Creating a model
     Model<> model;

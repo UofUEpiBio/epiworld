@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 #define calc_r0(ans_observed, ans_expected, r0, model) \
@@ -78,26 +74,18 @@ EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesSchoolR0]") {
     model_0.run_multiple(n_days, nsims, 1231, saver, true, true, n_threads);
     calc_r0(R0_obs4, R0_exp4, R0s, model_0);
 
-    #ifndef CATCH_CONFIG_MAIN
-    model_0.print(false);
-    #endif
-
     std::cout << "Testing R0 in Measles" << std::endl;
     std::cout << "R0 obs " << R0_obs1 << " vs exp " << R0_exp1 << std::endl;
     std::cout << "R0 obs " << R0_obs2 << " vs exp " << R0_exp2 << std::endl;
     std::cout << "R0 obs " << R0_obs3 << " vs exp " << R0_exp3 << std::endl;
     std::cout << "R0 obs " << R0_obs4 << " vs exp " << R0_exp4 << std::endl;
 
-    #ifdef CATCH_CONFIG_MAIN    
     REQUIRE_FALSE(moreless(R0_obs1, R0_exp1, 0.2));
     REQUIRE_FALSE(moreless(R0_obs2, R0_exp2, 0.2));
     REQUIRE_FALSE(moreless(R0_obs3, R0_exp3, 0.2));
     REQUIRE_FALSE(moreless(R0_obs4, R0_exp4, 0.2));
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
     
 }
 
