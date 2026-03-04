@@ -44,7 +44,7 @@ EPIWORLD_TEST_CASE(
         return;
     });
 
-    size_t nsims = 200;
+    size_t nsims = 500;
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
     std::vector< double > outbreak_sizes(nsims, 0.0);
@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE(
         
     auto saver = tests_create_saver(transitions, R0s, n_seeds, nullptr, &outbreak_sizes, &hospitalizations);
 
-    model_0.run_multiple(60, nsims, 1231, saver, true, true, 4);
+    model_0.run_multiple(200, nsims, 1231, saver, true, true, 4);
     
     #ifndef CATCH_CONFIG_MAIN
     model_0.print(false);
@@ -104,7 +104,8 @@ EPIWORLD_TEST_CASE(
     REQUIRE_FALSE(moreless(R0_observed, R0_theo, 0.1));
 
     // Transition to prodromal
-    REQUIRE_FALSE(moreless(mat(1, 2), 1.0/model_0("Incubation period"), 0.05));
+    REQUIRE_FALSE(
+        moreless(mat(1, 2) + mat(7, 2) + mat(9, 2), 1.0/model_0("Incubation period"), 0.05));
 
     // Transition to rash
     REQUIRE_FALSE(
@@ -147,12 +148,13 @@ EPIWORLD_TEST_CASE(
     );
     #endif
     // Reproductive number
-    std::cout << "Reproductive number: "
+    std::cout << "Reproductive number (lower): "
               << R0_observed << " (expected ~" << R0_theo << ")" << std::endl;
 
     // Transition to prodromal
     std::cout << "Transition to prodromal: "
-              << mat(1, 2) << " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
+              << mat(1, 2)  + mat(7, 2) + mat(9, 2) <<
+              " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
 
     // Transition to rash
     std::cout << "Transition to rash: "
