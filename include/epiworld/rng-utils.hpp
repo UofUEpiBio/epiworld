@@ -34,7 +34,9 @@ public:
     }
 
     static constexpr result_type min() noexcept { return 0; }
-    static constexpr result_type max() noexcept { return UINT64_MAX; }
+    static constexpr result_type max() noexcept {
+        return std::numeric_limits<result_type>::max();
+    }
 
     void seed(uint64_t seed_val) noexcept {
         s[0] = splitmix64(seed_val);
@@ -67,6 +69,13 @@ public:
  * @return epiworld_double in [0, 1).
  */
 inline epiworld_double runif_epi(epi_xoshiro256ss & engine) {
+    static_assert(
+        std::numeric_limits<epiworld_double>::digits < 64,
+        "epiworld_double must have fewer than 64 mantissa bits; "
+        "the bit-extraction in runif_epi requires digits < 64 to avoid "
+        "undefined behaviour in the shift and scale computation"
+    );
+    
     constexpr int bits  = std::numeric_limits<epiworld_double>::digits;
     constexpr int shift = 64 - bits;
     // scale = 2^{-bits}: the result is in [0, 1) by construction (no clamp needed)

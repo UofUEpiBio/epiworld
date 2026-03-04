@@ -52,5 +52,4 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
     REQUIRE_FALSE(moreless(rts/static_cast<double>(n_seed), R0, 0.15));
 
 
-
 }

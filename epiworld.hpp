@@ -3,6 +3,7 @@
 #include <memory>
 #include <stdexcept>
 #include <random>
+#include <cmath>
 #include <fstream>
 #include <string>
 #include <string_view>
@@ -27,7 +28,7 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 12
+#define EPIWORLD_VERSION_MINOR 13
 #define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
@@ -951,6 +952,125 @@ inline void Progress::next() {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -./include/epiworld/rng-utils.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_RNG_UTILS_HPP
+#define EPIWORLD_RNG_UTILS_HPP
+
+/**
+ * @brief Fast 64-bit PRNG based on the xoshiro256** algorithm.
+ *
+ * xoshiro256** has 256-bit state, 64-bit output, and passes all known
+ * statistical tests. It is significantly faster than std::mt19937.
+ * State is seeded via SplitMix64 from a single 64-bit value.
+ *
+ * Reference: Blackman & Vigna, "Scrambled Linear Pseudorandom Number
+ * Generators", ACM TOMS, 2021. https://prng.di.unimi.it/
+ */
+class epi_xoshiro256ss {
+    uint64_t s[4];
+
+    static uint64_t rotl(const uint64_t x, int k) noexcept {
+        return (x << k) | (x >> (64 - k));
+    }
+
+    static uint64_t splitmix64(uint64_t& x) noexcept {
+        x += 0x9e3779b97f4a7c15ULL;
+        uint64_t z = x;
+        z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+        z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+        return z ^ (z >> 31);
+    }
+
+public:
+    using result_type = uint64_t;
+
+    explicit epi_xoshiro256ss(uint64_t seed_val = 0) noexcept {
+        seed(seed_val);
+    }
+
+    static constexpr result_type min() noexcept { return 0; }
+    static constexpr result_type max() noexcept {
+        return std::numeric_limits<result_type>::max();
+    }
+
+    void seed(uint64_t seed_val) noexcept {
+        s[0] = splitmix64(seed_val);
+        s[1] = splitmix64(seed_val);
+        s[2] = splitmix64(seed_val);
+        s[3] = splitmix64(seed_val);
+    }
+
+    result_type operator()() noexcept {
+        const uint64_t result = rotl(s[1] * 5, 7) * 9;
+        const uint64_t t = s[1] << 17;
+        s[2] ^= s[0];
+        s[3] ^= s[1];
+        s[1] ^= s[2];
+        s[0] ^= s[3];
+        s[2] ^= t;
+        s[3] = rotl(s[3], 45);
+        return result;
+    }
+};
+
+/**
+ * @brief Draw a uniform [0, 1) random number from an epi_xoshiro256ss engine.
+ *
+ * Uses the top N bits of the 64-bit output (where N =
+ * std::numeric_limits<epiworld_double>::digits) to produce a value in [0, 1)
+ * without any long-double arithmetic.
+ *
+ * @param engine An epi_xoshiro256ss engine.
+ * @return epiworld_double in [0, 1).
+ */
+inline epiworld_double runif_epi(epi_xoshiro256ss & engine) {
+    static_assert(
+        std::numeric_limits<epiworld_double>::digits < 64,
+        "epiworld_double must have fewer than 64 mantissa bits; "
+        "the bit-extraction in runif_epi requires digits < 64 to avoid "
+        "undefined behaviour in the shift and scale computation"
+    );
+    
+    constexpr int bits  = std::numeric_limits<epiworld_double>::digits;
+    constexpr int shift = 64 - bits;
+    // scale = 2^{-bits}: the result is in [0, 1) by construction (no clamp needed)
+    constexpr epiworld_double scale =
+        epiworld_double(1) / epiworld_double(uint64_t(1) << bits);
+    return static_cast<epiworld_double>(engine() >> shift) * scale;
+}
+
+/**
+ * @brief Draw a uniform [0, 1) random number from a std::mt19937 engine.
+ *
+ * Kept for backward compatibility with code that still holds a raw mt19937.
+ */
+inline epiworld_double runif_mt19937(std::mt19937 & engine) {
+    static constexpr epiworld_double factor =
+        epiworld_double(1) / (epiworld_double(std::mt19937::max()) + epiworld_double(1));
+    epiworld_double res = epiworld_double(engine()) * factor;
+    if (res >= epiworld_double(1))
+        res = std::nextafter(epiworld_double(1), epiworld_double(0));
+    return res;
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/rng-utils.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -./include/epiworld/modeldiagram-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1767,11 +1887,8 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::shared_ptr< std::mt19937 > m_engine = nullptr;
+    std::shared_ptr< epi_xoshiro256ss > m_engine = nullptr;
     
-    std::shared_ptr< std::uniform_real_distribution<> > runifd =
-        std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
-
     std::shared_ptr< std::normal_distribution<> > rnormd =
         std::make_shared< std::normal_distribution<> >(0.0);
 
@@ -1869,8 +1986,8 @@ public:
      * @param eng 
      */
     ///@{
-    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
-    std::shared_ptr< std::mt19937 > & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng);
+    std::shared_ptr< epi_xoshiro256ss > & get_rand_endgine();
     void seed(epiworld_fast_uint s);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
@@ -2069,11 +2186,8 @@ class LFMCMC {
 private:
 
     // Random number sampling
-    std::shared_ptr< std::mt19937 > m_engine = nullptr;
+    std::shared_ptr< epi_xoshiro256ss > m_engine = nullptr;
     
-    std::shared_ptr< std::uniform_real_distribution<> > runifd =
-        std::make_shared< std::uniform_real_distribution<> >(0.0, 1.0);
-
     std::shared_ptr< std::normal_distribution<> > rnormd =
         std::make_shared< std::normal_distribution<> >(0.0);
 
@@ -2171,8 +2285,8 @@ public:
      * @param eng 
      */
     ///@{
-    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
-    std::shared_ptr< std::mt19937 > & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng);
+    std::shared_ptr< epi_xoshiro256ss > & get_rand_endgine();
     void seed(epiworld_fast_uint s);
     void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
     epiworld_double runif();
@@ -2574,7 +2688,7 @@ inline void LFMCMC<TData>::run(
 template<typename TData>
 inline epiworld_double LFMCMC<TData>::runif()
 {
-    return runifd->operator()(*m_engine);
+    return runif_epi(*m_engine);
 }
 
 template<typename TData>
@@ -2583,7 +2697,7 @@ inline epiworld_double LFMCMC<TData>::runif(
     epiworld_double ub
 )
 {
-    return runifd->operator()(*m_engine) * (ub - lb) + lb;
+    return runif_epi(*m_engine) * (ub - lb) + lb;
 }
 
 template<typename TData>
@@ -2634,7 +2748,7 @@ inline void LFMCMC<TData>::seed(epiworld_fast_uint s) {
 }
 
 template<typename TData>
-inline void LFMCMC<TData>::set_rand_engine(std::shared_ptr< std::mt19937 > & eng)
+inline void LFMCMC<TData>::set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng)
 {
     m_engine = eng;
 }
@@ -2646,7 +2760,7 @@ inline void LFMCMC<TData>::set_rand_gamma(epiworld_double alpha, epiworld_double
 }
 
 template<typename TData>
-inline std::shared_ptr< std::mt19937 > & LFMCMC<TData>::get_rand_endgine()
+inline std::shared_ptr< epi_xoshiro256ss > & LFMCMC<TData>::get_rand_endgine()
 {
     return m_engine;
 }
@@ -9137,10 +9251,10 @@ protected:
 
     std::vector< Entity<TSeq> > entities = {};
 
-    std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
+    std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
-    std::uniform_real_distribution<> runifd      =
-        std::uniform_real_distribution<> (0.0, 1.0);
+    epiworld_double runifd_a = 0.0;
+    epiworld_double runifd_b = 1.0;
     std::normal_distribution<>       rnormd      =
         std::normal_distribution<>(0.0);
     std::gamma_distribution<>        rgammad     =
@@ -9288,8 +9402,8 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
-    std::shared_ptr< std::mt19937 > & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng);
+    std::shared_ptr< epi_xoshiro256ss > & get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
@@ -10517,10 +10631,10 @@ protected:
 
     std::vector< Entity<TSeq> > entities = {};
 
-    std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
+    std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
-    std::uniform_real_distribution<> runifd      =
-        std::uniform_real_distribution<> (0.0, 1.0);
+    epiworld_double runifd_a = 0.0;
+    epiworld_double runifd_b = 1.0;
     std::normal_distribution<>       rnormd      =
         std::normal_distribution<>(0.0);
     std::gamma_distribution<>        rgammad     =
@@ -10668,8 +10782,8 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
-    std::shared_ptr< std::mt19937 > & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng);
+    std::shared_ptr< epi_xoshiro256ss > & get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
@@ -12230,7 +12344,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     entities(std::move(model.entities)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
-    runifd(std::move(model.runifd)),
+    runifd_a(model.runifd_a),
+    runifd_b(model.runifd_b),
     rnormd(std::move(model.rnormd)),
     rgammad(std::move(model.rgammad)),
     rlognormald(std::move(model.rlognormald)),
@@ -12462,7 +12577,8 @@ inline void Model<TSeq>::set_rand_norm(epiworld_double mean, epiworld_double sd)
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_unif(epiworld_double a, epiworld_double b)
 {
-    runifd  = std::uniform_real_distribution<>(a, b);
+    runifd_a = a;
+    runifd_b = b;
 }
 
 template<typename TSeq>
@@ -12585,21 +12701,28 @@ inline void Model<TSeq>::set_backup()
 }
 
 template<typename TSeq>
-inline std::shared_ptr< std::mt19937 > & Model<TSeq>::get_rand_endgine()
+inline std::shared_ptr< epi_xoshiro256ss > & Model<TSeq>::get_rand_endgine()
 {
     return engine;
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng)
+{
+    engine = eng;
+}
+
+template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return runifd(*engine);
+    epiworld_double res = runif_epi(*engine);
+    return res * (runifd_b - runifd_a) + runifd_a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return runifd(*engine) * (b - a) + a;
+    return runif_epi(*engine) * (b - a) + a;
 }
 
 template<typename TSeq>
@@ -19123,10 +19246,10 @@ protected:
 
     std::vector< Entity<TSeq> > entities = {};
 
-    std::shared_ptr< std::mt19937 > engine = std::make_shared< std::mt19937 >();
+    std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
-    std::uniform_real_distribution<> runifd      =
-        std::uniform_real_distribution<> (0.0, 1.0);
+    epiworld_double runifd_a = 0.0;
+    epiworld_double runifd_b = 1.0;
     std::normal_distribution<>       rnormd      =
         std::normal_distribution<>(0.0);
     std::gamma_distribution<>        rgammad     =
@@ -19274,8 +19397,8 @@ public:
      * @param s Seed
      */
     ///@{
-    void set_rand_engine(std::shared_ptr< std::mt19937 > & eng);
-    std::shared_ptr< std::mt19937 > & get_rand_endgine();
+    void set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng);
+    std::shared_ptr< epi_xoshiro256ss > & get_rand_endgine();
     void seed(size_t s);
     void set_rand_norm(epiworld_double mean, epiworld_double sd);
     void set_rand_unif(epiworld_double a, epiworld_double b);
@@ -34338,4 +34461,41 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
 
 }
 
-#endif 
+// ---------------------------------------------------------------------------
+// Specializations of std::generate_canonical for epiworld::epi_xoshiro256ss.
+//
+// This is the agnostic performance fix: by specializing generate_canonical for
+// our custom engine, ALL std distributions (normal, gamma, binomial, etc.)
+// that call generate_canonical internally will automatically bypass the
+// long-double arithmetic that causes severe slowdowns on platforms where
+// long double is software-emulated 128-bit (e.g., Clang+libstdc++ on ARM).
+//
+// The specialisation converts the 64-bit engine output to a floating-point
+// value in [0, 1) using only the precision of the target type:
+//   - double (53 mantissa bits): top 53 bits of the 64-bit word, × 2^{-53}
+//   - float  (24 mantissa bits): top 24 bits,                      × 2^{-24}
+//
+// The result is strictly less than 1.0 by construction (max value is
+// (2^N - 1) / 2^N), so no nextafter clamp is required.
+// ---------------------------------------------------------------------------
+namespace std {
+    template<>
+    inline double generate_canonical<
+        double,
+        numeric_limits<double>::digits,
+        epiworld::epi_xoshiro256ss
+    >(epiworld::epi_xoshiro256ss& eng) {
+        return static_cast<double>(eng() >> 11) * 0x1.0p-53;
+    }
+
+    template<>
+    inline float generate_canonical<
+        float,
+        numeric_limits<float>::digits,
+        epiworld::epi_xoshiro256ss
+    >(epiworld::epi_xoshiro256ss& eng) {
+        return static_cast<float>(eng() >> 40) * 0x1.0p-24f;
+    }
+}
+
+#endif
