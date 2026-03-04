@@ -32,11 +32,13 @@ $(NAME)-test-gen-report: $(NAME)-tests
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-genhtml.pl $($(NAME)_TEST_DIR)/report.xml > $($(NAME)_TEST_DIR)/report.html
 	$(SAY) "REPORT" $($(NAME)_TEST_DIR)/report.xml
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-okay.pl $($(NAME)_TEST_DIR)/report.xml; \
-	if [ $$? -eq 0 ]; then \
+	JUNIT_STATUS=$$?; \
+	if [ $$JUNIT_STATUS -eq 0 ]; then \
 		perl $(ROOT_SOURCE_DIR)/script/junit-report.pl --short $($(NAME)_TEST_DIR)/report.xml; \
 	else \
 		perl $(ROOT_SOURCE_DIR)/script/junit-report.pl $($(NAME)_TEST_DIR)/report.xml; \
-	fi
+	fi; \
+	exit $$JUNIT_STATUS
 	
 .PHONY: $(NAME)-tests
 $(NAME)-tests: override NAME := $(NAME)
