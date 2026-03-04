@@ -44,11 +44,11 @@ CXXFLAGS := -std=c++17
 LDFLAGS  :=
 
 ifeq ($(BUILD_PROFILE),debug)
-    CFLAGS += -g -O2 -DDEBUG -Wno-unused-parameter -fdelete-null-pointer-checks -Wall -Wextra
-    CXXFLAGS += -g -O2 -DDEBUG -Wno-unused-parameter -fdelete-null-pointer-checks -Wall -Wextra
+    CFLAGS += -g3 -O2 -DDEBUG -Wno-unused-parameter -fdelete-null-pointer-checks -Wall -Wextra -march=native
+    CXXFLAGS += -g3 -O2 -DDEBUG -Wno-unused-parameter -fdelete-null-pointer-checks -Wall -Wextra -march=native
 else ifeq ($(BUILD_PROFILE),release)
-    CFLAGS += -O2 -g -pedantic -Wno-unused-parameter -fdelete-null-pointer-checks -ffast-math
-    CXXFLAGS += -O2 -g -pedantic -Wno-unused-parameter -fdelete-null-pointer-checks -ffast-math
+    CFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native
+    CXXFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native
 else
     $(error "Unknown BUILD_PROFILE: '$(BUILD_PROFILE)'. Valid options are 'debug' and 'release'.")
 endif
