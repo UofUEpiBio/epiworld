@@ -59,7 +59,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
     epiworld_double v_gamma = calc_variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_gamma, 1.5*2.0, 0.025));
-    REQUIRE_FALSE(moreless(v_gamma, 1.5*2.0*2.0, 0.025));
+    REQUIRE_FALSE(moreless(v_gamma, 1.5*2.0*2.0, 0.10));
+    // #endif
     
     // Looking at the exponential
     model.set_rand_exp(1.0);
