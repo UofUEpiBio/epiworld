@@ -16,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 3
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 467.00ms
-Last run speed      : 1.07 million agents x day / second
+Last run elapsed t  : 28.00ms
+Last run speed      : 17.41 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -36,10 +36,10 @@ Model parameters:
  - Prob. Transmission   : 0.1000
 
 Distribution of the population at time 50:
-  - (0) Susceptible :  9900 -> 17
-  - (1) Exposed     :   100 -> 6
-  - (2) Infected    :     0 -> 238
-  - (3) Recovered   :     0 -> 9739
+  - (0) Susceptible :  9900 -> 15
+  - (1) Exposed     :   100 -> 5
+  - (2) Infected    :     0 -> 225
+  - (3) Recovered   :     0 -> 9755
 
 Transition Probabilities:
  - Susceptible  0.95  0.05     -     -

@@ -18,9 +18,9 @@ Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
 Last run elapsed t  : 0.00s
-Total elapsed t     : 14.00s (100 runs)
-Last run speed      : 17.84 million agents x day / second
-Average run speed   : 71.11 million agents x day / second
+Total elapsed t     : 1.00s (100 runs)
+Last run speed      : 233.51 million agents x day / second
+Average run speed   : 567.09 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -37,9 +37,9 @@ Model parameters:
  - Transmission rate : 0.9000
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  99000 -> 123
+  - (0) Susceptible :  99000 -> 2
   - (1) Infected    :   1000 -> 14
-  - (2) Recovered   :      0 -> 99863
+  - (2) Recovered   :      0 -> 99984
 
 Transition Probabilities:
  - Susceptible  0.94  0.06     -

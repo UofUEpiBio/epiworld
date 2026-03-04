@@ -3,9 +3,10 @@
 Output from the program:
 
 ```
-Running the model...
-DEBUGGING ON (compiled with EPI_DEBUG defined)
-________________________________________________________________________________
+_________________________________________________________________________
+|Running the model...
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| done.
+|________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
@@ -15,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 308.00ms
-Last run speed      : 8.11 million agents x day / second
+Last run elapsed t  : 35.00ms
+Last run speed      : 70.16 million agents x day / second
 Rewiring            : off
 
 Global events:
