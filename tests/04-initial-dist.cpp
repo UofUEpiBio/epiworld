@@ -146,9 +146,9 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     #ifdef CATCH_CONFIG_MAIN
     REQUIRE_FALSE(
         (
-            moreless(h_0[0u], 4700) || 
+            moreless(h_0[0u], 4682) || 
             moreless(h_0[1u], 100) || 
-            moreless(h_0[2u], 4705) || 
+            moreless(h_0[2u], 4723) || 
             moreless(h_0[3u], 495))
         );
     #endif

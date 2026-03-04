@@ -7,6 +7,10 @@ examples/*/*
 tests/*
 !tests/
 !tests/*.cpp
+!tests/Makefile
+tests/callgrind*.txt
+!tests/*.R
+!tests/*.yaml
 .vscode
 *.o
 .zed/
@@ -22,3 +26,4 @@ docs/xml/
 
 # CodeQL generated files
 _codeql_detected_source_root
+tests/*-saves/

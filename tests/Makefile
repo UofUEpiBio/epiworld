@@ -42,7 +42,7 @@ clean:
 		mkdir -p "$${file%.cpp}-saves"; \
 	done
 
-.PHONY: all clean coverage
+.PHONY: all clean coverage callgrind callgrind-measles
 
 05-mixing-with-size.o: 05-mixing-with-size.cpp
 	g++ $(CXX_FLAGS_DEBUG) 05-mixing-with-size.cpp -o 05-mixing-with-size.o
@@ -52,6 +52,17 @@ callgrind: 05-mixing-with-size.cpp
 	g++ $(CXX_FLAGS_DEBUG) 05-mixing-with-size.cpp -o 05-mixing-with-size.o && \
 	valgrind --tool=callgrind ./05-mixing-with-size.o && \
 	callgrind_annotate callgrind.out.* > callgrind_report.txt
+
+14a-measles-callgrind: 14a-measles.cpp
+	g++ -std=$(CXX_STD) $(CXX_FLAGS_DEBUG) -Depiworld_double=double \
+		14a-measles.cpp -o 14a-measles-callgrind
+
+callgrind-measles: 14a-measles-callgrind
+	rm -f callgrind-measles.out.* && \
+	valgrind --tool=callgrind \
+		--callgrind-out-file=callgrind-measles.out \
+		./14a-measles-callgrind && \
+	callgrind_annotate --auto=yes callgrind-measles.out > callgrind-measles-report.txt
 
 
 05b-mixing.o: 05b-mixing.cpp
