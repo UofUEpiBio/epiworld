@@ -244,6 +244,7 @@ public:
     bool has_entity(std::string name) const;
 
     void print(bool compressed = false) const;
+    void print(Model<TSeq> & model, bool compressed = false) const;
 
     /**
      * @brief Access the j-th column of the agent

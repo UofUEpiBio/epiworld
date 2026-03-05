@@ -294,7 +294,7 @@ public:
      * @brief Create a clone of this model
      * @return Pointer to a new model instance with the same configuration
      */
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -1431,14 +1431,10 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelMeaslesMixingRiskQuarantine<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelMeaslesMixingRiskQuarantine<TSeq>::clone_ptr()
 {
     
-    ModelMeaslesMixingRiskQuarantine<TSeq> * ptr = new ModelMeaslesMixingRiskQuarantine<TSeq>(
-        *dynamic_cast<const ModelMeaslesMixingRiskQuarantine<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelMeaslesMixingRiskQuarantine<TSeq>>(*this);
 
 }
 

@@ -1,8 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
-#endif
-
-#define EPI_DEBUG_NO_THREAD_ID
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -24,13 +19,9 @@ EPIWORLD_TEST_CASE("Edgelist is preserved in run multiple", "[Edgelist]") {
     model_0.run_multiple(100, 100, 1231, nullptr, true, true, 1);
     model_0.write_edgelist(source0b, target0b);
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE( source0a == source0b );
     REQUIRE( target0a == target0b );
-    #endif
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

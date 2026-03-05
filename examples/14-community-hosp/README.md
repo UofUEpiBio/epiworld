@@ -1,4 +1,4 @@
-## Example: 14-community-hosp
+## Example: `14-community-hosp`
 
 Output from the program:
 
@@ -16,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 7.00ms
-Last run speed      : 13.63 million agents x day / second
+Last run elapsed t  : 6.00ms
+Last run speed      : 15.95 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -41,7 +41,7 @@ Distribution of the population at time 100:
 
 Transition Probabilities:
  - Susceptible              1.00  0.00  0.00
- - Infected                 0.26  0.69  0.05
- - Infected (hospitalized)  0.39     -  0.61
+ - Infected                 0.43  0.53  0.04
+ - Infected (hospitalized)  0.17  0.17  0.67
 
 ```

@@ -4,7 +4,7 @@
 using namespace epiworld;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-EntityToAgentFun<TSeq> dist_factory(int from, int to) {
+EntityToAgentFun<TSeq> dist_factory(size_t from, size_t to) {
     return [from, to](Entity<> & e, Model<> * m) -> void {
 
             auto & agents = m->get_agents();

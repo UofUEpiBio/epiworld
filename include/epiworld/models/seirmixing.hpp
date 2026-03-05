@@ -118,7 +118,7 @@ public:
 
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -335,25 +335,10 @@ inline void ModelSEIRMixing<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSEIRMixing<TSeq>::clone_ptr()
 {
 
-    ModelSEIRMixing<TSeq> * ptr = new ModelSEIRMixing<TSeq>(
-        *dynamic_cast<const ModelSEIRMixing<TSeq>*>(this)
-        );
-
-    #if defined(__clang__)
-        // Clang
-        __builtin_assume(ptr != nullptr);
-    #elif defined(__GNUC__) && __GNUC__ >= 13
-        // GCC 13 or later
-        [[assume(ptr != nullptr)]];
-    #else
-        // C++17 or C++20
-        assert(ptr != nullptr); // Use assert for runtime checks
-    #endif
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSEIRMixing<TSeq>>(*this);
 
 }
 

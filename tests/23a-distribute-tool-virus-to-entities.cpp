@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -81,7 +77,6 @@ EPIWORLD_TEST_CASE("distribute_tool_virus_to_entities_proportions", "[distribute
     std::vector<double> expected_counts = {100.0, 50.0, 25.0, 15.0, 0.0};
 
     // Allow for statistical variation (±20% tolerance for stochastic test)
-    #ifdef CATCH_CONFIG_MAIN
     for (size_t i = 0; i < 5; ++i) {
         // Check that virus distribution follows expected pattern
         // Allow for statistical variation: 20% of expected or at least 2 agents
@@ -91,5 +86,4 @@ EPIWORLD_TEST_CASE("distribute_tool_virus_to_entities_proportions", "[distribute
         // Check that tool distribution follows expected pattern
         REQUIRE(std::abs(avg_tool_by_entity[i] - expected_counts[i]) <= tolerance);
     }
-    #endif
 }

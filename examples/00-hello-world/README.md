@@ -1,4 +1,4 @@
-## Example: 00-hello-world
+## Example: `00-hello-world`
 
 Output from the program:
 
@@ -16,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 14.00ms
-Last run speed      : 67.99 million agents x day / second
+Last run elapsed t  : 16.00ms
+Last run speed      : 60.72 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -35,11 +35,11 @@ Model parameters:
 Distribution of the population at time 100:
   - (0) Susceptible :  9950 -> 0
   - (1) Exposed     :    50 -> 0
-  - (2) Recovered   :     0 -> 9417
-  - (3) Removed     :     0 -> 583
+  - (2) Recovered   :     0 -> 9423
+  - (3) Removed     :     0 -> 577
 
 Transition Probabilities:
- - Susceptible  0.79  0.21     -     -
+ - Susceptible  0.78  0.22     -     -
  - Exposed         -  0.85  0.14  0.01
  - Recovered       -     -  1.00     -
  - Removed         -     -     -  1.00

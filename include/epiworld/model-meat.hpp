@@ -429,10 +429,10 @@ inline epiworld_double death_reduction_mixer_default(
 ///@}
 
 template<typename TSeq>
-inline Model<TSeq> * Model<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> Model<TSeq>::clone_ptr()
 {
     // Everything is copied
-    Model<TSeq> * ptr = new Model<TSeq>(*dynamic_cast<const Model<TSeq>*>(this));
+    auto ptr = std::make_unique<Model<TSeq>>(*dynamic_cast<const Model<TSeq>*>(this));
 
     #ifdef EPI_DEBUG
     if (*this != *ptr)
@@ -517,7 +517,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     entities(std::move(model.entities)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
-    runifd(std::move(model.runifd)),
+    runifd_a(model.runifd_a),
+    runifd_b(model.runifd_b),
     rnormd(std::move(model.rnormd)),
     rgammad(std::move(model.rgammad)),
     rlognormald(std::move(model.rlognormald)),
@@ -771,7 +772,8 @@ inline void Model<TSeq>::set_rand_norm(epiworld_double mean, epiworld_double sd)
 template<typename TSeq>
 inline void Model<TSeq>::set_rand_unif(epiworld_double a, epiworld_double b)
 {
-    runifd  = std::uniform_real_distribution<>(a, b);
+    runifd_a = a;
+    runifd_b = b;
 }
 
 template<typename TSeq>
@@ -894,21 +896,28 @@ inline void Model<TSeq>::set_backup()
 }
 
 template<typename TSeq>
-inline std::shared_ptr< std::mt19937 > & Model<TSeq>::get_rand_endgine()
+inline std::shared_ptr< epi_xoshiro256ss > & Model<TSeq>::get_rand_endgine()
 {
     return engine;
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng)
+{
+    engine = eng;
+}
+
+template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
-    return runifd(*engine);
+    epiworld_double res = runif_epi(*engine);
+    return res * (runifd_b - runifd_a) + runifd_a;
 }
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
-    return runifd(*engine) * (b - a) + a;
+    return runif_epi(*engine) * (b - a) + a;
 }
 
 template<typename TSeq>
@@ -1556,7 +1565,7 @@ inline Model<TSeq> & Model<TSeq>::run(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::run_multiple(
+inline Model<TSeq> & Model<TSeq>::run_multiple(
     epiworld_fast_uint ndays,
     epiworld_fast_uint nexperiments,
     int seed_,
@@ -1607,13 +1616,11 @@ inline void Model<TSeq>::run_multiple(
         static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
 
     // Generating copies of the model (done serially to avoid races on original)
-    std::vector< Model<TSeq> * > these(
-        std::max(nthreads - 1, 0)
-    );
+    std::vector< std::unique_ptr< Model<TSeq> > > these;
 
     for (size_t i = 1u; i < static_cast<size_t>(nthreads); ++i)
     {
-        these[i - 1] = clone_ptr();
+        these.emplace_back(clone_ptr());
     }
 
 
@@ -1700,7 +1707,7 @@ inline void Model<TSeq>::run_multiple(
                 these[iam - 1]->run(ndays, seeds_n[sim_id]);
 
                 if (fun)
-                    fun(sim_id, these[iam - 1]);
+                    fun(sim_id, &(*these[iam - 1]));
 
             }
 
@@ -1710,12 +1717,6 @@ inline void Model<TSeq>::run_multiple(
 
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
-
-    // Cleanup clones (done serially to avoid races)
-    for (int i = 1; i < nthreads; ++i)
-    {
-        delete these[i - 1];
-    }
 
     #else
     // if (reset)
@@ -1758,7 +1759,7 @@ inline void Model<TSeq>::run_multiple(
     if (old_verb)
         verbose_on();
 
-    return;
+    return *this;
 
 }
 

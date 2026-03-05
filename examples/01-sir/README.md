@@ -1,4 +1,4 @@
-## Example: 01-sir
+## Example: `01-sir`
 
 Output from the program:
 
@@ -16,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 34.00ms
-Last run speed      : 72.07 million agents x day / second
+Last run elapsed t  : 35.00ms
+Last run speed      : 70.16 million agents x day / second
 Rewiring            : off
 
 Global events:

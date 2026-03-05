@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -45,10 +41,6 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 1);
     
-    #ifndef CATCH_CONFIG_MAIN
-    model_0.print(false);
-    #endif
-
     // Creating an average across the transitions vectors
     auto avg_transitions = tests_calculate_avg_transitions(
         transitions, model_0
@@ -88,7 +80,6 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     double p_recovered = 1.0/model_0("Rash period");
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
-    #ifdef CATCH_CONFIG_MAIN
     // Transition to prodromal
     REQUIRE_FALSE(moreless(
         mat(1, 2) + mat(1, 9), 1.0/model_0("Incubation period"), 0.05)
@@ -144,7 +135,6 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
         )
     );
 
-    #endif
     // Reproductive number
     std::cout << "Effective Rt (lower): "
               << R0_observed << " (R0 ~" << R0_theo << ")" << std::endl;
@@ -192,8 +182,6 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
               ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     #undef mat
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
     
 }

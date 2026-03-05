@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -114,7 +110,6 @@ EPIWORLD_TEST_CASE(
         mat(8, 9) << " (expected: " << 
         (1.0 / model("Hospitalization period")) << ")" << std::endl;
 
-    #ifdef CATCH_CONFIG_MAIN
     // R0
     REQUIRE_FALSE(moreless(R0, R0_expected, 0.1));
 
@@ -137,11 +132,8 @@ EPIWORLD_TEST_CASE(
     REQUIRE_FALSE(
         moreless(mat(8, 9), 1.0 / model("Hospitalization period"), 0.05)
     );
-    #endif
     
     #undef mat
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

@@ -114,7 +114,7 @@ public:
 
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -328,14 +328,10 @@ inline void ModelSIRMixing<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSIRMixing<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSIRMixing<TSeq>::clone_ptr()
 {
 
-    ModelSIRMixing<TSeq> * ptr = new ModelSIRMixing<TSeq>(
-        *dynamic_cast<const ModelSIRMixing<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSIRMixing<TSeq>>(*this);
 
 }
 

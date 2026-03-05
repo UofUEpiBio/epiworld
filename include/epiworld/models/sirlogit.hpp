@@ -88,7 +88,7 @@ public:
         int seed = -1
     );
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     void reset();
     
@@ -114,14 +114,10 @@ inline ModelSIRLogit<TSeq> & ModelSIRLogit<TSeq>::run(
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSIRLogit<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSIRLogit<TSeq>::clone_ptr()
 {
     
-    ModelSIRLogit<TSeq> * ptr = new ModelSIRLogit<TSeq>(
-        *dynamic_cast<const ModelSIRLogit<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSIRLogit<TSeq>>(*this);
 
 }
 
