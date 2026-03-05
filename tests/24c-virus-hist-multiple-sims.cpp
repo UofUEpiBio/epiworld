@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-#define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -60,9 +56,8 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         std::ifstream file(filename);
         if (!file.good()) {
             std::cout << "  ERROR: File " << filename << " not found!" << std::endl;
-            #ifdef CATCH_CONFIG_MAIN
             REQUIRE(false);
-            #endif
+            
             continue;
         }
         
@@ -79,6 +74,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
             line_count++;
             // Extract date (first column after thread column in debug mode)
             std::istringstream iss(line);
+            
             #ifdef EPI_DEBUG
             int thread_id, date;
             iss >> thread_id >> date;
@@ -86,6 +82,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
             int date;
             iss >> date;
             #endif
+            
             dates_in_file.insert(date);
         }
         file.close();
@@ -94,7 +91,6 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         std::cout << "    Lines in file: " << line_count << " (expected " << ((ndays + 1) * nstates) << ")" << std::endl;
         std::cout << "    Unique dates: " << dates_in_file.size() << " (expected " << (ndays + 1) << ")" << std::endl;
         
-        #ifdef CATCH_CONFIG_MAIN
         // Each file should have (ndays + 1) * nstates lines
         REQUIRE(line_count == (ndays + 1) * nstates);
         
@@ -102,7 +98,6 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         REQUIRE(dates_in_file.size() == static_cast<size_t>(ndays + 1));
         REQUIRE(*dates_in_file.begin() == 0);
         REQUIRE(*dates_in_file.rbegin() == ndays);
-        #endif
     }
 
     // Also check that the model's current database only has the LAST simulation's data
@@ -119,13 +114,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
     std::cout << "    Virus history size: " << virus_date.size() 
               << " (expected " << ((ndays + 1) * nstates) << " - last simulation only)" << std::endl;
 
-    #ifdef CATCH_CONFIG_MAIN
     // The database should only contain the last simulation's data
     REQUIRE(virus_date.size() == static_cast<size_t>((ndays + 1) * nstates));
-    #endif
-
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
 
 }

@@ -40,8 +40,6 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     std::cout << std::endl;
 
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }

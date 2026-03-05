@@ -27,7 +27,7 @@ Here is a simple SIR model implemented with `epiworld`. The source code
 can be found [here](https://github.com/UofUEpiBio/epiworld/tree/master/helloworld.cpp), and you can compile the code as follows:
 
 ```bash
-g++ -std=c++20 -O3 readme.cpp -o readme.o
+g++ -std=c++20 -O3 helloworld.cpp -o helloworld.o
 ```
 
 As you can see in [`helloworld.cpp`](https://github.com/UofUEpiBio/epiworld/tree/master/helloworld.cpp), to use `epiworld` you only need to incorporate the single header file [`epiworld.hpp`](https://github.com/UofUEpiBio/epiworld/tree/master/epiworld.hpp):
@@ -45,13 +45,13 @@ int main()
     epimodels::ModelSIR<> hello(
         "COVID-19", // Name of the virus
         0.01,        // Initial prevalence
-        0.9,        // Transmission probability
+        0.1,        // Transmission probability
         0.3         // Recovery probability
         );
 
     // We can simulate agents using a smallworld network
     // with 100,000 individuals, in this case
-    hello.agents_smallworld(100000, 4L, false, .01);
+    hello.agents_smallworld(100000, 10L, false, .01);
 
     // Running the model and printing the results
     // Setting the number of days (100) and seed (122)
@@ -79,8 +79,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 50.00ms
-Last run speed      : 196.66 million agents x day / second
+Last run elapsed t  : 69.00ms
+Last run speed      : 143.87 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -94,15 +94,15 @@ Tool(s):
 
 Model parameters:
  - Recovery rate     : 0.3000
- - Transmission rate : 0.9000
+ - Transmission rate : 0.1000
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  99000 -> 23
-  - (1) Infected    :   1000 -> 1
-  - (2) Recovered   :      0 -> 99976
+  - (0) Susceptible :  99000 -> 41957
+  - (1) Infected    :   1000 -> 70
+  - (2) Recovered   :      0 -> 57973
 
 Transition Probabilities:
- - Susceptible  0.94  0.06     -
+ - Susceptible  0.99  0.01     -
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 ```
@@ -125,35 +125,32 @@ int main()
     // - Infected: Status 1
     // - Recovered: Status 2
     Model<> model;
-    model.add_status("Susceptible", default_update_susceptible<>);
-    model.add_status("Infected", default_update_exposed<>);
-    model.add_status("Recovered");
+    model.add_state("Susceptible", default_update_susceptible<>);
+    model.add_state("Infected", default_update_exposed<>);
+    model.add_state("Recovered");
 
-    // Desgining a virus: This virus will:
-    // - Have a 90% transmission rate
+    // Designing a virus: This virus will:
+    // - Have a 10% transmission rate
     // - Have a 30% recovery rate
     // - Infected individuals become "Infected" (status 1)
     // - Recovered individuals become "Recovered" (status 2)
     // 100 individuals will have the virus from the beginning.
-    Virus<> virus("covid 19");
+    Virus<> virus("covid 19", 100, false);
 
-    virus.set_prob_infecting(.90);
+    virus.set_prob_infecting(.10);
     virus.set_prob_recovery(.30);
+    
+    virus.set_state(1, 2);
 
-    virus.set_status(1, 2);
-
-    model.default_add_virus<TSeq>n(virus, 1000);
-
+    model.add_virus(virus);
+    
     // Generating a random pop from a smallworld network
-    model.agents_smallworld(100000, 4L, false, .01);
-
-    // Initializing setting days and seed
-    model.init(100, 122);
+    model.agents_smallworld(100000, 10L, false, .01);
 
     // Running the model
-    model.run();
+    model.run(100, 122);
     model.print();
-
+  
 }
 ```
 
@@ -173,8 +170,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 52.00ms
-Last run speed      : 190.50 million agents x day / second
+Last run elapsed t  : 24.00ms
+Last run speed      : 410.34 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -190,17 +187,17 @@ Model parameters:
  (none)
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  99000 -> 23
-  - (1) Infected    :   1000 -> 1
-  - (2) Recovered   :      0 -> 99976
+  - (0) Susceptible :  99900 -> 78866
+  - (1) Infected    :    100 -> 625
+  - (2) Recovered   :      0 -> 20509
 
 Transition Probabilities:
- - Susceptible  0.94  0.06     -
+ - Susceptible  1.00  0.00     -
  - Infected        -  0.70  0.30
- - Recovered       -     -  1.0
+ - Recovered       -     -  1.00
 ```
 
-Which took about 0.052 seconds (~ 190 million ppl x day / second).
+Which took about 0.024 seconds (~ 401 million agents x day / second).
 
 ## Simulation Steps
 

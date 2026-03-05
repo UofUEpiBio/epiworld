@@ -1,4 +1,4 @@
-## Example: 10-likelihood-free-mcmc
+## Example: `10-likelihood-free-mcmc`
 
 Output from the program:
 
@@ -13,8 +13,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 162.00µs
-Last run speed      : 308.64 million agents x day / second
+Last run elapsed t  : 148.00µs
+Last run speed      : 337.84 million agents x day / second
 Rewiring            : off
 
 Global events:
@@ -31,13 +31,13 @@ Model parameters:
  - Transmission rate : 0.1000
 
 Distribution of the population at time 50:
-  - (0) Susceptible :  900 -> 697
+  - (0) Susceptible :  900 -> 738
   - (1) Infected    :  100 -> 0
-  - (2) Recovered   :    0 -> 303
+  - (2) Recovered   :    0 -> 262
 
 Transition Probabilities:
  - Susceptible  0.99  0.01     -
- - Infected        -  0.71  0.29
+ - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 
 _________________________________________________________________________
@@ -47,16 +47,16 @@ LIKELIHOOD-FREE MARKOV CHAIN MONTE CARLO
 
 N Samples (total) : 2000
 N Samples (after burn-in period) : 2000
-Elapsed t : 672.00ms
+Elapsed t : 614.00ms
 
 Parameters:
-  -Immune recovery :  0.75 [ 0.22,  1.00] (initial :  0.50)
-  -Infectiousness  :  0.24 [ 0.08,  0.65] (initial :  0.50)
+  -Immune recovery :  0.49 [ 0.27,  0.97] (initial :  0.50)
+  -Infectiousness  :  0.15 [ 0.09,  0.25] (initial :  0.50)
 
 Statistics:
-  -Susceptible :  670.44 [  16.00,  712.00] (Observed:  697.00)
-  -Infected    :    0.63 [   0.00,    0.00] (Observed:    0.00)
-  -Recovered   :  328.42 [ 288.00,  970.00] (Observed:  303.00)
+  -Susceptible :  725.97 [ 734.00,  746.00] (Observed:  738.00)
+  -Infected    :    0.47 [   0.00,    0.00] (Observed:    0.00)
+  -Recovered   :  273.08 [ 254.00,  266.00] (Observed:  262.00)
 ___________________________________________
 
 ```

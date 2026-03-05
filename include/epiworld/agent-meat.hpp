@@ -817,6 +817,13 @@ inline void Agent<TSeq>::print(
 }
 
 template<typename TSeq>
+inline void Agent<TSeq>::print(Model<TSeq> & model, bool compressed) const
+{
+    ModelScope<TSeq> scope_(&model);
+    print(compressed);
+}
+
+template<typename TSeq>
 inline double & Agent<TSeq>::operator()(size_t j)
 {
 

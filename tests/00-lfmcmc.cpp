@@ -1,5 +1,4 @@
 #include "tests.hpp"
-#include "../include/epiworld/math/lfmcmc.hpp"
 
 typedef std::vector<epiworld_double> vec_double;
 
@@ -44,7 +43,7 @@ void summary_fun(vec_double & res, const vec_double & p, LFMCMC<vec_double> * m)
 
 EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
 
-    auto rand = std::make_shared<std::mt19937>();
+    auto rand = std::make_shared<epiworld::epi_xoshiro256ss>();
     rand->seed(91231);
     std::normal_distribution<epiworld_double> rnorm(5, 1.5);
 
@@ -69,13 +68,11 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     auto params_means = model.get_mean_params();
     auto stats_means  = model.get_mean_stats();
 
-    #ifdef CATCH_CONFIG_MAIN
     std::vector<epiworld_double> expected = {5.0, 1.5};
     REQUIRE_THAT(params_means, Catch::Approx(expected).margin(0.5));
     REQUIRE_THAT(stats_means, Catch::Approx(expected).margin(0.5));
     REQUIRE_THROWS(model.print(200000));
     REQUIRE_NOTHROW(model.print(50000));
-    #endif 
 
     // Add test of summary stats between [0, 1]
     std::normal_distribution<epiworld_double> rnorm2(0.5, 0.5);
@@ -95,13 +92,9 @@ EPIWORLD_TEST_CASE("LFMCMC", "[Basic example]") {
     model2.run({1,1}, 100000, .125);
     model2.print();
 
-    #ifdef CATCH_CONFIG_MAIN
     REQUIRE_NOTHROW(model2.print());
-    #endif 
 
 
-    #ifndef CATCH_CONFIG_MAIN
-    return 0;
-    #endif
+
 
 }
