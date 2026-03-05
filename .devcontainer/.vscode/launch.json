@@ -21,6 +21,15 @@
           "ignoreFailures": true
         }
       ]
+    },
+    {
+      "name": "debug single file",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "cwd": "${fileDirname}",
+      "preLaunchTask": "build-single-file",
+      "externalConsole": false
     }
   ],
   "inputs": [

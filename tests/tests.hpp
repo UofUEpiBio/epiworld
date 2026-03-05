@@ -11,10 +11,11 @@
     #include <omp.h>
 #endif
 
-#include "../include/catch2/catch.hpp"
 #include "../include/epiworld/epiworld.hpp"
 
-
+#ifndef NO_CATCH_MAIN
+#include "../include/catch2/catch.hpp"
+#endif
 
 /**
  * Returns true if the absolute difference between a and b is greater than eps.
@@ -328,7 +329,14 @@ void inline tests_print_avg_transitions(
     }
 }
 
-
-#define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
+#ifdef NO_CATCH_MAIN
+    #define EPIWORLD_TEST_CASE(desc, tag) main()
+    #define REQUIRE(...) (void)0
+    #define REQUIRE_FALSE(...) (void)0
+    #define REQUIRE_TRUE(...) (void)0
+    #define REQUIRE_THROWS(...) (void)0
+#else
+    #define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
+#endif
 
 #endif
