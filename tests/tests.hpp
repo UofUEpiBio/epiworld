@@ -58,7 +58,7 @@ inline epiworld::EntityToAgentFun<TSeq> dist_factory(int from, int to) {
             auto & agents = m->get_agents();
             for (int i = from; i < to; ++i)
             {
-                e.add_agent(&agents[i], m);
+                e.add_agent(&agents[i]);
             }
             
             return;
@@ -71,7 +71,7 @@ inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
 {
     return [i](epiworld::Virus<TSeq> & v, epiworld::Model<TSeq> * m) -> void {
 
-            m->get_agents()[i].set_virus(v, m);
+            m->get_agents()[i].set_virus(v);
             return;
 
         };

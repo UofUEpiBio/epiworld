@@ -29,23 +29,15 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
     // Looking at people
     std::cout << "Neighbors agent[0] in m : " ;
-    for (auto & n : m.get_agents()[0u].get_neighbors())
+    for (auto & n : m.get_agents()[0u].get_neighbors(m))
         std::cout << n << ", ";
     std::cout << std::endl;
 
 
     std::cout << "Neighbors agent[0] in m2 : " ;
-    for (auto & n : m2.get_agents()[0u].get_neighbors())
+    for (auto & n : m2.get_agents()[0u].get_neighbors(m2))
         std::cout << n << ", ";
     std::cout << std::endl;
-
-    // std::cout << "Agent[0] in m tools  : " <<
-    //     // m.get_agents()[0u].get_virus()->get_agent() << ", " <<
-    //     m.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
-
-    // std::cout << "Agent[0] in m2 tools : " <<
-    //     // m2.get_agents()[0u].get_virus()->get_agent() << ", " <<
-    //     m2.get_agents()[0u].get_tool(0u)->get_agent() << std::endl;
 
 
 

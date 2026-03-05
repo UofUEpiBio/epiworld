@@ -8,24 +8,24 @@ EPIWORLD_TEST_CASE("Multiple events", "[multi-events]") {
 
     EPI_NEW_UPDATEFUN_LAMBDA(update_twice, int) {
 
-        p->change_state(m, 1);
+        p->change_state(1);
 
         if (m->runif() > .5)
-            p->change_state(m, m->state_of("State 2"));
+            p->change_state(m->state_of("State 2"));
 
     };
 
     EPI_NEW_UPDATEFUN_LAMBDA(update_once, int) {
 
         if (m->runif() > .5)
-            p->change_state(m, m->state_of("State 2"));
+            p->change_state(m->state_of("State 2"));
 
     };
 
     EPI_NEW_UPDATEFUN_LAMBDA(update_back, int) {
 
-        p->change_state(m, m->state_of("State 1"));
-        p->change_state(m, m->state_of("State 0"));
+        p->change_state(m->state_of("State 1"));
+        p->change_state(m->state_of("State 0"));
 
     };
 

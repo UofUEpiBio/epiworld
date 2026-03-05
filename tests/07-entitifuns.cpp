@@ -30,19 +30,19 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
 
     std::vector< bool > ids(model.size(), false);
     int nrepeats = 0;
-    for (const Agent<> & a: agents1)
+    for (size_t a_id : agents1)
     {
-        if (ids[a.get_id()])
+        if (ids[a_id])
             nrepeats++;
         else
-            ids[a.get_id()] = true;
+            ids[a_id] = true;
     }
-    for (const Agent<> & a: agents2)
+    for (size_t a_id : agents2)
     {
-        if (ids[a.get_id()])
+        if (ids[a_id])
             nrepeats++;
         else
-            ids[a.get_id()] = true;
+            ids[a_id] = true;
     }
 
     // Accumulate ids if they are true
@@ -81,11 +81,11 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     auto agents4 = model2.get_entity(1).get_agents();
 
     std::vector< int > counts(model2.size(), 0);
-    for (const Agent<> & a: agents3)
-        counts[a.get_id()]++;
+    for (size_t a_id : agents3)
+        counts[a_id]++;
 
-    for (const Agent<> & a: agents4)
-        counts[a.get_id()]++;
+    for (size_t a_id : agents4)
+        counts[a_id]++;
     
     double n0 = 0, n1 = 0, n2 = 0;
     for (const auto & c: counts)

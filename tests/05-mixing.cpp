@@ -49,7 +49,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     {
         if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
         {
-            if (a.get_entity(0).get_id() == 0)
+            if (a.get_entity(0, model).get_id() == 0)
             {
                 n_right++;
                 continue;
@@ -87,7 +87,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         }
         else if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
         {
-            if (a.get_entity(0).get_id() == 1)
+            if (a.get_entity(0, model).get_id() == 1)
             {
                 n_right++;
                 continue;
@@ -141,14 +141,14 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     auto agents3 = model.get_entity(2).get_agents();
 
     std::vector< int > counts(model.size(), 0);
-    for (const Agent<> & a: agents1)
-        counts[a.get_id()]++;
+    for (size_t a_id : agents1)
+        counts[a_id]++;
 
-    for (const Agent<> & a: agents2)
-        counts[a.get_id()]++;
+    for (size_t a_id : agents2)
+        counts[a_id]++;
 
-    for (const Agent<> & a: agents3)
-        counts[a.get_id()]++;
+    for (size_t a_id : agents3)
+        counts[a_id]++;
 
     double n0 = 0, n1 = 0, n2 = 0, n3 = 0;
     for (const auto & c: counts)

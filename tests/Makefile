@@ -77,4 +77,3 @@ relocate-all-$(NAME)-resources:
 	$(SAY) "HOOK" $@
 	$(V) mkdir -p $($(NAME)_TEST_DIR)
 	$(V) cp $($(NAME)_SOURCE_DIR)/resources/*  $($(NAME)_TEST_DIR)/
-

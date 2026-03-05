@@ -15,6 +15,24 @@
 #include "virus-bones.hpp"
 #include "agent-bones.hpp"
 
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::the() {
+
+    if (current_instance_ == nullptr)
+        throw std::logic_error(
+            "Model::the() called outside of a simulation scope. "
+            "This method can only be called during Model::run() "
+            "or within a ModelScope."
+        );
+    
+    return *current_instance_;
+}
+
+template<typename TSeq>
+inline Model<TSeq> * Model<TSeq>::the_ptr() {
+    return current_instance_;
+}
+
 /**
  * @brief Function factory for saving model runs
  *
@@ -411,10 +429,10 @@ inline epiworld_double death_reduction_mixer_default(
 ///@}
 
 template<typename TSeq>
-inline Model<TSeq> * Model<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> Model<TSeq>::clone_ptr()
 {
     // Everything is copied
-    Model<TSeq> * ptr = new Model<TSeq>(*dynamic_cast<const Model<TSeq>*>(this));
+    auto ptr = std::make_unique<Model<TSeq>>(*dynamic_cast<const Model<TSeq>*>(this));
 
     #ifdef EPI_DEBUG
     if (*this != *ptr)
@@ -461,11 +479,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     array_virus_tmp(model.array_virus_tmp.size())
 {
 
-
-    // Removing old neighbors
-    for (auto & p : population)
-        p.model = this;
-
     // Pointing to the right place. This needs
     // to be done afterwards since the state zero is set as a function
     // of the population.
@@ -478,6 +491,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     agents_data = model.agents_data;
     agents_data_ncols = model.agents_data_ncols;
 
+    // Entity-agent relationships now use size_t IDs, so they copy
+    // correctly without any rebinding needed.
+
 }
 
 template<typename TSeq>
@@ -489,6 +505,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     name(std::move(model.name)),
     db(std::move(model.db)),
     population(std::move(model.population)),
+    population_backup(std::move(model.population_backup)),
     agents_data(std::move(model.agents_data)),
     agents_data_ncols(std::move(model.agents_data_ncols)),
     directed(std::move(model.directed)),
@@ -537,13 +554,11 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 {
+
     name = m.name;
 
     population        = m.population;
     population_backup = m.population_backup;
-
-    for (auto & p : population)
-        p.model = this;
 
     db = m.db;
     db.model = this;
@@ -592,6 +607,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     array_double_tmp.resize(static_cast<size_t>(1024u), 0.0);
     array_virus_tmp.resize(1024u);
+
+    // Entity-agent relationships now use size_t IDs, so they copy
+    // correctly without any rebinding needed.
 
     return *this;
 
@@ -683,6 +701,24 @@ inline Entity<TSeq> & Model<TSeq>::get_entity(size_t i, int * entity_pos)
 }
 
 template<typename TSeq>
+inline const Entity<TSeq> & Model<TSeq>::get_entity(size_t i, int * entity_pos) const
+{
+    for (size_t j = 0u; j < entities.size(); ++j)
+        if (entities[j].get_id() == static_cast<int>(i))
+        {
+
+            if (entity_pos)
+                *entity_pos = j;
+
+            return entities[j];
+
+        }
+
+    throw std::range_error("The entity with id " + std::to_string(i) + " was not found.");
+
+}
+
+template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::agents_smallworld(
     epiworld_fast_uint n,
     epiworld_fast_uint k,
@@ -690,6 +726,8 @@ inline Model<TSeq> & Model<TSeq>::agents_smallworld(
     epiworld_double p
 )
 {
+    ModelScope<TSeq> scope_(this);
+
     agents_from_adjlist(
         rgraph_smallworld(n, k, p, d, *this)
     );
@@ -703,6 +741,8 @@ inline void Model<TSeq>::agents_empty_graph(
 )
 {
 
+    ModelScope<TSeq> scope_(this);
+
     // Resizing the people
     population.clear();
     population.resize(n, Agent<TSeq>());
@@ -712,7 +752,6 @@ inline void Model<TSeq>::agents_empty_graph(
     for (auto & p : population)
     {
         p.id = i++;
-        p.model = this;
     }
 
 
@@ -1128,6 +1167,8 @@ inline void Model<TSeq>::load_agents_entities_ties(
     )
 {
 
+    ModelScope<TSeq> scope_(this);
+
     int i,j;
     std::ifstream filei(fn);
 
@@ -1185,6 +1226,8 @@ inline void Model<TSeq>::load_agents_entities_ties(
     const std::vector< int > & entities_ids
 ) {
 
+    ModelScope<TSeq> scope_(this);
+
     // Checking the size
     if (agents_ids.size() != entities_ids.size())
         throw std::length_error(
@@ -1209,6 +1252,8 @@ inline void Model<TSeq>::load_agents_entities_ties(
     const int * entities_ids,
     size_t n
 ) {
+
+    ModelScope<TSeq> scope_(this);
 
     auto get_agent = [agents_ids](int i) -> int {
         return *(agents_ids + i);
@@ -1284,6 +1329,8 @@ inline void Model<TSeq>::agents_from_adjlist(
     bool directed
     ) {
 
+    ModelScope<TSeq> scope_(this);
+
     AdjList al;
     al.read_edgelist(fn, size, skip, directed);
     this->agents_from_adjlist(al);
@@ -1298,6 +1345,8 @@ inline void Model<TSeq>::agents_from_edgelist(
     bool directed
 ) {
 
+    ModelScope<TSeq> scope_(this);
+
     AdjList al(source, target, size, directed);
     agents_from_adjlist(al);
 
@@ -1305,6 +1354,8 @@ inline void Model<TSeq>::agents_from_edgelist(
 
 template<typename TSeq>
 inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
+
+    ModelScope<TSeq> scope_(this);
 
     // Resizing the people
     agents_empty_graph(al.vcount());
@@ -1315,7 +1366,6 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
     {
 
         // population[i].id    = i;
-        population[i].model = this;
 
         for (const auto & link: tmpdat[i])
         {
@@ -1405,6 +1455,10 @@ inline Model<TSeq> & Model<TSeq>::run(
     int seed
 )
 {
+
+    // Set this model as the current model in scope for this thread.
+    // This enables Model::the() calls from agents, entities, etc.
+    ModelScope<TSeq> scope_(this);
 
     if (size() == 0u)
         throw std::logic_error("There are no agents in this model!");
@@ -1561,20 +1615,12 @@ inline void Model<TSeq>::run_multiple(
     nthreads =
         static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
 
-    // Generating copies of the model
-    std::vector< Model<TSeq> * > these(
-        std::max(nthreads - 1, 0)
-    );
+    // Generating copies of the model (done serially to avoid races on original)
+    std::vector< std::unique_ptr< Model<TSeq> > > these;
 
-    #pragma omp parallel for shared(these, nthreads)
-    for (size_t i = 0u; i < static_cast<size_t>(nthreads); ++i)
+    for (size_t i = 1u; i < static_cast<size_t>(nthreads); ++i)
     {
-
-        if (i == 0)
-            continue;
-
-        these[i - 1] = clone_ptr();
-
+        these.emplace_back(clone_ptr());
     }
 
 
@@ -1661,7 +1707,7 @@ inline void Model<TSeq>::run_multiple(
                 these[iam - 1]->run(ndays, seeds_n[sim_id]);
 
                 if (fun)
-                    fun(sim_id, these[iam - 1]);
+                    fun(sim_id, &(*these[iam - 1]));
 
             }
 
@@ -1671,12 +1717,6 @@ inline void Model<TSeq>::run_multiple(
 
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
-
-    #pragma omp parallel for shared(these)
-    for (int i = 1; i < nthreads; ++i)
-    {
-        delete these[i - 1];
-    }
 
     #else
     // if (reset)
@@ -2003,16 +2043,14 @@ inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
 template<typename TSeq>
 inline void Model<TSeq>::reset() {
 
+    ModelScope<TSeq> scope_(this);
+
     // Restablishing people
     pb = Progress(ndays, 80);
 
     if (population_backup.size())
     {
         population = population_backup;
-
-        // Ensuring the population is poiting to the model
-        for (auto & p : population)
-            p.model = this;
 
         #ifdef EPI_DEBUG
         for (size_t i = 0; i < population.size(); ++i)

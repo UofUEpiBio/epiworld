@@ -37,9 +37,9 @@ inline void update_susceptible(Agent<int> * p, Model<int> * m)
     if (virus != nullptr)
     {
         if (m->par("Prob hospitalization") > m->runif())
-            p->set_virus(*virus, m, hm->infected_hospitalized_state);
+            p->set_virus(*virus, hm->infected_hospitalized_state);
         else
-            p->set_virus(*virus, m, hm->infected_state);
+            p->set_virus(*virus, hm->infected_state);
     }
 
 
@@ -73,9 +73,9 @@ inline void update_infected(Agent<int> * p, Model<int> * m)
     int res = roulette<>(probs, m);
 
     if (res == 0)
-        p->change_state(m, hm->infected_hospitalized_state);
+        p->change_state(hm->infected_hospitalized_state);
     else if (res == 1)
-        p->rm_virus(m, hm->susceptible_state);
+        p->rm_virus(hm->susceptible_state);
 
     return;
 
@@ -92,9 +92,9 @@ inline void update_infected_hospitalized(Agent<int> * p, Model<int> * m)
     auto hm = static_cast<CommunityHospModel*>(m);
 
     if (m->par("Prob recovery") > m->runif()) {
-        p->rm_virus(m, hm->susceptible_state);
+        p->rm_virus(hm->susceptible_state);
     } else if (m->par("Discharge infected") > m->runif()) {
-        p->change_state(m, hm->infected_state);
+        p->change_state(hm->infected_state);
     }
 
     return;

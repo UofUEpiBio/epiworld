@@ -96,6 +96,12 @@ class Model {
     friend class AgentsSample<TSeq>;
     friend class DataBase<TSeq>;
     friend class Queue<TSeq>;
+
+    template<typename T>
+    friend class ModelScope;
+
+    inline static thread_local Model<TSeq> * current_instance_ = nullptr;
+
 protected:
 
     std::string name = ""; ///< Name of the model
@@ -252,7 +258,7 @@ protected:
      *
      * @param copy
      */
-    virtual Model<TSeq> * clone_ptr();
+    virtual std::unique_ptr<Model<TSeq>> clone_ptr();
 
 public:
 
@@ -267,6 +273,21 @@ public:
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
     virtual ~Model() {};
+
+    /**
+     * @brief Returns a reference to the Model currently in scope on this
+     * thread (set by ModelScope, typically at the start of run()).
+     *
+     * @throws std::logic_error (in EPI_DEBUG mode) if called outside of a
+     * simulation scope.
+     */
+    static Model<TSeq> & the();
+
+    /**
+     * @brief Returns a pointer to the Model currently in scope, or nullptr
+     * if no model is in scope.
+     */
+    static Model<TSeq> * the_ptr();
 
     /**
      * @name Set the backup object
@@ -412,6 +433,7 @@ public:
     std::vector< Entity<TSeq> > & get_entities();
 
     Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr);
+    const Entity<TSeq> & get_entity(size_t entity_id, int * entity_pos = nullptr) const;
 
     Model<TSeq> & agents_smallworld(
         epiworld_fast_uint n = 1000,
@@ -810,6 +832,34 @@ public:
     ) const;
 
 
+};
+
+/**
+ * @brief RAII guard that sets the thread_local Model pointer for the
+ *        duration of a scope (e.g., Model::run).
+ *
+ * When a ModelScope is created, it saves the current thread_local model
+ * pointer and replaces it with the provided model. When it is destroyed,
+ * the previous pointer is restored. This supports nesting.
+ */
+template<typename TSeq>
+class ModelScope {
+public:
+    explicit ModelScope(Model<TSeq> * m)
+        : prev_(Model<TSeq>::current_instance_)
+    {
+        Model<TSeq>::current_instance_ = m;
+    }
+
+    ~ModelScope() {
+        Model<TSeq>::current_instance_ = prev_;
+    }
+
+    ModelScope(const ModelScope &) = delete;
+    ModelScope & operator=(const ModelScope &) = delete;
+
+private:
+    Model<TSeq> * prev_;
 };
 
 #endif

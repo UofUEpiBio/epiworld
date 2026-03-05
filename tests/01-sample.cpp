@@ -2,7 +2,7 @@
 
 using namespace epiworld;
 
-EPIWORLD_TEST_CASE("sample", "[model-methods]") {
+EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
 
     // Creating a model
     Model<> model;
@@ -14,7 +14,7 @@ EPIWORLD_TEST_CASE("sample", "[model-methods]") {
     auto removed_state = model.add_state("Removed");
 
     // Adding the tool and virus
-    Virus<> virus("covid 19", 50, false);
+    Virus<> virus("covid 19", 10, false);
     virus.set_post_immunity(1.0);
     virus.set_state(exposed_state, recovered_state, removed_state);
     virus.set_prob_death(.01);
@@ -24,21 +24,20 @@ EPIWORLD_TEST_CASE("sample", "[model-methods]") {
     model.add_tool(tool);
 
     // Generating a random pop
-    model.agents_smallworld(10000);
+    model.agents_smallworld(40);
 
     // Running the model
     model.run(100, 123);
     model.print();
 
+    // Will print the transition matrix
     (void) model.get_db().get_transition_probability();
 
-    AgentsSample<> agents(model, .05 * 10000);
-
+    AgentsSample<> agents(model, .05 * 40);
 
     printf_epiworld("Total sampled: %lu\n", agents.size());
     for (auto & a: agents)
-        a->print();
-
+        a->print(model);
 
 
 }

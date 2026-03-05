@@ -28,7 +28,7 @@ int main()
     {
         // Post immunity
         auto Tpr = m->get_tools()[1u];
-        p->add_tool(Tpr, m);
+        p->add_tool(Tpr);
 
         m->add_user_data({
             static_cast< epiworld_double >(p->get_id()),
