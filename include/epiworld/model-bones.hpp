@@ -258,7 +258,7 @@ protected:
      *
      * @param copy
      */
-    virtual Model<TSeq> * clone_ptr();
+    virtual std::unique_ptr<Model<TSeq>> clone_ptr();
 
 public:
 

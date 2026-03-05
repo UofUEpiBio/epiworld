@@ -9367,7 +9367,7 @@ protected:
      *
      * @param copy
      */
-    virtual Model<TSeq> * clone_ptr();
+    virtual std::unique_ptr<Model<TSeq>> clone_ptr();
 
 public:
 
@@ -10797,7 +10797,7 @@ protected:
      *
      * @param copy
      */
-    virtual Model<TSeq> * clone_ptr();
+    virtual std::unique_ptr<Model<TSeq>> clone_ptr();
 
 public:
 
@@ -12365,10 +12365,10 @@ inline epiworld_double death_reduction_mixer_default(
 ///@}
 
 template<typename TSeq>
-inline Model<TSeq> * Model<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> Model<TSeq>::clone_ptr()
 {
     // Everything is copied
-    Model<TSeq> * ptr = new Model<TSeq>(*dynamic_cast<const Model<TSeq>*>(this));
+    auto ptr = std::make_unique<Model<TSeq>>(*dynamic_cast<const Model<TSeq>*>(this));
 
     #ifdef EPI_DEBUG
     if (*this != *ptr)
@@ -13552,13 +13552,11 @@ inline void Model<TSeq>::run_multiple(
         static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
 
     // Generating copies of the model (done serially to avoid races on original)
-    std::vector< Model<TSeq> * > these(
-        std::max(nthreads - 1, 0)
-    );
+    std::vector< std::unique_ptr< Model<TSeq> > > these;
 
     for (size_t i = 1u; i < static_cast<size_t>(nthreads); ++i)
     {
-        these[i - 1] = clone_ptr();
+        these.emplace_back(clone_ptr());
     }
 
 
@@ -13645,7 +13643,7 @@ inline void Model<TSeq>::run_multiple(
                 these[iam - 1]->run(ndays, seeds_n[sim_id]);
 
                 if (fun)
-                    fun(sim_id, these[iam - 1]);
+                    fun(sim_id, &(*these[iam - 1]));
 
             }
 
@@ -13655,12 +13653,6 @@ inline void Model<TSeq>::run_multiple(
 
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
-
-    // Cleanup clones (done serially to avoid races)
-    for (int i = 1; i < nthreads; ++i)
-    {
-        delete these[i - 1];
-    }
 
     #else
     // if (reset)
@@ -19476,7 +19468,7 @@ protected:
      *
      * @param copy
      */
-    virtual Model<TSeq> * clone_ptr();
+    virtual std::unique_ptr<Model<TSeq>> clone_ptr();
 
 public:
 
@@ -25578,7 +25570,7 @@ public:
     
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -25661,14 +25653,10 @@ inline void ModelSIRCONN<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSIRCONN<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSIRCONN<TSeq>::clone_ptr()
 {
     
-    ModelSIRCONN<TSeq> * ptr = new ModelSIRCONN<TSeq>(
-        *dynamic_cast<const ModelSIRCONN<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSIRCONN<TSeq>>(*this);
 
 }
 
@@ -26027,7 +26015,7 @@ public:
 
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -26103,14 +26091,10 @@ inline void ModelSEIRCONN<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIRCONN<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSEIRCONN<TSeq>::clone_ptr()
 {
     
-    ModelSEIRCONN<TSeq> * ptr = new ModelSEIRCONN<TSeq>(
-        *dynamic_cast<const ModelSEIRCONN<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSEIRCONN<TSeq>>(*this);
 
 }
 
@@ -27044,7 +27028,7 @@ public:
     
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
 
 };
@@ -27080,21 +27064,17 @@ inline void ModelSIRDCONN<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSIRDCONN<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSIRDCONN<TSeq>::clone_ptr()
 {
     
-    ModelSIRDCONN<TSeq> * ptr = new ModelSIRDCONN<TSeq>(
-        *dynamic_cast<const ModelSIRDCONN<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSIRDCONN<TSeq>>(*this);
 
 }
 
 /**
- * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * @brief Template for a Susceptible-Infected-Removed-Deceased (SIRD) model
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model<TSeq> object where to set up the SIRD.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
@@ -27401,7 +27381,7 @@ public:
 
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set up the initial states of the model.
@@ -27470,21 +27450,17 @@ inline void ModelSEIRDCONN<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIRDCONN<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSEIRDCONN<TSeq>::clone_ptr()
 {
     
-    ModelSEIRDCONN<TSeq> * ptr = new ModelSEIRDCONN<TSeq>(
-        *dynamic_cast<const ModelSEIRDCONN<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSEIRDCONN<TSeq>>(*this);
 
 }
 
 /**
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
+ * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model<TSeq> object where to set up the SEIRD.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
@@ -27876,7 +27852,7 @@ public:
         int seed = -1
     );
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     void reset();
     
@@ -27902,14 +27878,10 @@ inline ModelSIRLogit<TSeq> & ModelSIRLogit<TSeq>::run(
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSIRLogit<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSIRLogit<TSeq>::clone_ptr()
 {
     
-    ModelSIRLogit<TSeq> * ptr = new ModelSIRLogit<TSeq>(
-        *dynamic_cast<const ModelSIRLogit<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSIRLogit<TSeq>>(*this);
 
 }
 
@@ -28513,7 +28485,7 @@ public:
 
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -28730,25 +28702,10 @@ inline void ModelSEIRMixing<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIRMixing<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSEIRMixing<TSeq>::clone_ptr()
 {
 
-    ModelSEIRMixing<TSeq> * ptr = new ModelSEIRMixing<TSeq>(
-        *dynamic_cast<const ModelSEIRMixing<TSeq>*>(this)
-        );
-
-    #if defined(__clang__)
-        // Clang
-        __builtin_assume(ptr != nullptr);
-    #elif defined(__GNUC__) && __GNUC__ >= 13
-        // GCC 13 or later
-        [[assume(ptr != nullptr)]];
-    #else
-        // C++17 or C++20
-        assert(ptr != nullptr); // Use assert for runtime checks
-    #endif
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSEIRMixing<TSeq>>(*this);
 
 }
 
@@ -29144,7 +29101,7 @@ public:
 
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -29358,14 +29315,10 @@ inline void ModelSIRMixing<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSIRMixing<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSIRMixing<TSeq>::clone_ptr()
 {
 
-    ModelSIRMixing<TSeq> * ptr = new ModelSIRMixing<TSeq>(
-        *dynamic_cast<const ModelSIRMixing<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSIRMixing<TSeq>>(*this);
 
 }
 
@@ -29823,7 +29776,7 @@ public:
     void reset();
     void update_infectious();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
 };
 
@@ -29973,14 +29926,10 @@ inline void ModelMeaslesSchool<TSeq>::update_infectious() {
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelMeaslesSchool<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelMeaslesSchool<TSeq>::clone_ptr()
 {
 
-    ModelMeaslesSchool<TSeq> * ptr = new ModelMeaslesSchool<TSeq>(
-        *dynamic_cast<const ModelMeaslesSchool<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelMeaslesSchool<TSeq>>(*this);
 
 }
 
@@ -30750,7 +30699,7 @@ public:
      * @brief Create a clone of this model
      * @return Pointer to a new model instance with the same configuration
      */
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -31125,25 +31074,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIRMixingQuarantine<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSEIRMixingQuarantine<TSeq>::clone_ptr()
 {
 
-    ModelSEIRMixingQuarantine<TSeq> * ptr = new ModelSEIRMixingQuarantine<TSeq>(
-        *dynamic_cast<const ModelSEIRMixingQuarantine<TSeq>*>(this)
-        );
-
-    #if defined(__clang__)
-        // Clang
-        __builtin_assume(ptr != nullptr);
-    #elif defined(__GNUC__) && __GNUC__ >= 13
-        // GCC 13 or later
-        [[assume(ptr != nullptr)]];
-    #else
-        // C++17 or C++20
-        assert(ptr != nullptr); // Use assert for runtime checks
-    #endif
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSEIRMixingQuarantine<TSeq>>(*this);
 
 }
 
@@ -32045,7 +31979,7 @@ public:
      * @brief Create a clone of this model
      * @return Pointer to a new model instance with the same configuration
      */
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -32402,25 +32336,10 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelMeaslesMixing<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelMeaslesMixing<TSeq>::clone_ptr()
 {
 
-    ModelMeaslesMixing<TSeq> * ptr = new ModelMeaslesMixing<TSeq>(
-        *dynamic_cast<const ModelMeaslesMixing<TSeq>*>(this)
-        );
-
-    #if defined(__clang__)
-        // Clang
-        __builtin_assume(ptr != nullptr);
-    #elif defined(__GNUC__) && __GNUC__ >= 13
-        // GCC 13 or later
-        [[assume(ptr != nullptr)]];
-    #else
-        // C++17 or C++20
-        assert(ptr != nullptr); // Use assert for runtime checks
-    #endif
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelMeaslesMixing<TSeq>>(*this);
 
 }
 
@@ -33419,7 +33338,7 @@ public:
      * @brief Create a clone of this model
      * @return Pointer to a new model instance with the same configuration
      */
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -34556,14 +34475,10 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelMeaslesMixingRiskQuarantine<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelMeaslesMixingRiskQuarantine<TSeq>::clone_ptr()
 {
     
-    ModelMeaslesMixingRiskQuarantine<TSeq> * ptr = new ModelMeaslesMixingRiskQuarantine<TSeq>(
-        *dynamic_cast<const ModelMeaslesMixingRiskQuarantine<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelMeaslesMixingRiskQuarantine<TSeq>>(*this);
 
 }
 

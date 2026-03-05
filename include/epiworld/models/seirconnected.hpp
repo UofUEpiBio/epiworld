@@ -53,7 +53,7 @@ public:
 
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set the initial states of the model
@@ -129,14 +129,10 @@ inline void ModelSEIRCONN<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIRCONN<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSEIRCONN<TSeq>::clone_ptr()
 {
     
-    ModelSEIRCONN<TSeq> * ptr = new ModelSEIRCONN<TSeq>(
-        *dynamic_cast<const ModelSEIRCONN<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSEIRCONN<TSeq>>(*this);
 
 }
 

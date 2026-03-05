@@ -203,7 +203,7 @@ public:
     void reset();
     void update_infectious();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
 };
 
@@ -353,14 +353,10 @@ inline void ModelMeaslesSchool<TSeq>::update_infectious() {
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelMeaslesSchool<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelMeaslesSchool<TSeq>::clone_ptr()
 {
 
-    ModelMeaslesSchool<TSeq> * ptr = new ModelMeaslesSchool<TSeq>(
-        *dynamic_cast<const ModelMeaslesSchool<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelMeaslesSchool<TSeq>>(*this);
 
 }
 

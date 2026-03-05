@@ -55,7 +55,7 @@ public:
 
     void reset();
 
-    Model<TSeq> * clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr();
 
     /**
      * @brief Set up the initial states of the model.
@@ -124,21 +124,17 @@ inline void ModelSEIRDCONN<TSeq>::reset()
 }
 
 template<typename TSeq>
-inline Model<TSeq> * ModelSEIRDCONN<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> ModelSEIRDCONN<TSeq>::clone_ptr()
 {
     
-    ModelSEIRDCONN<TSeq> * ptr = new ModelSEIRDCONN<TSeq>(
-        *dynamic_cast<const ModelSEIRDCONN<TSeq>*>(this)
-        );
-
-    return dynamic_cast< Model<TSeq> *>(ptr);
+    return std::make_unique<ModelSEIRDCONN<TSeq>>(*this);
 
 }
 
 /**
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
+ * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model<TSeq> object where to set up the SEIRD.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.

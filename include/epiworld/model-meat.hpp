@@ -429,10 +429,10 @@ inline epiworld_double death_reduction_mixer_default(
 ///@}
 
 template<typename TSeq>
-inline Model<TSeq> * Model<TSeq>::clone_ptr()
+inline std::unique_ptr<Model<TSeq>> Model<TSeq>::clone_ptr()
 {
     // Everything is copied
-    Model<TSeq> * ptr = new Model<TSeq>(*dynamic_cast<const Model<TSeq>*>(this));
+    auto ptr = std::make_unique<Model<TSeq>>(*dynamic_cast<const Model<TSeq>*>(this));
 
     #ifdef EPI_DEBUG
     if (*this != *ptr)
@@ -1616,13 +1616,11 @@ inline void Model<TSeq>::run_multiple(
         static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
 
     // Generating copies of the model (done serially to avoid races on original)
-    std::vector< Model<TSeq> * > these(
-        std::max(nthreads - 1, 0)
-    );
+    std::vector< std::unique_ptr< Model<TSeq> > > these;
 
     for (size_t i = 1u; i < static_cast<size_t>(nthreads); ++i)
     {
-        these[i - 1] = clone_ptr();
+        these.emplace_back(clone_ptr());
     }
 
 
@@ -1709,7 +1707,7 @@ inline void Model<TSeq>::run_multiple(
                 these[iam - 1]->run(ndays, seeds_n[sim_id]);
 
                 if (fun)
-                    fun(sim_id, these[iam - 1]);
+                    fun(sim_id, &(*these[iam - 1]));
 
             }
 
@@ -1719,12 +1717,6 @@ inline void Model<TSeq>::run_multiple(
 
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
-
-    // Cleanup clones (done serially to avoid races)
-    for (int i = 1; i < nthreads; ++i)
-    {
-        delete these[i - 1];
-    }
 
     #else
     // if (reset)
