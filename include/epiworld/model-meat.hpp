@@ -1212,7 +1212,7 @@ inline void Model<TSeq>::load_agents_entities_ties(
 
         target_[j].push_back(i);
 
-        population[i].add_entity(entities[j], nullptr);
+        population[i].add_entity(entities[j]);
 
     }
 
@@ -1309,10 +1309,7 @@ inline void Model<TSeq>::load_agents_entities_ties(
                 );
 
         // Adding the entity to the agent
-        this->population[get_agent(i)].add_entity(
-            this->entities[get_entity(i)],
-            nullptr /* Immediately add it to the agent */
-        );
+        this->population[get_agent(i)].add_entity(this->entities[get_entity(i)]);
 
     }
 
