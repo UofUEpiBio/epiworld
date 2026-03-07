@@ -461,7 +461,7 @@ public:
         epiworld_fast_uint ndays,
         int seed = -1
     ); ///< Runs the simulation (after initialization)
-    void run_multiple( ///< Multiple runs of the simulation
+    Model<TSeq> & run_multiple( ///< Multiple runs of the simulation
         epiworld_fast_uint ndays,
         epiworld_fast_uint nexperiments,
         int seed_ = -1,

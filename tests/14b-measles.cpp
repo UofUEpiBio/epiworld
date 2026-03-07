@@ -17,7 +17,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
         4.0,     // Prodromal period
         5.0,     // Rash period
         3.0,     // Days undetected
-        0.2,     // Hospitalization rate
+        0.1,     // Hospitalization rate
         7.0,     // Hospitalization duration
         0.1,     // Proportion vaccinated
         21u,     // Quarantine period
@@ -36,7 +36,8 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     size_t nsims = 1000;
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
-    auto saver = tests_create_saver(transitions, R0s, n_seeds);
+    std::vector< double > hospitalizations(nsims, 0), outbreak_sizes(nsims, 0);
+    auto saver = tests_create_saver(transitions, R0s, n_seeds, nullptr, &outbreak_sizes, &hospitalizations);
     
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 1);
     
@@ -61,11 +62,22 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     }
     R0_observed /= static_cast<epiworld_double>(nsims * n_seeds);
 
+    // Average hospitalizations
+    double obs_hosp_probability = 0.0;
+    for (auto i = 0u; i < hospitalizations.size(); ++i)
+    {
+        if (hospitalizations[i] >= 0.0)
+            obs_hosp_probability += hospitalizations[i]/outbreak_sizes[i];
+        else
+            throw std::range_error(
+                "The number of hospitalizations is negative. This should not happen."
+            );
+    }
+    obs_hosp_probability /= static_cast<epiworld_double>(nsims);
+
     // Checking especific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
-    double p_recovered = 1.0 - (
-        1.0/model_0("Rash period") + model_0("Hospitalization rate")
-    );
+    double p_recovered = 1.0/model_0("Rash period");
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
     // Transition to prodromal
@@ -111,6 +123,18 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
 
     // Transition from hospitalized to recovered
     REQUIRE_FALSE(moreless(mat(11, 12), 1.0/model_0("Hospitalization period"), 0.05));
+
+    // Hospitalization probability
+    REQUIRE_FALSE(
+        moreless(
+            model_0("Hospitalization rate")/(
+                model_0("Hospitalization rate") + p_recovered
+            ),
+            obs_hosp_probability,
+            0.05
+        )
+    );
+
     // Reproductive number
     std::cout << "Effective Rt (lower): "
               << R0_observed << " (R0 ~" << R0_theo << ")" << std::endl;
@@ -150,6 +174,13 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     // Transition from hospitalized to recovered
     std::cout << "Transition from hospitalized to recovered: "
               << mat(11, 12) << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
+
+    // Hospitalization probability
+    std::cout << "Hospitalization probability: "
+              << model_0("Hospitalization rate")/(
+                  model_0("Hospitalization rate") + p_recovered
+              ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
+
     #undef mat
 
     

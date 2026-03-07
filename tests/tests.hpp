@@ -11,10 +11,11 @@
     #include <omp.h>
 #endif
 
-#include "../include/catch2/catch.hpp"
 #include "../include/epiworld/epiworld.hpp"
 
-
+#ifndef NO_CATCH_MAIN
+#include "../include/catch2/catch.hpp"
+#endif
 
 /**
  * Returns true if the absolute difference between a and b is greater than eps.
@@ -93,9 +94,13 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
     std::vector<epiworld_double>& R0s,
     int n_seeds,
     std::vector<std::vector<int>>* final_distribution = nullptr,
-    std::vector< double > * outbreak_sizes = nullptr
+    std::vector< double > * outbreak_sizes = nullptr,
+    std::vector< double > * hospitalizations = nullptr
 ) {
-    return [&transitions, &R0s, n_seeds, final_distribution, outbreak_sizes](size_t n, epiworld::Model<>* m) -> void {
+    return [
+        &transitions, &R0s, n_seeds, final_distribution,
+        outbreak_sizes, hospitalizations
+    ](size_t n, epiworld::Model<>* m) -> void {
         // Saving the transition probabilities
         transitions[n] = m->get_db().get_transition_probability(false, false);
 
@@ -134,6 +139,28 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
             outbreak_sizes->at(n) = outbreak.back();
         }
 
+        if (hospitalizations != nullptr)
+        {
+            std::vector< int > date, virus, tool_id, hospitalizations_vec;
+            std::vector< double > weight;
+            m->get_hospitalizations(date, virus, tool_id, hospitalizations_vec, weight);
+
+            if (hospitalizations_vec.empty())
+            {
+                hospitalizations->at(n) = 0.0;
+            }
+            else
+            {
+                hospitalizations->at(n) = static_cast<double>(
+                    std::accumulate(
+                        weight.begin(),
+                        weight.end(),
+                        0.0
+                    )
+                );
+            }
+        }
+
         // Should we get the final distribution?
         if (final_distribution == nullptr)
             return;
@@ -142,6 +169,7 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
             nullptr,
             &(final_distribution->at(n))
         );
+
     };
 };
 
@@ -208,6 +236,82 @@ inline std::vector< double > test_compute_final_sizes(
             static_cast<int>(nsims), res[0], res[1], res[2], outbreak_sizes[mid_point]
         );
 
+    }
+
+    return res;
+}
+
+/**
+ * Computes probabilities of exceeding user-defined outbreak-size thresholds.
+ *
+ * Returns, for each value in k, the probability:
+ *   P(outbreak size > k[i]).
+ *
+ * @param final_distribution The final distribution of the model. As generated
+ * by the `tests_create_saver` function.
+ * @param not_infected_states The states that are considered "not infected".
+ * @param k Thresholds used to compute exceedance probabilities.
+ * @param nsims The number of simulations.
+ * @param reference_group Identifier of the reference group (for reporting).
+ * @param print Whether to print computed probabilities.
+ * @return A vector of length k.size() with probabilities P(size > k[i]).
+ */
+inline std::vector< double > test_compute_prob_outbreak_gt_k(
+    const std::vector<std::vector<int>>& final_distribution,
+    std::vector<size_t> not_infected_states,
+    const std::vector< double > k,
+    size_t nsims,
+    size_t reference_group = 0u,
+    bool print = true
+) {
+
+    // Looking at the final outbreak size
+    std::vector< double > outbreak_sizes(nsims, 0.0);
+    size_t n_states = final_distribution[0].size();
+    for (size_t i = 0; i < nsims; ++i)
+    {
+        for (size_t j = 0; j < n_states; ++j)
+        {
+
+            // We only count the states that are not considered "not infected"
+            if (
+                std::find(
+                    not_infected_states.begin(),
+                    not_infected_states.end(),
+                    j) ==
+                not_infected_states.end()
+            )
+            {
+                outbreak_sizes[i] += final_distribution[i][j];
+            }
+        }
+    }
+
+    // Computing exceedance probabilities
+    std::vector< double > res(k.size(), 0.0);
+    for (size_t i = 0u; i < k.size(); ++i)
+    {
+        size_t n_exceeds = 0u;
+        for (size_t s = 0u; s < nsims; ++s)
+        {
+            if (outbreak_sizes[s] > k[i])
+                ++n_exceeds;
+        }
+
+        res[i] = static_cast<double>(n_exceeds) / static_cast<double>(nsims);
+    }
+
+    if (print)
+    {
+        for (size_t i = 0u; i < k.size(); ++i)
+        {
+            printf_epiworld(
+                "Group %i: P(outbreak size > %.2f) = %.4f\n",
+                static_cast<int>(reference_group),
+                k[i],
+                res[i]
+            );
+        }
     }
 
     return res;
@@ -301,7 +405,14 @@ void inline tests_print_avg_transitions(
     }
 }
 
-
-#define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
+#ifdef NO_CATCH_MAIN
+    #define EPIWORLD_TEST_CASE(desc, tag) main()
+    #define REQUIRE(...) (void)0
+    #define REQUIRE_FALSE(...) (void)0
+    #define REQUIRE_TRUE(...) (void)0
+    #define REQUIRE_THROWS(...) (void)0
+#else
+    #define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
+#endif
 
 #endif

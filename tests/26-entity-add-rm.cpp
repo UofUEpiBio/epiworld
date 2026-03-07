@@ -1,7 +1,3 @@
-#ifndef CATCH_CONFIG_MAIN
-// #define EPI_DEBUG
-#endif
-
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -100,7 +96,6 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
             no_entity_count++;
     }
 
-    #ifdef CATCH_CONFIG_MAIN
     // Entity 0 started with 50, lost 10 (5 moved + 5 removed) = 40
     REQUIRE(size0 == 40);
     
@@ -154,7 +149,7 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     {
         throw std::logic_error("Entity add/rm test failed!");
     }
-    #endif
+
 
     // Now test with run_multiple() using 2 threads
     // Factory function to create and configure a model with entities and global events
@@ -251,9 +246,8 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         auto content_1thread = file_reader(file_1thread);
         auto content_2thread = file_reader(file_2thread);
 
-        #ifdef CATCH_CONFIG_MAIN
         REQUIRE_THAT(content_1thread, Catch::Equals(content_2thread));
-        #else
+
         if (content_1thread != content_2thread)
         {
             printf_epiworld(
@@ -262,13 +256,8 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
             );
             throw std::logic_error("Multi-threading test failed - results differ!");
         }
-        #endif
     }
 
-    #ifdef CATCH_CONFIG_MAIN
-    // Success message for multi-threading test
-    #else
     printf_epiworld("Multi-threading test completed successfully!\n");
-    #endif
 
 }

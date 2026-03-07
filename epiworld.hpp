@@ -30080,8 +30080,8 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     // Sampling from the probabilities
     SAMPLE_FROM_PROBS(2, which);
 
-    // Recovers
-    if (which == 2)
+    // Recovers (which == 0 fires with probability 1/rash_period)
+    if (which == 0)
     {
         p->rm_virus(
             detected ?
@@ -30100,14 +30100,14 @@ LOCAL_UPDATE_FUN(m_update_rash) {
                 ModelMeaslesSchool::HOSPITALIZED
             );
     }
-    else if (which != 0)
+    else if (which > 2)
     {
         throw std::logic_error("The roulette returned an unexpected value.");
     }
-    else if ((which == 0u) && detected)
+    else if (detected)
     {
-        // If the agent is not hospitalized, then it is moved to
-        // isolation.
+        // Neither recovered nor hospitalized, but detected:
+        // move to isolation.
         p->change_state(ModelMeaslesSchool::ISOLATED);
     }
 
@@ -30133,8 +30133,8 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     // Sampling from the probabilities
     SAMPLE_FROM_PROBS(2, which);
 
-    // Recovers
-    if (which == 2u)
+    // Recovers (which == 0 fires with probability 1/rash_period)
+    if (which == 0u)
     {
         if (unisolate)
         {
@@ -30161,7 +30161,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     }
     // If neither hospitalized nor recovered, then the agent is
     // still under isolation, unless the quarantine period is over.
-    else if ((which == 0u) && unisolate)
+    else if (unisolate)
     {
         p->change_state(ModelMeaslesSchool::RASH);
     }
@@ -32474,7 +32474,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
 
     SAMPLE_FROM_PROBS(2, which);
 
-    if (which == 2) // Recovers
+    if (which == 0) // Recovers (probability 1/rash_period)
     {
         p->rm_virus(
             detected ?
@@ -32491,14 +32491,14 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
                 ModelMeaslesMixing<TSeq>::HOSPITALIZED
         );
     }
-    else if (which != 0)
+    else if (which > 2)
     {
         throw std::logic_error("The roulette returned an unexpected value.");
     }
-    else if ((which == 0u) && detected)
+    else if (detected)
     {
-        // If the agent is not hospitalized or recovered, then it is moved to
-        // isolation.
+        // Neither recovered nor hospitalized, but detected:
+        // move to isolation.
         p->change_state(ModelMeaslesMixing<TSeq>::ISOLATED);
         model->day_flagged[p->get_id()] = m->today();
     }
@@ -32530,8 +32530,8 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
 
     SAMPLE_FROM_PROBS(2, which);
 
-    // Recovers
-    if (which == 2)
+    // Recovers (which == 0 fires with probability 1/rash_period)
+    if (which == 0)
     {
         if (unisolate)
         {
@@ -32561,7 +32561,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
             );
         }
     }
-    else if ((which == 0) && unisolate)
+    else if (unisolate)
     {
         p->change_state(
             ModelMeaslesMixing<TSeq>::RASH
@@ -33721,7 +33721,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
         
     SAMPLE_FROM_PROBS(2, which);
     
-    if (which == 2) // Recovers
+    if (which == 0) // Recovers (probability 1/rash_period)
     {
         p->rm_virus(detected ? ISOLATED_RECOVERED: RECOVERED);
     }
@@ -33730,13 +33730,13 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
         m->record_hospitalization(*p);
         p->change_state(detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
     }
-    else if ((which == 0) && detected)
-    {
-        p->change_state(ISOLATED);
-    }
-    else if (which != 0)
+    else if (which > 2)
     {
         throw std::logic_error("The roulette returned an unexpected value.");
+    }
+    else if (detected)
+    {
+        p->change_state(ISOLATED);
     }
     
     return ;
@@ -33766,8 +33766,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     // Sampling from the probabilities
     SAMPLE_FROM_PROBS(2, which);
 
-    // Recovers
-    if (which == 2u)
+    // Recovers (which == 0 fires with probability 1/rash_period)
+    if (which == 0u)
     {
         p->rm_virus(unisolate ? RECOVERED : ISOLATED_RECOVERED);
     }
@@ -33778,7 +33778,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
         p->change_state(DETECTED_HOSPITALIZED);
     }
     // Stays in rash, may or may not be released from isolation
-    else if ((which == 0u) && unisolate)
+    else if (unisolate)
     {
         p->change_state(RASH);
     }
