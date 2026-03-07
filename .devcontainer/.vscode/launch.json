@@ -29,7 +29,16 @@
       "program": "${fileDirname}/${fileBasenameNoExtension}",
       "cwd": "${fileDirname}",
       "preLaunchTask": "build-single-file",
-      "externalConsole": false
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
     }
   ],
   "inputs": [

@@ -7,6 +7,9 @@ EPIWORLD_TEST_CASE(
     "[ModelMeaslesMixing-On-size]"
 ) {
 
+    // Relevant outbreak sizes
+    auto outbreak_sizes = {10.0, 50.0, 100.0};
+
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 5;
 
@@ -64,10 +67,15 @@ EPIWORLD_TEST_CASE(
         print(false);
 
     // Looking at the final outbreak size
-    std::vector< size_t > not_infected_states = {epimodels::ModelMeaslesMixing<>::SUSCEPTIBLE, epimodels::ModelMeaslesMixing<>::QUARANTINED_SUSCEPTIBLE};
-    auto stats_with_quarantine = test_compute_final_sizes(
+    std::vector< size_t > not_infected_states = {
+        epimodels::ModelMeaslesMixing<>::SUSCEPTIBLE,
+        epimodels::ModelMeaslesMixing<>::QUARANTINED_SUSCEPTIBLE
+    };
+
+    auto stats_with_quarantine = test_compute_prob_outbreak_gt_k(
         final_distribution,
         not_infected_states,
+        outbreak_sizes,
         nsims, false
     );
 
@@ -79,9 +87,10 @@ EPIWORLD_TEST_CASE(
     model_0.run_multiple(60, nsims, 1231, saver_no_quarantine, true, true, 4);
 
     // Looking at the final outbreak size without quarantine
-    auto stats_without_quarantine = test_compute_final_sizes(
+    auto stats_without_quarantine = test_compute_prob_outbreak_gt_k(
         final_distribution,
         not_infected_states,
+        outbreak_sizes,
         nsims, false
     );
 
@@ -98,14 +107,15 @@ EPIWORLD_TEST_CASE(
         print(false);
 
     // Looking at the final outbreak size with longer contact tracing
-    auto stats_long_contact_tracing = test_compute_final_sizes(
+    auto stats_long_contact_tracing = test_compute_prob_outbreak_gt_k(
         final_distribution,
         not_infected_states,
+        outbreak_sizes,
         nsims, false
     );
 
-    REQUIRE(stats_without_quarantine[0] > stats_with_quarantine[0]);
-    REQUIRE(stats_with_quarantine[0] > stats_long_contact_tracing[0]);
+    REQUIRE(stats_without_quarantine[1] > stats_with_quarantine[1]);
+    REQUIRE(stats_with_quarantine[1] > stats_long_contact_tracing[1]);
 
     // Printing information
     std::cout << "========================================================" <<

@@ -242,6 +242,82 @@ inline std::vector< double > test_compute_final_sizes(
 }
 
 /**
+ * Computes probabilities of exceeding user-defined outbreak-size thresholds.
+ *
+ * Returns, for each value in k, the probability:
+ *   P(outbreak size > k[i]).
+ *
+ * @param final_distribution The final distribution of the model. As generated
+ * by the `tests_create_saver` function.
+ * @param not_infected_states The states that are considered "not infected".
+ * @param k Thresholds used to compute exceedance probabilities.
+ * @param nsims The number of simulations.
+ * @param reference_group Identifier of the reference group (for reporting).
+ * @param print Whether to print computed probabilities.
+ * @return A vector of length k.size() with probabilities P(size > k[i]).
+ */
+inline std::vector< double > test_compute_prob_outbreak_gt_k(
+    const std::vector<std::vector<int>>& final_distribution,
+    std::vector<size_t> not_infected_states,
+    const std::vector< double > k,
+    size_t nsims,
+    size_t reference_group = 0u,
+    bool print = true
+) {
+
+    // Looking at the final outbreak size
+    std::vector< double > outbreak_sizes(nsims, 0.0);
+    size_t n_states = final_distribution[0].size();
+    for (size_t i = 0; i < nsims; ++i)
+    {
+        for (size_t j = 0; j < n_states; ++j)
+        {
+
+            // We only count the states that are not considered "not infected"
+            if (
+                std::find(
+                    not_infected_states.begin(),
+                    not_infected_states.end(),
+                    j) ==
+                not_infected_states.end()
+            )
+            {
+                outbreak_sizes[i] += final_distribution[i][j];
+            }
+        }
+    }
+
+    // Computing exceedance probabilities
+    std::vector< double > res(k.size(), 0.0);
+    for (size_t i = 0u; i < k.size(); ++i)
+    {
+        size_t n_exceeds = 0u;
+        for (size_t s = 0u; s < nsims; ++s)
+        {
+            if (outbreak_sizes[s] > k[i])
+                ++n_exceeds;
+        }
+
+        res[i] = static_cast<double>(n_exceeds) / static_cast<double>(nsims);
+    }
+
+    if (print)
+    {
+        for (size_t i = 0u; i < k.size(); ++i)
+        {
+            printf_epiworld(
+                "Group %i: P(outbreak size > %.2f) = %.4f\n",
+                static_cast<int>(reference_group),
+                k[i],
+                res[i]
+            );
+        }
+    }
+
+    return res;
+}
+
+/**
  * @brief Calculate the average transition probabilities from a vector of transitions.
  * @param transitions A vector of vectors containing transition counts
  * extracted from multiple simulations.
