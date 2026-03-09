@@ -9209,7 +9209,18 @@ class Model {
     template<typename T>
     friend class ModelScope;
 
-    inline static thread_local Model<TSeq> * current_instance_ = nullptr;
+    // NOTE: Intentionally a private static function rather than an
+    // `inline static thread_local` data member.  Clang has a known bug where
+    // `inline static thread_local` members of class templates produce a
+    // separate TLS variable per translation unit, causing Model::the() to
+    // return nullptr even when a ModelScope is active.  A function-local
+    // `thread_local` static is guaranteed by the C++ standard to have exactly
+    // one instance per thread regardless of how many TUs instantiate the
+    // template.
+    static Model<TSeq> *& current_instance_() {
+        thread_local Model<TSeq> * ptr = nullptr;
+        return ptr;
+    }
 
 protected:
 
@@ -9570,7 +9581,7 @@ public:
         epiworld_fast_uint ndays,
         int seed = -1
     ); ///< Runs the simulation (after initialization)
-    void run_multiple( ///< Multiple runs of the simulation
+    Model<TSeq> & run_multiple( ///< Multiple runs of the simulation
         epiworld_fast_uint ndays,
         epiworld_fast_uint nexperiments,
         int seed_ = -1,
@@ -9955,13 +9966,13 @@ template<typename TSeq>
 class ModelScope {
 public:
     explicit ModelScope(Model<TSeq> * m)
-        : prev_(Model<TSeq>::current_instance_)
+        : prev_(Model<TSeq>::current_instance_())
     {
-        Model<TSeq>::current_instance_ = m;
+        Model<TSeq>::current_instance_() = m;
     }
 
     ~ModelScope() {
-        Model<TSeq>::current_instance_ = prev_;
+        Model<TSeq>::current_instance_() = prev_;
     }
 
     ModelScope(const ModelScope &) = delete;
@@ -10639,7 +10650,18 @@ class Model {
     template<typename T>
     friend class ModelScope;
 
-    inline static thread_local Model<TSeq> * current_instance_ = nullptr;
+    // NOTE: Intentionally a private static function rather than an
+    // `inline static thread_local` data member.  Clang has a known bug where
+    // `inline static thread_local` members of class templates produce a
+    // separate TLS variable per translation unit, causing Model::the() to
+    // return nullptr even when a ModelScope is active.  A function-local
+    // `thread_local` static is guaranteed by the C++ standard to have exactly
+    // one instance per thread regardless of how many TUs instantiate the
+    // template.
+    static Model<TSeq> *& current_instance_() {
+        thread_local Model<TSeq> * ptr = nullptr;
+        return ptr;
+    }
 
 protected:
 
@@ -11000,7 +11022,7 @@ public:
         epiworld_fast_uint ndays,
         int seed = -1
     ); ///< Runs the simulation (after initialization)
-    void run_multiple( ///< Multiple runs of the simulation
+    Model<TSeq> & run_multiple( ///< Multiple runs of the simulation
         epiworld_fast_uint ndays,
         epiworld_fast_uint nexperiments,
         int seed_ = -1,
@@ -11385,13 +11407,13 @@ template<typename TSeq>
 class ModelScope {
 public:
     explicit ModelScope(Model<TSeq> * m)
-        : prev_(Model<TSeq>::current_instance_)
+        : prev_(Model<TSeq>::current_instance_())
     {
-        Model<TSeq>::current_instance_ = m;
+        Model<TSeq>::current_instance_() = m;
     }
 
     ~ModelScope() {
-        Model<TSeq>::current_instance_ = prev_;
+        Model<TSeq>::current_instance_() = prev_;
     }
 
     ModelScope(const ModelScope &) = delete;
@@ -11954,19 +11976,19 @@ public:
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::the() {
 
-    if (current_instance_ == nullptr)
+    if (current_instance_() == nullptr)
         throw std::logic_error(
             "Model::the() called outside of a simulation scope. "
             "This method can only be called during Model::run() "
             "or within a ModelScope."
         );
     
-    return *current_instance_;
+    return *current_instance_();
 }
 
 template<typename TSeq>
 inline Model<TSeq> * Model<TSeq>::the_ptr() {
-    return current_instance_;
+    return current_instance_();
 }
 
 /**
@@ -13148,7 +13170,7 @@ inline void Model<TSeq>::load_agents_entities_ties(
 
         target_[j].push_back(i);
 
-        population[i].add_entity(entities[j], nullptr);
+        population[i].add_entity(entities[j]);
 
     }
 
@@ -13245,10 +13267,7 @@ inline void Model<TSeq>::load_agents_entities_ties(
                 );
 
         // Adding the entity to the agent
-        this->population[get_agent(i)].add_entity(
-            this->entities[get_entity(i)],
-            nullptr /* Immediately add it to the agent */
-        );
+        this->population[get_agent(i)].add_entity(this->entities[get_entity(i)]);
 
     }
 
@@ -13501,7 +13520,7 @@ inline Model<TSeq> & Model<TSeq>::run(
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::run_multiple(
+inline Model<TSeq> & Model<TSeq>::run_multiple(
     epiworld_fast_uint ndays,
     epiworld_fast_uint nexperiments,
     int seed_,
@@ -13695,7 +13714,7 @@ inline void Model<TSeq>::run_multiple(
     if (old_verb)
         verbose_on();
 
-    return;
+    return *this;
 
 }
 
@@ -19310,7 +19329,18 @@ class Model {
     template<typename T>
     friend class ModelScope;
 
-    inline static thread_local Model<TSeq> * current_instance_ = nullptr;
+    // NOTE: Intentionally a private static function rather than an
+    // `inline static thread_local` data member.  Clang has a known bug where
+    // `inline static thread_local` members of class templates produce a
+    // separate TLS variable per translation unit, causing Model::the() to
+    // return nullptr even when a ModelScope is active.  A function-local
+    // `thread_local` static is guaranteed by the C++ standard to have exactly
+    // one instance per thread regardless of how many TUs instantiate the
+    // template.
+    static Model<TSeq> *& current_instance_() {
+        thread_local Model<TSeq> * ptr = nullptr;
+        return ptr;
+    }
 
 protected:
 
@@ -19671,7 +19701,7 @@ public:
         epiworld_fast_uint ndays,
         int seed = -1
     ); ///< Runs the simulation (after initialization)
-    void run_multiple( ///< Multiple runs of the simulation
+    Model<TSeq> & run_multiple( ///< Multiple runs of the simulation
         epiworld_fast_uint ndays,
         epiworld_fast_uint nexperiments,
         int seed_ = -1,
@@ -20056,13 +20086,13 @@ template<typename TSeq>
 class ModelScope {
 public:
     explicit ModelScope(Model<TSeq> * m)
-        : prev_(Model<TSeq>::current_instance_)
+        : prev_(Model<TSeq>::current_instance_())
     {
-        Model<TSeq>::current_instance_ = m;
+        Model<TSeq>::current_instance_() = m;
     }
 
     ~ModelScope() {
-        Model<TSeq>::current_instance_ = prev_;
+        Model<TSeq>::current_instance_() = prev_;
     }
 
     ModelScope(const ModelScope &) = delete;
