@@ -87,6 +87,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
         // For each one of the possible innovations, we have to compute
         // the adoption probability, which is a function of exposure
+        auto & m_ref = *m;
         for (auto & neighbor: agent.get_neighbors(*m))
         {
 
@@ -100,8 +101,8 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     
                 /* And it is a function of susceptibility_reduction as well */ 
                 double p_i =
-                    (1.0 - agent.get_susceptibility_reduction(v), *m) *
-                    (1.0 - agent.get_transmission_reduction(v), *m) 
+                    (1.0 - agent.get_susceptibility_reduction(v, m_ref)) *
+                    (1.0 - agent.get_transmission_reduction(v, m_ref)) 
                     ; 
             
                 size_t vid = v->get_id();
@@ -125,7 +126,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
                 exposure.at(i) /= agent.get_n_neighbors();
 
             for (auto & j: diffmodel->data_cols)
-                exposure.at(i) += agent(j) * diffmodel->params.at(j);
+                exposure.at(i) += agent(j, m_ref) * diffmodel->params.at(j);
 
             // Baseline probability of adoption
             double p = m->get_viruses()[i]->get_prob_infecting(m);

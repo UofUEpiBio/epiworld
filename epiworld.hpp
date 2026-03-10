@@ -15995,7 +15995,7 @@ inline VirusFun<TSeq> virus_fun_logit(
     VirusFun<TSeq> fun_infect = [coefs_f,vars](
         Agent<TSeq> * agent,
         Virus<TSeq> &,
-        Model<TSeq> *
+        Model<TSeq> * model
         ) -> epiworld_double {
 
         size_t K = coefs_f.size();
@@ -16005,7 +16005,7 @@ inline VirusFun<TSeq> virus_fun_logit(
         #pragma omp simd reduction(+:res)
         #endif
         for (size_t i = 0u; i < K; ++i)
-            res += agent->operator[](vars.at(i)) * coefs_f.at(i);
+            res += agent->operator()(vars.at(i), *model) * coefs_f.at(i);
 
         return 1.0/(1.0 + std::exp(-res));
 
@@ -17507,7 +17507,7 @@ inline ToolFun<TSeq> tool_fun_logit(
         Tool<TSeq>&,
         Agent<TSeq> * agent,
         VirusPtr<TSeq>,
-        Model<TSeq> *
+        Model<TSeq> * model
         ) -> epiworld_double {
 
         size_t K = coefs_f.size();
@@ -17517,7 +17517,7 @@ inline ToolFun<TSeq> tool_fun_logit(
         #pragma omp simd reduction(+:res)
         #endif
         for (size_t i = 0u; i < K; ++i)
-            res += agent->operator[](vars.at(i)) * coefs_f.at(i);
+            res += agent->operator()(vars.at(i), *model) * coefs_f.at(i);
 
         return 1.0/(1.0 + std::exp(-res));
 
@@ -24328,7 +24328,7 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
             #pragma omp parallel for reduction(+:p)
             #endif
             for (size_t i = 0u; i < coefs.size(); ++i)
-                p += coefs.at(i) * agent(vars[i]);
+                p += coefs.at(i) * agent(vars[i], *model);
 
             p = 1.0 / (1.0 + std::exp(-p));
 
@@ -24984,6 +24984,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
         // This computes the prob of getting any neighbor variant
         epiworld_fast_uint nviruses_tmp = 0u;
+        auto & m_ref = *m;
         for (auto & neighbor: p->get_neighbors(*m)) 
         {
                     
@@ -24994,9 +24995,9 @@ inline ModelSURV<TSeq>::ModelSURV(
                 
             /* And it is a function of susceptibility_reduction as well */ 
             epiworld_double tmp_transmission = 
-                (1.0 - p->get_susceptibility_reduction(v), *m) *
+                (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
                 v->get_prob_infecting(m) *
-                (1.0 - neighbor->get_transmission_reduction(v), *m) 
+                (1.0 - neighbor->get_transmission_reduction(v, m_ref)) 
                 ; 
         
             m->array_double_tmp[nviruses_tmp]  = tmp_transmission;
@@ -25027,7 +25028,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         ModelSURV<TSeq> * model_surv = dynamic_cast<ModelSURV<TSeq> *>(m);
 
         epiworld::VirusPtr<TSeq> & v = p->get_virus(); 
-        epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v), *m);
+        epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, *m));
         
         epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
         epiworld_fast_uint state = p->get_state();
@@ -26883,6 +26884,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
 
             // Drawing from the set
             int nviruses_tmp = 0;
+            auto & m_ref = *m;
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
@@ -26918,9 +26920,9 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                         
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
-                        (1.0 - p->get_susceptibility_reduction(v), *m) *
+                        (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
                         v->get_prob_infecting(m) *
-                        (1.0 - neighbor.get_transmission_reduction(v), *m)
+                        (1.0 - neighbor.get_transmission_reduction(v, m_ref))
                         ;
                 
                     m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -26961,11 +26963,12 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                     
                 // Die
                 m->array_double_tmp[n_events++] = 
-                v->get_prob_death(m) * (1.0 - p->get_death_reduction(v), *m);
+                v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, *m));
                 
                 // Recover
                 m->array_double_tmp[n_events++] = 
-                1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v), *m);
+                1.0 - (1.0 - v->get_prob_recovery(m)) *
+                    (1.0 - p->get_recovery_enhancer(v, *m));
                 
     #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -27743,8 +27746,9 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
             double baseline = 0.0;
             for (size_t k = 0u; k < _m->coef_infect_cols.size(); ++k)
-                baseline += p->operator[](k) * _m->coefs_infect[k + 1u];
+                baseline += p->operator()(k, *m) * _m->coefs_infect[k + 1u];
 
+            auto & m_ref = *m;
             for (auto & neighbor: p->get_neighbors(*m)) 
             {
                 
@@ -27761,9 +27765,9 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
                     baseline +
-                    (1.0 - p->get_susceptibility_reduction(v), *m) *
+                    (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
                     v->get_prob_infecting(m) *
-                    (1.0 - neighbor->get_transmission_reduction(v), *m)  *
+                    (1.0 - neighbor->get_transmission_reduction(v, m_ref))  *
                     coef_exposure
                     ; 
 
@@ -27805,7 +27809,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
             #pragma omp simd reduction(+:prob)
             #endif
             for (size_t i = 0u; i < _m->coefs_recover.size(); ++i)
-                prob += p->operator[](i) * _m->coefs_recover[i];
+                prob += p->operator()(i, *m) * _m->coefs_recover[i];
 
             // Computing logis
             prob = 1.0/(1.0 + std::exp(-prob));
@@ -27991,6 +27995,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
         // For each one of the possible innovations, we have to compute
         // the adoption probability, which is a function of exposure
+        auto & m_ref = *m;
         for (auto & neighbor: agent.get_neighbors(*m))
         {
 
@@ -28004,8 +28009,8 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     
                 /* And it is a function of susceptibility_reduction as well */ 
                 double p_i =
-                    (1.0 - agent.get_susceptibility_reduction(v), *m) *
-                    (1.0 - agent.get_transmission_reduction(v), *m) 
+                    (1.0 - agent.get_susceptibility_reduction(v, m_ref)) *
+                    (1.0 - agent.get_transmission_reduction(v, m_ref)) 
                     ; 
             
                 size_t vid = v->get_id();
@@ -28029,7 +28034,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
                 exposure.at(i) /= agent.get_n_neighbors();
 
             for (auto & j: diffmodel->data_cols)
-                exposure.at(i) += agent(j) * diffmodel->params.at(j);
+                exposure.at(i) += agent(j, m_ref) * diffmodel->params.at(j);
 
             // Baseline probability of adoption
             double p = m->get_viruses()[i]->get_prob_infecting(m);
