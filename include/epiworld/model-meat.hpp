@@ -1050,7 +1050,8 @@ inline void Model<TSeq>::add_virus(
     db.record_virus(v);
 
     // Adding new virus
-    viruses.push_back(std::make_shared< Virus<TSeq> >(v));
+    auto cloned = v.clone_ptr();
+    viruses.push_back(std::shared_ptr<Virus<TSeq>>(std::move(cloned)));
 
 }
 
