@@ -1,4 +1,3 @@
-
 #ifndef EPIWORLD_TOOL_BONES_HPP
 #define EPIWORLD_TOOL_BONES_HPP
 
@@ -87,10 +86,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    virtual epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    virtual epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
+    virtual epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
     
     void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
     void set_transmission_reduction_fun(ToolFun<TSeq> fun);
@@ -129,6 +128,8 @@ public:
 
     void distribute(Model<TSeq> * model);
     void set_distribution(ToolToAgentFun<TSeq> fun);
+
+    virtual std::unique_ptr<Tool<TSeq>> clone_ptr() const; 
 
 };
 

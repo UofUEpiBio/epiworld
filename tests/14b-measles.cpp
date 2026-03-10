@@ -39,7 +39,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     std::vector< double > hospitalizations(nsims, 0), outbreak_sizes(nsims, 0);
     auto saver = tests_create_saver(transitions, R0s, n_seeds, nullptr, &outbreak_sizes, &hospitalizations);
     
-    model_0.run_multiple(60, nsims, 1231, saver, true, true, 1);
+    model_0.run_multiple(60, nsims, 1231, saver, true, true, 2);
     
     // Creating an average across the transitions vectors
     auto avg_transitions = tests_calculate_avg_transitions(

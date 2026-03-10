@@ -1,3 +1,5 @@
+#include "tools.hpp"
+
 #ifndef MEASLESQUARANTINE_HPP
 #define MEASLESQUARANTINE_HPP
 
@@ -793,42 +795,44 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     model.add_virus(measles);
 
-    // Preparing a vector that allows us to keep track
-    // of when this was checked
-    thread_local auto last_day_checked = std::make_shared< std::vector< int > >(
-        n, std::numeric_limits<int>::max()
-    );
+    // // Preparing a vector that allows us to keep track
+    // // of when this was checked
+    // thread_local auto last_day_checked = std::make_shared< std::vector< int > >(
+    //     n, std::numeric_limits<int>::max()
+    // );
 
-    thread_local auto immune = std::make_shared< std::vector< int > >(n, 0);
+    // thread_local auto immune = std::make_shared< std::vector< int > >(n, 0);
 
-    thread_local ToolFun<TSeq> suscept_redux =
-        [](
-            Tool<TSeq> & t, Agent<TSeq> * a, VirusPtr<TSeq> v, Model<TSeq> * m)
-            -> epiworld_double
-        {
+    // thread_local ToolFun<TSeq> suscept_redux =
+    //     [](
+    //         Tool<TSeq> & t, Agent<TSeq> * a, VirusPtr<TSeq> v, Model<TSeq> * m)
+    //         -> epiworld_double
+    //     {
 
-            auto & day_checked_i = (*last_day_checked)[a->get_id()];
-            auto & immune_i      = (*immune)[a->get_id()];
+    //         auto & day_checked_i = (*last_day_checked)[a->get_id()];
+    //         auto & immune_i      = (*immune)[a->get_id()];
             
-            // Have we checked this agent today?
-            if (m->today() < day_checked_i)
-            {
-                day_checked_i = m->today();
+    //         // Have we checked this agent today?
+    //         if (m->today() < day_checked_i)
+    //         {
+    //             day_checked_i = m->today();
 
-                immune_i = (m->runif() < (*m)("Vax efficacy")) ? 
-                    1 : 0;
+    //             immune_i = (m->runif() < (*m)("Vax efficacy")) ? 
+    //                 1 : 0;
 
-            }
+    //         }
 
-            return  (immune_i == 1) ? 1.0 : 0.0;
+    //         return  (immune_i == 1) ? 1.0 : 0.0;
 
-        };
+    //     };
     
 
-    // Designing the vaccine
-    Tool<> vaccine("Vaccine");
-    vaccine.set_susceptibility_reduction_fun(suscept_redux);
-    vaccine.set_recovery_enhancer(&model("(IGNORED) Vax improved recovery"));
+    // // Designing the vaccine
+    // Tool<> vaccine("Vaccine");
+    // vaccine.set_susceptibility_reduction_fun(suscept_redux);
+    // vaccine.set_recovery_enhancer(&model("(IGNORED) Vax improved recovery"));
+    ToolMMR<TSeq> vaccine{};
+
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );

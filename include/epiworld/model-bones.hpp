@@ -201,6 +201,8 @@ protected:
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
+    size_t sim_id = 0u;
+    void set_sim_id(size_t id);
 
     /**
      * @brief Variables used to keep track of the events
@@ -456,6 +458,7 @@ public:
     size_t get_n_tools() const; ///< Number of tools in the model
     epiworld_fast_uint get_ndays() const;
     epiworld_fast_uint get_n_replicates() const;
+    size_t get_sim_id() const;
     size_t get_n_entities() const;
     void set_ndays(epiworld_fast_uint ndays);
     bool get_verbose() const;

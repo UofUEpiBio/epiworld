@@ -178,7 +178,7 @@ inline void Agent<TSeq>::add_tool(
     epiworld_fast_int queue
 )
 {
-    ToolPtr<TSeq> tool_ptr = std::make_shared< Tool<TSeq> >(tool);
+    ToolPtr<TSeq> tool_ptr = std::shared_ptr<Tool<TSeq>>(tool.clone_ptr());
     add_tool(model, tool_ptr, state_new, queue);
 }
 
