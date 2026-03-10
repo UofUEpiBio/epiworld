@@ -390,7 +390,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_infectious_list()
         {
             if (a.get_n_entities() > 0u)
             {
-                const auto & entity = a.get_entity(0u, *m);
+                const auto & entity = a.get_entity(0u, *this);
                 infectious[
                     // Position of the group in the `infectious` vector
                     entity_indices[entity.get_id()] +
@@ -408,7 +408,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_infectious_list()
         )
         {
             adjusted_contact_rate[
-                a.get_entity(0u, *m).get_id()
+                a.get_entity(0u, *this).get_id()
             ] += 1.0;
         }
 
@@ -437,7 +437,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
     )
 {
 
-    size_t agent_group_id = agent->get_entity(0u, *m).get_id();
+    size_t agent_group_id = agent->get_entity(0u, *this).get_id();
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;
@@ -659,6 +659,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
 
     // Drawing from the set
     int nviruses_tmp = 0;
+    auto & m_ref = *m;
     for (size_t n = 0u; n < ndraws; ++n)
     {
 
@@ -678,9 +679,9 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v), *m) *
+            (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
             v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v), *m)
+            (1.0 - neighbor.get_transmission_reduction(v, m_ref))
             ;
 
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -1071,21 +1072,21 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
                 switch (agent.get_state())
                 {
                     case SUSCEPTIBLE:
-                        agent.change_state(*m, QUARANTINED_SUSCEPTIBLE);
+                        agent.change_state(*this, QUARANTINED_SUSCEPTIBLE);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case EXPOSED:
-                        agent.change_state(*m, QUARANTINED_EXPOSED);
+                        agent.change_state(*this, QUARANTINED_EXPOSED);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case PRODROMAL:
-                        agent.change_state(*m, QUARANTINED_PRODROMAL);
+                        agent.change_state(*this, QUARANTINED_PRODROMAL);
                         day_flagged[contact_id] = Model<TSeq>::today();
                         break;
                     case RASH:
                         if (isolation_willingness[contact_id])
                         {
-                            agent.change_state(*m, ISOLATED);
+                            agent.change_state(*this, ISOLATED);
                             day_flagged[contact_id] = Model<TSeq>::today();
                         }
                         break;

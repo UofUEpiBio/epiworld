@@ -426,7 +426,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_infectious_list()
         {
             if (a.get_n_entities() > 0u)
             {
-                const auto & entity = a.get_entity(0u, *m);
+                const auto & entity = a.get_entity(0u, *this);
                 infectious[
                     // Position of the group in the `infectious` vector
                     infectious_entity_indices[entity.get_id()] +
@@ -444,7 +444,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_infectious_list()
         )
         {
             adjusted_contact_rate[
-                a.get_entity(0u, *m).get_id()
+                a.get_entity(0u, *this).get_id()
             ] += 1.0;
         }
 
@@ -477,7 +477,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
     if (agent->get_n_entities() == 0u)
         return 0u;
 
-    size_t agent_group_id = agent->get_entity(0u, *m).get_id();
+    size_t agent_group_id = agent->get_entity(0u, *this).get_id();
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;
@@ -568,6 +568,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
     
     // Drawing from the set
     int nviruses_tmp = 0;
+    auto & m_ref = *m;
     for (size_t n = 0u; n < ndraws; ++n)
     {
 
@@ -589,9 +590,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v), *m) *
+            (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
             v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v), *m) 
+            (1.0 - neighbor.get_transmission_reduction(v, m_ref)) 
             ; 
     
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -939,14 +940,14 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         // check that later
         if (agent_i.get_n_entities() != 0u)
         {
-            for (size_t agent_j_idx: agent_i.get_entity(0))
+            for (size_t agent_j_idx: agent_i.get_entity(0, *this))
             {
 
                 #ifdef EPI_DEBUG
                 auto & agent_j = Model<TSeq>::get_agent(agent_j_idx);
                 if (
-                    agent_j.get_entity(0u, *m).get_id() !=
-                    agent_i.get_entity(0u, *m).get_id()
+                    agent_j.get_entity(0u, *this).get_id() !=
+                    agent_i.get_entity(0u, *this).get_id()
                 )
                     throw std::logic_error(
                         "An agent in a group has a different group id."
@@ -1029,15 +1030,15 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
 
         auto state = agent.get_state();
         if (state == SUSCEPTIBLE)
-            agent.change_state(*m, QUARANTINED_SUSCEPTIBLE);
+            agent.change_state(*this, QUARANTINED_SUSCEPTIBLE);
         else if (state == EXPOSED)
-            agent.change_state(*m, QUARANTINED_EXPOSED);
+            agent.change_state(*this, QUARANTINED_EXPOSED);
         else if (state == PRODROMAL)
-            agent.change_state(*m, QUARANTINED_PRODROMAL);
+            agent.change_state(*this, QUARANTINED_PRODROMAL);
         else if (state == RASH)
         {
             if (isolation_willingness[agent.get_id()])
-                agent.change_state(*m, ISOLATED);
+                agent.change_state(*this, ISOLATED);
         }
         else
             throw std::logic_error(
@@ -1081,7 +1082,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         if (agent_i.get_n_entities() == 0u)
             continue;
 
-        groups_ids.insert(agent_i.get_entity(0u, *m).get_id());
+        groups_ids.insert(agent_i.get_entity(0u, *this).get_id());
         
     }
 

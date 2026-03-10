@@ -11,8 +11,11 @@
     #include <omp.h>
 #endif
 
-#include "../include/catch2/catch.hpp"
 #include "../include/epiworld/epiworld.hpp"
+
+#ifndef NO_CATCH_MAIN
+    #include "../include/catch2/catch.hpp"
+#endif
 
 
 
@@ -58,7 +61,7 @@ inline epiworld::EntityToAgentFun<TSeq> dist_factory(int from, int to) {
             auto & agents = m->get_agents();
             for (int i = from; i < to; ++i)
             {
-                e.add_agent(&agents[i]);
+                e.add_agent(&agents[i], *m);
             }
             
             return;
@@ -71,7 +74,7 @@ inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
 {
     return [i](epiworld::Virus<TSeq> & v, epiworld::Model<TSeq> * m) -> void {
 
-            m->get_agents()[i].set_virus(v);
+            m->get_agents()[i].set_virus(*m, v);
             return;
 
         };
@@ -302,6 +305,15 @@ void inline tests_print_avg_transitions(
 }
 
 
-#define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
+#ifdef NO_CATCH_MAIN
+    #define EPIWORLD_TEST_CASE(desc, tag) main()
+    #define REQUIRE(...) (void)0
+    #define REQUIRE_FALSE(...) (void)0
+    #define REQUIRE_TRUE(...) (void)0
+    #define REQUIRE_THROWS(...) (void)0
+    #define REQUIRE_THAT(...) (void)0
+#else
+    #define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
+#endif
 
 #endif

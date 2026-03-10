@@ -151,7 +151,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_set(
 
         for (const auto & i: *idx_shared)
         {
-            e.add_agent(&m->get_agent(i));
+            e.add_agent(&m->get_agent(i), *m);
         }
 
     };

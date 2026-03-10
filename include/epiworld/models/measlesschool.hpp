@@ -377,6 +377,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
     // Drawing from the set
     int nviruses_tmp = 0;
     int i = 0;
+    auto & m_ref = *m;
     while (i < ndraw)
     {
         // Picking the actual contacts
@@ -421,9 +422,9 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v), *m) *
+            (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
             v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v), *m)
+            (1.0 - neighbor.get_transmission_reduction(v, m_ref))
             ;
 
         m->array_virus_tmp[nviruses_tmp++] = &(*v);

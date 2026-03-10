@@ -89,11 +89,11 @@ public:
       
     // Die
     m->array_double_tmp[n_events++] = 
-      v->get_prob_death(m) * (1.0 - p->get_death_reduction(v), *m);
+      v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, *m));
     
     // Recover
     m->array_double_tmp[n_events++] = 
-      1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v), *m);
+      1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, *m));
     
     
 #ifdef EPI_DEBUG
