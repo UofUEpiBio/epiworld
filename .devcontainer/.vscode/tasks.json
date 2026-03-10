@@ -15,6 +15,12 @@
             "problemMatcher": [
                 "$gcc"
             ]
+        },
+        {
+            "label": "build-single-file",
+            "type": "shell",
+            "command": "g++ -std=c++20 -Wall -pedantic -DNO_CATCH_MAIN -g -O0 ${file} -o ${fileDirname}/${fileBasenameNoExtension}",
+            "group": "build"
         }
     ]
 }

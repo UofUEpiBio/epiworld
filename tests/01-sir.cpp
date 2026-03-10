@@ -49,21 +49,21 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
     int out_of_range_0 = 0;
 
     for (auto & v: tmat_0)
-        if (v < 0.0 | v > 1.0)
+        if ((v < 0.0) || (v > 1.0))
             out_of_range_0++;
     
     auto tmat_1 = model_1.get_db().get_transition_probability(false);
     int out_of_range_1 = 0;
 
     for (auto & v: tmat_1)
-        if (v < 0.0 | v > 1.0)
+        if ((v < 0.0) || (v > 1.0))
             out_of_range_1++;
 
     auto tmat_2 = model_2.get_db().get_transition_probability(false);
     int out_of_range_2 = 0;
 
     for (auto & v: tmat_2)
-        if (v < 0.0 | v > 1.0)
+        if ((v < 0.0) || (v > 1.0))
             out_of_range_2++;
 
     REQUIRE_THAT(tmat_1, Catch::Equals(tmat_0));
