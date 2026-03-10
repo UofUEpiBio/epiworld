@@ -36,7 +36,7 @@ EPIWORLD_TEST_CASE(
     model_0.get_virus(0).set_distribution(
         [&n_seeds](Virus<> & v, Model<> * m) -> void {
         for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(v);
+            m->get_agents()[i].set_virus(*m, v);
         return;
     });
 
