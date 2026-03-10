@@ -31,7 +31,7 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool(
 
             // Adding the tool
             if (model->runif() < p)
-                agent.add_tool(tool);
+                agent.add_tool(*model, tool);
             
         
         }
@@ -93,7 +93,7 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
 
             // Adding the tool
             if (model->runif() < p)
-                agent.add_tool(tool);
+                agent.add_tool(*model, tool);
             
         
         }

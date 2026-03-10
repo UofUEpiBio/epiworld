@@ -246,11 +246,11 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
         {
 
             if (agent_state == SUSCEPTIBLE)
-                this->get_agent(i).change_state(QUARANTINED_SUSCEPTIBLE);
+                this->get_agent(i).change_state(*this, QUARANTINED_SUSCEPTIBLE);
             else if (agent_state == EXPOSED)
-                this->get_agent(i).change_state(QUARANTINED_EXPOSED);
+                this->get_agent(i).change_state(*this, QUARANTINED_EXPOSED);
             else if (agent_state == PRODROMAL)
-                this->get_agent(i).change_state(QUARANTINED_PRODROMAL);
+                this->get_agent(i).change_state(*this, QUARANTINED_PRODROMAL);
 
             // And we add the day of quarantine
             this->day_flagged[i] = this->today();
@@ -421,9 +421,9 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v)) *
+            (1.0 - p->get_susceptibility_reduction(v), *m) *
             v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v))
+            (1.0 - neighbor.get_transmission_reduction(v), *m)
             ;
 
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -440,7 +440,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
     if (which < 0)
         return;
 
-    p->set_virus(*m->array_virus_tmp[which]);
+    p->set_virus(*m, *m->array_virus_tmp[which]);
 
     return;
 
@@ -449,7 +449,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
 LOCAL_UPDATE_FUN(m_update_exposed) {
 
     if (m->runif() < (1.0/p->get_virus()->get_incubation(m)))
-        p->change_state(ModelMeaslesSchool<TSeq>::PRODROMAL);
+        p->change_state(*m, ModelMeaslesSchool<TSeq>::PRODROMAL);
 
     return;
 
@@ -462,7 +462,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
 
         GET_MODEL(m, model);
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(ModelMeaslesSchool<TSeq>::RASH);
+        p->change_state(*m, ModelMeaslesSchool<TSeq>::RASH);
 
     }
 
@@ -510,7 +510,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     // Recovers
     if (which == 2)
     {
-        p->rm_virus(
+        p->rm_virus(*m, 
             detected ?
                 ModelMeaslesSchool::ISOLATED_RECOVERED:
                 ModelMeaslesSchool::RECOVERED
@@ -521,7 +521,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
         // If hospitalized, then the agent is removed from the system
         // effectively
         model->record_hospitalization(*p);
-        p->change_state(
+        p->change_state(*m, 
             detected ?
                 ModelMeaslesSchool::DETECTED_HOSPITALIZED :
                 ModelMeaslesSchool::HOSPITALIZED
@@ -535,7 +535,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     {
         // If the agent is not hospitalized, then it is moved to
         // isolation.
-        p->change_state(ModelMeaslesSchool::ISOLATED);
+        p->change_state(*m, ModelMeaslesSchool::ISOLATED);
     }
 
 };
@@ -565,12 +565,12 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     {
         if (unisolate)
         {
-            p->rm_virus(
+            p->rm_virus(*m, 
                 ModelMeaslesSchool::RECOVERED
             );
         }
         else
-            p->rm_virus(
+            p->rm_virus(*m, 
                 ModelMeaslesSchool::ISOLATED_RECOVERED
             );
     }
@@ -579,7 +579,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     else if (which == 1u)
     {
         model->record_hospitalization(*p);
-        p->change_state(
+        p->change_state(*m, 
             // HOSPITALIZED
             unisolate ?
                 ModelMeaslesSchool::HOSPITALIZED :
@@ -590,7 +590,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     // still under isolation, unless the quarantine period is over.
     else if ((which == 0u) && unisolate)
     {
-        p->change_state(ModelMeaslesSchool::RASH);
+        p->change_state(*m, ModelMeaslesSchool::RASH);
     }
 
 }
@@ -608,7 +608,7 @@ LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
         true: false;
 
     if (unisolate)
-        p->change_state(ModelMeaslesSchool::RECOVERED);
+        p->change_state(*m, ModelMeaslesSchool::RECOVERED);
 
 }
 
@@ -630,18 +630,18 @@ LOCAL_UPDATE_FUN(m_update_q_exposed) {
         // the prodromal period. Otherwise, they are moved to the
         // quarantined prodromal period.
         if (unquarantine)
-            p->change_state(
+            p->change_state(*m, 
                 ModelMeaslesSchool::PRODROMAL
             );
         else
-            p->change_state(
+            p->change_state(*m, 
                 ModelMeaslesSchool::QUARANTINED_PRODROMAL
             );
 
     }
     else if (unquarantine)
     {
-        p->change_state(
+        p->change_state(*m, 
             ModelMeaslesSchool::EXPOSED
         );
     }
@@ -655,7 +655,7 @@ LOCAL_UPDATE_FUN(m_update_q_susceptible) {
         m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))
-        p->change_state(ModelMeaslesSchool::SUSCEPTIBLE);
+        p->change_state(*m, ModelMeaslesSchool::SUSCEPTIBLE);
 
 }
 
@@ -675,13 +675,13 @@ LOCAL_UPDATE_FUN(m_update_q_prodromal) {
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
         model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(ModelMeaslesSchool::ISOLATED);
+        p->change_state(*m, ModelMeaslesSchool::ISOLATED);
     }
     else
     {
 
         if (unquarantine)
-            p->change_state(ModelMeaslesSchool::PRODROMAL);
+            p->change_state(*m, ModelMeaslesSchool::PRODROMAL);
 
     }
 
@@ -693,7 +693,7 @@ LOCAL_UPDATE_FUN(m_update_q_recovered) {
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))
-        p->change_state(ModelMeaslesSchool::RECOVERED);
+        p->change_state(*m, ModelMeaslesSchool::RECOVERED);
 
 }
 
@@ -701,7 +701,7 @@ LOCAL_UPDATE_FUN(m_update_hospitalized) {
 
     // The agent is removed from the system
     if (m->runif() < 1.0/m->par("Hospitalization period"))
-        p->rm_virus(ModelMeaslesSchool::RECOVERED);
+        p->rm_virus(*m, ModelMeaslesSchool::RECOVERED);
 
     return;
 

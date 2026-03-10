@@ -209,9 +209,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v)) *
+                    (1.0 - p->get_susceptibility_reduction(v), *m) *
                     v->get_prob_infecting(m) *
-                    (1.0 - neighbor.get_transmission_reduction(v))
+                    (1.0 - neighbor.get_transmission_reduction(v), *m)
                     ;
             
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -228,7 +228,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             if (which < 0)
                 return;
 
-            p->set_virus(
+            p->set_virus(*m, 
                 *m->array_virus_tmp[which],
                 ModelSEIRCONN<TSeq>::EXPOSED
                 );
@@ -253,7 +253,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (m->runif() < 1.0/(v->get_incubation(m)))
                 {
 
-                    p->change_state(ModelSEIRCONN<TSeq>::INFECTED);
+                    p->change_state(*m, ModelSEIRCONN<TSeq>::INFECTED);
                     return;
 
                 }
@@ -269,7 +269,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
                 // Recover
                 m->array_double_tmp[n_events++] = 
-                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v), *m);
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -293,7 +293,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                     return;
 
                 // Which roulette happen?
-                p->rm_virus();
+                p->rm_virus(*m);
 
                 return ;
 

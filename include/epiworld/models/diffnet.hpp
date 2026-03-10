@@ -87,7 +87,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
         // For each one of the possible innovations, we have to compute
         // the adoption probability, which is a function of exposure
-        for (auto & neighbor: agent.get_neighbors())
+        for (auto & neighbor: agent.get_neighbors(*m))
         {
 
             if (neighbor->get_state() == ModelDiffNet<TSeq>::ADOPTER)
@@ -100,8 +100,8 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     
                 /* And it is a function of susceptibility_reduction as well */ 
                 double p_i =
-                    (1.0 - agent.get_susceptibility_reduction(v)) *
-                    (1.0 - agent.get_transmission_reduction(v)) 
+                    (1.0 - agent.get_susceptibility_reduction(v), *m) *
+                    (1.0 - agent.get_transmission_reduction(v), *m) 
                     ; 
             
                 size_t vid = v->get_id();
@@ -144,7 +144,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
             return;
 
         // Otherwise, it is adopted from any of the neighbors
-        agent.set_virus(
+        agent.set_virus(*m, 
             *innovations.at(which),
             ModelDiffNet::ADOPTER
         );

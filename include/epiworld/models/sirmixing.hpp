@@ -153,7 +153,7 @@ inline void ModelSIRMixing<TSeq>::update_infected_list()
         {
             if (a.get_n_entities() > 0u)
             {
-                const auto & entity = a.get_entity(0u);
+                const auto & entity = a.get_entity(0u, *m);
                 infected[
                     // Position of the group in the `infected` vector
                     entity_indices[entity.get_id()] +
@@ -177,7 +177,7 @@ inline size_t ModelSIRMixing<TSeq>::sample_agents(
     )
 {
 
-    size_t agent_group_id = agent->get_entity(0u).get_id();
+    size_t agent_group_id = agent->get_entity(0u, *m).get_id();
     size_t ngroups = this->entities.size();
 
     int samp_id = 0;
@@ -396,9 +396,9 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
                 /* And it is a function of susceptibility_reduction as well */
                 m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v)) *
+                    (1.0 - p->get_susceptibility_reduction(v), *m) *
                     v->get_prob_infecting(m) *
-                    (1.0 - neighbor.get_transmission_reduction(v))
+                    (1.0 - neighbor.get_transmission_reduction(v), *m)
                     ;
 
                 m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -411,7 +411,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
             if (which < 0)
                 return;
 
-            p->set_virus(
+            p->set_virus(*m, 
                 *m->array_virus_tmp[which],
                 ModelSIRMixing<TSeq>::INFECTED
                 );
@@ -436,7 +436,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
                 // Recover
                 m->array_double_tmp[n_events++] =
-                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v));
+                    1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v), *m);
 
                 #ifdef EPI_DEBUG
                 if (n_events == 0u)
@@ -460,7 +460,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
                     return;
 
                 // Which roulette happen?
-                p->rm_virus();
+                p->rm_virus(*m);
 
                 return ;
 
