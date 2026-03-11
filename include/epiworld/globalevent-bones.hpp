@@ -30,7 +30,7 @@ public:
      */
     GlobalEvent(GlobalFun<TSeq> fun, std::string name, int day = -99);
     
-    ~GlobalEvent() {};
+    virtual ~GlobalEvent() = default;
 
     void operator()(Model<TSeq> * m, int day);
 

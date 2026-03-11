@@ -7455,7 +7455,7 @@ public:
      */
     GlobalEvent(GlobalFun<TSeq> fun, std::string name, int day = -99);
     
-    ~GlobalEvent() {};
+    virtual ~GlobalEvent() = default;
 
     void operator()(Model<TSeq> * m, int day);
 
@@ -26862,7 +26862,7 @@ thread_local std::shared_ptr<std::vector<int>> ToolVaccine<TSeq>::model_id = nul
 
 template<typename TSeq>
 inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq>,
     Model<TSeq> * model
 )
 {
@@ -26903,7 +26903,7 @@ inline void ToolVaccine<TSeq>::set_susceptibility_reduction_fun(
 }
 
 template<typename TSeq>
-inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
+inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double *)
 {
     throw std::logic_error(
         std::string(
