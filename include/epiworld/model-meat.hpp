@@ -14,6 +14,8 @@
 #include "model-bones.hpp"
 #include "virus-bones.hpp"
 #include "agent-bones.hpp"
+#include "tool-bones.hpp"
+#include "rng-utils.hpp"
 
 /**
  * @brief Function factory for saving model runs
@@ -2372,22 +2374,18 @@ inline void Model<TSeq>::add_globalevent(
 )
 {
 
-    globalevents.push_back(
-        GlobalEvent<TSeq>(
-            fun,
-            name,
-            date
-            )
-    );
+    auto event = GlobalEvent<TSeq>(fun, name, date);
+    add_globalevent(event);
 
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::add_globalevent(
-    GlobalEvent<TSeq> action
+    GlobalEvent<TSeq> & action
 )
 {
-    globalevents.push_back(action);
+    auto ptr = action.clone_ptr();
+    globalevents.push_back(GlobalEventPtr<TSeq>(std::move(ptr)));
 }
 
 template<typename TSeq>
@@ -2413,7 +2411,7 @@ GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
     if (index >= globalevents.size())
         throw std::range_error("The index " + std::to_string(index) + " is out of range.");
 
-    return globalevents[index];
+    return *globalevents[index];
 
 }
 
@@ -2424,7 +2422,7 @@ inline void Model<TSeq>::rm_globalevent(
 )
 {
 
-    for (auto it = globalevents.begin(); it != globalevents.end(); ++it)
+    for (auto & it = globalevents.begin(); it != globalevents.end(); ++it)
     {
         if (it->get_name() == name)
         {
@@ -2457,7 +2455,7 @@ inline void Model<TSeq>::run_globalevents()
 
     for (auto & action: globalevents)
     {
-        action(this, today());
+        (*action)(this, today());
         events_run();
     }
 

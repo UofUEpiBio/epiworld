@@ -1,9 +1,8 @@
-#include "../tools/vaccine.hpp"
-
 #ifndef EPIWORLD_MODELS_MEASLESMIXING_HPP
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
 
-using namespace epiworld;
+#include "../tools/vaccine.hpp"
+#include "../model-bones.hpp"
 
 #define MM(i, j, n) \
     j * n + i
@@ -76,7 +75,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing : public epiworld::Model<TSeq>
+class ModelMeaslesMixing : public Model<TSeq>
 {
 private:
 
@@ -434,7 +433,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_infectious_list()
 
 template<typename TSeq>
 inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
-    epiworld::Agent<TSeq> * agent,
+    Agent<TSeq> * agent,
     std::vector< size_t > & sampled_agents
     )
 {
@@ -452,7 +451,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 MM(agent_group_id, g, ngroups)
@@ -467,7 +466,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -1211,7 +1210,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles", prevalence, true);
     virus.set_state(
         ModelMeaslesMixing<TSeq>::EXPOSED,
         ModelMeaslesMixing<TSeq>::RECOVERED,

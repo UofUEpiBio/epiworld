@@ -1,7 +1,9 @@
-#include "../tools/vaccine.hpp"
 
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
+
+#include "../tools/vaccine.hpp"
+#include "../model-bones.hpp"
 
 #define COL_MAJOR_POS(i, j, n) \
     (j * n + i)
@@ -65,7 +67,7 @@
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine : public epiworld::Model<TSeq> 
+class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
 {
 private:
     // Vector of vectors of infected agents (prodromal agents are infectious)
@@ -492,7 +494,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 COL_MAJOR_POS(agent_group_id, g, ngroups)
@@ -507,7 +509,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -1243,7 +1245,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles", prevalence, true);
     virus.set_state(
         ModelMeaslesMixingRiskQuarantine<TSeq>::EXPOSED,
         ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED,

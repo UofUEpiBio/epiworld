@@ -120,10 +120,19 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Entity;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
+class GlobalEvent;
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 using VirusPtr = std::shared_ptr< Virus< TSeq > >;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using ToolPtr = std::shared_ptr< Tool< TSeq > >;
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+using EntityPtr = std::shared_ptr< Entity< TSeq > >;
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+using GlobalEventPtr = std::shared_ptr< GlobalEvent< TSeq > >;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
@@ -960,6 +969,11 @@ inline void Progress::next() {
 
 #ifndef EPIWORLD_RNG_UTILS_HPP
 #define EPIWORLD_RNG_UTILS_HPP
+
+#include <cstdint>
+#include <limits>
+#include <random>
+// (already included include/epiworld/config.hpp)
 
 /**
  * @brief Fast 64-bit PRNG based on the xoshiro256** algorithm.
@@ -6411,6 +6425,14 @@ public:
 #ifndef EPIWORLD_ADJLIST_MEAT_HPP
 #define EPIWORLD_ADJLIST_MEAT_HPP
 
+#include <vector>
+#include <map>
+#include <string>
+#include <stdexcept>
+#include <fstream>
+// (already included include/epiworld/config.hpp)
+// (already included include/epiworld/adjlist-bones.hpp)
+
 inline AdjList::AdjList(
     const std::vector< int > & source,
     const std::vector< int > & target,
@@ -7602,37 +7624,25 @@ inline std::unique_ptr<GlobalEvent<TSeq>> GlobalEvent<TSeq>::clone_ptr() const
 #ifndef EPIWORLD_MODEL_BONES_HPP
 #define EPIWORLD_MODEL_BONES_HPP
 
-template<typename TSeq>
-class Agent;
+#include <memory>
+#include <vector>
+#include <functional>
+#include <string>
+#include <map>
+// (already included include/epiworld/config.hpp)
+
+// (already included include/epiworld/agent-bones.hpp)
+// (already included include/epiworld/virus-bones.hpp)
+// (already included include/epiworld/viruses-bones.hpp)
+// (already included include/epiworld/tool-bones.hpp)
+// (already included include/epiworld/database-bones.hpp)
+// (already included include/epiworld/queue-bones.hpp)
+// (already included include/epiworld/globalevent-bones.hpp)
 
 template<typename TSeq>
 class AgentsSample;
 
-template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Viruses;
-
-template<typename TSeq>
-class Viruses_const;
-
-template<typename TSeq>
-class Tool;
-
 class AdjList;
-
-template<typename TSeq>
-class DataBase;
-
-template<typename TSeq>
-class Queue;
-
-template<typename TSeq>
-struct Event;
-
-template<typename TSeq>
-class GlobalEvent;
 
 template<typename TSeq>
 inline epiworld_double susceptibility_reduction_mixer_default(
@@ -7798,7 +7808,7 @@ protected:
     void chrono_start();
     void chrono_end();
 
-    std::vector<GlobalEvent<TSeq>> globalevents;
+    std::vector<GlobalEventPtr<TSeq>> globalevents;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
@@ -8274,7 +8284,7 @@ public:
         );
 
     void add_globalevent(
-        GlobalEvent<TSeq> action
+        GlobalEvent<TSeq> & action
     );
 
     GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
@@ -8453,6 +8463,8 @@ public:
 // (already included include/epiworld/model-bones.hpp)
 // (already included include/epiworld/virus-bones.hpp)
 // (already included include/epiworld/agent-bones.hpp)
+// (already included include/epiworld/tool-bones.hpp)
+// (already included include/epiworld/rng-utils.hpp)
 
 /**
  * @brief Function factory for saving model runs
@@ -10677,11 +10689,11 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
     printf_epiworld("Global events:\n");
     for (auto & a : globalevents)
     {
-        if (a.get_day() < 0)
+        if (a->get_day() < 0)
         {
-            printf_epiworld(" - %s (runs daily)\n", a.get_name().c_str());
+            printf_epiworld(" - %s (runs daily)\n", a->get_name().c_str());
         } else {
-            printf_epiworld(" - %s (day %i)\n", a.get_name().c_str(), a.get_day());
+            printf_epiworld(" - %s (day %i)\n", a->get_name().c_str(), a->get_day());
         }
     }
 
@@ -11134,22 +11146,18 @@ inline void Model<TSeq>::add_globalevent(
 )
 {
 
-    globalevents.push_back(
-        GlobalEvent<TSeq>(
-            fun,
-            name,
-            date
-            )
-    );
+    auto event = GlobalEvent<TSeq>(fun, name, date);
+    add_globalevent(event);
 
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::add_globalevent(
-    GlobalEvent<TSeq> action
+    GlobalEvent<TSeq> & action
 )
 {
-    globalevents.push_back(action);
+    auto ptr = action.clone_ptr();
+    globalevents.push_back(GlobalEventPtr<TSeq>(std::move(ptr)));
 }
 
 template<typename TSeq>
@@ -11175,7 +11183,7 @@ GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
     if (index >= globalevents.size())
         throw std::range_error("The index " + std::to_string(index) + " is out of range.");
 
-    return globalevents[index];
+    return *globalevents[index];
 
 }
 
@@ -11186,7 +11194,7 @@ inline void Model<TSeq>::rm_globalevent(
 )
 {
 
-    for (auto it = globalevents.begin(); it != globalevents.end(); ++it)
+    for (auto & it = globalevents.begin(); it != globalevents.end(); ++it)
     {
         if (it->get_name() == name)
         {
@@ -11219,7 +11227,7 @@ inline void Model<TSeq>::run_globalevents()
 
     for (auto & action: globalevents)
     {
-        action(this, today());
+        (*action)(this, today());
         events_run();
     }
 
@@ -15537,6 +15545,9 @@ template<typename TSeq>
 class Entities;
 
 template<typename TSeq>
+class AgentsSample;
+
+template<typename TSeq>
 inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m);
 
 template<typename TSeq>
@@ -17856,6 +17867,12 @@ namespace epimodels {
 #ifndef EPIWORLD_MODELS_INIT_FUNCTIONS_HPP
 #define EPIWORLD_MODELS_INIT_FUNCTIONS_HPP
 
+#include <functional>
+#include <vector>
+#include <string>
+#include <stdexcept>
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Creates an initial function for the SIR-like models
  * @ingroup model_utilities
@@ -18213,6 +18230,13 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seird(
 #ifndef EPIWORLD_GLOBALEVENTS_HPP
 #define EPIWORLD_GLOBALEVENTS_HPP
 
+#include <functional>
+#include <string>
+#include <vector>
+
+// (already included include/epiworld/models/../model-bones.hpp)
+// (already included include/epiworld/models/../agent-bones.hpp)
+
 // This function creates a global action that distributes a tool
 // to agents with probability p.
 /**
@@ -18376,6 +18400,8 @@ inline std::function<void(Model<TSeq>*)> globalevent_set_param(
 #ifndef EPIWORLD_MODELS_SIS_HPP 
 #define EPIWORLD_MODELS_SIS_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Infected-Susceptible (SIS) model
  * 
@@ -18389,7 +18415,7 @@ inline std::function<void(Model<TSeq>*)> globalevent_set_param(
  * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIS : public epiworld::Model<TSeq>
+class ModelSIS : public Model<TSeq>
 {
 
 public:
@@ -18429,15 +18455,15 @@ inline ModelSIS<TSeq>::ModelSIS(
     model.set_name("Susceptible-Infected-Susceptible (SIS)");
 
     // Adding statuses
-    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
+    model.add_state("Susceptible", default_update_susceptible<TSeq>);
+    model.add_state("Infected", default_update_exposed<TSeq>);
 
     // Setting up parameters
     model.add_param(transmission_rate, "Transmission rate");
     model.add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(ModelSIS<TSeq>::INFECTED, ModelSIS<TSeq>::SUSCEPTIBLE, ModelSIS<TSeq>::SUSCEPTIBLE);
     
     virus.set_prob_infecting(&model("Transmission rate"));
@@ -18493,6 +18519,8 @@ inline ModelSIS<TSeq>::ModelSIS(
 #ifndef EPIWORLD_SIR_H 
 #define EPIWORLD_SIR_H
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
  * 
@@ -18507,7 +18535,7 @@ inline ModelSIS<TSeq>::ModelSIS(
  * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIR : public epiworld::Model<TSeq>
+class ModelSIR : public Model<TSeq>
 {
 public:
 
@@ -18551,8 +18579,8 @@ inline ModelSIR<TSeq>::ModelSIR(
 {
 
     // Adding statuses
-    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
+    model.add_state("Susceptible", default_update_susceptible<TSeq>);
+    model.add_state("Infected", default_update_exposed<TSeq>);
     model.add_state("Recovered");
 
     // Setting up parameters
@@ -18560,7 +18588,7 @@ inline ModelSIR<TSeq>::ModelSIR(
     model.add_param(transmission_rate, "Transmission rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1,2,2);
     
     virus.set_prob_recovery(&model("Recovery rate"));
@@ -18631,6 +18659,8 @@ inline ModelSIR<TSeq> & ModelSIR<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_SEIR_HPP
 #define EPIWORLD_MODELS_SEIR_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
  * 
@@ -18646,7 +18676,7 @@ inline ModelSIR<TSeq> & ModelSIR<TSeq>::initial_states(
  * @param recovery_rate epiworld_double Recovery rate of the virus.
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIR : public epiworld::Model<TSeq>
+class ModelSEIR : public Model<TSeq>
 {
 
 public:
@@ -18674,9 +18704,9 @@ public:
         epiworld_double recovery_rate
     );
 
-    epiworld::UpdateFun<TSeq> update_exposed_seir = [](
-        epiworld::Agent<TSeq> * p,
-        epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_exposed_seir = [](
+        Agent<TSeq> * p,
+        Model<TSeq> * m
     ) -> void {
 
         // Getting the virus
@@ -18690,9 +18720,9 @@ public:
     };
 
 
-    epiworld::UpdateFun<TSeq> update_infected_seir = [](
-        epiworld::Agent<TSeq> * p,
-        epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_infected_seir = [](
+        Agent<TSeq> * p,
+        Model<TSeq> * m
     ) -> void {
         // Does the agent recover?
         if (m->runif() < (m->par("Recovery rate")))
@@ -18727,7 +18757,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 {
 
     // Adding statuses
-    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
+    model.add_state("Susceptible", default_update_susceptible<TSeq>);
     model.add_state("Exposed", model.update_exposed_seir);
     model.add_state("Infected", model.update_infected_seir);
     model.add_state("Removed");
@@ -18738,7 +18768,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     model.add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
 
     virus.set_prob_infecting(&model("Transmission rate"));
@@ -18813,12 +18843,14 @@ inline ModelSEIR<TSeq> & ModelSEIR<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_SURVEILLANCE_HPP
 #define EPIWORLD_MODELS_SURVEILLANCE_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Surveillance model
  * @ingroup special_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSURV : public epiworld::Model<TSeq> {
+class ModelSURV : public Model<TSeq> {
 
 private:
     // state
@@ -18923,11 +18955,11 @@ public:
 template<typename TSeq>
 inline void ModelSURV<TSeq>::reset()
 {
-    epiworld::Model<TSeq>::reset();
+    Model<TSeq>::reset();
 
     days_latent_and_infectious.clear();
     days_latent_and_infectious.resize(
-        2u * epiworld::Model<TSeq>::size(),
+        2u * Model<TSeq>::size(),
         -1.0
     );
 }
@@ -18991,14 +19023,14 @@ inline ModelSURV<TSeq>::ModelSURV(
     };
 
 
-    epiworld::UpdateFun<TSeq> surveillance_update_exposed = 
-    [](epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m) -> void
+    UpdateFun<TSeq> surveillance_update_exposed = 
+    [](Agent<TSeq> * p, Model<TSeq> * m) -> void
     {
 
         // Dynamically getting the ModelSURV
         ModelSURV<TSeq> * model_surv = dynamic_cast<ModelSURV<TSeq> *>(m);
 
-        epiworld::VirusPtr<TSeq> & v = p->get_virus(); 
+        VirusPtr<TSeq> & v = p->get_virus(); 
         epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, *m));
         
         epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
@@ -19063,9 +19095,9 @@ inline ModelSURV<TSeq>::ModelSURV(
         LATENT
     };
 
-    epiworld::GlobalFun<TSeq> surveillance_program = 
+    GlobalFun<TSeq> surveillance_program = 
     [exposed_state](
-        epiworld::Model<TSeq>* m
+        Model<TSeq>* m
         ) -> void
     {
 
@@ -19091,10 +19123,10 @@ inline ModelSURV<TSeq>::ModelSURV(
                 continue;
 
             sampled[i] = true;
-            epiworld::Agent<TSeq> * p = &pop[i];
+            Agent<TSeq> * p = &pop[i];
             
             // If still exposed for the next term
-            if (epiworld::IN(p->get_state(), exposed_state ))
+            if (IN(p->get_state(), exposed_state ))
             {
 
                 ndetected += 1.0;
@@ -19148,15 +19180,15 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_param(prob_noreinfect, "Prob. no reinfect");
 
     // Virus ------------------------------------------------------------------
-    epiworld::Virus<TSeq> covid(vname, prevalence, false);
+    Virus<TSeq> covid(vname, prevalence, false);
     covid.set_state(LATENT, RECOVERED, REMOVED);
     covid.set_post_immunity(&model("Prob. no reinfect"));
     covid.set_prob_death(&model("Prob. death"));
 
-    epiworld::VirusFun<TSeq> ptransmitfun = [](
-        epiworld::Agent<TSeq> * p,
-        epiworld::Virus<TSeq> &,
-        epiworld::Model<TSeq> * m
+    VirusFun<TSeq> ptransmitfun = [](
+        Agent<TSeq> * p,
+        Virus<TSeq> &,
+        Model<TSeq> * m
         ) -> epiworld_double
     {
         // No chance of infecting
@@ -19180,7 +19212,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     model.add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
-    epiworld::Tool<TSeq> vax("Vaccine", prop_vaccinated, true);
+    Tool<TSeq> vax("Vaccine", prop_vaccinated, true);
     vax.set_susceptibility_reduction(&model("Vax efficacy"));
     vax.set_transmission_reduction(&model("Vax redux transmission"));
     
@@ -19253,6 +19285,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 #ifndef EPIWORLD_MODELS_SIRCONNECTED_HPP 
 #define EPIWORLD_MODELS_SIRCONNECTED_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model with connected population
  * 
@@ -19261,12 +19294,12 @@ inline ModelSURV<TSeq>::ModelSURV(
  * @ingroup connected_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRCONN : public epiworld::Model<TSeq>
+class ModelSIRCONN : public Model<TSeq>
 {
 
 private:
 
-    std::vector< epiworld::Agent<TSeq> * > infected;
+    std::vector< Agent<TSeq> * > infected;
     void update_infected();
 
 public:
@@ -19318,7 +19351,7 @@ public:
 
     /**
      * @brief Get the infected individuals
-     * @return std::vector< epiworld::Agent<TSeq> * > 
+     * @return std::vector< Agent<TSeq> * > 
      */
     size_t get_n_infected() const
     {
@@ -19417,8 +19450,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     )
 {
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_susceptible = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
@@ -19450,7 +19483,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 if (which == static_cast<int>(ninfected))
                     --which;
 
-                epiworld::Agent<TSeq> & neighbor = *model->infected[which];
+                Agent<TSeq> & neighbor = *model->infected[which];
 
                 // Can't sample itself
                 if (neighbor.get_id() == p->get_id())
@@ -19495,8 +19528,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         };
 
 
-    epiworld::UpdateFun<TSeq> update_infected = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_infected = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void {
 
             auto state = p->get_state();
@@ -19559,7 +19592,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     // model.add_param(prob_reinfection, "Prob. Reinfection");
 
     // Adding update function
-    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
+    GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
     {
         ModelSIRCONN<TSeq> * model = dynamic_cast<ModelSIRCONN<TSeq> *>(m);
         model->update_infected();
@@ -19570,7 +19603,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     model.add_globalevent(update, "Update infected individuals");
     
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1, 2, 2);
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
@@ -19698,6 +19731,8 @@ inline std::vector< double > ModelSIRCONN<TSeq>::generation_time_expected(
 #ifndef EPIWORLD_MODELS_SEIRCONNECTED_HPP
 #define EPIWORLD_MODELS_SEIRCONNECTED_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with connected population
  * 
@@ -19706,10 +19741,10 @@ inline std::vector< double > ModelSIRCONN<TSeq>::generation_time_expected(
  * @ingroup connected_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRCONN : public epiworld::Model<TSeq> 
+class ModelSEIRCONN : public Model<TSeq> 
 {
 private:
-    std::vector< epiworld::Agent<TSeq> * > infected;
+    std::vector< Agent<TSeq> * > infected;
     void update_infected();
 
 public:
@@ -19857,8 +19892,8 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     )
 {
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_susceptible = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
@@ -19891,7 +19926,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 if (which == static_cast<int>(ninfected))
                     --which;
 
-                epiworld::Agent<TSeq> & neighbor = *model->infected[which];
+                Agent<TSeq> & neighbor = *model->infected[which];
 
                 // Can't sample itself
                 if (neighbor.get_id() == p->get_id())
@@ -19935,8 +19970,8 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
         };
 
-    epiworld::UpdateFun<TSeq> update_infected = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_infected = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void {
 
             auto state = p->get_state();
@@ -20016,8 +20051,8 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     model.add_state("Recovered");
 
     // Adding update function
-    epiworld::GlobalFun<TSeq> update = [](
-        epiworld::Model<TSeq> * m
+    GlobalFun<TSeq> update = [](
+        Model<TSeq> * m
         ) -> void
         {
 
@@ -20033,7 +20068,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSEIRCONN<TSeq>::EXPOSED,
         ModelSEIRCONN<TSeq>::RECOVERED,
@@ -20178,6 +20213,8 @@ inline std::vector< double > ModelSEIRCONN<TSeq>::generation_time_expected(
 #ifndef EPIWORLD_SIRD_H 
 #define EPIWORLD_SIRD_H
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Infected-Removed-Deceased (SIRD) model
  * 
@@ -20186,7 +20223,7 @@ inline std::vector< double > ModelSEIRCONN<TSeq>::generation_time_expected(
  * @ingroup death_compartmental
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRD : public epiworld::Model<TSeq>
+class ModelSIRD : public Model<TSeq>
 {
 public:
 
@@ -20247,8 +20284,8 @@ inline ModelSIRD<TSeq>::ModelSIRD(
 {
 
     // Adding statuses
-    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
+    model.add_state("Susceptible", default_update_susceptible<TSeq>);
+    model.add_state("Infected", default_update_exposed<TSeq>);
     model.add_state("Recovered"),
     model.add_state("Deceased")
     ;
@@ -20259,7 +20296,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     model.add_param(death_rate, "Death rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1,2,3);
     virus.set_prob_recovery(&model("Recovery rate"));
     virus.set_prob_infecting(&model("Transmission rate"));
@@ -20332,6 +20369,8 @@ inline ModelSIRD<TSeq> & ModelSIRD<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_SISD_HPP 
 #define EPIWORLD_MODELS_SISD_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Infected-Susceptible-Deceased (SISD) model
  * 
@@ -20346,7 +20385,7 @@ inline ModelSIRD<TSeq> & ModelSIRD<TSeq>::initial_states(
  * @param inital_death epiworld_double Initial death_rate of the immune system
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSISD : public epiworld::Model<TSeq>
+class ModelSISD : public Model<TSeq>
 {
 
 public:
@@ -20386,8 +20425,8 @@ inline ModelSISD<TSeq>::ModelSISD(
     model.set_name("Susceptible-Infected-Susceptible-Deceased (SISD)");
 
     // Adding statuses
-    model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
-    model.add_state("Infected", epiworld::default_update_exposed<TSeq>);
+    model.add_state("Susceptible", default_update_susceptible<TSeq>);
+    model.add_state("Infected", default_update_exposed<TSeq>);
     model.add_state("Deceased");
 
     // Setting up parameters
@@ -20396,7 +20435,7 @@ inline ModelSISD<TSeq>::ModelSISD(
     model.add_param(death_rate, "Death rate");
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1,0,2);
     
     virus.set_prob_infecting(&model("Transmission rate"));
@@ -20454,6 +20493,8 @@ inline ModelSISD<TSeq>::ModelSISD(
 #ifndef EPIWORLD_MODELS_SEIRD_HPP
 #define EPIWORLD_MODELS_SEIRD_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
  * 
@@ -20462,7 +20503,7 @@ inline ModelSISD<TSeq>::ModelSISD(
  * @ingroup death_compartmental
 */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRD : public epiworld::Model<TSeq>
+class ModelSEIRD : public Model<TSeq>
 {
   
 public:
@@ -20515,9 +20556,9 @@ public:
     epiworld_double death_rate
   );
   
-  epiworld::UpdateFun<TSeq> update_exposed_seir = [](
-    epiworld::Agent<TSeq> * p,
-    epiworld::Model<TSeq> * m
+  UpdateFun<TSeq> update_exposed_seir = [](
+    Agent<TSeq> * p,
+    Model<TSeq> * m
   ) -> void {
 
     // Getting the virus
@@ -20531,8 +20572,8 @@ public:
   };
 
   
-  epiworld::UpdateFun<TSeq> update_infected = [](
-    epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+  UpdateFun<TSeq> update_infected = [](
+    Agent<TSeq> * p, Model<TSeq> * m
   ) -> void {
           
     // Odd: Die, Even: Recover
@@ -20612,7 +20653,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 {
   
   // Adding statuses
-  model.add_state("Susceptible", epiworld::default_update_susceptible<TSeq>);
+  model.add_state("Susceptible", default_update_susceptible<TSeq>);
   model.add_state("Exposed",  model.update_exposed_seir);
   model.add_state("Infected", model.update_infected);
   model.add_state("Removed");
@@ -20625,7 +20666,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   model.add_param(death_rate, "Death rate");
   
   // Preparing the virus -------------------------------------------
-  epiworld::Virus<TSeq> virus(vname, prevalence, true);
+  Virus<TSeq> virus(vname, prevalence, true);
   virus.set_state(ModelSEIRD<TSeq>::EXPOSED, ModelSEIRD<TSeq>::REMOVED, ModelSEIRD<TSeq>::DECEASED);
   
   virus.set_prob_infecting(&model("Transmission rate"));
@@ -20704,6 +20745,8 @@ inline ModelSEIRD<TSeq> & ModelSEIRD<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_SIRDCONNECTED_HPP 
 #define EPIWORLD_MODELS_SIRDCONNECTED_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Infected-Removed-Deceased (SIRD) model with connected population
  * 
@@ -20712,7 +20755,7 @@ inline ModelSEIRD<TSeq> & ModelSEIRD<TSeq>::initial_states(
  * @ingroup connected_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRDCONN : public epiworld::Model<TSeq>
+class ModelSIRDCONN : public Model<TSeq>
 {
 public:
     static const int SUSCEPTIBLE = 0;
@@ -20749,8 +20792,8 @@ public:
     );
 
     // Tracking who is infected and who is not
-    // std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected = {};
-    // std::vector< epiworld::Agent<TSeq>* > tracked_agents_infected_next = {};
+    // std::vector< Agent<TSeq>* > tracked_agents_infected = {};
+    // std::vector< Agent<TSeq>* > tracked_agents_infected_next = {};
     // std::vector< epiworld_double >        tracked_agents_weight        = {};
     // std::vector< epiworld_double >        tracked_agents_weight_next   = {};
 
@@ -20835,8 +20878,8 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
 
 
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_susceptible = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
@@ -20918,8 +20961,8 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
         };
 
 
-    epiworld::UpdateFun<TSeq> update_infected = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_infected = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void {
 
             auto state = p->get_state();
@@ -20998,7 +21041,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(1, 2, 3);
     virus.set_prob_infecting(&model("Transmission rate"));
     virus.set_prob_recovery(&model("Recovery rate"));
@@ -21066,6 +21109,8 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
 #ifndef EPIWORLD_MODELS_SEIRDCONNECTED_HPP
 #define EPIWORLD_MODELS_SEIRDCONNECTED_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model with connected population
  * 
@@ -21074,10 +21119,10 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
  * @ingroup connected_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRDCONN : public epiworld::Model<TSeq> 
+class ModelSEIRDCONN : public Model<TSeq> 
 {
 private:
-    std::vector< epiworld::Agent<TSeq> * > infected;
+    std::vector< Agent<TSeq> * > infected;
     void update_infected();
 
 public:
@@ -21222,8 +21267,8 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     )
 {
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_susceptible = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
@@ -21259,7 +21304,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 if (which == static_cast<int>(ninfected))
                     --which;
 
-                epiworld::Agent<TSeq> & neighbor = *model->infected[which];
+                Agent<TSeq> & neighbor = *model->infected[which];
 
                 // Can't sample itself
                 if (neighbor.get_id() == p->get_id())
@@ -21302,8 +21347,8 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
         };
 
-    epiworld::UpdateFun<TSeq> update_infected = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_infected = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void {
 
             auto state = p->get_state();
@@ -21397,7 +21442,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
 
     // Adding update function
-    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
+    GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
     {
         ModelSEIRDCONN<TSeq> * model = dynamic_cast<ModelSEIRDCONN<TSeq> *>(m);
         
@@ -21416,7 +21461,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSEIRDCONN<TSeq>::EXPOSED,
         ModelSEIRDCONN<TSeq>::REMOVED,
@@ -21502,11 +21547,10 @@ inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::initial_states(
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-// #include "../epiworld.hpp"
-
 #ifndef EPIWORLD_MODELS_SIRLOGIT_HPP 
 #define EPIWORLD_MODELS_SIRLOGIT_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
 
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
@@ -21540,7 +21584,7 @@ inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::initial_states(
  
 */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRLogit : public epiworld::Model<TSeq>
+class ModelSIRLogit : public Model<TSeq>
 {
 private:
     static const int SUSCEPTIBLE = 0;
@@ -21701,8 +21745,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     model.coef_infect_cols = coef_infect_cols;
     model.coef_recover_cols = coef_recover_cols;
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_susceptible = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
@@ -21766,8 +21810,8 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
         };
 
-    epiworld::UpdateFun<TSeq> update_infected = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_infected = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
@@ -21804,7 +21848,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     // model.add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSIRLogit<TSeq>::INFECTED,
         ModelSIRLogit<TSeq>::RECOVERED,
@@ -21880,6 +21924,11 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 #ifndef EPIWORLD_DIFFNET_H 
 #define EPIWORLD_DIFFNET_H
 
+#include <string>
+#include <vector>
+// (already included include/epiworld/models/../config.hpp)
+// (already included include/epiworld/models/../model-bones.hpp)
+
 /**
  * @brief Template for a Network Diffusion Model
  * @ingroup special_models
@@ -21892,7 +21941,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
  * 
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelDiffNet : public epiworld::Model<TSeq>
+class ModelDiffNet : public Model<TSeq>
 {
 private:
 public:
@@ -21949,8 +21998,8 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     this->data_cols = data_cols;
     this->params = params;
 
-    epiworld::UpdateFun<TSeq> update_non_adopters = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_non_adopters = [](
+        Agent<TSeq> * p, Model<TSeq> * m
     ) -> void {
 
         // Measuring exposure
@@ -22045,7 +22094,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     model.add_param(prob_adopt, parname);
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> innovation(innovation_name, prevalence, true);
+    Virus<TSeq> innovation(innovation_name, prevalence, true);
     innovation.set_state(1,1,1);
     
     innovation.set_prob_infecting(&model(parname));
@@ -22110,6 +22159,8 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 #ifndef EPIWORLD_MODELS_SEIRMIXING_HPP
 #define EPIWORLD_MODELS_SEIRMIXING_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 #define MM(i, j, n) \
     j * n + i
 
@@ -22136,7 +22187,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRMixing : public epiworld::Model<TSeq>
+class ModelSEIRMixing : public Model<TSeq>
 {
 private:
 
@@ -22152,7 +22203,7 @@ private:
     void update_infected_list();
     std::vector< size_t > sampled_agents;
     size_t sample_agents(
-        epiworld::Agent<TSeq> * agent,
+        Agent<TSeq> * agent,
         std::vector< size_t > & sampled_agents
         );
     std::vector< double > adjusted_contact_rate;
@@ -22281,7 +22332,7 @@ inline void ModelSEIRMixing<TSeq>::update_infected_list()
 
 template<typename TSeq>
 inline size_t ModelSEIRMixing<TSeq>::sample_agents(
-    epiworld::Agent<TSeq> * agent,
+    Agent<TSeq> * agent,
     std::vector< size_t > & sampled_agents
     )
 {
@@ -22296,7 +22347,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         size_t group_size = n_infected_per_group[g];
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 MM(agent_group_id, g, ngroups)
@@ -22311,7 +22362,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -22479,8 +22530,8 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     // Setting up the contact matrix
     this->contact_matrix = contact_matrix;
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_susceptible = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
@@ -22543,8 +22594,8 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
         };
 
-    epiworld::UpdateFun<TSeq> update_exposed_and_infected = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_exposed_and_infected = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void {
 
             auto state = p->get_state();
@@ -22624,7 +22675,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     model.add_state("Recovered");
 
     // Global function
-    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
+    GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
     {
 
         GET_MODEL(m, m_down);
@@ -22639,7 +22690,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSEIRMixing<TSeq>::EXPOSED,
         ModelSEIRMixing<TSeq>::RECOVERED,
@@ -22732,6 +22783,8 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_SIRMIXING_HPP
 #define EPIWORLD_MODELS_SIRMIXING_HPP
 
+// (already included include/epiworld/models/../model-bones.hpp)
+
 #if defined(__clang__)
     // Clang
     #define GET_MODEL(model, output) \
@@ -22758,7 +22811,7 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRMixing : public epiworld::Model<TSeq>
+class ModelSIRMixing : public Model<TSeq>
 {
 private:
 
@@ -22775,7 +22828,7 @@ private:
     void update_infected_list();
     std::vector< size_t > sampled_agents;
     size_t sample_agents(
-        epiworld::Agent<TSeq> * agent,
+        Agent<TSeq> * agent,
         std::vector< size_t > & sampled_agents
         );
 
@@ -22903,7 +22956,7 @@ inline void ModelSIRMixing<TSeq>::update_infected_list()
 
 template<typename TSeq>
 inline size_t ModelSIRMixing<TSeq>::sample_agents(
-    epiworld::Agent<TSeq> * agent,
+    Agent<TSeq> * agent,
     std::vector< size_t > & sampled_agents
     )
 {
@@ -22918,7 +22971,7 @@ inline size_t ModelSIRMixing<TSeq>::sample_agents(
         size_t group_size = n_infected_per_group[g];
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 index(agent_group_id, g, ngroups)
@@ -22933,7 +22986,7 @@ inline size_t ModelSIRMixing<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -23093,8 +23146,8 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     // Setting up the contact matrix
     this->contact_matrix = contact_matrix;
 
-    epiworld::UpdateFun<TSeq> update_susceptible = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_susceptible = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
@@ -23152,8 +23205,8 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
         };
 
-    epiworld::UpdateFun<TSeq> update_infected = [](
-        epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m
+    UpdateFun<TSeq> update_infected = [](
+        Agent<TSeq> * p, Model<TSeq> * m
         ) -> void {
 
             auto state = p->get_state();
@@ -23214,7 +23267,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     model.add_state("Recovered");
 
     // Global function
-    epiworld::GlobalFun<TSeq> update = [](epiworld::Model<TSeq> * m) -> void
+    GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
     {
 
         GET_MODEL(m, m_down);
@@ -23229,7 +23282,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSIRMixing<TSeq>::INFECTED,
         ModelSIRMixing<TSeq>::RECOVERED,
@@ -23316,12 +23369,13 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 //////////////////////////////////////////////////////////////////////////////*/
 
 
+
+#ifndef MEASLESSCHOOL_HPP
+#define MEASLESSCHOOL_HPP
+
 // (already included include/epiworld/models/../tools/vaccine.hpp)
+// (already included include/epiworld/models/../model-bones.hpp)
 
-#ifndef MEASLESQUARANTINE_HPP
-#define MEASLESQUARANTINE_HPP
-
-#include<memory>
 
 #if defined(__clang__)
     // Clang
@@ -23346,7 +23400,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
     inline void ModelMeaslesSchool<TSeq>:: name \
-    (epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m)
+    (Agent<TSeq> * p, Model<TSeq> * m)
 
 #define SAMPLE_FROM_PROBS(n, ans) \
     size_t ans; \
@@ -23379,7 +23433,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool: public epiworld::Model<TSeq> {
+class ModelMeaslesSchool: public Model<TSeq> {
 
 private:
 
@@ -23715,7 +23769,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
         if (which == static_cast<int>(n_infectious))
             --which;
 
-        epiworld::Agent<> & neighbor = *model->infectious[which];
+        Agent<> & neighbor = *model->infectious[which];
 
         // Can't sample itself
         if (neighbor.get_id() == p->get_id())
@@ -24210,7 +24264,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 #ifndef EPIWORLD_MODELS_SEIRMIXINGQUARANTINE_HPP
 #define EPIWORLD_MODELS_SEIRMIXINGQUARANTINE_HPP
 
-using namespace epiworld;
+// (already included include/epiworld/models/../model-bones.hpp)
 
 #define MM(i, j, n) \
     j * n + i
@@ -24274,7 +24328,7 @@ using namespace epiworld;
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRMixingQuarantine : public epiworld::Model<TSeq>
+class ModelSEIRMixingQuarantine : public Model<TSeq>
 {
 private:
 
@@ -24616,7 +24670,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected_list()
 
 template<typename TSeq>
 inline size_t ModelSEIRMixingQuarantine<TSeq>::sample_agents(
-    epiworld::Agent<TSeq> * agent,
+    Agent<TSeq> * agent,
     std::vector< size_t > & sampled_agents
     )
 {
@@ -24634,7 +24688,7 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::sample_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 MM(agent_group_id, g, ngroups)
@@ -24649,7 +24703,7 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -25349,7 +25403,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname, prevalence, true);
     virus.set_state(
         ModelSEIRMixingQuarantine<TSeq>::EXPOSED,
         ModelSEIRMixingQuarantine<TSeq>::RECOVERED,
@@ -25460,12 +25514,12 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-// (already included include/epiworld/models/../tools/vaccine.hpp)
-
 #ifndef EPIWORLD_MODELS_MEASLESMIXING_HPP
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
 
-using namespace epiworld;
+#include <memory>
+// (already included include/epiworld/models/../tools/vaccine.hpp)
+// (already included include/epiworld/models/../model-bones.hpp)
 
 #define MM(i, j, n) \
     j * n + i
@@ -25538,7 +25592,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing : public epiworld::Model<TSeq>
+class ModelMeaslesMixing : public Model<TSeq>
 {
 private:
 
@@ -25896,7 +25950,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_infectious_list()
 
 template<typename TSeq>
 inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
-    epiworld::Agent<TSeq> * agent,
+    Agent<TSeq> * agent,
     std::vector< size_t > & sampled_agents
     )
 {
@@ -25914,7 +25968,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 MM(agent_group_id, g, ngroups)
@@ -25929,7 +25983,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -26673,7 +26727,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles", prevalence, true);
     virus.set_state(
         ModelMeaslesMixing<TSeq>::EXPOSED,
         ModelMeaslesMixing<TSeq>::RECOVERED,
@@ -26802,6 +26856,10 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 //////////////////////////////////////////////////////////////////////////////*/
 
 
+
+#ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
+#define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
+
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -26814,6 +26872,9 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 #ifndef EPIWORLD_TOOLS_VACCINE_HPP
 #define EPIWORLD_TOOLS_VACCINE_HPP
 
+#include <memory>
+#include <vector>
+// (already included include/epiworld/models/../tools/../config.hpp)
 // (already included include/epiworld/models/../tools/../tool-bones.hpp)
 
 /**
@@ -26940,9 +27001,7 @@ inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-
-#ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
-#define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
+// (already included include/epiworld/models/../model-bones.hpp)
 
 #define COL_MAJOR_POS(i, j, n) \
     (j * n + i)
@@ -27006,7 +27065,7 @@ inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine : public epiworld::Model<TSeq> 
+class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
 {
 private:
     // Vector of vectors of infected agents (prodromal agents are infectious)
@@ -27433,7 +27492,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 COL_MAJOR_POS(agent_group_id, g, ngroups)
@@ -27448,7 +27507,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -28184,7 +28243,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles", prevalence, true);
     virus.set_state(
         ModelMeaslesMixingRiskQuarantine<TSeq>::EXPOSED,
         ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED,

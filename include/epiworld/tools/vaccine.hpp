@@ -1,6 +1,9 @@
 #ifndef EPIWORLD_TOOLS_VACCINE_HPP
 #define EPIWORLD_TOOLS_VACCINE_HPP
 
+#include <memory>
+#include <vector>
+#include "../config.hpp"
 #include "../tool-bones.hpp"
 
 /**

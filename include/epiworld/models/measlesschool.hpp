@@ -1,9 +1,10 @@
+
+#ifndef MEASLESSCHOOL_HPP
+#define MEASLESSCHOOL_HPP
+
 #include "../tools/vaccine.hpp"
+#include "../model-bones.hpp"
 
-#ifndef MEASLESQUARANTINE_HPP
-#define MEASLESQUARANTINE_HPP
-
-#include<memory>
 
 #if defined(__clang__)
     // Clang
@@ -28,7 +29,7 @@
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
     inline void ModelMeaslesSchool<TSeq>:: name \
-    (epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m)
+    (Agent<TSeq> * p, Model<TSeq> * m)
 
 #define SAMPLE_FROM_PROBS(n, ans) \
     size_t ans; \
@@ -61,7 +62,7 @@
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool: public epiworld::Model<TSeq> {
+class ModelMeaslesSchool: public Model<TSeq> {
 
 private:
 
@@ -397,7 +398,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
         if (which == static_cast<int>(n_infectious))
             --which;
 
-        epiworld::Agent<> & neighbor = *model->infectious[which];
+        Agent<> & neighbor = *model->infectious[which];
 
         // Can't sample itself
         if (neighbor.get_id() == p->get_id())
