@@ -46,6 +46,8 @@ public:
     bool operator==(const GlobalEvent<TSeq> & other) const;
     bool operator!=(const GlobalEvent<TSeq> & other) const;
 
+    virtual std::unique_ptr<GlobalEvent<TSeq>> clone_ptr() const;
+
 };
 
 

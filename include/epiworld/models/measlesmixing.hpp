@@ -1,4 +1,4 @@
-#include "tools.hpp"
+#include "../tools/vaccine.hpp"
 
 #ifndef EPIWORLD_MODELS_MEASLESMIXING_HPP
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
@@ -1225,14 +1225,16 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     model.add_virus(virus);
 
     // Designing the vaccine
-    ToolMMR<TSeq> vaccine{};
-    vaccine.set_efficacy(model("Vax efficacy"));
+    ToolVaccine<TSeq> vaccine(
+        std::string("MMR ") +
+        std::to_string(model("Vax efficacy"))
+    );
+
+    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
 
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );
-
-    model.add_tool(vaccine);
 
     model.queuing_off(); // No queuing need
 

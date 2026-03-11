@@ -7471,6 +7471,8 @@ public:
     bool operator==(const GlobalEvent<TSeq> & other) const;
     bool operator!=(const GlobalEvent<TSeq> & other) const;
 
+    virtual std::unique_ptr<GlobalEvent<TSeq>> clone_ptr() const;
+
 };
 
 
@@ -7569,6 +7571,12 @@ template<typename TSeq>
 inline bool GlobalEvent<TSeq>::operator!=(const GlobalEvent<TSeq> & other) const
 {
     return !(*this == other);
+}
+
+template<typename TSeq>
+inline std::unique_ptr<GlobalEvent<TSeq>> GlobalEvent<TSeq>::clone_ptr() const
+{
+    return std::make_unique<GlobalEvent<TSeq>>(*this);
 }
 
 #endif
@@ -13457,6 +13465,8 @@ public:
         bool as_proportion
     );
 
+    virtual ~Tool() = default;
+
     void set_sequence(TSeq d);
     void set_sequence(std::shared_ptr<TSeq> d);
     EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
@@ -13475,20 +13485,20 @@ public:
     virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
     virtual epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
     
-    void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
-    void set_transmission_reduction_fun(ToolFun<TSeq> fun);
-    void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
-    void set_death_reduction_fun(ToolFun<TSeq> fun);
+    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
+    virtual void set_transmission_reduction_fun(ToolFun<TSeq> fun);
+    virtual void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
+    virtual void set_death_reduction_fun(ToolFun<TSeq> fun);
 
-    void set_susceptibility_reduction(epiworld_double * prob);
-    void set_transmission_reduction(epiworld_double * prob);
-    void set_recovery_enhancer(epiworld_double * prob);
-    void set_death_reduction(epiworld_double * prob);
+    virtual void set_susceptibility_reduction(epiworld_double * prob);
+    virtual void set_transmission_reduction(epiworld_double * prob);
+    virtual void set_recovery_enhancer(epiworld_double * prob);
+    virtual void set_death_reduction(epiworld_double * prob);
 
-    void set_susceptibility_reduction(epiworld_double prob);
-    void set_transmission_reduction(epiworld_double prob);
-    void set_recovery_enhancer(epiworld_double prob);
-    void set_death_reduction(epiworld_double prob);
+    virtual void set_susceptibility_reduction(epiworld_double prob);
+    virtual void set_transmission_reduction(epiworld_double prob);
+    virtual void set_recovery_enhancer(epiworld_double prob);
+    virtual void set_death_reduction(epiworld_double prob);
     ///@}
 
     void set_name(std::string name);
@@ -23306,7 +23316,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-// (already included include/epiworld/models/tools.hpp)
+// (already included include/epiworld/models/../tools/vaccine.hpp)
 
 #ifndef MEASLESQUARANTINE_HPP
 #define MEASLESQUARANTINE_HPP
@@ -24103,8 +24113,13 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     model.add_virus(measles);
 
-    ToolMMR<TSeq> vaccine{};
-    vaccine.set_efficacy(model("Vax efficacy"));
+    // Designing the vaccine
+    ToolVaccine<TSeq> vaccine(
+        std::string("MMR ") +
+        std::to_string(model("Vax efficacy"))
+    );
+    
+    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
 
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
@@ -25445,7 +25460,7 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-// (already included include/epiworld/models/tools.hpp)
+// (already included include/epiworld/models/../tools/vaccine.hpp)
 
 #ifndef EPIWORLD_MODELS_MEASLESMIXING_HPP
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
@@ -26672,14 +26687,16 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     model.add_virus(virus);
 
     // Designing the vaccine
-    ToolMMR<TSeq> vaccine{};
-    vaccine.set_efficacy(model("Vax efficacy"));
+    ToolVaccine<TSeq> vaccine(
+        std::string("MMR ") +
+        std::to_string(model("Vax efficacy"))
+    );
+
+    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
 
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );
-
-    model.add_tool(vaccine);
 
     model.queuing_off(); // No queuing need
 
@@ -26788,61 +26805,70 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/models/tools.hpp-
+ Start of -include/epiworld/models/../tools/vaccine.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_MODELS_TOOLS_H
-#define EPIWORLD_MODELS_TOOLS_H
+#ifndef EPIWORLD_TOOLS_VACCINE_HPP
+#define EPIWORLD_TOOLS_VACCINE_HPP
 
-// (already included include/epiworld/models/../tool-bones.hpp)
+// (already included include/epiworld/models/../tools/../tool-bones.hpp)
 
 /**
- * @brief Template for a Measles-Mumps-Rubella (MMR) tool
+ * @brief Template for a common vaccine
+ * 
+ * The main difference with a regular tool is that the reduction
+ * in susceptibility is at the agent level and fixed for the
+ * entire simulation. In other words, if the efficacy is 65%,
+ * then 65% of the agents that receive the vaccine will be fully
+ * protected (100% reduction in susceptibility) and 35% will not be
+ * protected at all (0% reduction in susceptibility).
  * 
  * @ingroup tools
  * 
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ToolMMR: public Tool<TSeq> {
+class ToolVaccine: public Tool<TSeq> {
 private:
 
-    
-static thread_local std::shared_ptr<std::vector<int>> immune;
-static thread_local std::shared_ptr<std::vector<int>> model_id;
+    static thread_local std::shared_ptr<std::vector<int>> immune;
+    static thread_local std::shared_ptr<std::vector<int>> model_id;
+    epiworld_double efficacy = 0.0;
 
-    // Reset immunity for all agents at the beginning of the model.
-    void reset_immunity(Model<TSeq> * model);
-    epiworld_double mmr_measles_immunity = 0.97;
-    // Tool<TSeq>::tool_name = "MMR Vaccine";
 
 public:
+    ToolVaccine(std::string name = "Vaccine") : Tool<TSeq>(name) {};
 
-    void add_to_model(Model<TSeq> * m);
-    ToolMMR(std::string name = "MMR Vaccine") : Tool<TSeq>(name) {};
-
-    virtual epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model) override;
-
-    void set_efficacy(epiworld_double efficacy);
+    virtual epiworld_double get_susceptibility_reduction(
+        VirusPtr<TSeq> v,
+        Model<TSeq> * model
+    ) override;
+    
+    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun) override;
+    virtual void set_susceptibility_reduction(epiworld_double * prob) override;
+    virtual void set_susceptibility_reduction(epiworld_double prob) override;
 
     std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
 
 };
 
 template<typename TSeq>
-thread_local std::shared_ptr<std::vector<int>> ToolMMR<TSeq>::immune = nullptr;
+thread_local std::shared_ptr<std::vector<int>> ToolVaccine<TSeq>::immune = nullptr;
 
 template<typename TSeq>
-thread_local std::shared_ptr<std::vector<int>> ToolMMR<TSeq>::model_id = nullptr;
+thread_local std::shared_ptr<std::vector<int>> ToolVaccine<TSeq>::model_id = nullptr;
 
 template<typename TSeq>
-inline epiworld_double ToolMMR<TSeq>::get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model)
+inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
+    VirusPtr<TSeq> v,
+    Model<TSeq> * model
+)
 {
 
     // Have we initialized the tool?
-    if (model_id == nullptr)
+    if ((model_id == nullptr) || (model_id->size() != model->size()))
     {
         model_id = std::make_shared<std::vector<int>>(model->size(), -99);
         immune = std::make_shared<std::vector<int>>(model->size(), 0);
@@ -26856,7 +26882,7 @@ inline epiworld_double ToolMMR<TSeq>::get_susceptibility_reduction(VirusPtr<TSeq
     if (model_id_i != static_cast<int>(model->get_sim_id()))
     {
         model_id_i = static_cast<int>(model->get_sim_id());
-        immune_i = (model->runif() < mmr_measles_immunity) ? 1 : 0;
+        immune_i = (model->runif() < efficacy) ? 1 : 0;
     }
 
     return  (immune_i == 1) ? 1.0 : 0.0;
@@ -26864,15 +26890,43 @@ inline epiworld_double ToolMMR<TSeq>::get_susceptibility_reduction(VirusPtr<TSeq
 }
 
 template<typename TSeq>
-inline void ToolMMR<TSeq>::set_efficacy(epiworld_double efficacy)
+inline void ToolVaccine<TSeq>::set_susceptibility_reduction_fun(
+    ToolFun<TSeq>
+)
 {
-    this->mmr_measles_immunity = efficacy;
+    throw std::logic_error(
+        std::string(
+            "The susceptibility reduction function cannot be set for the "
+         ) +
+        std::string("ToolVaccine (Tool).")
+    );
 }
 
 template<typename TSeq>
-inline std::unique_ptr<Tool<TSeq>> ToolMMR<TSeq>::clone_ptr() const
+inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
 {
-    return std::make_unique<ToolMMR<TSeq>>(*this);
+    throw std::logic_error(
+        std::string(
+            "The susceptibility reduction probability cannot be set for the "
+        ) +
+        std::string(
+            "ToolVaccine (Tool) using a pointer. Use the version that takes a "
+        ) +
+        std::string("double instead.")
+    );
+}
+
+template<typename TSeq>
+inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob)
+{
+    efficacy = prob;
+}
+
+
+template<typename TSeq>
+inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
+{
+    return std::make_unique<ToolVaccine<TSeq>>(*this);
 }
 
 
@@ -26880,7 +26934,7 @@ inline std::unique_ptr<Tool<TSeq>> ToolMMR<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/models/tools.hpp-
+ End of -include/epiworld/models/../tools/vaccine.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -28144,8 +28198,12 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     model.add_virus(virus);
 
     // Designing the vaccine
-    ToolMMR<TSeq> vaccine{};
-    vaccine.set_efficacy(model("Vax efficacy"));
+    ToolVaccine<TSeq> vaccine(
+        std::string("MMR ") +
+        std::to_string(model("Vax efficacy"))
+    );
+    
+    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
 
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)

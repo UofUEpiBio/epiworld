@@ -1,4 +1,4 @@
-#include "tools.hpp"
+#include "../tools/vaccine.hpp"
 
 #ifndef MEASLESQUARANTINE_HPP
 #define MEASLESQUARANTINE_HPP
@@ -795,8 +795,13 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     model.add_virus(measles);
 
-    ToolMMR<TSeq> vaccine{};
-    vaccine.set_efficacy(model("Vax efficacy"));
+    // Designing the vaccine
+    ToolVaccine<TSeq> vaccine(
+        std::string("MMR ") +
+        std::to_string(model("Vax efficacy"))
+    );
+    
+    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
 
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)

@@ -73,6 +73,8 @@ public:
         bool as_proportion
     );
 
+    virtual ~Tool() = default;
+
     void set_sequence(TSeq d);
     void set_sequence(std::shared_ptr<TSeq> d);
     EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
@@ -91,20 +93,20 @@ public:
     virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
     virtual epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
     
-    void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
-    void set_transmission_reduction_fun(ToolFun<TSeq> fun);
-    void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
-    void set_death_reduction_fun(ToolFun<TSeq> fun);
+    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
+    virtual void set_transmission_reduction_fun(ToolFun<TSeq> fun);
+    virtual void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
+    virtual void set_death_reduction_fun(ToolFun<TSeq> fun);
 
-    void set_susceptibility_reduction(epiworld_double * prob);
-    void set_transmission_reduction(epiworld_double * prob);
-    void set_recovery_enhancer(epiworld_double * prob);
-    void set_death_reduction(epiworld_double * prob);
+    virtual void set_susceptibility_reduction(epiworld_double * prob);
+    virtual void set_transmission_reduction(epiworld_double * prob);
+    virtual void set_recovery_enhancer(epiworld_double * prob);
+    virtual void set_death_reduction(epiworld_double * prob);
 
-    void set_susceptibility_reduction(epiworld_double prob);
-    void set_transmission_reduction(epiworld_double prob);
-    void set_recovery_enhancer(epiworld_double prob);
-    void set_death_reduction(epiworld_double prob);
+    virtual void set_susceptibility_reduction(epiworld_double prob);
+    virtual void set_transmission_reduction(epiworld_double prob);
+    virtual void set_recovery_enhancer(epiworld_double prob);
+    virtual void set_death_reduction(epiworld_double prob);
     ///@}
 
     void set_name(std::string name);
