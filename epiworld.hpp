@@ -8465,6 +8465,7 @@ public:
 // (already included include/epiworld/agent-bones.hpp)
 // (already included include/epiworld/tool-bones.hpp)
 // (already included include/epiworld/rng-utils.hpp)
+// (already included include/epiworld/modeldiagram-bones.hpp)
 
 /**
  * @brief Function factory for saving model runs
@@ -11194,9 +11195,9 @@ inline void Model<TSeq>::rm_globalevent(
 )
 {
 
-    for (auto & it = globalevents.begin(); it != globalevents.end(); ++it)
+    for (auto it = globalevents.begin(); it != globalevents.end(); ++it)
     {
-        if (it->get_name() == name)
+        if ((*it)->get_name() == name)
         {
             globalevents.erase(it);
             return;
@@ -17744,6 +17745,147 @@ inline void ContactTracing::print(size_t agent)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -./include/epiworld/tools/vaccine.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_TOOLS_VACCINE_HPP
+#define EPIWORLD_TOOLS_VACCINE_HPP
+
+#include <memory>
+#include <vector>
+// (already included include/epiworld/tools/../config.hpp)
+// (already included include/epiworld/tools/../tool-bones.hpp)
+
+/**
+ * @brief Template for a common vaccine
+ * 
+ * The main difference with a regular tool is that the reduction
+ * in susceptibility is at the agent level and fixed for the
+ * entire simulation. In other words, if the efficacy is 65%,
+ * then 65% of the agents that receive the vaccine will be fully
+ * protected (100% reduction in susceptibility) and 35% will not be
+ * protected at all (0% reduction in susceptibility).
+ * 
+ * @ingroup tools
+ * 
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class ToolVaccine: public Tool<TSeq> {
+private:
+
+    static thread_local std::shared_ptr<std::vector<int>> immune;
+    static thread_local std::shared_ptr<std::vector<int>> model_id;
+    epiworld_double efficacy = 0.0;
+
+
+public:
+    ToolVaccine(std::string name = "Vaccine") : Tool<TSeq>(name) {};
+
+    virtual epiworld_double get_susceptibility_reduction(
+        VirusPtr<TSeq> v,
+        Model<TSeq> * model
+    ) override;
+    
+    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun) override;
+    virtual void set_susceptibility_reduction(epiworld_double * prob) override;
+    virtual void set_susceptibility_reduction(epiworld_double prob) override;
+
+    std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
+
+};
+
+template<typename TSeq>
+thread_local std::shared_ptr<std::vector<int>> ToolVaccine<TSeq>::immune = nullptr;
+
+template<typename TSeq>
+thread_local std::shared_ptr<std::vector<int>> ToolVaccine<TSeq>::model_id = nullptr;
+
+template<typename TSeq>
+inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
+    VirusPtr<TSeq>,
+    Model<TSeq> * model
+)
+{
+
+    // Have we initialized the tool?
+    if ((model_id == nullptr) || (model_id->size() != model->size()))
+    {
+        model_id = std::make_shared<std::vector<int>>(model->size(), -99);
+        immune = std::make_shared<std::vector<int>>(model->size(), 0);
+    }
+
+    // Agent-level information
+    auto & model_id_i = (*model_id)[this->get_agent()->get_id()];
+    auto & immune_i = (*immune)[this->get_agent()->get_id()];
+
+    // Updating a single agent (if needed)
+    if (model_id_i != static_cast<int>(model->get_sim_id()))
+    {
+        model_id_i = static_cast<int>(model->get_sim_id());
+        immune_i = (model->runif() < efficacy) ? 1 : 0;
+    }
+
+    return  (immune_i == 1) ? 1.0 : 0.0;
+
+}
+
+template<typename TSeq>
+inline void ToolVaccine<TSeq>::set_susceptibility_reduction_fun(
+    ToolFun<TSeq>
+)
+{
+    throw std::logic_error(
+        std::string(
+            "The susceptibility reduction function cannot be set for the "
+         ) +
+        std::string("ToolVaccine (Tool).")
+    );
+}
+
+template<typename TSeq>
+inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double *)
+{
+    throw std::logic_error(
+        std::string(
+            "The susceptibility reduction probability cannot be set for the "
+        ) +
+        std::string(
+            "ToolVaccine (Tool) using a pointer. Use the version that takes a "
+        ) +
+        std::string("double instead.")
+    );
+}
+
+template<typename TSeq>
+inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob)
+{
+    efficacy = prob;
+}
+
+
+template<typename TSeq>
+inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
+{
+    return std::make_unique<ToolVaccine<TSeq>>(*this);
+}
+
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/tools/vaccine.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -./include/epiworld/models/models.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -17867,10 +18009,6 @@ namespace epimodels {
 #ifndef EPIWORLD_MODELS_INIT_FUNCTIONS_HPP
 #define EPIWORLD_MODELS_INIT_FUNCTIONS_HPP
 
-#include <functional>
-#include <vector>
-#include <string>
-#include <stdexcept>
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
@@ -18230,12 +18368,7 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seird(
 #ifndef EPIWORLD_GLOBALEVENTS_HPP
 #define EPIWORLD_GLOBALEVENTS_HPP
 
-#include <functional>
-#include <string>
-#include <vector>
-
 // (already included include/epiworld/models/../model-bones.hpp)
-// (already included include/epiworld/models/../agent-bones.hpp)
 
 // This function creates a global action that distributes a tool
 // to agents with probability p.
@@ -25517,7 +25650,6 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 #ifndef EPIWORLD_MODELS_MEASLESMIXING_HPP
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
 
-#include <memory>
 // (already included include/epiworld/models/../tools/vaccine.hpp)
 // (already included include/epiworld/models/../model-bones.hpp)
 
@@ -26860,147 +26992,7 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/models/../tools/vaccine.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_TOOLS_VACCINE_HPP
-#define EPIWORLD_TOOLS_VACCINE_HPP
-
-#include <memory>
-#include <vector>
-// (already included include/epiworld/models/../tools/../config.hpp)
-// (already included include/epiworld/models/../tools/../tool-bones.hpp)
-
-/**
- * @brief Template for a common vaccine
- * 
- * The main difference with a regular tool is that the reduction
- * in susceptibility is at the agent level and fixed for the
- * entire simulation. In other words, if the efficacy is 65%,
- * then 65% of the agents that receive the vaccine will be fully
- * protected (100% reduction in susceptibility) and 35% will not be
- * protected at all (0% reduction in susceptibility).
- * 
- * @ingroup tools
- * 
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ToolVaccine: public Tool<TSeq> {
-private:
-
-    static thread_local std::shared_ptr<std::vector<int>> immune;
-    static thread_local std::shared_ptr<std::vector<int>> model_id;
-    epiworld_double efficacy = 0.0;
-
-
-public:
-    ToolVaccine(std::string name = "Vaccine") : Tool<TSeq>(name) {};
-
-    virtual epiworld_double get_susceptibility_reduction(
-        VirusPtr<TSeq> v,
-        Model<TSeq> * model
-    ) override;
-    
-    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun) override;
-    virtual void set_susceptibility_reduction(epiworld_double * prob) override;
-    virtual void set_susceptibility_reduction(epiworld_double prob) override;
-
-    std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
-
-};
-
-template<typename TSeq>
-thread_local std::shared_ptr<std::vector<int>> ToolVaccine<TSeq>::immune = nullptr;
-
-template<typename TSeq>
-thread_local std::shared_ptr<std::vector<int>> ToolVaccine<TSeq>::model_id = nullptr;
-
-template<typename TSeq>
-inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq>,
-    Model<TSeq> * model
-)
-{
-
-    // Have we initialized the tool?
-    if ((model_id == nullptr) || (model_id->size() != model->size()))
-    {
-        model_id = std::make_shared<std::vector<int>>(model->size(), -99);
-        immune = std::make_shared<std::vector<int>>(model->size(), 0);
-    }
-
-    // Agent-level information
-    auto & model_id_i = (*model_id)[this->get_agent()->get_id()];
-    auto & immune_i = (*immune)[this->get_agent()->get_id()];
-
-    // Updating a single agent (if needed)
-    if (model_id_i != static_cast<int>(model->get_sim_id()))
-    {
-        model_id_i = static_cast<int>(model->get_sim_id());
-        immune_i = (model->runif() < efficacy) ? 1 : 0;
-    }
-
-    return  (immune_i == 1) ? 1.0 : 0.0;
-
-}
-
-template<typename TSeq>
-inline void ToolVaccine<TSeq>::set_susceptibility_reduction_fun(
-    ToolFun<TSeq>
-)
-{
-    throw std::logic_error(
-        std::string(
-            "The susceptibility reduction function cannot be set for the "
-         ) +
-        std::string("ToolVaccine (Tool).")
-    );
-}
-
-template<typename TSeq>
-inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double *)
-{
-    throw std::logic_error(
-        std::string(
-            "The susceptibility reduction probability cannot be set for the "
-        ) +
-        std::string(
-            "ToolVaccine (Tool) using a pointer. Use the version that takes a "
-        ) +
-        std::string("double instead.")
-    );
-}
-
-template<typename TSeq>
-inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob)
-{
-    efficacy = prob;
-}
-
-
-template<typename TSeq>
-inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
-{
-    return std::make_unique<ToolVaccine<TSeq>>(*this);
-}
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/models/../tools/vaccine.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
+// (already included include/epiworld/models/../tools/vaccine.hpp)
 // (already included include/epiworld/models/../model-bones.hpp)
 
 #define COL_MAJOR_POS(i, j, n) \

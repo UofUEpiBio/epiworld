@@ -16,6 +16,7 @@
 #include "agent-bones.hpp"
 #include "tool-bones.hpp"
 #include "rng-utils.hpp"
+#include "modeldiagram-bones.hpp"
 
 /**
  * @brief Function factory for saving model runs
@@ -2422,9 +2423,9 @@ inline void Model<TSeq>::rm_globalevent(
 )
 {
 
-    for (auto & it = globalevents.begin(); it != globalevents.end(); ++it)
+    for (auto it = globalevents.begin(); it != globalevents.end(); ++it)
     {
-        if (it->get_name() == name)
+        if ((*it)->get_name() == name)
         {
             globalevents.erase(it);
             return;
