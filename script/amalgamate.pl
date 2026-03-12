@@ -1,11 +1,13 @@
 use strict;
 use warnings;
 use File::Spec;
+use Cwd qw(abs_path);
 
 my $line78 = '/' x 78;
 
 our $N_CALLS   = 0;
-our $MAX_CALLS = 10;
+our $MAX_CALLS = 200;
+our %SEEN_FILES;
 
 sub unfolder {
     my ($txt_ref, $rel) = @_;
@@ -40,10 +42,28 @@ sub unfolder {
 
     my @new_src = @$txt_ref;
 
+    # Forward pass: decide which includes to expand (first occurrence wins)
+    my %expand;
+    for my $h (0 .. $#fns) {
+        my $fn  = $rel . $fns[$h];
+        $fn =~ s/^\s+|\s+$//g;
+        my $canonical = abs_path($fn) // File::Spec->canonpath($fn);
+        if (!$SEEN_FILES{$canonical}) {
+            $SEEN_FILES{$canonical} = 1;
+            $expand{$h} = 1;
+        }
+    }
+
+    # Reverse pass: splice content (reverse to keep indices stable)
     for my $h (reverse 0 .. $#fns) {
         my $loc = $heads[$h];
         my $fn  = $rel . $fns[$h];
         $fn =~ s/^\s+|\s+$//g;
+
+        unless ($expand{$h}) {
+            splice(@new_src, $loc, 1, "// (already included $fn)");
+            next;
+        }
 
         open my $fh, '<', $fn or do {
             warn "Could not read $fn: $!\n";

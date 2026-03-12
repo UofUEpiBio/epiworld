@@ -154,7 +154,11 @@
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
-  "C_Cpp.intelliSenseEngine": "disabled",
+  "C_Cpp.intelliSenseEngine": "default",
+  "C_Cpp.files.exclude": {
+    "**/epiworld.hpp": true,
+    "**/build/**": true
+  },
   "[cpp]": {
     "editor.wordWrap": "off"
   }

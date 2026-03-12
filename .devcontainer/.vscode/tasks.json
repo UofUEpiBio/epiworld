@@ -19,7 +19,13 @@
         {
             "label": "build-single-file",
             "type": "shell",
-            "command": "g++ -std=c++20 -Wall -pedantic -DNO_CATCH_MAIN -g -O0 ${file} -o ${fileDirname}/${fileBasenameNoExtension}",
+            "command": "g++ -std=c++20 -Wall -pedantic -DNO_CATCH_MAIN -fopenmp -g -O0 ${file} -o ${fileDirname}/${fileBasenameNoExtension}",
+            "group": "build"
+        },
+        {
+            "label": "build-and-run-single-file-fast",
+            "type": "shell",
+            "command": "g++ -std=c++20 -Wall -pedantic -DNO_CATCH_MAIN -fopenmp -g -O3 ${file} -o ${fileDirname}/${fileBasenameNoExtension}",
             "group": "build"
         }
     ]

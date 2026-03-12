@@ -40,6 +40,4 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     std::cout << std::endl;
 
 
-
-
 }

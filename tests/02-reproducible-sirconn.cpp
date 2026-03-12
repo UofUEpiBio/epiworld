@@ -72,26 +72,11 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
                 printf_epiworld("Files %s and %s are different\n", fname_0.c_str(), fname_1.c_str());
             }
 
-            #ifdef CATCH_CONFIG_MAIN
             REQUIRE_THAT(file0, Catch::Equals(file1));
-            #endif
 
         }
 
     }
-
-    // tmat_0 = model_0.get_db().transition_probability(false);
-    // tmat_1 = model_1.get_db().transition_probability(false);
-
-    // #ifdef CATCH_CONFIG_MAIN
-    // REQUIRE_THAT(tmat_0, Catch::Equals(tmat_1));
-    // #else
-    // printf_epiworld("Reproducibility test\n");
-    // model_0.print(true);
-    // model_1.print(true);
-    // #endif 
-
-
 
 
 }

@@ -1,5 +1,10 @@
-#ifndef MEASLESQUARANTINE_HPP
-#define MEASLESQUARANTINE_HPP
+
+#ifndef MEASLESSCHOOL_HPP
+#define MEASLESSCHOOL_HPP
+
+#include "../tools/vaccine.hpp"
+#include "../model-bones.hpp"
+
 
 #if defined(__clang__)
     // Clang
@@ -24,7 +29,7 @@
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
     inline void ModelMeaslesSchool<TSeq>:: name \
-    (epiworld::Agent<TSeq> * p, epiworld::Model<TSeq> * m)
+    (Agent<TSeq> * p, Model<TSeq> * m)
 
 #define SAMPLE_FROM_PROBS(n, ans) \
     size_t ans; \
@@ -57,7 +62,7 @@
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool: public epiworld::Model<TSeq> {
+class ModelMeaslesSchool: public Model<TSeq> {
 
 private:
 
@@ -393,7 +398,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
         if (which == static_cast<int>(n_infectious))
             --which;
 
-        epiworld::Agent<> & neighbor = *model->infectious[which];
+        Agent<> & neighbor = *model->infectious[which];
 
         // Can't sample itself
         if (neighbor.get_id() == p->get_id())
@@ -508,8 +513,8 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     // Sampling from the probabilities
     SAMPLE_FROM_PROBS(2, which);
 
-    // Recovers
-    if (which == 2)
+    // Recovers (which == 0 fires with probability 1/rash_period)
+    if (which == 0)
     {
         p->rm_virus(*m, 
             detected ?
@@ -528,11 +533,11 @@ LOCAL_UPDATE_FUN(m_update_rash) {
                 ModelMeaslesSchool::HOSPITALIZED
             );
     }
-    else if (which != 0)
+    else if (which > 2)
     {
         throw std::logic_error("The roulette returned an unexpected value.");
     }
-    else if ((which == 0u) && detected)
+    else if (detected)
     {
         // If the agent is not hospitalized, then it is moved to
         // isolation.
@@ -561,8 +566,8 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     // Sampling from the probabilities
     SAMPLE_FROM_PROBS(2, which);
 
-    // Recovers
-    if (which == 2u)
+    // Recovers (which == 0 fires with probability 1/rash_period)
+    if (which == 0u)
     {
         if (unisolate)
         {
@@ -589,7 +594,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     }
     // If neither hospitalized nor recovered, then the agent is
     // still under isolation, unless the quarantine period is over.
-    else if ((which == 0u) && unisolate)
+    else if (unisolate)
     {
         p->change_state(*m, ModelMeaslesSchool::RASH);
     }
@@ -792,9 +797,13 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     model.add_virus(measles);
 
     // Designing the vaccine
-    Tool<> vaccine("Vaccine");
-    vaccine.set_susceptibility_reduction(&model("Vax efficacy"));
-    vaccine.set_recovery_enhancer(&model("(IGNORED) Vax improved recovery"));
+    ToolVaccine<TSeq> vaccine(
+        std::string("MMR ") +
+        std::to_string(model("Vax efficacy"))
+    );
+    
+    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
+
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );

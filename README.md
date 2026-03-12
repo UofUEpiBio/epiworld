@@ -194,7 +194,7 @@ Distribution of the population at time 100:
 Transition Probabilities:
  - Susceptible  1.00  0.00     -
  - Infected        -  0.70  0.30
- - Recovered       -     -  1.00
+ - Recovered       -     -  1.0
 ```
 
 Which took about 0.024 seconds (~ 401 million agents x day / second).

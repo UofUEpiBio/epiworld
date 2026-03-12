@@ -1,5 +1,9 @@
+
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
+
+#include "../tools/vaccine.hpp"
+#include "../model-bones.hpp"
 
 #define COL_MAJOR_POS(i, j, n) \
     (j * n + i)
@@ -63,7 +67,7 @@
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine : public epiworld::Model<TSeq> 
+class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
 {
 private:
     // Vector of vectors of infected agents (prodromal agents are infectious)
@@ -490,7 +494,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = epiworld::Model<TSeq>::rbinom(
+        int nsamples = Model<TSeq>::rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 COL_MAJOR_POS(agent_group_id, g, ngroups)
@@ -505,7 +509,7 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
         {
 
             // Randomly selecting an agent
-            int which = epiworld::Model<TSeq>::runif() * group_size;
+            int which = Model<TSeq>::runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -678,7 +682,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
         
     SAMPLE_FROM_PROBS(2, which);
     
-    if (which == 2) // Recovers
+    if (which == 0) // Recovers (probability 1/rash_period)
     {
         p->rm_virus(*m, detected ? ISOLATED_RECOVERED: RECOVERED);
     }
@@ -687,13 +691,13 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
         m->record_hospitalization(*p);
         p->change_state(*m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
     }
-    else if ((which == 0) && detected)
-    {
-        p->change_state(*m, ISOLATED);
-    }
-    else if (which != 0)
+    else if (which > 2)
     {
         throw std::logic_error("The roulette returned an unexpected value.");
+    }
+    else if (detected)
+    {
+        p->change_state(*m, ISOLATED);
     }
     
     return ;
@@ -723,8 +727,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     // Sampling from the probabilities
     SAMPLE_FROM_PROBS(2, which);
 
-    // Recovers
-    if (which == 2u)
+    // Recovers (which == 0 fires with probability 1/rash_period)
+    if (which == 0u)
     {
         p->rm_virus(*m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
     }
@@ -735,7 +739,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
         p->change_state(*m, DETECTED_HOSPITALIZED);
     }
     // Stays in rash, may or may not be released from isolation
-    else if ((which == 0u) && unisolate)
+    else if (unisolate)
     {
         p->change_state(*m, RASH);
     }
@@ -1241,7 +1245,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     model.queuing_off();
 
     // Preparing the virus -------------------------------------------
-    epiworld::Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles", prevalence, true);
     virus.set_state(
         ModelMeaslesMixingRiskQuarantine<TSeq>::EXPOSED,
         ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED,
@@ -1255,8 +1259,13 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     model.add_virus(virus);
 
     // Designing the vaccine
-    Tool<> vaccine("Vaccine");
-    vaccine.set_susceptibility_reduction(&model("Vax efficacy"));
+    ToolVaccine<TSeq> vaccine(
+        std::string("MMR ") +
+        std::to_string(model("Vax efficacy"))
+    );
+    
+    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
+
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );

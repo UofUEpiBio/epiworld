@@ -15,8 +15,6 @@
 				"ms-vscode.cpptools",
 				"ms-vscode.cpptools-extension-pack",
 				"github.vscode-github-actions",
-
-				"llvm-vs-code-extensions.vscode-clangd",
 				"matepek.vscode-catch2-test-adapter",
 				"bierner.markdown-mermaid",
 				"augustocdias.tasks-shell-input"
