@@ -71,6 +71,9 @@ namespace epiworld {
     #include "globalevent-bones.hpp"
     #include "globalevent-meat.hpp"
 
+    #include "intervention-bones.hpp"
+    #include "intervention-meat.hpp"
+
     #include "model-bones.hpp"
     #include "model-meat.hpp"
 

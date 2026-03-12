@@ -186,6 +186,7 @@ protected:
     void chrono_end();
 
     std::vector<GlobalEventPtr<TSeq>> globalevents;
+    std::vector<InterventionPtr<TSeq>> interventions;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
@@ -673,6 +674,61 @@ public:
     void run_globalevents();
 
     void clear_state_set();
+
+    /**
+     * @name Interventions
+     * @details Interventions are structured actions that can be attached to a
+     * model to implement complex public-health policies (quarantine, isolation,
+     * contact-tracing campaigns, etc.).  Each @ref Intervention provides:
+     * - A **setup()** hook called inside `reset()` for per-run initialisation.
+     * - An **update()** hook called inside `run_globalevents()` for per-day
+     *   logic.
+     * - Per-agent helpers (`applies_to`, `apply`, `should_release`, `release`)
+     *   invoked by the default `update()` loop.
+     */
+    ///@{
+    /**
+     * @brief Register an intervention by storing an independent clone.
+     * @param intervention The intervention to add (a clone is stored).
+     */
+    void add_intervention(Intervention<TSeq>& intervention);
+
+    /**
+     * @brief Register an intervention via a shared_ptr.
+     * @param intervention Shared pointer to the intervention to add.
+     */
+    void add_intervention(std::shared_ptr<Intervention<TSeq>> intervention);
+
+    /**
+     * @brief Retrieve an intervention by name.
+     * @param name Name of the intervention to look up.
+     * @return Reference to the matching intervention.
+     * @throws std::logic_error if no intervention with that name exists.
+     */
+    Intervention<TSeq>& get_intervention(std::string name);
+
+    /**
+     * @brief Retrieve an intervention by index.
+     * @param i Zero-based index into the interventions list.
+     * @return Reference to the intervention at position @p i.
+     * @throws std::range_error if @p i is out of range.
+     */
+    Intervention<TSeq>& get_intervention(size_t i);
+
+    /**
+     * @brief Remove an intervention by name.
+     * @param name Name of the intervention to remove.
+     * @throws std::logic_error if no intervention with that name exists.
+     */
+    void rm_intervention(std::string name);
+
+    /**
+     * @brief Remove an intervention by index.
+     * @param i Zero-based index of the intervention to remove.
+     * @throws std::range_error if @p i is out of range.
+     */
+    void rm_intervention(size_t i);
+    ///@}
 
     /**
      * @name Queuing system
