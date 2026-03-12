@@ -2097,6 +2097,11 @@ inline void Model<TSeq>::reset() {
     // Distributing initial state, if specified
     initial_states_fun(this);
 
+    // Call setup() for each registered intervention so they can resize
+    // tracking arrays, etc. before the first simulated day.
+    for (auto & intervention : interventions)
+        intervention->setup(this);
+
     // Recording the original state (at time 0) and advancing
     // to time 1
     next();
@@ -2450,6 +2455,75 @@ inline void Model<TSeq>::rm_globalevent(
 
 }
 
+// ---------------------------------------------------------------------------
+// Intervention management
+// ---------------------------------------------------------------------------
+
+template<typename TSeq>
+inline void Model<TSeq>::add_intervention(Intervention<TSeq>& intervention)
+{
+    auto ptr = intervention.clone_ptr();
+    interventions.push_back(InterventionPtr<TSeq>(std::move(ptr)));
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::add_intervention(
+    std::shared_ptr<Intervention<TSeq>> intervention)
+{
+    interventions.push_back(intervention);
+}
+
+template<typename TSeq>
+inline Intervention<TSeq>& Model<TSeq>::get_intervention(std::string name)
+{
+    for (auto & iv : interventions)
+        if (iv->get_name() == name)
+            return *iv;
+
+    throw std::logic_error(
+        "The intervention \"" + name + "\" was not found."
+    );
+}
+
+template<typename TSeq>
+inline Intervention<TSeq>& Model<TSeq>::get_intervention(size_t index)
+{
+    if (index >= interventions.size())
+        throw std::range_error(
+            "The index " + std::to_string(index) + " is out of range."
+        );
+
+    return *interventions[index];
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::rm_intervention(std::string name)
+{
+    for (auto it = interventions.begin(); it != interventions.end(); ++it)
+    {
+        if ((*it)->get_name() == name)
+        {
+            interventions.erase(it);
+            return;
+        }
+    }
+
+    throw std::logic_error(
+        "The intervention \"" + name + "\" was not found."
+    );
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::rm_intervention(size_t index)
+{
+    if (index >= interventions.size())
+        throw std::range_error(
+            "The index " + std::to_string(index) + " is out of range."
+        );
+
+    interventions.erase(interventions.begin() + index);
+}
+
 template<typename TSeq>
 inline void Model<TSeq>::run_globalevents()
 {
@@ -2457,6 +2531,16 @@ inline void Model<TSeq>::run_globalevents()
     for (auto & action: globalevents)
     {
         (*action)(this, today());
+        events_run();
+    }
+
+    for (auto & intervention : interventions)
+    {
+        (*intervention)(this, today());
+        // Process any state-change events queued by this intervention before
+        // moving on to the next one.  This mirrors the same call in the
+        // globalevents loop above so that each intervention sees a fully
+        // up-to-date agent state.
         events_run();
     }
 

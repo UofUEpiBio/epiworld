@@ -49,7 +49,8 @@ $(NAME)_SOURCES := \
 	24b-csv-output-format.cpp \
 	24c-virus-hist-multiple-sims.cpp \
 	25a-hospitalizationstracker.cpp \
-	25b-hospitalizationstracker-validation.cpp
+	25b-hospitalizationstracker-validation.cpp \
+	27a-intervention-api.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
