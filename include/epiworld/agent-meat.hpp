@@ -75,8 +75,9 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     }
     
 
+    tools.clear();
     tools.reserve(p.get_n_tools());
-    n_tools = tools.size();
+    n_tools = p.get_n_tools();
     for (size_t i = 0u; i < n_tools; ++i)
     {
         
@@ -127,11 +128,14 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     } else
         virus = nullptr;
     
-    n_tools             = other_agent.n_tools;
+    
+    n_tools = other_agent.n_tools;
+    tools.clear();
+    tools.reserve(n_tools);
     for (size_t i = 0u; i < n_tools; ++i)
     {
-        tools[i] = std::shared_ptr<Tool<TSeq>>(other_agent.tools[i]->clone_ptr());
-        tools[i]->set_agent(this, i);
+        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(other_agent.tools[i]->clone_ptr()));
+        tools.back()->set_agent(this, i);
     }
     
     return *this;
