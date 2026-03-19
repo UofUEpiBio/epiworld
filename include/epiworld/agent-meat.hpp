@@ -80,10 +80,7 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     n_tools = p.get_n_tools();
     for (size_t i = 0u; i < n_tools; ++i)
     {
-        
-        // Will create a copy of the virus, with the exeption of
-        // the virus code
-        tools.emplace_back(std::make_shared<Tool<TSeq>>(*p.tools[i]));
+        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(p.tools[i]->clone_ptr()));
         tools.back()->set_agent(this, i);
 
     }

@@ -443,8 +443,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     population(model.population),
     population_backup(model.population_backup),
     directed(model.directed),
-    viruses(model.viruses),
-    tools(model.tools),
+    viruses(),
+    tools(),
     entities(model.entities),
     rewire_fun(model.rewire_fun),
     rewire_prop(model.rewire_prop),
@@ -457,7 +457,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(model.current_date),
-    globalevents(model.globalevents),
+    globalevents(),
     queue(model.queue),
     use_queuing(model.use_queuing),
     sim_id(model.sim_id),
@@ -476,6 +476,19 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
     agents_data = model.agents_data;
     agents_data_ncols = model.agents_data_ncols;
+
+    // Deep-copy model-level objects so clones can run independently in parallel.
+    viruses.reserve(model.viruses.size());
+    for (const auto & v : model.viruses)
+        viruses.emplace_back(std::shared_ptr<Virus<TSeq>>(v->clone_ptr()));
+
+    tools.reserve(model.tools.size());
+    for (const auto & t : model.tools)
+        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(t->clone_ptr()));
+
+    globalevents.reserve(model.globalevents.size());
+    for (const auto & ge : model.globalevents)
+        globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
 
     // Entity-agent relationships now use size_t IDs, so they copy
     // correctly without any rebinding needed.
@@ -541,6 +554,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 {
+    if (this == &m)
+        return *this;
 
     name = m.name;
 
@@ -553,9 +568,15 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     directed = m.directed;
 
-    viruses                        = m.viruses;
+    viruses.clear();
+    viruses.reserve(m.viruses.size());
+    for (const auto & v : m.viruses)
+        viruses.emplace_back(std::shared_ptr<Virus<TSeq>>(v->clone_ptr()));
 
-    tools                         = m.tools;
+    tools.clear();
+    tools.reserve(m.tools.size());
+    for (const auto & t : m.tools)
+        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(t->clone_ptr()));
 
     entities        = m.entities;
 
@@ -575,7 +596,10 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     current_date = m.current_date;
 
-    globalevents = m.globalevents;
+    globalevents.clear();
+    globalevents.reserve(m.globalevents.size());
+    for (const auto & ge : m.globalevents)
+        globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
 
     queue       = m.queue;
     use_queuing = m.use_queuing;

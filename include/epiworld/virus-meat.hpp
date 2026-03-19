@@ -891,7 +891,13 @@ inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
 template<typename TSeq>
 inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
 {
-    return std::make_unique<Virus<TSeq>>(*this);
+    auto cloned = std::make_unique<Virus<TSeq>>(*this);
+
+    // Ensure cloned viruses don't share mutable function bundles.
+    if (virus_functions)
+        cloned->virus_functions = std::make_shared<VirusFunctions<TSeq>>(*virus_functions);
+
+    return cloned;
 }
 
 #endif

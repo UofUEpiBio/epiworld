@@ -575,7 +575,13 @@ inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
 template<typename TSeq>
 inline std::unique_ptr<Tool<TSeq>> Tool<TSeq>::clone_ptr() const
 {
-    return std::make_unique<Tool<TSeq>>(*this);
+    auto cloned = std::make_unique<Tool<TSeq>>(*this);
+
+    // Ensure cloned tools don't share mutable function bundles.
+    if (tool_functions)
+        cloned->tool_functions = std::make_shared<ToolFunctions<TSeq>>(*tool_functions);
+
+    return cloned;
 }
 
 #endif
