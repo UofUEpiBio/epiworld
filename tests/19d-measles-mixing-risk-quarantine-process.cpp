@@ -2,6 +2,7 @@
 
 using namespace epiworld;
 
+
 inline std::vector< double > counts_risk;
 
 EPI_NEW_GLOBALFUN(count_risk, int)

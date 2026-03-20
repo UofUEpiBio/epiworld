@@ -102,27 +102,34 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     // Running and checking the results
     // model.run(50, 123);
     model.run_multiple(50, 10, 1233, nullptr, true, true, 4);
+    size_t memory_after = get_memory_usage();
+
+    model.print();
 
     // Measure memory after simulation
-    size_t memory_after = get_memory_usage();
-    std::cout << "Memory after: " << memory_after << " KB" << std::endl;
-    std::cout << "Memory used: " << (memory_after - memory_before) << " KB" << std::endl;
+    std::cout << "-------------------------------------\n";
+    std::cout << "Memory before : " << memory_before << " KB" << std::endl;
+    std::cout << "Memory after  : " << memory_after << " KB" << std::endl;
+    std::cout << "TOTAL USED    : " << (memory_after - memory_before) << " KB" << std::endl;
+    std::cout << "-------------------------------------\n";
    
-    std::cout << "sizeof(int)    :" << sizeof(int) << std::endl;
-    std::cout << "sizeof(size_t) :" << sizeof(size_t) << std::endl;
-    std::cout << "sizeof(short)  :" << sizeof(double) << std::endl;
-    std::cout << "sizeof(Agent)  :" << sizeof(model.get_agent(0)) << std::endl;
-    std::cout << "sizeof(Virus)  :" << sizeof(model.get_virus(0)) << std::endl;
-    std::cout << "sizeof(Tool)   :" << sizeof(model.get_tool(0)) << std::endl;
-    std::cout << "sizeof(Entity) :" << sizeof(model.get_entity(0)) << std::endl;
-    std::cout << "sizeof(Model)  :"  << sizeof(model) << std::endl;
+    std::cout << "sizeof(int)         :" << sizeof(int) << std::endl;
+    std::cout << "sizeof(size_t)      :" << sizeof(size_t) << std::endl;
+    std::cout << "sizeof(double)      :" << sizeof(double) << std::endl;
+    std::cout << "sizeof(Agent)       :" << sizeof(model.get_agent(0)) << " Bytes" << std::endl;
+    std::cout << "sizeof(Agent) (all) :" <<
+        sizeof(model.get_agent(0)) * model.size() / 1024.0 <<
+        " KB" << std::endl;
+    std::cout << "sizeof(Virus)       :" << sizeof(model.get_virus(0)) << std::endl;
+    std::cout << "sizeof(Tool)        :" << sizeof(model.get_tool(0)) << std::endl;
+    std::cout << "sizeof(Entity)      :" << sizeof(model.get_entity(0)) << std::endl;
+    std::cout << "sizeof(Model)       :"  << sizeof(model) << std::endl;
 
     // auto v = std::make_shared< Virus<> >(model.get_virus(0));
     // std::cout << 
     //     "Address of model.virus_functions " << &model.get_virus(0).virus_functions << std::endl <<
     //     "Address of v.virus_functions     "     << &v->virus_functions << std::endl;
 
-    model.print();
 
 
 

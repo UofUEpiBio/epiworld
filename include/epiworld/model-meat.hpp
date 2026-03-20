@@ -678,7 +678,7 @@ inline void Model<TSeq>::agents_empty_graph(
 
     // Resizing the people
     population.clear();
-    population.resize(n, Agent<TSeq>());
+    population.resize(n);
 
     // Filling the model and ids
     size_t i = 0u;
@@ -2590,7 +2590,7 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     for (size_t i = 0u; i < entities.size(); ++i)
     {
         EPI_DEBUG_FAIL_AT_TRUE(
-            *entities[i] != *other.entities[i],
+            entities[i] != other.entities[i],
             "Model:: *entities[i] don't match"
         )
 

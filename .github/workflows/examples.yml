@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Ubuntu dependencies
         if: runner.os == 'Linux'
@@ -16,7 +16,7 @@ jobs:
           sudo apt-get install -y cpanminus
 
       - name: Cache cpanm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cpanm
           key: "${{ runner.os }}-llvm18-cpanm-${{ hashFiles('cpanfile') }}"

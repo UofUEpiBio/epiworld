@@ -8,10 +8,6 @@
 #include "agent-bones.hpp"
 #include "agent-events-meat.hpp"
 
-// To large to add directly here
-template<typename TSeq>
-inline Agent<TSeq>::Agent() {}
-
 template<typename TSeq>
 inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     neighbors(std::move(p.neighbors)),
@@ -828,7 +824,13 @@ inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i, const Model<TSeq> 
     if (i >= entities.size())
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return model.get_entity(entities[i]);
+    return model.get_entity(
+        #ifdef EPI_DEBUG
+        entities.at(i)
+        #else
+        entities[i]
+        #endif
+    );
 }
 
 template<typename TSeq>
@@ -840,7 +842,13 @@ inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i, Model<TSeq> & model)
     if (i >= entities.size())
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return model.get_entity(entities[i]);
+    return model.get_entity(
+        #ifdef EPI_DEBUG
+        entities.at(i)
+        #else
+        entities[i]
+        #endif
+    );
 }
 
 template<typename TSeq>

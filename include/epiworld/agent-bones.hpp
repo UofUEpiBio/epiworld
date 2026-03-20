@@ -104,7 +104,7 @@ private:
 
 public:
 
-    Agent();
+    Agent() = default;
     Agent(Agent<TSeq> && p);
     Agent(const Agent<TSeq> & p);
     Agent<TSeq> & operator=(const Agent<TSeq> & other_agent);
