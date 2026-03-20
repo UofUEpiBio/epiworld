@@ -20,7 +20,7 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     m.add_tool(t);
 
     // Cloning
-    epiworld::Model<> m2 = m;
+    epiworld::Model<> m2(m);
 
     // Printing the addresses
     std::cout <<

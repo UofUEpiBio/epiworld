@@ -253,7 +253,6 @@ public:
 
     Model();
     Model(const Model<TSeq> & m);
-    Model(Model<TSeq> & m);
     Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m);
 

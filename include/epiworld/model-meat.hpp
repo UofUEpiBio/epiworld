@@ -83,102 +83,33 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         size_t niter, Model<TSeq> * m
     ) -> void {
 
-        std::string virus_info = "";
-        std::string virus_hist = "";
-        std::string tool_info = "";
-        std::string tool_hist = "";
-        std::string total_hist = "";
-        std::string transmission = "";
-        std::string transition = "";
-        std::string reproductive = "";
-        std::string generation = "";
-        std::string active_cases = "";
-        std::string outbreak_size = "";
-        std::string hospitalizations = "";
+        auto set_saver = [fmt,niter](
+            bool condition,
+            std::string suffix
+        ) -> std::string
+        {
+            if (condition)
+            {
+                std::string var = fmt + suffix;
+                char buff[1024u];
+                snprintf(buff, sizeof(buff), var.c_str(), niter);
+                return std::string(buff);
+            }
+            return std::string("");
+        };
 
-        char buff[1024u];
-        if (what_to_save[0u])
-        {
-            virus_info = fmt + std::string("_virus_info.csv");
-            snprintf(buff, sizeof(buff), virus_info.c_str(), niter);
-            virus_info = buff;
-        }
-        if (what_to_save[1u])
-        {
-            virus_hist = fmt + std::string("_virus_hist.csv");
-            snprintf(buff, sizeof(buff), virus_hist.c_str(), niter);
-            virus_hist = buff;
-        }
-        if (what_to_save[2u])
-        {
-            tool_info = fmt + std::string("_tool_info.csv");
-            snprintf(buff, sizeof(buff), tool_info.c_str(), niter);
-            tool_info = buff;
-        }
-        if (what_to_save[3u])
-        {
-            tool_hist = fmt + std::string("_tool_hist.csv");
-            snprintf(buff, sizeof(buff), tool_hist.c_str(), niter);
-            tool_hist = buff;
-        }
-        if (what_to_save[4u])
-        {
-            total_hist = fmt + std::string("_total_hist.csv");
-            snprintf(buff, sizeof(buff), total_hist.c_str(), niter);
-            total_hist = buff;
-        }
-        if (what_to_save[5u])
-        {
-            transmission = fmt + std::string("_transmission.csv");
-            snprintf(buff, sizeof(buff), transmission.c_str(), niter);
-            transmission = buff;
-        }
-        if (what_to_save[6u])
-        {
-            transition = fmt + std::string("_transition.csv");
-            snprintf(buff, sizeof(buff), transition.c_str(), niter);
-            transition = buff;
-        }
-        if (what_to_save[7u])
-        {
-
-            reproductive = fmt + std::string("_reproductive.csv");
-            snprintf(buff, sizeof(buff), reproductive.c_str(), niter);
-            reproductive = buff;
-
-        }
-        if (what_to_save[8u])
-        {
-
-            generation = fmt + std::string("_generation.csv");
-            snprintf(buff, sizeof(buff), generation.c_str(), niter);
-            generation = buff;
-
-        }
-        if (what_to_save[9u])
-        {
-
-            active_cases = fmt + std::string("_active_cases.csv");
-            snprintf(buff, sizeof(buff), active_cases.c_str(), niter);
-            active_cases = buff;
-
-        }
-        if (what_to_save[10u])
-        {
-
-            outbreak_size = fmt + std::string("_outbreak_size.csv");
-            snprintf(buff, sizeof(buff), outbreak_size.c_str(), niter);
-            outbreak_size = buff;
-
-        }
-        if (what_to_save[11u])
-        {
-
-            hospitalizations = fmt + std::string("_hospitalizations.csv");
-            snprintf(buff, sizeof(buff), hospitalizations.c_str(), niter);
-            hospitalizations = buff;
-
-        }
+        auto virus_info = set_saver(what_to_save[0u], "_virus_info.csv");
+        auto virus_hist = set_saver(what_to_save[1u], "_virus_hist.csv");
+        auto tool_info = set_saver(what_to_save[2u], "_tool_info.csv");
+        auto tool_hist = set_saver(what_to_save[3u], "_tool_hist.csv");
+        auto total_hist = set_saver(what_to_save[4u], "_total_hist.csv");
+        auto transmission = set_saver(what_to_save[5u], "_transmission.csv");
+        auto transition = set_saver(what_to_save[6u], "_transition.csv");
+        auto reproductive = set_saver(what_to_save[7u], "_reproductive.csv");
+        auto generation = set_saver(what_to_save[8u], "_generation.csv");
+        auto active_cases = set_saver(what_to_save[9u], "_active_cases.csv");
+        auto outbreak_size = set_saver(what_to_save[10u], "_outbreak_size.csv");
+        auto hospitalizations = set_saver(what_to_save[11u], "_hospitalizations.csv");
 
         m->write_data(
             virus_info,
@@ -496,10 +427,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 }
 
 template<typename TSeq>
-inline Model<TSeq>::Model(Model<TSeq> & model) :
-    Model(dynamic_cast< const Model<TSeq> & >(model)) {}
-
-template<typename TSeq>
 inline Model<TSeq>::Model(Model<TSeq> && model) :
     name(std::move(model.name)),
     db(std::move(model.db)),
@@ -601,15 +528,10 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     for (const auto & ge : m.globalevents)
         globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
 
-    queue       = m.queue;
+    queue = m.queue;
     use_queuing = m.use_queuing;
 
-    // Making sure population is passed correctly
-    // Pointing to the right place
-    db.model = this;
-    db.user_data.model = this;
-
-    agents_data            = m.agents_data;
+    agents_data = m.agents_data;
     agents_data_ncols = m.agents_data_ncols;
 
     // Figure out the queuing
@@ -2661,11 +2583,18 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
 
     }
 
-    VECT_MATCH(
-        entities,
-        other.entities,
-        "entities don't match"
-    )
+    EPI_DEBUG_FAIL_AT_TRUE(
+        entities.size() != other.entities.size(),
+        "Model:: entities.size() don't match"
+        )
+    for (size_t i = 0u; i < entities.size(); ++i)
+    {
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *entities[i] != *other.entities[i],
+            "Model:: *entities[i] don't match"
+        )
+
+    }
 
     EPI_DEBUG_FAIL_AT_TRUE(
         rewire_prop != other.rewire_prop,

@@ -853,6 +853,10 @@ template<typename TSeq>
 inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 {
 
+    // Checking the address
+    if (this == &other)
+        return true;
+
     EPI_DEBUG_FAIL_AT_TRUE(
         n_neighbors != other.n_neighbors,
         "Agent:: n_eighbors don't match"
@@ -918,7 +922,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     {
         
         EPI_DEBUG_FAIL_AT_TRUE(
-            tools[i] != other.tools[i],
+            *tools[i] != *other.tools[i],
             "Agent:: tools[i] don't match"
         )
          

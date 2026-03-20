@@ -70,7 +70,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
                 );
 
             // Correcting for possible overflow
-            if ((n_left > 0) && (loc >= n_left))
+            if ((n_left > 0) && (loc > n_left))
                 loc = n_left - 1;
 
             m->get_agent(idx[loc]).add_entity(*m, e);
