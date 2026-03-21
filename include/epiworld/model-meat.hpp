@@ -140,9 +140,7 @@ inline void Model<TSeq>::events_add(
     Entity<TSeq> * entity_,
     epiworld_fast_int new_state_,
     epiworld_fast_int queue_,
-    EventFun<TSeq> call_,
-    int idx_agent_,
-    int idx_object_
+    EventFun<TSeq> call_
 ) {
 
     ++nactions;
@@ -157,8 +155,7 @@ inline void Model<TSeq>::events_add(
 
         events.emplace_back(
             Event<TSeq>(
-                agent_, virus_, tool_, entity_, new_state_, queue_, call_,
-                idx_agent_, idx_object_
+                agent_, virus_, tool_, entity_, new_state_, queue_, call_
             ));
 
     }
@@ -174,8 +171,6 @@ inline void Model<TSeq>::events_add(
         A.new_state  = std::move(new_state_);
         A.queue      = std::move(queue_);
         A.call       = std::move(call_);
-        A.idx_agent  = std::move(idx_agent_);
-        A.idx_object = std::move(idx_object_);
 
     }
 
@@ -282,61 +277,57 @@ inline void Model<TSeq>::events_run()
  */
 ///@{
 template<typename TSeq>
-inline epiworld_double susceptibility_reduction_mixer_default(
+inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq> * m
+    VirusPtr<TSeq> v
 )
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
-        total *= (1.0 - tool->get_susceptibility_reduction(v, m));
+        total *= (1.0 - tool->get_susceptibility_reduction(v, this));
 
     return 1.0 - total;
 
 }
 
 template<typename TSeq>
-inline epiworld_double transmission_reduction_mixer_default(
+inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
+    VirusPtr<TSeq> v
 )
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
-        total *= (1.0 - tool->get_transmission_reduction(v, m));
+        total *= (1.0 - tool->get_transmission_reduction(v, this));
 
     return (1.0 - total);
 
 }
 
 template<typename TSeq>
-inline epiworld_double recovery_enhancer_mixer_default(
+inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
+    VirusPtr<TSeq> v
 )
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
-        total *= (1.0 - tool->get_recovery_enhancer(v, m));
+        total *= (1.0 - tool->get_recovery_enhancer(v, this));
 
     return 1.0 - total;
 
 }
 
 template<typename TSeq>
-inline epiworld_double death_reduction_mixer_default(
+inline epiworld_double Model<TSeq>::death_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
+    VirusPtr<TSeq> v
 ) {
 
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
     {
-        total *= (1.0 - tool->get_death_reduction(v, m));
+        total *= (1.0 - tool->get_death_reduction(v, this));
     }
 
     return 1.0 - total;
@@ -348,7 +339,7 @@ template<typename TSeq>
 inline std::unique_ptr<Model<TSeq>> Model<TSeq>::clone_ptr()
 {
     // Everything is copied
-    auto ptr = std::make_unique<Model<TSeq>>(*dynamic_cast<const Model<TSeq>*>(this));
+    auto ptr = std::make_unique<Model<TSeq>>(*this);
 
     #ifdef EPI_DEBUG
     if (*this != *ptr)
@@ -391,9 +382,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     globalevents(),
     queue(model.queue),
     use_queuing(model.use_queuing),
-    sim_id(model.sim_id),
-    array_double_tmp(model.array_double_tmp.size()),
-    array_virus_tmp(model.array_virus_tmp.size())
+    sim_id(model.sim_id)
 {
 
     // Pointing to the right place. This needs
@@ -465,9 +454,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     globalevents(std::move(model.globalevents)),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
-    sim_id(model.sim_id),
-    array_double_tmp(model.array_double_tmp.size()),
-    array_virus_tmp(model.array_virus_tmp.size())
+    sim_id(model.sim_id)
 {
 
     db.model = this;
@@ -539,10 +526,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
         queue.model = this;
 
     sim_id = m.sim_id;
-
-    array_double_tmp.resize(static_cast<size_t>(1024u), 0.0);
-    array_virus_tmp.resize(1024u);
-
     // Entity-agent relationships now use size_t IDs, so they copy
     // correctly without any rebinding needed.
 
@@ -1402,14 +1385,6 @@ inline Model<TSeq> & Model<TSeq>::run(
 
     if (seed >= 0)
         engine->seed(seed);
-
-    array_double_tmp.resize(std::max(
-        size(),
-        static_cast<size_t>(1024)
-    ));
-
-
-    array_virus_tmp.resize(1024);
 
     // Checking whether the proposed state in/out/removed
     // are valid

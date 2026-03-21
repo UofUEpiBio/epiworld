@@ -21,31 +21,6 @@ class AgentsSample;
 
 class AdjList;
 
-template<typename TSeq>
-inline epiworld_double susceptibility_reduction_mixer_default(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-    );
-template<typename TSeq>
-inline epiworld_double transmission_reduction_mixer_default(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-    );
-template<typename TSeq>
-inline epiworld_double recovery_enhancer_mixer_default(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-    );
-template<typename TSeq>
-inline epiworld_double death_reduction_mixer_default(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> v,
-    Model<TSeq>* m
-    );
-
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
@@ -209,8 +184,6 @@ protected:
      * @param new_state_ New state of the agent
      * @param call_ Function the action will call
      * @param queue_ Change in the queue
-     * @param idx_agent_ Location of agent in object.
-     * @param idx_object_ Location of object in agent.
      */
     void events_add(
         Agent<TSeq> * agent_,
@@ -219,9 +192,7 @@ protected:
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_,
-        int idx_agent_,
-        int idx_object_
+        EventFun<TSeq> call_
         );
 
     /**
@@ -233,10 +204,18 @@ protected:
      * the susceptibility for a given virus.
      *
      */
-    MixerFun<TSeq> susceptibility_reduction_mixer = susceptibility_reduction_mixer_default<TSeq>;
-    MixerFun<TSeq> transmission_reduction_mixer = transmission_reduction_mixer_default<TSeq>;
-    MixerFun<TSeq> recovery_enhancer_mixer = recovery_enhancer_mixer_default<TSeq>;
-    MixerFun<TSeq> death_reduction_mixer = death_reduction_mixer_default<TSeq>;
+    virtual epiworld_double susceptibility_reduction_mixer(
+        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+    );
+    virtual epiworld_double transmission_reduction_mixer(
+        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+    );
+    virtual epiworld_double recovery_enhancer_mixer(
+        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+    );
+    virtual epiworld_double death_reduction_mixer(
+        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+    );
 
     /**
      * @brief Advanced usage: Makes a copy of data and returns it as undeleted pointer
@@ -247,9 +226,8 @@ protected:
 
 public:
 
-
-    std::vector<epiworld_double> array_double_tmp;
-    std::vector<Virus<TSeq> * > array_virus_tmp;
+    std::array<epiworld_double, 1024u * 2u> array_double_tmp;
+    std::array<Virus<TSeq> *, 1024u * 2u> array_virus_tmp;
 
     Model();
     Model(const Model<TSeq> & m);
@@ -685,19 +663,6 @@ public:
     Model<TSeq> & queuing_off(); ///< Deactivates the queuing system.
     bool is_queuing_on() const; ///< Query if the queuing system is on.
     Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
-    ///@}
-
-    /**
-     * @name Get the susceptibility reduction object
-     *
-     * @param v
-     * @return epiworld_double
-     */
-    ///@{
-    void set_susceptibility_reduction_mixer(MixerFun<TSeq> fun);
-    void set_transmission_reduction_mixer(MixerFun<TSeq> fun);
-    void set_recovery_enhancer_mixer(MixerFun<TSeq> fun);
-    void set_death_reduction_mixer(MixerFun<TSeq> fun);
     ///@}
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;

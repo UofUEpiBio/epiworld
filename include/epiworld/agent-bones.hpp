@@ -247,6 +247,7 @@ public:
         );
 
     const unsigned int & get_state() const;
+    const unsigned int & get_state_prev() const;
 
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string name) const;

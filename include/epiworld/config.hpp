@@ -145,8 +145,6 @@ struct Event {
     epiworld_fast_int new_state;
     epiworld_fast_int queue;
     EventFun<TSeq> call;
-    int idx_agent;
-    int idx_object;
 public:
 /**
      * @brief Construct a new Event object
@@ -161,8 +159,6 @@ public:
      * @param new_state_ Next state
      * @param queue_ Efect on the queue
      * @param call_ The action call (if needed)
-     * @param idx_agent_ Location of agent in object.
-     * @param idx_object_ Location of object in agent.
      */
     Event(
         Agent<TSeq> * agent_,
@@ -171,12 +167,10 @@ public:
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> & call_,
-        int idx_agent_,
-        int idx_object_
+        EventFun<TSeq> & call_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
         new_state(new_state_),
-        queue(queue_), call(call_), idx_agent(idx_agent_), idx_object(idx_object_) {
+        queue(queue_), call(call_) {
             return;
         };
 };

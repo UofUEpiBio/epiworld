@@ -162,7 +162,7 @@ inline void Agent<TSeq>::add_tool(
             " included in the model.");
 
     model.events_add(
-        this, nullptr, tool, nullptr, state_new, queue, default_add_tool<TSeq>, -1, -1
+        this, nullptr, tool, nullptr, state_new, queue, default_add_tool<TSeq>
         );
 
 }
@@ -201,7 +201,7 @@ inline void Agent<TSeq>::set_virus(
         virus->get_queue(&queue, nullptr, nullptr);
 
     model.events_add(
-        this, virus, nullptr, nullptr, state_new, queue, default_add_virus<TSeq>, -1, -1
+        this, virus, nullptr, nullptr, state_new, queue, default_add_virus<TSeq>
         );
 
 }
@@ -228,7 +228,7 @@ inline void Agent<TSeq>::add_entity(
 {
 
     model.events_add(
-        this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>, -1, -1
+        this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>
     );
 
 }
@@ -249,7 +249,7 @@ inline void Agent<TSeq>::rm_tool(
         );
 
     model.events_add(
-        this, nullptr, tools[tool_idx], nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
+        this, nullptr, tools[tool_idx], nullptr, state_new, queue, default_rm_tool<TSeq>
         );
 
 }
@@ -267,7 +267,7 @@ inline void Agent<TSeq>::rm_tool(
         throw std::logic_error("Cannot remove a virus from another agent!");
 
     model.events_add(
-        this, nullptr, tool, nullptr, state_new, queue, default_rm_tool<TSeq>, -1, -1
+        this, nullptr, tool, nullptr, state_new, queue, default_rm_tool<TSeq>
         );
 
 }
@@ -295,7 +295,7 @@ inline void Agent<TSeq>::rm_virus(
         this, virus, nullptr, nullptr,
         state_new,
         queue,
-        default_rm_virus<TSeq>, -1, -1
+        default_rm_virus<TSeq>
         );
 
 }
@@ -326,9 +326,7 @@ inline void Agent<TSeq>::rm_entity(
         &model.get_entity(entities[entity_idx]),
         state_new,
         queue,
-        default_rm_entity<TSeq>,
-        -1,
-        -1
+        default_rm_entity<TSeq>
     );
 }
 
@@ -363,9 +361,7 @@ inline void Agent<TSeq>::rm_entity(
         &model.get_entity(entity.get_id()),
         state_new,
         queue,
-        default_rm_entity<TSeq>,
-        -1,
-        -1
+        default_rm_entity<TSeq>
     );
 }
 
@@ -377,7 +373,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(Model<TSeq> & model)
         this, virus, nullptr, nullptr,
         virus->state_removed,
         virus->queue_removed,
-        default_rm_virus<TSeq>, -1, -1
+        default_rm_virus<TSeq>
         );
 
 }
@@ -388,7 +384,7 @@ inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
     Model<TSeq> & model
 ) {
 
-    return model.susceptibility_reduction_mixer(this, v, &model);
+    return model.susceptibility_reduction_mixer(this, v);
 }
 
 template<typename TSeq>
@@ -396,7 +392,7 @@ inline epiworld_double Agent<TSeq>::get_transmission_reduction(
     VirusPtr<TSeq> v,
     Model<TSeq> & model
 ) {
-    return model.transmission_reduction_mixer(this, v, &model);
+    return model.transmission_reduction_mixer(this, v);
 }
 
 template<typename TSeq>
@@ -404,7 +400,7 @@ inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
     VirusPtr<TSeq> v,
     Model<TSeq> & model
 ) {
-    return model.recovery_enhancer_mixer(this, v, &model);
+    return model.recovery_enhancer_mixer(this, v);
 }
 
 template<typename TSeq>
@@ -412,7 +408,7 @@ inline epiworld_double Agent<TSeq>::get_death_reduction(
     VirusPtr<TSeq> v,
     Model<TSeq> & model
 ) {
-    return model.death_reduction_mixer(this, v, &model);
+    return model.death_reduction_mixer(this, v);
 }
 
 template<typename TSeq>
@@ -609,7 +605,7 @@ inline void Agent<TSeq>::change_state(
 
     model.events_add(
         this, nullptr, nullptr, nullptr, new_state, queue,
-        default_change_state<TSeq>, -1, -1
+        default_change_state<TSeq>
     );
 
     return;
@@ -619,6 +615,11 @@ inline void Agent<TSeq>::change_state(
 template<typename TSeq>
 inline const unsigned int & Agent<TSeq>::get_state() const {
     return state;
+}
+
+template<typename TSeq>
+inline const unsigned int & Agent<TSeq>::get_state_prev() const {
+    return state_prev;
 }
 
 template<typename TSeq>
