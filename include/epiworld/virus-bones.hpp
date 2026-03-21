@@ -11,31 +11,6 @@ template<typename TSeq>
 class Model;
 
 /**
- * @brief Class containing virus functions
- * @details
- * Provides a way to share virus-related functions across multiple Virus instances.
- * This is particularly useful when viruses are cloned or copied, ensuring that
- * they all reference the same set of functions without duplicating them.
- * @tparam TSeq Type for genetic sequences
- */
-template<typename TSeq>
-class VirusFunctions {
-public:
-    MutFun<TSeq>          mutation                 = nullptr;
-    PostRecoveryFun<TSeq> post_recovery            = nullptr;
-    VirusFun<TSeq>        probability_of_infecting = nullptr;
-    VirusFun<TSeq>        probability_of_recovery  = nullptr;
-    VirusFun<TSeq>        probability_of_death     = nullptr;
-    VirusFun<TSeq>        incubation               = nullptr;
-
-    // Information about how distribution works
-    VirusToAgentFun<TSeq> dist = nullptr;
-
-    VirusFunctions() = default;
-
-};
-
-/**
  * @brief Virus
  * 
  * @tparam TSeq 
@@ -70,8 +45,15 @@ private:
     epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
     epiworld_fast_int queue_removed = -Queue<TSeq>::Everyone; ///< Change of state when agent is removed
 
-    std::shared_ptr< VirusFunctions<TSeq> > virus_functions = 
-        std::make_shared< VirusFunctions<TSeq> >();
+    MutFun<TSeq>          mutation                 = nullptr;
+    PostRecoveryFun<TSeq> post_recovery_fun        = nullptr;
+    VirusFun<TSeq>        probability_of_infecting = nullptr;
+    VirusFun<TSeq>        probability_of_recovery  = nullptr;
+    VirusFun<TSeq>        probability_of_death     = nullptr;
+    VirusFun<TSeq>        incubation               = nullptr;
+
+    // Information about how distribution works
+    VirusToAgentFun<TSeq> dist = nullptr;
         
 public:
 

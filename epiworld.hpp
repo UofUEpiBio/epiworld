@@ -7876,7 +7876,6 @@ public:
 
     Model();
     Model(const Model<TSeq> & m);
-    Model(Model<TSeq> & m);
     Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
@@ -8532,102 +8531,33 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         size_t niter, Model<TSeq> * m
     ) -> void {
 
-        std::string virus_info = "";
-        std::string virus_hist = "";
-        std::string tool_info = "";
-        std::string tool_hist = "";
-        std::string total_hist = "";
-        std::string transmission = "";
-        std::string transition = "";
-        std::string reproductive = "";
-        std::string generation = "";
-        std::string active_cases = "";
-        std::string outbreak_size = "";
-        std::string hospitalizations = "";
+        auto set_saver = [fmt,niter](
+            bool condition,
+            std::string suffix
+        ) -> std::string
+        {
+            if (condition)
+            {
+                std::string var = fmt + suffix;
+                char buff[1024u];
+                snprintf(buff, sizeof(buff), var.c_str(), niter);
+                return std::string(buff);
+            }
+            return std::string("");
+        };
 
-        char buff[1024u];
-        if (what_to_save[0u])
-        {
-            virus_info = fmt + std::string("_virus_info.csv");
-            snprintf(buff, sizeof(buff), virus_info.c_str(), niter);
-            virus_info = buff;
-        }
-        if (what_to_save[1u])
-        {
-            virus_hist = fmt + std::string("_virus_hist.csv");
-            snprintf(buff, sizeof(buff), virus_hist.c_str(), niter);
-            virus_hist = buff;
-        }
-        if (what_to_save[2u])
-        {
-            tool_info = fmt + std::string("_tool_info.csv");
-            snprintf(buff, sizeof(buff), tool_info.c_str(), niter);
-            tool_info = buff;
-        }
-        if (what_to_save[3u])
-        {
-            tool_hist = fmt + std::string("_tool_hist.csv");
-            snprintf(buff, sizeof(buff), tool_hist.c_str(), niter);
-            tool_hist = buff;
-        }
-        if (what_to_save[4u])
-        {
-            total_hist = fmt + std::string("_total_hist.csv");
-            snprintf(buff, sizeof(buff), total_hist.c_str(), niter);
-            total_hist = buff;
-        }
-        if (what_to_save[5u])
-        {
-            transmission = fmt + std::string("_transmission.csv");
-            snprintf(buff, sizeof(buff), transmission.c_str(), niter);
-            transmission = buff;
-        }
-        if (what_to_save[6u])
-        {
-            transition = fmt + std::string("_transition.csv");
-            snprintf(buff, sizeof(buff), transition.c_str(), niter);
-            transition = buff;
-        }
-        if (what_to_save[7u])
-        {
-
-            reproductive = fmt + std::string("_reproductive.csv");
-            snprintf(buff, sizeof(buff), reproductive.c_str(), niter);
-            reproductive = buff;
-
-        }
-        if (what_to_save[8u])
-        {
-
-            generation = fmt + std::string("_generation.csv");
-            snprintf(buff, sizeof(buff), generation.c_str(), niter);
-            generation = buff;
-
-        }
-        if (what_to_save[9u])
-        {
-
-            active_cases = fmt + std::string("_active_cases.csv");
-            snprintf(buff, sizeof(buff), active_cases.c_str(), niter);
-            active_cases = buff;
-
-        }
-        if (what_to_save[10u])
-        {
-
-            outbreak_size = fmt + std::string("_outbreak_size.csv");
-            snprintf(buff, sizeof(buff), outbreak_size.c_str(), niter);
-            outbreak_size = buff;
-
-        }
-        if (what_to_save[11u])
-        {
-
-            hospitalizations = fmt + std::string("_hospitalizations.csv");
-            snprintf(buff, sizeof(buff), hospitalizations.c_str(), niter);
-            hospitalizations = buff;
-
-        }
+        auto virus_info = set_saver(what_to_save[0u], "_virus_info.csv");
+        auto virus_hist = set_saver(what_to_save[1u], "_virus_hist.csv");
+        auto tool_info = set_saver(what_to_save[2u], "_tool_info.csv");
+        auto tool_hist = set_saver(what_to_save[3u], "_tool_hist.csv");
+        auto total_hist = set_saver(what_to_save[4u], "_total_hist.csv");
+        auto transmission = set_saver(what_to_save[5u], "_transmission.csv");
+        auto transition = set_saver(what_to_save[6u], "_transition.csv");
+        auto reproductive = set_saver(what_to_save[7u], "_reproductive.csv");
+        auto generation = set_saver(what_to_save[8u], "_generation.csv");
+        auto active_cases = set_saver(what_to_save[9u], "_active_cases.csv");
+        auto outbreak_size = set_saver(what_to_save[10u], "_outbreak_size.csv");
+        auto hospitalizations = set_saver(what_to_save[11u], "_hospitalizations.csv");
 
         m->write_data(
             virus_info,
@@ -8892,8 +8822,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     population(model.population),
     population_backup(model.population_backup),
     directed(model.directed),
-    viruses(model.viruses),
-    tools(model.tools),
+    viruses(),
+    tools(),
     entities(model.entities),
     rewire_fun(model.rewire_fun),
     rewire_prop(model.rewire_prop),
@@ -8906,7 +8836,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(model.current_date),
-    globalevents(model.globalevents),
+    globalevents(),
     queue(model.queue),
     use_queuing(model.use_queuing),
     sim_id(model.sim_id),
@@ -8926,14 +8856,23 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     agents_data = model.agents_data;
     agents_data_ncols = model.agents_data_ncols;
 
+    // Deep-copy model-level objects so clones can run independently in parallel.
+    viruses.reserve(model.viruses.size());
+    for (const auto & v : model.viruses)
+        viruses.emplace_back(std::shared_ptr<Virus<TSeq>>(v->clone_ptr()));
+
+    tools.reserve(model.tools.size());
+    for (const auto & t : model.tools)
+        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(t->clone_ptr()));
+
+    globalevents.reserve(model.globalevents.size());
+    for (const auto & ge : model.globalevents)
+        globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
+
     // Entity-agent relationships now use size_t IDs, so they copy
     // correctly without any rebinding needed.
 
 }
-
-template<typename TSeq>
-inline Model<TSeq>::Model(Model<TSeq> & model) :
-    Model(dynamic_cast< const Model<TSeq> & >(model)) {}
 
 template<typename TSeq>
 inline Model<TSeq>::Model(Model<TSeq> && model) :
@@ -8990,6 +8929,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 {
+    if (this == &m)
+        return *this;
 
     name = m.name;
 
@@ -9002,9 +8943,15 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     directed = m.directed;
 
-    viruses                        = m.viruses;
+    viruses.clear();
+    viruses.reserve(m.viruses.size());
+    for (const auto & v : m.viruses)
+        viruses.emplace_back(std::shared_ptr<Virus<TSeq>>(v->clone_ptr()));
 
-    tools                         = m.tools;
+    tools.clear();
+    tools.reserve(m.tools.size());
+    for (const auto & t : m.tools)
+        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(t->clone_ptr()));
 
     entities        = m.entities;
 
@@ -9024,17 +8971,15 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     current_date = m.current_date;
 
-    globalevents = m.globalevents;
+    globalevents.clear();
+    globalevents.reserve(m.globalevents.size());
+    for (const auto & ge : m.globalevents)
+        globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
 
-    queue       = m.queue;
+    queue = m.queue;
     use_queuing = m.use_queuing;
 
-    // Making sure population is passed correctly
-    // Pointing to the right place
-    db.model = this;
-    db.user_data.model = this;
-
-    agents_data            = m.agents_data;
+    agents_data = m.agents_data;
     agents_data_ncols = m.agents_data_ncols;
 
     // Figure out the queuing
@@ -9181,7 +9126,7 @@ inline void Model<TSeq>::agents_empty_graph(
 
     // Resizing the people
     population.clear();
-    population.resize(n, Agent<TSeq>());
+    population.resize(n);
 
     // Filling the model and ids
     size_t i = 0u;
@@ -10237,7 +10182,7 @@ inline void Model<TSeq>::mutate_virus() {
     // Checking if any virus has mutation
     size_t nmutates = 0u;
     for (const auto & v: viruses)
-        if (v->virus_functions->mutation)
+        if (v->mutation)
             nmutates++;
 
     if (nmutates == 0u)
@@ -11409,11 +11354,18 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
 
     }
 
-    VECT_MATCH(
-        entities,
-        other.entities,
-        "entities don't match"
-    )
+    EPI_DEBUG_FAIL_AT_TRUE(
+        entities.size() != other.entities.size(),
+        "Model:: entities.size() don't match"
+        )
+    for (size_t i = 0u; i < entities.size(); ++i)
+    {
+        EPI_DEBUG_FAIL_AT_TRUE(
+            entities[i] != other.entities[i],
+            "Model:: *entities[i] don't match"
+        )
+
+    }
 
     EPI_DEBUG_FAIL_AT_TRUE(
         rewire_prop != other.rewire_prop,
@@ -11787,31 +11739,6 @@ template<typename TSeq>
 class Model;
 
 /**
- * @brief Class containing virus functions
- * @details
- * Provides a way to share virus-related functions across multiple Virus instances.
- * This is particularly useful when viruses are cloned or copied, ensuring that
- * they all reference the same set of functions without duplicating them.
- * @tparam TSeq Type for genetic sequences
- */
-template<typename TSeq>
-class VirusFunctions {
-public:
-    MutFun<TSeq>          mutation                 = nullptr;
-    PostRecoveryFun<TSeq> post_recovery            = nullptr;
-    VirusFun<TSeq>        probability_of_infecting = nullptr;
-    VirusFun<TSeq>        probability_of_recovery  = nullptr;
-    VirusFun<TSeq>        probability_of_death     = nullptr;
-    VirusFun<TSeq>        incubation               = nullptr;
-
-    // Information about how distribution works
-    VirusToAgentFun<TSeq> dist = nullptr;
-
-    VirusFunctions() = default;
-
-};
-
-/**
  * @brief Virus
  * 
  * @tparam TSeq 
@@ -11846,8 +11773,15 @@ private:
     epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
     epiworld_fast_int queue_removed = -Queue<TSeq>::Everyone; ///< Change of state when agent is removed
 
-    std::shared_ptr< VirusFunctions<TSeq> > virus_functions = 
-        std::make_shared< VirusFunctions<TSeq> >();
+    MutFun<TSeq>          mutation                 = nullptr;
+    PostRecoveryFun<TSeq> post_recovery_fun        = nullptr;
+    VirusFun<TSeq>        probability_of_infecting = nullptr;
+    VirusFun<TSeq>        probability_of_recovery  = nullptr;
+    VirusFun<TSeq>        probability_of_death     = nullptr;
+    VirusFun<TSeq>        incubation               = nullptr;
+
+    // Information about how distribution works
+    VirusToAgentFun<TSeq> dist = nullptr;
         
 public:
 
@@ -12443,8 +12377,7 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
       state_removed(other.state_removed),
       queue_init(other.queue_init),
       queue_post(other.queue_post),
-      queue_removed(other.queue_removed),
-      virus_functions(other.virus_functions)
+      queue_removed(other.queue_removed)
 {
     counter_copy_construct++;
 }
@@ -12462,8 +12395,7 @@ inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
       state_removed(other.state_removed),
       queue_init(other.queue_init),
       queue_post(other.queue_post),
-      queue_removed(other.queue_removed),
-      virus_functions(std::move(other.virus_functions))
+      queue_removed(other.queue_removed)
 {
     counter_move_construct++;
     // other.agent = nullptr;
@@ -12485,7 +12417,6 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
         queue_init = other.queue_init;
         queue_post = other.queue_post;
         queue_removed = other.queue_removed;
-        virus_functions = other.virus_functions;
         counter_copy_assign++;
     }
     return *this;
@@ -12507,7 +12438,6 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
         queue_init = other.queue_init;
         queue_post = other.queue_post;
         queue_removed = other.queue_removed;
-        virus_functions = std::move(other.virus_functions);
         other.agent = nullptr;
         counter_move_assign++;
     }
@@ -12520,8 +12450,8 @@ inline void Virus<TSeq>::mutate(
     Model<TSeq> * model
 ) {
 
-    if (virus_functions->mutation)
-        if (virus_functions->mutation(agent, *this, model))
+    if (mutation)
+        if (mutation(agent, *this, model))
             model->get_db().record_virus(*this);
 
     return;
@@ -12532,7 +12462,7 @@ template<typename TSeq>
 inline void Virus<TSeq>::set_mutation(
     MutFun<TSeq> fun
 ) {
-    virus_functions->mutation = MutFun<TSeq>(fun);
+    mutation = MutFun<TSeq>(fun);
 }
 
 template<typename TSeq>
@@ -12616,8 +12546,8 @@ inline epiworld_double Virus<TSeq>::get_prob_infecting(
 )
 {
 
-    if (virus_functions->probability_of_infecting)
-        return virus_functions->probability_of_infecting(agent, *this, model);
+    if (probability_of_infecting)
+        return probability_of_infecting(agent, *this, model);
         
     return EPI_DEFAULT_VIRUS_PROB_INFECTION;
 
@@ -12631,8 +12561,8 @@ inline epiworld_double Virus<TSeq>::get_prob_recovery(
 )
 {
 
-    if (virus_functions->probability_of_recovery)
-        return virus_functions->probability_of_recovery(agent, *this, model);
+    if (probability_of_recovery)
+        return probability_of_recovery(agent, *this, model);
         
     return EPI_DEFAULT_VIRUS_PROB_RECOVERY;
 
@@ -12646,8 +12576,8 @@ inline epiworld_double Virus<TSeq>::get_prob_death(
 )
 {
 
-    if (virus_functions->probability_of_death)
-        return virus_functions->probability_of_death(agent, *this, model);
+    if (probability_of_death)
+        return probability_of_death(agent, *this, model);
         
     return EPI_DEFAULT_VIRUS_PROB_DEATH;
 
@@ -12659,8 +12589,8 @@ inline epiworld_double Virus<TSeq>::get_incubation(
 )
 {
 
-    if (virus_functions->incubation)
-        return virus_functions->incubation(agent, *this, model);
+    if (incubation)
+        return incubation(agent, *this, model);
         
     return EPI_DEFAULT_INCUBATION_DAYS;
 
@@ -12669,25 +12599,25 @@ inline epiworld_double Virus<TSeq>::get_incubation(
 template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting_fun(VirusFun<TSeq> fun)
 {
-    virus_functions->probability_of_infecting = fun;
+    probability_of_infecting = fun;
 }
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery_fun(VirusFun<TSeq> fun)
 {
-    virus_functions->probability_of_recovery = fun;
+    probability_of_recovery = fun;
 }
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death_fun(VirusFun<TSeq> fun)
 {
-    virus_functions->probability_of_death = fun;
+    probability_of_death = fun;
 }
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_incubation_fun(VirusFun<TSeq> fun)
 {
-    virus_functions->incubation = fun;
+    incubation = fun;
 }
 
 template<typename TSeq>
@@ -12699,7 +12629,7 @@ inline void Virus<TSeq>::set_prob_infecting(const epiworld_double * prob)
             return *prob;
         };
     
-    virus_functions->probability_of_infecting = tmpfun;
+    probability_of_infecting = tmpfun;
 }
 
 template<typename TSeq>
@@ -12711,7 +12641,7 @@ inline void Virus<TSeq>::set_prob_recovery(const epiworld_double * prob)
             return *prob;
         };
     
-    virus_functions->probability_of_recovery = tmpfun;
+    probability_of_recovery = tmpfun;
 }
 
 template<typename TSeq>
@@ -12723,7 +12653,7 @@ inline void Virus<TSeq>::set_prob_death(const epiworld_double * prob)
             return *prob;
         };
     
-    virus_functions->probability_of_death = tmpfun;
+    probability_of_death = tmpfun;
 }
 
 template<typename TSeq>
@@ -12735,7 +12665,7 @@ inline void Virus<TSeq>::set_incubation(const epiworld_double * prob)
             return *prob;
         };
     
-    virus_functions->incubation = tmpfun;
+    incubation = tmpfun;
 }
 
 template<typename TSeq>
@@ -12747,7 +12677,7 @@ inline void Virus<TSeq>::set_prob_infecting(epiworld_double prob)
             return prob;
         };
     
-    virus_functions->probability_of_infecting = tmpfun;
+    probability_of_infecting = tmpfun;
 }
 
 template<typename TSeq>
@@ -12759,7 +12689,7 @@ inline void Virus<TSeq>::set_prob_recovery(epiworld_double prob)
             return prob;
         };
     
-    virus_functions->probability_of_recovery = tmpfun;
+    probability_of_recovery = tmpfun;
 }
 
 template<typename TSeq>
@@ -12771,7 +12701,7 @@ inline void Virus<TSeq>::set_prob_death(epiworld_double prob)
             return prob;
         };
     
-    virus_functions->probability_of_death = tmpfun;
+    probability_of_death = tmpfun;
 }
 
 template<typename TSeq>
@@ -12783,20 +12713,20 @@ inline void Virus<TSeq>::set_incubation(epiworld_double prob)
             return prob;
         };
     
-    virus_functions->incubation = tmpfun;
+    incubation = tmpfun;
 }
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_post_recovery(PostRecoveryFun<TSeq> fun)
 {
-    if (virus_functions->post_recovery)
+    if (post_recovery_fun)
     {
         printf_epiworld(
             "Warning: a PostRecoveryFun is alreay in place (overwriting)."
             );
     }
 
-    virus_functions->post_recovery = fun;
+    post_recovery_fun = fun;
 }
 
 template<typename TSeq>
@@ -12805,8 +12735,8 @@ inline void Virus<TSeq>::post_recovery(
 )
 {
 
-    if (virus_functions->post_recovery)
-        virus_functions->post_recovery(agent, *this, model);    
+    if (post_recovery_fun)
+        post_recovery_fun(agent, *this, model);    
 
     return;
         
@@ -12818,7 +12748,7 @@ inline void Virus<TSeq>::set_post_immunity(
 )
 {
 
-    if (virus_functions->post_recovery)
+    if (post_recovery_fun)
     {
 
         std::string msg =
@@ -12859,7 +12789,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
         };
 
-    virus_functions->post_recovery = tmpfun;
+    post_recovery_fun = tmpfun;
 
 }
 
@@ -12869,7 +12799,7 @@ inline void Virus<TSeq>::set_post_immunity(
 )
 {
 
-    if (virus_functions->post_recovery)
+    if (post_recovery_fun)
     {
 
         std::string msg =
@@ -12908,7 +12838,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
         };
 
-    virus_functions->post_recovery = tmpfun;
+    post_recovery_fun = tmpfun;
 
 }
 
@@ -13129,10 +13059,10 @@ template<typename TSeq>
 inline void Virus<TSeq>::distribute(Model<TSeq> * model)
 {
 
-    if (virus_functions->dist)
+    if (dist)
     {
 
-        virus_functions->dist(*this, model);
+        dist(*this, model);
 
     }
 
@@ -13141,13 +13071,14 @@ inline void Virus<TSeq>::distribute(Model<TSeq> * model)
 template<typename TSeq>
 inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
 {
-    virus_functions->dist = fun;
+    dist = fun;
 }
 
 template<typename TSeq>
 inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
 {
-    return std::make_unique<Virus<TSeq>>(*this);
+    auto cloned = std::make_unique<Virus<TSeq>>(*this);
+    return cloned;
 }
 
 #endif
@@ -13415,23 +13346,6 @@ template<typename TSeq>
 class Tool;
 
 /**
- * @brief Helper class to store the functions avoiding
- * multiple shared_pointers (we have only one for the four of these)
- */
-template<typename TSeq>
-class ToolFunctions {
-public:
-    ToolFun<TSeq> susceptibility_reduction = nullptr;
-    ToolFun<TSeq> transmission_reduction   = nullptr;
-    ToolFun<TSeq> recovery_enhancer        = nullptr;
-    ToolFun<TSeq> death_reduction          = nullptr;
-
-    ToolToAgentFun<TSeq> dist = nullptr;
-
-    ToolFunctions() = default;
-};
-
-/**
  * @brief Tools for defending the agent against the virus
  * 
  * @tparam TSeq Type of sequence
@@ -13454,8 +13368,12 @@ private:
     EPI_TYPENAME_TRAITS(TSeq, int) sequence = 
         EPI_TYPENAME_TRAITS(TSeq, int)(); ///< Sequence of the tool
 
-    std::shared_ptr<ToolFunctions<TSeq>> tool_functions = 
-        std::make_shared< ToolFunctions<TSeq> >();
+    ToolFun<TSeq> susceptibility_reduction = nullptr;
+    ToolFun<TSeq> transmission_reduction   = nullptr;
+    ToolFun<TSeq> recovery_enhancer        = nullptr;
+    ToolFun<TSeq> death_reduction          = nullptr;
+
+    ToolToAgentFun<TSeq> dist = nullptr;
 
     epiworld_fast_int state_init = -99;
     epiworld_fast_int state_post = -99;
@@ -13938,8 +13856,8 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 )
 {
 
-    if (tool_functions->susceptibility_reduction)
-        return tool_functions->susceptibility_reduction(
+    if (susceptibility_reduction)
+        return susceptibility_reduction(
             *this, this->agent, v, model
         );
 
@@ -13954,8 +13872,8 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 )
 {
 
-    if (tool_functions->transmission_reduction)
-        return tool_functions->transmission_reduction(
+    if (transmission_reduction)
+        return transmission_reduction(
             *this, this->agent, v, model
         );
 
@@ -13970,8 +13888,8 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 )
 {
 
-    if (tool_functions->recovery_enhancer)
-        return tool_functions->recovery_enhancer(*this, this->agent, v, model);
+    if (recovery_enhancer)
+        return recovery_enhancer(*this, this->agent, v, model);
 
     return DEFAULT_TOOL_RECOVERY_ENHANCER;
 
@@ -13984,8 +13902,8 @@ inline epiworld_double Tool<TSeq>::get_death_reduction(
 )
 {
 
-    if (tool_functions->death_reduction)
-        return tool_functions->death_reduction(*this, this->agent, v, model);
+    if (death_reduction)
+        return death_reduction(*this, this->agent, v, model);
 
     return DEFAULT_TOOL_DEATH_REDUCTION;
 
@@ -13996,7 +13914,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction_fun(
     ToolFun<TSeq> fun
 )
 {
-    tool_functions->susceptibility_reduction = fun;
+    susceptibility_reduction = fun;
 }
 
 template<typename TSeq>
@@ -14004,7 +13922,7 @@ inline void Tool<TSeq>::set_transmission_reduction_fun(
     ToolFun<TSeq> fun
 )
 {
-    tool_functions->transmission_reduction = fun;
+    transmission_reduction = fun;
 }
 
 template<typename TSeq>
@@ -14012,7 +13930,7 @@ inline void Tool<TSeq>::set_recovery_enhancer_fun(
     ToolFun<TSeq> fun
 )
 {
-    tool_functions->recovery_enhancer = fun;
+    recovery_enhancer = fun;
 }
 
 template<typename TSeq>
@@ -14020,7 +13938,7 @@ inline void Tool<TSeq>::set_death_reduction_fun(
     ToolFun<TSeq> fun
 )
 {
-    tool_functions->death_reduction = fun;
+    death_reduction = fun;
 }
 
 template<typename TSeq>
@@ -14033,7 +13951,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
             return *prob;
         };
 
-    tool_functions->susceptibility_reduction = tmpfun;
+    susceptibility_reduction = tmpfun;
 
 }
 
@@ -14048,7 +13966,7 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
             return *prob;
         };
 
-    tool_functions->transmission_reduction = tmpfun;
+    transmission_reduction = tmpfun;
 
 }
 
@@ -14063,7 +13981,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
             return *prob;
         };
 
-    tool_functions->recovery_enhancer = tmpfun;
+    recovery_enhancer = tmpfun;
 
 }
 
@@ -14078,7 +13996,7 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
             return *prob;
         };
 
-    tool_functions->death_reduction = tmpfun;
+    death_reduction = tmpfun;
 
 }
 
@@ -14097,7 +14015,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
             return prob;
         };
 
-    tool_functions->susceptibility_reduction = tmpfun;
+    susceptibility_reduction = tmpfun;
 
 }
 
@@ -14113,7 +14031,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
             return prob;
         };
 
-    tool_functions->transmission_reduction = tmpfun;
+    transmission_reduction = tmpfun;
 
 }
 
@@ -14129,7 +14047,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
             return prob;
         };
 
-    tool_functions->recovery_enhancer = tmpfun;
+    recovery_enhancer = tmpfun;
 
 }
 
@@ -14145,7 +14063,7 @@ inline void Tool<TSeq>::set_death_reduction(
             return prob;
         };
 
-    tool_functions->death_reduction = tmpfun;
+    death_reduction = tmpfun;
 
 }
 
@@ -14334,10 +14252,10 @@ template<typename TSeq>
 inline void Tool<TSeq>::distribute(Model<TSeq> * model)
 {
 
-    if (tool_functions->dist)
+    if (dist)
     {
 
-        tool_functions->dist(*this, model);
+        dist(*this, model);
 
     }
 
@@ -14346,13 +14264,14 @@ inline void Tool<TSeq>::distribute(Model<TSeq> * model)
 template<typename TSeq>
 inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
 {
-    tool_functions->dist = fun;
+    dist = fun;
 }
 
 template<typename TSeq>
 inline std::unique_ptr<Tool<TSeq>> Tool<TSeq>::clone_ptr() const
 {
-    return std::make_unique<Tool<TSeq>>(*this);
+    auto cloned = std::make_unique<Tool<TSeq>>(*this);
+    return cloned;
 }
 
 #endif
@@ -14579,7 +14498,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
                 );
 
             // Correcting for possible overflow
-            if ((loc > 0) && (loc >= n_left))
+            if ((n_left > 0) && (loc > n_left))
                 loc = n_left - 1;
 
             m->get_agent(idx[loc]).add_entity(*m, e);
@@ -14618,7 +14537,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
             for (int i = from; i < to; ++i)
             {
                 if (agents[i].get_n_entities() == 0)
-                    e.add_agent(&agents[i]);
+                    e.add_agent(&agents[i], *m);
                 else
                     throw std::logic_error(
                         "Agent " + std::to_string(i) + " already has an entity."
@@ -14638,7 +14557,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_range(
             auto & agents = m->get_agents();
             for (int i = from; i < to; ++i)
             {
-                e.add_agent(&agents[i]);
+                e.add_agent(&agents[i], *m);
             }
 
             return;
@@ -14847,6 +14766,7 @@ inline void Entity<TSeq>::reset()
 {
 
     this->agents.clear();
+    this->agents.shrink_to_fit();
 
     return;
 
@@ -15615,7 +15535,7 @@ private:
 
 public:
 
-    Agent();
+    Agent() = default;
     Agent(Agent<TSeq> && p);
     Agent(const Agent<TSeq> & p);
     Agent<TSeq> & operator=(const Agent<TSeq> & other_agent);
@@ -15838,7 +15758,6 @@ public:
 
 #ifndef EPIWORLD_AGENT_EVENTS_MEAT_HPP
 #define EPIWORLD_AGENT_EVENTS_MEAT_HPP
-
 
 template<typename TSeq>
 inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
@@ -16126,10 +16045,6 @@ inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> *)
 
 
 
-// To large to add directly here
-template<typename TSeq>
-inline Agent<TSeq>::Agent() {}
-
 template<typename TSeq>
 inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     neighbors(std::move(p.neighbors)),
@@ -16193,14 +16108,12 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
     }
     
 
+    tools.clear();
     tools.reserve(p.get_n_tools());
-    n_tools = tools.size();
+    n_tools = p.get_n_tools();
     for (size_t i = 0u; i < n_tools; ++i)
     {
-        
-        // Will create a copy of the virus, with the exeption of
-        // the virus code
-        tools.emplace_back(std::make_shared<Tool<TSeq>>(*p.tools[i]));
+        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(p.tools[i]->clone_ptr()));
         tools.back()->set_agent(this, i);
 
     }
@@ -16245,11 +16158,14 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     } else
         virus = nullptr;
     
-    n_tools             = other_agent.n_tools;
+    
+    n_tools = other_agent.n_tools;
+    tools.clear();
+    tools.reserve(n_tools);
     for (size_t i = 0u; i < n_tools; ++i)
     {
-        tools[i] = std::shared_ptr<Tool<TSeq>>(other_agent.tools[i]->clone_ptr());
-        tools[i]->set_agent(this, i);
+        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(other_agent.tools[i]->clone_ptr()));
+        tools.back()->set_agent(this, i);
     }
     
     return *this;
@@ -16749,9 +16665,11 @@ inline void Agent<TSeq>::reset()
     this->virus = nullptr;
 
     this->tools.clear();
+    this->tools.shrink_to_fit();
     n_tools = 0u;
 
     this->entities.clear();
+    this->entities.shrink_to_fit();
 
     this->state = 0u;
     this->state_prev = 0u;
@@ -16943,7 +16861,13 @@ inline const Entity<TSeq> & Agent<TSeq>::get_entity(size_t i, const Model<TSeq> 
     if (i >= entities.size())
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return model.get_entity(entities[i]);
+    return model.get_entity(
+        #ifdef EPI_DEBUG
+        entities.at(i)
+        #else
+        entities[i]
+        #endif
+    );
 }
 
 template<typename TSeq>
@@ -16955,7 +16879,13 @@ inline Entity<TSeq> & Agent<TSeq>::get_entity(size_t i, Model<TSeq> & model)
     if (i >= entities.size())
         throw std::range_error("Trying to get to an agent's entity outside of the range.");
 
-    return model.get_entity(entities[i]);
+    return model.get_entity(
+        #ifdef EPI_DEBUG
+        entities.at(i)
+        #else
+        entities[i]
+        #endif
+    );
 }
 
 template<typename TSeq>
@@ -16967,6 +16897,10 @@ inline size_t Agent<TSeq>::get_n_entities() const
 template<typename TSeq>
 inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 {
+
+    // Checking the address
+    if (this == &other)
+        return true;
 
     EPI_DEBUG_FAIL_AT_TRUE(
         n_neighbors != other.n_neighbors,
@@ -17033,7 +16967,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
     {
         
         EPI_DEBUG_FAIL_AT_TRUE(
-            tools[i] != other.tools[i],
+            *tools[i] != *other.tools[i],
             "Agent:: tools[i] don't match"
         )
          
@@ -28102,7 +28036,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
     for (auto & agent_i_idx: contacted_agents)
     {
         auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
-        auto state = agent_i.get_state();
 
         // If has a tool, then skip (is vaxxed)
         if (agent_i.get_n_tools() != 0u)
@@ -28112,7 +28045,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         // contact tracing
         if (agent_i.get_n_entities() != 0u)
         {
-            size_t group_id = agent_i.get_entity(0u, *m).get_id();
+            size_t group_id = agent_i.get_entity(0u, *this).get_id();
             if (groups_ids.find(group_id) != groups_ids.end())
                 continue;
         }

@@ -161,8 +161,8 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 )
 {
 
-    if (tool_functions->susceptibility_reduction)
-        return tool_functions->susceptibility_reduction(
+    if (susceptibility_reduction)
+        return susceptibility_reduction(
             *this, this->agent, v, model
         );
 
@@ -177,8 +177,8 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 )
 {
 
-    if (tool_functions->transmission_reduction)
-        return tool_functions->transmission_reduction(
+    if (transmission_reduction)
+        return transmission_reduction(
             *this, this->agent, v, model
         );
 
@@ -193,8 +193,8 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 )
 {
 
-    if (tool_functions->recovery_enhancer)
-        return tool_functions->recovery_enhancer(*this, this->agent, v, model);
+    if (recovery_enhancer)
+        return recovery_enhancer(*this, this->agent, v, model);
 
     return DEFAULT_TOOL_RECOVERY_ENHANCER;
 
@@ -207,8 +207,8 @@ inline epiworld_double Tool<TSeq>::get_death_reduction(
 )
 {
 
-    if (tool_functions->death_reduction)
-        return tool_functions->death_reduction(*this, this->agent, v, model);
+    if (death_reduction)
+        return death_reduction(*this, this->agent, v, model);
 
     return DEFAULT_TOOL_DEATH_REDUCTION;
 
@@ -219,7 +219,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction_fun(
     ToolFun<TSeq> fun
 )
 {
-    tool_functions->susceptibility_reduction = fun;
+    susceptibility_reduction = fun;
 }
 
 template<typename TSeq>
@@ -227,7 +227,7 @@ inline void Tool<TSeq>::set_transmission_reduction_fun(
     ToolFun<TSeq> fun
 )
 {
-    tool_functions->transmission_reduction = fun;
+    transmission_reduction = fun;
 }
 
 template<typename TSeq>
@@ -235,7 +235,7 @@ inline void Tool<TSeq>::set_recovery_enhancer_fun(
     ToolFun<TSeq> fun
 )
 {
-    tool_functions->recovery_enhancer = fun;
+    recovery_enhancer = fun;
 }
 
 template<typename TSeq>
@@ -243,7 +243,7 @@ inline void Tool<TSeq>::set_death_reduction_fun(
     ToolFun<TSeq> fun
 )
 {
-    tool_functions->death_reduction = fun;
+    death_reduction = fun;
 }
 
 template<typename TSeq>
@@ -256,7 +256,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
             return *prob;
         };
 
-    tool_functions->susceptibility_reduction = tmpfun;
+    susceptibility_reduction = tmpfun;
 
 }
 
@@ -271,7 +271,7 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
             return *prob;
         };
 
-    tool_functions->transmission_reduction = tmpfun;
+    transmission_reduction = tmpfun;
 
 }
 
@@ -286,7 +286,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
             return *prob;
         };
 
-    tool_functions->recovery_enhancer = tmpfun;
+    recovery_enhancer = tmpfun;
 
 }
 
@@ -301,7 +301,7 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
             return *prob;
         };
 
-    tool_functions->death_reduction = tmpfun;
+    death_reduction = tmpfun;
 
 }
 
@@ -320,7 +320,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
             return prob;
         };
 
-    tool_functions->susceptibility_reduction = tmpfun;
+    susceptibility_reduction = tmpfun;
 
 }
 
@@ -336,7 +336,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
             return prob;
         };
 
-    tool_functions->transmission_reduction = tmpfun;
+    transmission_reduction = tmpfun;
 
 }
 
@@ -352,7 +352,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
             return prob;
         };
 
-    tool_functions->recovery_enhancer = tmpfun;
+    recovery_enhancer = tmpfun;
 
 }
 
@@ -368,7 +368,7 @@ inline void Tool<TSeq>::set_death_reduction(
             return prob;
         };
 
-    tool_functions->death_reduction = tmpfun;
+    death_reduction = tmpfun;
 
 }
 
@@ -557,10 +557,10 @@ template<typename TSeq>
 inline void Tool<TSeq>::distribute(Model<TSeq> * model)
 {
 
-    if (tool_functions->dist)
+    if (dist)
     {
 
-        tool_functions->dist(*this, model);
+        dist(*this, model);
 
     }
 
@@ -569,18 +569,13 @@ inline void Tool<TSeq>::distribute(Model<TSeq> * model)
 template<typename TSeq>
 inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
 {
-    tool_functions->dist = fun;
+    dist = fun;
 }
 
 template<typename TSeq>
 inline std::unique_ptr<Tool<TSeq>> Tool<TSeq>::clone_ptr() const
 {
     auto cloned = std::make_unique<Tool<TSeq>>(*this);
-
-    // Ensure cloned tools don't share mutable function bundles.
-    if (tool_functions)
-        cloned->tool_functions = std::make_shared<ToolFunctions<TSeq>>(*tool_functions);
-
     return cloned;
 }
 
