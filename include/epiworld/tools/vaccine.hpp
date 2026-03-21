@@ -31,7 +31,7 @@ public:
     ToolVaccine(std::string name = "Vaccine") : Tool<TSeq>(name) {};
 
     virtual epiworld_double get_susceptibility_reduction(
-        VirusPtr<TSeq> v,
+        VirusPtr<TSeq> & v,
         Model<TSeq> * model
     ) override;
     
@@ -45,7 +45,7 @@ public:
 
 template<typename TSeq>
 inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq>,
+    VirusPtr<TSeq> &,
     Model<TSeq> * model
 )
 {

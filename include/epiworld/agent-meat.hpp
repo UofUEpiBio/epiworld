@@ -380,7 +380,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(Model<TSeq> & model)
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> & model
 ) {
 
@@ -389,7 +389,7 @@ inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> & model
 ) {
     return model.transmission_reduction_mixer(this, v);
@@ -397,7 +397,7 @@ inline epiworld_double Agent<TSeq>::get_transmission_reduction(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> & model
 ) {
     return model.recovery_enhancer_mixer(this, v);
@@ -405,7 +405,7 @@ inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> & model
 ) {
     return model.death_reduction_mixer(this, v);

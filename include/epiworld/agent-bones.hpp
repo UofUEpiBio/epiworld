@@ -200,10 +200,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> & model);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> & model);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> & model);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> & model);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> & v, Model<TSeq> & model);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
     ///@}
 
     int get_id() const; ///< Id of the individual

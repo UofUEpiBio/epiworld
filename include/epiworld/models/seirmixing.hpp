@@ -464,7 +464,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                const auto & v = p->get_virus();
+                auto & v = p->get_virus();
 
                 // Recover
                 m->array_double_tmp[n_events++] =

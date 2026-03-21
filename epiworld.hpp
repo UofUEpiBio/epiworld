@@ -135,10 +135,10 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 using GlobalEventPtr = std::shared_ptr< GlobalEvent< TSeq > >;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
@@ -7822,16 +7822,16 @@ protected:
      *
      */
     virtual epiworld_double susceptibility_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
     );
     virtual epiworld_double transmission_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
     );
     virtual epiworld_double recovery_enhancer_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
     );
     virtual epiworld_double death_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
     );
 
     /**
@@ -8686,7 +8686,7 @@ inline void Model<TSeq>::events_run()
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> & v
 )
 {
     epiworld_double total = 1.0;
@@ -8700,7 +8700,7 @@ inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> & v
 )
 {
     epiworld_double total = 1.0;
@@ -8714,7 +8714,7 @@ inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> & v
 )
 {
     epiworld_double total = 1.0;
@@ -8728,7 +8728,7 @@ inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::death_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> & v
 ) {
 
     epiworld_double total = 1.0;
@@ -13341,10 +13341,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    virtual epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    virtual epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
-    virtual epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    virtual epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
+    virtual epiworld_double get_transmission_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
+    virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> & v, Model<TSeq> * model);
+    virtual epiworld_double get_death_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
     
     virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
     virtual void set_transmission_reduction_fun(ToolFun<TSeq> fun);
@@ -13688,7 +13688,7 @@ inline ToolFun<TSeq> tool_fun_logit(
     ToolFun<TSeq> fun_ = [coefs_f,vars](
         Tool<TSeq>&,
         Agent<TSeq> * agent,
-        VirusPtr<TSeq>,
+        VirusPtr<TSeq> &,
         Model<TSeq> * model
         ) -> epiworld_double {
 
@@ -13785,7 +13785,7 @@ inline EPI_TYPENAME_TRAITS(TSeq, int) Tool<TSeq>::get_sequence() {
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> * model
 )
 {
@@ -13801,7 +13801,7 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> * model
 )
 {
@@ -13817,7 +13817,7 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> * model
 )
 {
@@ -13831,7 +13831,7 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 
 template<typename TSeq>
 inline epiworld_double Tool<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> * model
 )
 {
@@ -13880,7 +13880,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>, Model<TSeq> *)
+        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
         {
             return *prob;
         };
@@ -13895,7 +13895,7 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 {
     
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>, Model<TSeq> *)
+        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
         {
             return *prob;
         };
@@ -13910,7 +13910,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>, Model<TSeq> *)
+        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
         {
             return *prob;
         };
@@ -13925,7 +13925,7 @@ inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
 {
 
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>, Model<TSeq> *)
+        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
         {
             return *prob;
         };
@@ -13944,7 +13944,7 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>, Model<TSeq> *)
+        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
         {
             return prob;
         };
@@ -13960,7 +13960,7 @@ inline void Tool<TSeq>::set_transmission_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>, Model<TSeq> *)
+        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
         {
             return prob;
         };
@@ -13976,7 +13976,7 @@ inline void Tool<TSeq>::set_recovery_enhancer(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>, Model<TSeq> *)
+        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
         {
             return prob;
         };
@@ -13992,7 +13992,7 @@ inline void Tool<TSeq>::set_death_reduction(
 {
 
     ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>, Model<TSeq> *)
+        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
         {
             return prob;
         };
@@ -15565,10 +15565,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> & model);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> & model);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> & model);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> & model);
+    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
+    epiworld_double get_transmission_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
+    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> & v, Model<TSeq> & model);
+    epiworld_double get_death_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
     ///@}
 
     int get_id() const; ///< Id of the individual
@@ -16352,7 +16352,7 @@ inline void Agent<TSeq>::rm_agent_by_virus(Model<TSeq> & model)
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> & model
 ) {
 
@@ -16361,7 +16361,7 @@ inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> & model
 ) {
     return model.transmission_reduction_mixer(this, v);
@@ -16369,7 +16369,7 @@ inline epiworld_double Agent<TSeq>::get_transmission_reduction(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> & model
 ) {
     return model.recovery_enhancer_mixer(this, v);
@@ -16377,7 +16377,7 @@ inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
 
 template<typename TSeq>
 inline epiworld_double Agent<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> v,
+    VirusPtr<TSeq> & v,
     Model<TSeq> & model
 ) {
     return model.death_reduction_mixer(this, v);
@@ -17654,7 +17654,7 @@ public:
     ToolVaccine(std::string name = "Vaccine") : Tool<TSeq>(name) {};
 
     virtual epiworld_double get_susceptibility_reduction(
-        VirusPtr<TSeq> v,
+        VirusPtr<TSeq> & v,
         Model<TSeq> * model
     ) override;
     
@@ -17668,7 +17668,7 @@ public:
 
 template<typename TSeq>
 inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq>,
+    VirusPtr<TSeq> &,
     Model<TSeq> * model
 )
 {
@@ -19983,7 +19983,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                const auto & v = p->get_virus();
+                auto & v = p->get_virus();
 
                 // Recover
                 m->array_double_tmp[n_events++] = 
@@ -20564,7 +20564,7 @@ public:
     // Odd: Die, Even: Recover
     epiworld_fast_uint n_events = 0u;
 
-    const auto & v = p->get_virus();
+    auto & v = p->get_virus();
       
     // Die
     m->array_double_tmp[n_events++] = 
@@ -21296,7 +21296,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                     continue;
 
                 // All neighbors in this set are infected by construction
-                const auto & v = neighbor.get_virus();
+                auto & v = neighbor.get_virus();
             
                 #ifdef EPI_DEBUG
                 if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
@@ -21359,7 +21359,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                const auto & v = p->get_virus();
+                auto & v = p->get_virus();
                 
                 // Die
                 m->array_double_tmp[n_events++] = 
@@ -22607,7 +22607,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                const auto & v = p->get_virus();
+                auto & v = p->get_virus();
 
                 // Recover
                 m->array_double_tmp[n_events++] =
@@ -23202,7 +23202,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                const auto & v = p->get_virus();
+                auto & v = p->get_virus();
 
                 // Recover
                 m->array_double_tmp[n_events++] =
@@ -24994,7 +24994,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
         model->day_flagged[p->get_id()] = m->today();
 
     // Computing probabilities for state change
-    const auto & v = p->get_virus();
+    auto & v = p->get_virus();
     m->array_double_tmp[0] = 1.0 - (1.0 - v->get_prob_recovery(m)) *
         (1.0 - p->get_recovery_enhancer(v, *m));
     m->array_double_tmp[1] = m->par("Hospitalization rate");

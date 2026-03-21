@@ -205,16 +205,16 @@ protected:
      *
      */
     virtual epiworld_double susceptibility_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
     );
     virtual epiworld_double transmission_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
     );
     virtual epiworld_double recovery_enhancer_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
     );
     virtual epiworld_double death_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> virus
+        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
     );
 
     /**

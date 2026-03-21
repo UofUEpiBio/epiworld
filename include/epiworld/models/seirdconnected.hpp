@@ -203,7 +203,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                     continue;
 
                 // All neighbors in this set are infected by construction
-                const auto & v = neighbor.get_virus();
+                auto & v = neighbor.get_virus();
             
                 #ifdef EPI_DEBUG
                 if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
@@ -266,7 +266,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                const auto & v = p->get_virus();
+                auto & v = p->get_virus();
                 
                 // Die
                 m->array_double_tmp[n_events++] = 

@@ -746,7 +746,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
         model->day_flagged[p->get_id()] = m->today();
 
     // Computing probabilities for state change
-    const auto & v = p->get_virus();
+    auto & v = p->get_virus();
     m->array_double_tmp[0] = 1.0 - (1.0 - v->get_prob_recovery(m)) *
         (1.0 - p->get_recovery_enhancer(v, *m));
     m->array_double_tmp[1] = m->par("Hospitalization rate");

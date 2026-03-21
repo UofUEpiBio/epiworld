@@ -87,10 +87,10 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 using GlobalEventPtr = std::shared_ptr< GlobalEvent< TSeq > >;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>&,Model<TSeq>*)>;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;

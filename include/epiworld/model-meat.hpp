@@ -279,7 +279,7 @@ inline void Model<TSeq>::events_run()
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> & v
 )
 {
     epiworld_double total = 1.0;
@@ -293,7 +293,7 @@ inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> & v
 )
 {
     epiworld_double total = 1.0;
@@ -307,7 +307,7 @@ inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> & v
 )
 {
     epiworld_double total = 1.0;
@@ -321,7 +321,7 @@ inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::death_reduction_mixer(
     Agent<TSeq>* p,
-    VirusPtr<TSeq> v
+    VirusPtr<TSeq> & v
 ) {
 
     epiworld_double total = 1.0;

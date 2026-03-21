@@ -75,10 +75,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    virtual epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    virtual epiworld_double get_transmission_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
-    virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> v, Model<TSeq> * model);
-    virtual epiworld_double get_death_reduction(VirusPtr<TSeq> v, Model<TSeq> * model);
+    virtual epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
+    virtual epiworld_double get_transmission_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
+    virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> & v, Model<TSeq> * model);
+    virtual epiworld_double get_death_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
     
     virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
     virtual void set_transmission_reduction_fun(ToolFun<TSeq> fun);
