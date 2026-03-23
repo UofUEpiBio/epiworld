@@ -39,6 +39,8 @@ WITH_OPENMP   ?= 1
 # Enable code coverage support.
 WITH_COVERAGE ?= 0
 
+WITH_THREAD_SANITIZER ?= 0
+
 CFLAGS   := -std=c11
 CXXFLAGS := -std=c++17
 LDFLAGS  :=
@@ -63,6 +65,12 @@ ifeq ($(WITH_COVERAGE),1)
     CFLAGS   += --coverage
     CXXFLAGS += --coverage
     LDFLAGS  += --coverage
+endif
+
+ifeq ($(WITH_THREAD_SANITIZER),1)
+	CFLAGS   += -fsanitize=thread
+	CXXFLAGS += -fsanitize=thread
+	LDFLAGS  += -fsanitize=thread
 endif
 
 # Package tracking.
