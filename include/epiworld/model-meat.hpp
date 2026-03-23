@@ -1583,16 +1583,19 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     }
     #endif
 
-    #pragma omp parallel shared(these, nreplicates, nreplicates_csum, seeds_n) \
-        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, ndays) \
-        default(shared)
+    #pragma omp parallel shared(these) \
+        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, \
+        ndays, nreplicates, nreplicates_csum, seeds_n) default(shared)
     {
 
-        auto iam = omp_get_thread_num();
+        auto iam = static_cast<size_t>(omp_get_thread_num());
+        Model<TSeq> * model_ptr = iam == 0 ? this : &(*these[iam - 1u]);
+        size_t my_replicates = nreplicates[iam];
+        size_t my_replicates_csum = nreplicates_csum[iam];
 
-        for (size_t n = 0u; n < nreplicates[iam]; ++n)
+        for (size_t n = 0u; n < my_replicates; ++n)
         {
-            size_t run_id = nreplicates_csum[iam] + n;
+            size_t run_id = my_replicates_csum + n;
             if (iam == 0)
             {
 
@@ -1600,13 +1603,10 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
                 EPI_CHECK_USER_INTERRUPT(n);
 
                 // Setting the simulation id
-                set_sim_id(run_id);
+                model_ptr->set_sim_id(run_id);
 
                 // Initializing the seed
-                run(ndays, seeds_n[run_id]);
-
-                if (fun)
-                    fun(run_id, this);
+                model_ptr->run(ndays, seeds_n[run_id]);
 
                 // Only the first one prints
                 if (verbose)
@@ -1615,14 +1615,21 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
             } else {
 
                 // Setting the simulation id
-                these[iam - 1]->set_sim_id(run_id);
+                model_ptr->set_sim_id(run_id);
 
                 // Initializing the seed
-                these[iam - 1]->run(ndays, seeds_n[run_id]);
+                model_ptr->run(ndays, seeds_n[run_id]);
 
-                if (fun)
-                    fun(run_id, &(*these[iam - 1]));
+            }
 
+            if (fun)
+            {
+                // User callbacks often write into shared result containers.
+                // Serialize callback execution to avoid callback-induced races.
+                #pragma omp critical(epiworld_run_multiple_fun)
+                {
+                    fun(run_id, model_ptr);
+                }
             }
 
         }
