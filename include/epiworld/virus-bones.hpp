@@ -119,17 +119,17 @@ public:
     void post_recovery(Model<TSeq> * model);
     void set_post_recovery(PostRecoveryFun<TSeq> fun);
     void set_post_immunity(epiworld_double prob);
-    void set_post_immunity(epiworld_double * prob);
+    void set_post_immunity(std::string param);
 
     void set_prob_infecting_fun(VirusFun<TSeq> fun);
     void set_prob_recovery_fun(VirusFun<TSeq> fun);
     void set_prob_death_fun(VirusFun<TSeq> fun);
     void set_incubation_fun(VirusFun<TSeq> fun);
     
-    void set_prob_infecting(const epiworld_double * prob);
-    void set_prob_recovery(const epiworld_double * prob);
-    void set_prob_death(const epiworld_double * prob);
-    void set_incubation(const epiworld_double * prob);
+    void set_prob_infecting(std::string param);
+    void set_prob_recovery(std::string param);
+    void set_prob_death(std::string param);
+    void set_incubation(std::string param);
     
     void set_prob_infecting(epiworld_double prob);
     void set_prob_recovery(epiworld_double prob);

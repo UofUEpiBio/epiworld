@@ -127,15 +127,15 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs1, R0_exp1, R0s, model_1);
 
-    model_1("Contact rate") = model_1("Contact rate") * 1.5;
+    model_1.set_param("Contact rate", model_1("Contact rate") * 1.5);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs2, R0_exp2, R0s, model_1);
 
-    model_1("Contact rate") = model_1("Contact rate")  * 1.5;
+    model_1.set_param("Contact rate", model_1("Contact rate")  * 1.5);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs3, R0_exp3, R0s, model_1);
 
-    model_1("Contact rate") = model_1("Contact rate")  * 1.5;
+    model_1.set_param("Contact rate", model_1("Contact rate")  * 1.5);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs4, R0_exp4, R0s, model_1);
     

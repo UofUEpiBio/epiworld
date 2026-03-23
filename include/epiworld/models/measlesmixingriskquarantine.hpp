@@ -1251,9 +1251,9 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
         ModelMeaslesMixingRiskQuarantine<TSeq>::RECOVERED
         );
 
-    virus.set_prob_infecting(&model("Transmission rate"));
-    virus.set_prob_recovery(&model("Rash period"));
-    virus.set_incubation(&model("Incubation period"));
+    virus.set_prob_infecting("Transmission rate");
+    virus.set_prob_recovery("Rash period");
+    virus.set_incubation("Incubation period");
 
     model.add_virus(virus);
 

@@ -431,48 +431,52 @@ inline void Virus<TSeq>::set_incubation_fun(VirusFun<TSeq> fun)
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_prob_infecting(const epiworld_double * prob)
+inline void Virus<TSeq>::set_prob_infecting(std::string param)
 {
+    auto parname_ptr = std::make_shared< const std::string >(param);
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
+        [parname_ptr](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
         {
-            return *prob;
+            return model->get_param(*parname_ptr);
         };
     
     probability_of_infecting = tmpfun;
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_prob_recovery(const epiworld_double * prob)
+inline void Virus<TSeq>::set_prob_recovery(std::string param)
 {
+    auto parname_ptr = std::make_shared< const std::string >(param);
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
+        [parname_ptr](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
         {
-            return *prob;
+            return model->get_param(*parname_ptr);
         };
     
     probability_of_recovery = tmpfun;
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_prob_death(const epiworld_double * prob)
+inline void Virus<TSeq>::set_prob_death(std::string param)
 {
+    auto parname_ptr = std::make_shared< const std::string >(param);
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
+        [parname_ptr](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
         {
-            return *prob;
+            return model->get_param(*parname_ptr);
         };
     
     probability_of_death = tmpfun;
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::set_incubation(const epiworld_double * prob)
+inline void Virus<TSeq>::set_incubation(std::string param)
 {
+    auto parname_ptr = std::make_shared< const std::string >(param);
     VirusFun<TSeq> tmpfun = 
-        [prob](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> *)
+        [parname_ptr](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
         {
-            return *prob;
+            return model->get_param(*parname_ptr);
         };
     
     incubation = tmpfun;
@@ -605,7 +609,7 @@ inline void Virus<TSeq>::set_post_immunity(
 
 template<typename TSeq>
 inline void Virus<TSeq>::set_post_immunity(
-    epiworld_double * prob
+    std::string param
 )
 {
 
@@ -629,7 +633,7 @@ inline void Virus<TSeq>::set_post_immunity(
         "Immunity (" + virus_name + ")"
     );
 
-    __no_reinfect->set_susceptibility_reduction(prob);
+    __no_reinfect->set_susceptibility_reduction(param);
     __no_reinfect->set_death_reduction(0.0);
     __no_reinfect->set_transmission_reduction(0.0);
     __no_reinfect->set_recovery_enhancer(0.0);

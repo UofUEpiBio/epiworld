@@ -345,9 +345,9 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         ModelSEIRCONN<TSeq>::RECOVERED
         );
 
-    virus.set_prob_infecting(&model("Prob. Transmission"));
-    virus.set_prob_recovery(&model("Prob. Recovery"));
-    virus.set_incubation(&model("Avg. Incubation days"));
+    virus.set_prob_infecting("Prob. Transmission");
+    virus.set_prob_recovery("Prob. Recovery");
+    virus.set_incubation("Avg. Incubation days");
 
     model.add_virus(virus);
 

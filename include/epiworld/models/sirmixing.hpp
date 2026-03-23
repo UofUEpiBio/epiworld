@@ -507,8 +507,8 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         ModelSIRMixing<TSeq>::RECOVERED
         );
 
-    virus.set_prob_infecting(&model("Prob. Transmission"));
-    virus.set_prob_recovery(&model("Prob. Recovery"));
+    virus.set_prob_infecting("Prob. Transmission");
+    virus.set_prob_recovery("Prob. Recovery");
 
     model.add_virus(virus);
 

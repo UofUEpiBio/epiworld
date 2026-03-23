@@ -247,13 +247,15 @@ inline void Tool<TSeq>::set_death_reduction_fun(
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
+inline void Tool<TSeq>::set_susceptibility_reduction(std::string param)
 {
 
+    auto parname_ptr = std::make_shared<const std::string>(param);
+
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
+        [parname_ptr](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
         {
-            return *prob;
+            return model->get_param(*parname_ptr);
         };
 
     susceptibility_reduction = tmpfun;
@@ -262,13 +264,15 @@ inline void Tool<TSeq>::set_susceptibility_reduction(epiworld_double * prob)
 
 // EPIWORLD_SET_LAMBDA(susceptibility_reduction)
 template<typename TSeq>
-inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
+inline void Tool<TSeq>::set_transmission_reduction(std::string param)
 {
+
+    auto parname_ptr = std::make_shared<const std::string>(param);
     
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
+        [parname_ptr](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
         {
-            return *prob;
+            return model->get_param(*parname_ptr);
         };
 
     transmission_reduction = tmpfun;
@@ -277,13 +281,15 @@ inline void Tool<TSeq>::set_transmission_reduction(epiworld_double * prob)
 
 // EPIWORLD_SET_LAMBDA(transmission_reduction)
 template<typename TSeq>
-inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
+inline void Tool<TSeq>::set_recovery_enhancer(std::string param)
 {
 
+    auto parname_ptr = std::make_shared<const std::string>(param);
+
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
+        [parname_ptr](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
         {
-            return *prob;
+            return model->get_param(*parname_ptr);
         };
 
     recovery_enhancer = tmpfun;
@@ -292,13 +298,15 @@ inline void Tool<TSeq>::set_recovery_enhancer(epiworld_double * prob)
 
 // EPIWORLD_SET_LAMBDA(recovery_enhancer)
 template<typename TSeq>
-inline void Tool<TSeq>::set_death_reduction(epiworld_double * prob)
+inline void Tool<TSeq>::set_death_reduction(std::string param)
 {
 
+    auto parname_ptr = std::make_shared<const std::string>(param);
+
     ToolFun<TSeq> tmpfun =
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
+        [parname_ptr](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
         {
-            return *prob;
+            return model->get_param(*parname_ptr);
         };
 
     death_reduction = tmpfun;

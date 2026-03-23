@@ -360,10 +360,10 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
         ModelSEIRDCONN<TSeq>::DECEASED
         );
 
-    virus.set_prob_infecting(&model("Prob. Transmission"));
-    virus.set_prob_recovery(&model("Prob. Recovery"));
-    virus.set_incubation(&model("Avg. Incubation days"));
-    virus.set_prob_death(&model("Death rate"));
+    virus.set_prob_infecting("Prob. Transmission");
+    virus.set_prob_recovery("Prob. Recovery");
+    virus.set_incubation("Avg. Incubation days");
+    virus.set_prob_death("Death rate");
     model.add_virus(virus);
 
     model.queuing_off(); // No queuing need

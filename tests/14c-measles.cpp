@@ -37,7 +37,7 @@ EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesSchoolR0]") {
     );
 
     // Shutting off the quarantine feature
-    model_0("Quarantine period") = -1.0;
+    model_0.set_param("Quarantine period", -1.0);
 
     // Setting the distribution function of the initial cases
     model_0.get_virus(0).set_distribution(
@@ -62,15 +62,15 @@ EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesSchoolR0]") {
     model_0.run_multiple(n_days, nsims, 1231, saver, true, true, n_threads);
     calc_r0(R0_obs1, R0_exp1, R0s, model_0);
 
-    model_0("Contact rate") = model_0("Contact rate") * 1.5;
+    model_0.set_param("Contact rate", model_0("Contact rate") * 1.5);
     model_0.run_multiple(n_days, nsims, 1231, saver, true, true, n_threads);
     calc_r0(R0_obs2, R0_exp2, R0s, model_0);
 
-    model_0("Contact rate") = model_0("Contact rate")  * 1.5;
+    model_0.set_param("Contact rate", model_0("Contact rate")  * 1.5);
     model_0.run_multiple(n_days, nsims, 1231, saver, true, true, n_threads);
     calc_r0(R0_obs3, R0_exp3, R0s, model_0);
 
-    model_0("Contact rate") = model_0("Contact rate")  * 1.5;
+    model_0.set_param("Contact rate", model_0("Contact rate")  * 1.5);
     model_0.run_multiple(n_days, nsims, 1231, saver, true, true, n_threads);
     calc_r0(R0_obs4, R0_exp4, R0s, model_0);
 

@@ -729,7 +729,7 @@ inline void Model<TSeq>::set_rand_poiss(epiworld_double lambda)
 }
 
 template<typename TSeq>
-inline epiworld_double & Model<TSeq>::operator()(std::string pname) {
+inline epiworld_double Model<TSeq>::operator()(std::string pname) {
 
     if (parameters.find(pname) == parameters.end())
         throw std::range_error("The parameter '"+ pname + "' is not in the model.");
@@ -1488,6 +1488,9 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     if (seed_ >= 0)
         this->seed(seed_);
 
+    if (nexperiments == 0u)
+        throw std::logic_error("The number of experiments must be above 0.");
+
     // Seeds will be reproducible by default
     std::vector< int > seeds_n(nexperiments);
     for (auto & s : seeds_n)
@@ -1512,13 +1515,13 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     if (reset)
         set_backup();
 
-    #ifdef _OPENMP
-
-    omp_set_num_threads(nthreads);
-
     // Not more than the number of experiments
     nthreads =
         static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
+
+    #ifdef _OPENMP
+    
+    omp_set_num_threads(nthreads);
 
     // Generating copies of the model (done serially to avoid races on original)
     std::vector< std::unique_ptr< Model<TSeq> > > these;
