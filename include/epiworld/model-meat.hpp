@@ -1515,11 +1515,11 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     if (reset)
         set_backup();
 
+    #ifdef _OPENMP
+
     // Not more than the number of experiments
     nthreads =
         static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
-
-    #ifdef _OPENMP
     
     omp_set_num_threads(nthreads);
 
