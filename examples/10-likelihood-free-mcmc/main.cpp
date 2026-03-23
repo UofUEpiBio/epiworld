@@ -17,8 +17,8 @@ std::vector< int > simfun(
     LFMCMC<std::vector<int>> * m
 ) {
 
-    model("Recovery rate") = params[0u];
-    model("Transmission rate")  = params[1u];
+    model.set_param("Recovery rate", params[0u]);
+    model.set_param("Transmission rate", params[1u]);
 
     model.reset();
     model.run(50);

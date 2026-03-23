@@ -130,6 +130,13 @@ public:
     void set_prob_recovery(std::string param);
     void set_prob_death(std::string param);
     void set_incubation(std::string param);
+
+    // Deleting pointer versions to avoid mistakes
+    void set_prob_infecting(epiworld_double * prob) = delete;
+    void set_prob_recovery(epiworld_double * prob) = delete;
+    void set_prob_death(epiworld_double * prob) = delete;
+    void set_incubation(epiworld_double * prob) = delete;
+    void set_post_immunity(epiworld_double * prob) = delete;
     
     void set_prob_infecting(epiworld_double prob);
     void set_prob_recovery(epiworld_double prob);

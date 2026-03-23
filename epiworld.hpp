@@ -9921,11 +9921,11 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     if (reset)
         set_backup();
 
+    #ifdef _OPENMP
+
     // Not more than the number of experiments
     nthreads =
         static_cast<size_t>(nthreads) > nexperiments ? nexperiments : nthreads;
-
-    #ifdef _OPENMP
     
     omp_set_num_threads(nthreads);
 
@@ -11794,6 +11794,13 @@ public:
     void set_prob_recovery(std::string param);
     void set_prob_death(std::string param);
     void set_incubation(std::string param);
+
+    // Deleting pointer versions to avoid mistakes
+    void set_prob_infecting(epiworld_double * prob) = delete;
+    void set_prob_recovery(epiworld_double * prob) = delete;
+    void set_prob_death(epiworld_double * prob) = delete;
+    void set_incubation(epiworld_double * prob) = delete;
+    void set_post_immunity(epiworld_double * prob) = delete;
     
     void set_prob_infecting(epiworld_double prob);
     void set_prob_recovery(epiworld_double prob);
@@ -13361,6 +13368,12 @@ public:
     virtual void set_transmission_reduction(std::string param);
     virtual void set_recovery_enhancer(std::string param);
     virtual void set_death_reduction(std::string param);
+
+    // Deleting pointer versions to avoid mistakes
+    virtual void set_susceptibility_reduction(epiworld_double * prob) = delete;
+    virtual void set_transmission_reduction(epiworld_double * prob) = delete;
+    virtual void set_recovery_enhancer(epiworld_double * prob) = delete;
+    virtual void set_death_reduction(epiworld_double * prob) = delete;
 
     virtual void set_susceptibility_reduction(epiworld_double prob);
     virtual void set_transmission_reduction(epiworld_double prob);

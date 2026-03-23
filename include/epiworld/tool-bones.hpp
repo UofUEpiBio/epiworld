@@ -90,6 +90,12 @@ public:
     virtual void set_recovery_enhancer(std::string param);
     virtual void set_death_reduction(std::string param);
 
+    // Deleting pointer versions to avoid mistakes
+    virtual void set_susceptibility_reduction(epiworld_double * prob) = delete;
+    virtual void set_transmission_reduction(epiworld_double * prob) = delete;
+    virtual void set_recovery_enhancer(epiworld_double * prob) = delete;
+    virtual void set_death_reduction(epiworld_double * prob) = delete;
+
     virtual void set_susceptibility_reduction(epiworld_double prob);
     virtual void set_transmission_reduction(epiworld_double prob);
     virtual void set_recovery_enhancer(epiworld_double prob);
