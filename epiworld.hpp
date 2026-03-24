@@ -9991,7 +9991,7 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
 
     #pragma omp parallel shared(these) \
         firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, \
-        ndays, nreplicates, nreplicates_csum, seeds_n) default(shared)
+        ndays, nreplicates, nreplicates_csum, seeds_n) default(none)
     {
 
         auto iam = static_cast<size_t>(omp_get_thread_num());
@@ -20944,7 +20944,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                 if (neighbor.get_state() == ModelSIRDCONN<TSeq>::INFECTED)
                 {
 
-                    const auto & v = neighbor.get_virus();
+                    auto & v = neighbor.get_virus();
                     
                     #ifdef EPI_DEBUG
                     if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
@@ -20992,7 +20992,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
 
                 // Odd: Die, Even: Recover
                 epiworld_fast_uint n_events = 0u;
-                const auto & v = p->get_virus();
+                auto & v = p->get_virus();
                     
                 // Die
                 m->array_double_tmp[n_events++] = 

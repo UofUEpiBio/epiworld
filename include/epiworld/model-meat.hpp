@@ -1585,7 +1585,7 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
 
     #pragma omp parallel shared(these) \
         firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, \
-        ndays, nreplicates, nreplicates_csum, seeds_n) default(shared)
+        ndays, nreplicates, nreplicates_csum, seeds_n) default(none)
     {
 
         auto iam = static_cast<size_t>(omp_get_thread_num());
