@@ -7774,6 +7774,7 @@ protected:
     std::chrono::duration<epiworld_double,std::micro> time_elapsed =
         std::chrono::duration<epiworld_double,std::micro>::zero();
     epiworld_fast_uint n_replicates = 0u;
+    size_t last_seed = 0;
     void chrono_start();
     void chrono_end();
 
@@ -9792,6 +9793,8 @@ inline Model<TSeq> & Model<TSeq>::run(
     if (seed >= 0)
         engine->seed(seed);
 
+    last_seed = seed;
+
     // Checking whether the proposed state in/out/removed
     // are valid
     epiworld_fast_int _init, _end, _removed;
@@ -10569,10 +10572,12 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
     
     if (rewire_fun)
     {
-        printf_epiworld("Rewiring            : on (%.2f)\n\n", rewire_prop);
+        printf_epiworld("Rewiring            : on (%.2f)\n", rewire_prop);
     } else {
-        printf_epiworld("Rewiring            : off\n\n");
+        printf_epiworld("Rewiring            : off\n");
     }
+
+    printf_epiworld("Last seed used      : %i\n\n", static_cast<int>(last_seed));
     
     // Printing Global events
     printf_epiworld("Global events:\n");
