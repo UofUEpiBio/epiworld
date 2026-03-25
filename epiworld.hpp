@@ -28,7 +28,7 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 13
+#define EPIWORLD_VERSION_MINOR 14
 #define EPIWORLD_VERSION_PATCH 0
 
 static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
@@ -15366,7 +15366,9 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
     if (which == 0u) // If odd
     {
 
-        p->rm_agent_by_virus(*m);
+        int rm_state = -1;
+        p->get_virus()->get_state(nullptr, nullptr, &rm_state);
+        p->rm_virus(*m, rm_state);
         
     } else {
 
@@ -15589,7 +15591,7 @@ public:
         epiworld_fast_int queue = -99
     );
 
-    void rm_agent_by_virus(Model<TSeq> & model); ///< Agent removed by virus
+    void rm_agent_by_virus(Model<TSeq> & model) = delete; ///< Agent removed by virus
     ///@}
     
     /**
@@ -16369,19 +16371,6 @@ inline void Agent<TSeq>::rm_entity(
         queue,
         default_rm_entity<TSeq>
     );
-}
-
-template<typename TSeq>
-inline void Agent<TSeq>::rm_agent_by_virus(Model<TSeq> & model)
-{
-
-    model.events_add(
-        this, virus, nullptr, nullptr,
-        virus->state_removed,
-        virus->queue_removed,
-        default_rm_virus<TSeq>
-        );
-
 }
 
 template<typename TSeq>
@@ -20634,7 +20623,7 @@ public:
     if ((which % 2) == 0) // If odd
     {
       
-      p->rm_agent_by_virus(*m);
+      p->rm_virus(*m, ModelSEIRD<TSeq>::DECEASED);
       
     } else {
       
@@ -21028,7 +21017,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                 if ((which % 2) == 0) // If odd
                 {
                     
-                    p->rm_agent_by_virus(*m);
+                    p->rm_virus(*m, ModelSIRDCONN<TSeq>::DECEASED);
                     
                 } else {
                     
@@ -21428,11 +21417,11 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 if ((which % 2) == 0) // If odd
                 {
                 
-                    p->rm_agent_by_virus(*m);
+                    p->rm_virus(*m, ModelSEIRDCONN<TSeq>::DECEASED);
                 
                 } else {
                 
-                    p->rm_virus(*m);
+                    p->rm_virus(*m, ModelSEIRDCONN<TSeq>::REMOVED);
                 
                 }
 

@@ -243,8 +243,6 @@ result in gaining immunity to that variant.
 agent. Examples of this are moving from "exposed" to "infected," from "infected"
 to "ICU," etc.
 
-- **Become removed (`rm_agent_by_virus()`)**: An agent becomes inactive after its condition worsens. In such a case, all viruses attached to the agent are also removed.
-
 Any action in the model can trigger a change in its queuing system. By default, becoming exposed makes the agent (and its neighbors) active in the queuing system. Likewise, losing all viruses could make the agent and its neighbors inactive.
 
 <!--
