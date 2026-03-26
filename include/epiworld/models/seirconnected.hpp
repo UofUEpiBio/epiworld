@@ -142,7 +142,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             if (ndraw == 0)
                 return;
 
-            ModelSEIRCONN<TSeq> * model = dynamic_cast<ModelSEIRCONN<TSeq> *>(m);
+            auto * model = model_cast<ModelSEIRCONN<TSeq>,TSeq>(m);
             size_t ninfected = model->get_n_infected();
 
             // Drawing from the set
@@ -295,7 +295,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         ) -> void
         {
 
-            ModelSEIRCONN<TSeq> * model = dynamic_cast<ModelSEIRCONN<TSeq> *>(m);
+            ModelSEIRCONN<TSeq> * model = model_cast<ModelSEIRCONN<TSeq>,TSeq>(m);
 
             model->update_infected();
 

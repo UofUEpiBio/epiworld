@@ -168,7 +168,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         {
 
             // Getting the right type
-            ModelSIRLogit<TSeq> * _m = dynamic_cast<ModelSIRLogit<TSeq>*>(m);
+            ModelSIRLogit<TSeq> * _m = model_cast<ModelSIRLogit<TSeq>,TSeq>(m);
 
             // Exposure coefficient
             const double coef_exposure = _m->coefs_infect[0u];
@@ -233,7 +233,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         {
 
             // Getting the right type
-            ModelSIRLogit<TSeq> * _m = dynamic_cast<ModelSIRLogit<TSeq>*>(m);
+            ModelSIRLogit<TSeq> * _m = model_cast<ModelSIRLogit<TSeq>,TSeq>(m);
 
             // Computing recovery probability once
             double prob    = 0.0;

@@ -148,7 +148,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             if (ndraw == 0)
                 return;
 
-            ModelSIRCONN<TSeq> * model = dynamic_cast<ModelSIRCONN<TSeq> *>(m);
+            ModelSIRCONN<TSeq> * model = model_cast<ModelSIRCONN<TSeq>,TSeq>(m);
             size_t ninfected = model->get_n_infected();
 
             // Drawing from the set
@@ -282,7 +282,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     // Adding update function
     GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
     {
-        ModelSIRCONN<TSeq> * model = dynamic_cast<ModelSIRCONN<TSeq> *>(m);
+        ModelSIRCONN<TSeq> * model = model_cast<ModelSIRCONN<TSeq>,TSeq>(m);
         model->update_infected();
         
         return;

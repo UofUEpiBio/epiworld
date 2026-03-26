@@ -213,7 +213,7 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
 template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::m_update_model(Model<TSeq> * m) {
 
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     model->quarantine_agents();
     model->events_run();
     model->update_infectious();
@@ -311,7 +311,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
     if (ndraw == 0)
         return;
 
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     size_t n_infectious = model->infectious.size();
 
     if (n_infectious == 0)
@@ -404,7 +404,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
 
-        auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+        auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(*m, ModelMeaslesSchool<TSeq>::RASH);
 
@@ -417,7 +417,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
 LOCAL_UPDATE_FUN(m_update_rash) {
 
 
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
     #ifdef EPI_DEBUG
     if (static_cast<int>(model->day_flagged.size()) <= p->get_id())
@@ -486,7 +486,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
 
 LOCAL_UPDATE_FUN(m_update_isolated) {
 
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
     // Figuring out if the agent can be released from isolation
     // if the quarantine period is over.
@@ -541,7 +541,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
 
 LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
 
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
     // Figuring out if the agent can be released from isolation
     // if the quarantine period is over.
@@ -559,7 +559,7 @@ LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
 LOCAL_UPDATE_FUN(m_update_q_exposed) {
 
     // How many days since quarantine started
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     int days_since =
         m->today() - model->day_flagged[p->get_id()];
 
@@ -594,7 +594,7 @@ LOCAL_UPDATE_FUN(m_update_q_exposed) {
 
 LOCAL_UPDATE_FUN(m_update_q_susceptible) {
 
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     int days_since =
         m->today() - model->day_flagged[p->get_id()];
 
@@ -605,7 +605,7 @@ LOCAL_UPDATE_FUN(m_update_q_susceptible) {
 
 LOCAL_UPDATE_FUN(m_update_q_prodromal) {
 
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
     // Otherwise, these are moved to the prodromal period, if
     // the quanrantine period is over.
@@ -633,7 +633,7 @@ LOCAL_UPDATE_FUN(m_update_q_prodromal) {
 
 LOCAL_UPDATE_FUN(m_update_q_recovered) {
 
-    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))

@@ -139,7 +139,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
             if (ndraw == 0)
                 return;
 
-            ModelSEIRDCONN<TSeq> * model = dynamic_cast<ModelSEIRDCONN<TSeq> *>(
+            ModelSEIRDCONN<TSeq> * model = model_cast<ModelSEIRDCONN<TSeq>,TSeq>(
                 m
                 );
 
@@ -305,7 +305,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
     // Adding update function
     GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
     {
-        ModelSEIRDCONN<TSeq> * model = dynamic_cast<ModelSEIRDCONN<TSeq> *>(m);
+        ModelSEIRDCONN<TSeq> * model = model_cast<ModelSEIRDCONN<TSeq>,TSeq>(m);
         
         if (model == nullptr)
             throw std::logic_error(

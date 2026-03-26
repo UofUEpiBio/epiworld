@@ -260,7 +260,7 @@ public:
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::m_update_model(Model<TSeq> * m)
 {
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);;
     model->m_quarantine_process();
     model->events_run();
     model->m_update_infectious_list();
@@ -556,7 +556,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
 
     // Downcasting to retrieve the sampler attached to the
     // class
-    auto * m_down = static_cast<ModelMeaslesMixing<TSeq>*>(m);
+    auto * m_down = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
 
     size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
@@ -640,7 +640,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_prodromal(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
 
     // Does the agent transition to rash?
     if (m->runif() < 1.0/m->par("Prodromal period"))
@@ -658,7 +658,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
 
     // Checking if the agent will be detected or not
     bool detected = false;
@@ -716,7 +716,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
 
     // Figuring out if the agent can be released from isolation
     // if the isolation period is over.
@@ -780,7 +780,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_suscep(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
 
     // Figuring out if the agent can be released from quarantine
     // if the quarantine period is over.
@@ -804,7 +804,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_exposed(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
 
     // Figuring out if the agent can be released from quarantine
     // if the quarantine period is over.
@@ -846,7 +846,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_prodromal(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
 
     // Otherwise, these are moved to the prodromal period, if
     // the quarantine period is over.
@@ -877,7 +877,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_recovered(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))
@@ -890,7 +890,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated_recovered(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
 
     // Figuring out if the agent can be released from isolation
     // if the isolation period is over.
