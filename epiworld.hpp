@@ -161,6 +161,16 @@ struct Event;
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using EventFun = std::function<void(Event<TSeq>&,Model<TSeq>*)>;
 
+enum class EventAction : uint8_t {
+    AddVirus,
+    AddTool,
+    AddEntity,
+    RemoveVirus,
+    RemoveTool,
+    RemoveEntity,
+    ChangeState
+};
+
 /**
  * @brief Decides how to distribute viruses at initialization
  */
@@ -192,7 +202,7 @@ struct Event {
     Entity<TSeq> * entity;
     epiworld_fast_int new_state;
     epiworld_fast_int queue;
-    EventFun<TSeq> call;
+    EventAction action;
 public:
 /**
      * @brief Construct a new Event object
@@ -206,7 +216,7 @@ public:
      * @param tool_idx Index of tool to be removed (if needed)
      * @param new_state_ Next state
      * @param queue_ Efect on the queue
-     * @param call_ The action call (if needed)
+     * @param action_ The action to execute
      */
     Event(
         Agent<TSeq> * agent_,
@@ -215,10 +225,10 @@ public:
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> & call_
+        EventAction action_
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
         new_state(new_state_),
-        queue(queue_), call(call_) {
+        queue(queue_), action(action_) {
             return;
         };
 };
@@ -3720,21 +3730,6 @@ class Virus;
 template<typename TSeq>
 class UserData;
 
-template<typename TSeq>
-inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m);
-
 /**
  * @brief Statistical data about the process
  *
@@ -3743,11 +3738,6 @@ inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m);
 template<typename TSeq>
 class DataBase {
     friend class Model<TSeq>;
-    friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
     Model<TSeq> * model;
 
@@ -7833,18 +7823,34 @@ protected:
      * @param tool_ Tool pointer included in the action
      * @param entity_ Entity pointer included in the action
      * @param new_state_ New state of the agent
-     * @param call_ Function the action will call
      * @param queue_ Change in the queue
+      * @param action_ Action to execute when processing the event
      */
-    void events_add(
+    void _add_event(
         Agent<TSeq> * agent_,
         VirusPtr<TSeq> virus_,
         ToolPtr<TSeq> tool_,
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventFun<TSeq> call_
+          EventAction action_
         );
+
+    /**
+     * @name Default event handlers
+     *
+     * These member functions implement the default behavior for each
+     * event action (add/remove virus, tool, entity, or change state).
+     */
+    ///@{
+    void _event_add_virus(Event<TSeq> & a);
+    void _event_add_tool(Event<TSeq> & a);
+    void _event_add_entity(Event<TSeq> & a);
+    void _event_rm_virus(Event<TSeq> & a);
+    void _event_rm_tool(Event<TSeq> & a);
+    void _event_rm_entity(Event<TSeq> & a);
+    void _event_change_state(Event<TSeq> & a);
+    ///@}
 
     /**
      * @name Tool Mixers
@@ -8573,14 +8579,14 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
 
 
 template<typename TSeq>
-inline void Model<TSeq>::events_add(
+inline void Model<TSeq>::_add_event(
     Agent<TSeq> * agent_,
     VirusPtr<TSeq> virus_,
     ToolPtr<TSeq> tool_,
     Entity<TSeq> * entity_,
     epiworld_fast_int new_state_,
     epiworld_fast_int queue_,
-    EventFun<TSeq> call_
+    EventAction action_
 ) {
 
     ++nactions;
@@ -8595,7 +8601,7 @@ inline void Model<TSeq>::events_add(
 
         events.emplace_back(
             Event<TSeq>(
-                agent_, virus_, tool_, entity_, new_state_, queue_, call_
+                agent_, virus_, tool_, entity_, new_state_, queue_, action_
             ));
 
     }
@@ -8610,7 +8616,7 @@ inline void Model<TSeq>::events_add(
         A.entity     = std::move(entity_);
         A.new_state  = std::move(new_state_);
         A.queue      = std::move(queue_);
-        A.call       = std::move(call_);
+        A.action     = std::move(action_);
 
     }
 
@@ -8659,11 +8665,31 @@ inline void Model<TSeq>::events_run()
         } else if (p->state_last_changed != today())
             p->state_prev = p->state; // Recording the previous state
 
-        // Applying function after the fact. This way, if there were
-        // updates, they can be recorded properly, before losing the information
-        if (a.call)
+        switch (a.action)
         {
-            a.call(a, this);
+        case EventAction::AddVirus:
+            _event_add_virus(a);
+            break;
+        case EventAction::AddTool:
+            _event_add_tool(a);
+            break;
+        case EventAction::AddEntity:
+            _event_add_entity(a);
+            break;
+        case EventAction::RemoveVirus:
+            _event_rm_virus(a);
+            break;
+        case EventAction::RemoveTool:
+            _event_rm_tool(a);
+            break;
+        case EventAction::RemoveEntity:
+            _event_rm_entity(a);
+            break;
+        case EventAction::ChangeState:
+            _event_change_state(a);
+            break;
+        default:
+            throw std::logic_error("The requested event action is not supported.");
         }
 
         if (a.new_state != -99)
@@ -11734,8 +11760,6 @@ class Virus {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;
     friend class DataBase<TSeq>;
-    friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
     
     Agent<TSeq> * agent = nullptr;
@@ -13346,8 +13370,6 @@ template<typename TSeq>
 class Tool {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;
-    friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
 
     Agent<TSeq> * agent = nullptr;
@@ -14312,12 +14334,6 @@ class Agent;
 template<typename TSeq>
 class AgentsSample;
 
-template<typename TSeq>
-inline void default_add_entity(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m);
-
 /**
  * @brief Groups of agents within a model.
  */
@@ -14326,8 +14342,6 @@ class Entity {
     friend class Agent<TSeq>;
     friend class AgentsSample<TSeq>;
     friend class Model<TSeq>;
-    friend void default_add_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
     
     int id = -1;
@@ -15476,29 +15490,6 @@ class Entities;
 template<typename TSeq>
 class AgentsSample;
 
-template<typename TSeq>
-inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_add_entity(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> * m);
-
-template<typename TSeq>
-inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m);
-
-
-
 /**
  * @brief Agent (agents)
  * 
@@ -15513,13 +15504,6 @@ class Agent {
     friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
     friend class AgentsSample<TSeq>;
-    friend void default_add_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_add_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_add_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_virus<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_tool<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_rm_entity<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
-    friend void default_change_state<TSeq>(Event<TSeq> & a, Model<TSeq> * m);
 private:
 
     std::vector< size_t > * neighbors = nullptr;
@@ -15769,13 +15753,13 @@ public:
 #define EPIWORLD_AGENT_EVENTS_MEAT_HPP
 
 template<typename TSeq>
-inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
+inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
 {
 
     Agent<TSeq> *  p = a.agent;
     VirusPtr<TSeq> & v = a.virus;
     
-    m->get_db().record_transmission(
+    db.record_transmission(
         v->get_agent() ? v->get_agent()->get_id() : -1,
         p->get_id(),
         v->get_id(),
@@ -15783,14 +15767,13 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
     );
     
     p->virus = std::move(v);
-    p->virus->set_date(m->today());
+    p->virus->set_date(today());
     p->virus->set_agent(p);
 
     // Change of state needs to be recorded and updated on the
     // tools.
     if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
-        auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
         // For tool counts, use current state (p->state) not state_prev
@@ -15805,11 +15788,11 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 
     // Lastly, we increase the daily count of the virus
     #ifdef EPI_DEBUG
-    m->get_db().today_virus.at(p->virus->get_id()).at(
+    db.today_virus.at(p->virus->get_id()).at(
         a.new_state != -99 ? a.new_state : p->state
     )++;
     #else
-    m->get_db().today_virus[p->virus->get_id()][
+    db.today_virus[p->virus->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
     #endif
@@ -15817,7 +15800,7 @@ inline void default_add_virus(Event<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
+inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
 {
 
     Agent<TSeq> * p = a.agent;
@@ -15834,14 +15817,13 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 
     n_tools--;
 
-    p->tools[n_tools]->set_date(m->today());
+    p->tools[n_tools]->set_date(today());
     p->tools[n_tools]->set_agent(p, n_tools);
 
     // Change of state needs to be recorded and updated on the
     // tools.
     if ((a.new_state != -99) && static_cast<int>(p->state) != a.new_state)
     {
-        auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
         // For virus counts, use current state (p->state) not state_prev
@@ -15854,7 +15836,7 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
             );
     }
 
-    m->get_db().today_tool[p->tools.back()->get_id()][
+    db.today_tool[p->tools.back()->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
 
@@ -15862,14 +15844,14 @@ inline void default_add_tool(Event<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
+inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
 {
 
     Agent<TSeq> * p    = a.agent;
     VirusPtr<TSeq> & v = a.virus;
 
     // Calling the virus action over the removed virus
-    v->post_recovery(model);
+    v->post_recovery(this);
 
     p->virus = nullptr;
 
@@ -15877,7 +15859,6 @@ inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
     // tools.
     if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
-        auto & db = model->get_db();
         db.update_state(p->state_prev, a.new_state);
 
         // For tool counts, use current state (p->state) not state_prev
@@ -15894,9 +15875,9 @@ inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
     // We use the previous state of the agent as that was
     // the state when the virus was added.
     #ifdef EPI_DEBUG
-    model->get_db().today_virus.at(v->get_id()).at(p->state_prev)--;
+    db.today_virus.at(v->get_id()).at(p->state_prev)--;
     #else
-    model->get_db().today_virus[v->get_id()][p->state_prev]--;
+    db.today_virus[v->get_id()][p->state_prev]--;
     #endif
 
     
@@ -15905,7 +15886,7 @@ inline void default_rm_virus(Event<TSeq> & a, Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
+inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
 {
 
     Agent<TSeq> * p   = a.agent;    
@@ -15924,7 +15905,6 @@ inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
     // tools.
     if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
-        auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
         // For virus counts, use current state (p->state) not state_prev
@@ -15941,9 +15921,9 @@ inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
     // Like rm_virus, we use the previous state of the agent
     // as that was the state when the tool was added.
     #ifdef EPI_DEBUG
-    m->get_db().today_tool.at(t->get_id()).at(p->state_prev)--;
+    db.today_tool.at(t->get_id()).at(p->state_prev)--;
     #else
-    m->get_db().today_tool[t->get_id()][p->state_prev]--;
+    db.today_tool[t->get_id()][p->state_prev]--;
     #endif
 
     return;
@@ -15951,14 +15931,13 @@ inline void default_rm_tool(Event<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m)
+inline void Model<TSeq>::_event_change_state(Event<TSeq> & a)
 {
 
     Agent<TSeq> * p = a.agent;
 
     if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
-        auto & db = m->get_db();
         db.update_state(p->state_prev, a.new_state);
 
         // For virus and tool counts, use current state (p->state) not state_prev
@@ -15980,7 +15959,7 @@ inline void default_change_state(Event<TSeq> & a, Model<TSeq> * m)
 }
 
 template<typename TSeq>
-inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
+inline void Model<TSeq>::_event_add_entity(Event<TSeq> & a)
 {
 
     Agent<TSeq> *  p = a.agent;
@@ -16013,7 +15992,7 @@ inline void default_add_entity(Event<TSeq> & a, Model<TSeq> *)
 }
 
 template<typename TSeq>
-inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> *)
+inline void Model<TSeq>::_event_rm_entity(Event<TSeq> & a)
 {
 
     Agent<TSeq> &  p = *a.agent;
@@ -16041,7 +16020,7 @@ inline void default_rm_entity(Event<TSeq> & a, Model<TSeq> *)
 
     return;
 
-};
+}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -16207,8 +16186,8 @@ inline void Agent<TSeq>::add_tool(
             " has not been registered. There are only " + std::to_string(model.get_n_tools()) +
             " included in the model.");
 
-    model.events_add(
-        this, nullptr, tool, nullptr, state_new, queue, default_add_tool<TSeq>
+    model._add_event(
+        this, nullptr, tool, nullptr, state_new, queue, EventAction::AddTool
         );
 
 }
@@ -16246,8 +16225,8 @@ inline void Agent<TSeq>::set_virus(
     if (queue == -99)
         virus->get_queue(&queue, nullptr, nullptr);
 
-    model.events_add(
-        this, virus, nullptr, nullptr, state_new, queue, default_add_virus<TSeq>
+    model._add_event(
+        this, virus, nullptr, nullptr, state_new, queue, EventAction::AddVirus
         );
 
 }
@@ -16273,8 +16252,8 @@ inline void Agent<TSeq>::add_entity(
 )
 {
 
-    model.events_add(
-        this, nullptr, nullptr, &entity, state_new, queue, default_add_entity<TSeq>
+    model._add_event(
+        this, nullptr, nullptr, &entity, state_new, queue, EventAction::AddEntity
     );
 
 }
@@ -16294,8 +16273,8 @@ inline void Agent<TSeq>::rm_tool(
             std::to_string(n_tools) + " tools."
         );
 
-    model.events_add(
-        this, nullptr, tools[tool_idx], nullptr, state_new, queue, default_rm_tool<TSeq>
+    model._add_event(
+        this, nullptr, tools[tool_idx], nullptr, state_new, queue, EventAction::RemoveTool
         );
 
 }
@@ -16312,8 +16291,8 @@ inline void Agent<TSeq>::rm_tool(
     if (tool->agent != this)
         throw std::logic_error("Cannot remove a virus from another agent!");
 
-    model.events_add(
-        this, nullptr, tool, nullptr, state_new, queue, default_rm_tool<TSeq>
+    model._add_event(
+        this, nullptr, tool, nullptr, state_new, queue, EventAction::RemoveTool
         );
 
 }
@@ -16337,11 +16316,11 @@ inline void Agent<TSeq>::rm_virus(
     if (queue == -99)
         virus->get_queue(nullptr, &queue, nullptr);
 
-    model.events_add(
+    model._add_event(
         this, virus, nullptr, nullptr,
         state_new,
         queue,
-        default_rm_virus<TSeq>
+        EventAction::RemoveVirus
         );
 
 }
@@ -16365,14 +16344,14 @@ inline void Agent<TSeq>::rm_entity(
             "There is no entity to remove here!"
         );
 
-    model.events_add(
+    model._add_event(
         this,
         nullptr,
         nullptr,
         &model.get_entity(entities[entity_idx]),
         state_new,
         queue,
-        default_rm_entity<TSeq>
+        EventAction::RemoveEntity
     );
 }
 
@@ -16400,14 +16379,14 @@ inline void Agent<TSeq>::rm_entity(
             std::string("\".")
             );
 
-    model.events_add(
+    model._add_event(
         this,
         nullptr,
         nullptr,
         &model.get_entity(entity.get_id()),
         state_new,
         queue,
-        default_rm_entity<TSeq>
+        EventAction::RemoveEntity
     );
 }
 
@@ -16636,9 +16615,9 @@ inline void Agent<TSeq>::change_state(
     )
 {
 
-    model.events_add(
+    model._add_event(
         this, nullptr, nullptr, nullptr, new_state, queue,
-        default_change_state<TSeq>
+        EventAction::ChangeState
     );
 
     return;
