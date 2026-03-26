@@ -18570,7 +18570,7 @@ public:
     ModelSIR<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
     
 };
 
@@ -18713,7 +18713,7 @@ public:
     ModelSEIR<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
 };
 
@@ -19211,7 +19211,7 @@ public:
     
     void reset() override;
 
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
      * @brief Set the initial states of the model
@@ -19221,7 +19221,7 @@ public:
     ModelSIRCONN<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
     /**
      * @brief Get the infected individuals
@@ -19603,7 +19603,7 @@ public:
 
     void reset() override;
 
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
      * @brief Set the initial states of the model
@@ -19613,7 +19613,7 @@ public:
     ModelSEIRCONN<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
     size_t get_n_infected() const { return infected.size(); }
 
@@ -20032,7 +20032,7 @@ public:
     ModelSIRD<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
     
 };
 
@@ -20315,7 +20315,7 @@ public:
   ModelSEIRD<TSeq> & initial_states(
     std::vector< double > proportions_,
     std::vector< int > queue_ = {}
-  );
+  ) override;
 
 };
 
@@ -20444,7 +20444,7 @@ public:
         epiworld_double death_rate
     );
 
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
 
 };
@@ -20721,7 +20721,7 @@ public:
 
     void reset() override;
 
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
      * @brief Set up the initial states of the model.
@@ -20732,7 +20732,7 @@ public:
     ModelSEIRDCONN<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
     size_t get_n_infected() const
     {
@@ -21124,7 +21124,7 @@ public:
         epiworld_double prevalence
     );
 
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     void reset() override;
     
@@ -21707,7 +21707,7 @@ public:
 
     void reset() override;
 
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
      * @brief Set the initial states of the model
@@ -21717,7 +21717,7 @@ public:
     ModelSEIRMixing<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
     void set_contact_matrix(std::vector< double > cmat)
     {
@@ -22248,7 +22248,7 @@ public:
 
     void reset() override;
 
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
      * @brief Set the initial states of the model
@@ -22258,7 +22258,7 @@ public:
     ModelSIRMixing<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
     size_t get_n_infected(size_t group) const
     {
@@ -22821,7 +22821,7 @@ public:
     void reset() override;
     void update_infectious();
 
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
 };
 
@@ -23687,7 +23687,7 @@ public:
      * @brief Create a clone of this model
      * @return Pointer to a new model instance with the same configuration
      */
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
      * @brief Set the initial states of the model
@@ -23699,7 +23699,7 @@ public:
     ModelSEIRMixingQuarantine<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
     /**
      * @brief Set the contact matrix for population mixing
@@ -24878,7 +24878,7 @@ public:
      * @brief Create a clone of this model
      * @return Pointer to a new model instance with the same configuration
      */
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
      * @brief Set the initial states of the model
@@ -24890,7 +24890,7 @@ public:
     ModelMeaslesMixing<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
     /**
      * @brief Set the contact matrix for population mixing
@@ -26090,7 +26090,7 @@ public:
      * @brief Create a clone of this model
      * @return Pointer to a new model instance with the same configuration
      */
-    std::unique_ptr< Model<TSeq> > clone_ptr();
+    std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
      * @brief Set the initial states of the model
@@ -26102,7 +26102,7 @@ public:
     ModelMeaslesMixingRiskQuarantine<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
-    );
+    ) override;
 
     /**
      * @brief Set the contact matrix for population mixing
