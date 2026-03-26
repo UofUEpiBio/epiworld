@@ -20,7 +20,7 @@ size_t niter = 0;
 
 std::vector< int > simfun(
     std::vector< epiworld_double > params,
-    LFMCMC<std::vector<int>> * m
+    LFMCMC<std::vector<int>> * /* m */
 ) {
 
     model.set_param("Recovery rate", params[0u]);
@@ -40,7 +40,7 @@ std::vector< int > simfun(
 void sumfun(
     std::vector< epiworld_double > & res,
     const std::vector< int > & dat,
-    LFMCMC< std::vector<int> > * m
+    LFMCMC< std::vector<int> > * /* m */
 ) {
 
     if (res.size() == 0u)

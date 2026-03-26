@@ -44,7 +44,7 @@ int main()
     size_t n = 0;
     for (int i = 0; i < static_cast<int>(gentime_sir_obs.size()*3/4); i++)
     {
-        if (time[i] >= max_days_for_calc)
+        if (time[i] >= static_cast<int>(max_days_for_calc))
             continue;
 
         if (gentime_sir_obs[i] >= 0)
@@ -83,7 +83,7 @@ int main()
     n = 0;
     for (int i = 0; i < static_cast<int>(gentime_seir_obs.size()*3/4); i++)
     {
-        if (time[i] >= max_days_for_calc)
+        if (time[i] >= static_cast<int>(max_days_for_calc))
             continue;
         if (gentime_seir_obs[i] >= 0)
         {

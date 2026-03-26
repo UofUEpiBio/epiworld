@@ -19,7 +19,7 @@
         {
             "label": "build-single-file",
             "type": "shell",
-            "command": "g++ -std=c++17 -Wall -pedantic -DNO_CATCH_MAIN -fopenmp -g -O0 -fsanitize=thread ${file} -o ${fileDirname}/${fileBasenameNoExtension}",
+            "command": "g++ -std=c++17 -Wall -Wextra -Werror -pedantic -DNO_CATCH_MAIN -fopenmp -g -O0 -fsanitize=thread ${file} -o ${fileDirname}/${fileBasenameNoExtension}",
             "group": "build"
         },
         {

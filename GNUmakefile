@@ -39,6 +39,9 @@ WITH_OPENMP   ?= 1
 # Enable code coverage support.
 WITH_COVERAGE ?= 0
 
+# Enable Werror.
+WITH_WERROR ?= 0
+
 WITH_THREAD_SANITIZER ?= 0
 
 CFLAGS   := -std=c11
@@ -47,10 +50,10 @@ LDFLAGS  :=
 
 ifeq ($(BUILD_PROFILE),debug)
     CFLAGS += -g3 -O2 -DDEBUG -fdelete-null-pointer-checks -Wall -Wextra -march=native
-    CXXFLAGS += -g3 -O2 -DDEBUG -Werror -fdelete-null-pointer-checks -Wall -Wextra -march=native
+    CXXFLAGS += -g3 -O2 -DDEBUG -fdelete-null-pointer-checks -Wall -Wextra -march=native
 else ifeq ($(BUILD_PROFILE),release)
-    CFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native -Werror
-    CXXFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native -Werror
+    CFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native
+    CXXFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native
 else
     $(error "Unknown BUILD_PROFILE: '$(BUILD_PROFILE)'. Valid options are 'debug' and 'release'.")
 endif
@@ -71,6 +74,11 @@ ifeq ($(WITH_THREAD_SANITIZER),1)
 	CFLAGS   += -fsanitize=thread
 	CXXFLAGS += -fsanitize=thread
 	LDFLAGS  += -fsanitize=thread
+endif
+
+ifeq ($(WITH_WERROR),1)
+	CFLAGS   += -Werror
+	CXXFLAGS += -Werror
 endif
 
 # Package tracking.
