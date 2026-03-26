@@ -42,7 +42,7 @@ int main()
     // Computing the mean of gentime conditioning on gentime >= 0
     double gentime_sir_obs_mean = 0.0;
     size_t n = 0;
-    for (int i = 0; i < gentime_sir_obs.size()*3/4; i++)
+    for (int i = 0; i < static_cast<int>(gentime_sir_obs.size()*3/4); i++)
     {
         if (time[i] >= max_days_for_calc)
             continue;
@@ -81,7 +81,7 @@ int main()
     // Computing the mean of gentime conditioning on gentime >= 0
     double gentime_seir_obs_mean = 0.0;
     n = 0;
-    for (int i = 0; i < gentime_seir_obs.size()*3/4; i++)
+    for (int i = 0; i < static_cast<int>(gentime_seir_obs.size()*3/4); i++)
     {
         if (time[i] >= max_days_for_calc)
             continue;

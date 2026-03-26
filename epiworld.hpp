@@ -839,6 +839,39 @@ inline std::map< std::string, T > read_yaml(std::string fn)
 
 }
 
+
+
+/**
+ * @brief Cast a `Model` pointer to a specific model type
+ */
+#ifndef EPI_ASSUME
+    #if defined(EPI_DEBUG)
+        #include <cassert>
+        #define EPI_ASSUME(cond) assert(cond)
+    #elif defined(__clang__)
+        #define EPI_ASSUME(cond) __builtin_assume(cond)
+    #elif defined(_MSC_VER)
+        #define EPI_ASSUME(cond) __assume(cond)
+    #elif defined(__GNUC__)
+        #define EPI_ASSUME(cond) do { if (!(cond)) __builtin_unreachable(); } while (0)
+    #else
+        #define EPI_ASSUME(cond) ((void)0)
+    #endif
+#endif
+
+template<class To, class TSeq>
+inline To* model_cast(Model<TSeq>* m) {
+#ifdef EPI_DEBUG
+    auto* out = dynamic_cast<To*>(m);
+    assert(out != nullptr);
+    return out;
+#else
+    auto* out = static_cast<To*>(m);
+    EPI_ASSUME(out != nullptr);
+    return out;
+#endif
+}
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -18439,14 +18472,6 @@ public:
     ModelSIS() {};
 
     ModelSIS(
-        ModelSIS<TSeq> & model,
-        const std::string & vname,
-        epiworld_double prevalence,
-        epiworld_double transmission_rate,
-        epiworld_double recovery_rate
-    );
-
-    ModelSIS(
         const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
@@ -18457,7 +18482,6 @@ public:
 
 template<typename TSeq>
 inline ModelSIS<TSeq>::ModelSIS(
-    ModelSIS<TSeq> & model,
     const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
@@ -18465,48 +18489,25 @@ inline ModelSIS<TSeq>::ModelSIS(
     )
 {
 
-    model.set_name("Susceptible-Infected-Susceptible (SIS)");
+    this->set_name("Susceptible-Infected-Susceptible (SIS)");
 
     // Adding statuses
-    model.add_state("Susceptible", default_update_susceptible<TSeq>);
-    model.add_state("Infected", default_update_exposed<TSeq>);
+    this->add_state("Susceptible", default_update_susceptible<TSeq>);
+    this->add_state("Infected", default_update_exposed<TSeq>);
 
     // Setting up parameters
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(recovery_rate, "Recovery rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(ModelSIS<TSeq>::INFECTED, ModelSIS<TSeq>::SUSCEPTIBLE, ModelSIS<TSeq>::SUSCEPTIBLE);
+    virus.set_state(INFECTED, SUSCEPTIBLE, SUSCEPTIBLE);
     
     virus.set_prob_infecting("Transmission rate");
     virus.set_prob_recovery("Recovery rate");
     virus.set_prob_death(0.0);
     
-    model.add_virus(virus);
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSIS<TSeq>::ModelSIS(
-    const std::string & vname,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate
-    )
-{
-
-    ModelSIS<TSeq>(
-        *this,
-        vname,
-        prevalence,
-        transmission_rate,
-        recovery_rate
-    );    
-
-    return;
+    this->add_virus(virus);
 
 }
 
@@ -18555,14 +18556,6 @@ public:
     ModelSIR() {};
 
     ModelSIR(
-        ModelSIR<TSeq> & model,
-        const std::string & vname,
-        epiworld_double prevalence,
-        epiworld_double transmission_rate,
-        epiworld_double recovery_rate
-    );
-
-    ModelSIR(
         const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
@@ -18583,7 +18576,6 @@ public:
 
 template<typename TSeq>
 inline ModelSIR<TSeq>::ModelSIR(
-    ModelSIR<TSeq> & model,
     const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
@@ -18592,13 +18584,13 @@ inline ModelSIR<TSeq>::ModelSIR(
 {
 
     // Adding statuses
-    model.add_state("Susceptible", default_update_susceptible<TSeq>);
-    model.add_state("Infected", default_update_exposed<TSeq>);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", default_update_susceptible<TSeq>);
+    this->add_state("Infected", default_update_exposed<TSeq>);
+    this->add_state("Recovered");
 
     // Setting up parameters
-    model.add_param(recovery_rate, "Recovery rate");
-    model.add_param(transmission_rate, "Transmission rate");
+    this->add_param(recovery_rate, "Recovery rate");
+    this->add_param(transmission_rate, "Transmission rate");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
@@ -18607,33 +18599,10 @@ inline ModelSIR<TSeq>::ModelSIR(
     virus.set_prob_recovery("Recovery rate");
     virus.set_prob_infecting("Transmission rate");
     
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.set_name("Susceptible-Infected-Recovered (SIR)");
-
-    return;
+    this->set_name("Susceptible-Infected-Recovered (SIR)");
    
-}
-
-template<typename TSeq>
-inline ModelSIR<TSeq>::ModelSIR(
-    const std::string & vname,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate
-    )
-{
-
-    ModelSIR<TSeq>(
-        *this,
-        vname,
-        prevalence,
-        transmission_rate,
-        recovery_rate
-        );
-
-    return;
-
 }
 
 template<typename TSeq>
@@ -18701,15 +18670,6 @@ public:
     ModelSEIR() {};
 
     ModelSEIR(
-        ModelSEIR<TSeq> & model,
-        const std::string & vname,
-        epiworld_double prevalence,
-        epiworld_double transmission_rate,
-        epiworld_double avg_incubation_days,
-        epiworld_double recovery_rate
-    );
-
-    ModelSEIR(
         const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
@@ -18760,7 +18720,6 @@ public:
 
 template<typename TSeq>
 inline ModelSEIR<TSeq>::ModelSEIR(
-    ModelSEIR<TSeq> & model,
     const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
@@ -18770,53 +18729,28 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 {
 
     // Adding statuses
-    model.add_state("Susceptible", default_update_susceptible<TSeq>);
-    model.add_state("Exposed", model.update_exposed_seir);
-    model.add_state("Infected", model.update_infected_seir);
-    model.add_state("Removed");
+    this->add_state("Susceptible", default_update_susceptible<TSeq>);
+    this->add_state("Exposed", this->update_exposed_seir);
+    this->add_state("Infected", this->update_infected_seir);
+    this->add_state("Removed");
 
     // Setting up parameters
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(avg_incubation_days, "Incubation days");
-    model.add_param(recovery_rate, "Recovery rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(avg_incubation_days, "Incubation days");
+    this->add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(ModelSEIR<TSeq>::EXPOSED, ModelSEIR<TSeq>::REMOVED, ModelSEIR<TSeq>::REMOVED);
+    virus.set_state(EXPOSED, REMOVED, REMOVED);
 
     virus.set_prob_infecting("Transmission rate");
     virus.set_incubation("Incubation days");
     virus.set_prob_recovery("Recovery rate");
 
     // Adding the tool and the virus
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSEIR<TSeq>::ModelSEIR(
-    const std::string & vname,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate
-    )
-{
-
-    ModelSEIR<TSeq>(
-        *this,
-        vname,
-        prevalence,
-        transmission_rate,
-        avg_incubation_days,
-        recovery_rate
-        );
-
-    return;
+    this->set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
 }
 
@@ -18928,23 +18862,6 @@ public:
     ModelSURV() {};
 
     ModelSURV(
-        ModelSURV<TSeq> & model,
-        const std::string & vname,
-        epiworld_fast_uint prevalence               = 50,
-        epiworld_double efficacy_vax          = 0.9,
-        epiworld_double latent_period         = 3u,
-        epiworld_double infect_period         = 6u,
-        epiworld_double prob_symptoms         = 0.6,
-        epiworld_double prop_vaccinated       = 0.25,
-        epiworld_double prop_vax_redux_transm = 0.5,
-        epiworld_double prop_vax_redux_infect = 0.5,
-        epiworld_double surveillance_prob     = 0.001,
-        epiworld_double prob_transmission     = 1.0,
-        epiworld_double prob_death            = 0.001,
-        epiworld_double prob_noreinfect       = 0.9
-    );
-
-    ModelSURV(
         const std::string & vname,
         epiworld_fast_uint prevalence         = 50,
         epiworld_double efficacy_vax          = 0.9,
@@ -18961,7 +18878,7 @@ public:
     );
     ///@}
 
-    void reset();
+    void reset() override;
 
 };
 
@@ -18979,7 +18896,6 @@ inline void ModelSURV<TSeq>::reset()
 
 template<typename TSeq>
 inline ModelSURV<TSeq>::ModelSURV(
-    ModelSURV<TSeq> & model,
     const std::string & vname,
     epiworld_fast_uint prevalence,
     epiworld_double efficacy_vax,
@@ -19172,25 +19088,25 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     };
 
-    model.add_state("Susceptible", surveillance_update_susceptible);
-    model.add_state("Latent", surveillance_update_exposed);
-    model.add_state("Symptomatic", surveillance_update_exposed);
-    model.add_state("Symptomatic isolated", surveillance_update_exposed);
-    model.add_state("Asymptomatic", surveillance_update_exposed);
-    model.add_state("Asymptomatic isolated", surveillance_update_exposed);
-    model.add_state("Recovered");
-    model.add_state("Removed");
+    this->add_state("Susceptible", surveillance_update_susceptible);
+    this->add_state("Latent", surveillance_update_exposed);
+    this->add_state("Symptomatic", surveillance_update_exposed);
+    this->add_state("Symptomatic isolated", surveillance_update_exposed);
+    this->add_state("Asymptomatic", surveillance_update_exposed);
+    this->add_state("Asymptomatic isolated", surveillance_update_exposed);
+    this->add_state("Recovered");
+    this->add_state("Removed");
 
     // General model parameters
-    model.add_param(latent_period, "Latent period");
-    model.add_param(infect_period, "Infect period");
-    model.add_param(prob_symptoms, "Prob of symptoms");
-    model.add_param(surveillance_prob, "Surveilance prob.");
-    model.add_param(efficacy_vax, "Vax efficacy");
-    model.add_param(prop_vax_redux_transm, "Vax redux transmission");
-    model.add_param(prob_transmission, "Prob of transmission");
-    model.add_param(prob_death, "Prob. death");
-    model.add_param(prob_noreinfect, "Prob. no reinfect");
+    this->add_param(latent_period, "Latent period");
+    this->add_param(infect_period, "Infect period");
+    this->add_param(prob_symptoms, "Prob of symptoms");
+    this->add_param(surveillance_prob, "Surveilance prob.");
+    this->add_param(efficacy_vax, "Vax efficacy");
+    this->add_param(prop_vax_redux_transm, "Vax redux transmission");
+    this->add_param(prob_transmission, "Prob of transmission");
+    this->add_param(prob_death, "Prob. death");
+    this->add_param(prob_noreinfect, "Prob. no reinfect");
 
     // Virus ------------------------------------------------------------------
     Virus<TSeq> covid(vname, prevalence, false);
@@ -19219,60 +19135,20 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     covid.set_prob_infecting_fun(ptransmitfun);
     
-    model.add_virus(covid);
+    this->add_virus(covid);
 
-    model.set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
-    model.add_globalevent(surveillance_program, "Surveilance program", -1);
+    this->set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
+    this->add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
     Tool<TSeq> vax("Vaccine", prop_vaccinated, true);
     vax.set_susceptibility_reduction("Vax efficacy");
     vax.set_transmission_reduction("Vax redux transmission");
     
-    model.add_tool(vax);
+    this->add_tool(vax);
 
-    model.set_name("Surveillance");
+    this->set_name("Surveillance");
 
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSURV<TSeq>::ModelSURV(
-    const std::string & vname,
-    epiworld_fast_uint prevalence,
-    epiworld_double efficacy_vax,
-    epiworld_double latent_period,
-    epiworld_double infect_period,
-    epiworld_double prob_symptoms,
-    epiworld_double prop_vaccinated,
-    epiworld_double prop_vax_redux_transm,
-    epiworld_double prop_vax_redux_infect,
-    epiworld_double surveillance_prob,
-    epiworld_double prob_transmission,
-    epiworld_double prob_death,
-    epiworld_double prob_noreinfect
-    )
-{
-
-    ModelSURV(
-        *this,
-        vname,
-        prevalence,
-        efficacy_vax,
-        latent_period,
-        infect_period,
-        prob_symptoms,
-        prop_vaccinated,
-        prop_vax_redux_transm,
-        prop_vax_redux_infect,
-        surveillance_prob,
-        prob_transmission,
-        prob_death,
-        prob_noreinfect
-    );
-
-    return;
 
 }
 
@@ -19325,30 +19201,15 @@ public:
     ModelSIRCONN() {};
 
     ModelSIRCONN(
-        ModelSIRCONN<TSeq> & model,
         const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate
-    );
-
-    ModelSIRCONN(
-        const std::string & vname,
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double contact_rate,
-        epiworld_double transmission_rate,
-        epiworld_double recovery_rate
-    );
-
-    ModelSIRCONN<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
     );
     
-    void reset();
+    void reset() override;
 
     std::unique_ptr< Model<TSeq> > clone_ptr();
 
@@ -19409,18 +19270,6 @@ inline void ModelSIRCONN<TSeq>::update_infected()
 }
 
 template<typename TSeq>
-inline ModelSIRCONN<TSeq> & ModelSIRCONN<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-
-    Model<TSeq>::run(ndays, seed);
-    return *this;
-
-}
-
-template<typename TSeq>
 inline void ModelSIRCONN<TSeq>::reset()
 {
 
@@ -19452,7 +19301,6 @@ inline std::unique_ptr<Model<TSeq>> ModelSIRCONN<TSeq>::clone_ptr()
  */
 template<typename TSeq>
 inline ModelSIRCONN<TSeq>::ModelSIRCONN(
-    ModelSIRCONN<TSeq> & model,
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -19594,15 +19442,15 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         };
 
     // state
-    model.add_state("Susceptible", update_susceptible);
-    model.add_state("Infected", update_infected);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", update_susceptible);
+    this->add_state("Infected", update_infected);
+    this->add_state("Recovered");
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(recovery_rate, "Recovery rate");
-    // model.add_param(prob_reinfection, "Prob. Reinfection");
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(recovery_rate, "Recovery rate");
+    // this->add_param(prob_reinfection, "Prob. Reinfection");
 
     // Adding update function
     GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
@@ -19613,7 +19461,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
         return;
     };
 
-    model.add_globalevent(update, "Update infected individuals");
+    this->add_globalevent(update, "Update infected individuals");
     
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
@@ -19621,40 +19469,13 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
     virus.set_prob_infecting("Transmission rate");
     virus.set_prob_recovery("Recovery rate");
 
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.queuing_off(); // No queuing need
+    this->queuing_off(); // No queuing need
 
-    model.agents_empty_graph(n);
+    this->agents_empty_graph(n);
 
-    model.set_name("Susceptible-Infected-Removed (SIR) (connected)");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSIRCONN<TSeq>::ModelSIRCONN(
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate
-    )
-{
-
-    ModelSIRCONN(
-        *this,
-        vname,
-        n,
-        prevalence,
-        contact_rate,
-        transmission_rate,
-        recovery_rate
-    );
-
-    return;
+    this->set_name("Susceptible-Infected-Removed (SIR) (connected)");
 
 }
 
@@ -19771,17 +19592,6 @@ public:
     ModelSEIRCONN() {};
 
     ModelSEIRCONN(
-        ModelSEIRCONN<TSeq> & model,
-        const std::string & vname,
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double contact_rate,
-        epiworld_double transmission_rate,
-        epiworld_double avg_incubation_days,
-        epiworld_double recovery_rate
-    );
-    
-    ModelSEIRCONN(
         const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
@@ -19791,12 +19601,7 @@ public:
         epiworld_double recovery_rate
     );
 
-    ModelSEIRCONN<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    );
-
-    void reset();
+    void reset() override;
 
     std::unique_ptr< Model<TSeq> > clone_ptr();
 
@@ -19850,19 +19655,6 @@ inline void ModelSEIRCONN<TSeq>::update_infected()
 }
 
 template<typename TSeq>
-inline ModelSEIRCONN<TSeq> & ModelSEIRCONN<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-    
-    Model<TSeq>::run(ndays, seed);
-
-    return *this;
-
-}
-
-template<typename TSeq>
 inline void ModelSEIRCONN<TSeq>::reset()
 {
 
@@ -19884,7 +19676,6 @@ inline std::unique_ptr<Model<TSeq>> ModelSEIRCONN<TSeq>::clone_ptr()
 /**
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
@@ -19893,7 +19684,6 @@ inline std::unique_ptr<Model<TSeq>> ModelSEIRCONN<TSeq>::clone_ptr()
  */
 template<typename TSeq>
 inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
-    ModelSEIRCONN<TSeq> & model,
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -20052,16 +19842,16 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
         };
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Prob. Transmission");
-    model.add_param(recovery_rate, "Prob. Recovery");
-    model.add_param(avg_incubation_days, "Avg. Incubation days");
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Prob. Transmission");
+    this->add_param(recovery_rate, "Prob. Recovery");
+    this->add_param(avg_incubation_days, "Avg. Incubation days");
     
     // state
-    model.add_state("Susceptible", update_susceptible);
-    model.add_state("Exposed", update_infected);
-    model.add_state("Infected", update_infected);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", update_susceptible);
+    this->add_state("Exposed", update_infected);
+    this->add_state("Infected", update_infected);
+    this->add_state("Recovered");
 
     // Adding update function
     GlobalFun<TSeq> update = [](
@@ -20077,7 +19867,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
 
         };
 
-    model.add_globalevent(update, "Update infected individuals");
+    this->add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------
@@ -20092,43 +19882,14 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
     virus.set_prob_recovery("Prob. Recovery");
     virus.set_incubation("Avg. Incubation days");
 
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.queuing_off(); // No queuing need
+    this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    model.agents_empty_graph(n);
+    this->agents_empty_graph(n);
 
-    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) (connected)");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate
-    )
-{
-
-    ModelSEIRCONN(
-        *this,
-        vname,
-        n,
-        prevalence,
-        contact_rate,
-        transmission_rate,
-        avg_incubation_days,
-        recovery_rate
-    );
-
-    return;
+    this->set_name("Susceptible-Exposed-Infected-Removed (SEIR) (connected)");
 
 }
 
@@ -20246,7 +20007,6 @@ public:
     /**
      * @brief Constructs a new SIRD model with the given parameters.
      * 
-     * @param model The SIRD model to copy from.
      * @param vname The name of the vertex associated with this model.
      * @param prevalence The initial prevalence of the disease in the population.
      * @param transmission_rate The rate at which the disease spreads from infected to susceptible individuals.
@@ -20254,15 +20014,6 @@ public:
      * @param death_rate The rate at which infected individuals die.
      */
     ///@{
-    ModelSIRD(
-        ModelSIRD<TSeq> & model,
-        const std::string & vname,
-        epiworld_double prevalence,
-        epiworld_double transmission_rate,
-        epiworld_double recovery_rate, 
-        epiworld_double death_rate
-    );
-
     ModelSIRD(
         const std::string & vname,
         epiworld_double prevalence,
@@ -20287,7 +20038,6 @@ public:
 
 template<typename TSeq>
 inline ModelSIRD<TSeq>::ModelSIRD(
-    ModelSIRD<TSeq> & model,
     const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
@@ -20297,16 +20047,15 @@ inline ModelSIRD<TSeq>::ModelSIRD(
 {
 
     // Adding statuses
-    model.add_state("Susceptible", default_update_susceptible<TSeq>);
-    model.add_state("Infected", default_update_exposed<TSeq>);
-    model.add_state("Recovered"),
-    model.add_state("Deceased")
-    ;
+    this->add_state("Susceptible", default_update_susceptible<TSeq>);
+    this->add_state("Infected", default_update_exposed<TSeq>);
+    this->add_state("Recovered");
+    this->add_state("Deceased");
 
     // Setting up parameters
-    model.add_param(recovery_rate, "Recovery rate");
-    model.add_param(transmission_rate, "Transmission rate"),
-    model.add_param(death_rate, "Death rate");
+    this->add_param(recovery_rate, "Recovery rate");
+    this->add_param(transmission_rate, "Transmission rate"),
+    this->add_param(death_rate, "Death rate");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
@@ -20315,35 +20064,11 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     virus.set_prob_infecting("Transmission rate");
     virus.set_prob_death("Death rate");
     
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
+    this->set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
-    return;
    
-}
-
-template<typename TSeq>
-inline ModelSIRD<TSeq>::ModelSIRD(
-    const std::string & vname,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate,
-    epiworld_double death_rate
-    )
-{
-
-    ModelSIRD<TSeq>(
-        *this,
-        vname,
-        prevalence,
-        transmission_rate,
-        recovery_rate, 
-        death_rate
-        );
-
-    return;
-
 }
 
 template<typename TSeq>
@@ -20406,15 +20131,6 @@ public:
     ModelSISD() {};
 
     ModelSISD(
-        ModelSISD<TSeq> & model,
-        const std::string & vname,
-        epiworld_double prevalence,
-        epiworld_double transmission_rate,
-        epiworld_double recovery_rate,
-        epiworld_double death_rate
-    );
-
-    ModelSISD(
         const std::string & vname,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
@@ -20426,7 +20142,6 @@ public:
 
 template<typename TSeq>
 inline ModelSISD<TSeq>::ModelSISD(
-    ModelSISD<TSeq> & model,
     const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
@@ -20435,17 +20150,17 @@ inline ModelSISD<TSeq>::ModelSISD(
     )
 {
 
-    model.set_name("Susceptible-Infected-Susceptible-Deceased (SISD)");
+    this->set_name("Susceptible-Infected-Susceptible-Deceased (SISD)");
 
     // Adding statuses
-    model.add_state("Susceptible", default_update_susceptible<TSeq>);
-    model.add_state("Infected", default_update_exposed<TSeq>);
-    model.add_state("Deceased");
+    this->add_state("Susceptible", default_update_susceptible<TSeq>);
+    this->add_state("Infected", default_update_exposed<TSeq>);
+    this->add_state("Deceased");
 
     // Setting up parameters
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(recovery_rate, "Recovery rate");
-    model.add_param(death_rate, "Death rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(recovery_rate, "Recovery rate");
+    this->add_param(death_rate, "Death rate");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
@@ -20455,32 +20170,7 @@ inline ModelSISD<TSeq>::ModelSISD(
     virus.set_prob_recovery("Recovery rate");
     virus.set_prob_death(0.01);
     
-    model.add_virus(virus);
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSISD<TSeq>::ModelSISD(
-    const std::string & vname,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate,
-    epiworld_double death_rate
-    )
-{
-
-    ModelSISD<TSeq>(
-        *this,
-        vname,
-        prevalence,
-        transmission_rate,
-        recovery_rate,
-        death_rate
-    );    
-
-    return;
+    this->add_virus(virus);
 
 }
 
@@ -20527,29 +20217,7 @@ public:
   static const int DECEASED    = 4;
   
   ModelSEIRD() {};
-  
-  /**
-   * @brief Constructor for the SEIRD model.
-   * 
-   * @tparam TSeq Type of the sequence used in the model.
-   * @param model Reference to the SEIRD model.
-   * @param vname Name of the model.
-   * @param prevalence Prevalence of the disease.
-   * @param transmission_rate Transmission rate of the disease.
-   * @param avg_incubation_days Average incubation period of the disease.
-   * @param recovery_rate Recovery rate of the disease.
-   * @param death_rate Death rate of the disease.
-   */
-  ModelSEIRD(
-    ModelSEIRD<TSeq> & model,
-    const std::string & vname,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate,
-    epiworld_double death_rate
-  );
-  
+
   /**
    * @brief Constructor for the SEIRD model.
    * 
@@ -20655,7 +20323,6 @@ public:
 
 template<typename TSeq>
 inline ModelSEIRD<TSeq>::ModelSEIRD(
-    ModelSEIRD<TSeq> & model,
     const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
@@ -20666,17 +20333,17 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 {
   
   // Adding statuses
-  model.add_state("Susceptible", default_update_susceptible<TSeq>);
-  model.add_state("Exposed",  model.update_exposed_seir);
-  model.add_state("Infected", model.update_infected);
-  model.add_state("Removed");
-  model.add_state("Deceased");
+  this->add_state("Susceptible", default_update_susceptible<TSeq>);
+  this->add_state("Exposed",  this->update_exposed_seir);
+  this->add_state("Infected", this->update_infected);
+  this->add_state("Removed");
+  this->add_state("Deceased");
   
   // Setting up parameters
-  model.add_param(transmission_rate, "Transmission rate");
-  model.add_param(avg_incubation_days, "Incubation days");
-  model.add_param(recovery_rate, "Recovery rate");
-  model.add_param(death_rate, "Death rate");
+  this->add_param(transmission_rate, "Transmission rate");
+  this->add_param(avg_incubation_days, "Incubation days");
+  this->add_param(recovery_rate, "Recovery rate");
+  this->add_param(death_rate, "Death rate");
   
   // Preparing the virus -------------------------------------------
   Virus<TSeq> virus(vname, prevalence, true);
@@ -20688,36 +20355,9 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   virus.set_prob_recovery("Recovery rate");
   
   // Adding the tool and the virus
-  model.add_virus(virus);
+  this->add_virus(virus);
   
-  model.set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD)");
-  
-  return;
-  
-}
-
-template<typename TSeq>
-inline ModelSEIRD<TSeq>::ModelSEIRD(
-    const std::string & vname,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate,
-    epiworld_double death_rate
-)
-{
-  
-  ModelSEIRD<TSeq>(
-    *this,
-    vname,
-    prevalence,
-    transmission_rate,
-    avg_incubation_days,
-    recovery_rate,
-    death_rate
-  );
-  
-  return;
+  this->set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD)");
   
 }
 
@@ -20804,57 +20444,10 @@ public:
         epiworld_double death_rate
     );
 
-    // Tracking who is infected and who is not
-    // std::vector< Agent<TSeq>* > tracked_agents_infected = {};
-    // std::vector< Agent<TSeq>* > tracked_agents_infected_next = {};
-    // std::vector< epiworld_double >        tracked_agents_weight        = {};
-    // std::vector< epiworld_double >        tracked_agents_weight_next   = {};
-
-    // int tracked_ninfected = 0;
-    // int tracked_ninfected_next = 0;
-    // epiworld_double tracked_current_infect_prob = 0.0;
-
-    ModelSIRDCONN<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    );
-    
-    void reset();
-
     std::unique_ptr< Model<TSeq> > clone_ptr();
 
 
 };
-
-template<typename TSeq>
-inline ModelSIRDCONN<TSeq> & ModelSIRDCONN<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-
-    Model<TSeq>::run(ndays, seed);
-
-    return *this;
-
-}
-
-template<typename TSeq>
-inline void ModelSIRDCONN<TSeq>::reset()
-{
-
-    Model<TSeq>::reset();
-
-    // Model<TSeq>::set_rand_binom(
-    //     Model<TSeq>::size(),
-    //     static_cast<double>(
-    //         Model<TSeq>::par("Contact rate"))/
-    //         static_cast<double>(Model<TSeq>::size())
-    //     );
-
-    return;
-
-}
 
 template<typename TSeq>
 inline std::unique_ptr<Model<TSeq>> ModelSIRDCONN<TSeq>::clone_ptr()
@@ -20867,7 +20460,6 @@ inline std::unique_ptr<Model<TSeq>> ModelSIRDCONN<TSeq>::clone_ptr()
 /**
  * @brief Template for a Susceptible-Infected-Removed-Deceased (SIRD) model
  * 
- * @param model A Model<TSeq> object where to set up the SIRD.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
@@ -20877,7 +20469,6 @@ inline std::unique_ptr<Model<TSeq>> ModelSIRDCONN<TSeq>::clone_ptr()
  */
 template<typename TSeq>
 inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
-    ModelSIRDCONN<TSeq> & model,
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -20888,8 +20479,6 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
     // epiworld_double prob_reinfection
     )
 {
-
-
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
@@ -21040,18 +20629,18 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
         };
 
     // state
-    model.add_state("Susceptible", update_susceptible);
-    model.add_state("Infected", update_infected);
-    model.add_state("Recovered");
-    model.add_state("Deceased");
+    this->add_state("Susceptible", update_susceptible);
+    this->add_state("Infected", update_infected);
+    this->add_state("Recovered");
+    this->add_state("Deceased");
       
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(recovery_rate, "Recovery rate");
-    model.add_param(death_rate, "Death rate");
-    // model.add_param(prob_reinfection, "Prob. Reinfection");
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(recovery_rate, "Recovery rate");
+    this->add_param(death_rate, "Death rate");
+    // this->add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
@@ -21060,42 +20649,13 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
     virus.set_prob_recovery("Recovery rate");
     virus.set_prob_death("Death rate");
     
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.queuing_off(); // No queuing need
+    this->queuing_off(); // No queuing need
 
-    model.agents_empty_graph(n);
+    this->agents_empty_graph(n);
 
-    model.set_name("Susceptible-Infected-Removed-Deceased (SIRD) (connected)");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate,
-    epiworld_double death_rate
-    )
-{
-
-    ModelSIRDCONN(
-        *this,
-        vname,
-        n,
-        prevalence,
-        contact_rate,
-        transmission_rate,
-        recovery_rate,
-        death_rate
-    );
-
-    return;
+    this->set_name("Susceptible-Infected-Removed-Deceased (SIRD) (connected)");
 
 }
 
@@ -21147,18 +20707,6 @@ public:
     static const int DECEASED    = 4;
 
     ModelSEIRDCONN() {};
-
-    ModelSEIRDCONN(
-        ModelSEIRDCONN<TSeq> & model,
-        const std::string & vname,
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double contact_rate,
-        epiworld_double transmission_rate,
-        epiworld_double avg_incubation_days,
-        epiworld_double recovery_rate,
-        epiworld_double death_rate
-    );
     
     ModelSEIRDCONN(
         const std::string & vname,
@@ -21171,12 +20719,7 @@ public:
         epiworld_double death_rate
     );
 
-    ModelSEIRDCONN<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    );
-
-    void reset();
+    void reset() override;
 
     std::unique_ptr< Model<TSeq> > clone_ptr();
 
@@ -21222,19 +20765,6 @@ inline void ModelSEIRDCONN<TSeq>::update_infected()
 }
 
 template<typename TSeq>
-inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-    
-    Model<TSeq>::run(ndays, seed);
-
-    return *this;
-
-}
-
-template<typename TSeq>
 inline void ModelSEIRDCONN<TSeq>::reset()
 {
 
@@ -21267,7 +20797,6 @@ inline std::unique_ptr<Model<TSeq>> ModelSEIRDCONN<TSeq>::clone_ptr()
  */
 template<typename TSeq>
 inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
-    ModelSEIRDCONN<TSeq> & model,
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -21440,18 +20969,18 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
         };
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Prob. Transmission");
-    model.add_param(recovery_rate, "Prob. Recovery");
-    model.add_param(avg_incubation_days, "Avg. Incubation days");
-    model.add_param(death_rate, "Death rate");
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Prob. Transmission");
+    this->add_param(recovery_rate, "Prob. Recovery");
+    this->add_param(avg_incubation_days, "Avg. Incubation days");
+    this->add_param(death_rate, "Death rate");
     
     // state
-    model.add_state("Susceptible", update_susceptible);
-    model.add_state("Exposed", update_infected);
-    model.add_state("Infected", update_infected);
-    model.add_state("Removed");
-    model.add_state("Deceased");
+    this->add_state("Susceptible", update_susceptible);
+    this->add_state("Exposed", update_infected);
+    this->add_state("Infected", update_infected);
+    this->add_state("Removed");
+    this->add_state("Deceased");
 
 
     // Adding update function
@@ -21470,60 +20999,25 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
         return;
     };
 
-    model.add_globalevent(update, "Update infected individuals");
+    this->add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(
-        ModelSEIRDCONN<TSeq>::EXPOSED,
-        ModelSEIRDCONN<TSeq>::REMOVED,
-        ModelSEIRDCONN<TSeq>::DECEASED
-        );
+    virus.set_state(EXPOSED, REMOVED, DECEASED);
 
     virus.set_prob_infecting("Prob. Transmission");
     virus.set_prob_recovery("Prob. Recovery");
     virus.set_incubation("Avg. Incubation days");
     virus.set_prob_death("Death rate");
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.queuing_off(); // No queuing need
+    this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    model.agents_empty_graph(n);
+    this->agents_empty_graph(n);
 
-    model.set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) (connected)");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate,
-    epiworld_double death_rate
-    )
-{
-
-    ModelSEIRDCONN(
-        *this,
-        vname,
-        n,
-        prevalence,
-        contact_rate,
-        transmission_rate,
-        avg_incubation_days,
-        recovery_rate,
-        death_rate
-    );
-
-    return;
+    this->set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) (connected)");
 
 }
 
@@ -21618,7 +21112,6 @@ public:
       * @param coef_recover_cols Vector<unsigned int>. Ids of recover vars.
     */
     ModelSIRLogit(
-        ModelSIRLogit<TSeq> & model,
         const std::string & vname,
         double * data,
         size_t ncols,
@@ -21629,29 +21122,11 @@ public:
         epiworld_double transmission_rate,
         epiworld_double recovery_rate,
         epiworld_double prevalence
-    );
-
-    ModelSIRLogit(
-        const std::string & vname,
-        double * data,
-        size_t ncols,
-        std::vector< double > coefs_infect,
-        std::vector< double > coefs_recover,
-        std::vector< size_t > coef_infect_cols,
-        std::vector< size_t > coef_recover_cols,
-        epiworld_double transmission_rate,
-        epiworld_double recovery_rate,
-        epiworld_double prevalence
-    );
-
-    ModelSIRLogit<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
     );
 
     std::unique_ptr< Model<TSeq> > clone_ptr();
 
-    void reset();
+    void reset() override;
     
     std::vector< double > coefs_infect;
     std::vector< double > coefs_recover;
@@ -21659,20 +21134,6 @@ public:
     std::vector< size_t > coef_recover_cols;
 
 };
-
-
-
-template<typename TSeq>
-inline ModelSIRLogit<TSeq> & ModelSIRLogit<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-
-    Model<TSeq>::run(ndays, seed);
-    return *this;
-
-}
 
 template<typename TSeq>
 inline std::unique_ptr<Model<TSeq>> ModelSIRLogit<TSeq>::clone_ptr()
@@ -21728,7 +21189,6 @@ inline void ModelSIRLogit<TSeq>::reset()
  */
 template<typename TSeq>
 inline ModelSIRLogit<TSeq>::ModelSIRLogit(
-    ModelSIRLogit<TSeq> & model,
     const std::string & vname,
     double * data,
     size_t ncols,
@@ -21749,14 +21209,14 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         throw std::logic_error("No columns specified for coef_recover_cols.");
 
     // Saving the variables
-    model.set_agents_data(
+    this->set_agents_data(
         data, ncols
     );
 
-    model.coefs_infect = coefs_infect;
-    model.coefs_recover = coefs_recover;
-    model.coef_infect_cols = coef_infect_cols;
-    model.coef_recover_cols = coef_recover_cols;
+    this->coefs_infect = coefs_infect;
+    this->coefs_recover = coefs_recover;
+    this->coef_infect_cols = coef_infect_cols;
+    this->coef_recover_cols = coef_recover_cols;
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
@@ -21850,67 +21310,28 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         };
 
     // state
-    model.add_state("Susceptible", update_susceptible);
-    model.add_state("Infected", update_infected);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", update_susceptible);
+    this->add_state("Infected", update_infected);
+    this->add_state("Recovered");
 
     // Setting up parameters
-    // model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(recovery_rate, "Recovery rate");
-    // model.add_param(prob_reinfection, "Prob. Reinfection");
+    // this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(recovery_rate, "Recovery rate");
+    // this->add_param(prob_reinfection, "Prob. Reinfection");
     
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(
-        ModelSIRLogit<TSeq>::INFECTED,
-        ModelSIRLogit<TSeq>::RECOVERED,
-        ModelSIRLogit<TSeq>::RECOVERED
-        );
+    virus.set_state(INFECTED, RECOVERED, RECOVERED);
 
     virus.set_prob_infecting("Transmission rate");
     virus.set_prob_recovery("Recovery rate");
 
     // virus.set_prob
 
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.set_name("Susceptible-Infected-Removed (SIR) (logit)");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSIRLogit<TSeq>::ModelSIRLogit(
-    const std::string & vname,
-    double * data,
-    size_t ncols,
-    std::vector< double > coefs_infect,
-    std::vector< double > coefs_recover,
-    std::vector< size_t > coef_infect_cols,
-    std::vector< size_t > coef_recover_cols,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate,
-    epiworld_double prevalence
-    )
-{
-
-    ModelSIRLogit(
-        *this,
-        vname,
-        data,
-        ncols,
-        coefs_infect,
-        coefs_recover,
-        coef_infect_cols,
-        coef_recover_cols,
-        transmission_rate,
-        recovery_rate,
-        prevalence
-    );
-
-    return;
+    this->set_name("Susceptible-Infected-Removed (SIR) (logit)");
 
 }
 
@@ -22284,12 +21705,7 @@ public:
         std::vector< double > contact_matrix
     );
 
-    ModelSEIRMixing<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    );
-
-    void reset();
+    void reset() override;
 
     std::unique_ptr< Model<TSeq> > clone_ptr();
 
@@ -22409,19 +21825,6 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
 }
 
 template<typename TSeq>
-inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-
-    Model<TSeq>::run(ndays, seed);
-
-    return *this;
-
-}
-
-template<typename TSeq>
 inline void ModelSEIRMixing<TSeq>::reset()
 {
 
@@ -22528,7 +21931,6 @@ inline std::unique_ptr<Model<TSeq>> ModelSEIRMixing<TSeq>::clone_ptr()
  */
 template<typename TSeq>
 inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
-    ModelSEIRMixing<TSeq> & model,
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -22676,16 +22078,16 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
         };
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Prob. Transmission");
-    model.add_param(recovery_rate, "Prob. Recovery");
-    model.add_param(avg_incubation_days, "Avg. Incubation days");
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Prob. Transmission");
+    this->add_param(recovery_rate, "Prob. Recovery");
+    this->add_param(avg_incubation_days, "Avg. Incubation days");
 
     // state
-    model.add_state("Susceptible", update_susceptible);
-    model.add_state("Exposed", update_exposed_and_infected);
-    model.add_state("Infected", update_exposed_and_infected);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", update_susceptible);
+    this->add_state("Exposed", update_exposed_and_infected);
+    this->add_state("Infected", update_exposed_and_infected);
+    this->add_state("Recovered");
 
     // Global function
     GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
@@ -22699,62 +22101,25 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
     };
 
-    model.add_globalevent(update, "Update infected individuals");
+    this->add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(
-        ModelSEIRMixing<TSeq>::EXPOSED,
-        ModelSEIRMixing<TSeq>::RECOVERED,
-        ModelSEIRMixing<TSeq>::RECOVERED
-        );
+    virus.set_state(EXPOSED, RECOVERED, RECOVERED);
 
     virus.set_prob_infecting("Prob. Transmission");
     virus.set_prob_recovery("Prob. Recovery");
     virus.set_incubation("Avg. Incubation days");
 
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.queuing_off(); // No queuing need
+    this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    model.agents_empty_graph(n);
+    this->agents_empty_graph(n);
 
-    model.set_name("Susceptible-Exposed-Infected-Removed (SEIR) with Mixing");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate,
-    std::vector< double > contact_matrix
-    )
-{
-
-    this->contact_matrix = contact_matrix;
-
-    ModelSEIRMixing(
-        *this,
-        vname,
-        n,
-        prevalence,
-        contact_rate,
-        transmission_rate,
-        avg_incubation_days,
-        recovery_rate,
-        contact_matrix
-    );
-
-    return;
+    this->set_name("Susceptible-Exposed-Infected-Removed (SEIR) with Mixing");
 
 }
 
@@ -22863,29 +22228,6 @@ public:
     /**
      * @brief Constructs a ModelSIRMixing object.
      *
-     * @param model A reference to an existing ModelSIRMixing object.
-     * @param vname The name of the ModelSIRMixing object.
-     * @param n The number of entities in the model.
-     * @param prevalence The initial prevalence of the disease in the model.
-     * @param contact_rate The contact rate between entities in the model.
-     * @param transmission_rate The transmission rate of the disease in the model.
-     * @param recovery_rate The recovery rate of the disease in the model.
-     * @param contact_matrix The contact matrix between entities in the model.
-     */
-    ModelSIRMixing(
-        ModelSIRMixing<TSeq> & model,
-        const std::string & vname,
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double contact_rate,
-        epiworld_double transmission_rate,
-        epiworld_double recovery_rate,
-        std::vector< double > contact_matrix
-    );
-
-    /**
-     * @brief Constructs a ModelSIRMixing object.
-     *
      * @param vname The name of the ModelSIRMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
@@ -22904,12 +22246,7 @@ public:
         std::vector< double > contact_matrix
     );
 
-    ModelSIRMixing<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    );
-
-    void reset();
+    void reset() override;
 
     std::unique_ptr< Model<TSeq> > clone_ptr();
 
@@ -23033,18 +22370,6 @@ inline size_t ModelSIRMixing<TSeq>::sample_agents(
 }
 
 template<typename TSeq>
-inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-
-    Model<TSeq>::run(ndays, seed);
-    return *this;
-
-}
-
-template<typename TSeq>
 inline void ModelSIRMixing<TSeq>::reset()
 {
 
@@ -23145,7 +22470,6 @@ inline std::unique_ptr<Model<TSeq>> ModelSIRMixing<TSeq>::clone_ptr()
  */
 template<typename TSeq>
 inline ModelSIRMixing<TSeq>::ModelSIRMixing(
-    ModelSIRMixing<TSeq> & model,
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -23270,14 +22594,14 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         };
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Prob. Transmission");
-    model.add_param(recovery_rate, "Prob. Recovery");
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Prob. Transmission");
+    this->add_param(recovery_rate, "Prob. Recovery");
 
     // state
-    model.add_state("Susceptible", update_susceptible);
-    model.add_state("Infected", update_infected);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", update_susceptible);
+    this->add_state("Infected", update_infected);
+    this->add_state("Recovered");
 
     // Global function
     GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
@@ -23291,57 +22615,24 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 
     };
 
-    model.add_globalevent(update, "Update infected individuals");
+    this->add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(
-        ModelSIRMixing<TSeq>::INFECTED,
-        ModelSIRMixing<TSeq>::RECOVERED,
-        ModelSIRMixing<TSeq>::RECOVERED
-        );
+    virus.set_state(INFECTED, RECOVERED, RECOVERED);
 
     virus.set_prob_infecting("Prob. Transmission");
     virus.set_prob_recovery("Prob. Recovery");
 
-    model.add_virus(virus);
+    this->add_virus(virus);
 
-    model.queuing_off(); // No queuing need
+    this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    model.agents_empty_graph(n);
+    this->agents_empty_graph(n);
 
-    model.set_name("Susceptible-Infected-Removed (SIR) with Mixing");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSIRMixing<TSeq>::ModelSIRMixing(
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate,
-    std::vector< double > contact_matrix
-    )
-{
-
-    this->contact_matrix = contact_matrix;
-
-    ModelSIRMixing(
-        *this,
-        vname,
-        n,
-        prevalence,
-        contact_rate,
-        transmission_rate,
-        recovery_rate,
-        contact_matrix
-    );
+    this->set_name("Susceptible-Infected-Removed (SIR) with Mixing");
 
     return;
 
@@ -23389,27 +22680,6 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 // (already included include/epiworld/models/../tools/vaccine.hpp)
 // (already included include/epiworld/models/../model-bones.hpp)
 
-
-#if defined(__clang__)
-    // Clang
-    #define GET_MODEL(model, output) \
-        ModelMeaslesSchool<TSeq> * output = \
-            dynamic_cast<ModelMeaslesSchool<TSeq> *>(model); \
-        __builtin_assume(output != nullptr);
-#elif defined(__GNUC__) && __GNUC__ >= 13
-    // GCC 13 or later
-    #define GET_MODEL(model, output) \
-        ModelMeaslesSchool<TSeq> * output = \
-            dynamic_cast<ModelMeaslesSchool<TSeq> *>(model); \
-        [[assume(output != nullptr)]];
-#else
-    // C++17 or C++20
-    #define GET_MODEL(model, output) \
-        ModelMeaslesSchool<TSeq> * output = \
-            dynamic_cast<ModelMeaslesSchool<TSeq> *>(model); \
-        assert(output != nullptr); // Use assert for runtime checks
-#endif
-
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
     inline void ModelMeaslesSchool<TSeq>:: name \
@@ -23446,7 +22716,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool: public Model<TSeq> {
+class ModelMeaslesSchool final : public Model<TSeq> {
 
 private:
 
@@ -23499,47 +22769,6 @@ public:
     // Default constructor
     ModelMeaslesSchool() {};
 
-    /**
-     * @param n The number of agents in the system.
-     * @param n_exposed The number of exposed agents in the system.
-     * @param contact_rate The rate of contact between agents.
-     * @param transmission_rate The rate of transmission of the virus.
-     * @param vax_efficacy The efficacy of the vaccine.
-     * @param vax_reduction_recovery_rate The reduction in recovery rate due to  the vaccine.
-     * @param incubation_period The incubation period of the virus.
-     * @param prodromal_period The prodromal period of the virus.
-     * @param rash_period The rash period of the virus.
-     * @param days_undetected The number of days the virus goes undetected.
-     * @param hospitalization_rate The rate of hospitalization.
-     * @param hospitalization_period The duration of hospitalization.
-     * @param prop_vaccinated The proportion of vaccinated agents.
-     * @param quarantine_period The number of days for quarantine.
-     * @param quarantine_willingness The willingness to be quarantined.
-     * @param isolation_period The number of days for isolation.
-     */
-    ///@{
-    ModelMeaslesSchool(
-        ModelMeaslesSchool<TSeq> & model,
-        epiworld_fast_uint n,
-        epiworld_fast_uint n_exposed,
-        // Disease parameters
-        epiworld_double contact_rate,
-        epiworld_double transmission_rate,
-        epiworld_double vax_efficacy,
-        epiworld_double vax_reduction_recovery_rate,
-        epiworld_double incubation_period,
-        epiworld_double prodromal_period,
-        epiworld_double rash_period,
-        epiworld_double days_undetected,
-        epiworld_double hospitalization_rate,
-        epiworld_double hospitalization_period,
-        // Policy parameters
-        epiworld_double prop_vaccinated,
-        epiworld_fast_int quarantine_period,
-        epiworld_double quarantine_willingness,
-        epiworld_fast_int isolation_period
-    );
-
     ModelMeaslesSchool(
         epiworld_fast_uint n,
         epiworld_fast_uint n_exposed,
@@ -23589,7 +22818,7 @@ public:
      */
     void quarantine_agents();
 
-    void reset();
+    void reset() override;
     void update_infectious();
 
     std::unique_ptr< Model<TSeq> > clone_ptr();
@@ -23659,7 +22888,7 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
 template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::m_update_model(Model<TSeq> * m) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
     model->quarantine_agents();
     model->events_run();
     model->update_infectious();
@@ -23686,7 +22915,7 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
         day_rash_onset.end(),
         0);
 
-    this->m_update_model(dynamic_cast<Model<TSeq>*>(this));
+    this->m_update_model(this);
     return;
 
 }
@@ -23757,7 +22986,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
     if (ndraw == 0)
         return;
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
     size_t n_infectious = model->infectious.size();
 
     if (n_infectious == 0)
@@ -23850,7 +23079,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
 
-        GET_MODEL(m, model);
+        auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(*m, ModelMeaslesSchool<TSeq>::RASH);
 
@@ -23863,7 +23092,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
 LOCAL_UPDATE_FUN(m_update_rash) {
 
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
 
     #ifdef EPI_DEBUG
     if (static_cast<int>(model->day_flagged.size()) <= p->get_id())
@@ -23932,7 +23161,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
 
 LOCAL_UPDATE_FUN(m_update_isolated) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
 
     // Figuring out if the agent can be released from isolation
     // if the quarantine period is over.
@@ -23987,7 +23216,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
 
 LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
 
     // Figuring out if the agent can be released from isolation
     // if the quarantine period is over.
@@ -24005,7 +23234,7 @@ LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
 LOCAL_UPDATE_FUN(m_update_q_exposed) {
 
     // How many days since quarantine started
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
     int days_since =
         m->today() - model->day_flagged[p->get_id()];
 
@@ -24040,7 +23269,7 @@ LOCAL_UPDATE_FUN(m_update_q_exposed) {
 
 LOCAL_UPDATE_FUN(m_update_q_susceptible) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
     int days_since =
         m->today() - model->day_flagged[p->get_id()];
 
@@ -24051,7 +23280,7 @@ LOCAL_UPDATE_FUN(m_update_q_susceptible) {
 
 LOCAL_UPDATE_FUN(m_update_q_prodromal) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
 
     // Otherwise, these are moved to the prodromal period, if
     // the quanrantine period is over.
@@ -24079,7 +23308,7 @@ LOCAL_UPDATE_FUN(m_update_q_prodromal) {
 
 LOCAL_UPDATE_FUN(m_update_q_recovered) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesSchool<TSeq>*>(m);;
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))
@@ -24100,7 +23329,6 @@ LOCAL_UPDATE_FUN(m_update_hospitalized) {
 
 template<typename TSeq>
 inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
-    ModelMeaslesSchool<TSeq> & model,
     epiworld_fast_uint n,
     epiworld_fast_uint n_exposed,
     // Disease parameters
@@ -24121,52 +23349,52 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_fast_int isolation_period
 ) {
 
-    model.add_state("Susceptible", this->m_update_susceptible);
-    model.add_state("Exposed", this->m_update_exposed);
-    model.add_state("Prodromal", this->m_update_prodromal);
-    model.add_state("Rash", this->m_update_rash);
-    model.add_state("Isolated", this->m_update_isolated);
-    model.add_state(
+    this->add_state("Susceptible", this->m_update_susceptible);
+    this->add_state("Exposed", this->m_update_exposed);
+    this->add_state("Prodromal", this->m_update_prodromal);
+    this->add_state("Rash", this->m_update_rash);
+    this->add_state("Isolated", this->m_update_isolated);
+    this->add_state(
         "Isolated Recovered", this->m_update_isolated_recovered
     );
-    model.add_state("Detected Hospitalized", this->m_update_hospitalized);
-    model.add_state(
+    this->add_state("Detected Hospitalized", this->m_update_hospitalized);
+    this->add_state(
         "Quarantined Exposed", this->m_update_q_exposed
     );
 
-    model.add_state(
+    this->add_state(
         "Quarantined Susceptible", this->m_update_q_susceptible
     );
 
-    model.add_state(
+    this->add_state(
         "Quarantined Prodromal", this->m_update_q_prodromal
     );
 
-    model.add_state(
+    this->add_state(
         "Quarantined Recovered", this->m_update_q_recovered
     );
 
-    model.add_state("Hospitalized", this->m_update_hospitalized);
+    this->add_state("Hospitalized", this->m_update_hospitalized);
 
-    model.add_state("Recovered");
+    this->add_state("Recovered");
 
     // Adding the model parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(incubation_period, "Incubation period");
-    model.add_param(prodromal_period, "Prodromal period");
-    model.add_param(rash_period, "Rash period");
-    model.add_param(days_undetected, "Days undetected");
-    model.add_param(quarantine_period, "Quarantine period");
-    model.add_param(
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(incubation_period, "Incubation period");
+    this->add_param(prodromal_period, "Prodromal period");
+    this->add_param(rash_period, "Rash period");
+    this->add_param(days_undetected, "Days undetected");
+    this->add_param(quarantine_period, "Quarantine period");
+    this->add_param(
         quarantine_willingness, "Quarantine willingness"
     );
-    model.add_param(isolation_period, "Isolation period");
-    model.add_param(hospitalization_rate, "Hospitalization rate");
-    model.add_param(hospitalization_period, "Hospitalization period");
-    model.add_param(prop_vaccinated, "Vaccination rate");
-    model.add_param(vax_efficacy, "Vax efficacy");
-    model.add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
+    this->add_param(isolation_period, "Isolation period");
+    this->add_param(hospitalization_rate, "Hospitalization rate");
+    this->add_param(hospitalization_period, "Hospitalization period");
+    this->add_param(prop_vaccinated, "Vaccination rate");
+    this->add_param(vax_efficacy, "Vax efficacy");
+    this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
 
     // Designing the disease
     Virus<> measles("Measles");
@@ -24178,83 +23406,33 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
         distribute_virus_randomly(n_exposed, false)
     );
 
-    model.add_virus(measles);
+    this->add_virus(measles);
 
     // Designing the vaccine
     ToolVaccine<TSeq> vaccine(
         std::string("MMR ") +
-        std::to_string(model("Vax efficacy"))
+        std::to_string(this->par("Vax efficacy"))
     );
     
-    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
+    vaccine.set_susceptibility_reduction(this->par("Vax efficacy"));
 
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );
 
-    model.add_tool(vaccine);
+    this->add_tool(vaccine);
 
     // Global actions
-    model.add_globalevent(this->m_update_model, "Update model");
-    model.queuing_off();
+    this->add_globalevent(this->m_update_model, "Update model");
+    this->queuing_off();
 
     // Setting the population
-    model.agents_empty_graph(n);
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
-    epiworld_fast_uint n,
-    epiworld_fast_uint n_exposed,
-    // Disease parameters
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double vax_efficacy,
-    epiworld_double vax_reduction_recovery_rate,
-    epiworld_double incubation_period,
-    epiworld_double prodromal_period,
-    epiworld_double rash_period,
-    epiworld_double days_undetected,
-    epiworld_double hospitalization_rate,
-    epiworld_double hospitalization_period,
-    // Policy parameters
-    epiworld_double prop_vaccinated,
-    epiworld_fast_int quarantine_period,
-    epiworld_double quarantine_willingness,
-    epiworld_fast_int isolation_period
-
-) {
-
-    ModelMeaslesSchool(
-        *this,
-        n,
-        n_exposed,
-        contact_rate,
-        transmission_rate,
-        vax_efficacy,
-        vax_reduction_recovery_rate,
-        incubation_period,
-        prodromal_period,
-        rash_period,
-        days_undetected,
-        hospitalization_rate,
-        hospitalization_period,
-        prop_vaccinated,
-        quarantine_period,
-        quarantine_willingness,
-        isolation_period
-    );
-
-    return;
+    this->agents_empty_graph(n);
 
 }
 
 #undef SAMPLE_FROM_PROBS
 #undef LOCAL_UPDATE_FUN
-#undef GET_MODEL
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -24501,20 +23679,9 @@ public:
     );
 
     /**
-     * @brief Run the model simulation
-     * @param ndays Number of days to simulate
-     * @param seed Random seed for reproducibility (default: -1 for random seed)
-     * @return Reference to this model instance
-     */
-    ModelSEIRMixingQuarantine<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    );
-
-    /**
      * @brief Reset the model to initial state
      */
-    void reset();
+    void reset() override;
 
     /**
      * @brief Create a clone of this model
@@ -24746,19 +23913,6 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::sample_agents(
     }
 
     return samp_id;
-
-}
-
-template<typename TSeq>
-inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-
-    Model<TSeq>::run(ndays, seed);
-
-    return *this;
 
 }
 
@@ -25536,23 +24690,6 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 #define MM(i, j, n) \
     j * n + i
 
-#if defined(__clang__)
-    // Clang
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
-        __builtin_assume((output) != nullptr);
-#elif defined(__GNUC__) && __GNUC__ >= 13
-    // GCC 13 or later
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
-            [[assume((output) != nullptr)]];
-#else
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixing<TSeq> * >( (model) ); \
-        assert((output) != nullptr); // Use assert for runtime checks
-#endif
-
-
 #define SAMPLE_FROM_PROBS(n, ans) \
     size_t ans; \
     epiworld_double p_total = m->runif(); \
@@ -25604,7 +24741,7 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing : public Model<TSeq>
+class ModelMeaslesMixing final : public Model<TSeq>
 {
 private:
 
@@ -25686,7 +24823,6 @@ public:
     /**
      * @brief Constructs a ModelMeaslesMixing object.
      *
-     * @param model A reference to an existing ModelMeaslesMixing object.
      * @param n The number of entities in the model.
      * @param prevalence The initial prevalence of the disease in the model.
      * @param contact_rate The contact rate between entities in the model.
@@ -25710,7 +24846,6 @@ public:
      * @param contact_tracing_days_prior The number of days prior to detection for which contacts are traced (default: 4).
      */
     ModelMeaslesMixing(
-        ModelMeaslesMixing<TSeq> & model,
         epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double contact_rate,
@@ -25732,71 +24867,12 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_double contact_tracing_success_rate = 1.0,
         epiworld_fast_uint contact_tracing_days_prior = 4u
-    );
-
-    /**
-     * @brief Constructs a ModelMeaslesMixing object.
-     *
-     * @param n The number of entities in the model.
-     * @param prevalence The initial prevalence of the disease in the model.
-     * @param contact_rate The contact rate between entities in the model.
-     * @param transmission_rate The transmission rate of the disease in the model.
-     * @param vax_efficacy The efficacy of the vaccine.
-     * @param vax_reduction_recovery_rate The reduction in recovery rate due to the vaccine.
-     * @param incubation_period The incubation period of the disease in the model.
-     * @param prodromal_period The prodromal period of the disease in the model.
-     * @param rash_period The rash period of the disease in the model.
-     * @param contact_matrix The contact matrix between entities in the model.
-     * @param hospitalization_rate The rate at which infected individuals are hospitalized.
-     * @param hospitalization_period The average duration of hospitalization in days.
-     * @param days_undetected The average number of days an infected individual remains undetected.
-     * @param quarantine_period The duration of quarantine in days for exposed contacts.
-     * @param quarantine_willingness The proportion of individuals willing to comply with quarantine measures.
-     * @param isolation_willingness The proportion of individuals willing to self-isolate when detected.
-     * @param isolation_period The duration of isolation in days for detected infected individuals.
-     * @param prop_vaccinated The proportion of vaccinated agents.
-     * @param contact_tracing_success_rate The probability of successfully identifying and tracing contacts (default: 1.0).
-     * @param contact_tracing_days_prior The number of days prior to detection for which contacts are traced (default: 4).
-     */
-    ModelMeaslesMixing(
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double contact_rate,
-        epiworld_double transmission_rate,
-        epiworld_double vax_efficacy,
-        epiworld_double vax_reduction_recovery_rate,
-        epiworld_double incubation_period,
-        epiworld_double prodromal_period,
-        epiworld_double rash_period,
-        std::vector< double > contact_matrix,
-        epiworld_double hospitalization_rate,
-        epiworld_double hospitalization_period,
-        // Policy parameters
-        epiworld_double days_undetected,
-        epiworld_fast_int quarantine_period,
-        epiworld_double quarantine_willingness,
-        epiworld_double isolation_willingness,
-        epiworld_fast_int isolation_period,
-        epiworld_double prop_vaccinated,
-        epiworld_double contact_tracing_success_rate = 1.0,
-        epiworld_fast_uint contact_tracing_days_prior = 4u
-    );
-
-    /**
-     * @brief Run the model simulation
-     * @param ndays Number of days to simulate
-     * @param seed Random seed for reproducibility (default: -1 for random seed)
-     * @return Reference to this model instance
-     */
-    ModelMeaslesMixing<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
     );
 
     /**
      * @brief Reset the model to initial state
      */
-    void reset();
+    void reset() override;
 
     /**
      * @brief Create a clone of this model
@@ -25867,7 +24943,7 @@ public:
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::m_update_model(Model<TSeq> * m)
 {
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
     model->m_quarantine_process();
     model->events_run();
     model->m_update_infectious_list();
@@ -26029,19 +25105,6 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
 }
 
 template<typename TSeq>
-inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-
-    Model<TSeq>::run(ndays, seed);
-
-    return *this;
-
-}
-
-template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::reset()
 {
 
@@ -26176,7 +25239,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
 
     // Downcasting to retrieve the sampler attached to the
     // class
-    GET_MODEL(m, m_down);
+    auto * m_down = static_cast<ModelMeaslesMixing<TSeq>*>(m);
 
     size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
@@ -26260,7 +25323,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_prodromal(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
 
     // Does the agent transition to rash?
     if (m->runif() < 1.0/m->par("Prodromal period"))
@@ -26278,7 +25341,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
 
     // Checking if the agent will be detected or not
     bool detected = false;
@@ -26336,7 +25399,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
 
     // Figuring out if the agent can be released from isolation
     // if the isolation period is over.
@@ -26400,7 +25463,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_suscep(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
 
     // Figuring out if the agent can be released from quarantine
     // if the quarantine period is over.
@@ -26424,7 +25487,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_exposed(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
 
     // Figuring out if the agent can be released from quarantine
     // if the quarantine period is over.
@@ -26466,7 +25529,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_prodromal(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
 
     // Otherwise, these are moved to the prodromal period, if
     // the quarantine period is over.
@@ -26497,7 +25560,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_quarantine_recovered(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     if (days_since >= m->par("Quarantine period"))
@@ -26510,7 +25573,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated_recovered(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixing<TSeq>*>(m);;
 
     // Figuring out if the agent can be released from isolation
     // if the isolation period is over.
@@ -26664,7 +25727,6 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
  */
 template<typename TSeq>
 inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
-    ModelMeaslesMixing<TSeq> & model,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -26693,50 +25755,50 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->contact_matrix = contact_matrix;
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(incubation_period, "Incubation period");
-    model.add_param(prodromal_period, "Prodromal period");
-    model.add_param(rash_period, "Rash period");
-    model.add_param(hospitalization_rate, "Hospitalization rate");
-    model.add_param(hospitalization_period, "Hospitalization period");
-    model.add_param(days_undetected, "Days undetected");
-    model.add_param(quarantine_period, "Quarantine period");
-    model.add_param(
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(incubation_period, "Incubation period");
+    this->add_param(prodromal_period, "Prodromal period");
+    this->add_param(rash_period, "Rash period");
+    this->add_param(hospitalization_rate, "Hospitalization rate");
+    this->add_param(hospitalization_period, "Hospitalization period");
+    this->add_param(days_undetected, "Days undetected");
+    this->add_param(quarantine_period, "Quarantine period");
+    this->add_param(
         quarantine_willingness, "Quarantine willingness"
     );
-    model.add_param(
+    this->add_param(
         isolation_willingness, "Isolation willingness"
     );
-    model.add_param(isolation_period, "Isolation period");
-    model.add_param(
+    this->add_param(isolation_period, "Isolation period");
+    this->add_param(
         contact_tracing_success_rate, "Contact tracing success rate"
     );
-    model.add_param(
+    this->add_param(
         contact_tracing_days_prior, "Contact tracing days prior"
     );
-    model.add_param(prop_vaccinated, "Vaccination rate");
-    model.add_param(vax_efficacy, "Vax efficacy");
-    model.add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
+    this->add_param(prop_vaccinated, "Vaccination rate");
+    this->add_param(vax_efficacy, "Vax efficacy");
+    this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
 
     // state
-    model.add_state("Susceptible", m_update_susceptible);
-    model.add_state("Exposed", m_update_exposed);
-    model.add_state("Prodromal", m_update_prodromal);
-    model.add_state("Rash", m_update_rash);
-    model.add_state("Isolated", m_update_isolated);
-    model.add_state("Isolated Recovered", m_update_isolated_recovered);
-    model.add_state("Detected Hospitalized", m_update_hospitalized);
-    model.add_state("Quarantined Exposed", m_update_quarantine_exposed);
-    model.add_state("Quarantined Susceptible", m_update_quarantine_suscep);
-    model.add_state("Quarantined Prodromal", m_update_quarantine_prodromal);
-    model.add_state("Quarantined Recovered", m_update_quarantine_recovered);
-    model.add_state("Hospitalized", m_update_hospitalized);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", m_update_susceptible);
+    this->add_state("Exposed", m_update_exposed);
+    this->add_state("Prodromal", m_update_prodromal);
+    this->add_state("Rash", m_update_rash);
+    this->add_state("Isolated", m_update_isolated);
+    this->add_state("Isolated Recovered", m_update_isolated_recovered);
+    this->add_state("Detected Hospitalized", m_update_hospitalized);
+    this->add_state("Quarantined Exposed", m_update_quarantine_exposed);
+    this->add_state("Quarantined Susceptible", m_update_quarantine_suscep);
+    this->add_state("Quarantined Prodromal", m_update_quarantine_prodromal);
+    this->add_state("Quarantined Recovered", m_update_quarantine_recovered);
+    this->add_state("Hospitalized", m_update_hospitalized);
+    this->add_state("Recovered");
 
     // Global function
-    model.add_globalevent(this->m_update_model, "Update infected individuals");
-    model.queuing_off();
+    this->add_globalevent(this->m_update_model, "Update infected individuals");
+    this->queuing_off();
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus("Measles", prevalence, true);
@@ -26750,87 +25812,28 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     virus.set_prob_recovery("Rash period");
     virus.set_incubation("Incubation period");
 
-    model.add_virus(virus);
+    this->add_virus(virus);
 
     // Designing the vaccine
     ToolVaccine<TSeq> vaccine(
         std::string("MMR ") +
-        std::to_string(model("Vax efficacy"))
+        std::to_string(this->get_param("Vax efficacy"))
     );
 
-    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
+    vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
 
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );
 
-    model.add_tool(vaccine);
+    this->add_tool(vaccine);
 
-    model.queuing_off(); // No queuing need
+    this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    model.agents_empty_graph(n);
+    this->agents_empty_graph(n);
 
-    model.set_name("Measles with Mixing and Quarantine");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double vax_efficacy,
-    epiworld_double vax_reduction_recovery_rate,
-    epiworld_double incubation_period,
-    epiworld_double prodromal_period,
-    epiworld_double rash_period,
-    std::vector< double > contact_matrix,
-    epiworld_double hospitalization_rate,
-    epiworld_double hospitalization_period,
-    // Policy parameters
-    epiworld_double days_undetected,
-    epiworld_fast_int quarantine_period,
-    epiworld_double quarantine_willingness,
-    epiworld_double isolation_willingness,
-    epiworld_fast_int isolation_period,
-    epiworld_double prop_vaccinated,
-    epiworld_double contact_tracing_success_rate,
-    epiworld_fast_uint contact_tracing_days_prior
-    )
-{
-
-    this->contact_matrix = contact_matrix;
-
-    ModelMeaslesMixing(
-        *this,
-        n,
-        prevalence,
-        contact_rate,
-        transmission_rate,
-        vax_efficacy,
-        vax_reduction_recovery_rate,
-        incubation_period,
-        prodromal_period,
-        rash_period,
-        contact_matrix,
-        hospitalization_rate,
-        hospitalization_period,
-        // Policy parameters
-        days_undetected,
-        quarantine_period,
-        quarantine_willingness,
-        isolation_willingness,
-        isolation_period,
-        prop_vaccinated,
-        contact_tracing_success_rate,
-        contact_tracing_days_prior
-    );
-
-    return;
+    this->set_name("Measles with Mixing and Quarantine");
 
 }
 
@@ -26849,7 +25852,6 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 
 }
 #undef MM
-#undef GET_MODEL
 #undef SAMPLE_FROM_PROBS
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -26879,22 +25881,6 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 
 #define COL_MAJOR_POS(i, j, n) \
     (j * n + i)
-
-#if defined(__clang__)
-    // Clang
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
-        __builtin_assume((output) != nullptr);
-#elif defined(__GNUC__) && __GNUC__ >= 13
-    // GCC 13 or later
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
-        [[assume((output) != nullptr)]];
-#else
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelMeaslesMixingRiskQuarantine<TSeq> * >( (model) ); \
-        assert((output) != nullptr); // Use assert for runtime checks
-#endif
 
 /**
  * @brief Macro to sample from a list of probabilities
@@ -26939,7 +25925,7 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine : public Model<TSeq> 
+class ModelMeaslesMixingRiskQuarantine final : public Model<TSeq> 
 {
 private:
     // Vector of vectors of infected agents (prodromal agents are infectious)
@@ -27042,62 +26028,7 @@ public:
     static constexpr int RISK_HIGH   = 2;
 
     ModelMeaslesMixingRiskQuarantine() {};
-    
-    /**
-     * @brief Constructs a ModelMeaslesMixingRiskQuarantine object.
-     *
-     * @param model A reference to an existing ModelMeaslesMixingRiskQuarantine object.
-     * @param n The number of entities in the model.
-     * @param prevalence The initial prevalence of the disease in the model.
-     * @param contact_rate The contact rate between entities in the model.
-     * @param transmission_rate The transmission rate of the disease in the model.
-     * @param vax_efficacy The efficacy of the vaccine.
-     * @param incubation_period The incubation period of the disease in the model.
-     * @param prodromal_period The prodromal period of the disease in the model.
-     * @param rash_period The rash period of the disease in the model.
-     * @param contact_matrix The contact matrix between entities in the model. Specified in
-     * column-major order.
-     * @param hospitalization_rate The rate at which infected individuals are hospitalized.
-     * @param hospitalization_period The average duration of hospitalization in days.
-     * @param days_undetected The average number of days an infected individual remains undetected.
-     * @param quarantine_period_high The duration of quarantine in days for high-risk contacts.
-     * @param quarantine_period_medium The duration of quarantine in days for medium-risk contacts.
-     * @param quarantine_period_low The duration of quarantine in days for low-risk contacts.
-     * @param quarantine_willingness The proportion of individuals willing to comply with quarantine measures.
-     * @param isolation_willingness The proportion of individuals willing to self-isolate when detected.
-     * @param isolation_period The duration of isolation in days for detected infected individuals.
-     * @param prop_vaccinated The proportion of vaccinated agents.
-     * @param detection_rate_quarantine The detection rate during active quarantine periods.
-     * @param contact_tracing_success_rate The probability of successfully identifying and tracing contacts (default: 1.0).
-     * @param contact_tracing_days_prior The number of days prior to detection for which contacts are traced (default: 4).
-     */
-    ModelMeaslesMixingRiskQuarantine(
-        ModelMeaslesMixingRiskQuarantine<TSeq> & model,
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double contact_rate,
-        epiworld_double transmission_rate,
-        epiworld_double vax_efficacy,
-        epiworld_double incubation_period,
-        epiworld_double prodromal_period,
-        epiworld_double rash_period,
-        std::vector< double > contact_matrix,
-        epiworld_double hospitalization_rate,
-        epiworld_double hospitalization_period,
-        // Policy parameters
-        epiworld_double days_undetected,
-        epiworld_fast_int quarantine_period_high,
-        epiworld_fast_int quarantine_period_medium,
-        epiworld_fast_int quarantine_period_low,
-        epiworld_double quarantine_willingness,
-        epiworld_double isolation_willingness,
-        epiworld_fast_int isolation_period,
-        epiworld_double prop_vaccinated,
-        epiworld_double detection_rate_quarantine,
-        epiworld_double contact_tracing_success_rate = 1.0,
-        epiworld_fast_uint contact_tracing_days_prior = 4u
-    );
-    
+
     /**
      * @brief Constructs a ModelMeaslesMixingRiskQuarantine object.
      *
@@ -27151,20 +26082,9 @@ public:
     );
 
     /**
-     * @brief Run the model simulation
-     * @param ndays Number of days to simulate
-     * @param seed Random seed for reproducibility (default: -1 for random seed)
-     * @return Reference to this model instance
-     */
-    ModelMeaslesMixingRiskQuarantine<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    );
-
-    /**
      * @brief Reset the model to initial state
      */
-    void reset();
+    void reset() override;
 
     /**
      * @brief Create a clone of this model
@@ -27249,8 +26169,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_model(
     Model<TSeq> * m
 )
 {
-    GET_MODEL(m, model);
-
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
+    
     // This will move agents between states
     model->m_quarantine_process();
 
@@ -27430,8 +26350,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
 
     // Downcasting to retrieve the sampler attached to the
     // class
-    GET_MODEL(m, m_down);
-    
+    auto * m_down = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);
+
     // Sampling infected agents
     size_t ndraws = m_down->sample_infectious_agents(p, m_down->sampled_agents);
 
@@ -27508,7 +26428,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_prodromal(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
     
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
 
     // Does the agent transition to rash?
     if (m->runif() < 1.0/m->par("Prodromal period"))
@@ -27534,7 +26454,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
 
     // Checking if the agent will be detected or not
     bool detected = false;
@@ -27581,7 +26501,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
 
     // Figuring out if the agent can be released from isolation
     // if the isolation period is over.
@@ -27625,7 +26545,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated_recovered(
     Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
 
     // Figuring out if the agent can be released from isolation
     // if the isolation period is over.
@@ -27642,7 +26562,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
     Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
 
     // Get the appropriate quarantine period based on risk level
     auto quarantine_period = model->m_get_risk_period(p->get_id());
@@ -27661,7 +26581,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_exposed(
     Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
 
     // Get the appropriate quarantine period based on risk level
     auto quarantine_period = model->m_get_risk_period(p->get_id());
@@ -27694,7 +26614,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodroma
     Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
 
     // Get the appropriate quarantine period based on risk level
     auto quarantine_period = model->m_get_risk_period(p->get_id());
@@ -27727,7 +26647,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_recovere
     Model<TSeq> * m
 ) {
 
-    GET_MODEL(m, model);
+    auto* model = static_cast<ModelMeaslesMixingRiskQuarantine<TSeq>*>(m);;
 
     // Get the appropriate quarantine period based on risk level
     auto quarantine_period = model->m_get_risk_period(p->get_id());
@@ -28037,7 +26957,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
 
 template<typename TSeq>
 inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
-    ModelMeaslesMixingRiskQuarantine<TSeq> & model,
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double contact_rate,
@@ -28068,52 +26987,52 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     this->contact_matrix = contact_matrix;
 
     // Setting up parameters
-    model.add_param(contact_rate, "Contact rate");
-    model.add_param(transmission_rate, "Transmission rate");
-    model.add_param(incubation_period, "Incubation period");
-    model.add_param(prodromal_period, "Prodromal period");
-    model.add_param(rash_period, "Rash period");
-    model.add_param(hospitalization_rate, "Hospitalization rate");
-    model.add_param(hospitalization_period, "Hospitalization period");
-    model.add_param(days_undetected, "Days undetected");
-    model.add_param(quarantine_period_high, "Quarantine period high");
-    model.add_param(quarantine_period_medium, "Quarantine period medium");
-    model.add_param(quarantine_period_low, "Quarantine period low");
-    model.add_param(
+    this->add_param(contact_rate, "Contact rate");
+    this->add_param(transmission_rate, "Transmission rate");
+    this->add_param(incubation_period, "Incubation period");
+    this->add_param(prodromal_period, "Prodromal period");
+    this->add_param(rash_period, "Rash period");
+    this->add_param(hospitalization_rate, "Hospitalization rate");
+    this->add_param(hospitalization_period, "Hospitalization period");
+    this->add_param(days_undetected, "Days undetected");
+    this->add_param(quarantine_period_high, "Quarantine period high");
+    this->add_param(quarantine_period_medium, "Quarantine period medium");
+    this->add_param(quarantine_period_low, "Quarantine period low");
+    this->add_param(
         quarantine_willingness, "Quarantine willingness"
     );
-    model.add_param(
+    this->add_param(
         isolation_willingness, "Isolation willingness"
     );
-    model.add_param(isolation_period, "Isolation period");
-    model.add_param(detection_rate_quarantine, "Detection rate quarantine");
-    model.add_param(
+    this->add_param(isolation_period, "Isolation period");
+    this->add_param(detection_rate_quarantine, "Detection rate quarantine");
+    this->add_param(
         contact_tracing_success_rate, "Contact tracing success rate"
     );
-    model.add_param(
+    this->add_param(
         contact_tracing_days_prior, "Contact tracing days prior"
     );
-    model.add_param(prop_vaccinated, "Vaccination rate");
-    model.add_param(vax_efficacy, "Vax efficacy");
+    this->add_param(prop_vaccinated, "Vaccination rate");
+    this->add_param(vax_efficacy, "Vax efficacy");
     
     // state
-    model.add_state("Susceptible", m_update_susceptible);
-    model.add_state("Exposed", m_update_exposed);
-    model.add_state("Prodromal", m_update_prodromal);
-    model.add_state("Rash", m_update_rash);
-    model.add_state("Isolated", m_update_isolated);
-    model.add_state("Isolated Recovered", m_update_isolated_recovered);
-    model.add_state("Detected Hospitalized", m_update_hospitalized);
-    model.add_state("Quarantined Exposed", m_update_quarantine_exposed);
-    model.add_state("Quarantined Susceptible", m_update_quarantine_suscep);
-    model.add_state("Quarantined Prodromal", m_update_quarantine_prodromal);
-    model.add_state("Quarantined Recovered", m_update_quarantine_recovered);
-    model.add_state("Hospitalized", m_update_hospitalized);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", m_update_susceptible);
+    this->add_state("Exposed", m_update_exposed);
+    this->add_state("Prodromal", m_update_prodromal);
+    this->add_state("Rash", m_update_rash);
+    this->add_state("Isolated", m_update_isolated);
+    this->add_state("Isolated Recovered", m_update_isolated_recovered);
+    this->add_state("Detected Hospitalized", m_update_hospitalized);
+    this->add_state("Quarantined Exposed", m_update_quarantine_exposed);
+    this->add_state("Quarantined Susceptible", m_update_quarantine_suscep);
+    this->add_state("Quarantined Prodromal", m_update_quarantine_prodromal);
+    this->add_state("Quarantined Recovered", m_update_quarantine_recovered);
+    this->add_state("Hospitalized", m_update_hospitalized);
+    this->add_state("Recovered");
 
     // Global function
-    model.add_globalevent(this->m_update_model, "Update infected individuals");
-    model.queuing_off();
+    this->add_globalevent(this->m_update_model, "Update infected individuals");
+    this->queuing_off();
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus("Measles", prevalence, true);
@@ -28127,93 +27046,29 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     virus.set_prob_recovery("Rash period");
     virus.set_incubation("Incubation period");
 
-    model.add_virus(virus);
+    this->add_virus(virus);
 
     // Designing the vaccine
     ToolVaccine<TSeq> vaccine(
         std::string("MMR ") +
-        std::to_string(model("Vax efficacy"))
+        std::to_string(this->get_param("Vax efficacy"))
     );
     
-    vaccine.set_susceptibility_reduction(model("Vax efficacy"));
+    vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
 
     vaccine.set_distribution(
         distribute_tool_randomly(prop_vaccinated, true)
     );
 
-    model.add_tool(vaccine);
+    this->add_tool(vaccine);
 
-    model.queuing_off(); // No queuing need
+    this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    model.agents_empty_graph(n);
+    this->agents_empty_graph(n);
 
-    model.set_name("Measles with Mixing and Risk-based Quarantine");
+    this->set_name("Measles with Mixing and Risk-based Quarantine");
 
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double vax_efficacy,
-    epiworld_double incubation_period,
-    epiworld_double prodromal_period,
-    epiworld_double rash_period,
-    std::vector< double > contact_matrix,
-    epiworld_double hospitalization_rate,
-    epiworld_double hospitalization_period,
-    // Policy parameters
-    epiworld_double days_undetected,
-    epiworld_fast_int quarantine_period_high,
-    epiworld_fast_int quarantine_period_medium,
-    epiworld_fast_int quarantine_period_low,
-    epiworld_double quarantine_willingness,
-    epiworld_double isolation_willingness,
-    epiworld_fast_int isolation_period,
-    epiworld_double prop_vaccinated,
-    epiworld_double detection_rate_quarantine,
-    epiworld_double contact_tracing_success_rate,
-    epiworld_fast_uint contact_tracing_days_prior
-    ) : ModelMeaslesMixingRiskQuarantine<TSeq>(
-        *this,
-        n,
-        prevalence,
-        contact_rate,
-        transmission_rate,
-        vax_efficacy,
-        incubation_period,
-        prodromal_period,
-        rash_period,
-        contact_matrix,
-        hospitalization_rate,
-        hospitalization_period,
-        // Policy parameters
-        days_undetected,
-        quarantine_period_high,
-        quarantine_period_medium,
-        quarantine_period_low,
-        quarantine_willingness,
-        isolation_willingness,
-        isolation_period,
-        prop_vaccinated,
-        detection_rate_quarantine,
-        contact_tracing_success_rate,
-        contact_tracing_days_prior
-    ) {};
-
-template<typename TSeq>
-inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine<TSeq>::run(
-    epiworld_fast_uint ndays,
-    int seed
-)
-{
-    Model<TSeq>::run(ndays, seed);
-    return *this;
 }
 
 template<typename TSeq>
@@ -28335,7 +27190,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
 }
 
 #undef SAMPLE_FROM_PROBS
-#undef GET_MODEL
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
