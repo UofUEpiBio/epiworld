@@ -9,21 +9,6 @@
     (j * n + i)
 
 /**
- * @brief Macro to sample from a list of probabilities
- * @return The index of the sampled probability; and the total length
- * if none is found, returns n.
- */
-#define SAMPLE_FROM_PROBS(n, ans) \
-    int ans; \
-    epiworld_double p_total = m->runif(); \
-    for (ans = 0; ans < static_cast<int>(n); ans++) \
-    { \
-        if (p_total < m->array_double_tmp[ans]) \
-            break; \
-        m->array_double_tmp[ans + 1] += m->array_double_tmp[ans]; \
-    };
-
-/**
  * @file measlesmixingriskquarantine.hpp
  * @brief Template for a Measles model with population mixing and risk-based quarantine
  */
@@ -598,7 +583,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     m->array_double_tmp[0] = 1.0/m->par("Rash period"); // Recovery
     m->array_double_tmp[1] = m->par("Hospitalization rate"); // Hospitalization
         
-    SAMPLE_FROM_PROBS(2, which);
+    auto which = m->sample_from_probs(2);
     
     if (which == 0) // Recovers (probability 1/rash_period)
     {
@@ -643,7 +628,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     m->array_double_tmp[1] = m->par("Hospitalization rate");
 
     // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
+    auto which = m->sample_from_probs(2);
 
     // Recovers (which == 0 fires with probability 1/rash_period)
     if (which == 0u)
@@ -1175,10 +1160,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     this->add_virus(virus);
 
     // Designing the vaccine
-    ToolVaccine<TSeq> vaccine(
-        std::string("MMR ") +
-        std::to_string(this->get_param("Vax efficacy"))
-    );
+    ToolVaccine<TSeq> vaccine("MMR");
     
     vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
 
@@ -1314,7 +1296,5 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
     return *this;
 
 }
-
-#undef SAMPLE_FROM_PROBS
 
 #endif

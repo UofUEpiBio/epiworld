@@ -6,20 +6,6 @@
 #define MM(i, j, n) \
     j * n + i
 
-#if defined(__clang__)
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
-        __builtin_assume((output) != nullptr);
-#elif defined(__GNUC__) && __GNUC__ >= 13
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
-        [[assume((output) != nullptr)]];
-#else
-    #define GET_MODEL(model, output) \
-        auto * output = dynamic_cast< ModelSEIRMixing<TSeq> * >( (model) ); \
-        assert((output) != nullptr);
-#endif
-
 /**
  * @file seirentitiesconnected.hpp
  * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
@@ -363,7 +349,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 
             // Downcasting to retrieve the sampler attached to the
             // class
-            GET_MODEL(m, m_down);
+            auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
 
             size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
 
@@ -501,7 +487,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
     {
 
-        GET_MODEL(m, m_down);
+        auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
 
         m_down->update_infected_list();
 
@@ -546,5 +532,4 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
 
 }
 #undef MM
-#undef GET_MODEL
 #endif

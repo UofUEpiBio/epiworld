@@ -7,16 +7,6 @@
 #define MM(i, j, n) \
     j * n + i
 
-#define SAMPLE_FROM_PROBS(n, ans) \
-    size_t ans; \
-    epiworld_double p_total = m->runif(); \
-    for (ans = 0u; ans < n; ++ans) \
-    { \
-        if (p_total < m->array_double_tmp[ans]) \
-            break; \
-        m->array_double_tmp[ans + 1] += m->array_double_tmp[ans]; \
-    }
-
 /**
  * @file measlesmixing.hpp
  * @brief Template for a Measles model with population mixing, quarantine, and contact tracing
@@ -109,11 +99,7 @@ private:
     static void m_update_model(Model<TSeq> * m);
 
     // We will limit tracking to up to EPI_MAX_TRACKING
-    std::vector< size_t > tracking_matrix; ///< Tracking matrix for agent interactions
-    std::vector< size_t > tracking_matrix_size; ///< Number of current interactions for each agent
-    std::vector< size_t > tracking_matrix_date; ///< Date of each interaction
-
-    void m_add_tracking(size_t infectious_id, size_t agent_id);
+    ContactTracing contact_tracing;
 
 public:
 
@@ -266,33 +252,6 @@ inline void ModelMeaslesMixing<TSeq>::m_update_model(Model<TSeq> * m)
     model->m_update_infectious_list();
     return;
 }
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::m_add_tracking(
-    size_t infectious_id,
-    size_t agent_id
-)
-{
-
-    // We avoid the math if there's no point in tracking anymore
-    if (
-        agent_quarantine_triggered[infectious_id] >=
-        ModelMeaslesMixing<TSeq>::QUARANTINE_PROCESS_DONE
-    )
-        return;
-
-    // If we are overflow, we start from the beginning
-    size_t loc = tracking_matrix_size[infectious_id] % EPI_MAX_TRACKING;
-    loc = MM(infectious_id, loc, Model<TSeq>::size());
-    tracking_matrix[loc] = agent_id;
-    tracking_matrix_date[loc] = Model<TSeq>::today();
-
-    // We increase the size of the tracking matrix
-    tracking_matrix_size[infectious_id]++;
-
-    return;
-}
-
 
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::m_update_infectious_list()
@@ -524,15 +483,8 @@ inline void ModelMeaslesMixing<TSeq>::reset()
         0
     );
 
-    // Tracking matrix
-    tracking_matrix.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix.begin(), tracking_matrix.end(), 0u);
-
-    tracking_matrix_size.resize(Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix_size.begin(), tracking_matrix_size.end(), 0u);
-
-    tracking_matrix_date.resize(EPI_MAX_TRACKING * Model<TSeq>::size(), 0u);
-    std::fill(tracking_matrix_date.begin(), tracking_matrix_date.end(), 0u);
+    // Contact tracing
+    contact_tracing.reset(this->size(), EPI_MAX_TRACKING);
 
     return;
 
@@ -585,7 +537,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
         #endif
 
         // Adding the current agent to the tracked interactions
-        m_down->m_add_tracking(neighbor.get_id(), p->get_id());
+        m_down->contact_tracing.add_contact(neighbor.get_id(), p->get_id(), m->today());
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
@@ -676,7 +628,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     m->array_double_tmp[0] = 1.0/m->par("Rash period"); // Recovery
     m->array_double_tmp[1] = m->par("Hospitalization rate"); // Hospitalization
 
-    SAMPLE_FROM_PROBS(2, which);
+    auto which = m->sample_from_probs(2);
 
     if (which == 0) // Recovers (probability 1/rash_period)
     {
@@ -732,7 +684,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
     // And hospitalization
     m->array_double_tmp[1] = m->par("Hospitalization rate");
 
-    SAMPLE_FROM_PROBS(2, which);
+    auto which = m->sample_from_probs(2);
 
     // Recovers (which == 0 fires with probability 1/rash_period)
     if (which == 0)
@@ -941,7 +893,7 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
         // Getting the number of contacts, if it is greater
         // than the maximum, it means that we overflowed, so
         // we will only quarantine the first EPI_MAX_TRACKING
-        size_t n_contacts = this->tracking_matrix_size[agent_i];
+        size_t n_contacts = contact_tracing.get_n_contacts(agent_i);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -952,9 +904,9 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
         {
 
             // Checking if the contact is within the contact tracing days prior
-            size_t loc = MM(agent_i, contact_i, Model<TSeq>::size());
+            auto [contact_id, contact_date] = contact_tracing.get_contact(agent_i, contact_i);
             bool within_days_prior =
-                (day_rash_onset_agent_i - tracking_matrix_date[loc]) <=
+                (day_rash_onset_agent_i - contact_date) <=
                 Model<TSeq>::par("Contact tracing days prior");
             if (!within_days_prior)
                 continue;
@@ -962,8 +914,6 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
             // Checking if we will detect the contact
             if (Model<TSeq>::runif() > Model<TSeq>::par("Contact tracing success rate"))
                 continue;
-
-            size_t contact_id = this->tracking_matrix[loc];
 
             auto & agent = Model<TSeq>::get_agent(contact_id);
 
@@ -1132,10 +1082,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_virus(virus);
 
     // Designing the vaccine
-    ToolVaccine<TSeq> vaccine(
-        std::string("MMR ") +
-        std::to_string(this->get_param("Vax efficacy"))
-    );
+    ToolVaccine<TSeq> vaccine("MMR");
 
     vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
 
@@ -1169,5 +1116,4 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 
 }
 #undef MM
-#undef SAMPLE_FROM_PROBS
 #endif

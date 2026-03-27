@@ -10,16 +10,6 @@
     inline void ModelMeaslesSchool<TSeq>:: name \
     (Agent<TSeq> * p, Model<TSeq> * m)
 
-#define SAMPLE_FROM_PROBS(n, ans) \
-    size_t ans; \
-    epiworld_double p_total = m->runif(); \
-    for (ans = 0u; ans < n; ++ans) \
-    { \
-        if (p_total < m->array_double_tmp[ans]) \
-            break; \
-        m->array_double_tmp[ans + 1] += m->array_double_tmp[ans]; \
-    }
-
 /**
  * @brief Template for a Measles model with quarantine
  *
@@ -449,7 +439,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
     m->array_double_tmp[1] = m->par("Hospitalization rate");
 
     // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
+    auto which = m->sample_from_probs(2);
 
     // Recovers (which == 0 fires with probability 1/rash_period)
     if (which == 0)
@@ -502,7 +492,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
     m->array_double_tmp[1] = m->par("Hospitalization rate");
 
     // Sampling from the probabilities
-    SAMPLE_FROM_PROBS(2, which);
+    auto which = m->sample_from_probs(2);
 
     // Recovers (which == 0 fires with probability 1/rash_period)
     if (which == 0u)
@@ -734,10 +724,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_virus(measles);
 
     // Designing the vaccine
-    ToolVaccine<TSeq> vaccine(
-        std::string("MMR ") +
-        std::to_string(this->par("Vax efficacy"))
-    );
+    ToolVaccine<TSeq> vaccine("MMR");
     
     vaccine.set_susceptibility_reduction(this->par("Vax efficacy"));
 
@@ -756,6 +743,5 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
 }
 
-#undef SAMPLE_FROM_PROBS
 #undef LOCAL_UPDATE_FUN
 #endif

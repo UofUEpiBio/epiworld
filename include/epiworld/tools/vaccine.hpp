@@ -40,6 +40,7 @@ public:
     virtual void set_susceptibility_reduction(epiworld_double prob) override;
 
     std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
+    std::string get_name() const override;
 
 };
 
@@ -101,5 +102,13 @@ inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
     return std::make_unique<ToolVaccine<TSeq>>(*this);
 }
 
+template<typename TSeq>
+inline std::string ToolVaccine<TSeq>::get_name() const
+{
+    return Tool<TSeq>::get_name() +
+        std::string(" (efficacy: ") +
+        std::to_string(this->efficacy) +
+        std::string(")");
+}
 
 #endif

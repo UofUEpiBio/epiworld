@@ -311,6 +311,17 @@ public:
     ///@}
 
     /**
+     * @brief Sample from a set of probabilities stored in array_double_tmp.
+     * @details Uses a cumulative probability approach: draws a uniform random
+     * number and walks through array_double_tmp[0..n-1], accumulating
+     * probabilities until the draw is exceeded. If no event fires, returns n
+     * (meaning "none of the above").
+     * @param n Number of probability entries in array_double_tmp to consider.
+     * @return Index in [0, n] of the sampled event (n = no event).
+     */
+    size_t sample_from_probs(size_t n);
+
+    /**
      * @name Add Virus/Tool to the model
      *
      * This is done before the model has been initialized.

@@ -975,6 +975,21 @@ inline int Model<TSeq>::rpoiss(epiworld_double lambda) {
 }
 
 template<typename TSeq>
+inline size_t Model<TSeq>::sample_from_probs(size_t n) {
+
+    epiworld_double p_total = runif();
+    size_t ans;
+    for (ans = 0u; ans < n; ++ans)
+    {
+        if (p_total < array_double_tmp[ans])
+            break;
+        array_double_tmp[ans + 1] += array_double_tmp[ans];
+    }
+    return ans;
+
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::seed(size_t s) {
     this->engine->seed(s);
 }
