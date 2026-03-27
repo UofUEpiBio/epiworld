@@ -2,6 +2,7 @@
 #ifndef MEASLESSCHOOL_HPP
 #define MEASLESSCHOOL_HPP
 
+#include <cassert>
 #include "../tools/vaccine.hpp"
 #include "../model-bones.hpp"
 
@@ -102,7 +103,10 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
-        epiworld_fast_int isolation_period
+        epiworld_fast_int isolation_period,
+        // Policy parameters 2
+        epiworld_double pep_efficacy = 1.0,
+        epiworld_double pep_willingness = 1.0
     );
     ///@}
 
@@ -169,6 +173,17 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
         // If the agent has a vaccine, then no need for quarantine
         if (this->get_agent(i).get_n_tools() != 0u)
             continue;
+
+        // PEP will depend on the willingness of the agent to receive it
+        // If negative, then PEP never happens.
+        // if (
+        //     (this->par("PEP efficacy") >= 0) &&
+        //     (this->runif() < this->par("PEP willingness"))
+        // )
+        // {
+        //     // Administrating PEP to the agent.
+        //     this->get_agent(i).add_tool(*this, this->get_tool(1u) /* PEP */);
+        // }
 
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
@@ -661,8 +676,24 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_double prop_vaccinated,
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
-    epiworld_fast_int isolation_period
+    epiworld_fast_int isolation_period,
+    epiworld_double pep_efficacy,
+    epiworld_double pep_willingness
 ) {
+
+    // assertm(n > 0u, "The number of agents must be greater than 0.");
+    // assertm(n_exposed <= n, "The number of exposed agents must be less than or equal to the total number of agents.");
+    // assertm(pep_willingness >= 0 && pep_willingness <= 1, "The PEP willingness must be between 0 and 1.");
+    // assertm(incubation_period > 0, "The incubation period must be greater than 0.");
+    // assertm(prodromal_period > 0, "The prodromal period must be greater than 0.");
+    // assertm(rash_period > 0, "The rash period must be greater than 0.");
+    // assertm(hospitalization_rate >= 0 && hospitalization_rate <= 1, "The hospitalization rate must be between 0 and 1.");
+    // assertm(hospitalization_period > 0, "The hospitalization period must be greater than 0.");
+    // assertm(prop_vaccinated >= 0 && prop_vaccinated <= 1, "The vaccination rate must be between 0 and 1.");
+    // assertm(quarantine_willingness >= 0 && quarantine_willingness <= 1, "The quarantine willingness must be between 0 and 1.");
+    // assertm(pep_efficacy >= 0 && pep_efficacy <= 1, "The PEP efficacy must be between 0 and 1.");
+    // assertm(pep_willingness >= 0 && pep_willingness <= 1, "The PEP willingness must be between 0 and 1.");
+    // vaccine_efficacy and pep_efficacy are checked by ToolVaccine
 
     this->add_state("Susceptible", this->m_update_susceptible);
     this->add_state("Exposed", this->m_update_exposed);
@@ -710,6 +741,8 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");
     this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
+    this->add_param(pep_efficacy, "PEP efficacy");
+    this->add_param(pep_willingness, "PEP willingness");
 
     // Designing the disease
     Virus<> measles("Measles");
@@ -725,14 +758,14 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Designing the vaccine
     ToolVaccine<TSeq> vaccine("MMR");
-    
     vaccine.set_susceptibility_reduction(this->par("Vax efficacy"));
-
-    vaccine.set_distribution(
-        distribute_tool_randomly(prop_vaccinated, true)
-    );
-
+    vaccine.set_distribution(distribute_tool_randomly(prop_vaccinated, true));
     this->add_tool(vaccine);
+
+    // Designing MMR PEP
+    ToolVaccine<TSeq> pep("MMR PEP");
+    pep.set_susceptibility_reduction(this->par("PEP efficacy"));
+    this->add_tool(pep);
 
     // Global actions
     this->add_globalevent(this->m_update_model, "Update model");

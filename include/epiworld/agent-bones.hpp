@@ -93,21 +93,7 @@ public:
     ///@{
     void add_tool(
         Model<TSeq> & model,
-        ToolPtr<TSeq> & tool,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-        );
-
-    void add_tool(
-        Model<TSeq> & model,
         const Tool<TSeq> & tool,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-        );
-
-    void set_virus(
-        Model<TSeq> & model,
-        VirusPtr<TSeq> & virus,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );

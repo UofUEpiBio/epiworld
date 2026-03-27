@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <cassert>
 #include "../config.hpp"
 #include "../tool-bones.hpp"
 
@@ -92,7 +93,10 @@ inline void ToolVaccine<TSeq>::set_susceptibility_reduction(std::string)
 template<typename TSeq>
 inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob)
 {
+
+    // assertm(prob >= 0 && prob <= 1, "The efficacy must be between 0 and 1.");
     efficacy = prob;
+
 }
 
 

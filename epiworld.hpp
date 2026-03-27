@@ -11936,13 +11936,13 @@ public:
         epiworld_fast_int * init,
         epiworld_fast_int * end,
         epiworld_fast_int * removed = nullptr
-        );
+        ) const;
 
     void get_queue(
         epiworld_fast_int * init,
         epiworld_fast_int * end,
         epiworld_fast_int * removed = nullptr
-        );
+        ) const;
     ///@}
 
     bool operator==(const Virus<TSeq> & other) const;
@@ -12931,7 +12931,7 @@ inline void Virus<TSeq>::get_state(
     epiworld_fast_int * init,
     epiworld_fast_int * end,
     epiworld_fast_int * removed
-)
+) const
 {
 
     if (init != nullptr)
@@ -12950,7 +12950,7 @@ inline void Virus<TSeq>::get_queue(
     epiworld_fast_int * init,
     epiworld_fast_int * end,
     epiworld_fast_int * removed
-)
+) const
 {
 
     if (init != nullptr)
@@ -15572,21 +15572,7 @@ public:
     ///@{
     void add_tool(
         Model<TSeq> & model,
-        ToolPtr<TSeq> & tool,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-        );
-
-    void add_tool(
-        Model<TSeq> & model,
         const Tool<TSeq> & tool,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-        );
-
-    void set_virus(
-        Model<TSeq> & model,
-        VirusPtr<TSeq> & virus,
         epiworld_fast_int state_new = -99,
         epiworld_fast_int queue = -99
         );
@@ -16201,58 +16187,21 @@ inline Agent<TSeq>::~Agent()
 template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
     Model<TSeq> & model,
-    ToolPtr<TSeq> & tool,
+    const Tool<TSeq> & tool,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 ) {
 
-    // Checking the virus exists
-    if (tool->get_id() >= static_cast<int>(model.get_db().get_n_tools()))
-        throw std::range_error("The tool with id: " + std::to_string(tool->get_id()) +
+    // Checking the tool exists
+    if (tool.get_id() >= static_cast<int>(model.get_db().get_n_tools()))
+        throw std::range_error("The tool with id: " + std::to_string(tool.get_id()) +
             " has not been registered. There are only " + std::to_string(model.get_n_tools()) +
             " included in the model.");
 
-    model._add_event(
-        this, nullptr, tool, nullptr, state_new, queue, EventAction::AddTool
-        );
-
-}
-
-template<typename TSeq>
-inline void Agent<TSeq>::add_tool(
-    Model<TSeq> & model,
-    const Tool<TSeq> & tool,
-    epiworld_fast_int state_new,
-    epiworld_fast_int queue
-)
-{
     ToolPtr<TSeq> tool_ptr = std::shared_ptr<Tool<TSeq>>(tool.clone_ptr());
-    add_tool(model, tool_ptr, state_new, queue);
-}
-
-template<typename TSeq>
-inline void Agent<TSeq>::set_virus(
-    Model<TSeq> & model,
-    VirusPtr<TSeq> & virus,
-    epiworld_fast_int state_new,
-    epiworld_fast_int queue
-)
-{
-
-    // Checking the virus exists
-    if (virus->get_id() >= static_cast<int>(model.get_db().get_n_viruses()))
-        throw std::range_error("The virus with id: " + std::to_string(virus->get_id()) +
-            " has not been registered. There are only " + std::to_string(model.get_n_viruses()) +
-            " included in the model.");
-
-    if (state_new == -99)
-        virus->get_state(&state_new, nullptr, nullptr);
-
-    if (queue == -99)
-        virus->get_queue(&queue, nullptr, nullptr);
 
     model._add_event(
-        this, virus, nullptr, nullptr, state_new, queue, EventAction::AddVirus
+        this, nullptr, tool_ptr, nullptr, state_new, queue, EventAction::AddTool
         );
 
 }
@@ -16265,8 +16214,25 @@ inline void Agent<TSeq>::set_virus(
     epiworld_fast_int queue
 )
 {
+    
+        // Checking the virus exists
+    if (virus.get_id() >= static_cast<int>(model.get_db().get_n_viruses()))
+        throw std::range_error("The virus with id: " + std::to_string(virus.get_id()) +
+            " has not been registered. There are only " + std::to_string(model.get_n_viruses()) +
+            " included in the model.");
+
+    if (state_new == -99)
+        virus.get_state(&state_new, nullptr, nullptr);
+
+    if (queue == -99)
+        virus.get_queue(&queue, nullptr, nullptr);
+
     VirusPtr<TSeq> virus_ptr = std::shared_ptr<Virus<TSeq>>(virus.clone_ptr());
-    set_virus(model, virus_ptr, state_new, queue);
+
+    model._add_event(
+        this, virus_ptr, nullptr, nullptr, state_new, queue, EventAction::AddVirus
+        );
+
 }
 
 template<typename TSeq>
@@ -17720,6 +17686,7 @@ inline void ContactTracing::print(size_t agent)
 
 #include <memory>
 #include <vector>
+#include <cassert>
 // (already included include/epiworld/tools/../config.hpp)
 // (already included include/epiworld/tools/../tool-bones.hpp)
 
@@ -17809,7 +17776,10 @@ inline void ToolVaccine<TSeq>::set_susceptibility_reduction(std::string)
 template<typename TSeq>
 inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob)
 {
+
+    // assertm(prob >= 0 && prob <= 1, "The efficacy must be between 0 and 1.");
     efficacy = prob;
+
 }
 
 
@@ -22686,6 +22656,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #ifndef MEASLESSCHOOL_HPP
 #define MEASLESSCHOOL_HPP
 
+#include <cassert>
 // (already included include/epiworld/models/../tools/vaccine.hpp)
 // (already included include/epiworld/models/../model-bones.hpp)
 
@@ -22786,7 +22757,10 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
-        epiworld_fast_int isolation_period
+        epiworld_fast_int isolation_period,
+        // Policy parameters 2
+        epiworld_double pep_efficacy = 1.0,
+        epiworld_double pep_willingness = 1.0
     );
     ///@}
 
@@ -22853,6 +22827,17 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
         // If the agent has a vaccine, then no need for quarantine
         if (this->get_agent(i).get_n_tools() != 0u)
             continue;
+
+        // PEP will depend on the willingness of the agent to receive it
+        // If negative, then PEP never happens.
+        // if (
+        //     (this->par("PEP efficacy") >= 0) &&
+        //     (this->runif() < this->par("PEP willingness"))
+        // )
+        // {
+        //     // Administrating PEP to the agent.
+        //     this->get_agent(i).add_tool(*this, this->get_tool(1u) /* PEP */);
+        // }
 
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
@@ -23345,8 +23330,24 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_double prop_vaccinated,
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
-    epiworld_fast_int isolation_period
+    epiworld_fast_int isolation_period,
+    epiworld_double pep_efficacy,
+    epiworld_double pep_willingness
 ) {
+
+    // assertm(n > 0u, "The number of agents must be greater than 0.");
+    // assertm(n_exposed <= n, "The number of exposed agents must be less than or equal to the total number of agents.");
+    // assertm(pep_willingness >= 0 && pep_willingness <= 1, "The PEP willingness must be between 0 and 1.");
+    // assertm(incubation_period > 0, "The incubation period must be greater than 0.");
+    // assertm(prodromal_period > 0, "The prodromal period must be greater than 0.");
+    // assertm(rash_period > 0, "The rash period must be greater than 0.");
+    // assertm(hospitalization_rate >= 0 && hospitalization_rate <= 1, "The hospitalization rate must be between 0 and 1.");
+    // assertm(hospitalization_period > 0, "The hospitalization period must be greater than 0.");
+    // assertm(prop_vaccinated >= 0 && prop_vaccinated <= 1, "The vaccination rate must be between 0 and 1.");
+    // assertm(quarantine_willingness >= 0 && quarantine_willingness <= 1, "The quarantine willingness must be between 0 and 1.");
+    // assertm(pep_efficacy >= 0 && pep_efficacy <= 1, "The PEP efficacy must be between 0 and 1.");
+    // assertm(pep_willingness >= 0 && pep_willingness <= 1, "The PEP willingness must be between 0 and 1.");
+    // vaccine_efficacy and pep_efficacy are checked by ToolVaccine
 
     this->add_state("Susceptible", this->m_update_susceptible);
     this->add_state("Exposed", this->m_update_exposed);
@@ -23394,6 +23395,8 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");
     this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
+    this->add_param(pep_efficacy, "PEP efficacy");
+    this->add_param(pep_willingness, "PEP willingness");
 
     // Designing the disease
     Virus<> measles("Measles");
@@ -23409,14 +23412,14 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Designing the vaccine
     ToolVaccine<TSeq> vaccine("MMR");
-    
     vaccine.set_susceptibility_reduction(this->par("Vax efficacy"));
-
-    vaccine.set_distribution(
-        distribute_tool_randomly(prop_vaccinated, true)
-    );
-
+    vaccine.set_distribution(distribute_tool_randomly(prop_vaccinated, true));
     this->add_tool(vaccine);
+
+    // Designing MMR PEP
+    ToolVaccine<TSeq> pep("MMR PEP");
+    pep.set_susceptibility_reduction(this->par("PEP efficacy"));
+    this->add_tool(pep);
 
     // Global actions
     this->add_globalevent(this->m_update_model, "Update model");
