@@ -13,12 +13,12 @@ int main() {
     std::vector< epimodels::ModelSIR<> > Models;
 
     for (epiworld_fast_uint i = 0u; i < nthreads; ++i)
-        Models.push_back(epimodels::ModelSIR<>(
+        Models.emplace_back(
             "a virus", // Name of the virus
             0.01,      // Initial prevalence
             0.9,       // Infectiousness
             0.3        // Recovery rate
-        ));
+        );
 
     // Adding a bernoulli graph as step 0
     printf("Generating random graph... ");fflush(stdout);

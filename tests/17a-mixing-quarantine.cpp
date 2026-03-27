@@ -111,7 +111,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     model.set_contact_matrix(contact_matrix);
 
     // Running and checking the results
-    model("Days undetected") = -1.0; // No detection
+    model.set_param("Days undetected", -1.0); // No detection
     model.run(50, 123); 
     model.print();
 

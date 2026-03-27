@@ -37,8 +37,8 @@ EPIWORLD_TEST_CASE(
     );
 
     // Shutting off the quarantine feature
-    model_0("Quarantine period") = -1.0;
-    // model_0("Isolation period") = -1.0;
+    model_0.set_param("Quarantine period", -1.0);
+    // model_0.set_param("Isolation period", -1.0);
 
     // Adding a single entity (population group)
     model_0.add_entity(Entity<>("Population", dist_factory<>(0, 1000)));

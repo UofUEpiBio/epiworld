@@ -38,13 +38,13 @@ int main()
     };
 
     v.set_post_recovery(immunity);
-    v.set_prob_infecting(&model("infectiousness"));
+    v.set_prob_infecting("infectiousness");
 
     // Setting up tool ---------------------------------------------------------
     epiworld::Tool<> is("immune system", 1.0, true);
     is.set_susceptibility_reduction(.3);
     is.set_death_reduction(.9);
-    is.set_recovery_enhancer(&model("recovery"));
+    is.set_recovery_enhancer("recovery");
 
     epiworld::Tool<> postImm("post immunity", 0, false);
     postImm.set_susceptibility_reduction(1.0);

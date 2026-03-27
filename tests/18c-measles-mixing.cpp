@@ -80,7 +80,7 @@ EPIWORLD_TEST_CASE(
     );
 
     // Re-running the model without quarantine --------------------------------
-    model_0("Quarantine period") = -1.0;
+    model_0.set_param("Quarantine period", -1.0);
     auto saver_no_quarantine = tests_create_saver(
         transitions, R0s, n_seeds, &final_distribution
     );
@@ -95,8 +95,8 @@ EPIWORLD_TEST_CASE(
     );
 
     // Re-running setting a longer window for contact tracing -----------------
-    model_0("Contact tracing days prior") = 7u;
-    model_0("Quarantine period") = 21.0;
+    model_0.set_param("Contact tracing days prior", 7u);
+    model_0.set_param("Quarantine period", 21.0);
     auto saver_long_contact_tracing = tests_create_saver(
         transitions, R0s, n_seeds, &final_distribution
     );

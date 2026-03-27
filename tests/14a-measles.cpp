@@ -29,8 +29,8 @@ EPIWORLD_TEST_CASE(
     );
 
     // Shutting off the quarantine feature
-    // model_0("Quarantine period") = -1.0;
-    // model_0("Isolation period") = -1.0;
+    // model_0.set_param("Quarantine period", -1.0);
+    // model_0.set_param("Isolation period", -1.0);
 
     // Setting the distribution function of the initial cases
     model_0.get_virus(0).set_distribution(

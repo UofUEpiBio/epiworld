@@ -39,13 +39,18 @@ WITH_OPENMP   ?= 1
 # Enable code coverage support.
 WITH_COVERAGE ?= 0
 
+# Enable Werror.
+WITH_WERROR ?= 0
+
+WITH_THREAD_SANITIZER ?= 0
+
 CFLAGS   := -std=c11
 CXXFLAGS := -std=c++17
 LDFLAGS  :=
 
 ifeq ($(BUILD_PROFILE),debug)
-    CFLAGS += -g3 -O2 -DDEBUG -Wno-unused-parameter -fdelete-null-pointer-checks -Wall -Wextra -march=native
-    CXXFLAGS += -g3 -O2 -DDEBUG -Wno-unused-parameter -fdelete-null-pointer-checks -Wall -Wextra -march=native
+    CFLAGS += -g3 -O2 -DDEBUG -fdelete-null-pointer-checks -Wall -Wextra -march=native
+    CXXFLAGS += -g3 -O2 -DDEBUG -fdelete-null-pointer-checks -Wall -Wextra -march=native
 else ifeq ($(BUILD_PROFILE),release)
     CFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native
     CXXFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native
@@ -63,6 +68,17 @@ ifeq ($(WITH_COVERAGE),1)
     CFLAGS   += --coverage
     CXXFLAGS += --coverage
     LDFLAGS  += --coverage
+endif
+
+ifeq ($(WITH_THREAD_SANITIZER),1)
+	CFLAGS   += -fsanitize=thread
+	CXXFLAGS += -fsanitize=thread
+	LDFLAGS  += -fsanitize=thread
+endif
+
+ifeq ($(WITH_WERROR),1)
+	CFLAGS   += -Werror
+	CXXFLAGS += -Werror
 endif
 
 # Package tracking.

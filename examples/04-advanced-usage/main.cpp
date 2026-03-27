@@ -66,15 +66,15 @@ int main() {
     covid19.set_sequence(base_seq);
     covid19.set_mutation(covid19_mut);
     covid19.set_post_recovery(post_covid);
-    covid19.set_prob_death(&model("virus death"));
+    covid19.set_prob_death("virus death");
 
     covid19.set_state(exposed_state, recovered_state, removed_state);
 
     // Creating tools ---------------------------------------------------------
     epiworld::Tool<DAT> vaccine("Vaccine", 0.5, true);
-    vaccine.set_susceptibility_reduction(&model("vax efficacy"));
+    vaccine.set_susceptibility_reduction("vax efficacy");
     vaccine.set_recovery_enhancer(0.4);
-    vaccine.set_death_reduction(&model("vax death"));
+    vaccine.set_death_reduction("vax death");
     vaccine.set_transmission_reduction(0.5);
 
     epiworld::Tool<DAT> mask("Face masks", 0.5, true);
@@ -82,10 +82,10 @@ int main() {
     mask.set_transmission_reduction(0.05);
 
     epiworld::Tool<DAT> immune("Immune system", 1.0, true);
-    immune.set_susceptibility_reduction(&model("imm efficacy"));
-    immune.set_recovery_enhancer(&model("imm recovery"));
-    immune.set_death_reduction(&model("imm death"));
-    immune.set_transmission_reduction(&model("imm trans"));
+    immune.set_susceptibility_reduction("imm efficacy");
+    immune.set_recovery_enhancer("imm recovery");
+    immune.set_death_reduction("imm death");
+    immune.set_transmission_reduction("imm trans");
     DAT seq0(base_seq.size(), false);
     immune.set_sequence(seq0);
 

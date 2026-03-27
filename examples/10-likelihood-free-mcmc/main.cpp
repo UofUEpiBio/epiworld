@@ -8,17 +8,23 @@
 
 using namespace epiworld;
 
-epimodels::ModelSIR<> model;
+epimodels::ModelSIR<> model(
+    "covid", // Name of the virus
+    .1,      // Initial prevalence
+    .1,      // Infectiousness (par[1])
+    .3       // Immune Recovery (par[0])
+    );
+
 
 size_t niter = 0;
 
 std::vector< int > simfun(
     std::vector< epiworld_double > params,
-    LFMCMC<std::vector<int>> * m
+    LFMCMC<std::vector<int>> * /* m */
 ) {
 
-    model("Recovery rate") = params[0u];
-    model("Transmission rate")  = params[1u];
+    model.set_param("Recovery rate", params[0u]);
+    model.set_param("Transmission rate", params[1u]);
 
     model.reset();
     model.run(50);
@@ -34,7 +40,7 @@ std::vector< int > simfun(
 void sumfun(
     std::vector< epiworld_double > & res,
     const std::vector< int > & dat,
-    LFMCMC< std::vector<int> > * m
+    LFMCMC< std::vector<int> > * /* m */
 ) {
 
     if (res.size() == 0u)
@@ -52,14 +58,6 @@ void sumfun(
 
 int main()
 {
-
-    epimodels::ModelSIR<>(
-        model,   // Model
-        "covid", // Name of the virus
-        .1,      // Initial prevalence
-        .1,      // Infectiousness (par[1])
-        .3       // Immune Recovery (par[0])
-        );
 
     model.agents_smallworld(1000);
 

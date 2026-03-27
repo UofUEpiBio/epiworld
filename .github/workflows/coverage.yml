@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
@@ -36,7 +36,7 @@ jobs:
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-18 100       
 
       - name: Cache cpanm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cpanm
           key: "${{ runner.os }}-llvm18-cpanm-${{ hashFiles('cpanfile') }}"
