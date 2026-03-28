@@ -27,8 +27,7 @@ int main()
     EPI_NEW_POSTRECOVERYFUN_LAMBDA(immunity, int)
     {
         // Post immunity
-        auto Tpr = m->get_tools()[1u];
-        p->add_tool(*m, Tpr);
+        p->add_tool(*m, *m->get_tools()[1u]);
 
         m->add_user_data({
             static_cast< epiworld_double >(p->get_id()),

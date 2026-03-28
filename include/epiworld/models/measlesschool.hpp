@@ -105,8 +105,8 @@ public:
         epiworld_double quarantine_willingness,
         epiworld_fast_int isolation_period,
         // Policy parameters 2
-        epiworld_double pep_efficacy = 1.0,
-        epiworld_double pep_willingness = 1.0
+        epiworld_double pep_efficacy = 0.0,
+        epiworld_double pep_willingness = 0.0
     );
     ///@}
 
@@ -116,6 +116,7 @@ public:
 
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_rash_onset; ///< Day of rash onset
+    std::vector< int > has_pep;
 
     /**
      * @brief Quarantine agents that are in the system.
@@ -175,15 +176,20 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
             continue;
 
         // PEP will depend on the willingness of the agent to receive it
-        // If negative, then PEP never happens.
-        // if (
-        //     (this->par("PEP efficacy") >= 0) &&
-        //     (this->runif() < this->par("PEP willingness"))
-        // )
-        // {
-        //     // Administrating PEP to the agent.
-        //     this->get_agent(i).add_tool(*this, this->get_tool(1u) /* PEP */);
-        // }
+        // Once received, the agent won't be quarantined.
+        // Protection (cure) is defined later.
+        if (
+            (this->par("PEP efficacy") >= 0) &&
+            (this->runif() < this->par("PEP willingness"))
+            
+        )
+        {
+            // Administrating PEP to the agent.
+            this->get_agent(i).add_tool(*this, this->get_tool(1u) /* PEP */);
+            this->has_pep[i] = true;
+
+            continue;
+        }
 
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
@@ -233,17 +239,9 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
 
     this->system_quarantine_triggered = false;
 
-    this->day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0);
-
-    this->day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0);
+    this->day_flagged.assign(this->size(), 0);
+    this->day_rash_onset.assign(this->size(), 0);
+    this->has_pep.assign(this->size(), false);
 
     this->m_update_model(this);
     return;
