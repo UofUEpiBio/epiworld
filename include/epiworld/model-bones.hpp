@@ -292,6 +292,7 @@ public:
     void set_rand_poiss(epiworld_double lambda);
     epiworld_double runif();
     epiworld_double runif(epiworld_double a, epiworld_double b);
+    int runif_int(int a, int b);
     epiworld_double rnorm();
     epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
     epiworld_double rgamma();

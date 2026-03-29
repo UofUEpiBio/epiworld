@@ -7932,6 +7932,7 @@ public:
     void set_rand_poiss(epiworld_double lambda);
     epiworld_double runif();
     epiworld_double runif(epiworld_double a, epiworld_double b);
+    int runif_int(int a, int b);
     epiworld_double rnorm();
     epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
     epiworld_double rgamma();
@@ -9305,6 +9306,22 @@ inline epiworld_double Model<TSeq>::runif() {
     // CHECK_INIT()
     epiworld_double res = runif_epi(*engine);
     return res * (runifd_b - runifd_a) + runifd_a;
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::runif_int(int a, int b) {
+    // CHECK_INIT()
+    auto res =
+        static_cast<int>(std::floor(runif_epi(*engine) * (b - a + 1))) + 
+        a;
+
+    // Checking it is within the bounds
+    if (res < a)
+        res = a;
+    else if (res > b)
+        res = b;
+
+    return res;
 }
 
 template<typename TSeq>
@@ -19347,7 +19364,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
                 return;
 
             ModelSIRCONN<TSeq> * model = model_cast<ModelSIRCONN<TSeq>,TSeq>(m);
-            size_t ninfected = model->get_n_infected();
+            int ninfected = static_cast<int>(model->get_n_infected());
 
             // Drawing from the set
             int nviruses_tmp = 0;
@@ -19355,20 +19372,8 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
-                int which = static_cast<int>(
-                    std::floor(ninfected * m->runif())
-                );
-
-                /* There is a bug in which runif() returns 1.0. It is rare, but
-                 * we saw it here. See the Notes section in the C++ manual
-                 * https://en.cppreference.com/mwiki/index.php?title=cpp/numeric/random/uniform_real_distribution&oldid=133329
-                 * And the reported bug in GCC:
-                 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
-                 * 
-                 */
-                if (which == static_cast<int>(ninfected))
-                    --which;
-
+                int which = m->runif_int(0, ninfected - 1);
+                
                 Agent<TSeq> & neighbor = *model->infected[which];
 
                 // Can't sample itself
@@ -19732,7 +19737,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 return;
 
             auto * model = model_cast<ModelSEIRCONN<TSeq>,TSeq>(m);
-            size_t ninfected = model->get_n_infected();
+            int ninfected = static_cast<int>(model->get_n_infected());
 
             // Drawing from the set
             int nviruses_tmp = 0;
@@ -19740,19 +19745,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
-                int which = static_cast<int>(
-                    std::floor(ninfected * m->runif())
-                );
-
-                /* There is a bug in which runif() returns 1.0. It is rare, but
-                 * we saw it here. See the Notes section in the C++ manual
-                 * https://en.cppreference.com/mwiki/index.php?title=cpp/numeric/random/uniform_real_distribution&oldid=133329
-                 * And the reported bug in GCC:
-                 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
-                 * 
-                 */
-                if (which == static_cast<int>(ninfected))
-                    --which;
+                int which = m->runif_int(0, ninfected - 1);
 
                 Agent<TSeq> & neighbor = *model->infected[which];
 
@@ -20529,19 +20522,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
-                int which = static_cast<int>(
-                    std::floor(m->size() * m->runif())
-                );
-
-                /* There is a bug in which runif() returns 1.0. It is rare, but
-                 * we saw it here. See the Notes section in the C++ manual
-                 * https://en.cppreference.com/mwiki/index.php?title=cpp/numeric/random/uniform_real_distribution&oldid=133329
-                 * And the reported bug in GCC:
-                 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
-                 * 
-                 */
-                if (which == static_cast<int>(m->size()))
-                    --which;
+                int which = m->runif_int(0, static_cast<int>(m->size()) - 1);
 
                 // Can't sample itself
                 if (which == static_cast<int>(p->get_id()))
@@ -20849,7 +20830,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 m
                 );
 
-            size_t ninfected = model->get_n_infected();
+            int ninfected = static_cast<int>(model->get_n_infected());
 
             // Drawing from the set
             int nviruses_tmp = 0;
@@ -20857,19 +20838,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
-                int which = static_cast<int>(
-                    std::floor(ninfected * m->runif())
-                );
-
-                /* There is a bug in which runif() returns 1.0. It is rare, but
-                 * we saw it here. See the Notes section in the C++ manual
-                 * https://en.cppreference.com/mwiki/index.php?title=cpp/numeric/random/uniform_real_distribution&oldid=133329
-                 * And the reported bug in GCC:
-                 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
-                 * 
-                 */
-                if (which == static_cast<int>(ninfected))
-                    --which;
+                int which = m->runif_int(0, ninfected - 1);
 
                 Agent<TSeq> & neighbor = *model->infected[which];
 
@@ -22700,17 +22669,17 @@ private:
      * @brief The function that updates the model.
      */
     ///@{
-    static void m_update_susceptible(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_exposed(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_prodromal(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_rash(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_isolated(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_isolated_recovered(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_q_exposed(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_q_susceptible(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_q_prodromal(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_q_recovered(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_hospitalized(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_susceptible(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_exposed(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_prodromal(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_rash(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_isolated(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_isolated_recovered(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_q_exposed(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_q_susceptible(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_q_prodromal(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_q_recovered(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_hospitalized(Agent<TSeq> * p, Model<TSeq> * m);
     ///@}
 
     /**
@@ -22718,7 +22687,7 @@ private:
      *
      * This function is called at the end of each day.
      */
-    void m_update_model();
+    void _update_model();
 
 public:
 
@@ -22826,14 +22795,15 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
     // Iterating through the
     for (size_t i = 0u; i < this->size(); ++i) {
 
-        auto agent_state = this->get_agent(i).get_state();
+        auto & agent = this->get_agent(i);
+        auto agent_state = agent.get_state();
 
         // Already quarantined or isolated
         if (agent_state >= RASH)
             continue;
 
         // If the agent has a vaccine, then no need for quarantine
-        if (this->get_agent(i).get_n_tools() != 0u)
+        if (agent.get_n_tools() != 0u)
             continue;
 
         // PEP will depend on the willingness of the agent to receive it
@@ -22846,7 +22816,7 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
         )
         {
             // Administrating PEP to the agent.
-            this->get_agent(i).add_tool(*this, this->get_tool(1u) /* PEP */);
+            agent.add_tool(*this, this->get_tool(1u) /* PEP */);
             this->has_pep[i] = true;
 
             continue;
@@ -22861,11 +22831,11 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
         {
 
             if (agent_state == SUSCEPTIBLE)
-                this->get_agent(i).change_state(*this, QUARANTINED_SUSCEPTIBLE);
+                agent.change_state(*this, QUARANTINED_SUSCEPTIBLE);
             else if (agent_state == EXPOSED)
-                this->get_agent(i).change_state(*this, QUARANTINED_EXPOSED);
+                agent.change_state(*this, QUARANTINED_EXPOSED);
             else if (agent_state == PRODROMAL)
-                this->get_agent(i).change_state(*this, QUARANTINED_PRODROMAL);
+                agent.change_state(*this, QUARANTINED_PRODROMAL);
 
             // And we add the day of quarantine
             this->day_flagged[i] = this->today();
@@ -22883,7 +22853,7 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
 
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::m_update_model() {
+inline void ModelMeaslesSchool<TSeq>::_update_model() {
 
     this->quarantine_agents();
     this->events_run();
@@ -22902,7 +22872,7 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
     this->day_rash_onset.assign(this->size(), 0);
     this->has_pep.assign(this->size(), false);
 
-    this->m_update_model();
+    this->_update_model();
     return;
 
 }
@@ -22965,7 +22935,7 @@ inline std::unique_ptr<Model<TSeq>> ModelMeaslesSchool<TSeq>::clone_ptr()
 
 }
 
-LOCAL_UPDATE_FUN(m_update_susceptible) {
+LOCAL_UPDATE_FUN(_update_susceptible) {
 
     // How many contacts to draw
     int ndraw = m->rbinom();
@@ -22982,21 +22952,11 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
     // Drawing from the set
     int nviruses_tmp = 0;
     int i = 0;
-    auto & m_ref = *m;
+    auto & _ref = *m;
     while (i < ndraw)
     {
         // Picking the actual contacts
-        int which = static_cast<int>(std::floor(n_infectious * m->runif()));
-
-        /* There is a bug in which runif() returns 1.0. It is rare, but
-            * we saw it here. See the Notes section in the C++ manual
-            * https://en.cppreference.com/mwiki/index.php?title=cpp/numeric/random/uniform_real_distribution&oldid=133329
-            * And the reported bug in GCC:
-            * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63176
-            *
-            */
-        if (which == static_cast<int>(n_infectious))
-            --which;
+        int which = m->runif_int(0, n_infectious - 1);
 
         Agent<> & neighbor = *model->infectious[which];
 
@@ -23027,9 +22987,9 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
+            (1.0 - p->get_susceptibility_reduction(v, _ref)) *
             v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v, m_ref))
+            (1.0 - neighbor.get_transmission_reduction(v, _ref))
             ;
 
         m->array_virus_tmp[nviruses_tmp++] = &(*v);
@@ -23052,7 +23012,7 @@ LOCAL_UPDATE_FUN(m_update_susceptible) {
 
 };
 
-LOCAL_UPDATE_FUN(m_update_exposed) {
+LOCAL_UPDATE_FUN(_update_exposed) {
 
     if (m->runif() < (1.0/p->get_virus()->get_incubation(m)))
         p->change_state(*m, ModelMeaslesSchool<TSeq>::PRODROMAL);
@@ -23061,7 +23021,7 @@ LOCAL_UPDATE_FUN(m_update_exposed) {
 
 };
 
-LOCAL_UPDATE_FUN(m_update_prodromal) {
+LOCAL_UPDATE_FUN(_update_prodromal) {
 
     if (m->runif() < (1.0/m->par("Prodromal period")))
     {
@@ -23076,7 +23036,7 @@ LOCAL_UPDATE_FUN(m_update_prodromal) {
 
 };
 
-LOCAL_UPDATE_FUN(m_update_rash) {
+LOCAL_UPDATE_FUN(_update_rash) {
 
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
@@ -23138,7 +23098,7 @@ LOCAL_UPDATE_FUN(m_update_rash) {
 
 };
 
-LOCAL_UPDATE_FUN(m_update_isolated) {
+LOCAL_UPDATE_FUN(_update_isolated) {
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
@@ -23179,7 +23139,7 @@ LOCAL_UPDATE_FUN(m_update_isolated) {
 
 }
 
-LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
+LOCAL_UPDATE_FUN(_update_isolated_recovered) {
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
@@ -23196,7 +23156,7 @@ LOCAL_UPDATE_FUN(m_update_isolated_recovered) {
 
 }
 
-LOCAL_UPDATE_FUN(m_update_q_exposed) {
+LOCAL_UPDATE_FUN(_update_q_exposed) {
 
     // How many days since quarantine started
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
@@ -23225,7 +23185,7 @@ LOCAL_UPDATE_FUN(m_update_q_exposed) {
 
 }
 
-LOCAL_UPDATE_FUN(m_update_q_susceptible) {
+LOCAL_UPDATE_FUN(_update_q_susceptible) {
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     int days_since =
@@ -23236,7 +23196,7 @@ LOCAL_UPDATE_FUN(m_update_q_susceptible) {
 
 }
 
-LOCAL_UPDATE_FUN(m_update_q_prodromal) {
+LOCAL_UPDATE_FUN(_update_q_prodromal) {
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
@@ -23264,7 +23224,7 @@ LOCAL_UPDATE_FUN(m_update_q_prodromal) {
 
 }
 
-LOCAL_UPDATE_FUN(m_update_q_recovered) {
+LOCAL_UPDATE_FUN(_update_q_recovered) {
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     int days_since = m->today() - model->day_flagged[p->get_id()];
@@ -23274,7 +23234,7 @@ LOCAL_UPDATE_FUN(m_update_q_recovered) {
 
 }
 
-LOCAL_UPDATE_FUN(m_update_hospitalized) {
+LOCAL_UPDATE_FUN(_update_hospitalized) {
 
     // The agent is removed from the system
     if (m->runif() < 1.0/m->par("Hospitalization period"))
@@ -23323,18 +23283,18 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     // assertm(pep_willingness >= 0 && pep_willingness <= 1, "The PEP willingness must be between 0 and 1.");
     // vaccine_efficacy and pep_efficacy are checked by ToolVaccine
 
-    this->add_state("Susceptible", this->m_update_susceptible);
-    this->add_state("Exposed", this->m_update_exposed);
-    this->add_state("Prodromal", this->m_update_prodromal);
-    this->add_state("Rash", this->m_update_rash);
-    this->add_state("Isolated", this->m_update_isolated);
-    this->add_state("Isolated Recovered", this->m_update_isolated_recovered);
-    this->add_state("Detected Hospitalized", this->m_update_hospitalized);
-    this->add_state("Quarantined Exposed", this->m_update_q_exposed);
-    this->add_state("Quarantined Susceptible", this->m_update_q_susceptible);
-    this->add_state("Quarantined Prodromal", this->m_update_q_prodromal);
-    this->add_state("Quarantined Recovered", this->m_update_q_recovered);
-    this->add_state("Hospitalized", this->m_update_hospitalized);
+    this->add_state("Susceptible", this->_update_susceptible);
+    this->add_state("Exposed", this->_update_exposed);
+    this->add_state("Prodromal", this->_update_prodromal);
+    this->add_state("Rash", this->_update_rash);
+    this->add_state("Isolated", this->_update_isolated);
+    this->add_state("Isolated Recovered", this->_update_isolated_recovered);
+    this->add_state("Detected Hospitalized", this->_update_hospitalized);
+    this->add_state("Quarantined Exposed", this->_update_q_exposed);
+    this->add_state("Quarantined Susceptible", this->_update_q_susceptible);
+    this->add_state("Quarantined Prodromal", this->_update_q_prodromal);
+    this->add_state("Quarantined Recovered", this->_update_q_recovered);
+    this->add_state("Hospitalized", this->_update_hospitalized);
     this->add_state("Recovered");
 
     // Adding the model parameters
@@ -23390,7 +23350,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::next() {
 
-    this->m_update_model();
+    this->_update_model();
     Model<TSeq>::next();
 
 }

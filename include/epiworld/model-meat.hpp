@@ -851,6 +851,22 @@ inline epiworld_double Model<TSeq>::runif() {
 }
 
 template<typename TSeq>
+inline int Model<TSeq>::runif_int(int a, int b) {
+    // CHECK_INIT()
+    auto res =
+        static_cast<int>(std::floor(runif_epi(*engine) * (b - a + 1))) + 
+        a;
+
+    // Checking it is within the bounds
+    if (res < a)
+        res = a;
+    else if (res > b)
+        res = b;
+
+    return res;
+}
+
+template<typename TSeq>
 inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
     return runif_epi(*engine) * (b - a) + a;
