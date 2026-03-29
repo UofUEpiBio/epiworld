@@ -282,7 +282,7 @@ template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected_list()
 {
 
-    auto & agents = Model<TSeq>::get_agents();
+    auto & agents = this->get_agents();
 
     std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
 
@@ -356,7 +356,7 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::sample_agents(
             continue;
 
         // How many from this entity?
-        int nsamples = Model<TSeq>::rbinom(
+        int nsamples = this->rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 MM(agent_group_id, g, ngroups)
@@ -371,7 +371,7 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = Model<TSeq>::runif() * group_size;
+            int which = this->runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -443,13 +443,13 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
     }
 
     // Do it the first time only
-    sampled_agents.resize(Model<TSeq>::size());
+    sampled_agents.resize(this->size());
 
     // We only do it once
     n_infected_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infected.assign(Model<TSeq>::size(), 0u);
+    infected.assign(this->size(), 0u);
 
     // This will say when do the groups start in the `infected` vector
     entity_indices.assign(this->entities.size(), 0u);
@@ -489,9 +489,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
-            Model<TSeq>::runif() < this->par("Quarantine willingness");
+            this->runif() < this->par("Quarantine willingness");
         isolation_willingness[idx] =
-            Model<TSeq>::runif() < this->par("Isolation willingness");
+            this->runif() < this->par("Isolation willingness");
     }
 
     agent_quarantine_triggered.assign(this->size(), 0u);
@@ -861,7 +861,7 @@ template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
 
     // Process entity-level quarantine
-    for (size_t agent_i = 0u; agent_i < Model<TSeq>::size(); ++agent_i)
+    for (size_t agent_i = 0u; agent_i < this->size(); ++agent_i)
     {
 
         // Checking if the quarantine in the agent was triggered
@@ -887,7 +887,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Checking if we will detect the contact
-            if (Model<TSeq>::runif() > success_rate)
+            if (this->runif() > success_rate)
                 continue;
 
             auto [contact_id, contact_date] = contact_tracing.get_contact(
@@ -910,17 +910,17 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
                 {
                     case SUSCEPTIBLE:
                         agent.change_state(*this, QUARANTINED_SUSCEPTIBLE);
-                        day_flagged[contact_id] = Model<TSeq>::today();
+                        day_flagged[contact_id] = this->today();
                         break;
                     case EXPOSED:
                         agent.change_state(*this, QUARANTINED_EXPOSED);
-                        day_flagged[contact_id] = Model<TSeq>::today();
+                        day_flagged[contact_id] = this->today();
                         break;
                     case INFECTED:
                         if (isolation_willingness[contact_id])
                         {
                             agent.change_state(*this, ISOLATED);
-                            day_flagged[contact_id] = Model<TSeq>::today();
+                            day_flagged[contact_id] = this->today();
                         }
                         break;
                     default:

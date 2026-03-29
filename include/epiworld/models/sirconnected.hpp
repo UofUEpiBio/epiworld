@@ -89,7 +89,7 @@ inline void ModelSIRCONN<TSeq>::update_infected()
     Model<TSeq>::set_rand_binom(
         this->get_n_infected(),
         static_cast<double>(Model<TSeq>::par("Contact rate"))/
-            static_cast<double>(Model<TSeq>::size())
+            static_cast<double>(this->size())
     );
 
     return;

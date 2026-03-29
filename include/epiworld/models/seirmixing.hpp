@@ -125,7 +125,7 @@ template<typename TSeq>
 inline void ModelSEIRMixing<TSeq>::update_infected_list()
 {
 
-    auto & agents = Model<TSeq>::get_agents();
+    auto & agents = this->get_agents();
 
     std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
 
@@ -170,7 +170,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         size_t group_size = n_infected_per_group[g];
 
         // How many from this entity?
-        int nsamples = Model<TSeq>::rbinom(
+        int nsamples = this->rbinom(
             group_size,
             adjusted_contact_rate[g] * contact_matrix[
                 MM(agent_group_id, g, ngroups)
@@ -185,7 +185,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = Model<TSeq>::runif() * group_size;
+            int which = this->runif() * group_size;
 
             // Correcting overflow error
             if (which >= static_cast<int>(group_size))
@@ -257,13 +257,13 @@ inline void ModelSEIRMixing<TSeq>::reset()
     }
 
     // Do it the first time only
-    sampled_agents.resize(Model<TSeq>::size());
+    sampled_agents.resize(this->size());
 
     // We only do it once
     n_infected_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infected.assign(Model<TSeq>::size(), 0u);
+    infected.assign(this->size(), 0u);
 
     // This will say when do the groups start in the `infected` vector
     entity_indices.assign(this->entities.size(), 0u);
