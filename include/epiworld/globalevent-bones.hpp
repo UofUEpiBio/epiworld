@@ -1,8 +1,8 @@
 #ifndef EPIWORLD_GLOBALEVENT_BONES_HPP
 #define EPIWORLD_GLOBALEVENT_BONES_HPP
 
-// template<typename TSeq = EPI_DEFAULT_TSEQ>
-// using GlobalFun = std::function<void(Model<TSeq>*)>;
+#include <string>
+#include "config.hpp"
 
 /**
  * @brief Template for a Global Event

@@ -234,16 +234,13 @@ inline void ModelSIRMixing<TSeq>::reset()
     sampled_agents.resize(Model<TSeq>::size());
 
     // We only do it once
-    n_infected_per_group.resize(this->entities.size(), 0u);
-    std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
+    n_infected_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infected.resize(Model<TSeq>::size());
-    std::fill(infected.begin(), infected.end(), 0u);
+    infected.assign(Model<TSeq>::size(), 0u);
 
     // This will say when do the groups start in the `infected` vector
-    entity_indices.resize(this->entities.size(), 0u);
-    std::fill(entity_indices.begin(), entity_indices.end(), 0u);
+    entity_indices.assign(this->entities.size(), 0u);
     for (size_t i = 1u; i < this->entities.size(); ++i)
     {
         entity_indices[i] +=

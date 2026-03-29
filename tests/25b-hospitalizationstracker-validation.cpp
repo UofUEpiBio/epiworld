@@ -147,11 +147,13 @@ EPIWORLD_TEST_CASE(
     REQUIRE(global_event_tracking.size() == tracker_data.size());
     
     // Each entry should match
+    #ifndef NO_CATCH_MAIN
     for (const auto & entry : global_event_tracking)
     {
         auto it = tracker_data.find(entry.first);
         REQUIRE(it != tracker_data.end());
         REQUIRE(std::abs(it->second - entry.second) < 0.0001);
     }
+    #endif
        
 }

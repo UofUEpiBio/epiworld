@@ -1466,6 +1466,11 @@ inline Model<TSeq> & Model<TSeq>::run(
     // Starting first infection and tools
     reset();
 
+    // Record the baseline (day 0) and advance to day 1 using the base
+    // implementation only. Calling virtual next() from reset() can invoke
+    // model-specific logic before derived reset state is fully initialized.
+    Model<TSeq>::next();
+
     // Initializing the simulation
     chrono_start();
     EPIWORLD_RUN((*this))
@@ -2065,9 +2070,10 @@ inline void Model<TSeq>::reset() {
     // Distributing initial state, if specified
     initial_states_fun(this);
 
-    // Recording the original state (at time 0) and advancing
-    // to time 1
-    next();
+    // Recording day 0 and advancing to day 1 is handled by Model::run().
+    // Keeping reset() side-effect free from virtual next() prevents
+    // derived-model update code from running before derived reset state
+    // is fully initialized.
 
 
 }

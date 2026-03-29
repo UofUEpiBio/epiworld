@@ -431,7 +431,7 @@ public:
     ///@{
     void update_state();
     void mutate_virus();
-    void next();
+    virtual void next();
     virtual Model<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1

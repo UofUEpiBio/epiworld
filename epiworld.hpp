@@ -1343,8 +1343,7 @@ inline void ModelDiagram::transition_probability(
     // Generating the transition matrix
     states = std::vector< std::string >(states_set.begin(), states_set.end());
     size_t n_states = states.size();
-    tprob.resize(n_states * n_states);
-    std::fill(tprob.begin(), tprob.end(), 0.0);
+    tprob.assign(n_states * n_states, 0.0);
 
     std::vector< epiworld_double > rowsum(n_states, 0.0);
     for (size_t i = 0; i < n_states; ++i)
@@ -4140,8 +4139,7 @@ inline void DataBase<TSeq>::reset()
 {
 
     // Initializing the counts
-    today_total.resize(model->nstates);
-    std::fill(today_total.begin(), today_total.end(), 0);
+    today_total.assign(model->nstates, 0);
     for (auto & p : model->get_agents())
         ++today_total[p.get_state()];
 
@@ -4159,8 +4157,7 @@ inline void DataBase<TSeq>::reset()
     #endif
 
     
-    transition_matrix.resize(model->nstates * model->nstates);
-    std::fill(transition_matrix.begin(), transition_matrix.end(), 0);
+    transition_matrix.assign(model->nstates * model->nstates, 0);
     for (size_t s = 0u; s < model->nstates; ++s)
         transition_matrix[s + s * model->nstates] = today_total[s];
 
@@ -7465,8 +7462,8 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 #ifndef EPIWORLD_GLOBALEVENT_BONES_HPP
 #define EPIWORLD_GLOBALEVENT_BONES_HPP
 
-// template<typename TSeq = EPI_DEFAULT_TSEQ>
-// using GlobalFun = std::function<void(Model<TSeq>*)>;
+#include <string>
+// (already included include/epiworld/config.hpp)
 
 /**
  * @brief Template for a Global Event
@@ -7537,6 +7534,9 @@ public:
 
 #ifndef EPIWORLD_GLOBALEVENT_MEAT_HPP
 #define EPIWORLD_GLOBALEVENT_MEAT_HPP
+
+#include <memory>
+// (already included include/epiworld/globalevent-bones.hpp)
 
 template<typename TSeq>
 inline GlobalEvent<TSeq>::GlobalEvent(
@@ -8071,7 +8071,7 @@ public:
     ///@{
     void update_state();
     void mutate_virus();
-    void next();
+    virtual void next();
     virtual Model<TSeq> & run(
         epiworld_fast_uint ndays,
         int seed = -1
@@ -9923,6 +9923,11 @@ inline Model<TSeq> & Model<TSeq>::run(
     // Starting first infection and tools
     reset();
 
+    // Record the baseline (day 0) and advance to day 1 using the base
+    // implementation only. Calling virtual next() from reset() can invoke
+    // model-specific logic before derived reset state is fully initialized.
+    Model<TSeq>::next();
+
     // Initializing the simulation
     chrono_start();
     EPIWORLD_RUN((*this))
@@ -10522,9 +10527,10 @@ inline void Model<TSeq>::reset() {
     // Distributing initial state, if specified
     initial_states_fun(this);
 
-    // Recording the original state (at time 0) and advancing
-    // to time 1
-    next();
+    // Recording day 0 and advancing to day 1 is handled by Model::run().
+    // Keeping reset() side-effect free from virtual next() prevents
+    // derived-model update code from running before derived reset state
+    // is fully initialized.
 
 
 }
@@ -17708,7 +17714,6 @@ class ToolVaccine: public Tool<TSeq> {
 private:
 
     int immune = -1;
-    int model_id = -1;
     epiworld_double efficacy = 0.0;
 
 public:
@@ -17722,6 +17727,7 @@ public:
     virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun) override;
     virtual void set_susceptibility_reduction(std::string param) override;
     virtual void set_susceptibility_reduction(epiworld_double prob) override;
+    epiworld_double set_immunity(Model<TSeq> * model);
 
     std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
     std::string get_name() const override;
@@ -17736,10 +17742,9 @@ inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
 {
 
     // Updating a single agent (if needed)
-    if (model_id != static_cast<int>(model->get_sim_id()))
+    if (immune == -1)
     {
-        model_id = static_cast<int>(model->get_sim_id());
-        immune = (model->runif() < efficacy) ? 1 : 0;
+        set_immunity(model);
     }
 
     return  (immune == 1) ? 1.0 : 0.0;
@@ -17782,11 +17787,19 @@ inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob
 
 }
 
+template<typename TSeq>
+inline epiworld_double ToolVaccine<TSeq>::set_immunity(Model<TSeq> * model)
+{
+    immune = (model->runif() < efficacy) ? 1 : 0;
+    return immune;
+}
 
 template<typename TSeq>
 inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
 {
-    return std::make_unique<ToolVaccine<TSeq>>(*this);
+    auto ans =  std::make_unique<ToolVaccine<TSeq>>(*this);
+    ans->immune = -1;
+    return ans;
 }
 
 template<typename TSeq>
@@ -21864,16 +21877,13 @@ inline void ModelSEIRMixing<TSeq>::reset()
     sampled_agents.resize(Model<TSeq>::size());
 
     // We only do it once
-    n_infected_per_group.resize(this->entities.size(), 0u);
-    std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
+    n_infected_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infected.resize(Model<TSeq>::size());
-    std::fill(infected.begin(), infected.end(), 0u);
+    infected.assign(Model<TSeq>::size(), 0u);
 
     // This will say when do the groups start in the `infected` vector
-    entity_indices.resize(this->entities.size(), 0u);
-    std::fill(entity_indices.begin(), entity_indices.end(), 0u);
+    entity_indices.assign(this->entities.size(), 0u);
     for (size_t i = 1u; i < this->entities.size(); ++i)
     {
 
@@ -21885,8 +21895,7 @@ inline void ModelSEIRMixing<TSeq>::reset()
     }
 
     // Adjusting contact rate
-    adjusted_contact_rate.clear();
-    adjusted_contact_rate.resize(this->entities.size(), 0.0);
+    adjusted_contact_rate.assign(this->entities.size(), 0.0);
 
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
@@ -22391,16 +22400,13 @@ inline void ModelSIRMixing<TSeq>::reset()
     sampled_agents.resize(Model<TSeq>::size());
 
     // We only do it once
-    n_infected_per_group.resize(this->entities.size(), 0u);
-    std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
+    n_infected_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infected.resize(Model<TSeq>::size());
-    std::fill(infected.begin(), infected.end(), 0u);
+    infected.assign(Model<TSeq>::size(), 0u);
 
     // This will say when do the groups start in the `infected` vector
-    entity_indices.resize(this->entities.size(), 0u);
-    std::fill(entity_indices.begin(), entity_indices.end(), 0u);
+    entity_indices.assign(this->entities.size(), 0u);
     for (size_t i = 1u; i < this->entities.size(); ++i)
     {
         entity_indices[i] +=
@@ -22712,7 +22718,7 @@ private:
      *
      * This function is called at the end of each day.
      */
-    static void m_update_model(Model<TSeq> * m);
+    void m_update_model();
 
 public:
 
@@ -22759,8 +22765,8 @@ public:
         epiworld_double quarantine_willingness,
         epiworld_fast_int isolation_period,
         // Policy parameters 2
-        epiworld_double pep_efficacy = 1.0,
-        epiworld_double pep_willingness = 1.0
+        epiworld_double pep_efficacy = 0.0,
+        epiworld_double pep_willingness = 0.0
     );
     ///@}
 
@@ -22770,6 +22776,7 @@ public:
 
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_rash_onset; ///< Day of rash onset
+    std::vector< int > has_pep;
 
     /**
      * @brief Quarantine agents that are in the system.
@@ -22795,6 +22802,7 @@ public:
     void update_infectious();
 
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
+    void next() override;
 
 };
 
@@ -22829,15 +22837,20 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
             continue;
 
         // PEP will depend on the willingness of the agent to receive it
-        // If negative, then PEP never happens.
-        // if (
-        //     (this->par("PEP efficacy") >= 0) &&
-        //     (this->runif() < this->par("PEP willingness"))
-        // )
-        // {
-        //     // Administrating PEP to the agent.
-        //     this->get_agent(i).add_tool(*this, this->get_tool(1u) /* PEP */);
-        // }
+        // Once received, the agent won't be quarantined.
+        // Protection (cure) is defined later.
+        if (
+            (this->par("PEP efficacy") >= 0) &&
+            (this->runif() < this->par("PEP willingness"))
+            
+        )
+        {
+            // Administrating PEP to the agent.
+            this->get_agent(i).add_tool(*this, this->get_tool(1u) /* PEP */);
+            this->has_pep[i] = true;
+
+            continue;
+        }
 
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
@@ -22870,14 +22883,12 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
 
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::m_update_model(Model<TSeq> * m) {
+inline void ModelMeaslesSchool<TSeq>::m_update_model() {
 
-    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
-    model->quarantine_agents();
-    model->events_run();
-    model->update_infectious();
-    return;
-
+    this->quarantine_agents();
+    this->events_run();
+    this->update_infectious();
+    
 }
 
 template<typename TSeq>
@@ -22887,19 +22898,11 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
 
     this->system_quarantine_triggered = false;
 
-    this->day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0);
+    this->day_flagged.assign(this->size(), 0);
+    this->day_rash_onset.assign(this->size(), 0);
+    this->has_pep.assign(this->size(), false);
 
-    this->day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0);
-
-    this->m_update_model(this);
+    this->m_update_model();
     return;
 
 }
@@ -23421,12 +23424,18 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     pep.set_susceptibility_reduction(this->par("PEP efficacy"));
     this->add_tool(pep);
 
-    // Global actions
-    this->add_globalevent(this->m_update_model, "Update model");
     this->queuing_off();
 
     // Setting the population
     this->agents_empty_graph(n);
+
+}
+
+template<typename TSeq>
+inline void ModelMeaslesSchool<TSeq>::next() {
+
+    this->m_update_model();
+    Model<TSeq>::next();
 
 }
 
@@ -23898,16 +23907,13 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
     sampled_agents.resize(Model<TSeq>::size());
 
     // We only do it once
-    n_infected_per_group.resize(this->entities.size(), 0u);
-    std::fill(n_infected_per_group.begin(), n_infected_per_group.end(), 0u);
+    n_infected_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infected.resize(Model<TSeq>::size());
-    std::fill(infected.begin(), infected.end(), 0u);
+    infected.assign(Model<TSeq>::size(), 0u);
 
     // This will say when do the groups start in the `infected` vector
-    entity_indices.resize(this->entities.size(), 0u);
-    std::fill(entity_indices.begin(), entity_indices.end(), 0u);
+    entity_indices.assign(this->entities.size(), 0u);
     for (size_t i = 1u; i < this->entities.size(); ++i)
     {
 
@@ -23949,33 +23955,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
             Model<TSeq>::runif() < this->par("Isolation willingness");
     }
 
-    agent_quarantine_triggered.resize(this->size(), 0u);
-    std::fill(
-        agent_quarantine_triggered.begin(),
-        agent_quarantine_triggered.end(),
-        0u
-    );
-
-    day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0
-    );
-
-    day_onset.resize(this->size(), 0);
-    std::fill(
-        day_onset.begin(),
-        day_onset.end(),
-        0
-    );
-
-    day_exposed.resize(this->size(), 0);
-    std::fill(
-        day_exposed.begin(),
-        day_exposed.end(),
-        0
-    );
+    agent_quarantine_triggered.assign(this->size(), 0u);
+    day_flagged.assign(this->size(), 0);
+    day_onset.assign(this->size(), 0);
+    day_exposed.assign(this->size(), 0);
 
     // Contact tracing
     contact_tracing.reset(this->size(), EPI_MAX_TRACKING);
@@ -24713,7 +24696,7 @@ private:
     std::vector< int > day_exposed; ///< Day of exposure
 
     void m_quarantine_process();
-    static void m_update_model(Model<TSeq> * m);
+    void m_update_model();
 
     // We will limit tracking to up to EPI_MAX_TRACKING
     ContactTracing contact_tracing;
@@ -24858,16 +24841,18 @@ public:
         return isolation_willingness;
     };
 
+    // Overriding the next() function to include the model update
+    void next() override;
+
 };
 
 template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::m_update_model(Model<TSeq> * m)
+inline void ModelMeaslesMixing<TSeq>::m_update_model()
 {
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);;
-    model->m_quarantine_process();
-    model->events_run();
-    model->m_update_infectious_list();
-    return;
+    this->m_quarantine_process();
+    this->events_run();
+    this->m_update_infectious_list();
+
 }
 
 template<typename TSeq>
@@ -25039,16 +25024,14 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     sampled_agents.resize(Model<TSeq>::size());
 
     // We only do it once
-    n_infectious_per_group.resize(this->entities.size(), 0u);
-    std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);
+    n_infectious_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infectious.resize(Model<TSeq>::size());
-    std::fill(infectious.begin(), infectious.end(), 0u);
+    infectious.assign(Model<TSeq>::size(), 0u);
 
     // This will say when do the groups start in the `infectious` vector
-    entity_indices.resize(this->entities.size(), 0u);
-    std::fill(entity_indices.begin(), entity_indices.end(), 0u);
+    entity_indices.assign(this->entities.size(), 0u);
+
     for (size_t i = 1u; i < this->entities.size(); ++i)
     {
 
@@ -25062,8 +25045,8 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     this->m_update_infectious_list();
 
     // Setting up the quarantine parameters
-    quarantine_willingness.resize(this->size(), false);
-    isolation_willingness.resize(this->size(), false);
+    quarantine_willingness.assign(this->size(), false);
+    isolation_willingness.assign(this->size(), false);
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
@@ -25072,33 +25055,10 @@ inline void ModelMeaslesMixing<TSeq>::reset()
             Model<TSeq>::runif() < this->par("Isolation willingness");
     }
 
-    agent_quarantine_triggered.resize(this->size(), 0u);
-    std::fill(
-        agent_quarantine_triggered.begin(),
-        agent_quarantine_triggered.end(),
-        0u
-    );
-
-    day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0
-    );
-
-    day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0
-    );
-
-    day_exposed.resize(this->size(), 0);
-    std::fill(
-        day_exposed.begin(),
-        day_exposed.end(),
-        0
-    );
+    agent_quarantine_triggered.assign(this->size(), 0u);
+    day_flagged.assign(this->size(), 0);
+    day_rash_onset.assign(this->size(), 0);
+    day_exposed.assign(this->size(), 0);
 
     // Contact tracing
     contact_tracing.reset(this->size(), EPI_MAX_TRACKING);
@@ -25681,7 +25641,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_state("Recovered");
 
     // Global function
-    this->add_globalevent(this->m_update_model, "Update infected individuals");
     this->queuing_off();
 
     // Preparing the virus -------------------------------------------
@@ -25732,6 +25691,15 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
     return *this;
 
 }
+
+template<typename TSeq>
+inline void ModelMeaslesMixing<TSeq>::next()
+{
+    this->m_update_model();
+    Model<TSeq>::next();
+    return;
+}
+
 #undef MM
 #endif
 /*//////////////////////////////////////////////////////////////////////////////

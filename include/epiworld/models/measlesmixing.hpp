@@ -96,7 +96,7 @@ private:
     std::vector< int > day_exposed; ///< Day of exposure
 
     void m_quarantine_process();
-    static void m_update_model(Model<TSeq> * m);
+    void m_update_model();
 
     // We will limit tracking to up to EPI_MAX_TRACKING
     ContactTracing contact_tracing;
@@ -241,16 +241,18 @@ public:
         return isolation_willingness;
     };
 
+    // Overriding the next() function to include the model update
+    void next() override;
+
 };
 
 template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::m_update_model(Model<TSeq> * m)
+inline void ModelMeaslesMixing<TSeq>::m_update_model()
 {
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);;
-    model->m_quarantine_process();
-    model->events_run();
-    model->m_update_infectious_list();
-    return;
+    this->m_quarantine_process();
+    this->events_run();
+    this->m_update_infectious_list();
+
 }
 
 template<typename TSeq>
@@ -422,16 +424,14 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     sampled_agents.resize(Model<TSeq>::size());
 
     // We only do it once
-    n_infectious_per_group.resize(this->entities.size(), 0u);
-    std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);
+    n_infectious_per_group.assign(this->entities.size(), 0u);
 
     // We are assuming one agent per entity
-    infectious.resize(Model<TSeq>::size());
-    std::fill(infectious.begin(), infectious.end(), 0u);
+    infectious.assign(Model<TSeq>::size(), 0u);
 
     // This will say when do the groups start in the `infectious` vector
-    entity_indices.resize(this->entities.size(), 0u);
-    std::fill(entity_indices.begin(), entity_indices.end(), 0u);
+    entity_indices.assign(this->entities.size(), 0u);
+
     for (size_t i = 1u; i < this->entities.size(); ++i)
     {
 
@@ -445,43 +445,20 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     this->m_update_infectious_list();
 
     // Setting up the quarantine parameters
-    quarantine_willingness.resize(this->size(), false);
-    isolation_willingness.resize(this->size(), false);
+    quarantine_willingness.assign(this->size(), false);
+    isolation_willingness.assign(this->size(), false);
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
-            Model<TSeq>::runif() < this->par("Quarantine willingness");
+            Model<TSeq>::runif() < Model<TSeq>::par("Quarantine willingness");
         isolation_willingness[idx] =
-            Model<TSeq>::runif() < this->par("Isolation willingness");
+            Model<TSeq>::runif() < Model<TSeq>::par("Isolation willingness");
     }
 
-    agent_quarantine_triggered.resize(this->size(), 0u);
-    std::fill(
-        agent_quarantine_triggered.begin(),
-        agent_quarantine_triggered.end(),
-        0u
-    );
-
-    day_flagged.resize(this->size(), 0);
-    std::fill(
-        day_flagged.begin(),
-        day_flagged.end(),
-        0
-    );
-
-    day_rash_onset.resize(this->size(), 0);
-    std::fill(
-        day_rash_onset.begin(),
-        day_rash_onset.end(),
-        0
-    );
-
-    day_exposed.resize(this->size(), 0);
-    std::fill(
-        day_exposed.begin(),
-        day_exposed.end(),
-        0
-    );
+    agent_quarantine_triggered.assign(this->size(), 0u);
+    day_flagged.assign(this->size(), 0);
+    day_rash_onset.assign(this->size(), 0);
+    day_exposed.assign(this->size(), 0);
 
     // Contact tracing
     contact_tracing.reset(this->size(), EPI_MAX_TRACKING);
@@ -887,7 +864,7 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
         )
             continue;
 
-        if (this->par("Quarantine period") < 0)
+        if (Model<TSeq>::par("Quarantine period") < 0)
             continue;
 
         // Getting the number of contacts, if it is greater
@@ -1064,7 +1041,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_state("Recovered");
 
     // Global function
-    this->add_globalevent(this->m_update_model, "Update infected individuals");
     this->queuing_off();
 
     // Preparing the virus -------------------------------------------
@@ -1115,5 +1091,14 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
     return *this;
 
 }
+
+template<typename TSeq>
+inline void ModelMeaslesMixing<TSeq>::next()
+{
+    this->m_update_model();
+    Model<TSeq>::next();
+    return;
+}
+
 #undef MM
 #endif

@@ -58,7 +58,7 @@ private:
      *
      * This function is called at the end of each day.
      */
-    static void m_update_model(Model<TSeq> * m);
+    void m_update_model();
 
 public:
 
@@ -142,6 +142,7 @@ public:
     void update_infectious();
 
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
+    void next() override;
 
 };
 
@@ -222,14 +223,12 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
 
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::m_update_model(Model<TSeq> * m) {
+inline void ModelMeaslesSchool<TSeq>::m_update_model() {
 
-    auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
-    model->quarantine_agents();
-    model->events_run();
-    model->update_infectious();
-    return;
-
+    this->quarantine_agents();
+    this->events_run();
+    this->update_infectious();
+    
 }
 
 template<typename TSeq>
@@ -243,7 +242,7 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
     this->day_rash_onset.assign(this->size(), 0);
     this->has_pep.assign(this->size(), false);
 
-    this->m_update_model(this);
+    this->m_update_model();
     return;
 
 }
@@ -765,12 +764,18 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     pep.set_susceptibility_reduction(this->par("PEP efficacy"));
     this->add_tool(pep);
 
-    // Global actions
-    this->add_globalevent(this->m_update_model, "Update model");
     this->queuing_off();
 
     // Setting the population
     this->agents_empty_graph(n);
+
+}
+
+template<typename TSeq>
+inline void ModelMeaslesSchool<TSeq>::next() {
+
+    this->m_update_model();
+    Model<TSeq>::next();
 
 }
 
