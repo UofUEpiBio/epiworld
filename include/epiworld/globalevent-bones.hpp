@@ -32,7 +32,7 @@ public:
     
     virtual ~GlobalEvent() = default;
 
-    void operator()(Model<TSeq> * m, int day);
+    virtual void operator()(Model<TSeq> * m, int day);
 
     void set_name(std::string name);
     std::string get_name() const;

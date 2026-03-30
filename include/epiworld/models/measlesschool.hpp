@@ -5,6 +5,7 @@
 #include <cassert>
 #include "../tools/vaccine.hpp"
 #include "../model-bones.hpp"
+#include "interventions.hpp"
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
@@ -54,13 +55,6 @@ private:
     ///@}
 
     /**
-     * @brief The function that updates the model.
-     *
-     * This function is called at the end of each day.
-     */
-    void _update_model();
-
-    /**
      * @brief Quarantine agents that are in the system.
      *
      * The flow should be:
@@ -78,7 +72,7 @@ private:
      *
      * - At the end of the function, the quarantine status is set false.
      */
-    void _quarantine_agents();
+    static void _quarantine_agents(Model<TSeq> * m);
     
     // Update which agents are infectious for contact
     void _update_infectious();
@@ -149,26 +143,28 @@ public:
 };
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::_quarantine_agents() {
+inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
+
+    auto * model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
     // Iterating through the new cases
-    if (!system_quarantine_triggered)
+    if (!model->system_quarantine_triggered)
         return;
 
     // Quarantine and isolation can be shut off if negative
     if (
-        (this->par("Quarantine period") < 0) &&
-        (this->par("Isolation period") < 0)
+        (model->par("Quarantine period") < 0) &&
+        (model->par("Isolation period") < 0)
     )
         return;
 
     // Capturing the days that matter and the probability of success
-    epiworld_double willingness = this->par("Quarantine willingness");
+    epiworld_double willingness = model->par("Quarantine willingness");
 
     // Iterating through the
-    for (size_t i = 0u; i < this->size(); ++i) {
+    for (size_t i = 0u; i < model->size(); ++i) {
 
-        auto & agent = this->get_agent(i);
+        auto & agent = model->get_agent(i);
         auto agent_state = agent.get_state();
 
         // Already quarantined or isolated
@@ -183,46 +179,30 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents() {
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
         if (
-            (this->par("Quarantine period") >= 0) &&
-            (this->runif() < willingness)
+            (model->par("Quarantine period") >= 0) &&
+            (model->runif() < willingness)
         )
         {
 
             if (agent_state == SUSCEPTIBLE)
-                agent.change_state(*this, QUARANTINED_SUSCEPTIBLE);
+                agent.change_state(*model, QUARANTINED_SUSCEPTIBLE);
             else if (agent_state == EXPOSED)
-                agent.change_state(*this, QUARANTINED_EXPOSED);
+                agent.change_state(*model, QUARANTINED_EXPOSED);
             else if (agent_state == PRODROMAL)
-                agent.change_state(*this, QUARANTINED_PRODROMAL);
+                agent.change_state(*model, QUARANTINED_PRODROMAL);
 
             // And we add the day of quarantine
-            this->day_flagged[i] = this->today();
+            model->day_flagged[i] = model->today();
 
         }
 
     }
 
     // Setting the quarantine process off
-    this->system_quarantine_triggered = false;
+    model->system_quarantine_triggered = false;
 
     return;
 
-}
-
-
-template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::_update_model() {
-
-    // Applying the quarantine process
-    this->_quarantine_agents();
-    
-    // Locking the events so that this is reflected
-    // in the list of infectious agents
-    this->events_run();
-
-    // Updating the list of infectious agents for contact
-    this->_update_infectious();
-    
 }
 
 template<typename TSeq>
@@ -236,7 +216,7 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
     this->day_rash_onset.assign(this->size(), 0);
     this->has_pep.assign(this->size(), false);
 
-    this->_update_model();
+    this->_update_infectious();
     return;
 
 }
@@ -685,12 +665,30 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     vaccine.set_distribution(distribute_tool_randomly(prop_vaccinated, true));
     this->add_tool(vaccine);
 
-    // Designing MMR PEP
-    ToolVaccine<TSeq> pep("MMR PEP");
-    pep.set_susceptibility_reduction(this->par("PEP efficacy"));
-    this->add_tool(pep);
-
     this->queuing_off();
+
+    // Creating the PEP intervention and 
+    // setting it up so we can call it as a global event.
+    InterventionPEP<TSeq> pep{};
+    pep.set_name("PEP intervention");
+
+    pep.configure(
+        "PEP willingness",
+        "PEP efficacy",
+        {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE, QUARANTINED_PRODROMAL, QUARANTINED_RECOVERED},
+        {EXPOSED, SUSCEPTIBLE, PRODROMAL, RECOVERED}
+    );
+
+    this->add_globalevent(pep);
+
+    // Adding a global event for the PEP intervention
+
+    // Quarantine process will be automatically triggered
+    // at the end of the day
+    auto quarantine_event = GlobalEvent<TSeq>(
+        this->_quarantine_agents, "Quarantine process"
+    );
+    this->add_globalevent(quarantine_event);
 
     // Setting the population
     this->agents_empty_graph(n);
@@ -700,7 +698,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::next() {
 
-    this->_update_model();
+    this->_update_infectious();
     Model<TSeq>::next();
 
 }

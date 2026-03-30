@@ -2107,7 +2107,6 @@ inline void Model<TSeq>::add_globalevent(
     int date
 )
 {
-
     auto event = GlobalEvent<TSeq>(fun, name, date);
     add_globalevent(event);
 
@@ -2190,7 +2189,7 @@ inline void Model<TSeq>::run_globalevents()
 #if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911L
     // --- C++20 Implementation ---
     for (auto& a : std::views::reverse(globalevents)) {
-        (*a)(this, today());
+        a->operator()(this, today());
         events_run();
     }
 #else
@@ -2199,7 +2198,7 @@ inline void Model<TSeq>::run_globalevents()
         globalevents.rbegin(),
         globalevents.rend(),
         [this](auto& a) {
-            (*a)(this, today());
+            a->operator()(this, today());
             events_run();
         });
 #endif
@@ -2256,6 +2255,18 @@ inline Virus<TSeq> & Model<TSeq>::get_virus(size_t id)
 }
 
 template<typename TSeq>
+inline Virus<TSeq> & Model<TSeq>::get_virus(std::string name)
+{
+
+    for (auto & v : viruses)
+        if (v->get_name() == name)
+            return *v;
+
+    throw std::logic_error("The virus " + name + " was not found.");
+
+}
+
+template<typename TSeq>
 inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
 {
 
@@ -2264,6 +2275,36 @@ inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
 
     return *tools[id];
 
+}
+
+template<typename TSeq>
+inline Tool<TSeq> & Model<TSeq>::get_tool(std::string name)
+{
+    for (auto & t : tools)
+        if (t->get_name() == name)
+            return *t;
+
+    throw std::logic_error("The tool " + name + " was not found.");
+
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_virus(std::string name) const
+{
+    for (const auto & v : viruses)
+        if (v->get_name() == name)
+            return true;
+
+    return false;
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_tool(std::string name) const
+{
+    for (const auto & t : tools)
+        if (t->get_name() == name)
+            return true;
+    return false;
 }
 
 

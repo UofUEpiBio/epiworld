@@ -7499,7 +7499,7 @@ public:
     
     virtual ~GlobalEvent() = default;
 
-    void operator()(Model<TSeq> * m, int day);
+    virtual void operator()(Model<TSeq> * m, int day);
 
     void set_name(std::string name);
     std::string get_name() const;
@@ -8342,7 +8342,12 @@ public:
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
     Virus<TSeq> & get_virus(size_t id);
+    Virus<TSeq> & get_virus(std::string name);
     Tool<TSeq> & get_tool(size_t id);
+    Tool<TSeq> & get_tool(std::string name);
+
+    bool has_virus(std::string name) const;
+    bool has_tool(std::string name) const;
 
     /**
      * @brief Set the agents data object
@@ -11155,7 +11160,6 @@ inline void Model<TSeq>::add_globalevent(
     int date
 )
 {
-
     auto event = GlobalEvent<TSeq>(fun, name, date);
     add_globalevent(event);
 
@@ -11238,7 +11242,7 @@ inline void Model<TSeq>::run_globalevents()
 #if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911L
     // --- C++20 Implementation ---
     for (auto& a : std::views::reverse(globalevents)) {
-        (*a)(this, today());
+        a->operator()(this, today());
         events_run();
     }
 #else
@@ -11247,7 +11251,7 @@ inline void Model<TSeq>::run_globalevents()
         globalevents.rbegin(),
         globalevents.rend(),
         [this](auto& a) {
-            (*a)(this, today());
+            a->operator()(this, today());
             events_run();
         });
 #endif
@@ -11304,6 +11308,18 @@ inline Virus<TSeq> & Model<TSeq>::get_virus(size_t id)
 }
 
 template<typename TSeq>
+inline Virus<TSeq> & Model<TSeq>::get_virus(std::string name)
+{
+
+    for (auto & v : viruses)
+        if (v->get_name() == name)
+            return *v;
+
+    throw std::logic_error("The virus " + name + " was not found.");
+
+}
+
+template<typename TSeq>
 inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
 {
 
@@ -11312,6 +11328,36 @@ inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
 
     return *tools[id];
 
+}
+
+template<typename TSeq>
+inline Tool<TSeq> & Model<TSeq>::get_tool(std::string name)
+{
+    for (auto & t : tools)
+        if (t->get_name() == name)
+            return *t;
+
+    throw std::logic_error("The tool " + name + " was not found.");
+
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_virus(std::string name) const
+{
+    for (const auto & v : viruses)
+        if (v->get_name() == name)
+            return true;
+
+    return false;
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_tool(std::string name) const
+{
+    for (const auto & t : tools)
+        if (t->get_name() == name)
+            return true;
+    return false;
 }
 
 
@@ -22654,6 +22700,203 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #include <cassert>
 // (already included include/epiworld/models/../tools/vaccine.hpp)
 // (already included include/epiworld/models/../model-bones.hpp)
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/models/interventions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MODELS_INTERVENTIONS_HPP
+#define EPIWORLD_MODELS_INTERVENTIONS_HPP
+
+// (already included include/epiworld/models/../config.hpp)
+// (already included include/epiworld/models/../model-bones.hpp)
+// (already included include/epiworld/models/../agent-bones.hpp)
+// (already included include/epiworld/models/../tools/vaccine.hpp)
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class InterventionPEP : public GlobalEvent<TSeq> {
+
+private: 
+
+    // Willigness and efficacy of the PEP
+    std::string _parname_willingness;
+    std::string _parname_efficacy;
+    
+    // Willingness of the agents to receive PEP
+    std::vector< bool > _willing_to_receive_pep;
+
+    // Quarantine states to which the intervention applies
+    std::vector< int > _quarantine_states;
+    std::vector< int > _quarantine_states_for_pep;
+
+    // Id of the model
+    int model_id = -1;
+
+    /**
+     * @brief Set up the intervention.
+     * 
+     * @details
+     * This function is called at the beginning of the simulation. It sets up
+     * the willingness of the agents to receive PEP and the efficacy of the
+     * PEP.
+     * @param model A pointer to the model.
+     */
+    void _setup(Model<TSeq> * model);
+
+public:
+
+    /**
+     * @brief Construct a new Intervention PEP object.
+     * @param parameter_efficacy The efficacy of the PEP. Must be between 0
+     * and 1.
+     * @param parameter_willingness The willingness of the agents to receive
+     * PEP. Must be between 0 and 1.
+     * @param quarantine_states The states to which the intervention applies. For
+     * example, if the intervention applies to agents in quarantine, then this
+     * should include the states that correspond to quarantine.
+     */
+    void configure(
+        std::string parameter_willingness,
+        std::string parameter_efficacy,
+        std::vector< int > quarantine_states,
+        std::vector< int > quarantine_states_for_pep
+    );
+
+    /**
+     * @brief Apply the intervention to the model.
+     * @details
+     * This function is called at the end of the day as a global event. It
+     * iterates through the agents and gives PEP to those who are willing and
+     * applicable.
+     * 
+     * Agents who receive PEP may then be moved to a different state if
+     * the PEP is effective.
+     */
+    void operator()(Model<TSeq> * model, int day) override;
+
+    std::unique_ptr< GlobalEvent<TSeq> > clone_ptr() const override;
+
+};
+
+template<typename TSeq>
+inline void InterventionPEP<TSeq>::configure(
+    std::string parameter_efficacy,
+    std::string parameter_willingness,
+    std::vector< int > quarantine_states,
+    std::vector< int > quarantine_states_for_pep
+) {
+
+    // Must match the length
+    if (quarantine_states.size() != quarantine_states_for_pep.size())
+        throw std::logic_error(
+            "The length of the quarantine states and the quarantine states for "
+            "PEP must be the same. These are currently: " +
+            std::to_string(quarantine_states.size()) + " and " +
+            std::to_string(quarantine_states_for_pep.size()) +
+            ", respectively."
+        );
+
+    this->_quarantine_states = quarantine_states;
+    this->_quarantine_states_for_pep = quarantine_states_for_pep;
+    this->_parname_efficacy = parameter_efficacy;
+    this->_parname_willingness = parameter_willingness;
+}
+
+template<typename TSeq>
+inline void InterventionPEP<TSeq>::_setup(
+    Model<TSeq> * model
+) {
+
+    // Randomizing willigness
+    this->_willing_to_receive_pep.assign(model->size(), false);
+
+    auto willigness = model->par(this->_parname_willingness);
+    for (size_t i = 0u; i < model->size(); ++i)
+    {
+        if (model->runif() < willigness)
+        {
+            this->_willing_to_receive_pep[i] = true;
+        }
+    }
+
+    // Adding the PEP vaccine as a tool to the model
+    // (if not already added by the user)
+    if (!model->has_tool("PEP Vaccine"))
+        return;
+
+    // Creating the PEP vaccine tool
+    ToolVaccine<TSeq> pep("PEP Vaccine");
+    pep.set_susceptibility_reduction(model->par(this->_parname_efficacy));
+    model->add_tool(pep);
+
+};
+
+template<typename TSeq>
+inline void InterventionPEP<TSeq>::operator()(Model<TSeq> * model, int) {
+
+    // Verifying if this needs to be setup
+    if (static_cast<int>(model->get_sim_id()) != this->model_id)
+    {
+        this->model_id = static_cast<int>(model->get_sim_id());
+        this->_setup(model);
+    }
+
+    // Iterate through the agents and check 
+    for (auto & agent: model->get_agents())
+    {
+
+        // Checking if the agent is in a quarantine
+        // state
+        int id = static_cast<int>(agent.get_id());
+        if (!IN(id, this->_quarantine_states))
+            continue;
+
+        // Checking willigness
+        if (!this->_willing_to_receive_pep[agent.get_id()])
+            continue;
+
+        // Finding the corresponding state for PEP
+        auto it = std::find(
+            this->_quarantine_states.begin(),
+            this->_quarantine_states.end(),
+            agent.get_state()
+        );
+
+        // No need to check it, we know it is there
+        auto pos = std::distance(this->_quarantine_states.begin(), it);
+
+        // We will administer PEP to the agent
+        agent.add_tool(
+            *model,
+            model->get_tool("PEP Vaccine"),
+            this->_quarantine_states_for_pep[pos]
+        );
+
+    }
+
+};
+
+template<typename TSeq>
+inline std::unique_ptr< GlobalEvent<TSeq> > InterventionPEP<TSeq>::clone_ptr() const
+{
+    return std::make_unique< InterventionPEP<TSeq>>(*this);
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/models/interventions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
@@ -22703,13 +22946,6 @@ private:
     ///@}
 
     /**
-     * @brief The function that updates the model.
-     *
-     * This function is called at the end of each day.
-     */
-    void _update_model();
-
-    /**
      * @brief Quarantine agents that are in the system.
      *
      * The flow should be:
@@ -22727,7 +22963,7 @@ private:
      *
      * - At the end of the function, the quarantine status is set false.
      */
-    void _quarantine_agents();
+    static void _quarantine_agents(Model<TSeq> * m);
     
     // Update which agents are infectious for contact
     void _update_infectious();
@@ -22798,26 +23034,28 @@ public:
 };
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::_quarantine_agents() {
+inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
+
+    auto * model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
     // Iterating through the new cases
-    if (!system_quarantine_triggered)
+    if (!model->system_quarantine_triggered)
         return;
 
     // Quarantine and isolation can be shut off if negative
     if (
-        (this->par("Quarantine period") < 0) &&
-        (this->par("Isolation period") < 0)
+        (model->par("Quarantine period") < 0) &&
+        (model->par("Isolation period") < 0)
     )
         return;
 
     // Capturing the days that matter and the probability of success
-    epiworld_double willingness = this->par("Quarantine willingness");
+    epiworld_double willingness = model->par("Quarantine willingness");
 
     // Iterating through the
-    for (size_t i = 0u; i < this->size(); ++i) {
+    for (size_t i = 0u; i < model->size(); ++i) {
 
-        auto & agent = this->get_agent(i);
+        auto & agent = model->get_agent(i);
         auto agent_state = agent.get_state();
 
         // Already quarantined or isolated
@@ -22832,46 +23070,30 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents() {
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
         if (
-            (this->par("Quarantine period") >= 0) &&
-            (this->runif() < willingness)
+            (model->par("Quarantine period") >= 0) &&
+            (model->runif() < willingness)
         )
         {
 
             if (agent_state == SUSCEPTIBLE)
-                agent.change_state(*this, QUARANTINED_SUSCEPTIBLE);
+                agent.change_state(*model, QUARANTINED_SUSCEPTIBLE);
             else if (agent_state == EXPOSED)
-                agent.change_state(*this, QUARANTINED_EXPOSED);
+                agent.change_state(*model, QUARANTINED_EXPOSED);
             else if (agent_state == PRODROMAL)
-                agent.change_state(*this, QUARANTINED_PRODROMAL);
+                agent.change_state(*model, QUARANTINED_PRODROMAL);
 
             // And we add the day of quarantine
-            this->day_flagged[i] = this->today();
+            model->day_flagged[i] = model->today();
 
         }
 
     }
 
     // Setting the quarantine process off
-    this->system_quarantine_triggered = false;
+    model->system_quarantine_triggered = false;
 
     return;
 
-}
-
-
-template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::_update_model() {
-
-    // Applying the quarantine process
-    this->_quarantine_agents();
-    
-    // Locking the events so that this is reflected
-    // in the list of infectious agents
-    this->events_run();
-
-    // Updating the list of infectious agents for contact
-    this->_update_infectious();
-    
 }
 
 template<typename TSeq>
@@ -22885,7 +23107,7 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
     this->day_rash_onset.assign(this->size(), 0);
     this->has_pep.assign(this->size(), false);
 
-    this->_update_model();
+    this->_update_infectious();
     return;
 
 }
@@ -23334,12 +23556,30 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     vaccine.set_distribution(distribute_tool_randomly(prop_vaccinated, true));
     this->add_tool(vaccine);
 
-    // Designing MMR PEP
-    ToolVaccine<TSeq> pep("MMR PEP");
-    pep.set_susceptibility_reduction(this->par("PEP efficacy"));
-    this->add_tool(pep);
-
     this->queuing_off();
+
+    // Creating the PEP intervention and 
+    // setting it up so we can call it as a global event.
+    InterventionPEP<TSeq> pep{};
+    pep.set_name("PEP intervention");
+
+    pep.configure(
+        "PEP willingness",
+        "PEP efficacy",
+        {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE, QUARANTINED_PRODROMAL, QUARANTINED_RECOVERED},
+        {EXPOSED, SUSCEPTIBLE, PRODROMAL, RECOVERED}
+    );
+
+    this->add_globalevent(pep);
+
+    // Adding a global event for the PEP intervention
+
+    // Quarantine process will be automatically triggered
+    // at the end of the day
+    auto quarantine_event = GlobalEvent<TSeq>(
+        this->_quarantine_agents, "Quarantine process"
+    );
+    this->add_globalevent(quarantine_event);
 
     // Setting the population
     this->agents_empty_graph(n);
@@ -23349,7 +23589,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::next() {
 
-    this->_update_model();
+    this->_update_infectious();
     Model<TSeq>::next();
 
 }
