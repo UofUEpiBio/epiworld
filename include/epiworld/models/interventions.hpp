@@ -142,8 +142,8 @@ inline void InterventionPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
         // Checking if the agent is in a quarantine
         // state
-        int id = static_cast<int>(agent.get_state());
-        if (!IN(id, this->_quarantine_states))
+        int agent_state = static_cast<int>(agent.get_state());
+        if (!IN(agent_state, this->_quarantine_states))
             continue;
 
         // Checking willigness

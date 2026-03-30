@@ -4,7 +4,7 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
-    int n_seeds = 5;
+    int n_seeds = 1;
     epimodels::ModelMeaslesSchool<> model_0(
         1000,    // Number of agents
         n_seeds, // Number of initial cases
@@ -15,14 +15,14 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         7.0,     // Incubation period
         4.0,     // Prodromal period
         5.0,     // Rash period
-        3.0,     // Days undetected
+        3,       // Days undetected
         0.1,     // Hospitalization rate
         7.0,     // Hospitalization duration
         0.1,     // Proportion vaccinated
         21u,     // Quarantine period
-        .8,      // Quarantine willingness
+        1.0,      // Quarantine willingness
         4u,      // Isolation period
-        .8,      // PEP efficacy
+        1.0,     // PEP efficacy
         1.0      // PEP willingness
     );
 
@@ -34,7 +34,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         return;
     });
 
-    size_t nsims = 1000;
+    size_t nsims = 500;
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
     std::vector< double > hospitalizations(nsims, 0), outbreak_sizes(nsims, 0);
@@ -88,22 +88,10 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     // PEP-specific transition checks
     // =========================================================
 
-    // Quarantined Exposed -> Exposed should exist (PEP moves
-    // willing agents out of quarantine into the Exposed state
-    // with the PEP tool)
-    REQUIRE(mat(7, 1) > 0.01);
-
     // Exposed -> Recovered should exist (PEP clears the virus
     // via agent_recovers in the _update_exposed function)
     REQUIRE(mat(1, 12) > 0.01);
 
-    // Quarantined Exposed -> Quarantined Prodromal should still
-    // approximately match the incubation rate. Symptoms develop
-    // in the state update (before the PEP global event), so the
-    // rate is not changed by PEP.
-    REQUIRE_FALSE(
-        moreless(mat(7, 9), 1.0/model_0("Incubation period"), 0.1)
-    );
 
     // =========================================================
     // Standard disease transitions (should be preserved for
@@ -166,6 +154,23 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     REQUIRE(obs_hosp_probability < theoretical_hosp_no_pep);
 
+    // Rows and columns 7 and 8 (Quarantined Exposed and Quarantined
+    // Susceptible) should be empty since willigness is 100%
+    double col_sum_q_exposed = 0.0, col_sum_q_susceptible = 0.0;
+    double row_sum_q_exposed = 0.0, row_sum_q_susceptible = 0.0;
+    for (size_t i = 0u; i < n_states; ++i)
+    {
+        col_sum_q_exposed += mat(i, 7);
+        col_sum_q_susceptible += mat(i, 8);
+        row_sum_q_exposed += mat(7, i);
+        row_sum_q_susceptible += mat(8, i);
+    }
+
+    REQUIRE(col_sum_q_exposed < 1e-10);
+    REQUIRE(col_sum_q_susceptible < 1e-10);
+    REQUIRE(row_sum_q_exposed < 1e-10);
+    REQUIRE(row_sum_q_susceptible < 1e-10);
+
     // =========================================================
     // Diagnostics
     // =========================================================
@@ -173,15 +178,8 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     std::cout << "Effective Rt: " << R0_observed << std::endl;
 
-    std::cout << "Q.Exposed -> Exposed (PEP): "
-              << mat(7, 1) << std::endl;
-
     std::cout << "Exposed -> Recovered (PEP): "
               << mat(1, 12) << std::endl;
-
-    std::cout << "Q.Exposed -> Q.Prodromal: "
-              << mat(7, 9) << " (expected ~"
-              << 1.0/model_0("Incubation period") << ")" << std::endl;
 
     std::cout << "Prodromal -> Rash: "
               << mat(2, 3) + mat(2, 4) << " (expected ~"

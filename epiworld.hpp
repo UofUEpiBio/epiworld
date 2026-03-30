@@ -22840,8 +22840,8 @@ inline void InterventionPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
         // Checking if the agent is in a quarantine
         // state
-        int id = static_cast<int>(agent.get_state());
-        if (!IN(id, this->_quarantine_states))
+        int agent_state = static_cast<int>(agent.get_state());
+        if (!IN(agent_state, this->_quarantine_states))
             continue;
 
         // Checking willigness
@@ -23409,6 +23409,17 @@ LOCAL_UPDATE_FUN(_update_isolated_recovered) {
 
 LOCAL_UPDATE_FUN(_update_q_exposed) {
 
+    #ifdef EPI_DEBUG
+    if (m->par("PEP willingness") >= 0.999999999)
+    {
+        throw std::logic_error(
+            std::string("This shouldn't happen. ") +
+            std::string("When PEP willigness is 1, then no agent should be ") +
+            std::string("in QUARANTINED_EXPOSED state.")
+        );
+    }
+    #endif
+
     // How many days since quarantine started
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     int days_since =
@@ -23520,18 +23531,18 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_double pep_willingness
 ) {
 
-    this->add_state("Susceptible", this->_update_susceptible);
-    this->add_state("Exposed", this->_update_exposed);
-    this->add_state("Prodromal", this->_update_prodromal);
-    this->add_state("Rash", this->_update_rash);
-    this->add_state("Isolated", this->_update_isolated);
-    this->add_state("Isolated Recovered", this->_update_isolated_recovered);
-    this->add_state("Detected Hospitalized", this->_update_hospitalized);
-    this->add_state("Quarantined Exposed", this->_update_q_exposed);
+    this->add_state("Susceptible",             this->_update_susceptible);
+    this->add_state("Exposed",                 this->_update_exposed);
+    this->add_state("Prodromal",               this->_update_prodromal);
+    this->add_state("Rash",                    this->_update_rash);
+    this->add_state("Isolated",                this->_update_isolated);
+    this->add_state("Isolated Recovered",      this->_update_isolated_recovered);
+    this->add_state("Detected Hospitalized",   this->_update_hospitalized);
+    this->add_state("Quarantined Exposed",     this->_update_q_exposed);
     this->add_state("Quarantined Susceptible", this->_update_q_susceptible);
-    this->add_state("Quarantined Prodromal", this->_update_q_prodromal);
-    this->add_state("Quarantined Recovered", this->_update_q_recovered);
-    this->add_state("Hospitalized", this->_update_hospitalized);
+    this->add_state("Quarantined Prodromal",   this->_update_q_prodromal);
+    this->add_state("Quarantined Recovered",   this->_update_q_recovered);
+    this->add_state("Hospitalized",            this->_update_hospitalized);
     this->add_state("Recovered");
 
     // Adding the model parameters
@@ -23542,9 +23553,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_param(rash_period, "Rash period");
     this->add_param(days_undetected, "Days undetected");
     this->add_param(quarantine_period, "Quarantine period");
-    this->add_param(
-        quarantine_willingness, "Quarantine willingness"
-    );
+    this->add_param(quarantine_willingness, "Quarantine willingness");
     this->add_param(isolation_period, "Isolation period");
     this->add_param(hospitalization_rate, "Hospitalization rate");
     this->add_param(hospitalization_period, "Hospitalization period");
@@ -23574,28 +23583,26 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     this->queuing_off();
 
-    // Creating the PEP intervention and 
-    // setting it up so we can call it as a global event.
-    InterventionPEP<TSeq> pep{};
-    pep.set_name("PEP intervention");
-
-    pep.configure(
-        "PEP willingness",
-        "PEP efficacy",
-        {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE},
-        {EXPOSED, SUSCEPTIBLE}
-    );
-
-    this->add_globalevent(pep);
-
-    // Adding a global event for the PEP intervention
-
     // Quarantine process will be automatically triggered
     // at the end of the day
     auto quarantine_event = GlobalEvent<TSeq>(
         this->_quarantine_agents, "Quarantine process"
     );
     this->add_globalevent(quarantine_event);
+
+    // Creating the PEP intervention and 
+    // setting it up so we can call it as a global event.
+    InterventionPEP<TSeq> pep{};
+    pep.set_name("PEP intervention");
+
+    pep.configure(
+        "PEP efficacy",
+        "PEP willingness",
+        {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE},
+        {EXPOSED, SUSCEPTIBLE}
+    );
+
+    this->add_globalevent(pep);
 
     // Setting the population
     this->agents_empty_graph(n);
