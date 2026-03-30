@@ -5,7 +5,6 @@
 #include <cassert>
 #include "../tools/vaccine.hpp"
 #include "../model-bones.hpp"
-#include "interventions.hpp"
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
@@ -666,22 +665,6 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_tool(vaccine);
 
     this->queuing_off();
-
-    // Creating the PEP intervention and 
-    // setting it up so we can call it as a global event.
-    InterventionPEP<TSeq> pep{};
-    pep.set_name("PEP intervention");
-
-    pep.configure(
-        "PEP willingness",
-        "PEP efficacy",
-        {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE, QUARANTINED_PRODROMAL, QUARANTINED_RECOVERED},
-        {EXPOSED, SUSCEPTIBLE, PRODROMAL, RECOVERED}
-    );
-
-    this->add_globalevent(pep);
-
-    // Adding a global event for the PEP intervention
 
     // Quarantine process will be automatically triggered
     // at the end of the day
