@@ -690,6 +690,13 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     );
     this->add_globalevent(quarantine_event);
 
+    // Quarantine process will be automatically triggered
+    // at the end of the day
+    auto quarantine_event = GlobalEvent<TSeq>(
+        this->_quarantine_agents, "Quarantine process"
+    );
+    this->add_globalevent(quarantine_event);
+
     // Setting the population
     this->agents_empty_graph(n);
 

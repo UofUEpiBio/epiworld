@@ -11239,23 +11239,11 @@ template<typename TSeq>
 inline void Model<TSeq>::run_globalevents()
 {
 
-#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911L
-    // --- C++20 Implementation ---
-    for (auto& a : std::views::reverse(globalevents)) {
-        a->operator()(this, today());
+    for (auto & event: globalevents)
+    {
+        event->operator()(this, today());
         events_run();
     }
-#else
-    // --- C++17 Fallback Implementation ---
-    std::for_each(
-        globalevents.rbegin(),
-        globalevents.rend(),
-        [this](auto& a) {
-            a->operator()(this, today());
-            events_run();
-        });
-#endif
-    
 
 }
 
@@ -23573,6 +23561,13 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_globalevent(pep);
 
     // Adding a global event for the PEP intervention
+
+    // Quarantine process will be automatically triggered
+    // at the end of the day
+    auto quarantine_event = GlobalEvent<TSeq>(
+        this->_quarantine_agents, "Quarantine process"
+    );
+    this->add_globalevent(quarantine_event);
 
     // Quarantine process will be automatically triggered
     // at the end of the day
