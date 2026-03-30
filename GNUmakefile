@@ -45,7 +45,7 @@ WITH_WERROR ?= 0
 WITH_THREAD_SANITIZER ?= 0
 
 CFLAGS   := -std=c11
-CXXFLAGS := -std=c++20
+CXXFLAGS := -std=c++17
 LDFLAGS  :=
 
 ifeq ($(BUILD_PROFILE),debug)

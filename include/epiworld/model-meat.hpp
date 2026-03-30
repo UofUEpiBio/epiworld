@@ -2190,8 +2190,7 @@ inline void Model<TSeq>::run_globalevents()
     {
         event->operator()(this, today());
         events_run();
-    }
-    
+    }    
 
 }
 

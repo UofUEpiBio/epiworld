@@ -13,12 +13,6 @@
 #include <climits>
 #include <cstdint>
 #include <algorithm>
-
-// Check if the ranges library feature is available
-#ifdef __cpp_lib_ranges
-#include <ranges>
-#endif
-
 #include <regex>
 #include <sstream>
 #include <iomanip>
