@@ -412,6 +412,19 @@ inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(int i)
 }
 
 template<typename TSeq>
+inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(std::string name)
+{
+    for (auto & tool : tools)
+        if (tool->get_name() == name)
+            return tool;
+
+    throw std::logic_error(
+        "The agent does not have a tool with name: " + name
+    );
+
+}
+
+template<typename TSeq>
 inline size_t Agent<TSeq>::get_n_tools() const noexcept
 {
     return n_tools;

@@ -41,7 +41,6 @@ public:
     epiworld_double set_immunity(Model<TSeq> * model);
 
     std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
-    std::string get_name() const override;
 
 };
 
@@ -111,15 +110,6 @@ inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
     auto ans =  std::make_unique<ToolVaccine<TSeq>>(*this);
     ans->immune = -1;
     return ans;
-}
-
-template<typename TSeq>
-inline std::string ToolVaccine<TSeq>::get_name() const
-{
-    return Tool<TSeq>::get_name() +
-        std::string(" (efficacy: ") +
-        std::to_string(this->efficacy) +
-        std::string(")");
 }
 
 #endif

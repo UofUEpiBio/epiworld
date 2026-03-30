@@ -168,6 +168,8 @@ public:
     const VirusPtr<TSeq> & get_virus() const;
 
     ToolPtr<TSeq> & get_tool(int i);
+    ToolPtr<TSeq> & get_tool(std::string name);
+
     Tools<TSeq> get_tools();
     const Tools_const<TSeq> get_tools() const;
     size_t get_n_tools() const noexcept;

@@ -358,6 +358,9 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
 
 LOCAL_UPDATE_FUN(_update_exposed) {
 
+    if (InterventionPEP<TSeq>::agent_recovers(p, m, RECOVERED))
+        return;
+
     if (m->runif() < (1.0/p->get_virus()->get_incubation(m)))
         p->change_state(*m, ModelMeaslesSchool<TSeq>::PRODROMAL);
 
@@ -675,20 +678,13 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     pep.configure(
         "PEP willingness",
         "PEP efficacy",
-        {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE, QUARANTINED_PRODROMAL, QUARANTINED_RECOVERED},
-        {EXPOSED, SUSCEPTIBLE, PRODROMAL, RECOVERED}
+        {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE},
+        {EXPOSED, SUSCEPTIBLE}
     );
 
     this->add_globalevent(pep);
 
     // Adding a global event for the PEP intervention
-
-    // Quarantine process will be automatically triggered
-    // at the end of the day
-    auto quarantine_event = GlobalEvent<TSeq>(
-        this->_quarantine_agents, "Quarantine process"
-    );
-    this->add_globalevent(quarantine_event);
 
     // Quarantine process will be automatically triggered
     // at the end of the day
