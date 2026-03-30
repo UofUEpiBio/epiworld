@@ -177,21 +177,6 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
         if (agent.get_n_tools() != 0u)
             continue;
 
-        // PEP will depend on the willingness of the agent to receive it
-        // Once received, the agent won't be quarantined.
-        // Protection (cure) is defined later.
-        if (
-            (this->par("PEP efficacy") >= 0) &&
-            (this->runif() < this->par("PEP willingness"))
-            
-        )
-        {
-            // Administrating PEP to the agent.
-            agent.add_tool(*this, this->get_tool(1u) /* PEP */);
-            this->has_pep[i] = true;
-
-            continue;
-        }
 
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
@@ -639,20 +624,6 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_double pep_efficacy,
     epiworld_double pep_willingness
 ) {
-
-    // assertm(n > 0u, "The number of agents must be greater than 0.");
-    // assertm(n_exposed <= n, "The number of exposed agents must be less than or equal to the total number of agents.");
-    // assertm(pep_willingness >= 0 && pep_willingness <= 1, "The PEP willingness must be between 0 and 1.");
-    // assertm(incubation_period > 0, "The incubation period must be greater than 0.");
-    // assertm(prodromal_period > 0, "The prodromal period must be greater than 0.");
-    // assertm(rash_period > 0, "The rash period must be greater than 0.");
-    // assertm(hospitalization_rate >= 0 && hospitalization_rate <= 1, "The hospitalization rate must be between 0 and 1.");
-    // assertm(hospitalization_period > 0, "The hospitalization period must be greater than 0.");
-    // assertm(prop_vaccinated >= 0 && prop_vaccinated <= 1, "The vaccination rate must be between 0 and 1.");
-    // assertm(quarantine_willingness >= 0 && quarantine_willingness <= 1, "The quarantine willingness must be between 0 and 1.");
-    // assertm(pep_efficacy >= 0 && pep_efficacy <= 1, "The PEP efficacy must be between 0 and 1.");
-    // assertm(pep_willingness >= 0 && pep_willingness <= 1, "The PEP willingness must be between 0 and 1.");
-    // vaccine_efficacy and pep_efficacy are checked by ToolVaccine
 
     this->add_state("Susceptible", this->_update_susceptible);
     this->add_state("Exposed", this->_update_exposed);

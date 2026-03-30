@@ -1428,7 +1428,8 @@ inline Model<TSeq> & Model<TSeq>::run(
     if (nstates == 0u)
         throw std::logic_error(
             std::string("No states registered in this model. ") +
-            std::string("At least one state should be included. See the function -Model::add_state()-")
+            std::string("At least one state should be included. See the ") +
+            std::string("function -Model::add_state()-")
             );
 
     // Setting up the number of steps
@@ -1443,23 +1444,23 @@ inline Model<TSeq> & Model<TSeq>::run(
     // are valid
     epiworld_fast_int _init, _end, _removed;
     int nstate_int = static_cast<int>(nstates);
+
+    // Function to validate the states of viruses
+    // and tools.
+    auto check_init_states = [nstate_int](int x) -> void {
+
+        if (((x != -99) && (x < 0)) || (x >= nstate_int))
+            throw std::range_error("States must be between 0 and " +
+                std::to_string(nstate_int - 1));
+    };
+
     for (auto & v : viruses)
     {
         v->get_state(&_init, &_end, &_removed);
 
-        // Negative unspecified state
-        if (((_init != -99) && (_init < 0)) || (_init >= nstate_int))
-            throw std::range_error("States must be between 0 and " +
-                std::to_string(nstates - 1));
-
-        // Negative unspecified state
-        if (((_end != -99) && (_end < 0)) || (_end >= nstate_int))
-            throw std::range_error("States must be between 0 and " +
-                std::to_string(nstates - 1));
-
-        if (((_removed != -99) && (_removed < 0)) || (_removed >= nstate_int))
-            throw std::range_error("States must be between 0 and " +
-                std::to_string(nstates - 1));
+        check_init_states(_init);
+        check_init_states(_end);
+        check_init_states(_removed);
 
     }
 
@@ -1467,15 +1468,8 @@ inline Model<TSeq> & Model<TSeq>::run(
     {
         t->get_state(&_init, &_end);
 
-        // Negative unspecified state
-        if (((_init != -99) && (_init < 0)) || (_init >= nstate_int))
-            throw std::range_error("States must be between 0 and " +
-                std::to_string(nstates - 1));
-
-        // Negative unspecified state
-        if (((_end != -99) && (_end < 0)) || (_end >= nstate_int))
-            throw std::range_error("States must be between 0 and " +
-                std::to_string(nstates - 1));
+        check_init_states(_init);
+        check_init_states(_end);
 
     }
 
