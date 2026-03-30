@@ -60,6 +60,29 @@ private:
      */
     void _update_model();
 
+    /**
+     * @brief Quarantine agents that are in the system.
+     *
+     * The flow should be:
+     * - The function only runs if the quarantine status is active.
+     *
+     * - Agents who are in quarantine, isolation, removed, or
+     *   hospitalized are ignored.
+     *
+     * - Agents who are in the RASH state are isolated.
+     *
+     * - Vaccinated agents are ignored.
+     *
+     * - Susceptible, Exposed, and Prodromal agents are moved to the
+     *   QUARANTINED_* state.
+     *
+     * - At the end of the function, the quarantine status is set false.
+     */
+    void _quarantine_agents();
+    
+    // Update which agents are infectious for contact
+    void _update_infectious();
+
 public:
 
     /**
@@ -118,28 +141,7 @@ public:
     std::vector< int > day_rash_onset; ///< Day of rash onset
     std::vector< int > has_pep;
 
-    /**
-     * @brief Quarantine agents that are in the system.
-     *
-     * The flow should be:
-     * - The function only runs if the quarantine status is active.
-     *
-     * - Agents who are in quarantine, isolation, removed, or
-     *   hospitalized are ignored.
-     *
-     * - Agents who are in the RASH state are isolated.
-     *
-     * - Vaccinated agents are ignored.
-     *
-     * - Susceptible, Exposed, and Prodromal agents are moved to the
-     *   QUARANTINED_* state.
-     *
-     * - At the end of the function, the quarantine status is set false.
-     */
-    void quarantine_agents();
-
     void reset() override;
-    void update_infectious();
 
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
     void next() override;
@@ -147,7 +149,7 @@ public:
 };
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
+inline void ModelMeaslesSchool<TSeq>::_quarantine_agents() {
 
     // Iterating through the new cases
     if (!system_quarantine_triggered)
@@ -211,9 +213,15 @@ inline void ModelMeaslesSchool<TSeq>::quarantine_agents() {
 template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::_update_model() {
 
-    this->quarantine_agents();
+    // Applying the quarantine process
+    this->_quarantine_agents();
+    
+    // Locking the events so that this is reflected
+    // in the list of infectious agents
     this->events_run();
-    this->update_infectious();
+
+    // Updating the list of infectious agents for contact
+    this->_update_infectious();
     
 }
 
@@ -234,7 +242,7 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
 }
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::update_infectious() {
+inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
 
     #ifdef EPI_DEBUG
     // All agents with state >= EXPOSED should have a virus

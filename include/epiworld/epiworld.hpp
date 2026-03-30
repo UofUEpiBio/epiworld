@@ -13,6 +13,12 @@
 #include <climits>
 #include <cstdint>
 #include <algorithm>
+
+// Check if the ranges library feature is available
+#ifdef __cpp_lib_ranges
+#include <ranges>
+#endif
+
 #include <regex>
 #include <sstream>
 #include <iomanip>
@@ -72,6 +78,7 @@ namespace epiworld {
     #include "globalevent-meat.hpp"
 
     #include "model-bones.hpp"
+    #include "model-rand-meat.hpp"
     #include "model-meat.hpp"
 
     #include "viruses-bones.hpp"
