@@ -22,8 +22,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
         0.1,     // Proportion vaccinated
         21u,     // Quarantine period
         .8,      // Quarantine willingness
-        4u //,      // Isolation period
-        // .9, 1
+        4u       // Isolation period
     );
 
     // Setting the distribution function of the initial cases

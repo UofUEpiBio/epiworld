@@ -510,7 +510,7 @@ LOCAL_UPDATE_FUN(_update_q_exposed) {
     {
         throw std::logic_error(
             std::string("This shouldn't happen. ") +
-            std::string("When PEP willigness is 1, then no agent should be ") +
+            std::string("When PEP willingness is 1, then no agent should be ") +
             std::string("in QUARANTINED_EXPOSED state.")
         );
     }

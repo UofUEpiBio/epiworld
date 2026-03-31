@@ -5,6 +5,8 @@
 #include "../model-bones.hpp"
 #include "../agent-bones.hpp"
 #include "../tools/vaccine.hpp"
+#include <algorithm>   // for std::find
+#include <iterator>    // for std::distance
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class InterventionPEP : public GlobalEvent<TSeq> {
@@ -49,8 +51,8 @@ public:
      * should include the states that correspond to quarantine.
      */
     void configure(
-        std::string parameter_willingness,
         std::string parameter_efficacy,
+        std::string parameter_willingness,
         std::vector< int > quarantine_states,
         std::vector< int > quarantine_states_for_pep
     );
@@ -102,13 +104,13 @@ inline void InterventionPEP<TSeq>::_setup(
     Model<TSeq> * model
 ) {
 
-    // Randomizing willigness
+    // Randomizing willingness
     this->_willing_to_receive_pep.assign(model->size(), false);
 
-    auto willigness = model->par(this->_parname_willingness);
+    auto willingness = model->par(this->_parname_willingness);
     for (size_t i = 0u; i < model->size(); ++i)
     {
-        if (model->runif() < willigness)
+        if (model->runif() < willingness)
         {
             this->_willing_to_receive_pep[i] = true;
         }

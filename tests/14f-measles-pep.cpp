@@ -155,7 +155,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     REQUIRE(obs_hosp_probability < theoretical_hosp_no_pep);
 
     // Rows and columns 7 and 8 (Quarantined Exposed and Quarantined
-    // Susceptible) should be empty since willigness is 100%
+    // Susceptible) should be empty since willingness is 100%
     double col_sum_q_exposed = 0.0, col_sum_q_susceptible = 0.0;
     double row_sum_q_exposed = 0.0, row_sum_q_susceptible = 0.0;
     for (size_t i = 0u; i < n_states; ++i)
