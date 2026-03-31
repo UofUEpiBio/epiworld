@@ -22747,8 +22747,8 @@ public:
      * should include the states that correspond to quarantine.
      */
     void configure(
-        std::string parameter_willingness,
         std::string parameter_efficacy,
+        std::string parameter_willingness,
         std::vector< int > quarantine_states,
         std::vector< int > quarantine_states_for_pep
     );
@@ -22800,13 +22800,13 @@ inline void InterventionPEP<TSeq>::_setup(
     Model<TSeq> * model
 ) {
 
-    // Randomizing willigness
+    // Randomizing willingness
     this->_willing_to_receive_pep.assign(model->size(), false);
 
-    auto willigness = model->par(this->_parname_willingness);
+    auto willingness = model->par(this->_parname_willingness);
     for (size_t i = 0u; i < model->size(); ++i)
     {
-        if (model->runif() < willigness)
+        if (model->runif() < willingness)
         {
             this->_willing_to_receive_pep[i] = true;
         }
@@ -23414,7 +23414,7 @@ LOCAL_UPDATE_FUN(_update_q_exposed) {
     {
         throw std::logic_error(
             std::string("This shouldn't happen. ") +
-            std::string("When PEP willigness is 1, then no agent should be ") +
+            std::string("When PEP willingness is 1, then no agent should be ") +
             std::string("in QUARANTINED_EXPOSED state.")
         );
     }

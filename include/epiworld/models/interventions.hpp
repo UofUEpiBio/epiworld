@@ -5,8 +5,6 @@
 #include "../model-bones.hpp"
 #include "../agent-bones.hpp"
 #include "../tools/vaccine.hpp"
-#include <algorithm>   // for std::find
-#include <iterator>    // for std::distance
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class InterventionPEP : public GlobalEvent<TSeq> {
