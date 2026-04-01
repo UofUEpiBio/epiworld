@@ -449,13 +449,6 @@ public:
 
 #define EPI_RUNIF() m->runif()
 
-#define EPIWORLD_RUN(a) \
-    if (a.get_verbose()) \
-    { \
-        printf_epiworld("Running the model...\n");\
-    } \
-    for (epiworld_fast_uint niter = 0; niter < a.get_ndays(); ++niter)
-
 #define EPI_TOKENPASTE(a,b) a ## b
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
 
@@ -8262,9 +8255,7 @@ public:
     );
     Model<TSeq> & read_params(std::string fn, bool overwrite = false);
     epiworld_double get_param(std::string pname);
-    // void set_param(size_t k, epiworld_double val);
     void set_param(std::string pname, epiworld_double val);
-    // epiworld_double par(epiworld_fast_uint k);
     epiworld_double par(std::string pname) const;
     ///@}
 
@@ -9967,11 +9958,16 @@ inline Model<TSeq> & Model<TSeq>::run(
     // Record the baseline (day 0) and advance to day 1 using the base
     // implementation only. Calling virtual next() from reset() can invoke
     // model-specific logic before derived reset state is fully initialized.
-    Model<TSeq>::next();
+    next();
 
     // Initializing the simulation
     chrono_start();
-    EPIWORLD_RUN((*this))
+
+    // Verifying if the user wants to see the progress bar
+    if (get_verbose())
+        printf_epiworld("Running the model...\n");
+
+    for (epiworld_fast_uint niter = 0; niter < get_ndays(); ++niter)
     {
 
         #ifdef EPI_DEBUG
@@ -22690,7 +22686,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/models/interventions.hpp-
+ Start of -include/epiworld/models/../globalevents/pep.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -22699,10 +22695,10 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #ifndef EPIWORLD_MODELS_INTERVENTIONS_HPP
 #define EPIWORLD_MODELS_INTERVENTIONS_HPP
 
-// (already included include/epiworld/models/../config.hpp)
-// (already included include/epiworld/models/../model-bones.hpp)
-// (already included include/epiworld/models/../agent-bones.hpp)
-// (already included include/epiworld/models/../tools/vaccine.hpp)
+// (already included include/epiworld/models/../globalevents/../config.hpp)
+// (already included include/epiworld/models/../globalevents/../model-bones.hpp)
+// (already included include/epiworld/models/../globalevents/../agent-bones.hpp)
+// (already included include/epiworld/models/../globalevents/../tools/vaccine.hpp)
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class InterventionPEP : public GlobalEvent<TSeq> {
@@ -22746,7 +22742,7 @@ public:
      * example, if the intervention applies to agents in quarantine, then this
      * should include the states that correspond to quarantine.
      */
-    void configure(
+    InterventionPEP(
         std::string parameter_efficacy,
         std::string parameter_willingness,
         std::vector< int > quarantine_states,
@@ -22772,7 +22768,7 @@ public:
 };
 
 template<typename TSeq>
-inline void InterventionPEP<TSeq>::configure(
+inline InterventionPEP<TSeq>::InterventionPEP(
     std::string parameter_efficacy,
     std::string parameter_willingness,
     std::vector< int > quarantine_states,
@@ -22904,7 +22900,7 @@ inline bool InterventionPEP<TSeq>::agent_recovers(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/models/interventions.hpp-
+ End of -include/epiworld/models/../globalevents/pep.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -22932,6 +22928,11 @@ inline bool InterventionPEP<TSeq>::agent_recovers(
  * isolation_period days.
  * 
  * ![Model Diagram](../assets/img/measlesschool.png)
+ * 
+ * In the case of post-exposure prophylaxis (PEP), agents who are quarantined
+ * and exposed or susceptible can receive PEP with a certain willingness and
+ * efficacy. If they receive PEP, then they have a probability of moving to the
+ * recovered state, which is a function of the PEP efficacy.
  * 
  * 
  * @ingroup disease_specific
@@ -23133,7 +23134,12 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     for (auto & agent: this->get_agents())
     {
         auto s = agent.get_state();
-        if (IN(s, {EXPOSED, PRODROMAL, RASH, ISOLATED, DETECTED_HOSPITALIZED, QUARANTINED_EXPOSED, QUARANTINED_PRODROMAL, HOSPITALIZED}))
+        static const std::vector< int > states_with_virus = {
+            EXPOSED, PRODROMAL, RASH, ISOLATED, DETECTED_HOSPITALIZED,
+            QUARANTINED_EXPOSED, QUARANTINED_PRODROMAL, HOSPITALIZED
+        };
+
+        if (IN(s, states_with_virus))
         {
             if (agent.get_virus() == nullptr)
                 throw std::logic_error("The agent has no virus.");
@@ -23592,15 +23598,14 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Creating the PEP intervention and 
     // setting it up so we can call it as a global event.
-    InterventionPEP<TSeq> pep{};
-    pep.set_name("PEP intervention");
-
-    pep.configure(
+    InterventionPEP<TSeq> pep(
         "PEP efficacy",
         "PEP willingness",
         {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE},
         {EXPOSED, SUSCEPTIBLE}
     );
+
+    pep.set_name("PEP intervention");
 
     this->add_globalevent(pep);
 
