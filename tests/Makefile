@@ -28,6 +28,7 @@ $(NAME)_SOURCES := \
 	14d-measles.cpp \
 	14e-measles.cpp \
 	14f-measles-pep.cpp \
+	14g-measles-pep.cpp \
 	15-edgelist-after-run-multiple.cpp \
 	16-multiple-events.cpp \
 	17a-mixing-quarantine.cpp \
