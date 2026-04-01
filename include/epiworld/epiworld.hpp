@@ -31,10 +31,6 @@
 #define EPIWORLD_VERSION_MINOR 15
 #define EPIWORLD_VERSION_PATCH 0
 
-static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
-static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
-static const int epiworld_version_patch = EPIWORLD_VERSION_PATCH;
-
 #define EPIWORLD_VERSION_PRERELEASE "dev"
 
 static constexpr int epiworld_version_major = EPIWORLD_VERSION_MAJOR;

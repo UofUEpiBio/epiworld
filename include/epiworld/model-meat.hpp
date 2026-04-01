@@ -1252,7 +1252,9 @@ inline Model<TSeq> & Model<TSeq>::run(
 
     // Verifying if the user wants to see the progress bar
     if (get_verbose())
+    {
         printf_epiworld("Running the model...\n");
+    }
 
     for (epiworld_fast_uint niter = 0; niter < get_ndays(); ++niter)
     {
