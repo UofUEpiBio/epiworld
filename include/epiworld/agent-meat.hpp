@@ -635,7 +635,7 @@ inline bool Agent<TSeq>::has_tool(epiworld_fast_uint t) const
 }
 
 template<typename TSeq>
-inline bool Agent<TSeq>::has_tool(std::string name) const
+inline bool Agent<TSeq>::has_tool(std::string_view name) const
 {
 
     for (auto & tool : tools)
@@ -664,7 +664,7 @@ inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
 }
 
 template<typename TSeq>
-inline bool Agent<TSeq>::has_virus(std::string name) const
+inline bool Agent<TSeq>::has_virus(std::string_view name) const
 {
     
     if (virus->get_name() == name)
@@ -695,7 +695,7 @@ inline bool Agent<TSeq>::has_entity(epiworld_fast_uint t) const
 }
 
 template<typename TSeq>
-inline bool Agent<TSeq>::has_entity(std::string name, const Model<TSeq> & model) const
+inline bool Agent<TSeq>::has_entity(std::string_view name, const Model<TSeq> & model) const
 {
 
     for (auto & entity_id : entities)

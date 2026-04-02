@@ -5,7 +5,6 @@
 #include <cassert>
 #include "../tools/vaccine.hpp"
 #include "../model-bones.hpp"
-#include "../globalevents/pep.hpp"
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
@@ -28,11 +27,6 @@
  * isolation_period days.
  * 
  * ![Model Diagram](../assets/img/measlesschool.png)
- * 
- * In the case of post-exposure prophylaxis (PEP), agents who are quarantined
- * and exposed or susceptible can receive PEP with a certain willingness and
- * efficacy. If they receive PEP, then they have a probability of moving to the
- * recovered state, which is a function of the PEP efficacy.
  * 
  * 
  * @ingroup disease_specific
@@ -125,10 +119,7 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
-        epiworld_fast_int isolation_period,
-        // Policy parameters 2
-        epiworld_double pep_efficacy = 0.0,
-        epiworld_double pep_willingness = 0.0
+        epiworld_fast_int isolation_period
     );
     ///@}
 
@@ -368,7 +359,7 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
 
 LOCAL_UPDATE_FUN(_update_exposed) {
 
-    // if (InterventionPEP<TSeq>::agent_recovers(*p, *m, RECOVERED))
+    // if (InterventionMeaslesPEP<TSeq>::agent_recovers(*p, *m, RECOVERED))
     //     return;
 
     if (m->runif() < (1.0/p->get_virus()->get_incubation(m)))
@@ -632,9 +623,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_double prop_vaccinated,
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
-    epiworld_fast_int isolation_period,
-    epiworld_double pep_efficacy,
-    epiworld_double pep_willingness
+    epiworld_fast_int isolation_period
 ) {
 
     this->add_state("Susceptible",             this->_update_susceptible);
@@ -666,8 +655,6 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");
     this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
-    this->add_param(pep_efficacy, "PEP efficacy");
-    this->add_param(pep_willingness, "PEP willingness");
 
     // Designing the disease
     Virus<> measles("Measles");
@@ -695,19 +682,6 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
         this->_quarantine_agents, "Quarantine process"
     );
     this->add_globalevent(quarantine_event);
-
-    // Creating the PEP intervention and 
-    // setting it up so we can call it as a global event.
-    InterventionPEP<TSeq> pep(
-        "PEP efficacy",
-        "PEP willingness",
-        {QUARANTINED_EXPOSED, QUARANTINED_SUSCEPTIBLE},
-        {RECOVERED, SUSCEPTIBLE}
-    );
-
-    pep.set_name("PEP intervention");
-
-    this->add_globalevent(pep);
 
     // Setting the population
     this->agents_empty_graph(n);

@@ -2250,14 +2250,14 @@ inline Virus<TSeq> & Model<TSeq>::get_virus(size_t id)
 }
 
 template<typename TSeq>
-inline Virus<TSeq> & Model<TSeq>::get_virus(std::string name)
+inline Virus<TSeq> & Model<TSeq>::get_virus(std::string_view name)
 {
 
     for (auto & v : viruses)
         if (v->get_name() == name)
             return *v;
 
-    throw std::logic_error("The virus " + name + " was not found.");
+    throw std::logic_error("The virus " + std::string(name) + " was not found.");
 
 }
 
@@ -2273,18 +2273,18 @@ inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
 }
 
 template<typename TSeq>
-inline Tool<TSeq> & Model<TSeq>::get_tool(std::string name)
+inline Tool<TSeq> & Model<TSeq>::get_tool(std::string_view name)
 {
     for (auto & t : tools)
         if (t->get_name() == name)
             return *t;
 
-    throw std::logic_error("The tool " + name + " was not found.");
+    throw std::logic_error("The tool " + std::string(name) + " was not found.");
 
 }
 
 template<typename TSeq>
-inline bool Model<TSeq>::has_virus(std::string name) const
+inline bool Model<TSeq>::has_virus(std::string_view name) const
 {
     for (const auto & v : viruses)
         if (v->get_name() == name)
@@ -2294,7 +2294,7 @@ inline bool Model<TSeq>::has_virus(std::string name) const
 }
 
 template<typename TSeq>
-inline bool Model<TSeq>::has_tool(std::string name) const
+inline bool Model<TSeq>::has_tool(std::string_view name) const
 {
     for (const auto & t : tools)
         if (t->get_name() == name)

@@ -1,6 +1,7 @@
 #include "tests.hpp"
 
 using namespace epiworld;
+using MS = epimodels::ModelMeaslesSchool<>;
 
 EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
@@ -20,11 +21,24 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         7.0,     // Hospitalization duration
         0.1,     // Proportion vaccinated
         21u,     // Quarantine period
-        1.0,      // Quarantine willingness
-        4u,      // Isolation period
-        1.0,     // PEP efficacy
-        1.0      // PEP willingness
+        1.0,     // Quarantine willingness
+        4u       // Isolation period
     );
+
+    // Creating the PEP intervention and 
+    // setting it up so we can call it as a global event.
+    epimodels::InterventionMeaslesPEP<> pep(
+        1.0, // "PEP MMR efficacy"
+        1.0, // "PEP IG efficacy"
+        1.0, // "PEP willingness"
+        3.0, // "PEP MMR window"
+        {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
+        {MS::RECOVERED, MS::SUSCEPTIBLE}
+    );
+
+    pep.set_name("PEP intervention");
+
+    model_0.add_globalevent(pep);
 
     // Setting the distribution function of the initial cases
     model_0.get_virus(0).set_distribution(
