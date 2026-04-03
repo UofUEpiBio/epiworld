@@ -88,6 +88,13 @@ inline epiworld_double ToolImmunoglobulin<TSeq>::get_susceptibility_reduction(
     }
 
     // Deciding if the tool should be removed
+    #ifdef EPI_DEBUG
+    EPI_DEBUG_PRINTF(
+        "Agent %d; sim_id %li; today %d; removal_time %d\n",
+        this->agent->get_id(), model->get_sim_id(),
+        model->today(), _removal_time
+    );
+    #endif
     if (model->today() >= _removal_time)
     {
         this->get_agent()->rm_tool(*model, this->pos_in_agent);

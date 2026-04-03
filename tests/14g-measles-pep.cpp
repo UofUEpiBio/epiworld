@@ -1,3 +1,4 @@
+#define EPI_DEBUG
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -35,7 +36,7 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
         4.0 * 7.0, // "PEP IG half-life (mean)"
         7.0/2.0,   // "PEP IG half-life (sd)"
         1.0,       // "PEP willingness"
-        3.0,       // "PEP MMR window"
+        0.0,       // "PEP MMR window"
         {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
         {MS::RECOVERED, MS::SUSCEPTIBLE}
     );
@@ -157,7 +158,7 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
         }
     };
 
-    model.run_multiple(60, nsims, 1231, saver, true, true, 2);
+    model.run_multiple(200, nsims, 1231, saver, true, true, 2);
 
     model.print();
 

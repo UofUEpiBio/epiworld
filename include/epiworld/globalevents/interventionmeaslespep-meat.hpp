@@ -144,15 +144,13 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
             // on that again
             _agents_to_receive_pep.push_back(agent.get_id());
             _agents_to_receive_pep_next_state.push_back(this->_quarantine_states_for_pep[pos]);
-    
-                continue;
 
             // Checking when did the agent get infected
             int day_infected = agent.get_virus()->get_date();
 
             // If the date is within the window for PEP,
             // we administer MMR PEP to the agent
-            if ((today - day_infected) > pep_mmr_window)
+            if ((today - day_infected) >= pep_mmr_window)
             {
                 // We will administer MMR PEP to the agent
                 agent.add_tool(*model, tool_ig);

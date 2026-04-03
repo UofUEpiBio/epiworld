@@ -223,7 +223,7 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     // All agents with state >= EXPOSED should have a virus
     for (auto & agent: this->get_agents())
     {
-        auto s = agent.get_state();
+        int s = static_cast<int>(agent.get_state());
         static const std::vector< int > states_with_virus = {
             EXPOSED, PRODROMAL, RASH, ISOLATED, DETECTED_HOSPITALIZED,
             QUARANTINED_EXPOSED, QUARANTINED_PRODROMAL, HOSPITALIZED
