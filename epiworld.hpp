@@ -15392,7 +15392,6 @@ protected:
     VirusPtr<TSeq> virus = nullptr;
 
     std::vector< ToolPtr<TSeq> > tools;
-    unsigned int n_tools = 0u;
 
     void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
 
@@ -15637,7 +15636,7 @@ inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
 
         // For tool counts, use current state (p->state) not state_prev
         // because state_prev may be stale if multiple changes occurred today
-        for (size_t i = 0u; i < p->n_tools; ++i)
+        for (size_t i = 0u; i < p->tools.size(); ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
                 p->state,
@@ -15666,18 +15665,11 @@ inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
     ToolPtr<TSeq> & t = a.tool;
     
     // Update tool accounting
-    p->n_tools++;
-    size_t n_tools = p->n_tools;
+    p->tools.emplace_back(std::move(t));
+    size_t tool_pos = p->tools.size() - 1u;
 
-    if (n_tools <= p->tools.size())
-        p->tools[n_tools - 1] = std::move(t);
-    else
-        p->tools.emplace_back(std::move(t));
-
-    n_tools--;
-
-    p->tools[n_tools]->set_date(today());
-    p->tools[n_tools]->set_agent(p, n_tools);
+    p->tools[tool_pos]->set_date(today());
+    p->tools[tool_pos]->set_agent(p, tool_pos);
 
     // Change of state needs to be recorded and updated on the
     // tools.
@@ -15695,7 +15687,7 @@ inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
             );
     }
 
-    db.today_tool[p->tools.back()->get_id()][
+    db.today_tool[p->tools[tool_pos]->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
 
@@ -15722,7 +15714,7 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
 
         // For tool counts, use current state (p->state) not state_prev
         // because state_prev may be stale if multiple changes occurred today
-        for (size_t i = 0u; i < p->n_tools; ++i)
+        for (size_t i = 0u; i < p->tools.size(); ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
                 p->state,
@@ -15730,13 +15722,13 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
             );
     }
 
-    // The counters of the virus only needs to decrease.
-    // We use the previous state of the agent as that was
-    // the state when the virus was added.
+    // The counter of the removed virus must be decremented from the
+    // agent's current state (pre-transition), not state_prev.
+    // state_prev may refer to an earlier same-day state.
     #ifdef EPI_DEBUG
-    db.today_virus.at(v->get_id()).at(p->state_prev)--;
+    db.today_virus.at(v->get_id()).at(p->state)--;
     #else
-    db.today_virus[v->get_id()][p->state_prev]--;
+    db.today_virus[v->get_id()][p->state]--;
     #endif
 
     
@@ -15748,16 +15740,27 @@ template<typename TSeq>
 inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
 {
 
-    Agent<TSeq> * p   = a.agent;    
-    ToolPtr<TSeq> & t = a.agent->tools[a.tool->pos_in_agent];
+    Agent<TSeq> * p = a.agent;
+    ToolPtr<TSeq> & t = a.tool;
+    bool removed = false;
 
-    if (--p->n_tools > 0)
+    if (t)
     {
-        p->tools[p->n_tools]->pos_in_agent = t->pos_in_agent;
-        std::swap(
-            p->tools[t->pos_in_agent],
-            p->tools[p->n_tools]
-            );
+        // Remove tool(s) by id, following an erase/remove approach.
+        auto new_end = std::remove_if(
+            p->tools.begin(),
+            p->tools.end(),
+            [&t](const ToolPtr<TSeq> & tool_ptr) -> bool
+            {
+                return tool_ptr && (tool_ptr->get_id() == t->get_id());
+            }
+        );
+
+        removed = (new_end != p->tools.end());
+        p->tools.erase(new_end, p->tools.end());
+
+        for (size_t i = 0u; i < p->tools.size(); ++i)
+            p->tools[i]->pos_in_agent = static_cast<int>(i);
     }
 
     // Change of state needs to be recorded and updated on the
@@ -15776,14 +15779,20 @@ inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
             );
     }
 
-    // Lastly, we increase the daily count of the tool.
-    // Like rm_virus, we use the previous state of the agent
-    // as that was the state when the tool was added.
-    #ifdef EPI_DEBUG
-    db.today_tool.at(t->get_id()).at(p->state_prev)--;
-    #else
-    db.today_tool[t->get_id()][p->state_prev]--;
-    #endif
+    // Like rm_virus, remove the tool count from the agent's current
+    // state (pre-transition). Using state_prev can underflow when
+    // the agent changed state earlier in the day.
+    if (removed)
+    {
+        #ifdef EPI_DEBUG
+        db.today_tool.at(t->get_id()).at(p->state)--;
+        #else
+        db.today_tool[t->get_id()][p->state]--;
+        #endif
+
+        t->agent = nullptr;
+        t->pos_in_agent = -99;
+    }
 
     return;
 
@@ -15806,7 +15815,7 @@ inline void Model<TSeq>::_event_change_state(Event<TSeq> & a)
                 p->virus->get_id(), p->state, a.new_state
             );
 
-        for (size_t i = 0u; i < p->n_tools; ++i)
+        for (size_t i = 0u; i < p->tools.size(); ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
                 p->state,
@@ -15902,8 +15911,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     state_prev(p.state_prev), 
     state_last_changed(p.state_last_changed),
     id(p.id),
-    tools(std::move(p.tools)), /// Needs to be adjusted
-    n_tools(p.n_tools)
+    tools(std::move(p.tools)) /// Needs to be adjusted
 {
 
     state = p.state;
@@ -15957,8 +15965,7 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
 
     tools.clear();
     tools.reserve(p.get_n_tools());
-    n_tools = p.get_n_tools();
-    for (size_t i = 0u; i < n_tools; ++i)
+    for (size_t i = 0u; i < p.get_n_tools(); ++i)
     {
         tools.emplace_back(std::shared_ptr<Tool<TSeq>>(p.tools[i]->clone_ptr()));
         tools.back()->set_agent(this, i);
@@ -16006,10 +16013,9 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
         virus = nullptr;
     
     
-    n_tools = other_agent.n_tools;
     tools.clear();
-    tools.reserve(n_tools);
-    for (size_t i = 0u; i < n_tools; ++i)
+    tools.reserve(other_agent.get_n_tools());
+    for (size_t i = 0u; i < other_agent.get_n_tools(); ++i)
     {
         tools.emplace_back(std::shared_ptr<Tool<TSeq>>(other_agent.tools[i]->clone_ptr()));
         tools.back()->set_agent(this, i);
@@ -16106,10 +16112,10 @@ inline void Agent<TSeq>::rm_tool(
 )
 {
 
-    if (tool_idx >= n_tools)
+    if (tool_idx >= tools.size())
         throw std::range_error(
             "The Tool you want to remove is out of range. This Agent only has " +
-            std::to_string(n_tools) + " tools."
+            std::to_string(tools.size()) + " tools."
         );
 
     model._add_event(
@@ -16311,7 +16317,7 @@ inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(std::string name)
 template<typename TSeq>
 inline size_t Agent<TSeq>::get_n_tools() const noexcept
 {
-    return n_tools;
+    return tools.size();
 }
 
 template<typename TSeq>
@@ -16494,7 +16500,6 @@ inline void Agent<TSeq>::reset()
 
     this->tools.clear();
     decltype(this->tools)().swap(this->tools);
-    n_tools = 0u;
 
     this->entities.clear();
     decltype(this->entities)().swap(this->entities);
@@ -16605,7 +16610,7 @@ inline void Agent<TSeq>::print(
             model.states_labels[state].c_str(),
             static_cast<int>(state),
             virus == nullptr ? std::string("no").c_str() : std::string("yes").c_str(),
-            static_cast<int>(n_tools),
+            static_cast<int>(tools.size()),
             static_cast<int>(n_neighbors)
         );
     }
@@ -16617,7 +16622,7 @@ inline void Agent<TSeq>::print(
             model.states_labels[state].c_str(), static_cast<int>(state));
         printf_epiworld("  Has virus    : %s\n", virus == nullptr ?
             std::string("no").c_str() : std::string("yes").c_str());
-        printf_epiworld("  Tool count   : %i\n", static_cast<int>(n_tools));
+        printf_epiworld("  Tool count   : %i\n", static_cast<int>(tools.size()));
         printf_epiworld("  Neigh. count : %i\n", static_cast<int>(n_neighbors));
 
         size_t nfeats = model.get_agents_data_ncols();
@@ -16789,9 +16794,12 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
         )
     }
     
-    EPI_DEBUG_FAIL_AT_TRUE(n_tools != other.n_tools, "Agent:: n_tools don't match")
+    EPI_DEBUG_FAIL_AT_TRUE(
+        tools.size() != other.tools.size(),
+        "Agent:: n_tools don't match"
+    )
 
-    for (size_t i = 0u; i < n_tools; ++i)
+    for (size_t i = 0u; i < tools.size(); ++i)
     {
         
         EPI_DEBUG_FAIL_AT_TRUE(
@@ -18535,6 +18543,13 @@ inline epiworld_double ToolImmunoglobulin<TSeq>::get_susceptibility_reduction(
     }
 
     // Deciding if the tool should be removed
+    #ifdef EPI_DEBUG
+    EPI_DEBUG_PRINTF(
+        "Agent %d; sim_id %li; today %d; removal_time %d\n",
+        this->agent->get_id(), model->get_sim_id(),
+        model->today(), _removal_time
+    );
+    #endif
     if (model->today() >= _removal_time)
     {
         this->get_agent()->rm_tool(*model, this->pos_in_agent);
@@ -18721,6 +18736,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     
     // Iterating over the agents
     _agents_to_receive_pep.clear();
+    _agents_to_receive_pep_next_state.clear();
     for (auto & agent: model->get_agents())
     {
 
@@ -18752,15 +18768,13 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
             // on that again
             _agents_to_receive_pep.push_back(agent.get_id());
             _agents_to_receive_pep_next_state.push_back(this->_quarantine_states_for_pep[pos]);
-    
-                continue;
 
             // Checking when did the agent get infected
             int day_infected = agent.get_virus()->get_date();
 
             // If the date is within the window for PEP,
             // we administer MMR PEP to the agent
-            if ((today - day_infected) > pep_mmr_window)
+            if ((today - day_infected) >= pep_mmr_window)
             {
                 // We will administer MMR PEP to the agent
                 agent.add_tool(*model, tool_ig);
@@ -23231,7 +23245,7 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     // All agents with state >= EXPOSED should have a virus
     for (auto & agent: this->get_agents())
     {
-        auto s = agent.get_state();
+        int s = static_cast<int>(agent.get_state());
         static const std::vector< int > states_with_virus = {
             EXPOSED, PRODROMAL, RASH, ISOLATED, DETECTED_HOSPITALIZED,
             QUARANTINED_EXPOSED, QUARANTINED_PRODROMAL, HOSPITALIZED

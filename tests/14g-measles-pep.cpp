@@ -7,7 +7,7 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
 
     using MS = epimodels::ModelMeaslesSchool<>;
 
-    int n_seeds = 1;
+    int n_seeds = 5;
     epimodels::ModelMeaslesSchool<> model(
         1000,    // Number of agents
         n_seeds, // Number of initial cases
@@ -35,10 +35,10 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
         1.0,       // "PEP IG efficacy"
         4.0 * 7.0, // "PEP IG half-life (mean)"
         7.0/2.0,   // "PEP IG half-life (sd)"
-        1.0,       // "PEP willingness"
-        0.0,       // "PEP MMR window"
-        {MS::QUARANTINED_EXPOSED}, // MS::QUARANTINED_SUSCEPTIBLE},
-        {MS::SUSCEPTIBLE} //, MS::SUSCEPTIBLE}
+        0.5,       // "PEP willingness"
+        3.0,       // "PEP MMR window"
+        {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
+        {MS::SUSCEPTIBLE, MS::SUSCEPTIBLE}
     );
     
     model.add_globalevent(pep);

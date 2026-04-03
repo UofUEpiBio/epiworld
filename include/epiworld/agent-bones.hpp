@@ -61,7 +61,6 @@ protected:
     VirusPtr<TSeq> virus = nullptr;
 
     std::vector< ToolPtr<TSeq> > tools;
-    unsigned int n_tools = 0u;
 
     void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
 
