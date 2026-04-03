@@ -120,13 +120,13 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
             );
     }
 
-    // The counters of the virus only needs to decrease.
-    // We use the previous state of the agent as that was
-    // the state when the virus was added.
+    // The counter of the removed virus must be decremented from the
+    // agent's current state (pre-transition), not state_prev.
+    // state_prev may refer to an earlier same-day state.
     #ifdef EPI_DEBUG
-    db.today_virus.at(v->get_id()).at(p->state_prev)--;
+    db.today_virus.at(v->get_id()).at(p->state)--;
     #else
-    db.today_virus[v->get_id()][p->state_prev]--;
+    db.today_virus[v->get_id()][p->state]--;
     #endif
 
     
@@ -166,13 +166,13 @@ inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
             );
     }
 
-    // Lastly, we increase the daily count of the tool.
-    // Like rm_virus, we use the previous state of the agent
-    // as that was the state when the tool was added.
+    // Like rm_virus, remove the tool count from the agent's current
+    // state (pre-transition). Using state_prev can underflow when
+    // the agent changed state earlier in the day.
     #ifdef EPI_DEBUG
-    db.today_tool.at(t->get_id()).at(p->state_prev)--;
+    db.today_tool.at(t->get_id()).at(p->state)--;
     #else
-    db.today_tool[t->get_id()][p->state_prev]--;
+    db.today_tool[t->get_id()][p->state]--;
     #endif
 
     return;

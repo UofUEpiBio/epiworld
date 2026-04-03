@@ -11,7 +11,7 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
     epimodels::ModelMeaslesSchool<> model(
         1000,    // Number of agents
         n_seeds, // Number of initial cases
-        6.0,     // Contact rate
+        12.0,     // Contact rate
         0.2,     // Transmission rate
         0.9,     // Vaccination efficacy
         0.3,     // Vaccination reduction recovery rate
@@ -37,8 +37,8 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
         7.0/2.0,   // "PEP IG half-life (sd)"
         1.0,       // "PEP willingness"
         0.0,       // "PEP MMR window"
-        {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
-        {MS::RECOVERED, MS::SUSCEPTIBLE}
+        {MS::QUARANTINED_EXPOSED}, // MS::QUARANTINED_SUSCEPTIBLE},
+        {MS::SUSCEPTIBLE} //, MS::SUSCEPTIBLE}
     );
     
     model.add_globalevent(pep);

@@ -113,6 +113,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     
     // Iterating over the agents
     _agents_to_receive_pep.clear();
+    _agents_to_receive_pep_next_state.clear();
     for (auto & agent: model->get_agents())
     {
 
