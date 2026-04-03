@@ -4,7 +4,6 @@
 #include "../config.hpp"
 #include "../model-bones.hpp"
 #include "../agent-bones.hpp"
-#include "../tools/vaccine.hpp"
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class InterventionMeaslesPEP final : public GlobalEvent<TSeq> {
@@ -15,11 +14,16 @@ private:
     static inline const std::string _par_mmr_efficacy{"PEP MMR efficacy"};
     static inline const std::string _par_ig_efficacy{"PEP IG efficacy"};
     static inline const std::string _par_pep_mmr_window{"PEP MMR window"};
+    static inline const std::string _par_half_life_mean{"PEP IG half-life (mean)"};
+    static inline const std::string _par_half_life_sd{"PEP IG half-life (sd)"};
+
 
     // Willigness and efficacy of the PEP
     epiworld_double _willingness;
     epiworld_double _mmr_efficacy;
     epiworld_double _ig_efficacy;
+    epiworld_double _ig_half_life_mean;
+    epiworld_double _ig_half_life_sd;
     epiworld_double _pep_mmr_window;
 
     // Willingness of the agents to receive PEP
@@ -43,6 +47,11 @@ private:
      */
     void _setup(Model<TSeq> * model);
 
+    // List of agents that will receive PEP
+    // This is used to avoid iterating over the agents twice.
+    std::vector< size_t > _agents_to_receive_pep;
+    std::vector< int > _agents_to_receive_pep_next_state;
+
 public:
 
     /**
@@ -62,8 +71,11 @@ public:
      * position.
      */
     InterventionMeaslesPEP(
+        std::string name,
         epiworld_double mmr_efficacy,
         epiworld_double ig_efficacy,
+        epiworld_double ig_half_life_mean,
+        epiworld_double ig_half_life_sd,
         epiworld_double pep_willingness,
         epiworld_double mmr_window,
         std::vector< int > quarantine_states,

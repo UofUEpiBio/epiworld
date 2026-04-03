@@ -26,17 +26,20 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
         4u       // Isolation period
     );
 
-    // Creating the PEP intervention with both MMR and IG
+    // Creating the PEP intervention and 
+    // setting it up so we can call it as a global event.
     epimodels::InterventionMeaslesPEP<> pep(
-        1.0, // PEP MMR efficacy
-        1.0, // PEP IG efficacy
-        1.0, // PEP willingness
-        3.0, // PEP MMR window (days since infection)
+        "Post-exposure prophylaxis for measles", // Name of the intervention
+        1.0,       // "PEP MMR efficacy"
+        1.0,       // "PEP IG efficacy"
+        4.0 * 7.0, // "PEP IG half-life (mean)"
+        7.0/2.0,   // "PEP IG half-life (sd)"
+        1.0,       // "PEP willingness"
+        3.0,       // "PEP MMR window"
         {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
         {MS::RECOVERED, MS::SUSCEPTIBLE}
     );
-
-    pep.set_name("PEP intervention");
+    
     model.add_globalevent(pep);
 
     // Setting the distribution function of the initial cases

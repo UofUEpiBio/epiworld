@@ -171,7 +171,6 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
         if (agent.get_n_tools() != 0u)
             continue;
 
-
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
         if (

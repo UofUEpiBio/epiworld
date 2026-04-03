@@ -16,11 +16,6 @@ class Viruses_const;
 template<typename TSeq>
 class Tool;
 
-template<typename TSeq>
-class Tools;
-
-template<typename TSeq>
-class Tools_const;
 
 template<typename TSeq>
 class Queue;
@@ -47,11 +42,9 @@ class Agent {
     friend class Model<TSeq>;
     friend class Virus<TSeq>;
     friend class Tool<TSeq>;
-    friend class Tools<TSeq>;
-    friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
     friend class AgentsSample<TSeq>;
-private:
+protected:
 
     std::vector< size_t > * neighbors = nullptr;
     std::vector< size_t > * neighbors_locations = nullptr;
@@ -170,8 +163,8 @@ public:
     ToolPtr<TSeq> & get_tool(int i);
     ToolPtr<TSeq> & get_tool(std::string name);
 
-    Tools<TSeq> get_tools();
-    const Tools_const<TSeq> get_tools() const;
+    std::vector<ToolPtr<TSeq>> get_tools();
+    const std::vector<ToolPtr<TSeq>> get_tools() const;
     size_t get_n_tools() const noexcept;
 
     void mutate_virus();

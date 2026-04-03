@@ -1242,9 +1242,7 @@ inline Model<TSeq> & Model<TSeq>::run(
     // Starting first infection and tools
     reset();
 
-    // Record the baseline (day 0) and advance to day 1 using the base
-    // implementation only. Calling virtual next() from reset() can invoke
-    // model-specific logic before derived reset state is fully initialized.
+    // Record the baseline (day 0) and advance to day 1
     next();
 
     // Initializing the simulation

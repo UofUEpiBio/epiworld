@@ -396,13 +396,13 @@ inline const VirusPtr<TSeq> & Agent<TSeq>::get_virus() const {
 
 
 template<typename TSeq>
-inline Tools<TSeq> Agent<TSeq>::get_tools() {
-    return Tools<TSeq>(*this);
+inline std::vector< ToolPtr<TSeq> > Agent<TSeq>::get_tools() {
+    return tools;
 }
 
 template<typename TSeq>
-inline const Tools_const<TSeq> Agent<TSeq>::get_tools() const {
-    return Tools_const<TSeq>(*this);
+inline const std::vector< ToolPtr<TSeq> > Agent<TSeq>::get_tools() const {
+    return tools;
 }
 
 template<typename TSeq>
