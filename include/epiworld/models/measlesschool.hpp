@@ -359,8 +359,6 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
 
 LOCAL_UPDATE_FUN(_update_exposed) {
 
-    // if (InterventionMeaslesPEP<TSeq>::agent_recovers(*p, *m, RECOVERED))
-    //     return;
 
     if (m->runif() < (1.0/p->get_virus()->get_incubation(m)))
         p->change_state(*m, ModelMeaslesSchool<TSeq>::PRODROMAL);
@@ -505,17 +503,6 @@ LOCAL_UPDATE_FUN(_update_isolated_recovered) {
 }
 
 LOCAL_UPDATE_FUN(_update_q_exposed) {
-
-    #ifdef EPI_DEBUG
-    if (m->par("PEP willingness") >= 0.999999999)
-    {
-        throw std::logic_error(
-            std::string("This shouldn't happen. ") +
-            std::string("When PEP willingness is 1, then no agent should be ") +
-            std::string("in QUARANTINED_EXPOSED state.")
-        );
-    }
-    #endif
 
     // How many days since quarantine started
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);

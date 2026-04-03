@@ -173,7 +173,7 @@ inline bool InterventionMeaslesPEP<TSeq>::agent_recovers(
 
         // Adding the tool
         auto & tool = p.get_tool("PEP MMR");
-        if (tool.get_susceptibility_reduction(p.get_virus(), m) > 0.0)
+        if (tool->get_susceptibility_reduction(p.get_virus(), m) > 0.0)
         {
             p.rm_virus(m, next_state);
             return true;
