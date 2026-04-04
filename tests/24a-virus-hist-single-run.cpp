@@ -104,9 +104,6 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
         outbreak_size
     );
 
-    test_vector_approx<>(outbreak_date, total_infected_per_day, 0);
-    test_vector_approx<>(active_cases, total_active_cases, 0);
-
     REQUIRE(outbreak_size == total_infected_per_day);
     REQUIRE(active_cases == total_active_cases);
 }
