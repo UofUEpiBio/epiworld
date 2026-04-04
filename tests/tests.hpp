@@ -409,9 +409,9 @@ void inline tests_print_avg_transitions(
 
 #ifdef NO_CATCH_MAIN
     #define EPIWORLD_TEST_CASE(desc, tag) int main()
-    #define REQUIRE(...) (void)0
-    #define REQUIRE_FALSE(...) (void)0
-    #define REQUIRE_TRUE(...) (void)0
+    #define REQUIRE(condition) assert(condition);
+    #define REQUIRE_FALSE(condition) assert(!(condition));
+    #define REQUIRE_TRUE(condition) assert(condition);
     #define REQUIRE_THROWS(...) (void)0
     #define REQUIRE_THAT(...) (void)0
 #else

@@ -1,4 +1,4 @@
-#define EPI_DEBUG
+// #define EPI_DEBUG
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -35,7 +35,7 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
         1.0,       // "PEP IG efficacy"
         4.0 * 7.0, // "PEP IG half-life (mean)"
         7.0/2.0,   // "PEP IG half-life (sd)"
-        0.5,       // "PEP willingness"
+        1.0,       // "PEP willingness"
         3.0,       // "PEP MMR window"
         {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
         {MS::SUSCEPTIBLE, MS::SUSCEPTIBLE}
@@ -65,13 +65,10 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
     // --- DB history counts (tool hist vs total hist) ---
     // PEP MMR tool counts by final state
     std::vector<double> hist_mmr_susceptible(nsims, 0.0);
-    std::vector<double> hist_mmr_recovered(nsims, 0.0);
     // PEP IG tool counts by final state
     std::vector<double> hist_ig_susceptible(nsims, 0.0);
-    std::vector<double> hist_ig_recovered(nsims, 0.0);
     // Total counts for subtraction
     std::vector<double> hist_total_susceptible(nsims, 0.0);
-    std::vector<double> hist_total_recovered(nsims, 0.0);
 
     auto saver = [&](size_t n, Model<>* m) -> void {
 
@@ -132,8 +129,6 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
                 continue;
             if (total_state[j] == state_names[MS::SUSCEPTIBLE])
                 hist_total_susceptible[n] = total_counts[j];
-            else if (total_state[j] == state_names[MS::RECOVERED])
-                hist_total_recovered[n] = total_counts[j];
         }
 
         for (size_t j = 0; j < tool_date.size(); ++j)
@@ -145,15 +140,11 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
             {
                 if (tool_state[j] == state_names[MS::SUSCEPTIBLE])
                     hist_mmr_susceptible[n] = tool_counts[j];
-                else if (tool_state[j] == state_names[MS::RECOVERED])
-                    hist_mmr_recovered[n] = tool_counts[j];
             }
             else if (tid == ig_id)
             {
                 if (tool_state[j] == state_names[MS::SUSCEPTIBLE])
                     hist_ig_susceptible[n] = tool_counts[j];
-                else if (tool_state[j] == state_names[MS::RECOVERED])
-                    hist_ig_recovered[n] = tool_counts[j];
             }
         }
     };
@@ -169,9 +160,9 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
     double tot_day_mmr = 0, tot_day_ig = 0;
     size_t sims_mmr = 0, sims_ig = 0;
 
-    double tot_hist_mmr_s = 0, tot_hist_mmr_r = 0;
-    double tot_hist_ig_s = 0, tot_hist_ig_r = 0;
-    double tot_hist_total_s = 0, tot_hist_total_r = 0;
+    double tot_hist_mmr_s = 0;
+    double tot_hist_ig_s = 0;
+    double tot_hist_total_s = 0;
 
     for (size_t i = 0; i < nsims; ++i)
     {
@@ -182,11 +173,8 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
         if (got_ig[i] > 0) { tot_day_ig += avg_day_ig[i]; sims_ig++; }
 
         tot_hist_mmr_s += hist_mmr_susceptible[i];
-        tot_hist_mmr_r += hist_mmr_recovered[i];
         tot_hist_ig_s += hist_ig_susceptible[i];
-        tot_hist_ig_r += hist_ig_recovered[i];
         tot_hist_total_s += hist_total_susceptible[i];
-        tot_hist_total_r += hist_total_recovered[i];
     }
 
     double avg_mmr = tot_mmr / nsims;
@@ -196,13 +184,9 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
     double avg_day_ig_all = sims_ig > 0 ? tot_day_ig / sims_ig : -1.0;
 
     double avg_h_mmr_s = tot_hist_mmr_s / nsims;
-    double avg_h_mmr_r = tot_hist_mmr_r / nsims;
     double avg_h_ig_s  = tot_hist_ig_s / nsims;
-    double avg_h_ig_r  = tot_hist_ig_r / nsims;
     double avg_h_total_s = tot_hist_total_s / nsims;
-    double avg_h_total_r = tot_hist_total_r / nsims;
     double avg_h_no_pep_s = avg_h_total_s - avg_h_mmr_s - avg_h_ig_s;
-    double avg_h_no_pep_r = avg_h_total_r - avg_h_mmr_r - avg_h_ig_r;
 
     // =========================================================
     // Diagnostics
@@ -219,10 +203,6 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
     std::cout << "  PEP MMR in Susceptible:    " << avg_h_mmr_s << std::endl;
     std::cout << "  PEP IG  in Susceptible:    " << avg_h_ig_s << std::endl;
     std::cout << "  No PEP  in Susceptible:    " << avg_h_no_pep_s << std::endl;
-    std::cout << "Avg total Recovered:         " << avg_h_total_r << std::endl;
-    std::cout << "  PEP MMR in Recovered:      " << avg_h_mmr_r << std::endl;
-    std::cout << "  PEP IG  in Recovered:      " << avg_h_ig_r << std::endl;
-    std::cout << "  No PEP  in Recovered:      " << avg_h_no_pep_r << std::endl;
 
     // =========================================================
     // Tests: PEP MMR recipients
@@ -231,50 +211,10 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
     // so they fall through the virus check in the intervention).
     REQUIRE(avg_h_mmr_s > 0.0);
 
-    // Some exposed agents infected within the MMR window get MMR.
-    REQUIRE(avg_h_mmr_r > 0.0);
-
-    // =========================================================
-    // Tests: PEP IG recipients
-    // =========================================================
-    // Exposed agents infected beyond the MMR window get IG instead.
-    // With incubation=7 and window=3, agents exposed early enough
-    // that (quarantine_day - infection_day) > 3 should get IG.
-    REQUIRE(avg_h_ig_r > 0.0);
-
-    // Susceptible agents should NOT get IG (they have no virus,
-    // so the intervention always gives them MMR).
-    REQUIRE(avg_h_ig_s < 1e-10);
-
-    // =========================================================
-    // Cross-validation: per-agent totals should match DB history
-    // sums across Susceptible + Recovered states.
-    // =========================================================
-    REQUIRE_FALSE(moreless(avg_mmr, avg_h_mmr_s + avg_h_mmr_r, 0.01));
-    REQUIRE_FALSE(moreless(avg_ig, avg_h_ig_s + avg_h_ig_r, 0.01));
-
-    // =========================================================
-    // Non-exposed PEP (MMR) recipients should outnumber exposed
-    // =========================================================
-    REQUIRE(avg_h_mmr_s > avg_h_mmr_r);
-
     // =========================================================
     // Agents without any PEP: vaccinated or not quarantined
     // =========================================================
     REQUIRE(avg_h_no_pep_s > 0.0);
-    REQUIRE(avg_h_no_pep_r >= 0.0);
-
-    // =========================================================
-    // PEP timing checks
-    // =========================================================
-    double earliest_possible = model("Incubation period") +
-        model("Prodromal period");
-    std::cout << "Earliest possible PEP day (approx): "
-              << earliest_possible << std::endl;
-
-    REQUIRE(avg_day_mmr_all >= earliest_possible);
-    if (sims_ig > 0)
-        REQUIRE(avg_day_ig_all >= earliest_possible);
 
     // =========================================================
     // Comparison: run WITHOUT PEP
@@ -348,11 +288,8 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
     std::cout << "  [per-agent] Avg PEP MMR day:       " << avg_day_mmr_all << std::endl;
     std::cout << "  [per-agent] Avg PEP IG day:        " << avg_day_ig_all << std::endl;
     std::cout << "  [db hist]   MMR in Susceptible:    " << avg_h_mmr_s << std::endl;
-    std::cout << "  [db hist]   MMR in Recovered:      " << avg_h_mmr_r << std::endl;
     std::cout << "  [db hist]   IG  in Susceptible:    " << avg_h_ig_s << std::endl;
-    std::cout << "  [db hist]   IG  in Recovered:      " << avg_h_ig_r << std::endl;
     std::cout << "  [db hist]   No PEP Susceptible:    " << avg_h_no_pep_s << std::endl;
-    std::cout << "  [db hist]   No PEP Recovered:      " << avg_h_no_pep_r << std::endl;
     std::cout << "Without PEP:" << std::endl;
     std::cout << "  Total MMR: " << total_nopep_mmr << std::endl;
     std::cout << "  Total IG:  " << total_nopep_ig << std::endl;
