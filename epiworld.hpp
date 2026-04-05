@@ -31,9 +31,27 @@
 #define EPIWORLD_VERSION_MINOR 15
 #define EPIWORLD_VERSION_PATCH 0
 
-static const int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
-static const int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
-static const int epiworld_version_patch = EPIWORLD_VERSION_PATCH;
+#define EPIWORLD_VERSION_PRERELEASE "dev"
+
+static constexpr int epiworld_version_major = EPIWORLD_VERSION_MAJOR;
+static constexpr int epiworld_version_minor = EPIWORLD_VERSION_MINOR;
+static constexpr int epiworld_version_patch = EPIWORLD_VERSION_PATCH;
+static constexpr std::string_view epiworld_version_prerelease =
+    EPIWORLD_VERSION_PRERELEASE;
+
+inline std::string epiworld_version() {
+    std::string v =
+        std::to_string(epiworld_version_major) + "." +
+        std::to_string(epiworld_version_minor) + "." +
+        std::to_string(epiworld_version_patch);
+
+    if (!epiworld_version_prerelease.empty()) {
+        v += "-";
+        v += epiworld_version_prerelease;
+    }
+
+    return v;
+}
 
 namespace epiworld {
 
@@ -109,12 +127,6 @@ class Viruses_const;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Tool;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Tools;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Tools_const;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Entity;
@@ -448,13 +460,6 @@ public:
     epiworld::Model<TSeq> * m) -> epiworld_double
 
 #define EPI_RUNIF() m->runif()
-
-#define EPIWORLD_RUN(a) \
-    if (a.get_verbose()) \
-    { \
-        printf_epiworld("Running the model...\n");\
-    } \
-    for (epiworld_fast_uint niter = 0; niter < a.get_ndays(); ++niter)
 
 #define EPI_TOKENPASTE(a,b) a ## b
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
@@ -8262,9 +8267,7 @@ public:
     );
     Model<TSeq> & read_params(std::string fn, bool overwrite = false);
     epiworld_double get_param(std::string pname);
-    // void set_param(size_t k, epiworld_double val);
     void set_param(std::string pname, epiworld_double val);
-    // epiworld_double par(epiworld_fast_uint k);
     epiworld_double par(std::string pname) const;
     ///@}
 
@@ -8336,12 +8339,12 @@ public:
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
     const std::vector< ToolPtr<TSeq> > & get_tools() const;
     Virus<TSeq> & get_virus(size_t id);
-    Virus<TSeq> & get_virus(std::string name);
+    Virus<TSeq> & get_virus(std::string_view name);
     Tool<TSeq> & get_tool(size_t id);
-    Tool<TSeq> & get_tool(std::string name);
+    Tool<TSeq> & get_tool(std::string_view name);
 
-    bool has_virus(std::string name) const;
-    bool has_tool(std::string name) const;
+    bool has_virus(std::string_view name) const;
+    bool has_tool(std::string_view name) const;
 
     /**
      * @brief Set the agents data object
@@ -9964,14 +9967,19 @@ inline Model<TSeq> & Model<TSeq>::run(
     // Starting first infection and tools
     reset();
 
-    // Record the baseline (day 0) and advance to day 1 using the base
-    // implementation only. Calling virtual next() from reset() can invoke
-    // model-specific logic before derived reset state is fully initialized.
-    Model<TSeq>::next();
+    // Record the baseline (day 0) and advance to day 1
+    next();
 
     // Initializing the simulation
     chrono_start();
-    EPIWORLD_RUN((*this))
+
+    // Verifying if the user wants to see the progress bar
+    if (get_verbose())
+    {
+        printf_epiworld("Running the model...\n");
+    }
+
+    for (epiworld_fast_uint niter = 0; niter < get_ndays(); ++niter)
     {
 
         #ifdef EPI_DEBUG
@@ -11237,7 +11245,7 @@ inline void Model<TSeq>::run_globalevents()
     {
         event->operator()(this, today());
         events_run();
-    }
+    }    
 
 }
 
@@ -11290,14 +11298,14 @@ inline Virus<TSeq> & Model<TSeq>::get_virus(size_t id)
 }
 
 template<typename TSeq>
-inline Virus<TSeq> & Model<TSeq>::get_virus(std::string name)
+inline Virus<TSeq> & Model<TSeq>::get_virus(std::string_view name)
 {
 
     for (auto & v : viruses)
         if (v->get_name() == name)
             return *v;
 
-    throw std::logic_error("The virus " + name + " was not found.");
+    throw std::logic_error("The virus " + std::string(name) + " was not found.");
 
 }
 
@@ -11313,18 +11321,18 @@ inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
 }
 
 template<typename TSeq>
-inline Tool<TSeq> & Model<TSeq>::get_tool(std::string name)
+inline Tool<TSeq> & Model<TSeq>::get_tool(std::string_view name)
 {
     for (auto & t : tools)
         if (t->get_name() == name)
             return *t;
 
-    throw std::logic_error("The tool " + name + " was not found.");
+    throw std::logic_error("The tool " + std::string(name) + " was not found.");
 
 }
 
 template<typename TSeq>
-inline bool Model<TSeq>::has_virus(std::string name) const
+inline bool Model<TSeq>::has_virus(std::string_view name) const
 {
     for (const auto & v : viruses)
         if (v->get_name() == name)
@@ -11334,7 +11342,7 @@ inline bool Model<TSeq>::has_virus(std::string name) const
 }
 
 template<typename TSeq>
-inline bool Model<TSeq>::has_tool(std::string name) const
+inline bool Model<TSeq>::has_tool(std::string_view name) const
 {
     for (const auto & t : tools)
         if (t->get_name() == name)
@@ -13205,234 +13213,7 @@ inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
 
 
     
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/tools-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_TOOLS_BONES_HPP
-#define EPIWORLD_TOOLS_BONES_HPP
-
-template<typename TSeq>
-class Tool;
-
-template<typename TSeq>
-class Agent;
-
-// #define ToolPtr<TSeq> std::shared_ptr< Tool<TSeq> >
-
-/**
- * @brief Set of tools (useful for building iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Tools {
-    friend class Tool<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    std::vector< ToolPtr<TSeq> > * dat;
-    const unsigned int * n_tools;
-
-public:
-
-    Tools() = delete;
-    Tools(Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
-
-    typename std::vector< ToolPtr<TSeq> >::iterator begin();
-    typename std::vector< ToolPtr<TSeq> >::iterator end();
-
-    ToolPtr<TSeq> & operator()(size_t i);
-    ToolPtr<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    void print() const noexcept;
-
-};
-
-template<typename TSeq>
-inline typename std::vector< ToolPtr<TSeq> >::iterator Tools<TSeq>::begin()
-{
-
-    if (*n_tools == 0u)
-        return dat->end();
-    
-    return dat->begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< ToolPtr<TSeq> >::iterator Tools<TSeq>::end()
-{
-     
-    return begin() + *n_tools;
-}
-
-template<typename TSeq>
-inline ToolPtr<TSeq> & Tools<TSeq>::operator()(size_t i)
-{
-
-    if (i >= *n_tools)
-        throw std::range_error("Tool index out of range.");
-
-    return dat->operator[](i);
-
-}
-
-template<typename TSeq>
-inline ToolPtr<TSeq> & Tools<TSeq>::operator[](size_t i)
-{
-
-    return dat->operator[](i);
-
-}
-
-template<typename TSeq>
-inline size_t Tools<TSeq>::size() const noexcept 
-{
-    return *n_tools;
-}
-
-template<typename TSeq>
-inline void Tools<TSeq>::print() const noexcept 
-{
-    if (*n_tools == 0u)
-    {
-        printf_epiworld("List of tools (none)\n");
-        return;
-    }
-
-    printf_epiworld("List of tools (%i): ", static_cast<int>(*n_tools));
-
-    // Printing the name of each virus separated by a comma
-    for (size_t i = 0u; i < *n_tools; ++i)
-    {
-        if (i == *n_tools - 1u)
-        {
-            printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
-        } else
-        {
-            printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
-        }
-    }
-    
-    printf_epiworld("\n");
-
-}
-
-/**
- * @brief Set of Tools (const) (useful for iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Tools_const {
-    friend class Tool<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    const std::vector< ToolPtr<TSeq> > * dat;
-    const epiworld_fast_uint * n_tools;
-
-public:
-
-    Tools_const() = delete;
-    Tools_const(const Agent<TSeq> & p) : dat(&p.tools), n_tools(&p.n_tools) {};
-
-    typename std::vector< ToolPtr<TSeq> >::const_iterator begin() const;
-    typename std::vector< ToolPtr<TSeq> >::const_iterator end() const;
-
-    const ToolPtr<TSeq> & operator()(size_t i);
-    const ToolPtr<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    void print() const noexcept;
-
-};
-
-template<typename TSeq>
-inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::begin() const {
-
-    if (*n_tools == 0u)
-        return dat->end();
-    
-    return dat->begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< ToolPtr<TSeq> >::const_iterator Tools_const<TSeq>::end() const {
-     
-    return begin() + *n_tools;
-}
-
-template<typename TSeq>
-inline const ToolPtr<TSeq> & Tools_const<TSeq>::operator()(size_t i)
-{
-
-    if (i >= *n_tools)
-        throw std::range_error("Tool index out of range.");
-
-    return dat->operator[](i);
-
-}
-
-template<typename TSeq>
-inline const ToolPtr<TSeq> & Tools_const<TSeq>::operator[](size_t i)
-{
-
-    return dat->operator[](i);
-
-}
-
-template<typename TSeq>
-inline size_t Tools_const<TSeq>::size() const noexcept 
-{
-    return *n_tools;
-}
-
-template<typename TSeq>
-inline void Tools_const<TSeq>::print() const noexcept 
-{
-    if (*n_tools == 0u)
-    {
-        printf_epiworld("List of tools (none)\n");
-        return;
-    }
-
-    printf_epiworld("List of tools (%i): ", *n_tools);
-
-    // Printing the name of each virus separated by a comma
-    for (size_t i = 0u; i < *n_tools; ++i)
-    {
-        if (i == *n_tools - 1u)
-        {
-            printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
-        } else
-        {
-            printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
-        }
-    }
-    
-    printf_epiworld("\n");
-
-}
-
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/tools-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
+    // #include "tools-bones.hpp"
 
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -13467,7 +13248,7 @@ template<typename TSeq>
 class Tool {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;
-private:
+protected:
 
     Agent<TSeq> * agent = nullptr;
     int pos_in_agent        = -99; ///< Location in the agent
@@ -15566,11 +15347,6 @@ class Viruses_const;
 template<typename TSeq>
 class Tool;
 
-template<typename TSeq>
-class Tools;
-
-template<typename TSeq>
-class Tools_const;
 
 template<typename TSeq>
 class Queue;
@@ -15597,11 +15373,9 @@ class Agent {
     friend class Model<TSeq>;
     friend class Virus<TSeq>;
     friend class Tool<TSeq>;
-    friend class Tools<TSeq>;
-    friend class Tools_const<TSeq>;
     friend class Queue<TSeq>;
     friend class AgentsSample<TSeq>;
-private:
+protected:
 
     std::vector< size_t > * neighbors = nullptr;
     std::vector< size_t > * neighbors_locations = nullptr;
@@ -15618,7 +15392,6 @@ private:
     VirusPtr<TSeq> virus = nullptr;
 
     std::vector< ToolPtr<TSeq> > tools;
-    unsigned int n_tools = 0u;
 
     void reset(); ///< Resets the agent to the initial state (no virus, no tools, no entities, state 0.)
 
@@ -15718,8 +15491,10 @@ public:
     const VirusPtr<TSeq> & get_virus() const;
 
     ToolPtr<TSeq> & get_tool(int i);
-    Tools<TSeq> get_tools();
-    const Tools_const<TSeq> get_tools() const;
+    ToolPtr<TSeq> & get_tool(std::string name);
+
+    std::vector<ToolPtr<TSeq>> get_tools();
+    const std::vector<ToolPtr<TSeq>> get_tools() const;
     size_t get_n_tools() const noexcept;
 
     void mutate_virus();
@@ -15756,13 +15531,13 @@ public:
     const unsigned int & get_state_prev() const;
 
     bool has_tool(epiworld_fast_uint t) const;
-    bool has_tool(std::string name) const;
+    bool has_tool(std::string_view name) const;
     bool has_tool(const Tool<TSeq> & t) const;
     bool has_virus(epiworld_fast_uint t) const;
-    bool has_virus(std::string name) const;
+    bool has_virus(std::string_view name) const;
     bool has_virus(const Virus<TSeq> & v) const;
     bool has_entity(epiworld_fast_uint t) const;
-    bool has_entity(std::string name, const Model<TSeq> & model) const;
+    bool has_entity(std::string_view name, const Model<TSeq> & model) const;
 
     void print(Model<TSeq> & model, bool compressed = false) const;
 
@@ -15861,7 +15636,7 @@ inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
 
         // For tool counts, use current state (p->state) not state_prev
         // because state_prev may be stale if multiple changes occurred today
-        for (size_t i = 0u; i < p->n_tools; ++i)
+        for (size_t i = 0u; i < p->tools.size(); ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
                 p->state,
@@ -15890,18 +15665,11 @@ inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
     ToolPtr<TSeq> & t = a.tool;
     
     // Update tool accounting
-    p->n_tools++;
-    size_t n_tools = p->n_tools;
+    p->tools.emplace_back(std::move(t));
+    size_t tool_pos = p->tools.size() - 1u;
 
-    if (n_tools <= p->tools.size())
-        p->tools[n_tools - 1] = std::move(t);
-    else
-        p->tools.emplace_back(std::move(t));
-
-    n_tools--;
-
-    p->tools[n_tools]->set_date(today());
-    p->tools[n_tools]->set_agent(p, n_tools);
+    p->tools[tool_pos]->set_date(today());
+    p->tools[tool_pos]->set_agent(p, tool_pos);
 
     // Change of state needs to be recorded and updated on the
     // tools.
@@ -15919,7 +15687,7 @@ inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
             );
     }
 
-    db.today_tool[p->tools.back()->get_id()][
+    db.today_tool[p->tools[tool_pos]->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
 
@@ -15946,7 +15714,7 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
 
         // For tool counts, use current state (p->state) not state_prev
         // because state_prev may be stale if multiple changes occurred today
-        for (size_t i = 0u; i < p->n_tools; ++i)
+        for (size_t i = 0u; i < p->tools.size(); ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
                 p->state,
@@ -15954,13 +15722,13 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
             );
     }
 
-    // The counters of the virus only needs to decrease.
-    // We use the previous state of the agent as that was
-    // the state when the virus was added.
+    // The counter of the removed virus must be decremented from the
+    // agent's current state (pre-transition), not state_prev.
+    // state_prev may refer to an earlier same-day state.
     #ifdef EPI_DEBUG
-    db.today_virus.at(v->get_id()).at(p->state_prev)--;
+    db.today_virus.at(v->get_id()).at(p->state)--;
     #else
-    db.today_virus[v->get_id()][p->state_prev]--;
+    db.today_virus[v->get_id()][p->state]--;
     #endif
 
     
@@ -15972,16 +15740,27 @@ template<typename TSeq>
 inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
 {
 
-    Agent<TSeq> * p   = a.agent;    
-    ToolPtr<TSeq> & t = a.agent->tools[a.tool->pos_in_agent];
+    Agent<TSeq> * p = a.agent;
+    ToolPtr<TSeq> & t = a.tool;
+    bool removed = false;
 
-    if (--p->n_tools > 0)
+    if (t)
     {
-        p->tools[p->n_tools]->pos_in_agent = t->pos_in_agent;
-        std::swap(
-            p->tools[t->pos_in_agent],
-            p->tools[p->n_tools]
-            );
+        // Remove tool(s) by id, following an erase/remove approach.
+        auto new_end = std::remove_if(
+            p->tools.begin(),
+            p->tools.end(),
+            [&t](const ToolPtr<TSeq> & tool_ptr) -> bool
+            {
+                return tool_ptr && (tool_ptr->get_id() == t->get_id());
+            }
+        );
+
+        removed = (new_end != p->tools.end());
+        p->tools.erase(new_end, p->tools.end());
+
+        for (size_t i = 0u; i < p->tools.size(); ++i)
+            p->tools[i]->pos_in_agent = static_cast<int>(i);
     }
 
     // Change of state needs to be recorded and updated on the
@@ -16000,14 +15779,20 @@ inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
             );
     }
 
-    // Lastly, we increase the daily count of the tool.
-    // Like rm_virus, we use the previous state of the agent
-    // as that was the state when the tool was added.
-    #ifdef EPI_DEBUG
-    db.today_tool.at(t->get_id()).at(p->state_prev)--;
-    #else
-    db.today_tool[t->get_id()][p->state_prev]--;
-    #endif
+    // Like rm_virus, remove the tool count from the agent's current
+    // state (pre-transition). Using state_prev can underflow when
+    // the agent changed state earlier in the day.
+    if (removed)
+    {
+        #ifdef EPI_DEBUG
+        db.today_tool.at(t->get_id()).at(p->state)--;
+        #else
+        db.today_tool[t->get_id()][p->state]--;
+        #endif
+
+        t->agent = nullptr;
+        t->pos_in_agent = -99;
+    }
 
     return;
 
@@ -16030,7 +15815,7 @@ inline void Model<TSeq>::_event_change_state(Event<TSeq> & a)
                 p->virus->get_id(), p->state, a.new_state
             );
 
-        for (size_t i = 0u; i < p->n_tools; ++i)
+        for (size_t i = 0u; i < p->tools.size(); ++i)
             db.update_tool(
                 p->tools[i]->get_id(),
                 p->state,
@@ -16126,8 +15911,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
     state_prev(p.state_prev), 
     state_last_changed(p.state_last_changed),
     id(p.id),
-    tools(std::move(p.tools)), /// Needs to be adjusted
-    n_tools(p.n_tools)
+    tools(std::move(p.tools)) /// Needs to be adjusted
 {
 
     state = p.state;
@@ -16181,8 +15965,7 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
 
     tools.clear();
     tools.reserve(p.get_n_tools());
-    n_tools = p.get_n_tools();
-    for (size_t i = 0u; i < n_tools; ++i)
+    for (size_t i = 0u; i < p.get_n_tools(); ++i)
     {
         tools.emplace_back(std::shared_ptr<Tool<TSeq>>(p.tools[i]->clone_ptr()));
         tools.back()->set_agent(this, i);
@@ -16230,10 +16013,9 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
         virus = nullptr;
     
     
-    n_tools = other_agent.n_tools;
     tools.clear();
-    tools.reserve(n_tools);
-    for (size_t i = 0u; i < n_tools; ++i)
+    tools.reserve(other_agent.get_n_tools());
+    for (size_t i = 0u; i < other_agent.get_n_tools(); ++i)
     {
         tools.emplace_back(std::shared_ptr<Tool<TSeq>>(other_agent.tools[i]->clone_ptr()));
         tools.back()->set_agent(this, i);
@@ -16330,10 +16112,10 @@ inline void Agent<TSeq>::rm_tool(
 )
 {
 
-    if (tool_idx >= n_tools)
+    if (tool_idx >= tools.size())
         throw std::range_error(
             "The Tool you want to remove is out of range. This Agent only has " +
-            std::to_string(n_tools) + " tools."
+            std::to_string(tools.size()) + " tools."
         );
 
     model._add_event(
@@ -16504,13 +16286,13 @@ inline const VirusPtr<TSeq> & Agent<TSeq>::get_virus() const {
 
 
 template<typename TSeq>
-inline Tools<TSeq> Agent<TSeq>::get_tools() {
-    return Tools<TSeq>(*this);
+inline std::vector< ToolPtr<TSeq> > Agent<TSeq>::get_tools() {
+    return tools;
 }
 
 template<typename TSeq>
-inline const Tools_const<TSeq> Agent<TSeq>::get_tools() const {
-    return Tools_const<TSeq>(*this);
+inline const std::vector< ToolPtr<TSeq> > Agent<TSeq>::get_tools() const {
+    return tools;
 }
 
 template<typename TSeq>
@@ -16520,9 +16302,22 @@ inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(int i)
 }
 
 template<typename TSeq>
+inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(std::string name)
+{
+    for (auto & tool : tools)
+        if (tool->get_name() == name)
+            return tool;
+
+    throw std::logic_error(
+        "The agent does not have a tool with name: " + name
+    );
+
+}
+
+template<typename TSeq>
 inline size_t Agent<TSeq>::get_n_tools() const noexcept
 {
-    return n_tools;
+    return tools.size();
 }
 
 template<typename TSeq>
@@ -16705,7 +16500,6 @@ inline void Agent<TSeq>::reset()
 
     this->tools.clear();
     decltype(this->tools)().swap(this->tools);
-    n_tools = 0u;
 
     this->entities.clear();
     decltype(this->entities)().swap(this->entities);
@@ -16730,7 +16524,7 @@ inline bool Agent<TSeq>::has_tool(epiworld_fast_uint t) const
 }
 
 template<typename TSeq>
-inline bool Agent<TSeq>::has_tool(std::string name) const
+inline bool Agent<TSeq>::has_tool(std::string_view name) const
 {
 
     for (auto & tool : tools)
@@ -16759,7 +16553,7 @@ inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
 }
 
 template<typename TSeq>
-inline bool Agent<TSeq>::has_virus(std::string name) const
+inline bool Agent<TSeq>::has_virus(std::string_view name) const
 {
     
     if (virus->get_name() == name)
@@ -16790,7 +16584,7 @@ inline bool Agent<TSeq>::has_entity(epiworld_fast_uint t) const
 }
 
 template<typename TSeq>
-inline bool Agent<TSeq>::has_entity(std::string name, const Model<TSeq> & model) const
+inline bool Agent<TSeq>::has_entity(std::string_view name, const Model<TSeq> & model) const
 {
 
     for (auto & entity_id : entities)
@@ -16816,7 +16610,7 @@ inline void Agent<TSeq>::print(
             model.states_labels[state].c_str(),
             static_cast<int>(state),
             virus == nullptr ? std::string("no").c_str() : std::string("yes").c_str(),
-            static_cast<int>(n_tools),
+            static_cast<int>(tools.size()),
             static_cast<int>(n_neighbors)
         );
     }
@@ -16828,7 +16622,7 @@ inline void Agent<TSeq>::print(
             model.states_labels[state].c_str(), static_cast<int>(state));
         printf_epiworld("  Has virus    : %s\n", virus == nullptr ?
             std::string("no").c_str() : std::string("yes").c_str());
-        printf_epiworld("  Tool count   : %i\n", static_cast<int>(n_tools));
+        printf_epiworld("  Tool count   : %i\n", static_cast<int>(tools.size()));
         printf_epiworld("  Neigh. count : %i\n", static_cast<int>(n_neighbors));
 
         size_t nfeats = model.get_agents_data_ncols();
@@ -17000,9 +16794,12 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
         )
     }
     
-    EPI_DEBUG_FAIL_AT_TRUE(n_tools != other.n_tools, "Agent:: n_tools don't match")
+    EPI_DEBUG_FAIL_AT_TRUE(
+        tools.size() != other.tools.size(),
+        "Agent:: n_tools don't match"
+    )
 
-    for (size_t i = 0u; i < n_tools; ++i)
+    for (size_t i = 0u; i < tools.size(); ++i)
     {
         
         EPI_DEBUG_FAIL_AT_TRUE(
@@ -17778,8 +17575,9 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ToolVaccine: public Tool<TSeq> {
 private:
 
-    int immune = -1;
-    epiworld_double efficacy = 0.0;
+    int _immune = -1;
+    epiworld_double _efficacy = 0.0;
+    epiworld_double _set_immunity(Model<TSeq> & model);
 
 public:
     ToolVaccine(std::string name = "Vaccine") : Tool<TSeq>(name) {};
@@ -17792,10 +17590,8 @@ public:
     virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun) override;
     virtual void set_susceptibility_reduction(std::string param) override;
     virtual void set_susceptibility_reduction(epiworld_double prob) override;
-    epiworld_double set_immunity(Model<TSeq> * model);
 
     std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
-    std::string get_name() const override;
 
 };
 
@@ -17807,12 +17603,12 @@ inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
 {
 
     // Updating a single agent (if needed)
-    if (immune == -1)
+    if (_immune == -1)
     {
-        set_immunity(model);
+        _set_immunity(*model);
     }
 
-    return  (immune == 1) ? 1.0 : 0.0;
+    return  (_immune == 1) ? 1.0 : 0.0;
 
 }
 
@@ -17848,32 +17644,23 @@ inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob
 {
 
     // assertm(prob >= 0 && prob <= 1, "The efficacy must be between 0 and 1.");
-    efficacy = prob;
+    _efficacy = prob;
 
 }
 
 template<typename TSeq>
-inline epiworld_double ToolVaccine<TSeq>::set_immunity(Model<TSeq> * model)
+inline epiworld_double ToolVaccine<TSeq>::_set_immunity(Model<TSeq> & model)
 {
-    immune = (model->runif() < efficacy) ? 1 : 0;
-    return immune;
+    _immune = (model.runif() < _efficacy) ? 1 : 0;
+    return _immune;
 }
 
 template<typename TSeq>
 inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
 {
     auto ans =  std::make_unique<ToolVaccine<TSeq>>(*this);
-    ans->immune = -1;
+    ans->_immune = -1;
     return ans;
-}
-
-template<typename TSeq>
-inline std::string ToolVaccine<TSeq>::get_name() const
-{
-    return Tool<TSeq>::get_name() +
-        std::string(" (efficacy: ") +
-        std::to_string(this->efficacy) +
-        std::string(")");
 }
 
 #endif
@@ -18518,6 +18305,564 @@ inline std::function<void(Model<TSeq>*)> globalevent_set_param(
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -include/epiworld/models/globalevents.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/models/../globalevents/interventionmeaslespep-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_INTERVENTIONMEASLESPEP_MEAT_HPP
+#define EPIWORLD_INTERVENTIONMEASLESPEP_MEAT_HPP
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/models/../globalevents/interventionmeaslespep-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_INTERVENTIONMEASLESPEP_BONES_HPP
+#define EPIWORLD_INTERVENTIONMEASLESPEP_BONES_HPP
+
+// (already included include/epiworld/models/../globalevents/../config.hpp)
+// (already included include/epiworld/models/../globalevents/../model-bones.hpp)
+// (already included include/epiworld/models/../globalevents/../agent-bones.hpp)
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class InterventionMeaslesPEP final : public GlobalEvent<TSeq> {
+
+private:
+
+    static inline const std::string _par_willingness{"PEP willingness"};
+    static inline const std::string _par_mmr_efficacy{"PEP MMR efficacy"};
+    static inline const std::string _par_ig_efficacy{"PEP IG efficacy"};
+    static inline const std::string _par_pep_mmr_window{"PEP MMR window"};
+    static inline const std::string _par_half_life_mean{"PEP IG half-life (mean)"};
+    static inline const std::string _par_half_life_sd{"PEP IG half-life (sd)"};
+
+
+    // Willigness and efficacy of the PEP
+    epiworld_double _willingness;
+    epiworld_double _mmr_efficacy;
+    epiworld_double _ig_efficacy;
+    epiworld_double _ig_half_life_mean;
+    epiworld_double _ig_half_life_sd;
+    epiworld_double _pep_mmr_window;
+
+    // Willingness of the agents to receive PEP
+    std::vector< bool > _willing_to_receive_pep;
+
+    // Quarantine states to which the intervention applies
+    std::vector< int > _quarantine_states;
+    std::vector< int > _quarantine_states_for_pep;
+
+    // Id of the model
+    int model_id = -1;
+
+    /**
+     * @brief Set up the intervention.
+     * 
+     * @details
+     * This function is called at the beginning of the simulation. It sets up
+     * the willingness of the agents to receive PEP and the efficacy of the
+     * PEP.
+     * @param model A pointer to the model.
+     */
+    void _setup(Model<TSeq> * model);
+
+    // List of agents that will receive PEP
+    // This is used to avoid iterating over the agents twice.
+    std::vector< size_t > _agents_to_receive_pep;
+    std::vector< int > _agents_to_receive_pep_next_state;
+
+public:
+
+    /**
+     * @brief Construct a new Intervention PEP object.
+     * @param par_mmr_efficacy The efficacy of the PEP. Must be between 0
+     * and 1.
+     * @param par_pep_willingness The willingness of the agents to receive
+     * PEP. Must be between 0 and 1.
+     * @param quarantine_states The states to which the intervention applies. For
+     * example, if the intervention applies to agents in quarantine, then this
+     * should include the states that correspond to quarantine.
+     * @param quarantine_states_for_pep The states to which the agents will be
+     * moved if they receive PEP. Must be the same length as `quarantine_states`.
+     * For example, if agents in state 2 are quarantined and will move to state
+     * 5 if they receive PEP, then `quarantine_states` should include 2 and
+     * `quarantine_states_for_pep` should include 5 at the corresponding
+     * position.
+     */
+    InterventionMeaslesPEP(
+        std::string name,
+        epiworld_double mmr_efficacy,
+        epiworld_double ig_efficacy,
+        epiworld_double ig_half_life_mean,
+        epiworld_double ig_half_life_sd,
+        epiworld_double pep_willingness,
+        epiworld_double mmr_window,
+        std::vector< int > quarantine_states,
+        std::vector< int > quarantine_states_for_pep
+    );
+
+    /**
+     * @brief Apply the intervention to the model.
+     * @details
+     * This function is called at the end of the day as a global event. It
+     * iterates through the agents and gives PEP to those who are willing and
+     * applicable.
+     * 
+     * Agents who receive PEP may then be moved to a different state if
+     * the PEP is effective.
+     */
+    void operator()(Model<TSeq> * model, int day) override;
+
+    std::unique_ptr< GlobalEvent<TSeq> > clone_ptr() const override;
+
+    static bool agent_recovers(Agent<TSeq> & p, Model<TSeq> & m, int next_state);
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/models/../globalevents/interventionmeaslespep-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+// (already included include/epiworld/models/../globalevents/../tools/vaccine.hpp)
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/models/../globalevents/../tools/immunoglobulin.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_TOOLS_IMMUNOGLOBULIN_HPP
+#define EPIWORLD_TOOLS_IMMUNOGLOBULIN_HPP
+
+#include <memory>
+#include <vector>
+#include <cassert>
+#include <string_view>
+// (already included include/epiworld/models/../globalevents/../tools/../config.hpp)
+// (already included include/epiworld/models/../globalevents/../tools/../tool-bones.hpp)
+
+/**
+ * @brief Template for a common Immunoglobulin tool.
+ * 
+ * The main difference with a regular tool is that the reduction
+ * in susceptibility is at the agent level and fixed for the
+ * entire simulation. In other words, if the efficacy is 65%,
+ * then 65% of the agents that receive the vaccine will be fully
+ * protected (100% reduction in susceptibility) and 35% will not be
+ * protected at all (0% reduction in susceptibility).
+ * 
+ * @ingroup tools
+ * 
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class ToolImmunoglobulin: public Tool<TSeq> {
+private:
+
+    int _immune = -1;
+    std::string _par_efficacy;
+    epiworld_double _set_immunity(Model<TSeq> & model);
+
+    // This half-life
+    std::string _par_half_life_mean;
+    std::string _par_half_life_sd;
+    int _removal_time = -1;
+    bool _remove_tool();
+
+    // This method is used to throw an error when trying to set a method
+    // that cannot be set for this tool.
+    void _error_method(std::string_view method_name) const;
+
+public:
+    ToolImmunoglobulin(
+        std::string name,
+        std::string par_efficacy,
+        std::string par_half_life_mean,
+        std::string par_half_life_sd
+    ) : Tool<TSeq>(name) {
+        this->_par_efficacy = par_efficacy;
+        this->_par_half_life_mean = par_half_life_mean;
+        this->_par_half_life_sd = par_half_life_sd;
+    };
+
+    virtual epiworld_double get_susceptibility_reduction(
+        VirusPtr<TSeq> & v,
+        Model<TSeq> * model
+    ) override;
+    
+    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun) override;
+    virtual void set_susceptibility_reduction(std::string param) override;
+    virtual void set_susceptibility_reduction(epiworld_double prob) override;
+
+    std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
+
+};
+
+template<typename TSeq>
+inline void ToolImmunoglobulin<TSeq>::_error_method(std::string_view method_name) const {
+    throw std::logic_error(
+        std::string(
+            "The method " + std::string(method_name) + " cannot be set for the "
+        ) +
+        std::string("ToolImmunoglobulin (Tool).")
+    );
+}
+
+template<typename TSeq>
+inline epiworld_double ToolImmunoglobulin<TSeq>::get_susceptibility_reduction(
+    VirusPtr<TSeq> &,
+    Model<TSeq> * model
+)
+{
+
+    // Updating a single agent (if needed)
+    if (_immune == -1)
+    {
+        _set_immunity(*model);
+    }
+
+    // Deciding if the tool should be removed
+    #ifdef EPI_DEBUG
+    EPI_DEBUG_PRINTF(
+        "Agent %d; sim_id %li; today %d; removal_time %d\n",
+        this->agent->get_id(), model->get_sim_id(),
+        model->today(), _removal_time
+    );
+    #endif
+    if (model->today() >= _removal_time)
+    {
+        this->get_agent()->rm_tool(*model, this->pos_in_agent);
+        return 0.0;
+    }
+
+    return  (_immune == 1) ? 1.0 : 0.0;
+
+}
+
+template<typename TSeq>
+inline void ToolImmunoglobulin<TSeq>::set_susceptibility_reduction_fun(
+    ToolFun<TSeq>
+)
+{
+    _error_method("set_susceptibility_reduction_fun");
+}
+
+template<typename TSeq>
+inline void ToolImmunoglobulin<TSeq>::set_susceptibility_reduction(std::string)
+{
+    _error_method("set_susceptibility_reduction(string)");
+}
+
+template<typename TSeq>
+inline void ToolImmunoglobulin<TSeq>::set_susceptibility_reduction(epiworld_double)
+{
+
+    _error_method("set_susceptibility_reduction(epiworld_double)");
+
+}
+
+template<typename TSeq>
+inline epiworld_double ToolImmunoglobulin<TSeq>::_set_immunity(Model<TSeq> & model)
+{
+
+    // Setting immunity
+    _immune = (model.runif() < model.par(this->_par_efficacy)) ? 1 : 0;
+
+    // Setting the removal time (regardless)
+    auto half_life = model.par(this->_par_half_life_mean);
+    if (half_life > 0.0)
+    {
+
+        // Drawing the half-life for this agent
+        auto hl_sd = model.par(this->_par_half_life_sd);
+        auto hl_mean = model.par(this->_par_half_life_mean);
+
+        if (hl_sd > 0.0)
+            half_life = model.rnorm(hl_mean, hl_sd);
+        else
+            half_life = hl_mean;
+
+        _removal_time = model.today() + static_cast<int>(std::round(half_life));
+    }
+
+    return _immune;
+}
+
+template<typename TSeq>
+inline std::unique_ptr<Tool<TSeq>> ToolImmunoglobulin<TSeq>::clone_ptr() const
+{
+    auto ans =  std::make_unique<ToolImmunoglobulin<TSeq>>(*this);
+    ans->_immune = -1;
+    return ans;
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/models/../globalevents/../tools/immunoglobulin.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+template<typename TSeq>
+inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
+    std::string name,
+    epiworld_double mmr_efficacy,
+    epiworld_double ig_efficacy,
+    epiworld_double ig_half_life_mean,
+    epiworld_double ig_half_life_sd,
+    epiworld_double pep_willingness,
+    epiworld_double mmr_window,
+    std::vector< int > quarantine_states,
+    std::vector< int > quarantine_states_for_pep
+) {
+
+    this->set_name(name);
+
+    // Must match the length
+    if (quarantine_states.size() != quarantine_states_for_pep.size())
+        throw std::logic_error(
+            "The length of the quarantine states and the quarantine states for "
+            "PEP must be the same. These are currently: " +
+            std::to_string(quarantine_states.size()) + " and " +
+            std::to_string(quarantine_states_for_pep.size()) +
+            ", respectively."
+        );
+
+    this->_quarantine_states = quarantine_states;
+    this->_quarantine_states_for_pep = quarantine_states_for_pep;
+    
+    // Paramters
+    this->_mmr_efficacy = mmr_efficacy;
+    this->_ig_efficacy = ig_efficacy;
+    this->_ig_half_life_mean = ig_half_life_mean;
+    this->_ig_half_life_sd = ig_half_life_sd;
+    this->_willingness = pep_willingness;
+    this->_pep_mmr_window = mmr_window;
+}
+
+template<typename TSeq>
+inline void InterventionMeaslesPEP<TSeq>::_setup(
+    Model<TSeq> * model
+) {
+
+    // Randomizing willingness
+    this->_willing_to_receive_pep.assign(model->size(), false);
+
+    // Setting the parameters
+    model->add_param(this->_willingness, this->_par_willingness, true);
+    model->add_param(this->_mmr_efficacy, this->_par_mmr_efficacy, true);
+    model->add_param(this->_ig_efficacy, this->_par_ig_efficacy, true);
+    model->add_param(this->_pep_mmr_window, this->_par_pep_mmr_window, true);
+    model->add_param(this->_ig_half_life_mean, this->_par_half_life_mean, true);
+    model->add_param(this->_ig_half_life_sd, this->_par_half_life_sd, true);
+
+    auto willingness = model->par(this->_par_willingness);
+    for (size_t i = 0u; i < model->size(); ++i)
+    {
+        if (model->runif() < willingness)
+        {
+            this->_willing_to_receive_pep[i] = true;
+        }
+    }
+
+    // Adding the PEP vaccine as a tool to the model
+    // (if not already added by the user)
+    if (!model->has_tool("PEP MMR"))
+    {
+        // Creating the PEP vaccine tool
+        ToolVaccine<TSeq> pep("PEP MMR");
+        pep.set_susceptibility_reduction(model->par(this->_par_mmr_efficacy));
+        model->add_tool(pep);
+
+    }
+
+    if (!model->has_tool("PEP IG"))
+    {
+        // Creating the PEP vaccine tool
+        ToolImmunoglobulin<TSeq> ig(
+            "PEP IG",
+            this->_par_ig_efficacy,
+            this->_par_half_life_mean,
+            this->_par_half_life_sd
+        );
+        
+        model->add_tool(ig);
+    }
+
+};
+
+template<typename TSeq>
+inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
+
+    // Verifying if this needs to be setup
+    if (static_cast<int>(model->get_sim_id()) != this->model_id)
+    {
+        this->model_id = static_cast<int>(model->get_sim_id());
+        this->_setup(model);
+    }
+
+    // Capturing some basic information
+    auto today = model->today();
+    auto pep_mmr_window = static_cast<int>(model->par(this->_par_pep_mmr_window));
+
+    // Precapturing the tools
+    auto & tool_mmr = model->get_tool("PEP MMR");
+    auto & tool_ig  = model->get_tool("PEP IG");
+    
+    // Iterating over the agents
+    _agents_to_receive_pep.clear();
+    _agents_to_receive_pep_next_state.clear();
+    for (auto & agent: model->get_agents())
+    {
+
+        // Checking if the agent is in a quarantine
+        // state
+        int agent_state = static_cast<int>(agent.get_state());
+        if (!IN(agent_state, this->_quarantine_states))
+            continue;
+
+        // Checking willigness
+        if (!this->_willing_to_receive_pep[agent.get_id()])
+            continue;
+
+        // Finding the corresponding state for PEP
+        auto it = std::find(
+            this->_quarantine_states.begin(),
+            this->_quarantine_states.end(),
+            agent.get_state()
+        );
+
+        // No need to check it, we know it is there
+        auto pos = std::distance(this->_quarantine_states.begin(), it);
+
+        // Checking if the agent has a virus
+        if (agent.get_virus() != nullptr)
+        {
+
+            // Agents with virus may recover, so we need to check
+            // on that again
+            _agents_to_receive_pep.push_back(agent.get_id());
+            _agents_to_receive_pep_next_state.push_back(this->_quarantine_states_for_pep[pos]);
+
+            // Checking when did the agent get infected
+            int day_infected = agent.get_virus()->get_date();
+
+            // If the date is within the window for PEP,
+            // we administer MMR PEP to the agent
+            if ((today - day_infected) >= pep_mmr_window)
+            {
+                // We will administer MMR PEP to the agent
+                agent.add_tool(*model, tool_ig);
+
+                // Go to the next agent
+                continue;
+            }
+
+        }
+
+        // If we got this far, it is because the agent can 
+        // receive MMR PEP
+        agent.add_tool(
+            *model,
+            tool_mmr,
+            this->_quarantine_states_for_pep[pos]
+        );
+
+    }
+
+    // Second set of iterations (figuring out if the agents
+    // will recover or not)
+    model->events_run();
+    for (size_t i = 0u; i < _agents_to_receive_pep.size(); ++i)
+    {
+        auto & agent = model->get_agent(_agents_to_receive_pep[i]);
+        int next_state = _agents_to_receive_pep_next_state[i];
+
+        auto recovers = agent.get_susceptibility_reduction(
+            agent.get_virus(), *model
+        ); 
+
+        if (recovers > 0.5)
+        {
+            agent.rm_virus(*model, next_state);
+        }
+
+    }
+
+};
+
+template<typename TSeq>
+inline std::unique_ptr< GlobalEvent<TSeq> > InterventionMeaslesPEP<TSeq>::clone_ptr() const
+{
+    return std::make_unique< InterventionMeaslesPEP<TSeq>>(*this);
+}
+
+template<typename TSeq>
+inline bool InterventionMeaslesPEP<TSeq>::agent_recovers(
+    Agent<TSeq> & p,
+    Model<TSeq> & m,
+    int next_state
+) {
+
+    // If the agent has PEP, then we have to figure out if it works or not
+    if (p.has_tool("PEP MMR"))
+    {
+
+        // Adding the tool
+        auto & tool = p.get_tool("PEP MMR");
+        if (tool->get_susceptibility_reduction(p.get_virus(), m) > 0.0)
+        {
+            p.rm_virus(m, next_state);
+            return true;
+        }
+    }
+
+    if (p.has_tool("PEP IG"))
+    {
+
+        // Adding the tool
+        auto & tool = p.get_tool("PEP IG");
+        if (tool->get_susceptibility_reduction(p.get_virus(), m) > 0.0)
+        {
+            p.rm_virus(m, next_state);
+            return true;
+        }
+    }
+
+    return false;
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/models/../globalevents/interventionmeaslespep-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -22796,10 +23141,7 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
-        epiworld_fast_int isolation_period,
-        // Policy parameters 2
-        epiworld_double pep_efficacy = 0.0,
-        epiworld_double pep_willingness = 0.0
+        epiworld_fast_int isolation_period
     );
     ///@}
 
@@ -22850,7 +23192,6 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
         // If the agent has a vaccine, then no need for quarantine
         if (agent.get_n_tools() != 0u)
             continue;
-
 
         // Quarantine will depend on the willingness of the agent
         // to be quarantined. If negative, then quarantine never happens.
@@ -22904,8 +23245,13 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     // All agents with state >= EXPOSED should have a virus
     for (auto & agent: this->get_agents())
     {
-        auto s = agent.get_state();
-        if (IN(s, {EXPOSED, PRODROMAL, RASH, ISOLATED, DETECTED_HOSPITALIZED, QUARANTINED_EXPOSED, QUARANTINED_PRODROMAL, HOSPITALIZED}))
+        int s = static_cast<int>(agent.get_state());
+        static const std::vector< int > states_with_virus = {
+            EXPOSED, PRODROMAL, RASH, ISOLATED, DETECTED_HOSPITALIZED,
+            QUARANTINED_EXPOSED, QUARANTINED_PRODROMAL, HOSPITALIZED
+        };
+
+        if (IN(s, states_with_virus))
         {
             if (agent.get_virus() == nullptr)
                 throw std::logic_error("The agent has no virus.");
@@ -23033,6 +23379,7 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
 };
 
 LOCAL_UPDATE_FUN(_update_exposed) {
+
 
     if (m->runif() < (1.0/p->get_virus()->get_incubation(m)))
         p->change_state(*m, ModelMeaslesSchool<TSeq>::PRODROMAL);
@@ -23284,23 +23631,21 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_double prop_vaccinated,
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
-    epiworld_fast_int isolation_period,
-    epiworld_double pep_efficacy,
-    epiworld_double pep_willingness
+    epiworld_fast_int isolation_period
 ) {
 
-    this->add_state("Susceptible", this->_update_susceptible);
-    this->add_state("Exposed", this->_update_exposed);
-    this->add_state("Prodromal", this->_update_prodromal);
-    this->add_state("Rash", this->_update_rash);
-    this->add_state("Isolated", this->_update_isolated);
-    this->add_state("Isolated Recovered", this->_update_isolated_recovered);
-    this->add_state("Detected Hospitalized", this->_update_hospitalized);
-    this->add_state("Quarantined Exposed", this->_update_q_exposed);
+    this->add_state("Susceptible",             this->_update_susceptible);
+    this->add_state("Exposed",                 this->_update_exposed);
+    this->add_state("Prodromal",               this->_update_prodromal);
+    this->add_state("Rash",                    this->_update_rash);
+    this->add_state("Isolated",                this->_update_isolated);
+    this->add_state("Isolated Recovered",      this->_update_isolated_recovered);
+    this->add_state("Detected Hospitalized",   this->_update_hospitalized);
+    this->add_state("Quarantined Exposed",     this->_update_q_exposed);
     this->add_state("Quarantined Susceptible", this->_update_q_susceptible);
-    this->add_state("Quarantined Prodromal", this->_update_q_prodromal);
-    this->add_state("Quarantined Recovered", this->_update_q_recovered);
-    this->add_state("Hospitalized", this->_update_hospitalized);
+    this->add_state("Quarantined Prodromal",   this->_update_q_prodromal);
+    this->add_state("Quarantined Recovered",   this->_update_q_recovered);
+    this->add_state("Hospitalized",            this->_update_hospitalized);
     this->add_state("Recovered");
 
     // Adding the model parameters
@@ -23311,17 +23656,13 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_param(rash_period, "Rash period");
     this->add_param(days_undetected, "Days undetected");
     this->add_param(quarantine_period, "Quarantine period");
-    this->add_param(
-        quarantine_willingness, "Quarantine willingness"
-    );
+    this->add_param(quarantine_willingness, "Quarantine willingness");
     this->add_param(isolation_period, "Isolation period");
     this->add_param(hospitalization_rate, "Hospitalization rate");
     this->add_param(hospitalization_period, "Hospitalization period");
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");
     this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
-    this->add_param(pep_efficacy, "PEP efficacy");
-    this->add_param(pep_willingness, "PEP willingness");
 
     // Designing the disease
     Virus<> measles("Measles");

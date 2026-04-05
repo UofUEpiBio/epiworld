@@ -40,6 +40,9 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     auto saver = tests_create_saver(transitions, R0s, n_seeds, nullptr, &outbreak_sizes, &hospitalizations);
     
     model_0.run_multiple(60, nsims, 1231, saver, true, true, 2);
+
+    // Looking at the model
+    model_0.print();
     
     // Creating an average across the transitions vectors
     auto avg_transitions = tests_calculate_avg_transitions(

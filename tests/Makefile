@@ -27,6 +27,8 @@ $(NAME)_SOURCES := \
 	14c-measles.cpp \
 	14d-measles.cpp \
 	14e-measles.cpp \
+	14f-measles-pep.cpp \
+	14g-measles-pep.cpp \
 	15-edgelist-after-run-multiple.cpp \
 	16-multiple-events.cpp \
 	17a-mixing-quarantine.cpp \
@@ -49,7 +51,9 @@ $(NAME)_SOURCES := \
 	24b-csv-output-format.cpp \
 	24c-virus-hist-multiple-sims.cpp \
 	25a-hospitalizationstracker.cpp \
-	25b-hospitalizationstracker-validation.cpp
+	25b-hospitalizationstracker-validation.cpp \
+	26-entity-add-rm.cpp \
+	27-shortcreek.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

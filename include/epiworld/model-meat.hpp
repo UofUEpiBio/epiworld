@@ -1242,14 +1242,19 @@ inline Model<TSeq> & Model<TSeq>::run(
     // Starting first infection and tools
     reset();
 
-    // Record the baseline (day 0) and advance to day 1 using the base
-    // implementation only. Calling virtual next() from reset() can invoke
-    // model-specific logic before derived reset state is fully initialized.
-    Model<TSeq>::next();
+    // Record the baseline (day 0) and advance to day 1
+    next();
 
     // Initializing the simulation
     chrono_start();
-    EPIWORLD_RUN((*this))
+
+    // Verifying if the user wants to see the progress bar
+    if (get_verbose())
+    {
+        printf_epiworld("Running the model...\n");
+    }
+
+    for (epiworld_fast_uint niter = 0; niter < get_ndays(); ++niter)
     {
 
         #ifdef EPI_DEBUG
@@ -2190,7 +2195,7 @@ inline void Model<TSeq>::run_globalevents()
     {
         event->operator()(this, today());
         events_run();
-    }
+    }    
 
 }
 
@@ -2243,14 +2248,14 @@ inline Virus<TSeq> & Model<TSeq>::get_virus(size_t id)
 }
 
 template<typename TSeq>
-inline Virus<TSeq> & Model<TSeq>::get_virus(std::string name)
+inline Virus<TSeq> & Model<TSeq>::get_virus(std::string_view name)
 {
 
     for (auto & v : viruses)
         if (v->get_name() == name)
             return *v;
 
-    throw std::logic_error("The virus " + name + " was not found.");
+    throw std::logic_error("The virus " + std::string(name) + " was not found.");
 
 }
 
@@ -2266,18 +2271,18 @@ inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
 }
 
 template<typename TSeq>
-inline Tool<TSeq> & Model<TSeq>::get_tool(std::string name)
+inline Tool<TSeq> & Model<TSeq>::get_tool(std::string_view name)
 {
     for (auto & t : tools)
         if (t->get_name() == name)
             return *t;
 
-    throw std::logic_error("The tool " + name + " was not found.");
+    throw std::logic_error("The tool " + std::string(name) + " was not found.");
 
 }
 
 template<typename TSeq>
-inline bool Model<TSeq>::has_virus(std::string name) const
+inline bool Model<TSeq>::has_virus(std::string_view name) const
 {
     for (const auto & v : viruses)
         if (v->get_name() == name)
@@ -2287,7 +2292,7 @@ inline bool Model<TSeq>::has_virus(std::string name) const
 }
 
 template<typename TSeq>
-inline bool Model<TSeq>::has_tool(std::string name) const
+inline bool Model<TSeq>::has_tool(std::string_view name) const
 {
     for (const auto & t : tools)
         if (t->get_name() == name)
