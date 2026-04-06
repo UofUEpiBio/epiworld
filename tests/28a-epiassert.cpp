@@ -41,6 +41,16 @@ EPIWORLD_TEST_CASE("EpiAssert", "[epiassert]") {
     std::vector<int> empty_vec;
     REQUIRE_NOTHROW(EpiAssert::check_bounds(empty_vec, 0, 100, "v"));
 
+    // check_bounds – reversed bounds should throw std::invalid_argument
+    REQUIRE_THROWS_AS(
+        EpiAssert::check_bounds(5, 10, 0, "x", "test"),
+        std::invalid_argument
+    );
+    REQUIRE_THROWS_AS(
+        EpiAssert::check_bounds(good_vec, 1.0, 0.0, "probs", "test"),
+        std::invalid_argument
+    );
+
     // -----------------------------------------------------------------
     //  check_non_negative
     // -----------------------------------------------------------------
@@ -94,6 +104,12 @@ EPIWORLD_TEST_CASE("EpiAssert", "[epiassert]") {
     );
     REQUIRE_THROWS_AS(
         EpiAssert::check_sum(sum_bad, 1.0, "probs", "test"),
+        std::invalid_argument
+    );
+
+    // check_sum with negative tolerance should throw std::invalid_argument
+    REQUIRE_THROWS_AS(
+        EpiAssert::check_sum(sum_good, 1.0, "probs", "test", -0.01),
         std::invalid_argument
     );
 

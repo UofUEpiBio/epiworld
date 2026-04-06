@@ -623,6 +623,17 @@ public:
         const std::string & caller  = ""
     )
     {
+        if (lower > upper)
+        {
+            throw std::invalid_argument(
+                "check_bounds: 'lower' (" +
+                epiassert_detail::to_str(lower) +
+                ") must be <= 'upper' (" +
+                epiassert_detail::to_str(upper) + ")" +
+                fmt_location(caller)
+            );
+        }
+
         if constexpr (epiassert_detail::is_iterable<T>::value)
         {
             size_t idx = 0;
@@ -780,6 +791,15 @@ public:
             "check_sum requires an iterable type."
         );
 
+        if (tolerance < 0.0)
+        {
+            throw std::invalid_argument(
+                "check_sum: 'tolerance' must be non-negative, but got " +
+                epiassert_detail::to_str(tolerance) +
+                fmt_location(caller)
+            );
+        }
+
         double s = 0.0;
         for (const auto & v : values)
             s += static_cast<double>(v);
@@ -818,12 +838,16 @@ public:
             "check_size requires an iterable type."
         );
 
-        if (values.size() != expected)
+        const auto actual_size = static_cast<size_t>(
+            std::distance(std::begin(values), std::end(values))
+        );
+
+        if (actual_size != expected)
         {
             throw std::invalid_argument(
                 "'" + varname + "' must have " +
                 std::to_string(expected) + " elements, but got " +
-                std::to_string(values.size()) +
+                std::to_string(actual_size) +
                 fmt_location(caller)
             );
         }
