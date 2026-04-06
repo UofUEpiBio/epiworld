@@ -36,7 +36,8 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         1.0,       // "PEP willingness"
         3.0,       // "PEP MMR window"
         {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
-        {MS::RECOVERED, MS::SUSCEPTIBLE}
+        {MS::SUSCEPTIBLE, MS::SUSCEPTIBLE},
+        {MS::EXPOSED, MS::SUSCEPTIBLE}
     );
 
     model_0.add_globalevent(pep);
@@ -102,12 +103,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     // =========================================================
     // PEP-specific transition checks
     // =========================================================
-
-    // Exposed -> Recovered should exist (PEP clears the virus
-    // via agent_recovers in the _update_exposed function)
-    REQUIRE(mat(1, 12) > 0.01);
-
-
+    
     // =========================================================
     // Standard disease transitions (should be preserved for
     // agents that reach prodromal/rash regardless of PEP)
