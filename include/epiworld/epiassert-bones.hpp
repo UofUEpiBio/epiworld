@@ -91,11 +91,11 @@ public:
      */
     template<typename T, typename BoundT>
     static void check_bounds(
-        const T      & value,
-        const BoundT & lower,
-        const BoundT & upper,
-        const std::string & varname = "value",
-        const std::string & caller  = ""
+        const T      value,
+        const BoundT lower,
+        const BoundT upper,
+        const std::string varname = "value",
+        const std::string caller  = ""
     )
     {
         if (lower > upper)
@@ -114,7 +114,7 @@ public:
             size_t idx = 0;
             for (const auto & v : value)
             {
-                if (v < lower || v > upper)
+                if ((v < lower) || (v > upper))
                 {
                     throw std::range_error(
                         "'" + varname + "[" +
@@ -130,7 +130,7 @@ public:
         }
         else
         {
-            if (value < lower || value > upper)
+            if ((value < lower) || (value > upper))
             {
                 throw std::range_error(
                     "'" + varname + "' must be in [" +
@@ -156,9 +156,9 @@ public:
      */
     template<typename T>
     static void check_non_negative(
-        const T & value,
-        const std::string & varname = "value",
-        const std::string & caller  = ""
+        const T value,
+        const std::string varname = "value",
+        const std::string caller  = ""
     )
     {
         if constexpr (epiassert_detail::is_iterable<T>::value)
@@ -204,9 +204,9 @@ public:
      */
     template<typename T>
     static void check_probability(
-        const T & value,
-        const std::string & varname = "value",
-        const std::string & caller  = ""
+        const T value,
+        const std::string varname = "value",
+        const std::string caller  = ""
     )
     {
         if constexpr (epiassert_detail::is_iterable<T>::value)
@@ -254,10 +254,10 @@ public:
      */
     template<typename T>
     static void check_sum(
-        const T      & values,
+        const T      values,
         double         target,
-        const std::string & varname   = "values",
-        const std::string & caller    = "",
+        const std::string varname   = "values",
+        const std::string caller    = "",
         double         tolerance = 1e-8
     )
     {
@@ -302,10 +302,10 @@ public:
      */
     template<typename T>
     static void check_size(
-        const T & values,
+        const T values,
         size_t    expected,
-        const std::string & varname = "values",
-        const std::string & caller  = ""
+        const std::string varname = "values",
+        const std::string caller  = ""
     )
     {
         static_assert(
@@ -343,10 +343,10 @@ public:
      */
     template<typename T, typename Predicate>
     static void check(
-        const T     & value,
+        const T     value,
         Predicate     pred,
-        const std::string & message,
-        const std::string & caller = ""
+        const std::string message,
+        const std::string caller = ""
     )
     {
         if (!pred(value))

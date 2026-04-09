@@ -612,6 +612,27 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_fast_int isolation_period
 ) {
 
+    // Assertions
+    auto max_uint = std::numeric_limits< size_t >::max();
+    auto max_double = std::numeric_limits< double >::max();
+    auto max_int = std::numeric_limits< int >::max();
+    EpiAssert::check_bounds(n, static_cast<size_t>(1), max_uint, "n", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(n_exposed, static_cast<size_t>(0), static_cast<size_t>(n), "n_exposed", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(contact_rate, 0.0, max_double, "contact_rate", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(transmission_rate, 0.0, 1.0, "transmission_rate", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(vax_efficacy, 0.0, 1.0, "vax_efficacy", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(vax_reduction_recovery_rate, 0.0, 1.0, "vax_reduction_recovery_rate", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(incubation_period, 0.0, max_double, "incubation_period", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(prodromal_period, 0.0, max_double, "prodromal_period", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(rash_period, 0.0, max_double, "rash_period", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(days_undetected, 0.0, max_double, "days_undetected", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(hospitalization_rate, 0.0, 1.0, "hospitalization_rate", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(hospitalization_period, 0.0, max_double, "hospitalization_period", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(prop_vaccinated, 0.0, 1.0, "prop_vaccinated", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(quarantine_period, -1, max_int, "quarantine_period", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(quarantine_willingness, 0.0, 1.0, "quarantine_willingness", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(isolation_period, -1, max_int, "isolation_period", "ModelMeaslesSchool");
+
     this->add_state("Susceptible",             this->_update_susceptible);
     this->add_state("Exposed",                 this->_update_exposed);
     this->add_state("Prodromal",               this->_update_prodromal);
