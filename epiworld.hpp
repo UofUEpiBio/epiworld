@@ -18362,9 +18362,10 @@ private:
     // Willingness of the agents to receive PEP
     std::vector< bool > _willing_to_receive_pep;
 
-    // Quarantine states to which the intervention applies
-    std::vector< int > _quarantine_states;
-    std::vector< int > _quarantine_states_for_pep;
+    // Target states to which the intervention applies
+    std::vector< int > _target_states;
+    std::vector< int > _states_if_pep_effective;
+    std::vector< int > _states_if_pep_ineffective;
 
     // Id of the model
     int model_id = -1;
@@ -18382,8 +18383,9 @@ private:
 
     // List of agents that will receive PEP
     // This is used to avoid iterating over the agents twice.
-    std::vector< size_t > _agents_to_receive_pep;
-    std::vector< int > _agents_to_receive_pep_next_state;
+    std::vector< size_t > _to_receive_pep;
+    std::vector< int > _next_if_effective;
+    std::vector< int > _next_if_ineffective;
 
 public:
 
@@ -18393,7 +18395,7 @@ public:
      * and 1.
      * @param par_pep_willingness The willingness of the agents to receive
      * PEP. Must be between 0 and 1.
-     * @param quarantine_states The states to which the intervention applies. For
+     * @param target_states The states to which the intervention applies. For
      * example, if the intervention applies to agents in quarantine, then this
      * should include the states that correspond to quarantine.
      * @param quarantine_states_for_pep The states to which the agents will be
@@ -18411,8 +18413,9 @@ public:
         epiworld_double ig_half_life_sd,
         epiworld_double pep_willingness,
         epiworld_double mmr_window,
-        std::vector< int > quarantine_states,
-        std::vector< int > quarantine_states_for_pep
+        std::vector< int > target_states,
+        std::vector< int > states_if_pep_effective,
+        std::vector< int > states_if_pep_ineffective
     );
 
     /**
@@ -18637,25 +18640,27 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     epiworld_double ig_half_life_sd,
     epiworld_double pep_willingness,
     epiworld_double mmr_window,
-    std::vector< int > quarantine_states,
-    std::vector< int > quarantine_states_for_pep
+    std::vector< int > target_states,
+    std::vector< int > states_if_pep_effective,
+    std::vector< int > states_if_pep_ineffective
 ) {
 
     this->set_name(name);
 
     // Must match the length
-    if (quarantine_states.size() != quarantine_states_for_pep.size())
+    if (target_states.size() != states_if_pep_effective.size() || target_states.size() != states_if_pep_ineffective.size())
         throw std::logic_error(
-            "The length of the quarantine states and the quarantine states for "
+            "The length of the target states and the destination states for "
             "PEP must be the same. These are currently: " +
-            std::to_string(quarantine_states.size()) + " and " +
-            std::to_string(quarantine_states_for_pep.size()) +
+            std::to_string(target_states.size()) + " and " +
+            std::to_string(states_if_pep_effective.size()) +
             ", respectively."
         );
 
-    this->_quarantine_states = quarantine_states;
-    this->_quarantine_states_for_pep = quarantine_states_for_pep;
-    
+    this->_target_states = target_states;
+    this->_states_if_pep_effective = states_if_pep_effective;
+    this->_states_if_pep_ineffective = states_if_pep_ineffective;
+
     // Paramters
     this->_mmr_efficacy = mmr_efficacy;
     this->_ig_efficacy = ig_efficacy;
@@ -18735,15 +18740,16 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     auto & tool_ig  = model->get_tool("PEP IG");
     
     // Iterating over the agents
-    _agents_to_receive_pep.clear();
-    _agents_to_receive_pep_next_state.clear();
+    _to_receive_pep.clear();
+    _next_if_effective.clear();
+    _next_if_ineffective.clear();
     for (auto & agent: model->get_agents())
     {
 
-        // Checking if the agent is in a quarantine
+        // Checking if the agent is in a target
         // state
         int agent_state = static_cast<int>(agent.get_state());
-        if (!IN(agent_state, this->_quarantine_states))
+        if (!IN(agent_state, this->_target_states))
             continue;
 
         // Checking willigness
@@ -18752,13 +18758,13 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
         // Finding the corresponding state for PEP
         auto it = std::find(
-            this->_quarantine_states.begin(),
-            this->_quarantine_states.end(),
+            this->_target_states.begin(),
+            this->_target_states.end(),
             agent.get_state()
         );
 
         // No need to check it, we know it is there
-        auto pos = std::distance(this->_quarantine_states.begin(), it);
+        auto pos = std::distance(this->_target_states.begin(), it);
 
         // Checking if the agent has a virus
         if (agent.get_virus() != nullptr)
@@ -18766,8 +18772,9 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
             // Agents with virus may recover, so we need to check
             // on that again
-            _agents_to_receive_pep.push_back(agent.get_id());
-            _agents_to_receive_pep_next_state.push_back(this->_quarantine_states_for_pep[pos]);
+            _to_receive_pep.push_back(agent.get_id());
+            _next_if_effective.push_back(_states_if_pep_effective[pos]);
+            _next_if_ineffective.push_back(_states_if_pep_ineffective[pos]);
 
             // Checking when did the agent get infected
             int day_infected = agent.get_virus()->get_date();
@@ -18790,7 +18797,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         agent.add_tool(
             *model,
             tool_mmr,
-            this->_quarantine_states_for_pep[pos]
+            this->_states_if_pep_effective[pos]
         );
 
     }
@@ -18798,18 +18805,23 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     // Second set of iterations (figuring out if the agents
     // will recover or not)
     model->events_run();
-    for (size_t i = 0u; i < _agents_to_receive_pep.size(); ++i)
+    for (size_t i = 0u; i < _to_receive_pep.size(); ++i)
     {
-        auto & agent = model->get_agent(_agents_to_receive_pep[i]);
-        int next_state = _agents_to_receive_pep_next_state[i];
+        auto & agent = model->get_agent(_to_receive_pep[i]);
+        int next_state_success = _next_if_effective[i];
+        int next_state_failure = _next_if_ineffective[i];
 
         auto recovers = agent.get_susceptibility_reduction(
             agent.get_virus(), *model
         ); 
 
-        if (recovers > 0.5)
+        if (recovers > model->runif())
         {
-            agent.rm_virus(*model, next_state);
+            agent.rm_virus(*model, next_state_success);
+        } 
+        else
+        {
+            agent.change_state(*model, next_state_failure);
         }
 
     }
