@@ -39,9 +39,9 @@ EPIWORLD_TEST_CASE("State update transition factory", "[state-update-transition]
 
     Model<int> model;
 
-    constexpr epiworld_fast_uint I = 1u;
-    constexpr epiworld_fast_uint R = 2u;
-    constexpr epiworld_fast_uint D = 3u;
+    constexpr epiworld_fast_uint STATE_INFECTED  = 1u;
+    constexpr epiworld_fast_uint STATE_RECOVERED = 2u;
+    constexpr epiworld_fast_uint STATE_DECEASED  = 3u;
 
     epiworld_double ei_rate = 0.3;
     epiworld_double ir_rate = 0.5;
@@ -49,12 +49,12 @@ EPIWORLD_TEST_CASE("State update transition factory", "[state-update-transition]
 
     auto update_exposed = new_state_update_transition<int>(
         {"E->I transition rate"},
-        {I}
+        {STATE_INFECTED}
     );
 
     auto update_infected = new_state_update_transition<int>(
         {"I->R transition rate", "I->D transition rate"},
-        {R, D}
+        {STATE_RECOVERED, STATE_DECEASED}
     );
 
     model.add_state("Exposed",   update_exposed);
@@ -77,14 +77,14 @@ EPIWORLD_TEST_CASE("State update transition factory", "[state-update-transition]
 
     // The transition matrix uses column-major layout:
     //   index = from + to * n_state
-    size_t n = 4u;
+    size_t n = model.get_n_states();
 
     // E->I: all agents start in E, so day 0 records N stays with 0
     // transitions. The converged empirical probability is p/(1+p).
     epiworld_double exp_ei = ei_rate / (1.0 + ei_rate);
 
     REQUIRE_THAT(
-        tprobs[0 + I * n],   // E->I
+        tprobs[0 + STATE_INFECTED * n],   // E->I
         Catch::WithinAbs(static_cast<double>(exp_ei), 0.02)
     );
 
@@ -109,28 +109,28 @@ EPIWORLD_TEST_CASE("State update transition factory", "[state-update-transition]
     epiworld_double exp_id     = id_adj / p_total;
 
     REQUIRE_THAT(
-        tprobs[I + I * n],   // I->I (stay)
+        tprobs[STATE_INFECTED + STATE_INFECTED * n],   // I->I (stay)
         Catch::WithinAbs(static_cast<double>(exp_stay_i), 0.02)
     );
 
     REQUIRE_THAT(
-        tprobs[I + R * n],   // I->R
+        tprobs[STATE_INFECTED + STATE_RECOVERED * n],   // I->R
         Catch::WithinAbs(static_cast<double>(exp_ir), 0.02)
     );
 
     REQUIRE_THAT(
-        tprobs[I + D * n],   // I->D
+        tprobs[STATE_INFECTED + STATE_DECEASED * n],   // I->D
         Catch::WithinAbs(static_cast<double>(exp_id), 0.02)
     );
 
     // R and D are absorbing states
     REQUIRE_THAT(
-        tprobs[R + R * n],   // R->R
+        tprobs[STATE_RECOVERED + STATE_RECOVERED * n],   // R->R
         Catch::WithinAbs(1.0, 0.001)
     );
 
     REQUIRE_THAT(
-        tprobs[D + D * n],   // D->D
+        tprobs[STATE_DECEASED + STATE_DECEASED * n],   // D->D
         Catch::WithinAbs(1.0, 0.001)
     );
 
