@@ -43,7 +43,7 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
 
     for (size_t rep = 0u; rep < n_reps; ++rep)
     {
-        model.seed(static_cast<size_t>(rep + 1u));
+        model.seed(rep + 1u);
         model.agents_sbm(block_sizes, mixing_matrix, true);
 
         // Get the edgelist and compute degrees
