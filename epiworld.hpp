@@ -7689,18 +7689,20 @@ inline AdjList rgraph_blocked(
  * the entry of the mixing matrix and \f$n_h\f$ is the number of agents in
  * block \f$h\f$.
  *
- * The mixing matrix is **not** row-stochastic. Instead, its row sums determine
- * the average expected degree for agents in that group:
+ * The mixing matrix is **not** row-stochastic. For undirected networks, its
+ * row sums should be interpreted as the average expected degree for agents in
+ * that group only when the balance condition
+ * \f$M(g, h) \times n_g = M(h, g) \times n_h\f$ holds for all pairs
+ * \f$(g, h)\f$. In that balanced case,
  * \f[
  *   \mathbb{E}[\text{degree of agent in group } g] \approx \sum_{h} M(g, h)
  * \f]
  *
- * For undirected networks, the mixing matrix should satisfy the balance
- * condition \f$M(g, h) \times n_g = M(h, g) \times n_h\f$ for all pairs
- * \f$(g, h)\f$ so that the expected degree is consistent from both groups'
- * perspectives. When this condition holds, the edge probability for a pair
- * of agents in blocks \f$g\f$ and \f$h\f$ (with \f$g \le h\f$) is
- * \f$M(g, h) / n_h\f$.
+ * For undirected networks, the implementation samples between-block edges only
+ * once for each unordered pair of blocks (with \f$g \le h\f$) using
+ * \f$M(g, h) / n_h\f$. Therefore, if the balance condition is violated, the
+ * row sums generally do not match the expected degree from every group's
+ * perspective.
  *
  * @tparam TSeq Type of the sequence (template parameter of the model).
  * @param block_sizes A vector of size \f$K\f$ indicating the number of agents
@@ -7744,12 +7746,23 @@ inline AdjList rgraph_sbm(
 
     // Total number of agents
     size_t n = 0u;
+    const size_t max_adjlist_n = static_cast<size_t>(
+        std::numeric_limits<int>::max()
+    );
     for (auto bs : block_sizes)
     {
         if (bs == 0u)
             throw std::length_error(
                 "All block sizes must be positive."
             );
+
+        if (bs > max_adjlist_n - n)
+            throw std::length_error(
+                "The total number of agents implied by block_sizes exceeds "
+                "the maximum supported graph size (" +
+                std::to_string(std::numeric_limits<int>::max()) + ")."
+            );
+
         n += bs;
     }
 
@@ -7809,6 +7822,40 @@ inline AdjList rgraph_sbm(
 
             if (p_gh == 0.0)
                 continue;
+
+            // Fast path: p_gh >= 1.0 means all edges are present
+            if (p_gh >= 1.0)
+            {
+                if (g == h)
+                {
+                    // All unique pairs within the block
+                    for (size_t i = block_start[g];
+                         i < block_start[g] + block_sizes[g]; ++i)
+                    {
+                        for (size_t j = i + 1u;
+                             j < block_start[g] + block_sizes[g]; ++j)
+                        {
+                            source.push_back(static_cast<int>(i));
+                            target.push_back(static_cast<int>(j));
+                        }
+                    }
+                }
+                else
+                {
+                    // All pairs between blocks g and h
+                    for (size_t i = block_start[g];
+                         i < block_start[g] + block_sizes[g]; ++i)
+                    {
+                        for (size_t j = block_start[h];
+                             j < block_start[h] + block_sizes[h]; ++j)
+                        {
+                            source.push_back(static_cast<int>(i));
+                            target.push_back(static_cast<int>(j));
+                        }
+                    }
+                }
+                continue;
+            }
 
             if (g == h)
             {
