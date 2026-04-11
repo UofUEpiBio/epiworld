@@ -7792,7 +7792,9 @@ inline AdjList rgraph_sbm(
     std::vector< int > target;
 
     // For each pair of blocks (g, h) with g <= h (undirected),
-    // sample edges using Bernoulli trials.
+    // sample the number of edges from a binomial distribution and
+    // then randomly place them. This avoids iterating over all
+    // possible pairs, which is O(n_g * n_h) per block pair.
     for (size_t g = 0u; g < n_blocks; ++g)
     {
         for (size_t h = g; h < n_blocks; ++h)
@@ -7805,39 +7807,75 @@ inline AdjList rgraph_sbm(
             // Probability of an edge between agents in blocks g and h
             double p_gh = m_gh / static_cast<double>(block_sizes[h]);
 
+            if (p_gh == 0.0)
+                continue;
+
             if (g == h)
             {
-                // Within-block: iterate over unique pairs (i, j) with i < j
-                for (size_t i = block_start[g];
-                     i < block_start[g] + block_sizes[g]; ++i)
+                // Within-block: n_g * (n_g - 1) / 2 possible unique pairs
+                size_t n_g = block_sizes[g];
+                size_t n_possible = n_g * (n_g - 1u) / 2u;
+
+                std::binomial_distribution<> binom(
+                    static_cast<int>(n_possible), p_gh
+                );
+                size_t m = static_cast<size_t>(
+                    binom(*model.get_rand_endgine())
+                );
+
+                for (size_t e = 0u; e < m; ++e)
                 {
-                    for (size_t j = i + 1u;
-                         j < block_start[g] + block_sizes[g]; ++j)
-                    {
-                        if (model.runif() < p_gh)
-                        {
-                            source.push_back(static_cast<int>(i));
-                            target.push_back(static_cast<int>(j));
-                        }
-                    }
+                    // Sample a random pair (a, b) with a > b within
+                    // the block, following the rgraph_bernoulli pattern
+                    size_t a = static_cast<size_t>(
+                        std::floor(model.runif() * n_g)
+                    );
+
+                    // Ensure a > 0 so b has a valid range
+                    if (a == 0u)
+                        a = 1u;
+
+                    size_t b = static_cast<size_t>(
+                        std::floor(model.runif() * a)
+                    );
+
+                    source.push_back(
+                        static_cast<int>(block_start[g] + a)
+                    );
+                    target.push_back(
+                        static_cast<int>(block_start[g] + b)
+                    );
                 }
             }
             else
             {
-                // Between-block: iterate over all (i in g, j in h) pairs.
-                // Edge probability is M(g,h)/n_h from group g's perspective.
-                for (size_t i = block_start[g];
-                     i < block_start[g] + block_sizes[g]; ++i)
+                // Between-block: n_g * n_h possible pairs
+                size_t n_g = block_sizes[g];
+                size_t n_h = block_sizes[h];
+                size_t n_possible = n_g * n_h;
+
+                std::binomial_distribution<> binom(
+                    static_cast<int>(n_possible), p_gh
+                );
+                size_t m = static_cast<size_t>(
+                    binom(*model.get_rand_endgine())
+                );
+
+                for (size_t e = 0u; e < m; ++e)
                 {
-                    for (size_t j = block_start[h];
-                         j < block_start[h] + block_sizes[h]; ++j)
-                    {
-                        if (model.runif() < p_gh)
-                        {
-                            source.push_back(static_cast<int>(i));
-                            target.push_back(static_cast<int>(j));
-                        }
-                    }
+                    size_t a = static_cast<size_t>(
+                        std::floor(model.runif() * n_g)
+                    );
+                    size_t b = static_cast<size_t>(
+                        std::floor(model.runif() * n_h)
+                    );
+
+                    source.push_back(
+                        static_cast<int>(block_start[g] + a)
+                    );
+                    target.push_back(
+                        static_cast<int>(block_start[h] + b)
+                    );
                 }
             }
 
