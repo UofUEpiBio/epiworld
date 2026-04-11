@@ -111,14 +111,26 @@ inline UpdateFun<TSeq> new_state_update_transition(
     ) -> void {
 
         size_t n = param_names.size();
-        std::vector< epiworld_double > probs(n);
-        for (size_t i = 0u; i < n; ++i)
-            probs[i] = m->par(param_names[i]);
+        int which;
 
-        // Roulette sampling: returns -1 if no transition occurs,
-        // otherwise the index of the transition that fires.
-        int which = roulette(probs, m);
+        if (n <= 1024u)
+        {
+            for (size_t i = 0u; i < n; ++i)
+                m->array_double_tmp[i] = m->par(param_names[i]);
 
+            // Roulette sampling: returns -1 if no transition occurs,
+            // otherwise the index of the transition that fires.
+            which = roulette(static_cast<epiworld_fast_uint>(n), m);
+        }
+        else
+        {
+            std::vector< epiworld_double > probs(n);
+            for (size_t i = 0u; i < n; ++i)
+                probs[i] = m->par(param_names[i]);
+
+            // Fallback for transition tables larger than the temporary buffer.
+            which = roulette(probs, m);
+        }
         if (which < 0)
             return;
 

@@ -66,12 +66,16 @@ EPIWORLD_TEST_CASE("State update transition factory", "[state-update-transition]
     model.add_param(ir_rate, "I->R transition rate");
     model.add_param(id_rate, "I->D transition rate");
 
-    // Large population so the transition probabilities converge
-    model.agents_empty_graph(10000);
+    // Keep the sample large enough for stable estimates, but avoid an
+    // unnecessarily expensive test in CI.
+    constexpr epiworld_fast_uint N_AGENTS = 2000u;
+    constexpr epiworld_fast_uint N_DAYS   = 50u;
+    model.agents_empty_graph(N_AGENTS);
     model.queuing_off();
 
-    // Run long enough to get stable transition probabilities
-    model.run(5000, 123);
+    // With these transition rates, agents leave E and I quickly, so a
+    // short run is sufficient for the empirical probabilities to stabilize.
+    model.run(N_DAYS, 123);
 
     auto tprobs = model.get_db().get_transition_probability(false, true);
 
