@@ -54,7 +54,10 @@ $(NAME)_SOURCES := \
 	25b-hospitalizationstracker-validation.cpp \
 	26-entity-add-rm.cpp \
 	27-shortcreek.cpp \
-	28a-epiassert.cpp
+	28a-epiassert.cpp \
+	29a-sbm.cpp \
+	29b-sbm.cpp \
+	29c-sbm.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

@@ -605,4 +605,173 @@ inline AdjList rgraph_blocked(
 
 }
 
+/**
+ * @brief Generates a network using a Stochastic Block Model (SBM).
+ *
+ * This function creates a random undirected network where connections between
+ * agents are determined by a mixing matrix and block (group) membership.
+ * Each potential edge between agents in blocks \f$g\f$ and \f$h\f$ is included
+ * independently with probability \f$M(g, h) / n_h\f$, where \f$M(g, h)\f$ is
+ * the entry of the mixing matrix and \f$n_h\f$ is the number of agents in
+ * block \f$h\f$.
+ *
+ * The mixing matrix is **not** row-stochastic. Instead, its row sums determine
+ * the average expected degree for agents in that group:
+ * \f[
+ *   \mathbb{E}[\text{degree of agent in group } g] \approx \sum_{h} M(g, h)
+ * \f]
+ *
+ * For undirected networks, the mixing matrix should satisfy the balance
+ * condition \f$M(g, h) \times n_g = M(h, g) \times n_h\f$ for all pairs
+ * \f$(g, h)\f$ so that the expected degree is consistent from both groups'
+ * perspectives. When this condition holds, the edge probability for a pair
+ * of agents in blocks \f$g\f$ and \f$h\f$ (with \f$g \le h\f$) is
+ * \f$M(g, h) / n_h\f$.
+ *
+ * @tparam TSeq Type of the sequence (template parameter of the model).
+ * @param block_sizes A vector of size \f$K\f$ indicating the number of agents
+ *   per block. The total number of agents is \f$\sum_k \text{block\_sizes}[k]\f$.
+ * @param mixing_matrix A vector of size \f$K \times K\f$ representing the
+ *   mixing matrix. The entry \f$M(g, h)\f$ controls the expected number of
+ *   connections agents in group \f$g\f$ make with agents in group \f$h\f$.
+ * @param row_major If `true`, the mixing matrix is stored in row-major order
+ *   (C-style), i.e., \f$M(g, h) = \text{mixing\_matrix}[g \times K + h]\f$.
+ *   If `false`, column-major order (Fortran-style) is assumed, i.e.,
+ *   \f$M(g, h) = \text{mixing\_matrix}[h \times K + g]\f$.
+ * @param model A reference to the Model, used for random number generation.
+ * @return An AdjList representing the generated undirected network.
+ *
+ * @throws std::length_error If `block_sizes` is empty, `mixing_matrix` size
+ *   does not equal \f$K^2\f$, or any block size is zero.
+ * @throws std::range_error If any mixing matrix entry is negative or if
+ *   \f$M(g, h) / n_h > 1\f$ for any pair of blocks.
+ */
+template<typename TSeq>
+inline AdjList rgraph_sbm(
+    const std::vector< size_t > & block_sizes,
+    const std::vector< double > & mixing_matrix,
+    bool row_major,
+    Model<TSeq> & model
+) {
+
+    size_t n_blocks = block_sizes.size();
+
+    if (n_blocks == 0u)
+        throw std::length_error(
+            "block_sizes must have at least one element."
+        );
+
+    if (mixing_matrix.size() != n_blocks * n_blocks)
+        throw std::length_error(
+            "mixing_matrix must have size K * K, where K = block_sizes.size(). "
+            "Expected " + std::to_string(n_blocks * n_blocks) +
+            " but got " + std::to_string(mixing_matrix.size()) + "."
+        );
+
+    // Total number of agents
+    size_t n = 0u;
+    for (auto bs : block_sizes)
+    {
+        if (bs == 0u)
+            throw std::length_error(
+                "All block sizes must be positive."
+            );
+        n += bs;
+    }
+
+    // Compute the starting index for each block
+    std::vector< size_t > block_start(n_blocks, 0u);
+    for (size_t g = 1u; g < n_blocks; ++g)
+        block_start[g] = block_start[g - 1u] + block_sizes[g - 1u];
+
+    // Validate mixing matrix entries and compute probabilities
+    // p(g, h) = M(g, h) / n_h for the undirected case
+    // We validate that all entries are non-negative and p(g,h) <= 1
+    for (size_t g = 0u; g < n_blocks; ++g)
+    {
+        for (size_t h = 0u; h < n_blocks; ++h)
+        {
+            double m_gh = row_major
+                ? mixing_matrix[g * n_blocks + h]
+                : mixing_matrix[h * n_blocks + g];
+
+            if (m_gh < 0.0)
+                throw std::range_error(
+                    "Mixing matrix entries must be non-negative. "
+                    "Entry (" + std::to_string(g) + ", " +
+                    std::to_string(h) + ") = " + std::to_string(m_gh) + "."
+                );
+
+            double p_gh = m_gh / static_cast<double>(block_sizes[h]);
+            if (p_gh > 1.0)
+                throw std::range_error(
+                    "Mixing matrix entry (" + std::to_string(g) + ", " +
+                    std::to_string(h) + ") = " + std::to_string(m_gh) +
+                    " implies probability " + std::to_string(p_gh) +
+                    " > 1 (block size = " +
+                    std::to_string(block_sizes[h]) + ")."
+                );
+        }
+    }
+
+    std::vector< int > source;
+    std::vector< int > target;
+
+    // For each pair of blocks (g, h) with g <= h (undirected),
+    // sample edges using Bernoulli trials.
+    for (size_t g = 0u; g < n_blocks; ++g)
+    {
+        for (size_t h = g; h < n_blocks; ++h)
+        {
+
+            double m_gh = row_major
+                ? mixing_matrix[g * n_blocks + h]
+                : mixing_matrix[h * n_blocks + g];
+
+            // Probability of an edge between agents in blocks g and h
+            double p_gh = m_gh / static_cast<double>(block_sizes[h]);
+
+            if (g == h)
+            {
+                // Within-block: iterate over unique pairs (i, j) with i < j
+                for (size_t i = block_start[g];
+                     i < block_start[g] + block_sizes[g]; ++i)
+                {
+                    for (size_t j = i + 1u;
+                         j < block_start[g] + block_sizes[g]; ++j)
+                    {
+                        if (model.runif() < p_gh)
+                        {
+                            source.push_back(static_cast<int>(i));
+                            target.push_back(static_cast<int>(j));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Between-block: iterate over all (i in g, j in h) pairs.
+                // Edge probability is M(g,h)/n_h from group g's perspective.
+                for (size_t i = block_start[g];
+                     i < block_start[g] + block_sizes[g]; ++i)
+                {
+                    for (size_t j = block_start[h];
+                         j < block_start[h] + block_sizes[h]; ++j)
+                    {
+                        if (model.runif() < p_gh)
+                        {
+                            source.push_back(static_cast<int>(i));
+                            target.push_back(static_cast<int>(j));
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    return AdjList(source, target, static_cast<int>(n), false);
+
+}
+
 #endif
