@@ -7704,6 +7704,22 @@ inline AdjList rgraph_blocked(
  * row sums generally do not match the expected degree from every group's
  * perspective.
  *
+ * **Sampling bias.** Edges are sampled with replacement (binomial count then
+ * random placement), matching the `rgraph_bernoulli` pattern. Duplicate
+ * placements hitting the same pair are deduplicated by AdjList, so the
+ * realised edge count is slightly less than the binomial draw. The exact
+ * expected number of unique edges for a block pair is:
+ * \f[
+ *   \mathbb{E}[\text{unique edges}] =
+ *     \sum_{k} \bigl[1 - (1 - p \cdot q_k)^{N}\bigr]
+ * \f]
+ * where \f$N\f$ is the number of possible pairs, \f$p\f$ is the Bernoulli
+ * probability, and \f$q_k\f$ is the probability of selecting pair \f$k\f$ in a
+ * single draw. For between-block pairs, \f$q_k = 1/(n_g n_h)\f$ (uniform). For
+ * within-block pairs, the selection is non-uniform due to the \f$b =
+ * \lfloor U \cdot a \rfloor\f$ pattern inherited from `rgraph_bernoulli`. The
+ * bias is \f$O(1/n)\f$ and vanishes as block sizes grow.
+ *
  * @tparam TSeq Type of the sequence (template parameter of the model).
  * @param block_sizes A vector of size \f$K\f$ indicating the number of agents
  *   per block. The total number of agents is \f$\sum_k \text{block\_sizes}[k]\f$.
@@ -16015,14 +16031,26 @@ inline UpdateFun<TSeq> new_state_update_transition(
     ) -> void {
 
         size_t n = param_names.size();
-        std::vector< epiworld_double > probs(n);
-        for (size_t i = 0u; i < n; ++i)
-            probs[i] = m->par(param_names[i]);
+        int which;
 
-        // Roulette sampling: returns -1 if no transition occurs,
-        // otherwise the index of the transition that fires.
-        int which = roulette(probs, m);
+        if (n <= 1024u)
+        {
+            for (size_t i = 0u; i < n; ++i)
+                m->array_double_tmp[i] = m->par(param_names[i]);
 
+            // Roulette sampling: returns -1 if no transition occurs,
+            // otherwise the index of the transition that fires.
+            which = roulette(static_cast<epiworld_fast_uint>(n), m);
+        }
+        else
+        {
+            std::vector< epiworld_double > probs(n);
+            for (size_t i = 0u; i < n; ++i)
+                probs[i] = m->par(param_names[i]);
+
+            // Fallback for transition tables larger than the temporary buffer.
+            which = roulette(probs, m);
+        }
         if (which < 0)
             return;
 

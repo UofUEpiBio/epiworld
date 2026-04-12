@@ -60,6 +60,8 @@ $(NAME)_SOURCES := \
 	29c-sbm-between.cpp \
 	29d-sbm-colmajor.cpp \
 	29e-sbm-erdos-renyi.cpp \
+	29f-sbm-variance.cpp \
+	29g-sbm-balance.cpp \
 	29a-state-update-transition.cpp
 
 $(NAME)_COV_DIRS := \
