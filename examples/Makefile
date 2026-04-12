@@ -14,7 +14,8 @@ PACKAGES := \
 	10-likelihood-free-mcmc \
 	11-entities \
 	13-genint \
-	14-community-hosp
+	14-community-hosp \
+	15-seird-transitions
 	
 # Only with OpenMP
 ifneq ($(filter 1 yes true,$(WITH_OPENMP)),)
