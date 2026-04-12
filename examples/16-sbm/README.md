@@ -1,4 +1,4 @@
-## Example: `01-seir`
+## Example: `16-sbm`
 
 Output from the program:
 
@@ -10,14 +10,14 @@ _________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
 
-Name of the model   : Susceptible-Exposed-Infected-Removed (SEIR)
-Population size     : 1000000
+Name of the model   : Susceptible-Infected-Recovered (SIR)
+Population size     : 10000
 Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 2.00s
-Last run speed      : 17.14 million agents x day / second
+Last run elapsed t  : 12.00ms
+Last run speed      : 38.97 million agents x day / second
 Rewiring            : off
 Last seed used      : 123
 
@@ -31,20 +31,17 @@ Tool(s):
  (none)
 
 Model parameters:
- - Incubation days   : 7.0000
  - Recovery rate     : 0.5000
- - Transmission rate : 0.9000
+ - Transmission rate : 0.3000
 
 Distribution of the population at time 50:
-  - (0) Susceptible :  990000 -> 118466
-  - (1) Exposed     :   10000 -> 51970
-  - (2) Infected    :       0 -> 16394
-  - (3) Removed     :       0 -> 813170
+  - (0) Susceptible :  9900 -> 298
+  - (1) Infected    :   100 -> 0
+  - (2) Recovered   :     0 -> 9702
 
 Transition Probabilities:
- - Susceptible  0.96  0.04     -     -
- - Exposed         -  0.86  0.14     -
- - Infected        -     -  0.50  0.50
- - Removed         -     -     -  1.00
+ - Susceptible  0.85  0.15     -
+ - Infected        -  0.50  0.50
+ - Recovered       -     -  1.00
 
 ```

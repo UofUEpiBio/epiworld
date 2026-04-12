@@ -15,6 +15,7 @@ Days (duration)     : 0 (of 0)
 Number of viruses   : 1
 Last run elapsed t  : -
 Rewiring            : off
+Last seed used      : 0
 
 Global events:
  - Surveilance program (runs daily)
@@ -48,9 +49,10 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 11.00ms
-Last run speed      : 85.87 million agents x day / second
+Last run elapsed t  : 7.00ms
+Last run speed      : 130.98 million agents x day / second
 Rewiring            : off
+Last seed used      : 123
 
 Global events:
  - Surveilance program (runs daily)

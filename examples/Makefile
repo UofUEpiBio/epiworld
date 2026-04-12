@@ -15,7 +15,8 @@ PACKAGES := \
 	11-entities \
 	13-genint \
 	14-community-hosp \
-	15-seird-transitions
+	15-seird-transitions \
+	16-sbm
 	
 # Only with OpenMP
 ifneq ($(filter 1 yes true,$(WITH_OPENMP)),)
