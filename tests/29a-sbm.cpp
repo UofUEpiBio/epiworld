@@ -31,7 +31,7 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
         n += bs;
 
     // We need multiple runs to get stable average degrees.
-    size_t n_reps = 200u;
+    size_t n_reps = 400u;
 
     // Accumulate degree sums per group across repetitions.
     std::vector< double > degree_sum(n_blocks, 0.0);
@@ -41,9 +41,17 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
     );
     model.verbose_off();
 
+    // Generating different seeds for each replication to get
+    // different random graphs.
+    std::vector< size_t > seeds(n_reps);
+    for (size_t i = 0u; i < n_reps; ++i)
+        seeds[i] = model.runif() * std::numeric_limits< size_t >::max();
+
+    std::cout << "Running " << n_reps << " SBM simulations..." << std::endl;
+    Progress pb(n_reps, 80);
     for (size_t rep = 0u; rep < n_reps; ++rep)
     {
-        model.seed(rep + 1u);
+        model.seed(seeds[rep]);
         model.agents_sbm(block_sizes, mixing_matrix, true);
 
         // Get the edgelist and compute degrees
@@ -70,7 +78,10 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
             );
             offset += block_sizes[g];
         }
+
+        pb.next();
     }
+
 
     // Compute average degree per group across replications
     for (size_t g = 0u; g < n_blocks; ++g)
@@ -93,7 +104,7 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
     }
 
     // Check that observed average degree is close to expected.
-    // With 200 repetitions and these block sizes, tolerance of 0.5
+    // With 400 repetitions and these block sizes, tolerance of 0.5
     // should be adequate.
     for (size_t g = 0u; g < n_blocks; ++g)
     {

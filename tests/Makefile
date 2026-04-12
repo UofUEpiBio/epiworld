@@ -56,9 +56,9 @@ $(NAME)_SOURCES := \
 	27-shortcreek.cpp \
 	28a-epiassert.cpp \
 	29a-sbm.cpp \
-	29b-sbm.cpp \
-	29c-sbm.cpp \
-	29d-sbm.cpp \
+	29b-sbm-within.cpp \
+	29c-sbm-between.cpp \
+	29d-sbm-colmajor.cpp \
 	29a-state-update-transition.cpp
 
 $(NAME)_COV_DIRS := \
