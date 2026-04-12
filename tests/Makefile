@@ -58,7 +58,7 @@ $(NAME)_SOURCES := \
 	29a-sbm.cpp \
 	29b-sbm.cpp \
 	29c-sbm.cpp \
-	29d-sbm.cpp
+	29d-sbm.cpp \
 	29a-state-update-transition.cpp
 
 $(NAME)_COV_DIRS := \
