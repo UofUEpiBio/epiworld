@@ -7705,20 +7705,20 @@ inline AdjList rgraph_blocked(
  * perspective.
  *
  * **Sampling bias.** Edges are sampled with replacement (binomial count then
- * random placement), matching the `rgraph_bernoulli` pattern. Duplicate
- * placements hitting the same pair are deduplicated by AdjList, so the
- * realised edge count is slightly less than the binomial draw. The exact
- * expected number of unique edges for a block pair is:
+ * uniform random placement), so duplicate placements hitting the same pair
+ * are deduplicated by AdjList. The realised edge count is slightly less than
+ * the binomial draw. The exact expected number of unique edges for a block
+ * pair with \f$N\f$ possible slots and Bernoulli probability \f$p\f$ is:
  * \f[
  *   \mathbb{E}[\text{unique edges}] =
- *     \sum_{k} \bigl[1 - (1 - p \cdot q_k)^{N}\bigr]
+ *     N \bigl[1 - \bigl(1 - \frac{p}{N}\bigr)^{N}\bigr]
+ *     \approx N \bigl[1 - e^{-p}\bigr]
  * \f]
- * where \f$N\f$ is the number of possible pairs, \f$p\f$ is the Bernoulli
- * probability, and \f$q_k\f$ is the probability of selecting pair \f$k\f$ in a
- * single draw. For between-block pairs, \f$q_k = 1/(n_g n_h)\f$ (uniform). For
- * within-block pairs, the selection is non-uniform due to the \f$b =
- * \lfloor U \cdot a \rfloor\f$ pattern inherited from `rgraph_bernoulli`. The
- * bias is \f$O(1/n)\f$ and vanishes as block sizes grow.
+ * For between-block pairs \f$N = n_g n_h\f$; for within-block pairs
+ * \f$N = \binom{n_g}{2}\f$. Both within-block and between-block samplers
+ * draw uniformly over their respective pair spaces, so all agents within
+ * a block are exchangeable. The bias is \f$O(1/n)\f$ and vanishes as block
+ * sizes grow.
  *
  * @tparam TSeq Type of the sequence (template parameter of the model).
  * @param block_sizes A vector of size \f$K\f$ indicating the number of agents
@@ -7877,30 +7877,26 @@ inline AdjList rgraph_sbm(
             {
                 // Within-block: n_g * (n_g - 1) / 2 possible unique pairs
                 size_t n_g = block_sizes[g];
-                size_t n_possible = n_g * (n_g - 1u) / 2u;
+                long long n_possible = static_cast<long long>(n_g) *
+                    static_cast<long long>(n_g - 1u) / 2;
 
-                std::binomial_distribution<> binom(
-                    static_cast<int>(n_possible), p_gh
+                std::binomial_distribution<long long> binom(
+                    n_possible, p_gh
                 );
-                size_t m = static_cast<size_t>(
-                    binom(*model.get_rand_endgine())
-                );
+                long long m = binom(*model.get_rand_endgine());
 
-                for (size_t e = 0u; e < m; ++e)
+                for (long long e = 0; e < m; ++e)
                 {
-                    // Sample a random pair (a, b) with a > b within
-                    // the block, following the rgraph_bernoulli pattern
+                    // Sample a uniform unordered pair (a, b) with a != b
                     size_t a = static_cast<size_t>(
                         std::floor(model.runif() * n_g)
                     );
-
-                    // Ensure a > 0 so b has a valid range
-                    if (a == 0u)
-                        a = 1u;
-
                     size_t b = static_cast<size_t>(
-                        std::floor(model.runif() * a)
+                        std::floor(model.runif() * (n_g - 1u))
                     );
+
+                    if (b >= a)
+                        b++;
 
                     source.push_back(
                         static_cast<int>(block_start[g] + a)
@@ -7915,16 +7911,15 @@ inline AdjList rgraph_sbm(
                 // Between-block: n_g * n_h possible pairs
                 size_t n_g = block_sizes[g];
                 size_t n_h = block_sizes[h];
-                size_t n_possible = n_g * n_h;
+                long long n_possible = static_cast<long long>(n_g) *
+                    static_cast<long long>(n_h);
 
-                std::binomial_distribution<> binom(
-                    static_cast<int>(n_possible), p_gh
+                std::binomial_distribution<long long> binom(
+                    n_possible, p_gh
                 );
-                size_t m = static_cast<size_t>(
-                    binom(*model.get_rand_endgine())
-                );
+                long long m = binom(*model.get_rand_endgine());
 
-                for (size_t e = 0u; e < m; ++e)
+                for (long long e = 0; e < m; ++e)
                 {
                     size_t a = static_cast<size_t>(
                         std::floor(model.runif() * n_g)

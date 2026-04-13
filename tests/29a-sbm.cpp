@@ -3,63 +3,27 @@
 using namespace epiworld;
 
 /**
- * Compute the expected number of unique within-block edges for a block
- * of size n_g with mixing matrix diagonal entry m_gg. Accounts for the
- * non-uniform pair selection (b = floor(U * a), with a=0 mapped to a=1)
- * and duplicate collisions from sampling with replacement.
+ * Compute the expected number of unique edges for a block pair with
+ * N possible slots and Bernoulli probability p, under uniform
+ * sampling with replacement.
  *
- * Formula: E[unique] = sum_k [1 - (1 - p * q_k)^N]
- * where N = n_g*(n_g-1)/2, p = m_gg/n_g, and q_k is the selection
- * probability for pair k.
+ * Formula: E[unique] = N * [1 - (1 - p/N)^N]
  */
-static double expected_unique_within(size_t n_g, double m_gg)
+static double expected_unique(long long N, double p)
 {
-    if (n_g <= 1u || m_gg == 0.0)
+    if (N == 0 || p == 0.0)
         return 0.0;
 
-    size_t N_w = n_g * (n_g - 1u) / 2u;
-    double p_gg = m_gg / static_cast<double>(n_g);
-
-    // Pair (1, 0): selection probability = 2/n_g
-    double q10 = 2.0 / static_cast<double>(n_g);
-    double result = 1.0 - std::pow(1.0 - p_gg * q10, static_cast<double>(N_w));
-
-    // Pairs (a, b) for a >= 2, 0 <= b < a: selection probability = 1/(n_g*a)
-    for (size_t a = 2u; a < n_g; ++a)
-    {
-        double q_a = 1.0 / (static_cast<double>(n_g) * static_cast<double>(a));
-        result += static_cast<double>(a) *
-            (1.0 - std::pow(1.0 - p_gg * q_a, static_cast<double>(N_w)));
-    }
-
-    return result;
-}
-
-/**
- * Compute the expected number of unique between-block edges for blocks
- * of sizes n_g and n_h with mixing matrix entry m_gh. Pair selection is
- * uniform over n_g * n_h slots.
- *
- * Formula: E[unique] = n_g * n_h * [1 - (1 - p/(n_g*n_h))^(n_g*n_h)]
- * where p = m_gh / n_h.
- */
-static double expected_unique_between(
-    size_t n_g, size_t n_h, double m_gh
-)
-{
-    if (m_gh == 0.0)
-        return 0.0;
-
-    double N_b = static_cast<double>(n_g) * static_cast<double>(n_h);
-    double p_gh = m_gh / static_cast<double>(n_h);
-    double q = p_gh / N_b;
-
-    return N_b * (1.0 - std::pow(1.0 - q, N_b));
+    double Nd = static_cast<double>(N);
+    return Nd * (1.0 - std::pow(1.0 - p / Nd, Nd));
 }
 
 /**
  * Compute the bias-corrected expected degree for each group, accounting
- * for duplicate edge collisions from sampling with replacement.
+ * for duplicate edge collisions from uniform sampling with replacement.
+ *
+ * Within-block:  N = n_g*(n_g-1)/2, p = M(g,g)/n_g
+ * Between-block: N = n_g*n_h,       p = M(lo,hi)/n_hi  (lo <= hi)
  */
 static std::vector<double> expected_degrees_corrected(
     const std::vector<size_t> & block_sizes,
@@ -75,7 +39,10 @@ static std::vector<double> expected_degrees_corrected(
 
         // Within-block contribution: 2 * unique_within / n_g
         double m_gg = mixing_matrix[g * K + g];
-        exp_deg[g] += 2.0 * expected_unique_within(block_sizes[g], m_gg) / n_g;
+        double p_gg = m_gg / n_g;
+        long long N_w = static_cast<long long>(block_sizes[g]) *
+            static_cast<long long>(block_sizes[g] - 1u) / 2;
+        exp_deg[g] += 2.0 * expected_unique(N_w, p_gg) / n_g;
 
         // Between-block contributions
         for (size_t h = 0u; h < K; ++h)
@@ -86,10 +53,11 @@ static std::vector<double> expected_degrees_corrected(
             size_t hi = std::max(g, h);
             double m_lohi = mixing_matrix[lo * K + hi];
 
-            double unique_bw = expected_unique_between(
-                block_sizes[lo], block_sizes[hi], m_lohi
-            );
+            long long N_b = static_cast<long long>(block_sizes[lo]) *
+                static_cast<long long>(block_sizes[hi]);
+            double p_bw = m_lohi / static_cast<double>(block_sizes[hi]);
 
+            double unique_bw = expected_unique(N_b, p_bw);
             exp_deg[g] += unique_bw / n_g;
         }
     }
@@ -126,7 +94,7 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
     for (auto bs : block_sizes)
         n += bs;
 
-    // Compute bias-corrected expected degrees
+    // Compute bias-corrected expected degrees using uniform dedup formula
     auto corrected = expected_degrees_corrected(block_sizes, mixing_matrix);
 
     // We need multiple runs to get stable average degrees.
@@ -187,7 +155,8 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
         degree_sum[g] /= static_cast<double>(n_reps);
 
     // Print results
-    std::cout << "SBM expected degree test (bias-corrected):" << std::endl;
+    std::cout << "SBM expected degree test (bias-corrected, uniform):"
+              << std::endl;
     for (size_t g = 0u; g < n_blocks; ++g)
     {
         double row_sum = 0.0;

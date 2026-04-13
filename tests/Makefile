@@ -62,6 +62,8 @@ $(NAME)_SOURCES := \
 	29e-sbm-erdos-renyi.cpp \
 	29f-sbm-variance.cpp \
 	29g-sbm-balance.cpp \
+	29h-sbm-exchangeability.cpp \
+	29i-sbm-large-blocks.cpp \
 	29a-state-update-transition.cpp
 
 $(NAME)_COV_DIRS := \
