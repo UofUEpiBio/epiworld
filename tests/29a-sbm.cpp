@@ -3,38 +3,20 @@
 using namespace epiworld;
 
 /**
- * Compute the expected number of unique edges for a block pair with
- * N possible slots and Bernoulli probability p, under uniform
- * sampling with replacement.
+ * Compute the exact expected degree for each group using the
+ * mixing matrix and block sizes.
  *
- * For sparse blocks (p <= 0.5, using binomial + random placement):
- *   E[unique] = N * [1 - (1 - p/N)^N]
+ * With the Batagelj-Brandes algorithm, each edge is generated
+ * independently with exactly the correct probability — no
+ * duplicate collisions. The expected degree is:
  *
- * For dense blocks (p > 0.5, using per-pair Bernoulli trials):
- *   E[unique] = N * p  (no dedup needed)
+ * Within-block:  E[deg_within] = M(g,g) * (n_g - 1) / n_g
+ * Between-block: E[deg_between from h] = M(lo,hi) * n_lo / n_g
+ *   where lo = min(g,h), hi = max(g,h), and the edge probability
+ *   is M(lo,hi) / n_hi. Each agent in g gets n_h such trials
+ *   (or n_g for the other block), contributing unique_edges / n_g.
  */
-static double expected_unique(long long N, double p)
-{
-    if (N == 0 || p == 0.0)
-        return 0.0;
-
-    // Dense path: per-pair Bernoulli, no dedup bias
-    if (p > 0.5)
-        return static_cast<double>(N) * p;
-
-    // Sparse path: binomial + replacement dedup formula
-    double Nd = static_cast<double>(N);
-    return Nd * (1.0 - std::pow(1.0 - p / Nd, Nd));
-}
-
-/**
- * Compute the bias-corrected expected degree for each group, accounting
- * for duplicate edge collisions from uniform sampling with replacement.
- *
- * Within-block:  N = n_g*(n_g-1)/2, p = M(g,g)/n_g
- * Between-block: N = n_g*n_h,       p = M(lo,hi)/n_hi  (lo <= hi)
- */
-static std::vector<double> expected_degrees_corrected(
+static std::vector<double> expected_degrees(
     const std::vector<size_t> & block_sizes,
     const std::vector<double> & mixing_matrix  // row-major
 )
@@ -46,12 +28,14 @@ static std::vector<double> expected_degrees_corrected(
     {
         double n_g = static_cast<double>(block_sizes[g]);
 
-        // Within-block contribution: 2 * unique_within / n_g
+        // Within-block contribution:
+        // n_g*(n_g-1)/2 pairs, each with prob p_gg = M(g,g)/n_g.
+        // Expected edges = n_g*(n_g-1)/2 * p_gg
+        // Each edge adds 2 to total degree, so contribution per agent:
+        // 2 * [n_g*(n_g-1)/2 * p_gg] / n_g = (n_g-1) * p_gg
+        //   = M(g,g) * (n_g-1) / n_g
         double m_gg = mixing_matrix[g * K + g];
-        double p_gg = m_gg / n_g;
-        long long N_w = static_cast<long long>(block_sizes[g]) *
-            static_cast<long long>(block_sizes[g] - 1u) / 2;
-        exp_deg[g] += 2.0 * expected_unique(N_w, p_gg) / n_g;
+        exp_deg[g] += m_gg * (n_g - 1.0) / n_g;
 
         // Between-block contributions
         for (size_t h = 0u; h < K; ++h)
@@ -61,13 +45,15 @@ static std::vector<double> expected_degrees_corrected(
             size_t lo = std::min(g, h);
             size_t hi = std::max(g, h);
             double m_lohi = mixing_matrix[lo * K + hi];
+            double n_h = static_cast<double>(block_sizes[h]);
 
-            long long N_b = static_cast<long long>(block_sizes[lo]) *
-                static_cast<long long>(block_sizes[hi]);
-            double p_bw = m_lohi / static_cast<double>(block_sizes[hi]);
-
-            double unique_bw = expected_unique(N_b, p_bw);
-            exp_deg[g] += unique_bw / n_g;
+            // p = M(lo,hi) / n_hi
+            // Expected edges = n_lo * n_hi * p = n_lo * M(lo,hi)
+            // Each edge contributes 1 degree to g-side agent.
+            // Degree contribution per agent in g = expected_edges / n_g
+            double expected_edges = static_cast<double>(block_sizes[lo]) *
+                m_lohi;
+            exp_deg[g] += expected_edges / n_g;
         }
     }
 
@@ -79,7 +65,8 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
 
     // Setup: 3 blocks with known sizes and a mixing matrix.
     // The mixing matrix is NOT row-stochastic; row sums give the
-    // expected degree for agents in that group (before bias correction).
+    // expected degree for agents in that group (approximately,
+    // with the (n_g-1)/n_g correction for within-block edges).
     //
     // Block sizes: 200, 300, 500
     //
@@ -103,8 +90,8 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
     for (auto bs : block_sizes)
         n += bs;
 
-    // Compute bias-corrected expected degrees using uniform dedup formula
-    auto corrected = expected_degrees_corrected(block_sizes, mixing_matrix);
+    // Compute exact expected degrees (Batagelj-Brandes: no bias)
+    auto expected = expected_degrees(block_sizes, mixing_matrix);
 
     // We need multiple runs to get stable average degrees.
     size_t n_reps = 400u;
@@ -164,7 +151,7 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
         degree_sum[g] /= static_cast<double>(n_reps);
 
     // Print results
-    std::cout << "SBM expected degree test (bias-corrected, uniform):"
+    std::cout << "SBM expected degree test (Batagelj-Brandes, exact):"
               << std::endl;
     for (size_t g = 0u; g < n_blocks; ++g)
     {
@@ -173,18 +160,18 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
             row_sum += mixing_matrix[g * n_blocks + h];
 
         std::cout << "  Group " << g
-                  << ": naive = " << row_sum
-                  << ", corrected = " << corrected[g]
+                  << ": row_sum = " << row_sum
+                  << ", expected = " << expected[g]
                   << ", observed = " << degree_sum[g]
                   << std::endl;
     }
 
-    // Check that observed average degree is close to bias-corrected
-    // expected values. With 400 reps and the exact formula, tolerance
-    // of 0.15 should be adequate.
+    // Check that observed average degree is close to exact expected
+    // values. With BB (no bias) and 400 reps, tolerance of 0.15
+    // should be adequate.
     for (size_t g = 0u; g < n_blocks; ++g)
     {
-        REQUIRE(std::abs(degree_sum[g] - corrected[g]) < 0.15);
+        REQUIRE(std::abs(degree_sum[g] - expected[g]) < 0.15);
     }
 
 }

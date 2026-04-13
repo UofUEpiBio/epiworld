@@ -6,15 +6,13 @@ EPIWORLD_TEST_CASE("SBM balance violation", "[sbm-balance]") {
 
     // When the balance condition M(g,h)*n_g = M(h,g)*n_h is violated,
     // the implementation still generates a valid network — it just uses
-    // M(g,h)/n_h for the block pair (g,h) with g <= h. The expected
-    // unique edge count per block pair can still be predicted using the
-    // same deduplication formula.
+    // M(g,h)/n_h for the block pair (g,h) with g <= h. With the
+    // Batagelj-Brandes algorithm, the expected edge count is exactly
+    // N * p (no dedup bias).
     //
     // This test uses an unbalanced matrix and verifies:
     // 1. The network is generated without error
-    // 2. Observed edge counts per block pair match the formula
-    //    E[unique] = n_g * n_h * (1 - (1 - p/(n_g*n_h))^(n_g*n_h))
-    //    for between-block pairs (with p = M(lo,hi)/n_hi)
+    // 2. Observed edge counts per block pair match E = n_g * n_h * p
 
     size_t n_0 = 100u;
     size_t n_1 = 300u;
@@ -29,13 +27,10 @@ EPIWORLD_TEST_CASE("SBM balance violation", "[sbm-balance]") {
     // The implementation uses block pair (0, 1) with g=0, h=1:
     //   p = M(0,1)/n_1 = 8/300
     //   N = n_0 * n_1 = 30000
-    //   q = p/N = 8/(300*30000) = 8/9000000
-    //   E[unique] = 30000 * (1 - (1-q)^30000)
-
+    //   E[edges] = N * p = 30000 * 8/300 = 800
     double p_01 = 8.0 / static_cast<double>(n_1);
     double N_01 = static_cast<double>(n_0) * static_cast<double>(n_1);
-    double q_01 = p_01 / N_01;
-    double exp_unique = N_01 * (1.0 - std::pow(1.0 - q_01, N_01));
+    double exp_edges = N_01 * p_01;
 
     size_t n_reps = 200u;
     double edge_sum = 0.0;
@@ -81,24 +76,24 @@ EPIWORLD_TEST_CASE("SBM balance violation", "[sbm-balance]") {
     double avg_deg1 = deg1_sum / static_cast<double>(n_reps);
 
     // Expected degrees from the specific probability used:
-    // Group 0: E[unique]/n_0 = exp_unique/100
-    // Group 1: E[unique]/n_1 = exp_unique/300
-    double exp_deg0 = exp_unique / static_cast<double>(n_0);
-    double exp_deg1 = exp_unique / static_cast<double>(n_1);
+    // Group 0: exp_edges/n_0 = 800/100 = 8
+    // Group 1: exp_edges/n_1 = 800/300 ≈ 2.667
+    double exp_deg0 = exp_edges / static_cast<double>(n_0);
+    double exp_deg1 = exp_edges / static_cast<double>(n_1);
 
     std::cout << "SBM balance violation test:" << std::endl;
     std::cout << "  Unbalanced: M(0,1)*n_0 = "
               << 8.0 * n_0 << " != M(1,0)*n_1 = " << 2.0 * n_1
               << std::endl;
-    std::cout << "  Expected unique edges: " << exp_unique << std::endl;
+    std::cout << "  Expected edges: " << exp_edges << std::endl;
     std::cout << "  Observed avg edges:    " << avg_edges << std::endl;
     std::cout << "  Group 0: exp_deg = " << exp_deg0
               << ", observed = " << avg_deg0 << std::endl;
     std::cout << "  Group 1: exp_deg = " << exp_deg1
               << ", observed = " << avg_deg1 << std::endl;
 
-    // Edge count should match expected unique edges
-    REQUIRE(std::abs(avg_edges - exp_unique) < 10.0);
+    // Edge count should match expected edges
+    REQUIRE(std::abs(avg_edges - exp_edges) < 10.0);
 
     // Group degrees should match the specific probability used
     REQUIRE(std::abs(avg_deg0 - exp_deg0) < 0.3);
@@ -106,10 +101,10 @@ EPIWORLD_TEST_CASE("SBM balance violation", "[sbm-balance]") {
 
     // Key insight: with the unbalanced matrix, row sums do NOT
     // match expected degrees:
-    //   Row sum for group 0 = 0 + 8 = 8, but observed ≈ exp_deg0
-    //   Row sum for group 1 = 2 + 0 = 2, but observed ≈ exp_deg1
-    // The actual expected degree for group 1 is exp_unique/300, which
-    // is much larger than M(1,0) = 2 because the implementation uses
+    //   Row sum for group 0 = 0 + 8 = 8 → observed ≈ 8 (matches!)
+    //   Row sum for group 1 = 2 + 0 = 2, but observed ≈ 2.667
+    // The actual expected degree for group 1 is exp_edges/300 ≈ 2.667,
+    // which differs from M(1,0) = 2 because the implementation uses
     // M(0,1)/n_1 for the (0,1) pair.
     std::cout << "  Row sum group 0 = 8 vs observed ≈ " << avg_deg0
               << std::endl;

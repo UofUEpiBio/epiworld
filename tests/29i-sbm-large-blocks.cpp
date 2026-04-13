@@ -4,10 +4,9 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("SBM large block n_possible", "[sbm-large]") {
 
-    // Regression test: when n_g * n_h > INT_MAX, the old code cast
-    // n_possible to int which overflowed, causing the binomial
-    // distribution to produce 0 edges. This test uses two blocks
-    // where n_g * n_h > 2^31 but total agents is well within limits.
+    // Regression test: when n_g * n_h > INT_MAX, ensure the
+    // Batagelj-Brandes algorithm handles large pair spaces correctly
+    // via long long arithmetic.
 
     size_t n_g = 47000u;
     size_t n_h = 47000u;
