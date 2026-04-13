@@ -45,11 +45,7 @@ static std::vector<double> expected_degrees(
             size_t lo = std::min(g, h);
             size_t hi = std::max(g, h);
             double m_lohi = mixing_matrix[lo * K + hi];
-            double n_h = static_cast<double>(block_sizes[h]);
 
-            // p = M(lo,hi) / n_hi
-            // Expected edges = n_lo * n_hi * p = n_lo * M(lo,hi)
-            // Each edge contributes 1 degree to g-side agent.
             // Degree contribution per agent in g = expected_edges / n_g
             double expected_edges = static_cast<double>(block_sizes[lo]) *
                 m_lohi;
