@@ -12,8 +12,10 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     epiworld_double ig_efficacy,
     epiworld_double ig_half_life_mean,
     epiworld_double ig_half_life_sd,
-    epiworld_double pep_willingness,
+    epiworld_double mmr_willingness,
+    epiworld_double ig_willingness,
     epiworld_double mmr_window,
+    epiworld_double ig_window,
     std::vector< int > target_states,
     std::vector< int > states_if_pep_effective,
     std::vector< int > states_if_pep_ineffective
@@ -35,13 +37,15 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     this->_states_if_pep_effective = states_if_pep_effective;
     this->_states_if_pep_ineffective = states_if_pep_ineffective;
 
-    // Paramters
+    // Parameters
     this->_mmr_efficacy = mmr_efficacy;
     this->_ig_efficacy = ig_efficacy;
     this->_ig_half_life_mean = ig_half_life_mean;
     this->_ig_half_life_sd = ig_half_life_sd;
-    this->_willingness = pep_willingness;
+    this->_mmr_willingness = mmr_willingness;
+    this->_ig_willingness = ig_willingness;
     this->_pep_mmr_window = mmr_window;
+    this->_pep_ig_window = ig_window;
 }
 
 template<typename TSeq>
@@ -49,23 +53,31 @@ inline void InterventionMeaslesPEP<TSeq>::_setup(
     Model<TSeq> * model
 ) {
 
-    // Randomizing willingness
-    this->_willing_to_receive_pep.assign(model->size(), false);
+    // Randomizing willingness (separate for MMR and IG)
+    this->_willing_to_receive_mmr.assign(model->size(), false);
+    this->_willing_to_receive_ig.assign(model->size(), false);
 
     // Setting the parameters
-    model->add_param(this->_willingness, this->_par_willingness, true);
+    model->add_param(this->_mmr_willingness, this->_par_mmr_willingness, true);
+    model->add_param(this->_ig_willingness, this->_par_ig_willingness, true);
     model->add_param(this->_mmr_efficacy, this->_par_mmr_efficacy, true);
     model->add_param(this->_ig_efficacy, this->_par_ig_efficacy, true);
     model->add_param(this->_pep_mmr_window, this->_par_pep_mmr_window, true);
+    model->add_param(this->_pep_ig_window, this->_par_pep_ig_window, true);
     model->add_param(this->_ig_half_life_mean, this->_par_half_life_mean, true);
     model->add_param(this->_ig_half_life_sd, this->_par_half_life_sd, true);
 
-    auto willingness = model->par(this->_par_willingness);
+    auto mmr_willingness = model->par(this->_par_mmr_willingness);
+    auto ig_willingness = model->par(this->_par_ig_willingness);
     for (size_t i = 0u; i < model->size(); ++i)
     {
-        if (model->runif() < willingness)
+        if (model->runif() < mmr_willingness)
         {
-            this->_willing_to_receive_pep[i] = true;
+            this->_willing_to_receive_mmr[i] = true;
+        }
+        if (model->runif() < ig_willingness)
+        {
+            this->_willing_to_receive_ig[i] = true;
         }
     }
 
@@ -108,6 +120,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     // Capturing some basic information
     auto today = model->today();
     auto pep_mmr_window = static_cast<int>(model->par(this->_par_pep_mmr_window));
+    auto pep_ig_window = static_cast<int>(model->par(this->_par_pep_ig_window));
 
     // Precapturing the tools
     auto & tool_mmr = model->get_tool("PEP MMR");
@@ -126,10 +139,6 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         if (!IN(agent_state, this->_target_states))
             continue;
 
-        // Checking willigness
-        if (!this->_willing_to_receive_pep[agent.get_id()])
-            continue;
-
         // Finding the corresponding state for PEP
         auto it = std::find(
             this->_target_states.begin(),
@@ -144,35 +153,69 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         if (agent.get_virus() != nullptr)
         {
 
-            // Agents with virus may recover, so we need to check
-            // on that again
-            _to_receive_pep.push_back(agent.get_id());
-            _next_if_effective.push_back(_states_if_pep_effective[pos]);
-            _next_if_ineffective.push_back(_states_if_pep_ineffective[pos]);
-
-            // Checking when did the agent get infected
             int day_infected = agent.get_virus()->get_date();
+            bool within_mmr_window =
+                (today - day_infected) < pep_mmr_window;
+            bool within_ig_window =
+                (today - day_infected) < pep_ig_window;
 
-            // If the date is within the window for PEP,
-            // we administer MMR PEP to the agent
-            if ((today - day_infected) >= pep_mmr_window)
+            // (a) Check if within the MMR window and willing
+            if (within_mmr_window &&
+                this->_willing_to_receive_mmr[agent.get_id()])
             {
-                // We will administer MMR PEP to the agent
+
+                // Agents with virus may recover, so we track them
+                _to_receive_pep.push_back(agent.get_id());
+                _next_if_effective.push_back(
+                    _states_if_pep_effective[pos]
+                );
+                _next_if_ineffective.push_back(
+                    _states_if_pep_ineffective[pos]
+                );
+
+                agent.add_tool(*model, tool_mmr);
+
+            }
+            // (b) Otherwise, check if within the IG window and willing
+            else if (within_ig_window &&
+                     this->_willing_to_receive_ig[agent.get_id()])
+            {
+
+                _to_receive_pep.push_back(agent.get_id());
+                _next_if_effective.push_back(
+                    _states_if_pep_effective[pos]
+                );
+                _next_if_ineffective.push_back(
+                    _states_if_pep_ineffective[pos]
+                );
+
                 agent.add_tool(*model, tool_ig);
 
-                // Go to the next agent
-                continue;
             }
+
+            // Go to the next agent (agents with virus are handled above)
+            continue;
 
         }
 
-        // If we got this far, it is because the agent can 
-        // receive MMR PEP
-        agent.add_tool(
-            *model,
-            tool_mmr,
-            this->_states_if_pep_effective[pos]
-        );
+        // If we got this far, the agent has no virus (susceptible in
+        // quarantine). Check willingness for MMR first, then IG.
+        if (this->_willing_to_receive_mmr[agent.get_id()])
+        {
+            agent.add_tool(
+                *model,
+                tool_mmr,
+                this->_states_if_pep_effective[pos]
+            );
+        }
+        else if (this->_willing_to_receive_ig[agent.get_id()])
+        {
+            agent.add_tool(
+                *model,
+                tool_ig,
+                this->_states_if_pep_effective[pos]
+            );
+        }
 
     }
 

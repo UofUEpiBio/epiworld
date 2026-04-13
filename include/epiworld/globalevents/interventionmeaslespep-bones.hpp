@@ -10,24 +10,30 @@ class InterventionMeaslesPEP final : public GlobalEvent<TSeq> {
 
 private:
 
-    static inline const std::string _par_willingness{"PEP willingness"};
+    static inline const std::string _par_mmr_willingness{"PEP MMR willingness"};
+    static inline const std::string _par_ig_willingness{"PEP IG willingness"};
     static inline const std::string _par_mmr_efficacy{"PEP MMR efficacy"};
     static inline const std::string _par_ig_efficacy{"PEP IG efficacy"};
     static inline const std::string _par_pep_mmr_window{"PEP MMR window"};
+    static inline const std::string _par_pep_ig_window{"PEP IG window"};
     static inline const std::string _par_half_life_mean{"PEP IG half-life (mean)"};
     static inline const std::string _par_half_life_sd{"PEP IG half-life (sd)"};
 
 
-    // Willigness and efficacy of the PEP
-    epiworld_double _willingness;
+    // Willingness and efficacy of the PEP
+    epiworld_double _mmr_willingness;
+    epiworld_double _ig_willingness;
     epiworld_double _mmr_efficacy;
     epiworld_double _ig_efficacy;
     epiworld_double _ig_half_life_mean;
     epiworld_double _ig_half_life_sd;
     epiworld_double _pep_mmr_window;
+    epiworld_double _pep_ig_window;
 
-    // Willingness of the agents to receive PEP
-    std::vector< bool > _willing_to_receive_pep;
+    // Willingness of the agents to receive MMR PEP
+    std::vector< bool > _willing_to_receive_mmr;
+    // Willingness of the agents to receive IG PEP
+    std::vector< bool > _willing_to_receive_ig;
 
     // Target states to which the intervention applies
     std::vector< int > _target_states;
@@ -58,19 +64,30 @@ public:
 
     /**
      * @brief Construct a new Intervention PEP object.
-     * @param par_mmr_efficacy The efficacy of the PEP. Must be between 0
+     * @param name The name of the intervention.
+     * @param mmr_efficacy The efficacy of the PEP MMR. Must be between 0
      * and 1.
-     * @param par_pep_willingness The willingness of the agents to receive
-     * PEP. Must be between 0 and 1.
+     * @param ig_efficacy The efficacy of the PEP IG. Must be between 0
+     * and 1.
+     * @param ig_half_life_mean Mean half-life of the IG in days.
+     * @param ig_half_life_sd Standard deviation of the IG half-life in days.
+     * @param mmr_willingness The willingness of the agents to receive
+     * MMR PEP. Must be between 0 and 1. Set to 0 to deactivate MMR PEP.
+     * @param ig_willingness The willingness of the agents to receive
+     * IG PEP. Must be between 0 and 1. Set to 0 to deactivate IG PEP.
+     * @param mmr_window Number of days after exposure within which
+     * MMR PEP can be administered.
+     * @param ig_window Number of days after exposure within which
+     * IG PEP can be administered.
      * @param target_states The states to which the intervention applies. For
      * example, if the intervention applies to agents in quarantine, then this
      * should include the states that correspond to quarantine.
-     * @param quarantine_states_for_pep The states to which the agents will be
-     * moved if they receive PEP. Must be the same length as `quarantine_states`.
-     * For example, if agents in state 2 are quarantined and will move to state
-     * 5 if they receive PEP, then `quarantine_states` should include 2 and
-     * `quarantine_states_for_pep` should include 5 at the corresponding
-     * position.
+     * @param states_if_pep_effective The states to which the agents will be
+     * moved if they receive PEP and it is effective. Must be the same length
+     * as `target_states`.
+     * @param states_if_pep_ineffective The states to which the agents will be
+     * moved if they receive PEP and it is ineffective. Must be the same length
+     * as `target_states`.
      */
     InterventionMeaslesPEP(
         std::string name,
@@ -78,8 +95,10 @@ public:
         epiworld_double ig_efficacy,
         epiworld_double ig_half_life_mean,
         epiworld_double ig_half_life_sd,
-        epiworld_double pep_willingness,
+        epiworld_double mmr_willingness,
+        epiworld_double ig_willingness,
         epiworld_double mmr_window,
+        epiworld_double ig_window,
         std::vector< int > target_states,
         std::vector< int > states_if_pep_effective,
         std::vector< int > states_if_pep_ineffective
