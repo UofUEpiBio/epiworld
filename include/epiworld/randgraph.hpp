@@ -630,11 +630,12 @@ inline AdjList rgraph_blocked(
  * row sums generally do not match the expected degree from every group's
  * perspective.
  *
- * **Sampling bias.** Edges are sampled with replacement (binomial count then
- * uniform random placement), so duplicate placements hitting the same pair
- * are deduplicated by AdjList. The realised edge count is slightly less than
- * the binomial draw. The exact expected number of unique edges for a block
- * pair with \f$N\f$ possible slots and Bernoulli probability \f$p\f$ is:
+ * **Sampling bias.** For sparse block pairs (\f$p \le 0.5\f$), edges are
+ * sampled with replacement (binomial count then uniform random placement),
+ * so duplicate placements hitting the same pair are deduplicated by AdjList.
+ * The realised edge count is slightly less than the binomial draw. The exact
+ * expected number of unique edges for a block pair with \f$N\f$ possible slots
+ * and Bernoulli probability \f$p\f$ is:
  * \f[
  *   \mathbb{E}[\text{unique edges}] =
  *     N \bigl[1 - \bigl(1 - \frac{p}{N}\bigr)^{N}\bigr]
@@ -645,6 +646,16 @@ inline AdjList rgraph_blocked(
  * draw uniformly over their respective pair spaces, so all agents within
  * a block are exchangeable. The bias is \f$O(1/n)\f$ and vanishes as block
  * sizes grow.
+ *
+ * For dense block pairs (\f$p > 0.5\f$), the implementation switches to a
+ * per-pair Bernoulli trial loop to avoid the "coupon collector" overhead
+ * of sampling with replacement. This path produces unbiased edge counts
+ * (no deduplication needed) at the cost of iterating over all \f$N\f$
+ * possible pairs.
+ *
+ * **Balance condition warning.** If the balance condition is violated for
+ * any pair of blocks and the model's verbose mode is on, a warning is
+ * printed indicating which entries are being silently ignored.
  *
  * @tparam TSeq Type of the sequence (template parameter of the model).
  * @param block_sizes A vector of size \f$K\f$ indicating the number of agents
@@ -713,9 +724,11 @@ inline AdjList rgraph_sbm(
     for (size_t g = 1u; g < n_blocks; ++g)
         block_start[g] = block_start[g - 1u] + block_sizes[g - 1u];
 
-    // Validate mixing matrix entries and compute probabilities
-    // p(g, h) = M(g, h) / n_h for the undirected case
-    // We validate that all entries are non-negative and p(g,h) <= 1
+    // Validate mixing matrix entries and compute probabilities.
+    // p(g, h) = M(g, h) / n_h for the undirected case.
+    // We validate that all entries are non-negative and p(g,h) <= 1.
+    // Also estimate the total expected edge count for vector reservation.
+    double estimated_edges = 0.0;
     for (size_t g = 0u; g < n_blocks; ++g)
     {
         for (size_t h = 0u; h < n_blocks; ++h)
@@ -741,15 +754,83 @@ inline AdjList rgraph_sbm(
                     std::to_string(block_sizes[h]) + ")."
                 );
         }
+
+        // Accumulate expected edges for upper triangle (g <= h)
+        for (size_t h = g; h < n_blocks; ++h)
+        {
+            double m_gh = row_major
+                ? mixing_matrix[g * n_blocks + h]
+                : mixing_matrix[h * n_blocks + g];
+
+            double p_gh = m_gh / static_cast<double>(block_sizes[h]);
+            if (p_gh <= 0.0)
+                continue;
+
+            double n_possible;
+            if (g == h)
+                n_possible = static_cast<double>(block_sizes[g]) *
+                    static_cast<double>(block_sizes[g] - 1u) / 2.0;
+            else
+                n_possible = static_cast<double>(block_sizes[g]) *
+                    static_cast<double>(block_sizes[h]);
+
+            estimated_edges += n_possible * std::min(p_gh, 1.0);
+        }
+    }
+
+    // Warn when the balance condition M(g,h)*n_g = M(h,g)*n_h is
+    // violated for any pair. The upper triangle is used for sampling,
+    // so the lower-triangle entries are silently ignored.
+    if (model.get_verbose())
+    {
+        for (size_t g = 0u; g < n_blocks; ++g)
+        {
+            for (size_t h = g + 1u; h < n_blocks; ++h)
+            {
+                double m_gh = row_major
+                    ? mixing_matrix[g * n_blocks + h]
+                    : mixing_matrix[h * n_blocks + g];
+                double m_hg = row_major
+                    ? mixing_matrix[h * n_blocks + g]
+                    : mixing_matrix[g * n_blocks + h];
+
+                double lhs = m_gh * static_cast<double>(block_sizes[g]);
+                double rhs = m_hg * static_cast<double>(block_sizes[h]);
+
+                if (std::abs(lhs - rhs) > 1e-10 *
+                    std::max(std::abs(lhs), std::abs(rhs)))
+                {
+                    printf_epiworld(
+                        "Warning [rgraph_sbm]: balance condition violated "
+                        "for blocks (%zu, %zu): M(%zu,%zu)*n_%zu = %.4f "
+                        "!= M(%zu,%zu)*n_%zu = %.4f. Only M(%zu,%zu)/n_%zu "
+                        "is used for edge sampling.\n",
+                        g, h,
+                        g, h, g, lhs,
+                        h, g, h, rhs,
+                        g, h, h
+                    );
+                }
+            }
+        }
     }
 
     std::vector< int > source;
     std::vector< int > target;
 
+    // Pre-allocate based on estimated edge count to avoid
+    // repeated reallocations during push_back.
+    source.reserve(static_cast<size_t>(estimated_edges * 1.1));
+    target.reserve(static_cast<size_t>(estimated_edges * 1.1));
+
     // For each pair of blocks (g, h) with g <= h (undirected),
     // sample the number of edges from a binomial distribution and
     // then randomly place them. This avoids iterating over all
     // possible pairs, which is O(n_g * n_h) per block pair.
+    //
+    // For dense block pairs (p > 0.5), we switch to a per-pair
+    // Bernoulli trial to avoid the "coupon collector" overhead of
+    // sampling with replacement and deduplicating.
     for (size_t g = 0u; g < n_blocks; ++g)
     {
         for (size_t h = g; h < n_blocks; ++h)
@@ -801,65 +882,114 @@ inline AdjList rgraph_sbm(
 
             if (g == h)
             {
-                // Within-block: n_g * (n_g - 1) / 2 possible unique pairs
                 size_t n_g = block_sizes[g];
-                long long n_possible = static_cast<long long>(n_g) *
-                    static_cast<long long>(n_g - 1u) / 2;
 
-                std::binomial_distribution<long long> binom(
-                    n_possible, p_gh
-                );
-                long long m = binom(*model.get_rand_endgine());
-
-                for (long long e = 0; e < m; ++e)
+                if (p_gh > 0.5)
                 {
-                    // Sample a uniform unordered pair (a, b) with a != b
-                    size_t a = static_cast<size_t>(
-                        std::floor(model.runif() * n_g)
-                    );
-                    size_t b = static_cast<size_t>(
-                        std::floor(model.runif() * (n_g - 1u))
-                    );
+                    // Dense within-block: iterate all n_g*(n_g-1)/2
+                    // pairs and include each with probability p_gh.
+                    for (size_t i = 0u; i < n_g; ++i)
+                    {
+                        for (size_t j = i + 1u; j < n_g; ++j)
+                        {
+                            if (model.runif() < p_gh)
+                            {
+                                source.push_back(
+                                    static_cast<int>(block_start[g] + i)
+                                );
+                                target.push_back(
+                                    static_cast<int>(block_start[g] + j)
+                                );
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Sparse within-block: binomial + random placement
+                    long long n_possible = static_cast<long long>(n_g) *
+                        static_cast<long long>(n_g - 1u) / 2;
 
-                    if (b >= a)
-                        b++;
+                    std::binomial_distribution<long long> binom(
+                        n_possible, p_gh
+                    );
+                    long long m = binom(*model.get_rand_endgine());
 
-                    source.push_back(
-                        static_cast<int>(block_start[g] + a)
-                    );
-                    target.push_back(
-                        static_cast<int>(block_start[g] + b)
-                    );
+                    for (long long e = 0; e < m; ++e)
+                    {
+                        // Sample a uniform unordered pair (a, b) with
+                        // a != b
+                        size_t a = static_cast<size_t>(
+                            std::floor(model.runif() * n_g)
+                        );
+                        size_t b = static_cast<size_t>(
+                            std::floor(model.runif() * (n_g - 1u))
+                        );
+
+                        if (b >= a)
+                            b++;
+
+                        source.push_back(
+                            static_cast<int>(block_start[g] + a)
+                        );
+                        target.push_back(
+                            static_cast<int>(block_start[g] + b)
+                        );
+                    }
                 }
             }
             else
             {
-                // Between-block: n_g * n_h possible pairs
                 size_t n_g = block_sizes[g];
                 size_t n_h = block_sizes[h];
-                long long n_possible = static_cast<long long>(n_g) *
-                    static_cast<long long>(n_h);
 
-                std::binomial_distribution<long long> binom(
-                    n_possible, p_gh
-                );
-                long long m = binom(*model.get_rand_endgine());
-
-                for (long long e = 0; e < m; ++e)
+                if (p_gh > 0.5)
                 {
-                    size_t a = static_cast<size_t>(
-                        std::floor(model.runif() * n_g)
-                    );
-                    size_t b = static_cast<size_t>(
-                        std::floor(model.runif() * n_h)
-                    );
+                    // Dense between-block: iterate all n_g*n_h pairs
+                    // and include each with probability p_gh.
+                    for (size_t i = 0u; i < n_g; ++i)
+                    {
+                        for (size_t j = 0u; j < n_h; ++j)
+                        {
+                            if (model.runif() < p_gh)
+                            {
+                                source.push_back(
+                                    static_cast<int>(block_start[g] + i)
+                                );
+                                target.push_back(
+                                    static_cast<int>(block_start[h] + j)
+                                );
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Sparse between-block: binomial + random placement
+                    long long n_possible = static_cast<long long>(n_g) *
+                        static_cast<long long>(n_h);
 
-                    source.push_back(
-                        static_cast<int>(block_start[g] + a)
+                    std::binomial_distribution<long long> binom(
+                        n_possible, p_gh
                     );
-                    target.push_back(
-                        static_cast<int>(block_start[h] + b)
-                    );
+                    long long m = binom(*model.get_rand_endgine());
+
+                    for (long long e = 0; e < m; ++e)
+                    {
+                        size_t a = static_cast<size_t>(
+                            std::floor(model.runif() * n_g)
+                        );
+                        size_t b = static_cast<size_t>(
+                            std::floor(model.runif() * n_h)
+                        );
+
+                        source.push_back(
+                            static_cast<int>(block_start[g] + a)
+                        );
+                        target.push_back(
+                            static_cast<int>(block_start[h] + b)
+                        );
+                    }
                 }
             }
 

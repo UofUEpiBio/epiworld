@@ -7,13 +7,22 @@ using namespace epiworld;
  * N possible slots and Bernoulli probability p, under uniform
  * sampling with replacement.
  *
- * Formula: E[unique] = N * [1 - (1 - p/N)^N]
+ * For sparse blocks (p <= 0.5, using binomial + random placement):
+ *   E[unique] = N * [1 - (1 - p/N)^N]
+ *
+ * For dense blocks (p > 0.5, using per-pair Bernoulli trials):
+ *   E[unique] = N * p  (no dedup needed)
  */
 static double expected_unique(long long N, double p)
 {
     if (N == 0 || p == 0.0)
         return 0.0;
 
+    // Dense path: per-pair Bernoulli, no dedup bias
+    if (p > 0.5)
+        return static_cast<double>(N) * p;
+
+    // Sparse path: binomial + replacement dedup formula
     double Nd = static_cast<double>(N);
     return Nd * (1.0 - std::pow(1.0 - p / Nd, Nd));
 }
