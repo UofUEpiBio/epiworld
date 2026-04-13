@@ -35,9 +35,9 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         7.0/2.0,   // "PEP IG half-life (sd)"
         1.0,       // "PEP willingness"
         3.0,       // "PEP MMR window"
-        {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
+        {MS::QUARANTINED_LATENT, MS::QUARANTINED_SUSCEPTIBLE},
         {MS::SUSCEPTIBLE, MS::SUSCEPTIBLE},
-        {MS::EXPOSED, MS::SUSCEPTIBLE}
+        {MS::LATENT, MS::SUSCEPTIBLE}
     );
 
     model_0.add_globalevent(pep);
@@ -122,7 +122,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         )
     );
 
-    // Transition from Quarantine Exposed to Quarantined Prodromal
+    // Transition from Quarantine Latent to Quarantined Prodromal
     // (already checked above with wider tolerance; PEP doesn't
     // affect symptom development)
 
@@ -155,7 +155,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     // =========================================================
     // Hospitalization probability with PEP
     // =========================================================
-    // With PEP, some exposed agents recover before reaching the
+    // With PEP, some latent agents recover before reaching the
     // rash stage, so the overall hospitalization probability
     // (hospitalizations / outbreak_size) should be LOWER than
     // the theoretical no-PEP value.
@@ -165,21 +165,21 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     REQUIRE(obs_hosp_probability < theoretical_hosp_no_pep);
 
-    // Rows and columns 7 and 8 (Quarantined Exposed and Quarantined
+    // Rows and columns 7 and 8 (Quarantined Latent and Quarantined
     // Susceptible) should be empty since willingness is 100%
-    double col_sum_q_exposed = 0.0, col_sum_q_susceptible = 0.0;
-    double row_sum_q_exposed = 0.0, row_sum_q_susceptible = 0.0;
+    double col_sum_q_latent = 0.0, col_sum_q_susceptible = 0.0;
+    double row_sum_q_latent = 0.0, row_sum_q_susceptible = 0.0;
     for (size_t i = 0u; i < n_states; ++i)
     {
-        col_sum_q_exposed += mat(i, 7);
+        col_sum_q_latent += mat(i, 7);
         col_sum_q_susceptible += mat(i, 8);
-        row_sum_q_exposed += mat(7, i);
+        row_sum_q_latent += mat(7, i);
         row_sum_q_susceptible += mat(8, i);
     }
 
-    REQUIRE(col_sum_q_exposed < 1e-10);
+    REQUIRE(col_sum_q_latent < 1e-10);
     REQUIRE(col_sum_q_susceptible < 1e-10);
-    REQUIRE(row_sum_q_exposed < 1e-10);
+    REQUIRE(row_sum_q_latent < 1e-10);
     REQUIRE(row_sum_q_susceptible < 1e-10);
 
     // =========================================================
@@ -189,7 +189,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     std::cout << "Effective Rt: " << R0_observed << std::endl;
 
-    std::cout << "Exposed -> Recovered (PEP): "
+    std::cout << "Latent -> Recovered (PEP): "
               << mat(1, 12) << std::endl;
 
     std::cout << "Prodromal -> Rash: "

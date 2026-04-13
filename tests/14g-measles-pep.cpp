@@ -37,9 +37,9 @@ EPIWORLD_TEST_CASE("Measles PEP tool history", "[ModelMeaslesPEP]") {
         7.0/2.0,   // "PEP IG half-life (sd)"
         1.0,       // "PEP willingness"
         3.0,       // "PEP MMR window"
-        {MS::QUARANTINED_EXPOSED, MS::QUARANTINED_SUSCEPTIBLE},
+        {MS::QUARANTINED_LATENT, MS::QUARANTINED_SUSCEPTIBLE},
         {MS::SUSCEPTIBLE, MS::SUSCEPTIBLE},
-        {MS::EXPOSED, MS::SUSCEPTIBLE}
+        {MS::LATENT, MS::SUSCEPTIBLE}
     );
     
     model.add_globalevent(pep);
