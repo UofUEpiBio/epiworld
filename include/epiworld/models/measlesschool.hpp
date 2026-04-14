@@ -56,22 +56,8 @@ private:
     /**
      * @brief Quarantine agents that are in the system.
      *
-     * The flow should be:
-     * - The function only runs if the quarantine status is active.
-     *
-     * - Agents who are in quarantine, isolation, removed, or
-     *   hospitalized are ignored.
-     *
-     * - Agents who are in the RASH state are isolated.
-     *
-     * - Vaccinated agents are ignored.
-     *
-     * - Susceptible, Latent, and Prodromal agents are moved to the
-     *   QUARANTINED_* state.
-     *
-     * - At the end of the function, the quarantine status is set false.
+     * @deprecated Replaced by InterventionMeaslesQuarantine global event.
      */
-    static void _quarantine_agents(Model<TSeq> * m);
     
     // Update which agents are infectious for contact
     void _update_infectious();
@@ -125,9 +111,9 @@ public:
 
     std::vector<Agent<TSeq> *> infectious; ///< Agents infectious for contact
 
-    bool system_quarantine_triggered = false;
+    /// @brief Pointer to the quarantine intervention (owned by globalevents).
+    InterventionMeaslesQuarantine<TSeq> * _quarantine = nullptr;
 
-    std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_rash_onset; ///< Day of rash onset
     std::vector< int > has_pep;
 
@@ -139,75 +125,26 @@ public:
 };
 
 template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
-
-    auto * model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
-
-    // Iterating through the new cases
-    if (!model->system_quarantine_triggered)
-        return;
-
-    // Quarantine and isolation can be shut off if negative
-    if (
-        (model->par("Quarantine period") < 0) &&
-        (model->par("Isolation period") < 0)
-    )
-        return;
-
-    // Capturing the days that matter and the probability of success
-    epiworld_double willingness = model->par("Quarantine willingness");
-
-    // Iterating through the
-    for (size_t i = 0u; i < model->size(); ++i) {
-
-        auto & agent = model->get_agent(i);
-        auto agent_state = agent.get_state();
-
-        // Already quarantined or isolated
-        if (agent_state >= RASH)
-            continue;
-
-        // If the agent has a vaccine, then no need for quarantine
-        if (agent.get_n_tools() != 0u)
-            continue;
-
-        // Quarantine will depend on the willingness of the agent
-        // to be quarantined. If negative, then quarantine never happens.
-        if (
-            (model->par("Quarantine period") >= 0) &&
-            (model->runif() < willingness)
-        )
-        {
-
-            if (agent_state == SUSCEPTIBLE)
-                agent.change_state(*model, QUARANTINED_SUSCEPTIBLE);
-            else if (agent_state == LATENT)
-                agent.change_state(*model, QUARANTINED_LATENT);
-            else if (agent_state == PRODROMAL)
-                agent.change_state(*model, QUARANTINED_PRODROMAL);
-
-            // And we add the day of quarantine
-            model->day_flagged[i] = model->today();
-
-        }
-
-    }
-
-    // Setting the quarantine process off
-    model->system_quarantine_triggered = false;
-
-    return;
-
-}
-
-template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::reset() {
 
     Model<TSeq>::reset();
 
-    this->system_quarantine_triggered = false;
+    // Get pointer to the quarantine intervention (stored in globalevents)
+    _quarantine = dynamic_cast<InterventionMeaslesQuarantine<TSeq>*>(
+        &this->get_globalevent("Measles Quarantine")
+    );
 
-    this->day_flagged.assign(this->size(), 0);
+    // (Re-)initialise the intervention's internal vectors
+    _quarantine->init(this->size());
+
+    // Setting up the quarantine parameters via the intervention
+    for (size_t idx = 0; idx < this->size(); ++idx)
+    {
+        _quarantine->set_quarantine_willing(
+            idx, this->runif() < this->par("Quarantine willingness")
+        );
+    }
+
     this->day_rash_onset.assign(this->size(), 0);
     this->has_pep.assign(this->size(), false);
 
@@ -386,17 +323,6 @@ LOCAL_UPDATE_FUN(_update_rash) {
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
 
-    #ifdef EPI_DEBUG
-    if (static_cast<int>(model->day_flagged.size()) <= p->get_id())
-        throw std::logic_error(
-            "The agent is not in the list of quarantined or isolated agents: " +
-            std::to_string(p->get_id()) +
-            " vs " +
-            std::to_string(model->day_flagged.size()) +
-            ". The model has " + std::to_string(model->size()) + " agents."
-        );
-    #endif
-
     // Checking if the agent will be detected or not
     // How many days since detected
     bool detected = false;
@@ -405,7 +331,7 @@ LOCAL_UPDATE_FUN(_update_rash) {
         (m->runif() < 1.0/m->par("Days undetected"))
     )
     {
-        model->system_quarantine_triggered = true;
+        model->_quarantine->trigger_system_quarantine();
         detected = true;
 
     }
@@ -503,10 +429,9 @@ LOCAL_UPDATE_FUN(_update_isolated_recovered) {
 
 LOCAL_UPDATE_FUN(_update_q_latent) {
 
-    // How many days since quarantine started
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     int days_since =
-        m->today() - model->day_flagged[p->get_id()];
+        m->today() - model->_quarantine->get_day_flagged(p->get_id());
 
     bool unquarantine =
         (m->par("Quarantine period") <= days_since) ?
@@ -534,7 +459,7 @@ LOCAL_UPDATE_FUN(_update_q_susceptible) {
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     int days_since =
-        m->today() - model->day_flagged[p->get_id()];
+        m->today() - model->_quarantine->get_day_flagged(p->get_id());
 
     if (days_since >= m->par("Quarantine period"))
         p->change_state(*m, SUSCEPTIBLE);
@@ -547,7 +472,7 @@ LOCAL_UPDATE_FUN(_update_q_prodromal) {
 
     // Otherwise, these are moved to the prodromal period, if
     // the quanrantine period is over.
-    int days_since = m->today() - model->day_flagged[p->get_id()];
+    int days_since = m->today() - model->_quarantine->get_day_flagged(p->get_id());
 
     bool unquarantine =
         (m->par("Quarantine period") <= days_since) ?
@@ -572,7 +497,7 @@ LOCAL_UPDATE_FUN(_update_q_prodromal) {
 LOCAL_UPDATE_FUN(_update_q_recovered) {
 
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
-    int days_since = m->today() - model->day_flagged[p->get_id()];
+    int days_since = m->today() - model->_quarantine->get_day_flagged(p->get_id());
 
     if (days_since >= m->par("Quarantine period"))
         p->change_state(*m, RECOVERED);
@@ -683,12 +608,18 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     this->queuing_off();
 
-    // Quarantine process will be automatically triggered
-    // at the end of the day
-    auto quarantine_event = GlobalEvent<TSeq>(
-        this->_quarantine_agents, "Quarantine process"
+    // Adding the quarantine intervention as a global event
+    InterventionMeaslesQuarantine<TSeq> quarantine(
+        "Measles Quarantine",
+        quarantine_willingness,
+        0.0,  // No isolation willingness for school model
+        {SUSCEPTIBLE, LATENT, PRODROMAL},
+        {QUARANTINED_SUSCEPTIBLE, QUARANTINED_LATENT, QUARANTINED_PRODROMAL},
+        RASH,
+        ISOLATED,
+        RASH
     );
-    this->add_globalevent(quarantine_event);
+    this->add_globalevent(quarantine);
 
     // Setting the population
     this->agents_empty_graph(n);

@@ -90,10 +90,10 @@ private:
     static void m_update_hospitalized(Agent<TSeq> * p, Model<TSeq> * m);
 
     // Data about the quarantine process
-    std::vector< bool > quarantine_willingness; ///< Indicator for quarantine willingness
-    std::vector< bool > isolation_willingness;  ///< Indicator for isolation willingness
-    std::vector< int > day_flagged;             ///< Either detected or started quarantine
     std::vector< int > day_rash_onset;          ///< Day of rash onset
+
+    /// @brief Pointer to the quarantine intervention (owned by globalevents).
+    InterventionMeaslesQuarantine<TSeq> * _quarantine = nullptr;
 
     std::vector< size_t > agents_triggered_contact_tracing; ///< List of agents that triggered contact tracing
     size_t agents_triggered_contact_tracing_size = 0u;      ///< Number of agents that triggered contact tracing
@@ -107,9 +107,6 @@ private:
     void m_quarantine_process(); ///< Overall quarantine process
 
     static void m_update_model(Model<TSeq> * m);
-
-    // We will limit tracking to up to EPI_MAX_TRACKING
-    ContactTracing contact_tracing;
 
     std::vector< size_t > days_quarantine_triggered; ///< Days when quarantine was triggered
 
@@ -238,18 +235,24 @@ public:
      * @brief Get the quarantine willingness for all agents
      * @return Vector of boolean values indicating each agent's willingness to quarantine
      */
-    auto get_quarantine_willingness() const
+    std::vector< bool > get_quarantine_willingness() const
     {
-        return quarantine_willingness;
+        std::vector< bool > res(this->size());
+        for (size_t i = 0u; i < this->size(); ++i)
+            res[i] = _quarantine->is_quarantine_willing(i);
+        return res;
     };
 
     /**
      * @brief Get the isolation willingness for all agents
      * @return Vector of boolean values indicating each agent's willingness to self-isolate
      */
-    auto get_isolation_willingness() const
+    std::vector< bool > get_isolation_willingness() const
     {
-        return isolation_willingness;
+        std::vector< bool > res(this->size());
+        for (size_t i = 0u; i < this->size(); ++i)
+            res[i] = _quarantine->is_isolation_willing(i);
+        return res;
     };
 
     /**
@@ -493,7 +496,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
         // Adding the current agent to the tracked interactions
         // In this case, the infected neighbor is the one
         // who interacts with the susceptible agent
-        m_down->contact_tracing.add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->_quarantine->add_contact(neighbor.get_id(), p->get_id(), m->today());
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
@@ -576,7 +579,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     {
         model->m_add_contact_tracing(p->get_id());
         detected = true;
-        model->day_flagged[p->get_id()] = m->today();
+        model->_quarantine->set_day_flagged(p->get_id(), m->today());
     }
 
     // Computing probabilities for state change
@@ -679,7 +682,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_suscep(
     auto quarantine_period = model->m_get_risk_period(p->get_id());
 
     // Figuring out if the agent can be released from quarantine
-    int days_since = m->today() - model->day_flagged[p->get_id()];
+    int days_since = m->today() - model->_quarantine->get_day_flagged(p->get_id());
 
     if (quarantine_period <= days_since)
         p->change_state(*m, SUSCEPTIBLE);
@@ -698,7 +701,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_latent(
     auto quarantine_period = model->m_get_risk_period(p->get_id());
 
     // Figuring out if the agent can be released from quarantine
-    int days_since = m->today() - model->day_flagged[p->get_id()];
+    int days_since = m->today() - model->_quarantine->get_day_flagged(p->get_id());
 
     // Probability of moving to prodromal
     if (m->runif() < 1.0/(p->get_virus()->get_incubation(m)))
@@ -731,7 +734,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_prodroma
     auto quarantine_period = model->m_get_risk_period(p->get_id());
 
     // Figuring out if the agent can be released from quarantine
-    int days_since = m->today() - model->day_flagged[p->get_id()];
+    int days_since = m->today() - model->_quarantine->get_day_flagged(p->get_id());
 
     // Develops rash?
     if (m->runif() < (1.0/m->par("Prodromal period")))
@@ -764,7 +767,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_quarantine_recovere
     auto quarantine_period = model->m_get_risk_period(p->get_id());
 
     // Figuring out if the agent can be released from quarantine
-    int days_since = m->today() - model->day_flagged[p->get_id()];
+    int days_since = m->today() - model->_quarantine->get_day_flagged(p->get_id());
 
     if (quarantine_period <= days_since)
         p->change_state(*m, RECOVERED);
@@ -871,7 +874,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         }
 
         // (B) Checking the contacts
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
+        size_t n_contacts = _quarantine->get_contact_tracing().get_n_contacts(agent_i_idx);
         if (n_contacts > EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -879,7 +882,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            auto [contact_id, contact_date] = contact_tracing.get_contact(
+            auto [contact_id, contact_date] = _quarantine->get_contact_tracing().get_contact(
                 agent_i_idx, contact_j_idx
             );
 
@@ -929,11 +932,11 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         if (agent.get_n_tools() != 0u)
             continue;
 
-        if (quarantine_willingness[agent.get_id()] == false)
+        if (_quarantine->is_quarantine_willing(agent.get_id()) == false)
             continue;
 
         // Setting the day flagged to today
-        day_flagged[agent.get_id()] = this->today();
+        _quarantine->set_day_flagged(agent.get_id(), this->today());
 
         auto state = agent.get_state();
         if (state == SUSCEPTIBLE)
@@ -944,7 +947,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
             agent.change_state(*this, QUARANTINED_PRODROMAL);
         else if (state == RASH)
         {
-            if (isolation_willingness[agent.get_id()])
+            if (_quarantine->is_isolation_willing(agent.get_id()))
                 agent.change_state(*this, ISOLATED);
         }
         else
@@ -966,7 +969,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
 
         // We also check who are the contacted agents
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
+        size_t n_contacts = _quarantine->get_contact_tracing().get_n_contacts(agent_i_idx);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -974,7 +977,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            auto [contact_id, contact_date] = contact_tracing.get_contact(
+            auto [contact_id, contact_date] = _quarantine->get_contact_tracing().get_contact(
                 agent_i_idx, contact_j_idx
             );
 
@@ -1171,6 +1174,19 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     // Adding the empty population
     this->agents_empty_graph(n);
 
+    // Adding the quarantine intervention as a global event
+    InterventionMeaslesQuarantine<TSeq> quarantine(
+        "Measles Quarantine",
+        quarantine_willingness,
+        isolation_willingness,
+        {SUSCEPTIBLE, LATENT, PRODROMAL},
+        {QUARANTINED_SUSCEPTIBLE, QUARANTINED_LATENT, QUARANTINED_PRODROMAL},
+        RASH,
+        ISOLATED,
+        RASH
+    );
+    this->add_globalevent(quarantine);
+
     this->set_name("Measles with Mixing and Risk-based Quarantine");
 
 }
@@ -1236,18 +1252,25 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 
     this->m_update_infectious_list();
 
-    // Setting up the quarantine parameters
-    quarantine_willingness.resize(this->size(), false);
-    isolation_willingness.resize(this->size(), false);
-    for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
+    // Get pointer to the quarantine intervention (stored in globalevents)
+    _quarantine = dynamic_cast<InterventionMeaslesQuarantine<TSeq>*>(
+        &this->get_globalevent("Measles Quarantine")
+    );
+
+    // (Re-)initialise the intervention's internal vectors
+    _quarantine->init(this->size());
+
+    // Setting up the quarantine parameters via the intervention
+    for (size_t idx = 0; idx < this->size(); ++idx)
     {
-        quarantine_willingness[idx] =
-            this->runif() < this->par("Quarantine willingness");
-        isolation_willingness[idx] =
-            this->runif() < this->par("Isolation willingness");
+        _quarantine->set_quarantine_willing(
+            idx, this->runif() < this->par("Quarantine willingness")
+        );
+        _quarantine->set_isolation_willing(
+            idx, this->runif() < this->par("Isolation willingness")
+        );
     }
 
-    day_flagged.assign(this->size(), 0);
     day_rash_onset.assign(this->size(), 0);
 
     // Variables about contact tracing
@@ -1257,12 +1280,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 
     quarantine_risk_level.assign(this->size(), RISK_LOW);
 
-    // Setting up contact tracking matrix
-    contact_tracing.reset(
-        this->size(),
-        EPI_MAX_TRACKING
-    );
-    
     // Resetting the number of quarantines
     days_quarantine_triggered.clear();
 
