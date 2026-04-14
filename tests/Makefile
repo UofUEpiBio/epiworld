@@ -56,6 +56,15 @@ $(NAME)_SOURCES := \
 	26-entity-add-rm.cpp \
 	27-shortcreek.cpp \
 	28a-epiassert.cpp \
+	29a-sbm.cpp \
+	29b-sbm-within.cpp \
+	29c-sbm-between.cpp \
+	29d-sbm-colmajor.cpp \
+	29e-sbm-erdos-renyi.cpp \
+	29f-sbm-variance.cpp \
+	29g-sbm-balance.cpp \
+	29h-sbm-exchangeability.cpp \
+	29i-sbm-large-blocks.cpp \
 	29a-state-update-transition.cpp
 
 $(NAME)_COV_DIRS := \
