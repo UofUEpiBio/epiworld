@@ -12422,6 +12422,8 @@ inline Queue<TSeq> & Model<TSeq>::get_queue()
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::contact_tracing_on(size_t max_contacts)
 {
+    if (max_contacts < 1u)
+        throw std::logic_error("Contact tracing should use at least one contact.");
     use_contact_tracing = true;
     contact_tracing_max_contacts = max_contacts;
     return *this;
@@ -12444,10 +12446,13 @@ inline bool Model<TSeq>::is_contact_tracing_on() const
 template<typename TSeq>
 inline ContactTracing & Model<TSeq>::get_contact_tracing()
 {
-    if (!contact_tracing)
+    if (!use_contact_tracing)
         throw std::logic_error(
             "Contact tracing is not active. Call contact_tracing_on() first."
         );
+
+    if (!contact_tracing)
+        contact_tracing = std::make_unique<ContactTracing>();
     return *contact_tracing;
 }
 
@@ -25371,7 +25376,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
         #endif
 
         // Adding the current agent to the tracked interactions
-        m_down->contact_tracing->add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->get_contact_tracing().add_contact(neighbor.get_id(), p->get_id(), m->today());
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
@@ -26468,7 +26473,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
         #endif
 
         // Adding the current agent to the tracked interactions
-        m_down->contact_tracing->add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->get_contact_tracing().add_contact(neighbor.get_id(), p->get_id(), m->today());
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
@@ -27501,7 +27506,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
         // Adding the current agent to the tracked interactions
         // In this case, the infected neighbor is the one
         // who interacts with the susceptible agent
-        m_down->contact_tracing->add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->get_contact_tracing().add_contact(neighbor.get_id(), p->get_id(), m->today());
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
