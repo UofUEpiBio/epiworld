@@ -108,9 +108,6 @@ private:
 
     static void m_update_model(Model<TSeq> * m);
 
-    // We will limit tracking to up to EPI_MAX_TRACKING
-    ContactTracing contact_tracing;
-
     std::vector< size_t > days_quarantine_triggered; ///< Days when quarantine was triggered
 
 public:
@@ -493,7 +490,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
         // Adding the current agent to the tracked interactions
         // In this case, the infected neighbor is the one
         // who interacts with the susceptible agent
-        m_down->contact_tracing.add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->contact_tracing->add_contact(neighbor.get_id(), p->get_id(), m->today());
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
@@ -871,7 +868,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         }
 
         // (B) Checking the contacts
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
+        size_t n_contacts = this->contact_tracing->get_n_contacts(agent_i_idx);
         if (n_contacts > EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -879,7 +876,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            auto [contact_id, contact_date] = contact_tracing.get_contact(
+            auto [contact_id, contact_date] = this->contact_tracing->get_contact(
                 agent_i_idx, contact_j_idx
             );
 
@@ -966,7 +963,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
 
         // We also check who are the contacted agents
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
+        size_t n_contacts = this->contact_tracing->get_n_contacts(agent_i_idx);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -974,7 +971,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            auto [contact_id, contact_date] = contact_tracing.get_contact(
+            auto [contact_id, contact_date] = this->contact_tracing->get_contact(
                 agent_i_idx, contact_j_idx
             );
 
@@ -1168,6 +1165,9 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
 
     this->queuing_off(); // No queuing need
 
+    // Enable contact tracing for quarantine process
+    this->contact_tracing_on(EPI_MAX_TRACKING);
+
     // Adding the empty population
     this->agents_empty_graph(n);
 
@@ -1257,12 +1257,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 
     quarantine_risk_level.assign(this->size(), RISK_LOW);
 
-    // Setting up contact tracking matrix
-    contact_tracing.reset(
-        this->size(),
-        EPI_MAX_TRACKING
-    );
-    
     // Resetting the number of quarantines
     days_quarantine_triggered.clear();
 
