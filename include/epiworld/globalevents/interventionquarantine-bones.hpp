@@ -1,5 +1,5 @@
-#ifndef EPIWORLD_INTERVENTIONMEASLESQUARANTINE_BONES_HPP
-#define EPIWORLD_INTERVENTIONMEASLESQUARANTINE_BONES_HPP
+#ifndef EPIWORLD_INTERVENTIONQUARANTINE_BONES_HPP
+#define EPIWORLD_INTERVENTIONQUARANTINE_BONES_HPP
 
 #include "../config.hpp"
 #include "../model-bones.hpp"
@@ -11,12 +11,14 @@
  *
  * @details
  * This intervention generalizes the quarantine and isolation process for
- * measles (and similar) epidemiological models. It runs as an end-of-day
- * global event and performs the following steps each day:
+ * epidemiological models. It runs as an end-of-day global event and performs
+ * the following steps each day:
  *
  * 1. **Detect newly triggered agents**: Scans for agents that have entered
  *    one of the configured `trigger_states` (e.g., Isolated) since the
- *    last check. An agent is processed at most once per simulation.
+ *    last check. An agent is processed at most once per day; however,
+ *    agents who return to the system after quarantine may be processed
+ *    again in subsequent outbreaks.
  *
  * 2. **Contact tracing**: For each newly triggered agent, retrieves their
  *    recorded contacts from the model's `ContactTracing` object. Only
@@ -54,7 +56,7 @@
  * @ingroup model_utilities
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class InterventionMeaslesQuarantine final : public GlobalEvent<TSeq> {
+class InterventionQuarantine final : public GlobalEvent<TSeq> {
 
 private:
 
@@ -84,8 +86,11 @@ private:
     std::vector< bool > _willing_to_isolate;
     ///@}
 
-    /// Tracks which agents have already triggered quarantine in this sim.
-    std::vector< bool > _processed;
+    /// Day each agent last triggered the quarantine process.
+    /// Initialized to -1 (never processed). Agents can be re-processed
+    /// in subsequent outbreaks if enough time has passed since their
+    /// last trigger.
+    std::vector< int > _day_last_triggered;
 
     /// Day each agent was flagged for quarantine (initialized to -1).
     std::vector< int > _day_flagged;
@@ -115,7 +120,7 @@ private:
 public:
 
     /**
-     * @brief Construct a new Intervention Measles Quarantine object.
+     * @brief Construct a new InterventionQuarantine object.
      *
      * @param name Descriptive name for this global event.
      * @param quarantine_willingness Probability (0–1) that an agent is
@@ -140,7 +145,7 @@ public:
      * @param isolation_target_states Target states for isolated contacts.
      *        Must be the same length as `isolation_source_states`.
      */
-    InterventionMeaslesQuarantine(
+    InterventionQuarantine(
         std::string name,
         epiworld_double quarantine_willingness,
         epiworld_double isolation_willingness,

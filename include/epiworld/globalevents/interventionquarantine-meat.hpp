@@ -1,10 +1,10 @@
-#ifndef EPIWORLD_INTERVENTIONMEASLESQUARANTINE_MEAT_HPP
-#define EPIWORLD_INTERVENTIONMEASLESQUARANTINE_MEAT_HPP
+#ifndef EPIWORLD_INTERVENTIONQUARANTINE_MEAT_HPP
+#define EPIWORLD_INTERVENTIONQUARANTINE_MEAT_HPP
 
-#include "interventionmeaslesquarantine-bones.hpp"
+#include "interventionquarantine-bones.hpp"
 
 template<typename TSeq>
-inline InterventionMeaslesQuarantine<TSeq>::InterventionMeaslesQuarantine(
+inline InterventionQuarantine<TSeq>::InterventionQuarantine(
     std::string name,
     epiworld_double quarantine_willingness,
     epiworld_double isolation_willingness,
@@ -22,7 +22,7 @@ inline InterventionMeaslesQuarantine<TSeq>::InterventionMeaslesQuarantine(
     // Validate parallel arrays have matching lengths
     if (quarantine_source_states.size() != quarantine_target_states.size())
         throw std::logic_error(
-            "InterventionMeaslesQuarantine: quarantine_source_states and "
+            "InterventionQuarantine: quarantine_source_states and "
             "quarantine_target_states must have the same length. Got " +
             std::to_string(quarantine_source_states.size()) + " and " +
             std::to_string(quarantine_target_states.size()) + "."
@@ -30,7 +30,7 @@ inline InterventionMeaslesQuarantine<TSeq>::InterventionMeaslesQuarantine(
 
     if (isolation_source_states.size() != isolation_target_states.size())
         throw std::logic_error(
-            "InterventionMeaslesQuarantine: isolation_source_states and "
+            "InterventionQuarantine: isolation_source_states and "
             "isolation_target_states must have the same length. Got " +
             std::to_string(isolation_source_states.size()) + " and " +
             std::to_string(isolation_target_states.size()) + "."
@@ -50,14 +50,14 @@ inline InterventionMeaslesQuarantine<TSeq>::InterventionMeaslesQuarantine(
 }
 
 template<typename TSeq>
-inline void InterventionMeaslesQuarantine<TSeq>::_setup(
+inline void InterventionQuarantine<TSeq>::_setup(
     Model<TSeq> * model
 ) {
 
     // Contact tracing is required
     if (!model->is_contact_tracing_on())
         throw std::logic_error(
-            "InterventionMeaslesQuarantine requires contact tracing to be "
+            "InterventionQuarantine requires contact tracing to be "
             "enabled. Call model.contact_tracing_on() before running."
         );
 
@@ -80,7 +80,7 @@ inline void InterventionMeaslesQuarantine<TSeq>::_setup(
 
     _willing_to_quarantine.assign(n, false);
     _willing_to_isolate.assign(n, false);
-    _processed.assign(n, false);
+    _day_last_triggered.assign(n, -1);
     _day_flagged.assign(n, -1);
 
     for (size_t i = 0u; i < n; ++i)
@@ -109,7 +109,9 @@ inline void InterventionMeaslesQuarantine<TSeq>::_setup(
  * **Step 2 — Identify newly triggered agents:**
  * Iterate over all agents. An agent triggers the quarantine process if:
  * - Its current state is in `trigger_states`, AND
- * - It has not yet been processed in this simulation.
+ * - It has not already been processed today (tracked via
+ *   `_day_last_triggered`). This allows agents who return to the system
+ *   after quarantine to be re-processed in subsequent outbreaks.
  *
  * **Step 3 — Contact tracing and quarantine:**
  * For each newly triggered agent:
@@ -128,7 +130,7 @@ inline void InterventionMeaslesQuarantine<TSeq>::_setup(
  *   - Record the day flagged for quarantine release calculations.
  */
 template<typename TSeq>
-inline void InterventionMeaslesQuarantine<TSeq>::operator()(
+inline void InterventionQuarantine<TSeq>::operator()(
     Model<TSeq> * model, int
 ) {
 
@@ -152,8 +154,9 @@ inline void InterventionMeaslesQuarantine<TSeq>::operator()(
 
         size_t agent_id = agent.get_id();
 
-        // Already processed in this simulation
-        if (_processed[agent_id])
+        // Already processed today — skip to avoid duplicate processing
+        // within the same day
+        if (_day_last_triggered[agent_id] == today)
             continue;
 
         // Check if agent is in a trigger state
@@ -161,8 +164,10 @@ inline void InterventionMeaslesQuarantine<TSeq>::operator()(
         if (!IN(agent_state, _trigger_states))
             continue;
 
-        // Mark as processed so we don't re-trigger
-        _processed[agent_id] = true;
+        // Record the day of this trigger so we don't re-process today,
+        // but allow re-triggering on a future day if the agent returns
+        // to the system and another outbreak occurs.
+        _day_last_triggered[agent_id] = today;
 
         // Retrieve this agent's contacts
         size_t n_contacts = ct.get_n_contacts(agent_id);
@@ -244,35 +249,35 @@ inline void InterventionMeaslesQuarantine<TSeq>::operator()(
 
 template<typename TSeq>
 inline std::unique_ptr< GlobalEvent<TSeq> >
-InterventionMeaslesQuarantine<TSeq>::clone_ptr() const
+InterventionQuarantine<TSeq>::clone_ptr() const
 {
-    return std::make_unique< InterventionMeaslesQuarantine<TSeq> >(*this);
+    return std::make_unique< InterventionQuarantine<TSeq> >(*this);
 }
 
 template<typename TSeq>
 inline const std::vector< int > &
-InterventionMeaslesQuarantine<TSeq>::get_day_flagged() const
+InterventionQuarantine<TSeq>::get_day_flagged() const
 {
     return _day_flagged;
 }
 
 template<typename TSeq>
 inline int
-InterventionMeaslesQuarantine<TSeq>::get_day_flagged(size_t agent_id) const
+InterventionQuarantine<TSeq>::get_day_flagged(size_t agent_id) const
 {
     return _day_flagged[agent_id];
 }
 
 template<typename TSeq>
 inline const std::vector< bool > &
-InterventionMeaslesQuarantine<TSeq>::get_quarantine_willingness() const
+InterventionQuarantine<TSeq>::get_quarantine_willingness() const
 {
     return _willing_to_quarantine;
 }
 
 template<typename TSeq>
 inline const std::vector< bool > &
-InterventionMeaslesQuarantine<TSeq>::get_isolation_willingness() const
+InterventionQuarantine<TSeq>::get_isolation_willingness() const
 {
     return _willing_to_isolate;
 }
