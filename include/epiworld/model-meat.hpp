@@ -2018,6 +2018,12 @@ inline epiworld_double Model<TSeq>::par(std::string pname) const
     return iter->second;
 }
 
+template<typename TSeq>
+inline bool Model<TSeq>::has_param(std::string pname) const
+{
+    return parameters.find(pname) != parameters.end();
+}
+
 #define DURCAST(tunit,txtunit) {\
         elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
             time_end - time_start).count(); \
@@ -2148,8 +2154,8 @@ GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
 {
 
     for (auto & a : globalevents)
-        if (a.name == name)
-            return a;
+        if (a->get_name() == name)
+            return *a;
 
     throw std::logic_error("The global action " + name + " was not found.");
 

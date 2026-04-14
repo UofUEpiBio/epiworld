@@ -644,6 +644,7 @@ public:
     epiworld_double get_param(std::string pname);
     void set_param(std::string pname, epiworld_double val);
     epiworld_double par(std::string pname) const;
+    bool has_param(std::string pname) const; ///< Check if parameter exists
     ///@}
 
     void get_elapsed(
