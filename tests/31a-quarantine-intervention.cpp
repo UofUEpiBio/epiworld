@@ -292,7 +292,7 @@ EPIWORLD_TEST_CASE("InterventionQuarantine - standalone model", "[quarantine-int
 
     // With high transmission and 100% willingness, quarantine should
     // trigger in a meaningful fraction of simulations
-    REQUIRE(sims_with_quarantine >= 0);
+    REQUIRE(sims_with_quarantine > 0);
 
     // ---------------------------------------------------------------
     // 5. Verify constructor validation

@@ -112,6 +112,9 @@ inline void InterventionQuarantine<TSeq>::_setup(
  * - It has not already been processed today (tracked via
  *   `_day_last_triggered`). This allows agents who return to the system
  *   after quarantine to be re-processed in subsequent outbreaks.
+ *   Specifically, an agent can trigger again on any day after its last
+ *   trigger day, enabling re-quarantine when the agent re-enters a
+ *   trigger state (e.g., gets re-infected and isolated again).
  *
  * **Step 3 — Contact tracing and quarantine:**
  * For each newly triggered agent:
