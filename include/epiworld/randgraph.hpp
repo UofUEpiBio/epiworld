@@ -362,6 +362,18 @@ inline void rewire_degseq(
 }
 
 /**
+ * Threshold for the hybrid row-advance in Batagelj-Brandes.
+ *
+ * When a geometric skip lands past the current row of the lower-triangle
+ * enumeration, the flat index must be mapped back to (i, j). For small
+ * excess (j - i <= threshold) the integer while-loop is fastest; for
+ * large excess the O(1) inverse-triangular-number formula avoids
+ * O(sqrt(excess)) iterations. 200 keeps the loop body to at most ~20
+ * iterations (sqrt(2 * 200) ~ 20) before switching to FPU math.
+ */
+static constexpr long long BB_FPU_THRESHOLD = 200;
+
+/**
  * @brief Generates an Erdős–Rényi random graph G(n, p) using the
  * Batagelj-Brandes algorithm.
  *
@@ -427,17 +439,23 @@ inline AdjList rgraph_bernoulli(
             // integer loop, avoiding O(sqrt(skip)) iterations.
             if (j >= i && i < static_cast<long long>(n))
             {
-                if (j - i > 200)
+                if (j - i > BB_FPU_THRESHOLD)
                 {
                     // O(1) FPU mapping: flat index → (i, j) via
-                    // inverse triangular number
+                    // inverse triangular number. `flat` fits in
+                    // long long since n ≤ INT_MAX (AdjList limit),
+                    // so i*(i-1)/2 + j < n*(n-1)/2 ≪ 2^62.
                     long long flat = i * (i - 1) / 2 + j;
                     double df = static_cast<double>(flat);
                     i = static_cast<long long>(std::floor(
                         (1.0 + std::sqrt(1.0 + 8.0 * df)) / 2.0
                     ));
                     j = flat - i * (i - 1) / 2;
-                    // Floating-point correction (at most 1–2 steps)
+                    // Floating-point correction: sqrt may round i
+                    // up or down by 1 for large flat values, so j
+                    // may land outside [0, i). Each correction loop
+                    // runs at most 1–2 iterations; only one of the
+                    // two can execute for a given (i, j).
                     while (j >= i) { j -= i; i++; }
                     while (j < 0)  { i--; j += i; }
                 }
@@ -970,10 +988,11 @@ inline AdjList rgraph_sbm(
                         std::floor(std::log(r) / lp)
                     );
 
-                    // Hybrid row-advance: O(1) FPU for large skips
+                    // Hybrid row-advance (see BB_FPU_THRESHOLD
+                    // comment in rgraph_bernoulli above).
                     if (j >= i && i < n_g)
                     {
-                        if (j - i > 200)
+                        if (j - i > BB_FPU_THRESHOLD)
                         {
                             long long flat = i * (i - 1) / 2 + j;
                             double df = static_cast<double>(flat);
