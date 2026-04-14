@@ -8304,6 +8304,226 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -./include/epiworld/contacttracing-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_CONTACTTRACING_BONES_H
+#define EPIWORLD_CONTACTTRACING_BONES_H
+
+#include <vector>
+#include <stdexcept>
+// (already included include/epiworld/config.hpp)
+
+/** 
+ * @brief Class for tracing contacts between agents
+ * @details
+ * The class assumes that contacts are stored in a matrix-like
+ * structure, where rows are agents and columns are contacts in a 
+ * column-major format. Each entry stores the id of the contact
+ * and the day of the contact is stored in a parallel array.
+ * 
+ * The maximum number of contacts per agent is fixed at initialization
+ * time. If more contacts are added, they will overwrite previous
+ * contacts in a circular buffer fashion.
+ * */
+class ContactTracing
+{
+private:
+
+    std::vector< size_t > contact_matrix;
+    std::vector< size_t > contacts_per_agent;
+    std::vector< size_t > contact_date;
+
+    size_t n_agents;
+    size_t max_contacts;
+
+    size_t get_location(size_t row, size_t col) const;
+
+public:
+
+    ContactTracing();
+
+    /**
+     * @brief Construct a new Contact Tracing object
+     * 
+     * @param n_agents Agents in the system, usually `Model<TSeq>::size()`.
+     * @param max_contacts Maximum number of contacts to track per agent.
+     */
+    ContactTracing(size_t n_agents, size_t max_contacts);
+
+    /**
+     * @brief Add a contact between two agents at a given day.
+     * 
+     * @param agent_a Agent id (usually infectious agent)
+     * @param agent_b Agent id (usually susceptible agent)
+     * @param day Day of the contact (usually Model<TSeq>::today()).
+     */
+    void add_contact(size_t agent_a, size_t agent_b, size_t day);
+
+    /**
+     * @brief Get the number of contacts for an agent
+     * 
+     * @param agent Agent id
+     * @return size_t Number of contacts recorded for that agent (can be more than max_contacts)
+     */
+    size_t get_n_contacts(size_t agent); 
+    
+    /**
+     * @brief Get the contact object
+     * 
+     * @param agent Source agent (id)
+     * @param idx Index of the contact (0 to get_n_contacts(agent)-1)
+     * @return std::pair<size_t, size_t> with (contact_id, contact_day)
+     * @throws std::out_of_range if idx is out of range.
+     */
+    std::pair<size_t, size_t> get_contact(size_t agent, size_t idx);
+
+    /**
+     * @brief Reset the contact tracing data
+     * 
+     * Usually called by `Model<TSeq>::reset()`.
+     * 
+     * @param n_agents Number of agents
+     * @param max_contacts Maximum number of contacts to track per agent
+     */
+    void reset(
+        size_t n_agents,
+        size_t max_contacts
+    );
+
+    /**
+     * @brief Print the contacts of an agent 
+     * 
+     * @param agent Agent id
+     */
+    void print(size_t agent);
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/contacttracing-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/contacttracing-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_CONTACTTRACING_MEAT_H
+#define EPIWORLD_CONTACTTRACING_MEAT_H
+
+// (already included include/epiworld/contacttracing-bones.hpp)
+
+inline size_t ContactTracing::get_location(size_t row, size_t col) const
+{
+    return col * n_agents + row;
+}
+
+inline ContactTracing::ContactTracing()
+{
+    n_agents = 0u;
+    max_contacts = 0u;
+}
+
+inline ContactTracing::ContactTracing(size_t n_agents, size_t max_contacts)
+{
+    this->n_agents = n_agents;
+    this->max_contacts = max_contacts;
+
+    contact_matrix.resize(n_agents * max_contacts, 0u);
+    contacts_per_agent.resize(n_agents, 0);
+    contact_date.resize(n_agents * max_contacts, 0);
+}
+
+inline void ContactTracing::add_contact(size_t agent_a, size_t agent_b, size_t day)
+{
+    
+    // Checking overflow
+    size_t col_location = contacts_per_agent[agent_a] % max_contacts;
+    size_t array_location = get_location(agent_a, col_location);
+
+    contact_matrix[array_location] = agent_b;
+    contact_date[array_location] = day;
+
+    contacts_per_agent[agent_a] += 1;
+
+}
+
+inline size_t ContactTracing::get_n_contacts(size_t agent)
+{
+    return contacts_per_agent[agent];
+}
+
+inline std::pair< size_t, size_t> ContactTracing::get_contact(size_t agent, size_t idx)
+{
+    if (
+        (idx >= contacts_per_agent[agent]) ||
+        (idx >= max_contacts)
+    )
+        throw std::out_of_range("Index out of range in get_contact");
+
+    size_t col_location = idx % max_contacts;
+    size_t array_location = get_location(agent, col_location);
+
+    return { contact_matrix[array_location], contact_date[array_location] };
+}
+
+inline void ContactTracing::reset(size_t n_agents, size_t max_contacts)
+{
+
+    this->n_agents = n_agents;
+    this->max_contacts = max_contacts;
+
+    contact_matrix.assign(n_agents * max_contacts, 0u);
+    contacts_per_agent.assign(n_agents, 0u);
+    contact_date.assign(n_agents * max_contacts, 0u);
+}
+
+inline void ContactTracing::print(size_t agent)
+{
+
+    size_t n_contacts = contacts_per_agent[agent];
+    if (n_contacts > max_contacts)
+        n_contacts = max_contacts;
+
+    printf_epiworld("Agent %zu has %zu contacts: ", agent, n_contacts);
+    for (size_t i = 0u; i < n_contacts; ++i)
+    {
+        auto [contact_id, contact_day] = get_contact(agent, i);
+        printf_epiworld("(%zu, day %zu) ", contact_id, contact_day);
+    }
+    printf_epiworld("\n");
+
+    return;
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/contacttracing-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -./include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -8506,6 +8726,7 @@ inline std::unique_ptr<GlobalEvent<TSeq>> GlobalEvent<TSeq>::clone_ptr() const
 // (already included include/epiworld/database-bones.hpp)
 // (already included include/epiworld/queue-bones.hpp)
 // (already included include/epiworld/globalevent-bones.hpp)
+// (already included include/epiworld/contacttracing-bones.hpp)
 
 template<typename TSeq>
 class AgentsSample;
@@ -8658,6 +8879,10 @@ protected:
     bool use_queuing   = true;
     size_t sim_id = 0u;
     void set_sim_id(size_t id);
+
+    std::unique_ptr<ContactTracing> contact_tracing;
+    bool use_contact_tracing = false;
+    size_t contact_tracing_max_contacts = EPI_MAX_TRACKING;
 
     /**
      * @brief Variables used to keep track of the events
@@ -9200,6 +9425,23 @@ public:
     Model<TSeq> & queuing_off(); ///< Deactivates the queuing system.
     bool is_queuing_on() const; ///< Query if the queuing system is on.
     Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
+    ///@}
+
+    /**
+     * @name Contact tracing
+     * @details When contact tracing is on, the model will track contacts
+     * between agents. Users must actively record contacts in their update
+     * functions by calling `get_contact_tracing().add_contact(...)`.
+     * Contact tracing is off by default.
+     *
+     * @param max_contacts Maximum number of contacts to track per agent
+     * (default: EPI_MAX_TRACKING). Only used when turning tracing on.
+     */
+    ///@{
+    Model<TSeq> & contact_tracing_on(size_t max_contacts = EPI_MAX_TRACKING); ///< Activates contact tracing.
+    Model<TSeq> & contact_tracing_off(); ///< Deactivates contact tracing.
+    bool is_contact_tracing_on() const; ///< Query if contact tracing is on.
+    ContactTracing & get_contact_tracing(); ///< Retrieve the `ContactTracing` object.
     ///@}
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
@@ -9993,7 +10235,14 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     globalevents(),
     queue(model.queue),
     use_queuing(model.use_queuing),
-    sim_id(model.sim_id)
+    sim_id(model.sim_id),
+    contact_tracing(
+        model.contact_tracing
+            ? std::make_unique<ContactTracing>(*model.contact_tracing)
+            : nullptr
+    ),
+    use_contact_tracing(model.use_contact_tracing),
+    contact_tracing_max_contacts(model.contact_tracing_max_contacts)
 {
 
     // Pointing to the right place. This needs
@@ -10065,7 +10314,10 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     globalevents(std::move(model.globalevents)),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
-    sim_id(model.sim_id)
+    sim_id(model.sim_id),
+    contact_tracing(std::move(model.contact_tracing)),
+    use_contact_tracing(model.use_contact_tracing),
+    contact_tracing_max_contacts(model.contact_tracing_max_contacts)
 {
 
     db.model = this;
@@ -10128,6 +10380,12 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     queue = m.queue;
     use_queuing = m.use_queuing;
+
+    contact_tracing = m.contact_tracing
+        ? std::make_unique<ContactTracing>(*m.contact_tracing)
+        : nullptr;
+    use_contact_tracing = m.use_contact_tracing;
+    contact_tracing_max_contacts = m.contact_tracing_max_contacts;
 
     agents_data = m.agents_data;
     agents_data_ncols = m.agents_data_ncols;
@@ -11447,6 +11705,12 @@ inline void Model<TSeq>::reset() {
     if (use_queuing)
         queue.reset();
 
+    // Reset contact tracing if active
+    if (use_contact_tracing)
+        contact_tracing = std::make_unique<ContactTracing>(
+            population.size(), contact_tracing_max_contacts
+        );
+
     // Re distributing tools and virus
     dist_entities();
     dist_virus();
@@ -12153,6 +12417,38 @@ template<typename TSeq>
 inline Queue<TSeq> & Model<TSeq>::get_queue()
 {
     return queue;
+}
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::contact_tracing_on(size_t max_contacts)
+{
+    use_contact_tracing = true;
+    contact_tracing_max_contacts = max_contacts;
+    return *this;
+}
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::contact_tracing_off()
+{
+    use_contact_tracing = false;
+    contact_tracing.reset();
+    return *this;
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::is_contact_tracing_on() const
+{
+    return use_contact_tracing;
+}
+
+template<typename TSeq>
+inline ContactTracing & Model<TSeq>::get_contact_tracing()
+{
+    if (!contact_tracing)
+        throw std::logic_error(
+            "Contact tracing is not active. Call contact_tracing_on() first."
+        );
+    return *contact_tracing;
 }
 
 template<typename TSeq>
@@ -18309,226 +18605,6 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 
 
 
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/contacttracing-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_CONTACTTRACING_BONES_H
-#define EPIWORLD_CONTACTTRACING_BONES_H
-
-#include <vector>
-#include <stdexcept>
-// (already included include/epiworld/config.hpp)
-
-/** 
- * @brief Class for tracing contacts between agents
- * @details
- * The class assumes that contacts are stored in a matrix-like
- * structure, where rows are agents and columns are contacts in a 
- * column-major format. Each entry stores the id of the contact
- * and the day of the contact is stored in a parallel array.
- * 
- * The maximum number of contacts per agent is fixed at initialization
- * time. If more contacts are added, they will overwrite previous
- * contacts in a circular buffer fashion.
- * */
-class ContactTracing
-{
-private:
-
-    std::vector< size_t > contact_matrix;
-    std::vector< size_t > contacts_per_agent;
-    std::vector< size_t > contact_date;
-
-    size_t n_agents;
-    size_t max_contacts;
-
-    size_t get_location(size_t row, size_t col) const;
-
-public:
-
-    ContactTracing();
-
-    /**
-     * @brief Construct a new Contact Tracing object
-     * 
-     * @param n_agents Agents in the system, usually `Model<TSeq>::size()`.
-     * @param max_contacts Maximum number of contacts to track per agent.
-     */
-    ContactTracing(size_t n_agents, size_t max_contacts);
-
-    /**
-     * @brief Add a contact between two agents at a given day.
-     * 
-     * @param agent_a Agent id (usually infectious agent)
-     * @param agent_b Agent id (usually susceptible agent)
-     * @param day Day of the contact (usually Model<TSeq>::today()).
-     */
-    void add_contact(size_t agent_a, size_t agent_b, size_t day);
-
-    /**
-     * @brief Get the number of contacts for an agent
-     * 
-     * @param agent Agent id
-     * @return size_t Number of contacts recorded for that agent (can be more than max_contacts)
-     */
-    size_t get_n_contacts(size_t agent); 
-    
-    /**
-     * @brief Get the contact object
-     * 
-     * @param agent Source agent (id)
-     * @param idx Index of the contact (0 to get_n_contacts(agent)-1)
-     * @return std::pair<size_t, size_t> with (contact_id, contact_day)
-     * @throws std::out_of_range if idx is out of range.
-     */
-    std::pair<size_t, size_t> get_contact(size_t agent, size_t idx);
-
-    /**
-     * @brief Reset the contact tracing data
-     * 
-     * Usually called by `Model<TSeq>::reset()`.
-     * 
-     * @param n_agents Number of agents
-     * @param max_contacts Maximum number of contacts to track per agent
-     */
-    void reset(
-        size_t n_agents,
-        size_t max_contacts
-    );
-
-    /**
-     * @brief Print the contacts of an agent 
-     * 
-     * @param agent Agent id
-     */
-    void print(size_t agent);
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/contacttracing-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/contacttracing-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_CONTACTTRACING_MEAT_H
-#define EPIWORLD_CONTACTTRACING_MEAT_H
-
-// (already included include/epiworld/contacttracing-bones.hpp)
-
-inline size_t ContactTracing::get_location(size_t row, size_t col) const
-{
-    return col * n_agents + row;
-}
-
-inline ContactTracing::ContactTracing()
-{
-    n_agents = 0u;
-    max_contacts = 0u;
-}
-
-inline ContactTracing::ContactTracing(size_t n_agents, size_t max_contacts)
-{
-    this->n_agents = n_agents;
-    this->max_contacts = max_contacts;
-
-    contact_matrix.resize(n_agents * max_contacts, 0u);
-    contacts_per_agent.resize(n_agents, 0);
-    contact_date.resize(n_agents * max_contacts, 0);
-}
-
-inline void ContactTracing::add_contact(size_t agent_a, size_t agent_b, size_t day)
-{
-    
-    // Checking overflow
-    size_t col_location = contacts_per_agent[agent_a] % max_contacts;
-    size_t array_location = get_location(agent_a, col_location);
-
-    contact_matrix[array_location] = agent_b;
-    contact_date[array_location] = day;
-
-    contacts_per_agent[agent_a] += 1;
-
-}
-
-inline size_t ContactTracing::get_n_contacts(size_t agent)
-{
-    return contacts_per_agent[agent];
-}
-
-inline std::pair< size_t, size_t> ContactTracing::get_contact(size_t agent, size_t idx)
-{
-    if (
-        (idx >= contacts_per_agent[agent]) ||
-        (idx >= max_contacts)
-    )
-        throw std::out_of_range("Index out of range in get_contact");
-
-    size_t col_location = idx % max_contacts;
-    size_t array_location = get_location(agent, col_location);
-
-    return { contact_matrix[array_location], contact_date[array_location] };
-}
-
-inline void ContactTracing::reset(size_t n_agents, size_t max_contacts)
-{
-
-    this->n_agents = n_agents;
-    this->max_contacts = max_contacts;
-
-    contact_matrix.assign(n_agents * max_contacts, 0u);
-    contacts_per_agent.assign(n_agents, 0u);
-    contact_date.assign(n_agents * max_contacts, 0u);
-}
-
-inline void ContactTracing::print(size_t agent)
-{
-
-    size_t n_contacts = contacts_per_agent[agent];
-    if (n_contacts > max_contacts)
-        n_contacts = max_contacts;
-
-    printf_epiworld("Agent %zu has %zu contacts: ", agent, n_contacts);
-    for (size_t i = 0u; i < n_contacts; ++i)
-    {
-        auto [contact_id, contact_day] = get_contact(agent, i);
-        printf_epiworld("(%zu, day %zu) ", contact_id, contact_day);
-    }
-    printf_epiworld("\n");
-
-    return;
-
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/contacttracing-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-    
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -24836,9 +24912,6 @@ private:
     void m_quarantine_process();
     static void m_update_model(Model<TSeq> * m);
 
-    // We will limit tracking to up to EPI_MAX_TRACKING
-    ContactTracing contact_tracing;
-
 public:
 
     static const int SUSCEPTIBLE             = 0;
@@ -25247,9 +25320,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
     day_onset.assign(this->size(), 0);
     day_exposed.assign(this->size(), 0);
 
-    // Contact tracing
-    contact_tracing.reset(this->size(), EPI_MAX_TRACKING);
-
     return;
 
 }
@@ -25301,7 +25371,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
         #endif
 
         // Adding the current agent to the tracked interactions
-        m_down->contact_tracing.add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->contact_tracing->add_contact(neighbor.get_id(), p->get_id(), m->today());
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
@@ -25626,7 +25696,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         // Getting the number of contacts, if it is greater
         // than the maximum, it means that we overflowed, so
         // we will only quarantine the first EPI_MAX_TRACKING
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i);
+        size_t n_contacts = this->contact_tracing->get_n_contacts(agent_i);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -25638,7 +25708,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
             if (this->runif() > success_rate)
                 continue;
 
-            auto [contact_id, contact_date] = contact_tracing.get_contact(
+            auto [contact_id, contact_date] = this->contact_tracing->get_contact(
                 agent_i, contact_i
             );
 
@@ -25790,6 +25860,9 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.add_virus(virus);
 
     model.queuing_off(); // No queuing need
+
+    // Enable contact tracing for quarantine process
+    model.contact_tracing_on(EPI_MAX_TRACKING);
 
     // Adding the empty population
     model.agents_empty_graph(n);
@@ -25984,9 +26057,6 @@ private:
 
     void m_quarantine_process();
     void m_update_model();
-
-    // We will limit tracking to up to EPI_MAX_TRACKING
-    ContactTracing contact_tracing;
 
 public:
 
@@ -26347,9 +26417,6 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     day_rash_onset.assign(this->size(), 0);
     day_latent.assign(this->size(), 0);
 
-    // Contact tracing
-    contact_tracing.reset(this->size(), EPI_MAX_TRACKING);
-
     return;
 
 }
@@ -26401,7 +26468,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_susceptible(
         #endif
 
         // Adding the current agent to the tracked interactions
-        m_down->contact_tracing.add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->contact_tracing->add_contact(neighbor.get_id(), p->get_id(), m->today());
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
@@ -26702,7 +26769,7 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
         // Getting the number of contacts, if it is greater
         // than the maximum, it means that we overflowed, so
         // we will only quarantine the first EPI_MAX_TRACKING
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i);
+        size_t n_contacts = this->contact_tracing->get_n_contacts(agent_i);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -26713,7 +26780,7 @@ inline void ModelMeaslesMixing<TSeq>::m_quarantine_process() {
         {
 
             // Checking if the contact is within the contact tracing days prior
-            auto [contact_id, contact_date] = contact_tracing.get_contact(agent_i, contact_i);
+            auto [contact_id, contact_date] = this->contact_tracing->get_contact(agent_i, contact_i);
             bool within_days_prior =
                 (day_rash_onset_agent_i - contact_date) <=
                 this->par("Contact tracing days prior");
@@ -26890,6 +26957,9 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 
     this->queuing_off(); // No queuing need
 
+    // Enable contact tracing for quarantine process
+    this->contact_tracing_on(EPI_MAX_TRACKING);
+
     // Adding the empty population
     this->agents_empty_graph(n);
 
@@ -27048,9 +27118,6 @@ private:
     void m_quarantine_process(); ///< Overall quarantine process
 
     static void m_update_model(Model<TSeq> * m);
-
-    // We will limit tracking to up to EPI_MAX_TRACKING
-    ContactTracing contact_tracing;
 
     std::vector< size_t > days_quarantine_triggered; ///< Days when quarantine was triggered
 
@@ -27434,7 +27501,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_susceptible(
         // Adding the current agent to the tracked interactions
         // In this case, the infected neighbor is the one
         // who interacts with the susceptible agent
-        m_down->contact_tracing.add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->contact_tracing->add_contact(neighbor.get_id(), p->get_id(), m->today());
             
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
@@ -27812,7 +27879,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         }
 
         // (B) Checking the contacts
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
+        size_t n_contacts = this->contact_tracing->get_n_contacts(agent_i_idx);
         if (n_contacts > EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -27820,7 +27887,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            auto [contact_id, contact_date] = contact_tracing.get_contact(
+            auto [contact_id, contact_date] = this->contact_tracing->get_contact(
                 agent_i_idx, contact_j_idx
             );
 
@@ -27907,7 +27974,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
 
         // We also check who are the contacted agents
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i_idx);
+        size_t n_contacts = this->contact_tracing->get_n_contacts(agent_i_idx);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -27915,7 +27982,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_quarantine_process() {
         {
 
             // Getting the location in the matrix
-            auto [contact_id, contact_date] = contact_tracing.get_contact(
+            auto [contact_id, contact_date] = this->contact_tracing->get_contact(
                 agent_i_idx, contact_j_idx
             );
 
@@ -28109,6 +28176,9 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
 
     this->queuing_off(); // No queuing need
 
+    // Enable contact tracing for quarantine process
+    this->contact_tracing_on(EPI_MAX_TRACKING);
+
     // Adding the empty population
     this->agents_empty_graph(n);
 
@@ -28198,12 +28268,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 
     quarantine_risk_level.assign(this->size(), RISK_LOW);
 
-    // Setting up contact tracking matrix
-    contact_tracing.reset(
-        this->size(),
-        EPI_MAX_TRACKING
-    );
-    
     // Resetting the number of quarantines
     days_quarantine_triggered.clear();
 
