@@ -421,11 +421,34 @@ inline AdjList rgraph_bernoulli(
                 std::floor(std::log(r) / lp)
             );
 
-            // Advance to the next row if j >= i
-            while (j >= i && i < static_cast<long long>(n))
+            // Advance to the next row if j >= i.
+            // Hybrid approach: for large skips, use O(1) FPU
+            // inverse-triangular-number formula instead of the
+            // integer loop, avoiding O(sqrt(skip)) iterations.
+            if (j >= i && i < static_cast<long long>(n))
             {
-                j -= i;
-                i++;
+                if (j - i > 200)
+                {
+                    // O(1) FPU mapping: flat index → (i, j) via
+                    // inverse triangular number
+                    long long flat = i * (i - 1) / 2 + j;
+                    double df = static_cast<double>(flat);
+                    i = static_cast<long long>(std::floor(
+                        (1.0 + std::sqrt(1.0 + 8.0 * df)) / 2.0
+                    ));
+                    j = flat - i * (i - 1) / 2;
+                    // Floating-point correction (at most 1–2 steps)
+                    while (j >= i) { j -= i; i++; }
+                    while (j < 0)  { i--; j += i; }
+                }
+                else
+                {
+                    while (j >= i && i < static_cast<long long>(n))
+                    {
+                        j -= i;
+                        i++;
+                    }
+                }
             }
 
             if (i < static_cast<long long>(n))
@@ -947,10 +970,28 @@ inline AdjList rgraph_sbm(
                         std::floor(std::log(r) / lp)
                     );
 
-                    while (j >= i && i < n_g)
+                    // Hybrid row-advance: O(1) FPU for large skips
+                    if (j >= i && i < n_g)
                     {
-                        j -= i;
-                        i++;
+                        if (j - i > 200)
+                        {
+                            long long flat = i * (i - 1) / 2 + j;
+                            double df = static_cast<double>(flat);
+                            i = static_cast<long long>(std::floor(
+                                (1.0 + std::sqrt(1.0 + 8.0 * df)) / 2.0
+                            ));
+                            j = flat - i * (i - 1) / 2;
+                            while (j >= i) { j -= i; i++; }
+                            while (j < 0)  { i--; j += i; }
+                        }
+                        else
+                        {
+                            while (j >= i && i < n_g)
+                            {
+                                j -= i;
+                                i++;
+                            }
+                        }
                     }
 
                     if (i < n_g)
