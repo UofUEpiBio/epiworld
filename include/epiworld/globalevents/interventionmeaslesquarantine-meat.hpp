@@ -136,13 +136,62 @@ inline void InterventionMeaslesQuarantine<TSeq>::operator()(
         _setup(model);
     }
 
+    // Check quarantine-period parameter (if present)
+    bool has_q_period = model->has_param("Quarantine period");
+    bool has_i_period = model->has_param("Isolation period");
+    double q_period = has_q_period ? model->par("Quarantine period") : 0.0;
+    double i_period = has_i_period ? model->par("Isolation period") : 0.0;
+
+    // Both quarantine and isolation shut off?
+    if (has_q_period && has_i_period && q_period < 0 && i_period < 0)
+    {
+        _system_quarantine_triggered = false;
+        return;
+    }
+
+    bool q_period_ok = !has_q_period || q_period >= 0;
+
     // ---------------------------------------------------------------
     // System-wide quarantine mode (e.g. school-wide)
+    // In this mode, willingness is checked at quarantine time using
+    // the scalar model parameter (matching original MeaslesSchool
+    // behavior to preserve the RNG sequence).
     // ---------------------------------------------------------------
     if (_system_quarantine_triggered)
     {
+
+        epiworld_double willingness = model->par(_par_quarantine_willingness);
+
         for (auto & agent : model->get_agents())
-            _apply_quarantine(agent, *model);
+        {
+
+            auto agent_state = static_cast<int>(agent.get_state());
+            size_t agent_id  = agent.get_id();
+
+            // Already quarantined / isolated / hospitalised?
+            if (agent_state > _max_base_state)
+                continue;
+
+            // Vaccinated (has a tool)?
+            if (agent.get_n_tools() != 0u)
+                continue;
+
+            // Quarantine: check period and willingness with runif()
+            if (q_period_ok && (model->runif() < willingness))
+            {
+                // Find the matching quarantinable state
+                for (size_t s = 0u; s < _quarantinable_states.size(); ++s)
+                {
+                    if (agent_state == _quarantinable_states[s])
+                    {
+                        agent.change_state(*model, _quarantine_targets[s]);
+                        _day_flagged[agent_id] = model->today();
+                        break;
+                    }
+                }
+            }
+
+        }
 
         _system_quarantine_triggered = false;
         return;
@@ -151,6 +200,9 @@ inline void InterventionMeaslesQuarantine<TSeq>::operator()(
     // ---------------------------------------------------------------
     // Per-agent contact-tracing mode
     // ---------------------------------------------------------------
+    if (!q_period_ok)
+        return;
+
     bool has_ct_days_prior =
         model->has_param("Contact tracing days prior");
     bool has_ct_success_rate =

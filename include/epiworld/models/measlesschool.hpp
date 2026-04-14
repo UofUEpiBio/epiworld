@@ -137,14 +137,6 @@ inline void ModelMeaslesSchool<TSeq>::reset() {
     // (Re-)initialise the intervention's internal vectors
     _quarantine->init(this->size());
 
-    // Setting up the quarantine parameters via the intervention
-    for (size_t idx = 0; idx < this->size(); ++idx)
-    {
-        _quarantine->set_quarantine_willing(
-            idx, this->runif() < this->par("Quarantine willingness")
-        );
-    }
-
     this->day_rash_onset.assign(this->size(), 0);
     this->has_pep.assign(this->size(), false);
 
