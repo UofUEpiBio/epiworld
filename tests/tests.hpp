@@ -414,6 +414,7 @@ void inline tests_print_avg_transitions(
     #define REQUIRE_TRUE(condition) assert(condition);
     #define REQUIRE_THROWS(...) (void)0
     #define REQUIRE_THAT(...) (void)0
+    #define REQUIRE_THROWS_AS(...) (void)0
 #else
     #define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
 #endif

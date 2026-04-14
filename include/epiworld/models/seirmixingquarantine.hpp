@@ -88,9 +88,6 @@ private:
     void m_quarantine_process();
     static void m_update_model(Model<TSeq> * m);
 
-    // We will limit tracking to up to EPI_MAX_TRACKING
-    ContactTracing contact_tracing;
-
 public:
 
     static const int SUSCEPTIBLE             = 0;
@@ -499,9 +496,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
     day_onset.assign(this->size(), 0);
     day_exposed.assign(this->size(), 0);
 
-    // Contact tracing
-    contact_tracing.reset(this->size(), EPI_MAX_TRACKING);
-
     return;
 
 }
@@ -553,7 +547,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_susceptible(
         #endif
 
         // Adding the current agent to the tracked interactions
-        m_down->contact_tracing.add_contact(neighbor.get_id(), p->get_id(), m->today());
+        m_down->get_contact_tracing().add_contact(neighbor.get_id(), p->get_id(), m->today());
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
@@ -878,7 +872,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
         // Getting the number of contacts, if it is greater
         // than the maximum, it means that we overflowed, so
         // we will only quarantine the first EPI_MAX_TRACKING
-        size_t n_contacts = contact_tracing.get_n_contacts(agent_i);
+        size_t n_contacts = this->contact_tracing->get_n_contacts(agent_i);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -890,7 +884,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
             if (this->runif() > success_rate)
                 continue;
 
-            auto [contact_id, contact_date] = contact_tracing.get_contact(
+            auto [contact_id, contact_date] = this->contact_tracing->get_contact(
                 agent_i, contact_i
             );
 
@@ -1042,6 +1036,9 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.add_virus(virus);
 
     model.queuing_off(); // No queuing need
+
+    // Enable contact tracing for quarantine process
+    model.contact_tracing_on(EPI_MAX_TRACKING);
 
     // Adding the empty population
     model.agents_empty_graph(n);
