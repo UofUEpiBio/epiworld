@@ -13,9 +13,10 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 148.00µs
-Last run speed      : 337.84 million agents x day / second
+Last run elapsed t  : 328.00µs
+Last run speed      : 152.44 million agents x day / second
 Rewiring            : off
+Last seed used      : 122
 
 Global events:
  (none)
@@ -47,7 +48,7 @@ LIKELIHOOD-FREE MARKOV CHAIN MONTE CARLO
 
 N Samples (total) : 2000
 N Samples (after burn-in period) : 2000
-Elapsed t : 614.00ms
+Elapsed t : 1.00s
 
 Parameters:
   -Immune recovery :  0.49 [ 0.27,  0.97] (initial :  0.50)

@@ -14,9 +14,10 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 217.00ms
-Last run speed      : 114.83 million agents x day / second
+Last run elapsed t  : 684.00ms
+Last run speed      : 36.53 million agents x day / second
 Rewiring            : off
+Last seed used      : 0
 
 Global events:
  (none)
@@ -51,9 +52,10 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 199.00ms
-Last run speed      : 125.23 million agents x day / second
+Last run elapsed t  : 658.00ms
+Last run speed      : 37.96 million agents x day / second
 Rewiring            : off
+Last seed used      : 123
 
 Global events:
  (none)
@@ -88,9 +90,10 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 205.00ms
-Last run speed      : 121.41 million agents x day / second
+Last run elapsed t  : 662.00ms
+Last run speed      : 37.74 million agents x day / second
 Rewiring            : off
+Last seed used      : 246
 
 Global events:
  (none)
@@ -125,9 +128,10 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 206.00ms
-Last run speed      : 120.86 million agents x day / second
+Last run elapsed t  : 669.00ms
+Last run speed      : 37.34 million agents x day / second
 Rewiring            : off
+Last seed used      : 369
 
 Global events:
  (none)
@@ -152,9 +156,9 @@ Transition Probabilities:
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 
-last run elapsed time : 217.00ms.
-last run elapsed time : 199.00ms.
-last run elapsed time : 205.00ms.
-last run elapsed time : 206.00ms.
-Elapsed time: 224 milliseconds
+last run elapsed time : 684.00ms.
+last run elapsed time : 658.00ms.
+last run elapsed time : 662.00ms.
+last run elapsed time : 669.00ms.
+Elapsed time: 697 milliseconds
 ```

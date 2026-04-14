@@ -18,10 +18,11 @@ Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
 Last run elapsed t  : 0.00s
-Total elapsed t     : 1.00s (100 runs)
-Last run speed      : 233.51 million agents x day / second
-Average run speed   : 567.09 million agents x day / second
+Total elapsed t     : 6.00s (100 runs)
+Last run speed      : 96.88 million agents x day / second
+Average run speed   : 160.70 million agents x day / second
 Rewiring            : off
+Last seed used      : 696277119
 
 Global events:
  (none)
