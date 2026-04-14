@@ -64,7 +64,8 @@ $(NAME)_SOURCES := \
 	29g-sbm-balance.cpp \
 	29h-sbm-exchangeability.cpp \
 	29i-sbm-large-blocks.cpp \
-	29a-state-update-transition.cpp
+	29a-state-update-transition.cpp \
+	30a-intervention-measles-quarantine.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
