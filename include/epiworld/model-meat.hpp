@@ -2264,6 +2264,8 @@ inline Queue<TSeq> & Model<TSeq>::get_queue()
 template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::contact_tracing_on(size_t max_contacts)
 {
+    if (max_contacts < 1u)
+        throw std::logic_error("Contact tracing should use at least one contact.");
     use_contact_tracing = true;
     contact_tracing_max_contacts = max_contacts;
     return *this;
@@ -2286,10 +2288,13 @@ inline bool Model<TSeq>::is_contact_tracing_on() const
 template<typename TSeq>
 inline ContactTracing & Model<TSeq>::get_contact_tracing()
 {
-    if (!contact_tracing)
+    if (!use_contact_tracing)
         throw std::logic_error(
             "Contact tracing is not active. Call contact_tracing_on() first."
         );
+
+    if (!contact_tracing)
+        contact_tracing = std::make_unique<ContactTracing>();
     return *contact_tracing;
 }
 

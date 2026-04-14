@@ -7,12 +7,12 @@ using namespace epiworld;
  *
  * We create a custom SIR model where the susceptible agent's update function
  * actively records contacts using the model's built-in contact tracing.
- * The transmission rate is set to 1.0 (100%), so every contact with an
- * infected agent results in transmission.
+ * The transmission rate is set to 1.0 (100%), so every successful infection
+ * must originate from an infected neighbor that was recorded as a contact.
  *
- * Because transmission is guaranteed, the set of contacts recorded in the
- * contact tracing object must match exactly the set of (source, target)
- * pairs in the transmission database.
+ * Therefore, every (source, target) pair in the transmission database must
+ * also appear in the contact tracing object, although the contact tracing
+ * object may contain additional recorded contacts.
  */
 EPIWORLD_TEST_CASE("Contact tracing - SIR with 100% transmission", "[contact-tracing]") {
 
