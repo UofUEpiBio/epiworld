@@ -43,6 +43,11 @@ inline size_t ContactTracing::get_n_contacts(size_t agent)
     return contacts_per_agent[agent];
 }
 
+inline size_t ContactTracing::get_max_contacts() const
+{
+    return max_contacts;
+}
+
 inline std::pair< size_t, size_t> ContactTracing::get_contact(size_t agent, size_t idx)
 {
     if (

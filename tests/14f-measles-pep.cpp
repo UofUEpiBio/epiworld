@@ -35,7 +35,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         7.0/2.0,   // "PEP IG half-life (sd)"
         1.0,       // "PEP MMR willingness"
         1.0,       // "PEP IG willingness"
-        3.0,       // "PEP MMR window"
+        100,       // "PEP MMR window"
         100.0,     // "PEP IG window" (large to cover all quarantine scenarios)
         MS::ISOLATED,
         {MS::QUARANTINED_LATENT, MS::QUARANTINED_SUSCEPTIBLE},

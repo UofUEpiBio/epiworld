@@ -58,6 +58,8 @@ public:
      * @return size_t Number of contacts recorded for that agent (can be more than max_contacts)
      */
     size_t get_n_contacts(size_t agent); 
+
+    size_t get_max_contacts() const;
     
     /**
      * @brief Get the contact object

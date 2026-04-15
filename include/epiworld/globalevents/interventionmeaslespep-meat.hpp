@@ -133,6 +133,10 @@ inline void InterventionMeaslesPEP<TSeq>::_setup(
         model->add_tool(ig);
     }
 
+    // Auxiliary vectors for tracking the focal agents and their contact day
+    this->_focal_agent.assign(model->size(), false);
+    this->_focal_agent_contact_day.assign(model->size(), -1);
+
 };
 
 template<typename TSeq>
@@ -153,6 +157,66 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     // Precapturing the tools
     auto & tool_mmr = model->get_tool("PEP MMR");
     auto & tool_ig  = model->get_tool("PEP IG");
+
+    // Identifying the agents who are acually elegible
+    // for PEP. Those should be in contact with the triggering
+    // agents.
+    auto & ct = model->get_contact_tracing();
+    _focal_agent.assign(model->size(), false);
+    auto max_contacts = ct.get_max_contacts();
+    for (auto & agent: model->get_agents())
+    {
+        auto s = agent.get_state();
+
+        // Only if they recently transitioned to the triggering
+        // state.
+        if (
+            (s == static_cast<unsigned int>(this->_triggering_state)) &&
+            (s != agent.get_state_prev())
+        )
+        {
+            
+            // Iterating through their contacts and adding
+            // them to the focal agents, only if 
+            // they are:
+            // (a) in the target states,
+            // (b) within the PEP window, and
+            // (c) willing to receive PEP.
+            auto n_contacts = ct.get_n_contacts(agent.get_id());
+            if (n_contacts > max_contacts)
+                n_contacts = max_contacts;
+
+            for (size_t i = 0u; i < n_contacts; ++i)
+            {
+
+                auto [contact_id, contact_day] = ct.get_contact(agent.get_id(), i);
+                auto & contact_agent = model->get_agent(contact_id);
+
+                // Checking if the contact agent is in a target state
+                int contact_state = static_cast<int>(contact_agent.get_state());
+                if (!IN(contact_state, this->_target_states))
+                    continue;
+
+                // Checking if the agent was identified be
+                if (!_focal_agent[contact_id])
+                {
+                    _focal_agent[contact_id] = true;
+                    _focal_agent_contact_day[contact_id] = contact_day;
+                }
+                else
+                {
+                    // If the agent was already identified, we update the contact day
+                    // only if it is more recent (we want to capture the most recent contact)
+                    if (static_cast<int>(contact_day) > _focal_agent_contact_day[contact_id])
+                    {
+                        _focal_agent_contact_day[contact_id] = contact_day;
+                    }
+                }
+
+            }
+            
+        }
+    }
     
     // Iterating over the agents
     _to_receive_pep.clear();
@@ -161,10 +225,9 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     for (auto & agent: model->get_agents())
     {
 
-        // Checking if the agent is in a target
-        // state
-        int agent_state = static_cast<int>(agent.get_state());
-        if (!IN(agent_state, this->_target_states))
+        // Checking the list of agents that are elegible for PEP
+        // (those in contact with the triggering agents).
+        if (!_focal_agent[agent.get_id()])
             continue;
 
         // Finding the corresponding state for PEP
@@ -182,12 +245,11 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         {
 
             // Getting the date of exposure
-
-            int day_infected = agent.get_virus()->get_date();
+            int day_exposed = _focal_agent_contact_day[agent.get_id()];
             bool within_mmr_window =
-                (today - day_infected) < pep_mmr_window;
+                (today - day_exposed) < pep_mmr_window;
             bool within_ig_window =
-                (today - day_infected) < pep_ig_window;
+                (today - day_exposed) < pep_ig_window;
 
             // (a) Check if within the MMR window and willing
             if (within_mmr_window &&
@@ -228,24 +290,6 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
         }
 
-        // If we got this far, the agent has no virus (susceptible in
-        // quarantine). Check willingness for MMR first, then IG.
-        if (this->_willing_to_receive_mmr[agent.get_id()])
-        {
-            agent.add_tool(
-                *model,
-                tool_mmr,
-                this->_states_if_pep_effective[pos]
-            );
-        }
-        else if (this->_willing_to_receive_ig[agent.get_id()])
-        {
-            agent.add_tool(
-                *model,
-                tool_ig,
-                this->_states_if_pep_effective[pos]
-            );
-        }
 
     }
 

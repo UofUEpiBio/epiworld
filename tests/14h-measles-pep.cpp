@@ -51,6 +51,7 @@ EPIWORLD_TEST_CASE(
             ig_will,   // IG willingness
             mmr_window,// MMR window
             ig_window, // IG window
+            MS::ISOLATED,
             {MS::QUARANTINED_LATENT, MS::QUARANTINED_SUSCEPTIBLE},
             {MS::SUSCEPTIBLE, MS::SUSCEPTIBLE},
             {MS::LATENT, MS::SUSCEPTIBLE}
@@ -166,6 +167,7 @@ EPIWORLD_TEST_CASE(
             1.0, 1.0, 4.0 * 7.0, 7.0 / 2.0,
             1.0, 1.0, // both willing
             3.0, 6.0, // windows
+            MS::ISOLATED,
             {MS::QUARANTINED_LATENT, MS::QUARANTINED_SUSCEPTIBLE},
             {MS::SUSCEPTIBLE, MS::SUSCEPTIBLE},
             {MS::LATENT, MS::SUSCEPTIBLE}

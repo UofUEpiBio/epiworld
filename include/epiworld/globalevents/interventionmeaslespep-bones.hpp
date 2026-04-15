@@ -61,6 +61,9 @@ private:
     std::vector< int > _next_if_effective;
     std::vector< int > _next_if_ineffective;
 
+    std::vector< bool > _focal_agent;
+    std::vector< int > _focal_agent_contact_day;
+
 public:
 
     /**
