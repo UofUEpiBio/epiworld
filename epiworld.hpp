@@ -19439,6 +19439,7 @@ private:
     std::vector< bool > _willing_to_receive_ig;
 
     // Target states to which the intervention applies
+    int _triggering_state;
     std::vector< int > _target_states;
     std::vector< int > _states_if_pep_effective;
     std::vector< int > _states_if_pep_ineffective;
@@ -19482,6 +19483,9 @@ public:
      * MMR PEP can be administered.
      * @param ig_window Number of days after exposure within which
      * IG PEP can be administered.
+     * @param triggering_state State that triggers the intervention.
+     * For example, if detected agents were moved to isolation, it
+     * should be the state corresponding to isolation.
      * @param target_states The states to which the intervention applies. For
      * example, if the intervention applies to agents in quarantine, then this
      * should include the states that correspond to quarantine.
@@ -19502,6 +19506,7 @@ public:
         epiworld_double ig_willingness,
         epiworld_double mmr_window,
         epiworld_double ig_window,
+        int triggering_state,
         std::vector< int > target_states,
         std::vector< int > states_if_pep_effective,
         std::vector< int > states_if_pep_ineffective
@@ -19731,12 +19736,22 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     epiworld_double ig_willingness,
     epiworld_double mmr_window,
     epiworld_double ig_window,
+    int triggering_state,
     std::vector< int > target_states,
     std::vector< int > states_if_pep_effective,
     std::vector< int > states_if_pep_ineffective
 ) {
 
     this->set_name(name);
+
+    EpiAssert::check_probability(mmr_efficacy, "mmr_efficacy", "InterventionMeaslesPEP");
+    EpiAssert::check_probability(ig_efficacy, "ig_efficacy", "InterventionMeaslesPEP");
+    EpiAssert::check_non_negative(ig_half_life_mean, "ig_half_life_mean", "InterventionMeaslesPEP");
+    EpiAssert::check_non_negative(ig_half_life_sd, "ig_half_life_sd", "InterventionMeaslesPEP");
+    EpiAssert::check_probability(mmr_willingness, "mmr_willingness", "InterventionMeaslesPEP");
+    EpiAssert::check_probability(ig_willingness, "ig_willingness", "InterventionMeaslesPEP");
+    EpiAssert::check_non_negative(mmr_window, "mmr_window", "InterventionMeaslesPEP");
+    EpiAssert::check_non_negative(ig_window, "ig_window", "InterventionMeaslesPEP");
 
     // Must match the length
     if (target_states.size() != states_if_pep_effective.size() || target_states.size() != states_if_pep_ineffective.size())
@@ -19748,6 +19763,7 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
             ", respectively."
         );
 
+    this->_triggering_state = triggering_state;
     this->_target_states = target_states;
     this->_states_if_pep_effective = states_if_pep_effective;
     this->_states_if_pep_ineffective = states_if_pep_ineffective;
@@ -19767,6 +19783,23 @@ template<typename TSeq>
 inline void InterventionMeaslesPEP<TSeq>::_setup(
     Model<TSeq> * model
 ) {
+
+    // Validating the sign and range of the state-associated
+    // paramters
+    int n_states = model->get_n_states();
+    #define _EPI_CHECK(param, name) \
+        EpiAssert::check_bounds(\
+            param, static_cast<int>(0), n_states, name, \
+            "InterventionMeaslesPEP");
+
+    _EPI_CHECK(this->_triggering_state, "triggering_state");
+    for (size_t i = 0u; i < this->_target_states.size(); ++i)
+    {
+        _EPI_CHECK(_target_states[i], "target_states[" + std::to_string(i) + "]");
+        _EPI_CHECK(_states_if_pep_effective[i], "states_if_pep_effective[" + std::to_string(i) + "]");
+        _EPI_CHECK(_states_if_pep_ineffective[i], "states_if_pep_ineffective[" + std::to_string(i) + "]");
+    }
+    #undef _EPI_CHECK
 
     // Randomizing willingness (separate for MMR and IG)
     this->_willing_to_receive_mmr.assign(model->size(), false);
@@ -19867,6 +19900,8 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         // Checking if the agent has a virus
         if (agent.get_virus() != nullptr)
         {
+
+            // Getting the date of exposure
 
             int day_infected = agent.get_virus()->get_date();
             bool within_mmr_window =
@@ -24474,6 +24509,14 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
         if (neighbor.get_id() == p->get_id())
             continue;
 
+        // Adding the contact to the contact tracing system
+        // (always on for this model)
+        model->get_contact_tracing().add_contact(
+            p->get_id(),
+            neighbor.get_id(),
+            m->today()
+        );
+
         // We successfully drew a contact, so we increment the counter
         i++;
 
@@ -24858,6 +24901,9 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Setting the population
     this->agents_empty_graph(n);
+
+    // Turning contact tracing on for the model
+    this->contact_tracing_on();
 
 }
 

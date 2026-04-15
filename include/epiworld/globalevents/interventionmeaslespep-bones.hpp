@@ -36,6 +36,7 @@ private:
     std::vector< bool > _willing_to_receive_ig;
 
     // Target states to which the intervention applies
+    int _triggering_state;
     std::vector< int > _target_states;
     std::vector< int > _states_if_pep_effective;
     std::vector< int > _states_if_pep_ineffective;
@@ -79,6 +80,9 @@ public:
      * MMR PEP can be administered.
      * @param ig_window Number of days after exposure within which
      * IG PEP can be administered.
+     * @param triggering_state State that triggers the intervention.
+     * For example, if detected agents were moved to isolation, it
+     * should be the state corresponding to isolation.
      * @param target_states The states to which the intervention applies. For
      * example, if the intervention applies to agents in quarantine, then this
      * should include the states that correspond to quarantine.
@@ -99,6 +103,7 @@ public:
         epiworld_double ig_willingness,
         epiworld_double mmr_window,
         epiworld_double ig_window,
+        int triggering_state,
         std::vector< int > target_states,
         std::vector< int > states_if_pep_effective,
         std::vector< int > states_if_pep_ineffective

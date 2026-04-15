@@ -308,6 +308,14 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
         if (neighbor.get_id() == p->get_id())
             continue;
 
+        // Adding the contact to the contact tracing system
+        // (always on for this model)
+        model->get_contact_tracing().add_contact(
+            p->get_id(),
+            neighbor.get_id(),
+            m->today()
+        );
+
         // We successfully drew a contact, so we increment the counter
         i++;
 
@@ -692,6 +700,9 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Setting the population
     this->agents_empty_graph(n);
+
+    // Turning contact tracing on for the model
+    this->contact_tracing_on();
 
 }
 
