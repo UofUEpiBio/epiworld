@@ -15,8 +15,8 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
         0.3,     // Vaccination reduction recovery rate
         7.0,     // Incubation period
         4.0,     // Prodromal period
-        5.0,     // Rash period
-        3.0,     // Days undetected
+        7.0,     // Rash period
+        4.0,     // Days undetected
         0.1,     // Hospitalization rate
         7.0,     // Hospitalization duration
         0.1,     // Proportion vaccinated
@@ -33,7 +33,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
         return;
     });
 
-    size_t nsims = 1000;
+    size_t nsims = 2000;
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
     std::vector< double > hospitalizations(nsims, 0), outbreak_sizes(nsims, 0);
