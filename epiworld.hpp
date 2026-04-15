@@ -8370,16 +8370,18 @@ public:
      * @return size_t Number of contacts recorded for that agent (can be more than max_contacts)
      */
     size_t get_n_contacts(size_t agent); 
+
+    size_t get_max_contacts() const;
     
     /**
      * @brief Get the contact object
      * 
      * @param agent Source agent (id)
      * @param idx Index of the contact (0 to get_n_contacts(agent)-1)
-     * @return std::pair<size_t, size_t> with (contact_id, contact_day)
+     * @return std::pair<size_t, int> with (contact_id, contact_day)
      * @throws std::out_of_range if idx is out of range.
      */
-    std::pair<size_t, size_t> get_contact(size_t agent, size_t idx);
+    std::pair<size_t, int> get_contact(size_t agent, size_t idx);
 
     /**
      * @brief Reset the contact tracing data
@@ -8466,7 +8468,12 @@ inline size_t ContactTracing::get_n_contacts(size_t agent)
     return contacts_per_agent[agent];
 }
 
-inline std::pair< size_t, size_t> ContactTracing::get_contact(size_t agent, size_t idx)
+inline size_t ContactTracing::get_max_contacts() const
+{
+    return max_contacts;
+}
+
+inline std::pair< size_t, int> ContactTracing::get_contact(size_t agent, size_t idx)
 {
     if (
         (idx >= contacts_per_agent[agent]) ||
@@ -8502,7 +8509,7 @@ inline void ContactTracing::print(size_t agent)
     for (size_t i = 0u; i < n_contacts; ++i)
     {
         auto [contact_id, contact_day] = get_contact(agent, i);
-        printf_epiworld("(%zu, day %zu) ", contact_id, contact_day);
+        printf_epiworld("(%zu, day %i) ", contact_id, contact_day);
     }
     printf_epiworld("\n");
 
@@ -19413,24 +19420,29 @@ class InterventionMeaslesPEP final : public GlobalEvent<TSeq> {
 
 private:
 
-    static inline const std::string _par_willingness{"PEP willingness"};
+    static inline const std::string _par_mmr_willingness{"PEP MMR willingness"};
+    static inline const std::string _par_ig_willingness{"PEP IG willingness"};
     static inline const std::string _par_mmr_efficacy{"PEP MMR efficacy"};
     static inline const std::string _par_ig_efficacy{"PEP IG efficacy"};
     static inline const std::string _par_pep_mmr_window{"PEP MMR window"};
+    static inline const std::string _par_pep_ig_window{"PEP IG window"};
     static inline const std::string _par_half_life_mean{"PEP IG half-life (mean)"};
     static inline const std::string _par_half_life_sd{"PEP IG half-life (sd)"};
 
 
     // Willigness and efficacy of the PEP
-    epiworld_double _willingness;
+    epiworld_double _mmr_willingness;
+    epiworld_double _ig_willingness;
     epiworld_double _mmr_efficacy;
     epiworld_double _ig_efficacy;
     epiworld_double _ig_half_life_mean;
     epiworld_double _ig_half_life_sd;
     epiworld_double _pep_mmr_window;
+    epiworld_double _pep_ig_window;
 
-    // Willingness of the agents to receive PEP
-    std::vector< bool > _willing_to_receive_pep;
+    // Willingness of the agents to receive MMR and IG as PEP
+    std::vector< bool > _willing_to_receive_mmr;
+    std::vector< bool > _willing_to_receive_ig;
 
     // Target states to which the intervention applies
     std::vector< int > _target_states;
@@ -19481,8 +19493,10 @@ public:
         epiworld_double ig_efficacy,
         epiworld_double ig_half_life_mean,
         epiworld_double ig_half_life_sd,
-        epiworld_double pep_willingness,
+        epiworld_double mmr_willingness,
+        epiworld_double ig_willingness,
         epiworld_double mmr_window,
+        epiworld_double ig_window,
         std::vector< int > target_states,
         std::vector< int > states_if_pep_effective,
         std::vector< int > states_if_pep_ineffective
@@ -19700,6 +19714,7 @@ inline std::unique_ptr<Tool<TSeq>> ToolImmunoglobulin<TSeq>::clone_ptr() const
 //////////////////////////////////////////////////////////////////////////////*/
 
 
+// (already included include/epiworld/models/../globalevents/quarantinetrigger-bones.hpp)
 
 template<typename TSeq>
 inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
@@ -19708,8 +19723,10 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     epiworld_double ig_efficacy,
     epiworld_double ig_half_life_mean,
     epiworld_double ig_half_life_sd,
-    epiworld_double pep_willingness,
+    epiworld_double mmr_willingness,
+    epiworld_double ig_willingness,
     epiworld_double mmr_window,
+    epiworld_double ig_window,
     std::vector< int > target_states,
     std::vector< int > states_if_pep_effective,
     std::vector< int > states_if_pep_ineffective
@@ -19736,8 +19753,10 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     this->_ig_efficacy = ig_efficacy;
     this->_ig_half_life_mean = ig_half_life_mean;
     this->_ig_half_life_sd = ig_half_life_sd;
-    this->_willingness = pep_willingness;
+    this->_mmr_willingness = mmr_willingness;
+    this->_ig_willingness = ig_willingness;
     this->_pep_mmr_window = mmr_window;
+    this->_pep_ig_window = ig_window;
 }
 
 template<typename TSeq>
@@ -19746,22 +19765,34 @@ inline void InterventionMeaslesPEP<TSeq>::_setup(
 ) {
 
     // Randomizing willingness
-    this->_willing_to_receive_pep.assign(model->size(), false);
+    this->_willing_to_receive_mmr.assign(model->size(), false);
+    this->_willing_to_receive_ig.assign(model->size(), false);
 
     // Setting the parameters
-    model->add_param(this->_willingness, this->_par_willingness, true);
+    model->add_param(this->_mmr_willingness, this->_par_mmr_willingness, true);
+    model->add_param(this->_ig_willingness, this->_par_ig_willingness, true);
     model->add_param(this->_mmr_efficacy, this->_par_mmr_efficacy, true);
     model->add_param(this->_ig_efficacy, this->_par_ig_efficacy, true);
     model->add_param(this->_pep_mmr_window, this->_par_pep_mmr_window, true);
+    model->add_param(this->_pep_ig_window, this->_par_pep_ig_window, true);
     model->add_param(this->_ig_half_life_mean, this->_par_half_life_mean, true);
     model->add_param(this->_ig_half_life_sd, this->_par_half_life_sd, true);
 
-    auto willingness = model->par(this->_par_willingness);
+    auto mmr_willingness = model->par(this->_par_mmr_willingness);
+    auto ig_willingness = model->par(this->_par_ig_willingness);
     for (size_t i = 0u; i < model->size(); ++i)
     {
-        if (model->runif() < willingness)
+        if (model->runif() < mmr_willingness)
         {
-            this->_willing_to_receive_pep[i] = true;
+            this->_willing_to_receive_mmr[i] = true;
+        }
+    }
+
+    for (size_t i = 0u; i < model->size(); ++i)
+    {
+        if (model->runif() < ig_willingness)
+        {
+            this->_willing_to_receive_ig[i] = true;
         }
     }
 
@@ -19794,6 +19825,18 @@ inline void InterventionMeaslesPEP<TSeq>::_setup(
 template<typename TSeq>
 inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
+    // Checking dynamically
+    auto quarantine_trigger_ptr = dynamic_cast<QuarantineTrigger<TSeq> *>(model);
+    if (quarantine_trigger_ptr == nullptr)
+    {
+        throw std::logic_error(
+            "The InterventionMeaslesPEP global event can only be used with "
+            "models that inherit from QuarantineTrigger. This is because the "
+            "intervention relies on the quarantine triggering mechanism to "
+            "identify which agents should receive PEP."
+        );
+    }
+
     // Verifying if this needs to be setup
     if (static_cast<int>(model->get_sim_id()) != this->model_id)
     {
@@ -19801,74 +19844,98 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         this->_setup(model);
     }
 
-    // Capturing some basic information
-    auto today = model->today();
-    auto pep_mmr_window = static_cast<int>(model->par(this->_par_pep_mmr_window));
+    // Common variables
+    int pep_mmr_window = static_cast<int>(model->par(this->_par_pep_mmr_window));
+    int pep_ig_window = static_cast<int>(model->par(this->_par_pep_ig_window)); 
 
-    // Precapturing the tools
-    auto & tool_mmr = model->get_tool("PEP MMR");
-    auto & tool_ig  = model->get_tool("PEP IG");
-    
-    // Iterating over the agents
+    // Getting the list of agents that triggered the
+    // quarantine
+    auto & triggering_agents = quarantine_trigger_ptr->get_triggering_agents();
+    auto & contact_trace = model->get_contact_tracing();
+    auto & date_infectious = quarantine_trigger_ptr->get_date_infectious();
+
+    // Making room (we will iterate this vectors
+    // later to figure out the state changes.)
     _to_receive_pep.clear();
     _next_if_effective.clear();
     _next_if_ineffective.clear();
-    for (auto & agent: model->get_agents())
+    for (size_t t_i = 0u; t_i < triggering_agents.size(); ++t_i)
     {
 
-        // Checking if the agent is in a target
-        // state
-        int agent_state = static_cast<int>(agent.get_state());
-        if (!IN(agent_state, this->_target_states))
+        size_t agent_id = triggering_agents[t_i];
+
+        // Checking if the agent has made a contact
+        auto n_contacts = contact_trace.get_n_contacts(agent_id);
+        if (n_contacts == 0)
             continue;
 
-        // Checking willigness
-        if (!this->_willing_to_receive_pep[agent.get_id()])
-            continue;
+        // Iterating over the contacts
+        if (n_contacts > contact_trace.get_max_contacts())
+            n_contacts = contact_trace.get_max_contacts();
 
-        // Finding the corresponding state for PEP
-        auto it = std::find(
-            this->_target_states.begin(),
-            this->_target_states.end(),
-            agent.get_state()
-        );
+        // Precapturing the tools
+        auto & tool_mmr = model->get_tool("PEP MMR");
+        auto & tool_ig  = model->get_tool("PEP IG");
 
-        // No need to check it, we know it is there
-        auto pos = std::distance(this->_target_states.begin(), it);
-
-        // Checking if the agent has a virus
-        if (agent.get_virus() != nullptr)
+        // Get the relevant window
+        int infectious_since = date_infectious[t_i];
+        for (size_t i = 0u; i < n_contacts; ++i)
         {
+            // Relevant contact
+            auto [contact_id, contact_day] = contact_trace.get_contact(agent_id, i);
+            auto & contact = model->get_agent(contact_id);
 
-            // Agents with virus may recover, so we need to check
-            // on that again
-            _to_receive_pep.push_back(agent.get_id());
-            _next_if_effective.push_back(_states_if_pep_effective[pos]);
-            _next_if_ineffective.push_back(_states_if_pep_ineffective[pos]);
+            // First question: Is the agent elegible for PEP?
+            int contact_state = static_cast<int>(contact.get_state());
+            if (!IN(contact_state, this->_target_states))
+                continue;
 
-            // Checking when did the agent get infected
-            int day_infected = agent.get_virus()->get_date();
-
-            // If the date is within the window for PEP,
-            // we administer MMR PEP to the agent
-            if ((today - day_infected) >= pep_mmr_window)
+            // Second question: Is the agent within the MMR window?
+            if (
+                this->_willing_to_receive_mmr[contact_id] &&
+                // (contact_day > infectious_since) &&
+                ((contact_day - infectious_since) <= pep_mmr_window)
+            )
             {
                 // We will administer MMR PEP to the agent
-                agent.add_tool(*model, tool_ig);
-
-                // Go to the next agent
-                continue;
+                contact.add_tool(
+                    *model,
+                    tool_mmr
+                );
             }
+            else if (
+                this->_willing_to_receive_ig[contact_id] &&
+                // (contact_day > infectious_since) &&
+                ((contact_day - infectious_since) <= pep_ig_window)
+            )
+            {
+                // We will administer IG PEP to the agent
+                contact.add_tool(
+                    *model,
+                    tool_ig
+                );
+            }
+            // Nothing happens
+            else
+                continue;
 
+            // Finding the corresponding state for PEP
+            auto it = std::find(
+                this->_target_states.begin(),
+                this->_target_states.end(),
+                contact.get_state()
+            );
+
+            // No need to check it, we know it is there
+            auto pos = std::distance(this->_target_states.begin(), it);
+
+            // Recording the information of the agent
+            // so we can decide to what state to move
+            _to_receive_pep.push_back(contact.get_id());
+            _next_if_effective.push_back(_states_if_pep_effective[pos]);
+            _next_if_ineffective.push_back(_states_if_pep_ineffective[pos]);
+            
         }
-
-        // If we got this far, it is because the agent can 
-        // receive MMR PEP
-        agent.add_tool(
-            *model,
-            tool_mmr,
-            this->_states_if_pep_effective[pos]
-        );
 
     }
 
@@ -19878,21 +19945,28 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     for (size_t i = 0u; i < _to_receive_pep.size(); ++i)
     {
         auto & agent = model->get_agent(_to_receive_pep[i]);
+
         int next_state_success = _next_if_effective[i];
         int next_state_failure = _next_if_ineffective[i];
 
-        auto recovers = agent.get_susceptibility_reduction(
-            agent.get_virus(), *model
-        ); 
+        // Recovery is only possible if the agent has a virus
+        // and the tool reduces susceptibility.
+        auto & agent_v = agent.get_virus();
+        if (agent_v != nullptr)
+        {
+            auto recovers = agent.get_susceptibility_reduction(
+                agent.get_virus(), *model
+            );
 
-        if (recovers > model->runif())
-        {
-            agent.rm_virus(*model, next_state_success);
+            if (recovers > model->runif())
+            {
+                agent.rm_virus(*model, next_state_success);
+                continue;
+            }
+
         } 
-        else
-        {
-            agent.change_state(*model, next_state_failure);
-        }
+        
+        agent.change_state(*model, next_state_failure);
 
     }
 
@@ -24109,6 +24183,89 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #include <cassert>
 // (already included include/epiworld/models/../tools/vaccine.hpp)
 // (already included include/epiworld/models/../model-bones.hpp)
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/models/../globalevents/quarantinetrigger-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef QUARANTINETRIGGER_HPP
+#define QUARANTINETRIGGER_HPP
+
+#include <vector>
+// (already included include/epiworld/models/../globalevents/../config.hpp)
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class QuarantineTrigger {
+private:
+    int _model_sim_id = -1;
+    int _day = -1;
+    std::vector< size_t > _agents_triggering_quarantine;
+    std::vector< int > _date_infectious;
+    
+    void _setup(const Model<TSeq> & model);
+public:
+    QuarantineTrigger() = default;
+    void add_triggering_agent(
+        const Model<TSeq> & model,
+        const Agent<TSeq> & agent_id,
+        int date_infectious
+    );
+
+    std::vector< size_t > & get_triggering_agents();
+    std::vector< int > & get_date_infectious();
+};
+
+template<typename TSeq>
+inline void QuarantineTrigger<TSeq>::_setup(const Model<TSeq> & model) {
+
+    if (
+        (static_cast<int>(model.get_sim_id()) != _model_sim_id) ||
+        (static_cast<int>(model.today()) != _day)
+    ) {
+        _model_sim_id = static_cast<int>(model.get_sim_id());
+        _agents_triggering_quarantine.clear();
+        _date_infectious.clear();
+    }
+
+}
+
+template<typename TSeq>
+inline void QuarantineTrigger<TSeq>::add_triggering_agent(
+    const Model<TSeq> & model,
+    const Agent<TSeq> & agent_id,
+    int date_infectious
+) {
+    
+    // Ensuring we are not in a different run
+    _setup(model);
+    this->_agents_triggering_quarantine.push_back(agent_id.get_id());
+    this->_date_infectious.push_back(date_infectious);
+}
+
+template<typename TSeq>
+inline std::vector< size_t > & QuarantineTrigger<TSeq>::get_triggering_agents() {
+    return this->_agents_triggering_quarantine;
+}
+
+template<typename TSeq>
+inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
+    return this->_date_infectious;
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/models/../globalevents/quarantinetrigger-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
@@ -24136,7 +24293,10 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool final : public Model<TSeq> {
+class ModelMeaslesSchool final :
+    public Model<TSeq>,
+    public QuarantineTrigger<TSeq>
+{
 
 private:
 
@@ -24412,6 +24572,12 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
         if (neighbor.get_id() == p->get_id())
             continue;
 
+        m->get_contact_tracing().add_contact(
+            neighbor.get_id(),
+            p->get_id(),
+            m->today()
+        );
+
         // We successfully drew a contact, so we increment the counter
         i++;
 
@@ -24543,6 +24709,13 @@ LOCAL_UPDATE_FUN(_update_rash) {
         // If the agent is not hospitalized, then it is moved to
         // isolation.
         p->change_state(*m, ISOLATED);
+        
+        // Adding the agent to the quarantine list
+        model->add_triggering_agent(
+            *model,
+            *p,
+            model->day_rash_onset[p->get_id()] - 4
+        );
     }
 
 };
@@ -24796,6 +24969,9 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Setting the population
     this->agents_empty_graph(n);
+
+    // Turning on the contact tracing
+    this->contact_tracing_on();
 
 }
 

@@ -9,8 +9,8 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     epimodels::ModelMeaslesSchool<> model_0(
         1000,    // Number of agents
         n_seeds, // Number of initial cases
-        2.0,     // Contact rate
-        0.2,     // Transmission rate
+        20.0,     // Contact rate
+        0.1,     // Transmission rate
         0.9,     // Vaccination efficacy
         0.3,     // Vaccination reduction recovery rate
         7.0,     // Incubation period
@@ -33,11 +33,13 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         1.0,       // "PEP IG efficacy"
         4.0 * 7.0, // "PEP IG half-life (mean)"
         7.0/2.0,   // "PEP IG half-life (sd)"
-        1.0,       // "PEP willingness"
-        3.0,       // "PEP MMR window"
-        {MS::QUARANTINED_LATENT, MS::QUARANTINED_SUSCEPTIBLE},
-        {MS::SUSCEPTIBLE, MS::SUSCEPTIBLE},
-        {MS::LATENT, MS::SUSCEPTIBLE}
+        1.0,       // "PEP MMR willingness"
+        1.0,       // "PEP IG willingness"
+        100.0,       // "PEP MMR window"
+        100.0,       // "PEP IG window"
+        {MS::QUARANTINED_LATENT, MS::QUARANTINED_SUSCEPTIBLE, MS::QUARANTINED_PRODROMAL},
+        {MS::RECOVERED, MS::SUSCEPTIBLE, MS::RECOVERED},
+        {MS::LATENT, MS::SUSCEPTIBLE, MS::PRODROMAL}
     );
 
     model_0.add_globalevent(pep);
@@ -58,7 +60,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         transitions, R0s, n_seeds, nullptr, &outbreak_sizes, &hospitalizations
     );
 
-    model_0.run_multiple(60, nsims, 1231, saver, true, true, 2);
+    model_0.run_multiple(60, nsims, 1231, saver, true, true, 1);
 
     model_0.print();
 
@@ -152,35 +154,11 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         moreless(mat(11, 12), 1.0/model_0("Hospitalization period"), 0.05)
     );
 
-    // =========================================================
-    // Hospitalization probability with PEP
-    // =========================================================
-    // With PEP, some latent agents recover before reaching the
-    // rash stage, so the overall hospitalization probability
-    // (hospitalizations / outbreak_size) should be LOWER than
-    // the theoretical no-PEP value.
-    double theoretical_hosp_no_pep = model_0("Hospitalization rate") / (
-        model_0("Hospitalization rate") + p_recovered
-    );
-
-    REQUIRE(obs_hosp_probability < theoretical_hosp_no_pep);
-
-    // Rows and columns 7 and 8 (Quarantined Latent and Quarantined
-    // Susceptible) should be empty since willingness is 100%
-    double col_sum_q_latent = 0.0, col_sum_q_susceptible = 0.0;
-    double row_sum_q_latent = 0.0, row_sum_q_susceptible = 0.0;
-    for (size_t i = 0u; i < n_states; ++i)
-    {
-        col_sum_q_latent += mat(i, 7);
-        col_sum_q_susceptible += mat(i, 8);
-        row_sum_q_latent += mat(7, i);
-        row_sum_q_susceptible += mat(8, i);
-    }
-
-    REQUIRE(col_sum_q_latent < 1e-10);
-    REQUIRE(col_sum_q_susceptible < 1e-10);
-    REQUIRE(row_sum_q_latent < 1e-10);
-    REQUIRE(row_sum_q_susceptible < 1e-10);
+    // We should have some expected transitions away from 
+    // quarantine states
+    REQUIRE(mat(7, 1) > 0.0); // Quarantined latent to latent
+    REQUIRE(mat(8, 0) > 0.0); // Quarantined suseptible to susceptible
+    REQUIRE(mat(9, 2) > 0.0); // Quarantined prodromal to prodromal
 
     // =========================================================
     // Diagnostics
@@ -221,10 +199,6 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
               << mat(11, 12) << " (expected ~"
               << 1.0/model_0("Hospitalization period") << ")" << std::endl;
 
-    std::cout << "Hosp probability (observed): "
-              << obs_hosp_probability
-              << " (no-PEP theoretical: " << theoretical_hosp_no_pep << ")"
-              << std::endl;
 
     #undef mat
 

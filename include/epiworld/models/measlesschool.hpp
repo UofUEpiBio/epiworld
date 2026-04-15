@@ -5,6 +5,7 @@
 #include <cassert>
 #include "../tools/vaccine.hpp"
 #include "../model-bones.hpp"
+#include "../globalevents/quarantinetrigger-bones.hpp"
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \
@@ -32,7 +33,10 @@
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesSchool final : public Model<TSeq> {
+class ModelMeaslesSchool final :
+    public Model<TSeq>,
+    public QuarantineTrigger<TSeq>
+{
 
 private:
 
@@ -308,6 +312,12 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
         if (neighbor.get_id() == p->get_id())
             continue;
 
+        m->get_contact_tracing().add_contact(
+            neighbor.get_id(),
+            p->get_id(),
+            m->today()
+        );
+
         // We successfully drew a contact, so we increment the counter
         i++;
 
@@ -439,6 +449,13 @@ LOCAL_UPDATE_FUN(_update_rash) {
         // If the agent is not hospitalized, then it is moved to
         // isolation.
         p->change_state(*m, ISOLATED);
+        
+        // Adding the agent to the quarantine list
+        model->add_triggering_agent(
+            *model,
+            *p,
+            model->day_rash_onset[p->get_id()] - 4
+        );
     }
 
 };
@@ -692,6 +709,9 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Setting the population
     this->agents_empty_graph(n);
+
+    // Turning on the contact tracing
+    this->contact_tracing_on();
 
 }
 
