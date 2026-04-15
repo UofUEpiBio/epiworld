@@ -97,17 +97,17 @@ EPIWORLD_TEST_CASE(
 
     // Transition to recovered
     std::cout << "Transition to recovered: " <<
-        mat(2, 9) << " (expected: " << 
+        mat(2, 8) << " (expected: " << 
         model("Prob. Recovery") << ")" << std::endl;
 
     // Transition to hospitalized
     std::cout << "Transition to hospitalized: " <<
-        mat(2, 8) << " (expected: " << 
+        mat(2, 7) << " (expected: " << 
         model("Hospitalization rate") << ")" << std::endl;
 
     // Transition from hospitalized
     std::cout << "Transition from hospitalized: " <<
-        mat(8, 9) << " (expected: " << 
+        mat(7, 8) << " (expected: " << 
         (1.0 / model("Hospitalization period")) << ")" << std::endl;
 
     // R0
@@ -120,17 +120,17 @@ EPIWORLD_TEST_CASE(
 
     // Transition to recovered
     REQUIRE_FALSE(
-        moreless(mat(2, 9), model("Prob. Recovery"), 0.05)
+        moreless(mat(2, 8), model("Prob. Recovery"), 0.05)
     );
 
     // Transition to hospitalized
     REQUIRE_FALSE(
-        moreless(mat(2, 8), model("Hospitalization rate"), 0.05)
+        moreless(mat(2, 7), model("Hospitalization rate"), 0.05)
     );
 
     // Transition from hospitalized
     REQUIRE_FALSE(
-        moreless(mat(8, 9), 1.0 / model("Hospitalization period"), 0.05)
+        moreless(mat(7, 8), 1.0 / model("Hospitalization period"), 0.05)
     );
     
     #undef mat

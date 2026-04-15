@@ -82,7 +82,7 @@ EPIWORLD_TEST_CASE(
     
     // From exposed
     std::cout << "Transition from Exposed to Prodromal: " <<
-        mat(1, 2) + mat(1, 9) << " (expected: " << 
+        mat(1, 2) + mat(1, 8) << " (expected: " << 
         1.0/model("Incubation period") << ")" << std::endl;
 
     // From prodromal
@@ -92,62 +92,60 @@ EPIWORLD_TEST_CASE(
 
     // From Rash
     std::cout << "Transition from Rash to Recovered: " <<
-        mat(3, 12) + mat(3, 5) << " (expected: " << 
+        mat(3, 11) + mat(3, 5) << " (expected: " << 
         (1.0 - model("Hospitalization rate") - 1.0/model("Rash period")) << ")" << std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
-        mat(3, 6) + mat(3, 11) << " (expected: " <<
+        mat(3, 10) << " (expected: " <<
         model("Hospitalization rate") << ")" << std::endl;
 
     // Isolated
     std::cout << "Transition from Isolated to hospitalized: " <<
-        mat(4, 6) + mat(4, 11) << " (expected: " <<
+        mat(4, 10) << " (expected: " <<
         model("Hospitalization rate") << ")" << std::endl;
     
     // Quarantined Exposed
     std::cout << "Transition from Quarantined Exposed to Prodromal: " <<
-        mat(7, 2) + mat(7, 9) << " (expected: " <<
+        mat(6, 2) + mat(6, 8) << " (expected: " <<
         1.0/model("Incubation period") << ")" << std::endl;
 
     // Quarantined Prodromal
     std::cout << "Transition from Quarantined Prodromal to Rash: " <<
-        mat(9, 3) + mat(9, 4) << " (expected: " <<
+        mat(8, 3) + mat(8, 4) << " (expected: " <<
         1.0/model("Prodromal period") << ")" << std::endl;
 
     // From Hospitalized
     std::cout << "Transition from Hospitalized to Recovered: " <<
-        mat(11, 12) << " (expected: " <<
+        mat(10, 11) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
         
     // Some transitions should be zero. Building a vector of the transitions
     // we expect not to be zero, so the rest should be zero.
     std::set< std::pair<size_t, size_t> > non_zero_transitions = {
-        // From exposed
-        {0, 0}, {0, 1}, {0, 7}, {0, 8},
-        // From Exposed
-        {1, 1}, {1, 2}, {1, 7}, {1, 9},
+        // From Susceptible
+        {0, 0}, {0, 1}, {0, 6}, {0, 7},
+        // From Latent
+        {1, 1}, {1, 2}, {1, 6}, {1, 8},
         // From Prodromal
-        {2, 2}, {2, 3}, {2, 4}, {2, 9},
+        {2, 2}, {2, 3}, {2, 4}, {2, 8},
         // From Rash
-        {3, 3}, {3, 4}, {3, 5}, {3, 6}, {3, 11}, {3, 12},
-        // From isolated
-        {4, 4}, {4, 5}, {4, 6}, {4, 11}, {4, 12}, {4, 3},
-        // From isolated recovered
-        {5, 5}, {5, 12},
-        // From detected hospitalized
-        {6, 6}, {6, 11}, {6, 12},
-        // From quarantined exposed
-        {7, 7}, {7, 1}, {7, 2}, {7, 9}, 
-        // From quarantined susceptible
-        {8, 8}, {8, 0},
-        // From quarantined prodromal
-        {9, 9}, {9, 2}, {9, 3}, {9, 4},
-        // From quarantined recovered
-        {10, 10}, {10, 12},
-        // From hospitalized
-        {11, 11}, {11, 12},
-        // From recovered
-        {12, 12}
+        {3, 3}, {3, 4}, {3, 5}, {3, 10}, {3, 11},
+        // From Isolated
+        {4, 4}, {4, 5}, {4, 10}, {4, 11}, {4, 3},
+        // From Isolated Recovered
+        {5, 5}, {5, 11},
+        // From Quarantined Latent
+        {6, 6}, {6, 1}, {6, 2}, {6, 8},
+        // From Quarantined Susceptible
+        {7, 7}, {7, 0},
+        // From Quarantined Prodromal
+        {8, 8}, {8, 2}, {8, 3}, {8, 4},
+        // From Quarantined Recovered
+        {9, 9}, {9, 11},
+        // From Hospitalized
+        {10, 10}, {10, 11},
+        // From Recovered
+        {11, 11}
     };
 
     auto nstates = model.get_n_states();
@@ -174,7 +172,7 @@ EPIWORLD_TEST_CASE(
 
     // Validate core disease progression  
     REQUIRE_FALSE(
-        moreless(mat(1, 2) + mat(1, 9), 1.0/model("Incubation period"), 0.1)
+        moreless(mat(1, 2) + mat(1, 8), 1.0/model("Incubation period"), 0.1)
     );
 
     REQUIRE_FALSE(
@@ -183,27 +181,27 @@ EPIWORLD_TEST_CASE(
 
     double p_recovered = 1.0/model("Rash period");
     REQUIRE_FALSE(
-        moreless(mat(3, 12) + mat(3, 5), p_recovered, 0.1)
+        moreless(mat(3, 11) + mat(3, 5), p_recovered, 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(3, 6) + mat(3, 11), model("Hospitalization rate"), 0.1)
+        moreless(mat(3, 10), model("Hospitalization rate"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(4, 6) + mat(4, 11), model("Hospitalization rate"), 0.1)
+        moreless(mat(4, 10), model("Hospitalization rate"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(7, 2) + mat(7, 9), 1.0/model("Incubation period"), 0.1)
+        moreless(mat(6, 2) + mat(6, 8), 1.0/model("Incubation period"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(9, 3) + mat(9, 4), 1.0/model("Prodromal period"), 0.1)
+        moreless(mat(8, 3) + mat(8, 4), 1.0/model("Prodromal period"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(11, 12), 1.0/model("Hospitalization period"), 0.1)
+        moreless(mat(10, 11), 1.0/model("Hospitalization period"), 0.1)
     );
 
     // Hospitalization probability

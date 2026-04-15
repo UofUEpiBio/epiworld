@@ -24360,13 +24360,12 @@ public:
     static constexpr epiworld_fast_uint RASH                    = 3u;
     static constexpr epiworld_fast_uint ISOLATED                = 4u;
     static constexpr epiworld_fast_uint ISOLATED_RECOVERED      = 5u;
-    static constexpr epiworld_fast_uint DETECTED_HOSPITALIZED   = 6u;
-    static constexpr epiworld_fast_uint QUARANTINED_LATENT      = 7u;
-    static constexpr epiworld_fast_uint QUARANTINED_SUSCEPTIBLE = 8u;
-    static constexpr epiworld_fast_uint QUARANTINED_PRODROMAL   = 9u;
-    static constexpr epiworld_fast_uint QUARANTINED_RECOVERED   = 10u;
-    static constexpr epiworld_fast_uint HOSPITALIZED            = 11u;
-    static constexpr epiworld_fast_uint RECOVERED               = 12u;
+    static constexpr epiworld_fast_uint QUARANTINED_LATENT      = 6u;
+    static constexpr epiworld_fast_uint QUARANTINED_SUSCEPTIBLE = 7u;
+    static constexpr epiworld_fast_uint QUARANTINED_PRODROMAL   = 8u;
+    static constexpr epiworld_fast_uint QUARANTINED_RECOVERED   = 9u;
+    static constexpr epiworld_fast_uint HOSPITALIZED            = 10u;
+    static constexpr epiworld_fast_uint RECOVERED               = 11u;
     ///@}
     
     // Default constructor
@@ -24425,24 +24424,48 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
     epiworld_double willingness = model->par("Quarantine willingness");
     epiworld_double p_detection = 1.0/(model->par("Days undetected"));
 
-    // Iterating through the
+    bool triggered_today = false;
+
+    // Iterating through the agents to detect new cases
     for (size_t i = 0u; i < model->size(); ++i) {
 
         auto & agent = model->get_agent(i);
         auto agent_state = agent.get_state();
 
         // Checking if detection takes place
-        if ((agent_state == RASH) && (p_detection < model->runif()))
+        if ((agent_state == RASH) && (model->runif() < p_detection))
         {
             agent.change_state(*model, ISOLATED);
             model->day_flagged[i] = model->today();
             model->add_triggering_agent(
                 *model,
                 agent,
-                agent.get_state_last_changed()
+                model->day_rash_onset[agent.get_id()] - 4
             );
-            
+            triggered_today = true;
         }
+        // Also trigger if the agent just became hospitalized today
+        else if ((agent_state == HOSPITALIZED) && (agent.get_state_last_changed() == model->today()))
+        {
+            model->day_flagged[i] = model->today();
+            model->add_triggering_agent(
+                *model,
+                agent,
+                model->day_rash_onset[agent.get_id()] - 4
+            );
+            triggered_today = true;
+        }
+
+    }
+
+    if (!triggered_today)
+        return;
+
+    // Quarantining other agents
+    for (size_t i = 0u; i < model->size(); ++i) {
+
+        auto & agent = model->get_agent(i);
+        auto agent_state = agent.get_state();
 
         // Already quarantined or isolated
         if (agent_state >= RASH)
@@ -24506,7 +24529,7 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     {
         int s = static_cast<int>(agent.get_state());
         static const std::vector< int > states_with_virus = {
-            LATENT, PRODROMAL, RASH, ISOLATED, DETECTED_HOSPITALIZED,
+            LATENT, PRODROMAL, RASH, ISOLATED,
             QUARANTINED_LATENT, QUARANTINED_PRODROMAL, HOSPITALIZED
         };
 
@@ -24741,7 +24764,7 @@ LOCAL_UPDATE_FUN(_update_isolated) {
     else if (which == 1u)
     {
         model->record_hospitalization(*p);
-        p->change_state(*m, unisolate? HOSPITALIZED: DETECTED_HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
     }
     // If neither hospitalized nor recovered, then the agent is
     // still under isolation, unless the quarantine period is over.
@@ -24907,7 +24930,6 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_state("Rash",                    this->_update_rash);
     this->add_state("Isolated",                this->_update_isolated);
     this->add_state("Isolated Recovered",      this->_update_isolated_recovered);
-    this->add_state("Detected Hospitalized",   this->_update_hospitalized);
     this->add_state("Quarantined Latent",      this->_update_q_latent);
     this->add_state("Quarantined Susceptible", this->_update_q_susceptible);
     this->add_state("Quarantined Prodromal",   this->_update_q_prodromal);
@@ -25090,12 +25112,11 @@ public:
     static const int EXPOSED                 = 1;
     static const int INFECTED                = 2;
     static const int ISOLATED                = 3;
-    static const int DETECTED_HOSPITALIZED   = 4;
-    static const int QUARANTINED_SUSCEPTIBLE = 5;
-    static const int QUARANTINED_EXPOSED     = 6;
-    static const int ISOLATED_RECOVERED      = 7;
-    static const int HOSPITALIZED            = 8;
-    static const int RECOVERED               = 9;
+    static const int QUARANTINED_SUSCEPTIBLE = 4;
+    static const int QUARANTINED_EXPOSED     = 5;
+    static const int ISOLATED_RECOVERED      = 6;
+    static const int HOSPITALIZED            = 7;
+    static const int RECOVERED               = 8;
 
     static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -25650,19 +25671,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     }
     else if (which == 1) // Hospitalized
     {
-
-        if (detected)
-        {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
-            );
-        }
-        else
-        {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
-            );
-        }
+        p->change_state(*m, 
+            ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
+        );
 
     }
     else if ((which == 2) && isolation_detected) // Nothing, but detected
@@ -25719,19 +25730,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated(
     }
     else if (which == 1)
     {
-
-        if (unisolate)
-        {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
-            );
-        }
-        else
-        {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
-            );
-        }
+        p->change_state(*m, 
+            ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
+        );
     }
     else if ((which == 2) && unisolate)
     {
@@ -26006,7 +26007,6 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.add_state("Exposed", m_update_exposed);
     model.add_state("Infected", m_update_infected);
     model.add_state("Isolated", m_update_isolated);
-    model.add_state("Detected Hospitalized", m_update_hospitalized);
     model.add_state("Quarantined Susceptible", m_update_quarantine_suscep);
     model.add_state("Quarantined Exposed", m_update_quarantine_exposed);
     model.add_state("Isolated Recovered", m_update_isolated_recovered);
@@ -26238,13 +26238,12 @@ public:
     static const int RASH                     = 3;
     static const int ISOLATED                 = 4;
     static const int ISOLATED_RECOVERED       = 5;
-    static const int DETECTED_HOSPITALIZED    = 6;
-    static const int QUARANTINED_LATENT       = 7;
-    static const int QUARANTINED_SUSCEPTIBLE  = 8;
-    static const int QUARANTINED_PRODROMAL    = 9;
-    static const int QUARANTINED_RECOVERED    = 10;
-    static const int HOSPITALIZED             = 11;
-    static const int RECOVERED                = 12;
+    static const int QUARANTINED_LATENT       = 6;
+    static const int QUARANTINED_SUSCEPTIBLE  = 7;
+    static const int QUARANTINED_PRODROMAL    = 8;
+    static const int QUARANTINED_RECOVERED    = 9;
+    static const int HOSPITALIZED             = 10;
+    static const int RECOVERED                = 11;
 
     static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -26737,7 +26736,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     else if (which == 1) // Hospitalized
     {
         m->record_hospitalization(*p);
-        p->change_state(*m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
     }
     else if (which > 2)
     {
@@ -26787,7 +26786,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
     {
 
         m->record_hospitalization(*p);
-        p->change_state(*m, unisolate ? HOSPITALIZED : DETECTED_HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
 
     }
     else if (unisolate)
@@ -27095,7 +27094,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_state("Rash", m_update_rash);
     this->add_state("Isolated", m_update_isolated);
     this->add_state("Isolated Recovered", m_update_isolated_recovered);
-    this->add_state("Detected Hospitalized", m_update_hospitalized);
     this->add_state("Quarantined Latent", m_update_quarantine_latent);
     this->add_state("Quarantined Susceptible", m_update_quarantine_suscep);
     this->add_state("Quarantined Prodromal", m_update_quarantine_prodromal);
@@ -27301,13 +27299,12 @@ public:
     static constexpr int RASH                    = 3;
     static constexpr int ISOLATED                = 4;
     static constexpr int ISOLATED_RECOVERED      = 5;
-    static constexpr int DETECTED_HOSPITALIZED   = 6;
-    static constexpr int QUARANTINED_LATENT      = 7;
-    static constexpr int QUARANTINED_SUSCEPTIBLE = 8;
-    static constexpr int QUARANTINED_PRODROMAL   = 9;
-    static constexpr int QUARANTINED_RECOVERED   = 10;
-    static constexpr int HOSPITALIZED            = 11;
-    static constexpr int RECOVERED               = 12;
+    static constexpr int QUARANTINED_LATENT      = 6;
+    static constexpr int QUARANTINED_SUSCEPTIBLE = 7;
+    static constexpr int QUARANTINED_PRODROMAL   = 8;
+    static constexpr int QUARANTINED_RECOVERED   = 9;
+    static constexpr int HOSPITALIZED            = 10;
+    static constexpr int RECOVERED               = 11;
 
     static constexpr size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static constexpr size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -27772,7 +27769,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     else if (which == 1) // Hospitalized
     {
         m->record_hospitalization(*p);
-        p->change_state(*m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
     }
     else if (which > 2)
     {
@@ -27819,7 +27816,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     else if (which == 1u)
     {
         m->record_hospitalization(*p);
-        p->change_state(*m, DETECTED_HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
     }
     // Stays in rash, may or may not be released from isolation
     else if (unisolate)
@@ -28313,7 +28310,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     this->add_state("Rash", m_update_rash);
     this->add_state("Isolated", m_update_isolated);
     this->add_state("Isolated Recovered", m_update_isolated_recovered);
-    this->add_state("Detected Hospitalized", m_update_hospitalized);
     this->add_state("Quarantined Latent", m_update_quarantine_latent);
     this->add_state("Quarantined Susceptible", m_update_quarantine_suscep);
     this->add_state("Quarantined Prodromal", m_update_quarantine_prodromal);

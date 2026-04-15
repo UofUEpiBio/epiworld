@@ -17,7 +17,6 @@ flowchart TB
     In --> R
 
     %% Quarantine states
-    Dh[Detected<br>Hospitalized]
     Qs[Quarantined<br>Susceptible]
     Qe[Quarantined<br>Exposed]
     I[Isolated]
@@ -26,13 +25,12 @@ flowchart TB
     %% Infected to
     In <==> I
     In --> Ir
-    In --> Dh
+    In --> H
 
     %% Isolated to
     I --> R
     I --> Ir
     I --> H
-    I --> Dh
 
     %% Susceptible quarantined
     S <==> Qs
@@ -42,8 +40,6 @@ flowchart TB
 
     Qe --> I
     Qe --> In
-
-    Dh --> R
 
     %% Isolated recovered
     Ir --> R

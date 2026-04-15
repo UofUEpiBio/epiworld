@@ -157,7 +157,9 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
     epiworld_double willingness = model->par("Quarantine willingness");
     epiworld_double p_detection = 1.0/(model->par("Days undetected"));
 
-    // Iterating through the
+    bool triggered_today = false;
+
+    // Iterating through the agents to detect new cases
     for (size_t i = 0u; i < model->size(); ++i) {
 
         auto & agent = model->get_agent(i);
@@ -173,7 +175,7 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
                 agent,
                 model->day_rash_onset[agent.get_id()] - 4
             );
-            
+            triggered_today = true;
         }
         // Also trigger if the agent just became hospitalized today
         else if ((agent_state == HOSPITALIZED) && (agent.get_state_last_changed() == model->today()))
@@ -184,7 +186,19 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
                 agent,
                 model->day_rash_onset[agent.get_id()] - 4
             );
+            triggered_today = true;
         }
+
+    }
+
+    if (!triggered_today)
+        return;
+
+    // Quarantining other agents
+    for (size_t i = 0u; i < model->size(); ++i) {
+
+        auto & agent = model->get_agent(i);
+        auto agent_state = agent.get_state();
 
         // Already quarantined or isolated
         if (agent_state >= RASH)

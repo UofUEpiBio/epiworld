@@ -118,13 +118,12 @@ public:
     static constexpr int RASH                    = 3;
     static constexpr int ISOLATED                = 4;
     static constexpr int ISOLATED_RECOVERED      = 5;
-    static constexpr int DETECTED_HOSPITALIZED   = 6;
-    static constexpr int QUARANTINED_LATENT      = 7;
-    static constexpr int QUARANTINED_SUSCEPTIBLE = 8;
-    static constexpr int QUARANTINED_PRODROMAL   = 9;
-    static constexpr int QUARANTINED_RECOVERED   = 10;
-    static constexpr int HOSPITALIZED            = 11;
-    static constexpr int RECOVERED               = 12;
+    static constexpr int QUARANTINED_LATENT      = 6;
+    static constexpr int QUARANTINED_SUSCEPTIBLE = 7;
+    static constexpr int QUARANTINED_PRODROMAL   = 8;
+    static constexpr int QUARANTINED_RECOVERED   = 9;
+    static constexpr int HOSPITALIZED            = 10;
+    static constexpr int RECOVERED               = 11;
 
     static constexpr size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static constexpr size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -589,7 +588,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_rash(
     else if (which == 1) // Hospitalized
     {
         m->record_hospitalization(*p);
-        p->change_state(*m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
     }
     else if (which > 2)
     {
@@ -636,7 +635,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::m_update_isolated(
     else if (which == 1u)
     {
         m->record_hospitalization(*p);
-        p->change_state(*m, DETECTED_HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
     }
     // Stays in rash, may or may not be released from isolation
     else if (unisolate)
@@ -1130,7 +1129,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     this->add_state("Rash", m_update_rash);
     this->add_state("Isolated", m_update_isolated);
     this->add_state("Isolated Recovered", m_update_isolated_recovered);
-    this->add_state("Detected Hospitalized", m_update_hospitalized);
     this->add_state("Quarantined Latent", m_update_quarantine_latent);
     this->add_state("Quarantined Susceptible", m_update_quarantine_suscep);
     this->add_state("Quarantined Prodromal", m_update_quarantine_prodromal);

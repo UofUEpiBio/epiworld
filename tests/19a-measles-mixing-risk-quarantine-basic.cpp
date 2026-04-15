@@ -106,17 +106,17 @@ EPIWORLD_TEST_CASE(
 
     // From Rash
     std::cout << "Transition from Rash to Recovery: " <<
-        mat(3, 12) << " (expected: " <<
+        mat(3, 11) << " (expected: " <<
         1.0/model("Rash period") << ")" <<
         std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
-        mat(3, 11) << " (expected: " <<
+        mat(3, 10) << " (expected: " <<
         model("Hospitalization rate") << ")" << std::endl;
 
     // From hospitalized
     std::cout << "Transition from Hospitalized to Recovery: " <<
-        mat(11, 12) << " (expected: " <<
+        mat(10, 11) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
 
     // Hospitalization probability
@@ -137,18 +137,18 @@ EPIWORLD_TEST_CASE(
 
     REQUIRE_FALSE(
         moreless(
-            mat(3, 12),
+            mat(3, 11),
             1.0/model("Rash period"),
             0.1
         )
     );
 
     REQUIRE_FALSE(
-        moreless(mat(3, 11), model("Hospitalization rate"), 0.1)
+        moreless(mat(3, 10), model("Hospitalization rate"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(11, 12), 1.0/model("Hospitalization period"), 0.1)
+        moreless(mat(10, 11), 1.0/model("Hospitalization period"), 0.1)
     );
 
     // Hospitalization probability
