@@ -93,13 +93,12 @@ public:
     static constexpr epiworld_fast_uint RASH                    = 3u;
     static constexpr epiworld_fast_uint ISOLATED                = 4u;
     static constexpr epiworld_fast_uint ISOLATED_RECOVERED      = 5u;
-    static constexpr epiworld_fast_uint DETECTED_HOSPITALIZED   = 6u;
-    static constexpr epiworld_fast_uint QUARANTINED_LATENT      = 7u;
-    static constexpr epiworld_fast_uint QUARANTINED_SUSCEPTIBLE = 8u;
-    static constexpr epiworld_fast_uint QUARANTINED_PRODROMAL   = 9u;
-    static constexpr epiworld_fast_uint QUARANTINED_RECOVERED   = 10u;
-    static constexpr epiworld_fast_uint HOSPITALIZED            = 11u;
-    static constexpr epiworld_fast_uint RECOVERED               = 12u;
+    static constexpr epiworld_fast_uint QUARANTINED_LATENT      = 6u;
+    static constexpr epiworld_fast_uint QUARANTINED_SUSCEPTIBLE = 7u;
+    static constexpr epiworld_fast_uint QUARANTINED_PRODROMAL   = 8u;
+    static constexpr epiworld_fast_uint QUARANTINED_RECOVERED   = 9u;
+    static constexpr epiworld_fast_uint HOSPITALIZED            = 10u;
+    static constexpr epiworld_fast_uint RECOVERED               = 11u;
     ///@}
     
     // Default constructor
@@ -165,16 +164,26 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
         auto agent_state = agent.get_state();
 
         // Checking if detection takes place
-        if ((agent_state == RASH) && (p_detection < model->runif()))
+        if ((agent_state == RASH) && (model->runif() < p_detection))
         {
             agent.change_state(*model, ISOLATED);
             model->day_flagged[i] = model->today();
             model->add_triggering_agent(
                 *model,
                 agent,
-                agent.get_state_last_changed()
+                model->day_rash_onset[agent.get_id()] - 4
             );
             
+        }
+        // Also trigger if the agent just became hospitalized today
+        else if ((agent_state == HOSPITALIZED) && (agent.get_state_last_changed() == model->today()))
+        {
+            model->day_flagged[i] = model->today();
+            model->add_triggering_agent(
+                *model,
+                agent,
+                model->day_rash_onset[agent.get_id()] - 4
+            );
         }
 
         // Already quarantined or isolated
@@ -239,7 +248,7 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     {
         int s = static_cast<int>(agent.get_state());
         static const std::vector< int > states_with_virus = {
-            LATENT, PRODROMAL, RASH, ISOLATED, DETECTED_HOSPITALIZED,
+            LATENT, PRODROMAL, RASH, ISOLATED,
             QUARANTINED_LATENT, QUARANTINED_PRODROMAL, HOSPITALIZED
         };
 
@@ -474,7 +483,7 @@ LOCAL_UPDATE_FUN(_update_isolated) {
     else if (which == 1u)
     {
         model->record_hospitalization(*p);
-        p->change_state(*m, unisolate? HOSPITALIZED: DETECTED_HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
     }
     // If neither hospitalized nor recovered, then the agent is
     // still under isolation, unless the quarantine period is over.
@@ -640,7 +649,6 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_state("Rash",                    this->_update_rash);
     this->add_state("Isolated",                this->_update_isolated);
     this->add_state("Isolated Recovered",      this->_update_isolated_recovered);
-    this->add_state("Detected Hospitalized",   this->_update_hospitalized);
     this->add_state("Quarantined Latent",      this->_update_q_latent);
     this->add_state("Quarantined Susceptible", this->_update_q_susceptible);
     this->add_state("Quarantined Prodromal",   this->_update_q_prodromal);
