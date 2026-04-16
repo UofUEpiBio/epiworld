@@ -85,8 +85,7 @@ PepSummary run_experiment(bool with_pep, size_t nsims)
         std::vector<int> date, virus, outbreak;
         model_ptr->get_db().get_outbreak_size(date, virus, outbreak);
 
-        if (outbreak.empty())
-            throw std::runtime_error("get_outbreak_size returned an empty vector.");
+        REQUIRE_FALSE(outbreak.empty());
 
         outbreak_sizes[n] = outbreak.back();
     };
