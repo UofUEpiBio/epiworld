@@ -156,6 +156,7 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
     // Capturing the days that matter and the probability of success
     epiworld_double willingness = model->par("Quarantine willingness");
     epiworld_double p_detection = 1.0/(model->par("Days undetected"));
+    int prodromal_period = static_cast<int>(model->par("Prodromal period"));
 
     bool triggered_today = false;
 
@@ -173,7 +174,7 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
             model->add_triggering_agent(
                 *model,
                 agent,
-                model->day_rash_onset[agent.get_id()] - 4
+                model->day_rash_onset[agent.get_id()] - prodromal_period
             );
             triggered_today = true;
         }
@@ -184,7 +185,7 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
             model->add_triggering_agent(
                 *model,
                 agent,
-                model->day_rash_onset[agent.get_id()] - 4
+                model->day_rash_onset[agent.get_id()] - prodromal_period
             );
             triggered_today = true;
         }

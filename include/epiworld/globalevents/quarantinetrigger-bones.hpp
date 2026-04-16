@@ -33,6 +33,7 @@ inline void QuarantineTrigger<TSeq>::_setup(const Model<TSeq> & model) {
         (static_cast<int>(model.today()) != _day)
     ) {
         _model_sim_id = static_cast<int>(model.get_sim_id());
+        _day = static_cast<int>(model.today());
         _agents_triggering_quarantine.clear();
         _date_infectious.clear();
     }

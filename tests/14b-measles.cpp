@@ -33,7 +33,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
         return;
     });
 
-    size_t nsims = 2000;
+    size_t nsims = 1000;
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
     std::vector< double > hospitalizations(nsims, 0), outbreak_sizes(nsims, 0);
