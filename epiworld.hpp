@@ -26315,17 +26315,6 @@ public:
 };
 
 // -----------------------------------------------------------------------
-// Global event: run quarantine process and then execute pending events
-// -----------------------------------------------------------------------
-template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_global_event(Model<TSeq> * m)
-{
-    auto * model = model_cast<ModelSEIRNetworkQuarantine<TSeq>, TSeq>(m);
-    model->_quarantine_process();
-    return;
-}
-
-// -----------------------------------------------------------------------
 // Reset
 // -----------------------------------------------------------------------
 template<typename TSeq>
@@ -26699,7 +26688,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
     {
 
         if (
-            agent_quarantine_triggered[agent_i] !=
+            model->agent_quarantine_triggered[agent_i] !=
             ModelSEIRNetworkQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE
         )
             continue;
@@ -26707,7 +26696,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
         if (m->par("Quarantine period") < 0)
             continue;
 
-        size_t n_contacts = m->contact_tracing->get_n_contacts(agent_i);
+        size_t n_contacts = m->get_contact_tracing().get_n_contacts(agent_i);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
@@ -26718,11 +26707,11 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
             if (m->runif() > success_rate)
                 continue;
 
-            auto [contact_id, contact_date] = m->contact_tracing->get_contact(
+            auto [contact_id, contact_date] = m->get_contact_tracing().get_contact(
                 agent_i, contact_i
             );
 
-            auto & agent = Model<TSeq>::get_agent(contact_id);
+            auto & agent = m->get_agent(contact_id);
 
             if (agent.get_state() > INFECTED)
                 continue;
@@ -26731,23 +26720,23 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
             if (agent.get_n_tools() != 0u)
                 continue;
 
-            if (quarantine_willingness[contact_id])
+            if (model->quarantine_willingness[contact_id])
             {
                 switch (agent.get_state())
                 {
                     case SUSCEPTIBLE:
-                        agent.change_state(*this, QUARANTINED_SUSCEPTIBLE);
-                        day_flagged[contact_id] = this->today();
+                        agent.change_state(*m, QUARANTINED_SUSCEPTIBLE);
+                        model->day_flagged[contact_id] = m->today();
                         break;
                     case EXPOSED:
-                        agent.change_state(*this, QUARANTINED_EXPOSED);
-                        day_flagged[contact_id] = this->today();
+                        agent.change_state(*m, QUARANTINED_EXPOSED);
+                        model->day_flagged[contact_id] = m->today();
                         break;
                     case INFECTED:
-                        if (isolation_willingness[contact_id])
+                        if (model->isolation_willingness[contact_id])
                         {
-                            agent.change_state(*this, ISOLATED);
-                            day_flagged[contact_id] = this->today();
+                            agent.change_state(*m, ISOLATED);
+                            model->day_flagged[contact_id] = m->today();
                         }
                         break;
                     default:
@@ -26759,7 +26748,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
         }
 
         // Setting the quarantine process off
-        agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
+        model->agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
     }
 
     return;
@@ -26823,7 +26812,7 @@ inline ModelSEIRNetworkQuarantine<TSeq>::ModelSEIRNetworkQuarantine(
     this->add_state("Recovered");
 
     // Global function (quarantine process runs before state updates)
-    this->add_globalevent(m_global_event, "Quarantine process");
+    this->add_globalevent(_quarantine_process, "Quarantine process");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);

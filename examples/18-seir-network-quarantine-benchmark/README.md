@@ -7,14 +7,14 @@ Output from the program:
 Population: 20000 agents in 20 groups of 1000
 Mean contacts: 50.0, Days: 100, Reps: 50
 
-SEIRMixingQuarantine:  avg time per run = 130.39 ms
+SEIRMixingQuarantine:  avg time per run = 133.32 ms
 ________________________________________________________________________________
 SEIR with Mixing and Quarantine
 It features 20000 agents, 1 virus(es), and 0 tool(s).
 The model has 10 states.
 The final distribution is: 17131 Susceptible, 66 Exposed, 25 Infected, 29 Isolated, 9 Detected Hospitalized, 2509 Quarantined Susceptible, 33 Quarantined Exposed, 42 Isolated Recovered, 3 Hospitalized, and 153 Recovered.
 
-SEIRNetworkQuarantine: avg time per run = 37.30 ms
+SEIRNetworkQuarantine: avg time per run = 34.55 ms
 ________________________________________________________________________________
 ________________________________________________________________________________
 SIMULATION STUDY
@@ -27,8 +27,8 @@ Days (duration)     : 100 (of 100)
 Number of viruses   : 1
 Last run elapsed t  : 0.00s
 Total elapsed t     : 1.00s (51 runs)
-Last run speed      : 154.45 million agents x day / second
-Average run speed   : 61.30 million agents x day / second
+Last run speed      : 166.60 million agents x day / second
+Average run speed   : 65.41 million agents x day / second
 Rewiring            : off
 Last seed used      : 50
 
