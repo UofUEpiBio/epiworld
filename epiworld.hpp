@@ -26188,14 +26188,14 @@ class ModelSEIRNetworkQuarantine : public Model<TSeq>
 private:
 
     // Update functions
-    static void m_update_susceptible(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_exposed(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_infected(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_isolated(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_quarantine_suscep(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_quarantine_exposed(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_hospitalized(Agent<TSeq> * p, Model<TSeq> * m);
-    static void m_update_isolated_recovered(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_susceptible(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_exposed(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_infected(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_isolated(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_quarantine_suscep(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_quarantine_exposed(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_hospitalized(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_isolated_recovered(Agent<TSeq> * p, Model<TSeq> * m);
 
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator
@@ -26204,8 +26204,7 @@ private:
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_onset; ///< Day of onset of the disease
 
-    void m_quarantine_process();
-    static void m_global_event(Model<TSeq> * m);
+    static void _quarantine_process(Model<TSeq> * m);
 
 public:
 
@@ -26229,46 +26228,6 @@ public:
     /**
      * @brief Constructs a ModelSEIRNetworkQuarantine object.
      *
-     * @param model A reference to an existing ModelSEIRNetworkQuarantine object.
-     * @param vname The name of the virus.
-     * @param n The number of agents in the model.
-     * @param prevalence The initial prevalence of the disease.
-     * @param transmission_rate The transmission rate of the disease.
-     * @param avg_incubation_days The average incubation period.
-     * @param recovery_rate The recovery rate of the disease.
-     * @param hospitalization_rate The rate at which infected individuals are hospitalized.
-     * @param hospitalization_period The average duration of hospitalization in days.
-     * @param days_undetected The average number of days an infected individual remains undetected.
-     * @param quarantine_period The duration of quarantine in days.
-     * @param quarantine_willingness The proportion willing to comply with quarantine.
-     * @param isolation_willingness The proportion willing to self-isolate.
-     * @param isolation_period The duration of isolation in days.
-     * @param contact_tracing_success_rate Probability of successfully tracing a contact (default: 1.0).
-     * @param contact_tracing_days_prior Days prior to detection for contact tracing (default: 4).
-     */
-    ModelSEIRNetworkQuarantine(
-        ModelSEIRNetworkQuarantine<TSeq> & model,
-        const std::string & vname,
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double transmission_rate,
-        epiworld_double avg_incubation_days,
-        epiworld_double recovery_rate,
-        epiworld_double hospitalization_rate,
-        epiworld_double hospitalization_period,
-        // Policy parameters
-        epiworld_double days_undetected,
-        epiworld_fast_int quarantine_period,
-        epiworld_double quarantine_willingness,
-        epiworld_double isolation_willingness,
-        epiworld_fast_int isolation_period,
-        epiworld_double contact_tracing_success_rate = 1.0,
-        epiworld_fast_uint contact_tracing_days_prior = 4u
-    );
-
-    /**
-     * @brief Constructs a ModelSEIRNetworkQuarantine object.
-     *
      * @param vname The name of the virus.
      * @param n The number of agents in the model.
      * @param prevalence The initial prevalence of the disease.
@@ -26287,7 +26246,6 @@ public:
      */
     ModelSEIRNetworkQuarantine(
         const std::string & vname,
-        epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
@@ -26363,8 +26321,7 @@ template<typename TSeq>
 inline void ModelSEIRNetworkQuarantine<TSeq>::m_global_event(Model<TSeq> * m)
 {
     auto * model = model_cast<ModelSEIRNetworkQuarantine<TSeq>, TSeq>(m);
-    model->m_quarantine_process();
-    model->events_run();
+    model->_quarantine_process();
     return;
 }
 
@@ -26405,7 +26362,7 @@ inline std::unique_ptr<Model<TSeq>> ModelSEIRNetworkQuarantine<TSeq>::clone_ptr(
 // and record contacts for tracing
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_susceptible(
+inline void ModelSEIRNetworkQuarantine<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
@@ -26463,7 +26420,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_susceptible(
 // Exposed: incubation -> infected transition
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_exposed(
+inline void ModelSEIRNetworkQuarantine<TSeq>::_update_exposed(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
@@ -26484,7 +26441,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_exposed(
 // Infected: detection, isolation, hospitalization, recovery
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_infected(
+inline void ModelSEIRNetworkQuarantine<TSeq>::_update_infected(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
@@ -26562,7 +26519,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_infected(
 // Isolated: recovery, hospitalization, or release from isolation
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_isolated(
+inline void ModelSEIRNetworkQuarantine<TSeq>::_update_isolated(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
@@ -26626,7 +26583,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_isolated(
 // Quarantined Susceptible: release when quarantine period is over
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_quarantine_suscep(
+inline void ModelSEIRNetworkQuarantine<TSeq>::_update_quarantine_suscep(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
@@ -26651,7 +26608,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_quarantine_suscep(
 // Quarantined Exposed: incubation or release
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_quarantine_exposed(
+inline void ModelSEIRNetworkQuarantine<TSeq>::_update_quarantine_exposed(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
@@ -26694,7 +26651,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_quarantine_exposed(
 // Isolated Recovered: release when isolation period ends
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_isolated_recovered(
+inline void ModelSEIRNetworkQuarantine<TSeq>::_update_isolated_recovered(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
@@ -26719,7 +26676,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_isolated_recovered(
 // Hospitalized: recovery after hospitalization period
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_hospitalized(
+inline void ModelSEIRNetworkQuarantine<TSeq>::_update_hospitalized(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
@@ -26732,9 +26689,13 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_update_hospitalized(
 // Quarantine process: trace contacts and quarantine them
 // -----------------------------------------------------------------------
 template<typename TSeq>
-inline void ModelSEIRNetworkQuarantine<TSeq>::m_quarantine_process() {
+inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
+    Model<TSeq> * m
+) {
 
-    for (size_t agent_i = 0u; agent_i < this->size(); ++agent_i)
+    auto * model = model_cast<ModelSEIRNetworkQuarantine<TSeq>, TSeq>(m);
+
+    for (size_t agent_i = 0u; agent_i < m->size(); ++agent_i)
     {
 
         if (
@@ -26743,21 +26704,21 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_quarantine_process() {
         )
             continue;
 
-        if (this->par("Quarantine period") < 0)
+        if (m->par("Quarantine period") < 0)
             continue;
 
-        size_t n_contacts = this->contact_tracing->get_n_contacts(agent_i);
+        size_t n_contacts = m->contact_tracing->get_n_contacts(agent_i);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
-        auto success_rate = this->par("Contact tracing success rate");
+        auto success_rate = m->par("Contact tracing success rate");
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
             // Checking if we will detect the contact
-            if (this->runif() > success_rate)
+            if (m->runif() > success_rate)
                 continue;
 
-            auto [contact_id, contact_date] = this->contact_tracing->get_contact(
+            auto [contact_id, contact_date] = m->contact_tracing->get_contact(
                 agent_i, contact_i
             );
 
@@ -26809,9 +26770,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::m_quarantine_process() {
 // -----------------------------------------------------------------------
 template<typename TSeq>
 inline ModelSEIRNetworkQuarantine<TSeq>::ModelSEIRNetworkQuarantine(
-    ModelSEIRNetworkQuarantine<TSeq> & model,
     const std::string & vname,
-    epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
@@ -26830,108 +26789,56 @@ inline ModelSEIRNetworkQuarantine<TSeq>::ModelSEIRNetworkQuarantine(
 {
 
     // Setting up parameters
-    model.add_param(transmission_rate, "Prob. Transmission");
-    model.add_param(recovery_rate, "Prob. Recovery");
-    model.add_param(avg_incubation_days, "Avg. Incubation days");
-    model.add_param(hospitalization_rate, "Hospitalization rate");
-    model.add_param(hospitalization_period, "Hospitalization period");
-    model.add_param(days_undetected, "Days undetected");
-    model.add_param(quarantine_period, "Quarantine period");
-    model.add_param(
+    this->add_param(transmission_rate, "Prob. Transmission");
+    this->add_param(recovery_rate, "Prob. Recovery");
+    this->add_param(avg_incubation_days, "Avg. Incubation days");
+    this->add_param(hospitalization_rate, "Hospitalization rate");
+    this->add_param(hospitalization_period, "Hospitalization period");
+    this->add_param(days_undetected, "Days undetected");
+    this->add_param(quarantine_period, "Quarantine period");
+    this->add_param(
         quarantine_willingness, "Quarantine willingness"
     );
-    model.add_param(
+    this->add_param(
         isolation_willingness, "Isolation willingness"
     );
-    model.add_param(isolation_period, "Isolation period");
-    model.add_param(
+    this->add_param(isolation_period, "Isolation period");
+    this->add_param(
         contact_tracing_success_rate, "Contact tracing success rate"
     );
-    model.add_param(
+    this->add_param(
         contact_tracing_days_prior, "Contact tracing days prior"
     );
 
     // States
-    model.add_state("Susceptible", m_update_susceptible);
-    model.add_state("Exposed", m_update_exposed);
-    model.add_state("Infected", m_update_infected);
-    model.add_state("Isolated", m_update_isolated);
-    model.add_state("Detected Hospitalized", m_update_hospitalized);
-    model.add_state("Quarantined Susceptible", m_update_quarantine_suscep);
-    model.add_state("Quarantined Exposed", m_update_quarantine_exposed);
-    model.add_state("Isolated Recovered", m_update_isolated_recovered);
-    model.add_state("Hospitalized", m_update_hospitalized);
-    model.add_state("Recovered");
+    this->add_state("Susceptible", _update_susceptible);
+    this->add_state("Exposed", _update_exposed);
+    this->add_state("Infected", _update_infected);
+    this->add_state("Isolated", _update_isolated);
+    this->add_state("Detected Hospitalized", _update_hospitalized);
+    this->add_state("Quarantined Susceptible", _update_quarantine_suscep);
+    this->add_state("Quarantined Exposed", _update_quarantine_exposed);
+    this->add_state("Isolated Recovered", _update_isolated_recovered);
+    this->add_state("Hospitalized", _update_hospitalized);
+    this->add_state("Recovered");
 
     // Global function (quarantine process runs before state updates)
-    model.add_globalevent(m_global_event, "Quarantine process");
+    this->add_globalevent(m_global_event, "Quarantine process");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(
-        ModelSEIRNetworkQuarantine<TSeq>::EXPOSED,
-        ModelSEIRNetworkQuarantine<TSeq>::RECOVERED,
-        ModelSEIRNetworkQuarantine<TSeq>::RECOVERED
-    );
+    virus.set_state(EXPOSED, RECOVERED, RECOVERED);
 
     virus.set_prob_infecting("Prob. Transmission");
     virus.set_prob_recovery("Prob. Recovery");
     virus.set_incubation("Avg. Incubation days");
 
-    model.add_virus(virus);
+    this->add_virus(virus);
 
     // Enable contact tracing for quarantine process
-    model.contact_tracing_on(EPI_MAX_TRACKING);
+    this->contact_tracing_on(EPI_MAX_TRACKING);
 
-    // Adding the empty population (user will set up network via agents_sbm etc.)
-    model.agents_empty_graph(n);
-
-    model.set_name("SEIR with Network and Quarantine");
-
-    return;
-
-}
-
-template<typename TSeq>
-inline ModelSEIRNetworkQuarantine<TSeq>::ModelSEIRNetworkQuarantine(
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate,
-    epiworld_double hospitalization_rate,
-    epiworld_double hospitalization_period,
-    // Policy parameters
-    epiworld_double days_undetected,
-    epiworld_fast_int quarantine_period,
-    epiworld_double quarantine_willingness,
-    epiworld_double isolation_willingness,
-    epiworld_fast_int isolation_period,
-    epiworld_double contact_tracing_success_rate,
-    epiworld_fast_uint contact_tracing_days_prior
-    )
-{
-
-    ModelSEIRNetworkQuarantine(
-        *this,
-        vname,
-        n,
-        prevalence,
-        transmission_rate,
-        avg_incubation_days,
-        recovery_rate,
-        hospitalization_rate,
-        hospitalization_period,
-        // Policy parameters
-        days_undetected,
-        quarantine_period,
-        quarantine_willingness,
-        isolation_willingness,
-        isolation_period,
-        contact_tracing_success_rate,
-        contact_tracing_days_prior
-    );
+    this->set_name("SEIR with Network and Quarantine");
 
     return;
 

@@ -13,7 +13,6 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
 
     epimodels::ModelSEIRNetworkQuarantine<> model(
         "Flu",      // vname
-        1000,       // n (total agents)
         0.01,       // prevalence
         1.0,        // transmission_rate
         2.0,        // avg_incubation_days
@@ -79,7 +78,6 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
 
     epimodels::ModelSEIRNetworkQuarantine<> model2(
         "Flu",      // vname
-        1000,       // n (total agents)
         0.01,       // prevalence
         1.0,        // transmission_rate
         2.0,        // avg_incubation_days

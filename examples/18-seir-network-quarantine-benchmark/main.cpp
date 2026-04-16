@@ -23,12 +23,12 @@ int main() {
     // -------------------------------------------------------------------
     // Configuration
     // -------------------------------------------------------------------
-    const size_t n_groups   = 10;
-    const size_t group_size = 500;
-    const size_t n_total    = n_groups * group_size;
-    const double mean_contacts = 20.0;
-    const int    n_days     = 100;
-    const int    n_reps     = 50;
+    const size_t n_groups      = 20;
+    const size_t group_size    = 1000;
+    const size_t n_total       = n_groups * group_size;
+    const double mean_contacts = 50.0;
+    const int    n_days        = 100;
+    const int    n_reps        = 50;
 
     // Build an SBM mixing matrix (row-major):
     // Each row sums to `mean_contacts`. Within-block gets 60%, between-block
@@ -47,29 +47,30 @@ int main() {
     }
 
     // Build a row-stochastic contact matrix for SEIRMixingQuarantine.
-    // Each row must sum to 1.0
+    // Each row must sum to 1.0, but the flattened storage here must be
+    // column-major to match ModelSEIRMixingQuarantine's MM(i,j,n) access.
     std::vector< double > contact_matrix(n_groups * n_groups, 0.0);
     for (size_t g = 0; g < n_groups; ++g)
     {
         for (size_t h = 0; h < n_groups; ++h)
         {
-            contact_matrix[g * n_groups + h] =
+            contact_matrix[h * n_groups + g] =
                 sbm_mixing[g * n_groups + h] / mean_contacts;
         }
     }
 
     // Common disease parameters
-    const double prevalence          = 0.01;
-    const double transmission_rate   = 0.5;
-    const double avg_incubation_days = 3.0;
-    const double recovery_rate       = 1.0/5.0;
-    const double hospitalization_rate = 0.05;
+    const double prevalence             = 1.0/static_cast<double>(n_total);
+    const double transmission_rate      = 0.025;
+    const double avg_incubation_days    = 7.0;
+    const double recovery_rate          = 1.0/5.0;
+    const double hospitalization_rate   = 0.05;
     const double hospitalization_period = 7.0;
-    const double days_undetected     = 3.0;
-    const int    quarantine_period   = 7;
+    const double days_undetected        = 3.0;
+    const int    quarantine_period      = 7;
     const double quarantine_willingness = 0.8;
     const double isolation_willingness  = 0.9;
-    const int    isolation_period     = 10;
+    const int    isolation_period       = 10;
 
     // -------------------------------------------------------------------
     // Benchmark: SEIRMixingQuarantine
@@ -80,6 +81,19 @@ int main() {
     std::printf("Mean contacts: %.1f, Days: %d, Reps: %d\n\n",
         mean_contacts, n_days, n_reps);
 
+    double avg_outbreak_size_mixing = 0.0;
+    double avg_outbreak_size_network = 0.0;
+
+    auto get_os = [](const Model<> & m) -> double {
+
+        std::vector< int > date, virus_id, size;
+
+        m.get_db().get_outbreak_size(date, virus_id, size);
+
+        return static_cast<double>(size.back());
+
+    };
+
     // Create entities for mixing model
     {
         epimodels::ModelSEIRMixingQuarantine<> model_mix(
@@ -87,7 +101,7 @@ int main() {
             static_cast<epiworld_fast_uint>(n_total),
             prevalence,
             mean_contacts,       // contact_rate
-            transmission_rate,
+            transmission_rate * .9,
             avg_incubation_days,
             recovery_rate,
             contact_matrix,
@@ -124,12 +138,14 @@ int main() {
             model_mix.run(n_days, static_cast<size_t>(rep + 1));
             auto t1 = std::chrono::high_resolution_clock::now();
 
+            avg_outbreak_size_mixing += get_os(model_mix);
+
             total_ms += std::chrono::duration<double, std::milli>(t1 - t0).count();
         }
 
         std::printf("SEIRMixingQuarantine:  avg time per run = %.2f ms\n",
             total_ms / n_reps);
-        model_mix.print();
+        model_mix.print(true);
     }
 
     std::printf("\n");
@@ -140,7 +156,6 @@ int main() {
     {
         epimodels::ModelSEIRNetworkQuarantine<> model_net(
             "Flu",
-            static_cast<epiworld_fast_uint>(n_total),
             prevalence,
             transmission_rate,
             avg_incubation_days,
@@ -174,12 +189,17 @@ int main() {
             auto t1 = std::chrono::high_resolution_clock::now();
 
             total_ms += std::chrono::duration<double, std::milli>(t1 - t0).count();
+            avg_outbreak_size_network += get_os(model_net);
         }
 
         std::printf("SEIRNetworkQuarantine: avg time per run = %.2f ms\n",
             total_ms / n_reps);
-        model_net.print();
+        model_net.print(false);
     }
+
+    std::printf("\n");
+    std::printf("Average outbreak size - Mixing: %.2f\n", avg_outbreak_size_mixing / n_reps);
+    std::printf("Average outbreak size - Network: %.2f\n", avg_outbreak_size_network / n_reps);
 
     return 0;
 }
