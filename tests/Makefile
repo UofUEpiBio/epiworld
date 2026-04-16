@@ -15,6 +15,7 @@ $(NAME)_SOURCES := \
 	05-mixing.cpp \
 	05b-mixing.cpp \
 	05c-mixing.cpp \
+	05d-mixing.cpp \
 	06-mixing.cpp \
 	07-entitifuns.cpp \
 	09-distribute-tools-and-viruses.cpp \
@@ -37,6 +38,7 @@ $(NAME)_SOURCES := \
 	18a-measles-mixing.cpp \
 	18b-measles-mixing.cpp \
 	18c-measles-mixing.cpp \
+	18d-measles-mixing.cpp \
 	19a-measles-mixing-risk-quarantine-basic.cpp \
 	19b-measles-mixing-risk-quarantine-transitions.cpp \
 	19c-measles-mixing-risk-quarantine-durations.cpp \
