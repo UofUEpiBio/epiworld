@@ -21,16 +21,15 @@ EntityToAgentFun<TSeq> dist_factory(size_t from, size_t to) {
 int main() {
 
     std::vector< double > contact_matrix = {
-        0.9, 0.1, 0.1,
-        0.05, 0.8, .2,
-        0.05, 0.1, 0.7
+        9.0, 1.0, 1.0,
+        0.5, 8.0, 2.0,
+        0.5, 1.0, 7.0
     };
 
     epimodels::ModelSEIRMixing<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
-        10.0,// epiworld_double contact_rate,
         0.1,// epiworld_double transmission_rate,
         4.0,// epiworld_double avg_incubation_days,
         1.0/7.0,// epiworld_double recovery_rate,

@@ -14,8 +14,8 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
 
     // Contact matrix for 2 groups (identity = no cross-group contact)
     std::vector<double> contact_matrix = {
-        1.0, 0.0,
-        0.0, 1.0
+        5.0, 0.0,
+        0.0, 5.0
     };
 
     // Create a simple SEIR mixing model with 100 agents
@@ -23,7 +23,6 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         "TestVirus",    // vname
         100,            // n (number of agents)
         0.01,           // prevalence
-        5.0,            // contact_rate
         0.5,            // transmission_rate
         2.0,            // avg_incubation_days
         0.3,            // recovery_rate
@@ -160,7 +159,6 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
             "TestVirus",
             100,
             0.01,
-            5.0,
             0.5,
             2.0,
             0.3,

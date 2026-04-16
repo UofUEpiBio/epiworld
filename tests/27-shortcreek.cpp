@@ -181,10 +181,14 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
     // contact_rate = 15 / transmission_rate / prodromal_period
     double contact_rate = 15.0 / transmission_rate / prodromal_period;
 
+    // Scale the contact matrix by the contact rate
+    // (contact_rate is now absorbed into the contact matrix)
+    for (auto & v : contact_matrix)
+        v *= contact_rate;
+
     epiworld::epimodels::ModelMeaslesMixing<> measles_model(
         static_cast<epiworld_fast_uint>(N),     // n
         1.0 / static_cast<double>(N),           // prevalence
-        contact_rate,                            // contact_rate
         transmission_rate,                       // transmission_rate
         0.97,                                    // vax_efficacy
         0.5,                                     // vax_reduction_recovery_rate (default)
