@@ -723,7 +723,7 @@ inline ModelSEIRNetworkQuarantine<TSeq>::ModelSEIRNetworkQuarantine(
     model.add_state("Recovered");
 
     // Global function (quarantine process runs before state updates)
-    model.add_globalevent(this->m_global_event, "Quarantine process");
+    model.add_globalevent(m_global_event, "Quarantine process");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
