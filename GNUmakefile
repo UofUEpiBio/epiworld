@@ -202,11 +202,10 @@ clean: purge
 
 include docker/Makefile
 
-helloworld.o: helloworld.cpp
+helloworld.o: helloworld.cpp $(ROOT_BUILD_DIR)/epiworld.hpp
 	$(SAY) "CXX" $@
 	$(V)g++ -std=c++20 -O3 $< -o $@ && ./helloworld.o
 
-readme.o: readme.cpp
+readme.o: readme.cpp $(ROOT_BUILD_DIR)/epiworld.hpp
 	$(SAY) "CXX" $@
 	$(V)g++ -std=c++20 -O3 $< -o $@ && ./readme.o
-
