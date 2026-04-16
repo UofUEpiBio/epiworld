@@ -162,28 +162,29 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
     for (size_t i = 0u; i < model->size(); ++i) {
 
         auto & agent = model->get_agent(i);
+        auto agent_id = agent.get_id();
         auto agent_state = agent.get_state();
 
         // Checking if detection takes place
         if ((agent_state == RASH) && (model->runif() < p_detection))
         {
             agent.change_state(*model, ISOLATED);
-            model->day_flagged[i] = model->today();
+            model->day_flagged[agent_id] = model->today();
             model->add_triggering_agent(
                 *model,
                 agent,
-                model->day_rash_onset[agent.get_id()] - prodromal_period
+                model->day_rash_onset[agent_id] - prodromal_period
             );
             triggered_today = true;
         }
         // Also trigger if the agent just became hospitalized today
         else if ((agent_state == HOSPITALIZED) && (agent.get_state_last_changed() == model->today()))
         {
-            model->day_flagged[i] = model->today();
+            model->day_flagged[agent_id] = model->today();
             model->add_triggering_agent(
                 *model,
                 agent,
-                model->day_rash_onset[agent.get_id()] - prodromal_period
+                model->day_rash_onset[agent_id] - prodromal_period
             );
             triggered_today = true;
         }
@@ -197,6 +198,7 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
     for (size_t i = 0u; i < model->size(); ++i) {
 
         auto & agent = model->get_agent(i);
+        auto agent_id = agent.get_id();
         auto agent_state = agent.get_state();
 
         // Already quarantined or isolated
@@ -223,7 +225,7 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
                 agent.change_state(*model, QUARANTINED_PRODROMAL);
 
             // And we add the day of quarantine
-            model->day_flagged[i] = model->today();
+            model->day_flagged[agent_id] = model->today();
 
         }
 

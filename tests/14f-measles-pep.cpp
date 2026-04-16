@@ -157,7 +157,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     // We should have some expected transitions away from 
     // quarantine states
     REQUIRE(mat(6, 1) > 0.0); // Quarantined latent to latent
-    REQUIRE(mat(7, 0) > 0.0); // Quarantined suseptible to susceptible
+    REQUIRE(mat(7, 0) > 0.0); // Quarantined susceptible to susceptible
     REQUIRE(mat(8, 2) > 0.0); // Quarantined prodromal to prodromal
 
     // =========================================================

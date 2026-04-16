@@ -4,6 +4,8 @@
 
 using namespace epiworld;
 
+using MSQ = epimodels::ModelMeaslesMixingRiskQuarantine<>;
+
 EPIWORLD_TEST_CASE(
     "Measles model with risk-based quarantine",
     "[ModelMeaslesMixingRiskQuarantine]"
@@ -96,27 +98,27 @@ EPIWORLD_TEST_CASE(
 
     // From Exposed
     std::cout << "Transition from Exposed to Prodromal: " <<
-        mat(1, 2) << " (expected: " <<
+        mat(MSQ::LATENT, MSQ::PRODROMAL) << " (expected: " <<
         1.0/model("Incubation period") << ")" << std::endl;
 
     // From Prodromal
     std::cout << "Transition from Prodromal to Rash: " <<
-        mat(2, 3) << " (expected: " <<
+        mat(MSQ::PRODROMAL, MSQ::RASH) << " (expected: " <<
         1.0/model("Prodromal period") << ")" << std::endl;
 
     // From Rash
     std::cout << "Transition from Rash to Recovery: " <<
-        mat(3, 11) << " (expected: " <<
+        mat(MSQ::RASH, MSQ::RECOVERED) << " (expected: " <<
         1.0/model("Rash period") << ")" <<
         std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
-        mat(3, 10) << " (expected: " <<
+        mat(MSQ::RASH, MSQ::HOSPITALIZED) << " (expected: " <<
         model("Hospitalization rate") << ")" << std::endl;
 
     // From hospitalized
     std::cout << "Transition from Hospitalized to Recovery: " <<
-        mat(10, 11) << " (expected: " <<
+        mat(MSQ::HOSPITALIZED, MSQ::RECOVERED) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
 
     // Hospitalization probability
@@ -128,27 +130,27 @@ EPIWORLD_TEST_CASE(
 
     // Validating some transitions -------------------------------
     REQUIRE_FALSE(
-        moreless(mat(1, 2), 1.0/model("Incubation period"), 0.1)
+        moreless(mat(MSQ::LATENT, MSQ::PRODROMAL), 1.0/model("Incubation period"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(2, 3), 1.0/model("Prodromal period"), 0.1)
+        moreless(mat(MSQ::PRODROMAL, MSQ::RASH), 1.0/model("Prodromal period"), 0.1)
     );
 
     REQUIRE_FALSE(
         moreless(
-            mat(3, 11),
+            mat(MSQ::RASH, MSQ::RECOVERED),
             1.0/model("Rash period"),
             0.1
         )
     );
 
     REQUIRE_FALSE(
-        moreless(mat(3, 10), model("Hospitalization rate"), 0.1)
+        moreless(mat(MSQ::RASH, MSQ::HOSPITALIZED), model("Hospitalization rate"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(10, 11), 1.0/model("Hospitalization period"), 0.1)
+        moreless(mat(MSQ::HOSPITALIZED, MSQ::RECOVERED), 1.0/model("Hospitalization period"), 0.1)
     );
 
     // Hospitalization probability
