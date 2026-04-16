@@ -937,12 +937,12 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     // quarantined should be in RISK_HIGH
     std::set< size_t > groups_ids;
     std::set< size_t > contacted_agents;
-    for (size_t i = 0u; i < agents_triggered_contact_tracing_size; ++i)
+    for (size_t i = 0u; i < model->agents_triggered_contact_tracing_size; ++i)
     {
 
-        auto agent_i_idx = agents_triggered_contact_tracing[i];
+        auto agent_i_idx = model->agents_triggered_contact_tracing[i];
 
-        auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
+        auto & agent_i = m->get_agent(agent_i_idx);
 
         // We also check who are the contacted agents
         auto & ct = model->get_contact_tracing();
@@ -1032,7 +1032,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     }
 
     // Tabulating the number of agents per group
-    std::vector< size_t > n_agents_per_group(Model<TSeq>::entities.size(), 0u);
+    std::vector< size_t > n_agents_per_group(m->get_entities().size(), 0u);
     for (auto i: model->quarantine_risk_level)
         n_agents_per_group[i]++;
 

@@ -25462,7 +25462,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     // class
     auto * m_down = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
 
-    size_t ndraws = m_down->sample_agents(p, m_down->sampled_agents);
+    size_t ndraws = m_down->_sample_agents(p, m_down->sampled_agents);
 
     #ifdef EPI_DEBUG
     m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
@@ -25805,7 +25805,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m
         // Getting the number of contacts, if it is greater
         // than the maximum, it means that we overflowed, so
         // we will only quarantine the first EPI_MAX_TRACKING
-        auto ct = m->get_contact_tracing();
+        auto & ct = m->get_contact_tracing();
         size_t n_contacts = ct.get_n_contacts(agent_i);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
@@ -28653,14 +28653,14 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
         // check that later
         if (agent_i.get_n_entities() != 0u)
         {
-            for (size_t agent_j_idx: agent_i.get_entity(0, *this))
+            for (size_t agent_j_idx: agent_i.get_entity(0, *m))
             {
 
                 #ifdef EPI_DEBUG
                 auto & agent_j = m->get_agent(agent_j_idx);
                 if (
-                    agent_j.get_entity(0u, *this).get_id() !=
-                    agent_i.get_entity(0u, *this).get_id()
+                    agent_j.get_entity(0u, *m).get_id() !=
+                    agent_i.get_entity(0u, *m).get_id()
                 )
                     throw std::logic_error(
                         "An agent in a group has a different group id."
@@ -28741,15 +28741,15 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
 
         auto state = agent.get_state();
         if (state == SUSCEPTIBLE)
-            agent.change_state(*this, QUARANTINED_SUSCEPTIBLE);
+            agent.change_state(*m, QUARANTINED_SUSCEPTIBLE);
         else if (state == LATENT)
-            agent.change_state(*this, QUARANTINED_LATENT);
+            agent.change_state(*m, QUARANTINED_LATENT);
         else if (state == PRODROMAL)
-            agent.change_state(*this, QUARANTINED_PRODROMAL);
+            agent.change_state(*m, QUARANTINED_PRODROMAL);
         else if (state == RASH)
         {
             if (model->isolation_willingness[agent.get_id()])
-                agent.change_state(*this, ISOLATED);
+                agent.change_state(*m, ISOLATED);
         }
         else
             throw std::logic_error(
@@ -28762,12 +28762,12 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     // quarantined should be in RISK_HIGH
     std::set< size_t > groups_ids;
     std::set< size_t > contacted_agents;
-    for (size_t i = 0u; i < agents_triggered_contact_tracing_size; ++i)
+    for (size_t i = 0u; i < model->agents_triggered_contact_tracing_size; ++i)
     {
 
-        auto agent_i_idx = agents_triggered_contact_tracing[i];
+        auto agent_i_idx = model->agents_triggered_contact_tracing[i];
 
-        auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
+        auto & agent_i = m->get_agent(agent_i_idx);
 
         // We also check who are the contacted agents
         auto & ct = model->get_contact_tracing();
@@ -28794,7 +28794,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
         if (agent_i.get_n_entities() == 0u)
             continue;
 
-        groups_ids.insert(agent_i.get_entity(0u, *this).get_id());
+        groups_ids.insert(agent_i.get_entity(0u, *m).get_id());
         
     }
 
@@ -28857,7 +28857,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     }
 
     // Tabulating the number of agents per group
-    std::vector< size_t > n_agents_per_group(Model<TSeq>::entities.size(), 0u);
+    std::vector< size_t > n_agents_per_group(m->get_entities().size(), 0u);
     for (auto i: model->quarantine_risk_level)
         n_agents_per_group[i]++;
 
