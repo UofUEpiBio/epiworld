@@ -6,16 +6,15 @@ int main()
 {
 
     std::vector< double > contact_matrix = {
-        0.9, 0.1, 0.1,
-        0.05, 0.8, 0.2,
-        0.05, 0.1, 0.7
+        18.0, 2.0, 2.0,
+        1.0, 16.0, 4.0,
+        1.0, 2.0, 14.0
     };
 
     epimodels::ModelSEIRMixing<> model(
         "Flu", // std::string vname,
         9000, // epiworld_fast_uint n,
         1.0/9000.0,  // epiworld_double prevalence,
-        20.0,  // epiworld_double contact_rate,
         0.1,   // epiworld_double transmission_rate,
         7.0,   // epiworld_double avg_incubation_days,
         1.0/7.0,// epiworld_double recovery_rate,

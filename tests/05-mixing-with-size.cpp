@@ -80,7 +80,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     size_t n_groups = 40;
     std::vector< double > contact_matrix(
-        n_groups * n_groups, 1.0 / 
+        n_groups * n_groups, 40.0 / 
         static_cast<double>(n_groups)
     );
 
@@ -89,7 +89,6 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         "Flu", // std::string vname,
         n, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        40.0,  // epiworld_double contact_rate,
         1.0,   // epiworld_double transmission_rate,
         1.0,   // epiworld_double avg_incubation_days,
         1.0/2.0,// epiworld_double recovery_rate,

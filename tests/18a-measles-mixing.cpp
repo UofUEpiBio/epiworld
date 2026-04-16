@@ -11,12 +11,11 @@ EPIWORLD_TEST_CASE(
     int n_seeds = 5;
     
     // Simple contact matrix (single group, all mixing)
-    std::vector<double> contact_matrix = {1.0};
+    std::vector<double> contact_matrix = {2.0};
     
     epimodels::ModelMeaslesMixing<> model_0(
         1000,        // Number of agents
         n_seeds / 1000.0, // Initial prevalence
-        2.0,         // Contact rate
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
         0.3,         // Vaccination reduction recovery rate
@@ -101,7 +100,7 @@ EPIWORLD_TEST_CASE(
     // Checking specific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
     double p_recovered = 1.0/model_0("Rash period");
-    double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
+    double R0_theo = contact_matrix[0] * model_0("Transmission rate") *
         model_0("Prodromal period");
 
     // R0 - should be approximately equal to theoretical value
