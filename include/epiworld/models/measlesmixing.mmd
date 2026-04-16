@@ -24,7 +24,6 @@ flowchart TB
     Qs[Quarantined<br>Susceptible]
     Qp[Quarantined<br>Prodromal]
     I[Isolated]
-    Ih[Isolated<br>Hospitalized]
     Ir[Isolated<br>Recovered]
 
     %% Prodromal updates
@@ -33,16 +32,14 @@ flowchart TB
     %% Rash updates
     Ra <==> I
     Ra --> Ir
-    Ra --> Ih
+    Ra --> H
 
     %% Isolation process
     I --> Re
     I --> Ir
-    I --> Ih
     I --> H
 
-    %% Ih --> Ir
-    Ih --> Re
+    %% Isolation recoveries
     Ir --> Re
 
     %% Quarantine process

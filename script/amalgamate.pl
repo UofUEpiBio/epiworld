@@ -40,33 +40,32 @@ sub unfolder {
         $line78, $line78, $line78, $line78
     );
 
-    my @new_src = @$txt_ref;
+    my @new_src;
+    my %head_idx = map { $heads[$_] => $_ } 0..$#heads;
 
-    # Forward pass: decide which includes to expand (first occurrence wins)
-    my %expand;
-    for my $h (0 .. $#fns) {
-        my $fn  = $rel . $fns[$h];
-        $fn =~ s/^\s+|\s+$//g;
-        my $canonical = abs_path($fn) // File::Spec->canonpath($fn);
-        if (!$SEEN_FILES{$canonical}) {
-            $SEEN_FILES{$canonical} = 1;
-            $expand{$h} = 1;
-        }
-    }
+    for my $loc (0 .. $#$txt_ref) {
+        my $line = $$txt_ref[$loc];
 
-    # Reverse pass: splice content (reverse to keep indices stable)
-    for my $h (reverse 0 .. $#fns) {
-        my $loc = $heads[$h];
-        my $fn  = $rel . $fns[$h];
-        $fn =~ s/^\s+|\s+$//g;
-
-        unless ($expand{$h}) {
-            splice(@new_src, $loc, 1, "// (already included $fn)");
+        if (!exists $head_idx{$loc}) {
+            push @new_src, $line;
             next;
         }
 
+        my $h = $head_idx{$loc};
+        my $fn  = $rel . $fns[$h];
+        $fn =~ s/^\s+|\s+$//g;
+        my $canonical = abs_path($fn) // File::Spec->canonpath($fn);
+
+        if ($SEEN_FILES{$canonical}) {
+            push @new_src, "// (already included $fn)";
+            next;
+        }
+
+        $SEEN_FILES{$canonical} = 1;
+
         open my $fh, '<', $fn or do {
             warn "Could not read $fn: $!\n";
+            push @new_src, $line;
             next;
         };
         my @tmp_lines = <$fh>;
@@ -83,10 +82,7 @@ sub unfolder {
         my $start_comment = sprintf($head_start, $fn);
         my $end_comment   = sprintf($head_end,   $fn);
 
-        splice(
-            @new_src, $loc, 1,
-            ($start_comment, @$tmp_ref, $end_comment)
-        );
+        push @new_src, $start_comment, @$tmp_ref, $end_comment;
     }
 
     return \@new_src;

@@ -106,13 +106,12 @@ public:
     static const int RASH                     = 3;
     static const int ISOLATED                 = 4;
     static const int ISOLATED_RECOVERED       = 5;
-    static const int DETECTED_HOSPITALIZED    = 6;
-    static const int QUARANTINED_LATENT       = 7;
-    static const int QUARANTINED_SUSCEPTIBLE  = 8;
-    static const int QUARANTINED_PRODROMAL    = 9;
-    static const int QUARANTINED_RECOVERED    = 10;
-    static const int HOSPITALIZED             = 11;
-    static const int RECOVERED                = 12;
+    static const int QUARANTINED_LATENT       = 6;
+    static const int QUARANTINED_SUSCEPTIBLE  = 7;
+    static const int QUARANTINED_PRODROMAL    = 8;
+    static const int QUARANTINED_RECOVERED    = 9;
+    static const int HOSPITALIZED             = 10;
+    static const int RECOVERED                = 11;
 
     static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -605,7 +604,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_rash(
     else if (which == 1) // Hospitalized
     {
         m->record_hospitalization(*p);
-        p->change_state(*m, detected ? DETECTED_HOSPITALIZED : HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
     }
     else if (which > 2)
     {
@@ -655,7 +654,7 @@ inline void ModelMeaslesMixing<TSeq>::m_update_isolated(
     {
 
         m->record_hospitalization(*p);
-        p->change_state(*m, unisolate ? HOSPITALIZED : DETECTED_HOSPITALIZED);
+        p->change_state(*m, HOSPITALIZED);
 
     }
     else if (unisolate)
@@ -963,7 +962,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_state("Rash", m_update_rash);
     this->add_state("Isolated", m_update_isolated);
     this->add_state("Isolated Recovered", m_update_isolated_recovered);
-    this->add_state("Detected Hospitalized", m_update_hospitalized);
     this->add_state("Quarantined Latent", m_update_quarantine_latent);
     this->add_state("Quarantined Susceptible", m_update_quarantine_suscep);
     this->add_state("Quarantined Prodromal", m_update_quarantine_prodromal);

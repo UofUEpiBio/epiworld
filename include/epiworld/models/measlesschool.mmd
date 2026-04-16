@@ -24,21 +24,17 @@ flowchart TB
     Qs[Quarantined<br>Susceptible]
     Qp[Quarantined<br>Prodromal]
     I[Isolated]
-    Ih[Isolated<br>Hospitalized]
     Ir[Isolated<br>Recovered]
 
     %% Isolation process
     Ra <==> I
     Ra --> Ir
-    Ra --> Ih
+    Ra --> H
 
     I --> Re
-    I --> Ih
     I --> H
 
     I --> Ir
-    Ih --> Ir
-    Ih --> Re
     Ir --> Re
 
     %% Quarantine process

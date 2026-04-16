@@ -94,12 +94,11 @@ public:
     static const int EXPOSED                 = 1;
     static const int INFECTED                = 2;
     static const int ISOLATED                = 3;
-    static const int DETECTED_HOSPITALIZED   = 4;
-    static const int QUARANTINED_SUSCEPTIBLE = 5;
-    static const int QUARANTINED_EXPOSED     = 6;
-    static const int ISOLATED_RECOVERED      = 7;
-    static const int HOSPITALIZED            = 8;
-    static const int RECOVERED               = 9;
+    static const int QUARANTINED_SUSCEPTIBLE = 4;
+    static const int QUARANTINED_EXPOSED     = 5;
+    static const int ISOLATED_RECOVERED      = 6;
+    static const int HOSPITALIZED            = 7;
+    static const int RECOVERED               = 8;
 
     static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -654,19 +653,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
     }
     else if (which == 1) // Hospitalized
     {
-
-        if (detected)
-        {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
-            );
-        }
-        else
-        {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
-            );
-        }
+        p->change_state(*m, 
+            ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
+        );
 
     }
     else if ((which == 2) && isolation_detected) // Nothing, but detected
@@ -723,19 +712,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_isolated(
     }
     else if (which == 1)
     {
-
-        if (unisolate)
-        {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
-            );
-        }
-        else
-        {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::DETECTED_HOSPITALIZED
-            );
-        }
+        p->change_state(*m, 
+            ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
+        );
     }
     else if ((which == 2) && unisolate)
     {
@@ -1010,7 +989,6 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     model.add_state("Exposed", m_update_exposed);
     model.add_state("Infected", m_update_infected);
     model.add_state("Isolated", m_update_isolated);
-    model.add_state("Detected Hospitalized", m_update_hospitalized);
     model.add_state("Quarantined Susceptible", m_update_quarantine_suscep);
     model.add_state("Quarantined Exposed", m_update_quarantine_exposed);
     model.add_state("Isolated Recovered", m_update_isolated_recovered);

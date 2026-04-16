@@ -17,7 +17,7 @@ public:
     QuarantineTrigger() = default;
     void add_triggering_agent(
         const Model<TSeq> & model,
-        const Agent<TSeq> & agent_id,
+        const Agent<TSeq> & agent,
         int date_infectious
     );
 
@@ -33,6 +33,7 @@ inline void QuarantineTrigger<TSeq>::_setup(const Model<TSeq> & model) {
         (static_cast<int>(model.today()) != _day)
     ) {
         _model_sim_id = static_cast<int>(model.get_sim_id());
+        _day = static_cast<int>(model.today());
         _agents_triggering_quarantine.clear();
         _date_infectious.clear();
     }
@@ -42,13 +43,13 @@ inline void QuarantineTrigger<TSeq>::_setup(const Model<TSeq> & model) {
 template<typename TSeq>
 inline void QuarantineTrigger<TSeq>::add_triggering_agent(
     const Model<TSeq> & model,
-    const Agent<TSeq> & agent_id,
+    const Agent<TSeq> & agent,
     int date_infectious
 ) {
     
     // Ensuring we are not in a different run
     _setup(model);
-    this->_agents_triggering_quarantine.push_back(agent_id.get_id());
+    this->_agents_triggering_quarantine.push_back(agent.get_id());
     this->_date_infectious.push_back(date_infectious);
 }
 

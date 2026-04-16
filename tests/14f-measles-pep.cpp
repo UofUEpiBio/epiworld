@@ -119,8 +119,8 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     // Transition from Rash (days to detected/isolated)
     REQUIRE_FALSE(
         moreless(
-            mat(3, 4) + mat(3, 5) + mat(3, 6),
-            1.0/model_0("Days undetected"), 0.05
+            mat(3, 4),
+            (1.0/model_0("Days undetected")) * (1.0 - p_recovered - model_0("Hospitalization rate")), 0.05
         )
     );
 
@@ -130,35 +130,35 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     // From quarantine prodromal to isolated (detected immediately)
     REQUIRE_FALSE(
-        moreless(mat(9, 4), 1.0/model_0("Prodromal period"), 0.05)
+        moreless(mat(8, 4), 1.0/model_0("Prodromal period"), 0.05)
     );
 
     // Transition to hospitalized from Rash and Isolated
     REQUIRE_FALSE(
         moreless(
-            mat(3, 6) + mat(3, 11), model_0("Hospitalization rate"), 0.05
+            mat(3, 10), model_0("Hospitalization rate"), 0.05
         )
     );
     REQUIRE_FALSE(
         moreless(
-            mat(4, 6) + mat(4, 11), model_0("Hospitalization rate"), 0.05
+            0.0 + mat(4, 10), model_0("Hospitalization rate"), 0.05
         )
     );
 
     // Transition to recovered from Rash and Isolated
-    REQUIRE_FALSE(moreless(mat(3, 5) + mat(3, 12), p_recovered, 0.05));
-    REQUIRE_FALSE(moreless(mat(4, 5) + mat(4, 12), p_recovered, 0.05));
+    REQUIRE_FALSE(moreless(mat(3, 11), p_recovered, 0.05));
+    REQUIRE_FALSE(moreless(mat(4, 5) + mat(4, 11), p_recovered, 0.05));
 
     // Transition from hospitalized to recovered
     REQUIRE_FALSE(
-        moreless(mat(11, 12), 1.0/model_0("Hospitalization period"), 0.05)
+        moreless(mat(10, 11), 1.0/model_0("Hospitalization period"), 0.05)
     );
 
     // We should have some expected transitions away from 
     // quarantine states
-    REQUIRE(mat(7, 1) > 0.0); // Quarantined latent to latent
-    REQUIRE(mat(8, 0) > 0.0); // Quarantined suseptible to susceptible
-    REQUIRE(mat(9, 2) > 0.0); // Quarantined prodromal to prodromal
+    REQUIRE(mat(6, 1) > 0.0); // Quarantined latent to latent
+    REQUIRE(mat(7, 0) > 0.0); // Quarantined susceptible to susceptible
+    REQUIRE(mat(8, 2) > 0.0); // Quarantined prodromal to prodromal
 
     // =========================================================
     // Diagnostics
@@ -175,28 +175,28 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
               << 1.0/model_0("Prodromal period") << ")" << std::endl;
 
     std::cout << "Rash -> Detected: "
-              << mat(3, 4) + mat(3, 5) + mat(3, 6)
-              << " (expected ~" << 1.0/model_0("Days undetected") << ")"
+              << mat(3, 4)
+              << " (expected ~" << (1.0/model_0("Days undetected")) * (1.0 - p_recovered - model_0("Hospitalization rate")) << ")"
               << std::endl;
 
     std::cout << "Hospitalization rate (rash): "
-              << mat(3, 6) + mat(3, 11) << " (expected ~"
+              << mat(3, 10) << " (expected ~"
               << model_0("Hospitalization rate") << ")" << std::endl;
 
     std::cout << "Hospitalization rate (isolated): "
-              << mat(4, 6) + mat(4, 11) << " (expected ~"
+              << 0.0 + mat(4, 10) << " (expected ~"
               << model_0("Hospitalization rate") << ")" << std::endl;
 
     std::cout << "Recovery rate (rash): "
-              << mat(3, 5) + mat(3, 12) << " (expected ~"
+              << mat(3, 11) << " (expected ~"
               << p_recovered << ")" << std::endl;
 
     std::cout << "Recovery rate (isolated): "
-              << mat(4, 5) + mat(4, 12) << " (expected ~"
+              << mat(4, 5) + mat(4, 11) << " (expected ~"
               << p_recovered << ")" << std::endl;
 
     std::cout << "Hospitalized -> Recovered: "
-              << mat(11, 12) << " (expected ~"
+              << mat(10, 11) << " (expected ~"
               << 1.0/model_0("Hospitalization period") << ")" << std::endl;
 
 

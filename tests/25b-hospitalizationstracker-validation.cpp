@@ -60,9 +60,9 @@ EPIWORLD_TEST_CASE(
             unsigned int current_state = agent.get_state();
             unsigned int prev_state = previous_states[i];
             
-            // Check if agent transitioned to HOSPITALIZED (11) or DETECTED_HOSPITALIZED (6)
-            bool now_hospitalized = (current_state == 6u || current_state == 11u);
-            bool was_hospitalized = (prev_state == 6u || prev_state == 11u);
+            // Check if agent transitioned to HOSPITALIZED (10)
+            bool now_hospitalized = (current_state == epimodels::ModelMeaslesSchool<>::HOSPITALIZED);
+            bool was_hospitalized = (prev_state == epimodels::ModelMeaslesSchool<>::HOSPITALIZED);
             
             if (now_hospitalized && !was_hospitalized)
             {
