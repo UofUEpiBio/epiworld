@@ -17,7 +17,8 @@ PACKAGES := \
 	14-community-hosp \
 	15-seird-transitions \
 	16-sbm \
-	17-sbm-scalability
+	17-sbm-scalability \
+	18-seir-network-quarantine-benchmark
 	
 # Only with OpenMP
 ifneq ($(filter 1 yes true,$(WITH_OPENMP)),)
