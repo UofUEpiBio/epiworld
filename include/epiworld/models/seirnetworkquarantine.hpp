@@ -295,8 +295,13 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_infected(
 
     auto * model = model_cast<ModelSEIRNetworkQuarantine<TSeq>, TSeq>(m);
 
-    // Sampling whether the agent is detected or not
-    bool detected = m->runif() < 1.0/m->par("Days undetected");
+    // Sampling whether the agent is detected or not.
+    // If Days undetected < 0, detection is disabled (never detected).
+    // If Days undetected == 0, the agent is always detected.
+    epiworld_double days_undetected = m->par("Days undetected");
+    bool detected = (days_undetected < 0.0) ?
+        false : ((days_undetected == 0.0) ?
+            true : (m->runif() < 1.0 / days_undetected));
 
     // If detected, trigger the quarantine process
     if (detected)
@@ -553,13 +558,17 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
             continue;
 
         if (m->par("Quarantine period") < 0)
+        {
+            model->agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
             continue;
+        }
 
         size_t n_contacts = m->get_contact_tracing().get_n_contacts(agent_i);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
         auto success_rate = m->par("Contact tracing success rate");
+        auto days_prior = m->par("Contact tracing days prior");
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
             // Checking if we will detect the contact
@@ -569,6 +578,11 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
             auto [contact_id, contact_date] = m->get_contact_tracing().get_contact(
                 agent_i, contact_i
             );
+
+            // Skip contacts outside the tracing window
+            if ((static_cast<double>(m->today()) -
+                static_cast<double>(contact_date)) > days_prior)
+                continue;
 
             auto & agent = m->get_agent(contact_id);
 

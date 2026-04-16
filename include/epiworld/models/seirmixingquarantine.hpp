@@ -605,8 +605,13 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_update_infected(
 
     auto * model = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
 
-    // Sampling whether the agent is detected or not
-    bool detected = m->runif() < 1.0/m->par("Days undetected");
+    // Sampling whether the agent is detected or not.
+    // If Days undetected < 0, detection is disabled (never detected).
+    // If Days undetected == 0, the agent is always detected.
+    epiworld_double days_undetected = m->par("Days undetected");
+    bool detected = (days_undetected < 0.0) ?
+        false : ((days_undetected == 0.0) ?
+            true : (m->runif() < 1.0 / days_undetected));
 
     // If detected and the entity can quarantine, we start
     // the quarantine process
@@ -867,7 +872,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
             continue;
 
         if (this->par("Quarantine period") < 0)
+        {
+            agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
             continue;
+        }
 
         // Getting the number of contacts, if it is greater
         // than the maximum, it means that we overflowed, so
@@ -877,6 +885,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
             n_contacts = EPI_MAX_TRACKING;
 
         auto success_rate = this->par("Contact tracing success rate");
+        auto days_prior = this->par("Contact tracing days prior");
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
 
@@ -887,6 +896,11 @@ inline void ModelSEIRMixingQuarantine<TSeq>::m_quarantine_process() {
             auto [contact_id, contact_date] = this->contact_tracing->get_contact(
                 agent_i, contact_i
             );
+
+            // Skip contacts outside the tracing window
+            if ((static_cast<double>(this->today()) -
+                static_cast<double>(contact_date)) > days_prior)
+                continue;
 
             auto & agent = Model<TSeq>::get_agent(contact_id);
 
