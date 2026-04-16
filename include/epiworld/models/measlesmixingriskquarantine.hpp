@@ -132,7 +132,7 @@ public:
     static constexpr int RISK_MEDIUM = 1;
     static constexpr int RISK_HIGH   = 2;
 
-    ModelMeaslesMixingRiskQuarantine() {};
+    ModelMeaslesMixingRiskQuarantine() = delete;
 
     /**
      * @brief Constructs a ModelMeaslesMixingRiskQuarantine object.

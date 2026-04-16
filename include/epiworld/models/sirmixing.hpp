@@ -46,7 +46,7 @@ public:
     static const int INFECTED    = 1;
     static const int RECOVERED   = 2;
 
-    ModelSIRMixing() {};
+    ModelSIRMixing() = delete;
 
     /**
      * @brief Constructs a ModelSIRMixing object.

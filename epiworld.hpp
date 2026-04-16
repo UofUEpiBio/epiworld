@@ -20150,7 +20150,7 @@ public:
     static const int SUSCEPTIBLE = 0;
     static const int INFECTED    = 1;
 
-    ModelSIS() {};
+    ModelSIS() = delete;
 
     ModelSIS(
         const std::string & vname,
@@ -20234,7 +20234,7 @@ class ModelSIR : public Model<TSeq>
 {
 public:
 
-    ModelSIR() {};
+    ModelSIR() = delete;
 
     ModelSIR(
         const std::string & vname,
@@ -20348,7 +20348,7 @@ public:
     static const int INFECTED    = 2;
     static const int REMOVED     = 3;
 
-    ModelSEIR() {};
+    ModelSEIR() = delete;
 
     ModelSEIR(
         const std::string & vname,
@@ -20480,18 +20480,16 @@ inline ModelSEIR<TSeq> & ModelSEIR<TSeq>::initial_states(
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSURV : public Model<TSeq> {
 
-private:
-    // state
-    static const int SUSCEPTIBLE           = 0;
-    static const int LATENT                = 1;
-    static const int SYMPTOMATIC           = 2;
-    static const int SYMPTOMATIC_ISOLATED  = 3; // sampled and discovered
-    static const int ASYMPTOMATIC          = 4;
-    static const int ASYMPTOMATIC_ISOLATED = 5;
-    static const int RECOVERED             = 6;
-    static const int REMOVED               = 7;
-
 public:
+    // state
+    static constexpr int SUSCEPTIBLE           = 0;
+    static constexpr int LATENT                = 1;
+    static constexpr int SYMPTOMATIC           = 2;
+    static constexpr int SYMPTOMATIC_ISOLATED  = 3; // sampled and discovered
+    static constexpr int ASYMPTOMATIC          = 4;
+    static constexpr int ASYMPTOMATIC_ISOLATED = 5;
+    static constexpr int RECOVERED             = 6;
+    static constexpr int REMOVED               = 7;
 
     /**
      * @brief Vector of days spent in latent and infectious states
@@ -20540,7 +20538,7 @@ public:
      * 
      */
     ///@{
-    ModelSURV() {};
+    ModelSURV() = delete;
 
     ModelSURV(
         const std::string & vname,
@@ -20879,7 +20877,7 @@ public:
     static const int RECOVERED   = 2;
 
     
-    ModelSIRCONN() {};
+    ModelSIRCONN() = delete;
 
     ModelSIRCONN(
         const std::string & vname,
@@ -21258,7 +21256,7 @@ public:
     static const int RECOVERED   = 3;
 
 
-    ModelSEIRCONN() {};
+    ModelSEIRCONN() = delete;
 
     ModelSEIRCONN(
         const std::string & vname,
@@ -21658,9 +21656,8 @@ class ModelSIRD : public Model<TSeq>
 {
 public:
 
-    ModelSIRD() {};
+    ModelSIRD() = delete;
 
-    
     /**
      * @brief Constructs a new SIRD model with the given parameters.
      * 
@@ -21785,7 +21782,7 @@ class ModelSISD : public Model<TSeq>
 
 public:
 
-    ModelSISD() {};
+    ModelSISD() = delete;
 
     ModelSISD(
         const std::string & vname,
@@ -21873,7 +21870,7 @@ public:
   static const int REMOVED     = 3;
   static const int DECEASED    = 4;
   
-  ModelSEIRD() {};
+  ModelSEIRD() = delete;
 
   /**
    * @brief Constructor for the SEIRD model.
@@ -22073,23 +22070,7 @@ public:
     static const int RECOVERED   = 2;
     static const int DECEASED    = 3;
 
-    ModelSIRDCONN() {
-        
-        // tracked_agents_infected.reserve(1e4);
-        // tracked_agents_infected_next.reserve(1e4);
-
-    };
-
-    ModelSIRDCONN(
-        ModelSIRDCONN<TSeq> & model,
-        const std::string & vname,
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double contact_rate,
-        epiworld_double transmission_rate,
-        epiworld_double recovery_rate, 
-        epiworld_double death_rate
-    );
+    ModelSIRDCONN() = delete;
 
     ModelSIRDCONN(
         const std::string & vname,
@@ -22351,8 +22332,20 @@ public:
     static const int REMOVED     = 3;
     static const int DECEASED    = 4;
 
-    ModelSEIRDCONN() {};
-    
+    ModelSEIRDCONN() = delete;
+
+     /**
+     * @brief Constructor for the SEIRD model with connected population.
+     * 
+     * @param vname Name of the model.
+     * @param n Population size.
+     * @param prevalence Initial prevalence of the disease.
+     * @param contact_rate Average number of contacts (interactions) per step.
+     * @param transmission_rate Probability of transmission
+     * @param avg_incubation_days Average incubation period of the disease.
+     * @param recovery_rate Probability of recovery
+     * @param death_rate Probability of death
+     */
     ModelSEIRDCONN(
         const std::string & vname,
         epiworld_fast_uint n,
@@ -22726,14 +22719,12 @@ inline ModelSEIRDCONN<TSeq> & ModelSEIRDCONN<TSeq>::initial_states(
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSIRLogit : public Model<TSeq>
 {
-private:
+public:
     static const int SUSCEPTIBLE = 0;
     static const int INFECTED    = 1;
     static const int RECOVERED   = 2;
 
-public:
-
-    ModelSIRLogit() {};
+    ModelSIRLogit() = delete;
 
     /**
       * @param vname Name of the virus.
@@ -23013,33 +23004,22 @@ class ModelDiffNet : public Model<TSeq>
 private:
 public:
 
-    ModelDiffNet() {};
-
-    ModelDiffNet(
-        ModelDiffNet<TSeq> & model,
-        const std::string & innovation_name,
-        epiworld_double prevalence,
-        epiworld_double prob_adopt,
-        bool normalize_exposure = true,
-        double * agents_data = nullptr,
-        size_t data_ncols = 0u,
-        std::vector< size_t > data_cols = {},
-        std::vector< double > params = {}
-    );
-
-    ModelDiffNet(
-        const std::string & innovation_name,
-        epiworld_double prevalence,
-        epiworld_double prob_adopt,
-        bool normalize_exposure = true,
-        double * agents_data = nullptr,
-        size_t data_ncols = 0u,
-        std::vector< size_t > data_cols = {},
-        std::vector< double > params = {}
-    );
-    
+    // Statuses
     static const int NONADOPTER = 0;
     static const int ADOPTER    = 1;
+
+    ModelDiffNet() = delete;
+
+    ModelDiffNet(
+        const std::string & innovation_name,
+        epiworld_double prevalence,
+        epiworld_double prob_adopt,
+        bool normalize_exposure = true,
+        double * agents_data = nullptr,
+        size_t data_ncols = 0u,
+        std::vector< size_t > data_cols = {},
+        std::vector< double > params = {}
+    );
 
     bool normalize_exposure = true;
     std::vector< size_t > data_cols;
@@ -23048,7 +23028,6 @@ public:
 
 template<typename TSeq>
 inline ModelDiffNet<TSeq>::ModelDiffNet(
-    ModelDiffNet<TSeq> & model,
     const std::string & innovation_name,
     epiworld_double prevalence,
     epiworld_double prob_adopt,
@@ -23150,15 +23129,15 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
         };
 
     // Adding agents data
-    model.set_agents_data(agents_data, data_ncols);
+    this->set_agents_data(agents_data, data_ncols);
     
     // Adding statuses
-    model.add_state("Non adopters", update_non_adopters);
-    model.add_state("Adopters");
+    this->add_state("Non adopters", update_non_adopters);
+    this->add_state("Adopters");
 
     // Adding parameters
     std::string parname = std::string("Prob. Adopting ") + innovation_name;
-    model.add_param(prob_adopt, parname);
+    this->add_param(prob_adopt, parname);
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> innovation(innovation_name, prevalence, true);
@@ -23166,42 +23145,13 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     
     innovation.set_prob_infecting(parname);
     
-    model.add_virus(innovation);
+    this->add_virus(innovation);
 
-    model.set_name(
+    this->set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);
 
     return;
    
-}
-
-template<typename TSeq>
-inline ModelDiffNet<TSeq>::ModelDiffNet(
-    const std::string & innovation_name,
-    epiworld_double prevalence,
-    epiworld_double prob_adopt,
-    bool normalize_exposure,
-    double * agents_data,
-    size_t data_ncols,
-    std::vector< size_t > data_cols,
-    std::vector< double > params
-    )
-{
-
-    ModelDiffNet<TSeq>(
-        *this,
-        innovation_name,
-        prevalence,
-        prob_adopt,
-        normalize_exposure,
-        agents_data,
-        data_ncols,
-        data_cols,
-        params
-        );
-
-    return;
-
 }
 
 #endif
@@ -23273,32 +23223,7 @@ public:
     static const int INFECTED    = 2;
     static const int RECOVERED   = 3;
 
-    ModelSEIRMixing() {};
-
-    /**
-     * @brief Constructs a ModelSEIRMixing object.
-     *
-     * @param model A reference to an existing ModelSEIRMixing object.
-     * @param vname The name of the ModelSEIRMixing object.
-     * @param n The number of entities in the model.
-     * @param prevalence The initial prevalence of the disease in the model.
-     * @param transmission_rate The transmission rate of the disease in the model.
-     * @param avg_incubation_days The average incubation period of the disease in the model.
-     * @param recovery_rate The recovery rate of the disease in the model.
-     * @param contact_matrix The contact matrix between entities in the model. Specified in
-     * column-major order. Each entry (i,j) represents the expected number of
-     * contacts an agent in group i has with agents in group j per day.
-     */
-    ModelSEIRMixing(
-        ModelSEIRMixing<TSeq> & model,
-        const std::string & vname,
-        epiworld_fast_uint n,
-        epiworld_double prevalence,
-        epiworld_double transmission_rate,
-        epiworld_double avg_incubation_days,
-        epiworld_double recovery_rate,
-        std::vector< double > contact_matrix
-    );
+    ModelSEIRMixing() = delete;
 
     /**
      * @brief Constructs a ModelSEIRMixing object.
@@ -23811,7 +23736,7 @@ public:
     static const int INFECTED    = 1;
     static const int RECOVERED   = 2;
 
-    ModelSIRMixing() {};
+    ModelSIRMixing() = delete;
 
     /**
      * @brief Constructs a ModelSIRMixing object.
@@ -24361,7 +24286,7 @@ public:
     ///@}
     
     // Default constructor
-    ModelMeaslesSchool() {};
+    ModelMeaslesSchool() = delete;
 
     ModelMeaslesSchool(
         epiworld_fast_uint n,
@@ -25109,7 +25034,7 @@ public:
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
     static const size_t QUARANTINE_PROCESS_DONE     = 2u;
 
-    ModelSEIRMixingQuarantine() {};
+    ModelSEIRMixingQuarantine() = delete;
 
     /**
      * @brief Constructs a ModelSEIRMixingQuarantine object.
@@ -26107,7 +26032,7 @@ public:
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
     static const size_t QUARANTINE_PROCESS_DONE     = 2u;
 
-    ModelSEIRNetworkQuarantine() {};
+    ModelSEIRNetworkQuarantine() = delete;
 
     /**
      * @brief Constructs a ModelSEIRNetworkQuarantine object.
@@ -26884,7 +26809,7 @@ public:
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
     static const size_t QUARANTINE_PROCESS_DONE     = 2u;
 
-    ModelMeaslesMixing() {};
+    ModelMeaslesMixing() = delete;
 
     /**
      * @brief Constructs a ModelMeaslesMixing object.
@@ -27938,7 +27863,7 @@ public:
     static constexpr int RISK_MEDIUM = 1;
     static constexpr int RISK_HIGH   = 2;
 
-    ModelMeaslesMixingRiskQuarantine() {};
+    ModelMeaslesMixingRiskQuarantine() = delete;
 
     /**
      * @brief Constructs a ModelMeaslesMixingRiskQuarantine object.

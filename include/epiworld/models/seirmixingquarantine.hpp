@@ -103,7 +103,7 @@ public:
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
     static const size_t QUARANTINE_PROCESS_DONE     = 2u;
 
-    ModelSEIRMixingQuarantine() {};
+    ModelSEIRMixingQuarantine() = delete;
 
     /**
      * @brief Constructs a ModelSEIRMixingQuarantine object.
