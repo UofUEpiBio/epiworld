@@ -7,10 +7,9 @@ using namespace epiworld;
  *
  * This test verifies that agents with higher contact rates have higher
  * reproductive numbers. Setup:
- * - ~1000 agents in 4 equal groups (homogeneous mixing)
- * - Two initially infected agents: agent 0 in group 0 and agent group_size
- *   in group 1
- * - Group 0 has contact rate 10, groups 1-3 have contact rate 5
+ * - ~801 agents in 5 groups (homogeneous mixing)
+ * - Two initially infected agents: agent 0 in group 0 and agent 1 in group 1
+ * - Group 0 has contact rate 10, groups 1-4 have contact rate 5
  * - Contact rates are uniformly distributed across groups
  *
  * We verify that the agent with the highest contact rate (agent 0 in group 0)
@@ -21,10 +20,10 @@ EPIWORLD_TEST_CASE(
     "[SEIR-mixing-hetero]"
 ) {
 
-    // 4 groups, homogeneous mixing
-    // Group 0 has contact rate 10, groups 1-3 have contact rate 5
-    // Uniformly distributed across groups means each entry in a row = row_sum / 4
-    size_t ngroups = 4;
+    // 5 groups, homogeneous mixing
+    // Group 0 has contact rate 10, groups 1-4 have contact rate 5
+    // Uniformly distributed across groups means each entry in a row = row_sum / 5
+    size_t ngroups = 5;
     double high_rate = 10.0;
     double low_rate = 5.0;
 
@@ -38,9 +37,8 @@ EPIWORLD_TEST_CASE(
             contact_matrix[j * ngroups + i] = rate / static_cast<double>(ngroups);
     }
 
-    int n_agents = 1000;
+    int n_agents = 801;
     size_t nsims = 200;
-    int group_size = n_agents / static_cast<int>(ngroups);
 
     epimodels::ModelSEIRMixing<> model(
         "Flu",
@@ -52,34 +50,34 @@ EPIWORLD_TEST_CASE(
         contact_matrix
     );
 
-    // Create 4 equal groups
+    // Create groups
+    int from = 0;
     for (size_t g = 0; g < ngroups; ++g)
     {
-        int from = static_cast<int>(g) * group_size;
-        int to = from + group_size;
-        Entity<> e(
-            "Group " + std::to_string(g),
-            dist_factory<>(from, to)
+        int size = (g == 0) ? 1 : 200;
+        int to = from + size;
+        model.add_entity(
+            Entity<>("Group " + std::to_string(g), dist_factory<>(from, to))
         );
-        model.add_entity(e);
+        from = to;
     }
 
     // Override the virus distribution to place exactly 2 infected agents:
-    // Agent 0 in group 0 (high contact rate) and agent group_size in group 1
+    // Agent 0 in group 0 (high contact rate) and agent 1 in group 1
     // (low contact rate)
     model.get_virus(0).set_distribution(
-        [&group_size](Virus<> & v, Model<> * m) -> void {
+        [](Virus<> & v, Model<> * m) -> void {
             m->get_agents()[0].set_virus(*m, v);             // group 0
-            m->get_agents()[group_size].set_virus(*m, v);    // group 1
+            m->get_agents()[1].set_virus(*m, v);             // group 1
         }
     );
 
-    // Track reproductive numbers for agent 0 (group 0) and agent group_size
+    // Track reproductive numbers for agent 0 (group 0) and agent 1
     // (group 1) across simulations
     std::vector<double> R0_high(nsims, 0.0);
     std::vector<double> R0_low(nsims, 0.0);
 
-    auto saver = [&R0_high, &R0_low, &group_size](
+    auto saver = [&R0_high, &R0_low](
         size_t n, Model<> * m
     ) -> void {
 
@@ -90,8 +88,8 @@ EPIWORLD_TEST_CASE(
         if (it0 != rts.end())
             R0_high[n] = static_cast<double>(it0->second);
 
-        // Agent group_size (low contact rate group) infected at day 0
-        auto it1 = rts.find({0, group_size, 0});
+        // Agent 1 (low contact rate group) infected at day 0
+        auto it1 = rts.find({0, 1, 0});
         if (it1 != rts.end())
             R0_low[n] = static_cast<double>(it1->second);
 
@@ -113,7 +111,7 @@ EPIWORLD_TEST_CASE(
     std::cout << "Heterogeneous contact rates test (ModelSEIRMixing)" << std::endl;
     std::cout << "Agent 0 (group 0, contact rate " << high_rate
               << "): avg R0 = " << avg_R0_high << std::endl;
-    std::cout << "Agent " << group_size << " (group 1, contact rate " << low_rate
+    std::cout << "Agent " << 1 << " (group 1, contact rate " << low_rate
               << "): avg R0 = " << avg_R0_low << std::endl;
     std::cout << "========================================================" << std::endl;
 
