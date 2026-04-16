@@ -128,8 +128,6 @@ public:
 
     std::vector<Agent<TSeq> *> infectious; ///< Agents infectious for contact
 
-    bool system_quarantine_triggered = false;
-
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_rash_onset; ///< Day of rash onset
     std::vector< int > has_pep;
@@ -231,9 +229,6 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
 
     }
 
-    // Setting the quarantine process off
-    model->system_quarantine_triggered = false;
-
     return;
 
 }
@@ -242,8 +237,6 @@ template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::reset() {
 
     Model<TSeq>::reset();
-
-    this->system_quarantine_triggered = false;
 
     this->day_flagged.assign(this->size(), 0);
     this->day_rash_onset.assign(this->size(), 0);
