@@ -17,6 +17,7 @@ $(NAME)_SOURCES := \
 	05c-mixing.cpp \
 	05d-mixing.cpp \
 	06-mixing.cpp \
+	06b-mixing.cpp \
 	07-entitifuns.cpp \
 	09-distribute-tools-and-viruses.cpp \
 	10-generation-interval.cpp \
@@ -35,6 +36,7 @@ $(NAME)_SOURCES := \
 	17a-mixing-quarantine.cpp \
 	17b-mixing-quarantine.cpp \
 	17c-mixing-quarantine.cpp \
+	17f-mixing-quarantine.cpp \
 	18a-measles-mixing.cpp \
 	18b-measles-mixing.cpp \
 	18c-measles-mixing.cpp \
@@ -43,6 +45,7 @@ $(NAME)_SOURCES := \
 	19b-measles-mixing-risk-quarantine-transitions.cpp \
 	19c-measles-mixing-risk-quarantine-durations.cpp \
 	19d-measles-mixing-risk-quarantine-process.cpp \
+	19e-measles-mixing-risk-quarantine-hetero.cpp \
 	20a-rewire-degseq.cpp \
 	20b-rewire-degseq.cpp \
 	22a-globalevents.cpp \

@@ -5,16 +5,15 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
 
     std::vector< double > contact_matrix = {
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0
+        40.0, 0.0, 0.0,
+        0.0, 40.0, 0.0,
+        0.0, 0.0, 40.0
     };
 
     epimodels::ModelSEIRMixingQuarantine<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        40.0,  // epiworld_double contact_rate,
         1.0,   // epiworld_double transmission_rate,
         2.0,   // epiworld_double avg_incubation_days,
         1.0/2.0,// epiworld_double recovery_rate,
@@ -71,10 +70,18 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     REQUIRE_FALSE((n_wrong != 0));
 
     // Reruning the model where individuals from group 0 transmit all to group 1
-    contact_matrix[0] = 0.0;
-    contact_matrix[6] = 1.0;
-    contact_matrix[4] = 0.5;
-    contact_matrix[1] = 0.5;
+    // Contact matrix is column-major: index = j * n + i
+    // at(i, j) -> contact_matrix[j * n + i]
+    size_t n_groups = static_cast<size_t>(
+        std::round(std::sqrt(contact_matrix.size()))
+    );
+    auto at = [&contact_matrix, n_groups](size_t i, size_t j) -> double & {
+        return contact_matrix[j * n_groups + i];
+    };
+    at(0, 0) = 0.0;   // group 0 -> group 0: 0 (no self-contacts for group 0)
+    at(0, 2) = 40.0;  // group 0 -> group 2: 40 (group 0 contacts group 2)
+    at(1, 1) = 20.0;  // group 1 -> group 1: 20
+    at(1, 0) = 20.0;  // group 1 -> group 0: 20 (group 1 also contacts group 0)
     model.set_contact_matrix(contact_matrix);
 
     // Running and checking the results
@@ -107,7 +114,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     REQUIRE_FALSE((n_wrong != 0));
 
     // Rerunning with plain mixing
-    std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
+    std::fill(contact_matrix.begin(), contact_matrix.end(), 40.0/3.0);
     model.set_contact_matrix(contact_matrix);
 
     // Running and checking the results

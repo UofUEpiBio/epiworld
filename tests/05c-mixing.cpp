@@ -1,13 +1,5 @@
 #include "tests.hpp"
 
-#define calc_r0(ans_observed, ans_expected, r0, model) \
-    double (ans_observed) = std::accumulate(r0.begin(), r0.end(), 0.0); \
-    (ans_observed) /= static_cast<epiworld_double>(r0.size()); \
-    std::fill(r0.begin(), r0.end(), -1.0); \
-    double (ans_expected) = (model)("Contact rate") * \
-        (model)("Prob. Transmission") / \
-        (model)("Prob. Recovery");
-
 using namespace epiworld;
 
 EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
@@ -29,7 +21,6 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
         static_cast<double>(n_infected)/n_agents,  // epiworld_double prevalence,
-        1.0,  // epiworld_double contact_rate,
         0.1,   // epiworld_double transmission_rate,
         1.0/7.0,// epiworld_double recovery_rate,
         contact_matrix
@@ -123,21 +114,46 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
         printf_epiworld("\n");
     }
 
+    auto compute_avg_row_sum = [&contact_matrix]() -> double {
+        size_t n = static_cast<size_t>(std::round(std::sqrt(contact_matrix.size())));
+        double total = 0.0;
+        for (size_t i = 0u; i < n; ++i)
+            for (size_t j = 0u; j < n; ++j)
+                total += contact_matrix[j * n + i];
+        return total / static_cast<double>(n);
+    };
+
+    auto scale_contact_matrix = [&contact_matrix](double factor) -> void {
+        for (auto & value : contact_matrix)
+            value *= factor;
+    };
+
+    #define calc_r0(ans_observed, ans_expected, r0, avg_contact_rate) \
+        double (ans_observed) = std::accumulate(r0.begin(), r0.end(), 0.0); \
+        (ans_observed) /= static_cast<epiworld_double>(r0.size()); \
+        std::fill(r0.begin(), r0.end(), -1.0); \
+        double (ans_expected) = (avg_contact_rate) * \
+            model_1("Prob. Transmission") / \
+            model_1("Prob. Recovery");
+
     // Different runs
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
-    calc_r0(R0_obs1, R0_exp1, R0s, model_1);
+    calc_r0(R0_obs1, R0_exp1, R0s, compute_avg_row_sum());
 
-    model_1.set_param("Contact rate", model_1("Contact rate") * 1.5);
+    scale_contact_matrix(1.5);
+    model_1.set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
-    calc_r0(R0_obs2, R0_exp2, R0s, model_1);
+    calc_r0(R0_obs2, R0_exp2, R0s, compute_avg_row_sum());
 
-    model_1.set_param("Contact rate", model_1("Contact rate")  * 1.5);
+    scale_contact_matrix(1.5);
+    model_1.set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
-    calc_r0(R0_obs3, R0_exp3, R0s, model_1);
+    calc_r0(R0_obs3, R0_exp3, R0s, compute_avg_row_sum());
 
-    model_1.set_param("Contact rate", model_1("Contact rate")  * 1.5);
+    scale_contact_matrix(1.5);
+    model_1.set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
-    calc_r0(R0_obs4, R0_exp4, R0s, model_1);
+    calc_r0(R0_obs4, R0_exp4, R0s, compute_avg_row_sum());
     
     std::cout << "Testing R0 in SIRMixing" << std::endl;
     std::cout << "R0 obs " << R0_obs1 << " vs exp " << R0_exp1 << std::endl;

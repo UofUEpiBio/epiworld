@@ -7,16 +7,15 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     std::vector< double > contact_matrix = {
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0
+        40.0, 0.0, 0.0,
+        0.0, 40.0, 0.0,
+        0.0, 0.0, 40.0
     };
 
     epimodels::ModelSIRMixing<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
-        40.0,// epiworld_double contact_rate,
         1.0,// epiworld_double transmission_rate,
         1.0/2.0,// epiworld_double recovery_rate,
         contact_matrix
@@ -66,9 +65,9 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     // Reruning the model where individuals from group 0 transmit all to group 1
     contact_matrix[0] = 0.0;
-    contact_matrix[6] = 1.0;
-    contact_matrix[4] = 0.5;
-    contact_matrix[1] = 0.5;
+    contact_matrix[6] = 40.0;
+    contact_matrix[4] = 20.0;
+    contact_matrix[1] = 20.0;
     model.set_contact_matrix(contact_matrix);
 
     // Running and checking the results
@@ -103,7 +102,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
     REQUIRE_FALSE((n_wrong != 0 | n_right != 3001));
 
     // Rerunning with plain mixing
-    std::fill(contact_matrix.begin(), contact_matrix.end(), 1.0/3.0);
+    std::fill(contact_matrix.begin(), contact_matrix.end(), 40.0/3.0);
     model.set_contact_matrix(contact_matrix);
 
     // Running and checking the results

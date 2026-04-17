@@ -19,12 +19,11 @@ EPIWORLD_TEST_CASE(
     double p_infect = R0 / (c_rate) * (1.0/4.0);
 
     // Simple contact matrix (single group, all mixing)
-    std::vector<double> contact_matrix = {1.0};
+    std::vector<double> contact_matrix = {c_rate};
     
     epimodels::ModelMeaslesMixingRiskQuarantine<> model(
         n,           // Number of agents
         0.005,       // Initial prevalence
-        c_rate,      // Contact rate
         p_infect,    // Transmission rate
         0.9,         // Vaccination efficacy
         7.0,         // Incubation period

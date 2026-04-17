@@ -48,11 +48,12 @@ EPIWORLD_TEST_CASE(
     double R0 = 15;
     double c_rate = 10.0;
     double p_infect = R0 / (c_rate) * (1.0/4.0);
+    for (auto & value : contact_matrix)
+        value *= c_rate;
     
     epimodels::ModelMeaslesMixingRiskQuarantine<> model(
         n,           // Number of agents
         0.1 ,        // Initial prevalence
-        c_rate,      // Contact rate
         p_infect,    // Transmission rate
         1.0,         // Vaccination efficacy
         7.0,         // Incubation period

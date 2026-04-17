@@ -10,12 +10,11 @@ EPIWORLD_TEST_CASE(
     // Contact matrix for 3 groups with equal mixing
     size_t nsims = 400;
     size_t n     = 300;
-    std::vector<double> contact_matrix(9u, 1.0/3.0);
+    std::vector<double> contact_matrix(9u, 2.0/3.0);
     
     epimodels::ModelMeaslesMixingRiskQuarantine<> model(
         n,           // Number of agents
         0.1 ,        // Initial prevalence
-        2.0,         // Contact rate
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
         7.0,         // Incubation period
