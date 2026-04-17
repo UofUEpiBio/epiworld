@@ -70,10 +70,13 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     REQUIRE_FALSE((n_wrong != 0));
 
     // Reruning the model where individuals from group 0 transmit all to group 1
-    // Contact matrix is column-major: index = j * n + i, where n = 3
-    // at(i, j) -> contact_matrix[j * 3 + i]
-    auto at = [&contact_matrix](size_t i, size_t j) -> double & {
-        return contact_matrix[j * 3u + i];
+    // Contact matrix is column-major: index = j * n + i
+    // at(i, j) -> contact_matrix[j * n + i]
+    size_t n_groups = static_cast<size_t>(
+        std::round(std::sqrt(contact_matrix.size()))
+    );
+    auto at = [&contact_matrix, n_groups](size_t i, size_t j) -> double & {
+        return contact_matrix[j * n_groups + i];
     };
     at(0, 0) = 0.0;   // group 0 -> group 0: 0 (no self-contacts for group 0)
     at(0, 2) = 40.0;  // group 0 -> group 2: 40 (group 0 contacts group 2)
