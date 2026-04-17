@@ -115,7 +115,7 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     }
 
     auto compute_avg_row_sum = [&contact_matrix]() -> double {
-        size_t n = 3u;
+        size_t n = static_cast<size_t>(std::round(std::sqrt(contact_matrix.size())));
         double total = 0.0;
         for (size_t i = 0u; i < n; ++i)
             for (size_t j = 0u; j < n; ++j)

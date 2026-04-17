@@ -57,8 +57,9 @@ public:
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
-     * Each entry (i,j) represents the expected number of contacts an agent in
-     * group i has with agents in group j per day.
+     * Specified in column-major order. Each entry (i,j) represents the
+     * expected number of contacts an agent in group i has with agents in
+     * group j per day. Entry (i,j) is located at `contact_matrix[j * n + i]`.
      */
     ModelSIRMixing(
         const std::string & vname,

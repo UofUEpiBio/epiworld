@@ -70,10 +70,15 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     REQUIRE_FALSE((n_wrong != 0));
 
     // Reruning the model where individuals from group 0 transmit all to group 1
-    contact_matrix[0] = 0.0;
-    contact_matrix[6] = 40.0;
-    contact_matrix[4] = 20.0;
-    contact_matrix[1] = 20.0;
+    // Contact matrix is column-major: index = j * n + i, where n = 3
+    // at(i, j) -> contact_matrix[j * 3 + i]
+    auto at = [&contact_matrix](size_t i, size_t j) -> double & {
+        return contact_matrix[j * 3u + i];
+    };
+    at(0, 0) = 0.0;   // group 0 -> group 0: 0 (no self-contacts for group 0)
+    at(0, 2) = 40.0;  // group 0 -> group 2: 40 (group 0 contacts group 2)
+    at(1, 1) = 20.0;  // group 1 -> group 1: 20
+    at(1, 0) = 20.0;  // group 1 -> group 0: 20 (group 1 also contacts group 0)
     model.set_contact_matrix(contact_matrix);
 
     // Running and checking the results
