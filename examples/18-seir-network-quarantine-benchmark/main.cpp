@@ -46,16 +46,15 @@ int main() {
         }
     }
 
-    // Build a row-stochastic contact matrix for SEIRMixingQuarantine.
-    // Each row must sum to 1.0, but the flattened storage here must be
-    // column-major to match ModelSEIRMixingQuarantine's MM(i,j,n) access.
+    // Build a column-major contact matrix for SEIRMixingQuarantine.
+    // Each entry stores the expected number of contacts per day from a
+    // source group to a target group.
     std::vector< double > contact_matrix(n_groups * n_groups, 0.0);
     for (size_t g = 0; g < n_groups; ++g)
     {
         for (size_t h = 0; h < n_groups; ++h)
         {
-            contact_matrix[h * n_groups + g] =
-                sbm_mixing[g * n_groups + h] / mean_contacts;
+            contact_matrix[h * n_groups + g] = sbm_mixing[g * n_groups + h];
         }
     }
 
@@ -100,7 +99,6 @@ int main() {
             "Flu",
             static_cast<epiworld_fast_uint>(n_total),
             prevalence,
-            mean_contacts,       // contact_rate
             transmission_rate * .9,
             avg_incubation_days,
             recovery_rate,

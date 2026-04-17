@@ -23694,8 +23694,8 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @file seirentitiesconnected.hpp
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model with mixing
+ * @file sirmixing.hpp
+ * @brief Template for a Susceptible-Infected-Removed (SIR) model with mixing
  * 
  * ![Model Diagram](../assets/img/sirmixing.png)
  * 
@@ -23742,18 +23742,18 @@ public:
      * @brief Constructs a ModelSIRMixing object.
      *
      * @param vname The name of the ModelSIRMixing object.
-     * @param n The number of entities in the model.
+     * @param n The number of agents in the model.
      * @param prevalence The initial prevalence of the disease in the model.
-     * @param contact_rate The contact rate between entities in the model.
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
+     * Each entry (i,j) represents the expected number of contacts an agent in
+     * group i has with agents in group j per day.
      */
     ModelSIRMixing(
         const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
         epiworld_double transmission_rate,
         epiworld_double recovery_rate,
         std::vector< double > contact_matrix
@@ -23888,7 +23888,7 @@ inline void ModelSIRMixing<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // Checking contact matrix's rows add to one
+    // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
     if (this->contact_matrix.size() !=  nentities*nentities)
         throw std::length_error(
@@ -23901,7 +23901,6 @@ inline void ModelSIRMixing<TSeq>::reset()
 
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
-        double sum = 0.0;
         for (size_t j = 0u; j < this->entities.size(); ++j)
         {
             if (this->contact_matrix[index(i, j, nentities)] < 0.0)
@@ -23910,14 +23909,7 @@ inline void ModelSIRMixing<TSeq>::reset()
                     std::to_string(this->contact_matrix[index(i, j, nentities)]) +
                     std::string(" < 0.")
                     );
-            sum += this->contact_matrix[index(i, j, nentities)];
         }
-        if (sum < 0.999 || sum > 1.001)
-            throw std::range_error(
-                std::string("The contact matrix must have rows that add to one. ") +
-                std::to_string(sum) +
-                std::string(" != 1.")
-                );
     }
 
     // Do it the first time only
@@ -23940,13 +23932,12 @@ inline void ModelSIRMixing<TSeq>::reset()
     }
 
     // Adjusting contact rate
-    adjusted_contact_rate.clear();
-    adjusted_contact_rate.resize(this->entities.size(), 0.0);
+    adjusted_contact_rate.assign(this->entities.size(), 0.0);
 
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
         adjusted_contact_rate[i] =
-            Model<TSeq>::get_param("Contact rate") /
+            1.0 /
                 static_cast< epiworld_double > (this->get_entity(i).size());
 
         // Possibly correcting for a small number of agents
@@ -23974,16 +23965,17 @@ inline std::unique_ptr<Model<TSeq>> ModelSIRMixing<TSeq>::clone_ptr()
  * @param model A Model<TSeq> object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
- * @param contact_rate Average number of contacts (interactions) per step.
  * @param transmission_rate Probability of transmission
  * @param recovery_rate Probability of recovery
+ * @param contact_matrix Contact matrix specifying expected contacts between groups.
+ * Each entry (i,j) represents the expected number of contacts an agent in
+ * group i has with agents in group j per day.
  */
 template<typename TSeq>
 inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
     epiworld_double transmission_rate,
     epiworld_double recovery_rate,
     std::vector< double > contact_matrix
@@ -24104,7 +24096,6 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         };
 
     // Setting up parameters
-    this->add_param(contact_rate, "Contact rate");
     this->add_param(transmission_rate, "Prob. Transmission");
     this->add_param(recovery_rate, "Prob. Recovery");
 
@@ -24954,12 +24945,11 @@ inline void ModelMeaslesSchool<TSeq>::next() {
  * - Hospitalization of severe cases
  * - Individual willingness to comply with public health measures
  *
- * The model supports 10 distinct states:
+ * The model supports 9 distinct states:
  * - Susceptible: Individuals who can become infected
  * - Exposed: Infected but not yet infectious (incubation period)
  * - Infected: Infectious individuals in the community
  * - Isolated: Detected infected individuals in self-isolation
- * - Detected Hospitalized: Hospitalized individuals who were contact-traced
  * - Quarantined Susceptible: Susceptible individuals in quarantine due to contact tracing
  * - Quarantined Exposed: Exposed individuals in quarantine due to contact tracing
  * - Isolated Recovered: Recovered individuals still in isolation
@@ -25040,13 +25030,15 @@ public:
      * @brief Constructs a ModelSEIRMixingQuarantine object.
      *
      * @param vname The name of the ModelSEIRMixingQuarantine object.
-     * @param n The number of entities in the model.
+     * @param n The number of agents in the model.
      * @param prevalence The initial prevalence of the disease in the model.
-     * @param contact_rate The contact rate between entities in the model.
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param avg_incubation_days The average incubation period of the disease in the model.
      * @param recovery_rate The recovery rate of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
+     * Specified in column-major order. Each entry (i,j) represents the
+     * expected number of contacts an agent in group i has with agents in
+     * group j per day.
      * @param hospitalization_rate The rate at which infected individuals are hospitalized.
      * @param hospitalization_period The average duration of hospitalization in days.
      * @param days_undetected The average number of days an infected individual remains undetected.
@@ -25061,7 +25053,6 @@ public:
         const std::string & vname,
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
         epiworld_double transmission_rate,
         epiworld_double avg_incubation_days,
         epiworld_double recovery_rate,
@@ -25197,7 +25188,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_infected_list()
     for (auto & rate: adjusted_contact_rate)
     {
         if (rate > 0.0)
-            rate = Model<TSeq>::get_param("Contact rate") / rate;
+            rate = 1.0 / rate;
         else
             rate = 0.0;  // No available contacts in this group
 
@@ -25283,7 +25274,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // Checking contact matrix's rows add to one
+    // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
     if (this->contact_matrix.size() !=  nentities*nentities)
         throw std::length_error(
@@ -25296,7 +25287,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
-        double sum = 0.0;
         for (size_t j = 0u; j < this->entities.size(); ++j)
         {
             if (this->contact_matrix[MM(i, j, nentities)] < 0.0)
@@ -25305,14 +25295,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
                     std::to_string(this->contact_matrix[MM(i, j, nentities)]) +
                     std::string(" < 0.")
                     );
-            sum += this->contact_matrix[MM(i, j, nentities)];
         }
-        if (sum < 0.999 || sum > 1.001)
-            throw std::range_error(
-                std::string("The contact matrix must have rows that add to one. ") +
-                std::to_string(sum) +
-                std::string(" != 1.")
-                );
     }
 
     // Do it the first time only
@@ -25797,11 +25780,12 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m
  * @param vname Name of the virus
  * @param n Number of agents in the population
  * @param prevalence Initial prevalence (proportion of infected individuals)
- * @param contact_rate Average number of contacts (interactions) per step
  * @param transmission_rate Probability of transmission per contact
  * @param avg_incubation_days Average incubation period in days
  * @param recovery_rate Probability of recovery per day
- * @param contact_matrix Contact matrix specifying mixing patterns between population groups
+ * @param contact_matrix Contact matrix specifying expected contacts between groups.
+ * Each entry (i,j) represents the expected number of contacts an agent in
+ * group i has with agents in group j per day.
  * @param hospitalization_rate Rate at which infected individuals are hospitalized
  * @param hospitalization_period Average duration of hospitalization in days
  * @param days_undetected Average number of days an infected individual remains undetected
@@ -25817,7 +25801,6 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
     epiworld_double transmission_rate,
     epiworld_double avg_incubation_days,
     epiworld_double recovery_rate,
@@ -25839,7 +25822,6 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     this->contact_matrix = contact_matrix;
 
     // Setting up parameters
-    this->add_param(contact_rate, "Contact rate");
     this->add_param(transmission_rate, "Prob. Transmission");
     this->add_param(recovery_rate, "Prob. Recovery");
     this->add_param(avg_incubation_days, "Avg. Incubation days");
@@ -27868,15 +27850,17 @@ public:
     /**
      * @brief Constructs a ModelMeaslesMixingRiskQuarantine object.
      *
-     * @param n The number of entities in the model.
+     * @param n The number of agents in the model.
      * @param prevalence The initial prevalence of the disease in the model.
-     * @param contact_rate The contact rate between entities in the model.
      * @param transmission_rate The transmission rate of the disease in the model.
      * @param vax_efficacy The efficacy of the vaccine.
      * @param incubation_period The incubation period of the disease in the model.
      * @param prodromal_period The prodromal period of the disease in the model.
      * @param rash_period The rash period of the disease in the model.
      * @param contact_matrix The contact matrix between entities in the model.
+     * Specified in column-major order. Each entry (i,j) represents the
+     * expected number of contacts an agent in group i has with agents in
+     * group j per day.
      * @param hospitalization_rate The rate at which infected individuals are hospitalized.
      * @param hospitalization_period The average duration of hospitalization in days.
      * @param days_undetected The average number of days an infected individual remains undetected.
@@ -27894,7 +27878,6 @@ public:
     ModelMeaslesMixingRiskQuarantine(
         epiworld_fast_uint n,
         epiworld_double prevalence,
-        epiworld_double contact_rate,
         epiworld_double transmission_rate,
         epiworld_double vax_efficacy,
         epiworld_double incubation_period,
@@ -28071,7 +28054,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_infectious_list()
     for (auto & rate: adjusted_contact_rate)
     {
         if (rate > 0.0)
-            rate = Model<TSeq>::get_param("Contact rate") / rate;
+            rate = 1.0 / rate;
         else
             rate = 0.0;  // No available contacts in this group
 
@@ -28778,7 +28761,6 @@ template<typename TSeq>
 inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
     epiworld_double transmission_rate,
     epiworld_double vax_efficacy,
     epiworld_double incubation_period,
@@ -28806,7 +28788,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     this->contact_matrix = contact_matrix;
 
     // Setting up parameters
-    this->add_param(contact_rate, "Contact rate");
     this->add_param(transmission_rate, "Transmission rate");
     this->add_param(incubation_period, "Incubation period");
     this->add_param(prodromal_period, "Prodromal period");
@@ -28895,7 +28876,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // Checking contact matrix's rows add to one
+    // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
     if (this->contact_matrix.size() !=  nentities*nentities)
         throw std::length_error(
@@ -28908,7 +28889,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 
     for (size_t i = 0u; i < this->entities.size(); ++i)
     {
-        double sum = 0.0;
         for (size_t j = 0u; j < this->entities.size(); ++j)
         {
             if (this->contact_matrix[COL_MAJOR_POS(i, j, nentities)] < 0.0)
@@ -28917,14 +28897,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
                     std::to_string(this->contact_matrix[COL_MAJOR_POS(i, j, nentities)]) +
                     std::string(" < 0.")
                     );
-            sum += this->contact_matrix[COL_MAJOR_POS(i, j, nentities)];
         }
-        if (sum < 0.999 || sum > 1.001)
-            throw std::range_error(
-                std::string("The contact matrix must have rows that add to one. ") +
-                std::to_string(sum) +
-                std::string(" != 1.")
-                );
     }
 
     // Do it the first time only
