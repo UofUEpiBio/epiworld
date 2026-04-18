@@ -1,6 +1,11 @@
 name: MkDocs Documentation
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -34,7 +39,7 @@ jobs:
         run: mkdocs build
       
       - name: Upload artifact for GitHub Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
@@ -47,7 +52,7 @@ jobs:
           path: site/
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
     needs: build
     runs-on: ubuntu-latest
     environment:
