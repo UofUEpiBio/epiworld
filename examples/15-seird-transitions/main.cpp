@@ -19,7 +19,7 @@ int main()
 {
 
     // State codes (order of add_state calls)
-    constexpr epiworld_fast_uint S = 0u;
+    // constexpr epiworld_fast_uint S = 0u;
     constexpr epiworld_fast_uint E = 1u;
     constexpr epiworld_fast_uint I = 2u;
     constexpr epiworld_fast_uint R = 3u;
