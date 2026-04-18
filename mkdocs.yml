@@ -62,7 +62,6 @@ nav:
     - Extending the library with models: impl/3.1 Extending the Library with Models.md
     - Core Simulation Models: impl/4. Core Simulation Models.md
     - Queueing System: impl/5. Queueing System.md
-    - Random Graph Generation: impl/6. Random Graph Generation.md
     - Data Collection and Analysis: impl/7. Data Collection and Analysis.md
     - Random Number Generation and Statistical Functions: impl/8. Random Number Generation and Statistical Functions.md
     - Reproducibility and run_multiple: impl/9. Reproducibility and run_multiple.md

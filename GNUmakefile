@@ -200,7 +200,7 @@ $(ROOT_BUILD_DIR)/epiworld.hpp: $(ROOT_SOURCE_DIR)/script/amalgamate.pl
 clean: purge
 	@printf "Consider using '$(MAKE) purge' instead.\n"
 
-include docker/Makefile
+# include docker/Makefile
 
 helloworld.o: helloworld.cpp $(ROOT_BUILD_DIR)/epiworld.hpp
 	$(SAY) "CXX" $@
