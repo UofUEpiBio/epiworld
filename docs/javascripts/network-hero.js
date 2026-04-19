@@ -42,24 +42,26 @@
     }
 
     let particles = [];
+    let w = 0;
+    let h = 0;
 
     function resizeCanvas() {
       const ratio = Math.min(window.devicePixelRatio || 1, 2);
-      const width = hero.clientWidth;
-      const height = hero.clientHeight;
+      w = hero.clientWidth;
+      h = hero.clientHeight;
 
-      canvas.width = Math.floor(width * ratio);
-      canvas.height = Math.floor(height * ratio);
-      canvas.style.width = width + "px";
-      canvas.style.height = height + "px";
+      canvas.width = Math.floor(w * ratio);
+      canvas.height = Math.floor(h * ratio);
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
 
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     }
 
     class Particle {
       constructor() {
-        this.x = Math.random() * hero.clientWidth;
-        this.y = Math.random() * hero.clientHeight;
+        this.x = Math.random() * w;
+        this.y = Math.random() * h;
         this.vx = (Math.random() - 0.5) * config.speed * 2;
         this.vy = (Math.random() - 0.5) * config.speed * 2;
         this.radius = Math.random() * 2 + 1;
@@ -69,11 +71,11 @@
         this.x += this.vx;
         this.y += this.vy;
 
-        if (this.x < 0 || this.x > hero.clientWidth) {
+        if (this.x < 0 || this.x > w) {
           this.vx = -this.vx;
         }
 
-        if (this.y < 0 || this.y > hero.clientHeight) {
+        if (this.y < 0 || this.y > h) {
           this.vy = -this.vy;
         }
       }
@@ -114,7 +116,7 @@
     }
 
     function animate() {
-      ctx.clearRect(0, 0, hero.clientWidth, hero.clientHeight);
+      ctx.clearRect(0, 0, w, h);
 
       for (let i = 0; i < particles.length; i += 1) {
         particles[i].update();
@@ -137,7 +139,7 @@
       drawConnections();
     }
 
-    var onResize = function () {
+    const onResize = function () {
       resizeCanvas();
       initParticles();
     };
@@ -157,7 +159,7 @@
         resizeObserver = null;
       }
 
-      if (animationFrameId) {
+      if (animationFrameId !== null) {
         window.cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
       }
