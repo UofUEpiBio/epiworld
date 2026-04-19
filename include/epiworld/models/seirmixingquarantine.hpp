@@ -16,6 +16,7 @@
  *
  * This class implements a Susceptible-Exposed-Infected-Removed (SEIR) epidemiological model
  * with additional features including:
+ *
  * - Population mixing based on contact matrices
  * - Quarantine measures for exposed contacts
  * - Isolation policies for detected infected individuals
@@ -24,6 +25,7 @@
  * - Individual willingness to comply with public health measures
  *
  * The model supports 9 distinct states:
+ *
  * - Susceptible: Individuals who can become infected
  * - Exposed: Infected but not yet infectious (incubation period)
  * - Infected: Infectious individuals in the community

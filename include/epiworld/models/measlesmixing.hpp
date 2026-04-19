@@ -17,6 +17,7 @@
  *
  * This class implements a Measles epidemiological model based on the SEIR framework
  * with additional features including:
+ *
  * - Population mixing based on contact matrices
  * - Measles-specific disease progression: Susceptible → Latent → Prodromal → Rash
  * - Prodromal individuals are infectious (replace the "Infected" state in SEIR)
@@ -28,6 +29,7 @@
  * - Individual willingness to comply with public health measures
  *
  * The model supports 13 distinct states:
+ *
  * - Susceptible: Individuals who can become infected
  * - Latent: Infected but not yet infectious (incubation period)
  * - Prodromal: Infectious individuals in the community (replaces "Infected" in SEIR)

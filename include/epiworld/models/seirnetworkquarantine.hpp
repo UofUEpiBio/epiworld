@@ -18,6 +18,7 @@
  * iteration since only agents in contact with infected agents need updates.
  *
  * Features:
+ *
  * - Network-based contacts (via adjacency list, e.g., from agents_sbm())
  * - Quarantine measures for exposed contacts
  * - Isolation policies for detected infected individuals
@@ -27,6 +28,7 @@
  * - Queueing system support for computational efficiency
  *
  * The model supports 10 distinct states (identical to SEIRMixingQuarantine):
+ *
  * - Susceptible: Individuals who can become infected
  * - Exposed: Infected but not yet infectious (incubation period)
  * - Infected: Infectious individuals in the community
