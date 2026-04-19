@@ -432,3 +432,140 @@
     box-shadow: none;
   }
 }
+
+/* ── Interactive Playground ───────────────────────────────────────────────── */
+.epiworld-playground {
+  border: 1px solid rgba(164, 30, 69, 0.25);
+  border-radius: 0.625rem;
+  overflow: hidden;
+  margin: 1.5rem 0;
+  background: #1e1e2e;
+}
+
+.playground-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #a41e45 0%, #5d3875 100%);
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.playground-label {
+  font-weight: 600;
+  margin-right: auto;
+}
+
+.playground-status {
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin-right: 0.5rem;
+}
+
+.playground-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.playground-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.playground-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.playground-btn.is-loading {
+  animation: playground-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes playground-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.playground-editor {
+  display: block;
+  width: 100%;
+  min-height: 260px;
+  padding: 1rem;
+  margin: 0;
+  border: none;
+  outline: none;
+  resize: vertical;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  tab-size: 4;
+  white-space: pre;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.playground-editor:focus {
+  background: #1a1a2e;
+}
+
+.playground-output {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.playground-output-header {
+  padding: 0.4rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #a6adc8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.playground-output-content {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: #11111b;
+  color: #a6e3a1;
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.playground-output-content.has-error {
+  color: #f38ba8;
+}
+
+/* Light-mode adjustments for playground */
+[data-md-color-scheme="default"] .epiworld-playground {
+  border-color: rgba(164, 30, 69, 0.2);
+}
+
+/* Responsive playground */
+@media screen and (max-width: 768px) {
+  .playground-editor {
+    font-size: 0.78rem;
+    min-height: 200px;
+    padding: 0.75rem;
+  }
+  .playground-output-content {
+    font-size: 0.76rem;
+  }
+}
