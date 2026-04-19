@@ -10,6 +10,8 @@
  * or capture the disease).
  * 
  * @tparam TSeq 
+ * 
+ * @see [Queueing System](impl/queueing-system.md) for a detailed description of the queue optimization.
  */
 template<typename TSeq>
 class Queue

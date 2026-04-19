@@ -124,3 +124,10 @@ int main() {
 }
 ```
 
+## See Also
+
+- [Library Architecture](library-architecture.md) — the `Agent`/`Entity`/`Model` class hierarchy that new models inherit from.
+- [Extending the Library](extending-the-library.md) — defining custom agent behaviors, network structures, and global events.
+- [Core Simulation Models](core-simulation-models.md) — the full catalog of pre-built model templates.
+- [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the LIFO event queue system used during model execution.
+

@@ -23,6 +23,10 @@
  * - Rash individuals are no longer infectious but can be detected for isolation
  * - Quarantine measures for latent contacts during contact tracing
  * - Isolation policies for detected individuals during the rash state
+ * 
+ * @see [Mixing and Entity Distribution](impl/mixing-and-entity-distribution.md) for contact matrix details.
+ * @see [Quarantine, Isolation, and Contact Tracing](impl/quarantine-isolation-and-contact-tracing.md) for quarantine and isolation mechanisms.
+ * @see [Sampling Contacts](impl/sampling-contacts.md) for how contacts are drawn in mixing models.
  * - Contact tracing with configurable success rates
  * - Hospitalization of severe cases
  * - Individual willingness to comply with public health measures

@@ -166,3 +166,9 @@ lfmcmc.run(initial_params, n_samples, epsilon, 42);
 ```
 
 During the run, the module generates proposals, simulates data, evaluates kernel functions, and accepts or rejects proposals based on the Hastings ratio.
+
+## See Also
+
+- [Reproducibility and `run_multiple`](reproducibility-and-run-multiple.md) — seeding and reproducibility for simulation runs.
+- [Generation Interval and Reproductive Number Calculation](generation-interval-and-reproductive-number.md) — statistical functions (`dgenint`, `gen_int_mean`) that build on these distributions.
+- [Sampling Contacts](sampling-contacts.md) — how random distributions are used for contact sampling in mixing models.

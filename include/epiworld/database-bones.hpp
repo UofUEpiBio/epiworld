@@ -14,6 +14,9 @@ class UserData;
  * @brief Statistical data about the process
  *
  * @tparam TSeq
+ * 
+ * @see [Data Collection and Analysis](impl/data-collection-and-analysis.md) for recording, exporting, and analyzing simulation data.
+ * @see [Generation Interval and Reproductive Number Calculation](impl/generation-interval-and-reproductive-number.md) for the mathematical details behind reproductive numbers and generation times.
  */
 template<typename TSeq>
 class DataBase {

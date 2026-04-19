@@ -9,6 +9,10 @@
  * used in disease simulation and modeling. The models range from basic compartmental 
  * models to specialized scenarios including connected populations, population mixing, 
  * quarantine measures, and disease-specific implementations.
+ * 
+ * For implementation details, see:
+ * - [Core Simulation Models](impl/core-simulation-models.md) — constructors, parameters, and usage examples for all pre-built models.
+ * - [Extending the Library with Models](impl/extending-the-library-with-models.md) — how to create new models by inheriting from `Model`.
  */
 
 /**
@@ -18,6 +22,8 @@
  * 
  * These are the foundational compartmental models in epidemiology that divide 
  * populations into distinct states based on disease status.
+ * 
+ * @see [Core Simulation Models](impl/core-simulation-models.md) for detailed parameter descriptions and usage examples.
  */
 
 /**
@@ -27,6 +33,8 @@
  * 
  * Extended compartmental models that explicitly track mortality as a separate 
  * compartment in the disease progression.
+ * 
+ * @see [Core Simulation Models](impl/core-simulation-models.md) for detailed parameter descriptions and usage examples.
  */
 
 /**
@@ -36,6 +44,8 @@
  * 
  * Models designed for populations with explicit network connections between individuals, 
  * allowing for more realistic contact patterns.
+ * 
+ * @see [Core Simulation Models](impl/core-simulation-models.md) for detailed parameter descriptions and usage examples.
  */
 
 /**
@@ -45,6 +55,9 @@
  * 
  * Models that incorporate heterogeneous mixing patterns between different population 
  * groups or entities, often using contact matrices.
+ * 
+ * @see [Mixing and Entity Distribution](impl/mixing-and-entity-distribution.md) for contact matrix details and entity distribution functions.
+ * @see [Sampling Contacts](impl/sampling-contacts.md) for the binomial sampling optimization used in mixing models.
  */
 
 /**
@@ -54,6 +67,9 @@
  * 
  * Specialized implementations designed to capture the unique transmission dynamics 
  * and characteristics of specific infectious diseases.
+ * 
+ * @see [Core Simulation Models](impl/core-simulation-models.md) for model parameters.
+ * @see [Quarantine, Isolation, and Contact Tracing](impl/quarantine-isolation-and-contact-tracing.md) for quarantine mechanisms used in measles models.
  */
 
 /**
@@ -72,6 +88,9 @@
  * 
  * Helper functions and global event handlers that can be used across different 
  * epidemiological models for initialization and event management.
+ * 
+ * @see [Events and Multi-Event Handling](impl/events-and-multi-event-handling.md) for the event dispatch system.
+ * @see [Extending the Library](impl/extending-the-library.md) for custom global events and agent behaviors.
  */
 
 /**

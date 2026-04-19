@@ -25,6 +25,9 @@
  * - Hospitalization of severe cases
  * - Individual willingness to comply with public health measures
  * - Queueing system support for computational efficiency
+ * 
+ * @see [Quarantine, Isolation, and Contact Tracing](impl/quarantine-isolation-and-contact-tracing.md) for quarantine and isolation mechanisms.
+ * @see [Queueing System](impl/queueing-system.md) for the queue-based optimization used in this model.
  *
  * The model supports 10 distinct states (identical to SEIRMixingQuarantine):
  * - Susceptible: Individuals who can become infected
