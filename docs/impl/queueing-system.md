@@ -58,3 +58,9 @@ In this example:
 - The `queue[i]` method is used to check the activation status of an agent. Only active agents are processed.
 - The `-=` operator is used to remove an agent and its neighbors from the queue. This is useful for deactivating agents that no longer need to be processed.
 - The `reset` method is called at the start of a new simulation step to clear the queue and prepare it for the next round of processing.
+
+## See Also
+
+- [Library Architecture](library-architecture.md) — overview of the `Model` class that the `Queue` integrates with.
+- [Performance Optimization](performance-optimization.md) — broader strategies for improving simulation throughput.
+- [Extending the Library](extending-the-library.md) — custom agent state update functions that interact with the queue.

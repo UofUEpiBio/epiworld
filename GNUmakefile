@@ -207,3 +207,20 @@ helloworld.o: helloworld.cpp $(ROOT_BUILD_DIR)/epiworld.hpp
 readme.o: readme.cpp $(ROOT_BUILD_DIR)/epiworld.hpp
 	$(SAY) "CXX" $@
 	$(V)g++ -std=c++20 -O3 $< -o $@ && ./readme.o
+
+# ====================================================================
+# Docs
+.PHONY: setup-preview preview serve
+
+MKDOCS_SPEC = mkdocs<2
+MATERIAL_SPEC = mkdocs-material>=9.7.5,<10
+MKDOXY_SPEC = mkdoxy
+NO_MKDOCS_2_WARNING = 1
+
+setup-preview:
+	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) uv tool install '$(MKDOCS_SPEC)' --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)'
+
+preview: setup-preview
+	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) uv tool run --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)' mkdocs serve -a 0.0.0.0:8000
+
+serve: preview

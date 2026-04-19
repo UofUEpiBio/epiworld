@@ -87,3 +87,10 @@ for (size_t i = 0; i < date.size(); ++i) {
 ```
 
 This example retrieves the transmission network data and prints it to the console. Each transmission event is described by its date, source, target, and the virus involved.
+
+## See Also
+
+- [Library Architecture](library-architecture.md) — the `Model` class that owns and populates the `DataBase`.
+- [Reproducibility and `run_multiple`](reproducibility-and-run-multiple.md) — using saver callbacks with `run_multiple` to export data from repeated simulations.
+- [Extending the Library](extending-the-library.md) — custom data collection strategies using global events and `user_data`.
+- [Generation Interval and Reproductive Number Calculation](generation-interval-and-reproductive-number.md) — the mathematical details behind reproductive numbers and generation times computed by the database.

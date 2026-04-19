@@ -345,3 +345,11 @@ ModelSURV(
 - Combines vaccination, infection, recovery, and death within a surveillance system.  
 - Tracks detected versus undetected infections.  
 - Includes immunity reduction parameters and reinfection probabilities.
+
+## See Also
+
+- [Extending the Library with Models](extending-the-library-with-models.md) — how to create new models by inheriting from `Model`.
+- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices and entity distribution functions used by mixing models.
+- [Sampling Contacts](sampling-contacts.md) — how contacts are drawn in mixing models using binomial sampling.
+- [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — mechanisms for distributing viruses and tools to agents.
+- [Quarantine, Isolation, and Contact Tracing](quarantine-isolation-and-contact-tracing.md) — quarantine and isolation dynamics used by `SEIRMixingQuarantine` and related models.
