@@ -1,0 +1,434 @@
+/* ==========================================================================
+   Epiworld Custom Theme – Crimson-to-Purple palette from the logo
+   Primary:  #a41e45 (deep crimson/ruby)
+   Accent:   #5d3875 (deep purple)
+   Gradient: crimson → purple
+   ========================================================================== */
+
+/* ── Light mode colour overrides ──────────────────────────────────────────── */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color:        #a41e45;
+  --md-primary-fg-color--light: #c4325a;
+  --md-primary-fg-color--dark:  #8a1a3a;
+  --md-accent-fg-color:         #5d3875;
+  --md-accent-fg-color--transparent: rgba(93, 56, 117, 0.1);
+
+  /* Typeset links */
+  --md-typeset-a-color: #a41e45;
+}
+
+/* ── Dark mode colour overrides ───────────────────────────────────────────── */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:        #a41e45;
+  --md-primary-fg-color--light: #c4325a;
+  --md-primary-fg-color--dark:  #8a1a3a;
+  --md-accent-fg-color:         #9b6fbf;
+  --md-accent-fg-color--transparent: rgba(155, 111, 191, 0.1);
+
+  --md-typeset-a-color: #d4587a;
+}
+
+/* ── Header gradient ──────────────────────────────────────────────────────── */
+.md-header {
+  background: linear-gradient(135deg, #a41e45 0%, #5d3875 100%);
+}
+
+/* Tabs bar inherits the gradient but slightly darker */
+.md-tabs {
+  background: linear-gradient(135deg, #8a1a3a 0%, #4a2d5e 100%);
+}
+
+/* ── Hero section on homepage ─────────────────────────────────────────────── */
+.epiworld-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(135deg, #0f3a70 0%, #6b2d5c 50%, #be1e2d 100%);
+  color: #fff;
+  min-height: clamp(360px, 55vh, 560px);
+  padding: clamp(2.4rem, 5vw, 3.4rem) clamp(1.25rem, 4vw, 2.5rem);
+  border-radius: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.epiworld-hero .hero-text {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  text-align: left;
+}
+
+.epiworld-network-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.epiworld-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.2), transparent 35%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.12), transparent 40%);
+  pointer-events: none;
+}
+
+.epiworld-hero h1 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.epiworld-hero .hero-tagline {
+  font-size: 1.25rem;
+  font-weight: 400;
+  opacity: 0.92;
+  margin-bottom: 1.75rem;
+  max-width: 640px;
+}
+
+.epiworld-hero .hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.epiworld-hero .hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0.4rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.epiworld-hero .hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.epiworld-hero .hero-buttons a {
+  display: inline-block;
+  padding: 0.7rem 1.6rem;
+  border-radius: 0.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.epiworld-hero .hero-buttons a:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.epiworld-hero .btn-primary {
+  background: #fff;
+  color: #a41e45;
+}
+
+.epiworld-hero .btn-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 900px) {
+  .epiworld-hero {
+    min-height: 420px;
+  }
+
+  .epiworld-hero h1 {
+    font-size: 2.3rem;
+  }
+
+  .epiworld-hero .hero-tagline {
+    font-size: 1.08rem;
+  }
+}
+
+/* ── Language logos section ────────────────────────────────────────────────── */
+.lang-logos {
+  --logo-card-bg: rgba(164, 30, 69, 0.06);
+  --logo-card-border: rgba(164, 30, 69, 0.2);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 2.5rem 0;
+  padding: 1.25rem 0;
+}
+
+[data-md-color-scheme="slate"] .lang-logos {
+  --logo-card-bg: rgba(155, 111, 191, 0.09);
+  --logo-card-border: rgba(155, 111, 191, 0.35);
+}
+
+.lang-logos .lang-logos-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.lang-logos .lang-logo-card {
+  min-width: 220px;
+  max-width: 280px;
+  padding: 1rem 1.1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--logo-card-border);
+  background: var(--logo-card-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.lang-logos .lang-logo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+  border-color: var(--md-primary-fg-color);
+}
+
+.lang-logos .lang-logo-card img {
+  height: 60px;
+  width: auto;
+  display: block;
+  margin: 0 0 0.15rem;
+}
+
+.lang-logos .lang-logo-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--md-typeset-color);
+}
+
+.lang-logos .lang-logo-text {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--md-typeset-color);
+  opacity: 0.85;
+}
+
+/* ── Network illustration banner ──────────────────────────────────────────── */
+.network-banner {
+  text-align: center;
+  margin: 2rem 0;
+  padding: 1rem 0;
+}
+
+.network-banner img {
+  max-width: 100%;
+  height: auto;
+  max-height: 200px;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.network-banner img:hover {
+  opacity: 1;
+}
+
+/* ── Feature highlights on homepage ───────────────────────────────────────── */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.25rem;
+  margin: 2rem 0;
+}
+
+.feature-card {
+  background: linear-gradient(145deg, #a41e45, #5d3875);
+  color: #fff;
+  padding: 1.5rem;
+  border-radius: 0.625rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(164, 30, 69, 0.25);
+}
+
+.feature-card .feature-icon {
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.feature-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.feature-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.92;
+  line-height: 1.5;
+}
+
+/* ── Section cards (Documentation Sections) ───────────────────────────────── */
+.md-typeset .grid.cards > ol > li,
+.md-typeset .grid.cards > ul > li {
+  border: 1px solid rgba(164, 30, 69, 0.15);
+  border-radius: 0.625rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.md-typeset .grid.cards > ol > li:hover,
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: #a41e45;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(164, 30, 69, 0.12);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ol > li,
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li {
+  border-color: rgba(155, 111, 191, 0.2);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ol > li:hover,
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li:hover {
+  border-color: #9b6fbf;
+  box-shadow: 0 8px 24px rgba(93, 56, 117, 0.2);
+}
+
+/* ── Code blocks ──────────────────────────────────────────────────────────── */
+.md-typeset code {
+  border-radius: 0.25rem;
+}
+
+.md-typeset pre > code {
+  border-radius: 0.5rem;
+}
+
+/* ── Footer accent ────────────────────────────────────────────────────────── */
+.md-footer {
+  background: linear-gradient(135deg, #3a1028 0%, #2a1a3a 100%);
+}
+
+/* ── Admonition accent colours ────────────────────────────────────────────── */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: #a41e45;
+}
+
+.md-typeset .tip > .admonition-title,
+.md-typeset .tip > summary {
+  background-color: rgba(164, 30, 69, 0.1);
+}
+
+.md-typeset .tip > .admonition-title::before,
+.md-typeset .tip > summary::before {
+  background-color: #a41e45;
+}
+
+/* ── Navigation & sidebar accent ──────────────────────────────────────────── */
+.md-nav__link--active,
+.md-nav__link:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* ── Smooth content width ─────────────────────────────────────────────────── */
+.md-content {
+  max-width: none;
+}
+
+/* ── Hide permalink anchors inside hero & feature cards ────────────────────── */
+.epiworld-hero .headerlink,
+.feature-card .headerlink {
+  display: none;
+}
+
+/* ── Responsive hero ──────────────────────────────────────────────────────── */
+@media screen and (max-width: 768px) {
+  .epiworld-hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem 1.25rem;
+  }
+  .epiworld-hero .hero-text {
+    text-align: center;
+  }
+  .epiworld-hero .hero-badges {
+    justify-content: center;
+  }
+  .epiworld-hero .hero-buttons {
+    justify-content: center;
+  }
+  .epiworld-hero h1 {
+    font-size: 2rem;
+  }
+  .epiworld-hero .hero-tagline {
+    font-size: 1.05rem;
+  }
+  .epiworld-hero .hero-illustration {
+    flex: 0 0 auto;
+    max-width: 200px;
+  }
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+  .lang-logos {
+    gap: 0.75rem;
+  }
+  .lang-logos .lang-logos-row {
+    gap: 0.9rem;
+    width: 100%;
+  }
+  .lang-logos .lang-logo-card {
+    min-width: 0;
+    width: min(100%, 320px);
+  }
+  .lang-logos .lang-logo-card img {
+    height: 48px;
+  }
+}
+
+/* ── Respect reduced-motion preference ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .epiworld-hero .hero-buttons a,
+  .feature-card,
+  .md-typeset .grid.cards > ol > li,
+  .md-typeset .grid.cards > ul > li,
+  .lang-logos .lang-logo-card,
+  .network-banner img {
+    transition: none;
+  }
+
+  .epiworld-hero .hero-buttons a:hover,
+  .feature-card:hover,
+  .md-typeset .grid.cards > ol > li:hover,
+  .md-typeset .grid.cards > ul > li:hover,
+  .lang-logos .lang-logo-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
