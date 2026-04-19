@@ -14,7 +14,7 @@
 #include "../include/epiworld/epiworld.hpp"
 
 #ifndef NO_CATCH_MAIN
-    #include "../include/catch2/catch.hpp"
+    #include "../vendor/catch2/catch.hpp"
 #endif
 
 
