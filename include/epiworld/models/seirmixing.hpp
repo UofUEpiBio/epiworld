@@ -12,10 +12,11 @@
  * 
  * ![Model Diagram](../assets/img/seirmixing.png)
  * 
- * @ingroup mixing_models
+ * **Implementation details:**
+ * <a href="../impl/mixing-and-entity-distribution.md">Mixing and Entity Distribution</a>,
+ * <a href="../impl/sampling-contacts.md">Sampling Contacts</a>
  * 
- * @see [Mixing and Entity Distribution](impl/mixing-and-entity-distribution.md) for contact matrix details and entity distribution functions.
- * @see [Sampling Contacts](impl/sampling-contacts.md) for the binomial sampling optimization used in this model.
+ * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixing : public Model<TSeq>

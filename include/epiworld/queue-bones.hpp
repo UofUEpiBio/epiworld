@@ -9,9 +9,10 @@
  * checked. Otherwise it makes no sense (no chance to recover
  * or capture the disease).
  * 
- * @tparam TSeq 
+ * **Implementation details:**
+ * <a href="../impl/queueing-system.md">Queueing System</a>
  * 
- * @see [Queueing System](impl/queueing-system.md) for a detailed description of the queue optimization.
+ * @tparam TSeq 
  */
 template<typename TSeq>
 class Queue

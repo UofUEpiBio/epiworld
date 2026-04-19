@@ -39,9 +39,10 @@
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup mixing_models
  * 
- * @see [Quarantine, Isolation, and Contact Tracing](impl/quarantine-isolation-and-contact-tracing.md) for quarantine and isolation mechanisms.
- * @see [Mixing and Entity Distribution](impl/mixing-and-entity-distribution.md) for contact matrix details.
- * @see [Sampling Contacts](impl/sampling-contacts.md) for how contacts are drawn and how quarantine affects the available agent pool.
+ * **Implementation details:**
+ * <a href="../impl/quarantine-isolation-and-contact-tracing.md">Quarantine, Isolation, and Contact Tracing</a>,
+ * <a href="../impl/mixing-and-entity-distribution.md">Mixing and Entity Distribution</a>,
+ * <a href="../impl/sampling-contacts.md">Sampling Contacts</a>
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixingQuarantine : public Model<TSeq>

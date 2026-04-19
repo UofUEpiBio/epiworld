@@ -25,9 +25,6 @@
  * - Hospitalization of severe cases
  * - Individual willingness to comply with public health measures
  * - Queueing system support for computational efficiency
- * 
- * @see [Quarantine, Isolation, and Contact Tracing](impl/quarantine-isolation-and-contact-tracing.md) for quarantine and isolation mechanisms.
- * @see [Queueing System](impl/queueing-system.md) for the queue-based optimization used in this model.
  *
  * The model supports 10 distinct states (identical to SEIRMixingQuarantine):
  * - Susceptible: Individuals who can become infected
@@ -40,6 +37,10 @@
  * - Isolated Recovered: Recovered individuals still in isolation
  * - Hospitalized: Individuals requiring hospital care
  * - Recovered: Individuals who have recovered and gained immunity
+ *
+ * **Implementation details:**
+ * <a href="../impl/quarantine-isolation-and-contact-tracing.md">Quarantine, Isolation, and Contact Tracing</a>,
+ * <a href="../impl/queueing-system.md">Queueing System</a>
  *
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup connected_models
