@@ -21,3 +21,12 @@ In the epiworld codebase, "bones and meat" refers to a strict separation between
 The meat is the implementation that realizes those interfaces. Because the project is header-only, the meat also lives in headers, but it is kept apart from the interface. This includes method bodies, helper templates, algorithmic kernels, and any internal utilities that are not part of the supported API. Users include the bones (or even, ideally, just the root `epiworld.cpp`); the meat is pulled in transitively but is not intended to be referenced directly.
 
 This separation has a few practical effects. API stability and documentation focus on the bones, keeping the public surface small and predictable. The implementation can evolve—optimize algorithms, refactor helpers, add specializations—without breaking user code, as long as the bones remain consistent. Build behavior also benefits: declarations compile quickly, while the heavier template and inline definitions are isolated to implementation sections, reducing incidental coupling and making diffs and reviews more targeted.
+
+## See Also
+
+- [Performance Optimization](performance-optimization.md) — profiling, memory layout, and parallel execution strategies for the library.
+- [Extending the Library](extending-the-library.md) — how to define custom agent behaviors, network structures, and global events using the `Model` and `Agent` interfaces described here.
+- [Extending the Library with Models](extending-the-library-with-models.md) — creating new epidemiological models by inheriting from `Model`.
+- [Data Collection and Analysis](data-collection-and-analysis.md) — the `DataBase` class for recording simulation outputs.
+- [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the event dispatch system used by `Model` to schedule state changes.
+- [Queueing System](queueing-system.md) — the `Queue` optimization that selectively activates agents during simulation steps.

@@ -66,4 +66,12 @@ int main() {
 }
 ```
 
-To access this information, refer to the `DataBase` documentation.
+To access this information, refer to the [Data Collection and Analysis](data-collection-and-analysis.md) documentation.
+
+## See Also
+
+- [Library Architecture](library-architecture.md) — the `Model` class that provides `run` and `run_multiple`.
+- [Performance Optimization](performance-optimization.md) — OpenMP parallelization and throughput considerations.
+- [Extending the Library](extending-the-library.md) — defining custom saver callbacks for `run_multiple`.
+- [Data Collection and Analysis](data-collection-and-analysis.md) — the `DataBase` class used to record and export simulation outputs.
+- [Random Number Generation and Statistical Functions](random-number-generation.md) — seeding and random engine details.

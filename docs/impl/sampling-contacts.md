@@ -87,4 +87,9 @@ $$
 
 Therefore, for example, a vaccinated agent wearing a mask would have a factor of $1 - (1 - 0.30) \times (1 - 0.5) = 0.65$. The adjusted probabilities principle also applies to recovery rates in the SIR and SEIR models.
 
+## See Also
 
+- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices and entity distribution functions that define group interactions.
+- [Core Simulation Models](core-simulation-models.md) — the mixing and quarantine models that use this contact sampling approach.
+- [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — how virus transmission probabilities and tool adjustment factors are configured.
+- [Quarantine, Isolation, and Contact Tracing](quarantine-isolation-and-contact-tracing.md) — how quarantine mechanisms modify the available agent pool for contact sampling.

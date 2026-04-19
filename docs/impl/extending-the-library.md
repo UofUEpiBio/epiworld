@@ -156,3 +156,11 @@ model.run_multiple(100, 5, 123, custom_saver);
 By providing a custom function of type `std::function<void(size_t, Model<TSeq>*)>`, users can collect or export data in any desired format—CSV, binary, or in-memory. This design encourages users to treat data collection as part of the modeling logic rather than as a post-processing step.
 
 Overall, custom data collection in epiworld is best thought of as an open system rather than a closed reporting interface. The built-in database handles common epidemiological summaries automatically, but because the `Model` exposes its entire internal state, users can track virtually anything they need without modifying the core simulation engine, from degree distributions to conditional infection probabilities.
+
+## See Also
+
+- [Library Architecture](library-architecture.md) — the modular `Agent`/`Entity`/`Model` design that these extension points build on.
+- [Extending the Library with Models](extending-the-library-with-models.md) — creating new models via inheritance from `Model`.
+- [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the LIFO event dispatch system used by global events and state update functions.
+- [Data Collection and Analysis](data-collection-and-analysis.md) — the `DataBase` class and built-in recording mechanisms.
+- [Reproducibility and `run_multiple`](reproducibility-and-run-multiple.md) — using saver callbacks and parallel execution with `run_multiple`.

@@ -70,3 +70,10 @@ for (size_t i = 0; i < n_sampled; ++i) {
     std::cout << "Sampled agent ID: " << sampled_agents[i] << std::endl;
 }
 ```
+
+## See Also
+
+- [Core Simulation Models](core-simulation-models.md) — pre-built mixing models (`SIRMixing`, `SEIRMixing`, etc.) that use contact matrices and entity distribution.
+- [Sampling Contacts](sampling-contacts.md) — the binomial sampling optimization for drawing contacts from the contact matrix.
+- [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — analogous distribution functions for assigning viruses and tools to agents.
+- [Library Architecture](library-architecture.md) — the `Entity` class and its role in the simulation framework.
