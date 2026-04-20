@@ -435,11 +435,11 @@
 
 /* ── Interactive Playground ───────────────────────────────────────────────── */
 .epiworld-playground {
-  border: 1px solid rgba(164, 30, 69, 0.25);
+  border: 1px solid var(--md-code-bg-color, #e0e0e0);
   border-radius: 0.625rem;
   overflow: hidden;
   margin: 1.5rem 0;
-  background: #1e1e2e;
+  background: var(--md-code-bg-color);
 }
 
 .playground-toolbar {
@@ -499,35 +499,36 @@
 .playground-editor {
   display: block;
   width: 100%;
-  min-height: 260px;
   padding: 1rem;
   margin: 0;
   border: none;
   outline: none;
   resize: vertical;
-  background: #1e1e2e;
-  color: #cdd6f4;
-  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  background: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  font-family: var(--md-code-font-family, "Roboto Mono", monospace);
   font-size: 0.85rem;
   line-height: 1.6;
   tab-size: 4;
   white-space: pre;
-  overflow: auto;
+  overflow: hidden;
+  overflow-x: auto;
   box-sizing: border-box;
 }
 
 .playground-editor:focus {
-  background: #1a1a2e;
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: -2px;
 }
 
 .playground-output {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--md-default-fg-color--lightest, rgba(0,0,0,0.07));
 }
 
 .playground-output-header {
   padding: 0.4rem 0.75rem;
-  background: rgba(255, 255, 255, 0.04);
-  color: #a6adc8;
+  background: var(--md-code-bg-color);
+  color: var(--md-default-fg-color--light);
   font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -537,9 +538,9 @@
 .playground-output-content {
   margin: 0;
   padding: 0.75rem 1rem;
-  background: #11111b;
-  color: #a6e3a1;
-  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  background: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  font-family: var(--md-code-font-family, "Roboto Mono", monospace);
   font-size: 0.82rem;
   line-height: 1.55;
   white-space: pre-wrap;
@@ -550,19 +551,28 @@
 }
 
 .playground-output-content.has-error {
+  color: #d32f2f;
+}
+
+[data-md-color-scheme="slate"] .playground-output-content.has-error {
   color: #f38ba8;
 }
 
-/* Light-mode adjustments for playground */
-[data-md-color-scheme="default"] .epiworld-playground {
-  border-color: rgba(164, 30, 69, 0.2);
+.playground-flags-note {
+  margin: 0;
+  padding: 0.35rem 1rem;
+  background: var(--md-code-bg-color);
+  color: var(--md-default-fg-color--light);
+  font-family: var(--md-code-font-family, "Roboto Mono", monospace);
+  font-size: 0.75rem;
+  font-style: italic;
+  border-top: 1px solid var(--md-default-fg-color--lightest, rgba(0,0,0,0.07));
 }
 
 /* Responsive playground */
 @media screen and (max-width: 768px) {
   .playground-editor {
     font-size: 0.78rem;
-    min-height: 200px;
     padding: 0.75rem;
   }
   .playground-output-content {

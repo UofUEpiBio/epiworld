@@ -167,6 +167,11 @@
     return div.innerHTML;
   }
 
+  function autoResizeEditor(editor) {
+    editor.style.height = "auto";
+    editor.style.height = editor.scrollHeight + "px";
+  }
+
   function initPlayground(container) {
     var editor = container.querySelector(".playground-editor");
     var runBtn = container.querySelector(".playground-run");
@@ -180,6 +185,11 @@
     }
 
     var originalCode = editor.value;
+
+    autoResizeEditor(editor);
+    editor.addEventListener("input", function () {
+      autoResizeEditor(editor);
+    });
 
     function setStatus(msg) {
       if (statusEl) {
@@ -198,11 +208,32 @@
       }
     }
 
+    function ensureFlagsNote() {
+      var existing = container.querySelector(".playground-flags-note");
+      if (!existing) {
+        var note = document.createElement("div");
+        note.className = "playground-flags-note";
+        note.textContent =
+          "Compiled with: " +
+          CE_FLAGS +
+          " — performance is lower than optimized builds (e.g. -O2).";
+        outputWrap.appendChild(note);
+      }
+    }
+
+    function removeFlagsNote() {
+      var existing = container.querySelector(".playground-flags-note");
+      if (existing) {
+        existing.parentNode.removeChild(existing);
+      }
+    }
+
     runBtn.addEventListener("click", function () {
       var source = editor.value;
       outputWrap.style.display = "block";
       outputContent.textContent = "";
       outputContent.className = "playground-output-content";
+      removeFlagsNote();
       setRunning(true);
       setStatus("Fetching library & compiling…");
 
@@ -212,6 +243,7 @@
           if (result.hasError) {
             outputContent.classList.add("has-error");
           }
+          ensureFlagsNote();
           setStatus("");
         })
         .catch(function (err) {
@@ -227,9 +259,11 @@
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
         editor.value = originalCode;
+        autoResizeEditor(editor);
         outputWrap.style.display = "none";
         outputContent.textContent = "";
         outputContent.className = "playground-output-content";
+        removeFlagsNote();
         setStatus("");
       });
     }
