@@ -1,11 +1,12 @@
 #define N_DAYS 120
 
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 using namespace epiworld;
 
 struct TestResults {
-    epimodels::ModelMeaslesMixingRiskQuarantine<> model;
+    measles::ModelMeaslesMixingRiskQuarantine<> model;
     std::vector<epiworld_double> transitions;
     std::vector<epiworld_double> R0s;
     std::vector< std::vector< int > > final_distribution;
@@ -33,7 +34,7 @@ inline TestResults test_model_builder_20d(
     for (auto & value : contact_matrix)
         value *= c_rate;
 
-    epimodels::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine<> model(
         n,              // Number of agents
         0.1,            // Initial prevalence
         p_infect,       // Transmission rate
@@ -86,8 +87,8 @@ inline TestResults test_model_builder_20d(
     std::vector< double > final_sizes = test_compute_final_sizes(
         final_distribution,
         {
-            epimodels::ModelMeaslesMixingRiskQuarantine<>::SUSCEPTIBLE,
-            epimodels::ModelMeaslesMixingRiskQuarantine<>::QUARANTINED_SUSCEPTIBLE
+            measles::ModelMeaslesMixingRiskQuarantine<>::SUSCEPTIBLE,
+            measles::ModelMeaslesMixingRiskQuarantine<>::QUARANTINED_SUSCEPTIBLE
         },
         nsims,
         true

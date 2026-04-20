@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 #define calc_r0(ans_observed, ans_expected, r0, model) \
     double (ans_observed) = std::accumulate(r0.begin(), r0.end(), 0.0); \
@@ -17,7 +18,7 @@ EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesSchoolR0]") {
     int n_threads = 2;
     int n_days = 90;
     size_t nsims = 400;
-    epimodels::ModelMeaslesSchool<> model_0(
+    measles::ModelMeaslesSchool<> model_0(
         5000,    // Number of agents
         n_seeds, // Number of initial cases
         2.5,     // Contact rate

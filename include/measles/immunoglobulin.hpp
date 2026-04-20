@@ -1,12 +1,12 @@
 #ifndef EPIWORLD_TOOLS_IMMUNOGLOBULIN_HPP
 #define EPIWORLD_TOOLS_IMMUNOGLOBULIN_HPP
 
+using namespace epiworld;
+
 #include <memory>
 #include <vector>
 #include <cassert>
 #include <string_view>
-#include "../config.hpp"
-#include "../tool-bones.hpp"
 
 /**
  * @brief Template for a common Immunoglobulin tool.

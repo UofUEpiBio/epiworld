@@ -1,10 +1,10 @@
 #ifndef EPIWORLD_INTERVENTIONMEASLESPEP_MEAT_HPP
 #define EPIWORLD_INTERVENTIONMEASLESPEP_MEAT_HPP
 
+using namespace epiworld;
+
 #include "interventionmeaslespep-bones.hpp"
-#include "../tools/vaccine.hpp"
-#include "../tools/immunoglobulin.hpp"
-#include "quarantinetrigger-bones.hpp"
+#include "immunoglobulin.hpp"
 
 template<typename TSeq>
 inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(

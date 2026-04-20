@@ -1,7 +1,8 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 using namespace epiworld;
-using MS = epimodels::ModelMeaslesSchool<>;
+using MS = measles::ModelMeaslesSchool<>;
 
 namespace {
 
@@ -33,7 +34,7 @@ MS make_measles_model(int n_seeds, bool with_pep)
 
     if (with_pep)
     {
-        epimodels::InterventionMeaslesPEP<> pep(
+        measles::InterventionMeaslesPEP<> pep(
             "Post-exposure prophylaxis for measles",
             1.0,       // PEP MMR efficacy
             1.0,       // PEP IG efficacy

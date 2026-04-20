@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 using namespace epiworld;
 
@@ -16,7 +17,7 @@ EPIWORLD_TEST_CASE(
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix(9u, 2.0/3.0);
 
-    epimodels::ModelMeaslesMixing<> model_0(
+    measles::ModelMeaslesMixing<> model_0(
         900,        // Number of agents
         n_seeds / 900.0, // Initial prevalence
         0.2,         // Transmission rate
@@ -67,8 +68,8 @@ EPIWORLD_TEST_CASE(
 
     // Looking at the final outbreak size
     std::vector< size_t > not_infected_states = {
-        epimodels::ModelMeaslesMixing<>::SUSCEPTIBLE,
-        epimodels::ModelMeaslesMixing<>::QUARANTINED_SUSCEPTIBLE
+        measles::ModelMeaslesMixing<>::SUSCEPTIBLE,
+        measles::ModelMeaslesMixing<>::QUARANTINED_SUSCEPTIBLE
     };
 
     auto stats_with_quarantine = test_compute_prob_outbreak_gt_k(

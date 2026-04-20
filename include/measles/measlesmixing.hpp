@@ -1,8 +1,7 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXING_HPP
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
 
-#include "../tools/vaccine.hpp"
-#include "../model-bones.hpp"
+using namespace epiworld;
 
 #define MM(i, j, n) \
     j * n + i
@@ -1010,7 +1009,7 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 {
 
     Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
+        epimodels::create_init_function_seir<TSeq>(proportions_)
         ;
 
     return *this;

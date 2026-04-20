@@ -1,12 +1,14 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
+
 
 using namespace epiworld;
-using MS = epimodels::ModelMeaslesSchool<>;
+using MS = measles::ModelMeaslesSchool<>;
 
 EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     int n_seeds = 1;
-    epimodels::ModelMeaslesSchool<> model_0(
+    measles::ModelMeaslesSchool<> model_0(
         1000,    // Number of agents
         n_seeds, // Number of initial cases
         20.0,     // Contact rate
@@ -27,7 +29,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     // Creating the PEP intervention and 
     // setting it up so we can call it as a global event.
-    epimodels::InterventionMeaslesPEP<> pep(
+    measles::InterventionMeaslesPEP<> pep(
         "Post-exposure prophylaxis for measles", // Name of the intervention
         1.0,       // "PEP MMR efficacy"
         1.0,       // "PEP IG efficacy"

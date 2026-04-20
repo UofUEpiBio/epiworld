@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 using namespace epiworld;
 
@@ -24,7 +25,7 @@ EPIWORLD_TEST_CASE(
     
     // Using the same model configuration as 14a-measles.cpp
     int n_seeds = 5;  // More seeds for larger outbreaks
-    epimodels::ModelMeaslesSchool<> model(
+    measles::ModelMeaslesSchool<> model(
         500,    // Number of agents
         n_seeds, // Number of initial cases
         2.0,     // Contact rate

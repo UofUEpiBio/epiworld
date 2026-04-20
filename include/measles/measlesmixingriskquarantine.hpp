@@ -2,8 +2,7 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
-#include "../tools/vaccine.hpp"
-#include "../model-bones.hpp"
+using namespace epiworld;
 
 #define COL_MAJOR_POS(i, j, n) \
     (j * n + i)
@@ -1254,7 +1253,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine
 {
 
     Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
+        epimodels::create_init_function_seir<TSeq>(proportions_)
         ;
 
     return *this;
