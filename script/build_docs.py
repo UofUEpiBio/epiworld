@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -154,6 +155,16 @@ def require_command(name: str) -> str:
     if not found:
         raise SystemExit(f"required command not found in PATH: {name}")
     return found
+
+
+def detect_compiler_target(cxx: str) -> str:
+    for args in ([cxx, "--print-target-triple"], [cxx, "-dumpmachine"]):
+        result = subprocess.run(args, text=True, capture_output=True, check=False)
+        if result.returncode == 0:
+            target = result.stdout.strip()
+            if target:
+                return target.lower()
+    return ""
 
 
 def parse_markdown(source: Path) -> tuple[dict, str]:
@@ -352,16 +363,46 @@ def prepare_compile_database(cxx: str) -> Path:
     build_input = BUILD_DIR / "mrdocs-input"
     build_input.mkdir(parents=True, exist_ok=True)
 
-    headers = sorted((ROOT / "include" / "epiworld").rglob("*.hpp"))
-    if not headers:
-        raise SystemExit("no headers found under include/epiworld")
+    umbrella_header = ROOT / "epiworld.hpp"
+    if not umbrella_header.exists():
+        raise SystemExit("epiworld.hpp was not found at the repository root")
 
     include_file = build_input / "all_headers.cpp"
-    include_lines = ['// Generated for MrDocs\n']
-    for header in headers:
-        rel = header.relative_to(ROOT / "include").as_posix()
-        include_lines.append(f'#include "{rel}"')
-    include_file.write_text("\n".join(include_lines) + "\n", encoding="utf-8")
+    include_file.write_text(
+        textwrap.dedent(
+            """\
+            // Generated for MrDocs.
+            //
+            // This project relies on the top-level epiworld.hpp umbrella header
+            // to pull in standard-library headers, configuration macros, and the
+            // internal header ordering expected by the library.
+            #include "epiworld.hpp"
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    extra_flags: list[str] = []
+    runtime_machine = platform.machine().lower()
+    compiler_target = detect_compiler_target(cxx)
+
+    if compiler_target.startswith(("aarch64", "arm64")):
+        # MrDocs uses its embedded Clang frontend to consume the compilation
+        # database. That parser does not inherit the default target triple of
+        # the system clang++ binary, so we need to pass the target explicitly.
+        extra_flags.extend(["-target", compiler_target])
+
+        # On aarch64 Linux, glibc's math headers may expose SVE builtin types
+        # such as __SVFloat32_t. Clang only provides those types when SVE is
+        # enabled for the translation unit, so advertise a generic SVE-capable
+        # target for the synthetic MrDocs parse step.
+        extra_flags.append("-march=armv8-a+sve")
+    elif runtime_machine in {"aarch64", "arm64"}:
+        # Some container images expose an ARM userland while the default Clang
+        # target still resolves to a non-ARM architecture. Fall back to a
+        # generic Linux AArch64 triple so the synthetic parse step matches the
+        # running environment.
+        extra_flags.extend(["-target", "aarch64-linux-gnu", "-march=armv8-a+sve"])
 
     command = " ".join(
         [
@@ -369,6 +410,7 @@ def prepare_compile_database(cxx: str) -> Path:
             "-std=c++20",
             f"-I{(ROOT / 'include').as_posix()}",
             f"-I{ROOT.as_posix()}",
+            *extra_flags,
             "-c",
             include_file.as_posix(),
         ]
@@ -409,9 +451,7 @@ def prepare_addons(mrdocs: Path) -> Path:
     if addons_target.exists():
         shutil.rmtree(addons_target)
     copy_tree(locate_default_addons(mrdocs), addons_target)
-    wrapper_target = addons_target / "generator" / "html" / "layouts" / "wrapper.html.hbs"
-    wrapper_target.parent.mkdir(parents=True, exist_ok=True)
-    wrapper_target.write_text(MRDOCS_WRAPPER.read_text(encoding="utf-8"), encoding="utf-8")
+    copy_tree(MRDOCS_OVERRIDES, addons_target)
     return addons_target
 
 

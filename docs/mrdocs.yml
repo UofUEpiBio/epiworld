@@ -3,14 +3,27 @@
 
 source-root: ..
 input:
-  - ../include/epiworld
+  - ..
 file-patterns:
+  - 'epiworld.hpp'
   - '*.hpp'
+exclude:
+  - ../docs
+  - ../examples
+  - ../tests
+  - ../vendor
+  - ../paper
+  - ../build
+  - ../site
+include-symbols:
+  - 'epiworld'
+  - 'epiworld::**'
+  - 'epiworld_version'
 generator: html
 multipage: true
 legible-names: true
 show-namespaces: true
 show-enum-constants: true
-use-system-stdlib: true
-use-system-libc: true
-base-url: https://github.com/UofUEpiBio/epiworld/blob/master
+use-system-stdlib: false
+use-system-libc: false
+base-url: https://github.com/UofUEpiBio/epiworld/blob/master/
