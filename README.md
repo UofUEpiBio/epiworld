@@ -19,7 +19,7 @@ building complex models quickly. Here are some of its main features:
   - Multiple tools and viruses can live in the same simulation.
   - It is *FAST*: Over 150 Million person/day simulations per second (see example below).
 
-Various examples can be found in the [examples](https://github.com/UofUEpiBio/epiworld/tree/master/examples) folder.
+Various examples can be found in the [examples](https://github.com/UofUEpiBio/epiworld/tree/master/examples) folder. This repository also hosts the `measles` library, which extends `epiworld` with Measles-specific models. The library is available under [`include/measles`](./include/measles/).
 
 ## Hello world
 

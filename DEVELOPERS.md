@@ -227,22 +227,23 @@ epiworld/
 ├── GNUmakefile              # Main build entry point
 ├── epiworld.hpp             # Single-header amalgamated library
 ├── include/                 # Header files
-│   └── epiworld/           # Core library headers
+│   └── epiworld/            # Core library headers
+|   └── measles/             # Measles headers
 ├── tests/                   # Default test suite package
-│   ├── Makefile            # Test configuration
-│   ├── main.cpp            # Test runner main
-│   └── *.cpp               # Individual test files
+│   ├── Makefile             # Test configuration
+│   ├── main.cpp             # Test runner main
+│   └── *.cpp                # Individual test files
 ├── examples/                # Example programs package
-│   ├── Makefile            # Examples configuration
-│   └── */                  # Individual examples
+│   ├── Makefile             # Examples configuration
+│   └── */                   # Individual examples
 ├── share/mk/                # Build system modules
 ├── script/                  # Build scripts
-│   ├── amalgamate.pl       # Header amalgamation
-│   ├── test-gen-runner.pl  # Test runner generation
-│   └── junit-*.pl          # Test reporting scripts
+│   ├── amalgamate.pl        # Header amalgamation
+│   ├── test-gen-runner.pl   # Test runner generation
+│   └── junit-*.pl           # Test reporting scripts
 └── build/                   # Build output (mirrors source structure)
-    ├── tests/              # Built artifacts from tests/
-    └── examples/           # Built artifacts from examples/
+    ├── tests/               # Built artifacts from tests/
+    └── examples/            # Built artifacts from examples/
 ```
 
 **Note**: The build directory structure mirrors the source structure. Any package at `<path>/` produces build artifacts at `build/<path>/`.
