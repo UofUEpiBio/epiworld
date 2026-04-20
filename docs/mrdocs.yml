@@ -1,0 +1,16 @@
+# $schema: https://www.schemastore.org/mrdocs.json
+# yaml-language-server: $schema=https://www.schemastore.org/mrdocs.json
+
+source-root: ..
+input:
+  - ../include/epiworld
+file-patterns:
+  - '*.hpp'
+generator: html
+multipage: true
+legible-names: true
+show-namespaces: true
+show-enum-constants: true
+use-system-stdlib: true
+use-system-libc: true
+base-url: https://github.com/UofUEpiBio/epiworld/blob/master

@@ -1,8 +1,10 @@
 # API Reference
 
-This section contains the complete API reference documentation for Epiworld, automatically generated from the source code documentation.
+This section contains the generated C++ API reference for Epiworld.
 
-The API documentation is organized by namespace and class hierarchy. Navigate through the sections using the sidebar to explore different components of the library.
+The reference is generated with MrDocs directly from the library headers, so the
+pages track the current C++ declarations and comments rather than a separate
+hand-maintained API layer.
 
 ## Main Components
 
@@ -12,4 +14,8 @@ The API documentation is organized by namespace and class hierarchy. Navigate th
 - **Viruses**: Disease agents with configurable properties
 - **Entities**: Groups or populations in the simulation
 
-For more details, explore the generated API documentation.
+## Open the Generated Reference
+
+- [Browse the MrDocs reference index](reference/index.html)
+- [See the built-in model families](../models/index.html)
+- [Read the implementation guides](../impl/index.html)

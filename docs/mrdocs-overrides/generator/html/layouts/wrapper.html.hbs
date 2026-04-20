@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{#if @root.config.multipage }}
+<title>{{symbol.name}} | Epiworld API</title>
+{{else}}
+<title>Epiworld API</title>
+{{/if}}
+<meta name="description" content="Generated C++ API reference for epiworld.">
+<link rel="icon" href="{{{relativize "/assets/branding/epiworld.png"}}}">
+<link rel="stylesheet" href="{{{relativize "/stylesheets/extra.css"}}}">
+<script defer src="{{{relativize "/javascripts/site.js"}}}"></script>
+</head>
+<body class="epiworld-docs page-api-reference">
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="site-brand" href="{{{relativize "/index.html"}}}">
+      <img src="{{{relativize "/assets/branding/epiworld.png"}}}" alt="Epiworld logo">
+      <span>Epiworld Docs</span>
+    </a>
+    <button class="site-nav-toggle" type="button" aria-expanded="false" aria-controls="site-sidebar">Menu</button>
+    <nav class="site-topnav" aria-label="Primary">
+      <a href="{{{relativize "/index.html"}}}">Home</a>
+      <a href="{{{relativize "/models/index.html"}}}">Models</a>
+      <a href="{{{relativize "/api/index.html"}}}">API</a>
+      <a href="{{{relativize "/impl/index.html"}}}">Implementation</a>
+      <a href="https://github.com/UofUEpiBio/epiworld">GitHub</a>
+    </nav>
+  </div>
+</header>
+<div class="site-layout">
+  <aside class="site-sidebar" id="site-sidebar">
+    <nav class="site-sidebar-nav" aria-label="Documentation">
+      <div class="site-sidebar-group">
+        <p class="site-sidebar-heading">Sections</p>
+        <ul>
+          <li><a href="{{{relativize "/index.html"}}}">Home</a></li>
+          <li><a href="{{{relativize "/models/index.html"}}}">Models</a></li>
+          <li class="is-active"><a href="{{{relativize "/api/index.html"}}}">API Reference</a></li>
+          <li><a href="{{{relativize "/impl/index.html"}}}">Implementation</a></li>
+        </ul>
+      </div>
+      <div class="site-sidebar-group">
+        <p class="site-sidebar-heading">API</p>
+        <ul>
+          <li><a href="{{{relativize "/api/index.html"}}}">Overview</a></li>
+          <li><a href="{{{relativize "/api/reference/index.html"}}}">Reference Index</a></li>
+        </ul>
+      </div>
+    </nav>
+  </aside>
+  <main class="site-main">
+    <article class="content-card api-reference-card">
+      {{{contents}}}
+    </article>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>Built with MrDocs for the generated C++ reference.</p>
+    <a href="https://github.com/UofUEpiBio/epiworld">UofUEpiBio/epiworld</a>
+  </div>
+</footer>
+</body>
+</html>

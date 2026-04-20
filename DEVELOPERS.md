@@ -21,7 +21,7 @@ The project requires:
 - Perl (for build scripts)
 - Optional: OpenMP support
 - Optional: Code coverage tools (lcov)
-- Optional: Doxygen (for documentation)
+- Optional: MrDocs and pandoc (for documentation)
 
 ## Build System Overview
 
