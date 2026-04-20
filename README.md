@@ -1,5 +1,5 @@
 [![Tests and coverage](https://github.com/UofUEpi/epiworld/actions/workflows/test.yml/badge.svg)](https://github.com/UofUEpi/epiworld/actions/workflows/test.yml)
-[![C++ Documentation](https://img.shields.io/badge/Docs-Doxygen-brightgreen)](https://UofUEpi.github.io/epiworld)
+[![C++ Documentation](https://img.shields.io/badge/Docs-MrDocs-brightgreen)](https://UofUEpi.github.io/epiworld)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/UofUEpiBio/epiworld)
 ![GitHub Release](https://img.shields.io/github/v/release/UofUEpiBio/epiworld)
 [![codecov](https://codecov.io/gh/UofUEpiBio/epiworld/graph/badge.svg?token=CPDYG4HA0B)](https://codecov.io/gh/UofUEpiBio/epiworld)

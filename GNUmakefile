@@ -14,8 +14,6 @@ CC  ?= cc
 CXX ?= c++
 
 # Non-critical tooling.
-DOXYGEN            ?= doxygen
-MKDOCS             ?= mkdocs
 LCOV               ?= lcov
 VALGRIND           ?= valgrind
 CALLGRIND_ANNOTATE ?= callgrind_annotate
@@ -210,17 +208,17 @@ readme.o: readme.cpp $(ROOT_BUILD_DIR)/epiworld.hpp
 
 # ====================================================================
 # Docs
-.PHONY: setup-preview preview serve
+.PHONY: docs setup-preview preview serve
 
-MKDOCS_SPEC = mkdocs<2
-MATERIAL_SPEC = mkdocs-material>=9.7.5,<10
-MKDOXY_SPEC = mkdoxy
-NO_MKDOCS_2_WARNING = 1
+docs:
+	python3 script/build_docs.py
 
 setup-preview:
-	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) uv tool install '$(MKDOCS_SPEC)' --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)'
+	@command -v python3 >/dev/null || (echo "python3 is required" && exit 1)
+	@command -v pandoc >/dev/null || (echo "pandoc is required" && exit 1)
+	@command -v mrdocs >/dev/null || (echo "mrdocs is required" && exit 1)
 
-preview: setup-preview
-	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) uv tool run --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)' mkdocs serve -a 0.0.0.0:8000
+preview: setup-preview docs
+	python3 -m http.server 8000 --directory site
 
 serve: preview

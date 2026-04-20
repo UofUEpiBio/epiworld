@@ -12,7 +12,7 @@ The epiworld library is structured around a modular architecture that models pop
 | `benchmark/`   | Performance benchmarks                                             |
 | `docs/`        | User documentation, model descriptions, perhaps architecture notes |
 | `epiworld.hpp` | The pre-built, pre-packaged "monoheader" for epiworld.             |
-There are files at the root of the repository (e.g. `Makefile`, `Doxyfile`), but these should be mostly self explanatory, and/or stock. Usage is header-only, with template-based implementations in `epiworld.hpp` (or in files under `include/`). The library depends only on the C++ standard library (since it is a header-only template library); the `catch2` library is used in the unit tests (which are not required under normal operation).
+There are files at the root of the repository (e.g. `GNUmakefile`, `README.md`, and the documentation build scripts), but these should be mostly self explanatory. Usage is header-only, with template-based implementations in `epiworld.hpp` (or in files under `include/`). The library depends only on the C++ standard library (since it is a header-only template library); the `catch2` library is used in the unit tests (which are not required under normal operation).
 
 ## Bones and Meat
 

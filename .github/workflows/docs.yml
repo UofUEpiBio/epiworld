@@ -1,4 +1,4 @@
-name: MkDocs Documentation
+name: Documentation
 
 on:
   pull_request:
@@ -27,23 +27,25 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-      
-      - name: Install dependencies
+          python-version: "3.x"
+
+      - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y doxygen graphviz
-          pip install mkdocs mkdocs-material mkdoxy
-      
-      - name: Build MkDocs site
-        run: mkdocs build
-      
+          sudo apt-get install -y pandoc
+          curl -L --fail --output /tmp/mrdocs.tar.xz https://github.com/cppalliance/mrdocs/releases/download/v0.8.0/MrDocs-0.8.0-Linux.tar.xz
+          tar -xf /tmp/mrdocs.tar.xz -C /tmp
+          echo "/tmp/MrDocs-0.8.0-Linux/bin" >> "$GITHUB_PATH"
+
+      - name: Build documentation site
+        run: python3 script/build_docs.py
+
       - name: Upload artifact for GitHub Pages
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
-      
+
       - name: Upload artifact for preview
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
