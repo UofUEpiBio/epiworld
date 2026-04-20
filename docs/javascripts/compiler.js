@@ -4,8 +4,8 @@
   var HEADER_URL =
     "https://raw.githubusercontent.com/UofUEpiBio/epiworld/main/epiworld.hpp";
   var CE_API_BASE = "https://godbolt.org/api";
-  var CE_COMPILER = "g132";
-  var CE_FLAGS = "-std=c++17 -O2";
+  var CE_COMPILERS = ["g141", "g132", "g122"];
+  var CE_FLAGS = "-std=c++17 -O0";
 
   var headerCache = null;
 
@@ -16,133 +16,149 @@
     return fetch(HEADER_URL)
       .then(function (response) {
         if (!response.ok) {
-          throw new Error("Failed to fetch epiworld.hpp: " + response.status);
+          throw new Error(
+            "Could not download epiworld.hpp from GitHub (HTTP " +
+              response.status +
+              "). Check your network connection."
+          );
         }
         return response.text();
       })
       .then(function (text) {
+        if (text.length < 1000 || text.indexOf("EPIWORLD_HPP") === -1) {
+          throw new Error(
+            "Downloaded file does not look like epiworld.hpp. " +
+              "GitHub may be rate-limiting requests."
+          );
+        }
         headerCache = text;
         return text;
       });
   }
 
-  function inlineHeader(source, header) {
-    return source.replace(
-      /^\s*#include\s*["<]epiworld\.hpp[">]\s*$/m,
-      header
-    );
+  function tryCompile(source, header, compilerIdx) {
+    if (compilerIdx >= CE_COMPILERS.length) {
+      return Promise.reject(
+        new Error(
+          "No working compiler found on Compiler Explorer. " +
+            "The service may be temporarily unavailable."
+        )
+      );
+    }
+
+    var compiler = CE_COMPILERS[compilerIdx];
+
+    return fetch(CE_API_BASE + "/compiler/" + compiler + "/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        source: source,
+        options: {
+          userArguments: CE_FLAGS,
+          executeParameters: { args: "", stdin: "" },
+          compilerOptions: { executorRequest: true },
+          filters: { execute: true },
+        },
+        files: [{ filename: "epiworld.hpp", contents: header }],
+      }),
+    }).then(function (response) {
+      if (response.status === 404) {
+        return tryCompile(source, header, compilerIdx + 1);
+      }
+      if (!response.ok) {
+        throw new Error(
+          "Compiler Explorer returned HTTP " +
+            response.status +
+            " (compiler: " +
+            compiler +
+            ")."
+        );
+      }
+      return response.json();
+    });
+  }
+
+  function extractOutput(data) {
+    var lines = [];
+    var hasError = false;
+
+    function collectLines(arr) {
+      if (!Array.isArray(arr)) return "";
+      return arr
+        .map(function (l) {
+          return l.text;
+        })
+        .join("\n")
+        .trim();
+    }
+
+    if (data.buildResult && data.buildResult.stderr) {
+      var s = collectLines(data.buildResult.stderr);
+      if (s) {
+        lines.push(s);
+        hasError = true;
+      }
+    }
+
+    if (data.stderr) {
+      var s2 = collectLines(data.stderr);
+      if (s2) {
+        lines.push(s2);
+        hasError = true;
+      }
+    }
+
+    if (data.stdout) {
+      lines.push(collectLines(data.stdout));
+    }
+
+    if (data.execResult) {
+      var er = data.execResult;
+      if (er.buildResult && er.buildResult.stderr) {
+        var s3 = collectLines(er.buildResult.stderr);
+        if (s3) {
+          lines.push(s3);
+          hasError = true;
+        }
+      }
+      if (er.stderr) {
+        var s4 = collectLines(er.stderr);
+        if (s4) {
+          lines.push(s4);
+        }
+      }
+      if (er.stdout) {
+        lines.push(collectLines(er.stdout));
+      }
+      if (typeof er.code === "number" && er.code !== 0 && !hasError) {
+        lines.push("(process exited with code " + er.code + ")");
+        hasError = true;
+      }
+    }
+
+    var output = lines
+      .filter(function (l) {
+        return l;
+      })
+      .join("\n")
+      .trim();
+
+    if (!output) {
+      output = hasError
+        ? "Compilation failed with no output. The source may be too large for Compiler Explorer."
+        : "(no output)";
+    }
+
+    return { output: output, hasError: hasError };
   }
 
   function compileAndRun(source) {
-    return fetchHeader()
-      .then(function (header) {
-        var fullSource = inlineHeader(source, header);
-        return fetch(CE_API_BASE + "/compiler/" + CE_COMPILER + "/compile", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            source: fullSource,
-            options: {
-              userArguments: CE_FLAGS,
-              executeParameters: { args: "", stdin: "" },
-              compilerOptions: { executorRequest: true },
-              filters: {
-                execute: true,
-              },
-            },
-          }),
-        });
-      })
-      .then(function (response) {
-        if (!response.ok) {
-          throw new Error("Compiler Explorer returned " + response.status);
-        }
-        return response.json();
-      })
-      .then(function (data) {
-        var output = "";
-        var hasError = false;
-
-        if (data.buildResult && data.buildResult.stderr) {
-          var buildErrors = data.buildResult.stderr
-            .map(function (l) {
-              return l.text;
-            })
-            .join("\n")
-            .trim();
-          if (buildErrors) {
-            output += buildErrors + "\n";
-            hasError = true;
-          }
-        }
-
-        if (data.stderr) {
-          var stderr = data.stderr
-            .map(function (l) {
-              return l.text;
-            })
-            .join("\n")
-            .trim();
-          if (stderr) {
-            output += stderr + "\n";
-            hasError = true;
-          }
-        }
-
-        if (data.stdout) {
-          output += data.stdout
-            .map(function (l) {
-              return l.text;
-            })
-            .join("\n");
-        }
-
-        if (data.execResult) {
-          if (data.execResult.buildResult && data.execResult.buildResult.stderr) {
-            var execBuildErr = data.execResult.buildResult.stderr
-              .map(function (l) {
-                return l.text;
-              })
-              .join("\n")
-              .trim();
-            if (execBuildErr) {
-              output += execBuildErr + "\n";
-              hasError = true;
-            }
-          }
-          if (data.execResult.stderr) {
-            var execStderr = data.execResult.stderr
-              .map(function (l) {
-                return l.text;
-              })
-              .join("\n")
-              .trim();
-            if (execStderr) {
-              output += execStderr + "\n";
-            }
-          }
-          if (data.execResult.stdout) {
-            output += data.execResult.stdout
-              .map(function (l) {
-                return l.text;
-              })
-              .join("\n");
-          }
-        }
-
-        if (!output.trim()) {
-          if (hasError) {
-            output = "Compilation failed. Check errors above.";
-          } else {
-            output = "(no output)";
-          }
-        }
-
-        return { output: output.trim(), hasError: hasError };
-      });
+    return fetchHeader().then(function (header) {
+      return tryCompile(source, header, 0).then(extractOutput);
+    });
   }
 
   function escapeHtml(text) {
@@ -199,9 +215,7 @@
           setStatus("");
         })
         .catch(function (err) {
-          outputContent.innerHTML = escapeHtml(
-            "Error: " + err.message + "\nPlease try again later."
-          );
+          outputContent.innerHTML = escapeHtml("Error: " + err.message);
           outputContent.classList.add("has-error");
           setStatus("");
         })
