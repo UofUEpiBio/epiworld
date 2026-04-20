@@ -44,35 +44,49 @@ hide:
   </div>
 </div>
 
-## Quick Example
+## Try It Live
 
-The `epiworld` library includes many pre-defined models. Here is an example using the Susceptible-Infected-Recovered model with a small-world network:
+Edit the code below and click **▶ Run** to compile and execute it in your browser via [Compiler Explorer](https://godbolt.org). No local setup needed!
 
-```cpp
+<div class="epiworld-playground" id="helloworld-playground">
+  <div class="playground-toolbar">
+    <span class="playground-label">🧪 Interactive Example</span>
+    <span class="playground-status"></span>
+    <button class="playground-btn playground-reset">↺ Reset</button>
+    <button class="playground-btn playground-run">▶ Run</button>
+  </div>
+  <textarea class="playground-editor" spellcheck="false">
 #include "epiworld.hpp"
 
 using namespace epiworld;
 
 int main() {
 
-    // Create a built-in SIR model
-    epimodels::ModelSIR<> model(
-        "COVID-19", // Virus name
+    // epiworld already comes with a couple
+    // of models, like the SIR
+    epimodels::ModelSIR<> hello(
+        "COVID-19", // Name of the virus
         0.01,       // Initial prevalence
-        0.1,        // Transmission rate
-        0.3         // Recovery rate
-    );
+        0.1,        // Transmission probability
+        0.3         // Recovery probability
+        );
 
-    // Generate a small-world contact network
-    model.agents_smallworld(100000, 10, false, 0.01);
+    // We can simulate agents using a small-world network
+    // with 10,000 individuals, in this case
+    hello.agents_smallworld(10'000, 10, false, 0.01);
 
-    // Run for 100 days with seed 122
-    model.run(100, 122);
-    model.print();
+    // Running the model and printing the results
+    // Setting the number of days (100) and seed (122)
+    hello.run(100, 122);
+    hello.print();
 
-    return 0;
 }
-```
+</textarea>
+  <div class="playground-output" style="display:none;">
+    <div class="playground-output-header">Output</div>
+    <pre class="playground-output-content"></pre>
+  </div>
+</div>
 
 <div class="feature-grid" markdown>
 
