@@ -5,7 +5,7 @@
   const CANVAS_SELECTOR = ".epiworld-network-canvas";
 
   const config = {
-    particleCount: 100,
+    particleCount: 150,
     connectionDistance: 150,
     speed: 0.2,
     particleColor: "rgba(255, 255, 255, 0.2)",

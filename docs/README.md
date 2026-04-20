@@ -71,16 +71,14 @@ int main() {
         0.3         // Recovery probability
         );
 
-    // We can simulate agents using a smallworld network
+    // We can simulate agents using a small-world network
     // with 10,000 individuals, in this case
-    hello.agents_smallworld(10000, 10, false, 0.01);
+    hello.agents_smallworld(10'000, 10, false, 0.01);
 
     // Running the model and printing the results
     // Setting the number of days (100) and seed (122)
     hello.run(100, 122);
     hello.print();
-
-    return 0;
 
 }
 </textarea>
