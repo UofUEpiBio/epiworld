@@ -4,7 +4,6 @@
 using namespace epiworld;
 
 #include "interventionmeaslespep-bones.hpp"
-#include "immunoglobulin.hpp"
 
 template<typename TSeq>
 inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(

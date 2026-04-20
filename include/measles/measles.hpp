@@ -31,7 +31,7 @@ inline std::string measles_version() {
 namespace measles {
 
     // Tools and interventions
-    #include "immunoglobulin.hpp"
+    #include "immunoglobulin-meat.hpp"
     #include "interventionmeaslespep-meat.hpp"
 
     // Models
