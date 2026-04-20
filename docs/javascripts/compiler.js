@@ -2,10 +2,10 @@
   "use strict";
 
   var HEADER_URL =
-    "https://raw.githubusercontent.com/UofUEpiBio/epiworld/main/epiworld.hpp";
+    "https://raw.githubusercontent.com/UofUEpiBio/epiworld/refs/heads/master/epiworld.hpp";
   var CE_API_BASE = "https://godbolt.org/api";
   var CE_COMPILERS = ["g141", "g132", "g122"];
-  var CE_FLAGS = "-std=c++17 -O0";
+  var CE_FLAGS = "-std=c++20 -O0";
 
   var headerCache = null;
 
