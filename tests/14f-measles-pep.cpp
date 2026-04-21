@@ -108,6 +108,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     // PEP-specific transition checks
     // =========================================================
     
+    
     // =========================================================
     // Standard disease transitions (should be preserved for
     // agents that reach prodromal/rash regardless of PEP)
@@ -156,11 +157,14 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         moreless(mat(10, 11), 1.0/model_0("Hospitalization period"), 0.05)
     );
 
-    // We should have some expected transitions away from 
-    // quarantine states
-    REQUIRE(mat(6, 1) > 0.0); // Quarantined latent to latent
-    REQUIRE(mat(7, 0) > 0.0); // Quarantined susceptible to susceptible
-    REQUIRE(mat(8, 2) > 0.0); // Quarantined prodromal to prodromal
+    // We should have some expected transitions away from
+    // quarantine states due to PEP effects
+    REQUIRE(mat(6, 1) > 0.0);  // Quarantined latent to latent
+    REQUIRE(mat(7, 0) > 0.0);  // Quarantined susceptible to susceptible
+    REQUIRE(mat(8, 2) > 0.0);  // Quarantined prodromal to recovered
+    
+    REQUIRE(mat(6, 11) > 0.0); // Quarantined latent to recovered
+    REQUIRE(mat(8, 11) > 0.0); // Quarantined prodromal to recovered
 
     // =========================================================
     // Diagnostics
@@ -168,9 +172,6 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     std::cout << "\n=== PEP Test Diagnostics ===" << std::endl;
 
     std::cout << "Effective Rt: " << R0_observed << std::endl;
-
-    std::cout << "Latent -> Recovered (PEP): "
-              << mat(1, 12) << std::endl;
 
     std::cout << "Prodromal -> Rash: "
               << mat(2, 3) + mat(2, 4) << " (expected ~"
@@ -200,6 +201,20 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     std::cout << "Hospitalized -> Recovered: "
               << mat(10, 11) << " (expected ~"
               << 1.0/model_0("Hospitalization period") << ")" << std::endl;
+
+    // Transitions due to PEP
+    std::cout << "==== PEP-specific transitions ====" << std::endl;
+    std::cout << "Quarantined Latent      -> Latent      : "
+              << mat(6, 1) << std::endl;
+    std::cout << "Quarantined Latent      -> Recovered   : "
+              << mat(6, 11) << std::endl;
+    std::cout << "Quarantined Prodromal   -> Prodromal   : "
+              << mat(8, 2) << std::endl;
+    std::cout << "Quarantined Prodromal   -> Recovered   : "
+              << mat(8, 11) << std::endl;
+    std::cout << "Quarantined Susceptible -> Susceptible : "
+              << mat(7, 0) << std::endl;
+
 
 
     #undef mat
