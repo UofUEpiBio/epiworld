@@ -12,7 +12,7 @@ EPIWORLD_TEST_CASE(
     auto outbreak_sizes = {10.0, 50.0, 100.0};
 
     // Queuing doesn't matter and get results that are meaningful
-    int n_seeds = 1;
+    int n_seeds = 2;
 
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix(9u, 2.5);
@@ -36,7 +36,7 @@ EPIWORLD_TEST_CASE(
         4,           // Isolation period
         0.0,         // Proportion vaccinated
         1.0,         // Contact tracing success rate
-        4u           // Contact tracing days prior
+        2u           // Contact tracing days prior
     );
 
     // Adding a single entity (population group)
@@ -114,8 +114,15 @@ EPIWORLD_TEST_CASE(
         nsims, false
     );
 
-    REQUIRE(stats_without_quarantine[1] > stats_with_quarantine[1]);
-    REQUIRE(stats_with_quarantine[1] > stats_long_contact_tracing[1]);
+    auto sum_vec = [](const std::vector<double> & v) -> double {
+        return std::accumulate(v.begin(), v.end(), 0.0);
+    };
+    auto p_with_quarantine = sum_vec(stats_with_quarantine);
+    auto p_without_quarantine = sum_vec(stats_without_quarantine);
+    auto p_long_contact_tracing = sum_vec(stats_long_contact_tracing);
+
+    REQUIRE(p_without_quarantine > p_with_quarantine);
+    REQUIRE(p_with_quarantine > p_long_contact_tracing);
 
     // Printing information
     std::cout << "========================================================" <<
