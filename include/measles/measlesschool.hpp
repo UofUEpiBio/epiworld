@@ -3,9 +3,8 @@
 #define MEASLESSCHOOL_HPP
 
 #include <cassert>
-#include "../tools/vaccine.hpp"
-#include "../model-bones.hpp"
-#include "../globalevents/quarantinetrigger-bones.hpp"
+
+using namespace epiworld;
 
 #define LOCAL_UPDATE_FUN(name) \
     template<typename TSeq> \

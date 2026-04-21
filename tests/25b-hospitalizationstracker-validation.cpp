@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 using namespace epiworld;
 
@@ -24,7 +25,7 @@ EPIWORLD_TEST_CASE(
     // Create the model
     int n_seeds = 5;
     int simulation_days = 30;
-    epimodels::ModelMeaslesSchool<> model(
+    measles::ModelMeaslesSchool<> model(
         200,    // Number of agents
         n_seeds, // Number of initial cases
         5.0,     // Contact rate
@@ -61,8 +62,8 @@ EPIWORLD_TEST_CASE(
             unsigned int prev_state = previous_states[i];
             
             // Check if agent transitioned to HOSPITALIZED (10)
-            bool now_hospitalized = (current_state == epimodels::ModelMeaslesSchool<>::HOSPITALIZED);
-            bool was_hospitalized = (prev_state == epimodels::ModelMeaslesSchool<>::HOSPITALIZED);
+            bool now_hospitalized = (current_state == measles::ModelMeaslesSchool<>::HOSPITALIZED);
+            bool was_hospitalized = (prev_state == measles::ModelMeaslesSchool<>::HOSPITALIZED);
             
             if (now_hospitalized && !was_hospitalized)
             {

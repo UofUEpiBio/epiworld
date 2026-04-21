@@ -1,9 +1,7 @@
 #ifndef EPIWORLD_INTERVENTIONMEASLESPEP_BONES_HPP
 #define EPIWORLD_INTERVENTIONMEASLESPEP_BONES_HPP
 
-#include "../config.hpp"
-#include "../model-bones.hpp"
-#include "../agent-bones.hpp"
+using namespace epiworld;
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class InterventionMeaslesPEP final : public GlobalEvent<TSeq> {

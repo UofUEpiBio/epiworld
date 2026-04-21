@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 using namespace epiworld;
 
@@ -7,7 +8,7 @@ inline std::vector< double > counts_risk;
 
 EPI_NEW_GLOBALFUN(count_risk, int)
 {
-    auto * model = dynamic_cast< epimodels::ModelMeaslesMixingRiskQuarantine<> * >(m);
+    auto * model = dynamic_cast< measles::ModelMeaslesMixingRiskQuarantine<> * >(m);
 
     auto q_risk_today = model->get_quarantine_risk_level();
 
@@ -51,7 +52,7 @@ EPIWORLD_TEST_CASE(
     for (auto & value : contact_matrix)
         value *= c_rate;
     
-    epimodels::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine<> model(
         n,           // Number of agents
         0.1 ,        // Initial prevalence
         p_infect,    // Transmission rate

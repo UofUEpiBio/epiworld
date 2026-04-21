@@ -16,6 +16,7 @@
 
 // The epiworld header-only library (provided by the epiworldR package)
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 /**
  * @brief Population record for a single age/school group.
@@ -186,7 +187,7 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
     for (auto & v : contact_matrix)
         v *= contact_rate;
 
-    epiworld::epimodels::ModelMeaslesMixing<> measles_model(
+    measles::ModelMeaslesMixing<> measles_model(
         static_cast<epiworld_fast_uint>(N),     // n
         1.0 / static_cast<double>(N),           // prevalence
         transmission_rate,                       // transmission_rate

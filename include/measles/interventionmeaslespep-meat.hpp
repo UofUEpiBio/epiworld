@@ -1,10 +1,9 @@
 #ifndef EPIWORLD_INTERVENTIONMEASLESPEP_MEAT_HPP
 #define EPIWORLD_INTERVENTIONMEASLESPEP_MEAT_HPP
 
+using namespace epiworld;
+
 #include "interventionmeaslespep-bones.hpp"
-#include "../tools/vaccine.hpp"
-#include "../tools/immunoglobulin.hpp"
-#include "quarantinetrigger-bones.hpp"
 
 template<typename TSeq>
 inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
@@ -183,7 +182,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
             // Second question: Is the agent within the MMR window?
             if (
                 this->_willing_to_receive_mmr[contact_id] &&
-                // (contact_day > infectious_since) &&
+                (contact_day > infectious_since) &&
                 ((contact_day - infectious_since) <= pep_mmr_window)
             )
             {
@@ -195,7 +194,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
             }
             else if (
                 this->_willing_to_receive_ig[contact_id] &&
-                // (contact_day > infectious_since) &&
+                (contact_day > infectious_since) &&
                 ((contact_day - infectious_since) <= pep_ig_window)
             )
             {

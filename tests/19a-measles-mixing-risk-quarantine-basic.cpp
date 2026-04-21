@@ -1,10 +1,11 @@
 #define N_THREADS 4
 
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 using namespace epiworld;
 
-using MSQ = epimodels::ModelMeaslesMixingRiskQuarantine<>;
+using MSQ = measles::ModelMeaslesMixingRiskQuarantine<>;
 
 EPIWORLD_TEST_CASE(
     "Measles model with risk-based quarantine",
@@ -21,7 +22,7 @@ EPIWORLD_TEST_CASE(
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix = {c_rate};
     
-    epimodels::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine<> model(
         n,           // Number of agents
         0.005,       // Initial prevalence
         p_infect,    // Transmission rate

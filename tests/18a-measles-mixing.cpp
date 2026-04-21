@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
 
 using namespace epiworld;
 
@@ -13,7 +14,7 @@ EPIWORLD_TEST_CASE(
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix = {2.0};
     
-    epimodels::ModelMeaslesMixing<> model_0(
+    measles::ModelMeaslesMixing<> model_0(
         1000,        // Number of agents
         n_seeds / 1000.0, // Initial prevalence
         0.2,         // Transmission rate

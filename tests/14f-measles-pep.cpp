@@ -1,12 +1,14 @@
 #include "tests.hpp"
+#include "../include/measles/measles.hpp"
+
 
 using namespace epiworld;
-using MS = epimodels::ModelMeaslesSchool<>;
+using MS = measles::ModelMeaslesSchool<>;
 
 EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     int n_seeds = 1;
-    epimodels::ModelMeaslesSchool<> model_0(
+    measles::ModelMeaslesSchool<> model_0(
         1000,    // Number of agents
         n_seeds, // Number of initial cases
         20.0,     // Contact rate
@@ -27,7 +29,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     // Creating the PEP intervention and 
     // setting it up so we can call it as a global event.
-    epimodels::InterventionMeaslesPEP<> pep(
+    measles::InterventionMeaslesPEP<> pep(
         "Post-exposure prophylaxis for measles", // Name of the intervention
         1.0,       // "PEP MMR efficacy"
         1.0,       // "PEP IG efficacy"
@@ -106,6 +108,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     // PEP-specific transition checks
     // =========================================================
     
+    
     // =========================================================
     // Standard disease transitions (should be preserved for
     // agents that reach prodromal/rash regardless of PEP)
@@ -154,11 +157,14 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         moreless(mat(10, 11), 1.0/model_0("Hospitalization period"), 0.05)
     );
 
-    // We should have some expected transitions away from 
-    // quarantine states
-    REQUIRE(mat(6, 1) > 0.0); // Quarantined latent to latent
-    REQUIRE(mat(7, 0) > 0.0); // Quarantined susceptible to susceptible
-    REQUIRE(mat(8, 2) > 0.0); // Quarantined prodromal to prodromal
+    // We should have some expected transitions away from
+    // quarantine states due to PEP effects
+    REQUIRE(mat(6, 1) > 0.0);  // Quarantined latent to latent
+    REQUIRE(mat(7, 0) > 0.0);  // Quarantined susceptible to susceptible
+    REQUIRE(mat(8, 2) > 0.0);  // Quarantined prodromal to recovered
+    
+    REQUIRE(mat(6, 11) > 0.0); // Quarantined latent to recovered
+    REQUIRE(mat(8, 11) > 0.0); // Quarantined prodromal to recovered
 
     // =========================================================
     // Diagnostics
@@ -166,9 +172,6 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     std::cout << "\n=== PEP Test Diagnostics ===" << std::endl;
 
     std::cout << "Effective Rt: " << R0_observed << std::endl;
-
-    std::cout << "Latent -> Recovered (PEP): "
-              << mat(1, 12) << std::endl;
 
     std::cout << "Prodromal -> Rash: "
               << mat(2, 3) + mat(2, 4) << " (expected ~"
@@ -198,6 +201,20 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
     std::cout << "Hospitalized -> Recovered: "
               << mat(10, 11) << " (expected ~"
               << 1.0/model_0("Hospitalization period") << ")" << std::endl;
+
+    // Transitions due to PEP
+    std::cout << "==== PEP-specific transitions ====" << std::endl;
+    std::cout << "Quarantined Latent      -> Latent      : "
+              << mat(6, 1) << std::endl;
+    std::cout << "Quarantined Latent      -> Recovered   : "
+              << mat(6, 11) << std::endl;
+    std::cout << "Quarantined Prodromal   -> Prodromal   : "
+              << mat(8, 2) << std::endl;
+    std::cout << "Quarantined Prodromal   -> Recovered   : "
+              << mat(8, 11) << std::endl;
+    std::cout << "Quarantined Susceptible -> Susceptible : "
+              << mat(7, 0) << std::endl;
+
 
 
     #undef mat
