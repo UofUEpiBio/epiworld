@@ -12,15 +12,15 @@ EPIWORLD_TEST_CASE(
     auto outbreak_sizes = {10.0, 50.0, 100.0};
 
     // Queuing doesn't matter and get results that are meaningful
-    int n_seeds = 1;
+    int n_seeds = 5;
 
     // Simple contact matrix (single group, all mixing)
-    std::vector<double> contact_matrix(9u, 2.5);
+    std::vector<double> contact_matrix(9u, 2.0/3.0);
 
     measles::ModelMeaslesMixing<> model_0(
-        10'000,        // Number of agents
-        n_seeds / 10000.0, // Initial prevalence
-        0.05,         // Transmission rate
+        900,        // Number of agents
+        n_seeds / 900.0, // Initial prevalence
+        0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
         0.3,         // Vaccination reduction recovery rate
         7.0,         // Incubation period
@@ -40,9 +40,9 @@ EPIWORLD_TEST_CASE(
     );
 
     // Adding a single entity (population group)
-    model_0.add_entity(Entity<>("Population", dist_factory<>(0, 3'300)));
-    model_0.add_entity(Entity<>("Population", dist_factory<>(3'300, 6'600)));
-    model_0.add_entity(Entity<>("Population", dist_factory<>(6'600, 10'000)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(0, 300)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(300, 600)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(600, 900)));
 
 
     // Setting the distribution function of the initial cases
