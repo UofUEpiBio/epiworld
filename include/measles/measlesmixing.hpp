@@ -244,15 +244,6 @@ public:
     // Overriding the next() function to include the model update
     void next() override;
 
-    /**
-     * @brief Enable compression
-     * @details
-     * Removes immune agents from the population to accelerate the simulation.
-     * Not compatible with contact tracing or quarantine process. Rash
-     * agents are still isolated.
-     */
-    void compress_on();
-    void compress_off();
 
 };
 
@@ -389,10 +380,9 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // Checking if the model is supposed to be compressed
-    // if so, we can activate the queuing system to
-    // set immune agents aside
-    int n_immune = 0;
+    // Checking if the model is using the queuing
+    // system
+    auto & virusptr = Model<TSeq>::viruses[0u];
     if (this->is_queuing_on())
     {
         for (auto & a: this->get_agents())
@@ -403,13 +393,9 @@ inline void ModelMeaslesMixing<TSeq>::reset()
                 continue;
 
             // Removing the agent from the queue
-            if (a.get_susceptibility_reduction(
-                Model<TSeq>::viruses[0u],
-                *this
-            ) >= 1.0)
+            if (a.get_susceptibility_reduction(virusptr, *this) >= 1.0)
             {
                 this->queue -= &a;
-                n_immune++;
             }
             else
             {
