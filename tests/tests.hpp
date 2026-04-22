@@ -7,6 +7,8 @@
 #include <iostream>
 #include <type_traits>
 #include <exception>
+#include <chrono>
+#include <filesystem>
 #if defined(_OPENMP)
     #include <omp.h>
 #endif
@@ -52,6 +54,55 @@ inline std::string file_reader(std::string fname)
     MyReadFile.close();
 
     return res;
+}
+
+inline std::string epi_temp_file(
+    const std::string & test_name,
+    const std::string & pattern = "%05lu-episim"
+)
+{
+    // Create a temporary directory path for the test
+    std::filesystem::path base_dir =
+        std::filesystem::temp_directory_path() / (test_name);
+
+    // Crreating the temp directory and a unique subdirectory for the run
+    std::error_code ec;
+    std::filesystem::create_directories(base_dir, ec);
+    if (ec)
+        throw std::runtime_error("Could not create temp directory: " + base_dir.string());
+
+    // Generating a unique subdir
+    const auto timestamp =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
+
+    std::filesystem::path save_dir;
+    bool created = false;
+    for (size_t i = 0u; i < 1000u; ++i)
+    {
+        save_dir = base_dir / (
+            "run-" + std::to_string(timestamp) + "-" + std::to_string(i)
+        );
+
+        ec.clear();
+        if (std::filesystem::create_directory(save_dir, ec))
+        {
+            created = true;
+            break;
+        }
+
+        if (ec)
+            throw std::runtime_error("Could not create run directory: " + save_dir.string());
+    }
+
+    if (!created)
+        throw std::runtime_error("Could not allocate unique temp run directory under: " + base_dir.string());
+
+    // Printing out the path for debugging
+    std::cout << "Saving to: " << (save_dir).string() << std::endl;
+
+    return (save_dir / pattern).string();
 }
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
