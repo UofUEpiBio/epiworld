@@ -332,7 +332,7 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
     while (i < ndraw)
     {
         // Picking the actual contacts
-        int which = m->runif_int(0, n_infectious - 1);
+        auto which = m->runif_index(n_infectious);
 
         Agent<> & neighbor = *model->infectious[which];
 

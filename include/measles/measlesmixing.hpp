@@ -355,11 +355,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = this->runif() * group_size;
-
-            // Correcting overflow error
-            if (which >= static_cast<int>(group_size))
-                which = static_cast<int>(group_size) - 1;
+            auto which = this->runif_index(group_size); 
 
             #ifdef EPI_DEBUG
             auto & a = this->population.at(infectious.at(entity_indices[g] + which));

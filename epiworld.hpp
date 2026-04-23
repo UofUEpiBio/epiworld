@@ -7189,8 +7189,8 @@ inline void rewire_degseq(
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
-        int id01 = std::floor(p0.get_n_neighbors() * model->runif());
-        int id11 = std::floor(p1.get_n_neighbors() * model->runif());
+        int id01 = model->runif_index(p0.get_n_neighbors());
+        int id11 = model->runif_index(p1.get_n_neighbors());
 
         // Get the actual neighbor IDs that will be swapped
         auto neighbors_p0 = p0.get_neighbors(*model);
@@ -7365,8 +7365,8 @@ inline void rewire_degseq(
 
         // Picking alters (relative location in their lists)
         // In this case, these are uniformly distributed within the list
-        int id01 = std::floor(p0.size() * model->runif());
-        int id11 = std::floor(p1.size() * model->runif());
+        int id01 = model->runif_index(p0.size());
+        int id11 = model->runif_index(p1.size());
 
         // Since it is a map, we need to find the actual ids (positions)
         // are not good enough.
@@ -9901,9 +9901,6 @@ public:
     void set_rand_nbinom(int n, epiworld_double p);
     void set_rand_geom(epiworld_double p);
     void set_rand_poiss(epiworld_double lambda);
-    epiworld_double runif();
-    epiworld_double runif(epiworld_double a, epiworld_double b);
-    int runif_int(int a, int b);
     epiworld_double rnorm();
     epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
     epiworld_double rgamma();
@@ -9912,6 +9909,24 @@ public:
     epiworld_double rexp(epiworld_double lambda);
     epiworld_double rlognormal();
     epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
+
+    /**
+     * @brief Draw from the currently configured uniform distribution.
+     * @return A random draw from the configured uniform distribution.
+     * @details
+     * These uniform draws make use of Lemire's algorithm for fast
+     * uniform integer generation, which is both faster and more accurate than
+     * the common `std::uniform_int_distribution` approach.
+     * 
+     * 
+     * Lemire, D. (2019). Fast Random Integer Generation in an Interval.
+     * ACM Trans. Model. Comput. Simul., 29(1), 3:1-3:12.
+     * <https://doi.org/10.1145/3230636>
+     */
+    epiworld_double runif();
+    epiworld_double runif(epiworld_double a, epiworld_double b);
+    int runif_int(int a, int b);
+    uint32_t runif_index(uint32_t n);
     /**
      * @brief Draw from the currently configured binomial distribution.
      * @details When `EPI_FAST_BINOM` is enabled (default), this uses
@@ -10582,17 +10597,36 @@ inline epiworld_double Model<TSeq>::runif() {
 template<typename TSeq>
 inline int Model<TSeq>::runif_int(int a, int b) {
     // CHECK_INIT()
-    auto res =
-        static_cast<int>(std::floor(runif_epi(*engine) * (b - a + 1))) + 
-        a;
+    return a + runif_index(static_cast<uint32_t>(b - a + 1));
+}
 
-    // Checking it is within the bounds
-    if (res < a)
-        res = a;
-    else if (res > b)
-        res = b;
+template<typename TSeq>
+inline uint32_t Model<TSeq>::runif_index(uint32_t n) {
 
-    return res;
+    // If asking for a 0-range, return 0 to prevent division by zero in the bias check
+    if (n == 0) return 0;
+
+    // Grab 32 perfectly uniform random bits directly from xoshiro256ss
+    uint32_t x = static_cast<uint32_t>((*engine)());
+    
+    // Multiply by the bound N to get a 64-bit result
+    uint64_t m = static_cast<uint64_t>(x) * static_cast<uint64_t>(n);
+    
+    // The fractional part (lower 32 bits)
+    uint32_t l = static_cast<uint32_t>(m);
+    
+    // Unbiased rejection sampling for the rare edge case
+    if (l < n) {
+        uint32_t t = -n % n; // Two's complement trick to get (2^32 - n) % n
+        while (l < t) {
+            x = static_cast<uint32_t>((*engine)());
+            m = static_cast<uint64_t>(x) * static_cast<uint64_t>(n);
+            l = static_cast<uint32_t>(m);
+        }
+    }
+    
+    // The integer part (upper 32 bits) is our unbiased scaled random index
+    return static_cast<uint32_t>(m >> 32);
 }
 
 template<typename TSeq>
@@ -13855,9 +13889,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
         for (int i = 0; i < n_to_sample; ++i)
         {
 
-            int loc = static_cast<epiworld_fast_uint>(
-                floor(model->runif() * (n_available--))
-                );
+            int loc = model->runif_index(n_available--);
 
             // Correcting for possible overflow
             if ((n_available > 0) && (loc >= n_available))
@@ -13950,9 +13982,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
             std::vector< size_t > idx = agents_ids;
             for (size_t i = 0u; i < n_to_distribute; ++i)
             {
-                size_t loc = static_cast<epiworld_fast_uint>(
-                    floor(model->runif() * n--)
-                    );
+                size_t loc = model->runif_index(n--);
 
                 if ((n > 0) && (loc >= n))
                     loc = n - 1;
@@ -15002,9 +15032,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
             auto & population = model->get_agents();
             for (int i = 0u; i < n_to_distribute; ++i)
             {
-                int loc = static_cast<epiworld_fast_uint>(
-                    floor(model->runif() * n--)
-                    );
+                int loc = model->runif_index(n--);
 
                 if ((n > 0) && (loc >= n))
                     loc = n - 1;
@@ -15092,9 +15120,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
             std::vector< size_t > idx = agent_ids;
             for (size_t i = 0u; i < n_to_distribute; ++i)
             {
-                size_t loc = static_cast<epiworld_fast_uint>(
-                    floor(model->runif() * n--)
-                    );
+                size_t loc = model->runif_index(n--);
 
                 if ((n > 0) && (loc >= n))
                     loc = n - 1;
@@ -15929,9 +15955,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
         int n_left = n;
         for (int i = 0; i < n_to_sample; ++i)
         {
-            int loc = static_cast<epiworld_fast_uint>(
-                floor(m->runif() * n_left--)
-                );
+            int loc = m->runif_index(n_left--);
 
             // Correcting for possible overflow
             if ((n_left > 0) && (loc > n_left))
@@ -18459,7 +18483,7 @@ inline AgentsSample<TSeq>::AgentsSample(
     {
 
         // Sampling a single agent from the set of entities
-        int jth = std::floor(model->runif() * agents_in_entities);
+        int jth = model->runif_index(agents_in_entities);
         for (size_t e = 0u; e < cum_agents_count.size(); ++e)
         {
             
@@ -20224,7 +20248,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         {
 
             // Who is the lucky one
-            epiworld_fast_uint i = static_cast<epiworld_fast_uint>(std::floor(EPI_RUNIF() * m->size()));
+            epiworld_fast_uint i = m->runif_index(m->size());
 
             if (sampled[i])
                 continue;
@@ -20508,7 +20532,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
-                int which = m->runif_int(0, ninfected - 1);
+                auto which = m->runif_index(ninfected);
                 
                 Agent<TSeq> & neighbor = *model->infected[which];
 
@@ -20881,7 +20905,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
-                int which = m->runif_int(0, ninfected - 1);
+                auto which = m->runif_index(ninfected);
 
                 Agent<TSeq> & neighbor = *model->infected[which];
 
@@ -21641,7 +21665,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
-                int which = m->runif_int(0, static_cast<int>(m->size()) - 1);
+                auto which = m->runif_index(m->size());
 
                 // Can't sample itself
                 if (which == static_cast<int>(p->get_id()))
@@ -21969,7 +21993,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
             for (int i = 0; i < ndraw; ++i)
             {
                 // Now selecting who is transmitting the disease
-                int which = m->runif_int(0, ninfected - 1);
+                auto which = m->runif_index(ninfected);
 
                 Agent<TSeq> & neighbor = *model->infected[which];
 
