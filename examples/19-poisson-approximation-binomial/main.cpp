@@ -10,7 +10,7 @@
 // directly. In practice, the approximation is very good for
 // the parameter values used in this example, and the speedup is
 // significant.
-// #define EPI_NO_FAST_BINOM
+#define EPI_NO_FAST_BINOM
 
 #include "../../include/epiworld/epiworld.hpp"
 
