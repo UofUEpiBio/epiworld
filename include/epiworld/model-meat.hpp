@@ -2023,7 +2023,7 @@ template<typename TSeq>
 inline void Model<TSeq>::set_param(std::string pname, epiworld_double value)
 {
     if (parameters.find(pname) == parameters.end())
-        throw std::logic_error("The parameter " + pname + " does not exists.");
+        throw std::logic_error("The parameter '" + pname + "' does not exists.");
 
     parameters[pname] = value;
 
@@ -2036,7 +2036,7 @@ inline epiworld_double Model<TSeq>::par(std::string pname) const
 {
     const auto iter = parameters.find(pname);
     if (iter == parameters.end())
-        throw std::logic_error("The parameter " + pname + " does not exists.");
+        throw std::logic_error("The parameter '" + pname + "' does not exists.");
     return iter->second;
 }
 

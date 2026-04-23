@@ -159,7 +159,8 @@ public:
      * @param prop_vaccinated The proportion of vaccinated agents.
      * @param detection_rate_quarantine The detection rate during active quarantine periods.
      * @param contact_tracing_success_rate The probability of successfully identifying and tracing contacts (default: 1.0).
-     * @param contact_tracing_days_prior The number of days prior to detection for which contacts are traced (default: 4).
+     * @param contact_tracing_days_window The number of days prior or after
+     * rash onset for which contacts are traced (default: 4).
      */
     ModelMeaslesMixingRiskQuarantine(
         epiworld_fast_uint n,
@@ -183,7 +184,7 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_double detection_rate_quarantine,
         epiworld_double contact_tracing_success_rate = 1.0,
-        epiworld_fast_uint contact_tracing_days_prior = 4u
+        epiworld_fast_uint contact_tracing_days_window = 4u
     );
 
     /**
@@ -816,7 +817,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     #endif
 
     // Checking the risk levels
-    double param_days_prior = m->par("Contact tracing days prior");
+    double param_days_prior = m->par("Contact tracing days window");
     for (size_t i = 0u; i < model->agents_triggered_contact_tracing_size; ++i)
     {
 
@@ -880,7 +881,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
                 static_cast<double>(contact_date);
 
             // If the contact is outside of the tracing window, we skip it
-            if (days_since_contact > param_days_prior)
+            if (std::abs(days_since_contact) > param_days_prior)
                 continue;
 
             #ifdef EPI_DEBUG
@@ -1066,7 +1067,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     epiworld_double prop_vaccinated,
     epiworld_double detection_rate_quarantine,
     epiworld_double contact_tracing_success_rate,
-    epiworld_fast_uint contact_tracing_days_prior
+    epiworld_fast_uint contact_tracing_days_window
     )
 {
 
@@ -1096,7 +1097,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
         contact_tracing_success_rate, "Contact tracing success rate"
     );
     this->add_param(
-        contact_tracing_days_prior, "Contact tracing days prior"
+        contact_tracing_days_window, "Contact tracing days window"
     );
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");

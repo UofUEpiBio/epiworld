@@ -36,14 +36,13 @@ EPIWORLD_TEST_CASE(
         4,           // Isolation period
         0.0,         // Proportion vaccinated
         1.0,         // Contact tracing success rate
-        2u           // Contact tracing days prior
+        2u           // Contact tracing days window
     );
 
     // Adding a single entity (population group)
     model_0.add_entity(Entity<>("Population", dist_factory<>(0, 3'000)));
     model_0.add_entity(Entity<>("Population", dist_factory<>(3'000, 6'000)));
     model_0.add_entity(Entity<>("Population", dist_factory<>(6'000, 9'000)));
-
 
     // Setting the distribution function of the initial cases
     model_0.get_virus(0).set_distribution(
@@ -95,7 +94,7 @@ EPIWORLD_TEST_CASE(
     );
 
     // Re-running setting a longer window for contact tracing -----------------
-    model_0.set_param("Contact tracing days prior", 7u);
+    model_0.set_param("Contact tracing days window", 7u);
     model_0.set_param("Quarantine period", 21.0);
     auto saver_long_contact_tracing = tests_create_saver(
         transitions, R0s, n_seeds, &final_distribution
