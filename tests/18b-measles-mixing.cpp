@@ -11,13 +11,15 @@ EPIWORLD_TEST_CASE(
     
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 5;
+    double n_agents = 9'000.0;
+    size_t n_agents_sz = static_cast<size_t>(n_agents);
     
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix(9u, 4.0/3.0);
     
     measles::ModelMeaslesMixing<> model_0(
-        900,        // Number of agents
-        n_seeds / 900.0, // Initial prevalence
+        n_agents_sz,        // Number of agents
+        n_seeds / n_agents, // Initial prevalence
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
         0.3,         // Vaccination reduction recovery rate
@@ -38,9 +40,9 @@ EPIWORLD_TEST_CASE(
     );
 
     // Adding a single entity (population group)
-    model_0.add_entity(Entity<>("Population", dist_factory<>(0, 300)));
-    model_0.add_entity(Entity<>("Population", dist_factory<>(300, 600)));
-    model_0.add_entity(Entity<>("Population", dist_factory<>(600, 900)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(0, n_agents_sz/3)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(n_agents_sz/3, 2*n_agents_sz/3)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(2*n_agents_sz/3, n_agents_sz)));
 
 
     // Setting the distribution function of the initial cases
@@ -62,7 +64,9 @@ EPIWORLD_TEST_CASE(
         transitions, R0s, n_seeds, &final_distribution, &outbreak_sizes, &hospitalizations
     );
 
-    model_0.run_multiple(200, nsims, 1231, saver, true, true, 4);
+    model_0.
+        run_multiple(200, nsims, 1231, saver, true, true, 4).
+        print();
     
     // Calculate average transitions
     auto avg_transitions = tests_calculate_avg_transitions(

@@ -1,3 +1,5 @@
+
+// #define EPI_NO_FAST_BINOM
 #include "tests.hpp"
 #include "../include/measles/measles.hpp"
 
@@ -13,10 +15,12 @@ EPIWORLD_TEST_CASE(
     
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix = {2.0};
+    double n_agents = 1000.0;
+    size_t n_agents_sz = static_cast<size_t>(n_agents);
     
     measles::ModelMeaslesMixing<> model_0(
-        1000,        // Number of agents
-        n_seeds / 1000.0, // Initial prevalence
+        n_agents_sz, // Number of agents
+        n_seeds / n_agents, // Initial prevalence
         0.2,         // Transmission rate
         0.9,         // Vaccination efficacy
         0.3,         // Vaccination reduction recovery rate
@@ -43,7 +47,7 @@ EPIWORLD_TEST_CASE(
     // model_0.set_param("Isolation period", -1.0);
 
     // Adding a single entity (population group)
-    model_0.add_entity(Entity<>("Population", dist_factory<>(0, 1000)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(0, n_agents_sz)));
 
     // Setting the distribution function of the initial cases
     model_0.get_virus(0).set_distribution(
