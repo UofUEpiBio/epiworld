@@ -172,7 +172,7 @@ inline int Model<TSeq>::rbinom() {
     if (rbinomd_use_poisson)
     {
         int res = rpoiss(rbinomd_fast_lambda);
-        return res > rbinomd_n ? rbinomd_n : res;
+        return std::min(res, rbinomd_n);
     }
 #endif
     return rbinomd(*engine);
@@ -191,7 +191,7 @@ inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
     )
     {
         int res = rpoiss(static_cast<epiworld_double>(n) * p);
-        return res > n ? n : res;
+        return std::min(res, n);
     }
 #endif
 
