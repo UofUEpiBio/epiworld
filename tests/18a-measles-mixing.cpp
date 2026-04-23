@@ -1,5 +1,4 @@
 
-// #define EPI_NO_FAST_BINOM
 #include "tests.hpp"
 #include "../include/measles/measles.hpp"
 
