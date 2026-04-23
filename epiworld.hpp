@@ -9724,6 +9724,7 @@ protected:
         std::exponential_distribution<>();
     std::binomial_distribution<> rbinomd         =
         std::binomial_distribution<>();
+    int rbinomd_n = 1;
     epiworld_double rbinomd_fast_lambda = 0.0;
     bool rbinomd_use_poisson = false;
     std::negative_binomial_distribution<> rnbinomd =
@@ -10529,6 +10530,7 @@ template<typename TSeq>
 inline void Model<TSeq>::set_rand_binom(int n, epiworld_double p)
 {
     rbinomd  = std::binomial_distribution<>(n, p);
+    rbinomd_n = n;
 #ifdef EPI_FAST_BINOM
     rbinomd_fast_lambda = static_cast<epiworld_double>(n) * p;
     rbinomd_use_poisson =
@@ -10659,7 +10661,10 @@ template<typename TSeq>
 inline int Model<TSeq>::rbinom() {
 #ifdef EPI_FAST_BINOM
     if (rbinomd_use_poisson)
-        return rpoiss(rbinomd_fast_lambda);
+    {
+        int res = rpoiss(rbinomd_fast_lambda);
+        return std::min(res, rbinomd_n);
+    }
 #endif
     return rbinomd(*engine);
 }
@@ -10675,7 +10680,10 @@ inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
         (p <= static_cast<epiworld_double>(0.01)) &&
         (static_cast<epiworld_double>(n) * p * p <= static_cast<epiworld_double>(0.1))
     )
-        return rpoiss(static_cast<epiworld_double>(n) * p);
+    {
+        int res = rpoiss(static_cast<epiworld_double>(n) * p);
+        return std::min(res, n);
+    }
 #endif
 
     return rbinomd(
@@ -11194,6 +11202,11 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     agents_data = model.agents_data;
     agents_data_ncols = model.agents_data_ncols;
 
+    rbinomd = model.rbinomd;
+    rbinomd_n = model.rbinomd_n;
+    rbinomd_fast_lambda = model.rbinomd_fast_lambda;
+    rbinomd_use_poisson = model.rbinomd_use_poisson;
+
     // Deep-copy model-level objects so clones can run independently in parallel.
     viruses.reserve(model.viruses.size());
     for (const auto & v : model.viruses)
@@ -11235,6 +11248,10 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     rgammad(std::move(model.rgammad)),
     rlognormald(std::move(model.rlognormald)),
     rexpd(std::move(model.rexpd)),
+    rbinomd(std::move(model.rbinomd)),
+    rbinomd_n(model.rbinomd_n),
+    rbinomd_fast_lambda(model.rbinomd_fast_lambda),
+    rbinomd_use_poisson(model.rbinomd_use_poisson),
     // Rewiring
     rewire_fun(std::move(model.rewire_fun)),
     rewire_prop(std::move(model.rewire_prop)),
@@ -11326,6 +11343,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     agents_data = m.agents_data;
     agents_data_ncols = m.agents_data_ncols;
+
+    rbinomd = m.rbinomd;
+    rbinomd_n = m.rbinomd_n;
+    rbinomd_fast_lambda = m.rbinomd_fast_lambda;
+    rbinomd_use_poisson = m.rbinomd_use_poisson;
 
     // Figure out the queuing
     if (use_queuing)
@@ -13118,7 +13140,7 @@ template<typename TSeq>
 inline void Model<TSeq>::set_param(std::string pname, epiworld_double value)
 {
     if (parameters.find(pname) == parameters.end())
-        throw std::logic_error("The parameter " + pname + " does not exists.");
+        throw std::logic_error("The parameter '" + pname + "' does not exists.");
 
     parameters[pname] = value;
 
@@ -13131,7 +13153,7 @@ inline epiworld_double Model<TSeq>::par(std::string pname) const
 {
     const auto iter = parameters.find(pname);
     if (iter == parameters.end())
-        throw std::logic_error("The parameter " + pname + " does not exists.");
+        throw std::logic_error("The parameter '" + pname + "' does not exists.");
     return iter->second;
 }
 
