@@ -4,14 +4,23 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
 
+    auto fn_0 = epi_temp_file("01c-sir-0", "%lu-episims-0");
+    auto fn_1 = epi_temp_file("01c-sir-1", "%lu-episims-1");
+
+     // -----------------------------------------------------------------
+     // 1. Running two identical SIR models in parallel and saving outputs
+     //    to files. We use the make_save_run function to create a saver
+     //    function that saves the outputs to files with a specific format.
+     //
+
     // Saver function
     auto saver_0 = epiworld::make_save_run<>(
-        std::string("01c-sir-saves/%lu-episims-0"),
+        fn_0.full_path.c_str(),
         true, true, true, false, true, true, true, true, true, false, false
         );
 
     auto saver_1 = epiworld::make_save_run<>(
-        std::string("01c-sir-saves/%lu-episims-1"),
+        fn_1.full_path.c_str(),
         true, true, true, false, true, true, true, true, true, false, false
         );
 
@@ -46,17 +55,11 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         for (auto f : files)
         {
             auto fn0 = file_reader(
-                std::string("01c-sir-saves/") +
-                std::to_string(i) +
-                std::string("-episims-0_") +
-                f
+                fn_0.directory + "/" + std::to_string(i) + "-episims-0_" + f
                 );
 
             auto fn1 = file_reader(
-                std::string("01c-sir-saves/") +
-                std::to_string(i) +
-                std::string("-episims-1_")  +
-                f
+                fn_1.directory + "/" + std::to_string(i) + "-episims-1_" + f
                 );
 
             if (fn0 != fn1)

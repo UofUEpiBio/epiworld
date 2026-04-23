@@ -251,14 +251,14 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
     //    (mirrors run_multiple with make_saver for outbreak_size and
     //     hospitalizations)
     // -----------------------------------------------------------------
-    std::string save_fmt = epi_temp_file("27-shortcreek");
+    auto save_fmt = epi_temp_file("27-shortcreek");
 
     measles_model.run_multiple(
         200u,  // ndays
         10u,  // nsims
         52,  // seed
         epiworld::make_save_run<>(
-            save_fmt.c_str(),    // file name format
+            save_fmt.full_path.c_str(),    // file name format
             false,             // total_hist
             false,             // virus_info
             false,             // virus_hist

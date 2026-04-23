@@ -56,7 +56,13 @@ inline std::string file_reader(std::string fname)
     return res;
 }
 
-inline std::string epi_temp_file(
+struct EpiTempFile {
+    std::string directory;
+    std::string path;
+    std::string full_path;
+};
+
+inline EpiTempFile epi_temp_file(
     const std::string & test_name,
     const std::string & pattern = "%05lu-episim"
 )
@@ -102,7 +108,11 @@ inline std::string epi_temp_file(
     // Printing out the path for debugging
     std::cout << "Saving to: " << (save_dir).string() << std::endl;
 
-    return (save_dir / pattern).string();
+    return EpiTempFile{
+        save_dir.string(),
+        (save_dir / pattern).string(),
+        (save_dir / pattern).string()
+    };
 }
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
