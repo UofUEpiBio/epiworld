@@ -104,9 +104,9 @@ Replicate 97 done
 Replicate 98 done
 Replicate 99 done
 last run elapsed time : 0.00ms
-total elapsed time    : 67.00ms
+total elapsed time    : 87.00ms
 total runs            : 100
-mean run elapsed time : 0.67ms
+mean run elapsed time : 0.87ms
 Susceptible, Infected, Recovered, 
 2, 5, 993, 
 0, 0, 1000, 

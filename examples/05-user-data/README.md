@@ -16,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 112 (of 112)
 Number of viruses   : 1
-Last run elapsed t  : 537.00µs
-Last run speed      : 41.71 million agents x day / second
+Last run elapsed t  : 36.00ms
+Last run speed      : 0.61 million agents x day / second
 Rewiring            : off
 Last seed used      : 30
 

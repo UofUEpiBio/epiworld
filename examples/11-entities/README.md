@@ -16,8 +16,8 @@ Agents' data        : (none)
 Number of entities  : 3
 Days (duration)     : 50 (of 50)
 Number of viruses   : 1
-Last run elapsed t  : 47.00ms
-Last run speed      : 10.60 million agents x day / second
+Last run elapsed t  : 152.00ms
+Last run speed      : 3.28 million agents x day / second
 Rewiring            : off
 Last seed used      : 123
 
@@ -32,15 +32,14 @@ Tool(s):
 
 Model parameters:
  - Avg. Incubation days : 4.0000
- - Contact rate         : 10.0000
  - Prob. Recovery       : 0.1429
  - Prob. Transmission   : 0.1000
 
 Distribution of the population at time 50:
-  - (0) Susceptible :  9900 -> 15
-  - (1) Exposed     :   100 -> 5
-  - (2) Infected    :     0 -> 225
-  - (3) Recovered   :     0 -> 9755
+  - (0) Susceptible :  9900 -> 14
+  - (1) Exposed     :   100 -> 4
+  - (2) Infected    :     0 -> 260
+  - (3) Recovered   :     0 -> 9722
 
 Transition Probabilities:
  - Susceptible  0.95  0.05     -     -

@@ -17,10 +17,10 @@ Agents' data        : (none)
 Number of entities  : 0
 Days (duration)     : 60 (of 60)
 Number of viruses   : 1
-Last run elapsed t  : 7.00ms
-Total elapsed t     : 773.00ms (100 runs)
-Last run speed      : 76.49 million agents x day / second
-Average run speed   : 77.60 million agents x day / second
+Last run elapsed t  : 12.00ms
+Total elapsed t     : 954.00ms (100 runs)
+Last run speed      : 49.84 million agents x day / second
+Average run speed   : 62.84 million agents x day / second
 Rewiring            : off
 Last seed used      : 2103614207
 
@@ -47,8 +47,8 @@ Transition Probabilities:
  - Infected        -  0.70  0.30
  - Recovered       -     -  1.00
 
-last run elapsed time : 7.00ms
-total elapsed time    : 773.00ms
+last run elapsed time : 12.00ms
+total elapsed time    : 954.00ms
 total runs            : 100
-mean run elapsed time : 7.73ms
+mean run elapsed time : 9.54ms
 ```

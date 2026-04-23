@@ -1,6 +1,3 @@
-# Segfaulting (#116):
-# 	04-advanced-usage \
-#
 # Compilation failures (#116):
 # 	08-queuing \
 
@@ -19,7 +16,7 @@ PACKAGES := \
 	16-sbm \
 	17-sbm-scalability \
 	18-seir-network-quarantine-benchmark \
-	19-poisson-vs-binomial
+	19-poisson-approximation-binomial
 	
 # Only with OpenMP
 ifneq ($(filter 1 yes true,$(WITH_OPENMP)),)

@@ -1,21 +1,35 @@
 ## Example: `17-sbm-scalability`
 
-Scalability benchmark comparing the wall-clock time of three network
-generators — **SBM**, **Bernoulli**, and **Small-world (Watts-Strogatz)** —
-all producing undirected graphs with an expected degree of ~10.
+Output from the program:
 
-**Parameters:**
-- **SBM:** groups ∈ {3, 5, 10, 50}, total agents ∈ {1K, 10K, 100K},
-  within-block degree 6, between-block degree 4.
-- **Bernoulli:** p = 10/(n−1), total agents ∈ {1K, 10K, 100K}.
-- **Small-world:** k = 10, p_rewire = 0.1, total agents ∈ {1K, 10K, 100K}.
-- Repetitions per configuration: 10
+```
+=== SBM (Batagelj-Brandes, expected degree ~10) ===
+groups    n_total     n_each    edges(avg)    time_ms(avg)  
+------    -------     ------    ----------    -----------   
+3         1000        333       4975          0.69          
+3         10000       3333      49961         9.15          
+3         100000      33333     499800        215.28        
+5         1000        200       5011          0.50          
+5         10000       2000      49975         5.95          
+5         100000      20000     499791        138.75        
+10        1000        100       4963          0.41          
+10        10000       1000      49919         4.25          
+10        100000      10000     499824        63.02         
+50        1000        20        4870          0.44          
+50        10000       200       49833         3.98          
+50        100000      2000      499829        68.85         
 
-Both the SBM and Bernoulli generators use the Batagelj-Brandes
-geometric skipping algorithm (O(n + m) expected time).
-The small-world generator builds a ring lattice and rewires edges.
+=== Bernoulli (Batagelj-Brandes, expected degree ~10) ===
+n_total     edges(avg)    time_ms(avg)  
+-------     ----------    -----------   
+1000        4999          0.43          
+10000       49858         4.33          
+100000      499699        141.26        
 
-The edge counts track the expected value of ~n_total × 10 / 2
-(each of the ~10 contacts is undirected → 5 edges per agent).
-Generation time for SBM and Bernoulli scales linearly with the
-number of edges, consistent with O(n + m) complexity.
+=== Small-world (Watts-Strogatz, k=10, p_rewire=0.1) ===
+n_total     edges(avg)    time_ms(avg)  
+-------     ----------    -----------   
+1000        5000          0.44          
+10000       50000         11.20         
+100000      500000        798.77        
+```
