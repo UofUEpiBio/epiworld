@@ -101,6 +101,13 @@ namespace epiworld {
     #define epiworld_fast_uint unsigned long long int
 #endif
 
+// By default, `Model::rbinom` will use a Poisson approximation in the
+// rare-event regime where p <= 0.01 and n * p^2 <= 0.1. Advanced users can
+// disable this by defining EPI_NO_FAST_BINOM before including epiworld.
+#if !defined(EPI_NO_FAST_BINOM) && !defined(EPI_FAST_BINOM)
+    #define EPI_FAST_BINOM
+#endif
+
 #define EPI_DEFAULT_TSEQ int
 
 #ifndef EPI_MAX_TRACKING
@@ -9717,6 +9724,8 @@ protected:
         std::exponential_distribution<>();
     std::binomial_distribution<> rbinomd         =
         std::binomial_distribution<>();
+    epiworld_double rbinomd_fast_lambda = 0.0;
+    bool rbinomd_use_poisson = false;
     std::negative_binomial_distribution<> rnbinomd =
         std::negative_binomial_distribution<>();
     std::geometric_distribution<> rgeomd          =
@@ -9902,7 +9911,29 @@ public:
     epiworld_double rexp(epiworld_double lambda);
     epiworld_double rlognormal();
     epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
+    /**
+     * @brief Draw from the currently configured binomial distribution.
+     * @details When `EPI_FAST_BINOM` is enabled (default), this uses
+     * `rpoiss(lambda)` with `lambda = n * p` after `set_rand_binom(n, p)` in the
+     * rare-event regime `p <= 0.01` and `n * p * p <= 0.1`. Define
+     * `EPI_NO_FAST_BINOM` before including epiworld to disable this behavior.
+     * @return A random draw from the configured binomial distribution, or from
+     * its Poisson approximation when the fast path is active.
+     */
     int rbinom();
+    /**
+     * @brief Draw from a binomial distribution with parameters `n` and `p`.
+     * @details When `EPI_FAST_BINOM` is enabled (default), this uses
+     * `rpoiss(lambda)` with `lambda = n * p` in the rare-event regime
+     * `p <= 0.01` and `n * p * p <= 0.1`. This preserves the mean and is often
+     * substantially faster in practice while remaining very accurate in that
+     * region. Define `EPI_NO_FAST_BINOM` before including epiworld to disable
+     * this behavior and force the exact binomial draw.
+     * @param n Number of trials.
+     * @param p Success probability.
+     * @return A random draw from the binomial distribution, or from its
+     * Poisson approximation when the fast path is active.
+     */
     int rbinom(int n, epiworld_double p);
     int rnbinom();
     int rnbinom(int n, epiworld_double p);
@@ -10498,6 +10529,15 @@ template<typename TSeq>
 inline void Model<TSeq>::set_rand_binom(int n, epiworld_double p)
 {
     rbinomd  = std::binomial_distribution<>(n, p);
+#ifdef EPI_FAST_BINOM
+    rbinomd_fast_lambda = static_cast<epiworld_double>(n) * p;
+    rbinomd_use_poisson =
+        (p <= static_cast<epiworld_double>(0.01)) &&
+        (static_cast<epiworld_double>(n) * p * p <= static_cast<epiworld_double>(0.1));
+#else
+    rbinomd_fast_lambda = 0.0;
+    rbinomd_use_poisson = false;
+#endif
 }
 
 template<typename TSeq>
@@ -10617,6 +10657,10 @@ inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_do
 
 template<typename TSeq>
 inline int Model<TSeq>::rbinom() {
+#ifdef EPI_FAST_BINOM
+    if (rbinomd_use_poisson)
+        return rpoiss(rbinomd_fast_lambda);
+#endif
     return rbinomd(*engine);
 }
 
@@ -10625,6 +10669,14 @@ inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
 
     if (n == 0 || p == 0.0)
         return 0;
+
+#ifdef EPI_FAST_BINOM
+    if (
+        (p <= static_cast<epiworld_double>(0.01)) &&
+        (static_cast<epiworld_double>(n) * p * p <= static_cast<epiworld_double>(0.1))
+    )
+        return rpoiss(static_cast<epiworld_double>(n) * p);
+#endif
 
     return rbinomd(
         *engine,
