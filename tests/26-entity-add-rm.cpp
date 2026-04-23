@@ -201,8 +201,9 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     };
 
     // Create savers to capture results from both runs
+    auto fn1 = epi_temp_file("26-entity-add-rm", "main_out_1thread_%li");
     auto saver_1thread = epiworld::make_save_run<>(
-        "26-entity-add-rm-saves/main_out_1thread_%li",
+        fn1.full_path.c_str(),
         true,  // total_hist
         false, // variant_info
         false, // variant_hist
@@ -215,8 +216,9 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         false  // outbreak_size
     );
 
+    auto fn2 = epi_temp_file("26-entity-add-rm", "main_out_2thread_%li");
     auto saver_2thread = epiworld::make_save_run<>(
-        "26-entity-add-rm-saves/main_out_2thread_%li",
+        fn2.full_path.c_str(),
         true,  // total_hist
         false, // variant_info
         false, // variant_hist
@@ -240,8 +242,8 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     // Compare the results from both runs
     for (size_t i = 0u; i < 10u; ++i)
     {
-        std::string file_1thread = "26-entity-add-rm-saves/main_out_1thread_" + std::to_string(i) + "_total_hist.csv";
-        std::string file_2thread = "26-entity-add-rm-saves/main_out_2thread_" + std::to_string(i) + "_total_hist.csv";
+        std::string file_1thread = fn1.directory + "/main_out_1thread_" + std::to_string(i) + "_total_hist.csv";
+        std::string file_2thread = fn2.directory + "/main_out_2thread_" + std::to_string(i) + "_total_hist.csv";
 
         auto content_1thread = file_reader(file_1thread);
         auto content_2thread = file_reader(file_2thread);

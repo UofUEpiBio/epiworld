@@ -4,9 +4,12 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
 
+    auto fn_0 = epi_temp_file("01c-sir-0", "%li");
+    auto fn_1 = epi_temp_file("01c-sir-1", "%li");
+
     // Adding multi-file write
     auto sav_0 = epiworld::make_save_run<>(
-        "02-reproducible-sir-saves/main_out_%li", // std::string fmt,
+        fn_0.full_path.c_str(), // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,
         false, // bool variant_hist,
@@ -20,7 +23,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
     );
 
     auto sav_1 = epiworld::make_save_run<>(
-        "02-reproducible-sir-saves/main_out_pll_%li", // std::string fmt,
+        fn_1.full_path.c_str(), // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,
         false, // bool variant_hist,
@@ -64,8 +67,8 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
         for (size_t i = 0u; i < 4u; ++i)
         {
 
-            std::string file_0 = "02-reproducible-sir-saves/main_out_" + std::to_string(i) + "_" + f +  + ".csv";
-            std::string file_1 = "02-reproducible-sir-saves/main_out_pll_" + std::to_string(i) + "_" + f +  + ".csv";
+            std::string file_0 = fn_0.directory + "/" + std::to_string(i) + "_" + f +  + ".csv";
+            std::string file_1 = fn_1.directory + "/" + std::to_string(i) + "_" + f +  + ".csv";
             
 
             auto file0 = file_reader(file_0);

@@ -4,21 +4,22 @@
 using namespace epiworld;
 
 EPIWORLD_TEST_CASE(
-    "Measles model with mixing (no quarantine)",
-    "[ModelMeaslesMixingOff]"
+    "Measles model with mixing (no quarantine) + queueing",
+    "[ModelMeaslesMixingOffQueue]"
 ) {
     
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 5;
     
     // Simple contact matrix (single group, all mixing)
-    std::vector<double> contact_matrix = {2.0};
+    std::vector<double> contact_matrix = {20.0};
+    size_t n = 5'000;
     
     measles::ModelMeaslesMixing<> model_0(
-        1000,        // Number of agents
-        n_seeds / 1000.0, // Initial prevalence
+        n,        // Number of agents
+        n_seeds / static_cast<double>(n), // Initial prevalence
         0.2,         // Transmission rate
-        0.9,         // Vaccination efficacy
+        0.95,         // Vaccination efficacy
         0.3,         // Vaccination reduction recovery rate
         7.0,         // Incubation period
         4.0,         // Prodromal period
@@ -31,19 +32,17 @@ EPIWORLD_TEST_CASE(
         .8,          // Quarantine willingness
         .8,          // Isolation willingness
         4,           // Isolation period
-        0.0,         // Proportion vaccinated
+        0.9,         // Proportion vaccinated
         1.0,         // Contact tracing success rate
         4u           // Contact tracing days prior
     );
-
-    // model_0.queuing_off();
 
     // Shutting off the quarantine feature
     model_0.set_param("Quarantine period", -1.0);
     // model_0.set_param("Isolation period", -1.0);
 
     // Adding a single entity (population group)
-    model_0.add_entity(Entity<>("Population", dist_factory<>(0, 1000)));
+    model_0.add_entity(Entity<>("Population", dist_factory<>(0, n)));
 
     // Setting the distribution function of the initial cases
     model_0.get_virus(0).set_distribution(
@@ -53,7 +52,7 @@ EPIWORLD_TEST_CASE(
         return;
     });
 
-    size_t nsims = 400; // Reduced for faster testing
+    size_t nsims = 1'000; // Reduced for faster testing
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
     std::vector< double > outbreak_sizes(nsims, 0.0);
@@ -62,7 +61,7 @@ EPIWORLD_TEST_CASE(
     auto saver = tests_create_saver(transitions, R0s, n_seeds, nullptr, &outbreak_sizes, &hospitalizations);
 
     model_0.
-        run_multiple(200, nsims, 1231, saver, true, true, 4).
+        run_multiple(90, nsims, 1231, saver, true, true, 4).
         print(false);
 
     // Calculate average transitions
@@ -104,7 +103,9 @@ EPIWORLD_TEST_CASE(
     #define mat(i, j) avg_transitions[j*n_states + i]
     double p_recovered = 1.0/model_0("Rash period");
     double R0_theo = contact_matrix[0] * model_0("Transmission rate") *
-        model_0("Prodromal period");
+        model_0("Prodromal period") * (
+            1.0 - model_0("Vaccination rate") * model_0("Vax efficacy")
+        );
 
     // Reproductive number
     std::cout << "Reproductive number: "

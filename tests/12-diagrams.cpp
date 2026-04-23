@@ -16,18 +16,21 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
         run(100);
 
     
+    auto fn_0 = epi_temp_file("12-diagrams", "transitions.txt");
+    auto fn_1 = epi_temp_file("12-diagrams-saves", "%li");
+
     model_0.draw(epiworld::DiagramType::Mermaid);
     std::cout << "Printing transitions from file" << std::endl;
 
     model_0.write_data(
-        "", "", "", "", "", "", "01-sir_transitions.txt", "", "", "", "", ""
+        "", "", "", "", "", "", fn_0.full_path.c_str(), "", "", "", "", ""
     );
     epiworld::ModelDiagram diagram;
-    diagram.draw_from_file(epiworld::DiagramType::Mermaid, "01-sir_transitions.txt");
+    diagram.draw_from_file(epiworld::DiagramType::Mermaid, fn_0.full_path.c_str());
 
     model_0.run_multiple(
         100, 10, 1231, make_save_run<>(
-            "12-diagrams-saves/%i",
+            fn_1.full_path.c_str(),
             false, false, false, false, false, false, true, false, false, false, false
         )
     );
@@ -36,15 +39,12 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
     std::vector< std::string > files;
     for (size_t i = 0u; i < 10; ++i)
         files.push_back(
-            "12-diagrams-saves/" + std::to_string(i) + "_transition.csv"
+            fn_1.directory + "/" + std::to_string(i) + "_transition.csv"
             );
 
     std::cout << "Printing transitions from multiple files" << std::endl;
     diagram.draw_from_files(epiworld::DiagramType::Mermaid, files);
 
     REQUIRE_THROWS(diagram.draw_from_file(epiworld::DiagramType::Mermaid, "non_existant_file.txt"));
-
-    
-
 
 }
