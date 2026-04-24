@@ -6,7 +6,7 @@
 #define MEASLES_VERSION_MINOR 2
 #define MEASLES_VERSION_PATCH 0
 
-#define MEASLES_VERSION_PRERELEASE "dev"
+#define MEASLES_VERSION_PRERELEASE ""
 
 static constexpr int measles_version_major = MEASLES_VERSION_MAJOR;
 static constexpr int measles_version_minor = MEASLES_VERSION_MINOR;
