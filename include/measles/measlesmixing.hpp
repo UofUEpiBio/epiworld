@@ -847,8 +847,8 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
             auto [contact_id, contact_date] = ct.get_contact(agent_i, contact_i);
             
             bool within_days =
-                std::abs((day_rash_onset_agent_i - contact_date) <=
-                m->par("Contact tracing days window"));
+                std::abs(day_rash_onset_agent_i - contact_date) <=
+                m->par("Contact tracing days window");
 
             if (!within_days)
                 continue;
