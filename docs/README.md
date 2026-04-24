@@ -163,14 +163,15 @@ intervals, and likelihood-free inference (LFMCMC).
 
     [:octicons-arrow-right-24: View models](epiworld/modules.md)
 
--   :material-code-tags:{ .lg .middle } **API Reference**
+-   :material-code-braces:{ .lg .middle } **Examples**
 
     ---
 
-    Complete class and function reference generated from the source code
-    via Doxygen.
+    Explore ready-to-run examples — from a basic Hello World to
+    likelihood-free MCMC — each with an interactive Compiler Explorer
+    playground.
 
-    [:octicons-arrow-right-24: API docs](api/index.md)
+    [:octicons-arrow-right-24: Browse examples](examples/index.md)
 
 -   :material-cog:{ .lg .middle } **Implementation**
 
@@ -180,6 +181,15 @@ intervals, and likelihood-free inference (LFMCMC).
     extending the library, queueing system, and more.
 
     [:octicons-arrow-right-24: Learn more](impl/index.md)
+
+-   :material-code-tags:{ .lg .middle } **API Reference**
+
+    ---
+
+    Complete class and function reference generated from the source code
+    via Doxygen.
+
+    [:octicons-arrow-right-24: API docs](api/index.md)
 
 </div>
 
