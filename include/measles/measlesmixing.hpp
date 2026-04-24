@@ -160,8 +160,8 @@ public:
      * @param prop_vaccinated The proportion of vaccinated agents.
      * @param contact_tracing_success_rate The probability of successfully
      * identifying and tracing contacts (default: 1.0).
-     * @param contact_tracing_days_prior The number of days prior to detection
-     * for which contacts are traced (default: 4).
+     * @param contact_tracing_days_window The number of days prior or after
+     * rash onset for which contacts are traced (default: 4).
      */
     ModelMeaslesMixing(
         epiworld_fast_uint n,
@@ -183,7 +183,7 @@ public:
         epiworld_fast_int isolation_period,
         epiworld_double prop_vaccinated,
         epiworld_double contact_tracing_success_rate = 1.0,
-        epiworld_fast_uint contact_tracing_days_prior = 4u
+        epiworld_fast_uint contact_tracing_days_window = 4u
     );
 
     /**
@@ -355,11 +355,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
         {
 
             // Randomly selecting an agent
-            int which = this->runif() * group_size;
-
-            // Correcting overflow error
-            if (which >= static_cast<int>(group_size))
-                which = static_cast<int>(group_size) - 1;
+            auto which = this->runif_index(group_size); 
 
             #ifdef EPI_DEBUG
             auto & a = this->population.at(infectious.at(entity_indices[g] + which));
@@ -849,10 +845,12 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
             // Checking if the contact is within the contact tracing days prior
             auto [contact_id, contact_date] = ct.get_contact(agent_i, contact_i);
-            bool within_days_prior =
-                (day_rash_onset_agent_i - contact_date) <=
-                m->par("Contact tracing days prior");
-            if (!within_days_prior)
+            
+            bool within_days =
+                std::abs((day_rash_onset_agent_i - contact_date) <=
+                m->par("Contact tracing days window"));
+
+            if (!within_days)
                 continue;
 
             // Checking if we will detect the contact
@@ -911,32 +909,6 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
     return;
 }
 
-/**
- * @brief Template for a Measles model with population mixing, quarantine, and contact tracing
- *
- * @param model A ModelMeaslesMixing<TSeq> object where to set up the model.
- * @param n Number of agents in the population
- * @param prevalence Initial prevalence (proportion of infected individuals)
- * @param transmission_rate Probability of transmission per contact
- * @param vax_efficacy The efficacy of the vaccine
- * @param vax_reduction_recovery_rate The reduction in recovery rate due to the vaccine
- * @param incubation_period Average incubation period in days
- * @param prodromal_period Average prodromal period in days
- * @param rash_period Average rash period in days
- * @param contact_matrix Contact matrix specifying expected contacts between population groups.
- * Each entry (i,j) represents the expected number of contacts an agent in
- * group i has with agents in group j per day.
- * @param hospitalization_rate Rate at which infected individuals are hospitalized
- * @param hospitalization_period Average duration of hospitalization in days
- * @param days_undetected Average number of days an infected individual remains undetected
- * @param quarantine_period Duration of quarantine in days for latent contacts
- * @param quarantine_willingness Proportion of individuals willing to comply with quarantine
- * @param isolation_willingness Proportion of individuals willing to self-isolate when detected
- * @param isolation_period Duration of isolation in days for detected infected individuals
- * @param prop_vaccinated Proportion of vaccinated agents
- * @param contact_tracing_success_rate Probability of successfully identifying contacts during tracing
- * @param contact_tracing_days_prior Number of days prior to detection for contact tracing
- */
 template<typename TSeq>
 inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     epiworld_fast_uint n,
@@ -958,7 +930,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     epiworld_fast_int isolation_period,
     epiworld_double prop_vaccinated,
     epiworld_double contact_tracing_success_rate,
-    epiworld_fast_uint contact_tracing_days_prior
+    epiworld_fast_uint contact_tracing_days_window
     )
 {
 
@@ -1001,7 +973,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_param(isolation_willingness, "Isolation willingness");
     this->add_param(isolation_period, "Isolation period");
     this->add_param(contact_tracing_success_rate, "Contact tracing success rate");
-    this->add_param(contact_tracing_days_prior, "Contact tracing days prior");
+    this->add_param(contact_tracing_days_window, "Contact tracing days window");
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");
     this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");

@@ -24,6 +24,12 @@
 
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {
+			"version": "2.68.1"
+		}
+	},
+
 	"mounts": [
         // Mount the .vscode configuration into the container
         "source=${localWorkspaceFolder}/.devcontainer/.vscode,target=/workspaces/${localWorkspaceFolderBasename}/.vscode,type=bind,consistency=cached"

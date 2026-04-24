@@ -30,6 +30,8 @@ struct GroupData {
 
 EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMixing][ShortCreek]") {
 
+    size_t n_sims = 50; // Reduced for faster testing
+
     // -----------------------------------------------------------------
     // 1. Data: short_creek (15 groups)
     //    Columns: age_labels, agepops, agelims, vacc_rate
@@ -255,7 +257,7 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
 
     measles_model.run_multiple(
         200u,  // ndays
-        10u,  // nsims
+        n_sims,  // nsims
         52,  // seed
         epiworld::make_save_run<>(
             save_fmt.full_path.c_str(),    // file name format
