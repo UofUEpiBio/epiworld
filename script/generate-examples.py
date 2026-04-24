@@ -208,6 +208,9 @@ def playground_html(name: str, source: str) -> str:
     # bare ampersands can occasionally cause issues in some Markdown renderers,
     # so we escape & → &amp; only.
     safe_source = source.replace("&", "&amp;")
+    # Guard against pathological C++ source that contains literal </textarea>
+    # (unlikely, but would break the enclosing element if unescaped).
+    safe_source = safe_source.replace("</textarea>", "&lt;/textarea&gt;")
     return (
         f'<div class="epiworld-playground" id="{name}-playground">\n'
         '  <div class="playground-toolbar">\n'
@@ -225,7 +228,7 @@ def playground_html(name: str, source: str) -> str:
     )
 
 
-def generate_page(name: str, example_dir: Path) -> tuple:
+def generate_page(name: str, example_dir: Path) -> tuple[str | None, str | None]:
     """Generate a docs page for one example.
 
     Returns (filename, markdown_content) or (None, None) if not in EXAMPLE_META.
