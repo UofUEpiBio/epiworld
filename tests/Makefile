@@ -72,8 +72,7 @@ $(NAME)_SOURCES := \
 	29i-sbm-large-blocks.cpp \
 	29a-state-update-transition.cpp \
 	30a-contact-tracing.cpp \
-	31a-seir-network-quarantine.cpp \
-	32a-measles-mixing-contact-tracing-window.cpp
+	31a-seir-network-quarantine.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
