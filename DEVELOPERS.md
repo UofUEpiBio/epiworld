@@ -49,8 +49,8 @@ Epiworld uses a custom GNU Make-based build system designed for ease of use and 
 
 The build system follows a consistent pattern for exposing functionality:
 
-- **File-level operations** become **file targets**: Operations tied to specific files (e.g., generating a README, building a binary) are exposed as make targets corresponding to those files.
-  - Example: `make examples/00-hello-world/README.md`
+- **File-level operations** become **file targets**: Operations tied to specific files (e.g., building a binary) are exposed as make targets corresponding to those files.
+  - Example: `make build/examples/00-hello-world/00-hello-world`
   - Example: `make build/tests/tests`
 
 - **Binary-level operations** get **dedicated targets**: Operations that affect an entire binary or package (e.g., running a complete test suite) get their own phony targets.
@@ -136,15 +136,6 @@ Test results are stored in `build/<package-name>/.test/` where `<package-name>` 
 For example, the default test suite in `tests/` produces reports in `build/tests/.test/`.
 
 ## Running Examples
-
-### Generate Example READMEs
-
-Regenerate README files for all examples:
-```bash
-make readmes
-```
-
-This runs each example and captures its output to create documentation.
 
 ### Run Individual Examples
 
@@ -333,7 +324,7 @@ make test -j$(perl script/sys-get-nproc.pl)
 3. **Check coverage**: Run with `WITH_COVERAGE=1` periodically
 4. **Parallel builds**: Use `-j` for faster compilation
 5. **Keep tests focused**: One test case per file
-6. **Document examples**: Run `make readmes` after modifying examples
+6. **Document examples**: Update each example's `README.md` after modifying it
 7. **Understand path mirroring**: Build artifacts in `build/<path>/` correspond to sources in `<path>/`
 
 ## Getting Help

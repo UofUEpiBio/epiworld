@@ -33,10 +33,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y doxygen graphviz
-          pip install mkdocs mkdocs-material mkdoxy
+          pip install uv mkdocs mkdocs-material mkdoxy
       
       - name: Generate example documentation pages
-        run: python3 script/generate-examples.py
+        run: uv run python script/generate-examples.py
 
       - name: Build MkDocs site
         run: mkdocs build

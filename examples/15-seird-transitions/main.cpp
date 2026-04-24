@@ -17,6 +17,7 @@ using namespace epiworld;
 
 int main()
 {
+    constexpr epiworld_fast_uint n_agents = 5000u;
 
     // State codes (order of add_state calls)
     // constexpr epiworld_fast_uint S = 0u;
@@ -58,7 +59,7 @@ int main()
     model.add_virus(virus);
 
     // Population
-    model.agents_smallworld(10000, 20, false, 0.01);
+    model.agents_smallworld(n_agents, 20, false, 0.01);
 
     // Run and display
     model.run(100, 123);

@@ -24,7 +24,7 @@ int main() {
     // Configuration
     // -------------------------------------------------------------------
     const size_t n_groups      = 20;
-    const size_t group_size    = 1000;
+    const size_t group_size    = 250;
     const size_t n_total       = n_groups * group_size;
     const double mean_contacts = 50.0;
     const int    n_days        = 100;

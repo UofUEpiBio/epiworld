@@ -25,7 +25,7 @@ int main() {
     // Notice:
     //   - Urban agents mix more between groups.
     //   - Rural agents mostly connect within their own group.
-    std::vector<size_t> block_sizes = {2000, 3000, 5000};
+    std::vector<size_t> block_sizes = {1000, 1500, 2500};
     std::vector<double> mixing_matrix = {
         4.5, 3.0, 2.5,
         2.0, 5.5, 2.5,

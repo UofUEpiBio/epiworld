@@ -5,7 +5,7 @@ using namespace epiworld;
 int main() {
 
     int total_replicates = 100;
-    int pop_size         = 10000;
+    int pop_size         = 5000;
 
     epimodels::ModelSIR<> sir(
         "a virus", // Name of the virus

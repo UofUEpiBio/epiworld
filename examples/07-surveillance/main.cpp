@@ -1,4 +1,3 @@
-// #define EPI_DEBUG
 #include "../../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;
@@ -6,8 +5,8 @@ using namespace epiworld;
 int main(int argc, char* argv[]) {
 
     epiworld_fast_uint ndays       = 100;
-    epiworld_fast_uint popsize     = 10000;
-    epiworld_fast_uint preval      = 10;
+    epiworld_fast_uint popsize     = 5000;
+    epiworld_fast_uint preval      = popsize / 1000;
     epiworld_double sur_prob = 0.001;
     if (argc == 5)
     {

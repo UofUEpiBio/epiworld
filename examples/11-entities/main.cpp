@@ -19,6 +19,9 @@ EntityToAgentFun<TSeq> dist_factory(size_t from, size_t to) {
 }
 
 int main() {
+    constexpr epiworld_fast_uint n_agents = 5000u;
+    constexpr size_t entity1_end = n_agents * 3u / 10u;
+    constexpr size_t entity2_end = n_agents * 6u / 10u;
 
     std::vector< double > contact_matrix = {
         9.0, 1.0, 1.0,
@@ -28,7 +31,7 @@ int main() {
 
     epimodels::ModelSEIRMixing<> model(
         "Flu", // std::string vname,
-        10000, // epiworld_fast_uint n,
+        n_agents, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
         0.1,// epiworld_double transmission_rate,
         4.0,// epiworld_double avg_incubation_days,
@@ -37,9 +40,9 @@ int main() {
     );
 
     // Creating three groups
-    Entity<> e1("Entity 1", dist_factory<>(0, 3000));
-    Entity<> e2("Entity 2", dist_factory<>(3000, 6000));
-    Entity<> e3("Entity 3", dist_factory<>(6000, 10000));
+    Entity<> e1("Entity 1", dist_factory<>(0, entity1_end));
+    Entity<> e2("Entity 2", dist_factory<>(entity1_end, entity2_end));
+    Entity<> e3("Entity 3", dist_factory<>(entity2_end, n_agents));
 
     model.add_entity(e1);
     model.add_entity(e2);
