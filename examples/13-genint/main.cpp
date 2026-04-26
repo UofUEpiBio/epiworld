@@ -11,7 +11,8 @@ int main()
 
     // Model parameters
     double r          = 10.0; // Contact rate
-    double popsize    = 1e5;
+    double popsize    = 5000.0;
+    double prevalence = 0.0005;
     double p_i        = .1; // Probability of infection
     double p_r        = 1.0/7.0; // Probability of recovery
     double incubation = 2.0; // Incubation period
@@ -22,7 +23,7 @@ int main()
     epiworld::epimodels::ModelSIRCONN<> model(
         "avirus",
         popsize,
-        50.0/popsize,
+        prevalence,
         r,
         p_i,
         p_r
@@ -60,7 +61,7 @@ int main()
     epiworld::epimodels::ModelSEIRCONN<> model2(
         "avirus",
         popsize,
-        50.0/popsize,
+        prevalence,
         r,
         p_i,
         incubation,

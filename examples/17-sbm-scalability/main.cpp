@@ -7,9 +7,9 @@
  * degree of approximately 10 so that edge counts are comparable.
  *
  * **SBM** — tested for n_groups ∈ {3, 5, 10, 50} and
- *   n_total ∈ {1 000, 10 000, 100 000}.
+ *   n_total in {1 000, 2 500, 5 000}.
  *
- * **Bernoulli** — tested for n_total ∈ {1 000, 10 000, 100 000}
+ * **Bernoulli** — tested for n_total in {1 000, 2 500, 5 000}
  *   with p = 10 / (n − 1).
  *
  * **Small-world (Watts-Strogatz)** — tested for the same sizes with
@@ -45,7 +45,7 @@ static void reset_agents(
 int main() {
 
     std::vector<size_t> group_counts = {3, 5, 10, 50};
-    std::vector<size_t> total_sizes  = {1000, 10000, 100000};
+    std::vector<size_t> total_sizes  = {1000, 2500, 5000};
     const int n_reps = 10;
 
     // A lightweight SIR model – we only need its RNG, not its dynamics.

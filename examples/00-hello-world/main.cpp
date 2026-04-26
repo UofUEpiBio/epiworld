@@ -6,6 +6,8 @@ using namespace epiworld;
 
 int main()
 {
+    constexpr int n_agents = 5000;
+    constexpr int initial_cases = n_agents / 200;
 
     // Creating a model
     epiworld::Model<int> model;
@@ -19,7 +21,7 @@ int main()
     // Adding the tool and virus
     epiworld::Virus<int> virus("covid 19");
     virus.set_distribution(
-        distribute_virus_randomly<int>(50, false));
+        distribute_virus_randomly<int>(initial_cases, false));
 
     virus.set_post_immunity(1.0);
     virus.set_state(exposed_state, recovered_state, removed_state);
@@ -30,7 +32,7 @@ int main()
     model.add_tool(tool);
 
     // Generating a random pop
-    model.agents_smallworld(10000, 20, false, .01);
+    model.agents_smallworld(n_agents, 20, false, .01);
 
     // Running the model
     model.run(100, 123);

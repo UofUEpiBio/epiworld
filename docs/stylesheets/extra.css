@@ -38,6 +38,17 @@
   background: linear-gradient(135deg, #8a1a3a 0%, #4a2d5e 100%);
 }
 
+/* Push the final top-level tab, "API Reference", to the far edge. */
+@media screen and (min-width: 76.25em) {
+  .md-tabs__list {
+    width: 100%;
+  }
+
+  .md-tabs__item:last-child {
+    margin-left: auto;
+  }
+}
+
 /* ── Hero section on homepage ─────────────────────────────────────────────── */
 .epiworld-hero {
   position: relative;

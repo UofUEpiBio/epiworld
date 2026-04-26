@@ -1,7 +1,5 @@
 #include <omp.h>
 
-// #define EPI_DEBUG
-
 #include "../../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;
@@ -10,6 +8,7 @@ int main(int argc, char * argv[]) {
 
     auto nthreads = 4;
     auto nsims    = 100;
+    constexpr epiworld_fast_uint n_agents = 5000u;
     if (argc == 3)
     {
         nthreads = strtol(argv[1], nullptr, 0);
@@ -25,7 +24,7 @@ int main(int argc, char * argv[]) {
     );
 
     model.agents_from_adjlist(
-        rgraph_smallworld(100000, 4, .01, false, model)
+        rgraph_smallworld(n_agents, 4, .01, false, model)
     );
 
     auto sav = make_save_run<>(std::string("%03lu-episim.txt"));

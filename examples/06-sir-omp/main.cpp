@@ -9,6 +9,7 @@ using namespace epiworld;
 int main() {
 
     epiworld_fast_uint nthreads = 4u;
+    constexpr epiworld_fast_uint n_agents = 5000u;
     omp_set_num_threads(nthreads);
     std::vector< epimodels::ModelSIR<> > Models;
 
@@ -23,7 +24,7 @@ int main() {
     // Adding a bernoulli graph as step 0
     printf("Generating random graph... ");fflush(stdout);
     Models[0u].agents_from_adjlist(
-        rgraph_smallworld(250000, 5, .01, false, Models[0u])
+        rgraph_smallworld(n_agents, 5, .01, false, Models[0u])
     );
 
     for (unsigned i = 1u; i < nthreads; ++i)

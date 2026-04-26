@@ -16,6 +16,7 @@ CXX ?= c++
 # Non-critical tooling.
 DOXYGEN            ?= doxygen
 MKDOCS             ?= mkdocs
+UV                 ?= uv
 LCOV               ?= lcov
 VALGRIND           ?= valgrind
 CALLGRIND_ANNOTATE ?= callgrind_annotate
@@ -92,7 +93,6 @@ TEST_FILES       :=
 
 EXAMPLE_TARGETS     :=
 EXAMPLE_RUN_TARGETS := 
-README_TARGETS      :=
 TEST_TARGETS	    :=
 
 # What packages to include.
@@ -104,10 +104,6 @@ PACKAGES     := $(ALL_PACKAGES)
 purge:
 	$(SAY) "RM" $(ROOT_BUILD_DIR)
 	$(V)rm -rf $(ROOT_BUILD_DIR)
-
-.PHONY: docs
-docs:
-	$(error "unimplemented")
 
 .PHONY: help
 help: all
@@ -136,9 +132,6 @@ $(foreach package,$(PACKAGES),$(eval $(call INCLUDE_PACKAGE,$(package))))
 .PHONY: examples
 examples: $(EXAMPLE_RUN_TARGETS)
 	
-.PHONY: readmes
-readmes: $(README_TARGETS)
-
 .PHONY: test
 test: $(TEST_TARGETS)
 
@@ -149,9 +142,6 @@ tests: test
 # And this is where it all begins...
 .PHONY: example
 example: examples
-	
-.PHONY: readme
-readme: readmes
 
 .PHONY: all
 all:
@@ -161,11 +151,6 @@ all:
 	@printf "\n"
 	@printf "Run \`make examples' to run all examples, or you can run any specific set of examples with the below targets:\n\n"
 	@for target in $(EXAMPLE_RUN_TARGETS); do \
-	    printf "  - %s\n" $$target; \
-	done
-	@printf "\n"
-	@printf "Run \`make readmes' to regenerate all READMES, or you can regenerate any specific set of example READMEs with the below targets:\n\n"
-	@for target in $(README_TARGETS); do \
 	    printf "  - %s\n" $$target; \
 	done
 	@printf "\n"
@@ -210,17 +195,25 @@ readme.o: readme.cpp $(ROOT_BUILD_DIR)/epiworld.hpp
 
 # ====================================================================
 # Docs
-.PHONY: setup-preview preview serve
+.PHONY: docs docs-examples setup-preview preview serve
 
 MKDOCS_SPEC = mkdocs<2
 MATERIAL_SPEC = mkdocs-material>=9.7.5,<10
 MKDOXY_SPEC = mkdoxy
 NO_MKDOCS_2_WARNING = 1
+GENERATE_EXAMPLES = script/generate-examples.py
 
 setup-preview:
-	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) uv tool install '$(MKDOCS_SPEC)' --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)'
+	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) $(UV) tool install '$(MKDOCS_SPEC)' --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)'
 
-preview: setup-preview
-	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) uv tool run --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)' mkdocs serve -a 0.0.0.0:8000
+docs-examples:
+	$(SAY) "UV" $(GENERATE_EXAMPLES)
+	$(V)$(UV) run python $(GENERATE_EXAMPLES)
+
+docs: setup-preview docs-examples
+	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) $(UV) tool run --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)' mkdocs build
+
+preview: setup-preview docs-examples
+	NO_MKDOCS_2_WARNING=$(NO_MKDOCS_2_WARNING) $(UV) tool run --with '$(MATERIAL_SPEC)' --with '$(MKDOXY_SPEC)' mkdocs serve -a 0.0.0.0:8000
 
 serve: preview

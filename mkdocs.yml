@@ -69,11 +69,28 @@ nav:
         - SIR Logit: epiworld/classModelSIRLogit.md
         - Diffusion Network: epiworld/classModelDiffNet.md
         - Surveillance: epiworld/classModelSURV.md
-  - API Reference: 
-    - Overview: api/index.md
-    - Classes: epiworld/annotated.md
-    - Files: epiworld/files.md
-    - Namespaces: epiworld/namespaces.md
+  - Examples:
+    - Overview: examples/index.md
+    - Hello World: examples/00-hello-world.md
+    - SEIR Model: examples/01-seir.md
+    - SIR Model: examples/01-sir.md
+    - SIS Model: examples/01-sis.md
+    - "SIR: Multiple Runs": examples/02-sir_multiple_runs.md
+    - "SIR: Multiple Runs with Plotting": examples/02b-sir_multiple_runs.md
+    - Simple SIR: examples/03-simple-sir.md
+    - User Data: examples/05-user-data.md
+    - SIR with OpenMP: examples/06-sir-omp.md
+    - SIR with OpenMP (Callbacks): examples/06b-sir-omp.md
+    - Surveillance Model: examples/07-surveillance.md
+    - Likelihood-Free MCMC: examples/10-likelihood-free-mcmc.md
+    - Entities: examples/11-entities.md
+    - Generation Interval: examples/13-genint.md
+    - Community and Hospital: examples/14-community-hosp.md
+    - SEIRD Transitions: examples/15-seird-transitions.md
+    - Stochastic Block Model: examples/16-sbm.md
+    - SBM Scalability Benchmark: examples/17-sbm-scalability.md
+    - SEIR Quarantine Benchmark: examples/18-seir-network-quarantine-benchmark.md
+    - "Poisson vs. Binomial Sampling": examples/19-poisson-approximation-binomial.md
   - Implementation:
     - Overview: impl/index.md
     - Library Architecture: impl/library-architecture.md
@@ -91,6 +108,14 @@ nav:
     - Events and Multi-Event Handling: impl/events-and-multi-event-handling.md
     - Quarantine, Isolation, and Contact Tracing: impl/quarantine-isolation-and-contact-tracing.md
     - Sampling Contacts: impl/sampling-contacts.md
+  - API Reference:
+    - Overview: api/index.md
+    - Classes: epiworld/annotated.md
+    - Files: epiworld/files.md
+    - Namespaces: epiworld/namespaces.md
+
+hooks:
+  - script/mkdocs_hooks.py
 
 plugins:
   - search

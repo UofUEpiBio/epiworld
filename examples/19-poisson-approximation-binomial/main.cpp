@@ -86,8 +86,8 @@ void print_summary(
 
 int main()
 {
-    constexpr int n = 10000;
-    constexpr double p = 20.0 / 10000.0;
+    constexpr int n = 5000;
+    constexpr double p = 20.0 / static_cast<double>(n);
     constexpr double lambda = static_cast<double>(n) * p;
     constexpr size_t ndraws = 100000u;
     constexpr int max_k = 40;

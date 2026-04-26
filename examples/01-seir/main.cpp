@@ -3,6 +3,7 @@
 using namespace epiworld;
  
 int main() {
+    constexpr epiworld_fast_uint n_agents = 5000u;
 
     epimodels::ModelSEIR<> model(
         "a virus", // Name of the virus
@@ -14,7 +15,7 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     model.agents_from_adjlist(
-        rgraph_smallworld(1000000, 5, .001, false, model)
+        rgraph_smallworld(n_agents, 5, .001, false, model)
     );
 
     // Running and checking the results
