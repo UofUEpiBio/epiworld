@@ -10233,17 +10233,21 @@ public:
      * @details
      *
      * The functions `get_state` return the current values for the
-     * states included in the model.
+     * states included in the model. The function `set_state_function`
+     * replaces the update function associated with an existing state.
      *
      * @param lab `std::string` Name of the state.
      *
      * @return `add_state*` returns the ID (index) of the registered state.
+     * @return `set_state_function` returns a reference to the model.
      * @return `get_state_*` returns a vector of pairs with the
      * states and their labels.
      */
     ///@{
     epiworld_fast_int state_of(std::string_view name);
     epiworld_fast_int add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
+    Model<TSeq> & set_state_function(epiworld_fast_uint state, UpdateFun<TSeq> fun = nullptr);
+    Model<TSeq> & set_state_function(std::string_view name, UpdateFun<TSeq> fun = nullptr);
     const std::vector< std::string > & get_states() const;
     size_t get_n_states() const;
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
@@ -13105,6 +13109,38 @@ inline epiworld_fast_int Model<TSeq>::add_state(
     return nstates++;
 }
 
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::set_state_function(
+    epiworld_fast_uint state,
+    UpdateFun<TSeq> fun
+)
+{
+
+    if (state >= nstates)
+        throw std::range_error(
+            "The state " + std::to_string(state) + " is out of range. " +
+            "The model currently has " + std::to_string(nstates) + " states."
+        );
+
+    state_fun[state] = fun;
+
+    return *this;
+
+}
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::set_state_function(
+    std::string_view name,
+    UpdateFun<TSeq> fun
+)
+{
+
+    return set_state_function(
+        static_cast<epiworld_fast_uint>(state_of(name)),
+        fun
+    );
+
+}
 
 template<typename TSeq>
 inline const std::vector< std::string > &
