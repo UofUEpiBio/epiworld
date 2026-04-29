@@ -1047,7 +1047,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
 {
 
     // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix);
+    this->set_contact_matrix(contact_matrix, true);
 
     // Setting up parameters
     this->add_param(transmission_rate, "Transmission rate");

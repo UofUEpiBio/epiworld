@@ -8592,8 +8592,11 @@ public:
     /**
      * @brief Set the contact matrix for population mixing
      * @param cmat Contact matrix specifying interaction rates between groups
+     * @param as_backup Whether to use the matrix as a backup (default: true)
+     * If set to true, the new contact matrix will be saved as a backup for
+     * resetting the model.
      */
-    void set_contact_matrix(std::vector< double > cmat);
+    void set_contact_matrix(std::vector< double > cmat, bool as_backup = true);
 
     /**
      * @brief Get the current contact matrix
@@ -8650,11 +8653,8 @@ public:
 inline void ContactMatrix::validate_contact_matrix(size_t expected_size)
 {
 
-    if (contact_matrix_backup.empty())
+    if (!contact_matrix_backup.empty())
         contact_matrix_backup = contact_matrix;
-    else
-        contact_matrix = contact_matrix_backup;
-        
 
     if (contact_matrix.size() != expected_size * expected_size)
         throw std::length_error(
@@ -8680,7 +8680,8 @@ inline void ContactMatrix::validate_contact_matrix(size_t expected_size)
 }
 
 inline void ContactMatrix::set_contact_matrix(
-    std::vector< double > cmat
+    std::vector< double > cmat,
+    bool as_backup
 )
 {
     n_groups = static_cast<int>(std::sqrt(cmat.size()));
@@ -8688,6 +8689,9 @@ inline void ContactMatrix::set_contact_matrix(
         throw std::invalid_argument(
             "Contact matrix size is not a perfect square, cannot determine number of groups."
         );
+
+    if (as_backup)
+        contact_matrix_backup = cmat;
 
     contact_matrix = cmat;
     return;
@@ -23226,7 +23230,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 {
 
     // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix);
+    this->set_contact_matrix(contact_matrix, true);
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
@@ -23712,7 +23716,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 {
 
     // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix);
+    this->set_contact_matrix(contact_matrix, true);
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
@@ -24754,7 +24758,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
 {
 
     // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix);
+    this->set_contact_matrix(contact_matrix, true);
 
     // Setting up parameters
     this->add_param(transmission_rate, "Prob. Transmission");
