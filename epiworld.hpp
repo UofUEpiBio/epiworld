@@ -8577,6 +8577,7 @@ class ContactMatrix
 private: 
 
     std::vector< double > contact_matrix;
+    std::vector< double > contact_matrix_backup; ///< Used for resetting the model
     int n_groups = -1;
 
 public:
@@ -8648,6 +8649,11 @@ public:
 
 inline void ContactMatrix::validate_contact_matrix(size_t expected_size)
 {
+
+    // Resetting the contact matrix if it was changed
+    if (!contact_matrix_backup.empty())
+        contact_matrix = contact_matrix_backup;
+
     if (contact_matrix.size() != expected_size * expected_size)
         throw std::length_error(
             std::string("Contact matrix size is ") +
@@ -8679,6 +8685,10 @@ inline void ContactMatrix::set_contact_matrix(
         throw std::invalid_argument(
             "Contact matrix size is not a perfect square, cannot determine number of groups."
         );
+
+    // Saving the contact matrix for resetting the model
+    if (contact_matrix.empty())
+        contact_matrix_backup = contact_matrix;
 
     contact_matrix = cmat;
     return;
@@ -21910,7 +21920,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                 auto which = m->runif_index(m->size());
 
                 // Can't sample itself
-                if (which == static_cast<int>(p->get_id()))
+                if (which == p->get_id())
                     continue;
 
                 // If the neighbor is infected, then proceed
