@@ -8551,6 +8551,197 @@ inline void ContactTracing::print(size_t agent)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -./include/epiworld/contactmatrix-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_CONTACTMATRIX_BONES_HPP
+#define EPIWORLD_CONTACTMATRIX_BONES_HPP
+
+#include <vector>
+
+/**
+ * @file contactmatrix-bones.hpp
+ * @brief Base class for handling contact matrices in epidemiological
+ * models
+ * 
+ * This class provides functionality for setting and validating contact
+ * matrices, which are essential for modeling population mixing in
+ * epidemiological simulations. Models that require contact matrices can
+ * inherit from this class.
+ */
+class ContactMatrix 
+{
+private: 
+
+    std::vector< double > contact_matrix;
+    std::vector< double > contact_matrix_backup; ///< Used for resetting the model
+    int n_groups = -1;
+
+public:
+
+    ContactMatrix() = default;
+
+    /**
+     * @brief Validates the contact matrix size and values
+     * @param expected_size The expected size of the contact matrix
+     */
+    void validate_contact_matrix(size_t expected_size);
+    /**
+     * @brief Set the contact matrix for population mixing
+     * @param cmat Contact matrix specifying interaction rates between groups
+     * @param as_backup Whether to use the matrix as a backup (default: true)
+     * If set to true, the new contact matrix will be saved as a backup for
+     * resetting the model.
+     */
+    void set_contact_matrix(std::vector< double > cmat, bool as_backup = true);
+
+    /**
+     * @brief Get the current contact matrix
+     * @return Vector representing the contact matrix
+     */
+    const std::vector< double > & get_contact_matrix() const;
+
+    /**
+     * @brief Get the current contact matrix
+     * @return Vector representing the contact matrix
+     */
+    std::vector< double > & get_contact_matrix_ref();
+
+    /**
+     * @brief Get the contact rate between two groups
+     * @param i Index of the first group
+     * @param j Index of the second group
+     * @return Contact rate between group i and group j
+     */
+    double get_contact_rate(size_t i, size_t j, bool check = true) const;
+
+    /**
+     * @brief Get the size of the contact matrix
+     * @return Size of the contact matrix
+     */
+    size_t get_contact_matrix_size() const;
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/contactmatrix-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/contactmatrix-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_CONTACTMATRIX_MEAT_HPP
+#define EPIWORLD_CONTACTMATRIX_MEAT_HPP
+
+// (already included include/epiworld/contactmatrix-bones.hpp)
+#include <stdexcept>
+
+inline void ContactMatrix::validate_contact_matrix(size_t expected_size)
+{
+
+    if (!contact_matrix_backup.empty())
+        contact_matrix_backup = contact_matrix;
+
+    if (contact_matrix.size() != expected_size * expected_size)
+        throw std::length_error(
+            std::string("Contact matrix size is ") +
+            std::to_string(contact_matrix.size()) +
+            std::string(", but expected size is ") +
+            std::to_string(expected_size * expected_size) + "."
+        );
+
+    for (int i = 0; i < n_groups; ++i)
+    {
+        for (int j = 0; j < n_groups; ++j)
+        {
+            if (get_contact_rate(i, j, false) < 0.0)
+                throw std::range_error(
+                    std::string("The contact matrix must be non-negative. ") +
+                    std::to_string(this->get_contact_rate(i, j, false)) +
+                    std::string(" < 0.")
+                    );
+        }
+    }
+
+}
+
+inline void ContactMatrix::set_contact_matrix(
+    std::vector< double > cmat,
+    bool as_backup
+)
+{
+    n_groups = static_cast<int>(std::sqrt(cmat.size()));
+    if (n_groups * n_groups != static_cast<int>(cmat.size()))
+        throw std::invalid_argument(
+            "Contact matrix size is not a perfect square, cannot determine number of groups."
+        );
+
+    if (as_backup)
+        contact_matrix_backup = cmat;
+
+    contact_matrix = cmat;
+    return;
+};
+
+inline const std::vector< double > & ContactMatrix::get_contact_matrix() const
+{
+    return contact_matrix;
+}
+
+inline std::vector< double > & ContactMatrix::get_contact_matrix_ref()
+{
+    return contact_matrix;
+}
+
+inline double ContactMatrix::get_contact_rate(
+    size_t i, size_t j, bool check
+) const
+{
+    if (check && (
+        (static_cast<int>(i) >= n_groups) ||
+        (static_cast<int>(j) >= n_groups)
+    ))
+        throw std::out_of_range(
+            std::string("Group indices out of range. ") +
+            std::to_string(i) + ", " + std::to_string(j) +
+            std::string(" >= ") + std::to_string(n_groups)
+        );
+    return contact_matrix[j * n_groups + i];
+}
+
+inline size_t ContactMatrix::get_contact_matrix_size() const
+{
+    return contact_matrix.size();
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/contactmatrix-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -./include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -21732,7 +21923,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
                 auto which = m->runif_index(m->size());
 
                 // Can't sample itself
-                if (which == static_cast<int>(p->get_id()))
+                if (which == p->get_id())
                     continue;
 
                 // If the neighbor is infected, then proceed
@@ -22781,7 +22972,9 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRMixing : public Model<TSeq>
+class ModelSEIRMixing :
+    public Model<TSeq>,
+    public ContactMatrix
 {
 private:
 
@@ -22801,7 +22994,6 @@ private:
         std::vector< size_t > & sampled_agents
         );
     std::vector< double > adjusted_contact_rate;
-    std::vector< double > contact_matrix;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -22852,12 +23044,6 @@ public:
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
     ) override;
-
-    void set_contact_matrix(std::vector< double > cmat)
-    {
-        contact_matrix = cmat;
-        return;
-    };
 
 };
 
@@ -22912,9 +23098,7 @@ inline size_t ModelSEIRMixing<TSeq>::sample_agents(
         // How many from this entity?
         int nsamples = this->rbinom(
             group_size,
-            adjusted_contact_rate[g] * contact_matrix[
-                MM(agent_group_id, g, ngroups)
-            ]
+            adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false)
         );
 
         if (nsamples == 0)
@@ -22966,27 +23150,7 @@ inline void ModelSEIRMixing<TSeq>::reset()
 
     // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
-    if (this->contact_matrix.size() !=  nentities*nentities)
-        throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size ") +
-            std::string("nentities x nentities. ") +
-            std::to_string(this->contact_matrix.size()) +
-            std::string(" != ") + std::to_string(nentities*nentities) +
-            std::string(".")
-            );
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-        for (size_t j = 0u; j < this->entities.size(); ++j)
-        {
-            if (this->contact_matrix[MM(i, j, nentities)] < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->contact_matrix[MM(i, j, nentities)]) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
+    this->validate_contact_matrix(nentities);
 
     // Do it the first time only
     sampled_agents.resize(this->size());
@@ -23066,7 +23230,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 {
 
     // Setting up the contact matrix
-    this->contact_matrix = contact_matrix;
+    this->set_contact_matrix(contact_matrix, true);
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
@@ -23297,7 +23461,9 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
  * @ingroup mixing_models
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRMixing : public Model<TSeq>
+class ModelSIRMixing :
+    public Model<TSeq>,
+    public ContactMatrix
 {
 private:
 
@@ -23319,7 +23485,6 @@ private:
         );
 
     std::vector< double > adjusted_contact_rate;
-    std::vector< double > contact_matrix;
 
     size_t index(size_t i, size_t j, size_t n) {
         return j * n + i;
@@ -23374,12 +23539,6 @@ public:
         return n_infected_per_group[group];
     }
 
-    void set_contact_matrix(std::vector< double > cmat)
-    {
-        contact_matrix = cmat;
-        return;
-    };
-
 };
 
 template<typename TSeq>
@@ -23432,9 +23591,7 @@ inline size_t ModelSIRMixing<TSeq>::sample_agents(
         // How many from this entity?
         int nsamples = this->rbinom(
             group_size,
-            adjusted_contact_rate[g] * contact_matrix[
-                index(agent_group_id, g, ngroups)
-            ]
+            adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false)
         );
 
         if (nsamples == 0)
@@ -23486,27 +23643,7 @@ inline void ModelSIRMixing<TSeq>::reset()
 
     // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
-    if (this->contact_matrix.size() !=  nentities*nentities)
-        throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size ") +
-            std::string("nentities x nentities. ") +
-            std::to_string(this->contact_matrix.size()) +
-            std::string(" != ") + std::to_string(nentities*nentities) +
-            std::string(".")
-            );
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-        for (size_t j = 0u; j < this->entities.size(); ++j)
-        {
-            if (this->contact_matrix[index(i, j, nentities)] < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->contact_matrix[index(i, j, nentities)]) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
+    this->validate_contact_matrix(nentities);
 
     // Do it the first time only
     sampled_agents.resize(this->size());
@@ -23579,7 +23716,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 {
 
     // Setting up the contact matrix
-    this->contact_matrix = contact_matrix;
+    this->set_contact_matrix(contact_matrix, true);
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
@@ -23773,9 +23910,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #define EPIWORLD_MODELS_SEIRMIXINGQUARANTINE_HPP
 
 // (already included include/epiworld/models/../model-bones.hpp)
-
-#define MM(i, j, n) \
-    j * n + i
+// (already included include/epiworld/models/../contactmatrix-bones.hpp)
 
 /**
  * @file seirmixingquarantine.hpp
@@ -23818,7 +23953,9 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
  * <a href="../impl/sampling-contacts.md">Sampling Contacts</a>
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRMixingQuarantine : public Model<TSeq>
+class ModelSEIRMixingQuarantine :
+    public Model<TSeq>,
+    public ContactMatrix
 {
 private:
 
@@ -23838,7 +23975,6 @@ private:
         std::vector< size_t > & sampled_agents
         );
     std::vector< double > adjusted_contact_rate;
-    std::vector< double > contact_matrix;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -23948,24 +24084,6 @@ public:
         std::vector< int > queue_ = {}
     ) override;
 
-    /**
-     * @brief Set the contact matrix for population mixing
-     * @param cmat Contact matrix specifying interaction rates between groups
-     */
-    void set_contact_matrix(std::vector< double > cmat)
-    {
-        contact_matrix = cmat;
-        return;
-    };
-
-    /**
-     * @brief Get the current contact matrix
-     * @return Vector representing the contact matrix
-     */
-    std::vector< double > get_contact_matrix() const
-    {
-        return contact_matrix;
-    };
 
     /**
      * @brief Get the quarantine trigger status for all agents
@@ -24078,9 +24196,8 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::_sample_agents(
         // How many from this entity?
         int nsamples = this->rbinom(
             group_size,
-            adjusted_contact_rate[g] * contact_matrix[
-                MM(agent_group_id, g, ngroups)
-            ]
+            adjusted_contact_rate[g] *
+            get_contact_rate(agent_group_id, g, false)
         );
 
         if (nsamples == 0)
@@ -24132,27 +24249,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
-    if (this->contact_matrix.size() !=  nentities*nentities)
-        throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size ") +
-            std::string("nentities x nentities. ") +
-            std::to_string(this->contact_matrix.size()) +
-            std::string(" != ") + std::to_string(nentities*nentities) +
-            std::string(".")
-            );
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-        for (size_t j = 0u; j < this->entities.size(); ++j)
-        {
-            if (this->contact_matrix[MM(i, j, nentities)] < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->contact_matrix[MM(i, j, nentities)]) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
+    this->validate_contact_matrix(nentities);
 
     // Do it the first time only
     sampled_agents.resize(this->size());
@@ -24661,7 +24758,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
 {
 
     // Setting up the contact matrix
-    this->contact_matrix = contact_matrix;
+    this->set_contact_matrix(contact_matrix, true);
 
     // Setting up parameters
     this->add_param(transmission_rate, "Prob. Transmission");
@@ -24752,7 +24849,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::next() {
 
 }
 
-#undef MM
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
