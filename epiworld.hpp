@@ -29,7 +29,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 15
-#define EPIWORLD_VERSION_PATCH 0
+#define EPIWORLD_VERSION_PATCH 1
 
 #define EPIWORLD_VERSION_PRERELEASE ""
 
@@ -10089,6 +10089,19 @@ public:
     ///@}
 
     /**
+     * @name Initialize agents using a Bernoulli random graph
+     * @param n Number of agents.
+     * @param p Probability of tie formation.
+     * @param d Whether the graph is directed or not.
+     * @return Reference to this Model.
+     */
+    Model<TSeq> & agents_bernoulli(
+        epiworld_fast_uint n,
+        epiworld_double p,
+        bool d = false
+    );
+
+    /**
      * @name Functions to run the model
      *
      * @param seed Seed to be used for Pseudo-RNG.
@@ -10220,17 +10233,21 @@ public:
      * @details
      *
      * The functions `get_state` return the current values for the
-     * states included in the model.
+     * states included in the model. The function `set_state_function`
+     * replaces the update function associated with an existing state.
      *
      * @param lab `std::string` Name of the state.
      *
      * @return `add_state*` returns the ID (index) of the registered state.
+     * @return `set_state_function` returns a reference to the model.
      * @return `get_state_*` returns a vector of pairs with the
      * states and their labels.
      */
     ///@{
     epiworld_fast_int state_of(std::string_view name);
     epiworld_fast_int add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
+    Model<TSeq> & set_state_function(epiworld_fast_uint state, UpdateFun<TSeq> fun = nullptr);
+    Model<TSeq> & set_state_function(std::string_view name, UpdateFun<TSeq> fun = nullptr);
     const std::vector< std::string > & get_states() const;
     size_t get_n_states() const;
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
@@ -11545,6 +11562,21 @@ inline Model<TSeq> & Model<TSeq>::agents_sbm(
 
     agents_from_adjlist(
         rgraph_sbm(block_sizes, mixing_matrix, row_major, *this)
+    );
+
+    return *this;
+}
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::agents_bernoulli(
+    epiworld_fast_uint n,
+    epiworld_double p,
+    bool d
+)
+{
+
+    agents_from_adjlist(
+        rgraph_bernoulli(n, p, d, *this)
     );
 
     return *this;
@@ -13077,6 +13109,38 @@ inline epiworld_fast_int Model<TSeq>::add_state(
     return nstates++;
 }
 
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::set_state_function(
+    epiworld_fast_uint state,
+    UpdateFun<TSeq> fun
+)
+{
+
+    if (state >= nstates)
+        throw std::range_error(
+            "The state " + std::to_string(state) + " is out of range. " +
+            "The model currently has " + std::to_string(nstates) + " states."
+        );
+
+    state_fun[state] = fun;
+
+    return *this;
+
+}
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::set_state_function(
+    std::string_view name,
+    UpdateFun<TSeq> fun
+)
+{
+
+    return set_state_function(
+        static_cast<epiworld_fast_uint>(state_of(name)),
+        fun
+    );
+
+}
 
 template<typename TSeq>
 inline const std::vector< std::string > &
@@ -24040,7 +24104,7 @@ inline size_t ModelSEIRMixingQuarantine<TSeq>::_sample_agents(
             #endif
 
             #ifdef EPI_DEBUG
-            if (a.get_state() != ModelSEIRMixingQuarantine<TSeq>::INFECTED)
+            if (a.get_state() != INFECTED)
                 throw std::logic_error(
                     "The agent is not infected, but it should be."
                 );
@@ -24220,7 +24284,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_exposed(
     if (m->runif() < 1.0/(v->get_incubation(m)))
     {
 
-        p->change_state(*m, ModelSEIRMixingQuarantine<TSeq>::INFECTED);
+        p->change_state(*m, INFECTED);
 
         auto * model = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
         model->day_onset[p->get_id()] = m->today();
@@ -24251,7 +24315,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_infected(
     if (detected)
     {
         model->agent_quarantine_triggered[p->get_id()] =
-            ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE;
+            QUARANTINE_PROCESS_ACTIVE;
     }
 
     // Checking if the agent is willing to isolate individually
@@ -24277,32 +24341,25 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_infected(
     {
         if (isolation_detected)
         {
-            p->change_state(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
-            );
+            p->change_state(*m, ISOLATED_RECOVERED);
         }
         else
         {
-            p->rm_virus(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::RECOVERED
-            );
+            p->rm_virus(*m, RECOVERED);
         }
 
         return;
     }
     else if (which == 1) // Hospitalized
     {
-        p->change_state(*m, 
-            ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
-        );
+        m->record_hospitalization(*p);
+        p->change_state(*m, HOSPITALIZED);
 
     }
     else if ((which == 2) && isolation_detected) // Nothing, but detected
     {
         // If the agent is detected, it goes to isolation
-        p->change_state(*m, 
-            ModelSEIRMixingQuarantine<TSeq>::ISOLATED
-        );
+        p->change_state(*m, ISOLATED);
 
     }
 
@@ -24340,26 +24397,19 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_isolated(
     {
         if (unisolate)
         {
-            p->rm_virus(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::RECOVERED
-            );
+            p->rm_virus(*m, RECOVERED);
         }
         else
-            p->rm_virus(*m, 
-                ModelSEIRMixingQuarantine<TSeq>::ISOLATED_RECOVERED
-            );
+            p->rm_virus(*m, ISOLATED_RECOVERED);
     }
     else if (which == 1)
     {
-        p->change_state(*m, 
-            ModelSEIRMixingQuarantine<TSeq>::HOSPITALIZED
-        );
+        m->record_hospitalization(*p);
+        p->change_state(*m, HOSPITALIZED);
     }
     else if ((which == 2) && unisolate)
     {
-        p->change_state(*m, 
-            ModelSEIRMixingQuarantine<TSeq>::INFECTED
-        );
+        p->change_state(*m, INFECTED);
     }
 
 
@@ -25075,24 +25125,19 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_infected(
     }
     else if (which == 1) // Hospitalized
     {
+        m->record_hospitalization(*p);
         if (detected)
         {
-            p->change_state(*m,
-                ModelSEIRNetworkQuarantine<TSeq>::DETECTED_HOSPITALIZED
-            );
+            p->change_state(*m, DETECTED_HOSPITALIZED);
         }
         else
         {
-            p->change_state(*m,
-                ModelSEIRNetworkQuarantine<TSeq>::HOSPITALIZED
-            );
+            p->change_state(*m, HOSPITALIZED);
         }
     }
     else if ((which == 2) && isolation_detected) // Nothing, but detected
     {
-        p->change_state(*m,
-            ModelSEIRNetworkQuarantine<TSeq>::ISOLATED
-        );
+        p->change_state(*m, ISOLATED);
     }
 
     return;
@@ -25140,24 +25185,19 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_isolated(
     }
     else if (which == 1)
     {
+        m->record_hospitalization(*p);
         if (unisolate)
         {
-            p->change_state(*m,
-                ModelSEIRNetworkQuarantine<TSeq>::HOSPITALIZED
-            );
+            p->change_state(*m, HOSPITALIZED);
         }
         else
         {
-            p->change_state(*m,
-                ModelSEIRNetworkQuarantine<TSeq>::DETECTED_HOSPITALIZED
-            );
+            p->change_state(*m, DETECTED_HOSPITALIZED);
         }
     }
     else if ((which == 2) && unisolate)
     {
-        p->change_state(*m,
-            ModelSEIRNetworkQuarantine<TSeq>::INFECTED
-        );
+        p->change_state(*m, INFECTED);
     }
 
 };
