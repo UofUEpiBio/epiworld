@@ -8562,6 +8562,16 @@ inline void ContactTracing::print(size_t agent)
 
 #include <vector>
 
+/**
+ * @file contactmatrix-bones.hpp
+ * @brief Base class for handling contact matrices in epidemiological
+ * models
+ * 
+ * This class provides functionality for setting and validating contact
+ * matrices, which are essential for modeling population mixing in
+ * epidemiological simulations. Models that require contact matrices can
+ * inherit from this class.
+ */
 class ContactMatrix 
 {
 private: 
@@ -8570,6 +8580,14 @@ private:
     int n_groups = -1;
 
 public:
+
+    ContactMatrix() = default;
+
+    /**
+     * @brief Validates the contact matrix size and values
+     * @param expected_size The expected size of the contact matrix
+     */
+    void validate_contact_matrix(size_t expected_size);
     /**
      * @brief Set the contact matrix for population mixing
      * @param cmat Contact matrix specifying interaction rates between groups
@@ -8596,10 +8614,11 @@ public:
      */
     double get_contact_rate(size_t i, size_t j, bool check = true) const;
 
-    size_t get_contact_matrix_size() const
-    {
-        return contact_matrix.size();
-    }
+    /**
+     * @brief Get the size of the contact matrix
+     * @return Size of the contact matrix
+     */
+    size_t get_contact_matrix_size() const;
 };
 
 #endif
@@ -8627,7 +8646,33 @@ public:
 // (already included include/epiworld/contactmatrix-bones.hpp)
 #include <stdexcept>
 
-inline void ContactMatrix::set_contact_matrix(std::vector< double > cmat)
+inline void ContactMatrix::validate_contact_matrix(size_t expected_size)
+{
+    if (contact_matrix.size() != expected_size * expected_size)
+        throw std::length_error(
+            std::string("Contact matrix size is ") +
+            std::to_string(contact_matrix.size()) +
+            std::string(", but expected size is ") +
+            std::to_string(expected_size * expected_size) + "."
+        );
+
+    for (int i = 0; i < n_groups; ++i)
+    {
+        for (int j = 0; j < n_groups; ++j)
+        {
+            if (get_contact_rate(i, j, false) < 0.0)
+                throw std::range_error(
+                    std::string("The contact matrix must be non-negative. ") +
+                    std::to_string(this->get_contact_rate(i, j, false)) +
+                    std::string(" < 0.")
+                    );
+        }
+    }
+}
+
+inline void ContactMatrix::set_contact_matrix(
+    std::vector< double > cmat
+)
 {
     n_groups = static_cast<int>(std::sqrt(cmat.size()));
     if (n_groups * n_groups != static_cast<int>(cmat.size()))
@@ -8663,6 +8708,11 @@ inline double ContactMatrix::get_contact_rate(
             std::string(" >= ") + std::to_string(n_groups)
         );
     return contact_matrix[j * n_groups + i];
+}
+
+inline size_t ContactMatrix::get_contact_matrix_size() const
+{
+    return contact_matrix.size();
 }
 
 #endif
@@ -23087,27 +23137,7 @@ inline void ModelSEIRMixing<TSeq>::reset()
 
     // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
-    if (this->get_contact_matrix_size() !=  nentities*nentities)
-        throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size ") +
-            std::string("nentities x nentities. ") +
-            std::to_string(this->get_contact_matrix_size()) +
-            std::string(" != ") + std::to_string(nentities*nentities) +
-            std::string(".")
-            );
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-        for (size_t j = 0u; j < this->entities.size(); ++j)
-        {
-            if (this->get_contact_rate(i, j, false) < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->get_contact_rate(i, j, false)) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
+    this->validate_contact_matrix(nentities);
 
     // Do it the first time only
     sampled_agents.resize(this->size());
@@ -23600,27 +23630,7 @@ inline void ModelSIRMixing<TSeq>::reset()
 
     // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
-    if (this->get_contact_matrix_size() !=  nentities*nentities)
-        throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size ") +
-            std::string("nentities x nentities. ") +
-            std::to_string(this->get_contact_matrix_size()) +
-            std::string(" != ") + std::to_string(nentities*nentities) +
-            std::string(".")
-            );
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-        for (size_t j = 0u; j < this->entities.size(); ++j)
-        {
-            if (this->get_contact_rate(i, j, false) < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->get_contact_rate(i, j, false)) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
+    this->validate_contact_matrix(nentities);
 
     // Do it the first time only
     sampled_agents.resize(this->size());
@@ -24226,27 +24236,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
-    if (this->get_contact_matrix_size() !=  (nentities * nentities))
-        throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size ") +
-            std::string("nentities x nentities. ") +
-            std::to_string(this->get_contact_matrix_size()) +
-            std::string(" != ") + std::to_string(nentities * nentities) +
-            std::string(".")
-            );
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-        for (size_t j = 0u; j < this->entities.size(); ++j)
-        {
-            if (this->get_contact_rate(i, j, false) < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->get_contact_rate(i, j, false)) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
+    this->validate_contact_matrix(nentities);
 
     // Do it the first time only
     sampled_agents.resize(this->size());

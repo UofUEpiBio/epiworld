@@ -3,6 +3,16 @@
 
 #include <vector>
 
+/**
+ * @file contactmatrix-bones.hpp
+ * @brief Base class for handling contact matrices in epidemiological
+ * models
+ * 
+ * This class provides functionality for setting and validating contact
+ * matrices, which are essential for modeling population mixing in
+ * epidemiological simulations. Models that require contact matrices can
+ * inherit from this class.
+ */
 class ContactMatrix 
 {
 private: 
@@ -11,6 +21,14 @@ private:
     int n_groups = -1;
 
 public:
+
+    ContactMatrix() = default;
+
+    /**
+     * @brief Validates the contact matrix size and values
+     * @param expected_size The expected size of the contact matrix
+     */
+    void validate_contact_matrix(size_t expected_size);
     /**
      * @brief Set the contact matrix for population mixing
      * @param cmat Contact matrix specifying interaction rates between groups
@@ -37,10 +55,11 @@ public:
      */
     double get_contact_rate(size_t i, size_t j, bool check = true) const;
 
-    size_t get_contact_matrix_size() const
-    {
-        return contact_matrix.size();
-    }
+    /**
+     * @brief Get the size of the contact matrix
+     * @return Size of the contact matrix
+     */
+    size_t get_contact_matrix_size() const;
 };
 
 #endif

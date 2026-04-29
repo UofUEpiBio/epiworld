@@ -54,7 +54,9 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing final : public Model<TSeq>
+class ModelMeaslesMixing final :
+    public Model<TSeq>,
+    public ContactMatrix
 {
 private:
 
@@ -74,7 +76,6 @@ private:
         std::vector< size_t > & sampled_agents
         );
     std::vector< double > adjusted_contact_rate;
-    std::vector< double > contact_matrix;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -210,25 +211,6 @@ public:
     ) override;
 
     /**
-     * @brief Set the contact matrix for population mixing
-     * @param cmat Contact matrix specifying interaction rates between groups
-     */
-    void set_contact_matrix(std::vector< double > cmat)
-    {
-        contact_matrix = cmat;
-        return;
-    };
-
-    /**
-     * @brief Get the current contact matrix
-     * @return Vector representing the contact matrix
-     */
-    std::vector< double > get_contact_matrix() const
-    {
-        return contact_matrix;
-    };
-
-    /**
      * @brief Get the quarantine trigger status for all agents
      * @return Vector indicating quarantine process status for each agent
      */
@@ -342,9 +324,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
         // How many from this entity?
         int nsamples = this->rbinom(
             group_size,
-            adjusted_contact_rate[g] * contact_matrix[
-                MM(agent_group_id, g, ngroups)
-            ]
+            adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false)
         );
 
         if (nsamples == 0)
@@ -416,27 +396,7 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 
     // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
-    if (this->contact_matrix.size() !=  nentities*nentities)
-        throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size ") +
-            std::string("nentities x nentities. ") +
-            std::to_string(this->contact_matrix.size()) +
-            std::string(" != ") + std::to_string(nentities*nentities) +
-            std::string(".")
-            );
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-        for (size_t j = 0u; j < this->entities.size(); ++j)
-        {
-            if (this->contact_matrix[MM(i, j, nentities)] < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->contact_matrix[MM(i, j, nentities)]) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
+    validate_contact_matrix(nentities);
 
     // Do it the first time only
     sampled_agents.resize(this->size());
@@ -958,7 +918,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 
 
     // Setting up the contact matrix
-    this->contact_matrix = contact_matrix;
+    this->set_contact_matrix(contact_matrix);
 
     // Setting up parameters
     this->add_param(transmission_rate, "Transmission rate");

@@ -197,27 +197,7 @@ inline void ModelSEIRMixing<TSeq>::reset()
 
     // Checking contact matrix dimensions
     size_t nentities = this->entities.size();
-    if (this->get_contact_matrix_size() !=  nentities*nentities)
-        throw std::length_error(
-            std::string("The contact matrix must be a square matrix of size ") +
-            std::string("nentities x nentities. ") +
-            std::to_string(this->get_contact_matrix_size()) +
-            std::string(" != ") + std::to_string(nentities*nentities) +
-            std::string(".")
-            );
-
-    for (size_t i = 0u; i < this->entities.size(); ++i)
-    {
-        for (size_t j = 0u; j < this->entities.size(); ++j)
-        {
-            if (this->get_contact_rate(i, j, false) < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->get_contact_rate(i, j, false)) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
+    this->validate_contact_matrix(nentities);
 
     // Do it the first time only
     sampled_agents.resize(this->size());
