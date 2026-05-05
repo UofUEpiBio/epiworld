@@ -46,6 +46,15 @@ private:
     // Where the agents start in the `infectious` vector
     std::vector< size_t > infectious_entity_indices;
 
+    // Rash agents vector (for contact rate reduction feature)
+    std::vector< size_t > rash;
+
+    // Number of rash agents in each group
+    std::vector< size_t > n_rash_per_group;
+
+    // Where the rash agents start in the `rash` vector
+    std::vector< size_t > rash_entity_indices;
+
     double m_get_risk_period(size_t agent_id);
 
     // Update the list of infectious agents
@@ -180,7 +189,8 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_double detection_rate_quarantine,
         epiworld_double contact_tracing_success_rate = 1.0,
-        epiworld_fast_uint contact_tracing_days_window = 4u
+        epiworld_fast_uint contact_tracing_days_window = 4u,
+        epiworld_double contact_rate_reduction = 1.0
     );
 
     /**
@@ -279,6 +289,9 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_infectious_list()
     // Resetting the infectious list (no infected agents)
     std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);
 
+    // Resetting the rash list
+    std::fill(n_rash_per_group.begin(), n_rash_per_group.end(), 0u);
+
     // Resetting the number of available contacts
     adjusted_contact_rate.assign(this->entities.size(), 0.0);
     
@@ -298,6 +311,17 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_infectious_list()
                     n_infectious_per_group[entity.get_id()]++
                 ] = a.get_id();
 
+            }
+        }
+        else if (a.get_state() == RASH)
+        {
+            if (a.get_n_entities() > 0u)
+            {
+                const auto & entity = a.get_entity(0u, *this);
+                rash[
+                    rash_entity_indices[entity.get_id()] +
+                    n_rash_per_group[entity.get_id()]++
+                ] = a.get_id();
             }
         }
 
@@ -343,59 +367,101 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
 
     size_t agent_group_id = agent->get_entity(0u, *this).get_id();
     size_t ngroups = this->entities.size();
+    double rash_rate_factor = 1.0 - this->par("Contact rate reduction");
 
     int samp_id = 0;
     for (size_t g = 0; g < ngroups; ++g)
     {
 
+        double base_rate = adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false);
+
+        // Sample from prodromal agents
         size_t group_size = n_infectious_per_group[g];
 
-        if (group_size == 0u)
-            continue;
-
-        // How many from this entity?
-        int nsamples = this->rbinom(
-            group_size,
-            adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false)
-        );
-
-        if (nsamples == 0)
-            continue;
-
-        // Sampling from the entity
-        for (int s = 0; s < nsamples; ++s)
+        if (group_size > 0u)
         {
+            int nsamples = this->rbinom(group_size, base_rate);
 
-            // Randomly selecting an agent
-            int which = this->runif() * group_size;
+            // Sampling from the entity
+            for (int s = 0; s < nsamples; ++s)
+            {
 
-            // Correcting overflow error
-            if (which >= static_cast<int>(group_size))
-                which = static_cast<int>(group_size) - 1;
+                // Randomly selecting an agent
+                int which = this->runif() * group_size;
 
-            #ifdef EPI_DEBUG
-            auto & a = this->population.at(
-                infectious.at(infectious_entity_indices[g] + which)
-            );
-            #else
-            const auto & a = this->get_agent(
-                infectious[infectious_entity_indices[g] + which]
-            );
-            #endif
+                // Correcting overflow error
+                if (which >= static_cast<int>(group_size))
+                    which = static_cast<int>(group_size) - 1;
 
-            #ifdef EPI_DEBUG
-            if (a.get_state() != PRODROMAL)
-                throw std::logic_error(
-                    "The agent is not in prodromal state, but it should be."
+                #ifdef EPI_DEBUG
+                auto & a = this->population.at(
+                    infectious.at(infectious_entity_indices[g] + which)
                 );
-            #endif
+                #else
+                const auto & a = this->get_agent(
+                    infectious[infectious_entity_indices[g] + which]
+                );
+                #endif
 
-            // Can't sample itself
-            if (a.get_id() == agent->get_id())
-                continue;
+                #ifdef EPI_DEBUG
+                if (a.get_state() != PRODROMAL)
+                    throw std::logic_error(
+                        "The agent is not in prodromal state, but it should be."
+                    );
+                #endif
 
-            sampled_agents[samp_id++] = a.get_id();
-            
+                // Can't sample itself
+                if (a.get_id() == agent->get_id())
+                    continue;
+
+                sampled_agents[samp_id++] = a.get_id();
+                
+            }
+        }
+
+        // Sample from rash agents (with contact rate reduction)
+        size_t rash_size = n_rash_per_group[g];
+
+        if (rash_size > 0u && rash_rate_factor > 0.0)
+        {
+            int nsamples_rash = this->rbinom(
+                rash_size,
+                base_rate * rash_rate_factor
+            );
+
+            for (int s = 0; s < nsamples_rash; ++s)
+            {
+
+                int which = this->runif() * rash_size;
+
+                // Correcting overflow error
+                if (which >= static_cast<int>(rash_size))
+                    which = static_cast<int>(rash_size) - 1;
+
+                #ifdef EPI_DEBUG
+                auto & a = this->population.at(
+                    rash.at(rash_entity_indices[g] + which)
+                );
+                #else
+                const auto & a = this->get_agent(
+                    rash[rash_entity_indices[g] + which]
+                );
+                #endif
+
+                #ifdef EPI_DEBUG
+                if (a.get_state() != RASH)
+                    throw std::logic_error(
+                        "The rash agent is not in rash state, but it should be."
+                    );
+                #endif
+
+                // Can't sample itself
+                if (a.get_id() == agent->get_id())
+                    continue;
+
+                sampled_agents[samp_id++] = a.get_id();
+
+            }
         }
 
     }
@@ -1042,7 +1108,8 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     epiworld_double prop_vaccinated,
     epiworld_double detection_rate_quarantine,
     epiworld_double contact_tracing_success_rate,
-    epiworld_fast_uint contact_tracing_days_window
+    epiworld_fast_uint contact_tracing_days_window,
+    epiworld_double contact_rate_reduction
     )
 {
 
@@ -1076,6 +1143,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     );
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");
+    this->add_param(contact_rate_reduction, "Contact rate reduction");
     
     // state
     this->add_state("Susceptible", _update_susceptible);
@@ -1159,6 +1227,21 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
         infectious_entity_indices[i] +=
             this->entities[i - 1].size() +
             infectious_entity_indices[i - 1]
+            ;
+
+    }
+
+    // Initialize rash tracking vectors (same layout as infectious)
+    n_rash_per_group.assign(this->entities.size(), 0u);
+    rash.assign(this->size(), 0u);
+    rash_entity_indices.assign(this->entities.size(), 0u);
+
+    for (size_t i = 1u; i < this->entities.size(); ++i)
+    {
+
+        rash_entity_indices[i] +=
+            this->entities[i - 1].size() +
+            rash_entity_indices[i - 1]
             ;
 
     }

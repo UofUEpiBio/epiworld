@@ -121,11 +121,14 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_fast_int quarantine_period,
         epiworld_double quarantine_willingness,
-        epiworld_fast_int isolation_period
+        epiworld_fast_int isolation_period,
+        epiworld_double contact_rate_reduction = 1.0
     );
     ///@}
 
-    std::vector<Agent<TSeq> *> infectious; ///< Agents infectious for contact
+    std::vector<Agent<TSeq> *> infectious; ///< Prodromal agents infectious for contact
+    std::vector<Agent<TSeq> *> rash_infectious; ///< Rash agents infectious for contact
+    double p_contact_rash = 0.0; ///< Per-agent contact probability for rash agents
 
     std::vector< int > day_flagged; ///< Either detected or started quarantine
     std::vector< int > day_rash_onset; ///< Day of rash onset
@@ -270,12 +273,15 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     #endif
 
     this->infectious.clear();
+    this->rash_infectious.clear();
     int n_available = 0;
     for (auto & agent: this->get_agents())
     {
         const auto & s = agent.get_state();
         if (s == PRODROMAL)
             this->infectious.push_back(&agent);
+        else if (s == RASH)
+            this->rash_infectious.push_back(&agent);
 
         if ((s < RASH) || (s == RECOVERED))
             ++n_available;
@@ -289,6 +295,17 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     {
         p_contact = this->par("Contact rate")/
             static_cast< epiworld_double >(n_available);
+    }
+
+    // Compute the rash contact probability (reduced by contact_rate_reduction)
+    p_contact_rash = 0.0;
+    if (n_available > 0)
+    {
+        double reduction = this->par("Contact rate reduction");
+        p_contact_rash = this->par("Contact rate") * (1.0 - reduction) /
+            static_cast< epiworld_double >(n_available);
+        if (p_contact_rash > 1.0)
+            p_contact_rash = 1.0;
     }
 
     // Notice this is for sampling with replacement
@@ -313,69 +330,123 @@ inline std::unique_ptr<Model<TSeq>> ModelMeaslesSchool<TSeq>::clone_ptr()
 
 LOCAL_UPDATE_FUN(_update_susceptible) {
 
-    // How many contacts to draw
-    int ndraw = m->rbinom();
-
-    if (ndraw == 0)
-        return;
-
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
+
+    // How many prodromal contacts to draw
+    int ndraw = m->rbinom();
     size_t n_infectious = model->infectious.size();
 
-    if (n_infectious == 0)
+    // How many rash contacts to draw (reduced by contact_rate_reduction)
+    size_t n_rash = model->rash_infectious.size();
+    int ndraw_rash = (n_rash > 0u && model->p_contact_rash > 0.0) ?
+        m->rbinom(static_cast<int>(n_rash), model->p_contact_rash) : 0;
+
+    if ((ndraw == 0 || n_infectious == 0) && ndraw_rash == 0)
         return;
 
     // Drawing from the set
     int nviruses_tmp = 0;
-    int i = 0;
     auto & _ref = *m;
-    while (i < ndraw)
+
+    // Sample from prodromal contacts
+    if (ndraw > 0 && n_infectious > 0)
     {
-        // Picking the actual contacts
-        auto which = m->runif_index(n_infectious);
+        int i = 0;
+        while (i < ndraw)
+        {
+            // Picking the actual contacts
+            auto which = m->runif_index(n_infectious);
 
-        Agent<> & neighbor = *model->infectious[which];
+            Agent<> & neighbor = *model->infectious[which];
 
-        // Can't sample itself
-        if (neighbor.get_id() == p->get_id())
-            continue;
+            // Can't sample itself
+            if (neighbor.get_id() == p->get_id())
+                continue;
 
-        m->get_contact_tracing().add_contact(
-            neighbor.get_id(),
-            p->get_id(),
-            m->today()
-        );
-
-        // We successfully drew a contact, so we increment the counter
-        i++;
-
-        // No virus, the error!!
-        if (neighbor.get_virus() == nullptr)
-            throw std::logic_error("The neighbor has no virus.");
-
-        // Only prodomal individuals can transmit
-        if (neighbor.get_state() != model->PRODROMAL)
-            throw std::logic_error(
-                "The neighbor is not in the prodromal state. The state is: " +
-                std::to_string(neighbor.get_state())
+            m->get_contact_tracing().add_contact(
+                neighbor.get_id(),
+                p->get_id(),
+                m->today()
             );
 
-        auto & v = neighbor.get_virus();
+            // We successfully drew a contact, so we increment the counter
+            i++;
 
-        #ifdef EPI_DEBUG
-        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-        #endif
+            // No virus, the error!!
+            if (neighbor.get_virus() == nullptr)
+                throw std::logic_error("The neighbor has no virus.");
 
-        /* And it is a function of susceptibility_reduction as well */
-        m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, _ref)) *
-            v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v, _ref))
-            ;
+            // Only prodromal individuals can transmit in this loop
+            if (neighbor.get_state() != model->PRODROMAL)
+                throw std::logic_error(
+                    "The neighbor is not in the prodromal state. The state is: " +
+                    std::to_string(neighbor.get_state())
+                );
 
-        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+            auto & v = neighbor.get_virus();
 
+            #ifdef EPI_DEBUG
+            if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+            #endif
+
+            /* And it is a function of susceptibility_reduction as well */
+            m->array_double_tmp[nviruses_tmp] =
+                (1.0 - p->get_susceptibility_reduction(v, _ref)) *
+                v->get_prob_infecting(m) *
+                (1.0 - neighbor.get_transmission_reduction(v, _ref))
+                ;
+
+            m->array_virus_tmp[nviruses_tmp++] = &(*v);
+
+        }
+    }
+
+    // Sample from rash contacts (with reduced contact rate)
+    if (ndraw_rash > 0)
+    {
+        int j = 0;
+        while (j < ndraw_rash)
+        {
+            // Picking the actual rash contact
+            auto which = m->runif_index(n_rash);
+
+            Agent<> & neighbor = *model->rash_infectious[which];
+
+            // Can't sample itself
+            if (neighbor.get_id() == p->get_id())
+                continue;
+
+            m->get_contact_tracing().add_contact(
+                neighbor.get_id(),
+                p->get_id(),
+                m->today()
+            );
+
+            // We successfully drew a contact, so we increment the counter
+            j++;
+
+            // No virus
+            if (neighbor.get_virus() == nullptr)
+                throw std::logic_error("The rash neighbor has no virus.");
+
+            auto & v = neighbor.get_virus();
+
+            #ifdef EPI_DEBUG
+            if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
+                throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+            #endif
+
+            /* And it is a function of susceptibility_reduction as well */
+            m->array_double_tmp[nviruses_tmp] =
+                (1.0 - p->get_susceptibility_reduction(v, _ref)) *
+                v->get_prob_infecting(m) *
+                (1.0 - neighbor.get_transmission_reduction(v, _ref))
+                ;
+
+            m->array_virus_tmp[nviruses_tmp++] = &(*v);
+
+        }
     }
 
     // No virus to compute
@@ -628,7 +699,8 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     epiworld_double prop_vaccinated,
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
-    epiworld_fast_int isolation_period
+    epiworld_fast_int isolation_period,
+    epiworld_double contact_rate_reduction
 ) {
 
     // Assertions
@@ -651,6 +723,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     EpiAssert::check_bounds(quarantine_period, -1, max_int, "quarantine_period", "ModelMeaslesSchool");
     EpiAssert::check_bounds(quarantine_willingness, 0.0, 1.0, "quarantine_willingness", "ModelMeaslesSchool");
     EpiAssert::check_bounds(isolation_period, -1, max_int, "isolation_period", "ModelMeaslesSchool");
+    EpiAssert::check_bounds(contact_rate_reduction, 0.0, 1.0, "contact_rate_reduction", "ModelMeaslesSchool");
 
     this->add_state("Susceptible",             this->_update_susceptible);
     this->add_state("Latent",                  this->_update_latent);
@@ -680,6 +753,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");
     this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
+    this->add_param(contact_rate_reduction, "Contact rate reduction");
 
     // Designing the disease
     Virus<> measles("Measles");
