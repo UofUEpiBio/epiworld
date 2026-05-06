@@ -62,9 +62,17 @@ private:
 
     // Vector of vectors of infected agents (prodromal agents are infectious)
     std::vector< size_t > infectious;
+    std::vector< size_t > infectious_rash;
 
     // Number of infectious agents in each group
     std::vector< size_t > n_infectious_per_group;
+    std::vector< size_t > n_infectious_per_group_rash;
+    
+    // Indicates how important are prodromal agents
+    // compared to rash agents when sampling contacts
+    // 1 - this vector returns the importance for
+    // rash agents.
+    std::vector< double > ingroup_weights_prodromal;
 
     // Where the agents start in the `infectious` vector
     std::vector< size_t > entity_indices;
@@ -184,7 +192,8 @@ public:
         epiworld_fast_int isolation_period,
         epiworld_double prop_vaccinated,
         epiworld_double contact_tracing_success_rate = 1.0,
-        epiworld_fast_uint contact_tracing_days_window = 4u
+        epiworld_fast_uint contact_tracing_days_window = 4u,
+        epiworld_double rash_reduction_contact_rate = 1.0
     );
 
     /**
@@ -251,16 +260,29 @@ inline void ModelMeaslesMixing<TSeq>::_update_infectious_list()
 
     // Resetting infectious list
     std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);
+    std::fill(
+        n_infectious_per_group_rash.begin(),
+        n_infectious_per_group_rash.end(),
+        0u
+    );
 
     // Resetting the number of available contacts
     adjusted_contact_rate.assign(this->entities.size(), 0.0);
 
+    // This will trigger adding the rash agents or not
+    double rash_c_rate = 1.0 - this->par("Rash reduction contact rate");
+
+    bool include_rash = rash_c_rate > 0.0;
+
     for (const auto & a : agents)
     {
 
-        if (a.get_state() == PRODROMAL)
+        // Both Prodromal and Rash are infectious
+        auto state = a.get_state();
+        auto n_entities = a.get_n_entities();
+        if (state == PRODROMAL)
         {
-            if (a.get_n_entities() > 0u)
+            if (n_entities > 0u)
             {
                 const auto & entity = a.get_entity(0u, *this);
                 infectious[
@@ -271,12 +293,32 @@ inline void ModelMeaslesMixing<TSeq>::_update_infectious_list()
                 ] = a.get_id();
 
             }
+        } else if (include_rash && (state == RASH))
+        {
+
+            if (n_entities > 0u)
+            {
+                const auto & entity = a.get_entity(0u, *this);
+                infectious_rash[
+                    // Position of the group in the `infectious` vector
+                    entity_indices[entity.get_id()] +
+                    // Position of the agent in the group
+                    n_infectious_per_group_rash[entity.get_id()]++
+                ] = a.get_id();
+
+            }
         }
 
         // Setting how many agents are available for contact
+        // Rash agents also count, but have a reduced contact
+        // rate later
         if (
-            ((a.get_state() < RASH) || (a.get_state() == RECOVERED)) &&
-            (a.get_n_entities() > 0u)
+            (
+                (state < RASH) ||
+                (include_rash && (state == RASH)) ||
+                (state == RECOVERED)
+            ) &&
+            (n_entities > 0u)
         )
         {
             adjusted_contact_rate[
@@ -298,6 +340,27 @@ inline void ModelMeaslesMixing<TSeq>::_update_infectious_list()
             rate = 1.0;
     }
 
+    // Resetting the relative weight of prodromal agents when
+    // sampling contacts
+    if (include_rash)
+    {
+        ingroup_weights_prodromal.assign(this->entities.size(), 0.0);
+
+        for (size_t g = 0; g < this->entities.size(); ++g)
+        {
+            auto tot =
+                n_infectious_per_group[g] +
+                n_infectious_per_group_rash[g] * rash_c_rate;
+            if (tot > 0)
+            ingroup_weights_prodromal[g] =
+                static_cast<double>(n_infectious_per_group[g]) / tot; 
+        }
+    }
+    else
+    {
+        ingroup_weights_prodromal.assign(this->entities.size(), 1.0);
+    }
+
     return;
 
 }
@@ -316,7 +379,7 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
     for (size_t g = 0; g < ngroups; ++g)
     {
 
-        size_t group_size = n_infectious_per_group[g];
+        size_t group_size = n_infectious_per_group[g] + n_infectious_per_group_rash[g];
 
         if (group_size == 0u)
             continue;
@@ -324,7 +387,8 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
         // How many from this entity?
         int nsamples = this->rbinom(
             group_size,
-            adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false)
+            adjusted_contact_rate[g] *
+                this->get_contact_rate(agent_group_id, g, false)
         );
 
         if (nsamples == 0)
@@ -334,13 +398,36 @@ inline size_t ModelMeaslesMixing<TSeq>::sample_agents(
         for (int s = 0; s < nsamples; ++s)
         {
 
-            // Randomly selecting an agent
-            auto which = this->runif_index(group_size); 
+            // Right now is two draws, but it's OK for the moment
+            bool sample_prodromal = true;
+            uint32_t which = 0u;
+            if (n_infectious_per_group_rash[g] == 0) // Original behavior (no need to dist)
+            {
+                which = this->runif_index(n_infectious_per_group[g]);
+            }
+            else 
+            {
+                sample_prodromal = this->runif() < ingroup_weights_prodromal[g];
+                if (sample_prodromal && n_infectious_per_group[g] > 0)
+                {
+                    which = this->runif_index(n_infectious_per_group[g]);
+                }
+                else
+                {
+                    which = this->runif_index(n_infectious_per_group_rash[g]);
+                }
+            }
 
             #ifdef EPI_DEBUG
-            auto & a = this->population.at(infectious.at(entity_indices[g] + which));
+            auto & a = this->population.at(
+                sample_prodromal ? infectious.at(entity_indices[g] + which) :
+                    infectious_rash.at(entity_indices[g] + which)
+            );
             #else
-            auto & a = this->get_agent(infectious[entity_indices[g] + which]);
+            auto & a = this->get_agent(
+                sample_prodromal ? infectious[entity_indices[g] + which] :
+                    infectious_rash.at(entity_indices[g] + which)
+            );
             #endif
 
             #ifdef EPI_DEBUG
@@ -403,9 +490,12 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 
     // We only do it once
     n_infectious_per_group.assign(this->entities.size(), 0u);
+    n_infectious_per_group_rash.assign(this->entities.size(), 0u);
+    ingroup_weights_prodromal.assign(this->entities.size(), 1.0);
 
     // We are assuming one agent per entity
     infectious.assign(this->size(), 0u);
+    infectious_rash.assign(this->size(), 0u);
 
     // This will say when do the groups start in the `infectious` vector
     entity_indices.assign(this->entities.size(), 0u);
@@ -417,8 +507,8 @@ inline void ModelMeaslesMixing<TSeq>::reset()
             this->entities[i - 1].size() +
             entity_indices[i - 1]
             ;
+        }
 
-    }
 
     this->_update_infectious_list();
 
@@ -890,7 +980,8 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     epiworld_fast_int isolation_period,
     epiworld_double prop_vaccinated,
     epiworld_double contact_tracing_success_rate,
-    epiworld_fast_uint contact_tracing_days_window
+    epiworld_fast_uint contact_tracing_days_window,
+    epiworld_double rash_reduction_contact_rate
     )
 {
 
@@ -915,7 +1006,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     EpiAssert::check_bounds(quarantine_willingness, 0.0, 1.0, "quarantine_willingness", "ModelMeaslesMixing");
     EpiAssert::check_bounds(isolation_period, -1, max_int, "isolation_period", "ModelMeaslesMixing");
     EpiAssert::check_probability(contact_tracing_success_rate, "contact_tracing_success_rate", "ModelMeaslesMixing");
-
+    EpiAssert::check_bounds(rash_reduction_contact_rate, 0.0, 1.0, "rash_reduction_contact_rate", "ModelMeaslesMixing");
 
     // Setting up the contact matrix
     this->set_contact_matrix(contact_matrix, true);
@@ -937,6 +1028,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_param(prop_vaccinated, "Vaccination rate");
     this->add_param(vax_efficacy, "Vax efficacy");
     this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
+    this->add_param(rash_reduction_contact_rate, "Rash reduction contact rate");
 
     // state
     this->add_state("Susceptible", _update_susceptible);
