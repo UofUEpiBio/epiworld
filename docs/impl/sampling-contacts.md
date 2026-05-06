@@ -47,6 +47,60 @@ This is the key difference from the old parameterization based on a global conta
 
 Since the algorithm only draws infectious contacts, it avoids spending time drawing non-infectious contacts that cannot affect transmission. Once the number of infectious contacts from each group has been sampled, infectious agents are selected uniformly at random from that group's current infectious list.
 
+## Two-pool contact sampling: Rash agents in the MeaslesMixing model
+
+In the `ModelMeaslesMixing` model the infectious population is split into two pools:
+
+- **Primary infectious** (Prodromal): fully infectious agents, sampled at the full contact rate.
+- **Reduced infectious** (Rash): agents with visible symptoms whose contact behaviour is reduced by a factor controlled by the `rash_reduction_contact_rate` parameter.
+
+Let $r = 1 - \text{rash\_reduction\_contact\_rate}$, $r \in [0, 1]$. When $r = 0$ Rash agents make no contacts; when $r = 1$ they behave identically to Prodromal agents.
+
+### Expanded available pool
+
+Rash agents are *available for mixing* — they remain in the community and can be contacted by others. They therefore count toward $n_{\text{avail}}(j)$, together with Susceptible, Latent, Prodromal, and any other states that are not isolated or removed. As a result, the `adjusted_contact_rate` used for group $j$ is:
+
+$$
+\text{adjusted\_contact\_rate}(j) = \frac{1}{n_{\text{avail}}(j)},
+$$
+
+where $n_{\text{avail}}(j)$ now includes Rash agents.
+
+### Separate binomial draws
+
+Let $n_{\text{prod}}(j)$ and $n_{\text{rash}}(j)$ denote the number of Prodromal and Rash agents in group $j$, respectively. For a susceptible focal agent in group $g$, the model draws contacts from each group $j$ in two independent steps:
+
+$$
+X_{\text{prod}}(g,j) \sim \text{Binomial}\!\left(n_{\text{prod}}(j),\; \frac{C(g,j)}{n_{\text{avail}}(j)}\right),
+$$
+
+$$
+X_{\text{rash}}(g,j) \sim \text{Binomial}\!\left(n_{\text{rash}}(j),\; r \cdot \frac{C(g,j)}{n_{\text{avail}}(j)}\right).
+$$
+
+In code this corresponds to:
+
+```cpp
+// Primary pool (Prodromal)
+rbinom(n_primary_infectious_per_group[g], base_rate)
+
+// Reduced pool (Rash)
+rbinom(n_reduced_infectious_per_group[g], r * base_rate)
+```
+
+where `base_rate = adjusted_contact_rate[j] * contact_matrix[j * n_groups + g]` and `r = 1 - model.par("Rash reduction contact rate")`.
+
+### Expected contacts
+
+The expected total number of infectious contacts from group $j$ for an agent in group $g$ is:
+
+$$
+\mathbb{E}\!\left[X_{\text{prod}}(g,j) + X_{\text{rash}}(g,j)\right]
+= C(g,j) \cdot \frac{n_{\text{prod}}(j) + r \cdot n_{\text{rash}}(j)}{n_{\text{avail}}(j)}.
+$$
+
+When all agents are in the Prodromal state ($n_{\text{rash}} = 0$) and none are quarantined or isolated ($n_{\text{avail}} = n_{\text{prod}}$), the expression reduces to $C(g, j)$, recovering the standard single-pool result.
+
 ## Mixing models with quarantine
 
 When the model features quarantine, isolation, hospitalization, or any other mechanism that removes agents from the mixing pool, the quantity $n_{\text{avail}}(j)$ changes over time. The contact matrix $C$ does not change, but the binomial sampling probability does:
