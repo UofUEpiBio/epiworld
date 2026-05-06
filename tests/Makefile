@@ -42,6 +42,7 @@ $(NAME)_SOURCES := \
 	18c-measles-mixing.cpp \
 	18d-measles-mixing.cpp \
 	18e-measles-mixing-queue.cpp \
+	18f-measles-mixing-r0s.cpp \
 	19a-measles-mixing-risk-quarantine-basic.cpp \
 	19b-measles-mixing-risk-quarantine-transitions.cpp \
 	19c-measles-mixing-risk-quarantine-durations.cpp \

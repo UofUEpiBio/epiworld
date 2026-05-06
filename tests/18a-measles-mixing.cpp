@@ -216,7 +216,7 @@ EPIWORLD_TEST_CASE(
 
     // Setting the contact rate reduction for rash agents to 50%
     // We also shut off isolation
-    model_0.set_param("Rash reduction contact rate", 0.5);
+    model_0.set_param("Rash reduction contact rate", 0.2);
     model_0.set_param("Isolation period", -1.0);
     
     // Change the transmission rate a bit as well
@@ -245,9 +245,9 @@ EPIWORLD_TEST_CASE(
             );
     }
     R0_observed_rash /= static_cast<epiworld_double>(nsims * n_seeds);    
-    double R0_theo_rash = contact_matrix[0] * (
-        model_0("Transmission rate") * model_0("Prodromal period") +
-        0.5 * model_0("Transmission rate") * (model_0("Rash period"))
+    double R0_theo_rash = contact_matrix[0] * model_0("Transmission rate") * (
+        model_0("Prodromal period") +
+        (1.0 - model_0("Rash reduction contact rate")) * model_0("Rash period")
     );
     double R0_naive_rash = contact_matrix[0] * model_0("Transmission rate") *
         model_0("Prodromal period");
