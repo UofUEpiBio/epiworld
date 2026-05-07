@@ -104,7 +104,7 @@ inline const std::vector<ContactRecord> & ContactTracing::get_contacts(size_t ag
 
         cached_contacts[agent].clear();
         cached_contacts[agent].reserve(contact_map.size());
-        for (auto & kv : contact_map)
+        for (const auto & kv : contact_map)
             cached_contacts[agent].emplace_back(kv.first, kv.second);
 
         up_to_date[agent] = true;
