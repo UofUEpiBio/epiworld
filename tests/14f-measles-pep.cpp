@@ -44,6 +44,10 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         {MS::LATENT, MS::SUSCEPTIBLE, MS::PRODROMAL}
     );
 
+    // What epiworld does under the hood
+    // Call the `operator()` method of the class.
+    // pep(model_0, 19);
+
     model_0.add_globalevent(pep);
 
     // Setting the distribution function of the initial cases

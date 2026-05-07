@@ -172,6 +172,8 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
             model->add_triggering_agent(
                 *model,
                 agent,
+                // When does pub health consider the agent
+                // to be infectious
                 model->day_rash_onset[agent_id] - prodromal_period
             );
             triggered_today = true;

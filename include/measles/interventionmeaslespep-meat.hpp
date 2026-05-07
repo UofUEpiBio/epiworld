@@ -140,8 +140,10 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     // Getting the list of agents that triggered the
     // quarantine
     auto & triggering_agents = quarantine_trigger_ptr->get_triggering_agents();
-    auto & contact_trace = model->get_contact_tracing();
-    auto & date_infectious = quarantine_trigger_ptr->get_date_infectious();
+    auto & contact_trace     = model->get_contact_tracing();
+    
+    // When does pub health consider the agent to be infectious
+    auto & date_infectious   = quarantine_trigger_ptr->get_date_infectious();
 
     // Making room (we will iterate this vectors
     // later to figure out the state changes.)
@@ -180,6 +182,15 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
                 continue;
 
             // Second question: Is the agent within the MMR window?
+            //                                          MMR  3 day window
+            //        |--------------------------------------|
+            //                   infectious period                
+            //  |                            |        |     |      
+            // E-1                          E0*       E1    E2
+            //                                   |---------------------------| today (when did we id the case)
+            //                                           MMR 3 day window
+            //
+            // E0*: This is the one that public health needs.
             if (
                 this->_willing_to_receive_mmr[contact_id] &&
                 (contact_day > infectious_since) &&

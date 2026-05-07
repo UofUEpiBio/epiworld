@@ -91,6 +91,12 @@ EPIWORLD_TEST_CASE(
         );
     };
 
+    /*
+    E(days rash) = sum_i=0 [ (1 - h_r - 1/rash_period)^i ]
+                 = 1/(1 - (1 - h_r - 1/rash_period))
+                 = 1 / (1/rash_period + h_r)
+    */
+
     auto assert_and_print_r0 = [&R0s, nsims, n_seeds, calc_avg_r0, calc_r0_theoretical](
         double delta = 0.3
     ) -> void {
