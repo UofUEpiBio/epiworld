@@ -191,6 +191,9 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
             //                                           MMR 3 day window
             //
             // E0*: This is the one that public health needs.
+            // This can be defined as "the first day that the
+            // agent contacted the infectious agent after
+            // becoming infectious".
             if (
                 this->_willing_to_receive_mmr[contact_id] &&
                 (contact_day > infectious_since) &&
