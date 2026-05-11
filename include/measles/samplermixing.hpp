@@ -22,7 +22,6 @@ private:
 
     int primary_infectious_state = -1;
     int reduced_infectious_state = -1;
-    int recovered_state = -1;
     std::string reduced_contact_reduction_param;
     std::vector< int > contact_states;
 
@@ -32,7 +31,6 @@ private:
     std::vector< size_t > n_primary_infectious_per_group;
     std::vector< size_t > n_reduced_infectious_per_group;
 
-    std::vector< double > ingroup_weights_primary;
     std::vector< size_t > entity_indices;
     std::vector< double > adjusted_contact_rate;
     std::vector< size_t > sampled_agents;
@@ -56,7 +54,6 @@ public:
      *
      * @param primary_infectious_state_ State index for fully infectious agents.
      * @param reduced_infectious_state_ State index for reduced-infectious agents.
-     * @param recovered_state_ State index considered recovered/immune.
      * @param reduced_contact_reduction_param_ Model parameter name controlling
      * reduced infectious contact reduction.
      * @param contact_states_ Explicit states eligible for contact.
@@ -64,7 +61,6 @@ public:
     SamplerMixing(
         int primary_infectious_state_,
         int reduced_infectious_state_,
-        int recovered_state_,
         std::string reduced_contact_reduction_param_,
         std::vector< int > contact_states_
     );
@@ -74,7 +70,6 @@ public:
      *
      * @param primary_infectious_state_ State index for fully infectious agents.
      * @param reduced_infectious_state_ State index for reduced-infectious agents.
-     * @param recovered_state_ State index considered recovered/immune.
      * @param reduced_contact_reduction_param_ Model parameter name controlling
      * reduced infectious contact reduction.
      * @param contact_states_ Explicit states eligible for contact.
@@ -82,7 +77,6 @@ public:
     void configure(
         int primary_infectious_state_,
         int reduced_infectious_state_,
-        int recovered_state_,
         std::string reduced_contact_reduction_param_,
         std::vector< int > contact_states_
     );
@@ -175,7 +169,6 @@ template<typename TSeq>
 inline SamplerMixing<TSeq>::SamplerMixing(
     int primary_infectious_state_,
     int reduced_infectious_state_,
-    int recovered_state_,
     std::string reduced_contact_reduction_param_,
     std::vector< int > contact_states_
 )
@@ -183,7 +176,6 @@ inline SamplerMixing<TSeq>::SamplerMixing(
     configure(
         primary_infectious_state_,
         reduced_infectious_state_,
-        recovered_state_,
         reduced_contact_reduction_param_,
         contact_states_
     );
@@ -193,14 +185,12 @@ template<typename TSeq>
 inline void SamplerMixing<TSeq>::configure(
     int primary_infectious_state_,
     int reduced_infectious_state_,
-    int recovered_state_,
     std::string reduced_contact_reduction_param_,
     std::vector< int > contact_states_
 )
 {
     primary_infectious_state = primary_infectious_state_;
     reduced_infectious_state = reduced_infectious_state_;
-    recovered_state = recovered_state_;
     reduced_contact_reduction_param = reduced_contact_reduction_param_;
     contact_states = contact_states_;
 }
@@ -242,7 +232,6 @@ inline void SamplerMixing<TSeq>::reset(Model<TSeq> & model)
     sampled_agents.resize(model.size());
     n_primary_infectious_per_group.assign(entities.size(), 0u);
     n_reduced_infectious_per_group.assign(entities.size(), 0u);
-    ingroup_weights_primary.assign(entities.size(), 1.0);
 
     primary_infectious.assign(model.size(), 0u);
     reduced_infectious.assign(model.size(), 0u);
@@ -332,29 +321,6 @@ inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
 
         if (rate > 1.0)
             rate = 1.0;
-    }
-
-    if (include_reduced)
-    {
-        ingroup_weights_primary.assign(entities.size(), 0.0);
-
-        for (size_t g = 0; g < entities.size(); ++g)
-        {
-            auto tot =
-                n_primary_infectious_per_group[g] +
-                n_reduced_infectious_per_group[g] * reduced_contact_rate;
-
-            if (tot > 0.0)
-            {
-                ingroup_weights_primary[g] =
-                    static_cast<double>(n_primary_infectious_per_group[g]) /
-                    tot;
-            }
-        }
-    }
-    else
-    {
-        ingroup_weights_primary.assign(entities.size(), 1.0);
     }
 }
 

@@ -58,7 +58,7 @@ Let $r = 1 - \text{rash\_reduction\_contact\_rate}$, $r \in [0, 1]$. When $r = 0
 
 ### Expanded available pool
 
-Rash agents are *available for mixing* — they remain in the community and can be contacted by others. They therefore count toward $n_{\text{avail}}(j)$, together with Susceptible, Latent, Prodromal, and any other states that are not isolated or removed. As a result, the `adjusted_contact_rate` used for group $j$ is:
+Rash agents are *available for mixing* — they remain in the community and can be contacted by others, if the parameter "Rash reduction contact rate" is less than 1.0. They therefore count toward $n_{\text{avail}}(j)$, together with Susceptible, Latent, Prodromal, and any other states that are not isolated or removed. As a result, the `adjusted_contact_rate` used for group $j$ is:
 
 $$
 \text{adjusted\_contact\_rate}(j) = \frac{1}{n_{\text{avail}}(j)},
