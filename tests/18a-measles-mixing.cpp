@@ -10,11 +10,11 @@ EPIWORLD_TEST_CASE(
 ) {
     
     // Queuing doesn't matter and get results that are meaningful
-    int n_seeds = 5;
+    int n_seeds = 10;
     
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix = {2.0};
-    double n_agents = 1000.0;
+    double n_agents = 2000.0;
     size_t n_agents_sz = static_cast<size_t>(n_agents);
     
     measles::ModelMeaslesMixing<> model_0(
@@ -198,6 +198,64 @@ EPIWORLD_TEST_CASE(
             0.1
         )
     );
+
+    // ========================================================================
+    // Re-running the model now including the agents with Rash (50% contact rate)
+    // This should change the R0 value
+    // ========================================================================
+    nsims = 1'000;
+    std::vector<std::vector<epiworld_double>> transitions_rash(nsims);
+    std::vector<epiworld_double> R0s_rash(nsims * n_seeds, -1.0);
+    std::vector< double > outbreak_sizes_rash(nsims, 0.0);
+    std::vector< double > hospitalizations_rash(nsims, 0.0);
+
+    auto saver_rash = tests_create_saver(
+        transitions_rash, R0s_rash, n_seeds, nullptr,
+        &outbreak_sizes_rash, &hospitalizations_rash
+    );
+
+    // Setting the contact rate reduction for rash agents to 20%
+    // We also shut off isolation
+    model_0.set_param("Rash reduction contact rate", 0.2);
+    model_0.set_param("Isolation period", -1.0);
+    
+    // Change the transmission rate a bit as well
+    // model_0.set_param("Transmission rate", model_0("Transmission rate") * 0.75);
+
+    model_0.
+        run_multiple(100, nsims, 1231, saver_rash, true, true, 4).
+        print(false);
+
+    // Calculate average transitions
+    auto avg_transitions_rash = tests_calculate_avg_transitions(
+        transitions_rash, model_0
+    );
+
+    tests_print_avg_transitions(avg_transitions_rash, model_0);
+
+    // Average R0
+    double R0_observed_rash = 0.0;
+    for (auto & i: R0s_rash)
+    {
+        if (i >= 0.0)
+            R0_observed_rash += i;
+        else
+            throw std::range_error(
+                "The R0 value is negative. This should not happen."
+            );
+    }
+    R0_observed_rash /= static_cast<epiworld_double>(nsims * n_seeds);    
+    double R0_theo_rash = contact_matrix[0] * model_0("Transmission rate") * (
+        model_0("Prodromal period") +
+        (1.0 - model_0("Rash reduction contact rate")) * model_0("Rash period")
+    );
+    double R0_naive_rash = contact_matrix[0] * model_0("Transmission rate") *
+        model_0("Prodromal period");
+
+    std::cout << "Reproductive number with rash: "
+              << R0_observed_rash << " (expected ~" << R0_theo_rash << ")" 
+              << " (Prodromal only ~" << R0_naive_rash << ")" << std::endl;
+
     
     
     #undef mat
