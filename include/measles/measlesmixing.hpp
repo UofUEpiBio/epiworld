@@ -792,7 +792,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     sampler.configure(
         PRODROMAL,
         RASH,
-        RECOVERED,
         "Rash reduction contact rate",
         {SUSCEPTIBLE, LATENT, PRODROMAL, RECOVERED}
     );

@@ -214,7 +214,7 @@ EPIWORLD_TEST_CASE(
         &outbreak_sizes_rash, &hospitalizations_rash
     );
 
-    // Setting the contact rate reduction for rash agents to 50%
+    // Setting the contact rate reduction for rash agents to 20%
     // We also shut off isolation
     model_0.set_param("Rash reduction contact rate", 0.2);
     model_0.set_param("Isolation period", -1.0);
