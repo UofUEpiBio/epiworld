@@ -46,6 +46,8 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     // Verify agent 0: should have exactly 2 unique contacts (agent 2 and 4).
     // -----------------------------------------------------------------------
     const auto & contacts_0 = ct.get_contacts(0u);
+    std::cout << "[Agent 0] Expected 2 unique contacts, observed: "
+              << contacts_0.size() << "\n";
     REQUIRE(contacts_0.size() == 2u);
 
     // Build a map from contact_id -> times for easy lookup.
@@ -54,10 +56,16 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
         map_0[rec.get_contact_id()] = rec.get_times();
 
     // Agent 2 should appear with days {1, 3, 5}.
+    std::cout << "[Agent 0 -> Agent 2] Expected days {1, 3, 5}, observed: {";
+    for (int d : map_0[2u]) std::cout << d << " ";
+    std::cout << "}\n";
     REQUIRE(map_0.count(2u) == 1u);
     REQUIRE(map_0.at(2u) == (std::set<int>{1, 3, 5}));
 
     // Agent 4 should appear with day {2}.
+    std::cout << "[Agent 0 -> Agent 4] Expected days {2}, observed: {";
+    for (int d : map_0[4u]) std::cout << d << " ";
+    std::cout << "}\n";
     REQUIRE(map_0.count(4u) == 1u);
     REQUIRE(map_0.at(4u) == (std::set<int>{2}));
 
@@ -65,6 +73,12 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     // Verify agent 1: one unique contact (agent 3, day 0).
     // -----------------------------------------------------------------------
     const auto & contacts_1 = ct.get_contacts(1u);
+    std::cout << "[Agent 1] Expected 1 unique contact (agent 3, day 0), observed: "
+              << contacts_1.size() << " contact(s)";
+    if (!contacts_1.empty())
+        std::cout << ", contact_id=" << contacts_1[0].get_contact_id()
+                  << ", day=" << *contacts_1[0].get_times().begin();
+    std::cout << "\n";
     REQUIRE(contacts_1.size() == 1u);
     REQUIRE(contacts_1[0].get_contact_id() == 3u);
     REQUIRE(contacts_1[0].get_times() == (std::set<int>{0}));
@@ -72,6 +86,8 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     // -----------------------------------------------------------------------
     // Verify agent 2: no contacts recorded.
     // -----------------------------------------------------------------------
+    std::cout << "[Agent 2] Expected 0 contacts, observed: "
+              << ct.get_contacts(2u).size() << "\n";
     REQUIRE(ct.get_contacts(2u).empty());
 
     // -----------------------------------------------------------------------
@@ -79,6 +95,8 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     // -----------------------------------------------------------------------
     const auto & first_call  = ct.get_contacts(0u);
     const auto & second_call = ct.get_contacts(0u);
+    std::cout << "[Caching] Expected same address for consecutive get_contacts(0) calls: "
+              << (&first_call == &second_call ? "PASS" : "FAIL") << "\n";
     REQUIRE(&first_call == &second_call);
 
     // -----------------------------------------------------------------------
@@ -89,6 +107,8 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     const auto & after_add = ct.get_contacts(0u);
 
     // Now agent 0 should have 3 unique contacts.
+    std::cout << "[Cache invalidation] Agent 0 expected 3 unique contacts after adding "
+                 "agent 3 on day 7, observed: " << after_add.size() << "\n";
     REQUIRE(after_add.size() == 3u);
 
     // Day 7 must appear under contact_id 3.
@@ -101,6 +121,8 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
             break;
         }
     }
+    std::cout << "[Cache invalidation] Agent 0 -> Agent 3 should include day 7: "
+              << (found ? "PASS" : "FAIL") << "\n";
     REQUIRE(found);
 
     // -----------------------------------------------------------------------
@@ -197,6 +219,9 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
         }
     }
 
+    std::cout << "[Cross-check] Low-level API triples: " << ground_truth.size()
+              << ", get_contacts() triples: " << from_get_contacts.size()
+              << " (expected equal and > 0)\n";
     REQUIRE(ground_truth == from_get_contacts);
     REQUIRE(ground_truth.size() > 0u);
 }
