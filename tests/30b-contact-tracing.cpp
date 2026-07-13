@@ -126,6 +126,53 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     REQUIRE(found);
 
     // -----------------------------------------------------------------------
+    // Circular buffer wraparound: when more than max_contacts are recorded for
+    // an agent, older entries are overwritten. get_contacts() must reflect
+    // exactly the entries currently stored (matching the low-level API), not
+    // the overwritten ones.
+    // -----------------------------------------------------------------------
+    {
+        ContactTracing ct_wrap(2u, 3u);          // max_contacts = 3
+        ct_wrap.add_contact(0u, 10u, 0u);        // col 0: (10, day 0)
+        ct_wrap.add_contact(0u, 11u, 1u);        // col 1: (11, day 1)
+        ct_wrap.add_contact(0u, 12u, 2u);        // col 2: (12, day 2)
+        ct_wrap.add_contact(0u, 13u, 3u);        // overwrites col 0 -> (13, day 3)
+        ct_wrap.add_contact(0u, 14u, 4u);        // overwrites col 1 -> (14, day 4)
+        // Buffer now holds (13, day 3), (14, day 4), (12, day 2).
+
+        // Ground truth from the low-level API (capped at max_contacts).
+        std::set<std::tuple<size_t, int>> gt_wrap;
+        size_t n_wrap = ct_wrap.get_n_contacts(0u);
+        if (n_wrap > ct_wrap.get_max_contacts())
+            n_wrap = ct_wrap.get_max_contacts();
+        for (size_t j = 0u; j < n_wrap; ++j)
+        {
+            auto [cid, cday] = ct_wrap.get_contact(0u, j);
+            gt_wrap.emplace(cid, cday);
+        }
+
+        std::set<std::tuple<size_t, int>> gc_wrap;
+        for (const auto & rec : ct_wrap.get_contacts(0u))
+            for (int d : rec.get_times())
+                gc_wrap.emplace(rec.get_contact_id(), d);
+
+        std::cout << "[Wraparound] Agent 0 reported " << ct_wrap.get_n_contacts(0u)
+                  << " contacts, buffer holds 3 unique. get_contacts() matches "
+                     "low-level API: " << (gt_wrap == gc_wrap ? "PASS" : "FAIL") << "\n";
+        REQUIRE(ct_wrap.get_contacts(0u).size() == 3u);
+        REQUIRE(gt_wrap == gc_wrap);
+
+        // The overwritten entry (agent 10, day 0) must NOT be present.
+        bool has_stale = false;
+        for (const auto & rec : ct_wrap.get_contacts(0u))
+            if (rec.get_contact_id() == 10u)
+                has_stale = true;
+        std::cout << "[Wraparound] Overwritten contact (agent 10) absent: "
+                  << (has_stale ? "FAIL" : "PASS") << "\n";
+        REQUIRE_FALSE(has_stale);
+    }
+
+    // -----------------------------------------------------------------------
     // Cross-check: run a small SIR model and verify that get_contacts()
     // returns exactly the same (agent, contact_id, day) triples as the
     // low-level get_contact() API.
