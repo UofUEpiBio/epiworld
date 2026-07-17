@@ -75,7 +75,12 @@ $(NAME)_SOURCES := \
 	30a-contact-tracing.cpp \
 	30b-contact-tracing.cpp \
 	31a-seir-network-quarantine.cpp \
-	32a-bubbles.cpp
+	32a-bubbles.cpp \
+	32b-bubbles-peer.cpp \
+	32c-bubbles-transmission.cpp \
+	32d-bubbles-within-factor.cpp \
+	32e-bubbles-rewiring.cpp \
+	32f-bubbles-reset-recompute.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

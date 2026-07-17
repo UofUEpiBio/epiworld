@@ -1,6 +1,5 @@
 #include "tests.hpp"
 #include <set>
-#include <map>
 #include <unordered_map>
 #include <algorithm>
 
@@ -13,22 +12,6 @@ static std::vector<size_t> make_households(size_t n, size_t hh_size)
     for (size_t i = 0u; i < n; ++i)
         hh[i] = i / hh_size;
     return hh;
-}
-
-// Counts edges of the contact network whose endpoints fall in different bubbles.
-static int count_cross_bubble_edges(
-    Model<> & m, const std::vector<int> & bid
-)
-{
-    int cross = 0;
-    for (auto & a : m.get_agents())
-    {
-        int ba = bid[static_cast<size_t>(a.get_id())];
-        for (auto * nb : a.get_neighbors(m))
-            if (bid[static_cast<size_t>(nb->get_id())] != ba)
-                ++cross;
-    }
-    return cross / 2; // undirected
 }
 
 EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
@@ -68,127 +51,5 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
     size_t n_households = n / hh_size;
     size_t expected_bubbles = (n_households + group - 1u) / group;
     REQUIRE(households_in_bubble.size() == expected_bubbles);
-
-}
-
-EPIWORLD_TEST_CASE("Bubbles - peer partition respects households", "[bubbles]") {
-
-    size_t n = 300u, hh_size = 3u;
-    auto hh = make_households(n, hh_size);
-
-    epimodels::ModelSEIR<> model("flu", 0.05, 0.1, 4.5, 1.0/8.0);
-    model.seed(7);
-    model.agents_smallworld(n, 8, false, 0.15);
-
-    Bubbles<> bubbles(hh, BubbleFlavor::Peer, 1u, 1.0, 0, -1, 0);
-    bubbles.deploy(model);
-    model.verbose_off();
-    model.run(5);
-
-    const auto & bid = bubbles.get_bubble_id();
-
-    // Households never split across bubbles.
-    for (size_t a = 0u; a < n; ++a)
-        REQUIRE(bid[a] == bid[(a / hh_size) * hh_size]);
-
-    // With k = 1 external peer, bubbles merge at least some households.
-    std::set<int> distinct(bid.begin(), bid.end());
-    REQUIRE(distinct.size() < (n / hh_size)); // fewer bubbles than households
-
-}
-
-EPIWORLD_TEST_CASE("Bubbles - no cross-bubble transmission", "[bubbles]") {
-
-    size_t n = 400u, hh_size = 4u, group = 2u;
-    auto hh = make_households(n, hh_size);
-
-    epimodels::ModelSEIR<> model("flu", 0.1, 0.2, 4.5, 1.0/8.0);
-    model.seed(2024);
-    model.agents_smallworld(n, 8, false, 0.10);
-
-    Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 1.0, 0, -1, 0);
-    bubbles.deploy(model);
-    model.verbose_off();
-    model.run(80);
-
-    const auto & bid = bubbles.get_bubble_id();
-
-    // The network must contain cross-bubble contacts, otherwise the test is
-    // vacuous (nothing to block).
-    REQUIRE(count_cross_bubble_edges(model, bid) > 0);
-
-    // Every transmission must be within a single bubble.
-    std::vector<int> date, source, target, virus, sexp;
-    model.get_db().get_transmissions(date, source, target, virus, sexp);
-
-    int n_secondary = 0;
-    for (size_t i = 0u; i < source.size(); ++i)
-    {
-        if (source[i] < 0) // seed case (external)
-            continue;
-        ++n_secondary;
-        REQUIRE(bid[static_cast<size_t>(source[i])] ==
-                bid[static_cast<size_t>(target[i])]);
-    }
-
-    // The outbreak actually produced secondary transmissions.
-    REQUIRE(n_secondary > 0);
-
-}
-
-EPIWORLD_TEST_CASE("Bubbles - within_factor scales/blocks transmission", "[bubbles]") {
-
-    size_t n = 300u, hh_size = 3u;
-    auto hh = make_households(n, hh_size);
-    size_t n_households = n / hh_size;
-
-    auto count_secondary = [&](epiworld_double within_factor) -> int {
-        epimodels::ModelSEIR<> model("flu", 0.1, 0.3, 4.5, 1.0/8.0);
-        model.seed(99);
-        model.agents_smallworld(n, 8, false, 0.10);
-
-        // One big bubble: everyone shares a bubble, so within_factor governs
-        // all transmission.
-        Bubbles<> bubbles(
-            hh, BubbleFlavor::Household, n_households, within_factor, 0, -1, 0
-        );
-        bubbles.deploy(model);
-        model.verbose_off();
-        model.run(60);
-
-        std::vector<int> date, source, target, virus, sexp;
-        model.get_db().get_transmissions(date, source, target, virus, sexp);
-        int secondary = 0;
-        for (auto s : source)
-            if (s >= 0) ++secondary;
-        return secondary;
-    };
-
-    // within_factor = 0 fully blocks transmission (reduction = 1.0).
-    REQUIRE(count_secondary(0.0) == 0);
-
-    // within_factor = 1 leaves transmission unrestricted -> outbreak grows.
-    REQUIRE(count_secondary(1.0) > 0);
-
-}
-
-EPIWORLD_TEST_CASE("Bubbles - rewiring advances epochs", "[bubbles]") {
-
-    size_t n = 300u, hh_size = 3u;
-    auto hh = make_households(n, hh_size);
-
-    epimodels::ModelSEIR<> model("flu", 0.05, 0.1, 4.5, 1.0/8.0);
-    model.seed(5);
-    model.agents_smallworld(n, 6, false, 0.05);
-
-    int start = 10, rewire = 7, ndays = 60;
-    Bubbles<> bubbles(hh, BubbleFlavor::Household, 2u, 1.0, start, -1, rewire);
-    bubbles.deploy(model);
-    model.verbose_off();
-    model.run(ndays);
-
-    // The scheduler recomputes the partition at each rewiring epoch.
-    int expected_epoch = (ndays - start) / rewire;
-    REQUIRE(bubbles.get_state()->last_epoch == expected_epoch);
 
 }
