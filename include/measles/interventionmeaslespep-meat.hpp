@@ -155,12 +155,15 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
         size_t agent_id = triggering_agents[t_i];
 
-        // Checking if the agent has made a contact
+        // Contacts of the (infectious) index case: these are the
+        // classmates that shared the classroom while the index was
+        // infectious. We do not care whether a given classmate
+        // *specifically* interacted with the index; being in school
+        // during the infectious window is what matters.
         auto n_contacts = contact_trace.get_n_contacts(agent_id);
         if (n_contacts == 0)
             continue;
 
-        // Iterating over the contacts
         if (n_contacts > contact_trace.get_max_contacts())
             n_contacts = contact_trace.get_max_contacts();
 
@@ -168,37 +171,81 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         auto & tool_mmr = model->get_tool("PEP MMR");
         auto & tool_ig  = model->get_tool("PEP IG");
 
-        // Get the relevant window
+        // (a) Start of the infectious window as considered by public
+        // health: rash onset counted backwards by the prodromal period.
         int infectious_since = date_infectious[t_i];
+
+        // (b) Last time the class saw the index while infectious.
+        //
+        //   infectious window                 today (case detected)
+        //  |=================|.....................|
+        //  ^                 ^
+        //  infectious_since  last_seen
+        //                    (last day the class saw the index)
+        //          |<------ days_since ----->|
+        //
+        // PEP is only worthwhile while `days_since = today - last_seen`
+        // is within the MMR (~3 day) or IG (~6 day) window. The reference
+        // is the *last* time the class was exposed, not the day the index
+        // became infectious.
+        int last_seen = -1;
         for (size_t i = 0u; i < n_contacts; ++i)
         {
-            // Relevant contact
-            auto [contact_id, contact_day] = contact_trace.get_contact(agent_id, i);
+            int contact_day = contact_trace.get_contact(agent_id, i).second;
+
+            if (contact_day < infectious_since)
+                continue;
+
+            if (contact_day > last_seen)
+                last_seen = contact_day;
+        }
+
+        // No exposure recorded within the infectious window.
+        if (last_seen < 0)
+            continue;
+
+        // (e) Is there still time to intervene? This is a class-level
+        // decision: it depends on how long ago the class was last
+        // exposed, not on any single contact.
+        int days_since = model->today() - last_seen;
+        bool within_mmr_window =
+            (days_since >= 0) && (days_since <= pep_mmr_window);
+        bool within_ig_window =
+            (days_since >= 0) && (days_since <= pep_ig_window);
+
+        // Too late for both MMR and IG: nobody in this cohort is offered
+        // PEP.
+        if (!within_mmr_window && !within_ig_window)
+            continue;
+
+        // Offering PEP to the exposed classmates. Each classmate is
+        // considered at most once, regardless of how many times they
+        // shared the classroom with the index.
+        std::set< size_t > processed;
+        for (size_t i = 0u; i < n_contacts; ++i)
+        {
+            auto [contact_id, contact_day] =
+                contact_trace.get_contact(agent_id, i);
+
+            // Only classmates present during the infectious window.
+            if (contact_day < infectious_since)
+                continue;
+
+            // Consider each classmate once.
+            if (!processed.insert(contact_id).second)
+                continue;
+
             auto & contact = model->get_agent(contact_id);
 
-            // First question: Is the agent elegible for PEP?
+            // First question: Is the classmate eligible for PEP?
             int contact_state = static_cast<int>(contact.get_state());
             if (!IN(contact_state, this->_target_states))
                 continue;
 
-            // Second question: Is the agent within the MMR window?
-            //                                          MMR  3 day window
-            //        |--------------------------------------|
-            //                   infectious period                
-            //  |                            |        |     |      
-            // E-1                          E0*       E1    E2
-            //                                   |---------------------------| today (when did we id the case)
-            //                                           MMR 3 day window
-            //
-            // E0*: This is the one that public health needs.
-            // This can be defined as "the first day that the
-            // agent contacted the infectious agent after
-            // becoming infectious".
-            if (
-                this->_willing_to_receive_mmr[contact_id] &&
-                (contact_day > infectious_since) &&
-                ((contact_day - infectious_since) <= pep_mmr_window)
-            )
+            // (c)/(d) Vaccination status and willingness. MMR is
+            // preferred while we are within its (shorter) window;
+            // otherwise IG is offered if we are within its window.
+            if (within_mmr_window && this->_willing_to_receive_mmr[contact_id])
             {
                 // We will administer MMR PEP to the agent
                 contact.add_tool(
@@ -206,11 +253,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
                     tool_mmr
                 );
             }
-            else if (
-                this->_willing_to_receive_ig[contact_id] &&
-                (contact_day > infectious_since) &&
-                ((contact_day - infectious_since) <= pep_ig_window)
-            )
+            else if (within_ig_window && this->_willing_to_receive_ig[contact_id])
             {
                 // We will administer IG PEP to the agent
                 contact.add_tool(
@@ -226,7 +269,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
             auto it = std::find(
                 this->_target_states.begin(),
                 this->_target_states.end(),
-                contact.get_state()
+                contact_state
             );
 
             // No need to check it, we know it is there
@@ -237,7 +280,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
             _to_receive_pep.push_back(contact.get_id());
             _next_if_effective.push_back(_states_if_pep_effective[pos]);
             _next_if_ineffective.push_back(_states_if_pep_ineffective[pos]);
-            
+
         }
 
     }
