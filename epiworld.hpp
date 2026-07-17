@@ -1,6 +1,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <stdexcept>
 #include <random>
 #include <cmath>
@@ -19337,9 +19338,9 @@ inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
 #ifndef EPIWORLD_GLOBALEVENTS_BUBBLES_MEAT_HPP
 #define EPIWORLD_GLOBALEVENTS_BUBBLES_MEAT_HPP
 
-#include <algorithm>
-#include <stdexcept>
-#include <utility>
+// Standard library headers are included at global scope by epiworld.hpp (this
+// file is included from within `namespace epiworld`, so system headers must not
+// be re-included here).
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -19352,10 +19353,10 @@ inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
 #ifndef EPIWORLD_GLOBALEVENTS_BUBBLES_BONES_HPP
 #define EPIWORLD_GLOBALEVENTS_BUBBLES_BONES_HPP
 
-#include <vector>
-#include <memory>
-#include <string>
-#include <unordered_map>
+// Standard library headers (vector, memory, string, unordered_map, utility,
+// algorithm, stdexcept) are included at global scope by epiworld.hpp; this file
+// is only ever included from within `namespace epiworld`, so it must not
+// re-include system headers here.
 // (already included include/epiworld/globalevents/../config.hpp)
 
 /**
