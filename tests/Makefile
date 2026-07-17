@@ -74,7 +74,8 @@ $(NAME)_SOURCES := \
 	29a-state-update-transition.cpp \
 	30a-contact-tracing.cpp \
 	30b-contact-tracing.cpp \
-	31a-seir-network-quarantine.cpp
+	31a-seir-network-quarantine.cpp \
+	32a-bubbles.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
