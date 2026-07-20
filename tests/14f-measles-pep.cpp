@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
 
     // What epiworld does under the hood
     // Call the `operator()` method of the class.
-    // pep(model_0, 19);
+    // pep(&model_0, 19);
 
     model_0.add_globalevent(pep);
 

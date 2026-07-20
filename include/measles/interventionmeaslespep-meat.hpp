@@ -122,7 +122,9 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
             "The InterventionMeaslesPEP global event can only be used with "
             "models that inherit from QuarantineTrigger. This is because the "
             "intervention relies on the quarantine triggering mechanism to "
-            "identify which agents should receive PEP."
+            "learn which cases were identified today, and the day public "
+            "health considers each of them to have become infectious, which "
+            "is what dates the exposure."
         );
     }
 
@@ -201,30 +203,48 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
         size_t agent_id = cases[t_i];
 
-        auto n_contacts = contact_trace.get_n_contacts(agent_id);
-        if (n_contacts == 0)
+        auto n_recorded = contact_trace.get_n_contacts(agent_id);
+        if (n_recorded == 0)
             continue;
 
-        if (n_contacts > contact_trace.get_max_contacts())
-            n_contacts = contact_trace.get_max_contacts();
-
         // Start of the infectious window as considered by public health:
-        // rash onset counted backwards by the prodromal period.
+        // rash onset counted backwards by the prodromal period. Nobody
+        // could have been exposed before the simulation began.
         int infectious_since = cases_infectious_since[t_i];
+        if (infectious_since < 0)
+            infectious_since = 0;
 
         // First day the class encountered this index while infectious.
+        //
+        // Contact tracing keeps only the most recent `max_contacts`
+        // encounters per agent, in a circular buffer. Once it has wrapped
+        // around, the earliest encounters have been overwritten, and the
+        // oldest one still on record is *later* than the true first
+        // encounter. Trusting it would shorten `days_since` and hand out
+        // PEP after the window had in fact closed. When we detect that
+        // loss we fall back to the date public health would use with no
+        // contact data at all: the infectious-onset date. That is the
+        // earliest the class could possibly have been exposed, so the
+        // fallback can only withhold PEP, never grant it too late.
         int index_first_seen = -1;
-        for (size_t i = 0u; i < n_contacts; ++i)
+        if (n_recorded > contact_trace.get_max_contacts())
         {
-            int contact_day = contact_trace.get_contact(agent_id, i).second;
+            index_first_seen = infectious_since;
+        }
+        else
+        {
+            for (size_t i = 0u; i < n_recorded; ++i)
+            {
+                int contact_day = contact_trace.get_contact(agent_id, i).second;
 
-            // Encounters before the index was considered infectious do
-            // not expose anyone.
-            if (contact_day < infectious_since)
-                continue;
+                // Encounters before the index was considered infectious do
+                // not expose anyone.
+                if (contact_day < infectious_since)
+                    continue;
 
-            if ((index_first_seen < 0) || (contact_day < index_first_seen))
-                index_first_seen = contact_day;
+                if ((index_first_seen < 0) || (contact_day < index_first_seen))
+                    index_first_seen = contact_day;
+            }
         }
 
         // This index never met the class while infectious (e.g. it was

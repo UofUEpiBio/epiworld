@@ -230,4 +230,46 @@ EPIWORLD_TEST_CASE(
         REQUIRE(count_pep(model) == model.size());
     }
 
+    // -----------------------------------------------------------------
+    // (6) The contact-tracing buffer overflowed.
+    //
+    //     Contact tracing keeps only the most recent `max_contacts`
+    //     encounters per agent. A busy index case overflows it (observed
+    //     at contact_rate = 20), and the earliest encounters are lost.
+    //     The oldest surviving encounter is then later than the truth, so
+    //     trusting it would understate how long ago the exposure started
+    //     and hand out PEP after the window had closed.
+    //
+    //     Here the class met the index every day from day 5, but only the
+    //     day 7 and day 8 encounters survive in the buffer. The exposure
+    //     really started 5 days ago, which is outside the 3 day window.
+    // -----------------------------------------------------------------
+    {
+        auto model = make_school();
+        auto pep = make_pep();
+
+        auto & ct = model.get_contact_tracing();
+        const size_t cap = ct.get_max_contacts();
+
+        // Fill the buffer so that the day 5 and day 6 encounters are
+        // overwritten by the day 7 and day 8 ones.
+        for (int day = 5; day <= 8; ++day)
+            for (size_t k = 0u; k < cap / 2u; ++k)
+                ct.add_contact(0, 1u + (k % (model.size() - 1u)), day);
+
+        REQUIRE(ct.get_n_contacts(0) > cap);          // overflowed
+        REQUIRE(ct.get_contact(0, 0).second > 5);     // day 5 is gone
+
+        model.add_triggering_agent(model, model.get_agent(0), 5);
+
+        pep(&model, model.today());
+        model.events_run();
+
+        // Falling back to the infectious-onset date gives the true
+        // answer: today - 5 = 5 > 3, so the window has closed. Trusting
+        // the surviving encounters would have given 10 - 7 = 3 <= 3 and
+        // dosed the whole school after the fact.
+        REQUIRE(count_pep(model) == 0u);
+    }
+
 }
