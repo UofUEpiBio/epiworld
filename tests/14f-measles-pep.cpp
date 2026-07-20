@@ -209,6 +209,19 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
               << 0.0 + mat(4, 10) << " (expected ~"
               << model_0("Hospitalization rate") << ")" << std::endl;
 
+    // Cumulative, not a daily rate: the share of infections that ended in
+    // hospitalization. Rash and Isolated face the same competing daily
+    // risks (recovery at 1/rash_period vs hospitalization), so an agent
+    // that reaches rash is hospitalized with probability
+    // hosp/(hosp + 1/rash_period). The observed value sits below that,
+    // because PEP clears part of the denominator before it ever reaches
+    // rash.
+    std::cout << "Hospitalizations per infection: "
+              << obs_hosp_probability << " (< "
+              << model_0("Hospitalization rate") /
+                 (model_0("Hospitalization rate") + p_recovered)
+              << ", the no-PEP ceiling)" << std::endl;
+
     std::cout << "Recovery rate (rash): "
               << mat(3, 11) << " (expected ~"
               << p_recovered << ")" << std::endl;
