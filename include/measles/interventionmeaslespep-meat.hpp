@@ -133,6 +133,13 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         this->_setup(model);
     }
 
+    // PEP is a response to identifying a case. This global event runs every
+    // day, but the triggering set is only refreshed when a case is actually
+    // detected, so without this check we would keep re-administering PEP
+    // for a detection that happened days ago.
+    if (!quarantine_trigger_ptr->has_triggered_today(*model))
+        return;
+
     // Common variables
     int pep_mmr_window = static_cast<int>(model->par(this->_par_pep_mmr_window));
     int pep_ig_window = static_cast<int>(model->par(this->_par_pep_ig_window)); 
@@ -150,16 +157,41 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     _to_receive_pep.clear();
     _next_if_effective.clear();
     _next_if_ineffective.clear();
+
+    // -------------------------------------------------------------------
+    // Step 1: date the exposure.
+    //
+    // Public health does not have the time to trace individual contacts.
+    // When a case is identified they look at the group that was exposed
+    // (here, the whole school) and ask how long ago that exposure started,
+    // since MMR/IG must be given within a few days *of the exposure*.
+    //
+    // Given an index case with rash onset on day `d`, public health
+    // considers it infectious from `d - prodromal_period` onwards (that is
+    // `date_infectious`, computed by the model). The reference date is
+    // then the FIRST day, on or after that, on which the class actually
+    // encountered the index:
+    //
+    //                first_seen
+    //                v
+    //   |------------|=====================|.............| today
+    //   ^            (index in school and infectious)     (case detected)
+    //   infectious_since
+    //                |<-------- days_since = today - first_seen -------->|
+    //
+    // Contact tracing is used only to *date* that first encounter, not to
+    // decide who was exposed. This matters when the class is not in
+    // session every day: if the contact rate is set to zero on weekends
+    // (e.g. via a global event) and the infectious window opens on a
+    // Saturday, then the first actual encounter is the following Monday,
+    // and Monday -- not Saturday -- anchors the MMR window.
+    // -------------------------------------------------------------------
+    int first_seen = -1;
     for (size_t t_i = 0u; t_i < triggering_agents.size(); ++t_i)
     {
 
         size_t agent_id = triggering_agents[t_i];
 
-        // Contacts of the (infectious) index case: these are the
-        // classmates that shared the classroom while the index was
-        // infectious. We do not care whether a given classmate
-        // *specifically* interacted with the index; being in school
-        // during the infectious window is what matters.
         auto n_contacts = contact_trace.get_n_contacts(agent_id);
         if (n_contacts == 0)
             continue;
@@ -167,121 +199,121 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         if (n_contacts > contact_trace.get_max_contacts())
             n_contacts = contact_trace.get_max_contacts();
 
-        // Precapturing the tools
-        auto & tool_mmr = model->get_tool("PEP MMR");
-        auto & tool_ig  = model->get_tool("PEP IG");
-
-        // (a) Start of the infectious window as considered by public
-        // health: rash onset counted backwards by the prodromal period.
+        // Start of the infectious window as considered by public health:
+        // rash onset counted backwards by the prodromal period.
         int infectious_since = date_infectious[t_i];
 
-        // (b) Last time the class saw the index while infectious.
-        //
-        //   infectious window                 today (case detected)
-        //  |=================|.....................|
-        //  ^                 ^
-        //  infectious_since  last_seen
-        //                    (last day the class saw the index)
-        //          |<------ days_since ----->|
-        //
-        // PEP is only worthwhile while `days_since = today - last_seen`
-        // is within the MMR (~3 day) or IG (~6 day) window. The reference
-        // is the *last* time the class was exposed, not the day the index
-        // became infectious.
-        int last_seen = -1;
+        // First day the class encountered this index while infectious.
+        int index_first_seen = -1;
         for (size_t i = 0u; i < n_contacts; ++i)
         {
             int contact_day = contact_trace.get_contact(agent_id, i).second;
 
+            // Encounters before the index was considered infectious do
+            // not expose anyone.
             if (contact_day < infectious_since)
                 continue;
 
-            if (contact_day > last_seen)
-                last_seen = contact_day;
+            if ((index_first_seen < 0) || (contact_day < index_first_seen))
+                index_first_seen = contact_day;
         }
 
-        // No exposure recorded within the infectious window.
-        if (last_seen < 0)
+        // This index never met the class while infectious (e.g. it was
+        // never in school during its infectious window), so it exposed
+        // nobody.
+        if (index_first_seen < 0)
             continue;
 
-        // (e) Is there still time to intervene? This is a class-level
-        // decision: it depends on how long ago the class was last
-        // exposed, not on any single contact.
-        int days_since = model->today() - last_seen;
-        bool within_mmr_window =
-            (days_since >= 0) && (days_since <= pep_mmr_window);
-        bool within_ig_window =
-            (days_since >= 0) && (days_since <= pep_ig_window);
+        // When several cases are identified together, public health works
+        // from the earliest exposure: a co-detected case whose rash started
+        // earlier dictates how much time is left to intervene.
+        if ((first_seen < 0) || (index_first_seen < first_seen))
+            first_seen = index_first_seen;
 
-        // Too late for both MMR and IG: nobody in this cohort is offered
-        // PEP.
-        if (!within_mmr_window && !within_ig_window)
+    }
+
+    // No identified case actually exposed the class.
+    if (first_seen < 0)
+        return;
+
+    // Is there still time to intervene? MMR is preferred while we are
+    // within its (shorter) window; otherwise IG is offered if we are
+    // within its window.
+    int days_since = model->today() - first_seen;
+    bool within_mmr_window =
+        (days_since >= 0) && (days_since <= pep_mmr_window);
+    bool within_ig_window =
+        (days_since >= 0) && (days_since <= pep_ig_window);
+
+    // Too late for both MMR and IG: nobody is offered PEP.
+    if (!within_mmr_window && !within_ig_window)
+        return;
+
+    // -------------------------------------------------------------------
+    // Step 2: offer PEP to the exposed group.
+    //
+    // We are not doing individual contact tracing: the entire school is
+    // assumed to have been exposed. Every agent still in a PEP-target
+    // state is therefore offered PEP, whether or not they were recorded
+    // as having met the index case. Agents who are already immune or
+    // otherwise ineligible are excluded by not being in a target state.
+    // -------------------------------------------------------------------
+    auto & tool_mmr = model->get_tool("PEP MMR");
+    auto & tool_ig  = model->get_tool("PEP IG");
+
+    for (size_t agent_i = 0u; agent_i < model->size(); ++agent_i)
+    {
+
+        auto & agent = model->get_agent(agent_i);
+
+        // Is the agent eligible for PEP?
+        int agent_state = static_cast<int>(agent.get_state());
+        if (!IN(agent_state, this->_target_states))
             continue;
 
-        // Offering PEP to the exposed classmates. Each classmate is
-        // considered at most once, regardless of how many times they
-        // shared the classroom with the index.
-        std::set< size_t > processed;
-        for (size_t i = 0u; i < n_contacts; ++i)
+        // Already under prophylaxis: there is nothing to add by dosing
+        // again, and willingness is fixed, so re-offering would not change
+        // the agent's decision. Note that IG wanes and is removed once its
+        // duration is over, at which point the agent becomes eligible again.
+        if (agent.has_tool("PEP MMR") || agent.has_tool("PEP IG"))
+            continue;
+
+        // Willingness to receive each of the two prophylaxes.
+        if (within_mmr_window && this->_willing_to_receive_mmr[agent_i])
         {
-            auto [contact_id, contact_day] =
-                contact_trace.get_contact(agent_id, i);
-
-            // Only classmates present during the infectious window.
-            if (contact_day < infectious_since)
-                continue;
-
-            // Consider each classmate once.
-            if (!processed.insert(contact_id).second)
-                continue;
-
-            auto & contact = model->get_agent(contact_id);
-
-            // First question: Is the classmate eligible for PEP?
-            int contact_state = static_cast<int>(contact.get_state());
-            if (!IN(contact_state, this->_target_states))
-                continue;
-
-            // (c)/(d) Vaccination status and willingness. MMR is
-            // preferred while we are within its (shorter) window;
-            // otherwise IG is offered if we are within its window.
-            if (within_mmr_window && this->_willing_to_receive_mmr[contact_id])
-            {
-                // We will administer MMR PEP to the agent
-                contact.add_tool(
-                    *model,
-                    tool_mmr
-                );
-            }
-            else if (within_ig_window && this->_willing_to_receive_ig[contact_id])
-            {
-                // We will administer IG PEP to the agent
-                contact.add_tool(
-                    *model,
-                    tool_ig
-                );
-            }
-            // Nothing happens
-            else
-                continue;
-
-            // Finding the corresponding state for PEP
-            auto it = std::find(
-                this->_target_states.begin(),
-                this->_target_states.end(),
-                contact_state
+            // We will administer MMR PEP to the agent
+            agent.add_tool(
+                *model,
+                tool_mmr
             );
-
-            // No need to check it, we know it is there
-            auto pos = std::distance(this->_target_states.begin(), it);
-
-            // Recording the information of the agent
-            // so we can decide to what state to move
-            _to_receive_pep.push_back(contact.get_id());
-            _next_if_effective.push_back(_states_if_pep_effective[pos]);
-            _next_if_ineffective.push_back(_states_if_pep_ineffective[pos]);
-
         }
+        else if (within_ig_window && this->_willing_to_receive_ig[agent_i])
+        {
+            // We will administer IG PEP to the agent
+            agent.add_tool(
+                *model,
+                tool_ig
+            );
+        }
+        // Nothing happens
+        else
+            continue;
+
+        // Finding the corresponding state for PEP
+        auto it = std::find(
+            this->_target_states.begin(),
+            this->_target_states.end(),
+            agent_state
+        );
+
+        // No need to check it, we know it is there
+        auto pos = std::distance(this->_target_states.begin(), it);
+
+        // Recording the information of the agent
+        // so we can decide to what state to move
+        _to_receive_pep.push_back(agent.get_id());
+        _next_if_effective.push_back(_states_if_pep_effective[pos]);
+        _next_if_ineffective.push_back(_states_if_pep_ineffective[pos]);
 
     }
 
