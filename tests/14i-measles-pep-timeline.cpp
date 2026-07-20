@@ -198,4 +198,36 @@ EPIWORLD_TEST_CASE(
         REQUIRE(count_pep(model) == 0u);
     }
 
+    // -----------------------------------------------------------------
+    // (5) Days on which the class does not meet.
+    //
+    //     By default the school model has no weekends, so the reference
+    //     date coincides with the infectious-onset date. But if the
+    //     contact rate is set to zero on some days (e.g. weekends, via a
+    //     global event), the class cannot be exposed on those days, and
+    //     the first day actually in session must anchor the window.
+    //
+    //     Here the index is considered infectious from day 5, the class
+    //     does not meet on days 5-7, and the first encounter is on day 8.
+    //     With detection on day 10 the window is measured from day 8.
+    // -----------------------------------------------------------------
+    {
+        auto model = make_school();
+        auto pep = make_pep();
+
+        auto & ct = model.get_contact_tracing();
+        ct.add_contact(0, 1, 8); // first day back in session
+        ct.add_contact(0, 2, 9);
+
+        model.add_triggering_agent(model, model.get_agent(0), 5);
+
+        pep(&model, model.today());
+        model.events_run();
+
+        // today - first_seen = 10 - 8 = 2 <= 3, so PEP is still on time.
+        // Anchoring on the infectious-onset date instead would have given
+        // 10 - 5 = 5 > 3 and denied PEP to the whole school.
+        REQUIRE(count_pep(model) == model.size());
+    }
+
 }
