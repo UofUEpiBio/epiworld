@@ -40,16 +40,4 @@ inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
     return this->_date_infectious;
 }
 
-template<typename TSeq>
-inline bool QuarantineTrigger<TSeq>::has_triggered_today(
-    const Model<TSeq> & model
-) const {
-
-    return
-        (this->_model_sim_id == static_cast<int>(model.get_sim_id())) &&
-        (this->_day == static_cast<int>(model.today())) &&
-        (!this->_agents_triggering_quarantine.empty());
-
-}
-
 #endif

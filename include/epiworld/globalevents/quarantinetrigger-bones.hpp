@@ -23,21 +23,6 @@ public:
 
     std::vector< size_t > & get_triggering_agents();
     std::vector< int > & get_date_infectious();
-
-    /**
-     * @brief Whether a case was identified today.
-     *
-     * @details
-     * The triggering set is only refreshed when `add_triggering_agent` is
-     * called, so on days when nothing is detected it still holds the
-     * previous detection. Consumers that run every day (such as global
-     * events) must use this to tell a fresh detection from a stale one.
-     *
-     * @param model The model the trigger belongs to.
-     * @return true if agents were added to the triggering set during the
-     * current day of the current simulation.
-     */
-    bool has_triggered_today(const Model<TSeq> & model) const;
 };
 
 #endif

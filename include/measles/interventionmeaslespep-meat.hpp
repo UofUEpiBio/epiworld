@@ -133,24 +133,33 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         this->_setup(model);
     }
 
-    // PEP is a response to identifying a case. This global event runs every
-    // day, but the triggering set is only refreshed when a case is actually
-    // detected, so without this check we would keep re-administering PEP
-    // for a detection that happened days ago.
-    if (!quarantine_trigger_ptr->has_triggered_today(*model))
-        return;
 
     // Common variables
     int pep_mmr_window = static_cast<int>(model->par(this->_par_pep_mmr_window));
     int pep_ig_window = static_cast<int>(model->par(this->_par_pep_ig_window)); 
 
-    // Getting the list of agents that triggered the
-    // quarantine
+    auto & contact_trace = model->get_contact_tracing();
+
+    // Getting the list of agents that triggered the quarantine, together
+    // with the day public health considers each of them to have become
+    // infectious.
+    //
+    // This global event runs every day, but the triggering set is only
+    // refreshed when a case is actually identified. We therefore treat it
+    // as a queue of detections to respond to: today's detections are taken
+    // and the queue emptied, so that a detection is not answered with a
+    // second round of PEP on every subsequent day.
     auto & triggering_agents = quarantine_trigger_ptr->get_triggering_agents();
-    auto & contact_trace     = model->get_contact_tracing();
-    
-    // When does pub health consider the agent to be infectious
     auto & date_infectious   = quarantine_trigger_ptr->get_date_infectious();
+
+    if (triggering_agents.empty())
+        return;
+
+    std::vector< size_t > cases(triggering_agents);
+    std::vector< int > cases_infectious_since(date_infectious);
+
+    triggering_agents.clear();
+    date_infectious.clear();
 
     // Making room (we will iterate this vectors
     // later to figure out the state changes.)
@@ -187,10 +196,10 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     // and Monday -- not Saturday -- anchors the MMR window.
     // -------------------------------------------------------------------
     int first_seen = -1;
-    for (size_t t_i = 0u; t_i < triggering_agents.size(); ++t_i)
+    for (size_t t_i = 0u; t_i < cases.size(); ++t_i)
     {
 
-        size_t agent_id = triggering_agents[t_i];
+        size_t agent_id = cases[t_i];
 
         auto n_contacts = contact_trace.get_n_contacts(agent_id);
         if (n_contacts == 0)
@@ -201,7 +210,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
         // Start of the infectious window as considered by public health:
         // rash onset counted backwards by the prodromal period.
-        int infectious_since = date_infectious[t_i];
+        int infectious_since = cases_infectious_since[t_i];
 
         // First day the class encountered this index while infectious.
         int index_first_seen = -1;
