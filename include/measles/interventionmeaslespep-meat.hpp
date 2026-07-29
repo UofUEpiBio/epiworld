@@ -18,7 +18,8 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     epiworld_double ig_window,
     std::vector< int > target_states,
     std::vector< int > states_if_pep_effective,
-    std::vector< int > states_if_pep_ineffective
+    std::vector< int > states_if_pep_ineffective,
+    std::vector< int > agent_groups
 ) {
 
     this->set_name(name);
@@ -37,6 +38,11 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     this->_states_if_pep_effective = states_if_pep_effective;
     this->_states_if_pep_ineffective = states_if_pep_ineffective;
 
+    // An empty vector means "no groups": the whole population is treated
+    // as a single exposed group. Its length can only be checked against
+    // the model once we have one, so that happens in _setup().
+    this->_agent_groups = agent_groups;
+
     // Paramters
     this->_mmr_efficacy = mmr_efficacy;
     this->_ig_efficacy = ig_efficacy;
@@ -52,6 +58,21 @@ template<typename TSeq>
 inline void InterventionMeaslesPEP<TSeq>::_setup(
     Model<TSeq> * model
 ) {
+
+    // Groups are optional, but if given there must be one entry per agent
+    // (they are indexed by agent id).
+    if (
+        !this->_agent_groups.empty() &&
+        (this->_agent_groups.size() != model->size())
+    )
+        throw std::length_error(
+            "The vector of agent groups passed to InterventionMeaslesPEP "
+            "must be either empty (no groups: PEP is offered to the whole "
+            "population) or have one entry per agent. It currently has " +
+            std::to_string(this->_agent_groups.size()) +
+            " entries, but the model has " +
+            std::to_string(model->size()) + " agents."
+        );
 
     // Randomizing willingness
     this->_willing_to_receive_mmr.assign(model->size(), false);
@@ -196,8 +217,13 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     // (e.g. via a global event) and the infectious window opens on a
     // Saturday, then the first actual encounter is the following Monday,
     // and Monday -- not Saturday -- anchors the MMR window.
+    //
+    // Each exposed group is dated separately: a case in one classroom
+    // says nothing about how long ago another classroom was exposed.
+    // When no groups were given every case falls into the same bucket,
+    // which is the whole-population behaviour.
     // -------------------------------------------------------------------
-    int first_seen = -1;
+    std::map< int, int > group_first_seen;
     for (size_t t_i = 0u; t_i < cases.size(); ++t_i)
     {
 
@@ -253,45 +279,72 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         if (index_first_seen < 0)
             continue;
 
-        // When several cases are identified together, public health works
-        // from the earliest exposure: a co-detected case whose rash started
-        // earlier dictates how much time is left to intervene.
-        if ((first_seen < 0) || (index_first_seen < first_seen))
-            first_seen = index_first_seen;
+        // When several cases are identified together in the same group,
+        // public health works from the earliest exposure: a co-detected
+        // case whose rash started earlier dictates how much time is left
+        // to intervene.
+        int group = this->_group_of(agent_id);
+        auto group_i = group_first_seen.find(group);
+        if (
+            (group_i == group_first_seen.end()) ||
+            (index_first_seen < group_i->second)
+        )
+            group_first_seen[group] = index_first_seen;
 
     }
 
-    // No identified case actually exposed the class.
-    if (first_seen < 0)
-        return;
+    // Is there still time to intervene? Drop the groups whose window has
+    // already closed; what remains are the groups to offer PEP to.
+    for (auto group_i = group_first_seen.begin();
+         group_i != group_first_seen.end(); )
+    {
+        int days_since = model->today() - group_i->second;
 
-    // Is there still time to intervene? MMR is preferred while we are
-    // within its (shorter) window; otherwise IG is offered if we are
-    // within its window.
-    int days_since = model->today() - first_seen;
-    bool within_mmr_window =
-        (days_since >= 0) && (days_since <= pep_mmr_window);
-    bool within_ig_window =
-        (days_since >= 0) && (days_since <= pep_ig_window);
+        if (
+            (days_since < 0) ||
+            ((days_since > pep_mmr_window) && (days_since > pep_ig_window))
+        )
+            group_i = group_first_seen.erase(group_i);
+        else
+            ++group_i;
+    }
 
-    // Too late for both MMR and IG: nobody is offered PEP.
-    if (!within_mmr_window && !within_ig_window)
+    // Either no identified case actually exposed anyone, or it is too late
+    // for both MMR and IG everywhere: nobody is offered PEP.
+    if (group_first_seen.empty())
         return;
 
     // -------------------------------------------------------------------
-    // Step 2: offer PEP to the exposed group.
+    // Step 2: offer PEP to the exposed group(s).
     //
-    // We are not doing individual contact tracing: the entire school is
-    // assumed to have been exposed. Every agent still in a PEP-target
-    // state is therefore offered PEP, whether or not they were recorded
-    // as having met the index case. Agents who are already immune or
-    // otherwise ineligible are excluded by not being in a target state.
+    // We are not doing individual contact tracing: everyone in an exposed
+    // group is assumed to have been exposed. Every agent of that group
+    // still in a PEP-target state is therefore offered PEP, whether or not
+    // they were recorded as having met the index case. Agents who are
+    // already immune or otherwise ineligible are excluded by not being in
+    // a target state.
+    //
+    // Groups let this be narrowed to, say, the classroom the identified
+    // case belongs to. Without them the exposed group is the entire
+    // population.
     // -------------------------------------------------------------------
     auto & tool_mmr = model->get_tool("PEP MMR");
     auto & tool_ig  = model->get_tool("PEP IG");
 
     for (size_t agent_i = 0u; agent_i < model->size(); ++agent_i)
     {
+
+        // Was this agent's group exposed by a case identified today, and
+        // is that exposure still recent enough to act on?
+        auto group_i = group_first_seen.find(this->_group_of(agent_i));
+        if (group_i == group_first_seen.end())
+            continue;
+
+        // MMR is preferred while we are within its (shorter) window;
+        // otherwise IG is offered if we are within its window.
+        int days_since = model->today() - group_i->second;
+        bool within_mmr_window = (days_since <= pep_mmr_window);
+        bool within_ig_window  = (days_since <= pep_ig_window);
 
         auto & agent = model->get_agent(agent_i);
 
