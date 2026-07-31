@@ -18,7 +18,7 @@ jobs:
             llvm: 14
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install macOS dependencies
         if: runner.os == 'macOS'
