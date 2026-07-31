@@ -33,14 +33,14 @@ endif
 %TEST_DIR%/report-%RULE_NAME%.xml: TTYP = %TEST_DIR%/.tty-%RULE_NAME%
 %TEST_DIR%/report-%RULE_NAME%.xml: COV_SILO = %COV_DIR%/coverage-%RULE_NAME%
 %TEST_DIR%/report-%RULE_NAME%.xml: %BINARY%
-	$(SAY) 'TEST' '%HUMAN_NAME%'
+	$(SAY) 'TEST' '%SHELL_NAME%'
 	$(V)mkdir -p $(COV_SILO)
 	$(V)GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(COV_SILO)' %BINARY% \
 		--reporter junit \
 		--out %TEST_DIR%/report-%RULE_NAME%.xml \
-		'%HUMAN_NAME%' \
+		'%SHELL_NAME%' \
 		>$(TTYP) 2>&1; \
-	perl -pi -e 's/name="tests"/name="%HUMAN_NAME%"/g' %TEST_DIR%/report-%RULE_NAME%.xml; \
+	perl -pi -e 's/name="tests"/name="%SHELL_NAME%"/g' %TEST_DIR%/report-%RULE_NAME%.xml; \
 	cat '$(TTYP)'; \
 	rm '$(TTYP)'
 
@@ -75,6 +75,16 @@ my $cov_abs   = $cov_dir;
 
 my @targets;
 
+# Test names are interpolated into single-quoted shell strings in the rules
+# above, so a name containing an apostrophe (say, "the case's group") would
+# close the quote early and break the generated Makefile with a shell syntax
+# error rather than anything pointing at the test. Escape it the usual way.
+sub shell_escape {
+    my ($s) = @_;
+    $s =~ s{'}{'\\''}g;
+    return $s;
+}
+
 sub apply_template {
     my ($template, %vars) = @_;
 
@@ -96,6 +106,7 @@ for my $test (@tests) {
         $fragment,
         RULE_NAME => $rule,
         HUMAN_NAME => $test,
+        SHELL_NAME => shell_escape($test),
         BINARY => $binary,
         BUILD_DIR => $build_abs,
         TEST_DIR => $test_abs,

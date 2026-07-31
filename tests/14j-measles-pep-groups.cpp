@@ -99,7 +99,7 @@ size_t count_pep(MS & model, size_t from = 0u, size_t to = N_AGENTS)
 } // namespace
 
 EPIWORLD_TEST_CASE(
-    "Measles PEP can be restricted to the case's group",
+    "Measles PEP can be restricted to the group of the identified case",
     "[ModelMeaslesPEP]"
 ) {
 
