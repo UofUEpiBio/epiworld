@@ -1,5 +1,6 @@
 #include "tests.hpp"
 #include <set>
+#include <map>
 
 using namespace epiworld;
 
@@ -27,13 +28,50 @@ EPIWORLD_TEST_CASE("Bubbles - peer partition respects households", "[bubbles]") 
     model.run(5);
 
     const auto & bid = bubbles.get_bubble_id();
+    size_t n_households = n / hh_size;
 
     // Households never split across bubbles.
     for (size_t a = 0u; a < n; ++a)
         REQUIRE(bid[a] == bid[(a / hh_size) * hh_size]);
 
-    // With k = 1 external peer, bubbles merge at least some households.
-    std::set<int> distinct(bid.begin(), bid.end());
-    REQUIRE(distinct.size() < (n / hh_size)); // fewer bubbles than households
+    // Count households per bubble.
+    std::map<int, std::set<size_t>> households_in_bubble;
+    for (size_t a = 0u; a < n; ++a)
+        households_in_bubble[bid[a]].insert(hh[a]);
+
+    // Peer nominations merge households, so some households share a bubble.
+    REQUIRE(households_in_bubble.size() < n_households);
+
+    // ...but the merges must NOT percolate. With the default cap of two
+    // households per bubble, no bubble may exceed it and there must be at least
+    // n_households / 2 bubbles. (Uncapped union-find collapsed the whole
+    // population into a single bubble, imposing no restriction at all.)
+    for (auto & kv : households_in_bubble)
+        REQUIRE(kv.second.size() <= 2u);
+
+    REQUIRE(households_in_bubble.size() >= (n_households + 1u) / 2u);
+
+    // Every household sharing a bubble must be genuinely connected: with a cap
+    // of two, the pair is joined by at least one member-to-member contact.
+    std::map<size_t, std::set<size_t>> hh_adj;
+    for (auto & a : model.get_agents())
+    {
+        size_t ia = static_cast<size_t>(a.get_id());
+        for (auto * nb : a.get_neighbors(model))
+        {
+            size_t ib = static_cast<size_t>(nb->get_id());
+            if (hh[ia] != hh[ib])
+                hh_adj[hh[ia]].insert(hh[ib]);
+        }
+    }
+
+    for (auto & kv : households_in_bubble)
+    {
+        if (kv.second.size() < 2u)
+            continue;
+        auto it = kv.second.begin();
+        size_t h1 = *it++, h2 = *it;
+        REQUIRE(hh_adj[h1].count(h2) == 1u);
+    }
 
 }
