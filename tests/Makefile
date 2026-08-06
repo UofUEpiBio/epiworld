@@ -80,7 +80,8 @@ $(NAME)_SOURCES := \
 	32c-bubbles-transmission.cpp \
 	32d-bubbles-within-factor.cpp \
 	32e-bubbles-rewiring.cpp \
-	32f-bubbles-reset-recompute.cpp
+	32f-bubbles-reset-recompute.cpp \
+	32g-bubbles-connected-pairing.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

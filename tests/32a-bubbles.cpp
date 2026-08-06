@@ -1,5 +1,6 @@
 #include "tests.hpp"
 #include <set>
+#include <map>
 #include <unordered_map>
 #include <algorithm>
 
@@ -47,9 +48,53 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
 
     REQUIRE(max_hh <= group);
 
-    // ceil(n_households / group) bubbles.
+    // Bubbles are grown along existing ties, so a household may end up in a
+    // smaller bubble (or alone) when it has no unassigned connected partner.
+    // Hence there are at least ceil(n_households / group) bubbles.
     size_t n_households = n / hh_size;
-    size_t expected_bubbles = (n_households + group - 1u) / group;
-    REQUIRE(households_in_bubble.size() == expected_bubbles);
+    size_t min_bubbles = (n_households + group - 1u) / group;
+    REQUIRE(households_in_bubble.size() >= min_bubbles);
+
+    // Household contact graph: h1 ~ h2 iff some member of h1 is connected to a
+    // member of h2.
+    std::map<size_t, std::set<size_t>> hh_adj;
+    for (auto & a : model.get_agents())
+    {
+        size_t ia = static_cast<size_t>(a.get_id());
+        for (auto * nb : a.get_neighbors(model))
+        {
+            size_t ib = static_cast<size_t>(nb->get_id());
+            if (hh[ia] != hh[ib])
+                hh_adj[hh[ia]].insert(hh[ib]);
+        }
+    }
+
+    // Every bubble must be CONNECTED in the household graph. Grouping
+    // households that share no tie would be a no-op, since the intervention can
+    // only suppress transmission along existing edges (never create them).
+    for (auto & kv : households_in_bubble)
+    {
+        const std::set<size_t> & members = kv.second;
+        if (members.size() < 2u)
+            continue;
+
+        // BFS from an arbitrary member, restricted to the bubble.
+        std::set<size_t> seen;
+        std::vector<size_t> stack{*members.begin()};
+        seen.insert(*members.begin());
+        while (!stack.empty())
+        {
+            size_t cur = stack.back();
+            stack.pop_back();
+            for (size_t nb : hh_adj[cur])
+                if (members.count(nb) && !seen.count(nb))
+                {
+                    seen.insert(nb);
+                    stack.push_back(nb);
+                }
+        }
+
+        REQUIRE(seen.size() == members.size());
+    }
 
 }
