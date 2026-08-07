@@ -1,6 +1,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <stdexcept>
 #include <random>
 #include <cmath>
@@ -125,7 +126,8 @@ namespace epiworld {
 
     #include "tools/vaccine.hpp"
     #include "globalevents/quarantinetrigger-meat.hpp"
-    
+    #include "globalevents/bubbles-meat.hpp"
+
     #include "models/models.hpp"
 
 }

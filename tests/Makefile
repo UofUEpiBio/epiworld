@@ -76,7 +76,15 @@ $(NAME)_SOURCES := \
 	29a-state-update-transition.cpp \
 	30a-contact-tracing.cpp \
 	30b-contact-tracing.cpp \
-	31a-seir-network-quarantine.cpp
+	31a-seir-network-quarantine.cpp \
+	32a-bubbles.cpp \
+	32b-bubbles-peer.cpp \
+	32c-bubbles-transmission.cpp \
+	32d-bubbles-transmission-factor.cpp \
+	32e-bubbles-rewiring.cpp \
+	32f-bubbles-reset-recompute.cpp \
+	32g-bubbles-connected-pairing.cpp \
+	32h-bubbles-peer-cap.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

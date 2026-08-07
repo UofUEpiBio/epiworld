@@ -1,6 +1,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <stdexcept>
 #include <random>
 #include <cmath>
@@ -8334,8 +8335,39 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 #define EPIWORLD_CONTACTTRACING_BONES_H
 
 #include <vector>
+#include <set>
+#include <map>
 #include <stdexcept>
 // (already included include/epiworld/config.hpp)
+
+/**
+ * @brief Represents a single contact relationship for an agent.
+ * @details
+ * Each instance holds the id of the contacted agent and the set of
+ * simulation days on which the contact occurred.  Instances are
+ * returned by `ContactTracing::get_contacts()`.
+ */
+class ContactRecord
+{
+private:
+    size_t m_contact_id;
+    std::set<int> m_times;
+
+public:
+    ContactRecord(size_t contact_id, std::set<int> times)
+        : m_contact_id(contact_id), m_times(std::move(times)) {}
+
+    /**
+     * @brief Return the id of the contacted agent.
+     */
+    size_t get_contact_id() const { return m_contact_id; }
+
+    /**
+     * @brief Return the set of days on which the contact was recorded.
+     * @return A const reference to the set of simulation days.
+     */
+    const std::set<int> & get_times() const { return m_times; }
+};
 
 /** 
  * @brief Class for tracing contacts between agents
@@ -8359,6 +8391,12 @@ private:
 
     size_t n_agents;
     size_t max_contacts;
+
+    // Cache: for each agent, the list of unique contacts with their dates.
+    // up_to_date[a] is false whenever add_contact(a, ...) is called, and
+    // set to true after get_contacts(a) rebuilds the cache.
+    std::vector< std::vector<ContactRecord> > cached_contacts;
+    std::vector< bool > up_to_date;
 
     size_t get_location(size_t row, size_t col) const;
 
@@ -8417,6 +8455,25 @@ public:
     );
 
     /**
+     * @brief Get all unique contacts of an agent with the days they occurred.
+     * @details
+     * Returns a vector of `ContactRecord` objects, one per unique contacted
+     * agent.  Each record exposes:
+     *
+     * - `get_contact_id()` – the id of the other agent.
+     * - `get_times()` – the set of simulation days on which the contact was
+     *   recorded in the current (non-reset) window.
+     *
+     * The result is lazily computed on the first call after any new contact is
+     * recorded for this agent and cached until the next `add_contact()` call
+     * for the same agent.
+     *
+     * @param agent Source agent id.
+     * @return Const reference to the cached vector of ContactRecord objects.
+     */
+    const std::vector<ContactRecord> & get_contacts(size_t agent);
+
+    /**
      * @brief Print the contacts of an agent 
      * 
      * @param agent Agent id
@@ -8467,6 +8524,9 @@ inline ContactTracing::ContactTracing(size_t n_agents, size_t max_contacts)
     contact_matrix.resize(n_agents * max_contacts, 0u);
     contacts_per_agent.resize(n_agents, 0);
     contact_date.resize(n_agents * max_contacts, 0);
+
+    cached_contacts.resize(n_agents);
+    up_to_date.assign(n_agents, false);
 }
 
 inline void ContactTracing::add_contact(size_t agent_a, size_t agent_b, size_t day)
@@ -8480,6 +8540,9 @@ inline void ContactTracing::add_contact(size_t agent_a, size_t agent_b, size_t d
     contact_date[array_location] = day;
 
     contacts_per_agent[agent_a] += 1;
+
+    // Invalidate the cache for this agent
+    up_to_date[agent_a] = false;
 
 }
 
@@ -8516,6 +8579,40 @@ inline void ContactTracing::reset(size_t n_agents, size_t max_contacts)
     contact_matrix.assign(n_agents * max_contacts, 0u);
     contacts_per_agent.assign(n_agents, 0u);
     contact_date.assign(n_agents * max_contacts, 0u);
+
+    cached_contacts.assign(n_agents, std::vector<ContactRecord>());
+    up_to_date.assign(n_agents, false);
+}
+
+inline const std::vector<ContactRecord> & ContactTracing::get_contacts(size_t agent)
+{
+    if (!up_to_date[agent])
+    {
+        // Rebuild the cache for this agent by grouping stored contacts by
+        // contact id and collecting all recorded days into a std::set<int>.
+        std::map<size_t, std::set<int>> contact_map;
+
+        size_t actual_n = contacts_per_agent[agent];
+        if (actual_n > max_contacts)
+            actual_n = max_contacts;
+
+        for (size_t i = 0u; i < actual_n; ++i)
+        {
+            size_t array_location = get_location(agent, i);
+            contact_map[contact_matrix[array_location]].insert(
+                static_cast<int>(contact_date[array_location])
+            );
+        }
+
+        cached_contacts[agent].clear();
+        cached_contacts[agent].reserve(contact_map.size());
+        for (const auto & kv : contact_map)
+            cached_contacts[agent].emplace_back(kv.first, kv.second);
+
+        up_to_date[agent] = true;
+    }
+
+    return cached_contacts[agent];
 }
 
 inline void ContactTracing::print(size_t agent)
@@ -19229,7 +19326,889 @@ inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-    
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/globalevents/bubbles-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_GLOBALEVENTS_BUBBLES_MEAT_HPP
+#define EPIWORLD_GLOBALEVENTS_BUBBLES_MEAT_HPP
+
+// Standard library headers are included at global scope by epiworld.hpp (this
+// file is included from within `namespace epiworld`, so system headers must not
+// be re-included here).
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/globalevents/bubbles-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_GLOBALEVENTS_BUBBLES_BONES_HPP
+#define EPIWORLD_GLOBALEVENTS_BUBBLES_BONES_HPP
+
+// Standard library headers (vector, memory, string, unordered_map, utility,
+// algorithm, stdexcept) are included at global scope by epiworld.hpp; this file
+// is only ever included from within `namespace epiworld`, so it must not
+// re-include system headers here.
+// (already included include/epiworld/globalevents/../config.hpp)
+
+/**
+ * @brief Flavor of the social-bubble intervention (how bubbles are formed).
+ * @ingroup globalevents
+ *
+ * @details Both flavors produce a partition of the population into disjoint
+ * bubbles in which households are never split, and both form bubbles along
+ * *existing* contacts (see Bubbles).
+ */
+enum class BubbleFlavor {
+    /**
+     * Household-level rule: whole households bubble together, up to
+     * `group_size` households per bubble. A bubble is grown from a seed
+     * household by repeatedly absorbing a random household that is connected
+     * to it in the contact network. `group_size == 1` leaves every household
+     * on its own, i.e. a strict household-only lockdown.
+     *
+     * Models e.g. the Belgian rule of 10 May 2020 ("a household may form one
+     * fixed bubble with other households").
+     */
+    Household,
+    /**
+     * Individual-level rule: each agent nominates up to `group_size` peers
+     * among its existing contacts outside its own household. A nomination
+     * merges the two agents' households -- so a teenager choosing a partner
+     * brings both households into one bubble.
+     *
+     * Nominations are only accepted while the bubble stays within
+     * `max_households` households; this cap is what enforces the policy's
+     * exclusivity. Without it the merges percolate: with several members per
+     * household each nominating someone, the household graph becomes connected
+     * and everyone ends up in a single bubble, imposing no restriction at all.
+     *
+     * Models e.g. the Belgian rule of 19 October 2020 (`group_size == 1`, "one
+     * close contact per person").
+     */
+    Peer
+};
+
+/**
+ * @brief Shared, mutable state of a Bubbles intervention.
+ *
+ * Held via `std::shared_ptr` and captured by both the bubble `Tool`
+ * (read-only) and the scheduler `GlobalEvent` (read-write), so the two stay in
+ * sync for the lifetime of the model. The bubble partition is a per-agent
+ * integer label (`bubble_id`): agents whose labels match are in the same bubble
+ * and transmit freely, while transmission between different labels is scaled
+ * down by the intervention's transmission factor.
+ */
+struct BubbleState {
+    std::vector< int > bubble_id;  ///< Per-agent bubble label (index = agent id); -1 = unassigned.
+    int last_sim_id = -1;          ///< Sim id the current partition was computed for.
+    int last_epoch  = -1;          ///< Rewiring epoch the current partition was computed for.
+};
+
+/**
+ * @brief Social-bubble contact-restriction intervention for network models.
+ * @ingroup globalevents
+ *
+ * @details A "social bubble" policy lets people keep seeing a small, fixed set
+ * of others while cutting off the rest of their contacts. `Bubbles` implements
+ * this for models built on an explicit contact network (e.g. `ModelSEIR`,
+ * `ModelSIR` after `agents_smallworld()` / `agents_from_edgelist()`), and is
+ * designed for the household-based rules used during COVID-19.
+ *
+ * ## How it works
+ *
+ * The contact network is **not modified**. Instead, `deploy()` attaches a
+ * `Tool` ("Social bubble") to every agent. When a susceptible agent `p` is
+ * exposed to an infectious neighbor, the tool's susceptibility-reduction
+ * function identifies the transmitter through the virus (`v->get_agent()`) and
+ * compares the two agents' bubble labels:
+ *
+ * - same bubble  -> reduction `0.0`: contacts *inside* the bubble are what the
+ *                   policy preserves, so they are left untouched;
+ * - different bubbles -> reduction `1 - f`, i.e. transmission along contacts
+ *                   *outside* the bubble is scaled by the transmission factor
+ *                   `f`;
+ * - outside the policy window -> reduction `0.0`, no effect.
+ *
+ * The transmission factor `f` is how strictly the bubble is observed:
+ * `f == 0` is a perfectly efficient bubble (out-of-bubble contact is cut
+ * entirely, which is equivalent to deleting those edges), `f == 1` disables the
+ * intervention (out-of-bubble contact is as good as before), and intermediate
+ * values model a soft contact reduction -- people still meet outside their
+ * bubble, just less often or more carefully.
+ *
+ * `f` is **not** stored in the intervention: `deploy()` registers it as a model
+ * parameter (`param_name`, "Bubble transmission factor" by default) and the
+ * tool reads it from the model on every exposure. It can therefore be inspected
+ * with `model.get_param()`, changed mid-run with `model.set_param()`, read from
+ * a parameter file with `model.read_params()`, or swept over in a calibration
+ * without rebuilding the intervention. Values outside `[0, 1]` are clamped.
+ *
+ * Since reductions combine as `1 - prod(1 - r_i)`, a reduction of `1.0`
+ * (`f == 0`) zeroes the transmission probability regardless of any other tools
+ * the agent carries. Contact weights are uniform in these models, so
+ * suppressing transmission on out-of-bubble contacts is equivalent to deleting
+ * those contacts, while keeping the network intact for other purposes (contact
+ * tracing, output).
+ *
+ * ## Forming bubbles (why ties matter)
+ *
+ * Households are declared with a per-agent `household_id` vector (one entry per
+ * agent, indexed by agent id). Bubbles are always:
+ *
+ * - **disjoint** -- every agent belongs to exactly one bubble;
+ * - **household-preserving** -- a household is never split; and
+ * - **connection-aware** -- bubbles only ever join households that are actually
+ *   connected in the contact network.
+ *
+ * The last point is essential. Because the intervention can only suppress
+ * transmission along existing edges and never creates new ones, putting two
+ * households that share no contact into the same bubble changes nothing at all.
+ * Pairing households at random would therefore leave `group_size` inert --
+ * behaving like a strict lockdown no matter how large the bubbles are. It also
+ * mirrors the real policy: a household chooses a bubble partner it already
+ * socialises with.
+ *
+ * ## The algorithms
+ *
+ * Both rules start from the **household contact graph**: one node per
+ * household, with an edge between two households whenever at least one member
+ * of the first is connected to a member of the second in the agents' contact
+ * network. All random draws use the model's RNG, so a run is reproducible from
+ * its seed.
+ *
+ * **`BubbleFlavor::Household`** -- grow bubbles from seed households:
+ *
+ * 1. Visit households in random order.
+ * 2. Skip a household if it already belongs to a bubble; otherwise open a new
+ *    bubble containing it, and set the *frontier* to its unassigned neighbours
+ *    in the household contact graph.
+ * 3. While the bubble holds fewer than `group_size` households and the frontier
+ *    is not empty, draw a household from the frontier at random, add it to the
+ *    bubble, and extend the frontier with that household's unassigned
+ *    neighbours. A household that is tied to several members of the bubble
+ *    appears in the frontier more than once and is correspondingly more likely
+ *    to be drawn, so stronger ties are favoured.
+ * 4. Stop when no unassigned neighbour remains, even if the bubble is smaller
+ *    than `group_size`.
+ *
+ * Each bubble is therefore a *connected* subgraph of the household contact
+ * graph -- not necessarily a clique, so with `group_size > 2` two households in
+ * one bubble need not be tied to each other directly. Because a household with
+ * no available partner is left on its own, the number of bubbles is at least
+ * `ceil(n_households / group_size)`. Cost is linear in the number of edges.
+ *
+ * **`BubbleFlavor::Peer`** -- agents choose peers from those still available:
+ *
+ * Households are kept in a disjoint-set (union-find) structure that also tracks
+ * how many households each bubble holds, so a bubble that is full can be
+ * recognised at once.
+ *
+ * 1. Visit the agents in random order.
+ * 2. Skip an agent whose household is already in a full bubble -- it has left
+ *    the pool and can neither choose nor be chosen.
+ * 3. Otherwise, repeatedly draw one of the agent's contacts outside its own
+ *    household, at random and without replacement, until the agent has made
+ *    `group_size` successful choices or has no contact left that its bubble can
+ *    still take in. A draw is accepted when the two households are in different
+ *    bubbles **and** the merged bubble would hold at most `max_households`
+ *    households; otherwise that contact is simply unavailable and the agent
+ *    draws again. Accepting a draw merges the two households (household
+ *    commitment), and the agent stops once its bubble is full.
+ *
+ * The cap is what makes the rule work. Without it the merges percolate: with a
+ * few members per household each choosing someone, the household graph becomes
+ * connected and every household lands in one giant bubble -- no restriction at
+ * all.
+ *
+ * Note that `max_households` is the effective dial on bubble size, while
+ * `group_size` rarely binds: because a choice by *any* member commits the whole
+ * household, the members of one household together tend to fill its bubble
+ * regardless of how many choices each of them is allowed. With
+ * `max_households == 2`, in particular, one accepted choice fills the bubble and
+ * `group_size` has no effect at all. Households whose every contact was taken
+ * first remain on their own.
+ *
+ * ## Scheduling
+ *
+ * `start_day` is the first day the policy applies; `end_day` is the (exclusive)
+ * day it lifts, or `< 0` to never lift. With `rewire_every > 0` the partition is
+ * re-randomised every that-many days, modelling policies whose bubbles change
+ * over time (e.g. contacts renewed weekly); `0` keeps a fixed bubble.
+ *
+ * The initial partition is computed at reset time via the tool's distribution
+ * function, so it is recomputed for each replicate of `run_multiple()` using
+ * that replicate's seed and is already in force on day 1. Re-randomisations are
+ * applied by a daily global event and take effect the following step.
+ *
+ * ## Example
+ *
+ * ```cpp
+ * epimodels::ModelSEIR<> model("flu", 0.01, 0.1, 4.5, 1.0/7.0);
+ * model.agents_smallworld(10000, 8, false, 0.05);
+ *
+ * std::vector< size_t > household_id(10000);
+ * for (size_t i = 0u; i < 10000; ++i)
+ *     household_id[i] = i / 3;             // households of three
+ *
+ * // Two households per bubble from day 10, halving out-of-bubble transmission.
+ * Bubbles<> bubbles(
+ *     household_id, BubbleFlavor::Household,
+ *     2,      // group_size
+ *     0.5,    // transmission_factor (initial value of the model parameter)
+ *     10      // start_day
+ * );
+ * bubbles.deploy(model);
+ *
+ * // The factor lives in the model, so it can be changed without touching
+ * // the intervention.
+ * model.set_param("Bubble transmission factor", 0.25);
+ *
+ * model.run(100, 1231);
+ * ```
+ *
+ * @note All copies of a `Bubbles` object share one `BubbleState`, so replicates
+ * in `run_multiple()` must run on a single thread (`nthreads = 1`).
+ *
+ * @note Both rules produce *exclusive* bubbles, which is what the modelled
+ * policies prescribe. A rule that instead grants each person a personal budget
+ * of contacts that need be neither mutual nor exclusive (e.g. "up to ten
+ * different people a week") is not a partition of the population and cannot be
+ * expressed this way.
+ *
+ * @note Not yet modelled: fixed out-of-bubble "sport partners", travel between
+ * regions, and caps on the number of individuals (as opposed to households) a
+ * bubble may contain.
+ *
+ * @tparam TSeq Sequence type (should match `TSeq` across the model).
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class Bubbles {
+private:
+
+    std::vector< size_t > household_id;
+    BubbleFlavor flavor;
+    size_t group_size;               ///< households per bubble (Household) or max peers (Peer).
+    size_t max_households;           ///< cap on households per bubble (Peer only).
+    epiworld_double transmission_factor; ///< initial value of the model parameter, in [0, 1].
+    int start_day;
+    int end_day;
+    int rewire_every;
+    std::string name;
+    std::string param_name;          ///< model parameter holding the transmission factor.
+    std::shared_ptr< BubbleState > state;
+
+    void compute_partition(Model<TSeq> * model) const;
+    void partition_household(Model<TSeq> * model) const;
+    void partition_peer(Model<TSeq> * model) const;
+
+public:
+
+    /**
+     * @brief Configure a social-bubble policy.
+     *
+     * @param household_id Household label of each agent, indexed by agent id.
+     *        Its length must equal the number of agents in the model. Labels are
+     *        arbitrary (they need not be consecutive); agents sharing a label
+     *        form a household and are always placed in the same bubble.
+     * @param flavor Whether bubbles are chosen by households or by individuals
+     *        (see `BubbleFlavor`).
+     * @param group_size For `Household`, the maximum number of households per
+     *        bubble (`1` = strict household-only lockdown). For `Peer`, the
+     *        maximum number of external peers each agent may pick.
+     * @param transmission_factor Initial value of the model parameter
+     *        `param_name`: the multiplier applied to transmission between
+     *        agents of *different* bubbles, in `[0, 1]`. `0.0` (the default) is
+     *        a perfectly efficient bubble -- contact outside it is cut
+     *        entirely; `0.5` halves out-of-bubble transmission (a soft contact
+     *        reduction); and `1.0` turns the intervention off. Transmission
+     *        within a bubble is never altered. The value is stored in the model
+     *        (see `deploy()`), not here, so it can be changed at any time with
+     *        `model.set_param(param_name, ...)`.
+     * @param start_day First day on which the policy applies.
+     * @param end_day Day on which the policy is lifted (exclusive). Use a
+     *        negative value for a policy that never ends. Must be greater than
+     *        `start_day`.
+     * @param rewire_every Re-randomise the bubbles every this-many days, for
+     *        policies whose contacts change over time. `0` keeps the bubbles
+     *        fixed for the whole intervention.
+     * @param name Name given to the tool and to the scheduler event; useful to
+     *        look them up on the model afterwards.
+     * @param max_households **`Peer` flavor only**: the largest number of
+     *        households a bubble may contain. A nomination that would exceed it
+     *        is declined, which is what stops one household's choices from
+     *        chaining into the next (see `BubbleFlavor::Peer`). The default of
+     *        `2` represents two households joined by a close contact. Ignored by
+     *        the `Household` flavor, where `group_size` already is the cap.
+     * @param param_name Name of the model parameter that holds the transmission
+     *        factor. Give two interventions deployed on the same model
+     *        different names if they are to be dialled independently.
+     *
+     * @throws std::range_error if `transmission_factor` is outside `[0, 1]`, if
+     *         `group_size` is zero for the `Household` flavor, if
+     *         `max_households` is less than 2 for the `Peer` flavor, or if
+     *         `end_day` is non-negative and not greater than `start_day`.
+     */
+    Bubbles(
+        std::vector< size_t > household_id,
+        BubbleFlavor flavor,
+        size_t group_size,
+        epiworld_double transmission_factor = 0.0,
+        int start_day = 0,
+        int end_day = -1,
+        int rewire_every = 0,
+        std::string name = "Social bubble",
+        size_t max_households = 2u,
+        std::string param_name = "Bubble transmission factor"
+    );
+
+    /**
+     * @brief Install the intervention on a model.
+     *
+     * Registers the model parameter `param_name` (set to the
+     * `transmission_factor` passed to the constructor, overwriting any value it
+     * already had), adds the bubble `Tool` (distributed to every agent, which
+     * also computes the bubble partition at each reset) and, when
+     * `rewire_every > 0`, the global event that re-randomises the bubbles.
+     *
+     * To drive the factor from a parameter file instead, call
+     * `model.read_params()` (or `set_param()`) *after* `deploy()`.
+     *
+     * Call this **after** the model's agents and contact network exist (e.g.
+     * after `agents_smallworld()`), since the household grouping is derived from
+     * the network, and before `run()`.
+     *
+     * @param model Model to install the intervention on.
+     * @throws std::length_error if `household_id` does not have exactly one
+     *         entry per agent.
+     */
+    void deploy(Model<TSeq> & model);
+
+    /**
+     * @brief Shared state of the intervention (bubble labels and bookkeeping).
+     *
+     * The state is shared by every copy of this object and by the model's tool
+     * and event, and is refreshed on each run.
+     */
+    std::shared_ptr< BubbleState > get_state() const;
+
+    /**
+     * @brief Current bubble label of every agent, indexed by agent id.
+     *
+     * Two agents may transmit only when their labels are equal. Populated on the
+     * first reset (i.e. once the model has been run); empty before then.
+     */
+    const std::vector< int > & get_bubble_id() const;
+
+    /// @brief The rule used to form bubbles.
+    BubbleFlavor get_flavor() const;
+
+    /**
+     * @brief Name of the model parameter holding the transmission factor.
+     *
+     * Use it with `model.get_param()` / `model.set_param()` to read or change
+     * how leaky the bubbles are, including in the middle of a run.
+     */
+    const std::string & get_param_name() const;
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/globalevents/bubbles-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+template<typename TSeq>
+inline Bubbles<TSeq>::Bubbles(
+    std::vector< size_t > household_id,
+    BubbleFlavor flavor,
+    size_t group_size,
+    epiworld_double transmission_factor,
+    int start_day,
+    int end_day,
+    int rewire_every,
+    std::string name,
+    size_t max_households,
+    std::string param_name
+) :
+    household_id(std::move(household_id)),
+    flavor(flavor),
+    group_size(group_size),
+    max_households(max_households),
+    transmission_factor(transmission_factor),
+    start_day(start_day),
+    end_day(end_day),
+    rewire_every(rewire_every),
+    name(std::move(name)),
+    param_name(std::move(param_name)),
+    state(std::make_shared< BubbleState >())
+{
+
+    if ((this->transmission_factor < 0.0) || (this->transmission_factor > 1.0))
+        throw std::range_error(
+            "Bubbles: transmission_factor must be in [0, 1]."
+        );
+
+    if ((flavor == BubbleFlavor::Household) && (group_size < 1u))
+        throw std::range_error(
+            "Bubbles: group_size (households per bubble) must be >= 1."
+        );
+
+    if ((flavor == BubbleFlavor::Peer) && (max_households < 2u))
+        throw std::range_error(
+            "Bubbles: max_households must be >= 2 for the Peer flavor."
+        );
+
+    if ((this->end_day >= 0) && (this->end_day <= this->start_day))
+        throw std::range_error(
+            "Bubbles: end_day must be greater than start_day (or negative)."
+        );
+
+}
+
+template<typename TSeq>
+inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model) const
+{
+
+    // Map household label -> compact index, and list unique households.
+    std::unordered_map< size_t, size_t > hh_index;
+    std::vector< size_t > hh_labels;
+    for (size_t a = 0u; a < household_id.size(); ++a)
+    {
+        size_t h = household_id[a];
+        if (hh_index.find(h) == hh_index.end())
+        {
+            hh_index[h] = hh_labels.size();
+            hh_labels.push_back(h);
+        }
+    }
+
+    size_t nh = hh_labels.size();
+
+    // Build the household contact graph: households h1 and h2 are adjacent when
+    // at least one member of h1 is connected to a member of h2 in the contact
+    // network. Bubbles are grown along these ties.
+    //
+    // Grouping households that share NO tie would be a no-op: the intervention
+    // can only suppress transmission along existing edges, never create new
+    // ones, so bubbling two unconnected households changes nothing. Pairing at
+    // random therefore degenerates to the household-only lockdown. It also
+    // matches the policy being modelled: a household picks a bubble partner it
+    // actually socialises with.
+    std::vector< std::vector< size_t > > hh_adj(nh);
+    auto & pop_all = model->get_agents();
+    for (size_t a = 0u; a < household_id.size(); ++a)
+    {
+        size_t ha = hh_index[household_id[a]];
+        for (auto * nb : pop_all[a].get_neighbors(*model))
+        {
+            size_t b = static_cast< size_t >(nb->get_id());
+            if (household_id[a] == household_id[b])
+                continue;
+            hh_adj[ha].push_back(hh_index[household_id[b]]);
+        }
+    }
+
+    // De-duplicate each adjacency list.
+    for (auto & adj : hh_adj)
+    {
+        std::sort(adj.begin(), adj.end());
+        adj.erase(std::unique(adj.begin(), adj.end()), adj.end());
+    }
+
+    // Shuffle household order (Fisher-Yates with the model RNG).
+    std::vector< size_t > order(nh);
+    for (size_t i = 0u; i < nh; ++i)
+        order[i] = i;
+
+    for (size_t i = nh; i > 1u; --i)
+    {
+        size_t j = static_cast< size_t >(model->runif_index(static_cast<uint32_t>(i)));
+        std::swap(order[i - 1u], order[j]);
+    }
+
+    // Grow each bubble from a seed household by repeatedly absorbing a random
+    // household that is *connected* to the bubble, up to `group_size`
+    // households. A household with no unassigned connected candidates simply
+    // ends up in a smaller bubble (possibly alone) -- you can only bubble with
+    // someone you already have contact with.
+    std::vector< int > hh_bubble(nh, -1);
+    std::vector< size_t > candidates;
+    int next_bubble = 0;
+
+    for (size_t pos = 0u; pos < nh; ++pos)
+    {
+
+        size_t seed = order[pos];
+        if (hh_bubble[seed] != -1)
+            continue;
+
+        int b = next_bubble++;
+        hh_bubble[seed] = b;
+        size_t members = 1u;
+
+        // Frontier of households connected to the bubble. May contain stale
+        // (already assigned) or repeated entries; repeats make a household that
+        // is tied to several members proportionally more likely to be picked.
+        candidates.clear();
+        for (size_t x : hh_adj[seed])
+            if (hh_bubble[x] == -1)
+                candidates.push_back(x);
+
+        while ((members < group_size) && !candidates.empty())
+        {
+
+            size_t idx = static_cast< size_t >(
+                model->runif_index(static_cast<uint32_t>(candidates.size()))
+            );
+            size_t pick = candidates[idx];
+            candidates[idx] = candidates.back();
+            candidates.pop_back();
+
+            if (hh_bubble[pick] != -1) // stale entry
+                continue;
+
+            hh_bubble[pick] = b;
+            ++members;
+
+            for (size_t x : hh_adj[pick])
+                if (hh_bubble[x] == -1)
+                    candidates.push_back(x);
+
+        }
+
+    }
+
+    // Assign each agent the bubble of its household.
+    for (size_t a = 0u; a < household_id.size(); ++a)
+        state->bubble_id[a] = hh_bubble[hh_index[household_id[a]]];
+
+}
+
+template<typename TSeq>
+inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model) const
+{
+
+    size_t n = household_id.size();
+
+    // Map household label -> compact index.
+    std::unordered_map< size_t, size_t > hh_index;
+    std::vector< size_t > hh_labels;
+    for (size_t a = 0u; a < n; ++a)
+    {
+        size_t h = household_id[a];
+        if (hh_index.find(h) == hh_index.end())
+        {
+            hh_index[h] = hh_labels.size();
+            hh_labels.push_back(h);
+        }
+    }
+
+    size_t nh = hh_labels.size();
+
+    // Disjoint-set (union-find) over households, tracking the number of
+    // households in each set so bubbles can be capped.
+    std::vector< size_t > parent(nh), set_size(nh, 1u);
+    for (size_t i = 0u; i < nh; ++i)
+        parent[i] = i;
+
+    auto find = [&parent](size_t x) -> size_t {
+        while (parent[x] != x)
+        {
+            parent[x] = parent[parent[x]]; // path halving
+            x = parent[x];
+        }
+        return x;
+    };
+
+    // Agents choose in random order, each drawing peers from the contacts that
+    // are still available. A household whose bubble is full drops out of the
+    // pool: any choice involving it is declined, and its own members stop
+    // choosing. This cap is what makes the policy's exclusivity bite -- without
+    // it the merges percolate, the household graph becomes connected, and every
+    // household ends up in one giant bubble, imposing no restriction at all.
+    std::vector< size_t > agent_order(n);
+    for (size_t i = 0u; i < n; ++i)
+        agent_order[i] = i;
+
+    for (size_t i = n; i > 1u; --i)
+    {
+        size_t j = static_cast< size_t >(
+            model->runif_index(static_cast<uint32_t>(i))
+        );
+        std::swap(agent_order[i - 1u], agent_order[j]);
+    }
+
+    auto & pop = model->get_agents();
+    std::vector< size_t > ext;
+
+    for (size_t oi = 0u; oi < n; ++oi)
+    {
+
+        size_t a  = agent_order[oi];
+        size_t ha = hh_index[household_id[a]];
+
+        // This agent's household is already in a full bubble: it is out of the
+        // pool and cannot take anyone else in.
+        if (set_size[find(ha)] >= max_households)
+            continue;
+
+        // Households of this agent's contacts outside its own household.
+        ext.clear();
+        for (auto * nb : pop[a].get_neighbors(*model))
+        {
+            size_t nid = static_cast< size_t >(nb->get_id());
+            if (household_id[nid] != household_id[a])
+                ext.push_back(hh_index[household_id[nid]]);
+        }
+
+        // Keep drawing until the agent has made `group_size` choices or no
+        // contact is left that its bubble can still take in.
+        size_t chosen = 0u;
+        while ((chosen < group_size) && !ext.empty())
+        {
+
+            size_t idx = static_cast< size_t >(
+                model->runif_index(static_cast<uint32_t>(ext.size()))
+            );
+            size_t hb = ext[idx];
+            ext[idx] = ext.back();
+            ext.pop_back();
+
+            size_t ra = find(ha);
+            size_t rb = find(hb);
+
+            if (ra == rb) // already sharing a bubble
+                continue;
+
+            if ((set_size[ra] + set_size[rb]) > max_households)
+                continue; // that bubble is full: not available
+
+            parent[ra] = rb;
+            set_size[rb] += set_size[ra];
+            ++chosen;
+
+            if (set_size[rb] >= max_households)
+                break; // this bubble is now full
+
+        }
+
+    }
+
+    // Compact the component roots to 0..K-1 and label agents.
+    std::unordered_map< size_t, int > root_label;
+    int next_label = 0;
+    for (size_t a = 0u; a < n; ++a)
+    {
+        size_t root = find(hh_index[household_id[a]]);
+        auto it = root_label.find(root);
+        if (it == root_label.end())
+        {
+            root_label[root] = next_label;
+            state->bubble_id[a] = next_label;
+            ++next_label;
+        }
+        else
+        {
+            state->bubble_id[a] = it->second;
+        }
+    }
+
+}
+
+template<typename TSeq>
+inline void Bubbles<TSeq>::compute_partition(Model<TSeq> * model) const
+{
+
+    state->bubble_id.assign(household_id.size(), -1);
+
+    if (flavor == BubbleFlavor::Household)
+        partition_household(model);
+    else
+        partition_peer(model);
+
+}
+
+template<typename TSeq>
+inline void Bubbles<TSeq>::deploy(Model<TSeq> & model)
+{
+
+    if (household_id.size() != model.size())
+        throw std::length_error(
+            "Bubbles: household_id length (" +
+            std::to_string(household_id.size()) +
+            ") must equal the number of agents (" +
+            std::to_string(model.size()) + ")."
+        );
+
+    // ---- The transmission factor lives in the model -------------------------
+    // The tool reads it on every exposure rather than holding a copy, so the
+    // strictness of the policy can be inspected, calibrated, or switched
+    // mid-run through the model's parameters.
+    model.add_param(transmission_factor, param_name, true);
+
+    // ---- The bubble tool: dampens out-of-bubble transmission ---------------
+    auto st  = state;
+    int  sd  = start_day;
+    int  ed  = end_day;
+    std::string pname = param_name;
+
+    Tool<TSeq> bubble_tool(name);
+    bubble_tool.set_susceptibility_reduction_fun(
+        [st, sd, ed, pname](
+            Tool<TSeq> &,
+            Agent<TSeq> * p,
+            VirusPtr<TSeq> & v,
+            Model<TSeq> * m
+        ) -> epiworld_double {
+
+            int today = static_cast< int >(m->today());
+
+            // Policy window.
+            if (today < sd)
+                return 0.0;
+            if ((ed >= 0) && (today >= ed))
+                return 0.0;
+
+            if (st->bubble_id.empty())
+                return 0.0;
+
+            Agent<TSeq> * transmitter = v->get_agent();
+            if (transmitter == nullptr)
+                return 0.0;
+
+            int bp = st->bubble_id[static_cast< size_t >(p->get_id())];
+            int bt = st->bubble_id[static_cast< size_t >(transmitter->get_id())];
+
+            if ((bp < 0) || (bt < 0))
+                return 0.0;
+
+            // Contacts inside the bubble are exactly what the policy keeps:
+            // they are left alone.
+            if (bp == bt)
+                return 0.0;
+
+            // Contacts outside the bubble are scaled by the transmission
+            // factor: 0 = perfectly observed bubble (contact cut), 1 = the
+            // bubble imposes nothing.
+            epiworld_double factor = m->par(pname);
+            if (factor <= 0.0)
+                return 1.0;
+            if (factor >= 1.0)
+                return 0.0;
+
+            return static_cast<epiworld_double>(1.0) - factor;
+
+        }
+    );
+
+    // ---- Distribution: recompute the partition at reset time ---------------
+    // The tool's distribution function runs from Model::reset() -> dist_tools(),
+    // i.e. *before* day 1 and with the run's (per-replicate) RNG already seeded.
+    // Computing the partition here — rather than eagerly in deploy() — keeps the
+    // epoch-0 partition fresh for every replicate of run_multiple() and avoids
+    // any dependence on a stale partition left over from a previous run. It then
+    // distributes the tool to every agent (prevalence 1.0).
+    Bubbles<TSeq> self = *this; // shares `state` via the shared_ptr
+    ToolToAgentFun<TSeq> distribute_all = distribute_tool_randomly<TSeq>(1.0, true);
+    bubble_tool.set_distribution(
+        [self, distribute_all](Tool<TSeq> & tool, Model<TSeq> * m) -> void {
+            self.compute_partition(m);
+            self.state->last_sim_id = static_cast< int >(m->get_sim_id());
+            self.state->last_epoch  = 0;
+            distribute_all(tool, m);
+        }
+    );
+
+    model.add_tool(bubble_tool);
+
+    // ---- The scheduler: re-randomizes the partition at rewiring epochs -----
+    // The epoch-0 partition is installed at reset (above); this event only
+    // handles rewire_every > 0, recomputing when the epoch advances. Because
+    // global events run after update_state(), a rewired partition takes effect
+    // the following simulation step. Deactivation (end_day) needs no event: the
+    // tool gates itself by day.
+    if (rewire_every > 0)
+    {
+        model.add_globalevent(
+            [self](Model<TSeq> * m) -> void {
+
+                int today = static_cast< int >(m->today());
+
+                bool on = (today >= self.start_day) &&
+                    ((self.end_day < 0) || (today < self.end_day));
+                if (!on)
+                    return;
+
+                int sim   = static_cast< int >(m->get_sim_id());
+                int epoch = (today - self.start_day) / self.rewire_every;
+
+                // Already up to date for this (replicate, epoch).
+                if ((self.state->last_sim_id == sim) &&
+                    (self.state->last_epoch == epoch))
+                    return;
+
+                self.compute_partition(m);
+                self.state->last_sim_id = sim;
+                self.state->last_epoch  = epoch;
+
+            },
+            name + " (scheduler)",
+            -99
+        );
+    }
+
+}
+
+template<typename TSeq>
+inline std::shared_ptr< BubbleState > Bubbles<TSeq>::get_state() const
+{
+    return state;
+}
+
+template<typename TSeq>
+inline const std::vector< int > & Bubbles<TSeq>::get_bubble_id() const
+{
+    return state->bubble_id;
+}
+
+template<typename TSeq>
+inline BubbleFlavor Bubbles<TSeq>::get_flavor() const
+{
+    return flavor;
+}
+
+template<typename TSeq>
+inline const std::string & Bubbles<TSeq>::get_param_name() const
+{
+    return param_name;
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/globalevents/bubbles-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
