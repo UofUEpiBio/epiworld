@@ -78,7 +78,7 @@ $(NAME)_SOURCES := \
 	32a-bubbles.cpp \
 	32b-bubbles-peer.cpp \
 	32c-bubbles-transmission.cpp \
-	32d-bubbles-within-factor.cpp \
+	32d-bubbles-transmission-factor.cpp \
 	32e-bubbles-rewiring.cpp \
 	32f-bubbles-reset-recompute.cpp \
 	32g-bubbles-connected-pairing.cpp \

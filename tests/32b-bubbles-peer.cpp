@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("Bubbles - peer partition respects households", "[bubbles]") 
     model.seed(7);
     model.agents_smallworld(n, 8, false, 0.15);
 
-    Bubbles<> bubbles(hh, BubbleFlavor::Peer, 1u, 1.0, 0, -1, 0);
+    Bubbles<> bubbles(hh, BubbleFlavor::Peer, 1u, 0.0, 0, -1, 0);
     bubbles.deploy(model);
     model.verbose_off();
     model.run(5);

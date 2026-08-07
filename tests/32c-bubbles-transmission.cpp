@@ -36,7 +36,7 @@ EPIWORLD_TEST_CASE("Bubbles - no cross-bubble transmission", "[bubbles]") {
     model.seed(2024);
     model.agents_smallworld(n, 8, false, 0.10);
 
-    Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 1.0, 0, -1, 0);
+    Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
     bubbles.deploy(model);
     model.verbose_off();
     model.run(80);

@@ -51,7 +51,7 @@ EPIWORLD_TEST_CASE("Bubbles - household pairing follows existing ties", "[bubble
         epimodels::ModelSEIR<> model("flu", 0.01, 0.1, 4.5, 1.0/8.0);
         model.agents_smallworld(n, 8, false, 0.05);
 
-        Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 1.0, 0, -1, 0);
+        Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
         bubbles.deploy(model);
         model.verbose_off();
         model.run(1, 123);

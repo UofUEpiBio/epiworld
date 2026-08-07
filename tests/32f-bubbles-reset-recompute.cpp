@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("Bubbles - partition recomputed each run", "[bubbles]") {
     epimodels::ModelSEIR<> model("flu", 0.05, 0.1, 4.5, 1.0/8.0);
     model.agents_smallworld(n, 6, false, 0.05);
 
-    Bubbles<> bubbles(hh, BubbleFlavor::Household, 2u, 1.0, 0, -1, 0);
+    Bubbles<> bubbles(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0);
     bubbles.deploy(model);
     model.verbose_off();
 

@@ -28,7 +28,7 @@ EPIWORLD_TEST_CASE("Bubbles - peer bubbles honour max_households", "[bubbles]") 
         model.agents_smallworld(n, 8, false, 0.05);
 
         Bubbles<> bubbles(
-            hh, BubbleFlavor::Peer, 2u, 1.0, 0, -1, 0, "Social bubble", cap
+            hh, BubbleFlavor::Peer, 2u, 0.0, 0, -1, 0, "Social bubble", cap
         );
         bubbles.deploy(model);
         model.verbose_off();

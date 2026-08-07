@@ -24,7 +24,7 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
     model.seed(11);
     model.agents_smallworld(n, 6, false, 0.05);
 
-    Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 1.0, 0, -1, 0);
+    Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
     bubbles.deploy(model);
     model.verbose_off();
     model.run(5);
