@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("Bubbles - rewiring advances epochs", "[bubbles]") {
 
     int start = 10, rewire = 7, ndays = 60;
     Bubbles<> bubbles(hh, BubbleFlavor::Household, 2u, 0.0, start, -1, rewire);
-    bubbles.deploy(model);
+    model.add_globalevent(bubbles);
     model.verbose_off();
     model.run(ndays);
 

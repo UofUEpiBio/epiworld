@@ -11,10 +11,12 @@ static std::vector<size_t> make_households(size_t n, size_t hh_size)
     return hh;
 }
 
-// The partition is (re)computed at reset time (via the tool's distribution
-// function), so it is fresh for each run/replicate and depends on that run's
-// seed -- not a stale partition carried over from a previous run.
-EPIWORLD_TEST_CASE("Bubbles - partition recomputed each run", "[bubbles]") {
+// Adding the intervention to the model is the whole installation: it sets
+// itself up on the first day of *every* run, so the partition is drawn from
+// that run's seed and the tool is back on the agents after the reset that
+// stripped it -- no stale partition carried over, and no setup step for the
+// user to remember.
+EPIWORLD_TEST_CASE("Bubbles - set up on every run", "[bubbles]") {
 
     size_t n = 300u, hh_size = 3u;
     auto hh = make_households(n, hh_size);
@@ -23,8 +25,12 @@ EPIWORLD_TEST_CASE("Bubbles - partition recomputed each run", "[bubbles]") {
     model.agents_smallworld(n, 6, false, 0.05);
 
     Bubbles<> bubbles(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0);
-    bubbles.deploy(model);
+    model.add_globalevent(bubbles);
     model.verbose_off();
+
+    // Nothing is installed before the run: the model's own copy of the
+    // intervention has no partition yet.
+    REQUIRE(Bubbles<>::get_from(model)->get_bubble_id().empty());
 
     model.run(5, 111);
     std::vector<int> p1 = Bubbles<>::get_from(model)->get_bubble_id();
@@ -43,11 +49,20 @@ EPIWORLD_TEST_CASE("Bubbles - partition recomputed each run", "[bubbles]") {
     }
 
     // Different seeds shuffle households differently -> the partitions differ.
-    // (With the previous eager-compute design, both runs reused the same stale
-    // partition and this would fail.)
+    // (A partition computed once and kept would make both runs identical.)
     bool differ = false;
     for (size_t a = 0u; a < n; ++a)
         if (p1[a] != p2[a]) { differ = true; break; }
     REQUIRE(differ);
+
+    // Every agent carries the bubble tool at the end of the second run: reset()
+    // takes it away, so this only holds if the intervention hands it out on
+    // each run rather than once.
+    for (auto & a : model.get_agents())
+        REQUIRE(a.has_tool("Social bubble"));
+
+    // The object the user built stays a template: the model works off its own
+    // copy, which is where the partition lives.
+    REQUIRE(bubbles.get_bubble_id().empty());
 
 }

@@ -25,8 +25,8 @@ EPIWORLD_TEST_CASE(
     auto hh = make_households(n, hh_size);
 
     // Runs the model with the factor given at construction; `override_factor`
-    // (when non-negative) is instead written to the model parameter after
-    // deploy(), so the tool must pick it up from the model.
+    // (when non-negative) is instead written to the model parameter before the
+    // run, so the tool must pick it up from the model.
     auto run_with = [&](
         epiworld_double factor, epiworld_double override_factor
     ) -> TransmissionCounts {
@@ -36,16 +36,20 @@ EPIWORLD_TEST_CASE(
         model.agents_smallworld(n, 8, false, 0.10);
 
         Bubbles<> bubbles(hh, BubbleFlavor::Household, group, factor, 0, -1, 0);
-        bubbles.deploy(model);
-
-        // deploy() registers the factor as a model parameter.
-        REQUIRE(model.get_param(bubbles.get_param_name()) == factor);
+        model.add_globalevent(bubbles);
 
         if (override_factor >= 0.0)
-            model.set_param(bubbles.get_param_name(), override_factor);
+            model.add_param(override_factor, bubbles.get_param_name(), true);
 
         model.verbose_off();
         model.run(80);
+
+        // The intervention registers the factor as a model parameter when it
+        // sets itself up, but a value already in the model is left alone.
+        REQUIRE(
+            model.get_param(bubbles.get_param_name()) ==
+            (override_factor >= 0.0 ? override_factor : factor)
+        );
 
         const auto & bid = Bubbles<>::get_from(model)->get_bubble_id();
 
@@ -87,8 +91,8 @@ EPIWORLD_TEST_CASE(
     REQUIRE(soft.outside > 0);
     REQUIRE(soft.outside < off.outside);
 
-    // The factor is read from the model on every exposure, so changing the
-    // parameter after deploy() -- not the object -- is what governs the run.
+    // The factor is read from the model on every exposure, so the model's
+    // parameter -- not the value the object was built with -- governs the run.
     TransmissionCounts from_param = run_with(0.0, 1.0);
     REQUIRE(from_param.outside == off.outside);
     REQUIRE(from_param.within == off.within);

@@ -24,8 +24,10 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
     model.seed(11);
     model.agents_smallworld(n, 6, false, 0.05);
 
+    // Adding the intervention is all there is to it: it sets itself up (the
+    // partition included) on the first day of the run.
     Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
-    bubbles.deploy(model);
+    model.add_globalevent(bubbles);
     model.verbose_off();
     model.run(5);
 

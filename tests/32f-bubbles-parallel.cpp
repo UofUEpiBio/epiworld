@@ -31,7 +31,7 @@ EPIWORLD_TEST_CASE("Bubbles - replicates are independent", "[bubbles]") {
         model.agents_smallworld(n, 8, false, 0.10);
 
         Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
-        bubbles.deploy(model);
+        model.add_globalevent(bubbles);
         model.verbose_off();
 
         Results res;
