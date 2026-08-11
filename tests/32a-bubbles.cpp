@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
     model.verbose_off();
     model.run(5);
 
-    const auto & bid = bubbles.get_bubble_id();
+    const auto & bid = Bubbles<>::get_from(model)->get_bubble_id();
     REQUIRE(bid.size() == n);
 
     // Agents in the same household share a bubble.

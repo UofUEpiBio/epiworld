@@ -47,7 +47,7 @@ EPIWORLD_TEST_CASE(
         model.verbose_off();
         model.run(80);
 
-        const auto & bid = bubbles.get_bubble_id();
+        const auto & bid = Bubbles<>::get_from(model)->get_bubble_id();
 
         std::vector<int> date, source, target, virus, sexp;
         model.get_db().get_transmissions(date, source, target, virus, sexp);

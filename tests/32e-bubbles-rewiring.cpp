@@ -26,8 +26,9 @@ EPIWORLD_TEST_CASE("Bubbles - rewiring advances epochs", "[bubbles]") {
     model.verbose_off();
     model.run(ndays);
 
-    // The scheduler recomputes the partition at each rewiring epoch.
+    // The intervention recomputes the partition at each rewiring epoch. The
+    // model owns the intervention, so the epoch is read off the model.
     int expected_epoch = (ndays - start) / rewire;
-    REQUIRE(bubbles.get_state()->last_epoch == expected_epoch);
+    REQUIRE(Bubbles<>::get_from(model)->get_last_epoch() == expected_epoch);
 
 }

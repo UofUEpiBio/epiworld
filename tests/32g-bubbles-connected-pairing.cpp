@@ -57,7 +57,7 @@ EPIWORLD_TEST_CASE("Bubbles - household pairing follows existing ties", "[bubble
         model.run(1, 123);
 
         int total = 0, kept = 0;
-        count_edges(model, hh, bubbles.get_bubble_id(), total, kept);
+        count_edges(model, hh, Bubbles<>::get_from(model)->get_bubble_id(), total, kept);
         REQUIRE(total > 0); // the network has cross-household contacts
         return static_cast<double>(kept) / static_cast<double>(total);
     };

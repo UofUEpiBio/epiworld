@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("Bubbles - no cross-bubble transmission", "[bubbles]") {
     model.verbose_off();
     model.run(80);
 
-    const auto & bid = bubbles.get_bubble_id();
+    const auto & bid = Bubbles<>::get_from(model)->get_bubble_id();
 
     // The network must contain cross-bubble contacts, otherwise the test is
     // vacuous (nothing to block).

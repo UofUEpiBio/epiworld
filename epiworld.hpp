@@ -10642,6 +10642,7 @@ public:
 
     GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
     GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
+    bool has_globalevent(std::string_view name) const; ///< Whether a global action by that name exists
 
     void rm_globalevent(std::string name); ///< Remove a global action by name
     void rm_globalevent(size_t i); ///< Remove a global action by index
@@ -13673,11 +13674,20 @@ GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
 {
 
     for (auto & a : globalevents)
-        if (a.name == name)
-            return a;
+        if (a->get_name() == name)
+            return *a;
 
     throw std::logic_error("The global action " + name + " was not found.");
 
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_globalevent(std::string_view name) const
+{
+    for (const auto & a : globalevents)
+        if (a->get_name() == name)
+            return true;
+    return false;
 }
 
 template<typename TSeq>
@@ -14047,7 +14057,20 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
         "Model:: current_date don't match"
     )
 
-    VECT_MATCH(globalevents, other.globalevents, "global action don't match");
+    // Global events are held by pointer and deep-copied when a model is copied,
+    // so they must be compared through the pointer (as viruses and tools are).
+    EPI_DEBUG_FAIL_AT_TRUE(
+        globalevents.size() != other.globalevents.size(),
+        "Model:: globalevents.size() don't match"
+    )
+
+    for (size_t i = 0u; i < globalevents.size(); ++i)
+    {
+        EPI_DEBUG_FAIL_AT_TRUE(
+            *globalevents[i] != *other.globalevents[i],
+            "Model:: *globalevents[i] don't match"
+        )
+    }
 
     EPI_DEBUG_FAIL_AT_TRUE(
         queue != other.queue,
@@ -19397,20 +19420,51 @@ enum class BubbleFlavor {
     Peer
 };
 
+template<typename TSeq>
+class Bubbles;
+
 /**
- * @brief Shared, mutable state of a Bubbles intervention.
+ * @brief Tool carried by every agent under a Bubbles policy.
+ * @ingroup globalevents
  *
- * Held via `std::shared_ptr` and captured by both the bubble `Tool`
- * (read-only) and the scheduler `GlobalEvent` (read-write), so the two stay in
- * sync for the lifetime of the model. The bubble partition is a per-agent
- * integer label (`bubble_id`): agents whose labels match are in the same bubble
- * and transmit freely, while transmission between different labels is scaled
- * down by the intervention's transmission factor.
+ * @details The tool does not hold the bubble partition -- it holds a pointer to
+ * the `Bubbles` intervention that owns it, resolved by name from the model the
+ * first time the tool is used. `clone_ptr()` clears that pointer, exactly as
+ * `ToolVaccine` clears its per-agent immunity, so a copy of the tool always
+ * re-resolves against the model it ends up in. Copies of a model therefore
+ * never reach into the model they were copied from, which is what lets bubble
+ * models run in parallel replicates.
+ *
+ * Users do not instantiate this directly; `Bubbles::deploy()` does.
+ *
+ * @tparam TSeq Sequence type (should match `TSeq` across the model).
  */
-struct BubbleState {
-    std::vector< int > bubble_id;  ///< Per-agent bubble label (index = agent id); -1 = unassigned.
-    int last_sim_id = -1;          ///< Sim id the current partition was computed for.
-    int last_epoch  = -1;          ///< Rewiring epoch the current partition was computed for.
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class BubbleTool : public Tool<TSeq> {
+private:
+
+    std::string _event_name;                  ///< Name of the owning intervention.
+    Bubbles<TSeq> * _policy = nullptr;        ///< Resolved lazily, per model.
+
+public:
+
+    BubbleTool(std::string name, std::string event_name);
+
+    /**
+     * @brief Reduction applied to an exposure of this tool's agent.
+     *
+     * `0.0` when the transmitter shares the agent's bubble (contacts inside the
+     * bubble are what the policy preserves), and `1 - f` otherwise, where `f`
+     * is the intervention's transmission factor. Outside the policy window, or
+     * before a partition exists, the reduction is `0.0`.
+     */
+    epiworld_double get_susceptibility_reduction(
+        VirusPtr<TSeq> & v,
+        Model<TSeq> * model
+    ) override;
+
+    std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
+
 };
 
 /**
@@ -19426,10 +19480,10 @@ struct BubbleState {
  * ## How it works
  *
  * The contact network is **not modified**. Instead, `deploy()` attaches a
- * `Tool` ("Social bubble") to every agent. When a susceptible agent `p` is
- * exposed to an infectious neighbor, the tool's susceptibility-reduction
- * function identifies the transmitter through the virus (`v->get_agent()`) and
- * compares the two agents' bubble labels:
+ * `BubbleTool` ("Social bubble") to every agent. When a susceptible agent `p`
+ * is exposed to an infectious neighbor, the tool identifies the transmitter
+ * through the virus (`v->get_agent()`) and compares the two agents' bubble
+ * labels:
  *
  * - same bubble  -> reduction `0.0`: contacts *inside* the bubble are what the
  *                   policy preserves, so they are left untouched;
@@ -19458,6 +19512,24 @@ struct BubbleState {
  * suppressing transmission on out-of-bubble contacts is equivalent to deleting
  * those contacts, while keeping the network intact for other purposes (contact
  * tracing, output).
+ *
+ * ## Where the state lives
+ *
+ * `Bubbles` *is* the model's global event: `deploy()` hands the model a clone
+ * of it, and the bubble partition (`get_bubble_id()`) is a member of that
+ * clone. Since `Model`'s copy constructor deep-copies global events and tools,
+ * every copy of a model -- including the per-thread copies `run_multiple()`
+ * makes -- owns its partition outright, and the tool resolves to the
+ * intervention of whichever model it belongs to. Nothing is shared between
+ * models, so replicates may run on as many threads as you like.
+ *
+ * The object you construct is a template: after `deploy()` it is no longer
+ * connected to the model, and its own `get_bubble_id()` stays empty. To look at
+ * the partition of a model that has run, ask the model for its copy:
+ *
+ * ```cpp
+ * const auto & bubble_id = Bubbles<>::get_from(model)->get_bubble_id();
+ * ```
  *
  * ## Forming bubbles (why ties matter)
  *
@@ -19547,7 +19619,8 @@ struct BubbleState {
  * The initial partition is computed at reset time via the tool's distribution
  * function, so it is recomputed for each replicate of `run_multiple()` using
  * that replicate's seed and is already in force on day 1. Re-randomisations are
- * applied by a daily global event and take effect the following step.
+ * applied by the intervention itself (a daily global event) and take effect the
+ * following step.
  *
  * ## Example
  *
@@ -19573,10 +19646,10 @@ struct BubbleState {
  * model.set_param("Bubble transmission factor", 0.25);
  *
  * model.run(100, 1231);
- * ```
  *
- * @note All copies of a `Bubbles` object share one `BubbleState`, so replicates
- * in `run_multiple()` must run on a single thread (`nthreads = 1`).
+ * // The partition belongs to the model, not to `bubbles`.
+ * const auto & bubble_id = Bubbles<>::get_from(model)->get_bubble_id();
+ * ```
  *
  * @note Both rules produce *exclusive* bubbles, which is what the modelled
  * policies prescribe. A rule that instead grants each person a personal budget
@@ -19591,7 +19664,7 @@ struct BubbleState {
  * @tparam TSeq Sequence type (should match `TSeq` across the model).
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Bubbles {
+class Bubbles final : public GlobalEvent<TSeq> {
 private:
 
     std::vector< size_t > household_id;
@@ -19602,13 +19675,16 @@ private:
     int start_day;
     int end_day;
     int rewire_every;
-    std::string name;
     std::string param_name;          ///< model parameter holding the transmission factor.
-    std::shared_ptr< BubbleState > state;
 
-    void compute_partition(Model<TSeq> * model) const;
-    void partition_household(Model<TSeq> * model) const;
-    void partition_peer(Model<TSeq> * model) const;
+    // Per-model state. Copied with the intervention, so each model (including
+    // each per-thread copy made by run_multiple) owns its own partition.
+    std::vector< int > bubble_id;    ///< Per-agent bubble label; -1 = unassigned.
+    int last_sim_id = -1;            ///< Sim id the current partition was computed for.
+    int last_epoch  = -1;            ///< Rewiring epoch the current partition was computed for.
+
+    void partition_household(Model<TSeq> * model);
+    void partition_peer(Model<TSeq> * model);
 
 public:
 
@@ -19640,8 +19716,9 @@ public:
      * @param rewire_every Re-randomise the bubbles every this-many days, for
      *        policies whose contacts change over time. `0` keeps the bubbles
      *        fixed for the whole intervention.
-     * @param name Name given to the tool and to the scheduler event; useful to
-     *        look them up on the model afterwards.
+     * @param name Name given to the tool and to the intervention's global
+     *        event; the tool finds its policy by this name, and `get_from()`
+     *        looks it up on a model with it.
      * @param max_households **`Peer` flavor only**: the largest number of
      *        households a bubble may contain. A nomination that would exceed it
      *        is declined, which is what stops one household's choices from
@@ -19675,9 +19752,9 @@ public:
      *
      * Registers the model parameter `param_name` (set to the
      * `transmission_factor` passed to the constructor, overwriting any value it
-     * already had), adds the bubble `Tool` (distributed to every agent, which
-     * also computes the bubble partition at each reset) and, when
-     * `rewire_every > 0`, the global event that re-randomises the bubbles.
+     * already had), hands the model a copy of this intervention as a global
+     * event, and adds the bubble `Tool`, which is given to every agent at reset
+     * time -- the same moment the partition is computed.
      *
      * To drive the factor from a parameter file instead, call
      * `model.read_params()` (or `set_param()`) *after* `deploy()`.
@@ -19693,18 +19770,33 @@ public:
     void deploy(Model<TSeq> & model);
 
     /**
-     * @brief Shared state of the intervention (bubble labels and bookkeeping).
+     * @brief The model's copy of a deployed intervention.
      *
-     * The state is shared by every copy of this object and by the model's tool
-     * and event, and is refreshed on each run.
+     * @param model Model the intervention was deployed on.
+     * @param name Name it was deployed under.
+     * @return Pointer to the model's own intervention, or `nullptr` if the
+     *         model has no global event by that name, or it is not a `Bubbles`.
      */
-    std::shared_ptr< BubbleState > get_state() const;
+    static Bubbles<TSeq> * get_from(
+        Model<TSeq> & model,
+        const std::string & name = "Social bubble"
+    );
+
+    /**
+     * @brief Recompute the partition using the model's RNG.
+     *
+     * Called at reset time (through the tool's distribution function) and at
+     * each rewiring epoch. Rarely needed directly.
+     */
+    void compute_partition(Model<TSeq> * model);
 
     /**
      * @brief Current bubble label of every agent, indexed by agent id.
      *
-     * Two agents may transmit only when their labels are equal. Populated on the
-     * first reset (i.e. once the model has been run); empty before then.
+     * Two agents in the same bubble transmit as they would without the policy;
+     * transmission between labels is scaled by the transmission factor.
+     * Populated on the first reset, and only on the model's own copy of the
+     * intervention -- see `get_from()`.
      */
     const std::vector< int > & get_bubble_id() const;
 
@@ -19719,6 +19811,33 @@ public:
      */
     const std::string & get_param_name() const;
 
+    /// @brief True when the policy applies on the given day.
+    bool is_active(int today) const;
+
+    /**
+     * @brief Rewiring epoch the current partition was computed for.
+     *
+     * `0` for the partition drawn at reset, incrementing every `rewire_every`
+     * days while the policy is active. `-1` before the first partition.
+     */
+    int get_last_epoch() const;
+
+    /**
+     * @brief Reduction applied to an exposure between two agents.
+     *
+     * The tool's side of the intervention; see `BubbleTool`.
+     */
+    epiworld_double susceptibility_reduction(
+        const Agent<TSeq> * p,
+        const Agent<TSeq> * transmitter,
+        Model<TSeq> * model
+    ) const;
+
+    /// @brief Re-randomises the partition at rewiring epochs.
+    void operator()(Model<TSeq> * model, int day) override;
+
+    std::unique_ptr< GlobalEvent<TSeq> > clone_ptr() const override;
+
 };
 
 #endif
@@ -19731,6 +19850,51 @@ public:
 //////////////////////////////////////////////////////////////////////////////*/
 
 
+
+template<typename TSeq>
+inline BubbleTool<TSeq>::BubbleTool(
+    std::string name,
+    std::string event_name
+) : Tool<TSeq>(name), _event_name(std::move(event_name))
+{
+}
+
+template<typename TSeq>
+inline epiworld_double BubbleTool<TSeq>::get_susceptibility_reduction(
+    VirusPtr<TSeq> & v,
+    Model<TSeq> * model
+)
+{
+
+    // Binding to the policy of *this* model, once. clone_ptr() clears the
+    // pointer, so a copy of this tool -- in another agent, or in a copy of the
+    // model -- resolves against its own model rather than inheriting ours.
+    if (_policy == nullptr)
+    {
+
+        _policy = Bubbles<TSeq>::get_from(*model, _event_name);
+
+        if (_policy == nullptr)
+            throw std::logic_error(
+                "BubbleTool: the intervention '" + _event_name +
+                "' is not installed on this model."
+            );
+
+    }
+
+    return _policy->susceptibility_reduction(
+        this->get_agent(), v->get_agent(), model
+    );
+
+}
+
+template<typename TSeq>
+inline std::unique_ptr<Tool<TSeq>> BubbleTool<TSeq>::clone_ptr() const
+{
+    auto ans = std::make_unique<BubbleTool<TSeq>>(*this);
+    ans->_policy = nullptr; // the copy resolves against its own model
+    return ans;
+}
 
 template<typename TSeq>
 inline Bubbles<TSeq>::Bubbles(
@@ -19753,10 +19917,11 @@ inline Bubbles<TSeq>::Bubbles(
     start_day(start_day),
     end_day(end_day),
     rewire_every(rewire_every),
-    name(std::move(name)),
-    param_name(std::move(param_name)),
-    state(std::make_shared< BubbleState >())
+    param_name(std::move(param_name))
 {
+
+    this->set_name(name);
+    this->set_day(-99); // runs at the end of every day
 
     if ((this->transmission_factor < 0.0) || (this->transmission_factor > 1.0))
         throw std::range_error(
@@ -19781,7 +19946,7 @@ inline Bubbles<TSeq>::Bubbles(
 }
 
 template<typename TSeq>
-inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model) const
+inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model)
 {
 
     // Map household label -> compact index, and list unique households.
@@ -19895,12 +20060,12 @@ inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model) const
 
     // Assign each agent the bubble of its household.
     for (size_t a = 0u; a < household_id.size(); ++a)
-        state->bubble_id[a] = hh_bubble[hh_index[household_id[a]]];
+        bubble_id[a] = hh_bubble[hh_index[household_id[a]]];
 
 }
 
 template<typename TSeq>
-inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model) const
+inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model)
 {
 
     size_t n = household_id.size();
@@ -20019,27 +20184,98 @@ inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model) const
         if (it == root_label.end())
         {
             root_label[root] = next_label;
-            state->bubble_id[a] = next_label;
+            bubble_id[a] = next_label;
             ++next_label;
         }
         else
         {
-            state->bubble_id[a] = it->second;
+            bubble_id[a] = it->second;
         }
     }
 
 }
 
 template<typename TSeq>
-inline void Bubbles<TSeq>::compute_partition(Model<TSeq> * model) const
+inline void Bubbles<TSeq>::compute_partition(Model<TSeq> * model)
 {
 
-    state->bubble_id.assign(household_id.size(), -1);
+    bubble_id.assign(household_id.size(), -1);
 
     if (flavor == BubbleFlavor::Household)
         partition_household(model);
     else
         partition_peer(model);
+
+}
+
+template<typename TSeq>
+inline bool Bubbles<TSeq>::is_active(int today) const
+{
+    return (today >= start_day) && ((end_day < 0) || (today < end_day));
+}
+
+template<typename TSeq>
+inline epiworld_double Bubbles<TSeq>::susceptibility_reduction(
+    const Agent<TSeq> * p,
+    const Agent<TSeq> * transmitter,
+    Model<TSeq> * model
+) const
+{
+
+    if (!is_active(static_cast< int >(model->today())))
+        return 0.0;
+
+    if (bubble_id.empty() || (p == nullptr) || (transmitter == nullptr))
+        return 0.0;
+
+    int bp = bubble_id[static_cast< size_t >(p->get_id())];
+    int bt = bubble_id[static_cast< size_t >(transmitter->get_id())];
+
+    if ((bp < 0) || (bt < 0))
+        return 0.0;
+
+    // Contacts inside the bubble are exactly what the policy keeps: they are
+    // left alone.
+    if (bp == bt)
+        return 0.0;
+
+    // Contacts outside the bubble are scaled by the transmission factor:
+    // 0 = perfectly observed bubble (contact cut), 1 = the bubble imposes
+    // nothing.
+    epiworld_double factor = model->par(param_name);
+    if (factor <= 0.0)
+        return 1.0;
+    if (factor >= 1.0)
+        return 0.0;
+
+    return static_cast<epiworld_double>(1.0) - factor;
+
+}
+
+template<typename TSeq>
+inline void Bubbles<TSeq>::operator()(Model<TSeq> * model, int day)
+{
+
+    // Only rewiring needs a daily event; the tool gates itself by day, and the
+    // epoch-0 partition is computed at reset (see deploy()). Because global
+    // events run after update_state(), a rewired partition takes effect the
+    // following simulation step.
+    if (rewire_every <= 0)
+        return;
+
+    if (!is_active(day))
+        return;
+
+    int sim   = static_cast< int >(model->get_sim_id());
+    int epoch = (day - start_day) / rewire_every;
+
+    // Already up to date for this (replicate, epoch).
+    if ((last_sim_id == sim) && (last_epoch == epoch))
+        return;
+
+    compute_partition(model);
+    last_sim_id = sim;
+    last_epoch  = epoch;
 
 }
 
@@ -20061,129 +20297,74 @@ inline void Bubbles<TSeq>::deploy(Model<TSeq> & model)
     // mid-run through the model's parameters.
     model.add_param(transmission_factor, param_name, true);
 
-    // ---- The bubble tool: dampens out-of-bubble transmission ---------------
-    auto st  = state;
-    int  sd  = start_day;
-    int  ed  = end_day;
-    std::string pname = param_name;
+    // ---- The intervention itself -------------------------------------------
+    // add_globalevent() clones this object, so the model owns the partition and
+    // the rewiring schedule. Copies of the model (e.g. the per-thread copies
+    // made by run_multiple) clone it again and are fully independent.
+    model.add_globalevent(*this);
 
-    Tool<TSeq> bubble_tool(name);
-    bubble_tool.set_susceptibility_reduction_fun(
-        [st, sd, ed, pname](
-            Tool<TSeq> &,
-            Agent<TSeq> * p,
-            VirusPtr<TSeq> & v,
-            Model<TSeq> * m
-        ) -> epiworld_double {
+    // ---- The tool: dampens out-of-bubble transmission -----------------------
+    // It carries no state of its own: it finds the model's intervention by name
+    // the first time it is used.
+    BubbleTool<TSeq> bubble_tool(this->get_name(), this->get_name());
 
-            int today = static_cast< int >(m->today());
-
-            // Policy window.
-            if (today < sd)
-                return 0.0;
-            if ((ed >= 0) && (today >= ed))
-                return 0.0;
-
-            if (st->bubble_id.empty())
-                return 0.0;
-
-            Agent<TSeq> * transmitter = v->get_agent();
-            if (transmitter == nullptr)
-                return 0.0;
-
-            int bp = st->bubble_id[static_cast< size_t >(p->get_id())];
-            int bt = st->bubble_id[static_cast< size_t >(transmitter->get_id())];
-
-            if ((bp < 0) || (bt < 0))
-                return 0.0;
-
-            // Contacts inside the bubble are exactly what the policy keeps:
-            // they are left alone.
-            if (bp == bt)
-                return 0.0;
-
-            // Contacts outside the bubble are scaled by the transmission
-            // factor: 0 = perfectly observed bubble (contact cut), 1 = the
-            // bubble imposes nothing.
-            epiworld_double factor = m->par(pname);
-            if (factor <= 0.0)
-                return 1.0;
-            if (factor >= 1.0)
-                return 0.0;
-
-            return static_cast<epiworld_double>(1.0) - factor;
-
-        }
-    );
-
-    // ---- Distribution: recompute the partition at reset time ---------------
+    // ---- Distribution: recompute the partition at reset time ----------------
     // The tool's distribution function runs from Model::reset() -> dist_tools(),
     // i.e. *before* day 1 and with the run's (per-replicate) RNG already seeded.
     // Computing the partition here — rather than eagerly in deploy() — keeps the
     // epoch-0 partition fresh for every replicate of run_multiple() and avoids
     // any dependence on a stale partition left over from a previous run. It then
     // distributes the tool to every agent (prevalence 1.0).
-    Bubbles<TSeq> self = *this; // shares `state` via the shared_ptr
+    std::string ename = this->get_name();
     ToolToAgentFun<TSeq> distribute_all = distribute_tool_randomly<TSeq>(1.0, true);
     bubble_tool.set_distribution(
-        [self, distribute_all](Tool<TSeq> & tool, Model<TSeq> * m) -> void {
-            self.compute_partition(m);
-            self.state->last_sim_id = static_cast< int >(m->get_sim_id());
-            self.state->last_epoch  = 0;
+        [ename, distribute_all](Tool<TSeq> & tool, Model<TSeq> * m) -> void {
+
+            Bubbles<TSeq> * self = Bubbles<TSeq>::get_from(*m, ename);
+
+            if (self == nullptr)
+                throw std::logic_error(
+                    "Bubbles: the intervention '" + ename +
+                    "' is not installed on this model."
+                );
+
+            self->compute_partition(m);
+            self->last_sim_id = static_cast< int >(m->get_sim_id());
+            self->last_epoch  = 0;
+
             distribute_all(tool, m);
+
         }
     );
 
     model.add_tool(bubble_tool);
 
-    // ---- The scheduler: re-randomizes the partition at rewiring epochs -----
-    // The epoch-0 partition is installed at reset (above); this event only
-    // handles rewire_every > 0, recomputing when the epoch advances. Because
-    // global events run after update_state(), a rewired partition takes effect
-    // the following simulation step. Deactivation (end_day) needs no event: the
-    // tool gates itself by day.
-    if (rewire_every > 0)
-    {
-        model.add_globalevent(
-            [self](Model<TSeq> * m) -> void {
-
-                int today = static_cast< int >(m->today());
-
-                bool on = (today >= self.start_day) &&
-                    ((self.end_day < 0) || (today < self.end_day));
-                if (!on)
-                    return;
-
-                int sim   = static_cast< int >(m->get_sim_id());
-                int epoch = (today - self.start_day) / self.rewire_every;
-
-                // Already up to date for this (replicate, epoch).
-                if ((self.state->last_sim_id == sim) &&
-                    (self.state->last_epoch == epoch))
-                    return;
-
-                self.compute_partition(m);
-                self.state->last_sim_id = sim;
-                self.state->last_epoch  = epoch;
-
-            },
-            name + " (scheduler)",
-            -99
-        );
-    }
-
 }
 
 template<typename TSeq>
-inline std::shared_ptr< BubbleState > Bubbles<TSeq>::get_state() const
+inline Bubbles<TSeq> * Bubbles<TSeq>::get_from(
+    Model<TSeq> & model,
+    const std::string & name
+)
 {
-    return state;
+
+    if (!model.has_globalevent(name))
+        return nullptr;
+
+    return dynamic_cast< Bubbles<TSeq> * >(&model.get_globalevent(name));
+
 }
 
 template<typename TSeq>
 inline const std::vector< int > & Bubbles<TSeq>::get_bubble_id() const
 {
-    return state->bubble_id;
+    return bubble_id;
+}
+
+template<typename TSeq>
+inline int Bubbles<TSeq>::get_last_epoch() const
+{
+    return last_epoch;
 }
 
 template<typename TSeq>
@@ -20196,6 +20377,12 @@ template<typename TSeq>
 inline const std::string & Bubbles<TSeq>::get_param_name() const
 {
     return param_name;
+}
+
+template<typename TSeq>
+inline std::unique_ptr< GlobalEvent<TSeq> > Bubbles<TSeq>::clone_ptr() const
+{
+    return std::make_unique< Bubbles<TSeq> >(*this);
 }
 
 #endif

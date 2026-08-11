@@ -27,10 +27,10 @@ EPIWORLD_TEST_CASE("Bubbles - partition recomputed each run", "[bubbles]") {
     model.verbose_off();
 
     model.run(5, 111);
-    std::vector<int> p1 = bubbles.get_bubble_id();
+    std::vector<int> p1 = Bubbles<>::get_from(model)->get_bubble_id();
 
     model.run(5, 222);
-    std::vector<int> p2 = bubbles.get_bubble_id();
+    std::vector<int> p2 = Bubbles<>::get_from(model)->get_bubble_id();
 
     REQUIRE(p1.size() == n);
     REQUIRE(p2.size() == n);

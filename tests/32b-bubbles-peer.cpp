@@ -27,7 +27,7 @@ EPIWORLD_TEST_CASE("Bubbles - peer partition respects households", "[bubbles]") 
     model.verbose_off();
     model.run(5);
 
-    const auto & bid = bubbles.get_bubble_id();
+    const auto & bid = Bubbles<>::get_from(model)->get_bubble_id();
     size_t n_households = n / hh_size;
 
     // Households never split across bubbles.
