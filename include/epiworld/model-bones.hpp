@@ -489,7 +489,14 @@ public:
      *         operate on both ends of a tie, which is meaningless there).
      */
     ///@{
-    bool add_edge(size_t i, size_t j); ///< @return `true` if the tie was created.
+    /**
+     * @return `true` if the tie was created, `false` if the two were already
+     *         tied. An intervention that has to withdraw its own ties later
+     *         should record only the ones this returned `true` for, so it never
+     *         removes a tie the model already had.
+     */
+    bool add_edge(size_t i, size_t j);
+
     bool rm_edge(size_t i, size_t j);  ///< @return `true` if a tie was removed.
     bool has_edge(size_t i, size_t j) const; ///< Whether `i` and `j` are tied.
     ///@}

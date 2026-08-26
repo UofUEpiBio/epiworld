@@ -122,7 +122,7 @@ namespace epiworld {
 // -- smallworld networks of degree 5-8, households of 3-5 -- fits in a cache
 // line and beats a hash lookup. Past it, the linear scan starts to dominate
 // graph construction and tie surgery, so the agent builds the index once and
-// maintains it from then on. See `Agent::add_neighbor` / `Agent::rm_neighbor`.
+// maintains it from then on. See `Model::add_edge` / `Model::rm_edge`.
 #ifndef EPI_NEIGHBOR_INDEX_THRESHOLD
     #define EPI_NEIGHBOR_INDEX_THRESHOLD 32u
 #endif
@@ -9244,12 +9244,12 @@ class AgentsSample;
  *
  * @tparam TSeq Sequence type (should match `TSeq` across the model)
  */
-template<typename TSeq>
+template<typename TSeq = EPI_DEFAULT_TSEQ>
 class NeighborsView {
 private:
 
     const size_t * first = nullptr;
-    const size_t * last  = nullptr;
+    size_t n = 0u;
     std::vector< Agent<TSeq> > * pop = nullptr;
 
 public:
@@ -9277,15 +9277,18 @@ public:
 
     NeighborsView(
         const size_t * first,
-        const size_t * last,
+        size_t n,
         std::vector< Agent<TSeq> > * pop
-    ) : first(first), last(last), pop(pop) {}
+    ) : first(first), n(n), pop(pop) {}
 
+    // The size is carried rather than derived as `last - first`: an agent with
+    // no ties has nothing to point at, and subtracting two null pointers is
+    // undefined behaviour (they point into no array).
     iterator begin() const { return iterator(first, pop); }
-    iterator end() const { return iterator(last, pop); }
+    iterator end() const { return iterator(first + n, pop); }
 
-    size_t size() const { return static_cast< size_t >(last - first); }
-    bool empty() const { return first == last; }
+    size_t size() const { return n; }
+    bool empty() const { return n == 0u; }
 
 };
 
@@ -9329,6 +9332,35 @@ protected:
 
     /// @brief Drops the neighbor at `pos`, keeping the survivors in order.
     void erase_neighbor_at(size_t pos);
+
+    /**
+     * @name Change this agent's ties
+     *
+     * @details These are deliberately not public. They edit the network and
+     * nothing else, so calling one while a model is running would leave the
+     * queueing system counting neighbors that no longer exist (or missing ones
+     * that now do), and agents would drop out of `Model::update_state()`
+     * unnoticed. `Model::add_edge()` / `Model::rm_edge()` are the supported
+     * way in: they do this *and* keep the queue in step, and are safe at any
+     * point of a run. `Model` reaches these directly for graph construction,
+     * where there is no queue yet.
+     *
+     * @param p The agent at the other end of the tie.
+     * @param check_source Whether to check that `p` is not already a neighbor of
+     *        this agent before adding it.
+     * @param check_target Whether to check that this agent is not already a
+     *        neighbor of `p`.
+     */
+    ///@{
+    bool add_neighbor( ///< @return `true` if a new tie was created.
+        Agent<TSeq> & p,
+        bool check_source = true,
+        bool check_target = true
+        );
+
+    /// @return `true` if a tie was removed. Survivors keep their relative order.
+    bool rm_neighbor(Agent<TSeq> & p);
+    ///@}
 
     std::vector< size_t > entities; ///< Entity IDs (indices into Model::entities)
 
@@ -9447,37 +9479,6 @@ public:
     size_t get_n_tools() const noexcept;
 
     void mutate_virus();
-
-    /**
-     * @brief Ties this agent to `p`, in both directions.
-     *
-     * @param p The agent to tie to.
-     * @param check_source Whether to check that `p` is not already a neighbor of
-     *        this agent before adding it.
-     * @param check_target Whether to check that this agent is not already a
-     *        neighbor of `p`.
-     * @return `true` if a new tie was created, `false` if the two were already
-     *         tied. Callers that must undo their own additions later -- a
-     *         temporary-contact intervention, say -- use the return value to
-     *         record only the ties they actually created.
-     */
-    bool add_neighbor(
-        Agent<TSeq> & p,
-        bool check_source = true,
-        bool check_target = true
-        );
-
-    /**
-     * @brief Removes the tie between this agent and `p`, in both directions.
-     *
-     * @details The surviving neighbors keep their relative order (see
-     * `neighbors`), so removing a tie never changes which transmitter is
-     * sampled among the others.
-     *
-     * @param p The agent to untie from.
-     * @return `true` if a tie was removed, `false` if the two were not tied.
-     */
-    bool rm_neighbor(Agent<TSeq> & p);
 
     /// @brief Whether `neighbor_id` is one of this agent's neighbors.
     bool has_neighbor(size_t neighbor_id) const;
@@ -10654,7 +10655,14 @@ public:
      *         operate on both ends of a tie, which is meaningless there).
      */
     ///@{
-    bool add_edge(size_t i, size_t j); ///< @return `true` if the tie was created.
+    /**
+     * @return `true` if the tie was created, `false` if the two were already
+     *         tied. An intervention that has to withdraw its own ties later
+     *         should record only the ones this returned `true` for, so it never
+     *         removes a tie the model already had.
+     */
+    bool add_edge(size_t i, size_t j);
+
     bool rm_edge(size_t i, size_t j);  ///< @return `true` if a tie was removed.
     bool has_edge(size_t i, size_t j) const; ///< Whether `i` and `j` are tied.
     ///@}
@@ -18742,10 +18750,11 @@ inline NeighborsView<TSeq> Agent<TSeq>::neighbors_view(Model<TSeq> & model)
 {
 
     if ((neighbors == nullptr) || (n_neighbors == 0u))
-        return NeighborsView<TSeq>(nullptr, nullptr, &model.population);
+        return NeighborsView<TSeq>(nullptr, 0u, &model.population);
 
-    const size_t * first = neighbors->data();
-    return NeighborsView<TSeq>(first, first + n_neighbors, &model.population);
+    return NeighborsView<TSeq>(
+        neighbors->data(), n_neighbors, &model.population
+    );
 
 }
 

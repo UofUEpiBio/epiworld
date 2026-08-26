@@ -672,10 +672,11 @@ inline NeighborsView<TSeq> Agent<TSeq>::neighbors_view(Model<TSeq> & model)
 {
 
     if ((neighbors == nullptr) || (n_neighbors == 0u))
-        return NeighborsView<TSeq>(nullptr, nullptr, &model.population);
+        return NeighborsView<TSeq>(nullptr, 0u, &model.population);
 
-    const size_t * first = neighbors->data();
-    return NeighborsView<TSeq>(first, first + n_neighbors, &model.population);
+    return NeighborsView<TSeq>(
+        neighbors->data(), n_neighbors, &model.population
+    );
 
 }
 

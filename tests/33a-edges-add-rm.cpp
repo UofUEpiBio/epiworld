@@ -4,6 +4,50 @@
 
 using namespace epiworld;
 
+// Tie mutation has to stay behind Model::add_edge()/rm_edge(), because only
+// those keep the queueing system in step. Agent::add_neighbor() edits the
+// network and nothing else, so a global event calling it directly would leave a
+// newly exposed agent at queue count zero and see it silently skipped by
+// update_state().
+//
+// Access checking happens during template argument deduction, so a non-public
+// member makes this substitution fail rather than the build. If someone ever
+// moves these back into the public section, the static_asserts below fail and
+// say why.
+template< typename T, typename = void >
+struct calls_add_neighbor : std::false_type {};
+
+template< typename T >
+struct calls_add_neighbor<
+    T,
+    std::void_t< decltype(
+        std::declval< T & >().add_neighbor(std::declval< T & >())
+    ) >
+> : std::true_type {};
+
+template< typename T, typename = void >
+struct calls_rm_neighbor : std::false_type {};
+
+template< typename T >
+struct calls_rm_neighbor<
+    T,
+    std::void_t< decltype(
+        std::declval< T & >().rm_neighbor(std::declval< T & >())
+    ) >
+> : std::true_type {};
+
+static_assert(
+    !calls_add_neighbor< Agent<> >::value,
+    "Agent::add_neighbor must stay non-public: it edits ties without telling "
+    "the queue. Use Model::add_edge()."
+);
+
+static_assert(
+    !calls_rm_neighbor< Agent<> >::value,
+    "Agent::rm_neighbor must stay non-public: it edits ties without telling "
+    "the queue. Use Model::rm_edge()."
+);
+
 // Sorted (source, target) pairs of the model's contact network, as the public
 // API reports them.
 static std::vector< std::pair<int,int> > edges_of(Model<> & model)
@@ -59,6 +103,44 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
     REQUIRE(model.get_agent(n - 1u).get_n_neighbors() == 0u);
 
     auto baseline = edges_of(model);
+
+    // -- the view over an agent with no ties --------------------------------
+    // An isolate has nothing to point at, so the empty view is a pair of null
+    // pointers; its size must not be computed by subtracting them.
+    {
+        auto view = model.get_agent(n - 1u).neighbors_view(model);
+        REQUIRE(view.size() == 0u);
+        REQUIRE(view.empty());
+        REQUIRE(view.begin() == view.end());
+
+        size_t visited = 0u;
+        for (auto * nb : view)
+        {
+            (void) nb;
+            ++visited;
+        }
+        REQUIRE(visited == 0u);
+    }
+
+    // A default-constructed view is empty in the same way.
+    {
+        NeighborsView<> view;
+        REQUIRE(view.size() == 0u);
+        REQUIRE(view.empty());
+        REQUIRE(view.begin() == view.end());
+    }
+
+    // And where there *are* ties, the view agrees with get_neighbors().
+    {
+        std::vector< int > from_view, from_vector;
+        for (auto * nb : model.get_agent(hub).neighbors_view(model))
+            from_view.push_back(nb->get_id());
+        for (auto * nb : model.get_agent(hub).get_neighbors(model))
+            from_vector.push_back(nb->get_id());
+
+        REQUIRE(model.get_agent(hub).neighbors_view(model).size() == hub_degree);
+        REQUIRE_THAT(from_view, Catch::Equals(from_vector));
+    }
 
     // -- has_edge agrees with the network we asked for ------------------------
     REQUIRE(model.has_edge(hub, 1u));
