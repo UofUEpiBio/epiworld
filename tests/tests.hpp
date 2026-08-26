@@ -46,6 +46,18 @@ inline std::string file_reader(std::string fname)
 
     // Use a while loop together with the getline() function to read the file line by line
     while (getline (MyReadFile, myText)) {
+
+        #ifdef EPI_DEBUG
+        // Under EPI_DEBUG, every saver csv gains a leading "thread" column
+        // holding the OpenMP thread id that wrote the row. That id depends on
+        // how the runs were scheduled, not on the simulation, so it must be
+        // dropped before comparing files across runs with different numbers of
+        // threads.
+        auto first_space = myText.find(' ');
+        if (first_space != std::string::npos)
+            myText.erase(0u, first_space + 1u);
+        #endif
+
         // Output the text from the file
         res += myText;
     }
