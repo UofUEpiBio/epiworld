@@ -79,12 +79,10 @@ $(NAME)_SOURCES := \
 	31a-seir-network-quarantine.cpp \
 	32a-bubbles.cpp \
 	32b-bubbles-peer.cpp \
-	32c-bubbles-transmission.cpp \
-	32d-bubbles-transmission-factor.cpp \
-	32e-bubbles-rewiring.cpp \
-	32f-bubbles-reset-recompute.cpp \
-	32g-bubbles-connected-pairing.cpp \
-	32h-bubbles-peer-cap.cpp
+	32c-bubbles-transmission-factor.cpp \
+	32d-bubbles-rewiring.cpp \
+	32e-bubbles-setup-per-run.cpp \
+	32f-bubbles-parallel.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
