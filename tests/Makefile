@@ -87,6 +87,7 @@ $(NAME)_SOURCES := \
 	32h-bubbles-ties-restored.cpp \
 	32i-bubbles-ties-queue.cpp \
 	32j-bubbles-ties-merge.cpp \
+	32k-bubbles-ties-interactions.cpp \
 	33a-edges-add-rm.cpp \
 	33b-edges-queue.cpp
 

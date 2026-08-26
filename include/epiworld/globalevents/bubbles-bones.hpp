@@ -262,10 +262,25 @@ public:
  * Contacts *outside* the bubble are untouched by either setting: they stay in
  * the network and are damped by `f`, which is what makes the bubble imperfect.
  *
+ * Two `Complete` policies may run on the same model -- household bubbles and
+ * school bubbles, say. A tie both want is on the books of whichever created it,
+ * and when that policy's window closes the tie is handed to the other rather
+ * than removed, so a bubble that is still open does not lose a contact because
+ * a different policy ended. If something else takes a tie away, the clique is
+ * re-asserted on the next step; that check costs nothing on a day when nothing
+ * touched the network (see `Model::get_network_version()`).
+ *
  * `BubbleTies::Complete` needs an undirected model and cannot be combined with
  * `Model::set_rewire_fun()` -- degree-sequence rewiring swaps neighbors between
  * agents, so a tie the intervention created could be swapped out from under it
  * and never withdrawn. Both are checked when the intervention sets itself up.
+ *
+ * A bubble is also refused if completing it would give any member more
+ * neighbors than the virus sampler can weigh at once (`roulette()` uses two
+ * slots per candidate in `Model::array_double_tmp`, so the ceiling is half its
+ * size). What binds is each member's resulting *degree*, not the size of the
+ * bubble: the clique is added on top of the ties an agent already has outside
+ * it.
  *
  * ## The algorithms
  *
@@ -434,6 +449,7 @@ private:
      */
     std::vector< std::pair< size_t, size_t > > created_ties;
     int ties_epoch = -1;             ///< Epoch the materialized ties belong to.
+    size_t ties_version = 0u;        ///< Model::get_network_version() when built.
     int model_id   = -1;             ///< Sim id this intervention was set up for.
     int last_epoch = -1;             ///< Rewiring epoch the current partition was computed for.
 
@@ -468,6 +484,19 @@ private:
 
     /// @brief Whether the clique should be up for the next simulation step.
     bool wants_ties(Model<TSeq> * model) const;
+
+    /**
+     * @brief Withdraw the ties this policy is holding.
+     *
+     * @param hand_over When true, a tie that another `Bubbles` policy still
+     *        wants is transferred to it rather than removed, so a bubble that is
+     *        still open does not lose a contact because a different policy's
+     *        window closed.
+     */
+    void withdraw_ties(Model<TSeq> * model, bool hand_over);
+
+    /// @brief Another active `Complete` policy that wants the tie `i`--`j`.
+    Bubbles<TSeq> * heir_of(Model<TSeq> * model, size_t i, size_t j);
 
 public:
 
