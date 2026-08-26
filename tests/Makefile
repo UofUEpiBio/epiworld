@@ -83,6 +83,10 @@ $(NAME)_SOURCES := \
 	32d-bubbles-rewiring.cpp \
 	32e-bubbles-setup-per-run.cpp \
 	32f-bubbles-parallel.cpp \
+	32g-bubbles-complete-ties.cpp \
+	32h-bubbles-ties-restored.cpp \
+	32i-bubbles-ties-queue.cpp \
+	32j-bubbles-ties-merge.cpp \
 	33a-edges-add-rm.cpp \
 	33b-edges-queue.cpp
 
