@@ -18,14 +18,28 @@ docs/xml/
 
 _codeql_detected_source_root
 
-# We only care about code
-tests/
-!tests/*.hpp
-!tests/*.cpp
+# We only care about code.
+#
+# Note the `/**` rather than a bare `tests/`: git does not descend into an
+# excluded *directory*, so a negation underneath one never gets a chance to
+# match. With a bare `tests/`, the `!tests/*.cpp` below silently did nothing and
+# new test files were invisible to `git status` -- they had to be `git add -f`ed
+# or they were quietly left out of the commit. Excluding the directory's
+# *contents* instead, and re-including subdirectories, lets the negations work.
+tests/**
+!tests/**/
+!tests/**/*.hpp
+!tests/**/*.cpp
+!tests/**/Makefile
+!tests/resources/**
 
-examples/
+examples/**
+!examples/**/
 !examples/**/*.hpp
 !examples/**/*.cpp
+!examples/**/*.md
+!examples/**/Makefile
+!examples/**/.gitignore
 
 # This is mounted from the container
 .vscode/

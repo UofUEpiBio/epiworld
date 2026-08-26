@@ -1180,6 +1180,77 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::check_edge_endpoints(size_t i, size_t j) const
+{
+
+    if ((i >= population.size()) || (j >= population.size()))
+        throw std::range_error(
+            "Agent ids must be below " + std::to_string(population.size()) +
+            "; got " + std::to_string(i) + " and " + std::to_string(j) + "."
+        );
+
+    if (i == j)
+        throw std::logic_error(
+            "An agent cannot be tied to itself (agent " + std::to_string(i) + ")."
+        );
+
+    if (directed)
+        throw std::logic_error(
+            "add_edge/rm_edge change both ends of a tie, which is not meaningful "
+            "in a directed model."
+        );
+
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::add_edge(size_t i, size_t j)
+{
+
+    check_edge_endpoints(i, j);
+
+    if (!population[i].add_neighbor(population[j], true, true))
+        return false;
+
+    if (use_queuing)
+        queue.notify_edge_added(&population[i], &population[j]);
+
+    return true;
+
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::rm_edge(size_t i, size_t j)
+{
+
+    check_edge_endpoints(i, j);
+
+    // Nothing to unwind if the two were never tied -- shifting the counts for a
+    // tie that is not there is exactly the drift these calls exist to prevent.
+    if (!population[i].has_neighbor(j) && !population[j].has_neighbor(i))
+        return false;
+
+    if (use_queuing)
+        queue.notify_edge_removed(&population[i], &population[j]);
+
+    return population[i].rm_neighbor(population[j]);
+
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_edge(size_t i, size_t j) const
+{
+
+    if ((i >= population.size()) || (j >= population.size()))
+        throw std::range_error(
+            "Agent ids must be below " + std::to_string(population.size()) +
+            "; got " + std::to_string(i) + " and " + std::to_string(j) + "."
+        );
+
+    return population[i].has_neighbor(j);
+
+}
+
+template<typename TSeq>
 inline bool Model<TSeq>::is_directed() const
 {
     if (population.size() == 0u)

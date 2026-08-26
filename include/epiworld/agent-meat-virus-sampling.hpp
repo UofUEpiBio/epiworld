@@ -43,7 +43,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
 
                 // This computes the prob of getting any neighbor variant
                 size_t nviruses_tmp = 0u;
-                for (auto & neighbor: p->get_neighbors(*m)) 
+                for (auto * neighbor: p->neighbors_view(*m)) 
                 {
                     
                     auto & v = neighbor->get_virus();
@@ -121,7 +121,7 @@ inline std::function<void(Agent<TSeq>*,Model<TSeq>*)> make_update_susceptible(
 
                 // This computes the prob of getting any neighbor variant
                 size_t nviruses_tmp = 0u;
-                for (auto & neighbor: p->get_neighbors(*m)) 
+                for (auto * neighbor: p->neighbors_view(*m)) 
                 {
 
                     // If the state is in the list, exclude it
@@ -199,7 +199,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
 
                 // This computes the prob of getting any neighbor variant
                 size_t nviruses_tmp = 0u;
-                for (auto & neighbor: p->get_neighbors(*m)) 
+                for (auto * neighbor: p->neighbors_view(*m)) 
                 {
                     
                     if (neighbor->get_virus() == nullptr)
@@ -283,7 +283,7 @@ inline std::function<Virus<TSeq>*(Agent<TSeq>*,Model<TSeq>*)> make_sample_virus_
 
                 // This computes the prob of getting any neighbor variant
                 size_t nviruses_tmp = 0u;
-                for (auto & neighbor: p->get_neighbors(*m)) 
+                for (auto * neighbor: p->neighbors_view(*m)) 
                 {
 
                     // If the state is in the list, exclude it
@@ -360,7 +360,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 
     // This computes the prob of getting any neighbor variant
     size_t nviruses_tmp = 0u;
-    for (auto & neighbor: p->get_neighbors(*m)) 
+    for (auto * neighbor: p->neighbors_view(*m)) 
     {   
         #ifdef EPI_DEBUG
         int _vcount_neigh = 0;

@@ -82,7 +82,9 @@ $(NAME)_SOURCES := \
 	32c-bubbles-transmission-factor.cpp \
 	32d-bubbles-rewiring.cpp \
 	32e-bubbles-setup-per-run.cpp \
-	32f-bubbles-parallel.cpp
+	32f-bubbles-parallel.cpp \
+	33a-edges-add-rm.cpp \
+	33b-edges-queue.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
