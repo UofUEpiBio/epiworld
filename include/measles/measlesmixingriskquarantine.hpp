@@ -954,10 +954,10 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     // RISK_HIGH
     for (auto & group: groups_ids)
     {
-        for (auto & agent_i_idx: Model<TSeq>::get_entity(group))
+        for (auto & agent_i_idx: m->get_entity(group))
         {
 
-            auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
+            auto & agent_i = m->get_agent(agent_i_idx);
             auto state = agent_i.get_state();
 
             // If not in any of these states, we skip
@@ -986,7 +986,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     // in RISK_MEDIUM
     for (auto & agent_i_idx: contacted_agents)
     {
-        auto & agent_i = Model<TSeq>::get_agent(agent_i_idx);
+        auto & agent_i = m->get_agent(agent_i_idx);
 
         // If has a tool, then skip (is vaxxed)
         if (agent_i.get_n_tools() != 0u)
@@ -996,7 +996,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
         // contact tracing
         if (agent_i.get_n_entities() != 0u)
         {
-            size_t group_id = agent_i.get_entity(0u, *this).get_id();
+            size_t group_id = agent_i.get_entity(0u, *m).get_id();
             if (groups_ids.find(group_id) != groups_ids.end())
                 continue;
         }
