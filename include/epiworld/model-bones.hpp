@@ -69,6 +69,9 @@ protected:
 
     std::vector< Agent<TSeq> > population = {};
 
+    /// @brief Validates the arguments of `add_edge()` / `rm_edge()`.
+    void check_edge_endpoints(size_t i, size_t j) const;
+
     bool using_backup = true;
     std::vector< Agent<TSeq> > population_backup = {};
 
@@ -463,6 +466,33 @@ public:
         epiworld_double p = .01
         );
     void agents_empty_graph(epiworld_fast_uint n = 1000);
+
+    /**
+     * @name Change the contact network of a model that already has one
+     *
+     * @details Unlike `agents_from_edgelist()` and friends, which build the
+     * network up front, these edit it in place and may be called at any point,
+     * including in the middle of a run from a global event -- a policy that
+     * temporarily merges households, for instance. They keep the queueing system
+     * in step as they go (see `Queue::notify_edge_added`), which is what makes
+     * mid-run edits safe: the queue counts each agent's active neighbors, and a
+     * tie appearing or disappearing underneath it would otherwise corrupt that
+     * count and silently drop agents out of `update_state()`.
+     *
+     * Ties are undirected and are always changed at both ends. Existing
+     * neighbors keep their relative order, so an edit never changes which
+     * transmitter is sampled among the ties it left alone.
+     *
+     * @param i,j Ids of the two agents.
+     * @throws std::range_error if an id is out of range.
+     * @throws std::logic_error if `i == j`, or if the model is directed (these
+     *         operate on both ends of a tie, which is meaningless there).
+     */
+    ///@{
+    bool add_edge(size_t i, size_t j); ///< @return `true` if the tie was created.
+    bool rm_edge(size_t i, size_t j);  ///< @return `true` if a tie was removed.
+    bool has_edge(size_t i, size_t j) const; ///< Whether `i` and `j` are tied.
+    ///@}
 
     /**
      * @brief Initialize agents using a Stochastic Block Model (SBM).

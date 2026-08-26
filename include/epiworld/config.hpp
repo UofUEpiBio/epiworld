@@ -48,6 +48,18 @@
     #define EPI_MAX_TRACKING 200
 #endif
 
+// Degree at which an agent starts keeping a hash index of its neighbors.
+//
+// Below the threshold, membership tests and tie removal scan the (contiguous,
+// insertion-ordered) neighbor vector, which for the degrees these models run at
+// -- smallworld networks of degree 5-8, households of 3-5 -- fits in a cache
+// line and beats a hash lookup. Past it, the linear scan starts to dominate
+// graph construction and tie surgery, so the agent builds the index once and
+// maintains it from then on. See `Agent::add_neighbor` / `Agent::rm_neighbor`.
+#ifndef EPI_NEIGHBOR_INDEX_THRESHOLD
+    #define EPI_NEIGHBOR_INDEX_THRESHOLD 32u
+#endif
+
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
 
