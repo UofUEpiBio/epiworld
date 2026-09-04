@@ -72,6 +72,9 @@ protected:
     /// @brief Validates the arguments of `add_edge()` / `rm_edge()`.
     void check_edge_endpoints(size_t i, size_t j) const;
 
+    /// @brief Bumped whenever `add_edge()` / `rm_edge()` change the network.
+    size_t network_version = 0u;
+
     bool using_backup = true;
     std::vector< Agent<TSeq> > population_backup = {};
 
@@ -499,6 +502,18 @@ public:
 
     bool rm_edge(size_t i, size_t j);  ///< @return `true` if a tie was removed.
     bool has_edge(size_t i, size_t j) const; ///< Whether `i` and `j` are tied.
+
+    /**
+     * @brief Counter bumped every time `add_edge()` / `rm_edge()` change a tie.
+     *
+     * @details Lets something that has arranged the network a particular way
+     * tell, in constant time, whether anything has disturbed it since --
+     * without walking the network to find out. An intervention that holds
+     * temporary ties can use it to skip re-checking them on a day when nothing
+     * touched the network. Not changed by the graph-construction functions,
+     * which build the network rather than edit it.
+     */
+    size_t get_network_version() const;
     ///@}
 
     /**
@@ -790,6 +805,7 @@ public:
     GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
     GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
     bool has_globalevent(std::string_view name) const; ///< Whether a global action by that name exists
+    size_t get_n_globalevents() const; ///< Number of global actions registered
 
     void rm_globalevent(std::string name); ///< Remove a global action by name
     void rm_globalevent(size_t i); ///< Remove a global action by index
