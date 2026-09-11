@@ -1211,6 +1211,8 @@ inline bool Model<TSeq>::add_edge(size_t i, size_t j)
     if (!population[i].add_neighbor(population[j], true, true))
         return false;
 
+    network_version++;
+
     if (use_queuing)
         queue.notify_edge_added(&population[i], &population[j]);
 
@@ -1232,8 +1234,16 @@ inline bool Model<TSeq>::rm_edge(size_t i, size_t j)
     if (use_queuing)
         queue.notify_edge_removed(&population[i], &population[j]);
 
+    network_version++;
+
     return population[i].rm_neighbor(population[j]);
 
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_network_version() const
+{
+    return network_version;
 }
 
 template<typename TSeq>
@@ -2379,6 +2389,12 @@ inline void Model<TSeq>::rm_globalevent(
 
     globalevents.erase(globalevents.begin() + index);
 
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_n_globalevents() const
+{
+    return globalevents.size();
 }
 
 template<typename TSeq>
