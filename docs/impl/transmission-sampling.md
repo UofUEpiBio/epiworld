@@ -143,47 +143,57 @@ This gives identical runs, except where some probability is exactly 1 (see the n
 
 ## Benchmark
 
-`examples/20-transmission-benchmark` times the three modes on:
+`examples/20-transmission-benchmark` times the three modes on four scenarios:
 
 - **(A)** the SEIRH model of the [epiworld-benchmark](https://github.com/UofUEpiBio/epiworld-benchmark) study: a Watts–Strogatz network with mean degree 10, $R_0 = 2$, 100 initial cases and 100 days;
-- **(B)** `ModelSEIR` on the same network;
-- **(C)** a dense ($\bar k = 50$), high-prevalence SIR.
+- **(B)** `ModelSEIR` on the same network, a large outbreak (about 95% attack rate at 100,000 agents);
+- **(C)** a dense ($\bar k = 50$), high-prevalence SIR;
+- **(D)** a measles-like SEIR: 0.3 per contact-day, with a 10-day latent period that does not transmit, on a mean-degree-10 network with 1,000,000 agents.
 
-Median CPU milliseconds per 100-day run (50 replicates, Apple M3 Pro, Apple clang 16, `-O3`), epiworld 0.15.1 against 0.16.0:
+The tables below give the median CPU milliseconds per run (Apple M3 Pro, Apple clang 16, `-O3`), comparing epiworld 0.15.1 with 0.16.0. They use 50 replicates for A–C and 10 for D. `"pull"` runs are bit-identical to 0.15.1 (same checksums).
 
 | Scenario | Agents | 0.15.1 | 0.16 auto | 0.16 push | 0.16 pull |
 |:--|--:|--:|--:|--:|--:|
-| A: epiworld-benchmark SEIRH | 10,000 | 11.6 | **6.8** | 6.9 | 12.5 |
-| | 100,000 | 24.0 | **11.2** | 11.1 | 22.0 |
-| B: `ModelSEIR`, ~95% attack | 10,000 | 16.9 | 17.3 | 17.6 | 17.3 |
-| | 100,000 | 191 | 204 | 225 | 201 |
-| C: dense SIR ($\bar k = 50$) | 10,000 | 18.6 | **17.7** | 18.8 | 18.5 |
-| | 100,000 | 308 | **283** | 384 | 325 |
+| A | 10,000 | 12.1 | **7.4** | 6.8 | 13.2 |
+| A | 100,000 | 25.6 | **12.2** | 12.7 | 23.7 |
+| B | 10,000 | 17.1 | 18.0 | 17.8 | 18.9 |
+| B | 100,000 | 250 | 243 | 247 | 247 |
+| B | 1,000,000 | 2,419 | 2,313 | 2,388 | 2,364 |
+| C | 10,000 | 25.1 | 24.1 | 27.3 | 26.3 |
+| C | 100,000 | 354 | **314** | 369 | 336 |
 
-`"pull"` runs are bit-identical to 0.15.1 (same checksums).
+| Scenario D, 1,000,000 agents | Infected | 0.15.1 | 0.16 auto | 0.16 push | 0.16 pull |
+|:--|--:|--:|--:|--:|--:|
+| 60 days | ~14,000 | 47.7 | **23.3** | 23.0 | 39.1 |
+| 90 days | ~225,000 | 529 | **419** | 372 | 508 |
+| 120 days | ~930,000 | 2,340 | **2,091** | 2,077 | 2,218 |
 
-- **A.** Agents keep the virus after recovery and never leave the queue, so pulling scans tens of thousands of susceptibles a day while only a few hundred agents can transmit. Pushing halves the run time, and `"auto"` pushes at every step.
-- **B.** Recovered agents leave the queue, so the queued pull already visits little more than the susceptibles next to an infectious agent. Pushing brings little, and the index and queue bookkeeping costs a few percent over 0.15.1.
+What drives these numbers:
+
+- **A.** Agents keep the virus after recovery and never leave the queue, so pulling scans tens of thousands of susceptibles a day while only a few hundred agents can transmit. Pushing halves the run time.
+- **D.** This is the measles case: while the infected are a small share of a large population, pushing does a fraction of pulling's work (2× at 60 days). It still helps at 90 and 120 days, when the outbreak has reached most of the population.
+- **B.** Recovered agents leave the queue, so the queued pull already visits little more than the susceptibles next to an infectious agent. Pushing brings little, and the three modes are within a few percent of 0.15.1.
 - **C.** `"auto"` switches between the two and beats both.
 
-Through epiworldR, on the epiworld-benchmark study itself (its `runners/epiworld.R`, 100 replicates, `simulate_seconds`), with epiworldR built on epiworld 0.15.1 and on 0.16.0:
+Pushing visits the carriers in ascending id order. Networks are usually built with neighbors close in id, so the push sweeps memory much as a pull does. Visiting them in the index's (effectively random) order doubled the cost of a pushed tie at 1,000,000 agents.
+
+Through epiworldR, on the epiworld-benchmark study itself (its `runners/epiworld.R`: scenario A on the study's cached networks, 100 replicates, `simulate_seconds`), with epiworldR built on epiworld 0.15.1 and on 0.16.0:
 
 | Agents | 0.15.1 | 0.16.0 | Median attack rate (0.15.1 / 0.16.0) |
 |--:|--:|--:|:--|
-| 10,000 | 0.013 s | 0.009 s | 0.382 / 0.381 |
-| 100,000 | 0.029 s | 0.016 s | 0.060 / 0.059 |
+| 10,000 | 0.013 s | **0.009 s** | 0.382 / 0.381 |
+| 100,000 | 0.029 s | **0.016 s** | 0.060 / 0.059 |
 
-Timings on a laptop are noisy, so the same runs were also counted exactly with cachegrind (Linux container, GCC 13, `-O3`). The cells show instructions and last-level data-cache misses per run, with the change in misses relative to 0.15.1 in parentheses. Misses are what dominate the run time at these sizes:
+Timings on a laptop are noisy, so scenarios A–C were also counted exactly with cachegrind (Linux container, GCC 13, `-O3`). The cells show instructions and last-level data-cache misses per run, with the change in misses relative to 0.15.1 in parentheses. Misses dominate the run time at these sizes:
 
 | Scenario | Agents | 0.15.1 | 0.16 auto | 0.16 push | 0.16 pull |
 |:--|--:|--:|--:|--:|--:|
-| A | 10,000 | 182M / 1.91M | 120M / 0.50M (-74%) | 120M / 0.50M (-74%) | 176M / 1.94M (+2%) |
-| A | 100,000 | 337M / 4.25M | 203M / 1.60M (-62%) | 203M / 1.60M (-62%) | 264M / 3.97M (-7%) |
-| B | 10,000 | 304M / 1.98M | 295M / 2.06M (+4%) | 294M / 2.43M (+23%) | 302M / 2.06M (+4%) |
-| B | 100,000 | 2974M / 20.59M | 2900M / 23.59M (+15%) | 2897M / 29.99M (+46%) | 2951M / 21.26M (+3%) |
-| C | 10,000 | 349M / 1.67M | 335M / 1.58M (-5%) | 356M / 2.12M (+27%) | 344M / 1.73M (+4%) |
-| C | 100,000 | 3505M / 18.52M | 3353M / 17.41M (-6%) | 3580M / 27.33M (+48%) | 3453M / 18.78M (+1%) |
-
+| A | 10,000 | 182M / 1.91M | 119M / 0.50M (-74%) | 119M / 0.50M (-74%) | 176M / 1.95M (+2%) |
+| A | 100,000 | 339M / 4.26M | 184M / 1.48M (-65%) | 184M / 1.48M (-65%) | 264M / 3.97M (-7%) |
+| B | 10,000 | 304M / 1.98M | 296M / 2.02M (+2%) | 295M / 2.21M (+12%) | 302M / 2.06M (+4%) |
+| B | 100,000 | 2977M / 20.59M | 2911M / 21.96M (+7%) | 2909M / 24.30M (+18%) | 2953M / 21.26M (+3%) |
+| C | 10,000 | 349M / 1.67M | 336M / 1.55M (-7%) | 357M / 1.87M (+12%) | 344M / 1.73M (+4%) |
+| C | 100,000 | 3508M / 18.52M | 3355M / 17.00M (-8%) | 3584M / 22.24M (+20%) | 3455M / 18.78M (+1%) |
 
 ## See Also
 

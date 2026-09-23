@@ -70,5 +70,6 @@
 ## New example
 
 * `examples/20-transmission-benchmark` times the network transmission step in
-  each mode. It compiles against older releases too, for side-by-side
-  comparisons.
+  each mode on four network models, including a measles-like outbreak in a
+  population of a million. It compiles against older releases too, for
+  side-by-side comparisons.
