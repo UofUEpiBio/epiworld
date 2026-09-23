@@ -103,7 +103,9 @@ inline bool Model<TSeq>::transmission_choose_push() const
     // every tie of every susceptible agent. Both sums are kept per state, so
     // this is O(number of states). It deliberately ignores the queue: the
     // decision -- and so the random stream -- is the same with queuing on or
-    // off.
+    // off. The queue does make pulling cheaper than this sum suggests (it
+    // skips susceptibles with no infectious neighbor), which is what kappa < 1
+    // accounts for.
     double cost_push = 0.0;
     double cost_pull = 0.0;
     for (size_t s = 0u; s < static_cast< size_t >(nstates); ++s)
@@ -150,11 +152,14 @@ inline void Model<TSeq>::transmission_push()
             for (size_t i_id : *j.neighbors)
             {
 
-                Agent<TSeq> & i = population[i_id];
-                const size_t t = i.state;
+                // Most neighbors are usually not susceptible; the compact copy
+                // of the states rules them out without loading the agent.
+                const size_t t = agent_state[i_id];
 
                 if (!push_pushable[t] || push_excluded[t * ns + s])
                     continue;
+
+                Agent<TSeq> & i = population[i_id];
 
                 // An agent with a virus is not susceptible (pulling would
                 // refuse it; update_state() reports it).
@@ -287,27 +292,39 @@ inline void Model<TSeq>::transmission_update_others()
 
     // Everyone in a state with an update function, other than the pushed ones.
     // The index gives them directly, so neither the population nor the queue
-    // (which holds every neighbor of every carrier) needs to be scanned. Sorted
-    // so the visiting order is ascending id, whether queuing is on or off.
-    push_visit.clear();
+    // (which holds every neighbor of every carrier) needs to be scanned. They
+    // are marked in a bitset and visited in ascending id order -- the same
+    // order whether queuing is on or off -- in O(agents + N / 64), no sort.
+    const size_t nwords = (population.size() + 63u) / 64u;
+    if (push_visit.size() != nwords)
+        push_visit.assign(nwords, 0u);
+
     for (size_t s = 0u; s < ns; ++s)
         if (state_fun[s] && !push_pushable[s])
-            push_visit.insert(
-                push_visit.end(), state_members[s].begin(), state_members[s].end()
-            );
+            for (size_t id : state_members[s])
+                push_visit[id >> 6] |= (uint64_t(1) << (id & 63u));
 
-    std::sort(push_visit.begin(), push_visit.end());
-
-    for (size_t id : push_visit)
+    for (size_t w = 0u; w < nwords; ++w)
     {
 
-        // Queued agents only, read as the loop reaches them (a state function
-        // may change the queue by editing ties).
-        if (use_queuing && (queue[id] <= 0))
-            continue;
+        uint64_t word = push_visit[w];
+        push_visit[w] = 0u;
 
-        auto & p = population[id];
-        state_fun[p.state](&p, this);
+        while (word != 0u)
+        {
+
+            const size_t id = (w << 6) + epi_ctz64(word);
+            word &= (word - 1u);
+
+            // Queued agents only, read as the loop reaches them (a state
+            // function may change the queue by editing ties).
+            if (use_queuing && (queue[id] <= 0))
+                continue;
+
+            auto & p = population[id];
+            state_fun[p.state](&p, this);
+
+        }
 
     }
 

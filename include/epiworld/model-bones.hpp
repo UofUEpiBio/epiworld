@@ -193,6 +193,7 @@ protected:
     ///@{
     std::vector< std::vector< size_t > > state_members;
     std::vector< size_t > state_member_pos;
+    std::vector< unsigned int > agent_state;    ///< [agent] Copy of Agent::state, compact for scans
     std::vector< size_t > state_degree;
     std::vector< size_t > state_carriers;
     std::vector< size_t > state_carrier_degree;
@@ -213,7 +214,7 @@ protected:
     ///@{
     TransmissionMode transmission_mode = TransmissionMode::automatic;
     TransmissionMode transmission_mode_last = TransmissionMode::pull;
-    double transmission_kappa = 1.0;
+    double transmission_kappa = 0.25;
 
     struct PushTarget {
         size_t id;
@@ -228,7 +229,7 @@ protected:
     std::vector< char > push_source_ok;      ///< [state] Some pushable state accepts it as source
     std::vector< int >  push_slot;           ///< [agent] Index in push_targets, or -1
     std::vector< PushTarget > push_targets;
-    std::vector< size_t > push_visit;        ///< Agents to update after a push
+    std::vector< uint64_t > push_visit;      ///< [agent bit] To update after a push
 
     bool transmission_prepare();
     bool transmission_choose_push() const;
@@ -776,12 +777,16 @@ public:
      * ties are no more than `kappa` times the susceptibles' ties, and pulls
      * otherwise. The choice depends only on the model's state, never on the
      * queueing system, so turning queuing on or off leaves results unchanged.
+     * Because the queue already spares a pull the susceptibles with no
+     * infectious neighbor -- which the rule does not see -- the default
+     * `kappa` is 0.25 rather than 1 (tuned with
+     * `examples/20-transmission-benchmark`).
      *
      * Directed networks, and states with other update functions, always pull.
      * Set `"pull"` to reproduce the random streams of epiworld <= 0.15.
      *
      * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
-     * @param kappa Relative cost threshold used by `"auto"` (default 1).
+     * @param kappa Relative cost threshold used by `"auto"` (default 0.25).
      */
     ///@{
     Model<TSeq> & set_transmission_mode(TransmissionMode mode);

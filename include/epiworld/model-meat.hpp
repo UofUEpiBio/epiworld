@@ -189,6 +189,7 @@ inline void Model<TSeq>::state_index_build()
         m.clear();
 
     state_member_pos.resize(population.size());
+    agent_state.resize(population.size());
     state_degree.assign(ns, 0u);
     state_carriers.assign(ns, 0u);
     state_carrier_degree.assign(ns, 0u);
@@ -198,6 +199,7 @@ inline void Model<TSeq>::state_index_build()
 
         auto & members = state_members[p.state];
         state_member_pos[static_cast< size_t >(p.id)] = members.size();
+        agent_state[static_cast< size_t >(p.id)] = p.state;
         members.push_back(static_cast< size_t >(p.id));
 
         state_degree[p.state] += p.n_neighbors;
@@ -245,6 +247,7 @@ inline void Model<TSeq>::state_index_update(
         auto & to = state_members[state_new];
         state_member_pos[id] = to.size();
         to.push_back(id);
+        agent_state[id] = state_new;
 
         state_degree[state_old] -= deg;
         state_degree[state_new] += deg;
@@ -552,6 +555,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     contact_tracing_max_contacts(model.contact_tracing_max_contacts),
     state_members(model.state_members),
     state_member_pos(model.state_member_pos),
+    agent_state(model.agent_state),
     state_degree(model.state_degree),
     state_carriers(model.state_carriers),
     state_carrier_degree(model.state_carrier_degree),
@@ -645,6 +649,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     contact_tracing_max_contacts(model.contact_tracing_max_contacts),
     state_members(std::move(model.state_members)),
     state_member_pos(std::move(model.state_member_pos)),
+    agent_state(std::move(model.agent_state)),
     state_degree(std::move(model.state_degree)),
     state_carriers(std::move(model.state_carriers)),
     state_carrier_degree(std::move(model.state_carrier_degree)),
@@ -723,6 +728,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     state_members = m.state_members;
     state_member_pos = m.state_member_pos;
+    agent_state = m.agent_state;
     state_degree = m.state_degree;
     state_carriers = m.state_carriers;
     state_carrier_degree = m.state_carrier_degree;

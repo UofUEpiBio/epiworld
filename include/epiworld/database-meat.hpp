@@ -184,6 +184,8 @@ inline void DataBase<TSeq>::record()
             {
                 if (model->population[members[k]].get_state() != s)
                     throw std::logic_error("[epi-debug] DataBase::record state_members lists an agent in another state.");
+                if (model->agent_state[members[k]] != s)
+                    throw std::logic_error("[epi-debug] DataBase::record agent_state is out of step.");
                 if (model->state_member_pos[members[k]] != k)
                     throw std::logic_error("[epi-debug] DataBase::record state_member_pos is out of step.");
             }
