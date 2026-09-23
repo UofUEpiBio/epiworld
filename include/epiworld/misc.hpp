@@ -140,7 +140,10 @@ inline int roulette(
     {
         p_none *= (1.0 - probs[p]);
 
-        if (probs[p] > (1 - 1e-100))
+        // A probability of 1 is a certain event. (This used to test
+        // `> 1 - 1e-100`, which is `> 1` in floating point, so p == 1 fell
+        // through to 0/0 below and the last entry won regardless.)
+        if (probs[p] >= 1.0)
             certain_infection.push_back(p);
 
     }
@@ -222,7 +225,8 @@ inline int roulette(
     {
         p_none *= (1.0 - m->array_double_tmp[p]);
 
-        if (m->array_double_tmp[p] > (1 - 1e-100))
+        // A probability of 1 is a certain event (see the vector version).
+        if (m->array_double_tmp[p] >= 1.0)
             m->array_double_tmp[nelements + ncertain++] = p;
             // certain_infection.push_back(p);
 
