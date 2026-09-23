@@ -180,6 +180,61 @@ protected:
     size_t contact_tracing_max_contacts = EPI_MAX_TRACKING;
 
     /**
+     * @name Agents by state
+     *
+     * @details For each state, the ids of the agents in it (unordered; each
+     * agent's position is in `state_member_pos`), the sum of their degrees,
+     * how many of them carry a virus, and the sum of those carriers' degrees.
+     * Built in `reset()` and kept current in `events_run()` -- the only place
+     * where an agent's state or virus changes during a run -- and in
+     * `add_edge()`/`rm_edge()`. The degree sums let the transmission step
+     * compare the cost of pushing and pulling in O(number of states).
+     */
+    ///@{
+    std::vector< std::vector< size_t > > state_members;
+    std::vector< size_t > state_member_pos;
+    std::vector< size_t > state_degree;
+    std::vector< size_t > state_carriers;
+    std::vector< size_t > state_carrier_degree;
+    bool state_index_ready = false;
+
+    void state_index_build();
+    void state_index_update(Agent<TSeq> * p, unsigned int state_old, bool had_virus);
+    void state_index_degree(Agent<TSeq> & p, size_t n_neighbors_before);
+    ///@}
+
+    /**
+     * @name Network transmission
+     *
+     * @details See `set_transmission_mode()` and
+     * `model-meat-transmission.hpp`. The push scratch space is per model and
+     * is not copied: a copy sizes its own the first time it pushes.
+     */
+    ///@{
+    TransmissionMode transmission_mode = TransmissionMode::automatic;
+    TransmissionMode transmission_mode_last = TransmissionMode::pull;
+    double transmission_kappa = 1.0;
+
+    struct PushTarget {
+        size_t id;
+        double odds;                // Sum of p / (1 - p) over the contacts
+        unsigned int n_certain;     // Contacts with p >= 1
+        Virus<TSeq> * candidate;    // Infector's virus drawn so far
+    };
+
+    std::vector< char > push_pushable;       ///< [state] Uses the default susceptible sampler
+    std::vector< char > push_default;        ///< [state] ...and it is default_update_susceptible
+    std::vector< char > push_excluded;       ///< [target state * nstates + source state]
+    std::vector< char > push_source_ok;      ///< [state] Some pushable state accepts it as source
+    std::vector< int >  push_slot;           ///< [agent] Index in push_targets, or -1
+    std::vector< PushTarget > push_targets;
+
+    bool transmission_prepare();
+    bool transmission_choose_push() const;
+    void transmission_push();
+    ///@}
+
+    /**
      * @brief Variables used to keep track of the events
      * to be made regarding viruses.
      */
@@ -686,6 +741,54 @@ public:
     size_t get_n_states() const;
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
     void print_state_codes() const;
+    ///@}
+
+    /**
+     * @brief Ids of the agents currently in a state.
+     *
+     * @details The list is kept up to date as the model runs, so looking up
+     * who is in a state costs nothing (no scan of the population). The ids are
+     * in no particular order. The index is built when a run starts, so this is
+     * available once `run()` (or `run_multiple()`) has been called, and it
+     * reflects the model at its current step.
+     *
+     * @param state The state code.
+     * @return A reference to the ids; it is invalidated by the next step.
+     * @throws std::logic_error if the model has not been run yet (or its
+     * population changed since).
+     * @throws std::range_error if `state` is not a state of the model.
+     */
+    const std::vector< size_t > & get_agents_in_state(epiworld_fast_uint state) const;
+
+    /**
+     * @name Network transmission mode
+     *
+     * @details States whose update function is `default_update_susceptible`
+     * or `sampler::make_update_susceptible()` can be updated by pulling (each
+     * susceptible agent scans its neighbors) or by pushing (each agent with a
+     * virus adds its infection odds to its susceptible neighbors). Both give
+     * the same distribution of who gets infected, and by whom; only the random
+     * number stream differs. See `TransmissionMode`.
+     *
+     * With `"auto"` (the default) the model pushes whenever the carriers'
+     * ties are no more than `kappa` times the susceptibles' ties, and pulls
+     * otherwise. The choice depends only on the model's state, never on the
+     * queueing system, so turning queuing on or off leaves results unchanged.
+     *
+     * Directed networks, and states with other update functions, always pull.
+     * Set `"pull"` to reproduce the random streams of epiworld <= 0.15.
+     *
+     * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
+     * @param kappa Relative cost threshold used by `"auto"` (default 1).
+     */
+    ///@{
+    Model<TSeq> & set_transmission_mode(TransmissionMode mode);
+    Model<TSeq> & set_transmission_mode(std::string_view mode);
+    TransmissionMode get_transmission_mode() const;
+    /// The mode used in the most recent step (`push` or `pull`).
+    TransmissionMode get_last_transmission_mode() const;
+    Model<TSeq> & set_transmission_kappa(double kappa);
+    double get_transmission_kappa() const;
     ///@}
 
     /**

@@ -156,6 +156,49 @@ inline void DataBase<TSeq>::record()
         "Sums of __today_total_cp in database-meat.hpp"
         )
 
+    // The agents-by-state index must agree with the population
+    if (model->state_index_ready)
+    {
+
+        std::vector< size_t > _deg(model->nstates, 0u);
+        std::vector< size_t > _carriers(model->nstates, 0u);
+        std::vector< size_t > _carrier_deg(model->nstates, 0u);
+        for (auto & p : model->population)
+        {
+            _deg[p.get_state()] += p.get_n_neighbors();
+            if (p.get_virus() != nullptr)
+            {
+                _carriers[p.get_state()]++;
+                _carrier_deg[p.get_state()] += p.get_n_neighbors();
+            }
+        }
+
+        for (size_t s = 0u; s < model->nstates; ++s)
+        {
+
+            const auto & members = model->state_members[s];
+            if (static_cast< int >(members.size()) != today_total[s])
+                throw std::logic_error("[epi-debug] DataBase::record state_members size doesn't match today_total.");
+
+            for (size_t k = 0u; k < members.size(); ++k)
+            {
+                if (model->population[members[k]].get_state() != s)
+                    throw std::logic_error("[epi-debug] DataBase::record state_members lists an agent in another state.");
+                if (model->state_member_pos[members[k]] != k)
+                    throw std::logic_error("[epi-debug] DataBase::record state_member_pos is out of step.");
+            }
+
+            if (
+                (_deg[s] != model->state_degree[s]) ||
+                (_carriers[s] != model->state_carriers[s]) ||
+                (_carrier_deg[s] != model->state_carrier_degree[s])
+            )
+                throw std::logic_error("[epi-debug] DataBase::record state degree/carrier sums are out of step.");
+
+        }
+
+    }
+
     if (model->today() == 0)
     {
         if (hist_total_date.size() != 0)
