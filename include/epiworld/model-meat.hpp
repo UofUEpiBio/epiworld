@@ -213,6 +213,12 @@ inline void Model<TSeq>::state_index_build()
 
     state_index_ready = true;
 
+    // The push scratch space is sized (and cleared) on first use; a step that
+    // was interrupted by an exception must not leave marks for the next run.
+    push_slot.clear();
+    push_visit.clear();
+    push_targets.clear();
+
 }
 
 template<typename TSeq>
