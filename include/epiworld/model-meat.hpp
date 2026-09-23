@@ -1824,20 +1824,51 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
 template<typename TSeq>
 inline void Model<TSeq>::update_state() {
 
-    // Next state
+    // Susceptible states using the default sampler can be updated by pushing
+    // infection odds from the carriers (see model-meat-transmission.hpp) --
+    // same distribution, and cheaper while few agents carry a virus. Directed
+    // networks always pull: a tie there need not be visible from both ends.
+    const bool push =
+        transmission_prepare() && !directed && transmission_choose_push();
+
+    transmission_mode_last = push ?
+        TransmissionMode::push : TransmissionMode::pull;
+
+    if (push)
+        transmission_push();
+
+    // Everyone else runs their state's update function
+    auto visit = [this, push](Agent<TSeq> & p) -> void {
+
+        if (push && push_pushable[p.state])
+        {
+
+            // Pulling would refuse this agent, so pushing does too.
+            if (p.virus != nullptr)
+                throw std::logic_error(
+                    std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
+                    std::string("Agent id ") + std::to_string(p.get_id()) +
+                    std::string(" has a virus.")
+                    );
+
+            return;
+
+        }
+
+        if (state_fun[p.state])
+            state_fun[p.state](&p, this);
+
+    };
+
     if (use_queuing)
     {
 
         // Only queued agents, in ascending id order (the order fixes the
         // random number stream).
-        queue.for_each_nonzero([this](size_t i) -> void {
+        queue.for_each_nonzero([this, &visit](size_t i) -> void {
 
-            if (queue[i] <= 0)
-                return;
-
-            auto & p = population[i];
-            if (state_fun[p.state])
-                state_fun[p.state](&p, this);
+            if (queue[i] > 0)
+                visit(population[i]);
 
         });
 
@@ -1846,8 +1877,7 @@ inline void Model<TSeq>::update_state() {
     {
 
         for (auto & p: population)
-            if (state_fun[p.state])
-                    state_fun[p.state](&p, this);
+            visit(p);
 
     }
 
