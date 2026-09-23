@@ -217,6 +217,7 @@ inline void Model<TSeq>::state_index_build()
     // was interrupted by an exception must not leave marks for the next run.
     push_slot.clear();
     push_visit.clear();
+    push_sources.clear();
     push_targets.clear();
 
 }

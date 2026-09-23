@@ -27,6 +27,11 @@ using namespace epiworld;
 // B: the built-in ModelSEIR on the same graph.
 // C: a dense, high-prevalence SIR (mean degree 50), where pulling can be the
 //    cheaper step near the peak.
+// D: a measles-like SEIR (not in the defaults; meant for large populations):
+//    highly transmissible (0.3 per contact-day, R0 near the mean degree of
+//    10), 10-day latent period during which agents do not transmit, 8 days
+//    infectious, 10 initial cases. With 1,000,000 agents it infects about 2%
+//    by day 60, 30% by day 90, and nearly everyone by day 120 (--days).
 //
 // For each cell it prints the median (Q1, Q3) CPU milliseconds per run (CPU time
 // rather than wall time, so that other load on the machine does not count), the
@@ -289,6 +294,21 @@ int main(int argc, char ** argv)
                         "Benchmark pathogen",
                         100.0 / static_cast< double >(n),
                         beta, 4.0, recovery
+                    );
+                    model.seed(20260907);
+                    model.agents_smallworld(n, 10, false, 0.05);
+                    res = time_model(model, o, mode, 1u);
+                }
+                else if (scen == "D")
+                {
+                    epimodels::ModelSEIR<> model(
+                        "Measles-like pathogen",
+                        10.0 / static_cast< double >(n),
+                        0.3, 10.0, 1.0 / 8.0
+                    );
+                    // Latent (exposed) agents do not transmit
+                    model.set_state_function(
+                        0u, sampler::make_update_susceptible<>({1u})
                     );
                     model.seed(20260907);
                     model.agents_smallworld(n, 10, false, 0.05);

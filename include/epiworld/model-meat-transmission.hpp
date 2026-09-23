@@ -139,18 +139,43 @@ inline void Model<TSeq>::transmission_push()
     // Phase 1: every carrier that can transmit adds its odds to its eligible
     // neighbors. Nothing changes state until events_run(), so this sees the
     // model as it was at the start of the step, as pulling does.
+    //
+    // The carriers are visited in ascending id order (marked in a bitset, then
+    // walked), not in the index's order: networks are usually built with
+    // neighbors close in id, so this sweeps memory the way a pull does, and on
+    // large populations it saves most of the cache misses.
+    const size_t nwords = (population.size() + 63u) / 64u;
+    if (push_sources.size() != nwords)
+        push_sources.assign(nwords, 0u);
+
     for (size_t s = 0u; s < ns; ++s)
     {
 
         if (!push_source_ok[s] || (state_carriers[s] == 0u))
             continue;
 
-        for (size_t j_id : state_members[s])
+        for (size_t id : state_members[s])
+            push_sources[id >> 6] |= (uint64_t(1) << (id & 63u));
+
+    }
+
+    for (size_t w = 0u; w < nwords; ++w)
+    {
+
+        uint64_t word = push_sources[w];
+        push_sources[w] = 0u;
+
+        while (word != 0u)
         {
+
+            const size_t j_id = (w << 6) + epi_ctz64(word);
+            word &= (word - 1u);
 
             Agent<TSeq> & j = population[j_id];
             if ((j.virus == nullptr) || (j.n_neighbors == 0u))
                 continue;
+
+            const size_t s = agent_state[j_id];
 
             VirusPtr<TSeq> & v = j.virus;
 

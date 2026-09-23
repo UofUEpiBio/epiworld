@@ -230,6 +230,7 @@ protected:
     std::vector< int >  push_slot;           ///< [agent] Index in push_targets, or -1
     std::vector< PushTarget > push_targets;
     std::vector< uint64_t > push_visit;      ///< [agent bit] To update after a push
+    std::vector< uint64_t > push_sources;    ///< [agent bit] Carriers that push this step
 
     bool transmission_prepare();
     bool transmission_choose_push() const;
