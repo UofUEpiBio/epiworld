@@ -46,6 +46,27 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
 // class ToolPtr;
 
 /**
+ * @brief Read-only view of a contiguous run of agent ids.
+ *
+ * @details Returned by `Model::get_agents_in_state()`. It points into the
+ * model's index, so it is invalidated by the next step (or anything else that
+ * moves agents between states).
+ */
+class AgentIdsView {
+private:
+    const size_t * first = nullptr;
+    size_t n = 0u;
+public:
+    AgentIdsView() = default;
+    AgentIdsView(const size_t * first_, size_t n_) : first(first_), n(n_) {}
+    const size_t * begin() const { return first; }
+    const size_t * end() const { return first + n; }
+    size_t size() const { return n; }
+    bool empty() const { return n == 0u; }
+    size_t operator[](size_t i) const { return first[i]; }
+};
+
+/**
  * @brief Core class of epiworld.
  *
  * The model class provides the wrapper that puts together `Agent`, `Virus`, and
@@ -182,17 +203,26 @@ protected:
     /**
      * @name Agents by state
      *
-     * @details For each state, the ids of the agents in it (unordered; each
-     * agent's position is in `state_member_pos`), the sum of their degrees,
-     * how many of them carry a virus, and the sum of those carriers' degrees.
+     * @details All agent ids live in one array, `state_order`, grouped by
+     * state: the agents in state `s` are `state_order[state_start[s]]` up to
+     * (not including) `state_order[state_start[s + 1]]`, in no particular
+     * order, and `state_member_pos[i]` is where agent `i` sits. One contiguous
+     * block of N ids, whatever the number of states. Moving an agent from
+     * state `a` to state `b` walks it across the blocks in between, one swap
+     * per block boundary: O(|a - b|).
+     *
+     * Per state, the index also keeps the sum of the members' degrees, how
+     * many of them carry a virus, and the sum of those carriers' degrees.
+     *
      * Built in `reset()` and kept current in `events_run()` -- the only place
      * where an agent's state or virus changes during a run -- and in
      * `add_edge()`/`rm_edge()`. The degree sums let the transmission step
      * compare the cost of pushing and pulling in O(number of states).
      */
     ///@{
-    std::vector< std::vector< size_t > > state_members;
-    std::vector< size_t > state_member_pos;
+    std::vector< size_t > state_order;       ///< [N] Agent ids, grouped by state
+    std::vector< size_t > state_start;       ///< [nstates + 1] Where each state's block starts
+    std::vector< size_t > state_member_pos;  ///< [agent] Position in state_order
     std::vector< unsigned int > agent_state;    ///< [agent] Copy of Agent::state, compact for scans
     std::vector< size_t > state_degree;
     std::vector< size_t > state_carriers;
@@ -201,6 +231,8 @@ protected:
 
     void state_index_build();
     void state_index_update(Agent<TSeq> * p, unsigned int state_old, bool had_virus);
+    void state_index_move(size_t id, unsigned int state_old, unsigned int state_new);
+    AgentIdsView state_index_members(size_t state) const;
     void state_index_degree(Agent<TSeq> & p, size_t n_neighbors_before);
     ///@}
 
@@ -214,7 +246,7 @@ protected:
     ///@{
     TransmissionMode transmission_mode = TransmissionMode::automatic;
     TransmissionMode transmission_mode_last = TransmissionMode::pull;
-    double transmission_kappa = 0.25;
+    double transmission_kappa = EPI_DEFAULT_TRANSMISSION_KAPPA;
 
     struct PushTarget {
         size_t id;
@@ -757,12 +789,13 @@ public:
      * reflects the model at its current step.
      *
      * @param state The state code.
-     * @return A reference to the ids; it is invalidated by the next step.
+     * @return A view of the ids (iterable, with `size()` and `[]`); it is
+     * invalidated by the next step.
      * @throws std::logic_error if the model has not been run yet (or its
      * population changed since).
      * @throws std::range_error if `state` is not a state of the model.
      */
-    const std::vector< size_t > & get_agents_in_state(epiworld_fast_uint state) const;
+    AgentIdsView get_agents_in_state(epiworld_fast_uint state) const;
 
     /**
      * @name Network transmission mode
@@ -776,7 +809,7 @@ public:
      *
      * With `"auto"` (the default) the model pushes whenever the carriers'
      * ties are no more than `kappa` times the susceptibles' ties, and pulls
-     * otherwise. The choice depends only on the model's state, never on the
+     * otherwise; `kappa` only matters in this mode. The choice depends only on the model's state, never on the
      * queueing system, so turning queuing on or off leaves results unchanged.
      * Because the queue already spares a pull the susceptibles with no
      * infectious neighbor -- which the rule does not see -- the default
@@ -787,15 +820,24 @@ public:
      * Set `"pull"` to reproduce the random streams of epiworld <= 0.15.
      *
      * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
-     * @param kappa Relative cost threshold used by `"auto"` (default 0.25).
+     * @param kappa Relative cost threshold used by `"auto"`: a finite,
+     * non-negative number (default `EPI_DEFAULT_TRANSMISSION_KAPPA`, 0.25).
+     * @throws std::invalid_argument for an unknown mode.
+     * @throws std::range_error for a negative or infinite `kappa`.
      */
     ///@{
-    Model<TSeq> & set_transmission_mode(TransmissionMode mode);
-    Model<TSeq> & set_transmission_mode(std::string_view mode);
+    Model<TSeq> & set_transmission_mode(
+        TransmissionMode mode,
+        double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
+    );
+    Model<TSeq> & set_transmission_mode(
+        std::string_view mode,
+        double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
+    );
     TransmissionMode get_transmission_mode() const;
     /// The mode used in the most recent step (`push` or `pull`).
     TransmissionMode get_last_transmission_mode() const;
-    Model<TSeq> & set_transmission_kappa(double kappa);
+    /// The threshold used by `"auto"`.
     double get_transmission_kappa() const;
     ///@}
 

@@ -183,24 +183,32 @@ inline void Model<TSeq>::state_index_build()
 {
 
     const size_t ns = static_cast< size_t >(nstates);
+    const size_t n  = population.size();
 
-    state_members.resize(ns);
-    for (auto & m : state_members)
-        m.clear();
+    // Counting sort of the agents by state
+    state_start.assign(ns + 1u, 0u);
+    for (auto & p : population)
+        state_start[p.state + 1u]++;
 
-    state_member_pos.resize(population.size());
-    agent_state.resize(population.size());
+    for (size_t s = 0u; s < ns; ++s)
+        state_start[s + 1u] += state_start[s];
+
+    state_order.resize(n);
+    state_member_pos.resize(n);
+    agent_state.resize(n);
     state_degree.assign(ns, 0u);
     state_carriers.assign(ns, 0u);
     state_carrier_degree.assign(ns, 0u);
 
+    std::vector< size_t > next(state_start.begin(), state_start.end() - 1);
     for (auto & p : population)
     {
 
-        auto & members = state_members[p.state];
-        state_member_pos[static_cast< size_t >(p.id)] = members.size();
-        agent_state[static_cast< size_t >(p.id)] = p.state;
-        members.push_back(static_cast< size_t >(p.id));
+        const size_t id = static_cast< size_t >(p.id);
+        const size_t pos = next[p.state]++;
+        state_order[pos] = id;
+        state_member_pos[id] = pos;
+        agent_state[id] = p.state;
 
         state_degree[p.state] += p.n_neighbors;
         if (p.virus != nullptr)
@@ -223,6 +231,68 @@ inline void Model<TSeq>::state_index_build()
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::state_index_move(
+    size_t id,
+    unsigned int state_old,
+    unsigned int state_new
+)
+{
+
+    // Swaps the entries at positions `a` and `b` of state_order
+    auto swap_pos = [this](size_t a, size_t b) -> void {
+        size_t ida = state_order[a];
+        size_t idb = state_order[b];
+        state_order[a] = idb;
+        state_order[b] = ida;
+        state_member_pos[idb] = a;
+        state_member_pos[ida] = b;
+    };
+
+    size_t pos = state_member_pos[id];
+
+    if (state_old < state_new)
+    {
+
+        // Move to the end of each block and shift that block's end down, so
+        // the agent becomes the first of the next block.
+        for (unsigned int s = state_old; s < state_new; ++s)
+        {
+            size_t last = state_start[s + 1u] - 1u;
+            swap_pos(pos, last);
+            state_start[s + 1u]--;
+            pos = last;
+        }
+
+    }
+    else
+    {
+
+        // Mirror: move to the front of the block and shift its start up, so
+        // the agent becomes the last of the previous block.
+        for (unsigned int s = state_old; s > state_new; --s)
+        {
+            size_t first = state_start[s];
+            swap_pos(pos, first);
+            state_start[s]++;
+            pos = first;
+        }
+
+    }
+
+    agent_state[id] = state_new;
+
+}
+
+template<typename TSeq>
+inline AgentIdsView Model<TSeq>::state_index_members(size_t state) const
+{
+    const size_t from = state_start[state];
+    return AgentIdsView(
+        state_order.data() + from, state_start[state + 1u] - from
+    );
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::state_index_update(
     Agent<TSeq> * p,
     unsigned int state_old,
@@ -242,19 +312,7 @@ inline void Model<TSeq>::state_index_update(
     if (state_new != state_old)
     {
 
-        // Swap-remove from the old state...
-        auto & from = state_members[state_old];
-        size_t pos  = state_member_pos[id];
-        size_t last = from.back();
-        from[pos] = last;
-        state_member_pos[last] = pos;
-        from.pop_back();
-
-        // ... and append to the new one
-        auto & to = state_members[state_new];
-        state_member_pos[id] = to.size();
-        to.push_back(id);
-        agent_state[id] = state_new;
+        state_index_move(id, state_old, state_new);
 
         state_degree[state_old] -= deg;
         state_degree[state_new] += deg;
@@ -295,7 +353,7 @@ inline void Model<TSeq>::state_index_degree(
 }
 
 template<typename TSeq>
-inline const std::vector< size_t > & Model<TSeq>::get_agents_in_state(
+inline AgentIdsView Model<TSeq>::get_agents_in_state(
     epiworld_fast_uint state
 ) const
 {
@@ -312,7 +370,7 @@ inline const std::vector< size_t > & Model<TSeq>::get_agents_in_state(
             "The model currently has " + std::to_string(nstates) + " states."
         );
 
-    return state_members[state];
+    return state_index_members(state);
 
 }
 
@@ -560,7 +618,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     ),
     use_contact_tracing(model.use_contact_tracing),
     contact_tracing_max_contacts(model.contact_tracing_max_contacts),
-    state_members(model.state_members),
+    state_order(model.state_order),
+    state_start(model.state_start),
     state_member_pos(model.state_member_pos),
     agent_state(model.agent_state),
     state_degree(model.state_degree),
@@ -654,7 +713,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     contact_tracing(std::move(model.contact_tracing)),
     use_contact_tracing(model.use_contact_tracing),
     contact_tracing_max_contacts(model.contact_tracing_max_contacts),
-    state_members(std::move(model.state_members)),
+    state_order(std::move(model.state_order)),
+    state_start(std::move(model.state_start)),
     state_member_pos(std::move(model.state_member_pos)),
     agent_state(std::move(model.agent_state)),
     state_degree(std::move(model.state_degree)),
@@ -733,7 +793,8 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     use_contact_tracing = m.use_contact_tracing;
     contact_tracing_max_contacts = m.contact_tracing_max_contacts;
 
-    state_members = m.state_members;
+    state_order = m.state_order;
+    state_start = m.state_start;
     state_member_pos = m.state_member_pos;
     agent_state = m.agent_state;
     state_degree = m.state_degree;

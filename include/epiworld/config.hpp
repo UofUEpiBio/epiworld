@@ -165,6 +165,14 @@ enum class TransmissionMode : uint8_t {
 #define EPIWORLD_HAS_TRANSMISSION_MODE
 
 /**
+ * @brief Default threshold of the `"auto"` transmission mode.
+ * @details See `Model::set_transmission_mode()`.
+ */
+#ifndef EPI_DEFAULT_TRANSMISSION_KAPPA
+    #define EPI_DEFAULT_TRANSMISSION_KAPPA 0.25
+#endif
+
+/**
  * @brief Decides how to distribute viruses at initialization
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>

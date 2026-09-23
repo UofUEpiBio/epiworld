@@ -195,9 +195,10 @@ static Result time_model(
     Result res;
 
     #ifdef EPIWORLD_HAS_TRANSMISSION_MODE
-    model.set_transmission_mode(mode);
     if (o.kappa >= 0.0)
-        model.set_transmission_kappa(o.kappa);
+        model.set_transmission_mode(mode, o.kappa);
+    else
+        model.set_transmission_mode(mode);
     int * n_push = &res.n_push;
     int * n_pull = &res.n_pull;
     model.add_globalevent(

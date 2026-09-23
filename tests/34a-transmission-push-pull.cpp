@@ -14,6 +14,17 @@ using namespace epiworld;
 // probability after the tools of both agents. Carriers in an excluded state
 // never transmit, and contacts with p = 1 make infection certain, the infector
 // drawn uniformly among them.
+//
+// Why a star: the formula above is about one susceptible agent exposed to
+// several infectious contacts at once -- the case where push and pull differ
+// in how they get there (one draw over all contacts vs. odds added one contact
+// at a time plus a reservoir sample). The star isolates exactly that: its
+// centre is the only susceptible, and every leaf is a source with a known
+// probability, so each run is one draw with a closed-form answer. In a ring
+// every susceptible has at most two contacts, which barely exercises the
+// reservoir, and outcomes spread along the ring, so there is no closed form to
+// check against. Whole networks (small-world rings with rewiring) are covered
+// in 34b, against each other rather than a formula.
 
 namespace {
 

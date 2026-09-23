@@ -265,7 +265,11 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         m.set_transmission_mode(TransmissionMode::pull);
         REQUIRE(m.get_transmission_mode() == TransmissionMode::pull);
         REQUIRE_THROWS_AS(m.set_transmission_mode("sideways"), std::invalid_argument);
-        REQUIRE_THROWS_AS(m.set_transmission_kappa(-1.0), std::range_error);
+        REQUIRE_THROWS_AS(m.set_transmission_mode("auto", -1.0), std::range_error);
+        m.set_transmission_mode("auto", 0.5);
+        REQUIRE(m.get_transmission_kappa() == 0.5);
+        m.set_transmission_mode(TransmissionMode::pull);
+        REQUIRE(m.get_transmission_kappa() == EPI_DEFAULT_TRANSMISSION_KAPPA);
 
         // Copies keep the mode (run_multiple runs copies on other threads)
         Model<> copy(m);

@@ -154,7 +154,7 @@ inline void Model<TSeq>::transmission_push()
         if (!push_source_ok[s] || (state_carriers[s] == 0u))
             continue;
 
-        for (size_t id : state_members[s])
+        for (size_t id : state_index_members(s))
             push_sources[id >> 6] |= (uint64_t(1) << (id & 63u));
 
     }
@@ -305,7 +305,7 @@ inline void Model<TSeq>::transmission_update_others()
         if (!push_pushable[s] || (state_carriers[s] == 0u))
             continue;
 
-        for (size_t id : state_members[s])
+        for (size_t id : state_index_members(s))
         {
 
             const auto & p = population[id];
@@ -331,7 +331,7 @@ inline void Model<TSeq>::transmission_update_others()
 
     for (size_t s = 0u; s < ns; ++s)
         if (state_fun[s] && !push_pushable[s])
-            for (size_t id : state_members[s])
+            for (size_t id : state_index_members(s))
                 push_visit[id >> 6] |= (uint64_t(1) << (id & 63u));
 
     for (size_t w = 0u; w < nwords; ++w)
@@ -361,29 +361,41 @@ inline void Model<TSeq>::transmission_update_others()
 }
 
 template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_transmission_mode(TransmissionMode mode)
+inline Model<TSeq> & Model<TSeq>::set_transmission_mode(
+    TransmissionMode mode,
+    double kappa
+)
 {
+
+    if (!(kappa >= 0.0) || std::isinf(kappa))
+        throw std::range_error(
+            "The transmission kappa must be a finite, non-negative number."
+        );
+
     transmission_mode = mode;
+    transmission_kappa = kappa;
     return *this;
+
 }
 
 template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_transmission_mode(std::string_view mode)
+inline Model<TSeq> & Model<TSeq>::set_transmission_mode(
+    std::string_view mode,
+    double kappa
+)
 {
 
     if (mode == "auto")
-        transmission_mode = TransmissionMode::automatic;
+        return set_transmission_mode(TransmissionMode::automatic, kappa);
     else if (mode == "push")
-        transmission_mode = TransmissionMode::push;
+        return set_transmission_mode(TransmissionMode::push, kappa);
     else if (mode == "pull")
-        transmission_mode = TransmissionMode::pull;
-    else
-        throw std::invalid_argument(
-            "Unknown transmission mode \"" + std::string(mode) +
-            "\". Use \"auto\", \"push\", or \"pull\"."
-        );
+        return set_transmission_mode(TransmissionMode::pull, kappa);
 
-    return *this;
+    throw std::invalid_argument(
+        "Unknown transmission mode \"" + std::string(mode) +
+        "\". Use \"auto\", \"push\", or \"pull\"."
+    );
 
 }
 
@@ -397,20 +409,6 @@ template<typename TSeq>
 inline TransmissionMode Model<TSeq>::get_last_transmission_mode() const
 {
     return transmission_mode_last;
-}
-
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_transmission_kappa(double kappa)
-{
-
-    if (!(kappa >= 0.0) || std::isinf(kappa))
-        throw std::range_error(
-            "The transmission kappa must be a finite, non-negative number."
-        );
-
-    transmission_kappa = kappa;
-    return *this;
-
 }
 
 template<typename TSeq>

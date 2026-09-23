@@ -113,7 +113,7 @@ and pulls otherwise. This takes $O(\text{number of states})$ time per step.
 
 The rule deliberately ignores the queue. The decision, and therefore the random stream, is the same with queuing on or off, so queuing remains a pure optimization: a run with it on and a run with it off give identical results in every mode.
 
-The queue does make pulling cheaper than the right-hand side suggests, because a queued pull skips the susceptibles with no infectious neighbor. That is why $\kappa$ defaults to 0.25 rather than 1 (`set_transmission_kappa()`). With cachegrind on the benchmark below, 0.25 keeps the full gain where pushing wins (the epiworld-benchmark model pushes at every step) without pushing through the peak of large outbreaks, where the queued pull is cheaper.
+The queue does make pulling cheaper than the right-hand side suggests, because a queued pull skips the susceptibles with no infectious neighbor. That is why $\kappa$ defaults to 0.25 rather than 1; it can be set with the mode, e.g. `set_transmission_mode("auto", 0.5)`. With cachegrind on the benchmark below, 0.25 keeps the full gain where pushing wins (the epiworld-benchmark model pushes at every step) without pushing through the peak of large outbreaks, where the queued pull is cheaper.
 
 ## Scope
 

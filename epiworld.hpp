@@ -232,6 +232,14 @@ enum class TransmissionMode : uint8_t {
 #define EPIWORLD_HAS_TRANSMISSION_MODE
 
 /**
+ * @brief Default threshold of the `"auto"` transmission mode.
+ * @details See `Model::set_transmission_mode()`.
+ */
+#ifndef EPI_DEFAULT_TRANSMISSION_KAPPA
+    #define EPI_DEFAULT_TRANSMISSION_KAPPA 0.25
+#endif
+
+/**
  * @brief Decides how to distribute viruses at initialization
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
@@ -1311,9 +1319,15 @@ inline std::map< std::string, T > read_yaml(std::string fn)
 /**
  * @brief Index of the lowest set bit of a non-zero 64-bit word.
  *
- * @details C++17 has no `std::countr_zero`. GCC and Clang get the builtin;
- * other compilers use a de Bruijn multiply, which needs no platform header.
- * `x` must not be zero.
+ * @details Used to walk bitsets of agents (the queue's queued agents, the
+ * carriers that push, the agents to update after a push) in ascending id
+ * order: take the lowest set bit, visit that agent, clear the bit, repeat. It
+ * costs one instruction per agent visited, and a whole word of 64 absent
+ * agents is skipped at once.
+ *
+ * C++17 has no `std::countr_zero` (that is C++20). GCC and Clang get the
+ * builtin; other compilers use a de Bruijn multiply, which needs no platform
+ * header. `x` must not be zero.
  */
 inline unsigned int epi_ctz64(uint64_t x)
 {
@@ -4753,7 +4767,14 @@ inline void DataBase<TSeq>::record()
         "Sums of __today_total_cp in database-meat.hpp"
         )
 
-    // The agents-by-state index must agree with the population
+    // EPI_DEBUG only: the model's agents-by-state index (see
+    // Model::get_agents_in_state()) is maintained incrementally, event by
+    // event, so check it against the population once per step, next to the
+    // same check for today_total above. Each state's block must hold exactly
+    // the agents in that state, each agent's recorded position must be right,
+    // and the degree and carrier sums used by the transmission step must match
+    // a recount. A drift here would silently bias which agents push, or which
+    // mode "auto" picks.
     if (model->state_index_ready)
     {
 
@@ -4773,17 +4794,17 @@ inline void DataBase<TSeq>::record()
         for (size_t s = 0u; s < model->nstates; ++s)
         {
 
-            const auto & members = model->state_members[s];
+            const auto members = model->state_index_members(s);
             if (static_cast< int >(members.size()) != today_total[s])
-                throw std::logic_error("[epi-debug] DataBase::record state_members size doesn't match today_total.");
+                throw std::logic_error("[epi-debug] DataBase::record state index size doesn't match today_total.");
 
             for (size_t k = 0u; k < members.size(); ++k)
             {
                 if (model->population[members[k]].get_state() != s)
-                    throw std::logic_error("[epi-debug] DataBase::record state_members lists an agent in another state.");
+                    throw std::logic_error("[epi-debug] DataBase::record state index lists an agent in another state.");
                 if (model->agent_state[members[k]] != s)
                     throw std::logic_error("[epi-debug] DataBase::record agent_state is out of step.");
-                if (model->state_member_pos[members[k]] != k)
+                if (model->state_member_pos[members[k]] != model->state_start[s] + k)
                     throw std::logic_error("[epi-debug] DataBase::record state_member_pos is out of step.");
             }
 
@@ -8430,6 +8451,12 @@ inline void Queue<TSeq>::shift(size_t id, epiworld_fast_int n)
     epiworld_fast_int before = active[id];
     active[id] += n;
 
+    // The agent enters or leaves the queue only when its count crosses zero.
+    // Then the count of queued agents changes, and so does the agent's bit in
+    // `bits`: word id / 64 (id >> 6), bit id % 64 (id & 63). Setting and
+    // clearing that bit here is what keeps `for_each_nonzero()` -- the ordered
+    // walk over queued agents that replaces scanning the whole population --
+    // in step with the counts.
     if ((before == 0) && (active[id] != 0))
     {
         n_in_queue++;
@@ -10356,6 +10383,27 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
 // class ToolPtr;
 
 /**
+ * @brief Read-only view of a contiguous run of agent ids.
+ *
+ * @details Returned by `Model::get_agents_in_state()`. It points into the
+ * model's index, so it is invalidated by the next step (or anything else that
+ * moves agents between states).
+ */
+class AgentIdsView {
+private:
+    const size_t * first = nullptr;
+    size_t n = 0u;
+public:
+    AgentIdsView() = default;
+    AgentIdsView(const size_t * first_, size_t n_) : first(first_), n(n_) {}
+    const size_t * begin() const { return first; }
+    const size_t * end() const { return first + n; }
+    size_t size() const { return n; }
+    bool empty() const { return n == 0u; }
+    size_t operator[](size_t i) const { return first[i]; }
+};
+
+/**
  * @brief Core class of epiworld.
  *
  * The model class provides the wrapper that puts together `Agent`, `Virus`, and
@@ -10492,17 +10540,26 @@ protected:
     /**
      * @name Agents by state
      *
-     * @details For each state, the ids of the agents in it (unordered; each
-     * agent's position is in `state_member_pos`), the sum of their degrees,
-     * how many of them carry a virus, and the sum of those carriers' degrees.
+     * @details All agent ids live in one array, `state_order`, grouped by
+     * state: the agents in state `s` are `state_order[state_start[s]]` up to
+     * (not including) `state_order[state_start[s + 1]]`, in no particular
+     * order, and `state_member_pos[i]` is where agent `i` sits. One contiguous
+     * block of N ids, whatever the number of states. Moving an agent from
+     * state `a` to state `b` walks it across the blocks in between, one swap
+     * per block boundary: O(|a - b|).
+     *
+     * Per state, the index also keeps the sum of the members' degrees, how
+     * many of them carry a virus, and the sum of those carriers' degrees.
+     *
      * Built in `reset()` and kept current in `events_run()` -- the only place
      * where an agent's state or virus changes during a run -- and in
      * `add_edge()`/`rm_edge()`. The degree sums let the transmission step
      * compare the cost of pushing and pulling in O(number of states).
      */
     ///@{
-    std::vector< std::vector< size_t > > state_members;
-    std::vector< size_t > state_member_pos;
+    std::vector< size_t > state_order;       ///< [N] Agent ids, grouped by state
+    std::vector< size_t > state_start;       ///< [nstates + 1] Where each state's block starts
+    std::vector< size_t > state_member_pos;  ///< [agent] Position in state_order
     std::vector< unsigned int > agent_state;    ///< [agent] Copy of Agent::state, compact for scans
     std::vector< size_t > state_degree;
     std::vector< size_t > state_carriers;
@@ -10511,6 +10568,8 @@ protected:
 
     void state_index_build();
     void state_index_update(Agent<TSeq> * p, unsigned int state_old, bool had_virus);
+    void state_index_move(size_t id, unsigned int state_old, unsigned int state_new);
+    AgentIdsView state_index_members(size_t state) const;
     void state_index_degree(Agent<TSeq> & p, size_t n_neighbors_before);
     ///@}
 
@@ -10524,7 +10583,7 @@ protected:
     ///@{
     TransmissionMode transmission_mode = TransmissionMode::automatic;
     TransmissionMode transmission_mode_last = TransmissionMode::pull;
-    double transmission_kappa = 0.25;
+    double transmission_kappa = EPI_DEFAULT_TRANSMISSION_KAPPA;
 
     struct PushTarget {
         size_t id;
@@ -11067,12 +11126,13 @@ public:
      * reflects the model at its current step.
      *
      * @param state The state code.
-     * @return A reference to the ids; it is invalidated by the next step.
+     * @return A view of the ids (iterable, with `size()` and `[]`); it is
+     * invalidated by the next step.
      * @throws std::logic_error if the model has not been run yet (or its
      * population changed since).
      * @throws std::range_error if `state` is not a state of the model.
      */
-    const std::vector< size_t > & get_agents_in_state(epiworld_fast_uint state) const;
+    AgentIdsView get_agents_in_state(epiworld_fast_uint state) const;
 
     /**
      * @name Network transmission mode
@@ -11086,7 +11146,7 @@ public:
      *
      * With `"auto"` (the default) the model pushes whenever the carriers'
      * ties are no more than `kappa` times the susceptibles' ties, and pulls
-     * otherwise. The choice depends only on the model's state, never on the
+     * otherwise; `kappa` only matters in this mode. The choice depends only on the model's state, never on the
      * queueing system, so turning queuing on or off leaves results unchanged.
      * Because the queue already spares a pull the susceptibles with no
      * infectious neighbor -- which the rule does not see -- the default
@@ -11097,15 +11157,24 @@ public:
      * Set `"pull"` to reproduce the random streams of epiworld <= 0.15.
      *
      * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
-     * @param kappa Relative cost threshold used by `"auto"` (default 0.25).
+     * @param kappa Relative cost threshold used by `"auto"`: a finite,
+     * non-negative number (default `EPI_DEFAULT_TRANSMISSION_KAPPA`, 0.25).
+     * @throws std::invalid_argument for an unknown mode.
+     * @throws std::range_error for a negative or infinite `kappa`.
      */
     ///@{
-    Model<TSeq> & set_transmission_mode(TransmissionMode mode);
-    Model<TSeq> & set_transmission_mode(std::string_view mode);
+    Model<TSeq> & set_transmission_mode(
+        TransmissionMode mode,
+        double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
+    );
+    Model<TSeq> & set_transmission_mode(
+        std::string_view mode,
+        double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
+    );
     TransmissionMode get_transmission_mode() const;
     /// The mode used in the most recent step (`push` or `pull`).
     TransmissionMode get_last_transmission_mode() const;
-    Model<TSeq> & set_transmission_kappa(double kappa);
+    /// The threshold used by `"auto"`.
     double get_transmission_kappa() const;
     ///@}
 
@@ -11869,24 +11938,32 @@ inline void Model<TSeq>::state_index_build()
 {
 
     const size_t ns = static_cast< size_t >(nstates);
+    const size_t n  = population.size();
 
-    state_members.resize(ns);
-    for (auto & m : state_members)
-        m.clear();
+    // Counting sort of the agents by state
+    state_start.assign(ns + 1u, 0u);
+    for (auto & p : population)
+        state_start[p.state + 1u]++;
 
-    state_member_pos.resize(population.size());
-    agent_state.resize(population.size());
+    for (size_t s = 0u; s < ns; ++s)
+        state_start[s + 1u] += state_start[s];
+
+    state_order.resize(n);
+    state_member_pos.resize(n);
+    agent_state.resize(n);
     state_degree.assign(ns, 0u);
     state_carriers.assign(ns, 0u);
     state_carrier_degree.assign(ns, 0u);
 
+    std::vector< size_t > next(state_start.begin(), state_start.end() - 1);
     for (auto & p : population)
     {
 
-        auto & members = state_members[p.state];
-        state_member_pos[static_cast< size_t >(p.id)] = members.size();
-        agent_state[static_cast< size_t >(p.id)] = p.state;
-        members.push_back(static_cast< size_t >(p.id));
+        const size_t id = static_cast< size_t >(p.id);
+        const size_t pos = next[p.state]++;
+        state_order[pos] = id;
+        state_member_pos[id] = pos;
+        agent_state[id] = p.state;
 
         state_degree[p.state] += p.n_neighbors;
         if (p.virus != nullptr)
@@ -11909,6 +11986,68 @@ inline void Model<TSeq>::state_index_build()
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::state_index_move(
+    size_t id,
+    unsigned int state_old,
+    unsigned int state_new
+)
+{
+
+    // Swaps the entries at positions `a` and `b` of state_order
+    auto swap_pos = [this](size_t a, size_t b) -> void {
+        size_t ida = state_order[a];
+        size_t idb = state_order[b];
+        state_order[a] = idb;
+        state_order[b] = ida;
+        state_member_pos[idb] = a;
+        state_member_pos[ida] = b;
+    };
+
+    size_t pos = state_member_pos[id];
+
+    if (state_old < state_new)
+    {
+
+        // Move to the end of each block and shift that block's end down, so
+        // the agent becomes the first of the next block.
+        for (unsigned int s = state_old; s < state_new; ++s)
+        {
+            size_t last = state_start[s + 1u] - 1u;
+            swap_pos(pos, last);
+            state_start[s + 1u]--;
+            pos = last;
+        }
+
+    }
+    else
+    {
+
+        // Mirror: move to the front of the block and shift its start up, so
+        // the agent becomes the last of the previous block.
+        for (unsigned int s = state_old; s > state_new; --s)
+        {
+            size_t first = state_start[s];
+            swap_pos(pos, first);
+            state_start[s]++;
+            pos = first;
+        }
+
+    }
+
+    agent_state[id] = state_new;
+
+}
+
+template<typename TSeq>
+inline AgentIdsView Model<TSeq>::state_index_members(size_t state) const
+{
+    const size_t from = state_start[state];
+    return AgentIdsView(
+        state_order.data() + from, state_start[state + 1u] - from
+    );
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::state_index_update(
     Agent<TSeq> * p,
     unsigned int state_old,
@@ -11928,19 +12067,7 @@ inline void Model<TSeq>::state_index_update(
     if (state_new != state_old)
     {
 
-        // Swap-remove from the old state...
-        auto & from = state_members[state_old];
-        size_t pos  = state_member_pos[id];
-        size_t last = from.back();
-        from[pos] = last;
-        state_member_pos[last] = pos;
-        from.pop_back();
-
-        // ... and append to the new one
-        auto & to = state_members[state_new];
-        state_member_pos[id] = to.size();
-        to.push_back(id);
-        agent_state[id] = state_new;
+        state_index_move(id, state_old, state_new);
 
         state_degree[state_old] -= deg;
         state_degree[state_new] += deg;
@@ -11981,7 +12108,7 @@ inline void Model<TSeq>::state_index_degree(
 }
 
 template<typename TSeq>
-inline const std::vector< size_t > & Model<TSeq>::get_agents_in_state(
+inline AgentIdsView Model<TSeq>::get_agents_in_state(
     epiworld_fast_uint state
 ) const
 {
@@ -11998,7 +12125,7 @@ inline const std::vector< size_t > & Model<TSeq>::get_agents_in_state(
             "The model currently has " + std::to_string(nstates) + " states."
         );
 
-    return state_members[state];
+    return state_index_members(state);
 
 }
 
@@ -12246,7 +12373,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     ),
     use_contact_tracing(model.use_contact_tracing),
     contact_tracing_max_contacts(model.contact_tracing_max_contacts),
-    state_members(model.state_members),
+    state_order(model.state_order),
+    state_start(model.state_start),
     state_member_pos(model.state_member_pos),
     agent_state(model.agent_state),
     state_degree(model.state_degree),
@@ -12340,7 +12468,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     contact_tracing(std::move(model.contact_tracing)),
     use_contact_tracing(model.use_contact_tracing),
     contact_tracing_max_contacts(model.contact_tracing_max_contacts),
-    state_members(std::move(model.state_members)),
+    state_order(std::move(model.state_order)),
+    state_start(std::move(model.state_start)),
     state_member_pos(std::move(model.state_member_pos)),
     agent_state(std::move(model.agent_state)),
     state_degree(std::move(model.state_degree)),
@@ -12419,7 +12548,8 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     use_contact_tracing = m.use_contact_tracing;
     contact_tracing_max_contacts = m.contact_tracing_max_contacts;
 
-    state_members = m.state_members;
+    state_order = m.state_order;
+    state_start = m.state_start;
     state_member_pos = m.state_member_pos;
     agent_state = m.agent_state;
     state_degree = m.state_degree;
@@ -19808,7 +19938,7 @@ inline void Model<TSeq>::transmission_push()
         if (!push_source_ok[s] || (state_carriers[s] == 0u))
             continue;
 
-        for (size_t id : state_members[s])
+        for (size_t id : state_index_members(s))
             push_sources[id >> 6] |= (uint64_t(1) << (id & 63u));
 
     }
@@ -19959,7 +20089,7 @@ inline void Model<TSeq>::transmission_update_others()
         if (!push_pushable[s] || (state_carriers[s] == 0u))
             continue;
 
-        for (size_t id : state_members[s])
+        for (size_t id : state_index_members(s))
         {
 
             const auto & p = population[id];
@@ -19985,7 +20115,7 @@ inline void Model<TSeq>::transmission_update_others()
 
     for (size_t s = 0u; s < ns; ++s)
         if (state_fun[s] && !push_pushable[s])
-            for (size_t id : state_members[s])
+            for (size_t id : state_index_members(s))
                 push_visit[id >> 6] |= (uint64_t(1) << (id & 63u));
 
     for (size_t w = 0u; w < nwords; ++w)
@@ -20015,29 +20145,41 @@ inline void Model<TSeq>::transmission_update_others()
 }
 
 template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_transmission_mode(TransmissionMode mode)
+inline Model<TSeq> & Model<TSeq>::set_transmission_mode(
+    TransmissionMode mode,
+    double kappa
+)
 {
+
+    if (!(kappa >= 0.0) || std::isinf(kappa))
+        throw std::range_error(
+            "The transmission kappa must be a finite, non-negative number."
+        );
+
     transmission_mode = mode;
+    transmission_kappa = kappa;
     return *this;
+
 }
 
 template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_transmission_mode(std::string_view mode)
+inline Model<TSeq> & Model<TSeq>::set_transmission_mode(
+    std::string_view mode,
+    double kappa
+)
 {
 
     if (mode == "auto")
-        transmission_mode = TransmissionMode::automatic;
+        return set_transmission_mode(TransmissionMode::automatic, kappa);
     else if (mode == "push")
-        transmission_mode = TransmissionMode::push;
+        return set_transmission_mode(TransmissionMode::push, kappa);
     else if (mode == "pull")
-        transmission_mode = TransmissionMode::pull;
-    else
-        throw std::invalid_argument(
-            "Unknown transmission mode \"" + std::string(mode) +
-            "\". Use \"auto\", \"push\", or \"pull\"."
-        );
+        return set_transmission_mode(TransmissionMode::pull, kappa);
 
-    return *this;
+    throw std::invalid_argument(
+        "Unknown transmission mode \"" + std::string(mode) +
+        "\". Use \"auto\", \"push\", or \"pull\"."
+    );
 
 }
 
@@ -20051,20 +20193,6 @@ template<typename TSeq>
 inline TransmissionMode Model<TSeq>::get_last_transmission_mode() const
 {
     return transmission_mode_last;
-}
-
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_transmission_kappa(double kappa)
-{
-
-    if (!(kappa >= 0.0) || std::isinf(kappa))
-        throw std::range_error(
-            "The transmission kappa must be a finite, non-negative number."
-        );
-
-    transmission_kappa = kappa;
-    return *this;
-
 }
 
 template<typename TSeq>

@@ -136,6 +136,12 @@ inline void Queue<TSeq>::shift(size_t id, epiworld_fast_int n)
     epiworld_fast_int before = active[id];
     active[id] += n;
 
+    // The agent enters or leaves the queue only when its count crosses zero.
+    // Then the count of queued agents changes, and so does the agent's bit in
+    // `bits`: word id / 64 (id >> 6), bit id % 64 (id & 63). Setting and
+    // clearing that bit here is what keeps `for_each_nonzero()` -- the ordered
+    // walk over queued agents that replaces scanning the whole population --
+    // in step with the counts.
     if ((before == 0) && (active[id] != 0))
     {
         n_in_queue++;

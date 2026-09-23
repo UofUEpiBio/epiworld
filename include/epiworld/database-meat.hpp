@@ -156,7 +156,14 @@ inline void DataBase<TSeq>::record()
         "Sums of __today_total_cp in database-meat.hpp"
         )
 
-    // The agents-by-state index must agree with the population
+    // EPI_DEBUG only: the model's agents-by-state index (see
+    // Model::get_agents_in_state()) is maintained incrementally, event by
+    // event, so check it against the population once per step, next to the
+    // same check for today_total above. Each state's block must hold exactly
+    // the agents in that state, each agent's recorded position must be right,
+    // and the degree and carrier sums used by the transmission step must match
+    // a recount. A drift here would silently bias which agents push, or which
+    // mode "auto" picks.
     if (model->state_index_ready)
     {
 
@@ -176,17 +183,17 @@ inline void DataBase<TSeq>::record()
         for (size_t s = 0u; s < model->nstates; ++s)
         {
 
-            const auto & members = model->state_members[s];
+            const auto members = model->state_index_members(s);
             if (static_cast< int >(members.size()) != today_total[s])
-                throw std::logic_error("[epi-debug] DataBase::record state_members size doesn't match today_total.");
+                throw std::logic_error("[epi-debug] DataBase::record state index size doesn't match today_total.");
 
             for (size_t k = 0u; k < members.size(); ++k)
             {
                 if (model->population[members[k]].get_state() != s)
-                    throw std::logic_error("[epi-debug] DataBase::record state_members lists an agent in another state.");
+                    throw std::logic_error("[epi-debug] DataBase::record state index lists an agent in another state.");
                 if (model->agent_state[members[k]] != s)
                     throw std::logic_error("[epi-debug] DataBase::record agent_state is out of step.");
-                if (model->state_member_pos[members[k]] != k)
+                if (model->state_member_pos[members[k]] != model->state_start[s] + k)
                     throw std::logic_error("[epi-debug] DataBase::record state_member_pos is out of step.");
             }
 

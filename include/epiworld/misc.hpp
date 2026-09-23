@@ -356,9 +356,15 @@ inline std::map< std::string, T > read_yaml(std::string fn)
 /**
  * @brief Index of the lowest set bit of a non-zero 64-bit word.
  *
- * @details C++17 has no `std::countr_zero`. GCC and Clang get the builtin;
- * other compilers use a de Bruijn multiply, which needs no platform header.
- * `x` must not be zero.
+ * @details Used to walk bitsets of agents (the queue's queued agents, the
+ * carriers that push, the agents to update after a push) in ascending id
+ * order: take the lowest set bit, visit that agent, clear the bit, repeat. It
+ * costs one instruction per agent visited, and a whole word of 64 absent
+ * agents is skipped at once.
+ *
+ * C++17 has no `std::countr_zero` (that is C++20). GCC and Clang get the
+ * builtin; other compilers use a de Bruijn multiply, which needs no platform
+ * header. `x` must not be zero.
  */
 inline unsigned int epi_ctz64(uint64_t x)
 {
