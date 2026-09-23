@@ -38,6 +38,10 @@ inline bool Model<TSeq>::transmission_prepare()
     push_source_ok.assign(ns, 0);
 
     bool any = false;
+
+    // Recognizing the samplers needs std::function::target(), i.e., RTTI.
+    // Without it, every state keeps pulling.
+    #if defined(__cpp_rtti) || defined(__GXX_RTTI) || defined(_CPPRTTI)
     for (size_t t = 0u; t < ns; ++t)
     {
 
@@ -77,6 +81,7 @@ inline bool Model<TSeq>::transmission_prepare()
         }
 
     }
+    #endif
 
     // A state can be a source if some pushable state takes infections from it
     for (size_t t = 0u; t < ns; ++t)
