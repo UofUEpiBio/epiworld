@@ -349,6 +349,28 @@ inline std::map< std::string, T > read_yaml(std::string fn)
     #endif
 #endif
 
+/**
+ * @brief Index of the lowest set bit of a non-zero 64-bit word.
+ *
+ * @details C++17 has no `std::countr_zero`. GCC and Clang get the builtin;
+ * other compilers use a de Bruijn multiply, which needs no platform header.
+ * `x` must not be zero.
+ */
+inline unsigned int epi_ctz64(uint64_t x)
+{
+#if defined(__GNUC__) || defined(__clang__)
+    return static_cast< unsigned int >(__builtin_ctzll(x));
+#else
+    static const unsigned int table[64] = {
+         0,  1, 48,  2, 57, 49, 28,  3, 61, 58, 50, 42, 38, 29, 17,  4,
+        62, 55, 59, 36, 53, 51, 43, 22, 45, 39, 33, 30, 24, 18, 12,  5,
+        63, 47, 56, 27, 60, 41, 37, 16, 54, 35, 52, 21, 44, 32, 23, 11,
+        46, 26, 40, 15, 34, 20, 31, 10, 25, 14, 19,  9, 13,  8,  7,  6
+    };
+    return table[((x & (~x + 1u)) * 0x03f79d71b4cb0a89ull) >> 58];
+#endif
+}
+
 template<class To, class TSeq>
 inline To* model_cast(Model<TSeq>* m) {
 #ifdef EPI_DEBUG

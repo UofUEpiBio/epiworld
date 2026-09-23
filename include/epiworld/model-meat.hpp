@@ -187,29 +187,36 @@ inline void Model<TSeq>::events_run()
     {
 
         Event<TSeq> & a = events[nevents_tmp++];
-        Agent<TSeq> * p  = a.agent;
+
+        // Everything read from the event after the handler runs is copied
+        // first: a handler can schedule more events (e.g., a virus's
+        // post-recovery hook adding a tool), which may grow `events` and leave
+        // `a` dangling.
+        Agent<TSeq> * p = a.agent;
+        const epiworld_fast_int new_state = a.new_state;
+        const epiworld_fast_int queue_change = a.queue;
 
         #ifdef EPI_DEBUG
-        if (a.new_state >= static_cast<epiworld_fast_int>(nstates))
+        if (new_state >= static_cast<epiworld_fast_int>(nstates))
         {
             throw std::range_error(
-                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
+                "The proposed state " + std::to_string(new_state) + " is out of range. " +
                 "The model currently has " + std::to_string(nstates - 1) + " states.");
 
         }
-        else if ((a.new_state != -99) && (a.new_state < 0))
+        else if ((new_state != -99) && (new_state < 0))
         {
             throw std::range_error(
-                "The proposed state " + std::to_string(a.new_state) + " is out of range. " +
+                "The proposed state " + std::to_string(new_state) + " is out of range. " +
                 "The state cannot be negative.");
         }
         #endif
 
         // Undoing the change in the transition matrix
         if (
-            (a.new_state != -99) &&
+            (new_state != -99) &&
             (p->state_last_changed == today()) &&
-            (static_cast<int>(p->state) != a.new_state)
+            (static_cast<int>(p->state) != new_state)
         )
         {
             // Undoing state change in the transition matrix
@@ -246,8 +253,8 @@ inline void Model<TSeq>::events_run()
             throw std::logic_error("The requested event action is not supported.");
         }
 
-        if (a.new_state != -99)
-            p->state = a.new_state;
+        if (new_state != -99)
+            p->state = new_state;
 
         // Registering that the last change was today
         p->state_last_changed = today();
@@ -261,18 +268,18 @@ inline void Model<TSeq>::events_run()
         #endif
 
         // Updating queue
-        if (use_queuing && a.queue != -99)
+        if (use_queuing && queue_change != -99)
         {
 
-            if (a.queue == Queue<TSeq>::Everyone)
+            if (queue_change == Queue<TSeq>::Everyone)
                 queue += p;
-            else if (a.queue == -Queue<TSeq>::Everyone)
+            else if (queue_change == -Queue<TSeq>::Everyone)
                 queue -= p;
-            else if (a.queue == Queue<TSeq>::OnlySelf)
-                queue[p->get_id()]++;
-            else if (a.queue == -Queue<TSeq>::OnlySelf)
-                queue[p->get_id()]--;
-            else if (a.queue != Queue<TSeq>::NoOne)
+            else if (queue_change == Queue<TSeq>::OnlySelf)
+                queue.shift(static_cast< size_t >(p->get_id()), 1);
+            else if (queue_change == -Queue<TSeq>::OnlySelf)
+                queue.shift(static_cast< size_t >(p->get_id()), -1);
+            else if (queue_change != Queue<TSeq>::NoOne)
                 throw std::logic_error(
                     "The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}."
                     );
@@ -1643,13 +1650,19 @@ inline void Model<TSeq>::update_state() {
     // Next state
     if (use_queuing)
     {
-        int i = -1;
-        for (auto & p: population)
-            if (queue[++i] > 0)
-            {
-                if (state_fun[p.state])
-                    state_fun[p.state](&p, this);
-            }
+
+        // Only queued agents, in ascending id order (the order fixes the
+        // random number stream).
+        queue.for_each_nonzero([this](size_t i) -> void {
+
+            if (queue[i] <= 0)
+                return;
+
+            auto & p = population[i];
+            if (state_fun[p.state])
+                state_fun[p.state](&p, this);
+
+        });
 
     }
     else
@@ -1680,17 +1693,13 @@ inline void Model<TSeq>::mutate_virus() {
     if (use_queuing)
     {
 
-        int i = -1;
-        for (auto & p: population)
-        {
+        queue.for_each_nonzero([this](size_t i) -> void {
 
-            if (queue[++i] == 0)
-                continue;
-
+            auto & p = population[i];
             if (p.virus != nullptr)
                 p.virus->mutate(this);
 
-        }
+        });
 
     }
     else

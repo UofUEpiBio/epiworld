@@ -41,10 +41,20 @@ private:
      */
     std::vector< epiworld_fast_int > everyone;
 
+    /**
+     * @brief One bit per agent: bit `i` is set iff `active[i] != 0`.
+     *
+     * @details This is what lets `Model::update_state()` visit only the agents
+     * in the queue, in ascending id order, without scanning the whole
+     * population: it walks the set bits (see `for_each_nonzero`). Every change
+     * to `active` goes through `shift()`, which keeps the two in step.
+     */
+    std::vector< uint64_t > bits;
+
     Model<TSeq> * model = nullptr;
     int n_in_queue = 0;
 
-    /// @brief Adds `n` to `active[id]`, keeping `n_in_queue` in step.
+    /// @brief Adds `n` to `active[id]`, keeping `n_in_queue` and `bits` in step.
     void shift(size_t id, epiworld_fast_int n);
 
     /// @brief Whether the counters have been sized to cover these two agents.
@@ -59,7 +69,28 @@ public:
 
     void operator+=(Agent<TSeq> * p);
     void operator-=(Agent<TSeq> * p);
-    epiworld_fast_int & operator[](epiworld_fast_uint i);
+
+    /**
+     * @brief How many registrations cover agent `i` (itself or a neighbor).
+     *
+     * @details Read-only: the count must only change through `+=`, `-=` and
+     * the edge notifications, which keep the ordered set of queued agents in
+     * step with it.
+     */
+    epiworld_fast_int operator[](epiworld_fast_uint i) const;
+
+    /**
+     * @brief Calls `f(i)` for every agent with a non-zero count, in ascending
+     * id order.
+     *
+     * @details Costs O(N / 64 + number of queued agents), instead of a scan of
+     * the whole population. The count of an agent is read when the walk
+     * reaches it, so if `f` changes the queue (e.g., a state function that
+     * adds a tie), agents further ahead see the change -- exactly what a plain
+     * `for (i = 0; i < N; ++i) if (queue[i] ...)` loop would do.
+     */
+    template< typename F >
+    void for_each_nonzero(F && f);
 
     /**
      * @name Keep the queue in step with a change to the contact network
@@ -106,9 +137,15 @@ inline void Queue<TSeq>::shift(size_t id, epiworld_fast_int n)
     active[id] += n;
 
     if ((before == 0) && (active[id] != 0))
+    {
         n_in_queue++;
+        bits[id >> 6] |= (uint64_t(1) << (id & 63u));
+    }
     else if ((before != 0) && (active[id] == 0))
+    {
         n_in_queue--;
+        bits[id >> 6] &= ~(uint64_t(1) << (id & 63u));
+    }
 
 }
 
@@ -118,19 +155,13 @@ inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 
     everyone[p->id]++;
 
-    if (++active[p->id] == 1)
-        n_in_queue++;
+    shift(static_cast< size_t >(p->id), 1);
 
     if (p->get_n_neighbors() == 0u)
         return; // No neighbors, no need to add them
 
     for (auto n : (*p->neighbors))
-    {
-
-        if (++active[n] == 1)
-            n_in_queue++;
-
-    }
+        shift(n, 1);
 
 }
 
@@ -140,17 +171,13 @@ inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 
     everyone[p->id]--;
 
-    if (--active[p->id] == 0)
-        n_in_queue--;
+    shift(static_cast< size_t >(p->id), -1);
 
     if (p->get_n_neighbors() == 0u)
         return; // No neighbors, no need to add them
 
     for (auto n : (*p->neighbors))
-    {
-        if (--active[n] == 0)
-            n_in_queue--;
-    }
+        shift(n, -1);
 
 }
 
@@ -192,30 +219,48 @@ inline void Queue<TSeq>::notify_edge_removed(Agent<TSeq> * a, Agent<TSeq> * b)
 }
 
 template<typename TSeq>
-inline epiworld_fast_int & Queue<TSeq>::operator[](epiworld_fast_uint i)
+inline epiworld_fast_int Queue<TSeq>::operator[](epiworld_fast_uint i) const
 {
     return active[i];
+}
+
+template<typename TSeq>
+template< typename F >
+inline void Queue<TSeq>::for_each_nonzero(F && f)
+{
+
+    const size_t nwords = bits.size();
+    for (size_t w = 0u; w < nwords; ++w)
+    {
+
+        uint64_t word = bits[w];
+        while (word != 0u)
+        {
+
+            unsigned int b = epi_ctz64(word);
+            f((w << 6) + b);
+
+            // Re-read the word: `f` may have queued or dequeued agents ahead
+            // of this one. Only the bits above `b` are still to be visited.
+            word = (b == 63u) ? 0u : (bits[w] & (~uint64_t(0) << (b + 1u)));
+
+        }
+
+    }
+
 }
 
 template<typename TSeq>
 inline void Queue<TSeq>::reset()
 {
 
-    if (n_in_queue)
-    {
-
-        for (auto & q : this->active)
-            q = 0;
-
-        n_in_queue = 0;
-        
-    }
-
-    for (auto & e : this->everyone)
-        e = 0;
-
-    active.resize(model->size(), 0);
-    everyone.resize(model->size(), 0);
+    // Cleared unconditionally: counts that never went through `shift()` (or
+    // that went negative) would otherwise survive into the next run.
+    size_t n = model->size();
+    active.assign(n, 0);
+    everyone.assign(n, 0);
+    bits.assign((n + 63u) / 64u, 0u);
+    n_in_queue = 0;
 
 }
 
