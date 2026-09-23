@@ -17,6 +17,8 @@ Due to the structure of the library internally, and where parallel execution can
 ## Benchmarking Methodologies
 As of current, epiworld does not include a dedicated benchmarking suite. The examples included in the repository—such as `helloworld.cpp` and `readme.cpp`—serve as informal benchmarks, reporting elapsed time and throughput at the end of each simulation. These provide a consistent way to monitor performance across versions and environments. While there is a `benchmarks/` directory, this is as of yet unpopulated.
 
+The example [`20-transmission-benchmark`](../examples/20-transmission-benchmark.md) times the network transmission step: it runs the SEIRH model of the [epiworld-benchmark](https://github.com/UofUEpiBio/epiworld-benchmark) study and two other network models in each transmission mode, and it compiles against older releases too, so versions can be compared side by side (see [Push and Pull Transmission](transmission-sampling.md)).
+
 Until a formal benchmarking system is implemented, users can measure performance externally using tools such as `/usr/bin/time`, `perf`, or custom C++ timing utilities based on `std::chrono`. Running example models with controlled parameters and fixed random seeds allows fair comparisons between compiler flags, thread counts, and machine configurations.
 
 Future benchmarking work will likely include a standardized set of models run under controlled conditions, with timing, memory use, and scaling data automatically collected. This would make it easier to track performance regressions and validate the efficiency of OpenMP parallel execution across releases.
@@ -25,4 +27,5 @@ Future benchmarking work will likely include a standardized set of models run un
 
 - [Library Architecture](library-architecture.md) — overview of the modular, template-based design that enables many of these optimizations.
 - [Queueing System](queueing-system.md) — the selective activation mechanism that reduces per-step computation.
+- [Push and Pull Transmission](transmission-sampling.md) — sampling transmission from the infectious agents when that is cheaper.
 - [Reproducibility and `run_multiple`](reproducibility-and-run-multiple.md) — OpenMP-based parallel execution of multiple simulation runs.
