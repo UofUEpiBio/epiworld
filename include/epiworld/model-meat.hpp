@@ -1835,40 +1835,28 @@ inline void Model<TSeq>::update_state() {
         TransmissionMode::push : TransmissionMode::pull;
 
     if (push)
+    {
+
+        // Susceptibles were handled by the push; only the agents in the other
+        // states with an update function are left (see
+        // transmission_update_others()).
         transmission_push();
+        transmission_update_others();
 
-    // Everyone else runs their state's update function
-    auto visit = [this, push](Agent<TSeq> & p) -> void {
-
-        if (push && push_pushable[p.state])
-        {
-
-            // Pulling would refuse this agent, so pushing does too.
-            if (p.virus != nullptr)
-                throw std::logic_error(
-                    std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
-                    std::string("Agent id ") + std::to_string(p.get_id()) +
-                    std::string(" has a virus.")
-                    );
-
-            return;
-
-        }
-
-        if (state_fun[p.state])
-            state_fun[p.state](&p, this);
-
-    };
-
-    if (use_queuing)
+    }
+    else if (use_queuing)
     {
 
         // Only queued agents, in ascending id order (the order fixes the
         // random number stream).
-        queue.for_each_nonzero([this, &visit](size_t i) -> void {
+        queue.for_each_nonzero([this](size_t i) -> void {
 
-            if (queue[i] > 0)
-                visit(population[i]);
+            if (queue[i] <= 0)
+                return;
+
+            auto & p = population[i];
+            if (state_fun[p.state])
+                state_fun[p.state](&p, this);
 
         });
 
@@ -1877,7 +1865,8 @@ inline void Model<TSeq>::update_state() {
     {
 
         for (auto & p: population)
-            visit(p);
+            if (state_fun[p.state])
+                state_fun[p.state](&p, this);
 
     }
 

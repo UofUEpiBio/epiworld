@@ -257,6 +257,63 @@ inline void Model<TSeq>::transmission_push()
 }
 
 template<typename TSeq>
+inline void Model<TSeq>::transmission_update_others()
+{
+
+    const size_t ns = static_cast< size_t >(nstates);
+
+    // Pulling refuses an agent in a susceptible state that carries a virus;
+    // so does pushing, for the agents a pull would have visited.
+    for (size_t s = 0u; s < ns; ++s)
+    {
+
+        if (!push_pushable[s] || (state_carriers[s] == 0u))
+            continue;
+
+        for (size_t id : state_members[s])
+        {
+
+            const auto & p = population[id];
+            if ((p.virus != nullptr) && (!use_queuing || (queue[id] > 0)))
+                throw std::logic_error(
+                    std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
+                    std::string("Agent id ") + std::to_string(p.get_id()) +
+                    std::string(" has a virus.")
+                    );
+
+        }
+
+    }
+
+    // Everyone in a state with an update function, other than the pushed ones.
+    // The index gives them directly, so neither the population nor the queue
+    // (which holds every neighbor of every carrier) needs to be scanned. Sorted
+    // so the visiting order is ascending id, whether queuing is on or off.
+    push_visit.clear();
+    for (size_t s = 0u; s < ns; ++s)
+        if (state_fun[s] && !push_pushable[s])
+            push_visit.insert(
+                push_visit.end(), state_members[s].begin(), state_members[s].end()
+            );
+
+    std::sort(push_visit.begin(), push_visit.end());
+
+    for (size_t id : push_visit)
+    {
+
+        // Queued agents only, read as the loop reaches them (a state function
+        // may change the queue by editing ties).
+        if (use_queuing && (queue[id] <= 0))
+            continue;
+
+        auto & p = population[id];
+        state_fun[p.state](&p, this);
+
+    }
+
+}
+
+template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::set_transmission_mode(TransmissionMode mode)
 {
     transmission_mode = mode;

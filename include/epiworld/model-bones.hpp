@@ -228,10 +228,12 @@ protected:
     std::vector< char > push_source_ok;      ///< [state] Some pushable state accepts it as source
     std::vector< int >  push_slot;           ///< [agent] Index in push_targets, or -1
     std::vector< PushTarget > push_targets;
+    std::vector< size_t > push_visit;        ///< Agents to update after a push
 
     bool transmission_prepare();
     bool transmission_choose_push() const;
     void transmission_push();
+    void transmission_update_others();
     ///@}
 
     /**
