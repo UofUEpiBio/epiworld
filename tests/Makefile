@@ -22,6 +22,7 @@ $(NAME)_SOURCES := \
 	09-distribute-tools-and-viruses.cpp \
 	09b-distribute-randomly-to-set.cpp \
 	09c-distribute-to-set-scaling.cpp \
+	09d-distribute-uniform.cpp \
 	10-generation-interval.cpp \
 	11-random-numbers.cpp \
 	12-diagrams.cpp \

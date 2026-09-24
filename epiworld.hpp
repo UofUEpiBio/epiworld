@@ -15294,11 +15294,9 @@ inline VirusToAgentFun<TSeq> distribute_virus_randomly(
         for (int i = 0; i < n_to_sample; ++i)
         {
 
+            // runif_index(n) is in [0, n); the decrement leaves n_available
+            // at the last slot, which is swapped out below
             int loc = model->runif_index(n_available--);
-
-            // Correcting for possible overflow
-            if ((n_available > 0) && (loc >= n_available))
-                loc = n_available - 1;
 
             Agent<TSeq> & agent = population[idx[loc]];
             
@@ -15393,11 +15391,9 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
             std::vector< size_t > idx = agents_ids;
             for (size_t i = 0u; i < n_to_distribute; ++i)
             {
+                // runif_index(n) is in [0, n); n-- leaves n at the last slot
                 size_t loc = model->runif_index(n--);
 
-                if ((n > 0) && (loc >= n))
-                    loc = n - 1;
-                
                 population[idx[loc]].set_virus(
                     *model, virus
                     );
@@ -16460,11 +16456,9 @@ inline ToolToAgentFun<TSeq> distribute_tool_randomly(
             auto & population = model->get_agents();
             for (int i = 0u; i < n_to_distribute; ++i)
             {
+                // runif_index(n) is in [0, n); n-- leaves n at the last slot
                 int loc = model->runif_index(n--);
 
-                if ((n > 0) && (loc >= n))
-                    loc = n - 1;
-                
                 population[idx[loc]].add_tool(
                     *model, tool
                     );
@@ -16554,11 +16548,9 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
             std::vector< size_t > idx = agent_ids;
             for (size_t i = 0u; i < n_to_distribute; ++i)
             {
+                // runif_index(n) is in [0, n); n-- leaves n at the last slot
                 size_t loc = model->runif_index(n--);
 
-                if ((n > 0) && (loc >= n))
-                    loc = n - 1;
-                
                 population[idx[loc]].add_tool(
                     *model, tool
                     );
@@ -17389,11 +17381,9 @@ inline EntityToAgentFun<TSeq> distribute_entity_randomly(
         int n_left = n;
         for (int i = 0; i < n_to_sample; ++i)
         {
+            // runif_index(n) is in [0, n); the decrement leaves n_left at
+            // the last slot, which is swapped out below
             int loc = m->runif_index(n_left--);
-
-            // Correcting for possible overflow
-            if ((n_left > 0) && (loc > n_left))
-                loc = n_left - 1;
 
             m->get_agent(idx[loc]).add_entity(*m, e);
 
