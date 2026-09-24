@@ -2074,6 +2074,11 @@ inline epiworld_double Model<TSeq>::get_rewire_prop() const {
 }
 
 template<typename TSeq>
+inline bool Model<TSeq>::has_rewire_fun() const {
+    return static_cast< bool >(rewire_fun);
+}
+
+template<typename TSeq>
 inline void Model<TSeq>::rewire() {
 
     if (rewire_fun)
@@ -2665,6 +2670,12 @@ inline void Model<TSeq>::rm_globalevent(
 
     globalevents.erase(globalevents.begin() + index);
 
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_n_globalevents() const
+{
+    return globalevents.size();
 }
 
 template<typename TSeq>
