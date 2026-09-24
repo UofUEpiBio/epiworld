@@ -702,6 +702,9 @@ public:
     void set_rewire_fun(std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
     void set_rewire_prop(epiworld_double prop);
     epiworld_double get_rewire_prop() const;
+    /// @brief Whether a rewiring function is set. `rewire()` calls it on every
+    /// step, whatever the proportion.
+    bool has_rewire_fun() const;
     void rewire();
     ///@}
 
@@ -964,6 +967,7 @@ public:
     GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
     GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
     bool has_globalevent(std::string_view name) const; ///< Whether a global action by that name exists
+    size_t get_n_globalevents() const; ///< Number of global actions registered
 
     void rm_globalevent(std::string name); ///< Remove a global action by name
     void rm_globalevent(size_t i); ///< Remove a global action by index
