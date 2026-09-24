@@ -64,6 +64,10 @@ In this example:
 
 The queue only decides *which* agents are updated. How susceptible agents acquire a virus -- by pulling from their neighbors or by having their infectious neighbors push to them -- is covered in [Push and Pull Transmission](transmission-sampling.md). That choice never depends on the queue, so a run gives the same results with queuing on or off.
 
+### Directed networks
+
+A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `i` is exposed to `j`. The queue marks the neighbors of an agent that becomes infectious, and in a directed network those are the agents it is exposed to. The agents it can infect are the ones that list *it*, which the queue never sees. So in a directed network, `Model::update_state()` updates every agent at each step, as if queuing were off. The results are the same either way.
+
 ## See Also
 
 - [Library Architecture](library-architecture.md) — overview of the `Model` class that the `Queue` integrates with.

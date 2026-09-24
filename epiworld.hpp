@@ -6888,7 +6888,7 @@ class AdjList {
 private:
 
     std::vector<std::map<int, int>> dat;
-    bool directed;
+    bool directed = false;
     epiworld_fast_uint N = 0;
     epiworld_fast_uint E = 0;
 
@@ -7347,14 +7347,14 @@ inline void rewire_degseq(
         // After swap: p0 will be connected to neighbor_id_11, p1 to neighbor_id_01
         bool would_create_duplicate = false;
         for (auto* n : neighbors_p0) {
-            if (n->get_id() == neighbor_id_11 && n != neighbors_p0[id01]) {
+            if (static_cast<size_t>(n->get_id()) == neighbor_id_11 && n != neighbors_p0[id01]) {
                 would_create_duplicate = true;
                 break;
             }
         }
         if (!would_create_duplicate) {
             for (auto* n : neighbors_p1) {
-                if (n->get_id() == neighbor_id_01 && n != neighbors_p1[id11]) {
+                if (static_cast<size_t>(n->get_id()) == neighbor_id_01 && n != neighbors_p1[id11]) {
                     would_create_duplicate = true;
                     break;
                 }
@@ -9505,9 +9505,24 @@ protected:
     void erase_neighbor_at(size_t pos);
 
     /**
+     * @brief Appends `neighbor_id` to this agent's neighbors, and only there.
+     *
+     * @details One end of a tie -- all that a directed tie has, since it is
+     * kept by its source (see `Model::is_directed()`). Not public, for the same
+     * reason as `add_neighbor()`.
+     *
+     * @param check Whether to skip `neighbor_id` if it is already a neighbor.
+     * @return `true` if it was appended.
+     */
+    bool append_neighbor(size_t neighbor_id, bool check);
+
+    /**
      * @name Change this agent's ties
      *
-     * @details These are deliberately not public. They edit the network and
+     * @details These edit both ends of the tie (`p` among this agent's
+     * neighbors, and this agent among `p`'s), i.e., an undirected tie.
+     *
+     * They are deliberately not public. They edit the network and
      * nothing else, so calling one while a model is running would leave the
      * queueing system counting neighbors that no longer exist (or missing ones
      * that now do), and agents would drop out of `Model::update_state()`
@@ -10697,6 +10712,8 @@ public:
      * @details `backup` can be used to restore the entire object
      * after a run. This can be useful if the user wishes to have
      * individuals start with the same network from the beginning.
+     * Building a new network (`agents_from_edgelist()` and friends, or
+     * `agents_empty_graph()`) drops the backup.
      *
      */
     ///@{
@@ -10847,11 +10864,27 @@ public:
     /**
      * @name Accessing population of the model
      *
+     * @details In a directed network (`directed = true`), a tie
+     * `source -> target` is kept by its source only: `target` is one of
+     * `source`'s neighbors, but not the other way around. An undirected tie is
+     * kept at both ends. Update functions look at an agent's own neighbors (a
+     * susceptible agent catches a virus from them), so the tie exposes the
+     * source to the target. The target can infect the source, but not the
+     * reverse. To have `i` infect `j`, give the tie as `j -> i`.
+     *
+     * A directed network always pulls (see `set_transmission_mode()`), and each
+     * step updates every agent, as with `queuing_off()`. The queue flags the
+     * neighbors of an agent that becomes infectious, and along a directed tie
+     * those are not the agents it can infect. `write_edgelist()` returns the
+     * ties as given, and `add_edge()`/`rm_edge()` refuse to edit a directed
+     * network.
+     *
      * @param fn std::string Filename of the edgelist file.
      * @param skip int Number of lines to skip in `fn`.
      * @param directed bool Whether the graph is directed or not.
      * @param size Size of the network.
-     * @param al AdjList to read into the model.
+     * @param al AdjList to read into the model. The network is directed if
+     * `al` is.
      */
     ///@{
     void agents_from_adjlist(
@@ -10870,7 +10903,7 @@ public:
 
     void agents_from_adjlist(AdjList al);
 
-    bool is_directed() const;
+    bool is_directed() const; ///< Whether the network was built directed.
 
     std::vector< Agent<TSeq> > & get_agents(); ///< Returns a reference to the vector of agents.
 
@@ -10893,6 +10926,7 @@ public:
         bool d = false,
         epiworld_double p = .01
         );
+    /// Replaces the network with `n` agents and no ties (undirected).
     void agents_empty_graph(epiworld_fast_uint n = 1000);
 
     /**
@@ -10926,7 +10960,8 @@ public:
     bool add_edge(size_t i, size_t j);
 
     bool rm_edge(size_t i, size_t j);  ///< @return `true` if a tie was removed.
-    bool has_edge(size_t i, size_t j) const; ///< Whether `i` and `j` are tied.
+    /// Whether `i` and `j` are tied. In a directed network, whether `i -> j` is.
+    bool has_edge(size_t i, size_t j) const;
     ///@}
 
     /**
@@ -11006,9 +11041,10 @@ public:
     /**
      * @name Rewire the network preserving the degree sequence.
      *
-     * @details This implementation assumes an undirected network,
-     * thus if {(i,j), (k,l)} -> {(i,l), (k,j)}, the reciprocal
-     * is also true, i.e., {(j,i), (l,k)} -> {(j,k), (l,i)}.
+     * @details In an undirected network, if {(i,j), (k,l)} -> {(i,l), (k,j)},
+     * the reciprocal is also true, i.e., {(j,i), (l,k)} -> {(j,k), (l,i)}. In a
+     * directed network only the sources' ties move, which keeps every agent's
+     * in- and out-degree.
      *
      * @param proportion Proportion of ties to be rewired.
      *
@@ -12712,6 +12748,12 @@ inline void Model<TSeq>::agents_empty_graph(
     population.resize(n);
     state_index_ready = false;
 
+    // A new network: undirected until agents_from_adjlist() says otherwise, and
+    // without the backup of the old agents (see set_backup()), which reset()
+    // would restore at the next run -- old ties, stored for the old direction.
+    directed = false;
+    population_backup.clear();
+
     // Filling the model and ids
     size_t i = 0u;
     for (auto & p : population)
@@ -13148,6 +13190,9 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
     // Resizing the people
     agents_empty_graph(al.vcount());
 
+    // AdjList::is_directed() throws on a list with no vertices.
+    directed = (al.vcount() > 0u) && al.is_directed();
+
     const auto & tmpdat = al.get_dat();
 
     for (size_t i = 0u; i < tmpdat.size(); ++i)
@@ -13158,10 +13203,17 @@ inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
         for (const auto & link: tmpdat[i])
         {
 
-            population[i].add_neighbor(
-                population[link.first],
-                true, true
-                );
+            // A directed tie i -> j is kept by its source only: j is one of
+            // i's neighbors, but i is not one of j's (see is_directed()).
+            if (directed)
+                population[i].append_neighbor(
+                    static_cast< size_t >(link.first), true
+                    );
+            else
+                population[i].add_neighbor(
+                    population[link.first],
+                    true, true
+                    );
 
         }
 
@@ -13656,7 +13708,8 @@ inline void Model<TSeq>::update_state() {
     // Susceptible states using the default sampler can be updated by pushing
     // infection odds from the carriers (see model-meat-transmission.hpp) --
     // same distribution, and cheaper while few agents carry a virus. Directed
-    // networks always pull: a tie there need not be visible from both ends.
+    // networks always pull: a tie there is kept by its source only (see
+    // is_directed()), so it is not visible from both ends.
     const bool push =
         transmission_prepare() && !directed && transmission_choose_push();
 
@@ -13673,11 +13726,16 @@ inline void Model<TSeq>::update_state() {
         transmission_update_others();
 
     }
-    else if (use_queuing)
+    else if (use_queuing && !directed)
     {
 
         // Only queued agents, in ascending id order (the order fixes the
         // random number stream).
+        //
+        // Directed networks visit everyone instead. Registering an agent
+        // queues the agents on its own list, which in a directed network are
+        // the ones it is exposed to. The ones that can catch something from it
+        // are the ones that list *it*, and the queue never sees those.
         queue.for_each_nonzero([this](size_t i) -> void {
 
             if (queue[i] <= 0)
@@ -19258,59 +19316,41 @@ inline bool Agent<TSeq>::has_neighbor(size_t neighbor_id) const
 }
 
 template<typename TSeq>
+inline bool Agent<TSeq>::append_neighbor(size_t neighbor_id, bool check)
+{
+
+    if (neighbors == nullptr)
+        neighbors = new std::vector< size_t >();
+
+    // Can we find the neighbor?
+    if (check && has_neighbor(neighbor_id))
+        return false;
+
+    neighbors->push_back(neighbor_id);
+    n_neighbors++;
+
+    if (neighbor_pos != nullptr)
+        neighbor_pos->operator[](neighbor_id) = n_neighbors - 1u;
+    else if (n_neighbors > EPI_NEIGHBOR_INDEX_THRESHOLD)
+        build_neighbor_index();
+
+    return true;
+
+}
+
+template<typename TSeq>
 inline bool Agent<TSeq>::add_neighbor(
     Agent<TSeq> & p,
     bool check_source,
     bool check_target
 ) {
 
-    bool added = false;
+    // Two statements, so that the second end is visited even when the first
+    // already had the tie.
+    bool here  = append_neighbor(static_cast< size_t >(p.get_id()), check_source);
+    bool there = p.append_neighbor(static_cast< size_t >(id), check_target);
 
-    if (neighbors == nullptr)
-        neighbors = new std::vector< size_t >();
-
-    // Can we find the neighbor?
-    bool found = check_source &&
-        has_neighbor(static_cast< size_t >(p.get_id()));
-
-    if (!found)
-    {
-
-        neighbors->push_back(static_cast< size_t >(p.get_id()));
-        n_neighbors++;
-
-        if (neighbor_pos != nullptr)
-            neighbor_pos->operator[](static_cast< size_t >(p.get_id())) =
-                n_neighbors - 1u;
-        else if (n_neighbors > EPI_NEIGHBOR_INDEX_THRESHOLD)
-            build_neighbor_index();
-
-        added = true;
-
-    }
-
-    if (p.neighbors == nullptr)
-        p.neighbors = new std::vector< size_t >();
-
-    found = check_target && p.has_neighbor(static_cast< size_t >(id));
-
-    if (!found)
-    {
-
-        p.neighbors->push_back(static_cast< size_t >(id));
-        p.n_neighbors++;
-
-        if (p.neighbor_pos != nullptr)
-            p.neighbor_pos->operator[](static_cast< size_t >(id)) =
-                p.n_neighbors - 1u;
-        else if (p.n_neighbors > EPI_NEIGHBOR_INDEX_THRESHOLD)
-            p.build_neighbor_index();
-
-        added = true;
-
-    }
-
-    return added;
+    return here || there;
 
 }
 

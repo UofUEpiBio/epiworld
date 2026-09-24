@@ -90,7 +90,9 @@ $(NAME)_SOURCES := \
 	33b-edges-queue.cpp \
 	34a-transmission-push-pull.cpp \
 	34b-transmission-models.cpp \
-	34c-agents-in-state.cpp
+	34c-agents-in-state.cpp \
+	35a-directed-network.cpp \
+	35b-directed-transmission.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
