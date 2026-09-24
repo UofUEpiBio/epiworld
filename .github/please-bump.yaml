@@ -1,0 +1,16 @@
+version: 1
+groups:
+  epiworld:
+    paths:
+      - include/epiworld/
+      - epiworld.hpp
+    preset: cpp-semantic
+    files:
+      - epiworld.hpp
+      - include/epiworld/epiworld.hpp
+  measles:
+    paths:
+      - include/measles/
+    preset: cpp-semantic
+    files:
+      - include/measles/measles.hpp

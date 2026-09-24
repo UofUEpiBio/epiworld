@@ -20,6 +20,9 @@ $(NAME)_SOURCES := \
 	06b-mixing.cpp \
 	07-entitifuns.cpp \
 	09-distribute-tools-and-viruses.cpp \
+	09b-distribute-randomly-to-set.cpp \
+	09c-distribute-to-set-scaling.cpp \
+	09d-distribute-uniform.cpp \
 	10-generation-interval.cpp \
 	11-random-numbers.cpp \
 	12-diagrams.cpp \
@@ -89,7 +92,10 @@ $(NAME)_SOURCES := \
 	32j-bubbles-ties-merge.cpp \
 	32k-bubbles-ties-interactions.cpp \
 	33a-edges-add-rm.cpp \
-	33b-edges-queue.cpp
+	33b-edges-queue.cpp \
+	34a-transmission-push-pull.cpp \
+	34b-transmission-models.cpp \
+	34c-agents-in-state.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

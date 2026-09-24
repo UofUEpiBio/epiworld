@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "epiworld: A Flexible and General Agent-Based Model Engine"
+version: "0.10.0"
+authors:
+  - family-names: "Vega Yon"
+    given-names: "George G."
+    orcid: "https://orcid.org/0000-0002-3171-0844"
+abstract: "A header-only C++ framework for fast prototyping and simulation of epidemiological agent-based models."
+license: "MIT"
+repository-code: "https://github.com/UofUEpiBio/epiworld"
+url: "https://uofuepibio.github.io/epiworld/"
+keywords:
+  - "epidemiology"
+  - "agent-based models"
+  - "C++"
