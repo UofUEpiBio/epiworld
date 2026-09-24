@@ -12,14 +12,16 @@ The `Queue` class is implemented as a template and encapsulates several key data
 
 ### Members
 - `std::vector<epiworld_fast_int> active`: tracks the activation status of agents and their neighbors. Each element corresponds to an agent, with the value indicating the number of times the agent has been activated.
+- `std::vector<uint64_t> bits`: one bit per agent, set when its `active` count is non-zero. It is kept in step with `active` and lets the model visit only the queued agents, in ascending id order, without scanning the whole population. Walking it costs $O(N/64 + \text{queued agents})$ instead of $O(N)$.
 - `Model<TSeq> * model`: A pointer to the associated `Model` instance. This allows the queue to interact with the broader simulation framework, accessing agent states and network structures as needed.
 - `int n_in_queue`: The number of agents currently in the queue. This counter provides a quick way to determine the queue's size without iterating over the `active` vector.
 
 ### Methods
 - `void operator+=(Agent<TSeq> * p)`: Adds an agent and its neighbors to the queue. This method increments the activation counters for the agent and its neighbors, ensuring they are processed in subsequent simulation steps.
 - `void operator-=(Agent<TSeq> * p)`: Removes an agent and its neighbors from the queue. This method decrements the activation counters, removing agents from the queue when their counters reach zero.
-- `epiworld_fast_int & operator[](epiworld_fast_uint i)`: Provides access to the activation status of a specific agent. This method allows direct manipulation of the `active` vector, enabling advanced customization.
-- `void reset()`: Resets the queue, clearing all activation statuses. This method is typically called at the start of a new simulation step to prepare the queue for the next round of processing.
+- `epiworld_fast_int operator[](epiworld_fast_uint i) const`: Returns the activation count of a specific agent. It is read-only (since 0.16): counts change only through `+=`, `-=`, and the network-edit notifications, which keep the ordered set of queued agents in step.
+- `void for_each_nonzero(F && f)`: Calls `f(i)` for every agent with a non-zero count, in ascending id order. `Model::update_state()` and `Model::mutate_virus()` use it to visit the queued agents in the same order a full scan would, so the random number stream is unchanged. A count is read when the walk reaches the agent, so changes made by `f` to agents further ahead are seen, as in a plain loop.
+- `void reset()`: Resets the queue, clearing all activation statuses. The model calls it when a simulation starts.
 - `bool operator==(const Queue<TSeq> & other) const`: Compares two queues for equality. This method checks whether the `active` vectors of the two queues are identical, providing a way to verify the consistency of the queue's state.
 - `bool operator!=(const Queue<TSeq> & other) const`: Compares two queues for inequality. This method is implemented as the negation of the equality operator.
 
@@ -36,14 +38,15 @@ void simulate_step(Queue<int> &queue, Model<int> &model) {
     Agent<int> *agent = model.get_agent(0); // Retrieve the first agent
     queue += agent; // Add the agent and its neighbors to the queue
 
-    // Example: Processing agents in the queue
-    for (size_t i = 0; i < model.size(); ++i) {
+    // Example: Processing agents in the queue (ascending id order,
+    // without scanning the whole population)
+    queue.for_each_nonzero([&](size_t i) {
         // Check if the agent is active
         if (queue[i] > 0) {
             // Perform some operation on the active agent
             std::cout << "Processing agent " << i << std::endl;
         }
-    }
+    });
 
     // Example: Removing an agent from the queue
     queue -= agent; // Remove the agent and its neighbors from the queue
@@ -55,12 +58,15 @@ void simulate_step(Queue<int> &queue, Model<int> &model) {
 
 In this example:
 - The `+=` operator is used to add an agent and its neighbors to the queue. This ensures that the agent and its neighbors are processed in the current simulation step.
-- The `queue[i]` method is used to check the activation status of an agent. Only active agents are processed.
+- The `for_each_nonzero` method visits the queued agents, and `queue[i]` reads the activation status of an agent. Only active agents are processed.
 - The `-=` operator is used to remove an agent and its neighbors from the queue. This is useful for deactivating agents that no longer need to be processed.
-- The `reset` method is called at the start of a new simulation step to clear the queue and prepare it for the next round of processing.
+- The `reset` method clears the queue; the model calls it when a simulation starts.
+
+The queue only decides *which* agents are updated. How susceptible agents acquire a virus -- by pulling from their neighbors or by having their infectious neighbors push to them -- is covered in [Push and Pull Transmission](transmission-sampling.md). That choice never depends on the queue, so a run gives the same results with queuing on or off.
 
 ## See Also
 
 - [Library Architecture](library-architecture.md) — overview of the `Model` class that the `Queue` integrates with.
 - [Performance Optimization](performance-optimization.md) — broader strategies for improving simulation throughput.
 - [Extending the Library](extending-the-library.md) — custom agent state update functions that interact with the queue.
+- [Push and Pull Transmission](transmission-sampling.md) — how transmission is sampled in network models.

@@ -91,6 +91,7 @@ nav:
     - SBM Scalability Benchmark: examples/17-sbm-scalability.md
     - SEIR Quarantine Benchmark: examples/18-seir-network-quarantine-benchmark.md
     - "Poisson vs. Binomial Sampling": examples/19-poisson-approximation-binomial.md
+    - Transmission Benchmark: examples/20-transmission-benchmark.md
   - Implementation:
     - Overview: impl/index.md
     - Library Architecture: impl/library-architecture.md
@@ -108,6 +109,7 @@ nav:
     - Events and Multi-Event Handling: impl/events-and-multi-event-handling.md
     - Quarantine, Isolation, and Contact Tracing: impl/quarantine-isolation-and-contact-tracing.md
     - Sampling Contacts: impl/sampling-contacts.md
+    - Push and Pull Transmission: impl/transmission-sampling.md
   - API Reference:
     - Overview: api/index.md
     - Classes: epiworld/annotated.md

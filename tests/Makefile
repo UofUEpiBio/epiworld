@@ -86,7 +86,10 @@ $(NAME)_SOURCES := \
 	32e-bubbles-setup-per-run.cpp \
 	32f-bubbles-parallel.cpp \
 	33a-edges-add-rm.cpp \
-	33b-edges-queue.cpp
+	33b-edges-queue.cpp \
+	34a-transmission-push-pull.cpp \
+	34b-transmission-models.cpp \
+	34c-agents-in-state.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
