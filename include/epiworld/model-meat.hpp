@@ -1458,8 +1458,6 @@ inline bool Model<TSeq>::add_edge(size_t i, size_t j)
     if (!population[i].add_neighbor(population[j], true, true))
         return false;
 
-    network_version++;
-
     state_index_degree(population[i], deg_i);
     state_index_degree(population[j], deg_j);
 
@@ -1484,8 +1482,6 @@ inline bool Model<TSeq>::rm_edge(size_t i, size_t j)
     if (use_queuing)
         queue.notify_edge_removed(&population[i], &population[j]);
 
-    network_version++;
-
     size_t deg_i = population[i].n_neighbors;
     size_t deg_j = population[j].n_neighbors;
 
@@ -1496,12 +1492,6 @@ inline bool Model<TSeq>::rm_edge(size_t i, size_t j)
 
     return removed;
 
-}
-
-template<typename TSeq>
-inline size_t Model<TSeq>::get_network_version() const
-{
-    return network_version;
 }
 
 template<typename TSeq>
@@ -2081,6 +2071,11 @@ inline void Model<TSeq>::set_rewire_prop(epiworld_double prop)
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::get_rewire_prop() const {
     return rewire_prop;
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_rewire_fun() const {
+    return static_cast< bool >(rewire_fun);
 }
 
 template<typename TSeq>

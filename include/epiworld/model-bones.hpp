@@ -93,9 +93,6 @@ protected:
     /// @brief Validates the arguments of `add_edge()` / `rm_edge()`.
     void check_edge_endpoints(size_t i, size_t j) const;
 
-    /// @brief Bumped whenever `add_edge()` / `rm_edge()` change the network.
-    size_t network_version = 0u;
-
     bool using_backup = true;
     std::vector< Agent<TSeq> > population_backup = {};
 
@@ -593,18 +590,6 @@ public:
 
     bool rm_edge(size_t i, size_t j);  ///< @return `true` if a tie was removed.
     bool has_edge(size_t i, size_t j) const; ///< Whether `i` and `j` are tied.
-
-    /**
-     * @brief Counter bumped every time `add_edge()` / `rm_edge()` change a tie.
-     *
-     * @details Lets something that has arranged the network a particular way
-     * tell, in constant time, whether anything has disturbed it since --
-     * without walking the network to find out. An intervention that holds
-     * temporary ties can use it to skip re-checking them on a day when nothing
-     * touched the network. Not changed by the graph-construction functions,
-     * which build the network rather than edit it.
-     */
-    size_t get_network_version() const;
     ///@}
 
     /**
@@ -696,6 +681,9 @@ public:
     void set_rewire_fun(std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> fun);
     void set_rewire_prop(epiworld_double prop);
     epiworld_double get_rewire_prop() const;
+    /// @brief Whether a rewiring function is set. `rewire()` calls it on every
+    /// step, whatever the proportion.
+    bool has_rewire_fun() const;
     void rewire();
     ///@}
 

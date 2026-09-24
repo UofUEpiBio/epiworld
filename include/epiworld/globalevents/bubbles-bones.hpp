@@ -78,6 +78,13 @@ enum class BubbleTies {
      *
      * Contacts *outside* the bubble are untouched and still damped by the
      * transmission factor, which is what makes the bubble imperfect.
+     *
+     * The ties only exist while the policy is in force. If household members
+     * should meet before and after it too, those ties belong in the contact
+     * network itself. For the same reason `Complete` is not neutral at a
+     * transmission factor of `1`: it adds contact inside the bubble and damps
+     * nothing outside it, so transmission rises above running without the
+     * policy.
      */
     Complete
 };
@@ -262,33 +269,59 @@ public:
  * Contacts *outside* the bubble are untouched by either setting: they stay in
  * the network and are damped by `f`, which is what makes the bubble imperfect.
  *
+ * The ties only exist while the policy is in force: households are completed
+ * on `start_day` and go back to however the network ties them when it lifts.
+ * If household members should meet before and after the policy too, put those
+ * ties in the contact network itself. For the same reason `Complete` is not
+ * neutral at `f == 1`: it adds contact inside the bubble and damps nothing
+ * outside it, so transmission rises above running without the policy.
+ *
+ * Grouping never sees these ties. Both rules read the contact network to decide
+ * which households may bubble together, and they skip every tie a bubble policy
+ * on the model is holding -- this one's from the previous epoch, or another
+ * policy's -- so `BubbleFlavor` draws the same bubbles whatever `BubbleTies`
+ * says, and one policy's grouping does not depend on another's ties.
+ *
  * Two `Complete` policies may run on the same model -- household bubbles and
  * school bubbles, say. A tie both want is on the books of whichever created it,
  * and when that policy's window closes the tie is handed to the other rather
  * than removed, so a bubble that is still open does not lose a contact because
- * a different policy ended. If something else takes a tie away, the clique is
- * re-asserted on the next step; that check costs nothing on a day when nothing
- * touched the network (see `Model::get_network_version()`).
+ * a different policy ended.
+ *
+ * Anything else that edits the network is left to it. If another event takes
+ * away a tie the bubble wants -- isolating an agent, say -- the tie stays gone
+ * for as long as that bubble stands: the policy does not put it back. A tie the
+ * policy created stays on its books all the same, so if it is restored while
+ * the bubble is up (the isolation ends) it still comes down with the bubble.
+ * The policy only ever takes back what it put in, and never puts back what
+ * something else took out. A bubble redrawn at a later epoch is a new bubble,
+ * though, and is completed afresh; an event that means to keep agents apart
+ * across a redraw has to say so again.
  *
  * `BubbleTies::Complete` needs an undirected model and cannot be combined with
- * `Model::set_rewire_fun()` -- degree-sequence rewiring swaps neighbors between
- * agents, so a tie the intervention created could be swapped out from under it
- * and never withdrawn. Both are checked when the intervention sets itself up.
+ * `Model::set_rewire_fun()` -- a rewiring function moves ties between agents,
+ * so a tie the intervention created could be moved out from under it and never
+ * withdrawn. Both are checked when the intervention sets itself up. The
+ * rewiring check is on the function, not on the proportion: `Model::rewire()`
+ * calls the function on every step.
  *
- * A bubble is also refused if completing it would give any member more
- * neighbors than the virus sampler can weigh at once (`roulette()` uses two
- * slots per candidate in `Model::array_double_tmp`, so the ceiling is half its
- * size). What binds is each member's resulting *degree*, not the size of the
- * bubble: the clique is added on top of the ties an agent already has outside
- * it.
+ * Finally, the clique has to fit the virus sampler, which weighs at most half of
+ * `Model::array_double_tmp` in neighbors at once when pulling (`roulette()` uses
+ * two slots per candidate). The policy answers for the ties it adds, not for the
+ * network it was given: a bubble is refused if completing it would take a
+ * member past that ceiling, or add to one already past it, while a member the
+ * network itself put past it -- a hub -- is fine as long as its bubble adds
+ * nothing to it. What binds is each member's resulting *degree*, not the size of
+ * the bubble: the clique is added on top of the ties an agent already has
+ * outside it.
  *
  * ## The algorithms
  *
  * Both rules start from the **household contact graph**: one node per
  * household, with an edge between two households whenever at least one member
  * of the first is connected to a member of the second in the agents' contact
- * network. All random draws use the model's RNG, so a run is reproducible from
- * its seed.
+ * network (ties a `Complete` bubble is holding do not count; see above). All
+ * random draws use the model's RNG, so a run is reproducible from its seed.
  *
  * **`BubbleFlavor::Household`** -- grow bubbles from seed households:
  *
@@ -449,12 +482,41 @@ private:
      */
     std::vector< std::pair< size_t, size_t > > created_ties;
     int ties_epoch = -1;             ///< Epoch the materialized ties belong to.
-    size_t ties_version = 0u;        ///< Model::get_network_version() when built.
     int model_id   = -1;             ///< Sim id this intervention was set up for.
     int last_epoch = -1;             ///< Rewiring epoch the current partition was computed for.
 
-    void partition_household(Model<TSeq> * model);
-    void partition_peer(Model<TSeq> * model);
+    /**
+     * @brief The ties bubble policies on a model are holding -- this one's and
+     * any other's -- looked up one agent at a time.
+     *
+     * @details `focus(a)` marks the held partners of agent `a`, after which
+     * `contains(b)` says whether the tie `a`--`b` is held. Both cost no more
+     * than the ties involved, so a grouping rule can walk every contact of
+     * every agent and skip the held ones for the price of the walk, however
+     * many ties are held. With nothing held, both are no-ops.
+     */
+    class HeldTies {
+    public:
+        HeldTies(Model<TSeq> * model, const Bubbles<TSeq> & self);
+        void focus(size_t a);
+        bool contains(size_t b) const;
+    private:
+        std::vector< size_t > start;    ///< Offsets into `partner`, per agent.
+        std::vector< size_t > partner;  ///< Held partners, agent by agent.
+        std::vector< char > marked;     ///< Partners of the focused agent.
+        size_t focused = 0u;
+    };
+
+    /**
+     * @name The two grouping rules.
+     *
+     * @param held Ties bubble policies are holding; they are not contacts, so
+     *        the rules skip them (see `compute_partition()`).
+     */
+    ///@{
+    void partition_household(Model<TSeq> * model, HeldTies & held);
+    void partition_peer(Model<TSeq> * model, HeldTies & held);
+    ///@}
 
     /**
      * @brief Install the intervention on the model it is running in.
@@ -478,7 +540,9 @@ private:
      *
      * @details Builds the clique when the policy is about to apply and it is not
      * up already, drops it when the policy is about to lapse, and redraws it
-     * when the partition has moved on to a new rewiring epoch.
+     * when the partition has moved on to a new rewiring epoch. A standing
+     * clique is not re-checked: a tie something else took away stays gone
+     * (though it stays on the books).
      */
     void sync_ties(Model<TSeq> * model);
 
@@ -487,6 +551,10 @@ private:
 
     /**
      * @brief Withdraw the ties this policy is holding.
+     *
+     * @details A tie that is no longer in the network -- something else took
+     * it away -- is not an error: it is handed over like any other, or skipped
+     * if nobody wants it.
      *
      * @param hand_over When true, a tie that another `Bubbles` policy still
      *        wants is transferred to it rather than removed, so a bubble that is
@@ -614,7 +682,8 @@ public:
      * @brief Ties this intervention is currently keeping up, if any.
      *
      * Empty under `BubbleTies::Existing`, and empty under `Complete` outside
-     * the policy window. Each pair is a tie the intervention created; ties the
+     * the policy window. Each pair is a tie a bubble policy created -- this
+     * one, or another that handed it over when its own window closed. Ties the
      * network already had are not listed, because they are not the
      * intervention's to withdraw.
      */
@@ -623,11 +692,11 @@ public:
     /**
      * @brief Withdraw the ties the intervention is keeping up.
      *
-     * @details A run that ends while the policy is still in force leaves its
-     * ties in the network -- global events get no end-of-run callback, and the
-     * bubble network is often what you want to look at anyway. The next
-     * `Model::reset()` clears them; call this to get the original network back
-     * sooner. Harmless if there is nothing to withdraw.
+     * @details A run withdraws them by itself on its last day, so this is only
+     * needed when the day loop is driven by hand and stops while the policy is
+     * still in force. The next `Model::reset()` withdraws them too; call this
+     * to get the original network back sooner. Harmless if there is nothing to
+     * withdraw.
      */
     void restore_network(Model<TSeq> * model);
 
@@ -669,7 +738,8 @@ public:
      */
     void reset(Model<TSeq> * model) override;
 
-    /// @brief Re-randomises the partition at rewiring epochs.
+    /// @brief Re-randomises the partition at rewiring epochs, and keeps the
+    /// ties of a `Complete` bubble in step with the policy.
     void operator()(Model<TSeq> * model, int day) override;
 
     std::unique_ptr< GlobalEvent<TSeq> > clone_ptr() const override;

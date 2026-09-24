@@ -103,7 +103,90 @@ inline Bubbles<TSeq>::Bubbles(
 }
 
 template<typename TSeq>
-inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model)
+inline Bubbles<TSeq>::HeldTies::HeldTies(
+    Model<TSeq> * model,
+    const Bubbles<TSeq> & self
+)
+{
+
+    // Every policy's books, this one's included.
+    std::vector< const Bubbles<TSeq> * > holders = {&self};
+    for (size_t e = 0u; e < model->get_n_globalevents(); ++e)
+    {
+
+        const auto * other = dynamic_cast< const Bubbles<TSeq> * >(
+            &model->get_globalevent(e)
+        );
+
+        if ((other != nullptr) && (other != &self))
+            holders.push_back(other);
+
+    }
+
+    // A policy that has not been set up for this model yet may still hold
+    // ties from another network; only ties between this model's agents count.
+    size_t n = model->size();
+    std::vector< std::pair< size_t, size_t > > ties;
+    for (const auto * holder : holders)
+        for (const auto & tie : holder->created_ties)
+            if ((tie.first < n) && (tie.second < n))
+                ties.push_back(tie);
+
+    if (ties.empty())
+        return;
+
+    // Compressed rows: the held partners of agent `a` are
+    // partner[start[a]] .. partner[start[a + 1] - 1].
+    start.assign(n + 1u, 0u);
+    for (const auto & tie : ties)
+    {
+        ++start[tie.first + 1u];
+        ++start[tie.second + 1u];
+    }
+
+    for (size_t a = 0u; a < n; ++a)
+        start[a + 1u] += start[a];
+
+    partner.resize(start[n]);
+    std::vector< size_t > fill(start.begin(), start.end() - 1);
+    for (const auto & tie : ties)
+    {
+        partner[fill[tie.first]++]  = tie.second;
+        partner[fill[tie.second]++] = tie.first;
+    }
+
+    marked.assign(n, 0);
+
+}
+
+template<typename TSeq>
+inline void Bubbles<TSeq>::HeldTies::focus(size_t a)
+{
+
+    if (marked.empty())
+        return;
+
+    for (size_t k = start[focused]; k < start[focused + 1u]; ++k)
+        marked[partner[k]] = 0;
+
+    focused = a;
+
+    for (size_t k = start[a]; k < start[a + 1u]; ++k)
+        marked[partner[k]] = 1;
+
+}
+
+template<typename TSeq>
+inline bool Bubbles<TSeq>::HeldTies::contains(size_t b) const
+{
+    return !marked.empty() && (marked[b] != 0);
+}
+
+template<typename TSeq>
+inline void Bubbles<TSeq>::partition_household(
+    Model<TSeq> * model,
+    HeldTies & held
+)
 {
 
     // Map household label -> compact index, and list unique households.
@@ -131,15 +214,21 @@ inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model)
     // random therefore degenerates to the household-only lockdown. It also
     // matches the policy being modelled: a household picks a bubble partner it
     // actually socialises with.
+    //
+    // Ties a bubble policy is holding are not contacts anybody has, so they do
+    // not count (see compute_partition()).
     std::vector< std::vector< size_t > > hh_adj(nh);
     auto & pop_all = model->get_agents();
     for (size_t a = 0u; a < household_id.size(); ++a)
     {
         size_t ha = hh_index[household_id[a]];
+        held.focus(a);
         for (auto * nb : pop_all[a].get_neighbors(*model))
         {
             size_t b = static_cast< size_t >(nb->get_id());
             if (household_id[a] == household_id[b])
+                continue;
+            if (held.contains(b))
                 continue;
             hh_adj[ha].push_back(hh_index[household_id[b]]);
         }
@@ -222,7 +311,10 @@ inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model)
+inline void Bubbles<TSeq>::partition_peer(
+    Model<TSeq> * model,
+    HeldTies & held
+)
 {
 
     size_t n = household_id.size();
@@ -289,12 +381,15 @@ inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model)
         if (set_size[find(ha)] >= max_households)
             continue;
 
-        // Households of this agent's contacts outside its own household.
+        // Households of this agent's contacts outside its own household. Ties
+        // a bubble policy is holding are not contacts (see
+        // compute_partition()).
         ext.clear();
+        held.focus(a);
         for (auto * nb : pop[a].get_neighbors(*model))
         {
             size_t nid = static_cast< size_t >(nb->get_id());
-            if (household_id[nid] != household_id[a])
+            if ((household_id[nid] != household_id[a]) && !held.contains(nid))
                 ext.push_back(hh_index[household_id[nid]]);
         }
 
@@ -405,13 +500,21 @@ inline void Bubbles<TSeq>::build_ties(Model<TSeq> * model)
         if (bubble_id[a] >= 0)
             members[static_cast< size_t >(bubble_id[a])].push_back(a);
 
-    // What the sampler can take is a *degree*, not a bubble size: roulette()
-    // uses two slots per candidate in the fixed scratch array, so an agent may
-    // have at most `array_double_tmp.size() / 2` infectious neighbors before it
-    // throws. Completing a bubble adds ties on top of the ones an agent already
-    // has outside it, so the number that matters is what each member's degree
-    // will be afterwards -- a bubble small enough to look harmless can still
-    // push a well-connected member over.
+    // What the sampler can take is a *degree*, not a bubble size: when pulling,
+    // roulette() uses two slots per candidate in the fixed scratch array, so an
+    // agent may have at most `array_double_tmp.size() / 2` infectious neighbors
+    // before it throws. Pushing has no such ceiling, but the automatic mode may
+    // pull on any day, so the check does not depend on the mode. Completing a
+    // bubble adds ties on top of the ones an agent already has outside it, so
+    // the number that matters is what each member's degree will be afterwards
+    // -- a bubble small enough to look harmless can still push a
+    // well-connected member over.
+    //
+    // The policy answers for the ties it adds, not for the network it was
+    // handed. A member the network already put past the ceiling -- a hub -- is
+    // fine as long as its bubble adds nothing to it; what is refused is a
+    // clique that takes a member past the ceiling, or adds to one already
+    // there.
     //
     // Checked for every member before a single tie is created, so a bubble that
     // is too large fails without leaving the network half-rewritten.
@@ -433,16 +536,16 @@ inline void Bubbles<TSeq>::build_ties(Model<TSeq> * model)
                     bubble_id[x])
                     ++already;
 
-            size_t projected =
-                model->get_agent(x).get_n_neighbors() +
-                (who.size() - 1u) - already;
+            size_t degree    = model->get_agent(x).get_n_neighbors();
+            size_t projected = degree + (who.size() - 1u) - already;
 
-            if (projected > max_degree)
+            if ((projected > max_degree) && (projected > degree))
                 throw std::length_error(
                     "Bubbles: completing a bubble of " +
                     std::to_string(who.size()) + " would give agent " +
                     std::to_string(x) + " a degree of " +
-                    std::to_string(projected) + ", above the " +
+                    std::to_string(projected) + " (up from " +
+                    std::to_string(degree) + "), above the " +
                     std::to_string(max_degree) + " neighbors the virus sampler "
                     "can weigh. Reduce group_size or max_households."
                 );
@@ -470,10 +573,6 @@ inline void Bubbles<TSeq>::build_ties(Model<TSeq> * model)
     }
 
     ties_epoch = last_epoch;
-
-    // Snapshot taken after the clique is up, so the next day can tell in
-    // constant time whether anything has disturbed it.
-    ties_version = model->get_network_version();
 
 }
 
@@ -530,8 +629,11 @@ inline void Bubbles<TSeq>::withdraw_ties(
         // bubbles, say -- but only the one that happened to create it has it on
         // its books. Dropping it here would take it away from a bubble that is
         // still open, so it is handed to that policy instead of being removed.
-        // Without this the tie would vanish for a day and come back when the
-        // other policy next re-asserts its clique.
+        //
+        // That holds even for a tie something else has taken away in the
+        // meantime -- an event isolating an agent, say. The tie is still the
+        // bubbles', only suspended: if the isolation ends while the heir's
+        // bubble is up, the tie comes back, and it is the heir's to withdraw.
         if (hand_over)
         {
 
@@ -545,9 +647,8 @@ inline void Bubbles<TSeq>::withdraw_ties(
 
         }
 
-        // A tie that has gone missing is skipped rather than treated as an
-        // error: the model is free to have removed it in the meantime, and this
-        // only ever takes back what it put in.
+        // A tie that is not there -- taken away, and never put back -- is
+        // simply skipped: rm_edge() does nothing, and it leaves the books.
         model->rm_edge(tie.first, tie.second);
 
     }
@@ -579,25 +680,21 @@ inline void Bubbles<TSeq>::sync_ties(Model<TSeq> * model)
 
     }
 
-    // The standing clique belongs to a partition that has since moved on.
-    if (up && (ties_epoch != last_epoch))
-        withdraw_ties(model, true);
-
-    // Nothing has touched the network since the clique went up, so it is still
-    // exactly as it was left. This is the ordinary case, and skipping it is
-    // what keeps the policy from walking every pair of every bubble on every
-    // day of the run.
-    else if (up && (model->get_network_version() == ties_version))
+    // Standing, and for the partition in force: the ordinary day, and nothing
+    // to do. The clique is not re-checked. A tie that something else took away
+    // -- an event isolating an agent, say -- was taken deliberately, and
+    // putting it back would undo that. It stays on the books, so that if it is
+    // restored while the bubble is up it still comes down with the bubble. The
+    // one case that does need care, another bubble policy withdrawing a tie
+    // this one still wants, is handled by handing the tie over (see
+    // withdraw_ties()).
+    if (up && (ties_epoch == last_epoch))
         return;
 
-    // Otherwise the clique is re-asserted rather than assumed to still be
-    // standing: something changed the network, and it may well have been a tie
-    // this bubble wants. Another policy may own a tie this one also wants and
-    // take it down when its own window closes; the model itself is free to
-    // remove one too, and nothing tells this policy that happened.
-    // build_ties() is idempotent -- Model::add_edge() is a no-op on a tie that
-    // is already there -- so the same call both raises the clique the first
-    // time and repairs it afterwards.
+    // The standing clique belongs to a partition that has since moved on.
+    if (up)
+        withdraw_ties(model, true);
+
     build_ties(model);
 
 }
@@ -608,10 +705,24 @@ inline void Bubbles<TSeq>::compute_partition(Model<TSeq> * model)
 
     bubble_id.assign(household_id.size(), -1);
 
+    // Both rules read the contact network to decide which households may
+    // bubble together. The ties a bubble policy has put there -- this one's,
+    // or those of another policy on the same model -- are not contacts anybody
+    // has: counting them would pull the next bubble towards the last one's
+    // membership, and make one policy's grouping depend on another's. So
+    // grouping skips them and sees the network the model actually has, which
+    // is what keeps BubbleTies independent of BubbleFlavor.
+    //
+    // Skipping a tie rather than removing it keeps every other neighbor where
+    // it was: add_edge() appends and rm_edge() preserves order, so the agents'
+    // real contacts come up in the same order as if no tie had ever been
+    // added, and the same draws group them the same way.
+    HeldTies held(model, *this);
+
     if (flavor == BubbleFlavor::Household)
-        partition_household(model);
+        partition_household(model, held);
     else
-        partition_peer(model);
+        partition_peer(model, held);
 
 }
 
@@ -681,13 +792,15 @@ inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
                 "Bubbles: BubbleTies::Complete needs an undirected model."
             );
 
-        // Degree-sequence rewiring swaps neighbors *between* agents, so a tie
-        // this created can be swapped out from under it and would never be
-        // withdrawn. The two cannot be combined.
-        if (model->get_rewire_prop() > 0.0)
+        // Rewiring moves ties *between* agents, so a tie this created could be
+        // moved out from under it and would never be withdrawn. The two cannot
+        // be combined. It is the function that matters, not the proportion:
+        // Model::rewire() calls it on every step, and nothing obliges a
+        // rewiring function to honour a proportion of zero.
+        if (model->has_rewire_fun())
             throw std::logic_error(
-                "Bubbles: BubbleTies::Complete cannot be combined with "
-                "degree-sequence rewiring; call set_rewire_prop(0)."
+                "Bubbles: BubbleTies::Complete cannot be combined with network "
+                "rewiring; remove it with set_rewire_fun(nullptr)."
             );
 
     }
@@ -780,18 +893,13 @@ inline void Bubbles<TSeq>::operator()(Model<TSeq> * model, int day)
         if (last_epoch != epoch)
         {
 
-            // The clique comes down *before* the new partition is drawn. Both
-            // rules read the contact network to decide which households may
-            // bubble together, and the ties this put there are not contacts
-            // anybody has -- leaving them up would let the last bubble's
-            // members look connected to each other and pull the next bubble
-            // towards the same membership. Grouping has to see the network the
-            // model actually has, which is what keeps BubbleTies independent of
-            // BubbleFlavor.
-            //
-            // Handing over rather than plainly removing: another policy may
-            // want some of these ties for a bubble of its own that is still
-            // open, and its window has nothing to do with this one's epochs.
+            // The standing clique belongs to the old partition, so it comes
+            // down before the new one is drawn. Grouping would skip it anyway
+            // (see compute_partition()), but walking ties that are about to go
+            // only makes the grouping slower. Handing over rather than plainly
+            // removing: another policy may want some of these ties for a
+            // bubble of its own that is still open. sync_ties() below builds
+            // the new partition's clique.
             withdraw_ties(model, true);
 
             compute_partition(model);
