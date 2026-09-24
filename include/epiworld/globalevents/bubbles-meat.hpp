@@ -489,9 +489,6 @@ inline void Bubbles<TSeq>::build_ties(Model<TSeq> * model)
         if (b >= n_bubbles)
             n_bubbles = b + 1;
 
-    if (n_bubbles == 0)
-        return;
-
     std::vector< std::vector< size_t > > members(
         static_cast< size_t >(n_bubbles)
     );
@@ -594,9 +591,7 @@ inline Bubbles<TSeq> * Bubbles<TSeq>::heir_of(
         if ((other == nullptr) || (other == this))
             continue;
 
-        if (other->ties != BubbleTies::Complete)
-            continue;
-
+        // Only a Complete policy whose bubble is about to be in force.
         if (!other->wants_ties(model))
             continue;
 
@@ -680,20 +675,17 @@ inline void Bubbles<TSeq>::sync_ties(Model<TSeq> * model)
 
     }
 
-    // Standing, and for the partition in force: the ordinary day, and nothing
-    // to do. The clique is not re-checked. A tie that something else took away
+    // Standing: the ordinary day, and nothing to do. A standing clique always
+    // belongs to the partition in force, since the daily event withdraws it
+    // before drawing a new one. It is not re-checked either. A tie that something else took away
     // -- an event isolating an agent, say -- was taken deliberately, and
     // putting it back would undo that. It stays on the books, so that if it is
     // restored while the bubble is up it still comes down with the bubble. The
     // one case that does need care, another bubble policy withdrawing a tie
     // this one still wants, is handled by handing the tie over (see
     // withdraw_ties()).
-    if (up && (ties_epoch == last_epoch))
-        return;
-
-    // The standing clique belongs to a partition that has since moved on.
     if (up)
-        withdraw_ties(model, true);
+        return;
 
     build_ties(model);
 

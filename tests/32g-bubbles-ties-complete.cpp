@@ -37,8 +37,9 @@ static void two_households(Model<> & model)
 
 // Under BubbleTies::Complete a bubble stops being only a transmission rule and
 // becomes a clique. Checked first on a hand-built network, where the arithmetic
-// can be done by eye, then at scale on a real one. Both are inspected from
-// inside the run, since the ties are withdrawn when it ends.
+// can be done by eye, then at scale on a real one after the bubbles have been
+// redrawn. Both are inspected from inside the run, since the ties are withdrawn
+// when it ends.
 EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
 
     // -- 1. Two households that bubbled because of a single tie -------------
@@ -66,17 +67,19 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
         REQUIRE_FALSE(keep.has_edge(0u, 2u));
         REQUIRE_FALSE(keep.has_edge(0u, 3u));
 
-        // Complete: the bubble becomes a clique.
+        // Complete: the bubble becomes a clique. Asked for the way the docs
+        // show it -- on the object about to be added, whose copy the model
+        // then owns.
         epimodels::ModelSEIR<> full("flu", 0.0, 0.1, 4.5, 1.0/8.0);
         full.seed(20);
         two_households(full);
 
-        Bubbles<> as_ties(
-            hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
-            "Social bubble", 2u, "Bubble transmission factor",
-            BubbleTies::Complete
-        );
+        Bubbles<> as_ties(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0);
+        REQUIRE(as_ties.get_ties() == BubbleTies::Existing);   // the default
+        as_ties.set_ties(BubbleTies::Complete);
+
         full.add_globalevent(as_ties);
+        REQUIRE(Bubbles<>::get_from(full)->get_ties() == BubbleTies::Complete);
         full.verbose_off();
 
         bool checked = false;
@@ -134,7 +137,11 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
         REQUIRE(Bubbles<>::get_from(full)->get_created_ties().empty());
     }
 
-    // -- 2. The same at scale -----------------------------------------------
+    // -- 2. The same at scale, after a redraw ---------------------------------
+    //
+    // The bubbles are redrawn on day 3 and checked on day 4, so the clique in
+    // the network has to be the new partition's -- replacing the first one's,
+    // not joining it.
     {
         size_t n = 300u, hh_size = 3u;
 
@@ -155,7 +162,7 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
         REQUIRE(edges_of(model) == baseline);   // same seed, same network
 
         Bubbles<> bubbles(
-            hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
+            hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 3,
             "Social bubble", 2u, "Bubble transmission factor",
             BubbleTies::Complete
         );
@@ -163,14 +170,23 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
         model.verbose_off();
 
         bool checked = false;
+        std::vector< int > first_partition;
         model.add_globalevent(
-            [&checked, &baseline, &hh, n](Model<> * m) -> void {
+            [&checked, &baseline, &hh, &first_partition, n](Model<> * m) -> void {
+
+                auto * policy = Bubbles<>::get_from(*m);
+
+                if (m->today() == 1)
+                    first_partition = policy->get_bubble_id();
 
                 if (m->today() != 4)
                     return;
 
-                auto * policy = Bubbles<>::get_from(*m);
                 const auto & bid = policy->get_bubble_id();
+
+                // The partition really was redrawn in between.
+                REQUIRE(policy->get_last_epoch() == 1);
+                REQUIRE(bid != first_partition);
 
                 // Group the agents by bubble.
                 std::map< int, std::vector<size_t> > members;

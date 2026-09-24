@@ -539,10 +539,11 @@ private:
      * @brief Makes the network match the policy as of the next simulation step.
      *
      * @details Builds the clique when the policy is about to apply and it is not
-     * up already, drops it when the policy is about to lapse, and redraws it
-     * when the partition has moved on to a new rewiring epoch. A standing
-     * clique is not re-checked: a tie something else took away stays gone
-     * (though it stays on the books).
+     * up already, and drops it when the policy is about to lapse. At a
+     * rewiring epoch the daily event withdraws the old clique before drawing
+     * the new partition, so this builds the new one. A standing clique is not
+     * re-checked: a tie something else took away stays gone (though it stays
+     * on the books).
      */
     void sync_ties(Model<TSeq> * model);
 
