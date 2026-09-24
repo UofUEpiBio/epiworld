@@ -69,8 +69,10 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p) :
                 new std::unordered_map< size_t, size_t >(*p.neighbor_pos);
     }
 
-    state = p.state;
-    id     = p.id;
+    state              = p.state;
+    state_prev         = p.state_prev;
+    state_last_changed = p.state_last_changed;
+    id                 = p.id;
     
     // Dealing with the virus
     if (p.virus != nullptr)
