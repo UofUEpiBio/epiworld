@@ -673,6 +673,11 @@ public:
      * thus if {(i,j), (k,l)} -> {(i,l), (k,j)}, the reciprocal
      * is also true, i.e., {(j,i), (l,k)} -> {(j,k), (l,i)}.
      *
+     * The rewiring function runs on every step of a run, so it should change
+     * ties only through `Agent::swap_neighbors()` (what `rewire_degseq()`
+     * uses), `add_edge()`, or `rm_edge()`: these keep the queueing system in
+     * step with the network.
+     *
      * @param proportion Proportion of ties to be rewired.
      *
      * @result A rewired version of the network.

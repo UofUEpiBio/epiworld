@@ -12,6 +12,7 @@ The `Queue` class is implemented as a template and encapsulates several key data
 
 ### Members
 - `std::vector<epiworld_fast_int> active`: tracks the activation status of agents and their neighbors. Each element corresponds to an agent, with the value indicating the number of times the agent has been activated.
+- `std::vector<epiworld_fast_int> everyone`: the number of outstanding `Everyone` registrations of each agent. `active[i]` is `everyone[i]` plus the sum of `everyone[j]` over `i`'s neighbors, so `everyone[j]` is what a tie to `j` is worth to the agent at the other end.
 - `std::vector<uint64_t> bits`: one bit per agent, set when its `active` count is non-zero. It is kept in step with `active` and lets the model visit only the queued agents, in ascending id order, without scanning the whole population. Walking it costs $O(N/64 + \text{queued agents})$ instead of $O(N)$.
 - `Model<TSeq> * model`: A pointer to the associated `Model` instance. This allows the queue to interact with the broader simulation framework, accessing agent states and network structures as needed.
 - `int n_in_queue`: The number of agents currently in the queue. This counter provides a quick way to determine the queue's size without iterating over the `active` vector.
@@ -19,6 +20,7 @@ The `Queue` class is implemented as a template and encapsulates several key data
 ### Methods
 - `void operator+=(Agent<TSeq> * p)`: Adds an agent and its neighbors to the queue. This method increments the activation counters for the agent and its neighbors, ensuring they are processed in subsequent simulation steps.
 - `void operator-=(Agent<TSeq> * p)`: Removes an agent and its neighbors from the queue. This method decrements the activation counters, removing agents from the queue when their counters reach zero.
+- `notify_edge_added(a, b)`, `notify_edge_removed(a, b)`, and `notify_edges_swapped(a, b, c, d, directed)`: keep the counts exact when the network changes during a run, in constant time per tie. `+=` and `-=` walk an agent's neighbors as they are at that moment, so a tie added, removed, or rewired in between would otherwise make the counts drift, and an agent whose count drifted to zero would be skipped. `Model::add_edge()`, `Model::rm_edge()`, and `Agent::swap_neighbors()` (used by `rewire_degseq()`) call them. They do nothing before a run has sized the queue.
 - `epiworld_fast_int operator[](epiworld_fast_uint i) const`: Returns the activation count of a specific agent. It is read-only (since 0.16): counts change only through `+=`, `-=`, and the network-edit notifications, which keep the ordered set of queued agents in step.
 - `void for_each_nonzero(F && f)`: Calls `f(i)` for every agent with a non-zero count, in ascending id order. `Model::update_state()` and `Model::mutate_virus()` use it to visit the queued agents in the same order a full scan would, so the random number stream is unchanged. A count is read when the walk reaches the agent, so changes made by `f` to agents further ahead are seen, as in a plain loop.
 - `void reset()`: Resets the queue, clearing all activation statuses. The model calls it when a simulation starts.

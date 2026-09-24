@@ -8429,6 +8429,32 @@ public:
     void notify_edge_removed(Agent<TSeq> * a, Agent<TSeq> * b);
     ///@}
 
+    /**
+     * @brief Keep the queue in step with `Agent::swap_neighbors()`.
+     *
+     * @details `a`'s tie to `b` and `c`'s tie to `d` traded ends: (a-b), (c-d)
+     * became (a-d), (c-b). Nobody's degree changed, only whose registrations
+     * reach whom: `b` now gets what `c` contributes instead of what `a` does,
+     * and `d` the reverse. In an undirected network the other ends traded too,
+     * so `a` gets what `d` contributes instead of `b`, and `c` the reverse.
+     * Four shifts, whatever the degrees.
+     *
+     * In a directed network only `a`'s and `c`'s lists change, and the queue
+     * follows each agent's own list (`operator+=`), so only `b`'s and `d`'s
+     * counts change.
+     *
+     * @param a,c The agents whose neighbors were swapped.
+     * @param b,d Their neighbors before the swap (`b` was `a`'s, `d` was `c`'s).
+     * @param directed Whether only `a`'s and `c`'s lists changed.
+     */
+    void notify_edges_swapped(
+        Agent<TSeq> * a,
+        Agent<TSeq> * b,
+        Agent<TSeq> * c,
+        Agent<TSeq> * d,
+        bool directed
+    );
+
     // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
     void reset();
 
@@ -8536,6 +8562,34 @@ inline void Queue<TSeq>::notify_edge_removed(Agent<TSeq> * a, Agent<TSeq> * b)
 
     shift(static_cast< size_t >(b->id), -everyone[a->id]);
     shift(static_cast< size_t >(a->id), -everyone[b->id]);
+
+}
+
+template<typename TSeq>
+inline void Queue<TSeq>::notify_edges_swapped(
+    Agent<TSeq> * a,
+    Agent<TSeq> * b,
+    Agent<TSeq> * c,
+    Agent<TSeq> * d,
+    bool directed
+)
+{
+
+    if (!tracks(a, b) || !tracks(c, d))
+        return;
+
+    // `a`'s entry for `b` now names `d`, and `c`'s entry for `d` now names `b`.
+    epiworld_fast_int delta = everyone[c->id] - everyone[a->id];
+    shift(static_cast< size_t >(b->id), delta);
+    shift(static_cast< size_t >(d->id), -delta);
+
+    if (directed)
+        return;
+
+    // `b`'s entry for `a` now names `c`, and `d`'s entry for `c` now names `a`.
+    delta = everyone[d->id] - everyone[b->id];
+    shift(static_cast< size_t >(a->id), delta);
+    shift(static_cast< size_t >(c->id), -delta);
 
 }
 
@@ -9656,10 +9710,19 @@ public:
 
     /**
      * @brief Swaps neighbors between the current agent and agent `other`
-     * 
-     * @param other 
-     * @param n_this 
-     * @param n_other 
+     *
+     * @details `j`, this agent's neighbor at position `n_this`, and `l`,
+     * `other`'s neighbor at position `n_other`, trade places: (this-j),
+     * (other-l) become (this-l), (other-j). In an undirected model, `j` and
+     * `l` are updated to match. No degree changes. `rewire_degseq()` calls
+     * this on every step of a run that uses it as the rewiring function, so,
+     * like `Model::add_edge()`, it keeps the queueing system in step (see
+     * `Queue::notify_edges_swapped()`) and is safe at any point of a run.
+     *
+     * @param other The agent to swap a neighbor with.
+     * @param n_this,n_other Positions of the two neighbors in this agent's and
+     * in `other`'s list.
+     * @param model The model both agents belong to.
      */
     void swap_neighbors(
         Agent<TSeq> & other,
@@ -11009,6 +11072,11 @@ public:
      * @details This implementation assumes an undirected network,
      * thus if {(i,j), (k,l)} -> {(i,l), (k,j)}, the reciprocal
      * is also true, i.e., {(j,i), (l,k)} -> {(j,k), (l,i)}.
+     *
+     * The rewiring function runs on every step of a run, so it should change
+     * ties only through `Agent::swap_neighbors()` (what `rewire_degseq()`
+     * uses), `add_edge()`, or `rm_edge()`: these keep the queueing system in
+     * step with the network.
      *
      * @param proportion Proportion of ties to be rewired.
      *
@@ -19423,6 +19491,15 @@ inline void Agent<TSeq>::swap_neighbors(
             other.build_neighbor_index();
 
     }
+
+    // Rewiring functions call this in the middle of a run, so the queue's
+    // counts have to follow the ties (a no-op until a run has sized the
+    // queue). Nobody's degree changed, so the agents-by-state degree sums
+    // need nothing.
+    if (model.use_queuing)
+        model.queue.notify_edges_swapped(
+            this, &neigh_this, &other, &neigh_other, model.directed
+        );
 
 }
 

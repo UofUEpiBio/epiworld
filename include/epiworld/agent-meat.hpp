@@ -658,6 +658,15 @@ inline void Agent<TSeq>::swap_neighbors(
 
     }
 
+    // Rewiring functions call this in the middle of a run, so the queue's
+    // counts have to follow the ties (a no-op until a run has sized the
+    // queue). Nobody's degree changed, so the agents-by-state degree sums
+    // need nothing.
+    if (model.use_queuing)
+        model.queue.notify_edges_swapped(
+            this, &neigh_this, &other, &neigh_other, model.directed
+        );
+
 }
 
 template<typename TSeq>
