@@ -66,7 +66,7 @@ The queue only decides *which* agents are updated. How susceptible agents acquir
 
 ### Directed networks
 
-A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `i` is exposed to `j`. The queue marks the neighbors of an agent that becomes infectious, and in a directed network those are the agents it is exposed to. The agents it can infect are the ones that list *it*, which the queue never sees. So in a directed network, `Model::update_state()` updates every agent at each step, as if queuing were off. The results are the same either way.
+A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `i` is exposed to `j`. The queue marks the neighbors of an agent that becomes infectious, and in a directed network those are the agents it is exposed to. The agents it can infect are the ones that list *it*, which the queue never sees. So in a directed network, `Model::update_state()` and `Model::mutate_virus()` visit every agent at each step, as if queuing were off. The results are the same either way.
 
 ## See Also
 

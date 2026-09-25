@@ -10873,7 +10873,8 @@ public:
      * reverse. To have `i` infect `j`, give the tie as `j -> i`.
      *
      * A directed network always pulls (see `set_transmission_mode()`), and each
-     * step updates every agent, as with `queuing_off()`. The queue flags the
+     * step updates (and offers mutations to) every agent, as with
+     * `queuing_off()`. The queue flags the
      * neighbors of an agent that becomes infectious, and along a directed tie
      * those are not the agents it can infect. `write_edgelist()` returns the
      * ties as given, and `add_edge()`/`rm_edge()` refuse to edit a directed
@@ -13777,7 +13778,10 @@ inline void Model<TSeq>::mutate_virus() {
     if (nmutates == 0u)
         return;
 
-    if (use_queuing)
+    // Directed networks do not use the queue (see update_state()), and must not
+    // start depending on it here: a carrier registered without `Everyone`, or
+    // a count left stale by rewiring, would then mutate only with queuing off.
+    if (use_queuing && !directed)
     {
 
         queue.for_each_nonzero([this](size_t i) -> void {

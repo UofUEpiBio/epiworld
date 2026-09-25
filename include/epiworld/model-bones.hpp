@@ -521,7 +521,8 @@ public:
      * reverse. To have `i` infect `j`, give the tie as `j -> i`.
      *
      * A directed network always pulls (see `set_transmission_mode()`), and each
-     * step updates every agent, as with `queuing_off()`. The queue flags the
+     * step updates (and offers mutations to) every agent, as with
+     * `queuing_off()`. The queue flags the
      * neighbors of an agent that becomes infectious, and along a directed tie
      * those are not the agents it can infect. `write_edgelist()` returns the
      * ties as given, and `add_edge()`/`rm_edge()` refuse to edit a directed

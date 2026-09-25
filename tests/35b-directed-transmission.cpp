@@ -160,4 +160,37 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     require_same(run_random(true, "auto"), reference);
     require_same(run_random(false, "push"), reference);
 
+    // -- mutation does not depend on the queue either --------------------------
+    // Carriers of a virus that never registers in the queue (`NoOne`) must
+    // still be offered a mutation every day. Along the one-way path seeded at
+    // 9, agent 9 - d is infected on day d and nobody recovers, so the carriers
+    // at the end of day d are agents 9 - d .. 9: 2 + 3 + ... + 10 over days
+    // 1-9, then all 10 on each of days 10-15.
+    for (bool queuing : {true, false})
+    {
+
+        epimodels::ModelSIR<> model("a virus", 0.0, 1.0, 0.0);
+        model.verbose_off();
+        model.agents_from_edgelist(source, target, n, true);
+
+        size_t offered = 0u;
+        auto & v = model.get_virus(0u);
+        v.set_distribution(distribute_virus_to_set<>({static_cast<size_t>(n - 1)}));
+        v.set_queue(Queue<int>::NoOne, Queue<int>::NoOne, Queue<int>::NoOne);
+        v.set_mutation([&offered](Agent<> *, Virus<> &, Model<> *) -> bool {
+            ++offered;
+            return false;
+        });
+
+        if (!queuing)
+            model.queuing_off();
+
+        model.run(15, 42);
+
+        INFO("queuing " << (queuing ? "on" : "off"));
+        REQUIRE(model.get_agents_states() == everyone);
+        REQUIRE(offered == 54u + 6u * 10u);
+
+    }
+
 }

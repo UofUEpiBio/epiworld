@@ -1982,7 +1982,10 @@ inline void Model<TSeq>::mutate_virus() {
     if (nmutates == 0u)
         return;
 
-    if (use_queuing)
+    // Directed networks do not use the queue (see update_state()), and must not
+    // start depending on it here: a carrier registered without `Everyone`, or
+    // a count left stale by rewiring, would then mutate only with queuing off.
+    if (use_queuing && !directed)
     {
 
         queue.for_each_nonzero([this](size_t i) -> void {
