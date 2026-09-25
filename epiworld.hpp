@@ -8344,9 +8344,12 @@ private:
     /**
      * @brief Outstanding `Everyone` registrations per agent.
      *
-     * @details `active[i]` is the sum of `everyone[j]` over `j` in `i`'s
-     * neighborhood plus `i` itself, so this is what a tie is worth to the far
-     * end of it: adding an edge next to a registered agent is a `+everyone[]`
+     * @details `active[i]` is `everyone[i]` plus the sum of `everyone[j]` over
+     * the agents `j` whose neighbor lists contain `i` (`operator+=` credits
+     * the agents in the registered agent's own list). In an undirected
+     * network those are `i`'s neighbors; in a directed one they are the
+     * agents that list `i`. So this is what a tie is worth to the far end of
+     * it: adding an edge next to a registered agent is a `+everyone[]`
      * over there, and removing one is the mirror (see `notify_edge_added`).
      *
      * Keeping the count explicit -- rather than inferring "is this agent
