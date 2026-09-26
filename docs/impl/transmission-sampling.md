@@ -124,7 +124,7 @@ Pushing applies to states whose update function is `default_update_susceptible` 
 - **Queue.** With queuing on, a susceptible agent is only updated if it is queued, as when pulling.
 - **Errors.** An agent in a susceptible state that carries a virus raises the same error as the pull.
 
-Everything else keeps pulling: states with custom update functions (e.g., `ModelSIRLogit`, `ModelSURV`, `ModelSEIRNetworkQuarantine`, `ModelDiffNet`) and the connected, mixing, and measles models, which sample contacts differently. The model's `directed` flag, if set, also forces pulling, and so does building without RTTI (recognizing the functions uses `std::function::target()`). Pushing relies on every tie being stored at both ends, which is how `epiworld` builds networks.
+Everything else keeps pulling: states with custom update functions (e.g., `ModelSIRLogit`, `ModelSURV`, `ModelSEIRNetworkQuarantine`, `ModelDiffNet`) and the connected, mixing, and measles models, which sample contacts differently. Directed networks (built with `directed = true`) also always pull, and so does building without RTTI (recognizing the functions uses `std::function::target()`). Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
 
 Two numerical differences are worth knowing:
 

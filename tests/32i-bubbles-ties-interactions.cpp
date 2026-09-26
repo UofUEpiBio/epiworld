@@ -248,18 +248,15 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
         REQUIRE_FALSE(model.has_edge(0u, 2u));
     }
 
-    // -- 4. Rewiring ----------------------------------------------------------
+    // -- 4. Rewiring and directed networks ------------------------------------
     //
     // A rewiring function moves ties between agents, so a tie the intervention
     // created could be moved out from under it and never withdrawn. It is the
     // function that is refused, not the proportion: Model::rewire() calls it on
     // every step, and nothing obliges it to honour a proportion of zero.
     //
-    // (There is also a guard against directed models, but it cannot be reached
-    // from here: Model::directed is never set by agents_from_adjlist(), so
-    // is_directed() reports false even for a network built with
-    // agents_from_edgelist(..., directed = true). The guard is kept for when
-    // that is wired up.)
+    // Completing a bubble also edits ties at both ends, which a directed
+    // network -- whose ties are kept by their source only -- cannot take.
     {
         std::vector< size_t > hh = {0u, 0u, 0u, 1u, 1u, 1u};
 
@@ -311,8 +308,21 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
         );
         REQUIRE_NOTHROW(attempt(BubbleTies::Complete, proportion_only));
 
+        // The same ties, as a directed network.
+        auto directed = [](Model<> & m) -> void {
+            m.agents_from_edgelist({0, 1, 3, 4, 2}, {1, 2, 4, 5, 3}, 6, true);
+        };
+
+        // Refused up front, by the intervention -- not halfway through the run
+        // by add_edge(), which refuses directed models too.
+        REQUIRE_THROWS_WITH(
+            attempt(BubbleTies::Complete, directed),
+            Catch::Matchers::Contains("needs an undirected model")
+        );
+
         // The default realization does not touch the network, so it is fine.
         REQUIRE_NOTHROW(attempt(BubbleTies::Existing, degseq));
+        REQUIRE_NOTHROW(attempt(BubbleTies::Existing, directed));
     }
 
     // -- 5. The sampler's ceiling ---------------------------------------------

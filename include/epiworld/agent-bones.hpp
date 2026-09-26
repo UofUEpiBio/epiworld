@@ -143,9 +143,24 @@ protected:
     void erase_neighbor_at(size_t pos);
 
     /**
+     * @brief Appends `neighbor_id` to this agent's neighbors, and only there.
+     *
+     * @details One end of a tie -- all that a directed tie has, since it is
+     * kept by its source (see `Model::is_directed()`). Not public, for the same
+     * reason as `add_neighbor()`.
+     *
+     * @param check Whether to skip `neighbor_id` if it is already a neighbor.
+     * @return `true` if it was appended.
+     */
+    bool append_neighbor(size_t neighbor_id, bool check);
+
+    /**
      * @name Change this agent's ties
      *
-     * @details These are deliberately not public. They edit the network and
+     * @details These edit both ends of the tie (`p` among this agent's
+     * neighbors, and this agent among `p`'s), i.e., an undirected tie.
+     *
+     * They are deliberately not public. They edit the network and
      * nothing else, so calling one while a model is running would leave the
      * queueing system counting neighbors that no longer exist (or missing ones
      * that now do), and agents would drop out of `Model::update_state()`
