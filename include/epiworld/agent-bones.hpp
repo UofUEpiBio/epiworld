@@ -294,10 +294,19 @@ public:
 
     /**
      * @brief Swaps neighbors between the current agent and agent `other`
-     * 
-     * @param other 
-     * @param n_this 
-     * @param n_other 
+     *
+     * @details `j`, this agent's neighbor at position `n_this`, and `l`,
+     * `other`'s neighbor at position `n_other`, trade places: (this-j),
+     * (other-l) become (this-l), (other-j). In an undirected model, `j` and
+     * `l` are updated to match. No degree changes. `rewire_degseq()` calls
+     * this on every step of a run that uses it as the rewiring function, so,
+     * like `Model::add_edge()`, it keeps the queueing system in step (see
+     * `Queue::notify_edges_swapped()`) and is safe at any point of a run.
+     *
+     * @param other The agent to swap a neighbor with.
+     * @param n_this,n_other Positions of the two neighbors in this agent's and
+     * in `other`'s list.
+     * @param model The model both agents belong to.
      */
     void swap_neighbors(
         Agent<TSeq> & other,

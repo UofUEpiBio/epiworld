@@ -55,6 +55,7 @@ $(NAME)_SOURCES := \
 	19e-measles-mixing-risk-quarantine-hetero.cpp \
 	20a-rewire-degseq.cpp \
 	20b-rewire-degseq.cpp \
+	20c-rewire-degseq-queue.cpp \
 	22a-globalevents.cpp \
 	22b-globalevents.cpp \
 	23a-distribute-tool-virus-to-entities.cpp \
