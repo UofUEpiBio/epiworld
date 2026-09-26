@@ -41,6 +41,11 @@ hide:
       <p class="lang-logo-title">R</p>
       <p class="lang-logo-text">Available both on GitHub and the Comprehensive R Archive Network (CRAN).</p>
     </a>
+    <a href="https://github.com/UofUEpiBio/epiworldpy" class="lang-logo-card" aria-label="Python">
+      <img src="assets/img/python-logo.svg" alt="Python logo" style="width:100px">
+      <p class="lang-logo-title">Python</p>
+      <p class="lang-logo-text">Available both on GitHub and the Python Package Index (PyPI).</p>
+    </a>
   </div>
 </div>
 
