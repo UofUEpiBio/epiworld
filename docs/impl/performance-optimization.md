@@ -19,6 +19,8 @@ As of current, epiworld does not include a dedicated benchmarking suite. The exa
 
 The example [`20-transmission-benchmark`](../examples/20-transmission-benchmark.md) times the network transmission step: it runs the SEIRH model of the [epiworld-benchmark](https://github.com/UofUEpiBio/epiworld-benchmark) study and two other network models in each transmission mode, and it compiles against older releases too, so versions can be compared side by side (see [Push and Pull Transmission](transmission-sampling.md)).
 
+The example [`21-parameter-lookup-benchmark`](../examples/21-parameter-lookup-benchmark.md) times parameter lookups by name (`par()`, `get_param()`), both per call and inside models whose hot paths call them, such as `ModelMeaslesMixing`. It also compiles against older releases.
+
 Until a formal benchmarking system is implemented, users can measure performance externally using tools such as `/usr/bin/time`, `perf`, or custom C++ timing utilities based on `std::chrono`. Running example models with controlled parameters and fixed random seeds allows fair comparisons between compiler flags, thread counts, and machine configurations.
 
 Future benchmarking work will likely include a standardized set of models run under controlled conditions, with timing, memory use, and scaling data automatically collected. This would make it easier to track performance regressions and validate the efficiency of OpenMP parallel execution across releases.

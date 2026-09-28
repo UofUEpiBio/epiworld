@@ -92,6 +92,7 @@ nav:
     - SEIR Quarantine Benchmark: examples/18-seir-network-quarantine-benchmark.md
     - "Poisson vs. Binomial Sampling": examples/19-poisson-approximation-binomial.md
     - Transmission Benchmark: examples/20-transmission-benchmark.md
+    - Parameter Lookup Benchmark: examples/21-parameter-lookup-benchmark.md
   - Implementation:
     - Overview: impl/index.md
     - Library Architecture: impl/library-architecture.md

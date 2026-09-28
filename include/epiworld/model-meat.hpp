@@ -1007,12 +1007,15 @@ inline Model<TSeq> & Model<TSeq>::agents_bernoulli(
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::operator()(std::string pname) {
+inline epiworld_double Model<TSeq>::operator()(std::string_view pname) const {
 
-    if (parameters.find(pname) == parameters.end())
-        throw std::range_error("The parameter '"+ pname + "' is not in the model.");
+    const auto iter = parameters.find(pname);
+    if (iter == parameters.end())
+        throw std::range_error(
+            "The parameter '" + std::string(pname) + "' is not in the model."
+        );
 
-    return parameters[pname];
+    return iter->second;
 
 }
 
@@ -2333,7 +2336,7 @@ std::vector< int > & target
 }
 
 template<typename TSeq>
-inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
+inline std::map<std::string, epiworld_double, std::less<> > & Model<TSeq>::params()
 {
     return parameters;
 }
@@ -2547,12 +2550,13 @@ inline epiworld_double Model<TSeq>::add_param(
     bool overwrite
     ) {
 
-    if (parameters.find(pname) == parameters.end())
-        parameters[pname] = initial_value;
+    auto iter = parameters.find(pname);
+    if (iter == parameters.end())
+        parameters.emplace(std::move(pname), initial_value);
     else if (!overwrite)
         throw std::logic_error("The parameter " + pname + " already exists.");
     else
-        parameters[pname] = initial_value;
+        iter->second = initial_value;
 
     return initial_value;
 
@@ -2572,38 +2576,46 @@ inline Model<TSeq> & Model<TSeq>::read_params(std::string fn, bool overwrite)
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::get_param(std::string pname)
+inline epiworld_double Model<TSeq>::get_param(std::string_view pname) const
 {
-    if (parameters.find(pname) == parameters.end())
-        throw std::logic_error("The parameter " + pname + " does not exists.");
+    const auto iter = parameters.find(pname);
+    if (iter == parameters.end())
+        throw std::logic_error(
+            "The parameter " + std::string(pname) + " does not exists."
+        );
 
-    return parameters[pname];
+    return iter->second;
 }
 
 template<typename TSeq>
 inline bool Model<TSeq>::has_param(std::string_view pname) const
 {
-    return parameters.find(std::string(pname)) != parameters.end();
+    return parameters.find(pname) != parameters.end();
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_param(std::string pname, epiworld_double value)
+inline void Model<TSeq>::set_param(std::string_view pname, epiworld_double value)
 {
-    if (parameters.find(pname) == parameters.end())
-        throw std::logic_error("The parameter '" + pname + "' does not exists.");
+    auto iter = parameters.find(pname);
+    if (iter == parameters.end())
+        throw std::logic_error(
+            "The parameter '" + std::string(pname) + "' does not exists."
+        );
 
-    parameters[pname] = value;
+    iter->second = value;
 
     return;
 
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::par(std::string pname) const
+inline epiworld_double Model<TSeq>::par(std::string_view pname) const
 {
     const auto iter = parameters.find(pname);
     if (iter == parameters.end())
-        throw std::logic_error("The parameter '" + pname + "' does not exists.");
+        throw std::logic_error(
+            "The parameter '" + std::string(pname) + "' does not exists."
+        );
     return iter->second;
 }
 

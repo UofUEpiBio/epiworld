@@ -158,7 +158,9 @@ protected:
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop = 0.0;
 
-    std::map<std::string, epiworld_double > parameters;
+    // Transparent comparator (std::less<>) so names can be looked up as
+    // std::string_view without building a std::string.
+    std::map<std::string, epiworld_double, std::less<> > parameters;
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
@@ -388,7 +390,7 @@ public:
 
     DataBase<TSeq> & get_db();
     const DataBase<TSeq> & get_db() const;
-    epiworld_double operator()(std::string pname);
+    epiworld_double operator()(std::string_view pname) const;
 
     size_t size() const;
 
@@ -794,7 +796,7 @@ public:
         ) const;
     ///@}
 
-    std::map<std::string, epiworld_double> & params();
+    std::map<std::string, epiworld_double, std::less<> > & params();
 
     /**
      * @brief Reset the model
@@ -915,13 +917,10 @@ public:
     /**
      * @name Setting and accessing parameters from the model
      *
-     * @details Tools can incorporate parameters included in the model.
-     * Internally, parameters in the tool are stored as pointers to
-     * an std::map<> of parameters in the model. Using the `epiworld_fast_uint`
-     * method directly fetches the parameters in the order these were
-     * added to the tool. Accessing parameters via the `std::string` method
-     * involves searching the parameter directly in the std::map<> member
-     * of the model (so it is not recommended.)
+     * @details Parameters are stored in an ordered map keyed by name.
+     * Lookups take the name as a `std::string_view`, so passing a string
+     * literal or a `std::string` does not allocate; each lookup is a single
+     * search of the map. Unknown names throw.
      *
      * The `par()` function members are aliases for `get_param()`.
      *
@@ -951,10 +950,10 @@ public:
         epiworld_double initial_val, std::string pname, bool overwrite = false
     );
     Model<TSeq> & read_params(std::string fn, bool overwrite = false);
-    epiworld_double get_param(std::string pname);
+    epiworld_double get_param(std::string_view pname) const;
     bool has_param(std::string_view pname) const;
-    void set_param(std::string pname, epiworld_double val);
-    epiworld_double par(std::string pname) const;
+    void set_param(std::string_view pname, epiworld_double val);
+    epiworld_double par(std::string_view pname) const;
     ///@}
 
     void get_elapsed(
