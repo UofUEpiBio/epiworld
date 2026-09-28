@@ -1389,6 +1389,14 @@ inline void Model<TSeq>::agents_from_edgelist(
     bool directed
 ) {
 
+    // Validate everything before touching the model, so a bad edge list
+    // leaves the current network as it was.
+    if (size < 0)
+        throw std::length_error(
+            "The size of the network cannot be negative (" +
+            std::to_string(size) + ")."
+            );
+
     if (source.size() != target.size())
         throw std::length_error(
             "source and target must have the same length (" +
@@ -1396,8 +1404,6 @@ inline void Model<TSeq>::agents_from_edgelist(
             std::to_string(target.size()) + ")."
             );
 
-    // Validate everything before touching the model, so a bad edge list
-    // leaves the current network as it was.
     int max_id = size - 1;
     for (size_t m = 0u; m < source.size(); ++m)
     {
@@ -1418,7 +1424,7 @@ inline void Model<TSeq>::agents_from_edgelist(
 
     }
 
-    size_t n = (size > 0) ? static_cast< size_t >(size) : 0u;
+    size_t n = static_cast< size_t >(size);
     agents_empty_graph(n);
     this->directed = (n > 0u) && directed;
 

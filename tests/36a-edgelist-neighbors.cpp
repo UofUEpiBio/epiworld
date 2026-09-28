@@ -1,5 +1,6 @@
 #include "tests.hpp"
 #include <algorithm>
+#include <limits>
 
 using namespace epiworld;
 
@@ -180,6 +181,15 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
     );
     REQUIRE_THROWS_AS(
         model.agents_from_edgelist({0, 1}, {1}, 3, false), std::length_error
+    );
+    REQUIRE_THROWS_AS(
+        model.agents_from_edgelist({}, {}, -1, false), std::length_error
+    );
+    REQUIRE_THROWS_AS(
+        model.agents_from_edgelist(
+            {}, {}, std::numeric_limits< int >::min(), false
+        ),
+        std::length_error
     );
 
     REQUIRE(model.size() == 3u);
