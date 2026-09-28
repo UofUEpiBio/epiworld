@@ -97,7 +97,9 @@ $(NAME)_SOURCES := \
 	34b-transmission-models.cpp \
 	34c-agents-in-state.cpp \
 	35a-directed-network.cpp \
-	35b-directed-transmission.cpp
+	35b-directed-transmission.cpp \
+	36a-edgelist-neighbors.cpp \
+	36b-edgelist-paths-agree.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
