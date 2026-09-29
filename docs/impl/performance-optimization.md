@@ -7,6 +7,24 @@ Because the library is template-based and header-only, most logic is inlined, an
 
 Users running large experiments can further optimize memory by minimizing per-agent state complexity and reusing model objects between runs rather than constructing new ones. Since epiworld does not depend on dynamic memory allocators beyond the standard library, this approach helps maintain predictable memory footprints and avoids fragmentation over repeated simulations.
 
+## Parameter Access
+
+Model parameters are stored in a vector, in the order they were added, with a map from each name to its position. A lookup by name (`par("Transmission rate")`, `get_param()`, `set_param()`) searches that map: roughly 20–30 ns per call. That is negligible when it happens once per step, but update functions and virus or tool callbacks run for many agents every day, and there the lookups can add up to a third of the run time.
+
+Code on those paths should read parameters by position instead, at about 2–3 ns per call:
+
+- **`EPI_PAR(model, "name")`** is the simplest option. It takes a pointer to a model and a string literal, and caches the position in a function-local `static ParamRef`:
+
+  ```cpp
+  if (m->runif() < 1.0 / EPI_PAR(m, "Rash period"))
+      p->change_state(*m, RECOVERED);
+  ```
+
+- **`ParamRef`** does the same as an object you keep, for example as a member of a class. It resolves the name once per model layout and caches the position, so it gives the right value with any model, including models whose parameters were added in a different order, and it is safe to share between threads.
+- **`get_param_id()`** returns a `ParamId`, read with `par_at()` and written with `set_param_at()`. The position is valid for that model and all its copies (including the copies `run_multiple()` makes), because parameters are never removed.
+
+Only positions are cached, never values, so changes made with `set_param()` (for example by a global event) are seen immediately. Viruses and tools set up with a parameter name (`set_prob_infecting("Transmission rate")` and similar), `new_state_update_transition()`, and the built-in models already read parameters this way.
+
 ## Parallel Execution Strategies
 We support parallel execution through OpenMP, which is used to distribute workloads across simulation runs. Currently, OpenMP pragmas are applied when running multiple simulations in parallel.
 
@@ -19,7 +37,7 @@ As of current, epiworld does not include a dedicated benchmarking suite. The exa
 
 The example [`20-transmission-benchmark`](../examples/20-transmission-benchmark.md) times the network transmission step: it runs the SEIRH model of the [epiworld-benchmark](https://github.com/UofUEpiBio/epiworld-benchmark) study and two other network models in each transmission mode, and it compiles against older releases too, so versions can be compared side by side (see [Push and Pull Transmission](transmission-sampling.md)).
 
-The example [`21-parameter-lookup-benchmark`](../examples/21-parameter-lookup-benchmark.md) times parameter lookups by name (`par()`, `get_param()`), both per call and inside models whose hot paths call them, such as `ModelMeaslesMixing`. It also compiles against older releases.
+The example [`21-parameter-lookup-benchmark`](../examples/21-parameter-lookup-benchmark.md) times parameter lookups (see [Parameter Access](#parameter-access)), both per call and inside models whose hot paths call them, such as `ModelMeaslesMixing`. It also compiles against older releases.
 
 Until a formal benchmarking system is implemented, users can measure performance externally using tools such as `/usr/bin/time`, `perf`, or custom C++ timing utilities based on `std::chrono`. Running example models with controlled parameters and fixed random seeds allows fair comparisons between compiler flags, thread counts, and machine configurations.
 

@@ -158,9 +158,13 @@ protected:
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop = 0.0;
 
-    // Transparent comparator (std::less<>) so names can be looked up as
+    // Parameter values, by position, and each name's position. Parameters are
+    // never removed, so positions (ParamId) stay valid. The comparator is
+    // transparent (std::less<>) so names can be looked up as
     // std::string_view without building a std::string.
-    std::map<std::string, epiworld_double, std::less<> > parameters;
+    std::vector< epiworld_double > param_values;
+    std::map<std::string, size_t, std::less<> > param_index;
+    uint32_t param_layout_id = new_param_layout_id();
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
@@ -796,7 +800,11 @@ public:
         ) const;
     ///@}
 
-    std::map<std::string, epiworld_double, std::less<> > & params();
+    /**
+     * @brief Copy of the model parameters, by name.
+     * @details To change a parameter, use `set_param()`.
+     */
+    std::map<std::string, epiworld_double> params() const;
 
     /**
      * @brief Reset the model
@@ -917,10 +925,20 @@ public:
     /**
      * @name Setting and accessing parameters from the model
      *
-     * @details Parameters are stored in an ordered map keyed by name.
-     * Lookups take the name as a `std::string_view`, so passing a string
-     * literal or a `std::string` does not allocate; each lookup is a single
-     * search of the map. Unknown names throw.
+     * @details Parameters are stored in a vector, in the order they were
+     * added, with a map from each name to its position. Lookups by name take
+     * the name as a `std::string_view` (no allocation) and search the map once.
+     * Unknown names throw.
+     *
+     * Code that reads parameters for many agents every day can skip the
+     * search:
+     *
+     * - `get_param_id()` returns the position (`ParamId`) of a parameter, and
+     *   `par_at()` / `set_param_at()` read and write by position. Positions
+     *   are valid for the model and all its copies.
+     * - `ParamRef` (and the `EPI_PAR(model, "name")` macro) resolves a name
+     *   once per model layout and caches the position, so it is safe to use
+     *   with any model.
      *
      * The `par()` function members are aliases for `get_param()`.
      *
@@ -954,6 +972,11 @@ public:
     bool has_param(std::string_view pname) const;
     void set_param(std::string_view pname, epiworld_double val);
     epiworld_double par(std::string_view pname) const;
+    ParamId get_param_id(std::string_view pname) const;
+    epiworld_double par_at(ParamId id) const;
+    void set_param_at(ParamId id, epiworld_double val);
+    size_t get_n_params() const { return param_values.size(); };
+    uint32_t get_param_layout_id() const { return param_layout_id; };
     ///@}
 
     void get_elapsed(

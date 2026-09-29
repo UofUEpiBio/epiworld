@@ -2,7 +2,7 @@
 
 Times model parameter lookups by name, both on their own and inside models whose hot paths call them:
 
-- **P**: a micro benchmark. It reports nanoseconds per `par()`, `get_param()` and `operator()` call on a model with 20 parameters. It looks up a name that fits in the short-string buffer (`"Recovery rate"`) and one that does not (`"Transmission rate"`).
+- **P**: a micro benchmark. It reports nanoseconds per `par()`, `get_param()` and `operator()` call on a model with 20 parameters. It looks up a name that fits in the short-string buffer (`"Recovery rate"`) and one that does not (`"Transmission rate"`). On versions that have them, it also times `par_at(ParamId)` and `ParamRef`, which read by position.
 - **A**: an SEIRH model on a Watts–Strogatz network with mean degree 10. The virus reads `"Transmission rate"` by name for every susceptible–infected contact. `new_state_update_transition` reads its rates by name for every exposed and infected agent, every day.
 - **M**: `ModelMeaslesMixing` with one group, 15 contacts a day, and quarantine and contact tracing on. Its update functions call `par()` about 20 times per affected agent per day.
 

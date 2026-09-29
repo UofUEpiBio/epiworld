@@ -100,7 +100,9 @@ $(NAME)_SOURCES := \
 	35b-directed-transmission.cpp \
 	36a-edgelist-neighbors.cpp \
 	36b-edgelist-paths-agree.cpp \
-	37a-parameter-lookup.cpp
+	37a-parameter-lookup.cpp \
+	37b-param-id.cpp \
+	37c-param-ref.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

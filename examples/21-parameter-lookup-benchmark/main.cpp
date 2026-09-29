@@ -23,7 +23,8 @@ using namespace epiworld;
 // P: micro benchmark. Nanoseconds per `par()`, `get_param()`, and
 //    `operator()` call on a model with 20 parameters, looking up a name that
 //    fits in the short-string buffer ("Recovery rate") and one that does not
-//    ("Transmission rate", 17 characters).
+//    ("Transmission rate", 17 characters). On versions with `ParamId` and
+//    `ParamRef`, it also times reading by position.
 // A: SEIRH on a Watts-Strogatz network (mean degree 10, R0 near 4). The
 //    virus reads "Transmission rate" by name for every susceptible-infected
 //    contact, and `new_state_update_transition` reads its rates by name for
@@ -172,6 +173,16 @@ static void run_micro(const Options & o)
         std::string sname(name);
         ns = ns_per_call(o.calls, [&]() { return model.par(sname); });
         std::printf("%-26s %-19s %8.2f\n", "par(std::string)", name, ns);
+
+        #ifdef EPI_PAR
+        ParamId id = model.get_param_id(name);
+        ns = ns_per_call(o.calls, [&]() { return model.par_at(id); });
+        std::printf("%-26s %-19s %8.2f\n", "par_at(ParamId)", name, ns);
+
+        ParamRef ref(name);
+        ns = ns_per_call(o.calls, [&]() { return ref(model); });
+        std::printf("%-26s %-19s %8.2f\n", "ParamRef", name, ns);
+        #endif
     }
     std::fflush(stdout);
 }

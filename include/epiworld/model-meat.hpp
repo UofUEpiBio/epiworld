@@ -601,7 +601,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     entities(model.entities),
     rewire_fun(model.rewire_fun),
     rewire_prop(model.rewire_prop),
-    parameters(model.parameters),
+    param_values(model.param_values),
+    param_index(model.param_index),
+    param_layout_id(model.param_layout_id),
     ndays(model.ndays),
     pb(model.pb),
     state_fun(model.state_fun),
@@ -699,7 +701,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     // Rewiring
     rewire_fun(std::move(model.rewire_fun)),
     rewire_prop(std::move(model.rewire_prop)),
-    parameters(std::move(model.parameters)),
+    param_values(std::move(model.param_values)),
+    param_index(std::move(model.param_index)),
+    param_layout_id(model.param_layout_id),
     // Others
     ndays(model.ndays),
     pb(std::move(model.pb)),
@@ -769,7 +773,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     rewire_fun  = m.rewire_fun;
     rewire_prop = m.rewire_prop;
 
-    parameters = m.parameters;
+    param_values    = m.param_values;
+    param_index     = m.param_index;
+    param_layout_id = m.param_layout_id;
     ndays      = m.ndays;
     pb         = m.pb;
 
@@ -1009,13 +1015,13 @@ inline Model<TSeq> & Model<TSeq>::agents_bernoulli(
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::operator()(std::string_view pname) const {
 
-    const auto iter = parameters.find(pname);
-    if (iter == parameters.end())
+    const auto iter = param_index.find(pname);
+    if (iter == param_index.end())
         throw std::range_error(
             "The parameter '" + std::string(pname) + "' is not in the model."
         );
 
-    return iter->second;
+    return param_values[iter->second];
 
 }
 
@@ -2336,9 +2342,12 @@ std::vector< int > & target
 }
 
 template<typename TSeq>
-inline std::map<std::string, epiworld_double, std::less<> > & Model<TSeq>::params()
+inline std::map<std::string, epiworld_double> Model<TSeq>::params() const
 {
-    return parameters;
+    std::map<std::string, epiworld_double> res;
+    for (const auto & p : param_index)
+        res.emplace(p.first, param_values[p.second]);
+    return res;
 }
 
 template<typename TSeq>
@@ -2550,13 +2559,18 @@ inline epiworld_double Model<TSeq>::add_param(
     bool overwrite
     ) {
 
-    auto iter = parameters.find(pname);
-    if (iter == parameters.end())
-        parameters.emplace(std::move(pname), initial_value);
+    auto iter = param_index.find(pname);
+    if (iter == param_index.end())
+    {
+        param_index.emplace(std::move(pname), param_values.size());
+        param_values.push_back(initial_value);
+        // Names now map to positions no other model layout has
+        param_layout_id = new_param_layout_id();
+    }
     else if (!overwrite)
         throw std::logic_error("The parameter " + pname + " already exists.");
     else
-        iter->second = initial_value;
+        param_values[iter->second] = initial_value;
 
     return initial_value;
 
@@ -2578,31 +2592,31 @@ inline Model<TSeq> & Model<TSeq>::read_params(std::string fn, bool overwrite)
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::get_param(std::string_view pname) const
 {
-    const auto iter = parameters.find(pname);
-    if (iter == parameters.end())
+    const auto iter = param_index.find(pname);
+    if (iter == param_index.end())
         throw std::logic_error(
             "The parameter " + std::string(pname) + " does not exists."
         );
 
-    return iter->second;
+    return param_values[iter->second];
 }
 
 template<typename TSeq>
 inline bool Model<TSeq>::has_param(std::string_view pname) const
 {
-    return parameters.find(pname) != parameters.end();
+    return param_index.find(pname) != param_index.end();
 }
 
 template<typename TSeq>
 inline void Model<TSeq>::set_param(std::string_view pname, epiworld_double value)
 {
-    auto iter = parameters.find(pname);
-    if (iter == parameters.end())
+    auto iter = param_index.find(pname);
+    if (iter == param_index.end())
         throw std::logic_error(
             "The parameter '" + std::string(pname) + "' does not exists."
         );
 
-    iter->second = value;
+    param_values[iter->second] = value;
 
     return;
 
@@ -2611,12 +2625,47 @@ inline void Model<TSeq>::set_param(std::string_view pname, epiworld_double value
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::par(std::string_view pname) const
 {
-    const auto iter = parameters.find(pname);
-    if (iter == parameters.end())
+    const auto iter = param_index.find(pname);
+    if (iter == param_index.end())
         throw std::logic_error(
             "The parameter '" + std::string(pname) + "' does not exists."
         );
-    return iter->second;
+    return param_values[iter->second];
+}
+
+template<typename TSeq>
+inline ParamId Model<TSeq>::get_param_id(std::string_view pname) const
+{
+    const auto iter = param_index.find(pname);
+    if (iter == param_index.end())
+        throw std::logic_error(
+            "The parameter '" + std::string(pname) + "' does not exists."
+        );
+    return ParamId{iter->second};
+}
+
+template<typename TSeq>
+inline epiworld_double Model<TSeq>::par_at(ParamId id) const
+{
+    if (id.idx >= param_values.size())
+        throw std::out_of_range(
+            "The parameter position " + std::to_string(id.idx) +
+            " is out of range (the model has " +
+            std::to_string(param_values.size()) + " parameters)."
+        );
+    return param_values[id.idx];
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_param_at(ParamId id, epiworld_double value)
+{
+    if (id.idx >= param_values.size())
+        throw std::out_of_range(
+            "The parameter position " + std::to_string(id.idx) +
+            " is out of range (the model has " +
+            std::to_string(param_values.size()) + " parameters)."
+        );
+    param_values[id.idx] = value;
 }
 
 #define DURCAST(tunit,txtunit) {\
@@ -3103,12 +3152,13 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        parameters.size() != other.parameters.size(),
+        param_values.size() != other.param_values.size(),
         "Model:: () don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        parameters != other.parameters,
+        (param_values != other.param_values) ||
+            (param_index != other.param_index),
         "Model:: parameters don't match"
     )
 

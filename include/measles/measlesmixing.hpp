@@ -276,9 +276,9 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
-            this->runif() < this->par("Quarantine willingness");
+            this->runif() < EPI_PAR(this, "Quarantine willingness");
         isolation_willingness[idx] =
-            this->runif() < this->par("Isolation willingness");
+            this->runif() < EPI_PAR(this, "Isolation willingness");
     }
 
     agent_quarantine_triggered.assign(this->size(), 0u);
@@ -393,7 +393,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_prodromal(
     auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
 
     // Does the agent transition to rash?
-    if (m->runif() < 1.0/m->par("Prodromal period"))
+    if (m->runif() < 1.0/EPI_PAR(m, "Prodromal period"))
     {
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(*m, RASH);
@@ -413,8 +413,8 @@ inline void ModelMeaslesMixing<TSeq>::_update_rash(
     // Checking if the agent will be detected or not
     bool detected = false;
     if (
-        (m->par("Isolation period") >= 0) &&
-        (m->runif() < 1.0/m->par("Days undetected"))
+        (EPI_PAR(m, "Isolation period") >= 0) &&
+        (m->runif() < 1.0/EPI_PAR(m, "Days undetected"))
     )
     {
         model->agent_quarantine_triggered[p->get_id()] =
@@ -423,8 +423,8 @@ inline void ModelMeaslesMixing<TSeq>::_update_rash(
     }
 
     // Computing probabilities for state change
-    m->array_double_tmp[0] = 1.0/m->par("Rash period"); // Recovery
-    m->array_double_tmp[1] = m->par("Hospitalization rate"); // Hospitalization
+    m->array_double_tmp[0] = 1.0/EPI_PAR(m, "Rash period"); // Recovery
+    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate"); // Hospitalization
 
     auto which = m->sample_from_probs(2);
 
@@ -465,14 +465,14 @@ inline void ModelMeaslesMixing<TSeq>::_update_isolated(
     int days_since = m->today() - model->day_rash_onset[p->get_id()];
 
     bool unisolate =
-        (m->par("Isolation period") <= days_since) ?
+        (EPI_PAR(m, "Isolation period") <= days_since) ?
         true: false;
 
     // Sampling from the probabilities of recovery
-    m->array_double_tmp[0] = 1.0/m->par("Rash period");
+    m->array_double_tmp[0] = 1.0/EPI_PAR(m, "Rash period");
 
     // And hospitalization
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
+    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate");
 
     auto which = m->sample_from_probs(2);
 
@@ -508,7 +508,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_quarantine_suscep(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     bool unquarantine =
-        (m->par("Quarantine period") <= days_since) ?
+        (EPI_PAR(m, "Quarantine period") <= days_since) ?
         true: false;
 
     if (unquarantine)
@@ -530,7 +530,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_quarantine_latent(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     bool unquarantine =
-        (m->par("Quarantine period") <= days_since) ?
+        (EPI_PAR(m, "Quarantine period") <= days_since) ?
         true: false;
 
     if (m->runif() < 1.0/(p->get_virus()->get_incubation(m)))
@@ -556,11 +556,11 @@ inline void ModelMeaslesMixing<TSeq>::_update_quarantine_prodromal(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     bool unquarantine =
-        (m->par("Quarantine period") <= days_since) ?
+        (EPI_PAR(m, "Quarantine period") <= days_since) ?
         true: false;
 
     // Develops rash?
-    if (m->runif() < (1.0/m->par("Prodromal period")))
+    if (m->runif() < (1.0/EPI_PAR(m, "Prodromal period")))
     {
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(*m, ISOLATED);
@@ -583,7 +583,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_quarantine_recovered(
     auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
-    if (days_since >= m->par("Quarantine period"))
+    if (days_since >= EPI_PAR(m, "Quarantine period"))
         p->change_state(*m, RECOVERED);
 
 };
@@ -600,7 +600,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_isolated_recovered(
     int days_since = m->today() - model->day_rash_onset[p->get_id()];
 
     bool unisolate =
-        (m->par("Isolation period") <= days_since) ?
+        (EPI_PAR(m, "Isolation period") <= days_since) ?
         true: false;
 
     if (unisolate)
@@ -616,7 +616,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_hospitalized(
 ) {
 
     // The agent is removed from the system
-    if (m->runif() < 1.0/m->par("Hospitalization period"))
+    if (m->runif() < 1.0/EPI_PAR(m, "Hospitalization period"))
         p->rm_virus(*m, RECOVERED);
 
 };
@@ -636,7 +636,7 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
         if (model->agent_quarantine_triggered[agent_i] != QUARANTINE_PROCESS_ACTIVE)
             continue;
 
-        if (m->par("Quarantine period") < 0)
+        if (EPI_PAR(m, "Quarantine period") < 0)
             continue;
 
         // Getting the number of contacts, if it is greater
@@ -657,13 +657,13 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
             
             bool within_days =
                 std::abs(day_rash_onset_agent_i - contact_date) <=
-                m->par("Contact tracing days window");
+                EPI_PAR(m, "Contact tracing days window");
 
             if (!within_days)
                 continue;
 
             // Checking if we will detect the contact
-            if (m->runif() > m->par("Contact tracing success rate"))
+            if (m->runif() > EPI_PAR(m, "Contact tracing success rate"))
                 continue;
 
             auto & agent = m->get_agent(contact_id);
@@ -677,7 +677,7 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
             if (
                 model->quarantine_willingness[contact_id] &&
-                (m->par("Quarantine period") >= 0)
+                (EPI_PAR(m, "Quarantine period") >= 0)
             )
             {
 
