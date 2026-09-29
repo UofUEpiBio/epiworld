@@ -2,6 +2,7 @@
 #include "../../include/measles/measles.hpp"
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -61,33 +62,71 @@ static std::vector< std::string > split(const std::string & s)
     return out;
 }
 
+[[noreturn]] static void fail(const std::string & msg)
+{
+    std::fprintf(stderr, "%s\n", msg.c_str());
+    std::exit(1);
+}
+
+// Parses a whole string as an integer in [min, max].
+static long parse_long(
+    const std::string & key, const std::string & val,
+    long min, long max = LONG_MAX
+)
+{
+    size_t used = 0u;
+    long x = 0;
+    try {
+        x = std::stol(val, &used);
+    } catch (const std::exception &) {
+        used = 0u;
+    }
+    if (used == 0u || used != val.size())
+        fail("Option " + key + " expects an integer, got '" + val + "'");
+    if (x < min || x > max)
+        fail(
+            "Option " + key + " must be between " + std::to_string(min) +
+            " and " + std::to_string(max)
+        );
+    return x;
+}
+
 static Options parse(int argc, char ** argv)
 {
     Options o;
-    for (int i = 1; i + 1 < argc; i += 2)
+    for (int i = 1; i < argc; i += 2)
     {
         std::string key = argv[i];
+        if (i + 1 >= argc)
+            fail("Option " + key + " has no value");
         std::string val = argv[i + 1];
         if (key == "--sizes")
         {
             o.sizes.clear();
+            // Scenario M starts with 100 cases, so it needs 100 agents
             for (auto & s : split(val))
-                o.sizes.push_back(static_cast< size_t >(std::stoul(s)));
+                o.sizes.push_back(static_cast< size_t >(parse_long(key, s, 100)));
         }
         else if (key == "--reps")
-            o.reps = std::stoi(val);
+            o.reps = static_cast< int >(parse_long(key, val, 1, INT_MAX));
         else if (key == "--days")
-            o.days = std::stoi(val);
+            o.days = static_cast< int >(parse_long(key, val, 1, INT_MAX));
         else if (key == "--scenarios")
             o.scenarios = split(val);
         else if (key == "--calls")
-            o.calls = std::stol(val);
+            o.calls = parse_long(key, val, 1);
         else
-        {
-            std::fprintf(stderr, "Unknown option %s\n", key.c_str());
-            std::exit(1);
-        }
+            fail("Unknown option " + key);
     }
+
+    if (o.sizes.empty())
+        fail("Option --sizes needs at least one size");
+    if (o.scenarios.empty())
+        fail("Option --scenarios needs at least one scenario");
+    for (auto & scen : o.scenarios)
+        if (scen != "P" && scen != "A" && scen != "M")
+            fail("Unknown scenario " + scen);
+
     return o;
 }
 
@@ -117,6 +156,7 @@ static uint64_t run_checksum(Model<> & m)
     hash_ints(h, source);
     hash_ints(h, target);
     hash_ints(h, virus);
+    hash_ints(h, sexp);
     return h;
 }
 

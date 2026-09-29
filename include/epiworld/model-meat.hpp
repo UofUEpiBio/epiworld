@@ -3157,8 +3157,8 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        (param_values != other.param_values) ||
-            (param_index != other.param_index),
+        // By name, so the order parameters were added in does not matter
+        params() != other.params(),
         "Model:: parameters don't match"
     )
 

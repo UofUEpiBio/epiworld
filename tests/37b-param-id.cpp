@@ -39,6 +39,16 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     REQUIRE_THAT(copy.par_at(beta), Catch::Matchers::WithinAbs(0.1, 1e-6));
     REQUIRE(copy.get_param_layout_id() == model.get_param_layout_id());
 
+    // Equality compares parameters by name, not by position
+    Model<> order_1, order_2;
+    order_1.add_param(0.1, "a");
+    order_1.add_param(0.2, "b");
+    order_2.add_param(0.2, "b");
+    order_2.add_param(0.1, "a");
+    REQUIRE(order_1 == order_2);
+    order_2.set_param("a", 0.3);
+    REQUIRE_FALSE(order_1 == order_2);
+
     REQUIRE_THROWS_AS(model.par_at(ParamId{99u}), std::out_of_range);
     REQUIRE_THROWS_AS(model.set_param_at(ParamId{99u}, 1.0), std::out_of_range);
     REQUIRE_THROWS_WITH(

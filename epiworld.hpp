@@ -20,9 +20,7 @@
 #include <set>
 #include <type_traits>
 #include <cassert>
-#ifdef EPI_DEBUG_VIRUS
 #include <atomic>
-#endif
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -59,7 +57,7 @@ namespace epiworld {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/config.hpp-
+ Start of -./include/epiworld/config.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -426,7 +424,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/config.hpp-
+ End of -./include/epiworld/config.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -435,7 +433,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/epiworld-macros.hpp-
+ Start of -./include/epiworld/epiworld-macros.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -472,6 +470,21 @@ public:
  * 
  */
 #define EPI_PARAMS(i) m->operator()(i)
+
+/**
+ * @brief Value of the parameter named `pname` (a string literal) in `model`
+ * (a pointer to a model).
+ *
+ * @details Same value as `model->par(pname)`, but the name is looked up once
+ * per model layout and cached in a function-local `static ParamRef`, so
+ * repeated calls read the value directly. Use it in update functions and
+ * other code that runs for many agents every day.
+ */
+#define EPI_PAR(model, pname) \
+    ([]() -> const ::epiworld::ParamRef & { \
+        static const ::epiworld::ParamRef epi_param_ref_(pname); \
+        return epi_param_ref_; \
+    }()(*(model)))
 
 /**
  * @brief Helper macro for defining Mutation Functions
@@ -563,7 +576,141 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/epiworld-macros.hpp-
+ End of -./include/epiworld/epiworld-macros.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/param-ref.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_PARAM_REF_HPP
+#define EPIWORLD_PARAM_REF_HPP
+
+/**
+ * @brief Position of a parameter in a model's parameter table.
+ *
+ * @details Returned by `Model::get_param_id()` and read with
+ * `Model::par_at()`. Parameters are never removed, so an id stays valid for
+ * the model that returned it and for every copy of that model (including the
+ * copies `run_multiple()` makes). Models built separately may place the same
+ * name at different positions; use `ParamRef` when the same code runs on
+ * different models.
+ */
+struct ParamId {
+    size_t idx;
+};
+
+/**
+ * @brief Identifies one layout of a model's parameter table.
+ *
+ * @details Every model starts with a fresh id, copies keep the id of the
+ * model they copy, and adding a new parameter gives the model a fresh id. So
+ * two models with the same id always map names to the same positions. Zero
+ * is never returned; `ParamRef` uses it for "not resolved yet".
+ */
+inline uint32_t new_param_layout_id()
+{
+    static std::atomic< uint32_t > counter{0u};
+    uint32_t id = ++counter;
+    while (id == 0u)
+        id = ++counter;
+    return id;
+}
+
+/**
+ * @brief A model parameter referenced by name, resolved to its position on
+ * first use.
+ *
+ * @details Calling the object with a model returns the parameter's current
+ * value. The first call on a model looks the name up in the parameter table
+ * and caches its position together with the model's parameter layout (see
+ * `new_param_layout_id()`); later calls on that model, or on any copy of it,
+ * read the value directly. Using the object with a model of a different
+ * layout looks the name up again, so a `ParamRef` is always safe to share
+ * between models and threads.
+ *
+ * Values are never cached, only positions: changes made with `set_param()`
+ * are seen immediately.
+ *
+ * `EPI_PAR(model, "name")` wraps a function-local `static ParamRef`, which is
+ * the easiest way to use it inside update functions.
+ */
+class ParamRef {
+private:
+    std::string pname;
+
+    // (layout id << 32) | position; 0 means not resolved.
+    mutable std::atomic< uint64_t > cache{0u};
+
+public:
+
+    explicit ParamRef(std::string name) : pname(std::move(name)) {};
+
+    ParamRef(const ParamRef & other) :
+        pname(other.pname),
+        cache(other.cache.load(std::memory_order_relaxed)) {};
+
+    ParamRef & operator=(const ParamRef & other)
+    {
+        pname = other.pname;
+        cache.store(
+            other.cache.load(std::memory_order_relaxed),
+            std::memory_order_relaxed
+        );
+        return *this;
+    };
+
+    const std::string & name() const { return pname; };
+
+    /**
+     * @brief Position of the parameter in `model`'s table.
+     * @throws std::logic_error if the model has no parameter with this name.
+     */
+    template< typename TModel >
+    ParamId id(const TModel & model) const
+    {
+        const uint32_t layout = model.get_param_layout_id();
+        const uint64_t c = cache.load(std::memory_order_relaxed);
+        if (static_cast< uint32_t >(c >> 32) == layout)
+            return ParamId{static_cast< size_t >(c & 0xffffffffu)};
+
+        ParamId res = model.get_param_id(pname);
+        if (res.idx > 0xffffffffu)
+            return res;
+
+        cache.store(
+            (static_cast< uint64_t >(layout) << 32) |
+                static_cast< uint64_t >(res.idx),
+            std::memory_order_relaxed
+        );
+        return res;
+    };
+
+    /**
+     * @brief Current value of the parameter in `model`.
+     * @throws std::logic_error if the model has no parameter with this name.
+     */
+    template< typename TModel >
+    epiworld_double operator()(const TModel & model) const
+    {
+        return model.par_at(id(model));
+    };
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/param-ref.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -573,7 +720,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/epiassert-bones.hpp-
+ Start of -./include/epiworld/epiassert-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -945,7 +1092,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/epiassert-bones.hpp-
+ End of -./include/epiworld/epiassert-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -955,7 +1102,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/misc.hpp-
+ Start of -./include/epiworld/misc.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1361,7 +1508,7 @@ inline To* model_cast(Model<TSeq>* m) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/misc.hpp-
+ End of -./include/epiworld/misc.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1370,7 +1517,7 @@ inline To* model_cast(Model<TSeq>* m) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/progress.hpp-
+ Start of -./include/epiworld/progress.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1463,7 +1610,7 @@ inline void Progress::next() {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/progress.hpp-
+ End of -./include/epiworld/progress.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1473,7 +1620,7 @@ inline void Progress::next() {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/rng-utils.hpp-
+ Start of -./include/epiworld/rng-utils.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1588,7 +1735,7 @@ inline epiworld_double runif_mt19937(std::mt19937 & engine) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/rng-utils.hpp-
+ End of -./include/epiworld/rng-utils.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -1597,7 +1744,7 @@ inline epiworld_double runif_mt19937(std::mt19937 & engine) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/modeldiagram-meat.hpp-
+ Start of -./include/epiworld/modeldiagram-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -2077,7 +2224,7 @@ inline void ModelDiagram::draw_from_data(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/modeldiagram-meat.hpp-
+ End of -./include/epiworld/modeldiagram-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -2087,7 +2234,7 @@ inline void ModelDiagram::draw_from_data(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/math/distributions.hpp-
+ Start of -./include/epiworld/math/distributions.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -2264,7 +2411,7 @@ inline double gen_int_mean(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/math/distributions.hpp-
+ End of -./include/epiworld/math/distributions.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -2274,7 +2421,7 @@ inline double gen_int_mean(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/math/lfmcmc.hpp-
+ Start of -./include/epiworld/math/lfmcmc.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3437,7 +3584,7 @@ inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/math/lfmcmc.hpp-
+ End of -./include/epiworld/math/lfmcmc.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3447,7 +3594,7 @@ inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/userdata-bones.hpp-
+ Start of -./include/epiworld/userdata-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3556,7 +3703,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/userdata-bones.hpp-
+ End of -./include/epiworld/userdata-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3565,7 +3712,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/userdata-meat.hpp-
+ Start of -./include/epiworld/userdata-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3791,7 +3938,7 @@ inline void UserData<TSeq>::print() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/userdata-meat.hpp-
+ End of -./include/epiworld/userdata-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3801,7 +3948,7 @@ inline void UserData<TSeq>::print() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/seq_processing.hpp-
+ Start of -./include/epiworld/seq_processing.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3904,7 +4051,7 @@ inline std::string default_seq_writer<int>(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/seq_processing.hpp-
+ End of -./include/epiworld/seq_processing.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -3914,7 +4061,7 @@ inline std::string default_seq_writer<int>(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/hospitalizationstracker-bones.hpp-
+ Start of -./include/epiworld/hospitalizationstracker-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4029,7 +4176,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/hospitalizationstracker-bones.hpp-
+ End of -./include/epiworld/hospitalizationstracker-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4038,7 +4185,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/hospitalizationstracker-meat.hpp-
+ Start of -./include/epiworld/hospitalizationstracker-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4177,7 +4324,7 @@ inline size_t HospitalizationsTracker<TSeq>::size() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/hospitalizationstracker-meat.hpp-
+ End of -./include/epiworld/hospitalizationstracker-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4187,7 +4334,7 @@ inline size_t HospitalizationsTracker<TSeq>::size() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/database-bones.hpp-
+ Start of -./include/epiworld/database-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4594,7 +4741,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/database-bones.hpp-
+ End of -./include/epiworld/database-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4603,7 +4750,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/database-meat.hpp-
+ Start of -./include/epiworld/database-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6862,7 +7009,7 @@ inline void DataBase<TSeq>::get_hospitalizations(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/database-meat.hpp-
+ End of -./include/epiworld/database-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6871,7 +7018,7 @@ inline void DataBase<TSeq>::get_hospitalizations(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/adjlist-bones.hpp-
+ Start of -./include/epiworld/adjlist-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6948,6 +7095,10 @@ public:
         return dat;
     };
 
+    const std::vector<std::map<int,int>> & get_dat() const {
+        return dat;
+    };
+
     bool is_directed() const; ///< `true` if the network is directed.
 
 };
@@ -6958,7 +7109,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/adjlist-bones.hpp-
+ End of -./include/epiworld/adjlist-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6967,7 +7118,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/adjlist-meat.hpp-
+ Start of -./include/epiworld/adjlist-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -7206,7 +7357,7 @@ inline bool AdjList::is_directed() const {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/adjlist-meat.hpp-
+ End of -./include/epiworld/adjlist-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -7216,7 +7367,7 @@ inline bool AdjList::is_directed() const {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/randgraph.hpp-
+ Start of -./include/epiworld/randgraph.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8297,7 +8448,7 @@ inline AdjList rgraph_sbm(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/randgraph.hpp-
+ End of -./include/epiworld/randgraph.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8307,7 +8458,7 @@ inline AdjList rgraph_sbm(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/queue-bones.hpp-
+ Start of -./include/epiworld/queue-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8670,7 +8821,7 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/queue-bones.hpp-
+ End of -./include/epiworld/queue-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8680,7 +8831,7 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/contacttracing-bones.hpp-
+ Start of -./include/epiworld/contacttracing-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8840,7 +8991,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/contacttracing-bones.hpp-
+ End of -./include/epiworld/contacttracing-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8849,7 +9000,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/contacttracing-meat.hpp-
+ Start of -./include/epiworld/contacttracing-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8993,7 +9144,7 @@ inline void ContactTracing::print(size_t agent)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/contacttracing-meat.hpp-
+ End of -./include/epiworld/contacttracing-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9003,7 +9154,7 @@ inline void ContactTracing::print(size_t agent)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/contactmatrix-bones.hpp-
+ Start of -./include/epiworld/contactmatrix-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9081,7 +9232,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/contactmatrix-bones.hpp-
+ End of -./include/epiworld/contactmatrix-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9090,7 +9241,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/contactmatrix-meat.hpp-
+ Start of -./include/epiworld/contactmatrix-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9184,7 +9335,7 @@ inline size_t ContactMatrix::get_contact_matrix_size() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/contactmatrix-meat.hpp-
+ End of -./include/epiworld/contactmatrix-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9194,7 +9345,7 @@ inline size_t ContactMatrix::get_contact_matrix_size() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/globalevent-bones.hpp-
+ Start of -./include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9271,7 +9422,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/globalevent-bones.hpp-
+ End of -./include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9280,7 +9431,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/globalevent-meat.hpp-
+ Start of -./include/epiworld/globalevent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9382,7 +9533,7 @@ inline std::unique_ptr<GlobalEvent<TSeq>> GlobalEvent<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/globalevent-meat.hpp-
+ End of -./include/epiworld/globalevent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9392,7 +9543,7 @@ inline std::unique_ptr<GlobalEvent<TSeq>> GlobalEvent<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/model-bones.hpp-
+ Start of -./include/epiworld/model-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -10576,7 +10727,13 @@ protected:
     std::function<void(std::vector<Agent<TSeq>>*,Model<TSeq>*,epiworld_double)> rewire_fun;
     epiworld_double rewire_prop = 0.0;
 
-    std::map<std::string, epiworld_double > parameters;
+    // Parameter values, by position, and each name's position. Parameters are
+    // never removed, so positions (ParamId) stay valid. The comparator is
+    // transparent (std::less<>) so names can be looked up as
+    // std::string_view without building a std::string.
+    std::vector< epiworld_double > param_values;
+    std::map<std::string, size_t, std::less<> > param_index;
+    uint32_t param_layout_id = new_param_layout_id();
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
@@ -10591,6 +10748,10 @@ protected:
 
     bool verbose     = true;
     int current_date = 0;
+
+    // True while run() is driving the day loop, so get_ndays() is the run's
+    // actual horizon. Not copied: a copy of the model is not in a run.
+    bool running = false;
 
     void dist_tools();
     void dist_virus();
@@ -10653,6 +10814,19 @@ protected:
     AgentIdsView state_index_members(size_t state) const;
     void state_index_degree(Agent<TSeq> & p, size_t n_neighbors_before);
     ///@}
+
+    /**
+     * @brief Sets every agent's neighbors from rows of a flat array.
+     *
+     * @details Row `i` is `ids[start[i]]` to `ids[start[i + 1] - 1]`, in any
+     * order and with repeats. Each row is sorted and deduplicated in place and
+     * copied into agent `i`'s neighbors, allocated once at its final size. The
+     * agents must have no ties yet (see `agents_empty_graph()`).
+     */
+    void agents_set_neighbors(
+        const std::vector< size_t > & start,
+        std::vector< size_t > & ids
+    );
 
     /**
      * @name Network transmission
@@ -10789,7 +10963,7 @@ public:
 
     DataBase<TSeq> & get_db();
     const DataBase<TSeq> & get_db() const;
-    epiworld_double operator()(std::string pname);
+    epiworld_double operator()(std::string_view pname) const;
 
     size_t size() const;
 
@@ -10968,7 +11142,7 @@ public:
         bool directed
     );
 
-    void agents_from_adjlist(AdjList al);
+    void agents_from_adjlist(const AdjList & al);
 
     bool is_directed() const; ///< Whether the network was built directed.
 
@@ -11096,6 +11270,17 @@ public:
     size_t get_n_viruses() const; ///< Number of viruses in the model
     size_t get_n_tools() const; ///< Number of tools in the model
     epiworld_fast_uint get_ndays() const;
+
+    /**
+     * @brief True while `run()` is driving the day loop.
+     *
+     * @details It is set from just before `reset()` until the last day is
+     * done, so global events (including their `reset()`) can rely on
+     * `get_ndays()` being the run's horizon -- even when it is zero. It is
+     * false when the day loop is driven by hand (`reset()`, then the steps
+     * called directly), where `get_ndays()` means nothing.
+     */
+    bool is_running() const;
     epiworld_fast_uint get_n_replicates() const;
     size_t get_sim_id() const;
     size_t get_n_entities() const;
@@ -11184,7 +11369,11 @@ public:
         ) const;
     ///@}
 
-    std::map<std::string, epiworld_double> & params();
+    /**
+     * @brief Copy of the model parameters, by name.
+     * @details To change a parameter, use `set_param()`.
+     */
+    std::map<std::string, epiworld_double> params() const;
 
     /**
      * @brief Reset the model
@@ -11305,13 +11494,20 @@ public:
     /**
      * @name Setting and accessing parameters from the model
      *
-     * @details Tools can incorporate parameters included in the model.
-     * Internally, parameters in the tool are stored as pointers to
-     * an std::map<> of parameters in the model. Using the `epiworld_fast_uint`
-     * method directly fetches the parameters in the order these were
-     * added to the tool. Accessing parameters via the `std::string` method
-     * involves searching the parameter directly in the std::map<> member
-     * of the model (so it is not recommended.)
+     * @details Parameters are stored in a vector, in the order they were
+     * added, with a map from each name to its position. Lookups by name take
+     * the name as a `std::string_view` (no allocation) and search the map once.
+     * Unknown names throw.
+     *
+     * Code that reads parameters for many agents every day can skip the
+     * search:
+     *
+     * - `get_param_id()` returns the position (`ParamId`) of a parameter, and
+     *   `par_at()` / `set_param_at()` read and write by position. Positions
+     *   are valid for the model and all its copies.
+     * - `ParamRef` (and the `EPI_PAR(model, "name")` macro) resolves a name
+     *   once per model layout and caches the position, so it is safe to use
+     *   with any model.
      *
      * The `par()` function members are aliases for `get_param()`.
      *
@@ -11341,10 +11537,15 @@ public:
         epiworld_double initial_val, std::string pname, bool overwrite = false
     );
     Model<TSeq> & read_params(std::string fn, bool overwrite = false);
-    epiworld_double get_param(std::string pname);
+    epiworld_double get_param(std::string_view pname) const;
     bool has_param(std::string_view pname) const;
-    void set_param(std::string pname, epiworld_double val);
-    epiworld_double par(std::string pname) const;
+    void set_param(std::string_view pname, epiworld_double val);
+    epiworld_double par(std::string_view pname) const;
+    ParamId get_param_id(std::string_view pname) const;
+    epiworld_double par_at(ParamId id) const;
+    void set_param_at(ParamId id, epiworld_double val);
+    size_t get_n_params() const { return param_values.size(); };
+    uint32_t get_param_layout_id() const { return param_layout_id; };
     ///@}
 
     void get_elapsed(
@@ -11544,7 +11745,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/model-bones.hpp-
+ End of -./include/epiworld/model-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -11553,7 +11754,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/model-rand-meat.hpp-
+ Start of -./include/epiworld/model-rand-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -11850,7 +12051,7 @@ inline void Model<TSeq>::seed(size_t s) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/model-rand-meat.hpp-
+ End of -./include/epiworld/model-rand-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -11859,7 +12060,7 @@ inline void Model<TSeq>::seed(size_t s) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/model-meat.hpp-
+ Start of -./include/epiworld/model-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -11869,6 +12070,9 @@ inline void Model<TSeq>::seed(size_t s) {
 #define EPIWORLD_MODEL_MEAT_HPP
 
 #include <vector>
+#include <algorithm>
+#include <numeric>
+#include <stdexcept>
 #include <functional>
 #include <memory>
 #include <random>
@@ -12465,7 +12669,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     entities(model.entities),
     rewire_fun(model.rewire_fun),
     rewire_prop(model.rewire_prop),
-    parameters(model.parameters),
+    param_values(model.param_values),
+    param_index(model.param_index),
+    param_layout_id(model.param_layout_id),
     ndays(model.ndays),
     pb(model.pb),
     state_fun(model.state_fun),
@@ -12563,7 +12769,9 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     // Rewiring
     rewire_fun(std::move(model.rewire_fun)),
     rewire_prop(std::move(model.rewire_prop)),
-    parameters(std::move(model.parameters)),
+    param_values(std::move(model.param_values)),
+    param_index(std::move(model.param_index)),
+    param_layout_id(model.param_layout_id),
     // Others
     ndays(model.ndays),
     pb(std::move(model.pb)),
@@ -12633,7 +12841,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     rewire_fun  = m.rewire_fun;
     rewire_prop = m.rewire_prop;
 
-    parameters = m.parameters;
+    param_values    = m.param_values;
+    param_index     = m.param_index;
+    param_layout_id = m.param_layout_id;
     ndays      = m.ndays;
     pb         = m.pb;
 
@@ -12871,12 +13081,15 @@ inline Model<TSeq> & Model<TSeq>::agents_bernoulli(
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::operator()(std::string pname) {
+inline epiworld_double Model<TSeq>::operator()(std::string_view pname) const {
 
-    if (parameters.find(pname) == parameters.end())
-        throw std::range_error("The parameter '"+ pname + "' is not in the model.");
+    const auto iter = param_index.find(pname);
+    if (iter == param_index.end())
+        throw std::range_error(
+            "The parameter '" + std::string(pname) + "' is not in the model."
+        );
 
-    return parameters[pname];
+    return param_values[iter->second];
 
 }
 
@@ -13253,56 +13466,143 @@ inline void Model<TSeq>::agents_from_edgelist(
     bool directed
 ) {
 
+    // Validate everything before touching the model, so a bad edge list
+    // leaves the current network as it was.
+    if (size < 0)
+        throw std::length_error(
+            "The size of the network cannot be negative (" +
+            std::to_string(size) + ")."
+            );
 
-    AdjList al(source, target, size, directed);
-    agents_from_adjlist(al);
+    if (source.size() != target.size())
+        throw std::length_error(
+            "source and target must have the same length (" +
+            std::to_string(source.size()) + " vs " +
+            std::to_string(target.size()) + ")."
+            );
+
+    int max_id = size - 1;
+    for (size_t m = 0u; m < source.size(); ++m)
+    {
+
+        if ((source[m] < 0) || (source[m] > max_id))
+            throw std::range_error(
+                "The source["+std::to_string(m)+"] = " +
+                std::to_string(source[m]) +
+                " is above the max_id " + std::to_string(max_id)
+                );
+
+        if ((target[m] < 0) || (target[m] > max_id))
+            throw std::range_error(
+                "The target["+std::to_string(m)+"] = " +
+                std::to_string(target[m]) +
+                " is above the max_id " + std::to_string(max_id)
+                );
+
+    }
+
+    size_t n = static_cast< size_t >(size);
+    agents_empty_graph(n);
+    this->directed = (n > 0u) && directed;
+
+    // Counting sort of the edge ends by agent: row i of `ids` (from start[i]
+    // to start[i + 1]) holds i's neighbors. An undirected tie lands in both
+    // rows, a directed one in its source's only (see is_directed()).
+    std::vector< size_t > start(n + 1u, 0u);
+    for (size_t m = 0u; m < source.size(); ++m)
+    {
+        start[static_cast< size_t >(source[m]) + 1u]++;
+        if (!this->directed)
+            start[static_cast< size_t >(target[m]) + 1u]++;
+    }
+
+    std::partial_sum(start.begin(), start.end(), start.begin());
+
+    std::vector< size_t > ids(start[n]);
+    std::vector< size_t > next(start.begin(), start.end() - 1);
+    for (size_t m = 0u; m < source.size(); ++m)
+    {
+        size_t i = static_cast< size_t >(source[m]);
+        size_t j = static_cast< size_t >(target[m]);
+
+        ids[next[i]++] = j;
+        if (!this->directed)
+            ids[next[j]++] = i;
+    }
+
+    agents_set_neighbors(start, ids);
 
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::agents_from_adjlist(AdjList al) {
-
+inline void Model<TSeq>::agents_from_adjlist(const AdjList & al) {
 
     // Resizing the people
-    agents_empty_graph(al.vcount());
+    size_t n = al.vcount();
+    agents_empty_graph(n);
 
     // AdjList::is_directed() throws on a list with no vertices.
-    directed = (al.vcount() > 0u) && al.is_directed();
+    directed = (n > 0u) && al.is_directed();
 
     const auto & tmpdat = al.get_dat();
 
-    for (size_t i = 0u; i < tmpdat.size(); ++i)
+    // Same rows as agents_from_edgelist(). An undirected tie i - j is written
+    // to both rows, so the result does not depend on the list being symmetric.
+    std::vector< size_t > start(n + 1u, 0u);
+    for (size_t i = 0u; i < n; ++i)
     {
+        start[i + 1u] += tmpdat[i].size();
+        if (!directed)
+            for (const auto & link : tmpdat[i])
+                start[static_cast< size_t >(link.first) + 1u]++;
+    }
 
-        // population[i].id    = i;
+    std::partial_sum(start.begin(), start.end(), start.begin());
 
-        for (const auto & link: tmpdat[i])
+    std::vector< size_t > ids(start[n]);
+    std::vector< size_t > next(start.begin(), start.end() - 1);
+    for (size_t i = 0u; i < n; ++i)
+        for (const auto & link : tmpdat[i])
         {
-
-            // A directed tie i -> j is kept by its source only: j is one of
-            // i's neighbors, but i is not one of j's (see is_directed()).
-            if (directed)
-                population[i].append_neighbor(
-                    static_cast< size_t >(link.first), true
-                    );
-            else
-                population[i].add_neighbor(
-                    population[link.first],
-                    true, true
-                    );
-
+            size_t j = static_cast< size_t >(link.first);
+            ids[next[i]++] = j;
+            if (!directed)
+                ids[next[j]++] = i;
         }
 
-    }
+    agents_set_neighbors(start, ids);
 
-    #ifdef EPI_DEBUG
-    for (auto & p: population)
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::agents_set_neighbors(
+    const std::vector< size_t > & start,
+    std::vector< size_t > & ids
+) {
+
+    // Each row becomes its agent's neighbors: sorted, without repeats, and
+    // allocated once at its final size. Ascending order is what adding the
+    // ties one by one used to produce, and roulette() depends on that order.
+    for (size_t i = 0u; i < population.size(); ++i)
     {
-        if (p.id >= static_cast<int>(al.vcount()))
-            throw std::logic_error(
-                "Agent's id cannot be negative above or equal to the number of agents!");
+
+        auto first = ids.begin() + static_cast< std::ptrdiff_t >(start[i]);
+        auto last  = ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u]);
+
+        if (first == last)
+            continue;
+
+        std::sort(first, last);
+        last = std::unique(first, last);
+
+        auto & p = population[i];
+        p.neighbors   = new std::vector< size_t >(first, last);
+        p.n_neighbors = p.neighbors->size();
+
+        if (p.n_neighbors > EPI_NEIGHBOR_INDEX_THRESHOLD)
+            p.build_neighbor_index();
+
     }
-    #endif
 
 }
 
@@ -13510,6 +13810,14 @@ inline Model<TSeq> & Model<TSeq>::run(
         check_init_states(_end);
 
     }
+
+    // From here on get_ndays() is the run's horizon (see is_running()). The
+    // guard clears the flag however the run ends, exceptions included.
+    struct RunningGuard {
+        bool & flag;
+        explicit RunningGuard(bool & f) : flag(f) { flag = true; }
+        ~RunningGuard() { flag = false; }
+    } running_guard(running);
 
     // Starting first infection and tools
     reset();
@@ -13896,6 +14204,11 @@ inline epiworld_fast_uint Model<TSeq>::get_ndays() const {
 }
 
 template<typename TSeq>
+inline bool Model<TSeq>::is_running() const {
+    return running;
+}
+
+template<typename TSeq>
 inline epiworld_fast_uint Model<TSeq>::get_n_replicates() const
 {
     return n_replicates;
@@ -14097,9 +14410,12 @@ std::vector< int > & target
 }
 
 template<typename TSeq>
-inline std::map<std::string,epiworld_double> & Model<TSeq>::params()
+inline std::map<std::string, epiworld_double> Model<TSeq>::params() const
 {
-    return parameters;
+    std::map<std::string, epiworld_double> res;
+    for (const auto & p : param_index)
+        res.emplace(p.first, param_values[p.second]);
+    return res;
 }
 
 template<typename TSeq>
@@ -14427,15 +14743,16 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
     // Information about the parameters included
     printf_epiworld("\nModel parameters:\n");
     epiworld_fast_uint nchar = 0u;
-    for (auto & p : parameters)
+    for (auto & p : param_index)
         if (p.first.length() > nchar)
             nchar = p.first.length();
 
     std::string fmt = " - %-" + std::to_string(nchar + 1) + "s: ";
-    for (auto & p : parameters)
+    for (auto & p : param_index)
     {
+        const epiworld_double value = param_values[p.second];
         std::string fmt_tmp = fmt;
-        if (std::fabs(p.second) < 0.0001)
+        if (std::fabs(value) < 0.0001)
             fmt_tmp += "%.1e\n";
         else
             fmt_tmp += "%.4f\n";
@@ -14443,12 +14760,12 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         printf_epiworld(
             fmt_tmp.c_str(),
             p.first.c_str(),
-            p.second
+            value
         );
         
     }
 
-    if (parameters.size() == 0u)
+    if (param_values.size() == 0u)
     {
         printf_epiworld(" (none)\n");
     }
@@ -14636,12 +14953,18 @@ inline epiworld_double Model<TSeq>::add_param(
     bool overwrite
     ) {
 
-    if (parameters.find(pname) == parameters.end())
-        parameters[pname] = initial_value;
+    auto iter = param_index.find(pname);
+    if (iter == param_index.end())
+    {
+        param_index.emplace(std::move(pname), param_values.size());
+        param_values.push_back(initial_value);
+        // Names now map to positions no other model layout has
+        param_layout_id = new_param_layout_id();
+    }
     else if (!overwrite)
         throw std::logic_error("The parameter " + pname + " already exists.");
     else
-        parameters[pname] = initial_value;
+        param_values[iter->second] = initial_value;
 
     return initial_value;
 
@@ -14661,39 +14984,82 @@ inline Model<TSeq> & Model<TSeq>::read_params(std::string fn, bool overwrite)
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::get_param(std::string pname)
+inline epiworld_double Model<TSeq>::get_param(std::string_view pname) const
 {
-    if (parameters.find(pname) == parameters.end())
-        throw std::logic_error("The parameter " + pname + " does not exists.");
+    const auto iter = param_index.find(pname);
+    if (iter == param_index.end())
+        throw std::logic_error(
+            "The parameter " + std::string(pname) + " does not exists."
+        );
 
-    return parameters[pname];
+    return param_values[iter->second];
 }
 
 template<typename TSeq>
 inline bool Model<TSeq>::has_param(std::string_view pname) const
 {
-    return parameters.find(std::string(pname)) != parameters.end();
+    return param_index.find(pname) != param_index.end();
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_param(std::string pname, epiworld_double value)
+inline void Model<TSeq>::set_param(std::string_view pname, epiworld_double value)
 {
-    if (parameters.find(pname) == parameters.end())
-        throw std::logic_error("The parameter '" + pname + "' does not exists.");
+    auto iter = param_index.find(pname);
+    if (iter == param_index.end())
+        throw std::logic_error(
+            "The parameter '" + std::string(pname) + "' does not exists."
+        );
 
-    parameters[pname] = value;
+    param_values[iter->second] = value;
 
     return;
 
 }
 
 template<typename TSeq>
-inline epiworld_double Model<TSeq>::par(std::string pname) const
+inline epiworld_double Model<TSeq>::par(std::string_view pname) const
 {
-    const auto iter = parameters.find(pname);
-    if (iter == parameters.end())
-        throw std::logic_error("The parameter '" + pname + "' does not exists.");
-    return iter->second;
+    const auto iter = param_index.find(pname);
+    if (iter == param_index.end())
+        throw std::logic_error(
+            "The parameter '" + std::string(pname) + "' does not exists."
+        );
+    return param_values[iter->second];
+}
+
+template<typename TSeq>
+inline ParamId Model<TSeq>::get_param_id(std::string_view pname) const
+{
+    const auto iter = param_index.find(pname);
+    if (iter == param_index.end())
+        throw std::logic_error(
+            "The parameter '" + std::string(pname) + "' does not exists."
+        );
+    return ParamId{iter->second};
+}
+
+template<typename TSeq>
+inline epiworld_double Model<TSeq>::par_at(ParamId id) const
+{
+    if (id.idx >= param_values.size())
+        throw std::out_of_range(
+            "The parameter position " + std::to_string(id.idx) +
+            " is out of range (the model has " +
+            std::to_string(param_values.size()) + " parameters)."
+        );
+    return param_values[id.idx];
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_param_at(ParamId id, epiworld_double value)
+{
+    if (id.idx >= param_values.size())
+        throw std::out_of_range(
+            "The parameter position " + std::to_string(id.idx) +
+            " is out of range (the model has " +
+            std::to_string(param_values.size()) + " parameters)."
+        );
+    param_values[id.idx] = value;
 }
 
 #define DURCAST(tunit,txtunit) {\
@@ -15180,12 +15546,13 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        parameters.size() != other.parameters.size(),
+        param_values.size() != other.param_values.size(),
         "Model:: () don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(
-        parameters != other.parameters,
+        // By name, so the order parameters were added in does not matter
+        params() != other.params(),
         "Model:: parameters don't match"
     )
 
@@ -15303,20 +15670,20 @@ inline void Model<TSeq>::get_hospitalizations(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/model-meat.hpp-
+ End of -./include/epiworld/model-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
 
-// (already included include/epiworld/viruses-bones.hpp)
+// (already included ./include/epiworld/viruses-bones.hpp)
 
-// (already included include/epiworld/virus-bones.hpp)
+// (already included ./include/epiworld/virus-bones.hpp)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/virus-distribute-meat.hpp-
+ Start of -./include/epiworld/virus-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15559,7 +15926,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/virus-distribute-meat.hpp-
+ End of -./include/epiworld/virus-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -15568,7 +15935,7 @@ inline VirusToAgentFun<TSeq> distribute_virus_to_entities(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/virus-meat.hpp-
+ Start of -./include/epiworld/virus-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -16009,11 +16376,11 @@ inline void Virus<TSeq>::set_incubation_fun(VirusFun<TSeq> fun)
 template<typename TSeq>
 inline void Virus<TSeq>::set_prob_infecting(std::string param)
 {
-    auto parname_ptr = std::make_shared< const std::string >(param);
+    auto param_ref = std::make_shared< const ParamRef >(std::move(param));
     VirusFun<TSeq> tmpfun = 
-        [parname_ptr](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
+        [param_ref](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
         {
-            return model->get_param(*parname_ptr);
+            return (*param_ref)(*model);
         };
     
     probability_of_infecting = tmpfun;
@@ -16022,11 +16389,11 @@ inline void Virus<TSeq>::set_prob_infecting(std::string param)
 template<typename TSeq>
 inline void Virus<TSeq>::set_prob_recovery(std::string param)
 {
-    auto parname_ptr = std::make_shared< const std::string >(param);
+    auto param_ref = std::make_shared< const ParamRef >(std::move(param));
     VirusFun<TSeq> tmpfun = 
-        [parname_ptr](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
+        [param_ref](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
         {
-            return model->get_param(*parname_ptr);
+            return (*param_ref)(*model);
         };
     
     probability_of_recovery = tmpfun;
@@ -16035,11 +16402,11 @@ inline void Virus<TSeq>::set_prob_recovery(std::string param)
 template<typename TSeq>
 inline void Virus<TSeq>::set_prob_death(std::string param)
 {
-    auto parname_ptr = std::make_shared< const std::string >(param);
+    auto param_ref = std::make_shared< const ParamRef >(std::move(param));
     VirusFun<TSeq> tmpfun = 
-        [parname_ptr](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
+        [param_ref](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
         {
-            return model->get_param(*parname_ptr);
+            return (*param_ref)(*model);
         };
     
     probability_of_death = tmpfun;
@@ -16048,11 +16415,11 @@ inline void Virus<TSeq>::set_prob_death(std::string param)
 template<typename TSeq>
 inline void Virus<TSeq>::set_incubation(std::string param)
 {
-    auto parname_ptr = std::make_shared< const std::string >(param);
+    auto param_ref = std::make_shared< const ParamRef >(std::move(param));
     VirusFun<TSeq> tmpfun = 
-        [parname_ptr](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
+        [param_ref](Agent<TSeq> *, Virus<TSeq> &, Model<TSeq> * model)
         {
-            return model->get_param(*parname_ptr);
+            return (*param_ref)(*model);
         };
     
     incubation = tmpfun;
@@ -16475,7 +16842,7 @@ inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/virus-meat.hpp-
+ End of -./include/epiworld/virus-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -16484,11 +16851,11 @@ inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
     
     // #include "tools-bones.hpp"
 
-// (already included include/epiworld/tool-bones.hpp)
+// (already included ./include/epiworld/tool-bones.hpp)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/tool-distribute-meat.hpp-
+ Start of -./include/epiworld/tool-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -16714,7 +17081,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/tool-distribute-meat.hpp-
+ End of -./include/epiworld/tool-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -16723,7 +17090,7 @@ inline ToolToAgentFun<TSeq> distribute_tool_to_entities(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/tool-meat.hpp-
+ Start of -./include/epiworld/tool-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -16981,12 +17348,12 @@ template<typename TSeq>
 inline void Tool<TSeq>::set_susceptibility_reduction(std::string param)
 {
 
-    auto parname_ptr = std::make_shared<const std::string>(param);
+    auto param_ref = std::make_shared< const ParamRef >(std::move(param));
 
     ToolFun<TSeq> tmpfun =
-        [parname_ptr](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
+        [param_ref](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
         {
-            return model->get_param(*parname_ptr);
+            return (*param_ref)(*model);
         };
 
     susceptibility_reduction = tmpfun;
@@ -16998,12 +17365,12 @@ template<typename TSeq>
 inline void Tool<TSeq>::set_transmission_reduction(std::string param)
 {
 
-    auto parname_ptr = std::make_shared<const std::string>(param);
+    auto param_ref = std::make_shared< const ParamRef >(std::move(param));
     
     ToolFun<TSeq> tmpfun =
-        [parname_ptr](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
+        [param_ref](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
         {
-            return model->get_param(*parname_ptr);
+            return (*param_ref)(*model);
         };
 
     transmission_reduction = tmpfun;
@@ -17015,12 +17382,12 @@ template<typename TSeq>
 inline void Tool<TSeq>::set_recovery_enhancer(std::string param)
 {
 
-    auto parname_ptr = std::make_shared<const std::string>(param);
+    auto param_ref = std::make_shared< const ParamRef >(std::move(param));
 
     ToolFun<TSeq> tmpfun =
-        [parname_ptr](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
+        [param_ref](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
         {
-            return model->get_param(*parname_ptr);
+            return (*param_ref)(*model);
         };
 
     recovery_enhancer = tmpfun;
@@ -17032,12 +17399,12 @@ template<typename TSeq>
 inline void Tool<TSeq>::set_death_reduction(std::string param)
 {
 
-    auto parname_ptr = std::make_shared<const std::string>(param);
+    auto param_ref = std::make_shared< const ParamRef >(std::move(param));
 
     ToolFun<TSeq> tmpfun =
-        [parname_ptr](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
+        [param_ref](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
         {
-            return model->get_param(*parname_ptr);
+            return (*param_ref)(*model);
         };
 
     death_reduction = tmpfun;
@@ -17322,7 +17689,7 @@ inline std::unique_ptr<Tool<TSeq>> Tool<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/tool-meat.hpp-
+ End of -./include/epiworld/tool-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17332,7 +17699,7 @@ inline std::unique_ptr<Tool<TSeq>> Tool<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entity-bones.hpp-
+ Start of -./include/epiworld/entity-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17447,7 +17814,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/entity-bones.hpp-
+ End of -./include/epiworld/entity-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17456,7 +17823,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entity-distribute-meat.hpp-
+ Start of -./include/epiworld/entity-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17622,7 +17989,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_set(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/entity-distribute-meat.hpp-
+ End of -./include/epiworld/entity-distribute-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17631,7 +17998,7 @@ inline EntityToAgentFun<TSeq> distribute_entity_to_set(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/entity-meat.hpp-
+ Start of -./include/epiworld/entity-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17901,7 +18268,7 @@ inline void Entity<TSeq>::set_distribution(EntityToAgentFun<TSeq> fun)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/entity-meat.hpp-
+ End of -./include/epiworld/entity-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17911,7 +18278,7 @@ inline void Entity<TSeq>::set_distribution(EntityToAgentFun<TSeq> fun)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agent-meat-virus-sampling.hpp-
+ Start of -./include/epiworld/agent-meat-virus-sampling.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18374,7 +18741,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agent-meat-virus-sampling.hpp-
+ End of -./include/epiworld/agent-meat-virus-sampling.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18383,7 +18750,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agent-meat-state.hpp-
+ Start of -./include/epiworld/agent-meat-state.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18496,18 +18863,24 @@ inline UpdateFun<TSeq> new_state_update_transition(
             "At least one transition must be specified."
         );
 
-    return [param_names, target_states](
+    // Resolved to positions once per model layout (see ParamRef)
+    std::vector< ParamRef > params;
+    params.reserve(param_names.size());
+    for (auto & name : param_names)
+        params.emplace_back(std::move(name));
+
+    return [params, target_states](
         Agent<TSeq> * p,
         Model<TSeq> * m
     ) -> void {
 
-        size_t n = param_names.size();
+        size_t n = params.size();
         int which;
 
         if (n <= 1024u)
         {
             for (size_t i = 0u; i < n; ++i)
-                m->array_double_tmp[i] = m->par(param_names[i]);
+                m->array_double_tmp[i] = params[i](*m);
 
             // Roulette sampling: returns -1 if no transition occurs,
             // otherwise the index of the transition that fires.
@@ -18517,7 +18890,7 @@ inline UpdateFun<TSeq> new_state_update_transition(
         {
             std::vector< epiworld_double > probs(n);
             for (size_t i = 0u; i < n; ++i)
-                probs[i] = m->par(param_names[i]);
+                probs[i] = params[i](*m);
 
             // Fallback for transition tables larger than the temporary buffer.
             which = roulette(probs, m);
@@ -18580,17 +18953,17 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agent-meat-state.hpp-
+ End of -./include/epiworld/agent-meat-state.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-// (already included include/epiworld/agent-bones.hpp)
+// (already included ./include/epiworld/agent-bones.hpp)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agent-meat.hpp-
+ Start of -./include/epiworld/agent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -19935,7 +20308,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agent-meat.hpp-
+ End of -./include/epiworld/agent-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -19944,7 +20317,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/model-meat-transmission.hpp-
+ Start of -./include/epiworld/model-meat-transmission.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -20373,7 +20746,7 @@ inline double Model<TSeq>::get_transmission_kappa() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/model-meat-transmission.hpp-
+ End of -./include/epiworld/model-meat-transmission.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -20383,7 +20756,7 @@ inline double Model<TSeq>::get_transmission_kappa() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/agentssample-bones.hpp-
+ Start of -./include/epiworld/agentssample-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -20869,7 +21242,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/agentssample-bones.hpp-
+ End of -./include/epiworld/agentssample-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -20879,7 +21252,7 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/tools/vaccine.hpp-
+ Start of -./include/epiworld/tools/vaccine.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -21003,7 +21376,7 @@ inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/tools/vaccine.hpp-
+ End of -./include/epiworld/tools/vaccine.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -21012,7 +21385,7 @@ inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/globalevents/quarantinetrigger-meat.hpp-
+ Start of -./include/epiworld/globalevents/quarantinetrigger-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -21109,7 +21482,7 @@ inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/globalevents/quarantinetrigger-meat.hpp-
+ End of -./include/epiworld/globalevents/quarantinetrigger-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -21118,7 +21491,7 @@ inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/globalevents/bubbles-meat.hpp-
+ Start of -./include/epiworld/globalevents/bubbles-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -22357,10 +22730,12 @@ inline bool Bubbles<TSeq>::wants_ties(Model<TSeq> * model) const
     // on the last day is what keeps the intervention from outliving its run:
     // Model::run() takes no population backup, so ties left in the network
     // would still be there when the model is run again, or would be captured by
-    // the backup run_multiple() takes. `ndays == 0` means the day loop is being
-    // driven by hand and there is no known end, so the question does not apply.
-    size_t ndays = static_cast< size_t >(model->get_ndays());
-    if ((ndays > 0u) && (next > static_cast< int >(ndays)))
+    // the backup run_multiple() takes. That includes `run(0)`, whose only step
+    // is the setup: nothing would ever withdraw ties built there. Outside
+    // Model::run() the day loop is being driven by hand and there is no known
+    // end, so the question does not apply.
+    if (model->is_running() &&
+        (next > static_cast< int >(model->get_ndays())))
         return false;
 
     return is_active(next);
@@ -22870,7 +23245,7 @@ inline std::unique_ptr< GlobalEvent<TSeq> > Bubbles<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/globalevents/bubbles-meat.hpp-
+ End of -./include/epiworld/globalevents/bubbles-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -22880,7 +23255,7 @@ inline std::unique_ptr< GlobalEvent<TSeq> > Bubbles<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -include/epiworld/models/models.hpp-
+ Start of -./include/epiworld/models/models.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -23804,7 +24179,7 @@ public:
         Model<TSeq> * m
     ) -> void {
         // Does the agent recover?
-        if (m->runif() < (m->par("Recovery rate")))
+        if (m->runif() < EPI_PAR(m, "Recovery rate"))
             p->rm_virus(*m);
 
         return;
@@ -24074,13 +24449,13 @@ inline ModelSURV<TSeq>::ModelSURV(
         if (dat[p->get_id()] < 0)
         {
             epiworld_double latent_days = m->rgamma(
-                m->par("Latent period"), 1.0
+                EPI_PAR(m, "Latent period"), 1.0
             );
 
             dat[p->get_id() * 2u] = latent_days;
 
             dat[p->get_id() * 2u + 1u] = 
-                m->rgamma(m->par("Infect period"), 1.0) +
+                m->rgamma(EPI_PAR(m, "Infect period"), 1.0) +
                 latent_days;
         }
         
@@ -24100,7 +24475,7 @@ inline ModelSURV<TSeq>::ModelSURV(
         {
 
             // Will be symptomatic?
-            if (EPI_RUNIF() < m->par("Prob of symptoms"))
+            if (EPI_RUNIF() < EPI_PAR(m, "Prob of symptoms"))
                 p->change_state(*m, ModelSURV<TSeq>::SYMPTOMATIC);
             else
                 p->change_state(*m, ModelSURV<TSeq>::ASYMPTOMATIC);
@@ -24135,7 +24510,7 @@ inline ModelSURV<TSeq>::ModelSURV(
     {
 
         // How many will we find
-        std::binomial_distribution<> bdist(m->size(), m->par("Surveilance prob."));
+        std::binomial_distribution<> bdist(m->size(), EPI_PAR(m, "Surveilance prob."));
         int nsampled = bdist(*m->get_rand_endgine());
 
         int to_go = nsampled + 1;
@@ -24234,7 +24609,7 @@ inline ModelSURV<TSeq>::ModelSURV(
             return static_cast<epiworld_double>(0.0);
 
         // Otherwise
-        return m->par("Prob of transmission");
+        return EPI_PAR(m, "Prob of transmission");
     };
 
     covid.set_prob_infecting_fun(ptransmitfun);
@@ -24365,7 +24740,7 @@ inline void ModelSIRCONN<TSeq>::update_infected()
 
     Model<TSeq>::set_rand_binom(
         this->get_n_infected(),
-        static_cast<double>(Model<TSeq>::par("Contact rate"))/
+        static_cast<double>(EPI_PAR(this, "Contact rate"))/
             static_cast<double>(this->size())
     );
 
@@ -24615,9 +24990,9 @@ inline std::vector< double > ModelSIRCONN<TSeq>::generation_time_expected(
     // spend at least one day in the infected state before starting
     // transmitting.
     std::vector< double > gen_times(this_const->get_ndays(), 1.0);
-    double p_c = this_const->par("Contact rate")/this_const->size();
-    double p_i = this_const->par("Transmission rate");
-    double p_r = this_const->par("Recovery rate");
+    double p_c = EPI_PAR(this_const, "Contact rate")/this_const->size();
+    double p_i = EPI_PAR(this_const, "Transmission rate");
+    double p_r = EPI_PAR(this_const, "Recovery rate");
     for (size_t i = 0u; i < this_const->get_ndays(); ++i)
     {
         gen_times[i] = gen_int_mean(
@@ -24738,7 +25113,7 @@ inline void ModelSEIRCONN<TSeq>::update_infected()
 
     Model<TSeq>::set_rand_binom(
         this->get_n_infected(),
-        static_cast<double>(Model<TSeq>::par("Contact rate"))/
+        static_cast<double>(EPI_PAR(this, "Contact rate"))/
             static_cast<double>(this->size())
     );
 
@@ -25015,7 +25390,7 @@ inline std::vector< double > ModelSEIRCONN<TSeq>::generation_time_expected(
     }
 
     // Computing the expected number of days in exposed
-    double days_exposed = this_const->par("Avg. Incubation days");
+    double days_exposed = EPI_PAR(this_const, "Avg. Incubation days");
 
     // The generation time in the SEIR model starts from 2, as agents 
     // spend at least one day in the exposed state, and 1 day in the 
@@ -25024,9 +25399,9 @@ inline std::vector< double > ModelSEIRCONN<TSeq>::generation_time_expected(
         this_const->get_ndays(), 1.0 + days_exposed
         );
         
-    double p_c = this_const->par("Contact rate")/this_const->size();
-    double p_i = this_const->par("Prob. Transmission");
-    double p_r = this_const->par("Prob. Recovery");
+    double p_c = EPI_PAR(this_const, "Contact rate")/this_const->size();
+    double p_i = EPI_PAR(this_const, "Prob. Transmission");
+    double p_r = EPI_PAR(this_const, "Prob. Recovery");
 
     for (size_t i = 0u; i < this_const->get_ndays(); ++i)
     {
@@ -25552,7 +25927,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
             m->set_rand_binom(
                 m->size(),
                 static_cast<double>(
-                    m->par("Contact rate"))/
+                    EPI_PAR(m, "Contact rate"))/
                     static_cast<double>(m->size())
             );
 
@@ -25820,7 +26195,7 @@ inline void ModelSEIRDCONN<TSeq>::update_infected()
 
     Model<TSeq>::set_rand_binom(
         this->get_n_infected(),
-        static_cast<double>(Model<TSeq>::par("Contact rate"))/
+        static_cast<double>(EPI_PAR(this, "Contact rate"))/
             static_cast<double>(this->size())
     );
 
@@ -27927,9 +28302,9 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
-            this->runif() < this->par("Quarantine willingness");
+            this->runif() < EPI_PAR(this, "Quarantine willingness");
         isolation_willingness[idx] =
-            this->runif() < this->par("Isolation willingness");
+            this->runif() < EPI_PAR(this, "Isolation willingness");
     }
 
     agent_quarantine_triggered.assign(this->size(), 0u);
@@ -28049,7 +28424,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_infected(
     // Sampling whether the agent is detected or not.
     // If Days undetected < 0, detection is disabled (never detected).
     // If Days undetected == 0, the agent is always detected.
-    epiworld_double days_undetected = m->par("Days undetected");
+    epiworld_double days_undetected = EPI_PAR(m, "Days undetected");
     bool detected = (days_undetected < 0.0) ?
         false : ((days_undetected == 0.0) ?
             true : (m->runif() < 1.0 / days_undetected));
@@ -28064,7 +28439,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_infected(
 
     // Checking if the agent is willing to isolate individually
     // This is separate from quarantine and can happen even if agent cannot quarantine
-    bool isolation_detected = (m->par("Isolation period") >= 0) &&
+    bool isolation_detected = (EPI_PAR(m, "Isolation period") >= 0) &&
         detected &&
         (model->isolation_willingness[p->get_id()])
     ;
@@ -28077,7 +28452,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_infected(
     auto & v = p->get_virus();
     m->array_double_tmp[0] = 1.0 - (1.0 - v->get_prob_recovery(m)) *
         (1.0 - p->get_recovery_enhancer(v, *m));
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
+    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate");
 
     auto which = m->sample_from_probs(2);
 
@@ -28123,7 +28498,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_isolated(
     int days_since = m->today() - model->day_onset[p->get_id()];
 
     bool unisolate =
-        (m->par("Isolation period") <= days_since) ?
+        (EPI_PAR(m, "Isolation period") <= days_since) ?
         true: false;
 
     // Sampling from the probabilities of recovery
@@ -28132,7 +28507,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_isolated(
         (1.0 - p->get_recovery_enhancer(p->get_virus(), *m));
 
     // And hospitalization
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
+    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate");
 
     auto which = m->sample_from_probs(2);
 
@@ -28171,7 +28546,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_quarantine_suscep(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     bool unquarantine =
-        (m->par("Quarantine period") <= days_since) ?
+        (EPI_PAR(m, "Quarantine period") <= days_since) ?
         true: false;
 
     if (unquarantine)
@@ -28195,7 +28570,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_quarantine_exposed(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     bool unquarantine =
-        (m->par("Quarantine period") <= days_since) ?
+        (EPI_PAR(m, "Quarantine period") <= days_since) ?
         true: false;
 
     if (m->runif() < 1.0/(p->get_virus()->get_incubation(m)))
@@ -28240,7 +28615,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_isolated_recovered(
     int days_since = m->today() - model->day_onset[p->get_id()];
 
     bool unisolate =
-        (m->par("Isolation period") <= days_since) ?
+        (EPI_PAR(m, "Isolation period") <= days_since) ?
         true: false;
 
     if (unisolate)
@@ -28258,7 +28633,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_hospitalized(
 ) {
 
     // The agent is removed from the system
-    if (m->runif() < 1.0/m->par("Hospitalization period"))
+    if (m->runif() < 1.0/EPI_PAR(m, "Hospitalization period"))
         p->rm_virus(*m, ModelSEIRMixingQuarantine<TSeq>::RECOVERED);
 
 };
@@ -28280,7 +28655,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m
         )
             continue;
 
-        if (m->par("Quarantine period") < 0)
+        if (EPI_PAR(m, "Quarantine period") < 0)
         {
             model->agent_quarantine_triggered[agent_i] =
             ModelSEIRMixingQuarantine<TSeq>::QUARANTINE_PROCESS_DONE;
@@ -28295,8 +28670,8 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
-        auto success_rate = m->par("Contact tracing success rate");
-        auto days_prior = m->par("Contact tracing days prior");
+        auto success_rate = EPI_PAR(m, "Contact tracing success rate");
+        auto days_prior = EPI_PAR(m, "Contact tracing days prior");
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
 
@@ -28710,9 +29085,9 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::reset()
     for (size_t idx = 0; idx < quarantine_willingness.size(); ++idx)
     {
         quarantine_willingness[idx] =
-            this->runif() < this->par("Quarantine willingness");
+            this->runif() < EPI_PAR(this, "Quarantine willingness");
         isolation_willingness[idx] =
-            this->runif() < this->par("Isolation willingness");
+            this->runif() < EPI_PAR(this, "Isolation willingness");
     }
 
     agent_quarantine_triggered.assign(this->size(), 0u);
@@ -28821,7 +29196,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_infected(
     // Sampling whether the agent is detected or not.
     // If Days undetected < 0, detection is disabled (never detected).
     // If Days undetected == 0, the agent is always detected.
-    epiworld_double days_undetected = m->par("Days undetected");
+    epiworld_double days_undetected = EPI_PAR(m, "Days undetected");
     bool detected = (days_undetected < 0.0) ?
         false : ((days_undetected == 0.0) ?
             true : (m->runif() < 1.0 / days_undetected));
@@ -28834,7 +29209,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_infected(
     }
 
     // Checking if the agent is willing to isolate individually
-    bool isolation_detected = (m->par("Isolation period") >= 0) &&
+    bool isolation_detected = (EPI_PAR(m, "Isolation period") >= 0) &&
         detected &&
         (model->isolation_willingness[p->get_id()]);
 
@@ -28846,7 +29221,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_infected(
     auto & v = p->get_virus();
     m->array_double_tmp[0] = 1.0 - (1.0 - v->get_prob_recovery(m)) *
         (1.0 - p->get_recovery_enhancer(v, *m));
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
+    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate");
 
     auto which = m->sample_from_probs(2);
 
@@ -28899,7 +29274,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_isolated(
     int days_since = m->today() - model->day_onset[p->get_id()];
 
     bool unisolate =
-        (m->par("Isolation period") <= days_since) ?
+        (EPI_PAR(m, "Isolation period") <= days_since) ?
         true : false;
 
     // Sampling from the probabilities of recovery
@@ -28908,7 +29283,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_isolated(
         (1.0 - p->get_recovery_enhancer(p->get_virus(), *m));
 
     // And hospitalization
-    m->array_double_tmp[1] = m->par("Hospitalization rate");
+    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate");
 
     auto which = m->sample_from_probs(2);
 
@@ -28958,7 +29333,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_quarantine_suscep(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     bool unquarantine =
-        (m->par("Quarantine period") <= days_since) ?
+        (EPI_PAR(m, "Quarantine period") <= days_since) ?
         true : false;
 
     if (unquarantine)
@@ -28983,7 +29358,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_quarantine_exposed(
     int days_since = m->today() - model->day_flagged[p->get_id()];
 
     bool unquarantine =
-        (m->par("Quarantine period") <= days_since) ?
+        (EPI_PAR(m, "Quarantine period") <= days_since) ?
         true : false;
 
     if (m->runif() < 1.0/(p->get_virus()->get_incubation(m)))
@@ -29026,7 +29401,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_isolated_recovered(
     int days_since = m->today() - model->day_onset[p->get_id()];
 
     bool unisolate =
-        (m->par("Isolation period") <= days_since) ?
+        (EPI_PAR(m, "Isolation period") <= days_since) ?
         true : false;
 
     if (unisolate)
@@ -29046,7 +29421,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_hospitalized(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    if (m->runif() < 1.0/m->par("Hospitalization period"))
+    if (m->runif() < 1.0/EPI_PAR(m, "Hospitalization period"))
         p->rm_virus(*m, ModelSEIRNetworkQuarantine<TSeq>::RECOVERED);
 
 };
@@ -29070,7 +29445,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
         )
             continue;
 
-        if (m->par("Quarantine period") < 0)
+        if (EPI_PAR(m, "Quarantine period") < 0)
         {
             model->agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
             continue;
@@ -29080,8 +29455,8 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
 
-        auto success_rate = m->par("Contact tracing success rate");
-        auto days_prior = m->par("Contact tracing days prior");
+        auto success_rate = EPI_PAR(m, "Contact tracing success rate");
+        auto days_prior = EPI_PAR(m, "Contact tracing days prior");
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
             // Checking if we will detect the contact
@@ -29250,7 +29625,7 @@ inline ModelSEIRNetworkQuarantine<TSeq> & ModelSEIRNetworkQuarantine<TSeq>::init
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -include/epiworld/models/models.hpp-
+ End of -./include/epiworld/models/models.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
