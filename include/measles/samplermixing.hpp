@@ -22,7 +22,7 @@ private:
 
     int primary_infectious_state = -1;
     int reduced_infectious_state = -1;
-    std::string reduced_contact_reduction_param;
+    ParamRef reduced_contact_reduction_param{""};
     std::vector< int > contact_states;
 
     std::vector< size_t > primary_infectious;
@@ -191,7 +191,9 @@ inline void SamplerMixing<TSeq>::configure(
 {
     primary_infectious_state = primary_infectious_state_;
     reduced_infectious_state = reduced_infectious_state_;
-    reduced_contact_reduction_param = reduced_contact_reduction_param_;
+    reduced_contact_reduction_param = ParamRef(
+        std::move(reduced_contact_reduction_param_)
+    );
     contact_states = contact_states_;
 }
 
@@ -200,10 +202,10 @@ inline double SamplerMixing<TSeq>::get_reduced_contact_rate(
     Model<TSeq> & model
 ) const
 {
-    if (reduced_contact_reduction_param.empty())
+    if (reduced_contact_reduction_param.name().empty())
         return 0.0;
 
-    return 1.0 - model.par(reduced_contact_reduction_param);
+    return 1.0 - reduced_contact_reduction_param(model);
 }
 
 template<typename TSeq>
