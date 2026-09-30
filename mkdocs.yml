@@ -93,6 +93,7 @@ nav:
     - "Poisson vs. Binomial Sampling": examples/19-poisson-approximation-binomial.md
     - Transmission Benchmark: examples/20-transmission-benchmark.md
     - Parameter Lookup Benchmark: examples/21-parameter-lookup-benchmark.md
+    - Post-Sampling Benchmark: examples/22-post-sampling-benchmark.md
   - Implementation:
     - Overview: impl/index.md
     - Library Architecture: impl/library-architecture.md
