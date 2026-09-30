@@ -97,13 +97,9 @@ EPIWORLD_TEST_CASE(
     model.run_multiple(60, nsims, 1231, saver, true, true, 2);
 
     // Compute average R0 for each agent
-    double avg_R0_high = std::accumulate(
-        R0_high.begin(), R0_high.end(), 0.0
-    ) / static_cast<double>(nsims);
+    double avg_R0_high = stats::mean(R0_high);
 
-    double avg_R0_low = std::accumulate(
-        R0_low.begin(), R0_low.end(), 0.0
-    ) / static_cast<double>(nsims);
+    double avg_R0_low = stats::mean(R0_low);
 
     // Print results
     std::cout << "========================================================" << std::endl;

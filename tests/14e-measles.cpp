@@ -51,9 +51,7 @@ EPIWORLD_TEST_CASE("Vaccine efficacy on measles school", "[ModelMeaslesSchoolVax
         print(false);
     
     // Computing the mean of outbreak size
-    double mean_outbreak_size = std::accumulate(
-        outbreak_sizes.begin(), outbreak_sizes.end(), 0.0
-    ) / static_cast<double>(nsims);
+    double mean_outbreak_size = stats::mean(outbreak_sizes);
 
 
     double expected_outbreak_size = (1.0 - model_0("Vax efficacy")) *

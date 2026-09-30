@@ -1,21 +1,5 @@
 #include "tests.hpp"
 
-inline epiworld_double calc_mean(const std::vector<epiworld_double> & x)
-{
-    return std::accumulate(x.begin(), x.end(), 0.0)/static_cast<epiworld_double>(x.size());
-}
-
-inline epiworld_double calc_variance(const std::vector<epiworld_double> & x)
-{
-    epiworld_double mean = calc_mean(x);
-    return std::accumulate(
-        x.begin(), x.end(), 0.0,
-        [mean](epiworld_double acc, epiworld_double y) {
-            return acc + (y - mean)*(y - mean);
-        }
-        )/(static_cast<epiworld_double>(x.size()) - 1);
-}
-
 using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
@@ -31,8 +15,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.rnorm();
 
     // Computing the mean and variance
-    epiworld_double m_norm = calc_mean(num_normals);
-    epiworld_double v_norm = calc_variance(num_normals);
+    epiworld_double m_norm = stats::mean(num_normals);
+    epiworld_double v_norm = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_norm, 0.00, 0.025));
     REQUIRE_FALSE(moreless(v_norm, 1.00, 0.025));
@@ -43,8 +27,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.runif();
 
     // Computing the mean and variance
-    epiworld_double m_unif = calc_mean(num_normals);
-    epiworld_double v_unif = calc_variance(num_normals);
+    epiworld_double m_unif = stats::mean(num_normals);
+    epiworld_double v_unif = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_unif, 0.00, 0.025));
     REQUIRE_FALSE(moreless(v_unif, 4.0/12.0, 0.025));
@@ -55,8 +39,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.rgamma();
 
     // Computing the mean and variance
-    epiworld_double m_gamma = calc_mean(num_normals);
-    epiworld_double v_gamma = calc_variance(num_normals);
+    epiworld_double m_gamma = stats::mean(num_normals);
+    epiworld_double v_gamma = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_gamma, 1.5*2.0, 0.025));
     REQUIRE_FALSE(moreless(v_gamma, 1.5*2.0*2.0, 0.10));
@@ -67,8 +51,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.rexp();
 
     // Computing the mean and variance
-    epiworld_double m_exp = calc_mean(num_normals);
-    epiworld_double v_exp = calc_variance(num_normals);
+    epiworld_double m_exp = stats::mean(num_normals);
+    epiworld_double v_exp = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_exp, 1.0, 0.025));
     REQUIRE_FALSE(moreless(v_exp, 1.0, 0.025));
@@ -79,8 +63,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.rlognormal();
     
     // Computing the mean and variance
-    epiworld_double m_lognormal = calc_mean(num_normals);
-    epiworld_double v_lognormal = calc_variance(num_normals);
+    epiworld_double m_lognormal = stats::mean(num_normals);
+    epiworld_double v_lognormal = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_lognormal, std::exp(0.5), 0.025));
     REQUIRE_FALSE(moreless(v_lognormal/((std::exp(1.0) - 1.0)*std::exp(1.0)), 1.0, 0.25));
@@ -91,8 +75,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.rbinom();
     
     // Computing the mean and variance
-    epiworld_double m_binom = calc_mean(num_normals);
-    epiworld_double v_binom = calc_variance(num_normals);
+    epiworld_double m_binom = stats::mean(num_normals);
+    epiworld_double v_binom = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_binom, 5.0, 0.025));
     REQUIRE_FALSE(moreless(v_binom, 2.5, 0.025));
@@ -129,8 +113,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.rnbinom();
 
     // Computing the mean and variance
-    epiworld_double m_nbinom = calc_mean(num_normals);
-    epiworld_double v_nbinom = calc_variance(num_normals);
+    epiworld_double m_nbinom = stats::mean(num_normals);
+    epiworld_double v_nbinom = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_nbinom/10.0, 1.0, 0.025));
     REQUIRE_FALSE(moreless(v_nbinom/(10.0*0.5/(0.5*0.5)), 1.0, 0.025));
@@ -141,8 +125,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.rgeom();
 
     // Computing the mean and variance
-    epiworld_double m_geom = calc_mean(num_normals);
-    epiworld_double v_geom = calc_variance(num_normals);
+    epiworld_double m_geom = stats::mean(num_normals);
+    epiworld_double v_geom = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_geom, 0.2/0.8, 0.025));
     REQUIRE_FALSE(moreless(v_geom - (1.0 - .8) /(.8 * .8), 0.0, 0.025));
@@ -153,8 +137,8 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         num_normals[i] = model.rpoiss();
 
     // Computing the mean and variance
-    epiworld_double m_poiss = calc_mean(num_normals);
-    epiworld_double v_poiss = calc_variance(num_normals);
+    epiworld_double m_poiss = stats::mean(num_normals);
+    epiworld_double v_poiss = stats::variance(num_normals);
 
     REQUIRE_FALSE(moreless(m_poiss, 1.0, 0.025));
     REQUIRE_FALSE(moreless(v_poiss, 1.0, 0.025));

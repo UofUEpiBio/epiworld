@@ -76,7 +76,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
 
 
     // Computing the mean
-    double mean = std::accumulate(sim_days.begin(), sim_days.end(), 0.0)/static_cast<double>(sim_days.size());
+    double mean = stats::mean(sim_days);
 
     // Using the math model
     double expected_mean = epiworld::gen_int_mean(

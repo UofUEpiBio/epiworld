@@ -1,4 +1,7 @@
 #include "../../include/epiworld/epiworld.hpp"
+#include "../../include/cli/cli.hpp"
+#include "../../include/bench/bench.hpp"
+#include "../../include/stats/stats.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -50,92 +53,28 @@ struct Options {
     double kappa = -1.0; // < 0: the model's default
 };
 
-static std::vector< std::string > split(const std::string & s)
-{
-    std::vector< std::string > out;
-    size_t start = 0u;
-    while (start <= s.size())
-    {
-        size_t end = s.find(',', start);
-        if (end == std::string::npos)
-            end = s.size();
-        if (end > start)
-            out.push_back(s.substr(start, end - start));
-        start = end + 1u;
-    }
-    return out;
-}
-
 static Options parse(int argc, char ** argv)
 {
     Options o;
-    for (int i = 1; i + 1 < argc; i += 2)
-    {
-        std::string key = argv[i];
-        std::string val = argv[i + 1];
-        if (key == "--sizes")
-        {
-            o.sizes.clear();
-            for (auto & s : split(val))
-                o.sizes.push_back(static_cast< size_t >(std::stoul(s)));
-        }
-        else if (key == "--reps")
-            o.reps = std::stoi(val);
-        else if (key == "--days")
-            o.days = std::stoi(val);
-        else if (key == "--scenarios")
-            o.scenarios = split(val);
-        else if (key == "--modes")
-            o.modes = split(val);
-        else if (key == "--queuing")
-            o.queuing = (val == "on");
-        else if (key == "--kappa")
-            o.kappa = std::stod(val);
-        else
-        {
-            std::fprintf(stderr, "Unknown option %s\n", key.c_str());
-            std::exit(1);
-        }
-    }
+    cli::Parser(
+        "Times the network transmission step in each transmission mode."
+    )
+        .add_size_list("--sizes", o.sizes, "Population sizes", 1)
+        .add_int("--reps", o.reps, "Replicates per cell", 1)
+        .add_int("--days", o.days, "Days per run", 1)
+        .add_list(
+            "--scenarios", o.scenarios, "Scenarios to run", {"A", "B", "C", "D"}
+        )
+        .add_list(
+            "--modes", o.modes, "Transmission modes", {"auto", "push", "pull"}
+        )
+        .add_onoff("--queuing", o.queuing, "Use the queue")
+        .add_double(
+            "--kappa", o.kappa,
+            "Push/pull threshold (negative: the model's default)"
+        )
+        .parse(argc, argv);
     return o;
-}
-
-// FNV-1a over a stream of integers.
-static void hash_ints(uint64_t & h, const std::vector< int > & x)
-{
-    for (int v : x)
-    {
-        uint32_t u = static_cast< uint32_t >(v);
-        for (int b = 0; b < 4; ++b)
-        {
-            h ^= (u >> (8 * b)) & 0xffu;
-            h *= 1099511628211ull;
-        }
-    }
-}
-
-static uint64_t run_checksum(Model<> & m)
-{
-    uint64_t h = 1469598103934665603ull;
-    std::vector< int > counts;
-    m.get_db().get_hist_total(nullptr, nullptr, &counts);
-    hash_ints(h, counts);
-    std::vector< int > date, source, target, virus, sexp;
-    m.get_db().get_transmissions(date, source, target, virus, sexp);
-    hash_ints(h, date);
-    hash_ints(h, source);
-    hash_ints(h, target);
-    hash_ints(h, virus);
-    return h;
-}
-
-static double quantile(std::vector< double > x, double q)
-{
-    std::sort(x.begin(), x.end());
-    double pos = q * static_cast< double >(x.size() - 1u);
-    size_t lo = static_cast< size_t >(std::floor(pos));
-    size_t hi = static_cast< size_t >(std::ceil(pos));
-    return x[lo] + (x[hi] - x[lo]) * (pos - static_cast< double >(lo));
 }
 
 // Scenario A: epiworld-benchmark's SEIRH runner (runners/epiworld.R),
@@ -176,10 +115,7 @@ static void build_seirh(Model<> & model, size_t n)
     model.agents_smallworld(n, 10, false, 0.05);
 }
 
-struct Result {
-    std::vector< double > ms;
-    std::vector< double > final_size;
-    uint64_t checksum = 1469598103934665603ull;
+struct Result : bench::Timing {
     int n_push = 0;
     int n_pull = 0;
 };
@@ -189,7 +125,7 @@ static Result time_model(
     TModel & model,
     const Options & o,
     const std::string & mode,
-    size_t n_susceptible_states
+    const std::vector< size_t > & uninfected_states
 ) {
 
     Result res;
@@ -217,29 +153,11 @@ static Result time_model(
     if (!o.queuing)
         model.queuing_off();
 
-    model.verbose_off();
-
-    // Warm-up
-    model.run(static_cast< epiworld_fast_uint >(o.days), 999);
-    res.n_push = res.n_pull = 0;
-
-    for (int r = 0; r < o.reps; ++r)
-    {
-        std::clock_t t0 = std::clock();
-        model.run(static_cast< epiworld_fast_uint >(o.days), 1000 + r);
-        std::clock_t t1 = std::clock();
-        res.ms.push_back(1000.0 * static_cast< double >(t1 - t0) / CLOCKS_PER_SEC);
-
-        std::vector< int > today;
-        model.get_db().get_today_total(nullptr, &today);
-        double not_infected = 0.0;
-        for (size_t s = 0u; s < n_susceptible_states; ++s)
-            not_infected += today[s];
-        res.final_size.push_back(static_cast< double >(model.size()) - not_infected);
-
-        uint64_t h = run_checksum(model);
-        res.checksum ^= h + 0x9e3779b97f4a7c15ull + (res.checksum << 6) + (res.checksum >> 2);
-    }
+    // The counters only cover the timed runs
+    static_cast< bench::Timing & >(res) = bench::time_runs(
+        model, o.days, o.reps, uninfected_states,
+        [&res]() { res.n_push = res.n_pull = 0; }
+    );
 
     return res;
 
@@ -284,7 +202,7 @@ int main(int argc, char ** argv)
                     Model<> model;
                     model.seed(20260907);
                     build_seirh(model, n);
-                    res = time_model(model, o, mode, 1u);
+                    res = time_model(model, o, mode, {0u});
                 }
                 else if (scen == "B")
                 {
@@ -298,7 +216,7 @@ int main(int argc, char ** argv)
                     );
                     model.seed(20260907);
                     model.agents_smallworld(n, 10, false, 0.05);
-                    res = time_model(model, o, mode, 1u);
+                    res = time_model(model, o, mode, {0u});
                 }
                 else if (scen == "D")
                 {
@@ -313,14 +231,14 @@ int main(int argc, char ** argv)
                     );
                     model.seed(20260907);
                     model.agents_smallworld(n, 10, false, 0.05);
-                    res = time_model(model, o, mode, 1u);
+                    res = time_model(model, o, mode, {0u});
                 }
                 else if (scen == "C")
                 {
                     epimodels::ModelSIR<> model("Dense pathogen", 0.01, 0.05, 0.2);
                     model.seed(20260907);
                     model.agents_smallworld(n, 50, false, 0.1);
-                    res = time_model(model, o, mode, 1u);
+                    res = time_model(model, o, mode, {0u});
                 }
                 else
                 {
@@ -331,8 +249,8 @@ int main(int argc, char ** argv)
                 std::printf(
                     "%-9s %8zu %-5s %10.3f %10.3f %10.3f %11.0f %6d %6d %018llx\n",
                     scen.c_str(), n, has_modes ? mode.c_str() : "-",
-                    quantile(res.ms, 0.5), quantile(res.ms, 0.25), quantile(res.ms, 0.75),
-                    quantile(res.final_size, 0.5), res.n_push, res.n_pull,
+                    stats::quantile(res.ms, 0.5), stats::quantile(res.ms, 0.25), stats::quantile(res.ms, 0.75),
+                    stats::quantile(res.final_size, 0.5), res.n_push, res.n_pull,
                     static_cast< unsigned long long >(res.checksum)
                 );
                 std::fflush(stdout);

@@ -133,8 +133,7 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
 
     // Helper macro to compute observed and expected R0
     #define calc_r0(ans_observed, ans_expected, r0, avg_contact_rate) \
-        double (ans_observed) = std::accumulate(r0.begin(), r0.end(), 0.0); \
-        (ans_observed) /= static_cast<epiworld_double>(r0.size()); \
+        double (ans_observed) = stats::mean(r0); \
         std::fill(r0.begin(), r0.end(), -1.0); \
         double (ans_expected) = (avg_contact_rate) * \
             model_1("Prob. Transmission") / \

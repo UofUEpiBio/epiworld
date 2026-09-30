@@ -1,3 +1,7 @@
+---
+playground: false
+---
+
 # Parameter Lookup Benchmark
 
 Times model parameter lookups by name, both on their own and inside models whose hot paths call them:
@@ -9,7 +13,7 @@ Times model parameter lookups by name, both on their own and inside models whose
 For A and M, the program prints:
 
 - the median (Q1, Q3) CPU milliseconds per `run()`;
-- the median final size;
+- the median final size (agents that are neither susceptible nor quarantined-susceptible at the end);
 - a checksum of every replicate's daily counts and transmissions.
 
 Equal checksums mean bit-identical runs. The file only uses the string-based parameter API, so it also compiles against older versions, and two versions can be timed side by side:

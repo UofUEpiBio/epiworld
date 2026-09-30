@@ -39,6 +39,7 @@ examples/**
 !examples/**/*.cpp
 !examples/**/*.md
 !examples/**/Makefile
+!examples/**/*.sh
 !examples/**/.gitignore
 
 # This is mounted from the container

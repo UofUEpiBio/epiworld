@@ -74,8 +74,7 @@ EPIWORLD_TEST_CASE(
     tests_print_avg_transitions(tmat, model);
 
     // Averaging R0
-    auto avg_R0 = std::accumulate(R0s.begin(), R0s.end(), 0.0) /
-        static_cast<epiworld_double>(R0s.size());
+    auto avg_R0 = stats::mean(R0s);
 
     // Average hospitalizations
     double obs_hosp_probability = 0.0;

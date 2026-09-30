@@ -2,8 +2,7 @@
 #include "../include/measles/measles.hpp"
 
 #define calc_r0(ans_observed, ans_expected, r0, model) \
-    double ans_observed = std::accumulate(r0.begin(), r0.end(), 0.0); \
-    ans_observed /= static_cast<epiworld_double>(r0.size()); \
+    double ans_observed = stats::mean(r0); \
     std::fill(r0.begin(), r0.end(), -1.0); \
     double ans_expected = model("Contact rate") * \
         model("Transmission rate") * \
