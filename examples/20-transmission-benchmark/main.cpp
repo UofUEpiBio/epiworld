@@ -1,5 +1,7 @@
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/cli/cli.hpp"
+#include "../../include/bench/bench.hpp"
+#include "../../include/stats/stats.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -75,44 +77,6 @@ static Options parse(int argc, char ** argv)
     return o;
 }
 
-// FNV-1a over a stream of integers.
-static void hash_ints(uint64_t & h, const std::vector< int > & x)
-{
-    for (int v : x)
-    {
-        uint32_t u = static_cast< uint32_t >(v);
-        for (int b = 0; b < 4; ++b)
-        {
-            h ^= (u >> (8 * b)) & 0xffu;
-            h *= 1099511628211ull;
-        }
-    }
-}
-
-static uint64_t run_checksum(Model<> & m)
-{
-    uint64_t h = 1469598103934665603ull;
-    std::vector< int > counts;
-    m.get_db().get_hist_total(nullptr, nullptr, &counts);
-    hash_ints(h, counts);
-    std::vector< int > date, source, target, virus, sexp;
-    m.get_db().get_transmissions(date, source, target, virus, sexp);
-    hash_ints(h, date);
-    hash_ints(h, source);
-    hash_ints(h, target);
-    hash_ints(h, virus);
-    return h;
-}
-
-static double quantile(std::vector< double > x, double q)
-{
-    std::sort(x.begin(), x.end());
-    double pos = q * static_cast< double >(x.size() - 1u);
-    size_t lo = static_cast< size_t >(std::floor(pos));
-    size_t hi = static_cast< size_t >(std::ceil(pos));
-    return x[lo] + (x[hi] - x[lo]) * (pos - static_cast< double >(lo));
-}
-
 // Scenario A: epiworld-benchmark's SEIRH runner (runners/epiworld.R),
 // translated line by line.
 static void build_seirh(Model<> & model, size_t n)
@@ -151,10 +115,7 @@ static void build_seirh(Model<> & model, size_t n)
     model.agents_smallworld(n, 10, false, 0.05);
 }
 
-struct Result {
-    std::vector< double > ms;
-    std::vector< double > final_size;
-    uint64_t checksum = 1469598103934665603ull;
+struct Result : bench::Timing {
     int n_push = 0;
     int n_pull = 0;
 };
@@ -192,29 +153,11 @@ static Result time_model(
     if (!o.queuing)
         model.queuing_off();
 
-    model.verbose_off();
-
-    // Warm-up
-    model.run(static_cast< epiworld_fast_uint >(o.days), 999);
-    res.n_push = res.n_pull = 0;
-
-    for (int r = 0; r < o.reps; ++r)
-    {
-        std::clock_t t0 = std::clock();
-        model.run(static_cast< epiworld_fast_uint >(o.days), 1000 + r);
-        std::clock_t t1 = std::clock();
-        res.ms.push_back(1000.0 * static_cast< double >(t1 - t0) / CLOCKS_PER_SEC);
-
-        std::vector< int > today;
-        model.get_db().get_today_total(nullptr, &today);
-        double not_infected = 0.0;
-        for (size_t s = 0u; s < n_susceptible_states; ++s)
-            not_infected += today[s];
-        res.final_size.push_back(static_cast< double >(model.size()) - not_infected);
-
-        uint64_t h = run_checksum(model);
-        res.checksum ^= h + 0x9e3779b97f4a7c15ull + (res.checksum << 6) + (res.checksum >> 2);
-    }
+    // The counters only cover the timed runs
+    static_cast< bench::Timing & >(res) = bench::time_runs(
+        model, o.days, o.reps, n_susceptible_states,
+        [&res]() { res.n_push = res.n_pull = 0; }
+    );
 
     return res;
 
@@ -306,8 +249,8 @@ int main(int argc, char ** argv)
                 std::printf(
                     "%-9s %8zu %-5s %10.3f %10.3f %10.3f %11.0f %6d %6d %018llx\n",
                     scen.c_str(), n, has_modes ? mode.c_str() : "-",
-                    quantile(res.ms, 0.5), quantile(res.ms, 0.25), quantile(res.ms, 0.75),
-                    quantile(res.final_size, 0.5), res.n_push, res.n_pull,
+                    stats::quantile(res.ms, 0.5), stats::quantile(res.ms, 0.25), stats::quantile(res.ms, 0.75),
+                    stats::quantile(res.final_size, 0.5), res.n_push, res.n_pull,
                     static_cast< unsigned long long >(res.checksum)
                 );
                 std::fflush(stdout);

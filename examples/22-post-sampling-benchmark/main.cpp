@@ -1,6 +1,8 @@
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/measles/measles.hpp"
 #include "../../include/cli/cli.hpp"
+#include "../../include/bench/bench.hpp"
+#include "../../include/stats/stats.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -64,50 +66,6 @@ static Options parse(int argc, char ** argv)
     return o;
 }
 
-// FNV-1a over a stream of integers.
-static void hash_ints(uint64_t & h, const std::vector< int > & x)
-{
-    for (int v : x)
-    {
-        uint32_t u = static_cast< uint32_t >(v);
-        for (int b = 0; b < 4; ++b)
-        {
-            h ^= (u >> (8 * b)) & 0xffu;
-            h *= 1099511628211ull;
-        }
-    }
-}
-
-static uint64_t run_checksum(Model<> & m)
-{
-    uint64_t h = 1469598103934665603ull;
-    std::vector< int > counts;
-    m.get_db().get_hist_total(nullptr, nullptr, &counts);
-    hash_ints(h, counts);
-    std::vector< int > date, source, target, virus, sexp;
-    m.get_db().get_transmissions(date, source, target, virus, sexp);
-    hash_ints(h, date);
-    hash_ints(h, source);
-    hash_ints(h, target);
-    hash_ints(h, virus);
-    hash_ints(h, sexp);
-    return h;
-}
-
-static double quantile(std::vector< double > x, double q)
-{
-    std::sort(x.begin(), x.end());
-    double pos = q * static_cast< double >(x.size() - 1u);
-    size_t lo = static_cast< size_t >(std::floor(pos));
-    size_t hi = static_cast< size_t >(std::ceil(pos));
-    return x[lo] + (x[hi] - x[lo]) * (pos - static_cast< double >(lo));
-}
-
-static double cpu_ms(std::clock_t t0, std::clock_t t1)
-{
-    return 1000.0 * static_cast< double >(t1 - t0) / CLOCKS_PER_SEC;
-}
-
 // Scenarios -------------------------------------------------------------------
 
 // Column-major, N_GROUPS x N_GROUPS
@@ -165,41 +123,7 @@ static ModelMeasles build_measles(size_t n)
     return model;
 }
 
-struct Result {
-    std::vector< double > ms;
-    std::vector< double > final_size;
-    uint64_t checksum = 1469598103934665603ull;
-};
-
-static Result time_model(Model<> & model, const Options & o)
-{
-    Result res;
-    model.verbose_off();
-
-    // Warm-up
-    model.run(static_cast< epiworld_fast_uint >(o.days), 999);
-
-    for (int r = 0; r < o.reps; ++r)
-    {
-        std::clock_t t0 = std::clock();
-        model.run(static_cast< epiworld_fast_uint >(o.days), 1000 + r);
-        std::clock_t t1 = std::clock();
-        res.ms.push_back(cpu_ms(t0, t1));
-
-        std::vector< int > today;
-        model.get_db().get_today_total(nullptr, &today);
-        res.final_size.push_back(
-            static_cast< double >(model.size()) - static_cast< double >(today[0u])
-        );
-
-        uint64_t h = run_checksum(model);
-        res.checksum ^= h + 0x9e3779b97f4a7c15ull + (res.checksum << 6) + (res.checksum >> 2);
-    }
-
-    return res;
-}
-
-static Result run_scenario(const std::string & scen, size_t n, const Options & o)
+static bench::Timing run_scenario(const std::string & scen, size_t n, const Options & o)
 {
     const double prevalence = 100.0 / static_cast< double >(n);
 
@@ -209,7 +133,7 @@ static Result run_scenario(const std::string & scen, size_t n, const Options & o
         model.seed(20260930);
         model.agents_smallworld(n, 10, false, 0.05);
         model.set_transmission_mode(scen == "L" ? "pull" : "push");
-        return time_model(model, o);
+        return bench::time_runs(model, o.days, o.reps);
     }
 
     if (scen == "S")
@@ -220,7 +144,7 @@ static Result run_scenario(const std::string & scen, size_t n, const Options & o
         );
         model.seed(20260930);
         add_groups(model, n);
-        return time_model(model, o);
+        return bench::time_runs(model, o.days, o.reps);
     }
 
     if (scen == "E")
@@ -231,7 +155,7 @@ static Result run_scenario(const std::string & scen, size_t n, const Options & o
         );
         model.seed(20260930);
         add_groups(model, n);
-        return time_model(model, o);
+        return bench::time_runs(model, o.days, o.reps);
     }
 
     if (scen == "Q")
@@ -249,12 +173,12 @@ static Result run_scenario(const std::string & scen, size_t n, const Options & o
         );
         model.seed(20260930);
         add_groups(model, n);
-        return time_model(model, o);
+        return bench::time_runs(model, o.days, o.reps);
     }
 
     ModelMeasles model = build_measles(n);
     model.seed(20260930);
-    return time_model(model, o);
+    return bench::time_runs(model, o.days, o.reps);
 }
 
 int main(int argc, char ** argv)
@@ -276,13 +200,13 @@ int main(int argc, char ** argv)
     {
         for (auto n : o.sizes)
         {
-            Result res = run_scenario(scen, n, o);
+            bench::Timing res = run_scenario(scen, n, o);
 
             std::printf(
                 "%-9s %8zu %10.3f %10.3f %10.3f %11.0f %018llx\n",
                 scen.c_str(), n,
-                quantile(res.ms, 0.5), quantile(res.ms, 0.25), quantile(res.ms, 0.75),
-                quantile(res.final_size, 0.5),
+                stats::quantile(res.ms, 0.5), stats::quantile(res.ms, 0.25), stats::quantile(res.ms, 0.75),
+                stats::quantile(res.final_size, 0.5),
                 static_cast< unsigned long long >(res.checksum)
             );
             std::fflush(stdout);
