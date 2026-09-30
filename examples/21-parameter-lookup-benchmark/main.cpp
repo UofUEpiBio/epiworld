@@ -224,7 +224,10 @@ int main(int argc, char ** argv)
             {
                 ModelMeasles model = build_measles(n);
                 model.seed(20260928);
-                res = bench::time_runs(model, o.days, o.reps);
+                res = bench::time_runs(
+                    model, o.days, o.reps,
+                    {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+                );
             }
             else
             {

@@ -173,12 +173,18 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
         );
         model.seed(20260930);
         add_groups(model, n);
-        return bench::time_runs(model, o.days, o.reps);
+        return bench::time_runs(
+            model, o.days, o.reps,
+            {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+        );
     }
 
     ModelMeasles model = build_measles(n);
     model.seed(20260930);
-    return bench::time_runs(model, o.days, o.reps);
+    return bench::time_runs(
+        model, o.days, o.reps,
+        {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+    );
 }
 
 int main(int argc, char ** argv)

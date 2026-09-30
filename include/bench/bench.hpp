@@ -63,7 +63,7 @@ inline uint64_t run_checksum(epiworld::Model<> & m)
 /** The outcome of `time_runs()`. */
 struct Timing {
     std::vector< double > ms;         ///< CPU milliseconds of each run
-    std::vector< double > final_size; ///< Agents not in a susceptible state at the end
+    std::vector< double > final_size; ///< Agents outside the uninfected states at the end
     uint64_t checksum = 1469598103934665603ull; ///< Over every run
 };
 
@@ -71,8 +71,9 @@ struct Timing {
  * Runs @p model once to warm it up (seed 999), then times @p reps runs of
  * @p days days (seeds 1000, 1001, ...).
  *
- * @param n_susceptible_states The states 0, ..., n - 1 are the susceptible
- * ones; the final size is the number of agents outside them.
+ * @param uninfected_states States of agents that were never infected (e.g.,
+ * susceptible and quarantined-susceptible); the final size is the number of
+ * agents outside them.
  * @param after_warmup Called once after the warm-up run, e.g., to reset a
  * counter the model's callbacks keep.
  */
@@ -80,7 +81,7 @@ inline Timing time_runs(
     epiworld::Model<> & model,
     int days,
     int reps,
-    size_t n_susceptible_states = 1u,
+    const std::vector< size_t > & uninfected_states = {0u},
     const std::function< void() > & after_warmup = nullptr
 )
 {
@@ -100,11 +101,11 @@ inline Timing time_runs(
 
         std::vector< int > today;
         model.get_db().get_today_total(nullptr, &today);
-        double susceptible = 0.0;
-        for (size_t s = 0u; s < n_susceptible_states; ++s)
-            susceptible += today[s];
+        double uninfected = 0.0;
+        for (size_t s : uninfected_states)
+            uninfected += today[s];
         res.final_size.push_back(
-            static_cast< double >(model.size()) - susceptible
+            static_cast< double >(model.size()) - uninfected
         );
 
         uint64_t h = run_checksum(model);

@@ -33,6 +33,12 @@ REQUIRES_OMP_RE = re.compile(
     r"^requires_omp:\s*(?:true|yes|1)\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
+# Examples that include headers other than epiworld.hpp (which is all the
+# playground uploads), or that are too slow for it, opt out with this key.
+NO_PLAYGROUND_RE = re.compile(
+    r"^playground:\s*(?:false|no|0)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
 
 
 @dataclass(frozen=True)
@@ -42,6 +48,7 @@ class ExampleDoc:
     body: str
     front_matter: str
     requires_omp: bool
+    playground: bool
 
 
 def read_example_doc(example_dir: Path) -> ExampleDoc | None:
@@ -74,6 +81,7 @@ def read_example_doc(example_dir: Path) -> ExampleDoc | None:
     title = heading_match.group("title").strip()
     body = content[heading_match.end() :].strip()
     requires_omp = bool(REQUIRES_OMP_RE.search(front_matter))
+    playground = not NO_PLAYGROUND_RE.search(front_matter)
 
     return ExampleDoc(
         name=example_dir.name,
@@ -81,6 +89,7 @@ def read_example_doc(example_dir: Path) -> ExampleDoc | None:
         body=body,
         front_matter=front_matter,
         requires_omp=requires_omp,
+        playground=playground,
     )
 
 
@@ -171,6 +180,13 @@ def generate_page(example: ExampleDoc, example_dir: Path) -> tuple[str, str]:
             "!!! note\n"
             "    This example requires OpenMP support (`-fopenmp`). "
             "The interactive playground is not available for this example.\n\n"
+        )
+    elif not example.playground:
+        parts.append(
+            "!!! note\n"
+            "    This example uses headers other than `epiworld.hpp`, so the "
+            "interactive playground is not available for it. Build it locally "
+            "with `make example-" + example.name + "-run`.\n\n"
         )
     else:
         raw_source = (example_dir / "main.cpp").read_text(encoding="utf-8")

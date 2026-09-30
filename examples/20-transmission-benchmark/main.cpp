@@ -125,7 +125,7 @@ static Result time_model(
     TModel & model,
     const Options & o,
     const std::string & mode,
-    size_t n_susceptible_states
+    const std::vector< size_t > & uninfected_states
 ) {
 
     Result res;
@@ -155,7 +155,7 @@ static Result time_model(
 
     // The counters only cover the timed runs
     static_cast< bench::Timing & >(res) = bench::time_runs(
-        model, o.days, o.reps, n_susceptible_states,
+        model, o.days, o.reps, uninfected_states,
         [&res]() { res.n_push = res.n_pull = 0; }
     );
 
@@ -202,7 +202,7 @@ int main(int argc, char ** argv)
                     Model<> model;
                     model.seed(20260907);
                     build_seirh(model, n);
-                    res = time_model(model, o, mode, 1u);
+                    res = time_model(model, o, mode, {0u});
                 }
                 else if (scen == "B")
                 {
@@ -216,7 +216,7 @@ int main(int argc, char ** argv)
                     );
                     model.seed(20260907);
                     model.agents_smallworld(n, 10, false, 0.05);
-                    res = time_model(model, o, mode, 1u);
+                    res = time_model(model, o, mode, {0u});
                 }
                 else if (scen == "D")
                 {
@@ -231,14 +231,14 @@ int main(int argc, char ** argv)
                     );
                     model.seed(20260907);
                     model.agents_smallworld(n, 10, false, 0.05);
-                    res = time_model(model, o, mode, 1u);
+                    res = time_model(model, o, mode, {0u});
                 }
                 else if (scen == "C")
                 {
                     epimodels::ModelSIR<> model("Dense pathogen", 0.01, 0.05, 0.2);
                     model.seed(20260907);
                     model.agents_smallworld(n, 50, false, 0.1);
-                    res = time_model(model, o, mode, 1u);
+                    res = time_model(model, o, mode, {0u});
                 }
                 else
                 {

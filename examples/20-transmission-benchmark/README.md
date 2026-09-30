@@ -1,3 +1,7 @@
+---
+playground: false
+---
+
 # Transmission Benchmark
 
 Times the network transmission step in each transmission mode (`"auto"`, `"push"`, and `"pull"`; see [Push and Pull Transmission](https://UofUEpi.github.io/epiworld/impl/transmission-sampling/)) on three network models:

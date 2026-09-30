@@ -1,3 +1,7 @@
+---
+playground: false
+---
+
 # Post-Sampling Benchmark
 
 Times the contact-sampling step of the network and mixing models with no post-sampling callback installed. It is the before/after check for the post-sampling hook work (issue #276): adding a hook that is not in use must not slow these models down, and the refactor of the mixing models onto a shared sampler must not change their results.
@@ -14,7 +18,7 @@ Scenarios:
 For each cell, the program prints:
 
 - the median (Q1, Q3) CPU milliseconds per 40-day `run()`;
-- the median final size;
+- the median final size (agents that are neither susceptible nor quarantined-susceptible at the end);
 - a checksum of every replicate's daily counts and transmissions.
 
 Equal checksums mean bit-identical runs. The file only uses the long-standing public API, so it compiles against any version:
