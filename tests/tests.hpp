@@ -14,6 +14,7 @@
 #endif
 
 #include "../include/epiworld/epiworld.hpp"
+#include "../include/stats/stats.hpp"
 
 #ifndef NO_CATCH_MAIN
     #include "../vendor/catch2/catch.hpp"

@@ -1,7 +1,5 @@
 #include "tests.hpp"
 
-#include "../include/stats/stats.hpp"
-
 using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")

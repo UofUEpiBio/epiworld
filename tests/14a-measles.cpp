@@ -181,10 +181,7 @@ EPIWORLD_TEST_CASE(
                   model_0("Hospitalization rate") + p_recovered
               ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
-    std::cout << "Outbreak size: " <<
-        static_cast<double>(
-            std::accumulate(outbreak_sizes.begin(), outbreak_sizes.end(), 0.0)
-        ) / static_cast<double>(nsims) << std::endl;
+    std::cout << "Outbreak size: " << stats::mean(outbreak_sizes) << std::endl;
     #undef mat
 
     
