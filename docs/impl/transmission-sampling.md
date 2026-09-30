@@ -116,12 +116,12 @@ $$
 C_\text{push} \le \kappa \, C_\text{pull},
 $$
 
-and pulls otherwise. This takes $O(\text{number of states})$ time per step. $b$ is a property of how agents are laid out in memory, not of the network, so it is set once. $\kappa$ (`set_transmission_mode("auto", kappa)`, default 0.5) scales the pull cost. Below 1 it leans towards pushing: per unit of cost, a pull step measured dearer than a push step (the queue upkeep and the roulette are not in the sums), and 0.5 was the value that kept `"auto"` within a few percent of the cheaper mode on every benchmark scenario below.
+and pulls otherwise. This takes $O(\text{number of states})$ time per step. $b$ is a property of how agents are laid out in memory, not of the network, so it is set once. $\kappa$ (`set_transmission_mode("auto", kappa)`, default 0.5) scales the pull cost, so a value below 1 makes pushing harder to choose (it favors pulling). It is below 1 because the queue spares a pull the susceptibles with no infectious neighbor, which the sums do not see. The per-agent price $b$ pulls the other way, since susceptibles outnumber carriers in most outbreaks. The two were fitted together: 0.5 and 4 kept `"auto"` within a few percent of the cheaper mode on every benchmark scenario below.
 
 The rule deliberately ignores the queue. The decision, and therefore the random stream, is the same with queuing on or off, so queuing remains a pure optimization: a run with it on and a run with it off give identical results in every mode.
 
-!!! note "Before 0.17"
-    The rule compared the carriers' ties with $0.25$ times the susceptibles' ties and ignored the price of visiting an agent. On a network like a synthetic population's (households plus workplaces and schools, mean degree 4.5, 165,000 agents) it pulled on about a third of the days around the peak, when pushing was cheaper on every day.
+!!! note "Earlier versions"
+    Up to 0.17.0 the rule compared the carriers' ties with $0.25$ times the susceptibles' ties and ignored the price of visiting an agent. On a network like a synthetic population's (households plus workplaces and schools, mean degree 4.5, 165,000 agents) it pulled on about a third of the days around the peak, when pushing was cheaper on every day.
 
 ## Scope
 
@@ -186,9 +186,9 @@ What drives these numbers:
 
 ### Heterogeneous networks
 
-Scenario E is the case the cost model of the previous section was fitted on, together with a real synthetic-population network (GeoPops, Spartanburg County, 165,865 agents, mean degree 4.5) that is too large to ship with the examples. Both have a large outbreak that peaks with most of the population still susceptible. The carriers own a large share of the ties (they are the hubs), but the susceptibles are several times more numerous, and visiting an agent costs as much as a few of its ties. Before 0.17, `"auto"` counted ties only, pulled on about a third of the days around the peak, and ended about 10% slower than the cheaper mode:
+Scenario E is the case the cost model of the previous section was fitted on, together with a real synthetic-population network (GeoPops, Spartanburg County, 165,865 agents, mean degree 4.5) that is too large to ship with the examples. Both have a large outbreak that peaks with most of the population still susceptible. The carriers own a large share of the ties (they are the hubs), but the susceptibles are several times more numerous, and visiting an agent costs as much as a few of its ties. In 0.17.0 and earlier, `"auto"` counted ties only, pulled on about a third of the days around the peak, and ended about 10% slower than the cheaper mode:
 
-| Scenario (165,000 agents) | auto before 0.17 | 0.17 auto | 0.17 push | 0.17 pull |
+| Scenario (165,000 agents) | auto, previous rule | auto | push | pull |
 |:--|--:|--:|--:|--:|
 | E | 184.8 | **161.8** | 166.0 | 177.9 |
 | GeoPops | 190.0 | **173.2** | 173.3 | 215.1 |

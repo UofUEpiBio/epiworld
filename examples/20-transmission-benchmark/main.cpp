@@ -338,13 +338,23 @@ static Result time_model(
                 std::clock_t now = std::clock();
                 auto sums = m->get_transmission_sums();
 
-                // The sums the step's decision saw are those left by the
-                // previous day (the first day only has the ones after it).
-                std::vector< size_t > seen = trp->first ?
-                    std::vector< size_t >({
+                // The first day is not reported: its time includes the
+                // initialization (reset, initial distributions), and the sums
+                // its decision saw are not available yet. From the second day
+                // on, the sums the step's decision saw are those left by the
+                // previous day.
+                if (trp->first)
+                {
+                    trp->prev = {
                         sums.carrier_degree, sums.susceptible_degree,
                         sums.carriers, sums.susceptibles
-                    }) : trp->prev;
+                    };
+                    trp->first = false;
+                    trp->last = std::clock();
+                    return;
+                }
+
+                const std::vector< size_t > & seen = trp->prev;
 
                 std::printf(
                     "%4d %4c %10zu %10zu %9zu %9zu %9.0f\n",

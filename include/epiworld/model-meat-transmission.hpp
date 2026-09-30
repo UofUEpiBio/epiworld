@@ -111,8 +111,10 @@ inline bool Model<TSeq>::transmission_choose_push() const
     // so it matters which side has more agents. The sums are kept per state, so
     // this is O(number of states). It deliberately ignores the queue: the
     // decision -- and so the random stream -- is the same with queuing on or
-    // off. kappa < 1 because, measured per unit of this cost, a pull step is
-    // dearer than a push step (queue upkeep, function dispatch, the roulette).
+    // off. kappa < 1 makes pushing harder to choose: the queue spares a pull
+    // the susceptibles with no infectious neighbor, which the sums do not see,
+    // and the per-agent term raises the pull side wherever susceptibles
+    // outnumber carriers. The default was fitted so the two balance.
     const TransmissionSums sums = get_transmission_sums();
 
     const double cost_push =

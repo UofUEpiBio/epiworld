@@ -896,9 +896,11 @@ public:
      * push cost is no more than `kappa` times the pull cost, and pulls
      * otherwise; `kappa` only matters in this mode. The choice depends only on
      * the model's state, never on the queueing system, so turning queuing on or
-     * off leaves results unchanged. The default `kappa` is 0.5 rather than 1
-     * because, per unit of this cost, a pull step measured dearer than a push
-     * step (fitted with `examples/20-transmission-benchmark`).
+     * off leaves results unchanged. A `kappa` below 1 makes pushing harder to
+     * choose (it favors pulling); the default, 0.5, is below 1 because the
+     * queue spares a pull the susceptibles with no infectious neighbor, which
+     * the costs do not see. It was fitted together with the per-agent price
+     * with `examples/20-transmission-benchmark`.
      *
      * Directed networks, and states with other update functions, always pull.
      * Set `"pull"` to reproduce the random streams of epiworld <= 0.15.
