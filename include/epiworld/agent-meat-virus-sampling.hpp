@@ -79,9 +79,10 @@ inline size_t collect_neighbor_viruses(
     if (carrier != nullptr)
     {
 
+        const size_t * ids = neighbors.ids();
         const size_t n = neighbors.size();
         for (size_t k = 0u; k < n; ++k)
-            if (carrier[neighbors.id(k)] != 0)
+            if (carrier[ids[k]] != 0)
                 add(neighbors.agent(k));
 
     }

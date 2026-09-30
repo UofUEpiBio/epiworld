@@ -13,6 +13,7 @@ using namespace epiworld;
 //    `sampler::make_sample_virus_neighbors()` (which always walks the
 //    neighbors' agents) gives exactly the run of the built-in state in "pull"
 //    mode, so making that scan cheaper did not touch the random stream.
+// 3. The neighbor view used by that scan refuses indices past its end.
 //
 // (The automatic choice itself is in 34e.)
 
@@ -97,6 +98,22 @@ EPIWORLD_TEST_CASE("Transmission - heterogeneous network", "[transmission]") {
         INFO("queuing " << queuing);
         REQUIRE(builtin.date.size() > 1000u);
         REQUIRE(builtin == plain);
+    }
+
+    // 3. The neighbor view checks its indices ---------------------------------
+    {
+        Model<> model;
+        model.add_state("Susceptible", default_update_susceptible<>);
+        model.agents_smallworld(20, 4, false, 0.0);
+        model.verbose_off();
+        model.run(1, 1);
+
+        auto view = model.get_agent(0).neighbors_view(model);
+        REQUIRE(view.size() == 4u);
+        REQUIRE(view.id(3u) == view.ids()[3]);
+        REQUIRE(view.agent(3u)->get_id() == view.id(3u));
+        REQUIRE_THROWS_AS(view.id(4u), std::out_of_range);
+        REQUIRE_THROWS_AS(view.agent(4u), std::out_of_range);
     }
 
 }
