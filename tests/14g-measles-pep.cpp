@@ -94,12 +94,8 @@ PepSummary run_experiment(bool with_pep, size_t nsims)
     model.run_multiple(n_days, nsims, 1231, saver, true, false, 2);
 
     PepSummary summary;
-    summary.avg_recipients =
-        std::accumulate(recipients.begin(), recipients.end(), 0.0) /
-        static_cast<double>(nsims);
-    summary.avg_outbreak_size =
-        std::accumulate(outbreak_sizes.begin(), outbreak_sizes.end(), 0.0) /
-        static_cast<double>(nsims);
+    summary.avg_recipients = stats::mean(recipients);
+    summary.avg_outbreak_size = stats::mean(outbreak_sizes);
 
     return summary;
 }

@@ -18,7 +18,8 @@ PACKAGES := \
 	18-seir-network-quarantine-benchmark \
 	19-poisson-approximation-binomial \
 	20-transmission-benchmark \
-	21-parameter-lookup-benchmark
+	21-parameter-lookup-benchmark \
+	22-post-sampling-benchmark
 	
 # Only with OpenMP
 ifneq ($(filter 1 yes true,$(WITH_OPENMP)),)
