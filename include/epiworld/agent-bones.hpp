@@ -99,6 +99,12 @@ public:
     size_t size() const { return n; }
     bool empty() const { return n == 0u; }
 
+    /// Id of the `k`-th neighbor, without touching the neighbor's `Agent`.
+    size_t id(size_t k) const { return first[k]; }
+
+    /// The `k`-th neighbor.
+    Agent<TSeq> * agent(size_t k) const { return &pop->operator[](first[k]); }
+
 };
 
 /**

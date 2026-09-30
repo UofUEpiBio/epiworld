@@ -104,24 +104,54 @@ inline bool Model<TSeq>::transmission_choose_push() const
     if (transmission_mode == TransmissionMode::push)
         return true;
 
-    // Pushing walks every tie of every carrier that can transmit; pulling walks
-    // every tie of every susceptible agent. Both sums are kept per state, so
+    // Pushing visits every carrier that can transmit and walks its ties;
+    // pulling visits every susceptible agent and walks its ties. Each visit
+    // also costs a fixed amount, EPI_TRANSMISSION_AGENT_COST ties: at the low
+    // degrees of contact networks that is comparable to the ties themselves,
+    // so it matters which side has more agents. The sums are kept per state, so
     // this is O(number of states). It deliberately ignores the queue: the
     // decision -- and so the random stream -- is the same with queuing on or
-    // off. The queue does make pulling cheaper than this sum suggests (it
-    // skips susceptibles with no infectious neighbor), which is what kappa < 1
-    // accounts for.
-    double cost_push = 0.0;
-    double cost_pull = 0.0;
+    // off. kappa < 1 because, measured per unit of this cost, a pull step is
+    // dearer than a push step (queue upkeep, function dispatch, the roulette).
+    const TransmissionSums sums = get_transmission_sums();
+
+    const double cost_push =
+        static_cast< double >(sums.carrier_degree) +
+        EPI_TRANSMISSION_AGENT_COST * static_cast< double >(sums.carriers);
+
+    const double cost_pull =
+        static_cast< double >(sums.susceptible_degree) +
+        EPI_TRANSMISSION_AGENT_COST * static_cast< double >(sums.susceptibles);
+
+    return cost_push <= transmission_kappa * cost_pull;
+
+}
+
+template<typename TSeq>
+inline typename Model<TSeq>::TransmissionSums
+Model<TSeq>::get_transmission_sums() const
+{
+
+    TransmissionSums sums = {0u, 0u, 0u, 0u};
+
+    if (!state_index_ready || (push_pushable.size() != static_cast< size_t >(nstates)))
+        return sums;
+
     for (size_t s = 0u; s < static_cast< size_t >(nstates); ++s)
     {
         if (push_source_ok[s])
-            cost_push += static_cast< double >(state_carrier_degree[s]);
+        {
+            sums.carrier_degree += state_carrier_degree[s];
+            sums.carriers += state_carriers[s];
+        }
         if (push_pushable[s])
-            cost_pull += static_cast< double >(state_degree[s]);
+        {
+            sums.susceptible_degree += state_degree[s];
+            sums.susceptibles += state_start[s + 1u] - state_start[s];
+        }
     }
 
-    return cost_push <= transmission_kappa * cost_pull;
+    return sums;
 
 }
 

@@ -2,6 +2,23 @@
 
 This file contains conventions and rules for AI agents working on this repository.
 
+## Build Environment
+
+The repository ships a container image definition in `.devcontainer/` (`Containerfile`: Ubuntu 24.04, g++, make, gdb, lcov, doxygen, Perl, mkdocs). **Prefer building, testing and benchmarking inside that container whenever `docker` or `podman` is available** (check with `command -v podman docker`), so results do not depend on the host toolchain. Fall back to the host toolchain only when neither is installed.
+
+```sh
+# Build the image once (from the repository root; the context must be the root)
+podman build -f .devcontainer/Containerfile -t epiworld-dev .    # or: docker build ...
+
+# Run a command in it, with the checkout mounted at the same path
+podman run --rm -v "$PWD":"$PWD" -w "$PWD" epiworld-dev make test WITH_OPENMP=0
+```
+
+- In a git worktree, also mount the main checkout's `.git` directory at its own path (the worktree's `.git` file points to it), or run git on the host.
+- Podman on macOS needs a running machine (`podman machine start`).
+- Tools the image lacks (e.g., `valgrind` for cachegrind counts) can be installed inside a throwaway container with `apt-get`; if one is needed regularly, add it to the `Containerfile` instead.
+- Wall-clock timings inside a container on macOS run in a VM: compare variants interleaved within the same environment, never against host timings.
+
 ## Testing Conventions
 
 - Each test file in `tests/` must contain **exactly one** `EPIWORLD_TEST_CASE` macro.

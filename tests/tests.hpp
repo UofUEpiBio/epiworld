@@ -480,6 +480,54 @@ void inline tests_print_avg_transitions(
     }
 }
 
+/**
+ * Household cliques of 1 to 6 agents, plus a heavy-tailed number of random
+ * ties per agent (a discrete Pareto, paired uniformly): the degrees look like a
+ * collapsed activity-based population, with hubs in the second layer.
+ */
+inline void tests_heterogeneous_network(epiworld::Model<> & model, size_t n)
+{
+
+    std::mt19937_64 rng(2026);
+    std::uniform_real_distribution< double > unif(0.0, 1.0);
+
+    std::vector< int > source, target;
+
+    size_t i = 0u;
+    while (i < n)
+    {
+        size_t k = std::min(static_cast< size_t >(1u + unif(rng) * 6.0), n - i);
+        for (size_t a = 0u; a < k; ++a)
+            for (size_t b = a + 1u; b < k; ++b)
+            {
+                source.push_back(static_cast< int >(i + a));
+                target.push_back(static_cast< int >(i + b));
+            }
+        i += k;
+    }
+
+    std::vector< int > stubs;
+    for (size_t a = 0u; a < n; ++a)
+    {
+        if (unif(rng) < 0.15)
+            continue;
+        double x = std::pow(1.0 - unif(rng), -1.0 / 1.5);
+        int d = static_cast< int >(std::min(100.0, std::floor(x)));
+        for (int r = 0; r < d; ++r)
+            stubs.push_back(static_cast< int >(a));
+    }
+    std::shuffle(stubs.begin(), stubs.end(), rng);
+    for (size_t k = 0u; k + 1u < stubs.size(); k += 2u)
+        if (stubs[k] != stubs[k + 1u])
+        {
+            source.push_back(stubs[k]);
+            target.push_back(stubs[k + 1u]);
+        }
+
+    model.agents_from_edgelist(source, target, static_cast< int >(n), false);
+
+}
+
 #ifdef NO_CATCH_MAIN
     #define EPIWORLD_TEST_CASE(desc, tag) int main()
     #define REQUIRE(condition) assert(condition);
