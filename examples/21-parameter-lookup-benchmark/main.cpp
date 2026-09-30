@@ -1,5 +1,6 @@
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/measles/measles.hpp"
+#include "../../include/cli/cli.hpp"
 
 #include <algorithm>
 #include <climits>
@@ -46,87 +47,19 @@ struct Options {
     long calls = 10000000;
 };
 
-static std::vector< std::string > split(const std::string & s)
-{
-    std::vector< std::string > out;
-    size_t start = 0u;
-    while (start <= s.size())
-    {
-        size_t end = s.find(',', start);
-        if (end == std::string::npos)
-            end = s.size();
-        if (end > start)
-            out.push_back(s.substr(start, end - start));
-        start = end + 1u;
-    }
-    return out;
-}
-
-[[noreturn]] static void fail(const std::string & msg)
-{
-    std::fprintf(stderr, "%s\n", msg.c_str());
-    std::exit(1);
-}
-
-// Parses a whole string as an integer in [min, max].
-static long parse_long(
-    const std::string & key, const std::string & val,
-    long min, long max = LONG_MAX
-)
-{
-    size_t used = 0u;
-    long x = 0;
-    try {
-        x = std::stol(val, &used);
-    } catch (const std::exception &) {
-        used = 0u;
-    }
-    if (used == 0u || used != val.size())
-        fail("Option " + key + " expects an integer, got '" + val + "'");
-    if (x < min || x > max)
-        fail(
-            "Option " + key + " must be between " + std::to_string(min) +
-            " and " + std::to_string(max)
-        );
-    return x;
-}
-
 static Options parse(int argc, char ** argv)
 {
     Options o;
-    for (int i = 1; i < argc; i += 2)
-    {
-        std::string key = argv[i];
-        if (i + 1 >= argc)
-            fail("Option " + key + " has no value");
-        std::string val = argv[i + 1];
-        if (key == "--sizes")
-        {
-            o.sizes.clear();
-            // Scenario M starts with 100 cases, so it needs 100 agents
-            for (auto & s : split(val))
-                o.sizes.push_back(static_cast< size_t >(parse_long(key, s, 100)));
-        }
-        else if (key == "--reps")
-            o.reps = static_cast< int >(parse_long(key, val, 1, INT_MAX));
-        else if (key == "--days")
-            o.days = static_cast< int >(parse_long(key, val, 1, INT_MAX));
-        else if (key == "--scenarios")
-            o.scenarios = split(val);
-        else if (key == "--calls")
-            o.calls = parse_long(key, val, 1);
-        else
-            fail("Unknown option " + key);
-    }
-
-    if (o.sizes.empty())
-        fail("Option --sizes needs at least one size");
-    if (o.scenarios.empty())
-        fail("Option --scenarios needs at least one scenario");
-    for (auto & scen : o.scenarios)
-        if (scen != "P" && scen != "A" && scen != "M")
-            fail("Unknown scenario " + scen);
-
+    // Scenario M starts with 100 cases, so it needs 100 agents
+    cli::Parser(
+        "Times model parameter lookups, alone and inside models."
+    )
+        .add_size_list("--sizes", o.sizes, "Population sizes", 100)
+        .add_int("--reps", o.reps, "Replicates per cell", 1)
+        .add_int("--days", o.days, "Days per run", 1)
+        .add_list("--scenarios", o.scenarios, "Scenarios to run", {"P", "A", "M"})
+        .add_long("--calls", o.calls, "Calls per row in scenario P", 1)
+        .parse(argc, argv);
     return o;
 }
 

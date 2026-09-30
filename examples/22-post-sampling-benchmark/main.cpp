@@ -1,12 +1,11 @@
 #include "../../include/epiworld/epiworld.hpp"
 #include "../../include/measles/measles.hpp"
+#include "../../include/cli/cli.hpp"
 
 #include <algorithm>
-#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
-#include <cstdlib>
 #include <ctime>
 #include <string>
 #include <vector>
@@ -45,90 +44,23 @@ struct Options {
     std::vector< std::string > scenarios = {"L", "U", "S", "E", "Q", "M"};
 };
 
-static std::vector< std::string > split(const std::string & s)
-{
-    std::vector< std::string > out;
-    size_t start = 0u;
-    while (start <= s.size())
-    {
-        size_t end = s.find(',', start);
-        if (end == std::string::npos)
-            end = s.size();
-        if (end > start)
-            out.push_back(s.substr(start, end - start));
-        start = end + 1u;
-    }
-    return out;
-}
-
-[[noreturn]] static void fail(const std::string & msg)
-{
-    std::fprintf(stderr, "%s\n", msg.c_str());
-    std::exit(1);
-}
-
-// Parses a whole string as an integer in [min, max].
-static long parse_long(
-    const std::string & key, const std::string & val,
-    long min, long max = LONG_MAX
-)
-{
-    size_t used = 0u;
-    long x = 0;
-    try {
-        x = std::stol(val, &used);
-    } catch (const std::exception &) {
-        used = 0u;
-    }
-    if (used == 0u || used != val.size())
-        fail("Option " + key + " expects an integer, got '" + val + "'");
-    if (x < min || x > max)
-        fail(
-            "Option " + key + " must be between " + std::to_string(min) +
-            " and " + std::to_string(max)
-        );
-    return x;
-}
-
 static const size_t N_GROUPS = 10u;
 
 static Options parse(int argc, char ** argv)
 {
     Options o;
-    for (int i = 1; i < argc; i += 2)
-    {
-        std::string key = argv[i];
-        if (i + 1 >= argc)
-            fail("Option " + key + " has no value");
-        std::string val = argv[i + 1];
-        if (key == "--sizes")
-        {
-            o.sizes.clear();
-            // 100 initial cases, and every mixing group needs agents
-            for (auto & s : split(val))
-                o.sizes.push_back(static_cast< size_t >(parse_long(key, s, 1000)));
-        }
-        else if (key == "--reps")
-            o.reps = static_cast< int >(parse_long(key, val, 1, INT_MAX));
-        else if (key == "--days")
-            o.days = static_cast< int >(parse_long(key, val, 1, INT_MAX));
-        else if (key == "--scenarios")
-            o.scenarios = split(val);
-        else
-            fail("Unknown option " + key);
-    }
-
-    if (o.sizes.empty())
-        fail("Option --sizes needs at least one size");
-    if (o.scenarios.empty())
-        fail("Option --scenarios needs at least one scenario");
-    for (auto & scen : o.scenarios)
-        if (
-            scen != "L" && scen != "U" && scen != "S" && scen != "E" &&
-            scen != "Q" && scen != "M"
+    // 100 initial cases, and every mixing group needs agents
+    cli::Parser(
+        "Times the contact sampling of the network and mixing models."
+    )
+        .add_size_list("--sizes", o.sizes, "Population sizes", 1000)
+        .add_int("--reps", o.reps, "Replicates per cell", 1)
+        .add_int("--days", o.days, "Days per run", 1)
+        .add_list(
+            "--scenarios", o.scenarios, "Scenarios to run",
+            {"L", "U", "S", "E", "Q", "M"}
         )
-            fail("Unknown scenario " + scen);
-
+        .parse(argc, argv);
     return o;
 }
 

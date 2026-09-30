@@ -1,4 +1,5 @@
 #include "../../include/epiworld/epiworld.hpp"
+#include "../../include/cli/cli.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -50,53 +51,27 @@ struct Options {
     double kappa = -1.0; // < 0: the model's default
 };
 
-static std::vector< std::string > split(const std::string & s)
-{
-    std::vector< std::string > out;
-    size_t start = 0u;
-    while (start <= s.size())
-    {
-        size_t end = s.find(',', start);
-        if (end == std::string::npos)
-            end = s.size();
-        if (end > start)
-            out.push_back(s.substr(start, end - start));
-        start = end + 1u;
-    }
-    return out;
-}
-
 static Options parse(int argc, char ** argv)
 {
     Options o;
-    for (int i = 1; i + 1 < argc; i += 2)
-    {
-        std::string key = argv[i];
-        std::string val = argv[i + 1];
-        if (key == "--sizes")
-        {
-            o.sizes.clear();
-            for (auto & s : split(val))
-                o.sizes.push_back(static_cast< size_t >(std::stoul(s)));
-        }
-        else if (key == "--reps")
-            o.reps = std::stoi(val);
-        else if (key == "--days")
-            o.days = std::stoi(val);
-        else if (key == "--scenarios")
-            o.scenarios = split(val);
-        else if (key == "--modes")
-            o.modes = split(val);
-        else if (key == "--queuing")
-            o.queuing = (val == "on");
-        else if (key == "--kappa")
-            o.kappa = std::stod(val);
-        else
-        {
-            std::fprintf(stderr, "Unknown option %s\n", key.c_str());
-            std::exit(1);
-        }
-    }
+    cli::Parser(
+        "Times the network transmission step in each transmission mode."
+    )
+        .add_size_list("--sizes", o.sizes, "Population sizes", 1)
+        .add_int("--reps", o.reps, "Replicates per cell", 1)
+        .add_int("--days", o.days, "Days per run", 1)
+        .add_list(
+            "--scenarios", o.scenarios, "Scenarios to run", {"A", "B", "C", "D"}
+        )
+        .add_list(
+            "--modes", o.modes, "Transmission modes", {"auto", "push", "pull"}
+        )
+        .add_onoff("--queuing", o.queuing, "Use the queue")
+        .add_double(
+            "--kappa", o.kappa,
+            "Push/pull threshold (negative: the model's default)"
+        )
+        .parse(argc, argv);
     return o;
 }
 
