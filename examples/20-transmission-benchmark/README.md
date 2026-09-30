@@ -38,9 +38,9 @@ Other options are `--days` and `--queuing on|off`. The defaults are small (10,00
 
 ## Per-day trace
 
-`--trace` runs one replicate per cell and prints one line per day instead of the summary: the mode used (`P` for push, `L` for pull), the four sums `"auto"` compares as they stood when the step began (carrier degree, susceptible degree, carriers, susceptibles), and the CPU microseconds since the previous day. The first day is not printed, because its time includes the model's initialization. Tracing `push` and `pull` on the same scenario gives each mode's cost on the same days, which is how the cost model in [Push and Pull Transmission](https://UofUEpi.github.io/epiworld/impl/transmission-sampling/) was fitted:
+`--trace on` runs one replicate per cell and prints one line per day instead of the summary: the mode used (`P` for push, `L` for pull), the four sums `"auto"` compares as they stood when the step began (carrier degree, susceptible degree, carriers, susceptibles), and the CPU microseconds since the previous day. The first day is not printed, because its time includes the model's initialization. Tracing `push` and `pull` on the same scenario gives each mode's cost on the same days, which is how the cost model in [Push and Pull Transmission](https://UofUEpi.github.io/epiworld/impl/transmission-sampling/) was fitted:
 
 ```sh
-./main --sizes 165000 --scenarios E --modes push --trace
-./main --sizes 165000 --scenarios E --modes pull --trace
+./main --sizes 165000 --scenarios E --modes push --trace on
+./main --sizes 165000 --scenarios E --modes pull --trace on
 ```
