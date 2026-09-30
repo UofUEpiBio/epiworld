@@ -29,5 +29,7 @@ podman run --rm -v "$PWD":"$PWD" -w "$PWD" epiworld-dev make test WITH_OPENMP=0
 
 ## General Rules
 
-- The `./epiworld.hpp` file is a single-header amalgamation. Do not analyze it or suggest changes to it.
+- The `./epiworld.hpp` file is a single-header amalgamation, generated from `include/epiworld/` by `script/amalgamate.pl`. Never edit it by hand, and do not analyze it or suggest changes to it: edit the sources in `include/epiworld/`.
+- **Regenerate and commit `./epiworld.hpp` whenever a change touches anything under `include/epiworld/`** (including a version bump in `include/epiworld/epiworld.hpp`). Run `make build/epiworld.hpp` (in the container, see "Build Environment"), which rebuilds the amalgam and copies it to `./epiworld.hpp`, and commit the result with the source change. Check the diff contains only your changes.
 - Do not use `./epiworld.hpp` in your suggestions; include from `include/epiworld/` instead.
+- A change that affects simulation results or the public API needs a version bump in `include/epiworld/epiworld.hpp` (patch for fixes and behavior changes, minor for new features); the `please-bump` CI check reports when it is missing.
