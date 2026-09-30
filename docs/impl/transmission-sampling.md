@@ -98,22 +98,30 @@ What does change is the **stream of random numbers**. The draws happen in a diff
 
 ## Choosing between them
 
-A pull visits every tie of every susceptible agent it updates. A push visits every tie of every agent that can transmit. With queuing on, only queued susceptibles pull, but they include every neighbor of anyone carrying a virus, including latent or hospitalized agents that may not transmit.
+A pull visits every susceptible agent it updates and scans all its ties. A push visits every agent that can transmit and scans all its ties. With queuing on, only queued susceptibles pull, but they include every neighbor of anyone carrying a virus, including latent or hospitalized agents that may not transmit.
 
-The model keeps, per state, the sum of the members' degrees and the sum of the degrees of those carrying a virus, updated as agents change state. `"auto"` pushes at step $t$ when
+Scanning a tie is not the whole cost. Each visited agent also pays a fixed price: dispatching its update function (or loading the carrier), setting up its scratch space, and so on. At the mean degrees of contact networks (4 to 10) that price is comparable to scanning the agent's ties, so it matters which side visits more agents. A network with hubs, or households next to a workplace layer, tilts the balance: carriers are drawn towards the hubs, so a few carriers own many ties, while the susceptibles are numerous and have few.
+
+The model keeps, per state, the number of members, the number carrying a virus, and the sum of both groups' degrees, updated as agents change state. From them, `"auto"` estimates the cost of each step in units of ties,
 
 $$
-\underbrace{\sum_{s \,\in\, \text{source states}} \; \sum_{k \in s,\; k \text{ carries a virus}} \deg(k)}_{\text{push cost}}
-\;\le\;
-\kappa \times
-\underbrace{\sum_{s \,\in\, \text{susceptible states}} \; \sum_{j \in s} \deg(j)}_{\text{pull cost (without queuing)}}
+C_\text{push} = \sum_{k \,\in\, \text{carriers}} \big(\deg(k) + b\big),
+\qquad
+C_\text{pull} = \sum_{j \,\in\, \text{susceptibles}} \big(\deg(j) + b\big),
 $$
 
-and pulls otherwise. This takes $O(\text{number of states})$ time per step.
+where the carriers are the agents carrying a virus in a state that can transmit, the susceptibles are the agents in the states updated by the default sampler, and $b$ is the price of visiting an agent (`EPI_TRANSMISSION_AGENT_COST`, 4 ties). It pushes when
+
+$$
+C_\text{push} \le \kappa \, C_\text{pull},
+$$
+
+and pulls otherwise. This takes $O(\text{number of states})$ time per step. $b$ is a property of how agents are laid out in memory, not of the network, so it is set once. $\kappa$ (`set_transmission_mode("auto", kappa)`, default 0.5) scales the pull cost, so a value below 1 makes pushing harder to choose (it favors pulling). It is below 1 because the queue spares a pull the susceptibles with no infectious neighbor, which the sums do not see. The per-agent price $b$ pulls the other way, since susceptibles outnumber carriers in most outbreaks. The two were fitted together: 0.5 and 4 kept `"auto"` within a few percent of the cheaper mode on every benchmark scenario below.
 
 The rule deliberately ignores the queue. The decision, and therefore the random stream, is the same with queuing on or off, so queuing remains a pure optimization: a run with it on and a run with it off give identical results in every mode.
 
-The queue does make pulling cheaper than the right-hand side suggests, because a queued pull skips the susceptibles with no infectious neighbor. That is why $\kappa$ defaults to 0.25 rather than 1; it can be set with the mode, e.g. `set_transmission_mode("auto", 0.5)`. With cachegrind on the benchmark below, 0.25 keeps the full gain where pushing wins (the epiworld-benchmark model pushes at every step) without pushing through the peak of large outbreaks, where the queued pull is cheaper.
+!!! note "Earlier versions"
+    Up to 0.17.0 the rule compared the carriers' ties with $0.25$ times the susceptibles' ties and ignored the price of visiting an agent. On a network like a synthetic population's (households plus workplaces and schools, mean degree 4.5, 165,000 agents) it pulled on about a third of the days around the peak, when pushing was cheaper on every day.
 
 ## Scope
 
@@ -143,12 +151,13 @@ This gives identical runs, except where some probability is exactly 1 (see the n
 
 ## Benchmark
 
-`examples/20-transmission-benchmark` times the three modes on four scenarios:
+`examples/20-transmission-benchmark` times the three modes on five scenarios:
 
 - **(A)** the SEIRH model of the [epiworld-benchmark](https://github.com/UofUEpiBio/epiworld-benchmark) study: a Watts–Strogatz network with mean degree 10, $R_0 = 2$, 100 initial cases and 100 days;
 - **(B)** `ModelSEIR` on the same network, a large outbreak (about 95% attack rate at 100,000 agents);
 - **(C)** a dense ($\bar k = 50$), high-prevalence SIR;
-- **(D)** a measles-like SEIR: 0.3 per contact-day, with a 10-day latent period that does not transmit, on a mean-degree-10 network with 1,000,000 agents.
+- **(D)** a measles-like SEIR: 0.3 per contact-day, with a 10-day latent period that does not transmit, on a mean-degree-10 network with 1,000,000 agents;
+- **(E)** a heterogeneous SEIR, built like a collapsed activity-based population: household cliques of 1 to 6 agents plus a heavy-tailed workplace/school layer, mean degree 4.4, 165,000 agents, 100 initial cases, latent agents that do not transmit, about 60% infected in 100 days.
 
 The tables below give the median CPU milliseconds per run (Apple M3 Pro, Apple clang 16, `-O3`), comparing epiworld 0.15.1 with 0.16.0. They use 50 replicates for A–C and 10 for D. `"pull"` runs are bit-identical to 0.15.1 (same checksums).
 
@@ -174,6 +183,17 @@ What drives these numbers:
 - **D.** This is the measles case: while the infected are a small share of a large population, pushing does a fraction of pulling's work (2× at 60 days). It still helps at 90 and 120 days, when the outbreak has reached most of the population.
 - **B.** Recovered agents leave the queue, so the queued pull already visits little more than the susceptibles next to an infectious agent. Pushing brings little, and the three modes are within a few percent of 0.15.1.
 - **C.** `"auto"` switches between the two and beats both.
+
+### Heterogeneous networks
+
+Scenario E is the case the cost model of the previous section was fitted on, together with a real synthetic-population network (GeoPops, Spartanburg County, 165,865 agents, mean degree 4.5) that is too large to ship with the examples. Both have a large outbreak that peaks with most of the population still susceptible. The carriers own a large share of the ties (they are the hubs), but the susceptibles are several times more numerous, and visiting an agent costs as much as a few of its ties. In 0.17.0 and earlier, `"auto"` counted ties only, pulled on about a third of the days around the peak, and ended about 10% slower than the cheaper mode:
+
+| Scenario (165,000 agents) | auto, previous rule | auto | push | pull |
+|:--|--:|--:|--:|--:|
+| E | 184.8 | **161.8** | 166.0 | 177.9 |
+| GeoPops | 190.0 | **173.2** | 173.3 | 215.1 |
+
+Median CPU milliseconds per run over seven interleaved rounds of five replicates each (Apple M3 Pro, Apple clang 16, `-O3`, `--scenarios E`). A machine with other work running makes these numbers noisy to a few percent; what is stable is that the new `"auto"` is never more than a few percent from the cheaper mode, on the other four scenarios as well (the largest gap is scenario B, where the two modes are within 8% of each other and `"auto"` gives up 2 to 8% by switching between them).
 
 Pushing visits the carriers in ascending id order. Networks are usually built with neighbors close in id, so the push sweeps memory much as a pull does. Visiting them in the index's (effectively random) order doubled the cost of a pushed tie at 1,000,000 agents.
 

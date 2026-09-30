@@ -96,6 +96,8 @@ $(NAME)_SOURCES := \
 	34a-transmission-push-pull.cpp \
 	34b-transmission-models.cpp \
 	34c-agents-in-state.cpp \
+	34d-transmission-heterogeneous.cpp \
+	34e-transmission-auto-choice.cpp \
 	35a-directed-network.cpp \
 	35b-directed-transmission.cpp \
 	36a-edgelist-neighbors.cpp \

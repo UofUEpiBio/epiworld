@@ -28,7 +28,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 17
-#define EPIWORLD_VERSION_PATCH 0
+#define EPIWORLD_VERSION_PATCH 1
 
 #define EPIWORLD_VERSION_PRERELEASE ""
 
@@ -231,10 +231,22 @@ enum class TransmissionMode : uint8_t {
 
 /**
  * @brief Default threshold of the `"auto"` transmission mode.
- * @details See `Model::set_transmission_mode()`.
+ * @details The model pushes when the cost of the push is at most this
+ * fraction of the cost of the pull. See `Model::set_transmission_mode()`.
  */
 #ifndef EPI_DEFAULT_TRANSMISSION_KAPPA
-    #define EPI_DEFAULT_TRANSMISSION_KAPPA 0.25
+    #define EPI_DEFAULT_TRANSMISSION_KAPPA 0.5
+#endif
+
+/**
+ * @brief Cost of visiting an agent, in ties, in the `"auto"` transmission mode.
+ * @details Both a push (per carrier) and a pull (per susceptible) pay a fixed
+ * price for each agent they visit on top of the price of each tie they scan.
+ * This is that price in units of ties. It is a property of how agents are laid
+ * out in memory, not of the network. See `Model::set_transmission_mode()`.
+ */
+#ifndef EPI_TRANSMISSION_AGENT_COST
+    #define EPI_TRANSMISSION_AGENT_COST 4.0
 #endif
 
 /**
@@ -4951,6 +4963,8 @@ inline void DataBase<TSeq>::record()
                     throw std::logic_error("[epi-debug] DataBase::record state index lists an agent in another state.");
                 if (model->agent_state[members[k]] != s)
                     throw std::logic_error("[epi-debug] DataBase::record agent_state is out of step.");
+                if (model->agent_carrier[members[k]] != (model->population[members[k]].get_virus() != nullptr))
+                    throw std::logic_error("[epi-debug] DataBase::record agent_carrier is out of step.");
                 if (model->state_member_pos[members[k]] != model->state_start[s] + k)
                     throw std::logic_error("[epi-debug] DataBase::record state_member_pos is out of step.");
             }
@@ -9669,6 +9683,29 @@ public:
     size_t size() const { return n; }
     bool empty() const { return n == 0u; }
 
+    /// Id of the `k`-th neighbor, without touching the neighbor's `Agent`.
+    /// @throws std::out_of_range if `k >= size()`.
+    size_t id(size_t k) const
+    {
+        if (k >= n)
+            throw std::out_of_range("NeighborsView::id(): index out of range.");
+        return first[k];
+    }
+
+    /// The `k`-th neighbor.
+    /// @throws std::out_of_range if `k >= size()`.
+    Agent<TSeq> * agent(size_t k) const
+    {
+        if (k >= n)
+            throw std::out_of_range("NeighborsView::agent(): index out of range.");
+        return &pop->operator[](first[k]);
+    }
+
+    /// The ids of the `size()` neighbors, in order (like `std::vector::data()`:
+    /// only valid for indices below `size()`; `nullptr` when there are none).
+    /// For scans that must not touch the neighbors' `Agent`s.
+    const size_t * ids() const { return first; }
+
 };
 
 /**
@@ -10803,6 +10840,7 @@ protected:
     std::vector< size_t > state_start;       ///< [nstates + 1] Where each state's block starts
     std::vector< size_t > state_member_pos;  ///< [agent] Position in state_order
     std::vector< unsigned int > agent_state;    ///< [agent] Copy of Agent::state, compact for scans
+    std::vector< char > agent_carrier;          ///< [agent] 1 if Agent::virus is set, compact for scans
     std::vector< size_t > state_degree;
     std::vector< size_t > state_carriers;
     std::vector< size_t > state_carrier_degree;
@@ -11435,6 +11473,19 @@ public:
     AgentIdsView get_agents_in_state(epiworld_fast_uint state) const;
 
     /**
+     * @brief One flag per agent: 1 if the agent carries a virus.
+     * @details A compact copy of "has a virus", one byte per agent, so a scan
+     * of an agent's neighbors can rule most of them out without loading their
+     * `Agent` (a cache miss each). It is kept current from the moment a run
+     * starts. Returns `nullptr` before that (and after the population
+     * changes): callers then have to look at the agents.
+     */
+    const char * get_agent_carrier() const
+    {
+        return state_index_ready ? agent_carrier.data() : nullptr;
+    }
+
+    /**
      * @name Network transmission mode
      *
      * @details States whose update function is `default_update_susceptible`
@@ -11444,21 +11495,25 @@ public:
      * the same distribution of who gets infected, and by whom; only the random
      * number stream differs. See `TransmissionMode`.
      *
-     * With `"auto"` (the default) the model pushes whenever the carriers'
-     * ties are no more than `kappa` times the susceptibles' ties, and pulls
-     * otherwise; `kappa` only matters in this mode. The choice depends only on the model's state, never on the
-     * queueing system, so turning queuing on or off leaves results unchanged.
-     * Because the queue already spares a pull the susceptibles with no
-     * infectious neighbor -- which the rule does not see -- the default
-     * `kappa` is 0.25 rather than 1 (tuned with
-     * `examples/20-transmission-benchmark`).
+     * With `"auto"` (the default) the model estimates the cost of each step,
+     * as the ties to scan plus a fixed price per agent visited
+     * (`EPI_TRANSMISSION_AGENT_COST` ties), for the carriers that can transmit
+     * (push) and for the susceptible agents (pull). It pushes whenever the
+     * push cost is no more than `kappa` times the pull cost, and pulls
+     * otherwise; `kappa` only matters in this mode. The choice depends only on
+     * the model's state, never on the queueing system, so turning queuing on or
+     * off leaves results unchanged. A `kappa` below 1 makes pushing harder to
+     * choose (it favors pulling); the default, 0.5, is below 1 because the
+     * queue spares a pull the susceptibles with no infectious neighbor, which
+     * the costs do not see. It was fitted together with the per-agent price
+     * with `examples/20-transmission-benchmark`.
      *
      * Directed networks, and states with other update functions, always pull.
      * Set `"pull"` to reproduce the random streams of epiworld <= 0.15.
      *
      * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
      * @param kappa Relative cost threshold used by `"auto"`: a finite,
-     * non-negative number (default `EPI_DEFAULT_TRANSMISSION_KAPPA`, 0.25).
+     * non-negative number (default `EPI_DEFAULT_TRANSMISSION_KAPPA`, 0.5).
      * @throws std::invalid_argument for an unknown mode.
      * @throws std::range_error for a negative or infinite `kappa`.
      */
@@ -11476,6 +11531,20 @@ public:
     TransmissionMode get_last_transmission_mode() const;
     /// The threshold used by `"auto"`.
     double get_transmission_kappa() const;
+
+    /**
+     * @brief The sums `"auto"` compares to choose between push and pull.
+     * @details Totals over the states that can be sources of infection (the
+     * carriers) and over the states updated by the default susceptible sampler
+     * (the susceptibles), as they stand now. All zero before the model has run.
+     */
+    struct TransmissionSums {
+        size_t carrier_degree;      ///< Sum of the carriers' degrees
+        size_t susceptible_degree;  ///< Sum of the susceptibles' degrees
+        size_t carriers;            ///< Number of carriers that can transmit
+        size_t susceptibles;        ///< Number of susceptible agents
+    };
+    TransmissionSums get_transmission_sums() const;
     ///@}
 
     /**
@@ -12267,6 +12336,7 @@ inline void Model<TSeq>::state_index_build()
     state_order.resize(n);
     state_member_pos.resize(n);
     agent_state.resize(n);
+    agent_carrier.assign(n, 0);
     state_degree.assign(ns, 0u);
     state_carriers.assign(ns, 0u);
     state_carrier_degree.assign(ns, 0u);
@@ -12284,6 +12354,7 @@ inline void Model<TSeq>::state_index_build()
         state_degree[p.state] += p.n_neighbors;
         if (p.virus != nullptr)
         {
+            agent_carrier[id] = 1;
             state_carriers[p.state]++;
             state_carrier_degree[p.state] += p.n_neighbors;
         }
@@ -12389,6 +12460,9 @@ inline void Model<TSeq>::state_index_update(
         state_degree[state_new] += deg;
 
     }
+
+    if (has_virus != had_virus)
+        agent_carrier[id] = has_virus ? 1 : 0;
 
     if (had_virus)
     {
@@ -12695,6 +12769,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     state_start(model.state_start),
     state_member_pos(model.state_member_pos),
     agent_state(model.agent_state),
+    agent_carrier(model.agent_carrier),
     state_degree(model.state_degree),
     state_carriers(model.state_carriers),
     state_carrier_degree(model.state_carrier_degree),
@@ -12792,6 +12867,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     state_start(std::move(model.state_start)),
     state_member_pos(std::move(model.state_member_pos)),
     agent_state(std::move(model.agent_state)),
+    agent_carrier(std::move(model.agent_carrier)),
     state_degree(std::move(model.state_degree)),
     state_carriers(std::move(model.state_carriers)),
     state_carrier_degree(std::move(model.state_carrier_degree)),
@@ -12874,6 +12950,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     state_start = m.state_start;
     state_member_pos = m.state_member_pos;
     agent_state = m.agent_state;
+    agent_carrier = m.agent_carrier;
     state_degree = m.state_degree;
     state_carriers = m.state_carriers;
     state_carrier_degree = m.state_carrier_degree;
@@ -18294,6 +18371,97 @@ inline void Entity<TSeq>::set_distribution(EntityToAgentFun<TSeq> fun)
 namespace sampler {
 
 /**
+ * @brief Collects the contact probabilities of the neighbors carrying a virus.
+ *
+ * @details Fills `m->array_double_tmp` and `m->array_virus_tmp` with, for each
+ * neighbor of `p` that carries a virus (in the neighbor order), the probability
+ * that neighbor's virus is transmitted to `p`, and the virus. Neighbors in a
+ * state flagged in `exclude` (if any) are skipped. This is the scan of a pull.
+ *
+ * During a run, most neighbors do not carry a virus. The model's compact
+ * per-agent flag rules them out reading one byte each instead of loading the
+ * neighbor's `Agent`; the rest of the loop, including the order in which the
+ * arrays are filled, is the same, so the outcome (and the random stream) do not
+ * depend on which path runs.
+ *
+ * @return The number of viruses collected.
+ */
+template<typename TSeq>
+inline size_t collect_neighbor_viruses(
+    Agent<TSeq> * p,
+    Model<TSeq> * m,
+    const std::vector< bool > * exclude
+)
+{
+
+    size_t nviruses_tmp = 0u;
+
+    auto add = [&](Agent<TSeq> * neighbor) -> void {
+
+        // If the state is in the list, exclude it
+        if ((exclude != nullptr) && (*exclude)[neighbor->get_state()])
+            return;
+
+        auto & v = neighbor->get_virus();
+        if (v == nullptr)
+            return;
+
+        #ifdef EPI_DEBUG
+        if (nviruses_tmp >= m->array_virus_tmp.size())
+            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
+        #endif
+
+        /* And it is a function of susceptibility_reduction as well */
+        m->array_double_tmp[nviruses_tmp] =
+            (1.0 - p->get_susceptibility_reduction(v, *m)) *
+            v->get_prob_infecting(m) *
+            (1.0 - neighbor->get_transmission_reduction(v, *m))
+            ;
+
+        m->array_virus_tmp[nviruses_tmp++] = &(*v);
+
+        #ifdef EPI_DEBUG
+        if (
+            (m->array_double_tmp[nviruses_tmp - 1] < 0.0) |
+            (m->array_double_tmp[nviruses_tmp - 1] > 1.0)
+            )
+        {
+            printf_epiworld(
+                "[epi-debug] Agent %i's virus has transmission prob outside of [0, 1]: %.4f!\n",
+                static_cast<int>(neighbor->get_id()),
+                m->array_double_tmp[nviruses_tmp - 1]
+                );
+        }
+        #endif
+
+    };
+
+    auto neighbors = p->neighbors_view(*m);
+    const char * carrier = m->get_agent_carrier();
+
+    if (carrier != nullptr)
+    {
+
+        const size_t * ids = neighbors.ids();
+        const size_t n = neighbors.size();
+        for (size_t k = 0u; k < n; ++k)
+            if (carrier[ids[k]] != 0)
+                add(neighbors.agent(k));
+
+    }
+    else
+    {
+
+        for (auto * neighbor: neighbors)
+            add(neighbor);
+
+    }
+
+    return nviruses_tmp;
+
+}
+
+/**
  * @brief Update function for susceptible agents that samples from neighbors.
  *
  * @details This is what `make_update_susceptible()` returns. It is a named type
@@ -18335,54 +18503,8 @@ inline void UpdateSusceptible<TSeq>::operator()(
 )
 {
 
-    if (exclude.size() == 0u)
-    {
-
-        if (p->get_virus() != nullptr)
-            throw std::logic_error(
-                std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
-                std::string("Agent id ") + std::to_string(p->get_id()) +
-                std::string(" has a virus.")
-                );
-
-        // This computes the prob of getting any neighbor variant
-        size_t nviruses_tmp = 0u;
-        for (auto * neighbor: p->neighbors_view(*m)) 
-        {
-            
-            auto & v = neighbor->get_virus();
-            if (v == nullptr)
-                continue;
-            
-            /* And it is a function of susceptibility_reduction as well */ 
-            m->array_double_tmp[nviruses_tmp] =
-                (1.0 - p->get_susceptibility_reduction(v, *m)) * 
-                v->get_prob_infecting(m) * 
-                (1.0 - neighbor->get_transmission_reduction(v, *m)) 
-                ; 
-        
-            m->array_virus_tmp[nviruses_tmp++] = &(*v);
-                
-        }
-
-        // No virus to compute
-        if (nviruses_tmp == 0u)
-            return;
-
-        // Running the roulette
-        int which = roulette(nviruses_tmp, m);
-
-        if (which < 0)
-            return;
-
-        p->set_virus(*m, *m->array_virus_tmp[which]);
-
-        return; 
-
-    }
-
     // The first time we call it, we need to initialize the vector
-    if (exclude_agent_bool.size() == 0u)
+    if ((exclude.size() != 0u) && (exclude_agent_bool.size() == 0u))
     {
 
         exclude_agent_bool.resize(m->get_states().size(), false);
@@ -18392,7 +18514,7 @@ inline void UpdateSusceptible<TSeq>::operator()(
                 throw std::logic_error(
                     std::string("You are trying to exclude a state that is out of range: ") +
                     std::to_string(s) + std::string(". There are only ") +
-                    std::to_string(exclude_agent_bool.size()) + 
+                    std::to_string(exclude_agent_bool.size()) +
                     std::string(" states in the model.")
                     );
 
@@ -18400,7 +18522,7 @@ inline void UpdateSusceptible<TSeq>::operator()(
 
         }
 
-    }                    
+    }
 
     if (p->get_virus() != nullptr)
         throw std::logic_error(
@@ -18410,29 +18532,9 @@ inline void UpdateSusceptible<TSeq>::operator()(
             );
 
     // This computes the prob of getting any neighbor variant
-    size_t nviruses_tmp = 0u;
-    for (auto * neighbor: p->neighbors_view(*m)) 
-    {
-
-        // If the state is in the list, exclude it
-        if (exclude_agent_bool[neighbor->get_state()])
-            continue;
-
-        auto & v = neighbor->get_virus();
-        if (v == nullptr)
-            continue;
-                
-    
-        /* And it is a function of susceptibility_reduction as well */ 
-        m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, *m)) * 
-            v->get_prob_infecting(m) * 
-            (1.0 - neighbor->get_transmission_reduction(v, *m)) 
-            ; 
-    
-        m->array_virus_tmp[nviruses_tmp++] = &(*v);
-        
-    }
+    const size_t nviruses_tmp = collect_neighbor_viruses(
+        p, m, exclude.size() == 0u ? nullptr : &exclude_agent_bool
+    );
 
     // No virus to compute
     if (nviruses_tmp == 0u)
@@ -18444,7 +18546,7 @@ inline void UpdateSusceptible<TSeq>::operator()(
     if (which < 0)
         return;
 
-    p->set_virus(*m, *m->array_virus_tmp[which]); 
+    p->set_virus(*m, *m->array_virus_tmp[which]);
 
     return;
 
@@ -18669,49 +18771,7 @@ inline Virus<TSeq> * sample_virus_single(Agent<TSeq> * p, Model<TSeq> * m)
             );
 
     // This computes the prob of getting any neighbor variant
-    size_t nviruses_tmp = 0u;
-    for (auto * neighbor: p->neighbors_view(*m)) 
-    {   
-        #ifdef EPI_DEBUG
-        int _vcount_neigh = 0;
-        #endif                
-
-        if (neighbor->get_virus() == nullptr)
-            continue;
-
-        auto & v = neighbor->get_virus();
-
-        #ifdef EPI_DEBUG
-        if (nviruses_tmp >= m->array_virus_tmp.size())
-            throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-        #endif
-            
-        /* And it is a function of susceptibility_reduction as well */ 
-        m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, *m)) * 
-            v->get_prob_infecting(m) * 
-            (1.0 - neighbor->get_transmission_reduction(v, *m)) 
-            ; 
-    
-        m->array_virus_tmp[nviruses_tmp++] = &(*v);
-
-        #ifdef EPI_DEBUG
-        if (
-            (m->array_double_tmp[nviruses_tmp - 1] < 0.0) |
-            (m->array_double_tmp[nviruses_tmp - 1] > 1.0)
-            )
-        {
-            printf_epiworld(
-                "[epi-debug] Agent %i's virus %i has transmission prob outside of [0, 1]: %.4f!\n",
-                static_cast<int>(neighbor->get_id()),
-                static_cast<int>(_vcount_neigh++),
-                m->array_double_tmp[nviruses_tmp - 1]
-                );
-        }
-        #endif
-            
-    }
-
+    const size_t nviruses_tmp = collect_neighbor_viruses<TSeq>(p, m, nullptr);
 
     // No virus to compute
     if (nviruses_tmp == 0u)
@@ -20429,24 +20489,56 @@ inline bool Model<TSeq>::transmission_choose_push() const
     if (transmission_mode == TransmissionMode::push)
         return true;
 
-    // Pushing walks every tie of every carrier that can transmit; pulling walks
-    // every tie of every susceptible agent. Both sums are kept per state, so
+    // Pushing visits every carrier that can transmit and walks its ties;
+    // pulling visits every susceptible agent and walks its ties. Each visit
+    // also costs a fixed amount, EPI_TRANSMISSION_AGENT_COST ties: at the low
+    // degrees of contact networks that is comparable to the ties themselves,
+    // so it matters which side has more agents. The sums are kept per state, so
     // this is O(number of states). It deliberately ignores the queue: the
     // decision -- and so the random stream -- is the same with queuing on or
-    // off. The queue does make pulling cheaper than this sum suggests (it
-    // skips susceptibles with no infectious neighbor), which is what kappa < 1
-    // accounts for.
-    double cost_push = 0.0;
-    double cost_pull = 0.0;
+    // off. kappa < 1 makes pushing harder to choose: the queue spares a pull
+    // the susceptibles with no infectious neighbor, which the sums do not see,
+    // and the per-agent term raises the pull side wherever susceptibles
+    // outnumber carriers. The default was fitted so the two balance.
+    const TransmissionSums sums = get_transmission_sums();
+
+    const double cost_push =
+        static_cast< double >(sums.carrier_degree) +
+        EPI_TRANSMISSION_AGENT_COST * static_cast< double >(sums.carriers);
+
+    const double cost_pull =
+        static_cast< double >(sums.susceptible_degree) +
+        EPI_TRANSMISSION_AGENT_COST * static_cast< double >(sums.susceptibles);
+
+    return cost_push <= transmission_kappa * cost_pull;
+
+}
+
+template<typename TSeq>
+inline typename Model<TSeq>::TransmissionSums
+Model<TSeq>::get_transmission_sums() const
+{
+
+    TransmissionSums sums = {0u, 0u, 0u, 0u};
+
+    if (!state_index_ready || (push_pushable.size() != static_cast< size_t >(nstates)))
+        return sums;
+
     for (size_t s = 0u; s < static_cast< size_t >(nstates); ++s)
     {
         if (push_source_ok[s])
-            cost_push += static_cast< double >(state_carrier_degree[s]);
+        {
+            sums.carrier_degree += state_carrier_degree[s];
+            sums.carriers += state_carriers[s];
+        }
         if (push_pushable[s])
-            cost_pull += static_cast< double >(state_degree[s]);
+        {
+            sums.susceptible_degree += state_degree[s];
+            sums.susceptibles += state_start[s + 1u] - state_start[s];
+        }
     }
 
-    return cost_push <= transmission_kappa * cost_pull;
+    return sums;
 
 }
 

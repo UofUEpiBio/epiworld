@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -22,7 +23,7 @@ using namespace epiworld;
 //
 // Usage: main [--sizes 10000,100000] [--reps 10] [--days 100]
 //             [--scenarios A,B,C] [--modes auto,push,pull] [--queuing on|off]
-//             [--kappa 1.0]
+//             [--kappa 1.0] [--trace on|off]
 //
 // A: the SEIRH model of the epiworld-benchmark study (Watts-Strogatz graph,
 //    mean degree 10, R0 = 2, 100 initial cases), built exactly as its epiworldR
@@ -35,6 +36,21 @@ using namespace epiworld;
 //    10), 10-day latent period during which agents do not transmit, 8 days
 //    infectious, 10 initial cases. With 1,000,000 agents it infects about 2%
 //    by day 60, 30% by day 90, and nearly everyone by day 120 (--days).
+//
+// E: a heterogeneous, large-outbreak SEIR built like a collapsed activity-based
+//    population (e.g., GeoPops): household cliques of 1 to 6 agents plus a
+//    heavy-tailed workplace/school layer, mean degree near 4.5, 100 initial
+//    cases. With 165,000 agents (--sizes 165000) about 60% are infected within
+//    100 days, and the outbreak peaks with most of the population still
+//    susceptible. Latent agents do not transmit.
+//
+// --trace on runs a single replicate per cell and prints one line per day
+// instead of the summary: the mode used (P = push, L = pull), the sums that
+// `"auto"` compares as they stood when the step began (carrier degree,
+// susceptible degree, carriers, susceptibles), and the CPU microseconds since
+// the previous day. With --modes push,pull the cost of the two modes can be
+// set side by side on the same days. The first day is not printed: its time
+// includes the model's initialization.
 //
 // For each cell it prints the median (Q1, Q3) CPU milliseconds per run (CPU time
 // rather than wall time, so that other load on the machine does not count), the
@@ -51,6 +67,7 @@ struct Options {
     std::vector< std::string > modes = {"auto", "push", "pull"};
     bool queuing = true;
     double kappa = -1.0; // < 0: the model's default
+    bool trace = false;
 };
 
 static Options parse(int argc, char ** argv)
@@ -63,7 +80,8 @@ static Options parse(int argc, char ** argv)
         .add_int("--reps", o.reps, "Replicates per cell", 1)
         .add_int("--days", o.days, "Days per run", 1)
         .add_list(
-            "--scenarios", o.scenarios, "Scenarios to run", {"A", "B", "C", "D"}
+            "--scenarios", o.scenarios, "Scenarios to run",
+            {"A", "B", "C", "D", "E"}
         )
         .add_list(
             "--modes", o.modes, "Transmission modes", {"auto", "push", "pull"}
@@ -72,6 +90,10 @@ static Options parse(int argc, char ** argv)
         .add_double(
             "--kappa", o.kappa,
             "Push/pull threshold (negative: the model's default)"
+        )
+        .add_onoff(
+            "--trace", o.trace,
+            "Print one line per day for a single replicate instead of the summary"
         )
         .parse(argc, argv);
     return o;
@@ -115,6 +137,74 @@ static void build_seirh(Model<> & model, size_t n)
     model.agents_smallworld(n, 10, false, 0.05);
 }
 
+// Scenario E network: household cliques (size 1 to 6) plus a layer of random
+// ties in which the number of stubs per agent is heavy tailed (a discrete
+// Pareto with exponent 1.5, capped), paired uniformly at random. Self-contained
+// and deterministic.
+static void build_heterogeneous(Model<> & model, size_t n)
+{
+
+    std::mt19937_64 rng(20260929);
+    std::uniform_real_distribution< double > unif(0.0, 1.0);
+
+    std::vector< int > source, target;
+    source.reserve(6u * n);
+    target.reserve(6u * n);
+
+    // Households: sizes 1..6 with weights typical of a US census (the mean is
+    // about 2.5), each a clique. Agents are assigned in id order, so members
+    // are close in id, as in networks built from a synthetic population.
+    const double w[6] = {0.28, 0.35, 0.15, 0.13, 0.06, 0.03};
+    size_t i = 0u;
+    while (i < n)
+    {
+        double u = unif(rng), cum = 0.0;
+        size_t k = 6u;
+        for (size_t s = 0u; s < 6u; ++s)
+        {
+            cum += w[s];
+            if (u <= cum)
+            {
+                k = s + 1u;
+                break;
+            }
+        }
+        k = std::min(k, n - i);
+        for (size_t a = 0u; a < k; ++a)
+            for (size_t b = a + 1u; b < k; ++b)
+            {
+                source.push_back(static_cast< int >(i + a));
+                target.push_back(static_cast< int >(i + b));
+            }
+        i += k;
+    }
+
+    // Workplaces and schools: heavy-tailed stubs, uniform pairing. The
+    // minimum is 0, so a share of the agents has household ties only.
+    std::vector< int > stubs;
+    for (size_t a = 0u; a < n; ++a)
+    {
+        double u = unif(rng);
+        if (u < 0.12)
+            continue;
+        // Pareto(x_m = 1, alpha = 1.5), floored, capped at 300
+        double x = std::pow(1.0 - unif(rng), -1.0 / 1.5);
+        int d = static_cast< int >(std::min(300.0, std::floor(x)));
+        for (int r = 0; r < d; ++r)
+            stubs.push_back(static_cast< int >(a));
+    }
+    std::shuffle(stubs.begin(), stubs.end(), rng);
+    for (size_t k = 0u; k + 1u < stubs.size(); k += 2u)
+        if (stubs[k] != stubs[k + 1u])
+        {
+            source.push_back(stubs[k]);
+            target.push_back(stubs[k + 1u]);
+        }
+
+    model.agents_from_edgelist(source, target, static_cast< int >(n), false);
+
+}
+
 struct Result : bench::Timing {
     int n_push = 0;
     int n_pull = 0;
@@ -152,6 +242,74 @@ static Result time_model(
 
     if (!o.queuing)
         model.queuing_off();
+
+    #ifdef EPIWORLD_HAS_TRANSMISSION_MODE
+    if (o.trace)
+    {
+
+        struct Trace {
+            std::clock_t last;
+            bool first = true;
+            std::vector< size_t > prev = {0u, 0u, 0u, 0u};
+        } tr;
+
+        tr.last = std::clock();
+        std::printf("# mode=%s\n", mode.c_str());
+        std::printf(
+            "%4s %4s %10s %10s %9s %9s %9s\n",
+            "day", "mode", "carr_deg", "susc_deg", "carriers", "suscept", "cpu_us"
+        );
+
+        Trace * trp = &tr;
+        model.add_globalevent(
+            [trp](Model<> * m) -> void {
+
+                std::clock_t now = std::clock();
+                auto sums = m->get_transmission_sums();
+
+                // The first day is not reported: its time includes the
+                // initialization (reset, initial distributions), and the sums
+                // its decision saw are not available yet. From the second day
+                // on, the sums the step's decision saw are those left by the
+                // previous day.
+                if (trp->first)
+                {
+                    trp->prev = {
+                        sums.carrier_degree, sums.susceptible_degree,
+                        sums.carriers, sums.susceptibles
+                    };
+                    trp->first = false;
+                    trp->last = std::clock();
+                    return;
+                }
+
+                const std::vector< size_t > & seen = trp->prev;
+
+                std::printf(
+                    "%4d %4c %10zu %10zu %9zu %9zu %9.0f\n",
+                    static_cast< int >(m->today()),
+                    m->get_last_transmission_mode() == TransmissionMode::push ?
+                        'P' : 'L',
+                    seen[0], seen[1], seen[2], seen[3],
+                    1.0e6 * static_cast< double >(now - trp->last) / CLOCKS_PER_SEC
+                );
+
+                trp->prev = {
+                    sums.carrier_degree, sums.susceptible_degree,
+                    sums.carriers, sums.susceptibles
+                };
+                trp->last = std::clock();
+
+            },
+            "trace"
+        );
+
+        model.verbose_off();
+        model.run(static_cast< epiworld_fast_uint >(o.days), 1000);
+        return res;
+
+    }
+    #endif
 
     // The counters only cover the timed runs
     static_cast< bench::Timing & >(res) = bench::time_runs(
@@ -233,6 +391,21 @@ int main(int argc, char ** argv)
                     model.agents_smallworld(n, 10, false, 0.05);
                     res = time_model(model, o, mode, {0u});
                 }
+                else if (scen == "E")
+                {
+                    epimodels::ModelSEIR<> model(
+                        "Heterogeneous pathogen",
+                        100.0 / static_cast< double >(n),
+                        0.10, 3.0, 1.0 / 7.0
+                    );
+                    // Latent (exposed) agents do not transmit
+                    model.set_state_function(
+                        0u, sampler::make_update_susceptible<>({1u})
+                    );
+                    model.seed(20260907);
+                    build_heterogeneous(model, n);
+                    res = time_model(model, o, mode, {0u});
+                }
                 else if (scen == "C")
                 {
                     epimodels::ModelSIR<> model("Dense pathogen", 0.01, 0.05, 0.2);
@@ -245,6 +418,9 @@ int main(int argc, char ** argv)
                     std::fprintf(stderr, "Unknown scenario %s\n", scen.c_str());
                     return 1;
                 }
+
+                if (o.trace)
+                    continue;
 
                 std::printf(
                     "%-9s %8zu %-5s %10.3f %10.3f %10.3f %11.0f %6d %6d %018llx\n",
