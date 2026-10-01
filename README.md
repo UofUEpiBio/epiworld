@@ -19,6 +19,16 @@ building complex models quickly. Here are some of its main features:
   - Multiple tools and viruses can live in the same simulation.
   - It is *FAST*: Over 150 Million person/day simulations per second (see example below).
 
+An evolving [cross-framework benchmark](https://github.com/UofUEpiBio/epiworld-benchmark)
+compares epiworld, its R and Python wrappers, and other epidemic ABM engines.
+In the SEIRH network scenarios currently covered, the epiworld family is among
+the fastest, and native epiworld is among the lower-memory implementations.
+These results are a snapshot of the tested versions, workloads, and environment
+rather than a universal ranking; additional scenarios, engines, corrections,
+and implementation improvements are welcome through the benchmark's
+[issues](https://github.com/UofUEpiBio/epiworld-benchmark/issues) and
+[pull requests](https://github.com/UofUEpiBio/epiworld-benchmark/pulls).
+
 Various examples can be found in the [examples](https://github.com/UofUEpiBio/epiworld/tree/master/examples) folder. This repository also hosts the `measles` library, which extends `epiworld` with Measles-specific models. The library is available under [`include/measles`](./include/measles/).
 
 ## Hello world
