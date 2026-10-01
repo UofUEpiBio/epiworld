@@ -101,7 +101,9 @@ int main() {
 ### Lightning Fast
 
 Over 150 million agent × day simulations per second — built for
-large-scale studies without sacrificing speed.
+large-scale studies without sacrificing speed. See the
+[cross-framework benchmark](impl/performance-optimization.md#cross-framework-benchmark)
+for current, scenario-specific comparisons.
 </div>
 
 <div class="feature-card" markdown>

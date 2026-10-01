@@ -32,16 +32,53 @@ Users can control the number of threads and scheduling behavior at compile time 
 
 Due to the structure of the library internally, and where parallel execution can sanely be applied, correctness is relatively simple to attain. Since parallelism techniques, leveraging that of OpenMP, are used primarily to speed up simple accumulatory arithmetic, we do not have to worry about race conditions to such a great degree as one might expect. The combination of template-level inlining and OpenMP parallelism allows epiworld to reach very high throughput—on the order of hundreds of millions of agent-day operations per second on typical hardware.
 
+## Cross-Framework Benchmark
+
+The evolving [epiworld-benchmark](https://github.com/UofUEpiBio/epiworld-benchmark)
+compares eleven epidemic simulation engines on common SEIRH contact-network
+models. In the scenarios currently covered, the epiworld family is among the
+fastest, and native epiworld is among the lower-memory implementations.
+
+![Median simulation time per replicate across the currently implemented benchmark scenarios, with each scenario at its largest population size. Values use a logarithmic seconds scale.](../assets/img/benchmark-summary-time.svg)
+
+*Median simulation time per replicate across the currently implemented
+scenarios. Source: the benchmark [overview](https://github.com/UofUEpiBio/epiworld-benchmark#summary).*
+
+![Median overall peak resident memory across the currently implemented benchmark scenarios, with each scenario at its largest population size. Values use a logarithmic MiB scale.](../assets/img/benchmark-summary-memory.svg)
+
+*Median overall peak resident memory across the currently implemented
+scenarios. Source: the benchmark [overview](https://github.com/UofUEpiBio/epiworld-benchmark#summary).*
+
+!!! note "Work in progress"
+
+    This comparison is a snapshot of the tested versions, SEIRH workloads, and
+    environment, not a universal ranking. Other engines may perform especially
+    well in scenarios better aligned with their designs. The project is adding
+    engines and scenarios, and welcomes contributions, corrections, and
+    implementation improvements through its [scenario guide](https://github.com/UofUEpiBio/epiworld-benchmark/blob/main/scenarios.md),
+    [issues](https://github.com/UofUEpiBio/epiworld-benchmark/issues), and
+    [pull requests](https://github.com/UofUEpiBio/epiworld-benchmark/pulls).
+
+See the benchmark's [methods](https://github.com/UofUEpiBio/epiworld-benchmark/blob/main/docs/methods.md)
+and [full results](https://github.com/UofUEpiBio/epiworld-benchmark/blob/main/docs/results.md)
+for the model, measurement definitions, and results by scenario.
+
 ## Benchmarking Methodologies
-As of current, epiworld does not include a dedicated benchmarking suite. The examples included in the repository—such as `helloworld.cpp` and `readme.cpp`—serve as informal benchmarks, reporting elapsed time and throughput at the end of each simulation. These provide a consistent way to monitor performance across versions and environments. While there is a `benchmarks/` directory, this is as of yet unpopulated.
+
+The examples included in this repository—such as `helloworld.cpp` and
+`readme.cpp`—serve as informal local benchmarks, reporting elapsed time and
+throughput at the end of each simulation. They complement the reproducible
+cross-framework benchmark above and provide a convenient way to compare local
+compiler flags, thread counts, and versions.
 
 The example [`20-transmission-benchmark`](../examples/20-transmission-benchmark.md) times the network transmission step: it runs the SEIRH model of the [epiworld-benchmark](https://github.com/UofUEpiBio/epiworld-benchmark) study and two other network models in each transmission mode, and it compiles against older releases too, so versions can be compared side by side (see [Push and Pull Transmission](transmission-sampling.md)).
 
 The example [`21-parameter-lookup-benchmark`](../examples/21-parameter-lookup-benchmark.md) times parameter lookups (see [Parameter Access](#parameter-access)), both per call and inside models whose hot paths call them, such as `ModelMeaslesMixing`. It also compiles against older releases.
 
-Until a formal benchmarking system is implemented, users can measure performance externally using tools such as `/usr/bin/time`, `perf`, or custom C++ timing utilities based on `std::chrono`. Running example models with controlled parameters and fixed random seeds allows fair comparisons between compiler flags, thread counts, and machine configurations.
-
-Future benchmarking work will likely include a standardized set of models run under controlled conditions, with timing, memory use, and scaling data automatically collected. This would make it easier to track performance regressions and validate the efficiency of OpenMP parallel execution across releases.
+Users can also measure performance externally using tools such as `/usr/bin/time`,
+`perf`, or custom C++ timing utilities based on `std::chrono`. Running example
+models with controlled parameters and fixed random seeds allows fair comparisons
+between compiler flags, thread counts, and machine configurations.
 
 ## See Also
 
