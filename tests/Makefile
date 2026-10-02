@@ -104,7 +104,8 @@ $(NAME)_SOURCES := \
 	36b-edgelist-paths-agree.cpp \
 	37a-parameter-lookup.cpp \
 	37b-param-id.cpp \
-	37c-param-ref.cpp
+	37c-param-ref.cpp \
+	38a-mixing-sampler.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

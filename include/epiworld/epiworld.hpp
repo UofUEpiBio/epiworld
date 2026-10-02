@@ -27,8 +27,8 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 17
-#define EPIWORLD_VERSION_PATCH 1
+#define EPIWORLD_VERSION_MINOR 18
+#define EPIWORLD_VERSION_PATCH 0
 
 #define EPIWORLD_VERSION_PRERELEASE ""
 
@@ -121,6 +121,7 @@ namespace epiworld {
     #include "agent-bones.hpp"
     #include "agent-meat.hpp"
     #include "model-meat-transmission.hpp"
+    #include "sampler-mixing.hpp"
 
     #include "agentssample-bones.hpp"
 
