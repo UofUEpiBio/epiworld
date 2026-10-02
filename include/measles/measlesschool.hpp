@@ -328,6 +328,7 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
         return;
 
     // Drawing from the set
+    const bool record = m->has_post_sampling();
     int nviruses_tmp = 0;
     int i = 0;
     auto & _ref = *m;
@@ -342,11 +343,8 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
         if (neighbor.get_id() == p->get_id())
             continue;
 
-        m->get_contact_tracing().add_contact(
-            neighbor.get_id(),
-            p->get_id(),
-            m->today()
-        );
+        if (record)
+            m->register_sampled_contact(neighbor.get_id(), p->get_id());
 
         // We successfully drew a contact, so we increment the counter
         i++;
@@ -715,6 +713,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Turning on the contact tracing
     this->contact_tracing_on();
+    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
 
 }
 

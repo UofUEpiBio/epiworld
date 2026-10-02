@@ -10622,6 +10622,119 @@ public:
 // (already included include/epiworld/queue-bones.hpp)
 // (already included include/epiworld/globalevent-bones.hpp)
 // (already included include/epiworld/contacttracing-bones.hpp)
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/postsampling-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_POSTSAMPLING_BONES_HPP
+#define EPIWORLD_POSTSAMPLING_BONES_HPP
+
+#include <cstdint>
+#include <cstddef>
+#include <functional>
+#include <vector>
+
+template<typename TSeq> class Agent;
+template<typename TSeq> class Model;
+
+/**
+ * @brief Read-only view of the agents one infectious agent was in contact with.
+ *
+ * @details Passed to a `PostSamplingFun`. It points into the model's scratch
+ * storage, so it is valid only during the callback: do not keep it (copy the
+ * ids if you need them later). The contacts are a multiset: repeated contacts
+ * appear repeatedly, and contacts that did not transmit are included. The
+ * order of the contacts within the view is unspecified.
+ */
+class SampledContactsView {
+private:
+    const uint32_t * first = nullptr;
+    size_t n = 0u;
+public:
+    SampledContactsView() = default;
+    SampledContactsView(const uint32_t * first_, size_t n_) : first(first_), n(n_) {}
+    const uint32_t * begin() const { return first; }
+    const uint32_t * end() const { return first + n; }
+    size_t size() const { return n; }
+    bool empty() const { return n == 0u; }
+    size_t operator[](size_t i) const { return first[i]; }
+};
+
+/**
+ * @brief Callback run after the contacts of a step were sampled.
+ *
+ * @details Called once per infectious agent that had at least one sampled
+ * contact in the step, in ascending order of the agent's id, after all the
+ * susceptible agents were updated and right before the events are applied.
+ * The agents still have the state they had when the contacts were sampled;
+ * events the callback queues are applied in the same step.
+ *
+ * Arguments: the infectious agent, the ids of the agents it was in contact
+ * with (see `SampledContactsView`), and the model.
+ */
+template<typename TSeq>
+using PostSamplingFun = std::function<
+    void(Agent<TSeq> *, const SampledContactsView &, Model<TSeq> *)
+>;
+
+/**
+ * @brief Model-local storage used to batch sampled contacts.
+ *
+ * @details Pairs `(infectious, contacted)` are appended while sampling and
+ * grouped by infectious agent once, at the end of the sampling phase. Lengths
+ * are cleared, not released, between steps. Copies of a model start with empty
+ * scratch (nothing is shared or copied).
+ */
+struct PostSamplingScratch {
+
+    std::vector< uint32_t > pairs;    ///< Flat: infectious, contacted, ...
+    std::vector< uint32_t > grouped;  ///< Contacted ids, by infectious agent
+    std::vector< uint32_t > touched;  ///< Distinct infectious ids (sorted)
+    std::vector< size_t > starts;     ///< [touched] Where the batch starts
+    std::vector< uint32_t > counts;   ///< [agent] Zero between steps
+
+    PostSamplingScratch() = default;
+    PostSamplingScratch(const PostSamplingScratch &) {}
+    PostSamplingScratch & operator=(const PostSamplingScratch &) { clear(); return *this; }
+
+    /// Empties the batch and restores the invariant of `counts` (all zero).
+    void clear()
+    {
+        for (auto id : touched)
+            counts[id] = 0u;
+        pairs.clear();
+        grouped.clear();
+        touched.clear();
+        starts.clear();
+    }
+
+    /// Sizes the storage for a population (call at reset).
+    void reset(size_t n_agents)
+    {
+        pairs.clear();
+        grouped.clear();
+        touched.clear();
+        starts.clear();
+        counts.assign(n_agents, 0u);
+    }
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/postsampling-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
 
 template<typename TSeq>
 class AgentsSample;
@@ -10811,6 +10924,11 @@ protected:
     bool use_queuing   = true;
     size_t sim_id = 0u;
     void set_sim_id(size_t id);
+
+    PostSamplingFun<TSeq> post_sampling_fun = nullptr; ///< See set_post_sampling()
+    bool post_sampling_on = false;                     ///< post_sampling_fun is set
+    PostSamplingScratch post_sampling_scratch;         ///< Never copied
+    void post_sampling_dispatch();
 
     std::unique_ptr<ContactTracing> contact_tracing;
     bool use_contact_tracing = false;
@@ -11699,6 +11817,35 @@ public:
     Model<TSeq> & contact_tracing_off(); ///< Deactivates contact tracing.
     bool is_contact_tracing_on() const; ///< Query if contact tracing is on.
     ContactTracing & get_contact_tracing(); ///< Retrieve the `ContactTracing` object.
+    ///@}
+
+    /**
+     * @name Post-sampling callback
+     * @details A callback that receives, for each infectious agent, the agents
+     * it was in contact with during the step (see `PostSamplingFun`). The
+     * models whose samplers report contacts (network pull, the mixing models)
+     * collect them only while a callback is installed; otherwise the cost is
+     * one check per sampling operation. While a callback is installed,
+     * network models pull (they do not push). The callback is kept by copies
+     * of the model, including the ones `run_multiple()` makes.
+     *
+     * Installing a callback replaces the previous one. The built-in models
+     * with contact tracing install `make_contact_tracing_post_sampling()`;
+     * replacing it stops them from recording contacts.
+     */
+    ///@{
+    Model<TSeq> & set_post_sampling(PostSamplingFun<TSeq> fun); ///< Install a callback (an empty function clears it).
+    Model<TSeq> & clear_post_sampling(); ///< Remove the callback.
+    bool has_post_sampling() const { return post_sampling_on; } ///< Is a callback installed?
+
+    /// Reports that `infectious_id` was in contact with `contacted_id`. Samplers
+    /// call it, only if `has_post_sampling()`.
+    void register_sampled_contact(size_t infectious_id, size_t contacted_id);
+
+    /// Same, for several infectious agents in contact with `contacted_id`.
+    void register_sampled_contacts(
+        const size_t * infectious_ids, size_t n, size_t contacted_id
+    );
     ///@}
 
     const std::vector< VirusPtr<TSeq> > & get_viruses() const;
@@ -12758,6 +12905,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     queue(model.queue),
     use_queuing(model.use_queuing),
     sim_id(model.sim_id),
+    post_sampling_fun(model.post_sampling_fun),
+    post_sampling_on(model.post_sampling_on),
     contact_tracing(
         model.contact_tracing
             ? std::make_unique<ContactTracing>(*model.contact_tracing)
@@ -12860,6 +13009,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
     sim_id(model.sim_id),
+    post_sampling_fun(std::move(model.post_sampling_fun)),
+    post_sampling_on(model.post_sampling_on),
     contact_tracing(std::move(model.contact_tracing)),
     use_contact_tracing(model.use_contact_tracing),
     contact_tracing_max_contacts(model.contact_tracing_max_contacts),
@@ -12939,6 +13090,10 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     queue = m.queue;
     use_queuing = m.use_queuing;
+
+    post_sampling_fun = m.post_sampling_fun;
+    post_sampling_on = m.post_sampling_on;
+    post_sampling_scratch.clear();
 
     contact_tracing = m.contact_tracing
         ? std::make_unique<ContactTracing>(*m.contact_tracing)
@@ -14171,8 +14326,14 @@ inline void Model<TSeq>::update_state() {
     // same distribution, and cheaper while few agents carry a virus. Directed
     // networks always pull: a tie there is kept by its source only (see
     // is_directed()), so it is not visible from both ends.
+    // A post-sampling callback needs the contacts the pull samplers report, so
+    // the models pull while one is installed.
+    if (post_sampling_on)
+        post_sampling_scratch.clear();
+
     const bool push =
-        transmission_prepare() && !directed && transmission_choose_push();
+        !post_sampling_on && transmission_prepare() && !directed &&
+        transmission_choose_push();
 
     transmission_mode_last = push ?
         TransmissionMode::push : TransmissionMode::pull;
@@ -14217,6 +14378,9 @@ inline void Model<TSeq>::update_state() {
                 state_fun[p.state](&p, this);
 
     }
+
+    if (post_sampling_on)
+        post_sampling_dispatch();
 
     events_run();
 
@@ -14544,6 +14708,16 @@ inline void Model<TSeq>::reset() {
     // This also clears the queue
     if (use_queuing)
         queue.reset();
+
+    // The batch of sampled contacts
+    if (post_sampling_on)
+    {
+        if (population.size() >= (size_t(1) << 32))
+            throw std::length_error(
+                "The post-sampling callback supports populations below 2^32 agents."
+            );
+        post_sampling_scratch.reset(population.size());
+    }
 
     // Reset contact tracing if active
     if (use_contact_tracing)
@@ -15748,6 +15922,180 @@ inline void Model<TSeq>::get_hospitalizations(
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -./include/epiworld/model-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/postsampling-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_POSTSAMPLING_MEAT_HPP
+#define EPIWORLD_POSTSAMPLING_MEAT_HPP
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::set_post_sampling(PostSamplingFun<TSeq> fun)
+{
+
+    post_sampling_fun = std::move(fun);
+    post_sampling_on = static_cast< bool >(post_sampling_fun);
+
+    // The scratch is sized at reset(); a callback installed on a model that
+    // already has agents sizes it now.
+    if (post_sampling_on && (population.size() > 0u))
+    {
+        if (population.size() >= (size_t(1) << 32))
+            throw std::length_error(
+                "The post-sampling callback supports populations below 2^32 agents."
+            );
+        post_sampling_scratch.reset(population.size());
+    }
+
+    return *this;
+
+}
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::clear_post_sampling()
+{
+    return set_post_sampling(nullptr);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::register_sampled_contact(
+    size_t infectious_id,
+    size_t contacted_id
+)
+{
+    post_sampling_scratch.pairs.push_back(static_cast< uint32_t >(infectious_id));
+    post_sampling_scratch.pairs.push_back(static_cast< uint32_t >(contacted_id));
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::register_sampled_contacts(
+    const size_t * infectious_ids,
+    size_t n,
+    size_t contacted_id
+)
+{
+    auto & pairs = post_sampling_scratch.pairs;
+    for (size_t k = 0u; k < n; ++k)
+    {
+        pairs.push_back(static_cast< uint32_t >(infectious_ids[k]));
+        pairs.push_back(static_cast< uint32_t >(contacted_id));
+    }
+}
+
+/**
+ * Groups the pairs of the step by infectious agent (only the distinct ids are
+ * sorted, never an N-sized array) and runs the callback on each group, in
+ * ascending id order. The scratch is left clean even if the callback throws.
+ */
+template<typename TSeq>
+inline void Model<TSeq>::post_sampling_dispatch()
+{
+
+    auto & sc = post_sampling_scratch;
+    const size_t npairs = sc.pairs.size() / 2u;
+
+    if (npairs == 0u)
+        return;
+
+    try
+    {
+
+        // Counting per infectious agent, remembering the distinct ones
+        for (size_t k = 0u; k < npairs; ++k)
+        {
+            const uint32_t i = sc.pairs[2u * k];
+            if (sc.counts[i]++ == 0u)
+                sc.touched.push_back(i);
+        }
+
+        std::sort(sc.touched.begin(), sc.touched.end());
+
+        // Turning the counts into start positions
+        const size_t nt = sc.touched.size();
+        sc.starts.resize(nt + 1u);
+        size_t pos = 0u;
+        for (size_t t = 0u; t < nt; ++t)
+        {
+            const uint32_t i = sc.touched[t];
+            sc.starts[t] = pos;
+            pos += sc.counts[i];
+            sc.counts[i] = static_cast< uint32_t >(sc.starts[t]);
+        }
+        sc.starts[nt] = pos;
+
+        // Scattering the contacted ids
+        sc.grouped.resize(npairs);
+        for (size_t k = 0u; k < npairs; ++k)
+            sc.grouped[sc.counts[sc.pairs[2u * k]]++] = sc.pairs[2u * k + 1u];
+
+        // Callbacks must not retain the view: the buffers are reused.
+        for (size_t t = 0u; t < nt; ++t)
+        {
+
+            const size_t len = sc.starts[t + 1u] - sc.starts[t];
+            SampledContactsView view(sc.grouped.data() + sc.starts[t], len);
+            post_sampling_fun(&population[sc.touched[t]], view, this);
+
+        }
+
+    }
+    catch (...)
+    {
+        sc.clear();
+        throw;
+    }
+
+    sc.clear();
+
+}
+
+/**
+ * @brief A `PostSamplingFun` that records each batch in the model's
+ * `ContactTracing`.
+ *
+ * @details For every contact, it calls
+ * `add_contact(infectious_id, contacted_id, today)`, which is what the
+ * built-in models with tracing used to do inline. The model needs
+ * `contact_tracing_on()`; turning tracing on does not install this callback.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline PostSamplingFun<TSeq> make_contact_tracing_post_sampling()
+{
+
+    return [](
+        Agent<TSeq> * infectious,
+        const SampledContactsView & contacts,
+        Model<TSeq> * m
+    ) -> void {
+
+        if (!m->is_contact_tracing_on())
+            return;
+
+        auto & ct = m->get_contact_tracing();
+        const size_t id = infectious->get_id();
+        const size_t today = static_cast< size_t >(m->today());
+        for (const auto c : contacts)
+            ct.add_contact(id, c, today);
+
+    };
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/postsampling-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -18386,8 +18734,8 @@ namespace sampler {
  *
  * @return The number of viruses collected.
  */
-template<typename TSeq>
-inline size_t collect_neighbor_viruses(
+template<typename TSeq, bool Record>
+inline size_t collect_neighbor_viruses_impl(
     Agent<TSeq> * p,
     Model<TSeq> * m,
     const std::vector< bool > * exclude
@@ -18410,6 +18758,10 @@ inline size_t collect_neighbor_viruses(
         if (nviruses_tmp >= m->array_virus_tmp.size())
             throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
         #endif
+
+        // The post-sampling callback sees every eligible contact
+        if constexpr (Record)
+            m->register_sampled_contact(neighbor->get_id(), p->get_id());
 
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
@@ -18459,6 +18811,23 @@ inline size_t collect_neighbor_viruses(
 
     return nviruses_tmp;
 
+}
+
+/**
+ * @brief Collects the neighbors' viruses (see `collect_neighbor_viruses_impl`),
+ * reporting the contacts to the model's post-sampling callback if there is
+ * one. The path is chosen once per call, not per neighbor.
+ */
+template<typename TSeq>
+inline size_t collect_neighbor_viruses(
+    Agent<TSeq> * p,
+    Model<TSeq> * m,
+    const std::vector< bool > * exclude
+)
+{
+    return m->has_post_sampling() ?
+        collect_neighbor_viruses_impl<TSeq, true>(p, m, exclude) :
+        collect_neighbor_viruses_impl<TSeq, false>(p, m, exclude);
 }
 
 /**
@@ -21100,7 +21469,7 @@ inline size_t Mixing<TSeq>::sample(
             #endif
 
             // Can't sample itself
-            if (id == agent->get_id())
+            if (id == static_cast< size_t >(agent->get_id()))
                 continue;
 
             sampled[samp_id++] = id;
@@ -21108,6 +21477,10 @@ inline size_t Mixing<TSeq>::sample(
         }
 
     }
+
+    // Reporting the interactions, only if somebody listens
+    if (model.has_post_sampling())
+        model.register_sampled_contacts(sampled.data(), samp_id, agent->get_id());
 
     return samp_id;
 
@@ -28295,9 +28668,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
             );
         #endif
 
-        // Adding the current agent to the tracked interactions
-        m_down->get_contact_tracing().add_contact(neighbor.get_id(), p->get_id(), m->today());
-
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
             (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
@@ -28775,6 +29145,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
 
     // Enable contact tracing for quarantine process
     this->contact_tracing_on(EPI_MAX_TRACKING);
+    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
 
     // Adding the empty population
     this->agents_empty_graph(n);
@@ -29050,6 +29421,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
+    const bool record = m->has_post_sampling();
     size_t nviruses_tmp = 0u;
     for (auto * neighbor : p->neighbors_view(*m))
     {
@@ -29061,12 +29433,9 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_susceptible(
         if (neighbor->get_state() != ModelSEIRNetworkQuarantine<TSeq>::INFECTED)
             continue;
 
-        // Record contact for tracing: infected neighbor -> susceptible agent
-        m->get_contact_tracing().add_contact(
-            neighbor->get_id(),
-            p->get_id(),
-            static_cast<size_t>(m->today())
-        );
+        // Report the contact: infected neighbor -> susceptible agent
+        if (record)
+            m->register_sampled_contact(neighbor->get_id(), p->get_id());
 
         #ifdef EPI_DEBUG
         if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
@@ -29525,6 +29894,7 @@ inline ModelSEIRNetworkQuarantine<TSeq>::ModelSEIRNetworkQuarantine(
 
     // Enable contact tracing for quarantine process
     this->contact_tracing_on(EPI_MAX_TRACKING);
+    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
 
     this->set_name("SEIR with Network and Quarantine");
 

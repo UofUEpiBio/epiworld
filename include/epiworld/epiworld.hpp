@@ -99,6 +99,7 @@ namespace epiworld {
     #include "model-bones.hpp"
     #include "model-rand-meat.hpp"
     #include "model-meat.hpp"
+    #include "postsampling-meat.hpp"
 
     #include "viruses-bones.hpp"
 

@@ -621,6 +621,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     queue(model.queue),
     use_queuing(model.use_queuing),
     sim_id(model.sim_id),
+    post_sampling_fun(model.post_sampling_fun),
+    post_sampling_on(model.post_sampling_on),
     contact_tracing(
         model.contact_tracing
             ? std::make_unique<ContactTracing>(*model.contact_tracing)
@@ -723,6 +725,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
     sim_id(model.sim_id),
+    post_sampling_fun(std::move(model.post_sampling_fun)),
+    post_sampling_on(model.post_sampling_on),
     contact_tracing(std::move(model.contact_tracing)),
     use_contact_tracing(model.use_contact_tracing),
     contact_tracing_max_contacts(model.contact_tracing_max_contacts),
@@ -802,6 +806,10 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     queue = m.queue;
     use_queuing = m.use_queuing;
+
+    post_sampling_fun = m.post_sampling_fun;
+    post_sampling_on = m.post_sampling_on;
+    post_sampling_scratch.clear();
 
     contact_tracing = m.contact_tracing
         ? std::make_unique<ContactTracing>(*m.contact_tracing)
@@ -2034,8 +2042,14 @@ inline void Model<TSeq>::update_state() {
     // same distribution, and cheaper while few agents carry a virus. Directed
     // networks always pull: a tie there is kept by its source only (see
     // is_directed()), so it is not visible from both ends.
+    // A post-sampling callback needs the contacts the pull samplers report, so
+    // the models pull while one is installed.
+    if (post_sampling_on)
+        post_sampling_scratch.clear();
+
     const bool push =
-        transmission_prepare() && !directed && transmission_choose_push();
+        !post_sampling_on && transmission_prepare() && !directed &&
+        transmission_choose_push();
 
     transmission_mode_last = push ?
         TransmissionMode::push : TransmissionMode::pull;
@@ -2080,6 +2094,9 @@ inline void Model<TSeq>::update_state() {
                 state_fun[p.state](&p, this);
 
     }
+
+    if (post_sampling_on)
+        post_sampling_dispatch();
 
     events_run();
 
@@ -2407,6 +2424,16 @@ inline void Model<TSeq>::reset() {
     // This also clears the queue
     if (use_queuing)
         queue.reset();
+
+    // The batch of sampled contacts
+    if (post_sampling_on)
+    {
+        if (population.size() >= (size_t(1) << 32))
+            throw std::length_error(
+                "The post-sampling callback supports populations below 2^32 agents."
+            );
+        post_sampling_scratch.reset(population.size());
+    }
 
     // Reset contact tracing if active
     if (use_contact_tracing)

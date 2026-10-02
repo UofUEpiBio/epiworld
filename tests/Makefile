@@ -105,7 +105,10 @@ $(NAME)_SOURCES := \
 	37a-parameter-lookup.cpp \
 	37b-param-id.cpp \
 	37c-param-ref.cpp \
-	38a-mixing-sampler.cpp
+	38a-mixing-sampler.cpp \
+	39a-post-sampling-pull.cpp \
+	39b-post-sampling-mixing.cpp \
+	39c-post-sampling-clone.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

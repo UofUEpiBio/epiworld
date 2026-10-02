@@ -399,6 +399,12 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
         }
 
     }
+
+    // Each sampled interaction, once, if a post-sampling callback listens
+    if (this->has_post_sampling())
+        this->register_sampled_contacts(
+            sampled_agents.data(), samp_id, agent->get_id()
+        );
     
     return samp_id;
 
@@ -445,11 +451,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_susceptible(
             );
         #endif
 
-        // Adding the current agent to the tracked interactions
-        // In this case, the infected neighbor is the one
-        // who interacts with the susceptible agent
-        m_down->get_contact_tracing().add_contact(neighbor.get_id(), p->get_id(), m->today());
-            
         /* And it is a function of susceptibility_reduction as well */ 
         m->array_double_tmp[nviruses_tmp] =
             (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
@@ -1124,6 +1125,7 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
 
     // Enable contact tracing for quarantine process
     this->contact_tracing_on(EPI_MAX_TRACKING);
+    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
 
     // Adding the empty population
     this->agents_empty_graph(n);
