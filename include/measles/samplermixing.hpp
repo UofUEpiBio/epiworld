@@ -438,6 +438,12 @@ inline size_t SamplerMixing<TSeq>::sample(
         }
     }
 
+    // Each sampled interaction, once, if a post-sampling callback listens
+    if (model.has_post_sampling())
+        model.register_sampled_contacts(
+            sampled_agents_.data(), samp_id, agent->get_id()
+        );
+
     return samp_id;
 }
 

@@ -245,7 +245,7 @@ inline size_t Mixing<TSeq>::sample(
             #endif
 
             // Can't sample itself
-            if (id == agent->get_id())
+            if (id == static_cast< size_t >(agent->get_id()))
                 continue;
 
             sampled[samp_id++] = id;
@@ -253,6 +253,10 @@ inline size_t Mixing<TSeq>::sample(
         }
 
     }
+
+    // Reporting the interactions, only if somebody listens
+    if (model.has_post_sampling())
+        model.register_sampled_contacts(sampled.data(), samp_id, agent->get_id());
 
     return samp_id;
 

@@ -337,9 +337,6 @@ inline void ModelMeaslesMixing<TSeq>::_update_susceptible(
             );
         #endif
 
-        // Adding the current agent to the tracked interactions
-        m_down->get_contact_tracing().add_contact(neighbor.get_id(), p->get_id(), m->today());
-
         /* And it is a function of susceptibility_reduction as well */
         m->array_double_tmp[nviruses_tmp] =
             (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
@@ -838,6 +835,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 
     // Enable contact tracing for quarantine process
     this->contact_tracing_on(EPI_MAX_TRACKING);
+    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
 
     // Adding the empty population
     this->agents_empty_graph(n);
