@@ -1,8 +1,5 @@
 $(NAME)_SOURCES := \
 	main.cpp \
-	40a-savers-files.cpp \
-	40b-savers-threads.cpp \
-	40c-savers-callback.cpp \
    	00-cloning-model.cpp \
 	00-lfmcmc.cpp \
 	01-model-methods.cpp \
@@ -111,7 +108,10 @@ $(NAME)_SOURCES := \
 	38a-mixing-sampler.cpp \
 	39a-post-sampling-pull.cpp \
 	39b-post-sampling-mixing.cpp \
-	39c-post-sampling-clone.cpp
+	39c-post-sampling-clone.cpp \
+	40a-savers-files.cpp \
+	40b-savers-threads.cpp \
+	40c-savers-callback.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

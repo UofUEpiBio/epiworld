@@ -1,89 +1,37 @@
 #include "tests.hpp"
+
 using namespace epiworld;
-EPIWORLD_TEST_CASE("Memory saver is invariant to thread count", "[savers]") {
+
+EPIWORLD_TEST_CASE("Savers are invariant to the number of threads", "[savers]") {
+
     epimodels::ModelSEIRCONN<> model("virus", 100, 0.1, 5.0, 0.5, 3.0, 0.2);
     model.verbose_off();
-    SaveOptions options;
-    options.total_hist = true;
-    options.virus_info = true;
-    options.virus_hist = true;
-    options.tool_info = true;
-    options.tool_hist = true;
-    options.transmission = true;
-    options.transition = true;
-    options.reproductive = true;
-    options.generation = true;
-    options.active_cases = true;
-    options.outbreak_size = true;
-    options.hospitalizations = true;
-    SaverMemory<> one(options), four(options);
+
+    SaveOptions all;
+    RunOutputs::for_each_table([&](const char *, auto option, auto) {
+        all.*option = true;
+    });
+
+    // Savers write without locks: each thread fills its own slots...
+    SaverMemory<> one(all), four(all);
     model.run_multiple(10, 7, 91, one, true, false, 1);
     model.run_multiple(10, 7, 91, four, true, false, 4);
-    auto a = one.results(), b = four.results();
-    REQUIRE(a.total_hist.sim_id == b.total_hist.sim_id);
-    REQUIRE(a.total_hist.date == b.total_hist.date);
-    REQUIRE(a.total_hist.nviruses == b.total_hist.nviruses);
-    REQUIRE(a.total_hist.state == b.total_hist.state);
-    REQUIRE(a.total_hist.counts == b.total_hist.counts);
-    REQUIRE(a.virus_info.sim_id == b.virus_info.sim_id);
-    REQUIRE(a.virus_info.virus_id == b.virus_info.virus_id);
-    REQUIRE(a.virus_info.virus == b.virus_info.virus);
-    REQUIRE(a.virus_info.virus_sequence == b.virus_info.virus_sequence);
-    REQUIRE(a.virus_info.date_recorded == b.virus_info.date_recorded);
-    REQUIRE(a.virus_info.parent == b.virus_info.parent);
-    REQUIRE(a.virus_hist.sim_id == b.virus_hist.sim_id);
-    REQUIRE(a.virus_hist.date == b.virus_hist.date);
-    REQUIRE(a.virus_hist.virus_id == b.virus_hist.virus_id);
-    REQUIRE(a.virus_hist.virus == b.virus_hist.virus);
-    REQUIRE(a.virus_hist.state == b.virus_hist.state);
-    REQUIRE(a.virus_hist.n == b.virus_hist.n);
-    REQUIRE(a.tool_info.sim_id == b.tool_info.sim_id);
-    REQUIRE(a.tool_info.id == b.tool_info.id);
-    REQUIRE(a.tool_info.tool_name == b.tool_info.tool_name);
-    REQUIRE(a.tool_info.tool_sequence == b.tool_info.tool_sequence);
-    REQUIRE(a.tool_info.date_recorded == b.tool_info.date_recorded);
-    REQUIRE(a.tool_hist.sim_id == b.tool_hist.sim_id);
-    REQUIRE(a.tool_hist.date == b.tool_hist.date);
-    REQUIRE(a.tool_hist.id == b.tool_hist.id);
-    REQUIRE(a.tool_hist.state == b.tool_hist.state);
-    REQUIRE(a.tool_hist.n == b.tool_hist.n);
-    REQUIRE(a.transmission.sim_id == b.transmission.sim_id);
-    REQUIRE(a.transmission.date == b.transmission.date);
-    REQUIRE(a.transmission.virus_id == b.transmission.virus_id);
-    REQUIRE(a.transmission.virus == b.transmission.virus);
-    REQUIRE(a.transmission.source_exposure_date == b.transmission.source_exposure_date);
-    REQUIRE(a.transmission.source == b.transmission.source);
-    REQUIRE(a.transmission.target == b.transmission.target);
-    REQUIRE(a.transition.sim_id == b.transition.sim_id);
-    REQUIRE(a.transition.date == b.transition.date);
-    REQUIRE(a.transition.from == b.transition.from);
-    REQUIRE(a.transition.to == b.transition.to);
-    REQUIRE(a.transition.counts == b.transition.counts);
-    REQUIRE(a.reproductive.sim_id == b.reproductive.sim_id);
-    REQUIRE(a.reproductive.virus_id == b.reproductive.virus_id);
-    REQUIRE(a.reproductive.virus == b.reproductive.virus);
-    REQUIRE(a.reproductive.source == b.reproductive.source);
-    REQUIRE(a.reproductive.source_exposure_date == b.reproductive.source_exposure_date);
-    REQUIRE(a.reproductive.rt == b.reproductive.rt);
-    REQUIRE(a.generation.sim_id == b.generation.sim_id);
-    REQUIRE(a.generation.virus == b.generation.virus);
-    REQUIRE(a.generation.source == b.generation.source);
-    REQUIRE(a.generation.source_exposure_date == b.generation.source_exposure_date);
-    REQUIRE(a.generation.gentime == b.generation.gentime);
-    REQUIRE(a.active_cases.sim_id == b.active_cases.sim_id);
-    REQUIRE(a.active_cases.date == b.active_cases.date);
-    REQUIRE(a.active_cases.virus_id == b.active_cases.virus_id);
-    REQUIRE(a.active_cases.virus == b.active_cases.virus);
-    REQUIRE(a.active_cases.active_cases == b.active_cases.active_cases);
-    REQUIRE(a.outbreak_size.sim_id == b.outbreak_size.sim_id);
-    REQUIRE(a.outbreak_size.date == b.outbreak_size.date);
-    REQUIRE(a.outbreak_size.virus_id == b.outbreak_size.virus_id);
-    REQUIRE(a.outbreak_size.virus == b.outbreak_size.virus);
-    REQUIRE(a.outbreak_size.outbreak_size == b.outbreak_size.outbreak_size);
-    REQUIRE(a.hospitalizations.sim_id == b.hospitalizations.sim_id);
-    REQUIRE(a.hospitalizations.date == b.hospitalizations.date);
-    REQUIRE(a.hospitalizations.virus_id == b.hospitalizations.virus_id);
-    REQUIRE(a.hospitalizations.tool_id == b.hospitalizations.tool_id);
-    REQUIRE(a.hospitalizations.count == b.hospitalizations.count);
-    REQUIRE(a.hospitalizations.weight == b.hospitalizations.weight);
+    REQUIRE(one.results() == four.results());
+
+    // ...or writes its own files. Debug builds add the thread to each row.
+    #ifndef EPI_DEBUG
+    const std::string dir = epi_temp_file("40b-savers").directory + "/";
+    SaverFiles<> files_one(dir + "one-%d", all), files_four(dir + "four-%d", all);
+    model.run_multiple(10, 7, 91, files_one, true, false, 1);
+    model.run_multiple(10, 7, 91, files_four, true, false, 4);
+
+    for (int sim_id = 0; sim_id < 7; ++sim_id)
+        RunOutputs::for_each_table([&](const char * name, auto, auto) {
+            const std::string suffix =
+                std::to_string(sim_id) + "_" + name + ".csv";
+            REQUIRE(file_reader(dir + "one-" + suffix) ==
+                file_reader(dir + "four-" + suffix));
+        });
+    #endif
+
 }

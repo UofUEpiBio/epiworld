@@ -19,7 +19,8 @@ PACKAGES := \
 	19-poisson-approximation-binomial \
 	20-transmission-benchmark \
 	21-parameter-lookup-benchmark \
-	22-post-sampling-benchmark
+	22-post-sampling-benchmark \
+	23-in-memory-savers
 	
 # Only with OpenMP
 ifneq ($(filter 1 yes true,$(WITH_OPENMP)),)

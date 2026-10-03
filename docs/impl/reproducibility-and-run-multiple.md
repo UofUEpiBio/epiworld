@@ -71,6 +71,15 @@ int main() {
 
 To access this information, refer to the [Data Collection and Analysis](data-collection-and-analysis.md) documentation.
 
+### Savers
+Instead of a callback, `run_multiple` also takes a `Saver`, which collects the outputs of each simulation in memory (`SaverMemory`), in files (`SaverFiles`), or through a function (`SaverCallback`). Savers write without locks under OpenMP. See [In-memory Savers](in-memory-savers.md).
+
+```cpp
+epiworld::SaverMemory<> saver;
+model.run_multiple(30, 10, 42, saver, true, true, 4);
+auto history = saver.results().total_hist; /* sim_id, date, nviruses, state, counts */
+```
+
 ## See Also
 
 - [Library Architecture](library-architecture.md) — the `Model` class that provides `run` and `run_multiple`.

@@ -1,192 +1,113 @@
 #include "tests.hpp"
+
 using namespace epiworld;
 
-EPIWORLD_TEST_CASE("Memory savers match all legacy files", "[savers]") {
+EPIWORLD_TEST_CASE("Savers match the database files", "[savers]") {
+
+    // A tool and a hospitalization every day, so every output has rows
     epimodels::ModelSEIRCONN<> model("test virus", 100, 0.1, 5.0, 0.5, 3.0, 0.2);
     model.verbose_off();
     Tool<> tool("test tool", 0.5, true);
     model.add_tool(tool);
-    model.add_globalevent([](Model<>* m) {
-        for (auto& agent : m->get_agents())
-            if (agent.get_virus()) { m->record_hospitalization(agent); break; }
+    model.add_globalevent([](Model<> * m) {
+        for (auto & agent : m->get_agents())
+            if (agent.get_virus())
+            {
+                m->record_hospitalization(agent);
+                break;
+            }
     }, "record hospitalizations");
-    SaveOptions options;
-    options.total_hist = true;
-    options.virus_info = true;
-    options.virus_hist = true;
-    options.tool_info = true;
-    options.tool_hist = true;
-    options.transmission = true;
-    options.transition = true;
-    options.reproductive = true;
-    options.generation = true;
-    options.active_cases = true;
-    options.outbreak_size = true;
-    options.hospitalizations = true;
-    auto temp = epi_temp_file("40a-savers", "csv");
-    SaverFiles<> files(temp.directory + "/new-%zu", options);
-    SaverMemory<> memory(options);
-    auto legacy = make_save_run<int>(temp.directory + "/old-%zu",
-        true, true, true, true, true, true, true, true, true, true, true, true);
-    model.run_multiple(10, 3, 123, [&](size_t id, Model<>* m) {
-        legacy(id, m);
+
+    SaveOptions all;
+    RunOutputs::for_each_table([&](const char *, auto option, auto) {
+        all.*option = true;
+    });
+
+    // The file format is the contract downstream readers (e.g., epiworldR)
+    // rely on, so headers are spelled out here.
+    #ifdef EPI_DEBUG
+    const std::string thread = "thread ";
+    #else
+    const std::string thread = "";
+    #endif
+    const std::map< std::string, std::string > headers = {
+        {"total_hist", "date nviruses state counts"},
+        {"virus_info", "virus_id virus virus_sequence date_recorded parent"},
+        {"virus_hist", "date virus_id virus state n"},
+        {"tool_info", "id tool_name tool_sequence date_recorded"},
+        {"tool_hist", "date id state n"},
+        {"transmission", "date virus_id virus source_exposure_date source target"},
+        {"transition", "date from to counts"},
+        {"reproductive", "virus_id virus source source_exposure_date rt"},
+        {"generation", "virus source source_exposure_date gentime"},
+        {"active_cases", "date virus_id virus active_cases"},
+        {"outbreak_size", "date virus_id virus outbreak_size"},
+        {"hospitalizations", "date virus_id tool_id count weight"}
+    };
+
+    const auto read = [](const std::string & fn) {
+        std::ifstream file(fn);
+        return std::string(std::istreambuf_iterator< char >(file), {});
+    };
+
+    const std::string dir = epi_temp_file("40a-savers").directory + "/";
+    auto legacy = make_save_run<int>(
+        dir + "legacy-%zu",
+        true, true, true, true, true, true, true, true, true, true, true, true
+    );
+    SaverFiles<> files(dir + "files-%zu", all);
+    SaverMemory<> memory(all);
+    memory.begin(3);
+
+    // Every way of writing a simulation gives the same files
+    model.run_multiple(10, 3, 123, [&](size_t sim_id, Model<> * m) {
+
+        const std::string id = std::to_string(sim_id);
+        const auto fn = [&](const char * name) {
+            return dir + "db-" + id + "_" + name + ".csv";
+        };
+
         m->write_data(
-            temp.directory + "/direct-" + std::to_string(id) + "_virus_info.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_virus_hist.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_tool_info.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_tool_hist.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_total_hist.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_transmission.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_transition.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_reproductive.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_generation.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_active_cases.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_outbreak_size.csv",
-            temp.directory + "/direct-" + std::to_string(id) + "_hospitalizations.csv"
+            fn("virus_info"), fn("virus_hist"), fn("tool_info"),
+            fn("tool_hist"), fn("total_hist"), fn("transmission"),
+            fn("transition"), fn("reproductive"), fn("generation"),
+            fn("active_cases"), fn("outbreak_size"), fn("hospitalizations")
         );
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_total_hist.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_total_hist.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_virus_info.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_virus_info.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_virus_hist.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_virus_hist.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_tool_info.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_tool_info.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_tool_hist.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_tool_hist.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_transmission.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_transmission.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_transition.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_transition.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_reproductive.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_reproductive.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_generation.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_generation.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_active_cases.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_active_cases.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_outbreak_size.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_outbreak_size.csv"));
-        REQUIRE(file_reader(temp.directory + "/direct-" + std::to_string(id) + "_hospitalizations.csv") ==
-            file_reader(temp.directory + "/old-" + std::to_string(id) + "_hospitalizations.csv"));
-        auto out = memory.extract(id, *m);
-        files.write(id, RunOutputs(out));
-        {
-            std::ostringstream expected;
-            out.total_hist.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_total_hist.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_total_hist.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_total_hist.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.virus_info.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_virus_info.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_virus_info.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_virus_info.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.virus_hist.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_virus_hist.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_virus_hist.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_virus_hist.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.tool_info.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_tool_info.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_tool_info.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_tool_info.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.tool_hist.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_tool_hist.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_tool_hist.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_tool_hist.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.transmission.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_transmission.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_transmission.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_transmission.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.transition.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_transition.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_transition.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_transition.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.reproductive.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_reproductive.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_reproductive.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_reproductive.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.generation.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_generation.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_generation.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_generation.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.active_cases.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_active_cases.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_active_cases.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_active_cases.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.outbreak_size.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_outbreak_size.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_outbreak_size.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_outbreak_size.csv"));
-        }
-        {
-            std::ostringstream expected;
-            out.hospitalizations.write(expected);
-            std::ifstream input(temp.directory + "/old-" + std::to_string(id) + "_hospitalizations.csv");
-            std::string actual((std::istreambuf_iterator<char>(input)), {});
-            REQUIRE(expected.str() == actual);
-            REQUIRE(file_reader(temp.directory + "/new-" + std::to_string(id) + "_hospitalizations.csv") ==
-                file_reader(temp.directory + "/old-" + std::to_string(id) + "_hospitalizations.csv"));
-        }
-        memory.write(id, std::move(out));
+        legacy(sim_id, m);
+        auto outputs = files.extract(sim_id, *m);
+        files.write(sim_id, RunOutputs(outputs));
+
+        RunOutputs::for_each_table([&](const char * name, auto, auto table) {
+
+            const std::string expected = read(fn(name));
+            const std::string suffix = id + "_" + name + ".csv";
+            REQUIRE(read(dir + "legacy-" + suffix) == expected);
+            REQUIRE(read(dir + "files-" + suffix) == expected);
+
+            std::ostringstream written;
+            (outputs.*table).write(written);
+            REQUIRE(written.str() == expected);
+
+            REQUIRE(expected.substr(0, expected.find('\n')) == thread + headers.at(name));
+            REQUIRE((outputs.*table).size() > 0u);
+            REQUIRE((outputs.*table).sim_id == std::vector< int >((outputs.*table).size(), static_cast<int>(sim_id)));
+
+        });
+
+        memory.write(sim_id, std::move(outputs));
+
     }, true, false, 1);
-    auto result = memory.results();
-    REQUIRE(result.total_hist.size() == 3 * 11 * 4);
-    REQUIRE(result.tool_info.size() == 3);
-    REQUIRE(result.hospitalizations.size() > 0);
-    REQUIRE(result.total_hist.sim_id.front() == 0);
-    REQUIRE(result.total_hist.sim_id.back() == 2);
-    // The new overload produces the same result, and begin clears old runs.
+
+    // Results are concatenated in simulation order
+    const auto results = memory.results();
+    REQUIRE(results.total_hist.size() == 3u * 11u * 4u);
+    REQUIRE(results.total_hist.sim_id.front() == 0);
+    REQUIRE(results.total_hist.sim_id.back() == 2);
+
+    // The saver overload gives the same results; begin() clears the old ones
     model.run_multiple(10, 3, 123, memory, true, false);
-    REQUIRE(memory.results().total_hist.counts == result.total_hist.counts);
+    REQUIRE(memory.results() == results);
+    REQUIRE(memory.take_results() == results);
+    REQUIRE(memory.results().total_hist.size() == 0u);
+
 }

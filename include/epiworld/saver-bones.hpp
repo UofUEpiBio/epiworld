@@ -1,8 +1,17 @@
 #ifndef EPIWORLD_SAVER_BONES_HPP
 #define EPIWORLD_SAVER_BONES_HPP
 
-/** Select outputs without positional boolean arguments. */
-struct SaveOptions {
+template<typename TSeq>
+class Model;
+
+/**
+ * @brief Outputs to collect from each simulation
+ *
+ * @details The fields follow the order of the boolean arguments of
+ * `make_save_run()`. Only the total history is collected by default.
+ */
+struct SaveOptions
+{
     bool total_hist = true;
     bool virus_info = false;
     bool virus_hist = false;
@@ -17,450 +26,453 @@ struct SaveOptions {
     bool hospitalizations = false;
 };
 
-/** Columnar total_hist table, with the same fields and row order as write_data. */
-struct Output_total_hist {
-    std::vector<size_t> sim_id;
-    std::vector<int> date;
-    std::vector<int> nviruses;
-    std::vector<std::string> state;
-    std::vector<int> counts;
-    size_t size() const { return date.size(); }
-    void append(size_t id, const Output_total_hist& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        date.insert(date.end(), other.date.begin(), other.date.end());
-        nviruses.insert(nviruses.end(), other.nviruses.begin(), other.nviruses.end());
-        state.insert(state.end(), other.state.begin(), other.state.end());
-        counts.insert(counts.end(), other.counts.begin(), other.counts.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "date nviruses state counts\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << date[i] << ' ' << nviruses[i] << ' ' << '"' << state[i] << '"' << ' ' << counts[i] << '\n';
+/**
+ * @brief A column of an output table
+ *
+ * @details `name` is the column's name in the file header, and `quoted`
+ * whether its values are written between double quotes.
+ */
+template<typename TTable, typename TValue>
+struct SaverColumn
+{
+    const char * name;
+    std::vector< TValue > TTable::* values;
+    bool quoted;
+};
+
+/**
+ * @brief Describes a column of an output table
+ *
+ * @details Text columns are quoted by default, as in `DataBase::write_data()`.
+ */
+template<typename TTable, typename TValue>
+inline SaverColumn<TTable,TValue> saver_column(
+    const char * name,
+    std::vector< TValue > TTable::* values,
+    bool quoted = std::is_same< TValue, std::string >::value
+)
+{
+    return {name, values, quoted};
+}
+
+/**
+ * @brief Columnar output table of one or more simulations
+ *
+ * @details Tables derive from this class and list their columns, in file
+ * order, in a static `columns()` function. That list is the only place where
+ * a table's layout is defined: the functions below build on it. `sim_id` is
+ * not a file column; it identifies the simulation of each row.
+ *
+ * @tparam TTable The derived table.
+ */
+template<typename TTable>
+class SaverTable
+{
+public:
+
+    std::vector< int > sim_id; ///< Simulation ID of each row.
+
+    size_t size() const; ///< Number of rows.
+    void set_sim_id(int id); ///< Sets the simulation ID of all rows.
+    void append(const TTable & other); ///< Appends the rows of `other`.
+
+    /**
+     * @brief Writes the table in the format of `DataBase::write_data()`
+     * @details Space-separated, with a header. Debug builds (`EPI_DEBUG`)
+     * add the calling thread's ID as the first column.
+     */
+    void write(std::ostream & out) const;
+
+    bool operator==(const SaverTable<TTable> & other) const;
+
+private:
+    template<typename TFun>
+    static void for_each_column(TFun && fun);
+
+};
+
+/**
+ * @brief Outputs of one or more simulations, one table per output
+ *
+ * @details Tables have the same columns and rows as the matching files from
+ * `DataBase::write_data()`. Tables not selected in `SaveOptions` are empty.
+ */
+struct RunOutputs
+{
+
+    struct TotalHist : SaverTable<TotalHist>
+    {
+        std::vector< int > date;
+        std::vector< int > nviruses;
+        std::vector< std::string > state;
+        std::vector< int > counts;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("date", &TotalHist::date),
+                saver_column("nviruses", &TotalHist::nviruses),
+                saver_column("state", &TotalHist::state),
+                saver_column("counts", &TotalHist::counts)
+            );
         }
-    }
-};
+    };
 
-/** Columnar virus_info table, with the same fields and row order as write_data. */
-struct Output_virus_info {
-    std::vector<size_t> sim_id;
-    std::vector<int> virus_id;
-    std::vector<std::string> virus;
-    std::vector<std::string> virus_sequence;
-    std::vector<int> date_recorded;
-    std::vector<int> parent;
-    size_t size() const { return virus_id.size(); }
-    void append(size_t id, const Output_virus_info& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
-        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
-        virus_sequence.insert(virus_sequence.end(), other.virus_sequence.begin(), other.virus_sequence.end());
-        date_recorded.insert(date_recorded.end(), other.date_recorded.begin(), other.date_recorded.end());
-        parent.insert(parent.end(), other.parent.begin(), other.parent.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "virus_id virus virus_sequence date_recorded parent\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << virus_sequence[i] << ' ' << date_recorded[i] << ' ' << parent[i] << '\n';
+    struct VirusInfo : SaverTable<VirusInfo>
+    {
+        std::vector< int > virus_id;
+        std::vector< std::string > virus;
+        std::vector< std::string > virus_sequence;
+        std::vector< int > date_recorded;
+        std::vector< int > parent;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("virus_id", &VirusInfo::virus_id),
+                saver_column("virus", &VirusInfo::virus),
+                saver_column("virus_sequence", &VirusInfo::virus_sequence, false),
+                saver_column("date_recorded", &VirusInfo::date_recorded),
+                saver_column("parent", &VirusInfo::parent)
+            );
         }
-    }
-};
+    };
 
-/** Columnar virus_hist table, with the same fields and row order as write_data. */
-struct Output_virus_hist {
-    std::vector<size_t> sim_id;
-    std::vector<int> date;
-    std::vector<int> virus_id;
-    std::vector<std::string> virus;
-    std::vector<std::string> state;
-    std::vector<int> n;
-    size_t size() const { return date.size(); }
-    void append(size_t id, const Output_virus_hist& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        date.insert(date.end(), other.date.begin(), other.date.end());
-        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
-        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
-        state.insert(state.end(), other.state.begin(), other.state.end());
-        n.insert(n.end(), other.n.begin(), other.n.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "date virus_id virus state n\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << date[i] << ' ' << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << '"' << state[i] << '"' << ' ' << n[i] << '\n';
+    struct VirusHist : SaverTable<VirusHist>
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< std::string > virus;
+        std::vector< std::string > state;
+        std::vector< int > n;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("date", &VirusHist::date),
+                saver_column("virus_id", &VirusHist::virus_id),
+                saver_column("virus", &VirusHist::virus),
+                saver_column("state", &VirusHist::state),
+                saver_column("n", &VirusHist::n)
+            );
         }
-    }
-};
+    };
 
-/** Columnar tool_info table, with the same fields and row order as write_data. */
-struct Output_tool_info {
-    std::vector<size_t> sim_id;
-    std::vector<int> id;
-    std::vector<std::string> tool_name;
-    std::vector<std::string> tool_sequence;
-    std::vector<int> date_recorded;
-    size_t size() const { return id.size(); }
-    void append(size_t id, const Output_tool_info& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        this->id.insert(this->id.end(), other.id.begin(), other.id.end());
-        tool_name.insert(tool_name.end(), other.tool_name.begin(), other.tool_name.end());
-        tool_sequence.insert(tool_sequence.end(), other.tool_sequence.begin(), other.tool_sequence.end());
-        date_recorded.insert(date_recorded.end(), other.date_recorded.begin(), other.date_recorded.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "id tool_name tool_sequence date_recorded\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << id[i] << ' ' << '"' << tool_name[i] << '"' << ' ' << tool_sequence[i] << ' ' << date_recorded[i] << '\n';
+    struct ToolInfo : SaverTable<ToolInfo>
+    {
+        std::vector< int > id;
+        std::vector< std::string > tool_name;
+        std::vector< std::string > tool_sequence;
+        std::vector< int > date_recorded;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("id", &ToolInfo::id),
+                saver_column("tool_name", &ToolInfo::tool_name),
+                saver_column("tool_sequence", &ToolInfo::tool_sequence, false),
+                saver_column("date_recorded", &ToolInfo::date_recorded)
+            );
         }
-    }
-};
+    };
 
-/** Columnar tool_hist table, with the same fields and row order as write_data. */
-struct Output_tool_hist {
-    std::vector<size_t> sim_id;
-    std::vector<int> date;
-    std::vector<int> id;
-    std::vector<std::string> state;
-    std::vector<int> n;
-    size_t size() const { return date.size(); }
-    void append(size_t id, const Output_tool_hist& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        date.insert(date.end(), other.date.begin(), other.date.end());
-        this->id.insert(this->id.end(), other.id.begin(), other.id.end());
-        state.insert(state.end(), other.state.begin(), other.state.end());
-        n.insert(n.end(), other.n.begin(), other.n.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "date id state n\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << date[i] << ' ' << id[i] << ' ' << '"' << state[i] << '"' << ' ' << n[i] << '\n';
+    struct ToolHist : SaverTable<ToolHist>
+    {
+        std::vector< int > date;
+        std::vector< int > id;
+        std::vector< std::string > state;
+        std::vector< int > n;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("date", &ToolHist::date),
+                saver_column("id", &ToolHist::id),
+                saver_column("state", &ToolHist::state),
+                saver_column("n", &ToolHist::n)
+            );
         }
-    }
-};
+    };
 
-/** Columnar transmission table, with the same fields and row order as write_data. */
-struct Output_transmission {
-    std::vector<size_t> sim_id;
-    std::vector<int> date;
-    std::vector<int> virus_id;
-    std::vector<std::string> virus;
-    std::vector<int> source_exposure_date;
-    std::vector<int> source;
-    std::vector<int> target;
-    size_t size() const { return date.size(); }
-    void append(size_t id, const Output_transmission& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        date.insert(date.end(), other.date.begin(), other.date.end());
-        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
-        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
-        source_exposure_date.insert(source_exposure_date.end(), other.source_exposure_date.begin(), other.source_exposure_date.end());
-        source.insert(source.end(), other.source.begin(), other.source.end());
-        target.insert(target.end(), other.target.begin(), other.target.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "date virus_id virus source_exposure_date source target\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << date[i] << ' ' << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << source_exposure_date[i] << ' ' << source[i] << ' ' << target[i] << '\n';
+    struct Transmission : SaverTable<Transmission>
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< std::string > virus;
+        std::vector< int > source_exposure_date;
+        std::vector< int > source;
+        std::vector< int > target;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("date", &Transmission::date),
+                saver_column("virus_id", &Transmission::virus_id),
+                saver_column("virus", &Transmission::virus),
+                saver_column("source_exposure_date", &Transmission::source_exposure_date),
+                saver_column("source", &Transmission::source),
+                saver_column("target", &Transmission::target)
+            );
         }
-    }
-};
+    };
 
-/** Columnar transition table, with the same fields and row order as write_data. */
-struct Output_transition {
-    std::vector<size_t> sim_id;
-    std::vector<int> date;
-    std::vector<std::string> from;
-    std::vector<std::string> to;
-    std::vector<int> counts;
-    size_t size() const { return date.size(); }
-    void append(size_t id, const Output_transition& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        date.insert(date.end(), other.date.begin(), other.date.end());
-        from.insert(from.end(), other.from.begin(), other.from.end());
-        to.insert(to.end(), other.to.begin(), other.to.end());
-        counts.insert(counts.end(), other.counts.begin(), other.counts.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "date from to counts\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << date[i] << ' ' << '"' << from[i] << '"' << ' ' << '"' << to[i] << '"' << ' ' << counts[i] << '\n';
+    struct Transition : SaverTable<Transition>
+    {
+        std::vector< int > date;
+        std::vector< std::string > from;
+        std::vector< std::string > to;
+        std::vector< int > counts;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("date", &Transition::date),
+                saver_column("from", &Transition::from),
+                saver_column("to", &Transition::to),
+                saver_column("counts", &Transition::counts)
+            );
         }
-    }
-};
+    };
 
-/** Columnar reproductive table, with the same fields and row order as write_data. */
-struct Output_reproductive {
-    std::vector<size_t> sim_id;
-    std::vector<int> virus_id;
-    std::vector<std::string> virus;
-    std::vector<int> source;
-    std::vector<int> source_exposure_date;
-    std::vector<int> rt;
-    size_t size() const { return virus_id.size(); }
-    void append(size_t id, const Output_reproductive& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
-        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
-        source.insert(source.end(), other.source.begin(), other.source.end());
-        source_exposure_date.insert(source_exposure_date.end(), other.source_exposure_date.begin(), other.source_exposure_date.end());
-        rt.insert(rt.end(), other.rt.begin(), other.rt.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "virus_id virus source source_exposure_date rt\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << source[i] << ' ' << source_exposure_date[i] << ' ' << rt[i] << '\n';
+    struct Reproductive : SaverTable<Reproductive>
+    {
+        std::vector< int > virus_id;
+        std::vector< std::string > virus;
+        std::vector< int > source;
+        std::vector< int > source_exposure_date;
+        std::vector< int > rt;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("virus_id", &Reproductive::virus_id),
+                saver_column("virus", &Reproductive::virus),
+                saver_column("source", &Reproductive::source),
+                saver_column("source_exposure_date", &Reproductive::source_exposure_date),
+                saver_column("rt", &Reproductive::rt)
+            );
         }
-    }
-};
+    };
 
-/** Columnar generation table, with the same fields and row order as write_data. */
-struct Output_generation {
-    std::vector<size_t> sim_id;
-    std::vector<int> virus;
-    std::vector<int> source;
-    std::vector<int> source_exposure_date;
-    std::vector<int> gentime;
-    size_t size() const { return virus.size(); }
-    void append(size_t id, const Output_generation& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
-        source.insert(source.end(), other.source.begin(), other.source.end());
-        source_exposure_date.insert(source_exposure_date.end(), other.source_exposure_date.begin(), other.source_exposure_date.end());
-        gentime.insert(gentime.end(), other.gentime.begin(), other.gentime.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "virus source source_exposure_date gentime\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << virus[i] << ' ' << source[i] << ' ' << source_exposure_date[i] << ' ' << gentime[i] << '\n';
+    struct Generation : SaverTable<Generation>
+    {
+        std::vector< int > virus;
+        std::vector< int > source;
+        std::vector< int > source_exposure_date;
+        std::vector< int > gentime;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("virus", &Generation::virus),
+                saver_column("source", &Generation::source),
+                saver_column("source_exposure_date", &Generation::source_exposure_date),
+                saver_column("gentime", &Generation::gentime)
+            );
         }
-    }
-};
+    };
 
-/** Columnar active_cases table, with the same fields and row order as write_data. */
-struct Output_active_cases {
-    std::vector<size_t> sim_id;
-    std::vector<int> date;
-    std::vector<int> virus_id;
-    std::vector<std::string> virus;
-    std::vector<int> active_cases;
-    size_t size() const { return date.size(); }
-    void append(size_t id, const Output_active_cases& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        date.insert(date.end(), other.date.begin(), other.date.end());
-        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
-        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
-        active_cases.insert(active_cases.end(), other.active_cases.begin(), other.active_cases.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "date virus_id virus active_cases\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << date[i] << ' ' << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << active_cases[i] << '\n';
+    struct ActiveCases : SaverTable<ActiveCases>
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< std::string > virus;
+        std::vector< int > active_cases;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("date", &ActiveCases::date),
+                saver_column("virus_id", &ActiveCases::virus_id),
+                saver_column("virus", &ActiveCases::virus),
+                saver_column("active_cases", &ActiveCases::active_cases)
+            );
         }
-    }
-};
+    };
 
-/** Columnar outbreak_size table, with the same fields and row order as write_data. */
-struct Output_outbreak_size {
-    std::vector<size_t> sim_id;
-    std::vector<int> date;
-    std::vector<int> virus_id;
-    std::vector<std::string> virus;
-    std::vector<int> outbreak_size;
-    size_t size() const { return date.size(); }
-    void append(size_t id, const Output_outbreak_size& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        date.insert(date.end(), other.date.begin(), other.date.end());
-        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
-        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
-        outbreak_size.insert(outbreak_size.end(), other.outbreak_size.begin(), other.outbreak_size.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "date virus_id virus outbreak_size\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << date[i] << ' ' << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << outbreak_size[i] << '\n';
+    struct OutbreakSize : SaverTable<OutbreakSize>
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< std::string > virus;
+        std::vector< int > outbreak_size;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("date", &OutbreakSize::date),
+                saver_column("virus_id", &OutbreakSize::virus_id),
+                saver_column("virus", &OutbreakSize::virus),
+                saver_column("outbreak_size", &OutbreakSize::outbreak_size)
+            );
         }
-    }
-};
+    };
 
-/** Columnar hospitalizations table, with the same fields and row order as write_data. */
-struct Output_hospitalizations {
-    std::vector<size_t> sim_id;
-    std::vector<int> date;
-    std::vector<int> virus_id;
-    std::vector<int> tool_id;
-    std::vector<int> count;
-    std::vector<double> weight;
-    size_t size() const { return date.size(); }
-    void append(size_t id, const Output_hospitalizations& other) {
-        sim_id.insert(sim_id.end(), other.size(), id);
-        date.insert(date.end(), other.date.begin(), other.date.end());
-        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
-        tool_id.insert(tool_id.end(), other.tool_id.begin(), other.tool_id.end());
-        count.insert(count.end(), other.count.begin(), other.count.end());
-        weight.insert(weight.end(), other.weight.begin(), other.weight.end());
-    }
-    void write(std::ostream& out) const {
-#ifdef EPI_DEBUG
-        out << "thread ";
-#endif
-        out << "date virus_id tool_id count weight\n";
-        for (size_t i = 0; i < size(); ++i) {
-#ifdef EPI_DEBUG
-            out << EPI_GET_THREAD_ID() << ' ';
-#endif
-            out << date[i] << ' ' << virus_id[i] << ' ' << tool_id[i] << ' ' << count[i] << ' ' << weight[i] << '\n';
+    struct Hospitalizations : SaverTable<Hospitalizations>
+    {
+        std::vector< int > date;
+        std::vector< int > virus_id;
+        std::vector< int > tool_id;
+        std::vector< int > count;
+        std::vector< double > weight;
+        static auto columns()
+        {
+            return std::make_tuple(
+                saver_column("date", &Hospitalizations::date),
+                saver_column("virus_id", &Hospitalizations::virus_id),
+                saver_column("tool_id", &Hospitalizations::tool_id),
+                saver_column("count", &Hospitalizations::count),
+                saver_column("weight", &Hospitalizations::weight)
+            );
         }
-    }
+    };
+
+    TotalHist total_hist;
+    VirusInfo virus_info;
+    VirusHist virus_hist;
+    ToolInfo tool_info;
+    ToolHist tool_hist;
+    Transmission transmission;
+    Transition transition;
+    Reproductive reproductive;
+    Generation generation;
+    ActiveCases active_cases;
+    OutbreakSize outbreak_size;
+    Hospitalizations hospitalizations;
+
+    /**
+     * @brief Calls `fun(name, option, table)` for each output
+     *
+     * @details `name` is the output's name (also the suffix of its file),
+     * `option` points to its flag in `SaveOptions`, and `table` points to its
+     * member in `RunOutputs`. This is the only list of the outputs.
+     */
+    template<typename TFun>
+    static void for_each_table(TFun && fun);
+
+    void set_sim_id(int id); ///< Sets the simulation ID of all tables.
+    void append(const RunOutputs & other); ///< Appends the rows of `other`.
+
+    bool operator==(const RunOutputs & other) const;
+
 };
 
-/** Results for one simulation; concatenated results include sim_id per row. */
-struct RunOutputs {
-    Output_total_hist total_hist;
-    Output_virus_info virus_info;
-    Output_virus_hist virus_hist;
-    Output_tool_info tool_info;
-    Output_tool_hist tool_hist;
-    Output_transmission transmission;
-    Output_transition transition;
-    Output_reproductive reproductive;
-    Output_generation generation;
-    Output_active_cases active_cases;
-    Output_outbreak_size outbreak_size;
-    Output_hospitalizations hospitalizations;
-    void append(size_t id, const RunOutputs& other) {
-        total_hist.append(id, other.total_hist);
-        virus_info.append(id, other.virus_info);
-        virus_hist.append(id, other.virus_hist);
-        tool_info.append(id, other.tool_info);
-        tool_hist.append(id, other.tool_hist);
-        transmission.append(id, other.transmission);
-        transition.append(id, other.transition);
-        reproductive.append(id, other.reproductive);
-        generation.append(id, other.generation);
-        active_cases.append(id, other.active_cases);
-        outbreak_size.append(id, other.outbreak_size);
-        hospitalizations.append(id, other.hospitalizations);
-    }
-};
+/**
+ * @brief Writes a table to a file, throwing if the file cannot be written
+ */
+template<typename TTable>
+inline void saver_write_file(const std::string & fn, const TTable & table);
 
-template<typename TSeq> class Model;
-
-/** Extraction can run concurrently; writes are serialized by run_multiple. */
+/**
+ * @brief Collects the outputs of the simulations in `Model::run_multiple()`
+ *
+ * @details A saver splits the work in two: `extract()` copies the outputs out
+ * of a finished simulation, and `write()` stores them. Under OpenMP, each
+ * thread calls both for its own simulations, without locks. So `write()` may
+ * be called concurrently for different simulation IDs, and implementations
+ * must only touch state that belongs to that ID (like `SaverMemory` and
+ * `SaverFiles`) or synchronize internally (like `SaverCallback`).
+ *
+ * `begin()` is called once before the first simulation, and `end()` once
+ * after the last one; `end()` is not called if a simulation or saver throws.
+ * Bindings that run the simulations themselves can call these four functions
+ * directly.
+ */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Saver {
+class Saver
+{
 protected:
     SaveOptions options;
+
 public:
-    explicit Saver(SaveOptions opts = {}) : options(opts) {}
+
+    explicit Saver(SaveOptions options_ = {}) : options(options_) {}
     virtual ~Saver() = default;
-    virtual void begin(size_t) {}
-    RunOutputs extract(size_t, const Model<TSeq>& model) const;
-    virtual void write(size_t sim_id, RunOutputs&& out) = 0;
-    virtual void end() {}
+
+    virtual void begin(size_t) {} ///< Before the first simulation.
+
+    /**
+     * @brief Copies the selected outputs of a finished simulation
+     * @details Thread-safe as long as `model` is not running.
+     */
+    RunOutputs extract(size_t sim_id, const Model<TSeq> & model) const;
+
+    /**
+     * @brief Stores the outputs of a simulation
+     * @details May be called concurrently for different `sim_id`s.
+     */
+    virtual void write(size_t sim_id, RunOutputs && outputs) = 0;
+
+    virtual void end() {} ///< After the last simulation.
+
 };
 
+/**
+ * @brief Keeps the outputs in memory, one slot per simulation
+ *
+ * @details `begin()` allocates the slots, so `write()` only touches its own
+ * slot and needs no lock. Results are ordered by simulation ID, whatever the
+ * order the simulations finish in. Starting another `run_multiple()` with the
+ * same saver clears the previous results.
+ */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class SaverMemory : public Saver<TSeq> {
-    std::map<size_t, RunOutputs> runs;
+class SaverMemory : public Saver<TSeq>
+{
+private:
+    std::vector< RunOutputs > runs;
+
 public:
+
     using Saver<TSeq>::Saver;
-    void begin(size_t) override { runs.clear(); }
-    void write(size_t id, RunOutputs&& out) override {
-        runs.insert_or_assign(id, std::move(out));
-    }
-    RunOutputs results() const {
-        RunOutputs out;
-        for (const auto& run : runs)
-            out.append(run.first, run.second);
-        return out;
-    }
+
+    void begin(size_t nexperiments) override;
+    void write(size_t sim_id, RunOutputs && outputs) override;
+
+    RunOutputs results() const; ///< All simulations, concatenated.
+
+    /**
+     * @brief Like `results()`, but moves the outputs out of the saver
+     * @details Frees each simulation's outputs as it is appended, so peak
+     * memory stays close to one copy of the results.
+     */
+    RunOutputs take_results();
+
 };
 
+/**
+ * @brief Passes the outputs of each simulation to a function
+ *
+ * @details Callbacks often share state across simulations, so they run one at
+ * a time, in the order the simulations finish.
+ */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class SaverCallback : public Saver<TSeq> {
-    std::function<void(size_t, RunOutputs&&)> callback;
+class SaverCallback : public Saver<TSeq>
+{
+private:
+    std::function<void(size_t, RunOutputs &&)> callback;
+    std::mutex callback_mutex;
+
 public:
-    SaverCallback(SaveOptions opts,
-        std::function<void(size_t, RunOutputs&&)> fun) :
-        Saver<TSeq>(opts), callback(std::move(fun)) {
-        if (!callback)
-            throw std::invalid_argument("SaverCallback requires a callback.");
-    }
-    void write(size_t id, RunOutputs&& out) override {
-        callback(id, std::move(out));
-    }
+
+    SaverCallback(
+        SaveOptions options_,
+        std::function<void(size_t, RunOutputs &&)> callback_
+    );
+
+    void write(size_t sim_id, RunOutputs && outputs) override;
+
 };
 
+/**
+ * @brief Writes the outputs of each simulation to files
+ *
+ * @details Writes the files of `DataBase::write_data()`, named
+ * `<prefix>_<output>.csv`, where the prefix is `format` with its integer
+ * placeholder replaced by the simulation ID (e.g., `"%03lu-episimulation"`).
+ * Each simulation writes its own files, so `write()` needs no lock.
+ */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class SaverFiles : public Saver<TSeq> {
-    std::string format;
+class SaverFiles : public Saver<TSeq>
+{
+private:
+    std::string format; ///< `format_` with its placeholder rewritten for `long long`.
+    bool format_signed = false;
+
 public:
-    explicit SaverFiles(std::string fmt, SaveOptions opts = {});
-    void write(size_t id, RunOutputs&& out) override;
+
+    explicit SaverFiles(std::string format_, SaveOptions options_ = {});
+
+    void write(size_t sim_id, RunOutputs && outputs) override;
+
 };
 
 #endif

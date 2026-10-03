@@ -27,6 +27,8 @@
  * @details This function is the default behavior of the `run_multiple`
  * member of `Model<TSeq>`. By default only the total history (
  * case counts by unit of time.)
+ * It writes through `SaverFiles`; new code can pass a `Saver` to
+ * `run_multiple()` instead.
  *
  * @tparam TSeq
  * @param fmt
@@ -57,23 +59,20 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     )
 {
 
-    SaveOptions options;
-    options.total_hist = total_hist;
-    options.virus_info = virus_info;
-    options.virus_hist = virus_hist;
-    options.tool_info = tool_info;
-    options.tool_hist = tool_hist;
-    options.transmission = transmission;
-    options.transition = transition;
-    options.reproductive = reproductive;
-    options.generation = generation;
-    options.active_cases = active_cases;
-    options.outbreak_size = outbreak_size;
-    options.hospitalizations = hospitalizations;
-    auto saver = std::make_shared<SaverFiles<TSeq>>(std::move(fmt), options);
-    return [saver](size_t id, Model<TSeq>* model) {
-        saver->write(id, saver->extract(id, *model));
+    // `SaveOptions` lists its fields in the order of these arguments
+    auto saver = std::make_shared< SaverFiles<TSeq> >(
+        std::move(fmt),
+        SaveOptions{
+            total_hist, virus_info, virus_hist, tool_info, tool_hist,
+            transmission, transition, reproductive, generation, active_cases,
+            outbreak_size, hospitalizations
+        }
+    );
+
+    return [saver](size_t sim_id, Model<TSeq> * model) -> void {
+        saver->write(sim_id, saver->extract(sim_id, *model));
     };
+
 }
 
 
@@ -1763,27 +1762,36 @@ inline Model<TSeq> & Model<TSeq>::run(
 }
 
 template<typename TSeq>
-inline Model<TSeq>& Model<TSeq>::run_multiple(
-    epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+inline Model<TSeq> & Model<TSeq>::run_multiple(
+    epiworld_fast_uint ndays,
+    epiworld_fast_uint nexperiments,
+    int seed_,
     std::function<void(size_t,Model<TSeq>*)> fun,
-    bool reset, bool verbose, int nthreads
-) {
-    return run_multiple_impl(ndays, nexperiments, seed, std::move(fun),
-        reset, verbose, nthreads, nullptr);
+    bool reset,
+    bool verbose,
+    int nthreads
+)
+{
+    return run_multiple_impl(
+        ndays, nexperiments, seed_, std::move(fun), nullptr, reset, verbose,
+        nthreads
+    );
 }
 
 template<typename TSeq>
-inline Model<TSeq>& Model<TSeq>::run_multiple(
-    epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
-    Saver<TSeq>& saver, bool reset, bool verbose, int nthreads
-) {
-    if (nexperiments == 0 || nthreads < 1)
-        throw std::invalid_argument("Experiments and threads must be positive.");
-    saver.begin(nexperiments);
-    run_multiple_impl(ndays, nexperiments, seed, {}, reset, verbose,
-        nthreads, &saver);
-    saver.end();
-    return *this;
+inline Model<TSeq> & Model<TSeq>::run_multiple(
+    epiworld_fast_uint ndays,
+    epiworld_fast_uint nexperiments,
+    int seed_,
+    Saver<TSeq> & saver,
+    bool reset,
+    bool verbose,
+    int nthreads
+)
+{
+    return run_multiple_impl(
+        ndays, nexperiments, seed_, nullptr, &saver, reset, verbose, nthreads
+    );
 }
 
 template<typename TSeq>
@@ -1792,14 +1800,14 @@ inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
     epiworld_fast_uint nexperiments,
     int seed_,
     std::function<void(size_t,Model<TSeq>*)> fun,
+    Saver<TSeq> * saver,
     bool reset,
     bool verbose,
     #ifdef _OPENMP
-    int nthreads,
+    int nthreads
     #else
-    int,
+    int
     #endif
-    Saver<TSeq>* saver
 )
 {
 
@@ -1808,6 +1816,14 @@ inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
 
     if (nexperiments == 0u)
         throw std::logic_error("The number of experiments must be above 0.");
+
+    #ifdef _OPENMP
+    if (nthreads < 1)
+        throw std::logic_error("The number of threads must be above 0.");
+    #endif
+
+    if (saver)
+        saver->begin(nexperiments);
 
     // Seeds will be reproducible by default
     std::vector< int > seeds_n(nexperiments);
@@ -1826,7 +1842,13 @@ inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
         EPI_DEBUG_NOTIFY_ACTIVE()
     }
 
-    bool old_verb = this->verbose;
+    // Restores the verbosity on every exit, including exceptions
+    struct VerboseRestorer
+    {
+        Model<TSeq> * model;
+        bool verbose;
+        ~VerboseRestorer() { if (verbose) model->verbose_on(); }
+    } verbose_restorer{this, this->verbose};
     verbose_off();
 
     // Setting up backup
@@ -1901,10 +1923,14 @@ inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
     }
     #endif
 
-    std::exception_ptr saver_failure;
-    #pragma omp parallel shared(these, saver_failure) \
-        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, \
-        ndays, nreplicates, nreplicates_csum, seeds_n, saver) default(none)
+    // Savers write without locks (see `Saver`), so each thread keeps its own
+    // failure, and the others stop at their next run.
+    std::vector< std::exception_ptr > saver_failures(nthreads);
+    std::atomic< bool > saver_failed(false);
+
+    #pragma omp parallel shared(these, saver_failures, saver_failed) \
+        firstprivate(nexperiments, nthreads, fun, saver, reset, verbose, \
+        pb_multiple, ndays, nreplicates, nreplicates_csum, seeds_n) default(none)
     {
 
         auto iam = static_cast<size_t>(omp_get_thread_num());
@@ -1912,7 +1938,7 @@ inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
         size_t my_replicates = nreplicates[iam];
         size_t my_replicates_csum = nreplicates_csum[iam];
 
-        for (size_t n = 0u; n < my_replicates; ++n)
+        for (size_t n = 0u; n < my_replicates && !saver_failed; ++n)
         {
             size_t run_id = my_replicates_csum + n;
             if (iam == 0)
@@ -1943,24 +1969,14 @@ inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
 
             if (saver)
             {
-                try {
-                    auto out = saver->extract(run_id, *model_ptr);
-                    #pragma omp critical(epiworld_run_multiple_fun)
-                    {
-                        try {
-                            if (!saver_failure)
-                                saver->write(run_id, std::move(out));
-                        } catch (...) {
-                            if (!saver_failure)
-                                saver_failure = std::current_exception();
-                        }
-                    }
-                } catch (...) {
-                    #pragma omp critical(epiworld_run_multiple_fun)
-                    {
-                        if (!saver_failure)
-                            saver_failure = std::current_exception();
-                    }
+                try
+                {
+                    saver->write(run_id, saver->extract(run_id, *model_ptr));
+                }
+                catch (...)
+                {
+                    saver_failures[iam] = std::current_exception();
+                    saver_failed = true;
                 }
             }
             else if (fun)
@@ -1979,10 +1995,10 @@ inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
 
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
-    if (saver_failure) {
-        if (old_verb) verbose_on();
-        std::rethrow_exception(saver_failure);
-    }
+
+    for (const auto & failure : saver_failures)
+        if (failure)
+            std::rethrow_exception(failure);
 
     #else
 
@@ -2023,8 +2039,8 @@ inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
     }
     #endif
 
-    if (old_verb)
-        verbose_on();
+    if (saver)
+        saver->end();
 
     return *this;
 

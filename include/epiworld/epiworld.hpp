@@ -22,6 +22,8 @@
 #include <cassert>
 #include <atomic>
 #include <exception>
+#include <mutex>
+#include <tuple>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP

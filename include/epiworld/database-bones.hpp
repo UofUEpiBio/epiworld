@@ -110,7 +110,6 @@ private:
 
 
 public:
-    RunOutputs get_run_outputs(const SaveOptions& options) const;
 
     #ifdef EPI_DEBUG
     int n_transmissions_potential = 0;
@@ -240,6 +239,13 @@ public:
         int * source_exposure_date
     ) const;
     ///@}
+
+    /**
+     * @brief Copies the selected outputs of the last simulation
+     * @details The tables have the same rows and columns as the files from
+     * `write_data()`; see `RunOutputs`.
+     */
+    RunOutputs get_run_outputs(const SaveOptions & options) const;
 
     void write_data(
         std::string fn_virus_info,

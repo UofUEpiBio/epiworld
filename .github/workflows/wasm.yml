@@ -14,7 +14,7 @@ jobs:
       - name: Build and run in-memory saver example
         run: |
           mkdir -p build
-          em++ -O2 -std=c++17 -Wall -Wextra -Werror=shift-count-overflow -fwasm-exceptions -sALLOW_MEMORY_GROWTH examples/wasm-saver.cpp -o build/saver-example.js
+          em++ -O2 -std=c++17 -Wall -Wextra -Werror=shift-count-overflow -fwasm-exceptions -sALLOW_MEMORY_GROWTH examples/23-in-memory-savers/main.cpp -o build/saver-example.js
           node build/saver-example.js
       - name: Build and run saver tests in Node
         run: |

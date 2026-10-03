@@ -94,6 +94,18 @@ protected:
     /// @brief Validates the arguments of `add_edge()` / `rm_edge()`.
     void check_edge_endpoints(size_t i, size_t j) const;
 
+    /// @brief Shared by both `run_multiple()`: calls `fun`, or else `saver`.
+    Model<TSeq> & run_multiple_impl(
+        epiworld_fast_uint ndays,
+        epiworld_fast_uint nexperiments,
+        int seed_,
+        std::function<void(size_t,Model<TSeq>*)> fun,
+        Saver<TSeq> * saver,
+        bool reset,
+        bool verbose,
+        int nthreads
+        );
+
     bool using_backup = true;
     std::vector< Agent<TSeq> > population_backup = {};
 
@@ -685,6 +697,8 @@ public:
      * @param ndays Number of days (steps) of the simulation.
      * @param fun In the case of `run_multiple`, a function that is called
      * after each experiment.
+     * @param saver In the case of `run_multiple`, collects the outputs of each
+     * experiment (see `Saver`). Under OpenMP, threads call it without locks.
      *
      */
     ///@{
@@ -704,16 +718,15 @@ public:
         bool verbose = true,
         int nthreads = 1
         );
-    Model<TSeq>& run_multiple(
-        epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
-        Saver<TSeq>& saver, bool reset = true, bool verbose = true,
-        int nthreads = 1);
-private:
-    Model<TSeq>& run_multiple_impl(
-        epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
-        std::function<void(size_t,Model<TSeq>*)> fun,
-        bool reset, bool verbose, int nthreads, Saver<TSeq>* saver);
-public:
+    Model<TSeq> & run_multiple( ///< Multiple runs, collected by a `Saver`
+        epiworld_fast_uint ndays,
+        epiworld_fast_uint nexperiments,
+        int seed_,
+        Saver<TSeq> & saver,
+        bool reset = true,
+        bool verbose = true,
+        int nthreads = 1
+        );
     ///@}
 
     size_t get_n_viruses() const; ///< Number of viruses in the model
