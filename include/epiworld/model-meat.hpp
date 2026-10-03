@@ -2042,14 +2042,13 @@ inline void Model<TSeq>::update_state() {
     // same distribution, and cheaper while few agents carry a virus. Directed
     // networks always pull: a tie there is kept by its source only (see
     // is_directed()), so it is not visible from both ends.
-    // A post-sampling callback needs the contacts the pull samplers report, so
-    // the models pull while one is installed.
+    //
+    // With a post-sampling callback, pull and push report the same contacts.
     if (post_sampling_on)
         post_sampling_scratch.clear();
 
     const bool push =
-        !post_sampling_on && transmission_prepare() && !directed &&
-        transmission_choose_push();
+        transmission_prepare() && !directed && transmission_choose_push();
 
     transmission_mode_last = push ?
         TransmissionMode::push : TransmissionMode::pull;
