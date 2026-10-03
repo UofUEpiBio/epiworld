@@ -211,6 +211,7 @@ protected:
     bool post_sampling_on = false;                     ///< post_sampling_fun is set
     PostSamplingScratch post_sampling_scratch;         ///< Never copied
     void post_sampling_dispatch();
+    void post_sampling_prepare_scratch(); ///< Sizes the scratch for the population
 
     std::unique_ptr<ContactTracing> contact_tracing;
     bool use_contact_tracing = false;

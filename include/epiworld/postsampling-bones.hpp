@@ -55,7 +55,8 @@ using PostSamplingFun = std::function<
  * @details Pairs `(infectious, contacted)` are appended while sampling and
  * grouped by infectious agent once, at the end of the sampling phase. Lengths
  * are cleared, not released, between steps. Copies of a model start with empty
- * scratch (nothing is shared or copied).
+ * scratch (nothing is shared or copied); the model sizes `counts` for its
+ * population the first time it needs it (see `Model::post_sampling_dispatch()`).
  */
 struct PostSamplingScratch {
 
@@ -67,7 +68,7 @@ struct PostSamplingScratch {
 
     PostSamplingScratch() = default;
     PostSamplingScratch(const PostSamplingScratch &) {}
-    PostSamplingScratch & operator=(const PostSamplingScratch &) { clear(); return *this; }
+    PostSamplingScratch & operator=(const PostSamplingScratch &) { reset(0u); return *this; }
 
     /// Empties the batch and restores the invariant of `counts` (all zero).
     void clear()

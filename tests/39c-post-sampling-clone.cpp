@@ -67,6 +67,42 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
     REQUIRE_FALSE(clone->has_post_sampling());
     REQUIRE(model.has_post_sampling());
 
+    // Copies, moves and assignments continue stepping without a run() or
+    // reset(): the scratch is sized for their own population
+    {
+
+        epimodels::ModelSEIR<> base("Virus", 0.05, 0.5, 3.0, 0.2);
+        base.agents_smallworld(500, 6, false, 0.1);
+        base.verbose_off();
+
+        size_t n_batches = 0u;
+        base.set_post_sampling(
+            [&n_batches](Agent<> *, const SampledContactsView &, Model<> *) -> void {
+                n_batches++;
+            }
+        );
+
+        base.seed(5);
+        base.reset();
+
+        epimodels::ModelSEIR<> copied(base);
+        copied.update_state();
+
+        epimodels::ModelSEIR<> moved(std::move(copied));
+        moved.update_state();
+
+        // Assigned from a model with a different population
+        epimodels::ModelSEIR<> other("Virus", 0.05, 0.5, 3.0, 0.2);
+        other.agents_smallworld(100, 4, false, 0.1);
+        other.verbose_off();
+        other = base;
+        other.update_state();
+
+        // Each of the three stepped once and delivered something
+        REQUIRE(n_batches > 0u);
+
+    }
+
     // Replicates: every one delivers, and they differ from each other
     const size_t nsims = 8u;
     auto one = deliveries(1, nsims);

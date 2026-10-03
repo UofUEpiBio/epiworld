@@ -8,18 +8,34 @@ inline Model<TSeq> & Model<TSeq>::set_post_sampling(PostSamplingFun<TSeq> fun)
     post_sampling_fun = std::move(fun);
     post_sampling_on = static_cast< bool >(post_sampling_fun);
 
-    // The scratch is sized at reset(); a callback installed on a model that
-    // already has agents sizes it now.
-    if (post_sampling_on && (population.size() > 0u))
-    {
-        if (population.size() >= (size_t(1) << 32))
-            throw std::length_error(
-                "The post-sampling callback supports populations below 2^32 agents."
-            );
-        post_sampling_scratch.reset(population.size());
-    }
+    // A model that already has agents sizes the scratch now
+    if (post_sampling_on)
+        post_sampling_prepare_scratch();
 
     return *this;
+
+}
+
+/**
+ * Sizes the scratch for the current population. Copies, moves and assignments
+ * of a model leave the scratch empty, so this is also what makes them safe to
+ * continue stepping without a reset.
+ */
+template<typename TSeq>
+inline void Model<TSeq>::post_sampling_prepare_scratch()
+{
+
+    if (post_sampling_scratch.counts.size() == population.size())
+        return;
+
+    if (population.size() >= (size_t(1) << 32))
+        throw std::length_error(
+            "The post-sampling callback supports populations below 2^32 agents."
+        );
+
+    // Only `counts` (all zero between steps): the pairs of this step are kept
+    post_sampling_scratch.touched.clear();
+    post_sampling_scratch.counts.assign(population.size(), 0u);
 
 }
 
@@ -69,6 +85,12 @@ inline void Model<TSeq>::post_sampling_dispatch()
     if (npairs == 0u)
         return;
 
+    // The callback gets the model: it can clear or replace the callback. The
+    // whole dispatch runs on a snapshot, so that takes effect next step.
+    const PostSamplingFun<TSeq> fun = post_sampling_fun;
+
+    post_sampling_prepare_scratch();
+
     try
     {
 
@@ -106,7 +128,7 @@ inline void Model<TSeq>::post_sampling_dispatch()
 
             const size_t len = sc.starts[t + 1u] - sc.starts[t];
             SampledContactsView view(sc.grouped.data() + sc.starts[t], len);
-            post_sampling_fun(&population[sc.touched[t]], view, this);
+            fun(&population[sc.touched[t]], view, this);
 
         }
 

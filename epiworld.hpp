@@ -10688,7 +10688,8 @@ using PostSamplingFun = std::function<
  * @details Pairs `(infectious, contacted)` are appended while sampling and
  * grouped by infectious agent once, at the end of the sampling phase. Lengths
  * are cleared, not released, between steps. Copies of a model start with empty
- * scratch (nothing is shared or copied).
+ * scratch (nothing is shared or copied); the model sizes `counts` for its
+ * population the first time it needs it (see `Model::post_sampling_dispatch()`).
  */
 struct PostSamplingScratch {
 
@@ -10700,7 +10701,7 @@ struct PostSamplingScratch {
 
     PostSamplingScratch() = default;
     PostSamplingScratch(const PostSamplingScratch &) {}
-    PostSamplingScratch & operator=(const PostSamplingScratch &) { clear(); return *this; }
+    PostSamplingScratch & operator=(const PostSamplingScratch &) { reset(0u); return *this; }
 
     /// Empties the batch and restores the invariant of `counts` (all zero).
     void clear()
@@ -10929,6 +10930,7 @@ protected:
     bool post_sampling_on = false;                     ///< post_sampling_fun is set
     PostSamplingScratch post_sampling_scratch;         ///< Never copied
     void post_sampling_dispatch();
+    void post_sampling_prepare_scratch(); ///< Sizes the scratch for the population
 
     std::unique_ptr<ContactTracing> contact_tracing;
     bool use_contact_tracing = false;
@@ -13093,7 +13095,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     post_sampling_fun = m.post_sampling_fun;
     post_sampling_on = m.post_sampling_on;
-    post_sampling_scratch.clear();
+    post_sampling_scratch.reset(0u);
 
     contact_tracing = m.contact_tracing
         ? std::make_unique<ContactTracing>(*m.contact_tracing)
@@ -14712,11 +14714,8 @@ inline void Model<TSeq>::reset() {
     // The batch of sampled contacts
     if (post_sampling_on)
     {
-        if (population.size() >= (size_t(1) << 32))
-            throw std::length_error(
-                "The post-sampling callback supports populations below 2^32 agents."
-            );
-        post_sampling_scratch.reset(population.size());
+        post_sampling_scratch.reset(0u);
+        post_sampling_prepare_scratch();
     }
 
     // Reset contact tracing if active
@@ -15946,18 +15945,34 @@ inline Model<TSeq> & Model<TSeq>::set_post_sampling(PostSamplingFun<TSeq> fun)
     post_sampling_fun = std::move(fun);
     post_sampling_on = static_cast< bool >(post_sampling_fun);
 
-    // The scratch is sized at reset(); a callback installed on a model that
-    // already has agents sizes it now.
-    if (post_sampling_on && (population.size() > 0u))
-    {
-        if (population.size() >= (size_t(1) << 32))
-            throw std::length_error(
-                "The post-sampling callback supports populations below 2^32 agents."
-            );
-        post_sampling_scratch.reset(population.size());
-    }
+    // A model that already has agents sizes the scratch now
+    if (post_sampling_on)
+        post_sampling_prepare_scratch();
 
     return *this;
+
+}
+
+/**
+ * Sizes the scratch for the current population. Copies, moves and assignments
+ * of a model leave the scratch empty, so this is also what makes them safe to
+ * continue stepping without a reset.
+ */
+template<typename TSeq>
+inline void Model<TSeq>::post_sampling_prepare_scratch()
+{
+
+    if (post_sampling_scratch.counts.size() == population.size())
+        return;
+
+    if (population.size() >= (size_t(1) << 32))
+        throw std::length_error(
+            "The post-sampling callback supports populations below 2^32 agents."
+        );
+
+    // Only `counts` (all zero between steps): the pairs of this step are kept
+    post_sampling_scratch.touched.clear();
+    post_sampling_scratch.counts.assign(population.size(), 0u);
 
 }
 
@@ -16007,6 +16022,12 @@ inline void Model<TSeq>::post_sampling_dispatch()
     if (npairs == 0u)
         return;
 
+    // The callback gets the model: it can clear or replace the callback. The
+    // whole dispatch runs on a snapshot, so that takes effect next step.
+    const PostSamplingFun<TSeq> fun = post_sampling_fun;
+
+    post_sampling_prepare_scratch();
+
     try
     {
 
@@ -16044,7 +16065,7 @@ inline void Model<TSeq>::post_sampling_dispatch()
 
             const size_t len = sc.starts[t + 1u] - sc.starts[t];
             SampledContactsView view(sc.grouped.data() + sc.starts[t], len);
-            post_sampling_fun(&population[sc.touched[t]], view, this);
+            fun(&population[sc.touched[t]], view, this);
 
         }
 

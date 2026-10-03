@@ -809,7 +809,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     post_sampling_fun = m.post_sampling_fun;
     post_sampling_on = m.post_sampling_on;
-    post_sampling_scratch.clear();
+    post_sampling_scratch.reset(0u);
 
     contact_tracing = m.contact_tracing
         ? std::make_unique<ContactTracing>(*m.contact_tracing)
@@ -2428,11 +2428,8 @@ inline void Model<TSeq>::reset() {
     // The batch of sampled contacts
     if (post_sampling_on)
     {
-        if (population.size() >= (size_t(1) << 32))
-            throw std::length_error(
-                "The post-sampling callback supports populations below 2^32 agents."
-            );
-        post_sampling_scratch.reset(population.size());
+        post_sampling_scratch.reset(0u);
+        post_sampling_prepare_scratch();
     }
 
     // Reset contact tracing if active

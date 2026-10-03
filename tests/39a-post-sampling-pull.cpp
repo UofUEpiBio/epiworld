@@ -117,6 +117,44 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
     model.run(4, 123);
     CHECK(batches.empty());
 
+    // A callback can clear or replace itself: the step in progress finishes on
+    // the callback it started with, the change applies from the next step
+    {
+
+        auto self_clearing = make_ring();
+        size_t calls = 0u;
+        self_clearing.set_post_sampling(
+            [&calls](Agent<> *, const SampledContactsView &, Model<> * m) -> void {
+                calls++;
+                m->clear_post_sampling();
+            }
+        );
+        self_clearing.run(1, 123);
+
+        // Both pending batches (agents 2 and 6) were delivered
+        CHECK(calls == 2u);
+        CHECK_FALSE(self_clearing.has_post_sampling());
+
+        auto replacing = make_ring();
+        size_t calls_a = 0u, calls_b = 0u;
+        replacing.set_post_sampling(
+            [&](Agent<> *, const SampledContactsView &, Model<> * m) -> void {
+                calls_a++;
+                m->set_post_sampling(
+                    [&calls_b](Agent<> *, const SampledContactsView &, Model<> *) -> void {
+                        calls_b++;
+                    }
+                );
+            }
+        );
+        replacing.run(2, 123);
+
+        // Day 1 (two batches) on the original, day 2 (four batches) on the new one
+        CHECK(calls_a == 2u);
+        CHECK(calls_b == 4u);
+
+    }
+
     // A no-op callback does not change a run (the observable proxy for "a
     // callback that is not used costs nothing")
 
