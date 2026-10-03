@@ -704,6 +704,16 @@ public:
         bool verbose = true,
         int nthreads = 1
         );
+    Model<TSeq>& run_multiple(
+        epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+        Saver<TSeq>& saver, bool reset = true, bool verbose = true,
+        int nthreads = 1);
+private:
+    Model<TSeq>& run_multiple_impl(
+        epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+        std::function<void(size_t,Model<TSeq>*)> fun,
+        bool reset, bool verbose, int nthreads, Saver<TSeq>* saver);
+public:
     ///@}
 
     size_t get_n_viruses() const; ///< Number of viruses in the model

@@ -110,6 +110,7 @@ private:
 
 
 public:
+    RunOutputs get_run_outputs(const SaveOptions& options) const;
 
     #ifdef EPI_DEBUG
     int n_transmissions_potential = 0;

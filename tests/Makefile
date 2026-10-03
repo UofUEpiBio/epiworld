@@ -1,5 +1,8 @@
 $(NAME)_SOURCES := \
 	main.cpp \
+	40a-savers-files.cpp \
+	40b-savers-threads.cpp \
+	40c-savers-callback.cpp \
    	00-cloning-model.cpp \
 	00-lfmcmc.cpp \
 	01-model-methods.cpp \

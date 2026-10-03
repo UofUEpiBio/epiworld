@@ -21,13 +21,14 @@
 #include <type_traits>
 #include <cassert>
 #include <atomic>
+#include <exception>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 18
+#define EPIWORLD_VERSION_MINOR 19
 #define EPIWORLD_VERSION_PATCH 0
 
 #define EPIWORLD_VERSION_PRERELEASE ""
@@ -4346,6 +4347,490 @@ inline size_t HospitalizationsTracker<TSeq>::size() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -./include/epiworld/saver-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_SAVER_BONES_HPP
+#define EPIWORLD_SAVER_BONES_HPP
+
+/** Select outputs without positional boolean arguments. */
+struct SaveOptions {
+    bool total_hist = true;
+    bool virus_info = false;
+    bool virus_hist = false;
+    bool tool_info = false;
+    bool tool_hist = false;
+    bool transmission = false;
+    bool transition = false;
+    bool reproductive = false;
+    bool generation = false;
+    bool active_cases = false;
+    bool outbreak_size = false;
+    bool hospitalizations = false;
+};
+
+/** Columnar total_hist table, with the same fields and row order as write_data. */
+struct Output_total_hist {
+    std::vector<size_t> sim_id;
+    std::vector<int> date;
+    std::vector<int> nviruses;
+    std::vector<std::string> state;
+    std::vector<int> counts;
+    size_t size() const { return date.size(); }
+    void append(size_t id, const Output_total_hist& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        date.insert(date.end(), other.date.begin(), other.date.end());
+        nviruses.insert(nviruses.end(), other.nviruses.begin(), other.nviruses.end());
+        state.insert(state.end(), other.state.begin(), other.state.end());
+        counts.insert(counts.end(), other.counts.begin(), other.counts.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "date nviruses state counts\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << date[i] << ' ' << nviruses[i] << ' ' << '"' << state[i] << '"' << ' ' << counts[i] << '\n';
+        }
+    }
+};
+
+/** Columnar virus_info table, with the same fields and row order as write_data. */
+struct Output_virus_info {
+    std::vector<size_t> sim_id;
+    std::vector<int> virus_id;
+    std::vector<std::string> virus;
+    std::vector<std::string> virus_sequence;
+    std::vector<int> date_recorded;
+    std::vector<int> parent;
+    size_t size() const { return virus_id.size(); }
+    void append(size_t id, const Output_virus_info& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
+        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
+        virus_sequence.insert(virus_sequence.end(), other.virus_sequence.begin(), other.virus_sequence.end());
+        date_recorded.insert(date_recorded.end(), other.date_recorded.begin(), other.date_recorded.end());
+        parent.insert(parent.end(), other.parent.begin(), other.parent.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "virus_id virus virus_sequence date_recorded parent\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << virus_sequence[i] << ' ' << date_recorded[i] << ' ' << parent[i] << '\n';
+        }
+    }
+};
+
+/** Columnar virus_hist table, with the same fields and row order as write_data. */
+struct Output_virus_hist {
+    std::vector<size_t> sim_id;
+    std::vector<int> date;
+    std::vector<int> virus_id;
+    std::vector<std::string> virus;
+    std::vector<std::string> state;
+    std::vector<int> n;
+    size_t size() const { return date.size(); }
+    void append(size_t id, const Output_virus_hist& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        date.insert(date.end(), other.date.begin(), other.date.end());
+        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
+        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
+        state.insert(state.end(), other.state.begin(), other.state.end());
+        n.insert(n.end(), other.n.begin(), other.n.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "date virus_id virus state n\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << date[i] << ' ' << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << '"' << state[i] << '"' << ' ' << n[i] << '\n';
+        }
+    }
+};
+
+/** Columnar tool_info table, with the same fields and row order as write_data. */
+struct Output_tool_info {
+    std::vector<size_t> sim_id;
+    std::vector<int> id;
+    std::vector<std::string> tool_name;
+    std::vector<std::string> tool_sequence;
+    std::vector<int> date_recorded;
+    size_t size() const { return id.size(); }
+    void append(size_t id, const Output_tool_info& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        this->id.insert(this->id.end(), other.id.begin(), other.id.end());
+        tool_name.insert(tool_name.end(), other.tool_name.begin(), other.tool_name.end());
+        tool_sequence.insert(tool_sequence.end(), other.tool_sequence.begin(), other.tool_sequence.end());
+        date_recorded.insert(date_recorded.end(), other.date_recorded.begin(), other.date_recorded.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "id tool_name tool_sequence date_recorded\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << id[i] << ' ' << '"' << tool_name[i] << '"' << ' ' << tool_sequence[i] << ' ' << date_recorded[i] << '\n';
+        }
+    }
+};
+
+/** Columnar tool_hist table, with the same fields and row order as write_data. */
+struct Output_tool_hist {
+    std::vector<size_t> sim_id;
+    std::vector<int> date;
+    std::vector<int> id;
+    std::vector<std::string> state;
+    std::vector<int> n;
+    size_t size() const { return date.size(); }
+    void append(size_t id, const Output_tool_hist& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        date.insert(date.end(), other.date.begin(), other.date.end());
+        this->id.insert(this->id.end(), other.id.begin(), other.id.end());
+        state.insert(state.end(), other.state.begin(), other.state.end());
+        n.insert(n.end(), other.n.begin(), other.n.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "date id state n\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << date[i] << ' ' << id[i] << ' ' << '"' << state[i] << '"' << ' ' << n[i] << '\n';
+        }
+    }
+};
+
+/** Columnar transmission table, with the same fields and row order as write_data. */
+struct Output_transmission {
+    std::vector<size_t> sim_id;
+    std::vector<int> date;
+    std::vector<int> virus_id;
+    std::vector<std::string> virus;
+    std::vector<int> source_exposure_date;
+    std::vector<int> source;
+    std::vector<int> target;
+    size_t size() const { return date.size(); }
+    void append(size_t id, const Output_transmission& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        date.insert(date.end(), other.date.begin(), other.date.end());
+        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
+        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
+        source_exposure_date.insert(source_exposure_date.end(), other.source_exposure_date.begin(), other.source_exposure_date.end());
+        source.insert(source.end(), other.source.begin(), other.source.end());
+        target.insert(target.end(), other.target.begin(), other.target.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "date virus_id virus source_exposure_date source target\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << date[i] << ' ' << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << source_exposure_date[i] << ' ' << source[i] << ' ' << target[i] << '\n';
+        }
+    }
+};
+
+/** Columnar transition table, with the same fields and row order as write_data. */
+struct Output_transition {
+    std::vector<size_t> sim_id;
+    std::vector<int> date;
+    std::vector<std::string> from;
+    std::vector<std::string> to;
+    std::vector<int> counts;
+    size_t size() const { return date.size(); }
+    void append(size_t id, const Output_transition& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        date.insert(date.end(), other.date.begin(), other.date.end());
+        from.insert(from.end(), other.from.begin(), other.from.end());
+        to.insert(to.end(), other.to.begin(), other.to.end());
+        counts.insert(counts.end(), other.counts.begin(), other.counts.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "date from to counts\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << date[i] << ' ' << '"' << from[i] << '"' << ' ' << '"' << to[i] << '"' << ' ' << counts[i] << '\n';
+        }
+    }
+};
+
+/** Columnar reproductive table, with the same fields and row order as write_data. */
+struct Output_reproductive {
+    std::vector<size_t> sim_id;
+    std::vector<int> virus_id;
+    std::vector<std::string> virus;
+    std::vector<int> source;
+    std::vector<int> source_exposure_date;
+    std::vector<int> rt;
+    size_t size() const { return virus_id.size(); }
+    void append(size_t id, const Output_reproductive& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
+        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
+        source.insert(source.end(), other.source.begin(), other.source.end());
+        source_exposure_date.insert(source_exposure_date.end(), other.source_exposure_date.begin(), other.source_exposure_date.end());
+        rt.insert(rt.end(), other.rt.begin(), other.rt.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "virus_id virus source source_exposure_date rt\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << source[i] << ' ' << source_exposure_date[i] << ' ' << rt[i] << '\n';
+        }
+    }
+};
+
+/** Columnar generation table, with the same fields and row order as write_data. */
+struct Output_generation {
+    std::vector<size_t> sim_id;
+    std::vector<int> virus;
+    std::vector<int> source;
+    std::vector<int> source_exposure_date;
+    std::vector<int> gentime;
+    size_t size() const { return virus.size(); }
+    void append(size_t id, const Output_generation& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
+        source.insert(source.end(), other.source.begin(), other.source.end());
+        source_exposure_date.insert(source_exposure_date.end(), other.source_exposure_date.begin(), other.source_exposure_date.end());
+        gentime.insert(gentime.end(), other.gentime.begin(), other.gentime.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "virus source source_exposure_date gentime\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << virus[i] << ' ' << source[i] << ' ' << source_exposure_date[i] << ' ' << gentime[i] << '\n';
+        }
+    }
+};
+
+/** Columnar active_cases table, with the same fields and row order as write_data. */
+struct Output_active_cases {
+    std::vector<size_t> sim_id;
+    std::vector<int> date;
+    std::vector<int> virus_id;
+    std::vector<std::string> virus;
+    std::vector<int> active_cases;
+    size_t size() const { return date.size(); }
+    void append(size_t id, const Output_active_cases& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        date.insert(date.end(), other.date.begin(), other.date.end());
+        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
+        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
+        active_cases.insert(active_cases.end(), other.active_cases.begin(), other.active_cases.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "date virus_id virus active_cases\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << date[i] << ' ' << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << active_cases[i] << '\n';
+        }
+    }
+};
+
+/** Columnar outbreak_size table, with the same fields and row order as write_data. */
+struct Output_outbreak_size {
+    std::vector<size_t> sim_id;
+    std::vector<int> date;
+    std::vector<int> virus_id;
+    std::vector<std::string> virus;
+    std::vector<int> outbreak_size;
+    size_t size() const { return date.size(); }
+    void append(size_t id, const Output_outbreak_size& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        date.insert(date.end(), other.date.begin(), other.date.end());
+        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
+        virus.insert(virus.end(), other.virus.begin(), other.virus.end());
+        outbreak_size.insert(outbreak_size.end(), other.outbreak_size.begin(), other.outbreak_size.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "date virus_id virus outbreak_size\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << date[i] << ' ' << virus_id[i] << ' ' << '"' << virus[i] << '"' << ' ' << outbreak_size[i] << '\n';
+        }
+    }
+};
+
+/** Columnar hospitalizations table, with the same fields and row order as write_data. */
+struct Output_hospitalizations {
+    std::vector<size_t> sim_id;
+    std::vector<int> date;
+    std::vector<int> virus_id;
+    std::vector<int> tool_id;
+    std::vector<int> count;
+    std::vector<double> weight;
+    size_t size() const { return date.size(); }
+    void append(size_t id, const Output_hospitalizations& other) {
+        sim_id.insert(sim_id.end(), other.size(), id);
+        date.insert(date.end(), other.date.begin(), other.date.end());
+        virus_id.insert(virus_id.end(), other.virus_id.begin(), other.virus_id.end());
+        tool_id.insert(tool_id.end(), other.tool_id.begin(), other.tool_id.end());
+        count.insert(count.end(), other.count.begin(), other.count.end());
+        weight.insert(weight.end(), other.weight.begin(), other.weight.end());
+    }
+    void write(std::ostream& out) const {
+#ifdef EPI_DEBUG
+        out << "thread ";
+#endif
+        out << "date virus_id tool_id count weight\n";
+        for (size_t i = 0; i < size(); ++i) {
+#ifdef EPI_DEBUG
+            out << EPI_GET_THREAD_ID() << ' ';
+#endif
+            out << date[i] << ' ' << virus_id[i] << ' ' << tool_id[i] << ' ' << count[i] << ' ' << weight[i] << '\n';
+        }
+    }
+};
+
+/** Results for one simulation; concatenated results include sim_id per row. */
+struct RunOutputs {
+    Output_total_hist total_hist;
+    Output_virus_info virus_info;
+    Output_virus_hist virus_hist;
+    Output_tool_info tool_info;
+    Output_tool_hist tool_hist;
+    Output_transmission transmission;
+    Output_transition transition;
+    Output_reproductive reproductive;
+    Output_generation generation;
+    Output_active_cases active_cases;
+    Output_outbreak_size outbreak_size;
+    Output_hospitalizations hospitalizations;
+    void append(size_t id, const RunOutputs& other) {
+        total_hist.append(id, other.total_hist);
+        virus_info.append(id, other.virus_info);
+        virus_hist.append(id, other.virus_hist);
+        tool_info.append(id, other.tool_info);
+        tool_hist.append(id, other.tool_hist);
+        transmission.append(id, other.transmission);
+        transition.append(id, other.transition);
+        reproductive.append(id, other.reproductive);
+        generation.append(id, other.generation);
+        active_cases.append(id, other.active_cases);
+        outbreak_size.append(id, other.outbreak_size);
+        hospitalizations.append(id, other.hospitalizations);
+    }
+};
+
+template<typename TSeq> class Model;
+
+/** Extraction can run concurrently; writes are serialized by run_multiple. */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class Saver {
+protected:
+    SaveOptions options;
+public:
+    explicit Saver(SaveOptions opts = {}) : options(opts) {}
+    virtual ~Saver() = default;
+    virtual void begin(size_t) {}
+    RunOutputs extract(size_t, const Model<TSeq>& model) const;
+    virtual void write(size_t sim_id, RunOutputs&& out) = 0;
+    virtual void end() {}
+};
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class SaverMemory : public Saver<TSeq> {
+    std::map<size_t, RunOutputs> runs;
+public:
+    using Saver<TSeq>::Saver;
+    void begin(size_t) override { runs.clear(); }
+    void write(size_t id, RunOutputs&& out) override {
+        runs.insert_or_assign(id, std::move(out));
+    }
+    RunOutputs results() const {
+        RunOutputs out;
+        for (const auto& run : runs)
+            out.append(run.first, run.second);
+        return out;
+    }
+};
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class SaverCallback : public Saver<TSeq> {
+    std::function<void(size_t, RunOutputs&&)> callback;
+public:
+    SaverCallback(SaveOptions opts,
+        std::function<void(size_t, RunOutputs&&)> fun) :
+        Saver<TSeq>(opts), callback(std::move(fun)) {
+        if (!callback)
+            throw std::invalid_argument("SaverCallback requires a callback.");
+    }
+    void write(size_t id, RunOutputs&& out) override {
+        callback(id, std::move(out));
+    }
+};
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class SaverFiles : public Saver<TSeq> {
+    std::string format;
+public:
+    explicit SaverFiles(std::string fmt, SaveOptions opts = {});
+    void write(size_t id, RunOutputs&& out) override;
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/saver-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -./include/epiworld/database-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4464,6 +4949,7 @@ private:
 
 
 public:
+    RunOutputs get_run_outputs(const SaveOptions& options) const;
 
     #ifdef EPI_DEBUG
     int n_transmissions_potential = 0;
@@ -11423,6 +11909,16 @@ public:
         bool verbose = true,
         int nthreads = 1
         );
+    Model<TSeq>& run_multiple(
+        epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+        Saver<TSeq>& saver, bool reset = true, bool verbose = true,
+        int nthreads = 1);
+private:
+    Model<TSeq>& run_multiple_impl(
+        epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+        std::function<void(size_t,Model<TSeq>*)> fun,
+        bool reset, bool verbose, int nthreads, Saver<TSeq>* saver);
+public:
     ///@}
 
     size_t get_n_viruses() const; ///< Number of viruses in the model
@@ -12343,81 +12839,23 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     )
 {
 
-    // Counting number of %
-    int n_fmt = 0;
-    for (auto & f : fmt)
-        if (f == '%')
-            n_fmt++;
-
-    if (n_fmt != 1)
-        throw std::logic_error("The -fmt- argument must have only one \"%\" symbol.");
-
-    // Listting things to save
-    std::vector< bool > what_to_save = {
-        virus_info,
-        virus_hist,
-        tool_info,
-        tool_hist,
-        total_hist,
-        transmission,
-        transition,
-        reproductive,
-        generation,
-        active_cases,
-        outbreak_size,
-        hospitalizations
+    SaveOptions options;
+    options.total_hist = total_hist;
+    options.virus_info = virus_info;
+    options.virus_hist = virus_hist;
+    options.tool_info = tool_info;
+    options.tool_hist = tool_hist;
+    options.transmission = transmission;
+    options.transition = transition;
+    options.reproductive = reproductive;
+    options.generation = generation;
+    options.active_cases = active_cases;
+    options.outbreak_size = outbreak_size;
+    options.hospitalizations = hospitalizations;
+    auto saver = std::make_shared<SaverFiles<TSeq>>(std::move(fmt), options);
+    return [saver](size_t id, Model<TSeq>* model) {
+        saver->write(id, saver->extract(id, *model));
     };
-
-    std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
-        size_t niter, Model<TSeq> * m
-    ) -> void {
-
-        auto set_saver = [fmt,niter](
-            bool condition,
-            std::string suffix
-        ) -> std::string
-        {
-            if (condition)
-            {
-                std::string var = fmt + suffix;
-                char buff[1024u];
-                snprintf(buff, sizeof(buff), var.c_str(), niter);
-                return std::string(buff);
-            }
-            return std::string("");
-        };
-
-        auto virus_info = set_saver(what_to_save[0u], "_virus_info.csv");
-        auto virus_hist = set_saver(what_to_save[1u], "_virus_hist.csv");
-        auto tool_info = set_saver(what_to_save[2u], "_tool_info.csv");
-        auto tool_hist = set_saver(what_to_save[3u], "_tool_hist.csv");
-        auto total_hist = set_saver(what_to_save[4u], "_total_hist.csv");
-        auto transmission = set_saver(what_to_save[5u], "_transmission.csv");
-        auto transition = set_saver(what_to_save[6u], "_transition.csv");
-        auto reproductive = set_saver(what_to_save[7u], "_reproductive.csv");
-        auto generation = set_saver(what_to_save[8u], "_generation.csv");
-        auto active_cases = set_saver(what_to_save[9u], "_active_cases.csv");
-        auto outbreak_size = set_saver(what_to_save[10u], "_outbreak_size.csv");
-        auto hospitalizations = set_saver(what_to_save[11u], "_hospitalizations.csv");
-
-        m->write_data(
-            virus_info,
-            virus_hist,
-            tool_info,
-            tool_hist,
-            total_hist,
-            transmission,
-            transition,
-            reproductive,
-            generation,
-            active_cases,
-            outbreak_size,
-            hospitalizations
-        );
-
-    };
-
-    return saver;
 }
 
 
@@ -14107,7 +14545,31 @@ inline Model<TSeq> & Model<TSeq>::run(
 }
 
 template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::run_multiple(
+inline Model<TSeq>& Model<TSeq>::run_multiple(
+    epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+    std::function<void(size_t,Model<TSeq>*)> fun,
+    bool reset, bool verbose, int nthreads
+) {
+    return run_multiple_impl(ndays, nexperiments, seed, std::move(fun),
+        reset, verbose, nthreads, nullptr);
+}
+
+template<typename TSeq>
+inline Model<TSeq>& Model<TSeq>::run_multiple(
+    epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+    Saver<TSeq>& saver, bool reset, bool verbose, int nthreads
+) {
+    if (nexperiments == 0 || nthreads < 1)
+        throw std::invalid_argument("Experiments and threads must be positive.");
+    saver.begin(nexperiments);
+    run_multiple_impl(ndays, nexperiments, seed, {}, reset, verbose,
+        nthreads, &saver);
+    saver.end();
+    return *this;
+}
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
     epiworld_fast_uint ndays,
     epiworld_fast_uint nexperiments,
     int seed_,
@@ -14115,10 +14577,11 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     bool reset,
     bool verbose,
     #ifdef _OPENMP
-    int nthreads
+    int nthreads,
     #else
-    int
+    int,
     #endif
+    Saver<TSeq>* saver
 )
 {
 
@@ -14220,9 +14683,10 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     }
     #endif
 
-    #pragma omp parallel shared(these) \
+    std::exception_ptr saver_failure;
+    #pragma omp parallel shared(these, saver_failure) \
         firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, \
-        ndays, nreplicates, nreplicates_csum, seeds_n) default(none)
+        ndays, nreplicates, nreplicates_csum, seeds_n, saver) default(none)
     {
 
         auto iam = static_cast<size_t>(omp_get_thread_num());
@@ -14259,7 +14723,29 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
 
             }
 
-            if (fun)
+            if (saver)
+            {
+                try {
+                    auto out = saver->extract(run_id, *model_ptr);
+                    #pragma omp critical(epiworld_run_multiple_fun)
+                    {
+                        try {
+                            if (!saver_failure)
+                                saver->write(run_id, std::move(out));
+                        } catch (...) {
+                            if (!saver_failure)
+                                saver_failure = std::current_exception();
+                        }
+                    }
+                } catch (...) {
+                    #pragma omp critical(epiworld_run_multiple_fun)
+                    {
+                        if (!saver_failure)
+                            saver_failure = std::current_exception();
+                    }
+                }
+            }
+            else if (fun)
             {
                 // User callbacks often write into shared result containers.
                 // Serialize callback execution to avoid callback-induced races.
@@ -14275,6 +14761,10 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
 
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
+    if (saver_failure) {
+        if (old_verb) verbose_on();
+        std::rethrow_exception(saver_failure);
+    }
 
     #else
 
@@ -14304,7 +14794,9 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
         set_sim_id(n);
         run(ndays, seeds_n[n]);
 
-        if (fun)
+        if (saver)
+            saver->write(n, saver->extract(n, *this));
+        else if (fun)
             fun(n, this);
 
         if (verbose)
@@ -15965,7 +16457,7 @@ inline void Model<TSeq>::post_sampling_prepare_scratch()
     if (post_sampling_scratch.counts.size() == population.size())
         return;
 
-    if (population.size() >= (size_t(1) << 32))
+    if (static_cast<uint64_t>(population.size()) >= (uint64_t(1) << 32))
         throw std::length_error(
             "The post-sampling callback supports populations below 2^32 agents."
         );
@@ -29955,6 +30447,276 @@ inline ModelSEIRNetworkQuarantine<TSeq> & ModelSEIRNetworkQuarantine<TSeq>::init
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -./include/epiworld/models/models.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/saver-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_SAVER_MEAT_HPP
+#define EPIWORLD_SAVER_MEAT_HPP
+
+template<typename TSeq>
+inline RunOutputs DataBase<TSeq>::get_run_outputs(const SaveOptions& o) const {
+    RunOutputs out;
+    if (o.total_hist) {
+        auto& t = out.total_hist;
+        get_hist_total(&t.date, &t.state, &t.counts);
+        t.nviruses.assign(hist_total_nviruses_active.begin(), hist_total_nviruses_active.end());
+    }
+    if (o.virus_info) {
+        auto& t = out.virus_info;
+        for (const auto& v : virus_id) {
+            int id = v.second;
+            t.virus_id.push_back(id);
+            t.virus.push_back(virus_name[id]);
+            t.virus_sequence.push_back(seq_writer(virus_sequence[id]));
+            t.date_recorded.push_back(virus_origin_date[id]);
+            t.parent.push_back(virus_parent_id[id]);
+        }
+    }
+    if (o.virus_hist) {
+        auto& t = out.virus_hist;
+        get_hist_virus(t.date, t.virus_id, t.state, t.n);
+        for (int id : t.virus_id) t.virus.push_back(virus_name[id]);
+    }
+    if (o.tool_info) {
+        auto& t = out.tool_info;
+        for (const auto& tool : tool_id) {
+            int id = tool.second;
+            t.id.push_back(id);
+            t.tool_name.push_back(tool_name[id]);
+            t.tool_sequence.push_back(seq_writer(tool_sequence[id]));
+            t.date_recorded.push_back(tool_origin_date[id]);
+        }
+    }
+    if (o.tool_hist) {
+        auto& t = out.tool_hist;
+        get_hist_tool(t.date, t.id, t.state, t.n);
+    }
+    if (o.transmission) {
+        auto& t = out.transmission;
+        t.date = transmission_date;
+        t.virus_id = transmission_virus;
+        t.source_exposure_date = transmission_source_exposure_date;
+        t.source = transmission_source;
+        t.target = transmission_target;
+        for (int id : t.virus_id) t.virus.push_back(virus_name[id]);
+    }
+    if (o.transition && !hist_transition_matrix.empty()) {
+        // write_data uses from-major order, whereas the public matrix getter
+        // uses to-major order. Preserve the file's ordering here.
+        auto& t = out.transition;
+        const int ns = model->get_states().size();
+        for (int day = 0; day <= model->today(); ++day)
+            for (int from = 0; from < ns; ++from)
+                for (int to = 0; to < ns; ++to) {
+                    int count = hist_transition_matrix[day * ns * ns + to * ns + from];
+                    if (count == 0) continue;
+                    t.date.push_back(day);
+                    t.from.push_back(model->get_states()[from]);
+                    t.to.push_back(model->get_states()[to]);
+                    t.counts.push_back(count);
+                }
+    }
+    if (o.reproductive) {
+        auto& t = out.reproductive;
+        for (const auto& entry : get_reproductive_number()) {
+            t.virus_id.push_back(entry.first[0]);
+            t.virus.push_back(virus_name[entry.first[0]]);
+            t.source.push_back(entry.first[1]);
+            t.source_exposure_date.push_back(entry.first[2]);
+            t.rt.push_back(entry.second);
+        }
+    }
+    if (o.generation) {
+        auto& t = out.generation;
+        get_generation_time(t.source, t.virus, t.source_exposure_date, t.gentime);
+    }
+    if (o.active_cases) {
+        auto& t = out.active_cases;
+        std::vector<int> dates, ids, counts;
+        get_active_cases(dates, ids, counts);
+        for (size_t i = 0; i < counts.size(); ++i) {
+            if (counts[i] <= 0) continue;
+            t.date.push_back(dates[i]);
+            t.virus_id.push_back(ids[i]);
+            t.virus.push_back(virus_name[ids[i]]);
+            t.active_cases.push_back(counts[i]);
+        }
+    }
+    if (o.outbreak_size) {
+        auto& t = out.outbreak_size;
+        std::vector<int> dates, ids, counts;
+        get_outbreak_size(dates, ids, counts);
+        for (size_t i = 0; i < counts.size(); ++i) {
+            if (counts[i] <= 0) continue;
+            t.date.push_back(dates[i]);
+            t.virus_id.push_back(ids[i]);
+            t.virus.push_back(virus_name[ids[i]]);
+            t.outbreak_size.push_back(counts[i]);
+        }
+    }
+    if (o.hospitalizations) {
+        auto& t = out.hospitalizations;
+        std::vector<int> dates, viruses, tools, counts;
+        std::vector<double> weights;
+        get_hospitalizations(dates, viruses, tools, counts, weights);
+        for (size_t i = 0; i < counts.size(); ++i) {
+            if (counts[i] <= 0 && weights[i] <= 0.0) continue;
+            t.date.push_back(dates[i]);
+            t.virus_id.push_back(viruses[i]);
+            t.tool_id.push_back(tools[i]);
+            t.count.push_back(counts[i]);
+            t.weight.push_back(weights[i]);
+        }
+    }
+    return out;
+}
+
+template<typename TSeq>
+inline RunOutputs Saver<TSeq>::extract(size_t id, const Model<TSeq>& model) const {
+    auto out = model.get_db().get_run_outputs(options);
+    out.total_hist.sim_id.assign(out.total_hist.size(), id);
+    out.virus_info.sim_id.assign(out.virus_info.size(), id);
+    out.virus_hist.sim_id.assign(out.virus_hist.size(), id);
+    out.tool_info.sim_id.assign(out.tool_info.size(), id);
+    out.tool_hist.sim_id.assign(out.tool_hist.size(), id);
+    out.transmission.sim_id.assign(out.transmission.size(), id);
+    out.transition.sim_id.assign(out.transition.size(), id);
+    out.reproductive.sim_id.assign(out.reproductive.size(), id);
+    out.generation.sim_id.assign(out.generation.size(), id);
+    out.active_cases.sim_id.assign(out.active_cases.size(), id);
+    out.outbreak_size.sim_id.assign(out.outbreak_size.size(), id);
+    out.hospitalizations.sim_id.assign(out.hospitalizations.size(), id);
+    return out;
+}
+
+template<typename TSeq>
+inline SaverFiles<TSeq>::SaverFiles(std::string fmt, SaveOptions opts) :
+    Saver<TSeq>(opts), format(std::move(fmt)) {
+    // Only accept the integer placeholder used for simulation IDs. Validating
+    // before snprintf prevents undefined behaviour from incompatible formats.
+    if (!std::regex_match(format, std::regex("[^%]*%[-+ #0]*[0-9]*(\\.[0-9]+)?(ll|l|z)?[udi][^%]*")))
+        throw std::invalid_argument("SaverFiles format must contain one integer placeholder.");
+}
+
+template<typename TSeq>
+inline void SaverFiles<TSeq>::write(size_t id, RunOutputs&& out) {
+    const size_t conversion = format.find_first_of("udi", format.find('%'));
+    const bool is_unsigned = format[conversion] == 'u';
+    const auto format_id = [&](auto value) {
+        using Value = decltype(value);
+        if (id > static_cast<size_t>(std::numeric_limits<Value>::max()))
+            throw std::overflow_error("Simulation ID exceeds the filename placeholder range.");
+        const int length = snprintf(nullptr, 0, format.c_str(), value);
+        if (length < 0) throw std::runtime_error("Could not format saver filename.");
+        std::vector<char> buffer(static_cast<size_t>(length) + 1);
+        snprintf(buffer.data(), buffer.size(), format.c_str(), value);
+        return std::string(buffer.data());
+    };
+    std::string prefix;
+    const char length = format[conversion - 1];
+    if (length == 'z') {
+        prefix = is_unsigned ? format_id(id) :
+            format_id(static_cast<std::make_signed_t<size_t>>(id));
+    } else if (length == 'l' && conversion >= 2 && format[conversion - 2] == 'l') {
+        prefix = is_unsigned ? format_id(static_cast<unsigned long long>(id)) :
+            format_id(static_cast<long long>(id));
+    } else if (length == 'l') {
+        prefix = is_unsigned ? format_id(static_cast<unsigned long>(id)) :
+            format_id(static_cast<long>(id));
+    } else {
+        prefix = is_unsigned ? format_id(static_cast<unsigned int>(id)) :
+            format_id(static_cast<int>(id));
+    }
+    if (this->options.total_hist) {
+        std::ofstream file(prefix + "_total_hist.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_total_hist.csv");
+        out.total_hist.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_total_hist.csv");
+    }
+    if (this->options.virus_info) {
+        std::ofstream file(prefix + "_virus_info.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_virus_info.csv");
+        out.virus_info.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_virus_info.csv");
+    }
+    if (this->options.virus_hist) {
+        std::ofstream file(prefix + "_virus_hist.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_virus_hist.csv");
+        out.virus_hist.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_virus_hist.csv");
+    }
+    if (this->options.tool_info) {
+        std::ofstream file(prefix + "_tool_info.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_tool_info.csv");
+        out.tool_info.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_tool_info.csv");
+    }
+    if (this->options.tool_hist) {
+        std::ofstream file(prefix + "_tool_hist.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_tool_hist.csv");
+        out.tool_hist.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_tool_hist.csv");
+    }
+    if (this->options.transmission) {
+        std::ofstream file(prefix + "_transmission.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_transmission.csv");
+        out.transmission.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_transmission.csv");
+    }
+    if (this->options.transition) {
+        std::ofstream file(prefix + "_transition.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_transition.csv");
+        out.transition.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_transition.csv");
+    }
+    if (this->options.reproductive) {
+        std::ofstream file(prefix + "_reproductive.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_reproductive.csv");
+        out.reproductive.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_reproductive.csv");
+    }
+    if (this->options.generation) {
+        std::ofstream file(prefix + "_generation.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_generation.csv");
+        out.generation.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_generation.csv");
+    }
+    if (this->options.active_cases) {
+        std::ofstream file(prefix + "_active_cases.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_active_cases.csv");
+        out.active_cases.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_active_cases.csv");
+    }
+    if (this->options.outbreak_size) {
+        std::ofstream file(prefix + "_outbreak_size.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_outbreak_size.csv");
+        out.outbreak_size.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_outbreak_size.csv");
+    }
+    if (this->options.hospitalizations) {
+        std::ofstream file(prefix + "_hospitalizations.csv");
+        if (!file) throw std::runtime_error("Could not open file " + prefix + "_hospitalizations.csv");
+        out.hospitalizations.write(file);
+        if (!file) throw std::runtime_error("Could not write file " + prefix + "_hospitalizations.csv");
+    }
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/saver-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/

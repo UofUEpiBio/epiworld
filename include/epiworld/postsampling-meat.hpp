@@ -28,7 +28,7 @@ inline void Model<TSeq>::post_sampling_prepare_scratch()
     if (post_sampling_scratch.counts.size() == population.size())
         return;
 
-    if (population.size() >= (size_t(1) << 32))
+    if (static_cast<uint64_t>(population.size()) >= (uint64_t(1) << 32))
         throw std::length_error(
             "The post-sampling callback supports populations below 2^32 agents."
         );

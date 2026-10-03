@@ -1,0 +1,22 @@
+name: WebAssembly
+on:
+  push:
+    branches: [master]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  wasm:
+    runs-on: ubuntu-latest
+    container: emscripten/emsdk:3.1.74
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run in-memory saver example
+        run: |
+          mkdir -p build
+          em++ -O2 -std=c++17 -Wall -Wextra -Werror=shift-count-overflow -fwasm-exceptions -sALLOW_MEMORY_GROWTH examples/wasm-saver.cpp -o build/saver-example.js
+          node build/saver-example.js
+      - name: Build and run saver tests in Node
+        run: |
+          em++ -O1 -std=c++17 -fwasm-exceptions -sALLOW_MEMORY_GROWTH tests/main.cpp tests/40a-savers-files.cpp tests/40b-savers-threads.cpp tests/40c-savers-callback.cpp -o build/saver-tests.js
+          node build/saver-tests.js '[savers]'

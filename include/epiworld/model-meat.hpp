@@ -57,81 +57,23 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     )
 {
 
-    // Counting number of %
-    int n_fmt = 0;
-    for (auto & f : fmt)
-        if (f == '%')
-            n_fmt++;
-
-    if (n_fmt != 1)
-        throw std::logic_error("The -fmt- argument must have only one \"%\" symbol.");
-
-    // Listting things to save
-    std::vector< bool > what_to_save = {
-        virus_info,
-        virus_hist,
-        tool_info,
-        tool_hist,
-        total_hist,
-        transmission,
-        transition,
-        reproductive,
-        generation,
-        active_cases,
-        outbreak_size,
-        hospitalizations
+    SaveOptions options;
+    options.total_hist = total_hist;
+    options.virus_info = virus_info;
+    options.virus_hist = virus_hist;
+    options.tool_info = tool_info;
+    options.tool_hist = tool_hist;
+    options.transmission = transmission;
+    options.transition = transition;
+    options.reproductive = reproductive;
+    options.generation = generation;
+    options.active_cases = active_cases;
+    options.outbreak_size = outbreak_size;
+    options.hospitalizations = hospitalizations;
+    auto saver = std::make_shared<SaverFiles<TSeq>>(std::move(fmt), options);
+    return [saver](size_t id, Model<TSeq>* model) {
+        saver->write(id, saver->extract(id, *model));
     };
-
-    std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
-        size_t niter, Model<TSeq> * m
-    ) -> void {
-
-        auto set_saver = [fmt,niter](
-            bool condition,
-            std::string suffix
-        ) -> std::string
-        {
-            if (condition)
-            {
-                std::string var = fmt + suffix;
-                char buff[1024u];
-                snprintf(buff, sizeof(buff), var.c_str(), niter);
-                return std::string(buff);
-            }
-            return std::string("");
-        };
-
-        auto virus_info = set_saver(what_to_save[0u], "_virus_info.csv");
-        auto virus_hist = set_saver(what_to_save[1u], "_virus_hist.csv");
-        auto tool_info = set_saver(what_to_save[2u], "_tool_info.csv");
-        auto tool_hist = set_saver(what_to_save[3u], "_tool_hist.csv");
-        auto total_hist = set_saver(what_to_save[4u], "_total_hist.csv");
-        auto transmission = set_saver(what_to_save[5u], "_transmission.csv");
-        auto transition = set_saver(what_to_save[6u], "_transition.csv");
-        auto reproductive = set_saver(what_to_save[7u], "_reproductive.csv");
-        auto generation = set_saver(what_to_save[8u], "_generation.csv");
-        auto active_cases = set_saver(what_to_save[9u], "_active_cases.csv");
-        auto outbreak_size = set_saver(what_to_save[10u], "_outbreak_size.csv");
-        auto hospitalizations = set_saver(what_to_save[11u], "_hospitalizations.csv");
-
-        m->write_data(
-            virus_info,
-            virus_hist,
-            tool_info,
-            tool_hist,
-            total_hist,
-            transmission,
-            transition,
-            reproductive,
-            generation,
-            active_cases,
-            outbreak_size,
-            hospitalizations
-        );
-
-    };
-
-    return saver;
 }
 
 
@@ -1821,7 +1763,31 @@ inline Model<TSeq> & Model<TSeq>::run(
 }
 
 template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::run_multiple(
+inline Model<TSeq>& Model<TSeq>::run_multiple(
+    epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+    std::function<void(size_t,Model<TSeq>*)> fun,
+    bool reset, bool verbose, int nthreads
+) {
+    return run_multiple_impl(ndays, nexperiments, seed, std::move(fun),
+        reset, verbose, nthreads, nullptr);
+}
+
+template<typename TSeq>
+inline Model<TSeq>& Model<TSeq>::run_multiple(
+    epiworld_fast_uint ndays, epiworld_fast_uint nexperiments, int seed,
+    Saver<TSeq>& saver, bool reset, bool verbose, int nthreads
+) {
+    if (nexperiments == 0 || nthreads < 1)
+        throw std::invalid_argument("Experiments and threads must be positive.");
+    saver.begin(nexperiments);
+    run_multiple_impl(ndays, nexperiments, seed, {}, reset, verbose,
+        nthreads, &saver);
+    saver.end();
+    return *this;
+}
+
+template<typename TSeq>
+inline Model<TSeq> & Model<TSeq>::run_multiple_impl(
     epiworld_fast_uint ndays,
     epiworld_fast_uint nexperiments,
     int seed_,
@@ -1829,10 +1795,11 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     bool reset,
     bool verbose,
     #ifdef _OPENMP
-    int nthreads
+    int nthreads,
     #else
-    int
+    int,
     #endif
+    Saver<TSeq>* saver
 )
 {
 
@@ -1934,9 +1901,10 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     }
     #endif
 
-    #pragma omp parallel shared(these) \
+    std::exception_ptr saver_failure;
+    #pragma omp parallel shared(these, saver_failure) \
         firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, \
-        ndays, nreplicates, nreplicates_csum, seeds_n) default(none)
+        ndays, nreplicates, nreplicates_csum, seeds_n, saver) default(none)
     {
 
         auto iam = static_cast<size_t>(omp_get_thread_num());
@@ -1973,7 +1941,29 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
 
             }
 
-            if (fun)
+            if (saver)
+            {
+                try {
+                    auto out = saver->extract(run_id, *model_ptr);
+                    #pragma omp critical(epiworld_run_multiple_fun)
+                    {
+                        try {
+                            if (!saver_failure)
+                                saver->write(run_id, std::move(out));
+                        } catch (...) {
+                            if (!saver_failure)
+                                saver_failure = std::current_exception();
+                        }
+                    }
+                } catch (...) {
+                    #pragma omp critical(epiworld_run_multiple_fun)
+                    {
+                        if (!saver_failure)
+                            saver_failure = std::current_exception();
+                    }
+                }
+            }
+            else if (fun)
             {
                 // User callbacks often write into shared result containers.
                 // Serialize callback execution to avoid callback-induced races.
@@ -1989,6 +1979,10 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
 
     // Adjusting the number of replicates
     n_replicates += (nexperiments - nreplicates[0u]);
+    if (saver_failure) {
+        if (old_verb) verbose_on();
+        std::rethrow_exception(saver_failure);
+    }
 
     #else
 
@@ -2018,7 +2012,9 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
         set_sim_id(n);
         run(ndays, seeds_n[n]);
 
-        if (fun)
+        if (saver)
+            saver->write(n, saver->extract(n, *this));
+        else if (fun)
             fun(n, this);
 
         if (verbose)

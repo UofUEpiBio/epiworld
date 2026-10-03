@@ -28,6 +28,10 @@ int main() {
 
 ## Exporting Data
 
+For repeated simulations and language bindings, prefer
+[in-memory savers](in-memory-savers.md). They expose the same tables without
+writing and reparsing temporary files.
+
 The `write_data` method allows for exporting simulation results to external files. This method allows users to specify multiple output files, each corresponding to a specific type of data. For example, one file may contain information about viruses, while another contains the transmission network. The data is written in a tabular format, making it easy to import into statistical software or spreadsheet applications for further analysis.
 
 ```cpp
