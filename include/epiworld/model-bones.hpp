@@ -298,6 +298,7 @@ protected:
     bool transmission_prepare();
     bool transmission_choose_push() const;
     void transmission_push();
+    template<bool Record> void transmission_push_impl();
     void transmission_update_others();
     ///@}
 
@@ -1106,11 +1107,11 @@ public:
      * @name Post-sampling callback
      * @details A callback that receives, for each infectious agent, the agents
      * it was in contact with during the step (see `PostSamplingFun`). The
-     * models whose samplers report contacts (network pull, the mixing models)
-     * collect them only while a callback is installed; otherwise the cost is
-     * one check per sampling operation. While a callback is installed,
-     * network models pull (they do not push). The callback is kept by copies
-     * of the model, including the ones `run_multiple()` makes.
+     * models whose samplers report contacts (network pull and push, the
+     * mixing models) collect them only while a callback is installed;
+     * otherwise the cost is one check per sampling operation (per step in a
+     * push). Pull and push report the same contacts. The callback is kept by
+     * copies of the model, including the ones `run_multiple()` makes.
      *
      * Installing a callback replaces the previous one. The built-in models
      * with contact tracing install `make_contact_tracing_post_sampling()`;
