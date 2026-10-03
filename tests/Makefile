@@ -108,7 +108,8 @@ $(NAME)_SOURCES := \
 	38a-mixing-sampler.cpp \
 	39a-post-sampling-pull.cpp \
 	39b-post-sampling-mixing.cpp \
-	39c-post-sampling-clone.cpp
+	39c-post-sampling-clone.cpp \
+	39d-post-sampling-push.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \

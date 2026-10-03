@@ -94,33 +94,72 @@ inline void Model<TSeq>::post_sampling_dispatch()
     try
     {
 
-        // Counting per infectious agent, remembering the distinct ones
-        for (size_t k = 0u; k < npairs; ++k)
-        {
-            const uint32_t i = sc.pairs[2u * k];
-            if (sc.counts[i]++ == 0u)
-                sc.touched.push_back(i);
-        }
+        // A push visits the carriers in ascending id order, so its pairs are
+        // already grouped by infectious agent: no counting, no sorting.
+        bool grouped_already = true;
+        for (size_t k = 1u; k < npairs; ++k)
+            if (sc.pairs[2u * k] < sc.pairs[2u * (k - 1u)])
+            {
+                grouped_already = false;
+                break;
+            }
 
-        std::sort(sc.touched.begin(), sc.touched.end());
+        const size_t nt = [&]() -> size_t {
 
-        // Turning the counts into start positions
-        const size_t nt = sc.touched.size();
-        sc.starts.resize(nt + 1u);
-        size_t pos = 0u;
-        for (size_t t = 0u; t < nt; ++t)
-        {
-            const uint32_t i = sc.touched[t];
-            sc.starts[t] = pos;
-            pos += sc.counts[i];
-            sc.counts[i] = static_cast< uint32_t >(sc.starts[t]);
-        }
-        sc.starts[nt] = pos;
+            sc.grouped.resize(npairs);
 
-        // Scattering the contacted ids
-        sc.grouped.resize(npairs);
-        for (size_t k = 0u; k < npairs; ++k)
-            sc.grouped[sc.counts[sc.pairs[2u * k]]++] = sc.pairs[2u * k + 1u];
+            if (grouped_already)
+            {
+
+                for (size_t k = 0u; k < npairs; ++k)
+                {
+
+                    const uint32_t i = sc.pairs[2u * k];
+                    if ((k == 0u) || (i != sc.pairs[2u * (k - 1u)]))
+                    {
+                        sc.touched.push_back(i);
+                        sc.starts.push_back(k);
+                    }
+
+                    sc.grouped[k] = sc.pairs[2u * k + 1u];
+
+                }
+
+                sc.starts.push_back(npairs);
+                return sc.touched.size();
+
+            }
+
+            // Counting per infectious agent, remembering the distinct ones
+            for (size_t k = 0u; k < npairs; ++k)
+            {
+                const uint32_t i = sc.pairs[2u * k];
+                if (sc.counts[i]++ == 0u)
+                    sc.touched.push_back(i);
+            }
+
+            std::sort(sc.touched.begin(), sc.touched.end());
+
+            // Turning the counts into start positions
+            const size_t nd = sc.touched.size();
+            sc.starts.resize(nd + 1u);
+            size_t pos = 0u;
+            for (size_t t = 0u; t < nd; ++t)
+            {
+                const uint32_t i = sc.touched[t];
+                sc.starts[t] = pos;
+                pos += sc.counts[i];
+                sc.counts[i] = static_cast< uint32_t >(sc.starts[t]);
+            }
+            sc.starts[nd] = pos;
+
+            // Scattering the contacted ids
+            for (size_t k = 0u; k < npairs; ++k)
+                sc.grouped[sc.counts[sc.pairs[2u * k]]++] = sc.pairs[2u * k + 1u];
+
+            return nd;
+
+        }();
 
         // Callbacks must not retain the view: the buffers are reused.
         for (size_t t = 0u; t < nt; ++t)

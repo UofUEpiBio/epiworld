@@ -11017,6 +11017,7 @@ protected:
     bool transmission_prepare();
     bool transmission_choose_push() const;
     void transmission_push();
+    template<bool Record> void transmission_push_impl();
     void transmission_update_others();
     ///@}
 
@@ -11825,11 +11826,11 @@ public:
      * @name Post-sampling callback
      * @details A callback that receives, for each infectious agent, the agents
      * it was in contact with during the step (see `PostSamplingFun`). The
-     * models whose samplers report contacts (network pull, the mixing models)
-     * collect them only while a callback is installed; otherwise the cost is
-     * one check per sampling operation. While a callback is installed,
-     * network models pull (they do not push). The callback is kept by copies
-     * of the model, including the ones `run_multiple()` makes.
+     * models whose samplers report contacts (network pull and push, the
+     * mixing models) collect them only while a callback is installed;
+     * otherwise the cost is one check per sampling operation (per step in a
+     * push). Pull and push report the same contacts. The callback is kept by
+     * copies of the model, including the ones `run_multiple()` makes.
      *
      * Installing a callback replaces the previous one. The built-in models
      * with contact tracing install `make_contact_tracing_post_sampling()`;
@@ -14328,14 +14329,13 @@ inline void Model<TSeq>::update_state() {
     // same distribution, and cheaper while few agents carry a virus. Directed
     // networks always pull: a tie there is kept by its source only (see
     // is_directed()), so it is not visible from both ends.
-    // A post-sampling callback needs the contacts the pull samplers report, so
-    // the models pull while one is installed.
+    //
+    // With a post-sampling callback, pull and push report the same contacts.
     if (post_sampling_on)
         post_sampling_scratch.clear();
 
     const bool push =
-        !post_sampling_on && transmission_prepare() && !directed &&
-        transmission_choose_push();
+        transmission_prepare() && !directed && transmission_choose_push();
 
     transmission_mode_last = push ?
         TransmissionMode::push : TransmissionMode::pull;
@@ -16031,33 +16031,72 @@ inline void Model<TSeq>::post_sampling_dispatch()
     try
     {
 
-        // Counting per infectious agent, remembering the distinct ones
-        for (size_t k = 0u; k < npairs; ++k)
-        {
-            const uint32_t i = sc.pairs[2u * k];
-            if (sc.counts[i]++ == 0u)
-                sc.touched.push_back(i);
-        }
+        // A push visits the carriers in ascending id order, so its pairs are
+        // already grouped by infectious agent: no counting, no sorting.
+        bool grouped_already = true;
+        for (size_t k = 1u; k < npairs; ++k)
+            if (sc.pairs[2u * k] < sc.pairs[2u * (k - 1u)])
+            {
+                grouped_already = false;
+                break;
+            }
 
-        std::sort(sc.touched.begin(), sc.touched.end());
+        const size_t nt = [&]() -> size_t {
 
-        // Turning the counts into start positions
-        const size_t nt = sc.touched.size();
-        sc.starts.resize(nt + 1u);
-        size_t pos = 0u;
-        for (size_t t = 0u; t < nt; ++t)
-        {
-            const uint32_t i = sc.touched[t];
-            sc.starts[t] = pos;
-            pos += sc.counts[i];
-            sc.counts[i] = static_cast< uint32_t >(sc.starts[t]);
-        }
-        sc.starts[nt] = pos;
+            sc.grouped.resize(npairs);
 
-        // Scattering the contacted ids
-        sc.grouped.resize(npairs);
-        for (size_t k = 0u; k < npairs; ++k)
-            sc.grouped[sc.counts[sc.pairs[2u * k]]++] = sc.pairs[2u * k + 1u];
+            if (grouped_already)
+            {
+
+                for (size_t k = 0u; k < npairs; ++k)
+                {
+
+                    const uint32_t i = sc.pairs[2u * k];
+                    if ((k == 0u) || (i != sc.pairs[2u * (k - 1u)]))
+                    {
+                        sc.touched.push_back(i);
+                        sc.starts.push_back(k);
+                    }
+
+                    sc.grouped[k] = sc.pairs[2u * k + 1u];
+
+                }
+
+                sc.starts.push_back(npairs);
+                return sc.touched.size();
+
+            }
+
+            // Counting per infectious agent, remembering the distinct ones
+            for (size_t k = 0u; k < npairs; ++k)
+            {
+                const uint32_t i = sc.pairs[2u * k];
+                if (sc.counts[i]++ == 0u)
+                    sc.touched.push_back(i);
+            }
+
+            std::sort(sc.touched.begin(), sc.touched.end());
+
+            // Turning the counts into start positions
+            const size_t nd = sc.touched.size();
+            sc.starts.resize(nd + 1u);
+            size_t pos = 0u;
+            for (size_t t = 0u; t < nd; ++t)
+            {
+                const uint32_t i = sc.touched[t];
+                sc.starts[t] = pos;
+                pos += sc.counts[i];
+                sc.counts[i] = static_cast< uint32_t >(sc.starts[t]);
+            }
+            sc.starts[nd] = pos;
+
+            // Scattering the contacted ids
+            for (size_t k = 0u; k < npairs; ++k)
+                sc.grouped[sc.counts[sc.pairs[2u * k]]++] = sc.pairs[2u * k + 1u];
+
+            return nd;
+
+        }();
 
         // Callbacks must not retain the view: the buffers are reused.
         for (size_t t = 0u; t < nt; ++t)
@@ -20936,6 +20975,19 @@ template<typename TSeq>
 inline void Model<TSeq>::transmission_push()
 {
 
+    // The recording path is chosen once per step, not per contact
+    if (post_sampling_on)
+        transmission_push_impl<true>();
+    else
+        transmission_push_impl<false>();
+
+}
+
+template<typename TSeq>
+template<bool Record>
+inline void Model<TSeq>::transmission_push_impl()
+{
+
     const size_t ns = static_cast< size_t >(nstates);
 
     if (push_slot.size() != population.size())
@@ -21006,6 +21058,13 @@ inline void Model<TSeq>::transmission_push()
                 // Pulling only updates queued agents.
                 if (use_queuing && (queue[i_id] <= 0))
                     continue;
+
+                // The post-sampling callback sees every eligible contact, also
+                // the ones that cannot transmit, as a pull reports them. The
+                // carriers are visited in ascending id order, so the pairs
+                // come out grouped by infectious agent.
+                if constexpr (Record)
+                    register_sampled_contact(j_id, i_id);
 
                 // Exactly the expression the pull uses, in the same order.
                 epiworld_double p =
