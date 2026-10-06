@@ -66,68 +66,30 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     if (n_fmt != 1)
         throw std::logic_error("The -fmt- argument must have only one \"%\" symbol.");
 
-    // Listting things to save
-    std::vector< bool > what_to_save = {
-        virus_info,
-        virus_hist,
-        tool_info,
-        tool_hist,
-        total_hist,
-        transmission,
-        transition,
-        reproductive,
-        generation,
-        active_cases,
-        outbreak_size,
-        hospitalizations
+    // Outputs to save, in the order of the arguments (as run_output_names())
+    const std::vector< bool > what_to_save = {
+        virus_info, virus_hist, tool_info, tool_hist, total_hist,
+        transmission, transition, reproductive, generation, active_cases,
+        outbreak_size, hospitalizations
     };
 
-    std::function<void(size_t,Model<TSeq>*)> saver = [fmt,what_to_save](
+    std::vector< std::string > whats;
+    for (size_t i = 0u; i < what_to_save.size(); ++i)
+        if (what_to_save[i])
+            whats.push_back(run_output_names()[i]);
+
+    std::function<void(size_t,Model<TSeq>*)> saver = [fmt,whats](
         size_t niter, Model<TSeq> * m
     ) -> void {
 
-        auto set_saver = [fmt,niter](
-            bool condition,
-            std::string suffix
-        ) -> std::string
+        auto out = m->get_db().get_run_outputs(whats);
+
+        for (const auto & what : whats)
         {
-            if (condition)
-            {
-                std::string var = fmt + suffix;
-                char buff[1024u];
-                snprintf(buff, sizeof(buff), var.c_str(), niter);
-                return std::string(buff);
-            }
-            return std::string("");
-        };
-
-        auto virus_info = set_saver(what_to_save[0u], "_virus_info.csv");
-        auto virus_hist = set_saver(what_to_save[1u], "_virus_hist.csv");
-        auto tool_info = set_saver(what_to_save[2u], "_tool_info.csv");
-        auto tool_hist = set_saver(what_to_save[3u], "_tool_hist.csv");
-        auto total_hist = set_saver(what_to_save[4u], "_total_hist.csv");
-        auto transmission = set_saver(what_to_save[5u], "_transmission.csv");
-        auto transition = set_saver(what_to_save[6u], "_transition.csv");
-        auto reproductive = set_saver(what_to_save[7u], "_reproductive.csv");
-        auto generation = set_saver(what_to_save[8u], "_generation.csv");
-        auto active_cases = set_saver(what_to_save[9u], "_active_cases.csv");
-        auto outbreak_size = set_saver(what_to_save[10u], "_outbreak_size.csv");
-        auto hospitalizations = set_saver(what_to_save[11u], "_hospitalizations.csv");
-
-        m->write_data(
-            virus_info,
-            virus_hist,
-            tool_info,
-            tool_hist,
-            total_hist,
-            transmission,
-            transition,
-            reproductive,
-            generation,
-            active_cases,
-            outbreak_size,
-            hospitalizations
-        );
+            char buff[1024u];
+            snprintf(buff, sizeof(buff), (fmt + "_" + what + ".csv").c_str(), niter);
+            write_table(buff, out.at(what));
+        }
 
     };
 
