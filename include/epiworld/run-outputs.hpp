@@ -53,6 +53,10 @@ inline const std::vector< std::string > & run_output_names()
  * @brief Writes a table as a space-separated file with a header.
  *
  * Strings are double-quoted, except for the `*_sequence` columns.
+ *
+ * In `EPI_DEBUG` builds, each line is prefixed with the id of the thread that
+ * wrote it (a leading `thread` column), as the CSVs always were. It describes
+ * the writer, not the simulation, so it is not part of `OutputTable`.
  */
 inline void write_table(const std::string & fn, const OutputTable & table)
 {
