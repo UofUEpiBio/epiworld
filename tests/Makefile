@@ -111,7 +111,8 @@ $(NAME)_SOURCES := \
 	39c-post-sampling-clone.cpp \
 	39d-post-sampling-push.cpp \
 	40a-saver-memory-files.cpp \
-	40b-saver-memory-threads.cpp
+	40b-saver-memory-threads.cpp \
+	41-agent-mutate-virus.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
