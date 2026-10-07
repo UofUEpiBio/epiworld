@@ -1,4 +1,7 @@
 version: 1
+defaults:
+  # Releases are published per component: epiworld-v0.17.1, measles-v0.4.0.
+  tag-pattern: "{group}-v{version}"
 groups:
   epiworld:
     paths:
