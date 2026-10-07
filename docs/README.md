@@ -46,6 +46,11 @@ hide:
       <p class="lang-logo-title">Python</p>
       <p class="lang-logo-text">Available both on GitHub and the Python Package Index (PyPI).</p>
     </a>
+    <a href="https://github.com/UofUEpiBio/epiworldjs" class="lang-logo-card" aria-label="JavaScript">
+      <img src="assets/img/js-logo.svg" alt="JavaScript logo" style="width:100px">
+      <p class="lang-logo-title">JavaScript</p>
+      <p class="lang-logo-text">Runs in the browser through WebAssembly, no server needed.</p>
+    </a>
   </div>
 </div>
 
