@@ -384,6 +384,11 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
         v.set_id(new_id);
         v.set_date(model->today());
 
+        // A new founder starts a lineage (mutations keep it). Lineages
+        // 63 and above share the overflow bit, which tools cannot target.
+        v.lineage_id  = static_cast< int >(new_id);
+        v.lineage_bit = uint64_t(1) << std::min< epiworld_fast_uint >(new_id, 63u);
+
         today_total_nviruses_active++;
 
     }

@@ -35,7 +35,7 @@
 
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 18
+#define EPIWORLD_VERSION_MINOR 19
 #define EPIWORLD_VERSION_PATCH 0
 
 #define EPIWORLD_VERSION_PRERELEASE ""
@@ -5394,6 +5394,11 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
         v.set_id(new_id);
         v.set_date(model->today());
 
+        // A new founder starts a lineage (mutations keep it). Lineages
+        // 63 and above share the overflow bit, which tools cannot target.
+        v.lineage_id  = static_cast< int >(new_id);
+        v.lineage_bit = uint64_t(1) << std::min< epiworld_fast_uint >(new_id, 63u);
+
         today_total_nviruses_active++;
 
     }
@@ -10062,6 +10067,9 @@ class Virus;
 template<typename TSeq>
 class Model;
 
+template<typename TSeq>
+class Tool;
+
 /**
  * @brief Virus
  * 
@@ -10077,6 +10085,7 @@ class Virus {
     friend class Agent<TSeq>;
     friend class Model<TSeq>;
     friend class DataBase<TSeq>;
+    friend class Tool<TSeq>;
 private:
     
     Agent<TSeq> * agent = nullptr;
@@ -10087,6 +10096,8 @@ private:
     std::string virus_name = "unknown virus";
     int date = -99;
     int id   = -99;    
+    int lineage_id = -99; ///< Id of the founding virus (kept across mutations).
+    uint64_t lineage_bit = uint64_t(1) << 63; ///< Bit matched against Tool::target_mask.
     epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
     epiworld_fast_int state_post    = -99; ///< Change of state when removed from agent.
     epiworld_fast_int state_removed = -99; ///< Change of state when agent is removed
@@ -10151,6 +10162,18 @@ public:
 
     void set_id(int idx);
     int get_id() const;
+
+    /**
+     * @brief Id of the virus lineage
+     * 
+     * The id assigned to the founding virus when it was added to the model
+     * (see `Model::add_virus()`). Mutations change the virus id but keep
+     * the lineage id, so all variants of a virus share it. Tools target
+     * viruses by lineage (see `Tool::add_target()`).
+     * 
+     * @return int The lineage id (-99 if the virus has not been recorded).
+     */
+    int get_lineage_id() const;
 
     /**
      * @name Get and set the tool functions
@@ -10552,6 +10575,9 @@ protected:
 
     ToolToAgentFun<TSeq> dist = nullptr;
 
+    /// Bitmask of targeted virus lineages (all ones: every virus).
+    uint64_t target_mask = ~uint64_t(0);
+
     epiworld_fast_int state_init = -99;
     epiworld_fast_int state_post = -99;
 
@@ -10609,6 +10635,31 @@ public:
     virtual void set_transmission_reduction(epiworld_double prob);
     virtual void set_recovery_enhancer(epiworld_double prob);
     virtual void set_death_reduction(epiworld_double prob);
+    ///@}
+
+    /**
+     * @name Virus targets
+     * 
+     * @details
+     * By default, a tool acts on every virus. Adding targets restricts the
+     * tool (all four effects: susceptibility and transmission reduction,
+     * recovery enhancer, and death reduction) to the listed virus lineages.
+     * A lineage is a virus added with `Model::add_virus()` together with all
+     * of its mutations, so a tool targeting a virus also acts on its
+     * variants. Lineage ids are the virus ids assigned by
+     * `Model::add_virus()`; only lineages 0 to 62 can be targeted.
+     * 
+     * @param lineage_id Id of the virus lineage (see
+     * `Virus::get_lineage_id()`).
+     * @param v A virus already added to the model.
+     */
+    ///@{
+    void add_target(int lineage_id);
+    void add_target(const Virus<TSeq> & v);
+    void set_targets(const std::vector< int > & lineage_ids);
+    std::vector< int > get_targets() const; ///< Empty if the tool acts on every virus.
+    void clear_targets();
+    bool targets(const Virus<TSeq> & v) const;
     ///@}
 
     void set_name(std::string name);
@@ -12798,7 +12849,12 @@ inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
+    {
+        if (!(tool->target_mask & v->lineage_bit))
+            continue;
+
         total *= (1.0 - tool->get_susceptibility_reduction(v, this));
+    }
 
     return 1.0 - total;
 
@@ -12812,7 +12868,12 @@ inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
+    {
+        if (!(tool->target_mask & v->lineage_bit))
+            continue;
+
         total *= (1.0 - tool->get_transmission_reduction(v, this));
+    }
 
     return (1.0 - total);
 
@@ -12826,7 +12887,12 @@ inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
+    {
+        if (!(tool->target_mask & v->lineage_bit))
+            continue;
+
         total *= (1.0 - tool->get_recovery_enhancer(v, this));
+    }
 
     return 1.0 - total;
 
@@ -12841,6 +12907,9 @@ inline epiworld_double Model<TSeq>::death_reduction_mixer(
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
     {
+        if (!(tool->target_mask & v->lineage_bit))
+            continue;
+
         total *= (1.0 - tool->get_death_reduction(v, this));
     }
 
@@ -16602,6 +16671,8 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
       virus_name(other.virus_name),
       date(other.date),
       id(other.id),
+      lineage_id(other.lineage_id),
+      lineage_bit(other.lineage_bit),
       state_init(other.state_init),
       state_post(other.state_post),
       state_removed(other.state_removed),
@@ -16620,6 +16691,8 @@ inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
       virus_name(std::move(other.virus_name)),
       date(other.date),
       id(other.id),
+      lineage_id(other.lineage_id),
+      lineage_bit(other.lineage_bit),
       state_init(other.state_init),
       state_post(other.state_post),
       state_removed(other.state_removed),
@@ -16641,6 +16714,8 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
         virus_name = other.virus_name;
         date = other.date;
         id = other.id;
+        lineage_id = other.lineage_id;
+        lineage_bit = other.lineage_bit;
         state_init = other.state_init;
         state_post = other.state_post;
         state_removed = other.state_removed;
@@ -16662,6 +16737,8 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
         virus_name = std::move(other.virus_name);
         date = other.date;
         id = other.id;
+        lineage_id = other.lineage_id;
+        lineage_bit = other.lineage_bit;
         state_init = other.state_init;
         state_post = other.state_post;
         state_removed = other.state_removed;
@@ -16751,6 +16828,12 @@ inline int Virus<TSeq>::get_id() const
     
     return id;
 
+}
+
+template<typename TSeq>
+inline int Virus<TSeq>::get_lineage_id() const
+{
+    return lineage_id;
 }
 
 template<typename TSeq>
@@ -17969,6 +18052,79 @@ inline std::string Tool<TSeq>::get_name() const {
 }
 
 template<typename TSeq>
+inline void Tool<TSeq>::add_target(int lineage_id)
+{
+
+    if ((lineage_id < 0) || (lineage_id >= 63))
+        throw std::range_error(
+            std::string("The virus lineage id ") +
+            std::to_string(lineage_id) +
+            std::string(" cannot be targeted. Only lineages 0 to 62 can be ") +
+            std::string("targeted by tools.")
+        );
+
+    // The first target replaces the default (every virus)
+    if (target_mask == ~uint64_t(0))
+        target_mask = 0u;
+
+    target_mask |= uint64_t(1) << lineage_id;
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::add_target(const Virus<TSeq> & v)
+{
+
+    if (v.get_lineage_id() < 0)
+        throw std::logic_error(
+            std::string("The virus \"") + v.get_name() +
+            std::string("\" has no lineage id. Add it to the model with ") +
+            std::string("Model::add_virus() before targeting it.")
+        );
+
+    add_target(v.get_lineage_id());
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::set_targets(const std::vector< int > & lineage_ids)
+{
+
+    clear_targets();
+    for (auto id : lineage_ids)
+        add_target(id);
+
+}
+
+template<typename TSeq>
+inline std::vector< int > Tool<TSeq>::get_targets() const
+{
+
+    std::vector< int > res;
+    if (target_mask == ~uint64_t(0))
+        return res;
+
+    for (int i = 0; i < 63; ++i)
+        if (target_mask & (uint64_t(1) << i))
+            res.push_back(i);
+
+    return res;
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::clear_targets()
+{
+    target_mask = ~uint64_t(0);
+}
+
+template<typename TSeq>
+inline bool Tool<TSeq>::targets(const Virus<TSeq> & v) const
+{
+    return (target_mask & v.lineage_bit) != 0u;
+}
+
+template<typename TSeq>
 inline Agent<TSeq> * Tool<TSeq>::get_agent()
 {
     return this->agent;
@@ -18083,6 +18239,9 @@ inline bool Tool<std::vector<int>>::operator==(
     if (queue_post != other.queue_post)
         return false;
 
+    if (target_mask != other.target_mask)
+        return false;
+
 
     return true;
 
@@ -18118,6 +18277,9 @@ inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
     if (queue_post != other.queue_post)
         return false;
 
+    if (target_mask != other.target_mask)
+        return false;
+
     return true;
 
 }
@@ -18133,6 +18295,14 @@ inline void Tool<TSeq>::print() const
     printf_epiworld("state_post : %i\n", static_cast<int>(state_post));
     printf_epiworld("queue_init : %i\n", static_cast<int>(queue_init));
     printf_epiworld("queue_post : %i\n", static_cast<int>(queue_post));
+
+    if (target_mask != ~uint64_t(0))
+    {
+        std::string tgts;
+        for (auto i : get_targets())
+            tgts += (tgts.empty() ? "" : ", ") + std::to_string(i);
+        printf_epiworld("targets    : %s\n", tgts.c_str());
+    }
 
 }
 

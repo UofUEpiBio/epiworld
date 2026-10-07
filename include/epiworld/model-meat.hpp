@@ -482,7 +482,12 @@ inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
+    {
+        if (!(tool->target_mask & v->lineage_bit))
+            continue;
+
         total *= (1.0 - tool->get_susceptibility_reduction(v, this));
+    }
 
     return 1.0 - total;
 
@@ -496,7 +501,12 @@ inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
+    {
+        if (!(tool->target_mask & v->lineage_bit))
+            continue;
+
         total *= (1.0 - tool->get_transmission_reduction(v, this));
+    }
 
     return (1.0 - total);
 
@@ -510,7 +520,12 @@ inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
+    {
+        if (!(tool->target_mask & v->lineage_bit))
+            continue;
+
         total *= (1.0 - tool->get_recovery_enhancer(v, this));
+    }
 
     return 1.0 - total;
 
@@ -525,6 +540,9 @@ inline epiworld_double Model<TSeq>::death_reduction_mixer(
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
     {
+        if (!(tool->target_mask & v->lineage_bit))
+            continue;
+
         total *= (1.0 - tool->get_death_reduction(v, this));
     }
 
