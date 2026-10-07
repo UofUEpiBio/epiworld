@@ -69,6 +69,19 @@ int main() {
 }
 ```
 
+#### Keeping results in memory
+`SaverMemory` is a saver that keeps the outputs in memory instead of writing files. Pick the outputs by name (the suffixes of the CSV files: `total_hist`, `virus_info`, `virus_hist`, `tool_info`, `tool_hist`, `transmission`, `transition`, `reproductive`, `generation`, `active_cases`, `outbreak_size`, `hospitalizations`). Each output is a column-oriented `OutputTable` with exactly the columns of the matching CSV, so it can be converted to a data frame, a dict of arrays, etc. without parsing text.
+
+```cpp
+SaverMemory saver({"total_hist", "transition"});
+model.run_multiple(30, 10, 42, saver, true, true, 4);
+
+RunOutputs results = saver.results(); /* All simulations, with a leading `sim_id` column. */
+const OutputTable & hist = results.at("total_hist");
+```
+
+Results are stored by simulation id, so they do not depend on the number of threads. Call `saver.clear()` before reusing a saver. To use the tables of a single simulation from your own callback, call `model->get_db().get_run_outputs({"total_hist"})`.
+
 To access this information, refer to the [Data Collection and Analysis](data-collection-and-analysis.md) documentation.
 
 ## See Also

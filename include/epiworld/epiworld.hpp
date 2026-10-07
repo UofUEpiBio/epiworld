@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <cassert>
 #include <atomic>
+#include <variant>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -78,6 +79,7 @@ namespace epiworld {
     #include "hospitalizationstracker-bones.hpp"
     #include "hospitalizationstracker-meat.hpp"
 
+    #include "run-outputs.hpp"
     #include "database-bones.hpp"
     #include "database-meat.hpp"
     #include "adjlist-bones.hpp"
