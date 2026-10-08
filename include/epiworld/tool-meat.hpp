@@ -394,7 +394,7 @@ inline std::string Tool<TSeq>::get_name() const {
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::add_target(int lineage_id)
+inline uint64_t Tool<TSeq>::target_bit(int lineage_id)
 {
 
     if ((lineage_id < 0) || (lineage_id >= 63))
@@ -405,11 +405,21 @@ inline void Tool<TSeq>::add_target(int lineage_id)
             std::string("targeted by tools.")
         );
 
+    return uint64_t(1) << lineage_id;
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::add_target(int lineage_id)
+{
+
+    uint64_t bit = target_bit(lineage_id);
+
     // The first target replaces the default (every virus)
     if (target_mask == ~uint64_t(0))
         target_mask = 0u;
 
-    target_mask |= uint64_t(1) << lineage_id;
+    target_mask |= bit;
 
 }
 
@@ -432,9 +442,12 @@ template<typename TSeq>
 inline void Tool<TSeq>::set_targets(const std::vector< int > & lineage_ids)
 {
 
-    clear_targets();
+    // Validate every id before touching the current targets
+    uint64_t mask = lineage_ids.empty() ? ~uint64_t(0) : 0u;
     for (auto id : lineage_ids)
-        add_target(id);
+        mask |= target_bit(id);
+
+    target_mask = mask;
 
 }
 

@@ -4713,8 +4713,10 @@ public:
      * Since viruses are originated in the agent, the numbers simply move around.
      * From the parent virus to the new virus. And the total number of infected
      * does not change.
+     * @param founder `true` when `Model::add_virus()` registers the virus,
+     * which then starts its own lineage (unless its sequence is on record).
      */
-    void record_virus(Virus<TSeq> & v);
+    void record_virus(Virus<TSeq> & v, bool founder = false);
     void record_tool(Tool<TSeq> & t);
     void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
     void reset();
@@ -5341,7 +5343,7 @@ inline void DataBase<TSeq>::record()
 }
 
 template<typename TSeq>
-inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
+inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v, bool founder)
 {
 
     // If no sequence, then need to add one. This is regardless of the case
@@ -5360,25 +5362,60 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
                 ));        
     }
 
+    std::vector< int > hash;
+    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
+    {
+        hash = seq_hasher(v.get_sequence());
+    }
+    else
+    {
+        hash = seq_hasher(*v.get_sequence());
+    }
+
+    // Lineages 63 and above share the overflow bit, which tools cannot target
+    auto set_lineage = [&v](int lineage_id) {
+        v.lineage_id  = lineage_id;
+        v.lineage_bit = uint64_t(1) << std::min(lineage_id, 63);
+    };
+
+    // A virus added to the model founds a lineage. Its id may come from
+    // another model, so only its sequence identifies it here.
+    if (founder)
+    {
+
+        auto match = virus_id.find(hash);
+        if (match == virus_id.end())
+            v.set_id(-99);
+        else
+        {
+            // Already on record (e.g., added twice): keep its lineage
+            int id = static_cast< int >(match->second);
+            v.set_id(id);
+            v.set_date(virus_origin_date[id]);
+
+            while (virus_parent_id[id] >= 0)
+                id = virus_parent_id[id];
+
+            set_lineage(id);
+            return;
+        }
+
+    }
+
     // Negative id -> virus hasn't been recorded
     if (v.get_id() < 0)
     {
 
         epiworld_fast_uint new_id = virus_id.size();
         virus_name.push_back(v.get_name());
+        virus_id[hash] = new_id;
 
-        // Generating the hash
-        std::vector< int > hash;
         EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
         {
-            hash = seq_hasher(v.get_sequence());
-            virus_id[hash] = new_id;
             virus_sequence.push_back(v.get_sequence());
         }
         else
         {
-            hash = seq_hasher(*v.get_sequence());
-            virus_id[hash] = new_id;
             virus_sequence.push_back(*v.get_sequence());
         }
 
@@ -5394,10 +5431,8 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
         v.set_id(new_id);
         v.set_date(model->today());
 
-        // A new founder starts a lineage (mutations keep it). Lineages
-        // 63 and above share the overflow bit, which tools cannot target.
-        v.lineage_id  = static_cast< int >(new_id);
-        v.lineage_bit = uint64_t(1) << std::min< epiworld_fast_uint >(new_id, 63u);
+        // A new founder starts a lineage (mutations keep it)
+        set_lineage(static_cast< int >(new_id));
 
         today_total_nviruses_active++;
 
@@ -5407,15 +5442,6 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v)
              // The new sequence is new.
 
         // Updating registry
-        std::vector< int > hash;
-        EPI_IF_TSEQ_LESS_EQ_INT(TSeq)
-        {
-            hash = seq_hasher(v.get_sequence());
-        }
-        else
-        {
-            hash = seq_hasher(*v.get_sequence());
-        }
         epiworld_fast_uint old_id = v.get_id();
         epiworld_fast_uint new_id;
 
@@ -10577,6 +10603,7 @@ protected:
 
     /// Bitmask of targeted virus lineages (all ones: every virus).
     uint64_t target_mask = ~uint64_t(0);
+    static uint64_t target_bit(int lineage_id); ///< Throws for ids out of range.
 
     epiworld_fast_int state_init = -99;
     epiworld_fast_int state_post = -99;
@@ -13481,7 +13508,7 @@ inline void Model<TSeq>::add_virus(
             );
 
     // Recording the variant
-    db.record_virus(v);
+    db.record_virus(v, true);
 
     // Adding new virus
     auto cloned = v.clone_ptr();
@@ -18052,7 +18079,7 @@ inline std::string Tool<TSeq>::get_name() const {
 }
 
 template<typename TSeq>
-inline void Tool<TSeq>::add_target(int lineage_id)
+inline uint64_t Tool<TSeq>::target_bit(int lineage_id)
 {
 
     if ((lineage_id < 0) || (lineage_id >= 63))
@@ -18063,11 +18090,21 @@ inline void Tool<TSeq>::add_target(int lineage_id)
             std::string("targeted by tools.")
         );
 
+    return uint64_t(1) << lineage_id;
+
+}
+
+template<typename TSeq>
+inline void Tool<TSeq>::add_target(int lineage_id)
+{
+
+    uint64_t bit = target_bit(lineage_id);
+
     // The first target replaces the default (every virus)
     if (target_mask == ~uint64_t(0))
         target_mask = 0u;
 
-    target_mask |= uint64_t(1) << lineage_id;
+    target_mask |= bit;
 
 }
 
@@ -18090,9 +18127,12 @@ template<typename TSeq>
 inline void Tool<TSeq>::set_targets(const std::vector< int > & lineage_ids)
 {
 
-    clear_targets();
+    // Validate every id before touching the current targets
+    uint64_t mask = lineage_ids.empty() ? ~uint64_t(0) : 0u;
     for (auto id : lineage_ids)
-        add_target(id);
+        mask |= target_bit(id);
+
+    target_mask = mask;
 
 }
 

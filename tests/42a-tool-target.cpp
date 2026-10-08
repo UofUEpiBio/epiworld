@@ -31,6 +31,11 @@ EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
     REQUIRE(tool.targets(model.get_virus(0)));
     REQUIRE_FALSE(tool.targets(virus_b));
 
+    // Rejected updates keep the previous targets
+    REQUIRE_THROWS_AS(tool.set_targets({63}), std::range_error);
+    REQUIRE_THROWS_AS(tool.set_targets({1, -1}), std::range_error);
+    REQUIRE(tool.get_targets() == std::vector< int >{0});
+
     model.add_tool(tool);
     model.run(30, 1231);
 

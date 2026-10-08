@@ -1114,7 +1114,7 @@ inline void Model<TSeq>::add_virus(
             );
 
     // Recording the variant
-    db.record_virus(v);
+    db.record_virus(v, true);
 
     // Adding new virus
     auto cloned = v.clone_ptr();
