@@ -1,66 +1,43 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-#
-# See https://github.com/r-lib/actions/tree/master/examples#readme for
-# additional example workflows available for the R community.
-
 name: Code coverage
 
 on: [pull_request]
 
-jobs:        
+# A new push to the same PR supersedes the coverage run in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
   coverage:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v6
 
+      # clang-18 and llvm-18 (llvm-profdata, llvm-cov) ship with the runner image.
       - name: Install dependencies
         run: |
           sudo apt-get update && \
-          sudo apt-get install -y \
-            lcov \
-            libomp-18-dev \
-            clang-18 \
-            clang-tools-18 \
-            llvm-18 \
-            libxml-libxml-perl \
-            cpanminus && \
-          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100 && \
-          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-18 100 && \
-          sudo update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-18 100 && \
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/llvm-cov-18 100 && \
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-18 100 && \
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-18 100       
+          sudo apt-get install -y libxml-libxml-perl cpanminus
 
       - name: Cache cpanm
         uses: actions/cache@v5
         with:
           path: ~/.cpanm
           key: "${{ runner.os }}-llvm18-cpanm-${{ hashFiles('cpanfile') }}"
-  
-      - name: Install Perl modules
-        shell: bash
-        run: |
-          if [ "$(uname)" = "Darwin" ]; then
-            export PKG_CONFIG_PATH="$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH"
-          fi
-          cpanm --notest --installdeps .
 
+      - name: Install Perl modules
+        run: cpanm --notest --installdeps .
+
+      # Clang source-based coverage; WITH_COVERAGE=1 also turns OpenMP off.
       - name: Generate coverage
         run: |
-          if [ "$(uname)" = "Darwin" ]; then
-            CORES=$(sysctl -n hw.ncpu)
-          else
-            CORES=$(nproc)
-          fi
-        
-          VERBOSE=1 WITH_COVERAGE=1 make test -j"$CORES"
-          
+          make test -j"$(nproc)" VERBOSE=1 WITH_COVERAGE=1 \
+            CC=clang-18 CXX=clang++-18 \
+            LLVM_PROFDATA=llvm-profdata-18 LLVM_COV=llvm-cov-18
+
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ./build/tests/.coverage/coverage.info
           flags: unittests

@@ -4,7 +4,7 @@ This file contains conventions and rules for AI agents working on this repositor
 
 ## Build Environment
 
-The repository ships a container image definition in `.devcontainer/` (`Containerfile`: Ubuntu 24.04, g++, make, gdb, lcov, doxygen, Perl, mkdocs). **Prefer building, testing and benchmarking inside that container whenever `docker` or `podman` is available** (check with `command -v podman docker`), so results do not depend on the host toolchain. Fall back to the host toolchain only when neither is installed.
+The repository ships a container image definition in `.devcontainer/` (`Containerfile`: Ubuntu 24.04, g++, make, gdb, doxygen, Perl, mkdocs). **Prefer building, testing and benchmarking inside that container whenever `docker` or `podman` is available** (check with `command -v podman docker`), so results do not depend on the host toolchain. Fall back to the host toolchain only when neither is installed.
 
 ```sh
 # Build the image once (from the repository root; the context must be the root)

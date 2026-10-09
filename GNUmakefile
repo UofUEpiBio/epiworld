@@ -17,7 +17,8 @@ CXX ?= c++
 DOXYGEN            ?= doxygen
 MKDOCS             ?= mkdocs
 UV                 ?= uv
-LCOV               ?= lcov
+LLVM_PROFDATA      ?= llvm-profdata
+LLVM_COV           ?= llvm-cov
 VALGRIND           ?= valgrind
 CALLGRIND_ANNOTATE ?= callgrind_annotate
 
@@ -37,8 +38,14 @@ BUILD_PROFILE ?= debug
 # Enable OpenMP support.
 WITH_OPENMP   ?= 1
 
-# Enable code coverage support.
+# Enable code coverage support (clang source-based coverage).
 WITH_COVERAGE ?= 0
+
+# Coverage builds are single-threaded: OpenMP threads contend for the shared
+# coverage counters, which makes multithreaded tests ~40x slower.
+ifeq ($(WITH_COVERAGE),1)
+    override WITH_OPENMP := 0
+endif
 
 # Enable Werror.
 WITH_WERROR ?= 0
@@ -65,10 +72,14 @@ ifeq ($(WITH_OPENMP),1)
     LDFLAGS  += -fopenmp
 endif
 
+# Debug info is of no use to coverage and costs a third of the compile time.
 ifeq ($(WITH_COVERAGE),1)
-    CFLAGS   += --coverage
-    CXXFLAGS += --coverage
-    LDFLAGS  += --coverage
+    ifeq ($(findstring clang,$(shell $(CXX) --version)),)
+        $(error WITH_COVERAGE=1 needs clang (source-based coverage); got CXX='$(CXX)')
+    endif
+    CFLAGS   += -fprofile-instr-generate -fcoverage-mapping -g0
+    CXXFLAGS += -fprofile-instr-generate -fcoverage-mapping -g0
+    LDFLAGS  += -fprofile-instr-generate
 endif
 
 ifeq ($(WITH_THREAD_SANITIZER),1)
