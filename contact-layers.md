@@ -26,6 +26,12 @@ Realistic populations mix in several settings at once. An agent with the flu
 who isolates stops going to work, school, and public places, but keeps
 contacting their household. Neither engine can express that today.
 
+Some settings also have **recurring** contacts that are neither a fixed network
+nor fresh random mixing. A commuter who takes the 7:40 train meets largely the
+same people every weekday because they share a schedule ("familiar
+strangers"). Redrawing contacts every step misses that recurrence; a fixed
+network overstates it.
+
 ### Limitations of the current code this plan removes
 
 | Limitation | Where |
@@ -36,6 +42,7 @@ contacting their household. Neither engine can express that today.
 | Network and mixing cannot be combined | separate susceptible update functions |
 | Participation is all-or-nothing by state, per model (e.g., "available states"); the measles sampler hard-codes one reduced-contact state | `sampler-mixing.hpp`, `measles/samplermixing.hpp` |
 | Transmission records do not say *where* (which setting) an infection happened | `DataBase::record_transmission(i, j, virus, date)` |
+| Contact structure cannot change on a schedule (weekdays, shifts) or keep cohorts that persist across days | -- |
 
 ---
 
@@ -60,6 +67,30 @@ spot is attribution: when two contacts succeed in the same step, the first one
 in route/edge order is recorded as the infector, regardless of who was more
 infectious. epiworld picks the infector in proportion to each contact's weight
 (odds today), which is better and should stay.
+
+### Mobility and recurring contacts (transit)
+
+How often you meet *the same* people again is a property of its own, separate
+from how many contacts you have. Models place that recurrence at four levels:
+
+| Recurrence | Examples | Mechanism |
+|---|---|---|
+| **Same individuals** (same seatmate daily) | OpenABM workplace; Covasim/Starsim static or long-lived edges; EpiModel | Fixed ties, a subset active each day (OpenABM: 50%). EpiModel and Starsim's `DynamicNetwork` make edge **duration** a parameter. |
+| **Same cohort** (the 7:40 bus crowd) | Activity-based models such as MATSim-EpiSim (Mueller, Nagel) | Contacts are found among people sharing a vehicle or facility at the same time, from a transport simulation; schedules create the recurrence. |
+| **Same pool** (riders from your station) | **JUNE** (checked in the source) | Commuters are assigned to a station; at each commute time slot they get a **random** vehicle at that station (`Station.get_commute_subgroup()` -> `randint`). Recurrence only at the station level. |
+| **None** | Starsim `MixingPool`, Covasim community layer, epiworld `Mixing` | Contacts redrawn every step. |
+
+Empirically, bus smart-card data (Sun et al. 2013, Singapore) show repeated
+encounters that follow reproducible schedules ("familiar strangers"), but
+which connect into one large, loose small-world network rather than isolated
+cliques.
+
+A mixing layer gets the contact *rate* and the group-level pattern right but
+not the recurrence. Without recurrence a model overstates spread (an infectious
+rider keeps meeting the same, increasingly infected or immune people;
+fresh contacts do not saturate), smooths away cohort clustering, and makes
+cohort-level tracing or quarantine meaningless. Mixing is adequate only where
+turnover is high relative to contacts.
 
 ---
 
@@ -91,6 +122,18 @@ infectious. epiworld picks the infector in proportion to each contact's weight
 7. **`get_neighbors()` applies to network layers only**, per layer, through a
    non-allocating view. No `std::vector<std::pair<...>>` in the C++ core; the
    bindings can expose a named list.
+8. **Recurrence is a first-class property of a layer.** Between a fixed network
+   (same individuals every day) and mixing (fresh contacts every step) sits the
+   *affiliation* layer: agents belong to venues (a household, a classroom, the
+   7:40 train on route 12), possibly several per layer (the morning and the
+   evening trip), and contact co-members drawn fresh each step. Recurrence comes
+   from stable membership, controlled by a **persistence** probability `q`
+   (Section 5.2). Households and classrooms are the case `q = 1` with one
+   membership per agent.
+9. **Layers can change over time.** Layers follow schedules (transit and work on
+   weekdays only; a remote-work day sets that agent's weight to 0), and
+   affiliation memberships can change between steps. All such changes take
+   effect at the end of a step, like state changes.
 
 ---
 
@@ -183,6 +226,29 @@ Phase 4 unless it turns out to duplicate global events.
 Today `directed` is model-wide and forces pull. Recommendation: per network
 layer; a model pulls if any layer is directed.
 
+### D8. Persistence model for affiliation memberships
+
+Section 5.2 proposes "usual venue with probability `q`, otherwise a random venue
+in the same pool", with `q` per layer. Alternatives: `q` per agent (strict vs
+irregular commuters), or a user-supplied assignment function
+`venue(agent, step)` for data-driven schedules. Recommendation: per-layer `q`
+plus an optional per-agent override, and the assignment function as the
+general escape hatch.
+
+### D9. Within-venue contact rate
+
+A fixed `k` per layer, `k` as a function of venue size, or `k` per venue
+(crowded peak trips vs empty off-peak ones). Recommendation: per-venue `k`
+with a per-layer default; it costs one value per venue and lets capacity and
+crowding studies (e.g., peak-hour interventions) set it directly.
+
+### D10. Where schedules live
+
+Either in the layer (`update()` reads a calendar: active days, per-agent
+schedules) or in global events that set layer scales and weights. Layers are
+the natural owner of recurring, routine schedules; global events of one-off
+interventions (closing schools). Recommendation: both, with that split.
+
 ---
 
 ## 5. Design
@@ -193,15 +259,68 @@ layer; a model pulls if any layer is directed.
 |---|---|---|---|
 | `layer::Network` | explicit ties | per-agent tie lists (as today) | workplace, sexual partners |
 | `layer::Mixing` | contact matrix across a few large groups | group id per agent + `G x G` matrix | age groups in public spaces |
-| `layer::Groups` | homogeneous mixing **within** many small groups only | group id per agent + one rate | households, classrooms |
+| `layer::Affiliation` | mixing **within** venues an agent belongs to; memberships may persist or change | venues per agent (CSR) + members per venue + within-venue contact rate | households, classrooms, transit trips |
 
-`Groups` is a mixing-type layer with a block-diagonal matrix; it exists because
-a dense matrix cannot hold 100k households, and because, unlike `Mixing`, it
-supports the queue (an infectious agent reaches only its own group).
+`Affiliation` is a mixing-type layer with a block-diagonal matrix. It exists
+because a dense matrix cannot hold 100k households, because it can express
+recurring cohorts (Section 5.2), and because, unlike `Mixing`, it supports the
+queue (an infectious agent reaches only the members of its venues).
 `Bubbles` with `BubbleTies::Complete` (cliques added and withdrawn) could later
-become a `Groups` layer instead of edits to the network.
+become an `Affiliation` layer instead of edits to the network.
 
-### 5.2 Interface (sketch)
+Recurrence, from most to least, across the three kinds: `Network` (same
+individuals), `Affiliation` with `q = 1` (same cohort), `Affiliation` with
+`q < 1` or one large venue per route (same pool), `Mixing` (none).
+
+### 5.2 Affiliation layers, recurrence, and schedules
+
+**Venues and memberships.** An affiliation layer holds venues (a household; the
+7:40 departure of route 12) and, per agent, a short list of venues, stored
+compactly (CSR: offsets + venue ids; members per venue likewise). An agent may
+hold several memberships in one layer (morning trip and evening trip), each a
+separate exposure.
+
+**Contacts within a venue.** Each step, an agent makes about `k` contacts among
+the members of each of its venues who are present (weight > 0), drawn fresh:
+a binomial number of draws from the venue's infectious members with probability
+`k / (sum of weights of present members - own weight)`, as the `Mixing`
+sampler does per group. Recurrence is at the cohort level: you meet the same
+crowd, not necessarily the same seatmate. Dyad-level recurrence (same seatmate)
+belongs in a `Network` layer.
+
+`k` can be a single rate for the layer or a function of venue size (a
+household of 4 vs a full train car); for households, `k = size - 1` makes the
+venue a clique.
+
+**Persistence.** Each agent has a *usual* venue per membership slot, and venues
+are grouped into *pools* (a route, a station, a school). Each step, with
+probability `q` the agent attends its usual venue; otherwise it attends another
+venue drawn from the same pool:
+
+- `q = 1`: fixed cohorts (households, classrooms, strict commuters);
+- `0 < q < 1`: familiar strangers (mostly the same train, sometimes another);
+- `q = 0`: random vehicle at your station each step (JUNE);
+- one venue per pool: route-level mixing.
+
+Only agents who switch venue cost anything per step (`O(riders x (1 - q))`
+membership updates), plus `O(k)` per infectious member. A membership change
+notifies the queue, as `add_edge()`/`rm_edge()` do today
+(`Queue::notify_edge_added/removed`).
+
+**Schedules.** A layer can be active on some steps only (transit and work on
+weekdays), and an agent's weight can follow its own schedule (a remote-work day
+is weight 0 that day). Both are evaluated in the layer's `update()`; changes
+take effect at the end of the step like any other (D4). With data instead of a
+generative model (e.g., a co-rider network from smart-card records), use a
+`Network` layer whose ties are each active with probability `a` per step -- the
+OpenABM workplace approach, which is one more multiplier on `p` (thinning).
+
+**Same-step exposures.** A step is a day: an agent's bus, workplace, and
+household exposures on one day combine as simultaneous. That is fine with an
+incubation period and is the same assumption as for all layers; finer time
+slots (JUNE) are out of scope.
+
+### 5.3 Interface (sketch)
 
 ```cpp
 template<typename TSeq>
@@ -230,7 +349,7 @@ public:
     // Optional: queue support (agents carrier `j` can reach)
     virtual bool supports_queue() const { return false; }
 
-    // Participation (Section 5.4)
+    // Participation (Section 5.5)
     void set_weight(size_t agent, float w);   // applied at end of step
     float get_weight(size_t agent) const;
 };
@@ -245,7 +364,7 @@ deep-copy layers (`run_multiple()` clones models), and `reset()` must restore
 each layer's initial state (as the network backup and
 `contact_matrix_backup` do today).
 
-### 5.3 Combining layers in one draw
+### 5.4 Combining layers in one draw
 
 `default_update_susceptible` (and `sampler::UpdateSusceptible`) become
 layer-aware: for a susceptible `i`, every layer appends contacts; each contact
@@ -258,13 +377,13 @@ layers can be mixed in one step: reservoir samples merge exactly.
 Keep the arrays-then-`roulette()` code path for models whose only layer is a
 single network layer, so their random stream does not change.
 
-### 5.4 Participation weights
+### 5.5 Participation weights
 
 - Storage: `std::vector<float>` per layer (4 bytes x agents x layers; 16 MB for
   1M agents and 4 layers) plus an `all_ones` flag that skips the lookup.
 - Network layer: one load and a multiply per *infectious* contact; non-carriers
   are skipped before it.
-- Mixing/Groups layer: agents with `w = 0` are removed from the pools and from
+- Mixing/Affiliation layer: agents with `w = 0` are removed from the pools and from
   the denominators; the denominator becomes the **sum of weights** of available
   agents per group (equal to today's count when all weights are 1, exactly, in
   floating point). A drawn contact `j` contributes `w_j * p`, so a full
@@ -276,7 +395,7 @@ single network layer, so their random stream does not change.
 - Migration target: the measles sampler's "Rash reduction contact rate" (a
   reduced-infectious state sampled at reduced rate) is a participation weight.
 
-### 5.5 Neighbors per network layer
+### 5.6 Neighbors per network layer
 
 - `Agent::neighbors_view(model, layer_id)` returns the existing non-allocating
   `NeighborsView`, now per layer. Legacy `neighbors_view(model)` uses the
@@ -288,32 +407,33 @@ single network layer, so their random stream does not change.
 - Bindings: a named list of per-layer neighbor vectors; edgelist I/O gets a
   layer column.
 
-### 5.6 Queue
+### 5.7 Queue
 
 - The queue counts over the union of queue-capable layers (`Network`,
-  `Groups`). A carrier queues its ties in every network layer and its group in
-  every `Groups` layer.
+  `Affiliation`). A carrier queues its ties in every network layer and the
+  members of its venues in every `Affiliation` layer; a membership change is
+  notified to the queue like an edge edit.
 - Any `Mixing` layer turns queuing off, as mixing models do now.
 - Weights do not affect the queue (a queued agent with weight 0 just gets
   `p = 0`); conservative and simple.
 
-### 5.7 Push and pull
+### 5.8 Push and pull
 
 - Phase 1-4: push only when the model has a single undirected network layer
   (today's behavior). Everything else pulls.
 - Phase 5: `sample_reverse()` for `Mixing` (for infectious `j` in group `g`,
   contacts in group `h` ~ Binomial(available in `h`, c(h,g) / available in
-  `g`), which gives the same pair probabilities as pulling) and `Groups`; push
+  `g`), which gives the same pair probabilities as pulling) and `Affiliation`; push
   when every layer can push; the auto cost model sums per-layer costs.
 
-### 5.8 Outputs
+### 5.9 Outputs
 
 - `record_transmission(i, j, virus, date)` gains a layer id
   (`get_transmissions()` gets a `layer` column; -1 for seeded/non-contact).
 - The post-sampling callback reports the layer of each contact.
 - `write_edgelist()` / `get_edgelist()` per layer.
 
-### 5.9 Backward compatibility
+### 5.10 Backward compatibility
 
 - Network models built with today's API get one `"network"` layer implicitly;
   results identical.
@@ -367,34 +487,46 @@ refactors: the test is that existing model-level results stay identical.
 
 ### Phase 3 -- several layers in one model
 
-- Layer-aware susceptible update and accumulator (Section 5.3); `layer::Groups`;
-  layer id in transmission records and post-sampling; per-layer edgelist I/O.
-- An example model: households (`Groups`) + workplace (`Network`) + public
+- Layer-aware susceptible update and accumulator (Section 5.4);
+  `layer::Affiliation` with fixed memberships (`q = 1`, several memberships per
+  agent allowed); layer id in transmission records and post-sampling;
+  per-layer edgelist and membership I/O.
+- An example model: households (`Affiliation`) + workplace (`Network`) + public
   spaces (`Mixing`).
 - Tests (end-to-end, about three files):
   - a network split into two layers matches the single-layer network in
     distribution (`run_multiple`, attack rate and transmission counts);
-  - a `Groups` layer matches the equivalent complete-graph-per-household
+  - an `Affiliation` layer with `q = 1` matches the equivalent complete-graph-per-household
     network in distribution;
   - a combined model attributes transmissions to the expected layers (e.g.,
     with one layer's rate at 0, no transmission is recorded on it).
 - Version: minor.
 
-### Phase 4 -- participation weights and policies
+### Phase 4 -- participation weights, policies, schedules, and persistence
 
 - `set_weight()` applied at end of step; `isolate(agent, keep = ...)`; layer
   scale (D6); global event to scale/close a layer.
+- Schedules (D10): layers active on given steps (weekdays), per-agent weight
+  schedules.
+- Persistence (D8, D9): venue pools, usual venue with probability `q`, per-venue
+  contact rate `k`, membership changes notified to the queue.
 - Port the measles reduced-contact state to weights.
-- Tests: deterministic -- with `p = 1`, an isolated infectious agent infects
-  only household members; a closed layer records no transmission; a weight of
-  0.5 halves exposure in a mixing layer (statistical).
+- An example model: the Phase 3 model plus a transit layer (morning and evening
+  trips, route pools, `q < 1`, weekdays only).
+- Tests (end-to-end):
+  - deterministic -- with `p = 1`, an isolated infectious agent infects only
+    household members; a closed layer records no transmission;
+  - schedules and persistence -- no transit-layer transmission on inactive
+    steps; with `q = 1` every transit transmission is between members of the
+    same usual venue, with `q = 0` transmissions also cross venues in a pool;
+  - a weight of 0.5 halves exposure in a mixing layer (statistical).
 - Version: minor; patch-level result changes for measles models only if the
   port is not draw-for-draw identical.
 
 ### Phase 5 -- combination rule option and push across layers
 
 - `set_transmission_rule()` (D1) if Phase 0 supports it.
-- `sample_reverse()` for `Mixing` and `Groups`; multi-layer push; per-layer
+- `sample_reverse()` for `Mixing` and `Affiliation`; multi-layer push; per-layer
   auto cost model (revisit `EPI_TRANSMISSION_AGENT_COST` and kappa).
 - Version: minor (option); a default change is its own decision.
 
@@ -423,6 +555,9 @@ refactors: the test is that existing model-level results stay identical.
 - Phase 2: no regression for pull/push on network models.
 - Phase 3: overhead of a single-layer model through the multi-layer path vs the
   legacy path (to decide whether the legacy path must stay).
+- Phase 4: cost per step of an affiliation layer as `q` falls (membership
+  churn and queue notifications), at transit-like sizes (venues of 50-200,
+  two memberships per commuter).
 - Phase 5: push vs pull for mixing layers early in an outbreak.
 - Use CPU time and interleave variants; wall-clock on the macOS host is
   unreliable.
@@ -436,6 +571,9 @@ refactors: the test is that existing model-level results stay identical.
   shares state across threads.
 - **Hidden single-network assumptions** in models and global events (Phase 2).
 - **Binding churn** across three language packages (Phase 6).
+- **Membership churn.** With low `q`, many memberships change every step; the
+  queue notifications and venue member lists must stay O(changes), not
+  O(population).
 
 ## 10. References
 
@@ -450,5 +588,17 @@ refactors: the test is that existing model-level results stay identical.
   <https://doi.org/10.1371/journal.pcbi.1009146>
 - EpiModel multilayer networks: `R/net.mod.infection.R` (`discord_edgelist`),
   `R/net.inputs.R` -- <https://github.com/EpiModel/EpiModel>
-- Covasim, FRED, JUNE, FluTE, seirsplus: described from memory; verify before
-  relying on details.
+- JUNE commuting (checked in the source): `june/geography/station.py`
+  (`get_commute_subgroup`), `june/geography/city.py`,
+  `june/activity/activity_manager.py` -- <https://github.com/IDAS-Durham/JUNE>;
+  JUNE-Germany -- <https://arxiv.org/abs/2303.05742>
+- Sun, Axhausen, Lee, Huang (2013), Understanding metropolitan patterns of daily
+  encounters, PNAS 110(34) -- <https://doi.org/10.1073/pnas.1306440110>
+- Mueller (2025), From traffic to transmission: adapting an agent-based
+  transport model to simulate the spreading of infectious diseases (MATSim-EpiSim),
+  TU Berlin --
+  <https://depositonce.tu-berlin.de/items/0ea18ef0-742d-4df0-b3fc-b4df4af97ada/full>
+- Hiermann et al. (2025), EpiSim coupled with a capacity-constrained public
+  transport flow model (Munich) -- <https://arxiv.org/abs/2511.06377>
+- Covasim, FRED, FluTE, seirsplus, and the place-based summary of JUNE:
+  described from memory; verify before relying on details.
