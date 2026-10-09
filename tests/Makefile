@@ -118,8 +118,9 @@ $(NAME)_SOURCES := \
 	42c-tool-target-reuse.cpp \
 	43-run-multiple-team-size.cpp
 
+# Coverage of the library only: the test sources themselves are always ~100%
+# covered and would inflate the figure.
 $(NAME)_COV_DIRS := \
-	$($(NAME)_SOURCE_DIR) \
 	$(ROOT_SOURCE_DIR)/include/epiworld
 	
 $(NAME)_TEST_HOOKS := \
