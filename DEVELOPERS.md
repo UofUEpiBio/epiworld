@@ -262,7 +262,7 @@ This combines all headers from `include/epiworld/` into one file using `script/a
 
 ### Code Coverage Workflow
 
-Coverage runs on every pull request (`.github/workflows/coverage.yml`) and is uploaded to Codecov. To reproduce it locally you need clang and the matching LLVM tools (on Ubuntu, the `clang-18` and `llvm-18` packages):
+Coverage runs on every pull request and on every push to `master` (`.github/workflows/coverage.yml`) and is uploaded to Codecov; the `master` uploads are what Codecov compares each pull request against. The report covers the library (`include/epiworld/`), not the test sources (`tests_COV_DIRS` in `tests/Makefile`). To reproduce it locally you need clang and the matching LLVM tools (on Ubuntu, the `clang-18` and `llvm-18` packages):
 
 1. Run the test suite with coverage enabled:
 ```bash

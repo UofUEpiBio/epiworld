@@ -1,11 +1,17 @@
 name: Code coverage
 
-on: [pull_request]
+# Runs on master too, so that Codecov compares each PR against its actual
+# base instead of the last commit that happened to have an upload.
+on:
+  pull_request:
+  push:
+    branches: [master]
 
-# A new push to the same PR supersedes the coverage run in progress.
+# A new push to the same PR supersedes the coverage run in progress; on master,
+# every merge keeps its run (its upload is the base for the next PRs).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   coverage:
