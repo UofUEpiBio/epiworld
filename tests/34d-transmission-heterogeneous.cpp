@@ -9,15 +9,46 @@ using namespace epiworld;
 // 1. Queuing stays a pure optimisation in every mode (pull, push, auto): on
 //    and off give identical daily histories and transmission lists.
 // 2. The built-in pull scan is the same draw as the plain scan of the
-//    neighbors: a susceptible state written with
-//    `sampler::make_sample_virus_neighbors()` (which always walks the
-//    neighbors' agents) gives exactly the run of the built-in state in "pull"
-//    mode, so making that scan cheaper did not touch the random stream.
+//    neighbors: a susceptible state that walks the neighbors' agents itself
+//    (`plain_scan_update` below) gives exactly the run of the built-in state
+//    in "pull" mode, so making that scan cheaper did not touch the random
+//    stream.
 // 3. The neighbor view used by that scan refuses indices past its end.
 //
 // (The automatic choice itself is in 34e.)
 
 namespace {
+
+// The reference pull: walks every neighbor's agent (no carrier flags), skips
+// the latent ones (state 1) and the ones without a virus, and draws at most
+// one virus.
+void plain_scan_update(Agent<> * p, Model<> * m)
+{
+
+    size_t n = 0u;
+    for (auto * neighbor : p->neighbors_view(*m))
+    {
+
+        auto & v = neighbor->get_virus();
+        if ((neighbor->get_state() == 1u) || (v == nullptr))
+            continue;
+
+        m->array_double_tmp[n] =
+            (1.0 - p->get_susceptibility_reduction(v, *m)) *
+            v->get_prob_infecting(m) *
+            (1.0 - neighbor->get_transmission_reduction(v, *m));
+        m->array_virus_tmp[n++] = &(*v);
+
+    }
+
+    if (n == 0u)
+        return;
+
+    int which = roulette(n, m);
+    if (which >= 0)
+        p->set_virus(*m, *m->array_virus_tmp[which]);
+
+}
 
 struct Run {
     std::vector< int > counts, date, source, target;
@@ -40,17 +71,7 @@ Run simulate(
     epimodels::ModelSEIR<> model("virus", 20.0 / 3000.0, 0.1, 3.0, 1.0 / 7.0);
 
     if (plain_scan)
-    {
-        auto pick = sampler::make_sample_virus_neighbors<>({1u});
-        model.set_state_function(
-            0u,
-            [pick](Agent<> * p, Model<> * m) -> void {
-                Virus<> * v = pick(p, m);
-                if (v != nullptr)
-                    p->set_virus(*m, *v);
-            }
-        );
-    }
+        model.set_state_function(0u, plain_scan_update);
     else
         model.set_state_function(0u, sampler::make_update_susceptible<>({1u}));
 

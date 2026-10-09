@@ -42,6 +42,14 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
         distribute_virus_to_set<>(got_it)
     );
 
+    // A tool removed from the model is not distributed (it would reach
+    // everyone, so got_tool1 would not match below)
+    Tool<> everyone("everyone", 1.0, true);
+    model_1.add_tool(everyone);
+    REQUIRE_THROWS_AS(model_1.rm_tool(1u), std::range_error);
+    model_1.rm_tool(0u);
+    REQUIRE(model_1.get_n_tools() == 0u);
+
     model_1.add_tool(tool);
     model_1.get_tool(0).set_distribution(
         distribute_tool_to_set<>(got_tool)
@@ -92,6 +100,20 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
 
     REQUIRE(got_tool.size() > 0);
     REQUIRE(got_tool == got_tool1);
+
+    // Agents drop a tool by position or by pointer, once the events run
+    Agent<> & a = model_0.get_agent(got_tool[0]);
+    Agent<> & b = model_0.get_agent(got_tool[1]);
+    REQUIRE_THROWS_AS(a.rm_tool(model_0, 1u), std::range_error);
+    REQUIRE_THROWS_AS(a.rm_tool(model_0, b.get_tool(0)), std::logic_error);
+
+    a.rm_tool(model_0, 0u);
+    b.rm_tool(model_0, b.get_tool(0));
+    REQUIRE(a.get_n_tools() == 1u);
+
+    model_0.events_run();
+    REQUIRE(a.get_n_tools() == 0u);
+    REQUIRE(b.get_n_tools() == 0u);
 
 
 
