@@ -182,8 +182,10 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
 
     // Now test with run_multiple() using 2 threads
     // Factory function to create and configure a model with entities and global events
-    // With from_ties, the same 50/50 split comes from id vectors (as epiworldR
-    // loads it), and must hold in every replicate, not just the first
+    // With from_ties, part of the same 50/50 split comes from id vectors (as
+    // epiworldR loads it): Entity0 takes agents 0-24 from its own distribution
+    // and 25-49 from the ties, and Entity1 gets no ties. The split must hold in
+    // every replicate, not just the first
     auto create_test_model = [&contact_matrix](bool from_ties = false) -> epimodels::ModelSEIRMixing<> {
         epimodels::ModelSEIRMixing<> m(
             "TestVirus",
@@ -200,14 +202,14 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         // Add entities
         if (from_ties)
         {
-            m.add_entity(Entity<>("Entity0"));
-            m.add_entity(Entity<>("Entity1"));
+            m.add_entity(Entity<>("Entity0", distribute_entity_to_range<>(0, 25)));
+            m.add_entity(Entity<>("Entity1", distribute_entity_to_range<>(50, 100)));
 
             std::vector< int > agents_ids, entities_ids;
-            for (int i = 0; i < 100; ++i)
+            for (int i = 25; i < 50; ++i)
             {
                 agents_ids.push_back(i);
-                entities_ids.push_back(i < 50 ? 0 : 1);
+                entities_ids.push_back(0);
             }
 
             m.load_agents_entities_ties(agents_ids, entities_ids);
