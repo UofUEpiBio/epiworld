@@ -15,13 +15,10 @@ public:
     unsigned long long infected_state;
     unsigned long long infected_hospitalized_state;
 
-    CommunityHospModel();
-};
+    // One entry per state: true for the states whose agents do not transmit
+    std::vector< bool > not_transmitting;
 
-// Given a model, return a sampler that excludes infected from the hospital
-auto get_sampler_suscept = [](CommunityHospModel* m) {
-    return sampler::make_sample_virus_neighbors<>(
-        {m->infected_hospitalized_state});
+    CommunityHospModel();
 };
 
 /**
@@ -33,15 +30,26 @@ auto get_sampler_suscept = [](CommunityHospModel* m) {
 inline void update_susceptible(Agent<int> * p, Model<int> * m)
 {
     auto hm = static_cast<CommunityHospModel*>(m);
-    auto virus = get_sampler_suscept(hm)(p, m);
-    if (virus != nullptr)
-    {
-        if (m->par("Prob hospitalization") > m->runif())
-            p->set_virus(*m, *virus, hm->infected_hospitalized_state);
-        else
-            p->set_virus(*m, *virus, hm->infected_state);
-    }
 
+    // Collecting the viruses of the neighbors who transmit (infected agents
+    // in the hospital do not), and drawing at most one of them
+    size_t n_viruses = sampler::collect_neighbor_viruses(
+        p, m, &hm->not_transmitting
+    );
+
+    if (n_viruses == 0u)
+        return;
+
+    int which = roulette(n_viruses, m);
+
+    if (which < 0)
+        return;
+
+    Virus<int> * virus = m->array_virus_tmp[which];
+    if (m->par("Prob hospitalization") > m->runif())
+        p->set_virus(*m, *virus, hm->infected_hospitalized_state);
+    else
+        p->set_virus(*m, *virus, hm->infected_state);
 
     return;
 
@@ -107,6 +115,9 @@ CommunityHospModel::CommunityHospModel() : Model<int>()
     this->infected_state = this->add_state("Infected", update_infected);
     this->infected_hospitalized_state = this->add_state(
         "Infected (hospitalized)", update_infected_hospitalized);
+
+    not_transmitting.resize(this->get_states().size(), false);
+    not_transmitting[this->infected_hospitalized_state] = true;
 }
 
 int main() {

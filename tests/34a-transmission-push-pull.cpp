@@ -146,13 +146,28 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
         model.add_virus(v_b);
         model.add_virus(v_c);
 
+        // When pushing, the vaccine reads a parameter and the mask is a
+        // function: same reductions, so the same probabilities
+        const bool push = std::string(mode) == "push";
+        model.add_param(vax, "Vaccine efficacy");
+
         Tool<> t_vax("vaccine", 0.0, true);
-        t_vax.set_susceptibility_reduction(vax);
+        if (push)
+            t_vax.set_susceptibility_reduction("Vaccine efficacy");
+        else
+            t_vax.set_susceptibility_reduction(vax);
         t_vax.set_distribution(distribute_tool_to_set<>({0u}));
         model.add_tool(t_vax);
 
         Tool<> t_mask("mask", 0.0, true);
-        t_mask.set_transmission_reduction(mask);
+        if (push)
+            t_mask.set_transmission_reduction_fun(
+                [mask](Tool<> &, Agent<> *, VirusPtr<> &, Model<> *) {
+                    return mask;
+                }
+            );
+        else
+            t_mask.set_transmission_reduction(mask);
         t_mask.set_distribution(distribute_tool_to_set<>({4u}));
         model.add_tool(t_mask);
 

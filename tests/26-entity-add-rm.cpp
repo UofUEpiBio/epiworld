@@ -151,6 +151,34 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         throw std::logic_error("Entity add/rm test failed!");
     }
 
+    // Entity accessors: the ids, the (non-const) entity, and the range checks
+    Agent<> & moved_agent = model.get_agent(0);
+    REQUIRE(moved_agent.get_entities() == std::vector< size_t >{1u});
+    REQUIRE(&moved_agent.get_entity(0, model) == &final_entity1);
+    REQUIRE_THROWS_AS(moved_agent.get_entity(1, model), std::range_error);
+    REQUIRE(model.get_agent(5).get_entities().empty());
+    REQUIRE_THROWS_AS(model.get_agent(5).get_entity(0, model), std::range_error);
+
+    // Agent data: column-major, one column per feature
+    std::vector< double > agents_data(model.size() * 2u);
+    for (size_t i = 0u; i < agents_data.size(); ++i)
+        agents_data[i] = static_cast< double >(i);
+
+    model.set_agents_data(agents_data.data(), 2u);
+
+    Agent<> & agent_7 = model.get_agent(7);
+    REQUIRE(agent_7(0, model) == 7.0);
+    agent_7(1, model) = -1.0;
+    REQUIRE(agents_data[model.size() + 7u] == -1.0);
+    REQUIRE_THROWS_AS(agent_7(2, model), std::logic_error);
+
+    const Agent<> & const_agent_7 = agent_7;
+    const Model<> & const_model = model;
+    REQUIRE(const_agent_7(1, const_model) == -1.0);
+    REQUIRE_THROWS_AS(const_agent_7(2, const_model), std::logic_error);
+
+    model.set_agents_data(nullptr, 0u);
+
 
     // Now test with run_multiple() using 2 threads
     // Factory function to create and configure a model with entities and global events
