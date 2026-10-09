@@ -36,7 +36,7 @@
 /* Versioning */
 #define EPIWORLD_VERSION_MAJOR 0
 #define EPIWORLD_VERSION_MINOR 19
-#define EPIWORLD_VERSION_PATCH 0
+#define EPIWORLD_VERSION_PATCH 1
 
 #define EPIWORLD_VERSION_PRERELEASE ""
 
@@ -14257,29 +14257,6 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     }
 
 
-    // Figuring out how many replicates - distribute remainder evenly
-    std::vector< size_t > nreplicates(nthreads, 0);
-    std::vector< size_t > nreplicates_csum(nthreads, 0);
-
-    size_t base_replicates = nexperiments / nthreads;
-    size_t remainder = nexperiments % nthreads;
-
-    size_t sums = 0u;
-    for (int i = 0; i < nthreads; ++i)
-    {
-        // Distribute remainder to first 'remainder' threads
-        nreplicates[i] = base_replicates + (static_cast<size_t>(i) < remainder ? 1 : 0);
-
-        // This takes the cumsum
-        nreplicates_csum[i] = sums;
-        sums += nreplicates[i];
-    }
-
-    Progress pb_multiple(
-        nreplicates[0u],
-        EPIWORLD_PROGRESS_BAR_WIDTH
-        );
-
     if (verbose)
     {
 
@@ -14288,8 +14265,6 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
             static_cast<int>(nexperiments),
             static_cast<int>(nthreads)
         );
-
-        pb_multiple.start();
 
     }
 
@@ -14308,15 +14283,40 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     }
     #endif
 
-    #pragma omp parallel shared(these) \
-        firstprivate(nexperiments, nthreads, fun, reset, verbose, pb_multiple, \
-        ndays, nreplicates, nreplicates_csum, seeds_n) default(none)
+    // Replicates run by this model (thread 0), which counts them itself
+    size_t nreplicates_this = 0u;
+
+    #pragma omp parallel shared(these, nreplicates_this) \
+        firstprivate(nexperiments, fun, reset, verbose, ndays, seeds_n) \
+        default(none)
     {
 
+        // The replicates are split over the team OpenMP actually provides,
+        // which can be smaller than nthreads (OMP_THREAD_LIMIT, OMP_DYNAMIC,
+        // nested parallel regions, etc.): each thread runs a contiguous block
+        // of run ids, the remainder going to the first threads.
         auto iam = static_cast<size_t>(omp_get_thread_num());
+        auto nteam = static_cast<size_t>(omp_get_num_threads());
         Model<TSeq> * model_ptr = iam == 0 ? this : &(*these[iam - 1u]);
-        size_t my_replicates = nreplicates[iam];
-        size_t my_replicates_csum = nreplicates_csum[iam];
+
+        size_t base_replicates = nexperiments / nteam;
+        size_t remainder = nexperiments % nteam;
+        size_t my_replicates = base_replicates + (iam < remainder ? 1u : 0u);
+        size_t my_replicates_csum =
+            iam * base_replicates + std::min(iam, remainder);
+
+        // Only the first thread reports progress, on its own replicates
+        Progress pb_multiple(my_replicates, EPIWORLD_PROGRESS_BAR_WIDTH);
+
+        if (iam == 0)
+        {
+
+            nreplicates_this = my_replicates;
+
+            if (verbose)
+                pb_multiple.start();
+
+        }
 
         for (size_t n = 0u; n < my_replicates; ++n)
         {
@@ -14362,7 +14362,7 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     }
 
     // Adjusting the number of replicates
-    n_replicates += (nexperiments - nreplicates[0u]);
+    n_replicates += (nexperiments - nreplicates_this);
 
     #else
 

@@ -115,7 +115,8 @@ $(NAME)_SOURCES := \
 	41-agent-mutate-virus.cpp \
 	42a-tool-target.cpp \
 	42b-tool-target-mutation.cpp \
-	42c-tool-target-reuse.cpp
+	42c-tool-target-reuse.cpp \
+	43-run-multiple-team-size.cpp
 
 $(NAME)_COV_DIRS := \
 	$($(NAME)_SOURCE_DIR) \
