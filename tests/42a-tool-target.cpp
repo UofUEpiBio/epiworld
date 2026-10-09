@@ -37,11 +37,51 @@ EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
     REQUIRE(tool.get_targets() == std::vector< int >{0});
 
     model.add_tool(tool);
+
+    // A global event records, each day, the date and the agents infected
+    model.set_user_data({"Infected", "Day"});
+    model.add_globalevent([](Model<> * m) -> void {
+        m->add_user_data(0u, m->get_db().get_today_total("Infected"));
+        m->add_user_data(1u, static_cast< epiworld_double >(m->today()));
+    }, "Record infected");
+
     model.run(30, 1231);
 
     std::vector< int > date, id, counts;
     std::vector< std::string > state;
     model.get_db().get_hist_virus(date, id, state, counts);
+
+    // Everyone holds the tool on every day
+    std::vector< int > tool_date, tool_id, tool_counts;
+    std::vector< std::string > tool_state;
+    model.get_db().get_hist_tool(tool_date, tool_id, tool_state, tool_counts);
+
+    std::vector< int > holders(31u, 0);
+    for (size_t i = 0u; i < tool_date.size(); ++i)
+    {
+        REQUIRE(tool_id[i] == 0);
+        holders[tool_date[i]] += tool_counts[i];
+    }
+    REQUIRE(holders == std::vector< int >(31u, 1000));
+
+    // One user-data row per day, matching the daily totals
+    std::vector< int > total_date, total_counts;
+    std::vector< std::string > total_state;
+    model.get_db().get_hist_total(&total_date, &total_state, &total_counts);
+
+    auto & user_data = model.get_user_data();
+    REQUIRE(user_data.ncol() == 2u);
+    REQUIRE(user_data.nrow() == 30u);
+    for (size_t i = 0u; i < total_date.size(); ++i)
+    {
+        if (total_state[i] != "Infected" || total_date[i] == 0)
+            continue;
+
+        size_t row = static_cast< size_t >(total_date[i] - 1);
+        REQUIRE(user_data.get_dates()[row] == total_date[i]);
+        REQUIRE(user_data(row, 0u) == total_counts[i]);
+        REQUIRE(user_data(row, "Day") == total_date[i]);
+    }
 
     // Infected counts of each virus on the first and the last day
     int a_first = -1, a_last = -1, b_first = -1, b_last = -1;

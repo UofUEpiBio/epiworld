@@ -182,7 +182,9 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
 
     // Now test with run_multiple() using 2 threads
     // Factory function to create and configure a model with entities and global events
-    auto create_test_model = [&contact_matrix]() -> epimodels::ModelSEIRMixing<> {
+    // With from_ties, the same 50/50 split comes from id vectors (as epiworldR
+    // loads it), and must hold in every replicate, not just the first
+    auto create_test_model = [&contact_matrix](bool from_ties = false) -> epimodels::ModelSEIRMixing<> {
         epimodels::ModelSEIRMixing<> m(
             "TestVirus",
             100,
@@ -196,10 +198,25 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         m.verbose_off();
 
         // Add entities
-        Entity<> e0("Entity0", distribute_entity_to_range<>(0, 50));
-        Entity<> e1("Entity1", distribute_entity_to_range<>(50, 100));
-        m.add_entity(e0);
-        m.add_entity(e1);
+        if (from_ties)
+        {
+            m.add_entity(Entity<>("Entity0"));
+            m.add_entity(Entity<>("Entity1"));
+
+            std::vector< int > agents_ids, entities_ids;
+            for (int i = 0; i < 100; ++i)
+            {
+                agents_ids.push_back(i);
+                entities_ids.push_back(i < 50 ? 0 : 1);
+            }
+
+            m.load_agents_entities_ties(agents_ids, entities_ids);
+        }
+        else
+        {
+            m.add_entity(Entity<>("Entity0", distribute_entity_to_range<>(0, 50)));
+            m.add_entity(Entity<>("Entity1", distribute_entity_to_range<>(50, 100)));
+        }
 
         // Add global event
         // Note: No moved flag needed since date parameter ensures it only runs on day 5
@@ -259,13 +276,29 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         false  // outbreak_size
     );
 
+    auto fn3 = epi_temp_file("26-entity-add-rm", "main_out_ties_%li");
+    auto saver_ties = epiworld::make_save_run<>(
+        fn3.full_path.c_str(),
+        true, false, false, false, false, false, false, false, false, false
+    );
+
     // Create models using the factory function
     auto model_1thread = create_test_model();
     auto model_2thread = create_test_model();
+    auto model_ties = create_test_model(true);
+
+    // Mismatched or out-of-range ids are rejected
+    std::vector< int > ids_a = {0, 1}, ids_b = {0}, ids_c = {0, 2};
+    REQUIRE_THROWS_AS(model_ties.load_agents_entities_ties(ids_a, ids_b), std::length_error);
+    REQUIRE_THROWS_AS(model_ties.load_agents_entities_ties(ids_a, ids_c), std::length_error);
 
     // Run multiple simulations with 1 thread and 2 threads
     model_1thread.run_multiple(10, 10, 1231, saver_1thread, true, false, 1);
     model_2thread.run_multiple(10, 10, 1231, saver_2thread, true, false, 2);
+    model_ties.run_multiple(10, 10, 1231, saver_ties, true, false, 2);
+
+    REQUIRE(model_ties.get_entity(0).size() == 40u);
+    REQUIRE(model_ties.get_entity(1).size() == 55u);
 
     // Compare the results from both runs
     for (size_t i = 0u; i < 10u; ++i)
@@ -275,8 +308,12 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
 
         auto content_1thread = file_reader(file_1thread);
         auto content_2thread = file_reader(file_2thread);
+        auto content_ties = file_reader(
+            fn3.directory + "/main_out_ties_" + std::to_string(i) + "_total_hist.csv"
+        );
 
         REQUIRE_THAT(content_1thread, Catch::Equals(content_2thread));
+        REQUIRE_THAT(content_1thread, Catch::Equals(content_ties));
 
         if (content_1thread != content_2thread)
         {
