@@ -20,7 +20,7 @@ The project requires:
 - GNU Make
 - Perl (for build scripts)
 - Optional: OpenMP support
-- Optional: Code coverage tools (lcov)
+- Optional: clang and LLVM tools (`llvm-profdata`, `llvm-cov`) for code coverage
 - Optional: Doxygen (for documentation)
 
 ## Build System Overview
@@ -183,11 +183,11 @@ make test WITH_OPENMP=0
 #### `WITH_COVERAGE` (default: `0`)
 Enable code coverage instrumentation:
 - `0`: No coverage
-- `1`: Enable coverage with `--coverage` flag
+- `1`: Enable clang source-based coverage (`-fprofile-instr-generate -fcoverage-mapping`). Requires clang; also forces `WITH_OPENMP=0` and drops debug info (`-g0`)
 
 Usage:
 ```bash
-make test WITH_COVERAGE=1
+make test WITH_COVERAGE=1 CXX=clang++-18 LLVM_PROFDATA=llvm-profdata-18 LLVM_COV=llvm-cov-18
 ```
 
 Coverage reports are generated in `build/<package-name>/.coverage/` (e.g., `build/tests/.coverage/` for the default test suite).
@@ -208,7 +208,7 @@ make test TESTS="SIR Model;SEIR Model"
 
 Variables can be combined:
 ```bash
-BUILD_PROFILE=release WITH_OPENMP=1 WITH_COVERAGE=1 VERBOSE=1 make test
+BUILD_PROFILE=release WITH_OPENMP=1 VERBOSE=1 make test
 ```
 
 ## Project Structure
@@ -262,14 +262,18 @@ This combines all headers from `include/epiworld/` into one file using `script/a
 
 ### Code Coverage Workflow
 
-1. Build with coverage enabled:
+Coverage runs on every pull request (`.github/workflows/coverage.yml`) and is uploaded to Codecov. To reproduce it locally you need clang and the matching LLVM tools (on Ubuntu, the `clang-18` and `llvm-18` packages):
+
+1. Run the test suite with coverage enabled:
 ```bash
-make test WITH_COVERAGE=1
+make test WITH_COVERAGE=1 CXX=clang++-18 LLVM_PROFDATA=llvm-profdata-18 LLVM_COV=llvm-cov-18
 ```
 
-2. Coverage data is collected in `build/<package-name>/.coverage/` (e.g., `build/tests/.coverage/` for the default test suite)
-3. LCOV generates `coverage.info` file in that directory
-4. Use with your favorite coverage visualization tool
+2. Each test process writes a raw profile to `build/<package-name>/.coverage/` (e.g., `build/tests/.coverage/` for the default test suite)
+3. `llvm-profdata` merges them and `llvm-cov export` writes `coverage.info` (LCOV format) to that directory
+4. Use with your favorite coverage visualization tool, or browse it directly with `llvm-cov show -format=html -instr-profile build/tests/.coverage/tests.profdata build/tests/tests -output-dir build/tests/.coverage/html`
+
+Coverage builds run without OpenMP: threads contend for the shared coverage counters, which slows the instrumented suite down by more than an order of magnitude.
 
 ### Clean Build
 

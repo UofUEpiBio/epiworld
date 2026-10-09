@@ -17,7 +17,7 @@ $($(NAME)_BUILD_DIR)/test.mk: override NAME := $(NAME)
 $($(NAME)_BUILD_DIR)/test.mk: $($(NAME)_BUILD_DIR)/$(NAME)
 	$(SAY) "GEN" $@
 	$(V)mkdir -p $($(NAME)_BUILD_DIR)
-	$(V)perl script/test-gen-runner.pl '$(NAME)' '$($(NAME)_BUILD_DIR)' $($(NAME)_COV_DIRS) > $@
+	$(V)perl script/test-gen-runner.pl '$(NAME)' '$($(NAME)_BUILD_DIR)' > $@
 	
 # Call into the generated test Makefile to run all tests.
 # Then, if coverage is enabled, aggregate the coverage data.
@@ -40,11 +40,17 @@ $(NAME)-test-gen-report: $(NAME)-tests
 	fi; \
 	exit $$JUNIT_STATUS
 	
+# With coverage on, every test process writes its own raw profile (%p is the
+# process id); they are merged once the suite is done.
 .PHONY: $(NAME)-tests
 $(NAME)-tests: override NAME := $(NAME)
+$(NAME)-tests: export LLVM_PROFILE_FILE := $(abspath $($(NAME)_COV_DIR))/%p.profraw
 $(NAME)-tests: $($(NAME)_BUILD_DIR)/$(NAME) $($(NAME)_BUILD_DIR)/test.mk | $($(NAME)_TEST_HOOKS)
 	$(SAY) "SUITE" $@
 	$(V)mkdir -p $($(NAME)_TEST_DIR)
+ifeq ($(WITH_COVERAGE),1)
+	$(V)rm -rf $($(NAME)_COV_DIR) && mkdir -p $($(NAME)_COV_DIR)
+endif
 	
 ifneq ($(TESTS),)
 	$(V)echo "Running tests: $(TESTS)"
@@ -52,7 +58,7 @@ ifneq ($(TESTS),)
 	$(V)cd $($(NAME)_TEST_DIR) && \
 	IFS=';'; \
 	set -- $(TESTS); \
-	GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(abspath $($(NAME)_COV_DIR))' $(abspath $($(NAME)_BUILD_DIR)/$(NAME)) \
+	$(abspath $($(NAME)_BUILD_DIR)/$(NAME)) \
 		--reporter junit \
 		--out $(abspath $($(NAME)_TEST_DIR))/report.xml \
 		"$$@"
@@ -61,34 +67,16 @@ else
 	$(MAKE) \
 		-C $($(NAME)_TEST_DIR) \
 		-f $(abspath $(ROOT_SOURCE_DIR))/$($(NAME)_BUILD_DIR)/test.mk \
-		V='$(V)' SAY='$(SAY)' WITH_COVERAGE='$(WITH_COVERAGE)' LCOV='$(LCOV)' TESTS='$(TESTS)'
+		V='$(V)' SAY='$(SAY)'
         
 	$(V)perl $(ROOT_SOURCE_DIR)/script/junit-combine.pl $($(NAME)_TEST_DIR)/report-*.xml > $(abspath $($(NAME)_TEST_DIR))/report.xml
 endif
 
-ifneq ($(TESTS),1)
 ifeq ($(WITH_COVERAGE),1)
-	$(V)for f in $($(NAME)_BUILD_DIR)/*.gcno; do \
-		ln -sf "$$(realpath $$f)" "$(abspath $($(NAME)_COV_DIR))/$$(basename $$f)"; \
-	done
-	$(SAY) 'LCOV' '$(abspath $($(NAME)_COV_DIR))/coverage.info'
-	$(V)$(LCOV) --capture --directory "$(abspath $($(NAME)_COV_DIR))" --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
-		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
-	$(V)$(LCOV) --extract "$(abspath $($(NAME)_COV_DIR))/coverage.info" $(foreach d,$($(NAME)_COV_DIRS),$(abspath $(d))) --output-file "$(abspath $($(NAME)_COV_DIR))/coverage.info" --quiet \
-		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
-endif
-else
-ifeq ($(WITH_COVERAGE),1)
-	$(SAY) 'LCOV' '$($(NAME)_COV_DIR)/coverage.info'
-	$(V)merge_args=""; \
-	for f in $($(NAME)_COV_DIR)/coverage-*.info; do \
-	    merge_args="$$merge_args --add-tracefile $$f"; \
-	done; \
-	$(LCOV) $$merge_args \
-		--output-file '$($(NAME)_COV_DIR)/coverage.info' \
-		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused
-	perl -pi -e 's|SF:$(abspath $(ROOT_SOURCE_DIR))/|SF:./|g' $($(NAME)_COV_DIR)/coverage.info
-endif
+	$(SAY) "COV" $($(NAME)_COV_DIR)/coverage.info
+	$(V)$(LLVM_PROFDATA) merge -sparse $($(NAME)_COV_DIR)/*.profraw -o $($(NAME)_COV_DIR)/$(NAME).profdata
+	$(V)$(LLVM_COV) export -format=lcov -instr-profile $($(NAME)_COV_DIR)/$(NAME).profdata \
+		$($(NAME)_BUILD_DIR)/$(NAME) $(abspath $($(NAME)_COV_DIRS)) > $($(NAME)_COV_DIR)/coverage.info
 endif
 
 TEST_TARGETS += $(NAME)-test	

@@ -7,35 +7,18 @@ use File::Spec;
 
 @ARGV >= 2 or die "usage: $0 NAME BUILD_DIR\n";
 
-my ($name, $build_dir, @cov_dirs) = @ARGV;
+my ($name, $build_dir) = @ARGV;
 
 $build_dir = File::Spec->rel2abs($build_dir);
 my $test_dir = File::Spec->catdir($build_dir, ".test");
-my $cov_dir  = File::Spec->catdir($build_dir, ".coverage");
 my $binary   = File::Spec->catfile($build_dir, $name);
-@cov_dirs = map { File::Spec->rel2abs($_) } @cov_dirs;
 
 my $fragment = <<'EOF';
 # Test case: %HUMAN_NAME%
-ifeq ($(WITH_COVERAGE),1)
-%COV_DIR%/coverage-%RULE_NAME%.info: COV_SILO = %COV_DIR%/coverage-%RULE_NAME%
-%COV_DIR%/coverage-%RULE_NAME%.info: %TEST_DIR%/report-%RULE_NAME%.xml
-	$(SAY) 'LCOV' '$(COV_SILO)/coverage.info'
-	$(V)for f in %BUILD_DIR%/*.gcno; do \
-		ln -sf "$$(realpath $$f)" "$(COV_SILO)/$$(basename $$f)"; \
-	done
-	$(V)$(LCOV) --capture --directory "$(COV_SILO)" --output-file "$(COV_SILO)/coverage.info" --quiet \
-		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
-	$(V)$(LCOV) --extract "$(COV_SILO)/coverage.info" %COV_DIRS% --output-file "%COV_DIR%/coverage-%RULE_NAME%.info" --quiet \
-		--ignore-errors inconsistent,inconsistent,unsupported,unsupported,format,format,empty,empty,count,count,unused,unused,version,version,gcov,gcov
-endif
-
 %TEST_DIR%/report-%RULE_NAME%.xml: TTYP = %TEST_DIR%/.tty-%RULE_NAME%
-%TEST_DIR%/report-%RULE_NAME%.xml: COV_SILO = %COV_DIR%/coverage-%RULE_NAME%
 %TEST_DIR%/report-%RULE_NAME%.xml: %BINARY%
 	$(SAY) 'TEST' '%SHELL_NAME%'
-	$(V)mkdir -p $(COV_SILO)
-	$(V)GCOV_PREFIX_STRIP=999 GCOV_PREFIX='$(COV_SILO)' %BINARY% \
+	$(V)%BINARY% \
 		--reporter junit \
 		--out %TEST_DIR%/report-%RULE_NAME%.xml \
 		'%SHELL_NAME%' \
@@ -45,11 +28,7 @@ endif
 	rm '$(TTYP)'
 
 .PHONY: %RULE_NAME%
-ifeq ($(WITH_COVERAGE),1)
-%RULE_NAME%: %COV_DIR%/coverage-%RULE_NAME%.info
-else
 %RULE_NAME%: %TEST_DIR%/report-%RULE_NAME%.xml
-endif
 
 EOF
 
@@ -68,10 +47,6 @@ if (open my $cmd, "-|", "$binary -l") {
     }
     close $cmd;
 }
-
-my $build_abs = $build_dir;
-my $test_abs  = $test_dir;
-my $cov_abs   = $cov_dir;
 
 my @targets;
 
@@ -108,10 +83,7 @@ for my $test (@tests) {
         HUMAN_NAME => $test,
         SHELL_NAME => shell_escape($test),
         BINARY => $binary,
-        BUILD_DIR => $build_abs,
-        TEST_DIR => $test_abs,
-        COV_DIR => $cov_abs,
-        COV_DIRS => join ' ', map { "'$_'" } @cov_dirs,
+        TEST_DIR => $test_dir,
     );
 
     print $block;
