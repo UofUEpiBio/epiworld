@@ -53,6 +53,35 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
         return transitions[from + to * n_states];
     };
 
+    // The daily history: each day accounts for every agent (staying or moving),
+    // and its days add up to the counts above
+    std::vector< std::string > state_from, state_to;
+    std::vector< int > hist_date, hist_counts;
+    model.get_db().get_hist_transition_matrix(
+        state_from, state_to, hist_date, hist_counts, false
+    );
+
+    const auto & labels = model.get_states();
+    auto state_id = [&labels](const std::string & s) {
+        return static_cast< size_t >(
+            std::find(labels.begin(), labels.end(), s) - labels.begin()
+        );
+    };
+
+    std::vector< int > per_day(model.get_ndays() + 1u, 0);
+    std::vector< epiworld_double > summed(n_states * n_states, 0.0);
+    for (size_t i = 0u; i < hist_counts.size(); ++i)
+    {
+        per_day[hist_date[i]] += hist_counts[i];
+        if (hist_date[i] < static_cast< int >(model.get_ndays()))
+            summed[state_id(state_from[i]) + state_id(state_to[i]) * n_states] +=
+                hist_counts[i];
+    }
+
+    REQUIRE(hist_counts.size() == per_day.size() * n_states * n_states);
+    REQUIRE(per_day == std::vector< int >(per_day.size(), static_cast< int >(model.size())));
+    REQUIRE(summed == transitions);
+
     REQUIRE(model.get_virus(0).get_incubation(&model) == 3.0);
     REQUIRE(moves(exposed_state, exposed_state) == 0.0);
     REQUIRE(moves(exposed_state, removed_state) == 0.0);

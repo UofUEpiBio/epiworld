@@ -129,6 +129,29 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
         REQUIRE(ties_of(m) == expected);
     }
 
+    // An undirected Bernoulli graph: symmetric, no self-ties, and about
+    // p * n * (n - 1) / 2 ties (sd ~ 30 here)
+    {
+        epimodels::ModelSIR<> m("a virus", 0.1, 0.5, 0.3);
+        m.seed(77);
+        m.agents_bernoulli(300u, 0.02);
+
+        auto ties = ties_of(m);
+        REQUIRE_FALSE(m.is_directed());
+        REQUIRE(ties.size() > 897u - 150u);
+        REQUIRE(ties.size() < 897u + 150u);
+        for (const auto & t : ties)
+        {
+            REQUIRE(t.first != t.second);
+            REQUIRE(m.has_edge(t.second, t.first));
+        }
+
+        size_t degree_sum = 0u;
+        for (const auto & a : m.get_agents())
+            degree_sum += a.get_n_neighbors();
+        REQUIRE(degree_sum == 2u * ties.size());
+    }
+
     // A directed small world is a ring of k out-ties per agent (plus rewiring),
     // not 2k ties at both ends.
     {
