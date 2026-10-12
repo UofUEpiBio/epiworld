@@ -211,7 +211,7 @@ shows `GlobalEvent` already provides it. The suggested changes to the plan:
 | | Where | Status |
 |---|---|---|
 | Exposed agents transmit in the network `ModelSEIR` and `ModelSEIRD`, contrary to `docs/impl/core-simulation-models.md` ("not yet infectious"). `ModelSEIRCONN`, `ModelSEIRNetworkQuarantine`, and the mixing models count only Infected agents. With an incubation so long that nobody leaves Exposed, 10 initial cases turn into 1,000. | epiworld, `models/seir.hpp`, `models/seird.hpp` | PR open (UofUEpiBio/epiworld#313), with an end-to-end test (`tests/44-seir-exposed-not-infectious.cpp`) that fails without the fix |
-| SEIRD builder vignette excludes Recovered and Deceased (`exclude = c(3L, 4L)`) instead of Exposed (index 1), so exposed agents transmit. | epiworldR, `vignettes/model-builder.qmd` | PR open (UofUEpiBio/epiworldR#210) |
+| Builder examples exclude the wrong states from the susceptible update. Transitions from `update_fun_rate()` only change the state, so recovered and deceased agents keep the virus and must be excluded, as must Exposed. The SIR example excluded none (3,709 vs 1,303 ever infected by day 30 against `ModelSIR`); the SEIRD one missed Exposed (2,868 vs 730). | epiworldR, `vignettes/model-builder.qmd`, `?model_builder`, `test-model-builder.R` | PR open (UofUEpiBio/epiworldR#210), which also syncs the core fix |
 | `add_virus()` fails on `ModelSIRMixing`, `ModelSEIRMixing`, `ModelSEIRMixingQuarantine` with `has no -init- state`: the mixing classes have no `add_virus` method. | epiworldR, `R/virus.R` | Same PR, with a test |
 
 The first row changes simulation results of network SEIR and SEIRD models
