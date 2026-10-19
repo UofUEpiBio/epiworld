@@ -218,6 +218,7 @@ Timings on a laptop are noisy, so scenarios A–C were also counted exactly with
 ## See Also
 
 - [Sampling Contacts](sampling-contacts.md) — the probability of infection and how tools adjust it.
+- [Combining Exposures](combining-exposures.md) — why the roulette is replaced by independent exposures in 1.0.0.
 - [Queueing System](queueing-system.md) — which agents are updated at each step.
 - [Reproducibility and `run_multiple`](reproducibility-and-run-multiple.md) — seeds and multiple runs.
 - [Performance Optimization](performance-optimization.md) — benchmarking the library.
