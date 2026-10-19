@@ -185,6 +185,8 @@ protected:
     // actual horizon. Not copied: a copy of the model is not in a run.
     bool running = false;
 
+    void set_running(bool value); ///< Also tells the layers (see `ContactLayer`)
+
     void dist_tools();
     void dist_virus();
     void dist_entities();
@@ -1086,11 +1088,17 @@ public:
     ContactLayer<TSeq> & get_layer(size_t id); ///< Retrieve a layer by id
     ContactLayer<TSeq> & get_layer(std::string_view name); ///< Retrieve a layer by name
 
-    /// Retrieve a layer by id as its own type (unchecked cast; ids are cheaper than names)
+    /// Retrieve a layer as its own type (unchecked cast; ids are cheaper than names)
     template<typename TLayer>
     TLayer & get_layer_as(size_t id)
     {
         return static_cast< TLayer & >(get_layer(id));
+    }
+
+    template<typename TLayer>
+    TLayer & get_layer_as(std::string_view name)
+    {
+        return static_cast< TLayer & >(get_layer(name));
     }
 
     /// Calls `update()` on every layer with auto-update on (done by `run()` each step)

@@ -32,7 +32,8 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     for (size_t i = 0u; i < n; ++i)
         groups[i] = (i >= 270u) ? no_group : (i % 3u);
 
-    model.mixing().set_groups(groups, 3u);
+    auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
+    mixing.set_groups(groups, 3u);
 
     model.verbose_off();
     model.run(20, 1912);
@@ -60,10 +61,10 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     REQUIRE(outside == 0u);
 
     // The layer reports the grouping it was given
-    REQUIRE(model.mixing().get_n_groups() == 3u);
-    REQUIRE(model.mixing().get_group(4u) == 1u);
-    REQUIRE(model.mixing().in_layer(4u));
-    REQUIRE_FALSE(model.mixing().in_layer(273u));
+    REQUIRE(mixing.get_n_groups() == 3u);
+    REQUIRE(mixing.get_group(4u) == 1u);
+    REQUIRE(mixing.in_layer(4u));
+    REQUIRE_FALSE(mixing.in_layer(273u));
 
     // The layers of the model are reachable by name and by id
     REQUIRE(model.get_n_layers() == 1u);

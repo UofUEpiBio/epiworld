@@ -140,17 +140,17 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     calc_r0(R0_obs1, R0_exp1, R0s, compute_avg_row_sum());
 
     scale_contact_matrix(1.5);
-    model_1.set_contact_matrix(contact_matrix);
+    model_1.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs2, R0_exp2, R0s, compute_avg_row_sum());
 
     scale_contact_matrix(1.5);
-    model_1.set_contact_matrix(contact_matrix);
+    model_1.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs3, R0_exp3, R0s, compute_avg_row_sum());
 
     scale_contact_matrix(1.5);
-    model_1.set_contact_matrix(contact_matrix);
+    model_1.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs4, R0_exp4, R0s, compute_avg_row_sum());
     

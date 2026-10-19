@@ -17,8 +17,7 @@
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSIRMixing :
-    public Model<TSeq>,
-    public layer::MixingModel< TSeq, ModelSIRMixing<TSeq> >
+    public Model<TSeq>
 {
 private:
 
@@ -68,11 +67,6 @@ public:
         std::vector< int > queue_ = {}
     ) override;
 
-    size_t get_n_infected(size_t group) const
-    {
-        return const_cast< ModelSIRMixing<TSeq> * >(this)->mixing().get_n_infectious(group);
-    }
-
 };
 
 template<typename TSeq>
@@ -113,7 +107,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         std::vector< int >({ModelSIRMixing<TSeq>::INFECTED}),
         std::vector< int >({ModelSIRMixing<TSeq>::SUSCEPTIBLE, ModelSIRMixing<TSeq>::INFECTED, ModelSIRMixing<TSeq>::RECOVERED})
     );
-    mixing->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix);
     this->add_layer(std::move(mixing));
 
     UpdateFun<TSeq> update_susceptible = [](
@@ -121,9 +115,8 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         ) -> void
         {
 
-            // Downcasting to retrieve the layer attached to the class
-            auto * m_down = model_cast<ModelSIRMixing<TSeq>, TSeq>(m);
-            auto & mixing = m_down->mixing();
+            // Layer 0 is the mixing layer (added by the constructor)
+            auto & mixing = m->template get_layer_as< layer::Mixing<TSeq> >(0u);
 
             if (!mixing.in_layer(p->get_id()))
                 return;

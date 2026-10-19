@@ -46,8 +46,7 @@
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixingQuarantine :
-    public Model<TSeq>,
-    public layer::MixingModel< TSeq, ModelSEIRMixingQuarantine<TSeq> >
+    public Model<TSeq>
 {
 private:
 
@@ -230,9 +229,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    // Downcasting to retrieve the layer attached to the class
+    // Layer 0 is the mixing layer (added by the constructor); the downcast is
+    // for the sampling statistics
     auto * m_down = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
-    auto & mixing = m_down->mixing();
+    auto & mixing = m->template get_layer_as< layer::Mixing<TSeq> >(0u);
 
     if (!mixing.in_layer(p->get_id()))
         return;
@@ -684,7 +684,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})
     );
-    mixing->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix);
     mixing->set_auto_update(false);
     this->add_layer(std::move(mixing));
 
@@ -773,7 +773,7 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::next() {
 
-    this->mixing().update(*this);
+    this->template get_layer_as< layer::Mixing<TSeq> >(0u).update(*this);
     Model<TSeq>::next();
 
 }

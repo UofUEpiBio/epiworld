@@ -82,7 +82,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     at(0, 2) = 40.0;  // group 0 -> group 2: 40 (group 0 contacts group 2)
     at(1, 1) = 20.0;  // group 1 -> group 1: 20
     at(1, 0) = 20.0;  // group 1 -> group 0: 20 (group 1 also contacts group 0)
-    model.set_contact_matrix(contact_matrix);
+    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
 
     // Running and checking the results
     model.run(50, 123);
@@ -115,7 +115,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
 
     // Rerunning with plain mixing
     std::fill(contact_matrix.begin(), contact_matrix.end(), 40.0/3.0);
-    model.set_contact_matrix(contact_matrix);
+    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
 
     // Running and checking the results
     model.set_param("Days undetected", -1.0); // No detection

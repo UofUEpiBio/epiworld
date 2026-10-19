@@ -7,9 +7,7 @@ using namespace epiworld;
 // column-major, entry (i, j) = contacts of group i with group j.
 namespace {
 
-class SamplerModel :
-    public Model<>,
-    public layer::MixingModel< int, SamplerModel >
+class SamplerModel : public Model<>
 {
 public:
 
@@ -19,13 +17,13 @@ public:
         auto layer = std::make_unique< layer::Mixing<> >(
             "mixing", std::vector< int >({1}), std::vector< int >({0, 1})
         );
-        layer->set_contact_matrix(cm, true);
+        layer->set_contact_matrix(cm);
         add_layer(std::move(layer));
 
         UpdateFun<> susceptible = [](Agent<> * p, Model<> * m) -> void
         {
 
-            auto & mixing = model_cast<SamplerModel, int>(m)->mixing();
+            auto & mixing = m->get_layer_as< layer::Mixing<> >(0u);
             const size_t n_contacts = mixing.sample(p, *m);
 
             // Any sampled contact is infectious: it transmits for sure
@@ -93,7 +91,7 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
     REQUIRE(inf[2] == 0u);
 
     // The infectious agent is its own pool member but is never sampled
-    REQUIRE(model.mixing().get_n_infectious(2u) == 0u);
-    REQUIRE(model.mixing().get_n_infectious(0u) == inf[0]);
+    REQUIRE(model.get_layer_as< layer::Mixing<> >(0u).get_n_infectious(2u) == 0u);
+    REQUIRE(model.get_layer_as< layer::Mixing<> >(0u).get_n_infectious(0u) == inf[0]);
 
 }

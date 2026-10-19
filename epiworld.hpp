@@ -9449,11 +9449,11 @@ inline size_t ContactMatrix::get_contact_matrix_size() const
  *
  * ### Edits and the dirty flag
  *
- * Every edit of a layer made through its own methods, as opposed to the
- * baseline it was configured with, sets the *dirty* flag. `reset()` restores
- * the baseline of a dirty layer and clears the flag, and leaves a clean layer
- * as it is. An edit made between runs, with the "baseline" option of the
- * setter, becomes the new baseline.
+ * Whether an edit is permanent depends only on when it is made. An edit made
+ * during a run (from an update function or a global event) applies to that run
+ * only: it sets the *dirty* flag, and `reset()` restores the baseline of a
+ * dirty layer and clears the flag. An edit made between runs becomes the new
+ * baseline.
  *
  * @ingroup contact_layers
  */
@@ -9468,11 +9468,20 @@ private:
     size_t id = 0u;          ///< Position in the model's list, set by the model
     bool dirty = false;      ///< Edited since the baseline was set
     bool auto_update = true; ///< Updated by `Model::run()` once per step
+    bool in_run = false;     ///< Set by the model while it runs
 
 protected:
 
-    /// Call it from every method that edits the layer after its baseline.
-    void mark_dirty() { dirty = true; }
+    /**
+     * @brief Call it from every method that edits the layer.
+     * @return `true` if the edit is to the baseline (made between runs);
+     * otherwise it marks the layer dirty and returns `false`.
+     */
+    bool edits_baseline()
+    {
+        dirty = dirty || in_run;
+        return !in_run;
+    }
 
     /// Call it from `reset()` once the baseline has been restored.
     void mark_clean() { dirty = false; }
@@ -11114,6 +11123,8 @@ protected:
     // actual horizon. Not copied: a copy of the model is not in a run.
     bool running = false;
 
+    void set_running(bool value); ///< Also tells the layers (see `ContactLayer`)
+
     void dist_tools();
     void dist_virus();
     void dist_entities();
@@ -12015,11 +12026,17 @@ public:
     ContactLayer<TSeq> & get_layer(size_t id); ///< Retrieve a layer by id
     ContactLayer<TSeq> & get_layer(std::string_view name); ///< Retrieve a layer by name
 
-    /// Retrieve a layer by id as its own type (unchecked cast; ids are cheaper than names)
+    /// Retrieve a layer as its own type (unchecked cast; ids are cheaper than names)
     template<typename TLayer>
     TLayer & get_layer_as(size_t id)
     {
         return static_cast< TLayer & >(get_layer(id));
+    }
+
+    template<typename TLayer>
+    TLayer & get_layer_as(std::string_view name)
+    {
+        return static_cast< TLayer & >(get_layer(name));
     }
 
     /// Calls `update()` on every layer with auto-update on (done by `run()` each step)
@@ -14242,10 +14259,10 @@ inline Model<TSeq> & Model<TSeq>::run(
     // From here on get_ndays() is the run's horizon (see is_running()). The
     // guard clears the flag however the run ends, exceptions included.
     struct RunningGuard {
-        bool & flag;
-        explicit RunningGuard(bool & f) : flag(f) { flag = true; }
-        ~RunningGuard() { flag = false; }
-    } running_guard(running);
+        Model<TSeq> & model;
+        explicit RunningGuard(Model<TSeq> & m) : model(m) { model.set_running(true); }
+        ~RunningGuard() { model.set_running(false); }
+    } running_guard(*this);
 
     // Starting first infection and tools
     reset();
@@ -15789,6 +15806,14 @@ template<typename TSeq>
 inline ContactLayer<TSeq> & Model<TSeq>::get_layer(std::string_view name)
 {
     return *layers[get_layer_id(name)];
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_running(bool value)
+{
+    running = value;
+    for (auto & layer : layers)
+        layer->in_run = value;
 }
 
 template<typename TSeq>
@@ -21570,10 +21595,10 @@ namespace layer {
  *
  * ### Edits
  *
- * `set_group()` and `set_contact_matrix(..., false)` edit the layer for the
- * current run only: they set the dirty flag, and the next `reset()` restores
- * the baseline (the grouping given to `set_groups()` and the matrix given to
- * `set_contact_matrix()` with the default `as_baseline = true`).
+ * `set_group()` and `set_contact_matrix()` called during a run apply to that
+ * run only: they set the dirty flag, and the next `reset()` restores the
+ * baseline. Called between runs, they set the baseline. `set_groups()` sets
+ * the baseline grouping and can only be called between runs.
  *
  * @tparam TSeq Type of sequence.
  * @ingroup contact_layers
@@ -21631,7 +21656,7 @@ public:
         available_states(std::move(available)) {}
 
     /**
-     * @brief Sets the grouping of the layer (and its baseline).
+     * @brief Sets the grouping of the layer (between runs only).
      * @param group_of_agent One entry per agent: a group in `[0, n_groups)`, or
      * `NO_GROUP` to leave the agent out of the layer.
      * @param n_groups_ Number of groups (the contact matrix is
@@ -21645,10 +21670,7 @@ public:
     /// Whether the agent takes part in the layer (valid after `reset()`).
     bool in_layer(size_t agent_id) const { return groups[agent_id] != NO_GROUP; }
 
-    /**
-     * @brief Moves an agent to another group for the current run.
-     * @details Sets the dirty flag: the next `reset()` restores the baseline.
-     */
+    /// Moves an agent to another group (`NO_GROUP` takes it out of the layer).
     void set_group(size_t agent_id, size_t group);
 
     size_t get_n_groups() const { return n_groups; }
@@ -21658,15 +21680,10 @@ public:
      * @param cmat Column-major `n_groups x n_groups` matrix: entry `(i, j)`
      * is the expected number of contacts per day that an agent in group `i` has
      * with agents in group `j`.
-     * @param as_baseline If `true` (the default) it is also the matrix that
-     * every `reset()` restores. If `false` it only applies to the current run,
-     * and sets the dirty flag.
      */
-    void set_contact_matrix(std::vector< double > cmat, bool as_baseline = true)
+    void set_contact_matrix(std::vector< double > cmat)
     {
-        ContactMatrix::set_contact_matrix(std::move(cmat), as_baseline);
-        if (!as_baseline)
-            this->mark_dirty();
+        ContactMatrix::set_contact_matrix(std::move(cmat), this->edits_baseline());
     }
 
     /// Editing the matrix behind the layer's back would skip the dirty flag.
@@ -21719,6 +21736,12 @@ inline void Mixing<TSeq>::set_groups(
                 std::to_string(n_groups_) + " groups)."
             );
 
+    if (!this->edits_baseline())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': set_groups() sets the "
+            "baseline and cannot be called during a run; use set_group()."
+        );
+
     groups_baseline = std::move(group_of_agent);
     groups          = groups_baseline;
     n_groups        = n_groups_;
@@ -21745,9 +21768,18 @@ inline void Mixing<TSeq>::set_group(size_t agent_id, size_t group)
             std::to_string(n_groups) + " groups)."
         );
 
+    if (this->edits_baseline())
+    {
+        if (!explicit_groups)
+            throw std::logic_error(
+                "Mixing layer '" + this->get_name() + "': set_groups() must be "
+                "called before set_group() outside a run."
+            );
+        groups_baseline[agent_id] = group;
+    }
+
     groups[agent_id] = group;
     layout_stale = true;
-    this->mark_dirty();
 
 }
 
@@ -21971,50 +22003,6 @@ inline size_t Mixing<TSeq>::sample(
     return samp_id;
 
 }
-
-/**
- * @brief Base of the models that have one mixing layer, named `"mixing"`, as
- * their layer 0 (CRTP: `TModel` derives from `Model<TSeq>` and from this).
- *
- * @details It gives the model the accessors of its layer, so that update
- * functions can reach it from the model they receive and users can set the
- * contact matrix on the model itself. The layer is looked up by id each time
- * (a vector access and a cast) rather than held by pointer, so copying the
- * model (`run_multiple()`) cannot leave a model pointing at another's layer.
- */
-template<typename TSeq, typename TModel>
-class MixingModel
-{
-public:
-
-    /// The mixing layer of the model
-    layer::Mixing<TSeq> & mixing()
-    {
-        return static_cast< TModel * >(this)->template get_layer_as< layer::Mixing<TSeq> >(0u);
-    }
-
-    /// See `layer::Mixing::set_contact_matrix()`
-    void set_contact_matrix(std::vector< double > cmat, bool as_backup = true)
-    {
-        mixing().set_contact_matrix(std::move(cmat), as_backup);
-    }
-
-    const std::vector< double > & get_contact_matrix()
-    {
-        return mixing().get_contact_matrix();
-    }
-
-    double get_contact_rate(size_t i, size_t j, bool check = true)
-    {
-        return mixing().get_contact_rate(i, j, check);
-    }
-
-    size_t get_contact_matrix_size()
-    {
-        return mixing().get_contact_matrix_size();
-    }
-
-};
 
 }
 
@@ -28279,8 +28267,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixing :
-    public Model<TSeq>,
-    public layer::MixingModel< TSeq, ModelSEIRMixing<TSeq> >
+    public Model<TSeq>
 {
 private:
 
@@ -28373,7 +28360,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
         std::vector< int >({ModelSEIRMixing<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixing<TSeq>::SUSCEPTIBLE, ModelSEIRMixing<TSeq>::EXPOSED, ModelSEIRMixing<TSeq>::INFECTED, ModelSEIRMixing<TSeq>::RECOVERED})
     );
-    mixing->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix);
     this->add_layer(std::move(mixing));
 
     UpdateFun<TSeq> update_susceptible = [](
@@ -28381,9 +28368,10 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
         ) -> void
         {
 
-            // Downcasting to retrieve the layer attached to the class
+            // Layer 0 is the mixing layer (added by the constructor); the downcast is
+            // for the sampling statistics
             auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
-            auto & mixing = m_down->mixing();
+            auto & mixing = m->template get_layer_as< layer::Mixing<TSeq> >(0u);
 
             if (!mixing.in_layer(p->get_id()))
                 return;
@@ -28592,8 +28580,7 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSIRMixing :
-    public Model<TSeq>,
-    public layer::MixingModel< TSeq, ModelSIRMixing<TSeq> >
+    public Model<TSeq>
 {
 private:
 
@@ -28643,11 +28630,6 @@ public:
         std::vector< int > queue_ = {}
     ) override;
 
-    size_t get_n_infected(size_t group) const
-    {
-        return const_cast< ModelSIRMixing<TSeq> * >(this)->mixing().get_n_infectious(group);
-    }
-
 };
 
 template<typename TSeq>
@@ -28688,7 +28670,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         std::vector< int >({ModelSIRMixing<TSeq>::INFECTED}),
         std::vector< int >({ModelSIRMixing<TSeq>::SUSCEPTIBLE, ModelSIRMixing<TSeq>::INFECTED, ModelSIRMixing<TSeq>::RECOVERED})
     );
-    mixing->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix);
     this->add_layer(std::move(mixing));
 
     UpdateFun<TSeq> update_susceptible = [](
@@ -28696,9 +28678,8 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         ) -> void
         {
 
-            // Downcasting to retrieve the layer attached to the class
-            auto * m_down = model_cast<ModelSIRMixing<TSeq>, TSeq>(m);
-            auto & mixing = m_down->mixing();
+            // Layer 0 is the mixing layer (added by the constructor)
+            auto & mixing = m->template get_layer_as< layer::Mixing<TSeq> >(0u);
 
             if (!mixing.in_layer(p->get_id()))
                 return;
@@ -28913,8 +28894,7 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixingQuarantine :
-    public Model<TSeq>,
-    public layer::MixingModel< TSeq, ModelSEIRMixingQuarantine<TSeq> >
+    public Model<TSeq>
 {
 private:
 
@@ -29097,9 +29077,10 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    // Downcasting to retrieve the layer attached to the class
+    // Layer 0 is the mixing layer (added by the constructor); the downcast is
+    // for the sampling statistics
     auto * m_down = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
-    auto & mixing = m_down->mixing();
+    auto & mixing = m->template get_layer_as< layer::Mixing<TSeq> >(0u);
 
     if (!mixing.in_layer(p->get_id()))
         return;
@@ -29551,7 +29532,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})
     );
-    mixing->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix);
     mixing->set_auto_update(false);
     this->add_layer(std::move(mixing));
 
@@ -29640,7 +29621,7 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::next() {
 
-    this->mixing().update(*this);
+    this->template get_layer_as< layer::Mixing<TSeq> >(0u).update(*this);
     Model<TSeq>::next();
 
 }

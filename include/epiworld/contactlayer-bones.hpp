@@ -23,11 +23,11 @@
  *
  * ### Edits and the dirty flag
  *
- * Every edit of a layer made through its own methods, as opposed to the
- * baseline it was configured with, sets the *dirty* flag. `reset()` restores
- * the baseline of a dirty layer and clears the flag, and leaves a clean layer
- * as it is. An edit made between runs, with the "baseline" option of the
- * setter, becomes the new baseline.
+ * Whether an edit is permanent depends only on when it is made. An edit made
+ * during a run (from an update function or a global event) applies to that run
+ * only: it sets the *dirty* flag, and `reset()` restores the baseline of a
+ * dirty layer and clears the flag. An edit made between runs becomes the new
+ * baseline.
  *
  * @ingroup contact_layers
  */
@@ -42,11 +42,20 @@ private:
     size_t id = 0u;          ///< Position in the model's list, set by the model
     bool dirty = false;      ///< Edited since the baseline was set
     bool auto_update = true; ///< Updated by `Model::run()` once per step
+    bool in_run = false;     ///< Set by the model while it runs
 
 protected:
 
-    /// Call it from every method that edits the layer after its baseline.
-    void mark_dirty() { dirty = true; }
+    /**
+     * @brief Call it from every method that edits the layer.
+     * @return `true` if the edit is to the baseline (made between runs);
+     * otherwise it marks the layer dirty and returns `false`.
+     */
+    bool edits_baseline()
+    {
+        dirty = dirty || in_run;
+        return !in_run;
+    }
 
     /// Call it from `reset()` once the baseline has been restored.
     void mark_clean() { dirty = false; }

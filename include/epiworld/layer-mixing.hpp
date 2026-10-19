@@ -35,10 +35,10 @@ namespace layer {
  *
  * ### Edits
  *
- * `set_group()` and `set_contact_matrix(..., false)` edit the layer for the
- * current run only: they set the dirty flag, and the next `reset()` restores
- * the baseline (the grouping given to `set_groups()` and the matrix given to
- * `set_contact_matrix()` with the default `as_baseline = true`).
+ * `set_group()` and `set_contact_matrix()` called during a run apply to that
+ * run only: they set the dirty flag, and the next `reset()` restores the
+ * baseline. Called between runs, they set the baseline. `set_groups()` sets
+ * the baseline grouping and can only be called between runs.
  *
  * @tparam TSeq Type of sequence.
  * @ingroup contact_layers
@@ -96,7 +96,7 @@ public:
         available_states(std::move(available)) {}
 
     /**
-     * @brief Sets the grouping of the layer (and its baseline).
+     * @brief Sets the grouping of the layer (between runs only).
      * @param group_of_agent One entry per agent: a group in `[0, n_groups)`, or
      * `NO_GROUP` to leave the agent out of the layer.
      * @param n_groups_ Number of groups (the contact matrix is
@@ -110,10 +110,7 @@ public:
     /// Whether the agent takes part in the layer (valid after `reset()`).
     bool in_layer(size_t agent_id) const { return groups[agent_id] != NO_GROUP; }
 
-    /**
-     * @brief Moves an agent to another group for the current run.
-     * @details Sets the dirty flag: the next `reset()` restores the baseline.
-     */
+    /// Moves an agent to another group (`NO_GROUP` takes it out of the layer).
     void set_group(size_t agent_id, size_t group);
 
     size_t get_n_groups() const { return n_groups; }
@@ -123,15 +120,10 @@ public:
      * @param cmat Column-major `n_groups x n_groups` matrix: entry `(i, j)`
      * is the expected number of contacts per day that an agent in group `i` has
      * with agents in group `j`.
-     * @param as_baseline If `true` (the default) it is also the matrix that
-     * every `reset()` restores. If `false` it only applies to the current run,
-     * and sets the dirty flag.
      */
-    void set_contact_matrix(std::vector< double > cmat, bool as_baseline = true)
+    void set_contact_matrix(std::vector< double > cmat)
     {
-        ContactMatrix::set_contact_matrix(std::move(cmat), as_baseline);
-        if (!as_baseline)
-            this->mark_dirty();
+        ContactMatrix::set_contact_matrix(std::move(cmat), this->edits_baseline());
     }
 
     /// Editing the matrix behind the layer's back would skip the dirty flag.
@@ -184,6 +176,12 @@ inline void Mixing<TSeq>::set_groups(
                 std::to_string(n_groups_) + " groups)."
             );
 
+    if (!this->edits_baseline())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': set_groups() sets the "
+            "baseline and cannot be called during a run; use set_group()."
+        );
+
     groups_baseline = std::move(group_of_agent);
     groups          = groups_baseline;
     n_groups        = n_groups_;
@@ -210,9 +208,18 @@ inline void Mixing<TSeq>::set_group(size_t agent_id, size_t group)
             std::to_string(n_groups) + " groups)."
         );
 
+    if (this->edits_baseline())
+    {
+        if (!explicit_groups)
+            throw std::logic_error(
+                "Mixing layer '" + this->get_name() + "': set_groups() must be "
+                "called before set_group() outside a run."
+            );
+        groups_baseline[agent_id] = group;
+    }
+
     groups[agent_id] = group;
     layout_stale = true;
-    this->mark_dirty();
 
 }
 
@@ -436,50 +443,6 @@ inline size_t Mixing<TSeq>::sample(
     return samp_id;
 
 }
-
-/**
- * @brief Base of the models that have one mixing layer, named `"mixing"`, as
- * their layer 0 (CRTP: `TModel` derives from `Model<TSeq>` and from this).
- *
- * @details It gives the model the accessors of its layer, so that update
- * functions can reach it from the model they receive and users can set the
- * contact matrix on the model itself. The layer is looked up by id each time
- * (a vector access and a cast) rather than held by pointer, so copying the
- * model (`run_multiple()`) cannot leave a model pointing at another's layer.
- */
-template<typename TSeq, typename TModel>
-class MixingModel
-{
-public:
-
-    /// The mixing layer of the model
-    layer::Mixing<TSeq> & mixing()
-    {
-        return static_cast< TModel * >(this)->template get_layer_as< layer::Mixing<TSeq> >(0u);
-    }
-
-    /// See `layer::Mixing::set_contact_matrix()`
-    void set_contact_matrix(std::vector< double > cmat, bool as_backup = true)
-    {
-        mixing().set_contact_matrix(std::move(cmat), as_backup);
-    }
-
-    const std::vector< double > & get_contact_matrix()
-    {
-        return mixing().get_contact_matrix();
-    }
-
-    double get_contact_rate(size_t i, size_t j, bool check = true)
-    {
-        return mixing().get_contact_rate(i, j, check);
-    }
-
-    size_t get_contact_matrix_size()
-    {
-        return mixing().get_contact_matrix_size();
-    }
-
-};
 
 }
 

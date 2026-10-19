@@ -1717,10 +1717,10 @@ inline Model<TSeq> & Model<TSeq>::run(
     // From here on get_ndays() is the run's horizon (see is_running()). The
     // guard clears the flag however the run ends, exceptions included.
     struct RunningGuard {
-        bool & flag;
-        explicit RunningGuard(bool & f) : flag(f) { flag = true; }
-        ~RunningGuard() { flag = false; }
-    } running_guard(running);
+        Model<TSeq> & model;
+        explicit RunningGuard(Model<TSeq> & m) : model(m) { model.set_running(true); }
+        ~RunningGuard() { model.set_running(false); }
+    } running_guard(*this);
 
     // Starting first infection and tools
     reset();
@@ -2938,6 +2938,14 @@ template<typename TSeq>
 inline ContactLayer<TSeq> & Model<TSeq>::get_layer(std::string_view name)
 {
     return *layers[get_layer_id(name)];
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::set_running(bool value)
+{
+    running = value;
+    for (auto & layer : layers)
+        layer->in_run = value;
 }
 
 template<typename TSeq>

@@ -44,9 +44,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     // The same run with the matrix closed on day 1, for this run only
     model.add_globalevent(
         [&closed](Model<> * m) -> void {
-            model_cast< epimodels::ModelSIRMixing<>, int >(m)->set_contact_matrix(
-                closed, false
-            );
+            m->get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(closed);
         },
         "close"
     );
@@ -69,7 +67,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     REQUIRE_FALSE(model.get_layer("mixing").is_dirty());
 
     // An edit between runs becomes the new baseline: nothing spreads, run after run
-    model.set_contact_matrix(closed);
+    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(closed);
     model.run(30, 77);
     const auto closed_counts = counts();
 

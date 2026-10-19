@@ -68,7 +68,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
     contact_matrix[6] = 40.0;
     contact_matrix[4] = 20.0;
     contact_matrix[1] = 20.0;
-    model.set_contact_matrix(contact_matrix);
+    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
 
     // Running and checking the results
     model.run(50, 123);
@@ -103,7 +103,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     // Rerunning with plain mixing
     std::fill(contact_matrix.begin(), contact_matrix.end(), 40.0/3.0);
-    model.set_contact_matrix(contact_matrix);
+    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
 
     // Running and checking the results
     model.run(50, 123);
