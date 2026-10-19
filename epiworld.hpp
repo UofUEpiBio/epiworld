@@ -34,8 +34,8 @@
 #define EPIWORLD_HPP
 
 /* Versioning */
-#define EPIWORLD_VERSION_MAJOR 0
-#define EPIWORLD_VERSION_MINOR 19
+#define EPIWORLD_VERSION_MAJOR 1
+#define EPIWORLD_VERSION_MINOR 0
 #define EPIWORLD_VERSION_PATCH 0
 
 #define EPIWORLD_VERSION_PRERELEASE ""
@@ -9418,6 +9418,109 @@ inline size_t ContactMatrix::get_contact_matrix_size() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -./include/epiworld/contactlayer-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_CONTACTLAYER_BONES_HPP
+#define EPIWORLD_CONTACTLAYER_BONES_HPP
+
+/**
+ * @file contactlayer-bones.hpp
+ * @brief Base class of the contact layers of a model.
+ *
+ * @details A *contact layer* is one source of contacts of a model: it answers
+ * "whom did agent `i` contact this step?". A model owns any number of them (see
+ * `Model::add_layer()`), and none are implied: a model without layers has no
+ * transmission through contacts.
+ *
+ * The model drives the life cycle of its layers:
+ *
+ * - `reset()` at the end of `Model::reset()`, once the population is in its
+ *   initial state. A layer restores its baseline if it was edited during the
+ *   previous run (see `is_dirty()`) and sizes its per-run buffers.
+ * - `update()` once per step, right after the agents' update functions have
+ *   run and their changes are applied (unless `set_auto_update(false)`, in
+ *   which case the model calls it where it needs to).
+ * - `clone()` whenever the model is copied (`run_multiple()` copies models),
+ *   so replicates never share layer state.
+ *
+ * ### Edits and the dirty flag
+ *
+ * Every edit of a layer made through its own methods, as opposed to the
+ * baseline it was configured with, sets the *dirty* flag. `reset()` restores
+ * the baseline of a dirty layer and clears the flag, and leaves a clean layer
+ * as it is. An edit made between runs, with the "baseline" option of the
+ * setter, becomes the new baseline.
+ *
+ * @ingroup contact_layers
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class ContactLayer {
+
+    friend class Model<TSeq>;
+
+private:
+
+    std::string name;
+    size_t id = 0u;          ///< Position in the model's list, set by the model
+    bool dirty = false;      ///< Edited since the baseline was set
+    bool auto_update = true; ///< Updated by `Model::run()` once per step
+
+protected:
+
+    /// Call it from every method that edits the layer after its baseline.
+    void mark_dirty() { dirty = true; }
+
+    /// Call it from `reset()` once the baseline has been restored.
+    void mark_clean() { dirty = false; }
+
+public:
+
+    explicit ContactLayer(std::string name_) : name(std::move(name_)) {}
+
+    virtual ~ContactLayer() = default;
+
+    const std::string & get_name() const { return name; }
+    size_t get_id() const { return id; }
+    bool is_dirty() const { return dirty; }
+
+    bool get_auto_update() const { return auto_update; }
+
+    /**
+     * @brief Whether `Model::run()` calls `update()` every step.
+     * @details On by default. Turn it off if the model has to update the layer
+     * at a different point of the step (e.g., after its own global events).
+     */
+    void set_auto_update(bool value) { auto_update = value; }
+
+    /// Restore the baseline if dirty and size the buffers for a new run.
+    virtual void reset(Model<TSeq> & model) = 0;
+
+    /// Rebuild what depends on the state of the population (once per step).
+    virtual void update(Model<TSeq> & model) = 0;
+
+    /// Deep copy (the model's copy constructor calls it).
+    virtual std::unique_ptr< ContactLayer<TSeq> > clone() const = 0;
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/contactlayer-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -./include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -11028,6 +11131,9 @@ protected:
 
     std::vector<GlobalEventPtr<TSeq>> globalevents;
 
+    /// Contact layers (see `add_layer()`), deep-copied with the model
+    std::vector< std::unique_ptr< ContactLayer<TSeq> > > layers;
+
     Queue<TSeq> queue;
     bool use_queuing   = true;
     size_t sim_id = 0u;
@@ -11886,6 +11992,40 @@ public:
     void rm_globalevent(size_t i); ///< Remove a global action by index
 
     void run_globalevents();
+
+    /**
+     * @name Contact layers
+     * @brief Sources of contacts of the model (see `ContactLayer`).
+     * @{
+     */
+
+    /**
+     * @brief Adds a contact layer to the model.
+     * @details The model owns the layer, resets it at the end of `reset()`,
+     * updates it once per step (unless `set_auto_update(false)`), and copies it
+     * with the model.
+     * @param layer The layer. Its name must not be in use by another layer.
+     * @return A reference to the layer, valid while the model lives.
+     */
+    ContactLayer<TSeq> & add_layer(std::unique_ptr< ContactLayer<TSeq> > layer);
+
+    size_t get_n_layers() const; ///< Number of contact layers
+    bool has_layer(std::string_view name) const; ///< Whether a layer by that name exists
+    size_t get_layer_id(std::string_view name) const; ///< Id of a layer by name (throws if absent)
+    ContactLayer<TSeq> & get_layer(size_t id); ///< Retrieve a layer by id
+    ContactLayer<TSeq> & get_layer(std::string_view name); ///< Retrieve a layer by name
+
+    /// Retrieve a layer by id as its own type (unchecked cast; ids are cheaper than names)
+    template<typename TLayer>
+    TLayer & get_layer_as(size_t id)
+    {
+        return static_cast< TLayer & >(get_layer(id));
+    }
+
+    /// Calls `update()` on every layer with auto-update on (done by `run()` each step)
+    void update_layers();
+
+    /** @} */
 
     void clear_state_set();
 
@@ -13039,6 +13179,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     for (const auto & ge : model.globalevents)
         globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
 
+    layers.reserve(model.layers.size());
+    for (const auto & layer : model.layers)
+        layers.emplace_back(layer->clone());
+
     // Entity-agent relationships now use size_t IDs, so they copy
     // correctly without any rebinding needed.
 
@@ -13087,6 +13231,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
     globalevents(std::move(model.globalevents)),
+    layers(std::move(model.layers)),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
     sim_id(model.sim_id),
@@ -13168,6 +13313,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     globalevents.reserve(m.globalevents.size());
     for (const auto & ge : m.globalevents)
         globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
+
+    layers.clear();
+    layers.reserve(m.layers.size());
+    for (const auto & layer : m.layers)
+        layers.emplace_back(layer->clone());
 
     queue = m.queue;
     use_queuing = m.use_queuing;
@@ -14124,6 +14274,9 @@ inline Model<TSeq> & Model<TSeq>::run(
         // user needs.
         this->update_state();
 
+        // The layers rebuild what depends on who is in which state
+        this->update_layers();
+
         // We start with the Global events
         this->run_globalevents();
 
@@ -14784,6 +14937,11 @@ inline void Model<TSeq>::reset() {
         event->reset(this);
 
     events_run();
+
+    // The layers see the population as the first day will find it: after the
+    // initial states, viruses, tools and the global events' set-up are applied.
+    for (auto & layer : layers)
+        layer->reset(*this);
 
     // Recording day 0 and advancing to day 1 is handled by Model::run().
     // Keeping reset() side-effect free from virtual next() prevents
@@ -15564,6 +15722,81 @@ inline void Model<TSeq>::run_globalevents()
         events_run();
     }    
 
+}
+
+template<typename TSeq>
+inline ContactLayer<TSeq> & Model<TSeq>::add_layer(
+    std::unique_ptr< ContactLayer<TSeq> > layer
+)
+{
+
+    if (!layer)
+        throw std::invalid_argument("Cannot add a null contact layer.");
+
+    if (has_layer(layer->get_name()))
+        throw std::logic_error(
+            "There is already a contact layer named '" + layer->get_name() + "'."
+        );
+
+    layer->id = layers.size();
+    layers.push_back(std::move(layer));
+
+    return *layers.back();
+
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_n_layers() const
+{
+    return layers.size();
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_layer(std::string_view name) const
+{
+    for (const auto & layer : layers)
+        if (layer->get_name() == name)
+            return true;
+
+    return false;
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_layer_id(std::string_view name) const
+{
+    for (const auto & layer : layers)
+        if (layer->get_name() == name)
+            return layer->get_id();
+
+    throw std::out_of_range(
+        "There is no contact layer named '" + std::string(name) + "'."
+    );
+}
+
+template<typename TSeq>
+inline ContactLayer<TSeq> & Model<TSeq>::get_layer(size_t id)
+{
+    if (id >= layers.size())
+        throw std::out_of_range(
+            "Contact layer " + std::to_string(id) + " is out of range (the model has " +
+            std::to_string(layers.size()) + ")."
+        );
+
+    return *layers[id];
+}
+
+template<typename TSeq>
+inline ContactLayer<TSeq> & Model<TSeq>::get_layer(std::string_view name)
+{
+    return *layers[get_layer_id(name)];
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::update_layers()
+{
+    for (auto & layer : layers)
+        if (layer->get_auto_update())
+            layer->update(*this);
 }
 
 template<typename TSeq>
@@ -21294,24 +21527,35 @@ inline double Model<TSeq>::get_transmission_kappa() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/sampler-mixing.hpp-
+ Start of -./include/epiworld/layer-mixing.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_SAMPLER_MIXING_HPP
-#define EPIWORLD_SAMPLER_MIXING_HPP
+#ifndef EPIWORLD_LAYER_MIXING_HPP
+#define EPIWORLD_LAYER_MIXING_HPP
 
-namespace sampler {
+namespace layer {
 
 /**
- * @brief Samples infectious contacts for models with mixing (contact matrix).
+ * @brief Contact layer with mixing (a contact matrix across groups).
  *
- * @details The sampler is configured with two lists of states: the
+ * @details The layer is configured with two lists of states: the
  * *infectious* states (whose agents can be contacted and transmit) and the
  * *available* states (agents that take part in the mixing, which is what the
- * contact rate is spread over). Agents are grouped by their first entity.
+ * contact rate is spread over).
+ *
+ * ### Groups
+ *
+ * The layer owns the grouping: `set_groups()` assigns every agent a group (or
+ * `NO_GROUP`, which leaves it out of the layer). If no grouping is set, `reset()`
+ * builds one from the model's entities, each agent going to the group of its
+ * first entity (and agents without entities to none), which is how the mixing
+ * models are built. Either way, from then on the layer works on its own table,
+ * not on the entities.
+ *
+ * ### Sampling
  *
  * Each step, `update()` rebuilds the pool of infectious agents of each group,
  * and the number of available agents per group, without scanning the
@@ -21324,16 +21568,40 @@ namespace sampler {
  * infectious agents of `g`), picks the infectious agents with replacement
  * (duplicates are kept) and rejects contacts with the agent itself.
  *
+ * ### Edits
+ *
+ * `set_group()` and `set_contact_matrix(..., false)` edit the layer for the
+ * current run only: they set the dirty flag, and the next `reset()` restores
+ * the baseline (the grouping given to `set_groups()` and the matrix given to
+ * `set_contact_matrix()` with the default `as_baseline = true`).
+ *
  * @tparam TSeq Type of sequence.
+ * @ingroup contact_layers
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Mixing {
+class Mixing :
+    public ContactLayer<TSeq>,
+    public ContactMatrix
+{
+public:
+
+    /// Group of the agents that are not in the layer.
+    static constexpr size_t NO_GROUP = std::numeric_limits< size_t >::max();
+
 private:
 
     std::vector< char > is_infectious; ///< Lookup table, one entry per state
     std::vector< char > is_available;  ///< Lookup table, one entry per state
     std::vector< int > infectious_states;
     std::vector< int > available_states;
+
+    // Grouping
+    std::vector< size_t > groups;          ///< Group of each agent
+    std::vector< size_t > groups_baseline; ///< Set by set_groups()
+    size_t n_groups = 0u;
+    bool explicit_groups = false; ///< Set by set_groups(), else from entities
+    bool layout_stale = true;     ///< Group sizes and pool offsets to rebuild
+    std::vector< size_t > group_size; ///< Agents in each group
 
     std::vector< size_t > pool;      ///< Infectious agents, partitioned by group
     std::vector< size_t > offsets;   ///< Where each group starts in `pool`
@@ -21345,41 +21613,88 @@ private:
     std::vector< size_t > ordered;   ///< Infectious ids (ascending), scratch
     std::vector< size_t > sampled;   ///< Output buffer of `sample()`
 
+    void rebuild_layout();
+
 public:
 
-    Mixing() = default;
-
     /**
+     * @param name Name of the layer (unique in a model).
      * @param infectious States whose agents can be sampled as contacts.
      * @param available States whose agents take part in the mixing.
      */
     Mixing(
+        std::string name,
         std::vector< int > infectious,
         std::vector< int > available
-    ) : infectious_states(std::move(infectious)),
+    ) : ContactLayer<TSeq>(std::move(name)),
+        infectious_states(std::move(infectious)),
         available_states(std::move(available)) {}
 
     /**
-     * @brief Sizes all buffers for the model and builds the first pools.
-     * Call it from the model's `reset()`, after `Model::reset()`.
+     * @brief Sets the grouping of the layer (and its baseline).
+     * @param group_of_agent One entry per agent: a group in `[0, n_groups)`, or
+     * `NO_GROUP` to leave the agent out of the layer.
+     * @param n_groups_ Number of groups (the contact matrix is
+     * `n_groups x n_groups`).
      */
-    void reset(Model<TSeq> & model);
+    void set_groups(std::vector< size_t > group_of_agent, size_t n_groups_);
+
+    /// Group of an agent (`NO_GROUP` if it is not in the layer).
+    size_t get_group(size_t agent_id) const { return groups[agent_id]; }
+
+    /// Whether the agent takes part in the layer (valid after `reset()`).
+    bool in_layer(size_t agent_id) const { return groups[agent_id] != NO_GROUP; }
+
+    /**
+     * @brief Moves an agent to another group for the current run.
+     * @details Sets the dirty flag: the next `reset()` restores the baseline.
+     */
+    void set_group(size_t agent_id, size_t group);
+
+    size_t get_n_groups() const { return n_groups; }
+
+    /**
+     * @brief Sets the contact matrix.
+     * @param cmat Column-major `n_groups x n_groups` matrix: entry `(i, j)`
+     * is the expected number of contacts per day that an agent in group `i` has
+     * with agents in group `j`.
+     * @param as_baseline If `true` (the default) it is also the matrix that
+     * every `reset()` restores. If `false` it only applies to the current run,
+     * and sets the dirty flag.
+     */
+    void set_contact_matrix(std::vector< double > cmat, bool as_baseline = true)
+    {
+        ContactMatrix::set_contact_matrix(std::move(cmat), as_baseline);
+        if (!as_baseline)
+            this->mark_dirty();
+    }
+
+    /// Editing the matrix behind the layer's back would skip the dirty flag.
+    std::vector< double > & get_contact_matrix_ref() = delete;
+
+    /**
+     * @brief Restores the baseline, sizes all buffers for the model and builds
+     * the first pools.
+     */
+    void reset(Model<TSeq> & model) override;
 
     /**
      * @brief Rebuilds the infectious pools and the available counts from the
-     * current state of the model (call it once per step).
+     * current state of the model (once per step).
      */
-    void update(Model<TSeq> & model);
+    void update(Model<TSeq> & model) override;
+
+    std::unique_ptr< ContactLayer<TSeq> > clone() const override
+    {
+        return std::make_unique< Mixing<TSeq> >(*this);
+    }
 
     /**
-     * @brief Samples the infectious contacts of `agent`.
+     * @brief Samples the infectious contacts of `agent`, which must be in the
+     * layer.
      * @return Number of valid entries in `sampled_ids()`.
      */
-    size_t sample(
-        Agent<TSeq> * agent,
-        Model<TSeq> & model,
-        const ContactMatrix & contacts
-    );
+    size_t sample(Agent<TSeq> * agent, Model<TSeq> & model);
 
     /// Agent ids drawn by the last `sample()` (first `n` entries are valid).
     const std::vector< size_t > & sampled_ids() const { return sampled; }
@@ -21388,6 +21703,75 @@ public:
     size_t get_n_infectious(size_t group) const { return counts[group]; }
 
 };
+
+template<typename TSeq>
+inline void Mixing<TSeq>::set_groups(
+    std::vector< size_t > group_of_agent,
+    size_t n_groups_
+)
+{
+
+    for (size_t g : group_of_agent)
+        if ((g != NO_GROUP) && (g >= n_groups_))
+            throw std::range_error(
+                "Mixing layer '" + this->get_name() + "': group " +
+                std::to_string(g) + " is out of range (" +
+                std::to_string(n_groups_) + " groups)."
+            );
+
+    groups_baseline = std::move(group_of_agent);
+    groups          = groups_baseline;
+    n_groups        = n_groups_;
+    explicit_groups = true;
+    layout_stale    = true;
+
+}
+
+template<typename TSeq>
+inline void Mixing<TSeq>::set_group(size_t agent_id, size_t group)
+{
+
+    if (agent_id >= groups.size())
+        throw std::range_error(
+            "Mixing layer '" + this->get_name() + "': agent " +
+            std::to_string(agent_id) + " is out of range (the layer has " +
+            std::to_string(groups.size()) + " agents; was it reset?)."
+        );
+
+    if ((group != NO_GROUP) && (group >= n_groups))
+        throw std::range_error(
+            "Mixing layer '" + this->get_name() + "': group " +
+            std::to_string(group) + " is out of range (" +
+            std::to_string(n_groups) + " groups)."
+        );
+
+    groups[agent_id] = group;
+    layout_stale = true;
+    this->mark_dirty();
+
+}
+
+template<typename TSeq>
+inline void Mixing<TSeq>::rebuild_layout()
+{
+
+    group_size.assign(n_groups, 0u);
+    for (size_t g : groups)
+        if (g != NO_GROUP)
+            ++group_size[g];
+
+    counts.assign(n_groups, 0u);
+    offsets.assign(n_groups, 0u);
+    n_available.assign(n_groups, 0u);
+    inv_available.assign(n_groups, 0.0);
+
+    // Groups start where the previous one ends (at most its size)
+    for (size_t i = 1u; i < n_groups; ++i)
+        offsets[i] = offsets[i - 1u] + group_size[i - 1u];
+
+    layout_stale = false;
+
+}
 
 template<typename TSeq>
 inline void Mixing<TSeq>::reset(Model<TSeq> & model)
@@ -21400,33 +21784,59 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
     for (int s : infectious_states)
     {
         if ((s < 0) || (static_cast< size_t >(s) >= ns))
-            throw std::range_error("Mixing sampler: infectious state out of range.");
+            throw std::range_error("Mixing layer: infectious state out of range.");
         is_infectious[s] = 1;
     }
 
     for (int s : available_states)
     {
         if ((s < 0) || (static_cast< size_t >(s) >= ns))
-            throw std::range_error("Mixing sampler: available state out of range.");
+            throw std::range_error("Mixing layer: available state out of range.");
         is_available[s] = 1;
     }
 
-    const size_t ng = model.get_entities().size();
     const size_t n = model.size();
+
+    if (explicit_groups)
+    {
+
+        // Edits of the last run are dropped
+        groups = groups_baseline;
+
+        if (groups.size() != n)
+            throw std::length_error(
+                "Mixing layer '" + this->get_name() + "': the grouping has " +
+                std::to_string(groups.size()) + " agents, but the model has " +
+                std::to_string(n) + "."
+            );
+
+    }
+    else
+    {
+
+        // One group per entity; the agent goes to its first entity
+        n_groups = model.get_entities().size();
+        groups.assign(n, NO_GROUP);
+        for (size_t i = 0u; i < n; ++i)
+        {
+            auto & a = model.get_agent(i);
+            if (a.get_n_entities() != 0u)
+                groups[i] = a.get_entity(0u, model).get_id();
+        }
+
+    }
+
+    // Checking the contact matrix (and restoring its baseline)
+    this->validate_contact_matrix(n_groups);
 
     pool.assign(n, 0u);
     sampled.assign(n, 0u);
     ordered.clear();
     ordered.reserve(n);
-    counts.assign(ng, 0u);
-    offsets.assign(ng, 0u);
-    n_available.assign(ng, 0u);
-    inv_available.assign(ng, 0.0);
     marks.assign((n + 63u) / 64u, 0u);
 
-    // Groups start where the previous one ends (at most its size)
-    for (size_t i = 1u; i < ng; ++i)
-        offsets[i] = offsets[i - 1u] + model.get_entity(i - 1u).size();
+    rebuild_layout();
+    this->mark_clean();
 
     update(model);
 
@@ -21436,8 +21846,10 @@ template<typename TSeq>
 inline void Mixing<TSeq>::update(Model<TSeq> & model)
 {
 
+    if (layout_stale)
+        rebuild_layout();
+
     const size_t ns = is_infectious.size();
-    const size_t ng = counts.size();
 
     std::fill(counts.begin(), counts.end(), 0u);
 
@@ -21463,20 +21875,19 @@ inline void Mixing<TSeq>::update(Model<TSeq> & model)
         }
     }
 
-    // Placing them in their group (agents without entity are not in the mixing)
+    // Placing them in their group (agents out of the layer are not in the mixing)
     for (size_t id : ordered)
     {
-        auto & a = model.get_agent(id);
-        if (a.get_n_entities() == 0u)
+        const size_t g = groups[id];
+        if (g == NO_GROUP)
             continue;
 
-        const size_t g = a.get_entity(0u, model).get_id();
         pool[offsets[g] + counts[g]++] = id;
     }
 
     // Available = group size - agents in non-available states
-    for (size_t g = 0u; g < ng; ++g)
-        n_available[g] = model.get_entity(g).size();
+    for (size_t g = 0u; g < n_groups; ++g)
+        n_available[g] = group_size[g];
 
     for (size_t s = 0u; s < ns; ++s)
     {
@@ -21485,17 +21896,16 @@ inline void Mixing<TSeq>::update(Model<TSeq> & model)
 
         for (size_t id : model.get_agents_in_state(s))
         {
-            auto & a = model.get_agent(id);
-            if (a.get_n_entities() == 0u)
+            const size_t g = groups[id];
+            if (g == NO_GROUP)
                 continue;
 
-            const size_t g = a.get_entity(0u, model).get_id();
             if (n_available[g] > 0u)
                 --n_available[g];
         }
     }
 
-    for (size_t g = 0u; g < ng; ++g)
+    for (size_t g = 0u; g < n_groups; ++g)
         inv_available[g] = (n_available[g] > 0u) ?
             1.0 / static_cast< double >(n_available[g]) : 0.0;
 
@@ -21504,38 +21914,36 @@ inline void Mixing<TSeq>::update(Model<TSeq> & model)
 template<typename TSeq>
 inline size_t Mixing<TSeq>::sample(
     Agent<TSeq> * agent,
-    Model<TSeq> & model,
-    const ContactMatrix & contacts
+    Model<TSeq> & model
 )
 {
 
-    const size_t agent_group_id = agent->get_entity(0u, model).get_id();
-    const size_t ngroups = counts.size();
+    const size_t agent_group_id = groups[static_cast< size_t >(agent->get_id())];
 
     size_t samp_id = 0u;
-    for (size_t g = 0u; g < ngroups; ++g)
+    for (size_t g = 0u; g < n_groups; ++g)
     {
 
-        const size_t group_size = counts[g];
+        const size_t n_pool = counts[g];
 
-        if (group_size == 0u)
+        if (n_pool == 0u)
             continue;
 
-        // How many from this entity?
+        // How many from this group?
         int nsamples = model.rbinom(
-            group_size,
-            inv_available[g] * contacts.get_contact_rate(agent_group_id, g, false)
+            n_pool,
+            inv_available[g] * this->get_contact_rate(agent_group_id, g, false)
         );
 
         for (int s = 0; s < nsamples; ++s)
         {
 
             // Randomly selecting an agent
-            int which = model.runif() * group_size;
+            int which = model.runif() * n_pool;
 
             // Correcting overflow error
-            if (which >= static_cast< int >(group_size))
-                which = static_cast< int >(group_size) - 1;
+            if (which >= static_cast< int >(n_pool))
+                which = static_cast< int >(n_pool) - 1;
 
             const size_t id = pool[offsets[g] + which];
 
@@ -21564,13 +21972,57 @@ inline size_t Mixing<TSeq>::sample(
 
 }
 
+/**
+ * @brief Base of the models that have one mixing layer, named `"mixing"`, as
+ * their layer 0 (CRTP: `TModel` derives from `Model<TSeq>` and from this).
+ *
+ * @details It gives the model the accessors of its layer, so that update
+ * functions can reach it from the model they receive and users can set the
+ * contact matrix on the model itself. The layer is looked up by id each time
+ * (a vector access and a cast) rather than held by pointer, so copying the
+ * model (`run_multiple()`) cannot leave a model pointing at another's layer.
+ */
+template<typename TSeq, typename TModel>
+class MixingModel
+{
+public:
+
+    /// The mixing layer of the model
+    layer::Mixing<TSeq> & mixing()
+    {
+        return static_cast< TModel * >(this)->template get_layer_as< layer::Mixing<TSeq> >(0u);
+    }
+
+    /// See `layer::Mixing::set_contact_matrix()`
+    void set_contact_matrix(std::vector< double > cmat, bool as_backup = true)
+    {
+        mixing().set_contact_matrix(std::move(cmat), as_backup);
+    }
+
+    const std::vector< double > & get_contact_matrix()
+    {
+        return mixing().get_contact_matrix();
+    }
+
+    double get_contact_rate(size_t i, size_t j, bool check = true)
+    {
+        return mixing().get_contact_rate(i, j, check);
+    }
+
+    size_t get_contact_matrix_size()
+    {
+        return mixing().get_contact_matrix_size();
+    }
+
+};
+
 }
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -./include/epiworld/sampler-mixing.hpp-
+ End of -./include/epiworld/layer-mixing.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -27828,12 +28280,9 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixing :
     public Model<TSeq>,
-    public ContactMatrix
+    public layer::MixingModel< TSeq, ModelSEIRMixing<TSeq> >
 {
 private:
-
-    // Samples the infectious contacts (group pools, available counts)
-    sampler::Mixing<TSeq> mixing;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -27871,8 +28320,6 @@ public:
         std::vector< double > contact_matrix
     );
 
-    void reset() override;
-
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
@@ -27886,22 +28333,6 @@ public:
     ) override;
 
 };
-
-template<typename TSeq>
-inline void ModelSEIRMixing<TSeq>::reset()
-{
-
-    Model<TSeq>::reset();
-
-    // Checking contact matrix dimensions
-    size_t nentities = this->entities.size();
-    this->validate_contact_matrix(nentities);
-
-    mixing.reset(*this);
-
-    return;
-
-}
 
 template<typename TSeq>
 inline std::unique_ptr<Model<TSeq>> ModelSEIRMixing<TSeq>::clone_ptr()
@@ -27936,27 +28367,28 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     )
 {
 
-    mixing = sampler::Mixing<TSeq>(
-        {ModelSEIRMixing<TSeq>::INFECTED},
-        {ModelSEIRMixing<TSeq>::SUSCEPTIBLE, ModelSEIRMixing<TSeq>::EXPOSED, ModelSEIRMixing<TSeq>::INFECTED, ModelSEIRMixing<TSeq>::RECOVERED}
+    // The contacts come from one mixing layer, grouped by entity
+    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+        "mixing",
+        std::vector< int >({ModelSEIRMixing<TSeq>::INFECTED}),
+        std::vector< int >({ModelSEIRMixing<TSeq>::SUSCEPTIBLE, ModelSEIRMixing<TSeq>::EXPOSED, ModelSEIRMixing<TSeq>::INFECTED, ModelSEIRMixing<TSeq>::RECOVERED})
     );
-
-    // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix, true);
+    this->add_layer(std::move(mixing));
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
-            if (p->get_n_entities() == 0)
+            // Downcasting to retrieve the layer attached to the class
+            auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
+            auto & mixing = m_down->mixing();
+
+            if (!mixing.in_layer(p->get_id()))
                 return;
 
-            // Downcasting to retrieve the sampler attached to the
-            // class
-            auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
-
-            size_t ndraws = m_down->mixing.sample(p, *m, *m_down);
+            size_t ndraws = mixing.sample(p, *m);
 
             #ifdef EPI_DEBUG
             m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
@@ -27971,7 +28403,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
             for (size_t n = 0u; n < ndraws; ++n)
             {
 
-                auto & neighbor = m->get_agent(m_down->mixing.sampled_ids()[n]);
+                auto & neighbor = m->get_agent(mixing.sampled_ids()[n]);
 
                 auto & v = neighbor.get_virus();
 
@@ -28087,20 +28519,6 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     this->add_state("Infected", update_exposed_and_infected);
     this->add_state("Recovered");
 
-    // Global function
-    GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
-    {
-
-        auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
-
-        m_down->mixing.update(*m);
-
-        return;
-
-    };
-
-    this->add_globalevent(update, "Update infected individuals");
-
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
@@ -28175,12 +28593,9 @@ inline ModelSEIRMixing<TSeq> & ModelSEIRMixing<TSeq>::initial_states(
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSIRMixing :
     public Model<TSeq>,
-    public ContactMatrix
+    public layer::MixingModel< TSeq, ModelSIRMixing<TSeq> >
 {
 private:
-
-    // Samples the infectious contacts (group pools, available counts)
-    sampler::Mixing<TSeq> mixing;
 
     size_t index(size_t i, size_t j, size_t n) {
         return j * n + i;
@@ -28216,8 +28631,6 @@ public:
         std::vector< double > contact_matrix
     );
 
-    void reset() override;
-
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
@@ -28232,25 +28645,10 @@ public:
 
     size_t get_n_infected(size_t group) const
     {
-        return mixing.get_n_infectious(group);
+        return const_cast< ModelSIRMixing<TSeq> * >(this)->mixing().get_n_infectious(group);
     }
 
 };
-
-template<typename TSeq>
-inline void ModelSIRMixing<TSeq>::reset()
-{
-
-    Model<TSeq>::reset();
-
-    // Checking contact matrix dimensions
-    size_t nentities = this->entities.size();
-    this->validate_contact_matrix(nentities);
-
-    mixing.reset(*this);
-
-    return;
-}
 
 template<typename TSeq>
 inline std::unique_ptr<Model<TSeq>> ModelSIRMixing<TSeq>::clone_ptr()
@@ -28284,27 +28682,28 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     )
 {
 
-    mixing = sampler::Mixing<TSeq>(
-        {ModelSIRMixing<TSeq>::INFECTED},
-        {ModelSIRMixing<TSeq>::SUSCEPTIBLE, ModelSIRMixing<TSeq>::INFECTED, ModelSIRMixing<TSeq>::RECOVERED}
+    // The contacts come from one mixing layer, grouped by entity
+    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+        "mixing",
+        std::vector< int >({ModelSIRMixing<TSeq>::INFECTED}),
+        std::vector< int >({ModelSIRMixing<TSeq>::SUSCEPTIBLE, ModelSIRMixing<TSeq>::INFECTED, ModelSIRMixing<TSeq>::RECOVERED})
     );
-
-    // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix, true);
+    this->add_layer(std::move(mixing));
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
-            if (p->get_n_entities() == 0)
+            // Downcasting to retrieve the layer attached to the class
+            auto * m_down = model_cast<ModelSIRMixing<TSeq>, TSeq>(m);
+            auto & mixing = m_down->mixing();
+
+            if (!mixing.in_layer(p->get_id()))
                 return;
 
-            // Downcasting to retrieve the sampler attached to the
-            // class
-            auto * m_down = model_cast<ModelSIRMixing<TSeq>, TSeq>(m);
-
-            size_t ndraws = m_down->mixing.sample(p, *m, *m_down);
+            size_t ndraws = mixing.sample(p, *m);
 
             if (ndraws == 0u)
                 return;
@@ -28316,7 +28715,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
             for (size_t n = 0u; n < ndraws; ++n)
             {
 
-                auto & neighbor = m->get_agent(m_down->mixing.sampled_ids()[n]);
+                auto & neighbor = m->get_agent(mixing.sampled_ids()[n]);
 
                 auto & v = neighbor.get_virus();
 
@@ -28410,20 +28809,6 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     this->add_state("Susceptible", update_susceptible);
     this->add_state("Infected", update_infected);
     this->add_state("Recovered");
-
-    // Global function
-    GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
-    {
-
-        auto * m_down = model_cast<ModelSIRMixing<TSeq>, TSeq>(m);
-
-        m_down->mixing.update(*m);
-
-        return;
-
-    };
-
-    this->add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------
@@ -28529,12 +28914,9 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixingQuarantine :
     public Model<TSeq>,
-    public ContactMatrix
+    public layer::MixingModel< TSeq, ModelSEIRMixingQuarantine<TSeq> >
 {
 private:
-
-    // Samples the infectious contacts (group pools, available counts)
-    sampler::Mixing<TSeq> mixing;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -28682,12 +29064,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // Checking contact matrix dimensions
-    size_t nentities = this->entities.size();
-    this->validate_contact_matrix(nentities);
-
-    mixing.reset(*this);
-
     // Setting up the quarantine parameters
     quarantine_willingness.resize(this->size(), false);
     isolation_willingness.resize(this->size(), false);
@@ -28721,14 +29097,14 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    if (p->get_n_entities() == 0)
+    // Downcasting to retrieve the layer attached to the class
+    auto * m_down = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
+    auto & mixing = m_down->mixing();
+
+    if (!mixing.in_layer(p->get_id()))
         return;
 
-    // Downcasting to retrieve the sampler attached to the
-    // class
-    auto * m_down = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
-
-    size_t ndraws = m_down->mixing.sample(p, *m, *m_down);
+    size_t ndraws = mixing.sample(p, *m);
 
     #ifdef EPI_DEBUG
     m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
@@ -28743,7 +29119,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     for (size_t n = 0u; n < ndraws; ++n)
     {
 
-        auto & neighbor = m->get_agent(m_down->mixing.sampled_ids()[n]);
+        auto & neighbor = m->get_agent(mixing.sampled_ids()[n]);
 
         auto & v = neighbor.get_virus();
 
@@ -29168,13 +29544,16 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     )
 {
 
-    mixing = sampler::Mixing<TSeq>(
-        {ModelSEIRMixingQuarantine<TSeq>::INFECTED},
-        {ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED}
+    // The contacts come from one mixing layer, grouped by entity. The model
+    // updates it at the end of the step (see next()), after its own events.
+    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+        "mixing",
+        std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::INFECTED}),
+        std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})
     );
-
-    // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix, true);
+    mixing->set_auto_update(false);
+    this->add_layer(std::move(mixing));
 
     // Setting up parameters
     this->add_param(transmission_rate, "Prob. Transmission");
@@ -29261,7 +29640,7 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::next() {
 
-    mixing.update(*this);
+    this->mixing().update(*this);
     Model<TSeq>::next();
 
 }

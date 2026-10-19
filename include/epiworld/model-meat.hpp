@@ -654,6 +654,10 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     for (const auto & ge : model.globalevents)
         globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
 
+    layers.reserve(model.layers.size());
+    for (const auto & layer : model.layers)
+        layers.emplace_back(layer->clone());
+
     // Entity-agent relationships now use size_t IDs, so they copy
     // correctly without any rebinding needed.
 
@@ -702,6 +706,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
     globalevents(std::move(model.globalevents)),
+    layers(std::move(model.layers)),
     queue(std::move(model.queue)),
     use_queuing(model.use_queuing),
     sim_id(model.sim_id),
@@ -783,6 +788,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     globalevents.reserve(m.globalevents.size());
     for (const auto & ge : m.globalevents)
         globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
+
+    layers.clear();
+    layers.reserve(m.layers.size());
+    for (const auto & layer : m.layers)
+        layers.emplace_back(layer->clone());
 
     queue = m.queue;
     use_queuing = m.use_queuing;
@@ -1739,6 +1749,9 @@ inline Model<TSeq> & Model<TSeq>::run(
         // user needs.
         this->update_state();
 
+        // The layers rebuild what depends on who is in which state
+        this->update_layers();
+
         // We start with the Global events
         this->run_globalevents();
 
@@ -2400,6 +2413,11 @@ inline void Model<TSeq>::reset() {
 
     events_run();
 
+    // The layers see the population as the first day will find it: after the
+    // initial states, viruses, tools and the global events' set-up are applied.
+    for (auto & layer : layers)
+        layer->reset(*this);
+
     // Recording day 0 and advancing to day 1 is handled by Model::run().
     // Keeping reset() side-effect free from virtual next() prevents
     // derived-model update code from running before derived reset state
@@ -2853,6 +2871,81 @@ inline void Model<TSeq>::run_globalevents()
         events_run();
     }    
 
+}
+
+template<typename TSeq>
+inline ContactLayer<TSeq> & Model<TSeq>::add_layer(
+    std::unique_ptr< ContactLayer<TSeq> > layer
+)
+{
+
+    if (!layer)
+        throw std::invalid_argument("Cannot add a null contact layer.");
+
+    if (has_layer(layer->get_name()))
+        throw std::logic_error(
+            "There is already a contact layer named '" + layer->get_name() + "'."
+        );
+
+    layer->id = layers.size();
+    layers.push_back(std::move(layer));
+
+    return *layers.back();
+
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_n_layers() const
+{
+    return layers.size();
+}
+
+template<typename TSeq>
+inline bool Model<TSeq>::has_layer(std::string_view name) const
+{
+    for (const auto & layer : layers)
+        if (layer->get_name() == name)
+            return true;
+
+    return false;
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_layer_id(std::string_view name) const
+{
+    for (const auto & layer : layers)
+        if (layer->get_name() == name)
+            return layer->get_id();
+
+    throw std::out_of_range(
+        "There is no contact layer named '" + std::string(name) + "'."
+    );
+}
+
+template<typename TSeq>
+inline ContactLayer<TSeq> & Model<TSeq>::get_layer(size_t id)
+{
+    if (id >= layers.size())
+        throw std::out_of_range(
+            "Contact layer " + std::to_string(id) + " is out of range (the model has " +
+            std::to_string(layers.size()) + ")."
+        );
+
+    return *layers[id];
+}
+
+template<typename TSeq>
+inline ContactLayer<TSeq> & Model<TSeq>::get_layer(std::string_view name)
+{
+    return *layers[get_layer_id(name)];
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::update_layers()
+{
+    for (auto & layer : layers)
+        if (layer->get_auto_update())
+            layer->update(*this);
 }
 
 template<typename TSeq>

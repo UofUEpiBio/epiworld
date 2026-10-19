@@ -21,12 +21,9 @@
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixing :
     public Model<TSeq>,
-    public ContactMatrix
+    public layer::MixingModel< TSeq, ModelSEIRMixing<TSeq> >
 {
 private:
-
-    // Samples the infectious contacts (group pools, available counts)
-    sampler::Mixing<TSeq> mixing;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -64,8 +61,6 @@ public:
         std::vector< double > contact_matrix
     );
 
-    void reset() override;
-
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
     /**
@@ -79,22 +74,6 @@ public:
     ) override;
 
 };
-
-template<typename TSeq>
-inline void ModelSEIRMixing<TSeq>::reset()
-{
-
-    Model<TSeq>::reset();
-
-    // Checking contact matrix dimensions
-    size_t nentities = this->entities.size();
-    this->validate_contact_matrix(nentities);
-
-    mixing.reset(*this);
-
-    return;
-
-}
 
 template<typename TSeq>
 inline std::unique_ptr<Model<TSeq>> ModelSEIRMixing<TSeq>::clone_ptr()
@@ -129,27 +108,28 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     )
 {
 
-    mixing = sampler::Mixing<TSeq>(
-        {ModelSEIRMixing<TSeq>::INFECTED},
-        {ModelSEIRMixing<TSeq>::SUSCEPTIBLE, ModelSEIRMixing<TSeq>::EXPOSED, ModelSEIRMixing<TSeq>::INFECTED, ModelSEIRMixing<TSeq>::RECOVERED}
+    // The contacts come from one mixing layer, grouped by entity
+    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+        "mixing",
+        std::vector< int >({ModelSEIRMixing<TSeq>::INFECTED}),
+        std::vector< int >({ModelSEIRMixing<TSeq>::SUSCEPTIBLE, ModelSEIRMixing<TSeq>::EXPOSED, ModelSEIRMixing<TSeq>::INFECTED, ModelSEIRMixing<TSeq>::RECOVERED})
     );
-
-    // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix, true);
+    this->add_layer(std::move(mixing));
 
     UpdateFun<TSeq> update_susceptible = [](
         Agent<TSeq> * p, Model<TSeq> * m
         ) -> void
         {
 
-            if (p->get_n_entities() == 0)
+            // Downcasting to retrieve the layer attached to the class
+            auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
+            auto & mixing = m_down->mixing();
+
+            if (!mixing.in_layer(p->get_id()))
                 return;
 
-            // Downcasting to retrieve the sampler attached to the
-            // class
-            auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
-
-            size_t ndraws = m_down->mixing.sample(p, *m, *m_down);
+            size_t ndraws = mixing.sample(p, *m);
 
             #ifdef EPI_DEBUG
             m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
@@ -164,7 +144,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
             for (size_t n = 0u; n < ndraws; ++n)
             {
 
-                auto & neighbor = m->get_agent(m_down->mixing.sampled_ids()[n]);
+                auto & neighbor = m->get_agent(mixing.sampled_ids()[n]);
 
                 auto & v = neighbor.get_virus();
 
@@ -279,20 +259,6 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     this->add_state("Exposed", update_exposed_and_infected);
     this->add_state("Infected", update_exposed_and_infected);
     this->add_state("Recovered");
-
-    // Global function
-    GlobalFun<TSeq> update = [](Model<TSeq> * m) -> void
-    {
-
-        auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
-
-        m_down->mixing.update(*m);
-
-        return;
-
-    };
-
-    this->add_globalevent(update, "Update infected individuals");
 
 
     // Preparing the virus -------------------------------------------

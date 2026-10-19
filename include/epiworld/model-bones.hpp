@@ -202,6 +202,9 @@ protected:
 
     std::vector<GlobalEventPtr<TSeq>> globalevents;
 
+    /// Contact layers (see `add_layer()`), deep-copied with the model
+    std::vector< std::unique_ptr< ContactLayer<TSeq> > > layers;
+
     Queue<TSeq> queue;
     bool use_queuing   = true;
     size_t sim_id = 0u;
@@ -1060,6 +1063,40 @@ public:
     void rm_globalevent(size_t i); ///< Remove a global action by index
 
     void run_globalevents();
+
+    /**
+     * @name Contact layers
+     * @brief Sources of contacts of the model (see `ContactLayer`).
+     * @{
+     */
+
+    /**
+     * @brief Adds a contact layer to the model.
+     * @details The model owns the layer, resets it at the end of `reset()`,
+     * updates it once per step (unless `set_auto_update(false)`), and copies it
+     * with the model.
+     * @param layer The layer. Its name must not be in use by another layer.
+     * @return A reference to the layer, valid while the model lives.
+     */
+    ContactLayer<TSeq> & add_layer(std::unique_ptr< ContactLayer<TSeq> > layer);
+
+    size_t get_n_layers() const; ///< Number of contact layers
+    bool has_layer(std::string_view name) const; ///< Whether a layer by that name exists
+    size_t get_layer_id(std::string_view name) const; ///< Id of a layer by name (throws if absent)
+    ContactLayer<TSeq> & get_layer(size_t id); ///< Retrieve a layer by id
+    ContactLayer<TSeq> & get_layer(std::string_view name); ///< Retrieve a layer by name
+
+    /// Retrieve a layer by id as its own type (unchecked cast; ids are cheaper than names)
+    template<typename TLayer>
+    TLayer & get_layer_as(size_t id)
+    {
+        return static_cast< TLayer & >(get_layer(id));
+    }
+
+    /// Calls `update()` on every layer with auto-update on (done by `run()` each step)
+    void update_layers();
+
+    /** @} */
 
     void clear_state_set();
 

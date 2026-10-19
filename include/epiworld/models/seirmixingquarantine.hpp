@@ -47,12 +47,9 @@
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSEIRMixingQuarantine :
     public Model<TSeq>,
-    public ContactMatrix
+    public layer::MixingModel< TSeq, ModelSEIRMixingQuarantine<TSeq> >
 {
 private:
-
-    // Samples the infectious contacts (group pools, available counts)
-    sampler::Mixing<TSeq> mixing;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -200,12 +197,6 @@ inline void ModelSEIRMixingQuarantine<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // Checking contact matrix dimensions
-    size_t nentities = this->entities.size();
-    this->validate_contact_matrix(nentities);
-
-    mixing.reset(*this);
-
     // Setting up the quarantine parameters
     quarantine_willingness.resize(this->size(), false);
     isolation_willingness.resize(this->size(), false);
@@ -239,14 +230,14 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    if (p->get_n_entities() == 0)
+    // Downcasting to retrieve the layer attached to the class
+    auto * m_down = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
+    auto & mixing = m_down->mixing();
+
+    if (!mixing.in_layer(p->get_id()))
         return;
 
-    // Downcasting to retrieve the sampler attached to the
-    // class
-    auto * m_down = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
-
-    size_t ndraws = m_down->mixing.sample(p, *m, *m_down);
+    size_t ndraws = mixing.sample(p, *m);
 
     #ifdef EPI_DEBUG
     m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
@@ -261,7 +252,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     for (size_t n = 0u; n < ndraws; ++n)
     {
 
-        auto & neighbor = m->get_agent(m_down->mixing.sampled_ids()[n]);
+        auto & neighbor = m->get_agent(mixing.sampled_ids()[n]);
 
         auto & v = neighbor.get_virus();
 
@@ -686,13 +677,16 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     )
 {
 
-    mixing = sampler::Mixing<TSeq>(
-        {ModelSEIRMixingQuarantine<TSeq>::INFECTED},
-        {ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED}
+    // The contacts come from one mixing layer, grouped by entity. The model
+    // updates it at the end of the step (see next()), after its own events.
+    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+        "mixing",
+        std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::INFECTED}),
+        std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})
     );
-
-    // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix, true);
+    mixing->set_contact_matrix(contact_matrix, true);
+    mixing->set_auto_update(false);
+    this->add_layer(std::move(mixing));
 
     // Setting up parameters
     this->add_param(transmission_rate, "Prob. Transmission");
@@ -779,7 +773,7 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
 template<typename TSeq>
 inline void ModelSEIRMixingQuarantine<TSeq>::next() {
 
-    mixing.update(*this);
+    this->mixing().update(*this);
     Model<TSeq>::next();
 
 }
