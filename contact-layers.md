@@ -1,8 +1,10 @@
 # Contact layers: combining networks and mixing in one model
 
-**Status:** plan, not started. Written 2026-10-08; revised 2026-10-19 after
-the design review (layers replace the in-`Agent` network and entities; per-layer
-queues; layer weights and virus targets; release as 1.0.0 on `v1-layers`).
+**Status:** Phase 0 done; Phase 1 in review (#316). Written 2026-10-08;
+revised 2026-10-19 after the design review (layers replace the in-`Agent`
+network and entities; per-layer queues; layer weights and virus targets;
+release as 1.0.0 on `v1-layers`), and again the same day (no compatibility
+shims; model parameters are the single source of truth for scalars).
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -111,8 +113,7 @@ turnover is high relative to contacts.
 3. **Layers own their groupings and replace entities.** A school layer is the
    school; an age-group mixing layer is the age groups. Entities exist today to
    give mixing models "common places"; once layers do that, entities have no
-   job left in the core and are removed in 1.0.0 (Phase 4, after an audit of
-   what else uses them).
+   job left in the core and are removed in 1.0.0 (by the end of Phase 3, D6).
 4. **One draw per susceptible, one source of infection.** Contacts from all
    layers go into a single accumulator, and one draw decides whether the agent
    is infected and by whom (roulette across layers). Layers are independent
@@ -139,10 +140,12 @@ turnover is high relative to contacts.
 10. **Transmissions record their layer** (`layer` column; -1 for seeded or
     non-contact infections). This is a breaking change to outputs.
 11. **Dirty-flag reset.** Every edit to a layer (add/remove a tie, move an agent
-    between groups or venues, change a weight) goes through the layer API and
-    marks the layer dirty. `reset()` restores only dirty layers from their
-    baseline; an edit made between runs becomes the new baseline. This also
-    replaces copying the whole agent backup (ties included) on every replicate.
+    between groups or venues) goes through the layer API. Whether it is
+    permanent depends only on *when* it is made, not on an argument: an edit
+    during a run marks the layer dirty, and `reset()` restores only dirty
+    layers from their baseline; an edit between runs becomes the new baseline
+    (`Model::run()` tells its layers when it runs). This also replaces copying
+    the whole agent backup (ties included) on every replicate.
 12. **Recurrence is a first-class property of a layer.** Between a fixed network
     and fresh mixing sits the *affiliation* layer (Section 5.2): stable venue
     memberships with a persistence probability `q`.
@@ -153,11 +156,27 @@ turnover is high relative to contacts.
     the same rate. The denominator policy lives in one function so that this can
     be revisited (D2).
 15. **Versioning: this is epiworld 1.0.0**, with breaking changes allowed
-    (layer column in outputs, contact-matrix accessors move, entities removed).
+    (layer column in outputs, contact-matrix accessors move to the layer, entities removed).
     Work happens on an integration branch, `v1-layers` (Section 6).
 16. **Combination rule.** Refactor phases keep today's roulette so existing
     results must stay identical; a dedicated step (Phase 6) switches the rule
     to independent exposures (D1) and updates expected results.
+17. **Model parameters are the single source of truth for scalars.** A layer
+    never stores its own copy of a number a user may calibrate or change: its
+    weight, a default contact rate, a persistence `q`, a within-venue `k`, a
+    reduced-contact factor are named model parameters, which the layer reads
+    with a `ParamRef` (the same way `Virus::set_prob_infecting("name")` works).
+    So calibration (LFMCMC), `set_param()` and global events reach layers with
+    no layer-specific code, and parameters keep their usual semantics (they are
+    not part of the layer's baseline or dirty flag). What is structure, not a
+    scalar, stays in the layer: contact matrices, ties, groupings, memberships.
+    A layer may still default a parameter it needs (adding it to the model when
+    absent), the way models add theirs in their constructors.
+18. **No compatibility shims.** The 1.0.0 API lives where the data lives: the
+    model does not forward layer methods (no `model.set_contact_matrix()`; it
+    is `model.get_layer_as<layer::Mixing<>>("mixing").set_contact_matrix()`),
+    and agents do not forward network methods (D3). The bindings are updated
+    once, in Phase 6, against the final API.
 
 ---
 
@@ -237,15 +256,14 @@ count. For network layers the contacts with an excluded agent are simply lost
 denominator is computed in one function so that frequency-dependent
 alternatives can be added later.
 
-### D3. Network convenience API
+### D3. Network convenience API (settled 2026-10-19)
 
 With no network in `Agent`, `Agent::get_neighbors()`, `neighbors_view()`,
 `Model::add_edge()`, `rm_edge()`, `has_edge()`, `agents_from_edgelist()`,
 `agents_from_adjlist()`, `agents_smallworld()`, `rewire()`,
-`write_edgelist()` take a layer (id or name) explicitly, or are methods of
-`layer::Network`. Decide in Phase 2 whether a one-argument shorthand for
-"the only network layer" is worth keeping (it fails loudly when there are
-several).
+`write_edgelist()` become methods of `layer::Network` (or builders that return
+one), and nothing else. No one-argument shorthand for "the only network
+layer" (point 18).
 
 ### D4. Mixing layers and the queue
 
@@ -260,13 +278,17 @@ layer is pulled for every susceptible, as today.
 Today `directed` is model-wide and forces pull. Recommendation: per network
 layer; a model pulls if any layer is directed.
 
-### D6. Entities removal audit
+### D6. Entities removal (settled 2026-10-19: remove, by the end of Phase 3)
 
-Before removing entities (Phase 4): list everything that uses them (entity-level
-tools and events, `Bubbles`, entity distribution functions, the measles school
-and mixing models, #311). Distribution helpers become layer-membership
-builders. Decide per use whether it moves to a layer or stays as a separate
-concept.
+Entities are removed, not kept as a parallel concept: every use moves to a
+layer (entity-level tools and events, `Bubbles`, the measles school and mixing
+models, #311). Distribution helpers become layer-membership builders; the
+random ones keep today's behavior of redrawing at every `reset()`. Until then,
+`layer::Mixing` builds its grouping from the first entity when no grouping is
+given (the one shim left from Phase 1, because the random entity distributions
+the mixing tests use redraw at each reset and have no layer counterpart yet).
+The audit is now only a checklist of call sites, done at the start of the
+removal.
 
 ### D7. Layer targets on tools: mask or list
 
@@ -313,7 +335,7 @@ because a dense matrix cannot hold 100k households, because it can express
 recurring cohorts (Section 5.2), and because, unlike `Mixing`, it supports the
 queue (an infectious agent reaches only the members of its venues).
 `Bubbles` with `BubbleTies::Complete` (cliques added and withdrawn) becomes an
-`Affiliation` layer instead of edits to the network (Phase 4).
+`Affiliation` layer instead of edits to the network (Phase 3).
 
 Recurrence, from most to least, across the three kinds: `Network` (same
 individuals), `Affiliation` with `q = 1` (same cohort), `Affiliation` with
@@ -394,9 +416,8 @@ public:
     virtual bool can_push() const { return false; }
     virtual size_t sample_reverse(size_t j, Model<TSeq> & m, std::vector<size_t> & out);
 
-    // Intensity and viruses
-    void   set_weight(double s);          // layer weight (point 6)
-    double get_weight() const;
+    // Intensity (a model parameter, point 17) and viruses
+    void   set_weight(std::string param); // layer weight (point 6)
     void   add_virus_target(const Virus<TSeq> & v);  // default: every virus
 
     // Dirty flag, set by every mutator of the derived classes
@@ -480,7 +501,7 @@ the step (point 13), so results do not depend on agent update order.
 
 None promised across 0.x -> 1.0.0. Refactor phases (1-2) keep model-level
 results identical (same seeds, same draws); the breaking surface is the API
-(layers explicit, entities removed, contact-matrix accessors moved, `layer`
+(layers explicit, entities removed, contact-matrix accessors only on the layer, `layer`
 column) and, in Phase 6, the combination rule. A migration note per phase goes
 in the release notes.
 
@@ -544,8 +565,10 @@ different epidemic sizes).
 
 ### Phase 1 -- layer interface + `layer::Mixing`
 
-- Add `ContactLayer`, the model's layer list, `add_layer()`/`get_layer()`, the
-  dirty-flag baseline/reset machinery, and per-layer queue hooks.
+- Add `ContactLayer`, the model's layer list, `add_layer()`/`get_layer()`/
+  `get_layer_as<T>()`, and the dirty-flag baseline/reset machinery (as built:
+  no model-level forwarders, no `as_baseline` argument; per-layer queue hooks
+  deferred to Phase 2, their first user).
 - Move `sampler::Mixing` into `layer::Mixing` with its own explicit grouping (no
   `get_entity(0)`).
 - Port `ModelSIRMixing`, `ModelSEIRMixing`, `ModelSEIRMixingQuarantine`.
@@ -571,12 +594,17 @@ different epidemic sizes).
 - Risk: largest phase (about 200 references to `neighbors` in `include/`, 47 in
   `agent-meat.hpp`). Neighbor order must be preserved exactly.
 
-### Phase 3 -- several layers in one model
+### Phase 3 -- several layers in one model, entities removed
 
 - Layer-aware susceptible update and accumulator (5.4); layer weights; virus
   targets per layer; layer id in transmission records, contact tracing and
   post-sampling; `layer::Affiliation` with fixed memberships (`q = 1`, several
   memberships per agent); per-layer edgelist and membership I/O.
+- Layer-membership builders replace the entity distribution functions; remove
+  entities (D6), including the entity fallback of `layer::Mixing`, the
+  entity-level tools and events, and `Bubbles` as an entity (it becomes an
+  `Affiliation` layer). The measles models move to layers here (their
+  reduced-contact state reads a model parameter, point 17).
 - An example model: households (`Affiliation`) + workplace (`Network`) + public
   spaces (`Mixing`).
 - Tests (end-to-end, about three files):
@@ -587,15 +615,13 @@ different epidemic sizes).
   - a combined model attributes transmissions to the expected layers (a
     layer with weight 0, or one that excludes the virus, records none).
 
-### Phase 4 -- participation, tools, schedules, persistence, entities
+### Phase 4 -- participation, tools, schedules, persistence
 
 - Per-agent exclusion flags (end-of-step), layer-targeted tools (D2, D7),
   `isolate(agent, keep = ...)`, global event to scale/close a layer.
 - Schedules (D10), persistence and per-venue contact rate (D8, D9), membership
   changes notified to the layer queue.
-- Bubbles as an `Affiliation` layer plus exclusion from other layers; port the
-  measles sampler and models (`include/measles/`), including the reduced-contact
-  state; remove entities after the audit (D6).
+- Bubbles: exclusion from other layers (the bubble layer itself is Phase 3).
 - An example model: the Phase 3 model plus a transit layer (morning and evening
   trips, route pools, `q < 1`, weekdays only).
 - Tests (end-to-end):
@@ -660,8 +686,9 @@ different epidemic sizes).
   dirty flag; a path that edits a layer without it would leak state between
   replicates (cf. #311). Test it directly.
 - **Hidden single-network assumptions** in models and global events (Phase 2).
-- **Entities removal** touches the measles models and anything the audit (D6)
-  finds.
+- **Entities removal** (end of Phase 3) touches the measles models, Bubbles,
+  and the entity-level tools and events; it makes Phase 3 the second-largest
+  phase.
 - **Integration branch drift.** `v1-layers` must merge `master` regularly, or
   the final merge is painful.
 - **Binding churn** across three language packages (Phase 6); the `layer`
