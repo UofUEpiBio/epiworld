@@ -506,6 +506,42 @@ the test is that existing model-level results stay identical.
   interleaved, in the devcontainer.
 - Output: overhead numbers for D1.
 
+**Result (2026-10-19, devcontainer, g++ -O2, CPU time, variants interleaved,
+scratch branch `phase0-hazard-bench`).** Hazard rule behind
+`EPI_TRANSMISSION_HAZARD` at every transmission draw (pull in all models, push
+accumulator and final draw). Benchmark: `examples/20-transmission-benchmark`
+with two new scenarios (F: `ModelSEIRMixing`, three groups; G: `ModelSEIR`,
+`p = 0.06`) and a count of infectious contacts evaluated, so the comparison is
+CPU ns **per contact** (whole-run time is confounded: the rules produce
+different epidemic sizes).
+
+| Scenario | n | Mode | ns/contact roulette | ns/contact hazard | ratio |
+|---|---|---|---|---|---|
+| B SEIR network | 100k | pull | 124.6 | 126.4 | 1.015 |
+| B SEIR network | 100k | push | 68.6 | 72.3 | 1.054 |
+| E heterogeneous SEIR | 165k | pull | 409.6 | 423.9 | 1.035 |
+| E heterogeneous SEIR | 165k | push | 427.2 | 428.8 | 1.004 |
+| F SEIR mixing | 100k | pull | 281.8 | 270.2 | 0.959 |
+| G SEIR network | 100k | pull | 203.4 | 206.3 | 1.014 |
+| G SEIR network | 100k | push | 212.7 | 210.4 | 0.990 |
+| F SEIR mixing | 1M | pull | 843.8 | 765.8 | 0.908 |
+| G SEIR network | 1M | pull | 344.4 | 306.8 | 0.891 |
+| G SEIR network | 1M | push | 339.4 | 382.7 | 1.128 |
+
+- Medians of 8 rounds (100k-165k) or 3 rounds (1M). The machine is loaded:
+  per-cell spread between rounds is 10-70%, so differences below about 5-10%
+  cannot be resolved. The 100k-165k cells have a median ratio of 1.014, with
+  no consistent direction; the 1M cells (3 rounds) scatter from 0.89 to 1.13.
+- Consistent with the microbenchmark: about 4 ns extra per contact on 70-400 ns
+  of work per contact, i.e., 1-2%.
+- Correctness (star graph, 10 contacts from two viruses, p = 0.3 and 0.05; 40,000
+  replicates; `check-rule.cpp`): P(infection) and the infector split match the
+  analytic values for both rules in pull and push (roulette 0.707 vs 0.706;
+  hazard 0.870 vs 0.870; share of virus A 0.875 vs 0.874 under hazard).
+- Decision for D1: the overhead is not measurable on real models, so there is
+  no reason to keep two rules beyond the refactor phases. Proceed as planned
+  (roulette until Phase 6, then independent exposures as the only rule).
+
 ### Phase 1 -- layer interface + `layer::Mixing`
 
 - Add `ContactLayer`, the model's layer list, `add_layer()`/`get_layer()`, the
