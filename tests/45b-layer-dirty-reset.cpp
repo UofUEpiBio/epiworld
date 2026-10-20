@@ -3,7 +3,8 @@
 using namespace epiworld;
 
 // Edits made to a layer during a run are dropped by the next reset(); edits
-// made between runs become the new baseline.
+// made between runs become the new baseline, also on a model copied during a
+// run.
 EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     const size_t n = 600u;
@@ -79,5 +80,32 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     model.run(30, 77);
     REQUIRE(counts() == closed_counts);
+
+    // A copy made during a run is not in a run: an edit on it, after the
+    // source's run, sets its baseline
+    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(cm);
+    std::unique_ptr< epimodels::ModelSIRMixing<> > copy;
+    model.add_globalevent(
+        [&copy](Model<> * m) -> void {
+            copy = std::make_unique< epimodels::ModelSIRMixing<> >(
+                *model_cast< epimodels::ModelSIRMixing<>, int >(m)
+            );
+        },
+        "copy", 1
+    );
+    model.run(30, 77);
+    REQUIRE(copy != nullptr);
+    REQUIRE_FALSE(copy->is_running());
+
+    copy->rm_globalevent("copy");
+    copy->get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(closed);
+    REQUIRE_FALSE(copy->get_layer("mixing").is_dirty());
+
+    copy->run(30, 77);
+    size_t susceptible_copy = 0u;
+    for (auto & a : copy->get_agents())
+        if (a.get_state() == epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+            ++susceptible_copy;
+    REQUIRE(susceptible_copy == n - 1u);
 
 }

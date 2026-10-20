@@ -1075,7 +1075,7 @@ public:
     /**
      * @brief Adds a contact layer to the model.
      * @details The model owns the layer, resets it at the end of `reset()`,
-     * updates it once per step (unless `set_auto_update(false)`), and copies it
+     * updates it at the end of every step (see `ContactLayer`), and copies it
      * with the model.
      * @param layer The layer. Its name must not be in use by another layer.
      * @return A reference to the layer, valid while the model lives.
@@ -1101,7 +1101,7 @@ public:
         return static_cast< TLayer & >(get_layer(name));
     }
 
-    /// Calls `update()` on every layer with auto-update on (done by `run()` each step)
+    /// Calls `update()` on every layer (done by `next()` at the end of each step)
     void update_layers();
 
     /** @} */

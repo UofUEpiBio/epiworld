@@ -186,8 +186,6 @@ public:
         return isolation_willingness;
     };
 
-    void next() override;
-
 };
 
 template<typename TSeq>
@@ -677,15 +675,13 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     )
 {
 
-    // The contacts come from one mixing layer, grouped by entity. The model
-    // updates it at the end of the step (see next()), after its own events.
+    // The contacts come from one mixing layer, grouped by entity
     auto mixing = std::make_unique< layer::Mixing<TSeq> >(
         "mixing",
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})
     );
     mixing->set_contact_matrix(contact_matrix);
-    mixing->set_auto_update(false);
     this->add_layer(std::move(mixing));
 
     // Setting up parameters
@@ -766,15 +762,6 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
         ;
 
     return *this;
-
-}
-
-
-template<typename TSeq>
-inline void ModelSEIRMixingQuarantine<TSeq>::next() {
-
-    this->template get_layer_as< layer::Mixing<TSeq> >(0u).update(*this);
-    Model<TSeq>::next();
 
 }
 

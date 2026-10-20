@@ -15,9 +15,10 @@
  * - `reset()` at the end of `Model::reset()`, once the population is in its
  *   initial state. A layer restores its baseline if it was edited during the
  *   previous run (see `is_dirty()`) and sizes its per-run buffers.
- * - `update()` once per step, right after the agents' update functions have
- *   run and their changes are applied (unless `set_auto_update(false)`, in
- *   which case the model calls it where it needs to).
+ * - `update()` at the end of every step, including day 0 (at the start of
+ *   `Model::next()`): after the agents' update functions, the global events
+ *   and rewiring, so that whatever changed during a step (states, edits of the
+ *   layer) is in force for the next step's contacts.
  * - `clone()` whenever the model is copied (`run_multiple()` copies models),
  *   so replicates never share layer state.
  *
@@ -40,9 +41,8 @@ private:
 
     std::string name;
     size_t id = 0u;          ///< Position in the model's list, set by the model
-    bool dirty = false;      ///< Edited since the baseline was set
-    bool auto_update = true; ///< Updated by `Model::run()` once per step
-    bool in_run = false;     ///< Set by the model while it runs
+    bool dirty = false;  ///< Edited since the baseline was set
+    bool in_run = false; ///< Set by the model while it runs
 
 protected:
 
@@ -70,19 +70,10 @@ public:
     size_t get_id() const { return id; }
     bool is_dirty() const { return dirty; }
 
-    bool get_auto_update() const { return auto_update; }
-
-    /**
-     * @brief Whether `Model::run()` calls `update()` every step.
-     * @details On by default. Turn it off if the model has to update the layer
-     * at a different point of the step (e.g., after its own global events).
-     */
-    void set_auto_update(bool value) { auto_update = value; }
-
     /// Restore the baseline if dirty and size the buffers for a new run.
     virtual void reset(Model<TSeq> & model) = 0;
 
-    /// Rebuild what depends on the state of the population (once per step).
+    /// Rebuild what depends on the state of the population (end of each step).
     virtual void update(Model<TSeq> & model) = 0;
 
     /// Deep copy (the model's copy constructor calls it).

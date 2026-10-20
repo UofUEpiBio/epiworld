@@ -658,6 +658,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     for (const auto & layer : model.layers)
         layers.emplace_back(layer->clone());
 
+    // A copy is not in a run, even if the source is
+    set_running(running);
+
     // Entity-agent relationships now use size_t IDs, so they copy
     // correctly without any rebinding needed.
 
@@ -793,6 +796,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     layers.reserve(m.layers.size());
     for (const auto & layer : m.layers)
         layers.emplace_back(layer->clone());
+
+    // The layers follow this model's run state, not the source's
+    set_running(running);
 
     queue = m.queue;
     use_queuing = m.use_queuing;
@@ -1643,6 +1649,9 @@ inline void Model<TSeq>::next() {
 
     #endif
 
+    // The layers see what changed during the step before the next one samples
+    update_layers();
+
     db.record();
     ++this->current_date;
 
@@ -1748,9 +1757,6 @@ inline Model<TSeq> & Model<TSeq>::run(
         // We can execute these components in whatever order the
         // user needs.
         this->update_state();
-
-        // The layers rebuild what depends on who is in which state
-        this->update_layers();
 
         // We start with the Global events
         this->run_globalevents();
@@ -2952,8 +2958,7 @@ template<typename TSeq>
 inline void Model<TSeq>::update_layers()
 {
     for (auto & layer : layers)
-        if (layer->get_auto_update())
-            layer->update(*this);
+        layer->update(*this);
 }
 
 template<typename TSeq>

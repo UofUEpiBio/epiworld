@@ -9441,9 +9441,10 @@ inline size_t ContactMatrix::get_contact_matrix_size() const
  * - `reset()` at the end of `Model::reset()`, once the population is in its
  *   initial state. A layer restores its baseline if it was edited during the
  *   previous run (see `is_dirty()`) and sizes its per-run buffers.
- * - `update()` once per step, right after the agents' update functions have
- *   run and their changes are applied (unless `set_auto_update(false)`, in
- *   which case the model calls it where it needs to).
+ * - `update()` at the end of every step, including day 0 (at the start of
+ *   `Model::next()`): after the agents' update functions, the global events
+ *   and rewiring, so that whatever changed during a step (states, edits of the
+ *   layer) is in force for the next step's contacts.
  * - `clone()` whenever the model is copied (`run_multiple()` copies models),
  *   so replicates never share layer state.
  *
@@ -9466,9 +9467,8 @@ private:
 
     std::string name;
     size_t id = 0u;          ///< Position in the model's list, set by the model
-    bool dirty = false;      ///< Edited since the baseline was set
-    bool auto_update = true; ///< Updated by `Model::run()` once per step
-    bool in_run = false;     ///< Set by the model while it runs
+    bool dirty = false;  ///< Edited since the baseline was set
+    bool in_run = false; ///< Set by the model while it runs
 
 protected:
 
@@ -9496,19 +9496,10 @@ public:
     size_t get_id() const { return id; }
     bool is_dirty() const { return dirty; }
 
-    bool get_auto_update() const { return auto_update; }
-
-    /**
-     * @brief Whether `Model::run()` calls `update()` every step.
-     * @details On by default. Turn it off if the model has to update the layer
-     * at a different point of the step (e.g., after its own global events).
-     */
-    void set_auto_update(bool value) { auto_update = value; }
-
     /// Restore the baseline if dirty and size the buffers for a new run.
     virtual void reset(Model<TSeq> & model) = 0;
 
-    /// Rebuild what depends on the state of the population (once per step).
+    /// Rebuild what depends on the state of the population (end of each step).
     virtual void update(Model<TSeq> & model) = 0;
 
     /// Deep copy (the model's copy constructor calls it).
@@ -12013,7 +12004,7 @@ public:
     /**
      * @brief Adds a contact layer to the model.
      * @details The model owns the layer, resets it at the end of `reset()`,
-     * updates it once per step (unless `set_auto_update(false)`), and copies it
+     * updates it at the end of every step (see `ContactLayer`), and copies it
      * with the model.
      * @param layer The layer. Its name must not be in use by another layer.
      * @return A reference to the layer, valid while the model lives.
@@ -12039,7 +12030,7 @@ public:
         return static_cast< TLayer & >(get_layer(name));
     }
 
-    /// Calls `update()` on every layer with auto-update on (done by `run()` each step)
+    /// Calls `update()` on every layer (done by `next()` at the end of each step)
     void update_layers();
 
     /** @} */
@@ -13200,6 +13191,9 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     for (const auto & layer : model.layers)
         layers.emplace_back(layer->clone());
 
+    // A copy is not in a run, even if the source is
+    set_running(running);
+
     // Entity-agent relationships now use size_t IDs, so they copy
     // correctly without any rebinding needed.
 
@@ -13335,6 +13329,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     layers.reserve(m.layers.size());
     for (const auto & layer : m.layers)
         layers.emplace_back(layer->clone());
+
+    // The layers follow this model's run state, not the source's
+    set_running(running);
 
     queue = m.queue;
     use_queuing = m.use_queuing;
@@ -14185,6 +14182,9 @@ inline void Model<TSeq>::next() {
 
     #endif
 
+    // The layers see what changed during the step before the next one samples
+    update_layers();
+
     db.record();
     ++this->current_date;
 
@@ -14290,9 +14290,6 @@ inline Model<TSeq> & Model<TSeq>::run(
         // We can execute these components in whatever order the
         // user needs.
         this->update_state();
-
-        // The layers rebuild what depends on who is in which state
-        this->update_layers();
 
         // We start with the Global events
         this->run_globalevents();
@@ -15820,8 +15817,7 @@ template<typename TSeq>
 inline void Model<TSeq>::update_layers()
 {
     for (auto & layer : layers)
-        if (layer->get_auto_update())
-            layer->update(*this);
+        layer->update(*this);
 }
 
 template<typename TSeq>
@@ -21690,8 +21686,8 @@ public:
     std::vector< double > & get_contact_matrix_ref() = delete;
 
     /**
-     * @brief Restores the baseline, sizes all buffers for the model and builds
-     * the first pools.
+     * @brief Restores the baseline and sizes all buffers for the model (the
+     * first `update()`, on day 0, builds the pools).
      */
     void reset(Model<TSeq> & model) override;
 
@@ -21869,8 +21865,6 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
 
     rebuild_layout();
     this->mark_clean();
-
-    update(model);
 
 }
 
@@ -29034,8 +29028,6 @@ public:
         return isolation_willingness;
     };
 
-    void next() override;
-
 };
 
 template<typename TSeq>
@@ -29525,15 +29517,13 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     )
 {
 
-    // The contacts come from one mixing layer, grouped by entity. The model
-    // updates it at the end of the step (see next()), after its own events.
+    // The contacts come from one mixing layer, grouped by entity
     auto mixing = std::make_unique< layer::Mixing<TSeq> >(
         "mixing",
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})
     );
     mixing->set_contact_matrix(contact_matrix);
-    mixing->set_auto_update(false);
     this->add_layer(std::move(mixing));
 
     // Setting up parameters
@@ -29614,15 +29604,6 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
         ;
 
     return *this;
-
-}
-
-
-template<typename TSeq>
-inline void ModelSEIRMixingQuarantine<TSeq>::next() {
-
-    this->template get_layer_as< layer::Mixing<TSeq> >(0u).update(*this);
-    Model<TSeq>::next();
 
 }
 

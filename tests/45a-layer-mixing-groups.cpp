@@ -6,7 +6,8 @@ using namespace epiworld;
 // has no entities at all: the layer is given a grouping in which an agent's
 // group is its id modulo 3, and some agents are left out of the layer. With
 // contacts only within groups and a fully transmissible virus, the infection
-// that starts in agent 0 must fill group 0 and nothing else.
+// that starts in agent 0 must fill group 0 and nothing else. A group edit made
+// during a step is in force for the next step's contacts.
 EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-groups]") {
 
     const size_t n = 300u;
@@ -70,5 +71,30 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     REQUIRE(model.get_n_layers() == 1u);
     REQUIRE(model.get_layer_id("mixing") == 0u);
     REQUIRE(model.get_layer("mixing").get_name() == "mixing");
+
+    // The only infectious agent leaves the layer on day 1, when the matrix
+    // also opens: from day 2 on there is no one to be infected by
+    epimodels::ModelSIRMixing<> solo("Flu", 100u, 0.0, 1.0, 0.0, {0.0});
+    solo.rm_virus(0);
+    solo.add_virus(v);
+    solo.get_layer_as< layer::Mixing<> >("mixing").set_groups(
+        std::vector< size_t >(100u, 0u), 1u
+    );
+    solo.add_globalevent(
+        [no_group](Model<> * m) -> void {
+            auto & layer = m->get_layer_as< layer::Mixing<> >("mixing");
+            layer.set_group(0u, no_group);
+            layer.set_contact_matrix({50.0});
+        },
+        "leave", 1
+    );
+    solo.verbose_off();
+    solo.run(5, 77);
+
+    size_t reached_solo = 0u;
+    for (auto & a : solo.get_agents())
+        if (a.get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+            ++reached_solo;
+    REQUIRE(reached_solo == 1u);
 
 }

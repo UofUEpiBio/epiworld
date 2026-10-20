@@ -130,8 +130,8 @@ public:
     std::vector< double > & get_contact_matrix_ref() = delete;
 
     /**
-     * @brief Restores the baseline, sizes all buffers for the model and builds
-     * the first pools.
+     * @brief Restores the baseline and sizes all buffers for the model (the
+     * first `update()`, on day 0, builds the pools).
      */
     void reset(Model<TSeq> & model) override;
 
@@ -309,8 +309,6 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
 
     rebuild_layout();
     this->mark_clean();
-
-    update(model);
 
 }
 
