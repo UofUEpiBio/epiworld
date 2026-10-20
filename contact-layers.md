@@ -572,6 +572,12 @@ different epidemic sizes).
 - Move `sampler::Mixing` into `layer::Mixing` with its own explicit grouping (no
   `get_entity(0)`).
 - Port `ModelSIRMixing`, `ModelSEIRMixing`, `ModelSEIRMixingQuarantine`.
+- As built: `layer::Mixing` holds the contact matrix and its baseline itself;
+  `ContactMatrix` moved to `include/measles/` (the two measles mixing models
+  still inherit it) and goes with the measles port in Phase 3.
+  `Model::sample_virus(agent, contacts, n)` is the first piece of the
+  accumulator (5.4): exposures of a list of contacts plus the one draw. The
+  five mixing models (epiworld and measles) use it.
 - Files: new `contactlayer-bones.hpp`, `layer-mixing.hpp`;
   `sampler-mixing.hpp`, `contactmatrix-*.hpp`, `models/*mixing*.hpp`,
   `model-bones.hpp`, `model-meat.hpp`.
@@ -588,6 +594,13 @@ different epidemic sizes).
   model), the push loop, `add_edge`/`rm_edge`/`rewire`, directed handling,
   `Bubbles`, `diffnet`, `sirlogit`, `surveillance`, `seirnetworkquarantine`,
   `randgraph.hpp`, database edgelist output.
+- The network pull goes through `Model::sample_virus()` too:
+  `collect_neighbor_viruses` becomes `layer::Network::sample()` (contact ids,
+  like `Mixing::sample()`), and `sampler::UpdateSusceptible`,
+  `make_update_susceptible(exclude)` and `sample_virus_single` are removed (the
+  excluded states become the layer's infectious states, as in `Mixing`;
+  `default_update_susceptible` is the one generic update; push recognizes only
+  it). `agent-meat-virus-sampling.hpp` goes away.
 - Tests: the whole suite unchanged in results (notably `15`, `20*`, `33*`,
   `34*`, `35*`, `36a`). Benchmark: no regression in pull or push (CPU time,
   interleaved).
