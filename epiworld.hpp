@@ -9227,197 +9227,6 @@ inline void ContactTracing::print(size_t agent)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/contactmatrix-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_CONTACTMATRIX_BONES_HPP
-#define EPIWORLD_CONTACTMATRIX_BONES_HPP
-
-#include <vector>
-
-/**
- * @file contactmatrix-bones.hpp
- * @brief Base class for handling contact matrices in epidemiological
- * models
- * 
- * This class provides functionality for setting and validating contact
- * matrices, which are essential for modeling population mixing in
- * epidemiological simulations. Models that require contact matrices can
- * inherit from this class.
- */
-class ContactMatrix 
-{
-private: 
-
-    std::vector< double > contact_matrix;
-    std::vector< double > contact_matrix_backup; ///< Used for resetting the model
-    int n_groups = -1;
-
-public:
-
-    ContactMatrix() = default;
-
-    /**
-     * @brief Validates the contact matrix size and values
-     * @param expected_size The expected size of the contact matrix
-     */
-    void validate_contact_matrix(size_t expected_size);
-    /**
-     * @brief Set the contact matrix for population mixing
-     * @param cmat Contact matrix specifying interaction rates between groups
-     * @param as_backup Whether to use the matrix as a backup (default: true)
-     * If set to true, the new contact matrix will be saved as a backup for
-     * resetting the model.
-     */
-    void set_contact_matrix(std::vector< double > cmat, bool as_backup = true);
-
-    /**
-     * @brief Get the current contact matrix
-     * @return Vector representing the contact matrix
-     */
-    const std::vector< double > & get_contact_matrix() const;
-
-    /**
-     * @brief Get the current contact matrix
-     * @return Vector representing the contact matrix
-     */
-    std::vector< double > & get_contact_matrix_ref();
-
-    /**
-     * @brief Get the contact rate between two groups
-     * @param i Index of the first group
-     * @param j Index of the second group
-     * @return Contact rate between group i and group j
-     */
-    double get_contact_rate(size_t i, size_t j, bool check = true) const;
-
-    /**
-     * @brief Get the size of the contact matrix
-     * @return Size of the contact matrix
-     */
-    size_t get_contact_matrix_size() const;
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/contactmatrix-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/contactmatrix-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_CONTACTMATRIX_MEAT_HPP
-#define EPIWORLD_CONTACTMATRIX_MEAT_HPP
-
-// (already included include/epiworld/contactmatrix-bones.hpp)
-#include <stdexcept>
-
-inline void ContactMatrix::validate_contact_matrix(size_t expected_size)
-{
-
-    if (!contact_matrix_backup.empty())
-        contact_matrix = contact_matrix_backup;
-
-    if (contact_matrix.size() != expected_size * expected_size)
-        throw std::length_error(
-            std::string("Contact matrix size is ") +
-            std::to_string(contact_matrix.size()) +
-            std::string(", but expected size is ") +
-            std::to_string(expected_size * expected_size) + "."
-        );
-
-    for (int i = 0; i < n_groups; ++i)
-    {
-        for (int j = 0; j < n_groups; ++j)
-        {
-            if (get_contact_rate(i, j, false) < 0.0)
-                throw std::range_error(
-                    std::string("The contact matrix must be non-negative. ") +
-                    std::to_string(this->get_contact_rate(i, j, false)) +
-                    std::string(" < 0.")
-                    );
-        }
-    }
-
-}
-
-inline void ContactMatrix::set_contact_matrix(
-    std::vector< double > cmat,
-    bool as_backup
-)
-{
-    n_groups = static_cast<int>(std::sqrt(cmat.size()));
-    if (n_groups * n_groups != static_cast<int>(cmat.size()))
-        throw std::invalid_argument(
-            "Contact matrix size is not a perfect square, cannot determine number of groups."
-        );
-
-    if (as_backup)
-        contact_matrix_backup = cmat;
-
-    contact_matrix = cmat;
-    return;
-};
-
-inline const std::vector< double > & ContactMatrix::get_contact_matrix() const
-{
-    return contact_matrix;
-}
-
-inline std::vector< double > & ContactMatrix::get_contact_matrix_ref()
-{
-    return contact_matrix;
-}
-
-inline double ContactMatrix::get_contact_rate(
-    size_t i, size_t j, bool check
-) const
-{
-    if (check && (
-        (static_cast<int>(i) >= n_groups) ||
-        (static_cast<int>(j) >= n_groups)
-    ))
-        throw std::out_of_range(
-            std::string("Group indices out of range. ") +
-            std::to_string(i) + ", " + std::to_string(j) +
-            std::string(" >= ") + std::to_string(n_groups)
-        );
-    return contact_matrix[j * n_groups + i];
-}
-
-inline size_t ContactMatrix::get_contact_matrix_size() const
-{
-    return contact_matrix.size();
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/contactmatrix-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
  Start of -./include/epiworld/contactlayer-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -11811,6 +11620,25 @@ public:
     {
         return state_index_ready ? agent_carrier.data() : nullptr;
     }
+
+    /**
+     * @brief Draws the virus, if any, that infects `agent` from its contacts.
+     * @details This is where contacts become an infection. Every contact that
+     * carries a virus is an exposure with probability
+     * `(1 - susceptibility reduction of agent) * probability of infecting *
+     * (1 - transmission reduction of the contact)`, and one draw
+     * (`roulette()`) picks at most one infector. A contact listed twice is
+     * two exposures.
+     * @param agent Agent without a virus.
+     * @param contacts Ids of the contacts (e.g., `layer::Mixing::sampled_ids()`).
+     * @param n Number of contacts.
+     * @return The virus transmitted, or `nullptr` if none is.
+     */
+    Virus<TSeq> * sample_virus(
+        Agent<TSeq> * agent,
+        const size_t * contacts,
+        size_t n
+    );
 
     /**
      * @name Network transmission mode
@@ -21069,7 +20897,8 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
 
 /**
  * @file model-meat-transmission.hpp
- * @brief Network transmission by pushing infection odds.
+ * @brief Transmission: from contacts to infections, and network transmission
+ * by pushing infection odds.
  *
  * @details A susceptible agent `i` whose update function is
  * `default_update_susceptible` (or `sampler::make_update_susceptible()`)
@@ -21091,6 +20920,49 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
  * The docs page "Push and Pull Transmission" (docs/impl/transmission-sampling.md)
  * has the derivation.
  */
+
+template<typename TSeq>
+inline Virus<TSeq> * Model<TSeq>::sample_virus(
+    Agent<TSeq> * agent,
+    const size_t * contacts,
+    size_t n
+)
+{
+
+    size_t n_exposures = 0u;
+    for (size_t k = 0u; k < n; ++k)
+    {
+
+        auto & contact = population[contacts[k]];
+        auto & v = contact.get_virus();
+        if (v == nullptr)
+            continue;
+
+        #ifdef EPI_DEBUG
+        if (n_exposures >= array_virus_tmp.size())
+            throw std::logic_error(
+                "Trying to add an extra element to a temporal array outside of the range."
+            );
+        #endif
+
+        array_double_tmp[n_exposures] =
+            (1.0 - agent->get_susceptibility_reduction(v, *this)) *
+            v->get_prob_infecting(this) *
+            (1.0 - contact.get_transmission_reduction(v, *this))
+            ;
+
+        array_virus_tmp[n_exposures++] = &(*v);
+
+    }
+
+    if (n_exposures == 0u)
+        return nullptr;
+
+    const int which = roulette(n_exposures, this);
+
+    return (which < 0) ? nullptr : array_virus_tmp[which];
+
+}
 
 template<typename TSeq>
 inline bool Model<TSeq>::transmission_prepare()
@@ -21600,9 +21472,7 @@ namespace layer {
  * @ingroup contact_layers
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Mixing :
-    public ContactLayer<TSeq>,
-    public ContactMatrix
+class Mixing : public ContactLayer<TSeq>
 {
 public:
 
@@ -21623,6 +21493,9 @@ private:
     bool explicit_groups = false; ///< Set by set_groups(), else from entities
     bool layout_stale = true;     ///< Group sizes and pool offsets to rebuild
     std::vector< size_t > group_size; ///< Agents in each group
+
+    std::vector< double > contact_matrix;          ///< Column-major
+    std::vector< double > contact_matrix_baseline; ///< Set between runs
 
     std::vector< size_t > pool;      ///< Infectious agents, partitioned by group
     std::vector< size_t > offsets;   ///< Where each group starts in `pool`
@@ -21682,13 +21555,12 @@ public:
      * is the expected number of contacts per day that an agent in group `i` has
      * with agents in group `j`.
      */
-    void set_contact_matrix(std::vector< double > cmat)
-    {
-        ContactMatrix::set_contact_matrix(std::move(cmat), this->edits_baseline());
-    }
+    void set_contact_matrix(std::vector< double > cmat);
 
-    /// Editing the matrix behind the layer's back would skip the dirty flag.
-    std::vector< double > & get_contact_matrix_ref() = delete;
+    const std::vector< double > & get_contact_matrix() const
+    {
+        return contact_matrix;
+    }
 
     /**
      * @brief Restores the baseline and sizes all buffers for the model (the
@@ -21785,6 +21657,32 @@ inline void Mixing<TSeq>::set_group(size_t agent_id, size_t group)
 }
 
 template<typename TSeq>
+inline void Mixing<TSeq>::set_contact_matrix(std::vector< double > cmat)
+{
+
+    for (double c : cmat)
+        if (c < 0.0)
+            throw std::range_error(
+                "Mixing layer '" + this->get_name() + "': the contact matrix "
+                "must be non-negative (" + std::to_string(c) + " < 0)."
+            );
+
+    // Between runs, the size is checked by reset() (the grouping may not be
+    // set yet); during a run, the grouping is fixed
+    if (this->edits_baseline())
+        contact_matrix_baseline = cmat;
+    else if (cmat.size() != n_groups * n_groups)
+        throw std::length_error(
+            "Mixing layer '" + this->get_name() + "': the contact matrix has " +
+            std::to_string(cmat.size()) + " entries, but the layer has " +
+            std::to_string(n_groups) + " groups."
+        );
+
+    contact_matrix = std::move(cmat);
+
+}
+
+template<typename TSeq>
 inline void Mixing<TSeq>::rebuild_layout()
 {
 
@@ -21859,8 +21757,14 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
 
     }
 
-    // Checking the contact matrix (and restoring its baseline)
-    this->validate_contact_matrix(n_groups);
+    // Edits of the last run are dropped
+    contact_matrix = contact_matrix_baseline;
+    if (contact_matrix.size() != n_groups * n_groups)
+        throw std::length_error(
+            "Mixing layer '" + this->get_name() + "': the contact matrix has " +
+            std::to_string(contact_matrix.size()) + " entries, but the layer "
+            "has " + std::to_string(n_groups) + " groups."
+        );
 
     pool.assign(n, 0u);
     sampled.assign(n, 0u);
@@ -21949,7 +21853,9 @@ inline size_t Mixing<TSeq>::sample(
 )
 {
 
-    const size_t agent_group_id = groups[static_cast< size_t >(agent->get_id())];
+    // Column of the agent's group: entry (agent's group, g) is rate[g]
+    const double * rate = contact_matrix.data() +
+        groups[static_cast< size_t >(agent->get_id())];
 
     size_t samp_id = 0u;
     for (size_t g = 0u; g < n_groups; ++g)
@@ -21963,7 +21869,7 @@ inline size_t Mixing<TSeq>::sample(
         // How many from this group?
         int nsamples = model.rbinom(
             n_pool,
-            inv_available[g] * this->get_contact_rate(agent_group_id, g, false)
+            inv_available[g] * rate[g * n_groups]
         );
 
         for (int s = 0; s < nsamples; ++s)
@@ -28384,44 +28290,11 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
             if (ndraws == 0u)
                 return;
 
-            // Drawing from the set
-            int nviruses_tmp = 0;
-            auto & m_ref = *m;
-            for (size_t n = 0u; n < ndraws; ++n)
-            {
-
-                auto & neighbor = m->get_agent(mixing.sampled_ids()[n]);
-
-                auto & v = neighbor.get_virus();
-
-                #ifdef EPI_DEBUG
-                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                    throw std::logic_error(
-                        "Trying to add an extra element to a temporal array outside of the range."
-                    );
-                #endif
-
-                /* And it is a function of susceptibility_reduction as well */
-                m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
-                    v->get_prob_infecting(m) *
-                    (1.0 - neighbor.get_transmission_reduction(v, m_ref))
-                    ;
-
-                m->array_virus_tmp[nviruses_tmp++] = &(*v);
-
-            }
-
-            // Running the roulette
-            int which = roulette(nviruses_tmp, m);
-
-            if (which < 0)
-                return;
-
-            p->set_virus(*m, 
-                *m->array_virus_tmp[which],
-                ModelSEIRMixing<TSeq>::EXPOSED
-                );
+            Virus<TSeq> * virus = m->sample_virus(
+                p, mixing.sampled_ids().data(), ndraws
+            );
+            if (virus != nullptr)
+                p->set_virus(*m, *virus, ModelSEIRMixing<TSeq>::EXPOSED);
 
             return;
 
@@ -28689,42 +28562,11 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
                 return;
 
 
-            // Drawing from the set
-            int nviruses_tmp = 0;
-            auto & m_ref = *m;
-            for (size_t n = 0u; n < ndraws; ++n)
-            {
-
-                auto & neighbor = m->get_agent(mixing.sampled_ids()[n]);
-
-                auto & v = neighbor.get_virus();
-
-                #ifdef EPI_DEBUG
-                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                #endif
-
-                /* And it is a function of susceptibility_reduction as well */
-                m->array_double_tmp[nviruses_tmp] =
-                    (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
-                    v->get_prob_infecting(m) *
-                    (1.0 - neighbor.get_transmission_reduction(v, m_ref))
-                    ;
-
-                m->array_virus_tmp[nviruses_tmp++] = &(*v);
-
-            }
-
-            // Running the roulette
-            int which = roulette(nviruses_tmp, m);
-
-            if (which < 0)
-                return;
-
-            p->set_virus(*m, 
-                *m->array_virus_tmp[which],
-                ModelSIRMixing<TSeq>::INFECTED
-                );
+            Virus<TSeq> * virus = m->sample_virus(
+                p, mixing.sampled_ids().data(), ndraws
+            );
+            if (virus != nullptr)
+                p->set_virus(*m, *virus, ModelSIRMixing<TSeq>::INFECTED);
 
             return;
 
@@ -28849,7 +28691,6 @@ inline ModelSIRMixing<TSeq> & ModelSIRMixing<TSeq>::initial_states(
 #define EPIWORLD_MODELS_SEIRMIXINGQUARANTINE_HPP
 
 // (already included include/epiworld/models/../model-bones.hpp)
-// (already included include/epiworld/models/../contactmatrix-bones.hpp)
 
 /**
  * @file seirmixingquarantine.hpp
@@ -29091,44 +28932,11 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     if (ndraws == 0u)
         return;
 
-    // Drawing from the set
-    int nviruses_tmp = 0;
-    auto & m_ref = *m;
-    for (size_t n = 0u; n < ndraws; ++n)
-    {
-
-        auto & neighbor = m->get_agent(mixing.sampled_ids()[n]);
-
-        auto & v = neighbor.get_virus();
-
-        #ifdef EPI_DEBUG
-        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-            throw std::logic_error(
-                "Trying to add an extra element to a temporal array outside of the range."
-            );
-        #endif
-
-        /* And it is a function of susceptibility_reduction as well */
-        m->array_double_tmp[nviruses_tmp] =
-            (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
-            v->get_prob_infecting(m) *
-            (1.0 - neighbor.get_transmission_reduction(v, m_ref))
-            ;
-
-        m->array_virus_tmp[nviruses_tmp++] = &(*v);
-
-    }
-
-    // Running the roulette
-    int which = roulette(nviruses_tmp, m);
-
-    if (which < 0)
-        return;
-
-    p->set_virus(*m, 
-        *m->array_virus_tmp[which],
-        ModelSEIRMixingQuarantine<TSeq>::EXPOSED
-        );
+    Virus<TSeq> * virus = m->sample_virus(
+        p, mixing.sampled_ids().data(), ndraws
+    );
+    if (virus != nullptr)
+        p->set_virus(*m, *virus, ModelSEIRMixingQuarantine<TSeq>::EXPOSED);
 
     return;
 

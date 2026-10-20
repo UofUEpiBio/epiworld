@@ -1,8 +1,7 @@
-#ifndef EPIWORLD_CONTACTMATRIX_MEAT_HPP
-#define EPIWORLD_CONTACTMATRIX_MEAT_HPP
+#ifndef MEASLES_CONTACTMATRIX_MEAT_HPP
+#define MEASLES_CONTACTMATRIX_MEAT_HPP
 
 #include "contactmatrix-bones.hpp"
-#include <stdexcept>
 
 inline void ContactMatrix::validate_contact_matrix(size_t expected_size)
 {

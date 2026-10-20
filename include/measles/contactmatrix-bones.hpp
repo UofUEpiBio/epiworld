@@ -1,7 +1,5 @@
-#ifndef EPIWORLD_CONTACTMATRIX_BONES_HPP
-#define EPIWORLD_CONTACTMATRIX_BONES_HPP
-
-#include <vector>
+#ifndef MEASLES_CONTACTMATRIX_BONES_HPP
+#define MEASLES_CONTACTMATRIX_BONES_HPP
 
 /**
  * @file contactmatrix-bones.hpp
@@ -12,6 +10,9 @@
  * matrices, which are essential for modeling population mixing in
  * epidemiological simulations. Models that require contact matrices can
  * inherit from this class.
+ *
+ * Only the measles mixing models use it; it goes away once they are built on
+ * contact layers (`epiworld::layer::Mixing` holds its own matrix).
  */
 class ContactMatrix 
 {

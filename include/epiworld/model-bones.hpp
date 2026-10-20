@@ -884,6 +884,25 @@ public:
     }
 
     /**
+     * @brief Draws the virus, if any, that infects `agent` from its contacts.
+     * @details This is where contacts become an infection. Every contact that
+     * carries a virus is an exposure with probability
+     * `(1 - susceptibility reduction of agent) * probability of infecting *
+     * (1 - transmission reduction of the contact)`, and one draw
+     * (`roulette()`) picks at most one infector. A contact listed twice is
+     * two exposures.
+     * @param agent Agent without a virus.
+     * @param contacts Ids of the contacts (e.g., `layer::Mixing::sampled_ids()`).
+     * @param n Number of contacts.
+     * @return The virus transmitted, or `nullptr` if none is.
+     */
+    Virus<TSeq> * sample_virus(
+        Agent<TSeq> * agent,
+        const size_t * contacts,
+        size_t n
+    );
+
+    /**
      * @name Network transmission mode
      *
      * @details States whose update function is `default_update_susceptible`

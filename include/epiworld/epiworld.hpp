@@ -99,9 +99,6 @@ namespace epiworld {
     #include "contacttracing-bones.hpp"
     #include "contacttracing-meat.hpp"
 
-    #include "contactmatrix-bones.hpp"
-    #include "contactmatrix-meat.hpp"
-
     #include "contactlayer-bones.hpp"
 
     #include "globalevent-bones.hpp"

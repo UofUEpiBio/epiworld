@@ -44,9 +44,7 @@ namespace layer {
  * @ingroup contact_layers
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Mixing :
-    public ContactLayer<TSeq>,
-    public ContactMatrix
+class Mixing : public ContactLayer<TSeq>
 {
 public:
 
@@ -67,6 +65,9 @@ private:
     bool explicit_groups = false; ///< Set by set_groups(), else from entities
     bool layout_stale = true;     ///< Group sizes and pool offsets to rebuild
     std::vector< size_t > group_size; ///< Agents in each group
+
+    std::vector< double > contact_matrix;          ///< Column-major
+    std::vector< double > contact_matrix_baseline; ///< Set between runs
 
     std::vector< size_t > pool;      ///< Infectious agents, partitioned by group
     std::vector< size_t > offsets;   ///< Where each group starts in `pool`
@@ -126,13 +127,12 @@ public:
      * is the expected number of contacts per day that an agent in group `i` has
      * with agents in group `j`.
      */
-    void set_contact_matrix(std::vector< double > cmat)
-    {
-        ContactMatrix::set_contact_matrix(std::move(cmat), this->edits_baseline());
-    }
+    void set_contact_matrix(std::vector< double > cmat);
 
-    /// Editing the matrix behind the layer's back would skip the dirty flag.
-    std::vector< double > & get_contact_matrix_ref() = delete;
+    const std::vector< double > & get_contact_matrix() const
+    {
+        return contact_matrix;
+    }
 
     /**
      * @brief Restores the baseline and sizes all buffers for the model (the
@@ -229,6 +229,32 @@ inline void Mixing<TSeq>::set_group(size_t agent_id, size_t group)
 }
 
 template<typename TSeq>
+inline void Mixing<TSeq>::set_contact_matrix(std::vector< double > cmat)
+{
+
+    for (double c : cmat)
+        if (c < 0.0)
+            throw std::range_error(
+                "Mixing layer '" + this->get_name() + "': the contact matrix "
+                "must be non-negative (" + std::to_string(c) + " < 0)."
+            );
+
+    // Between runs, the size is checked by reset() (the grouping may not be
+    // set yet); during a run, the grouping is fixed
+    if (this->edits_baseline())
+        contact_matrix_baseline = cmat;
+    else if (cmat.size() != n_groups * n_groups)
+        throw std::length_error(
+            "Mixing layer '" + this->get_name() + "': the contact matrix has " +
+            std::to_string(cmat.size()) + " entries, but the layer has " +
+            std::to_string(n_groups) + " groups."
+        );
+
+    contact_matrix = std::move(cmat);
+
+}
+
+template<typename TSeq>
 inline void Mixing<TSeq>::rebuild_layout()
 {
 
@@ -303,8 +329,14 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
 
     }
 
-    // Checking the contact matrix (and restoring its baseline)
-    this->validate_contact_matrix(n_groups);
+    // Edits of the last run are dropped
+    contact_matrix = contact_matrix_baseline;
+    if (contact_matrix.size() != n_groups * n_groups)
+        throw std::length_error(
+            "Mixing layer '" + this->get_name() + "': the contact matrix has " +
+            std::to_string(contact_matrix.size()) + " entries, but the layer "
+            "has " + std::to_string(n_groups) + " groups."
+        );
 
     pool.assign(n, 0u);
     sampled.assign(n, 0u);
@@ -393,7 +425,9 @@ inline size_t Mixing<TSeq>::sample(
 )
 {
 
-    const size_t agent_group_id = groups[static_cast< size_t >(agent->get_id())];
+    // Column of the agent's group: entry (agent's group, g) is rate[g]
+    const double * rate = contact_matrix.data() +
+        groups[static_cast< size_t >(agent->get_id())];
 
     size_t samp_id = 0u;
     for (size_t g = 0u; g < n_groups; ++g)
@@ -407,7 +441,7 @@ inline size_t Mixing<TSeq>::sample(
         // How many from this group?
         int nsamples = model.rbinom(
             n_pool,
-            inv_available[g] * this->get_contact_rate(agent_group_id, g, false)
+            inv_available[g] * rate[g * n_groups]
         );
 
         for (int s = 0; s < nsamples; ++s)
