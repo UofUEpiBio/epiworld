@@ -21666,7 +21666,12 @@ public:
     /// Whether the agent takes part in the layer (valid after `reset()`).
     bool in_layer(size_t agent_id) const { return groups[agent_id] != NO_GROUP; }
 
-    /// Moves an agent to another group (`NO_GROUP` takes it out of the layer).
+    /**
+     * @brief Moves an agent to another group (`NO_GROUP` takes it out of the
+     * layer).
+     * @details Like every change made during a step, it is in force for the
+     * contacts of the next step (the pools are rebuilt at the end of the step).
+     */
     void set_group(size_t agent_id, size_t group);
 
     size_t get_n_groups() const { return n_groups; }
