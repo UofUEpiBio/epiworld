@@ -199,9 +199,9 @@ turnover is high relative to contacts.
     flat edge list replaces it), and calls it at every reset, so every run and
     replicate draws a new network from its own seed. Generators live outside
     the layer (`graph::smallworld(k, p)`, wrappers of the `rgraph_*`
-    functions), so adding one is writing a function. A fixed network is a
-    generator that returns the same graph (`graph::fixed(adjlist)`), read from
-    a file or drawn once. Rewiring follows the same pattern: the layer holds a
+    functions), so adding one is writing a function. A fixed network is built
+    from a graph instead (`layer::Network(name, adjlist)`), read from a file or
+    drawn once; it is restored at reset if dirty. Rewiring follows the same pattern: the layer holds a
     rewiring function called at the end of each step (degree-preserving
     rewiring is the first; an ERGM-style rewirer can be another), reading its
     rate from a model parameter (point 17).
@@ -457,12 +457,14 @@ Only what a phase uses is added in that phase (no `sample_reverse` before
 Phase 5, no weights before Phase 3). Virtual dispatch happens once per
 (agent, layer) per step, not per contact.
 
-**Reset order.** Layers reset right after entities are distributed and before
-viruses, tools, initial states and the global events' set-up: a redrawn
-network must exist before agents get a virus (the queue follows ties), before
-seeding that depends on the network, and before `Bubbles` sets itself up.
-`layer::Mixing` draws no random numbers at reset, so moving it there leaves its
-results unchanged.
+**Reset order.** Layers reset first, right after the agents return to the
+baseline state and before the agents-by-state index is built (its degree sums
+count ties) and anything is distributed (entities, viruses, tools, initial
+states, the global events' set-up): a redrawn network must exist before agents
+get a virus (the queue follows ties), before seeding that depends on the
+network, and before `Bubbles` sets itself up. `layer::Mixing` draws no random
+numbers at reset; its fallback grouping from entities, which are distributed
+later, is built at its first update instead, so its results are unchanged.
 
 The model holds `std::vector<std::unique_ptr<ContactLayer<TSeq>>>`, with
 `add_layer()`, `get_layer(name|id)`, `get_layer_id(name)` (resolve names once,
@@ -514,8 +516,8 @@ the step (point 13), so results do not depend on agent update order.
   `rm_edge()` do today, `Queue::notify_edge_added/removed`).
 - A susceptible is sampled in a layer only if queued there (or if the layer has
   no queue, e.g. `Mixing`, until push exists, D4).
-- Phase 2 keeps today's single queue, on only when the model has exactly one
-  network layer; per-layer queues come in Phase 3.
+- Phase 2 keeps today's single queue; an agent's count covers its ties in every
+  network layer (counts add across layers). Per-layer queues come in Phase 3.
 - Excluded agents (flag) simply produce no contacts; the queue stays
   conservative.
 
@@ -635,19 +637,20 @@ different epidemic sizes).
    `neighbors_view`, edgelist output and rewiring are the layer's (D3).
 4. The default susceptible update pulls from every network layer through
    `Model::sample_virus()` (with one layer, results are identical).
-5. The queue and push follow the layer, with today's counts (one network
-   layer; 5.7, 5.8). Layers reset before the distributions (5.3).
+5. The queue and push follow every network layer (counts and odds add across
+   layers; any directed layer means pull and no queue, D5). Layers reset
+   before the distributions (5.3).
 6. Port the network models, `Bubbles` (it names the layer it edits, until
    Phase 3), `randgraph.hpp`, and the tests.
 - The network pull goes through `Model::sample_virus()` too:
   `collect_neighbor_viruses` becomes `layer::Network::sample()` (contact ids,
-  like `Mixing::sample()`), and `sampler::UpdateSusceptible`,
-  `make_update_susceptible(exclude)` and `sample_virus_single` are removed (the
-  excluded states become the layer's infectious states, as in `Mixing`;
-  `default_update_susceptible` is the one generic update; push recognizes only
-  it). `agent-meat-virus-sampling.hpp` goes away.
+  like `Mixing::sample()`), and `sample_virus_single` is removed. As built:
+  `make_update_susceptible(exclude)` stays, because which states do not
+  transmit (SEIR's exposed) is a property of the disease model, not of a
+  contact structure; moving it into each layer would make users configure
+  every layer they add. It pulls from every network layer.
 - Tests: the whole suite unchanged in results (notably `15`, `20*`, `33*`,
-  `34*`, `35*`, `36a`; random graphs drawn once become `graph::fixed(...)`);
+  `34*`, `35*`, `36a`; random graphs drawn once become fixed layers);
   new: a network split into two layers matches the single layer in
   distribution; a redrawn network differs across replicates and repeats with
   the seed. Benchmark: no regression in pull or push (CPU time, interleaved).
