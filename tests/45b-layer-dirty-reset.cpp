@@ -4,7 +4,7 @@ using namespace epiworld;
 
 // Edits made to a layer during a run are dropped by the next reset(); edits
 // made between runs become the new baseline, also on a model copied during a
-// run.
+// run. Layers cannot be added during a run.
 EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     const size_t n = 600u;
@@ -82,7 +82,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     REQUIRE(counts() == closed_counts);
 
     // A copy made during a run is not in a run: an edit on it, after the
-    // source's run, sets its baseline
+    // source's run, sets its baseline. Adding a layer during the run fails.
     model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(cm);
     std::unique_ptr< epimodels::ModelSIRMixing<> > copy;
     model.add_globalevent(
@@ -90,10 +90,17 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
             copy = std::make_unique< epimodels::ModelSIRMixing<> >(
                 *model_cast< epimodels::ModelSIRMixing<>, int >(m)
             );
+            REQUIRE_THROWS_AS(
+                m->add_layer(std::make_unique< layer::Mixing<> >(
+                    "late", std::vector< int >{1}, std::vector< int >{0, 1}
+                )),
+                std::logic_error
+            );
         },
         "copy", 1
     );
     model.run(30, 77);
+    REQUIRE(model.get_n_layers() == 1u);
     REQUIRE(copy != nullptr);
     REQUIRE_FALSE(copy->is_running());
 

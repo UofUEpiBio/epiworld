@@ -11833,7 +11833,9 @@ public:
      * @brief Adds a contact layer to the model.
      * @details The model owns the layer, resets it at the end of `reset()`,
      * updates it at the end of every step (see `ContactLayer`), and copies it
-     * with the model.
+     * with the model. Layers are added between runs only (a layer that should
+     * act only part of the time is added up front and edited, e.g., by a
+     * global event).
      * @param layer The layer. Its name must not be in use by another layer.
      * @return A reference to the layer, valid while the model lives.
      */
@@ -15574,6 +15576,13 @@ inline ContactLayer<TSeq> & Model<TSeq>::add_layer(
 
     if (!layer)
         throw std::invalid_argument("Cannot add a null contact layer.");
+
+    // Layers are part of the model's setup: a run resets them all before day 0
+    if (running)
+        throw std::logic_error(
+            "Cannot add the contact layer '" + layer->get_name() + "' during a "
+            "run; add layers before calling run()."
+        );
 
     if (has_layer(layer->get_name()))
         throw std::logic_error(

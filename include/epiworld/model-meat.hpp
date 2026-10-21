@@ -2888,6 +2888,13 @@ inline ContactLayer<TSeq> & Model<TSeq>::add_layer(
     if (!layer)
         throw std::invalid_argument("Cannot add a null contact layer.");
 
+    // Layers are part of the model's setup: a run resets them all before day 0
+    if (running)
+        throw std::logic_error(
+            "Cannot add the contact layer '" + layer->get_name() + "' during a "
+            "run; add layers before calling run()."
+        );
+
     if (has_layer(layer->get_name()))
         throw std::logic_error(
             "There is already a contact layer named '" + layer->get_name() + "'."
