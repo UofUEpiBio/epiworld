@@ -740,6 +740,30 @@ different epidemic sizes).
 
 ### Phase 3 -- several layers in one model, entities removed
 
+Phase 3 is built as four PRs into `v1-layers`, in this order:
+
+- **3a. The accumulator** (as built): `ContactLayer::sample()` is virtual and
+  appends contacts to a vector; `Model::sample_virus(agent)` collects the
+  contacts of *every* layer (networks and mixing) into one draw. A layer has a
+  weight (`set_weight(param)`; the odds of its contacts are multiplied by it
+  under roulette, 0 turns the layer off, 1 changes nothing) and virus targets
+  (`add_virus_target()`, a lineage bitmask like the tools'). The layer id of the
+  winning contact travels with the infection: `Model` keeps it in
+  `sampled_layer` after each draw, `Agent::set_virus()` takes it into the event,
+  and `get_transmissions()` / the `transmission` output get a `layer` column
+  (-1 for seeds and events). A model with a layer that is not a network, or with
+  a directed network, always pulls and visits every agent (no queue) until
+  per-layer queues exist (3b). The SIR, SEIR and SEIR-quarantine mixing models
+  use the generic path; the measles models keep their own sampler until 3d.
+  Draw-for-draw identical to Phase 2 for every model in the identity harness.
+  Post-sampling and contact tracing receive the layer in 3c.
+- **3b. `layer::Affiliation` and per-layer queues.**
+- **3c. Contact tracing into the layers** (point 9, D11).
+- **3d. Entities removed, measles models and the example model on layers**
+  (the acceptance tests of D11).
+
+The list below is the whole of Phase 3.
+
 - The accumulator (5.4) for every kind of layer (Phase 2 does networks);
   layer weights; virus targets per layer; per-layer queues (5.7); layer id in
   transmission records, contact tracing and post-sampling; `layer::Affiliation` with fixed memberships (`q = 1`, several
