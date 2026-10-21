@@ -24,11 +24,12 @@ public:
         {
 
             auto & mixing = m->get_layer_as< layer::Mixing<> >(0u);
-            const size_t n_contacts = mixing.sample(p, *m);
+            std::vector< size_t > contacts;
+            mixing.sample(p->get_id(), *m, nullptr, contacts);
 
             // Any sampled contact is infectious: it transmits for sure
-            if (n_contacts > 0u)
-                p->set_virus(*m, *m->get_agent(mixing.sampled_ids()[0]).get_virus(), 1);
+            if (!contacts.empty())
+                p->set_virus(*m, *m->get_agent(contacts[0]).get_virus(), 1);
 
         };
 

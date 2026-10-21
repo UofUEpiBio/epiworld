@@ -24,7 +24,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
     struct Run {
         std::vector< int > hist_date, hist_counts;
         std::vector< std::string > hist_state;
-        std::vector< int > date, source, target, virus, source_exposure_date;
+        std::vector< int > date, source, target, virus, source_exposure_date, layer;
         std::vector< int > net_source_0, net_target_0; // Network before the run
         std::vector< int > net_source, net_target;     // ... and after it
         int n_push = 0, n_pull = 0;
@@ -60,7 +60,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
 
         model.get_db().get_hist_total(&r.hist_date, &r.hist_state, &r.hist_counts);
         model.get_db().get_transmissions(
-            r.date, r.source, r.target, r.virus, r.source_exposure_date
+            r.date, r.source, r.target, r.virus, r.source_exposure_date, r.layer
         );
         tests_net(model).get_edgelist(r.net_source, r.net_target);
 

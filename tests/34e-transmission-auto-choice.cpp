@@ -57,9 +57,9 @@ Modes simulate(const std::string & mode, double kappa = -1.0)
 
     model.run(100, 2026);
 
-    std::vector< int > source, virus, sexp;
+    std::vector< int > source, virus, sexp, sexp_layer;
     model.get_db().get_hist_total(nullptr, nullptr, &out.counts);
-    model.get_db().get_transmissions(out.date, source, out.target, virus, sexp);
+    model.get_db().get_transmissions(out.date, source, out.target, virus, sexp, sexp_layer);
     return out;
 
 }

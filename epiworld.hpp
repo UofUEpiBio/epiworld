@@ -29,6 +29,7 @@
 #include <cassert>
 #include <atomic>
 #include <variant>
+#include <optional>
 
 #ifndef EPIWORLD_HPP
 #define EPIWORLD_HPP
@@ -297,6 +298,7 @@ struct Event {
     epiworld_fast_int new_state;
     epiworld_fast_int queue;
     EventAction action;
+    int layer = -1; ///< Layer of the contact that transmitted the virus, if any
 public:
 /**
      * @brief Construct a new Event object
@@ -311,6 +313,7 @@ public:
      * @param new_state_ Next state
      * @param queue_ Efect on the queue
      * @param action_ The action to execute
+     * @param layer_ Layer of the contact that transmitted the virus, if any
      */
     Event(
         Agent<TSeq> * agent_,
@@ -319,10 +322,11 @@ public:
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-        EventAction action_
+        EventAction action_,
+        int layer_ = -1
     ) : agent(agent_), virus(virus_), tool(tool_), entity(entity_),
         new_state(new_state_),
-        queue(queue_), action(action_) {
+        queue(queue_), action(action_), layer(layer_) {
             return;
         };
 };
@@ -4674,6 +4678,7 @@ private:
     std::vector< int > transmission_target;               ///< Id of the target
     std::vector< int > transmission_virus;              ///< Id of the variant
     std::vector< int > transmission_source_exposure_date; ///< Date when the source acquired the variant
+    std::vector< int > transmission_layer;                ///< Id of the layer of the contact (-1: none, e.g., seeded)
 
     std::vector< int > transition_matrix;
 
@@ -4816,6 +4821,8 @@ public:
      * @param target
      * @param virus
      * @param source_exposure_date
+     * @param layer Id of the layer of the contact that transmitted the virus
+     * (-1 for infections that did not come from a contact, e.g., seeds)
      */
     ///@{
     void get_transmissions(
@@ -4823,7 +4830,8 @@ public:
         std::vector<int> & source,
         std::vector<int> & target,
         std::vector<int> & virus,
-        std::vector<int> & source_exposure_date
+        std::vector<int> & source_exposure_date,
+        std::vector<int> & layer
     ) const;
 
     void get_transmissions(
@@ -4831,7 +4839,8 @@ public:
         int * source,
         int * target,
         int * virus,
-        int * source_exposure_date
+        int * source_exposure_date,
+        int * layer
     ) const;
     ///@}
 
@@ -4868,7 +4877,7 @@ public:
      * If i is -1, then it means that the agent was assigned a virus at the
      * beginning of the simulation.
      */
-    void record_transmission(int i, int j, int virus, int i_expo_date);
+    void record_transmission(int i, int j, int virus, int i_expo_date, int layer = -1);
 
     size_t get_n_viruses() const; ///< Get the number of viruses
     size_t get_n_tools() const; ///< Get the number of tools
@@ -5084,6 +5093,7 @@ inline void DataBase<TSeq>::reset()
     transmission_source.clear();
     transmission_target.clear();
     transmission_source_exposure_date.clear();
+    transmission_layer.clear();
 
     m_hospitalizations.reset();
 
@@ -5136,6 +5146,7 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     transmission_target(db.transmission_target),
     transmission_virus(db.transmission_virus),
     transmission_source_exposure_date(db.transmission_source_exposure_date),
+    transmission_layer(db.transmission_layer),
     transition_matrix(db.transition_matrix),
     user_data(nullptr)
 {}
@@ -6051,7 +6062,8 @@ inline void DataBase<TSeq>::get_transmissions(
     std::vector<int> & source,
     std::vector<int> & target,
     std::vector<int> & virus,
-    std::vector<int> & source_exposure_date
+    std::vector<int> & source_exposure_date,
+    std::vector<int> & layer
 ) const 
 {
 
@@ -6062,13 +6074,15 @@ inline void DataBase<TSeq>::get_transmissions(
     target.resize(nevents);
     virus.resize(nevents);
     source_exposure_date.resize(nevents);
+    layer.resize(nevents);
 
     get_transmissions(
-        &date[0u],
-        &source[0u],
-        &target[0u],
-        &virus[0u],
-        &source_exposure_date[0u]
+        date.data(),
+        source.data(),
+        target.data(),
+        virus.data(),
+        source_exposure_date.data(),
+        layer.data()
     );
 
 }
@@ -6079,7 +6093,8 @@ inline void DataBase<TSeq>::get_transmissions(
     int * source,
     int * target,
     int * virus,
-    int * source_exposure_date
+    int * source_exposure_date,
+    int * layer
 ) const 
 {
 
@@ -6093,6 +6108,7 @@ inline void DataBase<TSeq>::get_transmissions(
         *(target + i) = transmission_target.at(i);
         *(virus + i) = transmission_virus.at(i);
         *(source_exposure_date + i) = transmission_source_exposure_date.at(i);
+        *(layer + i) = transmission_layer.at(i);
 
     }
 
@@ -6110,6 +6126,18 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
         names.reserve(ids.size());
         for (auto i : ids)
             names.push_back(virus_name[i]);
+        return names;
+    };
+
+    // Names of the layers, given their ids ("" for -1: not from a contact)
+    auto lnames = [this](const std::vector< int > & ids) {
+        std::vector< std::string > names;
+        names.reserve(ids.size());
+        for (auto i : ids)
+            names.push_back(
+                i < 0 ? std::string() :
+                model->get_layer(static_cast< size_t >(i)).get_name()
+            );
         return names;
     };
 
@@ -6193,6 +6221,8 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
             t.add("source_exposure_date", transmission_source_exposure_date);
             t.add("source", transmission_source);
             t.add("target", transmission_target);
+            t.add("layer_id", transmission_layer);
+            t.add("layer", lnames(transmission_layer));
         }
         else if (what == "transition")
         {
@@ -6350,7 +6380,8 @@ inline void DataBase<TSeq>::record_transmission(
     int i,
     int j,
     int virus,
-    int i_expo_date
+    int i_expo_date,
+    int layer
 ) {
 
     transmission_date.push_back(model->today());
@@ -6358,6 +6389,7 @@ inline void DataBase<TSeq>::record_transmission(
     transmission_target.push_back(j);
     transmission_virus.push_back(virus);
     transmission_source_exposure_date.push_back(i_expo_date);
+    transmission_layer.push_back(layer);
 
 }
 
@@ -6777,6 +6809,12 @@ inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<in
         "DataBase:: transmission_source_exposure_date[i] don't match"
         )
 
+    VECT_MATCH(
+        transmission_layer,
+        other.transmission_layer,
+        "DataBase:: transmission_layer[i] don't match"
+        )
+
 
     VECT_MATCH(
         transition_matrix,
@@ -6990,6 +7028,12 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
         transmission_source_exposure_date,
         other.transmission_source_exposure_date,
         "DataBase:: transmission_source_exposure_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        transmission_layer,
+        other.transmission_layer,
+        "DataBase:: transmission_layer[i] don't match"
     )
 
     VECT_MATCH(
@@ -9121,6 +9165,14 @@ inline void ContactTracing::print(size_t agent)
  * (the pointers held outside keep pointing at the original's), and a layer
  * outlives its model only detached from it. A copy of a layer is detached too.
  *
+ * ### Weight and viruses
+ *
+ * `set_weight()` makes the layer's contacts count more or less than the others':
+ * the odds of infection through the layer are multiplied by the weight (a
+ * model parameter, read at every step; 1 if none is set; 0 turns the layer
+ * off). `add_virus_target()` restricts the layer to some viruses, as tools are
+ * restricted; by default every virus spreads through every layer.
+ *
  * ### Edits and the dirty flag
  *
  * Whether an edit is permanent depends only on when it is made. An edit made
@@ -9142,6 +9194,9 @@ private:
     size_t id = 0u;          ///< Position in the model's list, set by the model
     bool dirty = false;  ///< Edited since the baseline was set
     bool in_run = false; ///< Set by the model while it runs
+
+    std::optional< ParamRef > weight_ref; ///< Empty: weight 1
+    uint64_t virus_mask = ~uint64_t(0);   ///< Lineages that spread here
 
 protected:
 
@@ -9168,7 +9223,8 @@ public:
 
     /// A copy belongs to no model (see `clone()`).
     ContactLayer(const ContactLayer<TSeq> & other) :
-        name(other.name), dirty(other.dirty) {}
+        name(other.name), dirty(other.dirty), weight_ref(other.weight_ref),
+        virus_mask(other.virus_mask) {}
 
     ContactLayer<TSeq> & operator=(const ContactLayer<TSeq> &) = delete;
 
@@ -9178,8 +9234,52 @@ public:
     size_t get_id() const { return id; }
     bool is_dirty() const { return dirty; }
 
+    /// The weight is the model parameter `param` (see the class description).
+    void set_weight(std::string param) { weight_ref.emplace(std::move(param)); }
+
+    bool has_weight() const { return weight_ref.has_value(); }
+
+    /// Current weight in `model`.
+    epiworld_double get_weight(const Model<TSeq> & model) const
+    {
+        return weight_ref ? (*weight_ref)(model) : 1.0;
+    }
+
+    /**
+     * @name Virus targets
+     * @brief Restrict the layer to the listed virus lineages (see
+     * `Tool::add_target()`, which these mirror). The first target turns the
+     * default (every virus) off.
+     */
+    ///@{
+    void add_virus_target(int lineage_id);
+    void add_virus_target(const Virus<TSeq> & v);
+    ///@}
+
+    /// Whether the virus spreads through the layer.
+    bool admits(const Virus<TSeq> & v) const
+    {
+        return (virus_mask & v.lineage_bit) != 0u;
+    }
+
     /// Restore the baseline if dirty and size the buffers for a new run.
     virtual void reset(Model<TSeq> & model) = 0;
+
+    /**
+     * @brief Appends to `out` the contacts of agent `agent` this step that
+     * carry a virus (repeats allowed), and reports them to the model's
+     * post-sampling callback, if there is one.
+     * @details This is the layer's part of a pull. Contacts in a state flagged
+     * in `exclude` (if not null) are skipped. Whether the contacts are able to
+     * infect (their viruses, the weight) is up to the model.
+     * @return The number of contacts appended.
+     */
+    virtual size_t sample(
+        size_t agent,
+        Model<TSeq> & model,
+        const std::vector< bool > * exclude,
+        std::vector< size_t > & out
+    ) = 0;
 
     /// Rebuild what depends on the state of the population (end of each step).
     virtual void update(Model<TSeq> & model) = 0;
@@ -9191,6 +9291,34 @@ public:
     virtual layer::Network<TSeq> * as_network() { return nullptr; }
 
 };
+
+template<typename TSeq>
+inline void ContactLayer<TSeq>::add_virus_target(int lineage_id)
+{
+
+    const uint64_t bit = Tool<TSeq>::target_bit(lineage_id);
+
+    // The first target turns the default off
+    if (virus_mask == ~uint64_t(0))
+        virus_mask = 0u;
+
+    virus_mask |= bit;
+
+}
+
+template<typename TSeq>
+inline void ContactLayer<TSeq>::add_virus_target(const Virus<TSeq> & v)
+{
+
+    if (v.get_lineage_id() < 0)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" has no lineage id. Add it to "
+            "the model with Model::add_virus() before using it as a target."
+        );
+
+    add_virus_target(v.get_lineage_id());
+
+}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -9788,6 +9916,7 @@ class Virus {
     friend class Model<TSeq>;
     friend class DataBase<TSeq>;
     friend class Tool<TSeq>;
+    friend class ContactLayer<TSeq>;
 private:
     
     Agent<TSeq> * agent = nullptr;
@@ -10279,7 +10408,6 @@ protected:
 
     /// Bitmask of targeted virus lineages (all ones: every virus).
     uint64_t target_mask = ~uint64_t(0);
-    static uint64_t target_bit(int lineage_id); ///< Throws for ids out of range.
 
     epiworld_fast_int state_init = -99;
     epiworld_fast_int state_post = -99;
@@ -10290,6 +10418,10 @@ protected:
     void set_agent(Agent<TSeq> * p, size_t idx);
 
 public:
+
+    /// Bit of a virus lineage in a target mask (contact layers use it too).
+    static uint64_t target_bit(int lineage_id); ///< Throws for ids out of range.
+
     Tool();
     Tool(std::string name = "unknown tool");
     Tool(
@@ -10716,12 +10848,34 @@ protected:
      */
     ///@{
     std::vector< layer::Network<TSeq> * > network_layers;
-    std::vector< size_t > network_contacts; ///< Scratch of `sample_virus()`
+    std::vector< size_t > layer_contacts; ///< Scratch of `sample_virus()`
+    bool pull_only = false; ///< See `has_pull_only_layer()`
+    int sampled_layer = -1; ///< See `take_sampled_layer()`
+
+    /// Adds the exposures of `contacts` to the arrays; returns their number.
+    size_t add_exposures(
+        Agent<TSeq> * agent,
+        const ContactLayer<TSeq> * layer,
+        const size_t * contacts,
+        size_t n,
+        size_t n_exposures
+    );
+
+    /// One draw over the first `n_exposures` exposures.
+    Virus<TSeq> * draw_exposure(size_t n_exposures);
     void layers_attach(); ///< Points the layers at this model, lists the networks
+    void layers_classify(); ///< Sets `pull_only`
     void layers_detach(); ///< Leaves the layers without a model (they may outlive it)
     void add_layer_ptr(std::shared_ptr< ContactLayer<TSeq> > layer);
     size_t network_degree(size_t id) const; ///< Ties of agent `id`, all networks
-    bool has_directed_network() const;
+
+    /**
+     * Whether some layer's contacts are not seen from both ends or not by the
+     * queue: a directed network (a tie is kept by its source only) or a layer
+     * that is not a network. The model then pulls, and visits every agent
+     * instead of using the queue.
+     */
+    bool has_pull_only_layer() const { return pull_only; }
 
     /// A network layer changed the ties of `i` and `j` by `di` and `dj`.
     void network_tie_changed(size_t i, int di, size_t j, int dj);
@@ -10801,6 +10955,7 @@ protected:
         double odds;                // Sum of p / (1 - p) over the contacts
         unsigned int n_certain;     // Contacts with p >= 1
         Virus<TSeq> * candidate;    // Infector's virus drawn so far
+        int layer;                  // Layer of the candidate's contact
     };
 
     std::vector< char > push_pushable;       ///< [state] Uses the default susceptible sampler
@@ -10844,7 +10999,8 @@ protected:
         Entity<TSeq> * entity_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
-          EventAction action_
+        EventAction action_,
+        int layer_ = -1
         );
 
     /**
@@ -10899,6 +11055,7 @@ public:
 
     std::array<epiworld_double, 1024u * 2u> array_double_tmp;
     std::array<Virus<TSeq> *, 1024u * 2u> array_virus_tmp;
+    std::array<int, 1024u * 2u> array_layer_tmp; ///< Layer of each exposure
 
     /// A model with `n` agents.
     explicit Model(size_t n);
@@ -11230,26 +11387,44 @@ public:
      * (1 - transmission reduction of the contact)`, and one draw
      * (`roulette()`) picks at most one infector. A contact listed twice is
      * two exposures.
+     * With a `layer`, the probabilities follow its weight and the viruses it
+     * admits (see `ContactLayer`), and the layer is recorded as the one of the
+     * transmission.
      * @param agent Agent without a virus.
-     * @param contacts Ids of the contacts (e.g., `layer::Mixing::sampled_ids()`).
+     * @param contacts Ids of the contacts.
      * @param n Number of contacts.
+     * @param layer The layer the contacts came from (none: weight 1, any
+     * virus, no layer recorded).
      * @return The virus transmitted, or `nullptr` if none is.
      */
     Virus<TSeq> * sample_virus(
         Agent<TSeq> * agent,
         const size_t * contacts,
-        size_t n
+        size_t n,
+        const ContactLayer<TSeq> * layer = nullptr
     );
 
     /**
-     * @brief Draws the virus, if any, that `agent` catches from its neighbors
-     * in the model's network layers.
-     * @details The neighbors that carry a virus, layer by layer in the order
-     * the layers were added and each layer in its tie order, are the contacts
-     * of `sample_virus(agent, contacts, n)`. Neighbors in a state flagged in
-     * `exclude` (one entry per state) are not sources. This is what
-     * `default_update_susceptible` and `sampler::make_update_susceptible()`
-     * do; a pushing step gives the same distribution.
+     * @brief The layer of the last transmission drawn by `sample_virus()`
+     * (-1 if none), which the next `Agent::set_virus()` records and clears.
+     */
+    int take_sampled_layer()
+    {
+        const int layer = sampled_layer;
+        sampled_layer = -1;
+        return layer;
+    }
+
+    /**
+     * @brief Draws the virus, if any, that `agent` catches from its contacts
+     * in the model's layers.
+     * @details The contacts that carry a virus, layer by layer in the order
+     * the layers were added and each layer in its own order, are all
+     * exposures of one draw (`sample_virus(agent, contacts, n, layer)` adds
+     * them). Contacts in a state flagged in `exclude` (one entry per state)
+     * are not sources. This is what `default_update_susceptible` and
+     * `sampler::make_update_susceptible()` do; a pushing step (networks only)
+     * gives the same distribution.
      * @throws std::logic_error if `agent` carries a virus.
      */
     Virus<TSeq> * sample_virus(
@@ -12099,7 +12274,8 @@ inline void Model<TSeq>::_add_event(
     Entity<TSeq> * entity_,
     epiworld_fast_int new_state_,
     epiworld_fast_int queue_,
-    EventAction action_
+    EventAction action_,
+    int layer_
 ) {
 
     ++nactions;
@@ -12114,7 +12290,8 @@ inline void Model<TSeq>::_add_event(
 
         events.emplace_back(
             Event<TSeq>(
-                agent_, virus_, tool_, entity_, new_state_, queue_, action_
+                agent_, virus_, tool_, entity_, new_state_, queue_, action_,
+                layer_
             ));
 
     }
@@ -12130,6 +12307,7 @@ inline void Model<TSeq>::_add_event(
         A.new_state  = std::move(new_state_);
         A.queue      = std::move(queue_);
         A.action     = std::move(action_);
+        A.layer      = layer_;
 
     }
 
@@ -13671,7 +13849,7 @@ inline void Model<TSeq>::update_state() {
     if (post_sampling_on)
         post_sampling_scratch.clear();
 
-    const bool directed = has_directed_network();
+    const bool directed = has_pull_only_layer();
 
     const bool push =
         transmission_prepare() && !directed && transmission_choose_push();
@@ -13742,7 +13920,7 @@ inline void Model<TSeq>::mutate_virus() {
     // Directed networks do not use the queue (see update_state()), and must not
     // start depending on it here: a carrier registered without `Everyone`, or
     // a count left stale by rewiring, would then mutate only with queuing off.
-    if (use_queuing && !has_directed_network())
+    if (use_queuing && !has_pull_only_layer())
     {
 
         queue.for_each_nonzero([this](size_t i) -> void {
@@ -13891,6 +14069,12 @@ inline void Model<TSeq>::reset() {
     // them.
     for (auto & layer : layers)
         layer->reset(*this);
+
+    // A generator decides the graph's direction at its reset, so the
+    // classification waits until every layer has one.
+    layers_classify();
+
+    sampled_layer = -1;
 
     // Everyone is now in the baseline state with no virus; from here on
     // events_run() keeps the index current.
@@ -14731,6 +14915,9 @@ template<typename TSeq>
 inline void Model<TSeq>::run_globalevents()
 {
 
+    // An infection added by an event is not one drawn from a layer
+    sampled_layer = -1;
+
     for (auto & event: globalevents)
     {
         event->operator()(this, today());
@@ -14845,6 +15032,8 @@ inline void Model<TSeq>::layers_attach()
             network_layers.push_back(net);
     }
 
+    layers_classify();
+
 }
 
 template<typename TSeq>
@@ -14875,14 +15064,15 @@ inline size_t Model<TSeq>::network_degree(size_t id) const
 }
 
 template<typename TSeq>
-inline bool Model<TSeq>::has_directed_network() const
+inline void Model<TSeq>::layers_classify()
 {
 
-    for (const auto * net : network_layers)
-        if (net->is_directed())
-            return true;
-
-    return false;
+    pull_only = false;
+    for (const auto & layer : layers)
+    {
+        const auto * net = layer->as_network();
+        pull_only = pull_only || (net == nullptr) || net->is_directed();
+    }
 
 }
 
@@ -17359,7 +17549,7 @@ inline uint64_t Tool<TSeq>::target_bit(int lineage_id)
             std::string("The virus lineage id ") +
             std::to_string(lineage_id) +
             std::string(" cannot be targeted. Only lineages 0 to 62 can be ") +
-            std::string("targeted by tools.")
+            std::string("targeted.")
         );
 
     return uint64_t(1) << lineage_id;
@@ -18612,7 +18802,8 @@ inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
         v->get_agent() ? v->get_agent()->get_id() : -1,
         p->get_id(),
         v->get_id(),
-        v->get_date() 
+        v->get_date(),
+        a.layer
     );
     
     p->virus = std::move(v);
@@ -19037,7 +19228,8 @@ inline void Agent<TSeq>::set_virus(
     VirusPtr<TSeq> virus_ptr = std::shared_ptr<Virus<TSeq>>(virus.clone_ptr());
 
     model._add_event(
-        this, virus_ptr, nullptr, nullptr, state_new, queue, EventAction::AddVirus
+        this, virus_ptr, nullptr, nullptr, state_new, queue, EventAction::AddVirus,
+        model.take_sampled_layer()
         );
 
 }
@@ -19676,20 +19868,32 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
  */
 
 template<typename TSeq>
-inline Virus<TSeq> * Model<TSeq>::sample_virus(
+inline size_t Model<TSeq>::add_exposures(
     Agent<TSeq> * agent,
+    const ContactLayer<TSeq> * layer,
     const size_t * contacts,
-    size_t n
+    size_t n,
+    size_t n_exposures
 )
 {
 
-    size_t n_exposures = 0u;
+    const bool weighted = (layer != nullptr) && layer->has_weight();
+    const epiworld_double weight = weighted ? layer->get_weight(*this) : 1.0;
+    const int layer_id = (layer == nullptr) ? -1 : static_cast< int >(layer->get_id());
+
+    // A layer of weight 0 transmits nothing
+    if (weighted && (weight <= 0.0))
+        return n_exposures;
+
     for (size_t k = 0u; k < n; ++k)
     {
 
         auto & contact = population[contacts[k]];
         auto & v = contact.get_virus();
         if (v == nullptr)
+            continue;
+
+        if ((layer != nullptr) && !layer->admits(*v))
             continue;
 
         #ifdef EPI_DEBUG
@@ -19699,22 +19903,55 @@ inline Virus<TSeq> * Model<TSeq>::sample_virus(
             );
         #endif
 
-        array_double_tmp[n_exposures] =
+        epiworld_double p =
             (1.0 - agent->get_susceptibility_reduction(v, *this)) *
             v->get_prob_infecting(this) *
             (1.0 - contact.get_transmission_reduction(v, *this))
             ;
 
-        array_virus_tmp[n_exposures++] = &(*v);
+        // The weight scales the odds p / (1 - p); a certain exposure stays so
+        if (weighted && (p < 1.0))
+            p = weight * p / (1.0 - p + weight * p);
+
+        array_double_tmp[n_exposures] = p;
+        array_virus_tmp[n_exposures] = &(*v);
+        array_layer_tmp[n_exposures++] = layer_id;
 
     }
+
+    return n_exposures;
+
+}
+
+template<typename TSeq>
+inline Virus<TSeq> * Model<TSeq>::draw_exposure(size_t n_exposures)
+{
+
+    sampled_layer = -1;
 
     if (n_exposures == 0u)
         return nullptr;
 
     const int which = roulette(n_exposures, this);
 
-    return (which < 0) ? nullptr : array_virus_tmp[which];
+    if (which < 0)
+        return nullptr;
+
+    sampled_layer = array_layer_tmp[which];
+    return array_virus_tmp[which];
+
+}
+
+template<typename TSeq>
+inline Virus<TSeq> * Model<TSeq>::sample_virus(
+    Agent<TSeq> * agent,
+    const size_t * contacts,
+    size_t n,
+    const ContactLayer<TSeq> * layer
+)
+{
+
+    return draw_exposure(add_exposures(agent, layer, contacts, n, 0u));
 
 }
 
@@ -19732,28 +19969,35 @@ inline Virus<TSeq> * Model<TSeq>::sample_virus(
         );
 
     const size_t id = static_cast< size_t >(agent->get_id());
-    const size_t degree = network_degree(id);
-    if (degree == 0u)
+
+    size_t n_contacts = 0u;
+    size_t n_exposures = 0u;
+    for (const auto & layer : layers)
+    {
+
+        layer_contacts.clear();
+        const size_t n = layer->sample(id, *this, exclude, layer_contacts);
+        if (n == 0u)
+            continue;
+
+        n_contacts += n;
+        n_exposures = add_exposures(
+            agent, layer.get(), layer_contacts.data(), n, n_exposures
+        );
+
+    }
+
+    if (n_contacts == 0u)
+    {
+        sampled_layer = -1;
         return nullptr;
-
-    if (network_contacts.size() < degree)
-        network_contacts.resize(degree);
-
-    // The recording path is chosen once per call, not per contact
-    size_t n = 0u;
-    for (const auto * net : network_layers)
-        n += post_sampling_on ?
-            net->template sample<true>(id, *this, exclude, network_contacts.data() + n) :
-            net->template sample<false>(id, *this, exclude, network_contacts.data() + n);
-
-    if (n == 0u)
-        return nullptr;
+    }
 
     #ifdef EPI_DEBUG
     db.n_transmissions_potential++;
     #endif
 
-    Virus<TSeq> * virus = sample_virus(agent, network_contacts.data(), n);
+    Virus<TSeq> * virus = draw_exposure(n_exposures);
 
     #ifdef EPI_DEBUG
     if (virus != nullptr)
@@ -19965,90 +20209,116 @@ inline void Model<TSeq>::transmission_push_impl()
             // Every network, in the order the layers were added, as a pull
             // reads them
             for (const auto * net : network_layers)
-            for (size_t i_id : net->ties[j_id])
             {
 
-                // Most neighbors are usually not susceptible; the compact copy
-                // of the states rules them out without loading the agent.
-                const size_t t = agent_state[i_id];
+                // Layer rules, as add_exposures() applies them in a pull
+                const bool weighted = net->has_weight();
+                const epiworld_double weight = weighted ?
+                    net->get_weight(*this) : 1.0;
+                const bool admitted = net->admits(*v);
+                const int layer_id = static_cast< int >(net->get_id());
 
-                if (!push_pushable[t] || push_excluded[t * ns + s])
-                    continue;
-
-                Agent<TSeq> & i = population[i_id];
-
-                // An agent with a virus is not susceptible (pulling would
-                // refuse it; update_state() reports it).
-                if (i.virus != nullptr)
-                    continue;
-
-                // Pulling only updates queued agents.
-                if (use_queuing && (queue[i_id] <= 0))
-                    continue;
-
-                // The post-sampling callback sees every eligible contact, also
-                // the ones that cannot transmit, as a pull reports them. The
-                // carriers are visited in ascending id order, so the pairs
-                // come out grouped by infectious agent.
-                if constexpr (Record)
-                    register_sampled_contact(j_id, i_id);
-
-                // Exactly the expression the pull uses, in the same order.
-                epiworld_double p =
-                    (1.0 - i.get_susceptibility_reduction(v, *this)) *
-                    v->get_prob_infecting(this) *
-                    (1.0 - j.get_transmission_reduction(v, *this))
-                    ;
-
-                // No chance of transmission (also catches NaN)
-                if (!(p > 0.0))
-                    continue;
-
-                int & slot = push_slot[i_id];
-                if (slot < 0)
+                for (size_t i_id : net->ties[j_id])
                 {
 
-                    slot = static_cast< int >(push_targets.size());
-                    push_targets.push_back({i_id, 0.0, 0u, nullptr});
+                    // Most neighbors are usually not susceptible; the compact copy
+                    // of the states rules them out without loading the agent.
+                    const size_t t = agent_state[i_id];
 
-                    #ifdef EPI_DEBUG
-                    if (push_default[t])
-                        db.n_transmissions_potential++;
-                    #endif
+                    if (!push_pushable[t] || push_excluded[t * ns + s])
+                        continue;
 
-                }
+                    Agent<TSeq> & i = population[i_id];
 
-                PushTarget & target = push_targets[static_cast< size_t >(slot)];
+                    // An agent with a virus is not susceptible (pulling would
+                    // refuse it; update_state() reports it).
+                    if (i.virus != nullptr)
+                        continue;
 
-                // Certain transmission: uniform reservoir among these
-                if (p >= 1.0)
-                {
+                    // Pulling only updates queued agents.
+                    if (use_queuing && (queue[i_id] <= 0))
+                        continue;
+
+                    // The post-sampling callback sees every eligible contact, also
+                    // the ones that cannot transmit, as a pull reports them. The
+                    // carriers are visited in ascending id order, so the pairs
+                    // come out grouped by infectious agent.
+                    if constexpr (Record)
+                        register_sampled_contact(j_id, i_id);
+
+                    // A layer of weight 0, or closed to this virus, transmits
+                    // nothing (its contacts were still reported above)
+                    if (!admitted || (weighted && (weight <= 0.0)))
+                        continue;
+
+                    // Exactly the expression the pull uses, in the same order.
+                    epiworld_double p =
+                        (1.0 - i.get_susceptibility_reduction(v, *this)) *
+                        v->get_prob_infecting(this) *
+                        (1.0 - j.get_transmission_reduction(v, *this))
+                        ;
+
+                    // The weight scales the odds; a certain exposure stays so
+                    if (weighted && (p < 1.0))
+                        p = weight * p / (1.0 - p + weight * p);
+
+                    // No chance of transmission (also catches NaN)
+                    if (!(p > 0.0))
+                        continue;
+
+                    int & slot = push_slot[i_id];
+                    if (slot < 0)
+                    {
+
+                        slot = static_cast< int >(push_targets.size());
+                        push_targets.push_back({i_id, 0.0, 0u, nullptr, -1});
+
+                        #ifdef EPI_DEBUG
+                        if (push_default[t])
+                            db.n_transmissions_potential++;
+                        #endif
+
+                    }
+
+                    PushTarget & target = push_targets[static_cast< size_t >(slot)];
+
+                    // Certain transmission: uniform reservoir among these
+                    if (p >= 1.0)
+                    {
+
+                        if (
+                            (++target.n_certain == 1u) ||
+                            (runif() * static_cast< double >(target.n_certain) < 1.0)
+                        )
+                        {
+                            target.candidate = &(*v);
+                            target.layer = layer_id;
+                        }
+
+                        continue;
+
+                    }
+
+                    // A certain transmission wins outright
+                    if (target.n_certain > 0u)
+                        continue;
+
+                    // Weighted reservoir: keep this infector with probability
+                    // r / (sum of odds so far).
+                    const double odds = static_cast< double >(p) /
+                        (1.0 - static_cast< double >(p));
+                    target.odds += odds;
 
                     if (
-                        (++target.n_certain == 1u) ||
-                        (runif() * static_cast< double >(target.n_certain) < 1.0)
+                        (target.candidate == nullptr) ||
+                        (runif() * target.odds < odds)
                     )
+                    {
                         target.candidate = &(*v);
-
-                    continue;
+                        target.layer = layer_id;
+                    }
 
                 }
-
-                // A certain transmission wins outright
-                if (target.n_certain > 0u)
-                    continue;
-
-                // Weighted reservoir: keep this infector with probability
-                // r / (sum of odds so far).
-                const double odds = static_cast< double >(p) /
-                    (1.0 - static_cast< double >(p));
-                target.odds += odds;
-
-                if (
-                    (target.candidate == nullptr) ||
-                    (runif() * target.odds < odds)
-                )
-                    target.candidate = &(*v);
 
             }
 
@@ -20078,6 +20348,7 @@ inline void Model<TSeq>::transmission_push_impl()
             db.n_transmissions_today++;
         #endif
 
+        sampled_layer = target.layer;
         i.set_virus(*this, *target.candidate);
 
     }
@@ -20328,7 +20599,6 @@ private:
 
     std::vector< uint64_t > marks;   ///< Bitset used to order the pool
     std::vector< size_t > ordered;   ///< Infectious ids (ascending), scratch
-    std::vector< size_t > sampled;   ///< Output buffer of `sample()`
 
     void rebuild_layout();
 
@@ -20406,14 +20676,17 @@ public:
     }
 
     /**
-     * @brief Samples the infectious contacts of `agent`, which must be in the
-     * layer.
-     * @return Number of valid entries in `sampled_ids()`.
+     * @brief Samples the infectious contacts of `agent` (none if it is not in
+     * the layer), appending them to `out`.
+     * @details `exclude` is ignored: the infectious states of the layer say
+     * who can be contacted. See `ContactLayer::sample()`.
      */
-    size_t sample(Agent<TSeq> * agent, Model<TSeq> & model);
-
-    /// Agent ids drawn by the last `sample()` (first `n` entries are valid).
-    const std::vector< size_t > & sampled_ids() const { return sampled; }
+    size_t sample(
+        size_t agent,
+        Model<TSeq> & model,
+        const std::vector< bool > * exclude,
+        std::vector< size_t > & out
+    ) override;
 
     /// Number of infectious agents in a group.
     size_t get_n_infectious(size_t group) const { return counts[group]; }
@@ -20601,7 +20874,6 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
         );
 
     pool.assign(n, 0u);
-    sampled.assign(n, 0u);
     ordered.clear();
     ordered.reserve(n);
     marks.assign((n + 63u) / 64u, 0u);
@@ -20696,16 +20968,20 @@ inline void Mixing<TSeq>::update(Model<TSeq> & model)
 
 template<typename TSeq>
 inline size_t Mixing<TSeq>::sample(
-    Agent<TSeq> * agent,
-    Model<TSeq> & model
+    size_t agent,
+    Model<TSeq> & model,
+    const std::vector< bool > *,
+    std::vector< size_t > & out
 )
 {
 
-    // Column of the agent's group: entry (agent's group, g) is rate[g]
-    const double * rate = contact_matrix.data() +
-        groups[static_cast< size_t >(agent->get_id())];
+    if (!in_layer(agent))
+        return 0u;
 
-    size_t samp_id = 0u;
+    // Column of the agent's group: entry (agent's group, g) is rate[g]
+    const double * rate = contact_matrix.data() + groups[agent];
+
+    const size_t first = out.size();
     for (size_t g = 0u; g < n_groups; ++g)
     {
 
@@ -20740,20 +21016,23 @@ inline size_t Mixing<TSeq>::sample(
             #endif
 
             // Can't sample itself
-            if (id == static_cast< size_t >(agent->get_id()))
+            if (id == agent)
                 continue;
 
-            sampled[samp_id++] = id;
+            out.push_back(id);
 
         }
 
     }
 
     // Reporting the interactions, only if somebody listens
+    const size_t n_sampled = out.size() - first;
     if (model.has_post_sampling())
-        model.register_sampled_contacts(sampled.data(), samp_id, agent->get_id());
+        model.register_sampled_contacts(
+            out.data() + first, n_sampled, static_cast< int >(agent)
+        );
 
-    return samp_id;
+    return n_sampled;
 
 }
 
@@ -20962,19 +21241,42 @@ public:
     void write_edgelist(const std::string & fn) const;
 
     /**
-     * @brief Appends the neighbors of `agent` that carry a virus to `out`.
+     * @brief The neighbors of `agent` that carry a virus, written to `out`
+     * (room for `get_degree(agent)` entries).
      * @details Neighbors in a state flagged in `exclude` (if not null) are
-     * skipped. Each contact is reported to the model's post-sampling callback,
-     * if there is one. This is the network's part of a pull.
-     * @return The number of contacts appended.
+     * skipped. With `Record`, each contact is reported to the model's
+     * post-sampling callback.
+     * @return The number of contacts written.
      */
     template< bool Record >
-    size_t sample(
+    size_t pull(
         size_t agent,
         Model<TSeq> & model,
         const std::vector< bool > * exclude,
         size_t * out
     ) const;
+
+    /// The network's part of a pull (see `ContactLayer::sample()`).
+    size_t sample(
+        size_t agent,
+        Model<TSeq> & model,
+        const std::vector< bool > * exclude,
+        std::vector< size_t > & out
+    ) override
+    {
+
+        const size_t first = out.size();
+        out.resize(first + ties[agent].size());
+
+        // The recording path is chosen once per call, not per contact
+        const size_t n = model.post_sampling_on ?
+            pull<true>(agent, model, exclude, out.data() + first) :
+            pull<false>(agent, model, exclude, out.data() + first);
+
+        out.resize(first + n);
+        return n;
+
+    }
 
     void reset(Model<TSeq> & model) override;
     void update(Model<TSeq> & model) override;
@@ -21456,7 +21758,7 @@ inline void Network<TSeq>::write_edgelist(const std::string & fn) const
 
 template<typename TSeq>
 template< bool Record >
-inline size_t Network<TSeq>::sample(
+inline size_t Network<TSeq>::pull(
     size_t agent,
     Model<TSeq> & model,
     const std::vector< bool > * exclude,
@@ -28095,7 +28397,6 @@ class ModelSEIRMixing :
 private:
 
     #ifdef EPI_DEBUG
-    std::vector< int > sampled_sizes;
     #endif
 
 public:
@@ -28191,26 +28492,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
         ) -> void
         {
 
-            // Layer 0 is the mixing layer (added by the constructor); the downcast is
-            // for the sampling statistics
-            auto * m_down = model_cast<ModelSEIRMixing<TSeq>, TSeq>(m);
-            auto & mixing = m->template get_layer_as< layer::Mixing<TSeq> >(0u);
-
-            if (!mixing.in_layer(p->get_id()))
-                return;
-
-            size_t ndraws = mixing.sample(p, *m);
-
-            #ifdef EPI_DEBUG
-            m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
-            #endif
-
-            if (ndraws == 0u)
-                return;
-
-            Virus<TSeq> * virus = m->sample_virus(
-                p, mixing.sampled_ids().data(), ndraws
-            );
+            Virus<TSeq> * virus = m->sample_virus(p);
             if (virus != nullptr)
                 p->set_virus(*m, *virus, ModelSEIRMixing<TSeq>::EXPOSED);
 
@@ -28468,21 +28750,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
         ) -> void
         {
 
-            // Layer 0 is the mixing layer (added by the constructor)
-            auto & mixing = m->template get_layer_as< layer::Mixing<TSeq> >(0u);
-
-            if (!mixing.in_layer(p->get_id()))
-                return;
-
-            size_t ndraws = mixing.sample(p, *m);
-
-            if (ndraws == 0u)
-                return;
-
-
-            Virus<TSeq> * virus = m->sample_virus(
-                p, mixing.sampled_ids().data(), ndraws
-            );
+            Virus<TSeq> * virus = m->sample_virus(p);
             if (virus != nullptr)
                 p->set_virus(*m, *virus, ModelSIRMixing<TSeq>::INFECTED);
 
@@ -28657,7 +28925,6 @@ class ModelSEIRMixingQuarantine :
 private:
 
     #ifdef EPI_DEBUG
-    std::vector< int > sampled_sizes;
     #endif
 
     // Update functions
@@ -28833,26 +29100,7 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    // Layer 0 is the mixing layer (added by the constructor); the downcast is
-    // for the sampling statistics
-    auto * m_down = model_cast<ModelSEIRMixingQuarantine<TSeq>, TSeq>(m);
-    auto & mixing = m->template get_layer_as< layer::Mixing<TSeq> >(0u);
-
-    if (!mixing.in_layer(p->get_id()))
-        return;
-
-    size_t ndraws = mixing.sample(p, *m);
-
-    #ifdef EPI_DEBUG
-    m_down->sampled_sizes.push_back(static_cast<int>(ndraws));
-    #endif
-
-    if (ndraws == 0u)
-        return;
-
-    Virus<TSeq> * virus = m->sample_virus(
-        p, mixing.sampled_ids().data(), ndraws
-    );
+    Virus<TSeq> * virus = m->sample_virus(p);
     if (virus != nullptr)
         p->set_virus(*m, *virus, ModelSEIRMixingQuarantine<TSeq>::EXPOSED);
 

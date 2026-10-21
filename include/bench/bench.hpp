@@ -50,8 +50,8 @@ inline uint64_t run_checksum(epiworld::Model<> & m)
     std::vector< int > counts;
     m.get_db().get_hist_total(nullptr, nullptr, &counts);
     hash_ints(h, counts);
-    std::vector< int > date, source, target, virus, sexp;
-    m.get_db().get_transmissions(date, source, target, virus, sexp);
+    std::vector< int > date, source, target, virus, sexp, layer;
+    m.get_db().get_transmissions(date, source, target, virus, sexp, layer);
     hash_ints(h, date);
     hash_ints(h, source);
     hash_ints(h, target);

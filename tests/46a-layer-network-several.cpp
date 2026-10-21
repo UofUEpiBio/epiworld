@@ -98,8 +98,8 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
         with_empty->get_db().get_hist_total(nullptr, nullptr, &h2);
         REQUIRE(h1 == h2);
 
-        std::vector< int > d, src, tgt, v, se;
-        single.get_db().get_transmissions(d, src, tgt, v, se);
+        std::vector< int > d, src, tgt, v, se, se_layer;
+        single.get_db().get_transmissions(d, src, tgt, v, se, se_layer);
         REQUIRE(d.size() > 50u);
     }
 

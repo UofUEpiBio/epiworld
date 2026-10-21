@@ -57,9 +57,9 @@ EPIWORLD_TEST_CASE("Bubbles - replicates are independent", "[bubbles]") {
                 const auto & bid =
                     Bubbles<>::get_from(*m)->get_bubble_id();
 
-                std::vector<int> date, source, target, virus, sexp;
+                std::vector<int> date, source, target, virus, sexp, sexp_layer;
                 m->get_db().get_transmissions(
-                    date, source, target, virus, sexp
+                    date, source, target, virus, sexp, sexp_layer
                 );
 
                 for (size_t i = 0u; i < source.size(); ++i)

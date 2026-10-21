@@ -90,9 +90,9 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
 
     // Everyone gets infected exactly once (the seeded agents are listed with
     // source -1), and keeps the immunity
-    std::vector< int > date, source, target, virus_id, source_exposure_date;
+    std::vector< int > date, source, target, virus_id, source_exposure_date, source_exposure_date_layer;
     model.get_db().get_transmissions(
-        date, source, target, virus_id, source_exposure_date
+        date, source, target, virus_id, source_exposure_date, source_exposure_date_layer
     );
     std::sort(target.begin(), target.end());
     REQUIRE(std::adjacent_find(target.begin(), target.end()) == target.end());

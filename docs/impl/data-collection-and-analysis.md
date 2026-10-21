@@ -75,8 +75,8 @@ It's worth noting that analysis of any great depth should likely not be done in 
 The `get_transmissions` method retrieves data about the transmission network, including the source, target, and timing of each event. This data can be used to construct transmission networks and analyze the spread of the infection. For example, users can visualize the network to identify clusters of infections or calculate network metrics such as centrality and clustering coefficients.
 
 ```cpp
-std::vector<int> date, source, target, virus, source_exposure_date;
-db.get_transmissions(date, source, target, virus, source_exposure_date);
+std::vector<int> date, source, target, virus, source_exposure_date, layer;
+db.get_transmissions(date, source, target, virus, source_exposure_date, layer);
 
 for (size_t i = 0; i < date.size(); ++i) {
     std::cout << "Transmission on day " << date[i]

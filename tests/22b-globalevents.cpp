@@ -27,9 +27,9 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
         size_t, Model<>* m) -> void {
         
         // Get transmission data
-        std::vector<int> trans_date, trans_source, trans_target, trans_virus, trans_source_exposure;
+        std::vector<int> trans_date, trans_source, trans_target, trans_virus, trans_source_exposure, trans_source_exposure_layer;
         m->get_db().get_transmissions(
-            trans_date, trans_source, trans_target, trans_virus, trans_source_exposure
+            trans_date, trans_source, trans_target, trans_virus, trans_source_exposure, trans_source_exposure_layer
         );
         
         // Count transmissions before and after intervention

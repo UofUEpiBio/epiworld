@@ -68,8 +68,8 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     );
     model.run(40, 55);
 
-    std::vector< int > date, source, target, virus, source_exposure;
-    model.get_db().get_transmissions(date, source, target, virus, source_exposure);
+    std::vector< int > date, source, target, virus, source_exposure, source_exposure_layer;
+    model.get_db().get_transmissions(date, source, target, virus, source_exposure, source_exposure_layer);
 
     int before = 0, after = 0;
     for (auto d : date)
