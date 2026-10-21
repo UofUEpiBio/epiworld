@@ -709,7 +709,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     this->add_globalevent(quarantine_event);
 
     // Setting the population
-    this->agents_empty_graph(n);
+    this->set_population_size(n);
 
     // Turning on the contact tracing
     this->contact_tracing_on();

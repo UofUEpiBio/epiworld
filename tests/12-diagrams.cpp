@@ -6,12 +6,16 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
 
     // Queuing doesn't matter and get results that are meaningful
     epimodels::ModelSIR<> model_0(
-        "a virus", 0.01, .5, .3
+        "a virus", 1000, 0.01, .5, .3
         );
 
     model_0.seed(1231);
 
-    model_0.agents_smallworld(1000, 5, false, 0.01).
+    model_0.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(1000, 5, 0.01, false, model_0)
+    ));
+
+    model_0.
         verbose_off().
         run(100);
 

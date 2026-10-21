@@ -19,14 +19,14 @@ using namespace epiworld;
 
 namespace {
 
-// The reference pull: walks every neighbor's agent (no carrier flags), skips
-// the latent ones (state 1) and the ones without a virus, and draws at most
-// one virus.
+// The reference pull: walks every neighbor's agent in the network layer (no
+// carrier flags), skips the latent ones (state 1) and the ones without a
+// virus, and draws at most one virus.
 void plain_scan_update(Agent<> * p, Model<> * m)
 {
 
     size_t n = 0u;
-    for (auto * neighbor : p->neighbors_view(*m))
+    for (auto * neighbor : tests_net(*m).neighbors_view(p->get_id()))
     {
 
         auto & v = neighbor->get_virus();
@@ -68,7 +68,7 @@ Run simulate(
 )
 {
 
-    epimodels::ModelSEIR<> model("virus", 20.0 / 3000.0, 0.1, 3.0, 1.0 / 7.0);
+    epimodels::ModelSEIR<> model("virus", 3000u, 20.0 / 3000.0, 0.1, 3.0, 1.0 / 7.0);
 
     if (plain_scan)
         model.set_state_function(0u, plain_scan_update);
@@ -123,13 +123,15 @@ EPIWORLD_TEST_CASE("Transmission - heterogeneous network", "[transmission]") {
 
     // 3. The neighbor view checks its indices ---------------------------------
     {
-        Model<> model;
+        Model<> model(20);
         model.add_state("Susceptible", default_update_susceptible<>);
-        model.agents_smallworld(20, 4, false, 0.0);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", rgraph_smallworld(20, 4, 0.0, false, model)
+        ));
         model.verbose_off();
         model.run(1, 1);
 
-        auto view = model.get_agent(0).neighbors_view(model);
+        auto view = tests_net(model).neighbors_view(0u);
         REQUIRE(view.size() == 4u);
         REQUIRE(view.id(3u) == view.ids()[3]);
         REQUIRE(view.agent(3u)->get_id() == view.id(3u));

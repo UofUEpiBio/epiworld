@@ -30,7 +30,8 @@ namespace {
 
 constexpr epiworld_fast_uint E_ = 1u, I_ = 2u; // state 0 is Susceptible
 
-// Star: agent 0 at the centre, agents 1..nleaves around it.
+// Star: agent 0 at the centre, agents 1..nleaves around it (the model has
+// nleaves + 1 agents).
 void make_star(Model<> & model, int nleaves)
 {
     std::vector< int > source, target;
@@ -39,7 +40,9 @@ void make_star(Model<> & model, int nleaves)
         source.push_back(0);
         target.push_back(k);
     }
-    model.agents_from_edgelist(source, target, nleaves + 1, false);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", AdjList(source, target, nleaves + 1, false)
+    ));
 }
 
 // Base model: S takes infections from everyone but E; E and I never change.
@@ -136,7 +139,7 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
     for (auto mode : {"pull", "push"})
     {
 
-        Model<> model;
+        Model<> model(7);
         add_states(model);
         make_star(model, 6);
         Virus<> v_a = make_virus("A", 0.2, I_, {1u, 2u});
@@ -191,7 +194,7 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
     for (auto mode : {"pull", "push"})
     {
 
-        Model<> model;
+        Model<> model(4);
         add_states(model);
         make_star(model, 3);
         Virus<> v_sure = make_virus("sure", 1.0, I_, {1u, 3u});

@@ -81,7 +81,7 @@ static double ns_per_call(long calls, TFun fun)
 
 static void run_micro(const Options & o)
 {
-    Model<> model;
+    Model<> model(0);
     for (int i = 0; i < 18; ++i)
         model.add_param(0.01 * i, "Filler parameter " + std::to_string(i));
     model.add_param(0.1, "Transmission rate");
@@ -143,7 +143,9 @@ static void build_seirh(Model<> & model, size_t n)
     pathogen.set_prob_infecting("Transmission rate");
     model.add_virus(pathogen);
 
-    model.agents_smallworld(n, 10, false, 0.05);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(n, 10, 0.05, false, model)
+    ));
 }
 
 // Scenario M ------------------------------------------------------------------
@@ -215,7 +217,7 @@ int main(int argc, char ** argv)
             bench::Timing res;
             if (scen == "A")
             {
-                Model<> model;
+                Model<> model(n);
                 model.seed(20260928);
                 build_seirh(model, n);
                 res = bench::time_runs(model, o.days, o.reps);

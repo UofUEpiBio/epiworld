@@ -7,6 +7,7 @@ EPIWORLD_TEST_CASE("SIRD via set_state_function", "[set-state-function]") {
     // Build a standard SIR model (states: 0=Susceptible, 1=Infected, 2=Recovered)
     epimodels::ModelSIR<> model(
         "a virus",
+        5000,
         /* prevalence        */ 0.05,
         /* transmission_rate */ 0.5,
         /* recovery_rate     */ 0.3
@@ -45,7 +46,9 @@ EPIWORLD_TEST_CASE("SIRD via set_state_function", "[set-state-function]") {
 
     model.set_state_function("Infected", update_infected_sird);
 
-    model.agents_smallworld(5000, 5, false, 0.02);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(5000, 5, 0.02, false, model)
+    ));
     model.verbose_off();
     model.seed(12345);
     model.run(100).print();

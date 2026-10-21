@@ -10,6 +10,7 @@ using namespace epiworld;
 
 epimodels::ModelSIR<> model(
     "covid", // Name of the virus
+    1000,
     .1,      // Initial prevalence
     .1,      // Infectiousness (par[1])
     .3       // Immune Recovery (par[0])
@@ -59,7 +60,9 @@ void sumfun(
 int main()
 {
 
-    model.agents_smallworld(1000);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(1000, 5, .01, false, model)
+    ));
 
     // Creating a new LFMCMC model
     LFMCMC<std::vector< int >> lfmcmc;

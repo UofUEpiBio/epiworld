@@ -20,6 +20,7 @@ int main(int argc, char* argv[]) {
 
     epimodels::ModelSURV<> model(
         "a virus", // Name of the virus
+        popsize,
         preval, // prevalence
         0.9,  // efficacy_vax
         3u,   // latent_period
@@ -35,9 +36,9 @@ int main(int argc, char* argv[]) {
     );
 
     // Adding a bernoulli graph as step 0
-    model.agents_from_adjlist(
-        epiworld::rgraph_smallworld(popsize, 5, .01, false, model)
-    );
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", epiworld::rgraph_smallworld(popsize, 5, .01, false, model)
+    ));
 
     // Running and checking the results
     model.print();

@@ -5,7 +5,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
 {
 
-    Model<> model;
+    Model<> model(0);
     model.seed(3312);
 
     // Generating random numbers
@@ -88,16 +88,16 @@ EPIWORLD_TEST_CASE("Random numbers", "[rand-nums]")
         constexpr epiworld_double fast_lambda =
             static_cast<epiworld_double>(fast_n) * fast_p;
 
-        Model<> fast_binom_args;
-        Model<> fast_poiss_args;
+        Model<> fast_binom_args(0);
+        Model<> fast_poiss_args(0);
         fast_binom_args.seed(91823);
         fast_poiss_args.seed(91823);
 
         for (size_t i = 0u; i < 256u; ++i)
             REQUIRE(fast_binom_args.rbinom(fast_n, fast_p) == fast_poiss_args.rpoiss(fast_lambda));
 
-        Model<> fast_binom_set;
-        Model<> fast_poiss_set;
+        Model<> fast_binom_set(0);
+        Model<> fast_poiss_set(0);
         fast_binom_set.seed(55123);
         fast_poiss_set.seed(55123);
         fast_binom_set.set_rand_binom(fast_n, fast_p);

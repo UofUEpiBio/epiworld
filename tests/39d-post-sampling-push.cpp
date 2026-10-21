@@ -50,8 +50,10 @@ EPIWORLD_TEST_CASE("Post-sampling callback - push and pull agree", "[post-sampli
     {
 
         auto run = [](TransmissionMode mode, TransmissionMode * used) {
-            epimodels::ModelSIR<> model("Virus", 0.05, 0.0, 0.0);
-            model.agents_smallworld(400, 6, false, 0.1);
+            epimodels::ModelSIR<> model("Virus", 400, 0.05, 0.0, 0.0);
+            model.add_layer(std::make_unique< layer::Network<> >(
+                "network", rgraph_smallworld(400, 6, 0.1, false, model)
+            ));
             return collect(model, mode, 6, used);
         };
 
@@ -85,7 +87,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - push and pull agree", "[post-sampli
 
         auto run = [](TransmissionMode mode, TransmissionMode * used) {
 
-            epimodels::ModelSIR<> model("Virus", 0.0, 1.0, 0.0);
+            epimodels::ModelSIR<> model("Virus", 12, 0.0, 1.0, 0.0);
 
             Virus<> v = model.get_virus(0);
             model.rm_virus(0);
@@ -98,7 +100,9 @@ EPIWORLD_TEST_CASE("Post-sampling callback - push and pull agree", "[post-sampli
                 source.push_back(i);
                 target.push_back((i + 1) % 12);
             }
-            model.agents_from_edgelist(source, target, 12, false);
+            model.add_layer(std::make_unique< layer::Network<> >(
+                "network", AdjList(source, target, 12, false)
+            ));
 
             return collect(model, mode, 8, used);
 

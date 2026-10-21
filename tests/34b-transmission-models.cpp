@@ -108,10 +108,10 @@ void rewire_some_ties(Model<> * m)
     int day = m->today();
     if ((day % 10) == 5)
         for (size_t i = 0u; i < 40u; ++i)
-            m->add_edge(i, i + 700u);
+            tests_net(*m).add_edge(i, i + 700u);
     else if ((day % 10) == 8)
         for (size_t i = 0u; i < 40u; ++i)
-            m->rm_edge(i, i + 700u);
+            tests_net(*m).rm_edge(i, i + 700u);
 }
 
 struct Run {
@@ -142,16 +142,20 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         std::map< std::string, Outcomes > seir, seirh;
         for (auto mode : {"pull", "push", "auto"})
         {
-            epimodels::ModelSEIR<> m_seir("flu", 0.01, 0.04, 4.0, 1.0 / 7.0);
+            epimodels::ModelSEIR<> m_seir("flu", 1500, 0.01, 0.04, 4.0, 1.0 / 7.0);
             m_seir.seed(11);
-            m_seir.agents_smallworld(1500, 8, false, 0.1);
+            m_seir.add_layer(std::make_unique< layer::Network<> >(
+                "network", rgraph_smallworld(1500, 8, 0.1, false, m_seir)
+            ));
             m_seir.set_transmission_mode(mode);
             seir[mode] = simulate(m_seir, 60, nsims);
 
-            Model<> m_seirh;
+            Model<> m_seirh(1500);
             build_seirh(m_seirh);
             m_seirh.seed(11);
-            m_seirh.agents_smallworld(1500, 8, false, 0.1);
+            m_seirh.add_layer(std::make_unique< layer::Network<> >(
+                "network", rgraph_smallworld(1500, 8, 0.1, false, m_seirh)
+            ));
             m_seirh.set_transmission_mode(mode);
             seirh[mode] = simulate(m_seirh, 60, nsims);
         }
@@ -180,9 +184,11 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         std::vector< Run > runs;
         for (bool queuing : {true, false})
         {
-            epimodels::ModelSIR<> model("flu", 0.02, 0.9, 0.3);
+            epimodels::ModelSIR<> model("flu", 2000, 0.02, 0.9, 0.3);
             model.seed(3131);
-            model.agents_smallworld(2000, 6, false, 0.02);
+            model.add_layer(std::make_unique< layer::Network<> >(
+                "network", rgraph_smallworld(2000, 6, 0.02, false, model)
+            ));
             if (!queuing)
                 model.queuing_off();
             model.add_globalevent(rewire_some_ties, "rewire some ties");
@@ -200,7 +206,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
     // 3. Custom functions pull ------------------------------------------------
     {
         auto sir = [](bool wrapped) {
-            Model<> m;
+            Model<> m(1000);
             if (wrapped)
                 m.add_state("Susceptible", [](Agent<> * p, Model<> * mm) -> void {
                     default_update_susceptible<>(p, mm);
@@ -215,7 +221,9 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
             v.set_prob_recovery(0.2);
             m.add_virus(v);
             m.seed(99);
-            m.agents_smallworld(1000, 6, false, 0.05);
+            m.add_layer(std::make_unique< layer::Network<> >(
+                "network", rgraph_smallworld(1000, 6, 0.05, false, m)
+            ));
             m.verbose_off();
             return m;
         };
@@ -237,9 +245,11 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
 
     // 4. "auto" switches in a dense, high-prevalence epidemic -------------------
     {
-        epimodels::ModelSIR<> model("flu", 0.01, 0.05, 0.2);
+        epimodels::ModelSIR<> model("flu", 2000, 0.01, 0.05, 0.2);
         model.seed(5);
-        model.agents_smallworld(2000, 50, false, 0.1);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", rgraph_smallworld(2000, 50, 0.1, false, model)
+        ));
         model.verbose_off();
 
         int n_push = 0, n_pull = 0;
@@ -258,7 +268,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
 
     // 5. The mode API ----------------------------------------------------------
     {
-        Model<> m;
+        Model<> m(0);
         REQUIRE(m.get_transmission_mode() == TransmissionMode::automatic);
         m.set_transmission_mode("push");
         REQUIRE(m.get_transmission_mode() == TransmissionMode::push);

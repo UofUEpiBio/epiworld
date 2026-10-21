@@ -4,9 +4,9 @@
 
 using namespace epiworld;
 
-// agents_from_edgelist() builds each agent's neighbors in one pass (a counting
-// sort of the edge ends, see #274). The order of an agent's neighbors decides
-// which transmitter roulette() picks, so the contract is exact:
+// A network layer builds each agent's neighbors from a graph in one pass (a
+// counting sort of the edge ends, see #274). The order of an agent's neighbors
+// decides which transmitter roulette() picks, so the contract is exact:
 //
 // - undirected: i's neighbors are the distinct j with (i, j) or (j, i) in the
 //   list, ascending. Repeats and reversed pairs collapse; a self-loop lists i
@@ -16,11 +16,11 @@ using namespace epiworld;
 // This checks the contract on hand-picked edge cases and on a larger random
 // list, plus the errors an invalid list raises.
 
-// Neighbor ids of agent i, in the model's order.
+// Neighbor ids of agent i, in the layer's order.
 static std::vector< size_t > nbrs(Model<> & model, size_t i)
 {
     std::vector< size_t > res;
-    for (auto * p : model.get_agent(i).get_neighbors(model))
+    for (auto * p : tests_net(model).neighbors_view(i))
         res.push_back(static_cast< size_t >(p->get_id()));
     return res;
 }
@@ -68,18 +68,20 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
     for (bool directed : {false, true})
     {
 
-        epimodels::ModelSIR<> model("a virus", 0.1, 0.5, 0.3);
+        epimodels::ModelSIR<> model("a virus", static_cast< int >(n), 0.1, 0.5, 0.3);
         model.verbose_off();
-        model.agents_from_edgelist(source, target, static_cast< int >(n), directed);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", AdjList(source, target, static_cast< int >(n), directed)
+        ));
 
-        REQUIRE(model.is_directed() == directed);
+        REQUIRE(tests_net(model).is_directed() == directed);
         REQUIRE(model.size() == n);
 
         auto rows = expected_rows(source, target, n, directed);
         for (size_t i = 0u; i < n; ++i)
         {
             REQUIRE(nbrs(model, i) == rows[i]);
-            REQUIRE(model.get_agent(i).get_n_neighbors() == rows[i].size());
+            REQUIRE(tests_net(model).get_degree(i) == rows[i].size());
         }
 
         if (!directed)
@@ -94,33 +96,33 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
         }
 
         REQUIRE(nbrs(model, 2u) == std::vector< size_t >({0u, 2u}));
-        REQUIRE(model.has_edge(2u, 2u));
-        REQUIRE(model.get_agent(3u).get_n_neighbors() == 0u);
-        REQUIRE(model.get_agent(5u).get_n_neighbors() == 0u);
-        REQUIRE(model.get_agent(4u).get_n_neighbors() == nhub);
+        REQUIRE(tests_net(model).has_edge(2u, 2u));
+        REQUIRE(tests_net(model).get_degree(3u) == 0u);
+        REQUIRE(tests_net(model).get_degree(5u) == 0u);
+        REQUIRE(tests_net(model).get_degree(4u) == nhub);
 
         // The hub's lookups go through its index; every tie must be found.
         for (size_t k = 6u; k < n; ++k)
         {
-            REQUIRE(model.has_edge(4u, k));
-            REQUIRE(model.has_edge(k, 4u) == !directed);
+            REQUIRE(tests_net(model).has_edge(4u, k));
+            REQUIRE(tests_net(model).has_edge(k, 4u) == !directed);
         }
-        REQUIRE_FALSE(model.has_edge(4u, 3u));
+        REQUIRE_FALSE(tests_net(model).has_edge(4u, 3u));
 
         // Undirected: editing the hub keeps its index in step.
         if (!directed)
         {
-            REQUIRE(model.rm_edge(4u, 10u));
-            REQUIRE_FALSE(model.has_edge(4u, 10u));
-            REQUIRE(model.has_edge(4u, 11u));
-            REQUIRE(model.get_agent(4u).get_n_neighbors() == nhub - 1u);
-            REQUIRE(model.add_edge(4u, 10u));
+            REQUIRE(tests_net(model).rm_edge(4u, 10u));
+            REQUIRE_FALSE(tests_net(model).has_edge(4u, 10u));
+            REQUIRE(tests_net(model).has_edge(4u, 11u));
+            REQUIRE(tests_net(model).get_degree(4u) == nhub - 1u);
+            REQUIRE(tests_net(model).add_edge(4u, 10u));
             REQUIRE(nbrs(model, 4u).back() == 10u);
         }
 
         // write_edgelist() reports the same ties (once each if undirected).
         std::vector< int > s, t;
-        model.write_edgelist(s, t);
+        tests_net(model).get_edgelist(s, t);
         std::vector< std::pair< size_t, size_t > > got, want;
         for (size_t m = 0u; m < s.size(); ++m)
             if (directed)
@@ -158,47 +160,60 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
 
     for (bool directed : {false, true})
     {
-        Model<> model;
-        model.agents_from_edgelist(bs, bt, nbig, directed);
+        Model<> model(nbig);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", AdjList(bs, bt, nbig, directed)
+        ));
         auto rows = expected_rows(bs, bt, nbig, directed);
         for (size_t i = 0u; i < static_cast< size_t >(nbig); ++i)
             REQUIRE(nbrs(model, i) == rows[i]);
     }
 
     // -- errors ----------------------------------------------------------------
-    // A bad list throws and leaves the current network alone.
-    Model<> model;
-    model.agents_from_edgelist({0, 1}, {1, 2}, 3, false);
-
+    // A bad list throws, and a graph of the wrong size is refused at reset.
+    REQUIRE_THROWS_AS(AdjList({0, 1}, {1, 3}, 3, false), std::range_error);
+    REQUIRE_THROWS_AS(AdjList({3, 1}, {1, 2}, 3, true), std::range_error);
     REQUIRE_THROWS_AS(
-        model.agents_from_edgelist({0, 1}, {1, 3}, 3, false), std::range_error
+        AdjList(std::vector< int >{-1}, std::vector< int >{1}, 3, false),
+        std::range_error
+    );
+    REQUIRE_THROWS_AS(AdjList({0, 1}, {1}, 3, false), std::length_error);
+    REQUIRE_THROWS_AS(
+        AdjList(std::vector< int >{}, std::vector< int >{}, -1, false),
+        std::length_error
     );
     REQUIRE_THROWS_AS(
-        model.agents_from_edgelist({3, 1}, {1, 2}, 3, true), std::range_error
-    );
-    REQUIRE_THROWS_AS(
-        model.agents_from_edgelist({-1}, {1}, 3, false), std::range_error
-    );
-    REQUIRE_THROWS_AS(
-        model.agents_from_edgelist({0, 1}, {1}, 3, false), std::length_error
-    );
-    REQUIRE_THROWS_AS(
-        model.agents_from_edgelist({}, {}, -1, false), std::length_error
-    );
-    REQUIRE_THROWS_AS(
-        model.agents_from_edgelist(
-            {}, {}, std::numeric_limits< int >::min(), false
+        AdjList(
+            std::vector< int >{}, std::vector< int >{},
+            std::numeric_limits< int >::min(), false
         ),
         std::length_error
     );
+
+    Model<> model(3);
+    model.add_state("Susceptible");
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", AdjList({0, 1}, {1, 2}, 3, false)
+    ));
+
+    Model<> wrong_size(4);
+    wrong_size.add_state("Susceptible");
+    wrong_size.add_layer(std::make_unique< layer::Network<> >(
+        "network", AdjList({0, 1}, {1, 2}, 3, false)
+    ));
+    wrong_size.verbose_off();
+    REQUIRE_THROWS_AS(wrong_size.run(1, 1), std::length_error);
 
     REQUIRE(model.size() == 3u);
     REQUIRE(nbrs(model, 1u) == std::vector< size_t >({0u, 2u}));
 
     // An empty list gives isolates.
-    model.agents_from_edgelist({}, {}, 4, false);
-    REQUIRE(model.size() == 4u);
+    Model<> empty(4);
+    empty.add_layer(std::make_unique< layer::Network<> >(
+        "network", AdjList(std::vector< int >{}, std::vector< int >{}, 4, false)
+    ));
+    REQUIRE(tests_net(empty).size() == 4u);
     for (size_t i = 0u; i < 4u; ++i)
-        REQUIRE(model.get_agent(i).get_n_neighbors() == 0u);
+        REQUIRE(tests_net(empty).get_degree(i) == 0u);
 
 }

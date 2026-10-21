@@ -18,7 +18,7 @@ public:
     // One entry per state: true for the states whose agents do not transmit
     std::vector< bool > not_transmitting;
 
-    CommunityHospModel();
+    explicit CommunityHospModel(size_t n);
 };
 
 /**
@@ -31,21 +31,13 @@ inline void update_susceptible(Agent<int> * p, Model<int> * m)
 {
     auto hm = static_cast<CommunityHospModel*>(m);
 
-    // Collecting the viruses of the neighbors who transmit (infected agents
-    // in the hospital do not), and drawing at most one of them
-    size_t n_viruses = sampler::collect_neighbor_viruses(
-        p, m, &hm->not_transmitting
-    );
+    // Drawing at most one virus from the neighbors who transmit (infected
+    // agents in the hospital do not)
+    Virus<int> * virus = m->sample_virus(p, &hm->not_transmitting);
 
-    if (n_viruses == 0u)
+    if (virus == nullptr)
         return;
 
-    int which = roulette(n_viruses, m);
-
-    if (which < 0)
-        return;
-
-    Virus<int> * virus = m->array_virus_tmp[which];
     if (m->par("Prob hospitalization") > m->runif())
         p->set_virus(*m, *virus, hm->infected_hospitalized_state);
     else
@@ -109,7 +101,7 @@ inline void update_infected_hospitalized(Agent<int> * p, Model<int> * m)
 
 }
 
-CommunityHospModel::CommunityHospModel() : Model<int>()
+CommunityHospModel::CommunityHospModel(size_t n) : Model<int>(n)
 {
     this->susceptible_state = this->add_state("Susceptible", update_susceptible);
     this->infected_state = this->add_state("Infected", update_infected);
@@ -121,7 +113,7 @@ CommunityHospModel::CommunityHospModel() : Model<int>()
 }
 
 int main() {
-    auto model = CommunityHospModel();
+    auto model = CommunityHospModel(1000);
 
     // Adding a new virus
     Virus<> mrsa("MRSA");
@@ -133,7 +125,9 @@ int main() {
     model.add_virus(mrsa);
 
     // Add a population
-    model.agents_smallworld(1000, 4, false, 0.1);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(1000, 4, 0.1, false, model)
+    ));
 
     model.add_param(0.1, "Prob hospitalization");
     model.add_param(0.33, "Prob recovery");

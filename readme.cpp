@@ -9,7 +9,7 @@ int main()
     // - Susceptible: Status 0
     // - Infected: Status 1
     // - Recovered: Status 2
-    Model<> model;
+    Model<> model(100000);
     model.add_state("Susceptible", default_update_susceptible<>);
     model.add_state("Infected", default_update_exposed<>);
     model.add_state("Recovered");
@@ -30,7 +30,9 @@ int main()
     model.add_virus(virus);
     
     // Generating a random pop from a smallworld network
-    model.agents_smallworld(100000, 10L, false, .01);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "contacts", graph::smallworld(10, .01)
+    ));
 
     // Running the model
     model.run(100, 122);

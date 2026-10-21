@@ -708,7 +708,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
 
     // Adding the empty population
-    this->agents_empty_graph(n);
+    this->set_population_size(n);
 
     this->set_name("SEIR with Mixing and Quarantine");
 

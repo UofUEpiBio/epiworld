@@ -49,10 +49,12 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
 
     // Create a single SIR model
     epimodels::ModelSIR<> model(
-        "virus", 0.05, 0.7, 0.15  // Parameters tuned for observable spread
+        "virus", 1000, 0.05, 0.7, 0.15  // Parameters tuned for observable spread
     );
 
-    model.agents_smallworld(1000, 8, false, 0.02);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(1000, 8, 0.02, false, model)
+    ));
     model.verbose_off();
 
     // Add a global event that sets transmission rate to 0 on the intervention day

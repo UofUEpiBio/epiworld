@@ -6,20 +6,26 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     // Queuing doesn't matter and get results that are meaningful
     epimodels::ModelSIR<> model_0(
-        "a virus", 0.01, .9, .3
+        "a virus", 10000, 0.01, .9, .3
         );
 
+    model_0.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(10000, 5, 0.01, false, model_0)
+    ));
+
     model_0.initial_states({0.5}).
-        agents_smallworld(10000, 5, false, 0.01).
         verbose_off().
         run(100, 1231);
 
     epimodels::ModelSIR<> model_1(
-        "a virus", 0.01, .9, .3
+        "a virus", 10000, 0.01, .9, .3
         );
 
+    model_1.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(10000, 5, 0.01, false, model_1)
+    ));
+
     model_1.initial_states({.5}).
-        agents_smallworld(10000, 5, false, 0.01).
         queuing_off().
         verbose_off().
         run(100, 1231);
@@ -60,11 +66,15 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     // Trying out the SEIR model now -------------------------------------------
     epimodels::ModelSEIR<> model_2(
-        "a virus", 0.01, .5, 7.0, .1
+        "a virus", 10000, 0.01, .5, 7.0, .1
         );
 
     
-    model_2.agents_smallworld(10000, 5, false, 0.01).
+    model_2.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(10000, 5, 0.01, false, model_2)
+    ));
+
+    model_2.
         queuing_off().
         verbose_off().
         initial_states({.3, .5}, {}).
@@ -114,11 +124,14 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     // Trying SIRD -------------------------------------------------------------
     epimodels::ModelSIRD<> model_5(
-        "a virus", 0.01, .9, .3, .1
+        "a virus", 10000, 0.01, .9, .3, .1
     );
 
+    model_5.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(10000, 5, 0.01, false, model_5)
+    ));
+
     model_5.initial_states({0.5, .05}).
-        agents_smallworld(10000, 5, false, 0.01).
         verbose_off().
         run(100, 1231).
         print(false);
@@ -136,11 +149,14 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     // Trying SEIRD -------------------------------------------------------------
     epimodels::ModelSEIRD<> model_6(
-        "a virus", 0.1, .9, 7, .3, .1
+        "a virus", 10000, 0.1, .9, 7, .3, .1
     );
 
+    model_6.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(10000, 5, 0.01, false, model_6)
+    ));
+
     model_6.initial_states({0.5, .1, .1}).
-        agents_smallworld(10000, 5, false, 0.01).
         verbose_off().
         run(100, 1231).
         print(false);

@@ -4,7 +4,7 @@
 int main()
 {
   // Creating a model
-  epiworld::Model<> model;
+  epiworld::Model<> model(1000);
 
   model.add_state("Susceptible", epiworld::default_update_susceptible<>);
   auto infected_state = model.add_state("Infected", epiworld::default_update_exposed<>);
@@ -25,9 +25,9 @@ int main()
   model.add_tool(vax);
 
   // Generating a random pop
-  model.agents_from_adjlist(
-    epiworld::rgraph_smallworld(1000, 5, 0.01, false, model)
-  );
+  model.add_layer(std::make_unique< epiworld::layer::Network<> >(
+      "network", epiworld::rgraph_smallworld(1000, 5, 0.01, false, model)
+  ));
 
   // Running the model
   model.run(100, 123123);

@@ -18,14 +18,15 @@ int main(int argc, char * argv[]) {
     omp_set_num_threads(nthreads);
     epimodels::ModelSIR<> model(
         "a virus", // Name of the virus
+        n_agents,
         0.01,      // Initial prevalence
         0.9,       // Infectiousness
         0.3        // Recovery rate
     );
 
-    model.agents_from_adjlist(
-        rgraph_smallworld(n_agents, 4, .01, false, model)
-    );
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(n_agents, 4, .01, false, model)
+    ));
 
     auto sav = make_save_run<>(std::string("%03lu-episim.txt"));
     model.run_multiple(100, nsims, 222, sav, true, true, nthreads);

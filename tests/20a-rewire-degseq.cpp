@@ -7,28 +7,32 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network", "[rewir
     // Create two SEIR models with smallworld networks
     // Model 1: p=0 (no rewiring, pure ring lattice)
     epimodels::ModelSEIR<> model_0(
-        "a virus", 0.01, 0.5, 7.0, 0.3
+        "a virus", 100, 0.01, 0.5, 7.0, 0.3
     );
     
     model_0.seed(1231);
-    model_0.agents_smallworld(100, 4, false, 0.0); // p=0: no rewiring
+    model_0.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(100, 4, 0.0, false, model_0)
+    )); // p=0: no rewiring
     model_0.verbose_off();
     
     // Model 2: p=0.5 (50% rewiring)
     epimodels::ModelSEIR<> model_1(
-        "a virus", 0.01, 0.5, 7.0, 0.3
+        "a virus", 100, 0.01, 0.5, 7.0, 0.3
     );
     
     model_1.seed(1231);
-    model_1.agents_smallworld(100, 4, false, 0.5); // p=0.5: 50% rewiring
+    model_1.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(100, 4, 0.5, false, model_1)
+    )); // p=0.5: 50% rewiring
     model_1.verbose_off();
     
     // Get edgelists from both models
     std::vector<int> source_0, target_0;
     std::vector<int> source_1, target_1;
     
-    model_0.write_edgelist(source_0, target_0);
-    model_1.write_edgelist(source_1, target_1);
+    tests_net(model_0).get_edgelist(source_0, target_0);
+    tests_net(model_1).get_edgelist(source_1, target_1);
     
     // Check that both networks have the same number of edges
     bool same_num_edges = (source_0.size() == source_1.size());

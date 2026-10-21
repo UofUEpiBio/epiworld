@@ -129,9 +129,11 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
 
     if (scen == "L" || scen == "U")
     {
-        epimodels::ModelSEIR<> model("Benchmark pathogen", prevalence, 0.05, 4.0, 0.2);
+        epimodels::ModelSEIR<> model("Benchmark pathogen", n, prevalence, 0.05, 4.0, 0.2);
         model.seed(20260930);
-        model.agents_smallworld(n, 10, false, 0.05);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", rgraph_smallworld(n, 10, 0.05, false, model)
+        ));
         model.set_transmission_mode(scen == "L" ? "pull" : "push");
         return bench::time_runs(model, o.days, o.reps);
     }

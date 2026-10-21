@@ -14,11 +14,12 @@ namespace layer {
  * ### Groups
  *
  * The layer owns the grouping: `set_groups()` assigns every agent a group (or
- * `NO_GROUP`, which leaves it out of the layer). If no grouping is set, `reset()`
- * builds one from the model's entities, each agent going to the group of its
- * first entity (and agents without entities to none), which is how the mixing
- * models are built. Either way, from then on the layer works on its own table,
- * not on the entities.
+ * `NO_GROUP`, which leaves it out of the layer). If no grouping is set, the
+ * layer builds one from the model's entities once they are distributed (at the
+ * first `update()` of a run), each agent going to the group of its first entity
+ * (and agents without entities to none), which is how the mixing models are
+ * built. Either way, from then on the layer works on its own table, not on the
+ * entities.
  *
  * ### Sampling
  *
@@ -63,6 +64,7 @@ private:
     std::vector< size_t > groups_baseline; ///< Set by set_groups()
     size_t n_groups = 0u;
     bool explicit_groups = false; ///< Set by set_groups(), else from entities
+    bool groups_pending = false;  ///< Groups to read from the entities
     bool layout_stale = true;     ///< Group sizes and pool offsets to rebuild
     std::vector< size_t > group_size; ///< Agents in each group
 
@@ -317,15 +319,11 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
     else
     {
 
-        // One group per entity; the agent goes to its first entity
+        // One group per entity; the agents are placed at the first update,
+        // once the entities are distributed
         n_groups = model.get_entities().size();
         groups.assign(n, NO_GROUP);
-        for (size_t i = 0u; i < n; ++i)
-        {
-            auto & a = model.get_agent(i);
-            if (a.get_n_entities() != 0u)
-                groups[i] = a.get_entity(0u, model).get_id();
-        }
+        groups_pending = true;
 
     }
 
@@ -352,6 +350,20 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
 template<typename TSeq>
 inline void Mixing<TSeq>::update(Model<TSeq> & model)
 {
+
+    // The agent goes to the group of its first entity
+    if (groups_pending)
+    {
+        for (size_t i = 0u; i < groups.size(); ++i)
+        {
+            auto & a = model.get_agent(i);
+            if (a.get_n_entities() != 0u)
+                groups[i] = a.get_entity(0u, model).get_id();
+        }
+
+        groups_pending = false;
+        layout_stale = true;
+    }
 
     if (layout_stale)
         rebuild_layout();

@@ -241,7 +241,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    this->agents_empty_graph(n);
+    this->set_population_size(n);
 
     this->set_name("Susceptible-Exposed-Infected-Removed (SEIR) with Mixing");
 

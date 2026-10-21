@@ -177,14 +177,14 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     // returns exactly the same (agent, contact_id, day) triples as the
     // low-level get_contact() API.
     // -----------------------------------------------------------------------
-    Model<> model;
+    Model<> model(200);
 
     auto update_susceptible = [](Agent<> * p, Model<> * m) -> void {
 
         auto & model_ct = m->get_contact_tracing();
 
         size_t nviruses_tmp = 0u;
-        for (auto & neighbor : p->get_neighbors(*m))
+        for (auto * neighbor : tests_net(*m).neighbors_view(p->get_id()))
         {
             if (neighbor->get_virus() == nullptr)
                 continue;
@@ -230,7 +230,9 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
 
     model.set_name("SIR get_contacts test");
     model.contact_tracing_on();
-    model.agents_smallworld(200, 5, false, 0.01);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(200, 5, 0.01, false, model)
+    ));
     model.seed(42);
     model.verbose_off();
     model.run(30);

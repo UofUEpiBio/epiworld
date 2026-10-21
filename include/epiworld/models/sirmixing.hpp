@@ -210,7 +210,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
     this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    this->agents_empty_graph(n);
+    this->set_population_size(n);
 
     this->set_name("Susceptible-Infected-Removed (SIR) with Mixing");
 

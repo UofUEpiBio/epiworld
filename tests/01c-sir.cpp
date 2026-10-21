@@ -26,20 +26,24 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
 
     // Queuing doesn't matter and get results that are meaningful
     epimodels::ModelSIR<> model_0(
-        "a virus", 0.01, .9, .3
+        "a virus", 10000, 0.01, .9, .3
         );
 
     model_0.seed(1231);
-    model_0.agents_smallworld(10000, 5, false, 0.01);
+    model_0.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(10000, 5, 0.01, false, model_0)
+    ));
     model_0.verbose_off();
     model_0.run_multiple(100, 100, 1231, saver_0, true, true, 1);
 
     epimodels::ModelSIR<> model_1(
-        "a virus", 0.01, .9, .3
+        "a virus", 10000, 0.01, .9, .3
         );
 
     model_1.seed(1231);
-    model_1.agents_smallworld(10000, 5, false, 0.01);
+    model_1.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(10000, 5, 0.01, false, model_1)
+    ));
     model_1.verbose_off();
     model_1.run_multiple(100, 100, 1231, saver_1, true, true, 2);
 

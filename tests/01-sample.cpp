@@ -5,7 +5,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
 
     // Creating a model
-    Model<> model;
+    Model<> model(40);
 
     // Declaring the three statuses in the model
     auto susceptible_state = model.add_state("Susceptible", epiworld::default_update_susceptible<>);
@@ -37,7 +37,9 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     model.add_tool(tool);
 
     // Generating a random pop
-    model.agents_smallworld(40);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(40, 5, .01, false, model)
+    ));
 
     // Running the model
     model.run(100, 123);

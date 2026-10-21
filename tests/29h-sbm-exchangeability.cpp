@@ -20,17 +20,18 @@ EPIWORLD_TEST_CASE("SBM within-block exchangeability", "[sbm-exchange]") {
     std::vector< double > degree_sum(n_g, 0.0);
 
     epimodels::ModelSIR<> model(
-        "a virus", 0.01, 0.5, 0.3
+        "a virus", std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)), 0.01, 0.5, 0.3
     );
     model.verbose_off();
 
     for (size_t rep = 0u; rep < n_reps; ++rep)
     {
         model.seed(rep + 1u);
-        model.agents_sbm(block_sizes, mixing_matrix, true);
+        // The model only provides the random numbers
+        layer::Network<> net("network", rgraph_sbm(block_sizes, mixing_matrix, true, model));
 
         std::vector< int > source, target;
-        model.write_edgelist(source, target);
+        net.get_edgelist(source, target);
 
         std::vector< int > degree(n_g, 0);
         for (size_t e = 0u; e < source.size(); ++e)

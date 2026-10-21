@@ -16,9 +16,11 @@ EPIWORLD_TEST_CASE("Bubbles - rewiring advances epochs", "[bubbles]") {
     size_t n = 300u, hh_size = 3u;
     auto hh = make_households(n, hh_size);
 
-    epimodels::ModelSEIR<> model("flu", 0.05, 0.1, 4.5, 1.0/8.0);
+    epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
     model.seed(5);
-    model.agents_smallworld(n, 6, false, 0.05);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(n, 6, 0.05, false, model)
+    ));
 
     int start = 10, rewire = 7, ndays = 60;
     Bubbles<> bubbles(hh, BubbleFlavor::Household, 2u, 0.0, start, -1, rewire);

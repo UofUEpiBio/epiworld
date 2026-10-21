@@ -96,7 +96,7 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
     std::vector< double > degree_sum(n_blocks, 0.0);
 
     epimodels::ModelSIR<> model(
-        "a virus", 0.01, 0.5, 0.3
+        "a virus", std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)), 0.01, 0.5, 0.3
     );
     model.verbose_off();
 
@@ -111,11 +111,12 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
     for (size_t rep = 0u; rep < n_reps; ++rep)
     {
         model.seed(seeds[rep]);
-        model.agents_sbm(block_sizes, mixing_matrix, true);
+        // The model only provides the random numbers
+        layer::Network<> net("network", rgraph_sbm(block_sizes, mixing_matrix, true, model));
 
         // Get the edgelist and compute degrees
         std::vector< int > source, target;
-        model.write_edgelist(source, target);
+        net.get_edgelist(source, target);
 
         std::vector< int > degree(n, 0);
         for (size_t e = 0u; e < source.size(); ++e)

@@ -37,7 +37,10 @@ EPIWORLD_TEST_CASE("State update transition factory", "[state-update-transition]
     // observed probabilities match the roulette expectations directly.
     // ----------------------------------------------------------------
 
-    Model<int> model;
+    // Keep the sample large enough for stable estimates, but avoid an
+    // unnecessarily expensive test in CI.
+    constexpr epiworld_fast_uint N_AGENTS = 2000u;
+    Model<int> model(N_AGENTS);
 
     constexpr epiworld_fast_uint STATE_INFECTED  = 1u;
     constexpr epiworld_fast_uint STATE_RECOVERED = 2u;
@@ -66,11 +69,7 @@ EPIWORLD_TEST_CASE("State update transition factory", "[state-update-transition]
     model.add_param(ir_rate, "I->R transition rate");
     model.add_param(id_rate, "I->D transition rate");
 
-    // Keep the sample large enough for stable estimates, but avoid an
-    // unnecessarily expensive test in CI.
-    constexpr epiworld_fast_uint N_AGENTS = 2000u;
-    constexpr epiworld_fast_uint N_DAYS   = 50u;
-    model.agents_empty_graph(N_AGENTS);
+    constexpr epiworld_fast_uint N_DAYS = 50u;
     model.queuing_off();
 
     // With these transition rates, agents leave E and I quickly, so a

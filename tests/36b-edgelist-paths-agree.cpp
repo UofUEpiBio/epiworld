@@ -2,11 +2,10 @@
 
 using namespace epiworld;
 
-// A network can reach a model three ways: agents_from_edgelist(),
-// agents_from_adjlist(AdjList), and agents_from_adjlist() reading a file. They
-// share one builder (#274) and must give the same agents, with neighbors in
-// the same order, so the same seed gives the same epidemic -- history,
-// transmissions, and ties. Checked for an undirected and a directed network
+// A network layer's graph can come from vectors or from a file. Both must give
+// the same ties, with neighbors in the same order, so the same seed gives the
+// same epidemic -- history, transmissions, and ties. So must rebuilding from
+// the layer's own edge list. Checked for an undirected and a directed network
 // with repeated, reversed, and self-loop edges and a hub.
 
 struct Run {
@@ -23,14 +22,14 @@ static Run run_model(Model<> & model)
     model.get_db().get_transmissions(
         r.tdate, r.tsource, r.ttarget, virus, sexp
     );
-    model.write_edgelist(r.s, r.t);
+    tests_net(model).get_edgelist(r.s, r.t);
 
     return r;
 }
 
-static epimodels::ModelSIR<> make_model()
+static epimodels::ModelSIR<> make_model(int n)
 {
-    epimodels::ModelSIR<> model("a virus", 0.02, 0.4, 0.2);
+    epimodels::ModelSIR<> model("a virus", n, 0.02, 0.4, 0.2);
     model.verbose_off();
     return model;
 }
@@ -65,32 +64,24 @@ EPIWORLD_TEST_CASE("Edge list - all build paths agree", "[edgelist]") {
     for (bool directed : {false, true})
     {
 
-        auto m_el = make_model();
-        m_el.agents_from_edgelist(source, target, n, directed);
+        auto m_el = make_model(n);
+        m_el.add_layer(std::make_unique< layer::Network<> >(
+            "network", AdjList(source, target, n, directed)
+        ));
 
-        auto m_al = make_model();
-        m_al.agents_from_adjlist(AdjList(source, target, n, directed));
+        auto m_fn = make_model(n);
+        AdjList from_file;
+        from_file.read_edgelist(fn, n, 0, directed);
+        m_fn.add_layer(std::make_unique< layer::Network<> >("network", from_file));
 
-        auto m_fn = make_model();
-        m_fn.agents_from_adjlist(fn, n, 0, directed);
-
-        REQUIRE(m_el.is_directed() == directed);
-        REQUIRE(m_al.is_directed() == directed);
-        REQUIRE(m_fn.is_directed() == directed);
+        REQUIRE(tests_net(m_el).is_directed() == directed);
+        REQUIRE(tests_net(m_fn).is_directed() == directed);
 
         Run r_el = run_model(m_el);
-        Run r_al = run_model(m_al);
         Run r_fn = run_model(m_fn);
 
         // The epidemic did spread, so the comparison means something.
         REQUIRE(r_el.tdate.size() > 50u);
-
-        REQUIRE(r_el.hist == r_al.hist);
-        REQUIRE(r_el.tdate == r_al.tdate);
-        REQUIRE(r_el.tsource == r_al.tsource);
-        REQUIRE(r_el.ttarget == r_al.ttarget);
-        REQUIRE(r_el.s == r_al.s);
-        REQUIRE(r_el.t == r_al.t);
 
         REQUIRE(r_el.hist == r_fn.hist);
         REQUIRE(r_el.tsource == r_fn.tsource);
@@ -99,8 +90,10 @@ EPIWORLD_TEST_CASE("Edge list - all build paths agree", "[edgelist]") {
         REQUIRE(r_el.t == r_fn.t);
 
         // Rebuilding from the model's own edge list reproduces the run.
-        auto m_rt = make_model();
-        m_rt.agents_from_edgelist(r_el.s, r_el.t, n, directed);
+        auto m_rt = make_model(n);
+        m_rt.add_layer(std::make_unique< layer::Network<> >(
+            "network", AdjList(r_el.s, r_el.t, n, directed)
+        ));
         Run r_rt = run_model(m_rt);
         REQUIRE(r_el.hist == r_rt.hist);
         REQUIRE(r_el.tsource == r_rt.tsource);

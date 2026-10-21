@@ -26,9 +26,11 @@ EPIWORLD_TEST_CASE("Bubbles - replicates are independent", "[bubbles]") {
 
     auto run_with = [&](int nthreads) -> Results {
 
-        epimodels::ModelSEIR<> model("flu", 0.1, 0.2, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> model("flu", n, 0.1, 0.2, 4.5, 1.0/8.0);
         model.seed(2024);
-        model.agents_smallworld(n, 8, false, 0.10);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", rgraph_smallworld(n, 8, 0.10, false, model)
+        ));
 
         Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
         model.add_globalevent(bubbles);

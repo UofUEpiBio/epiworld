@@ -26,7 +26,9 @@ static void build_model(
     model.add_virus(virus);
 
     model.seed(8812);
-    model.agents_smallworld(2000, 8, false, 0.1);
+    model.add_layer(std::make_unique< layer::Network<> >(
+        "network", rgraph_smallworld(2000, 8, 0.1, false, model)
+    ));
     model.verbose_off();
 
 }
@@ -49,8 +51,8 @@ EPIWORLD_TEST_CASE("ParamRef across models", "[parameters][ParamRef]") {
     auto update_exposed = new_state_update_transition<>({"incubation"}, {2u});
     auto update_infected = new_state_update_transition<>({"gamma"}, {3u});
 
-    Model<> model_a;
-    Model<> model_b;
+    Model<> model_a(2000);
+    Model<> model_b(2000);
     build_model(
         model_a, {"beta", "incubation", "gamma", "padding"},
         virus, update_exposed, update_infected

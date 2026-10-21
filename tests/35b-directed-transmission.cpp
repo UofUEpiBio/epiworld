@@ -57,7 +57,7 @@ size_t require_along_ties(Model<> & model, const Outcome & o)
             continue;
 
         INFO("transmission " << o.source[k] << " -> " << o.target[k]);
-        REQUIRE(model.has_edge(
+        REQUIRE(tests_net(model).has_edge(
             static_cast< size_t >(o.target[k]),
             static_cast< size_t >(o.source[k])
         ));
@@ -83,9 +83,11 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     }
 
     auto run_path = [&](bool directed, size_t seed_agent, bool queuing) {
-        epimodels::ModelSIR<> model("a virus", 0.0, 1.0, 0.0);
+        epimodels::ModelSIR<> model("a virus", n, 0.0, 1.0, 0.0);
         model.verbose_off();
-        model.agents_from_edgelist(source, target, n, directed);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", AdjList(source, target, n, directed)
+        ));
         model.get_virus(0u).set_distribution(
             distribute_virus_to_set<>({seed_agent})
         );
@@ -134,16 +136,18 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     // The same network and seeds, with queuing on and off and each transmission
     // mode requested: all runs must match, and they all pull.
     auto run_random = [](bool queuing, const char * mode) {
-        epimodels::ModelSEIR<> model("a virus", 0.01, 0.5, 3.0, 0.2);
+        epimodels::ModelSEIR<> model("a virus", 1500u, 0.01, 0.5, 3.0, 0.2);
         model.verbose_off();
         model.seed(2026);
-        model.agents_bernoulli(1500u, 0.004, true);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", rgraph_bernoulli(1500u, 0.004, true, model)
+        ));
         if (!queuing)
             model.queuing_off();
         model.set_transmission_mode(mode);
         model.run(60, 99);
 
-        REQUIRE(model.is_directed());
+        REQUIRE(tests_net(model).is_directed());
         REQUIRE(model.get_last_transmission_mode() == TransmissionMode::pull);
 
         Outcome o = outcome_of(model);
@@ -169,9 +173,11 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     for (bool queuing : {true, false})
     {
 
-        epimodels::ModelSIR<> model("a virus", 0.0, 1.0, 0.0);
+        epimodels::ModelSIR<> model("a virus", n, 0.0, 1.0, 0.0);
         model.verbose_off();
-        model.agents_from_edgelist(source, target, n, true);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", AdjList(source, target, n, true)
+        ));
 
         size_t offered = 0u;
         auto & v = model.get_virus(0u);

@@ -55,10 +55,10 @@ void rewire_some_ties(Model<> * m)
     int day = m->today();
     if ((day % 7) == 3)
         for (size_t i = 0u; i < 30u; ++i)
-            m->add_edge(i, i + 500u);
+            tests_net(*m).add_edge(i, i + 500u);
     else if ((day % 7) == 5)
         for (size_t i = 0u; i < 30u; ++i)
-            m->rm_edge(i, i + 500u);
+            tests_net(*m).rm_edge(i, i + 500u);
 }
 
 } // namespace
@@ -70,9 +70,11 @@ EPIWORLD_TEST_CASE("Agents in state - the index follows the model", "[agents-in-
 
         Tally tally;
 
-        epimodels::ModelSEIR<> model("flu", 0.02, 0.3, 3.0, 0.2);
+        epimodels::ModelSEIR<> model("flu", 1000, 0.02, 0.3, 3.0, 0.2);
         model.seed(42);
-        model.agents_smallworld(1000, 6, false, 0.05);
+        model.add_layer(std::make_unique< layer::Network<> >(
+            "network", rgraph_smallworld(1000, 6, 0.05, false, model)
+        ));
         model.verbose_off();
         model.set_transmission_mode(mode);
 

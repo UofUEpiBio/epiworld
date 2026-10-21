@@ -41,7 +41,7 @@ public:
         add_virus(v);
 
         queuing_off();
-        agents_empty_graph(n);
+        set_population_size(n);
 
     }
 
