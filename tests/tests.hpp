@@ -481,10 +481,17 @@ void inline tests_print_avg_transitions(
     }
 }
 
+/// The network layer "network" of `model` (the one the tests add).
+inline epiworld::layer::Network<> & tests_net(epiworld::Model<> & model)
+{
+    return model.get_layer_as< epiworld::layer::Network<> >("network");
+}
+
 /**
  * Household cliques of 1 to 6 agents, plus a heavy-tailed number of random
  * ties per agent (a discrete Pareto, paired uniformly): the degrees look like a
- * collapsed activity-based population, with hubs in the second layer.
+ * collapsed activity-based population, with hubs in the second layer. Added
+ * as the network layer "network" of `model`, which must have `n` agents.
  */
 inline void tests_heterogeneous_network(epiworld::Model<> & model, size_t n)
 {
@@ -525,7 +532,9 @@ inline void tests_heterogeneous_network(epiworld::Model<> & model, size_t n)
             target.push_back(stubs[k + 1u]);
         }
 
-    model.agents_from_edgelist(source, target, static_cast< int >(n), false);
+    model.add_layer(epiworld::layer::network(
+        "network", epiworld::AdjList(source, target, static_cast< int >(n), false)
+    ));
 
 }
 

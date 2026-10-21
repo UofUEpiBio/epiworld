@@ -5,7 +5,7 @@ using namespace epiworld;
 static size_t n_edges(Model<> & model)
 {
     std::vector< int > source, target;
-    model.write_edgelist(source, target);
+    tests_net(model).get_edgelist(source, target);
     return source.size();
 }
 
@@ -17,18 +17,20 @@ EPIWORLD_TEST_CASE("Bubbles - a zero-day run leaves the network as it found it",
 
     // Path 0-1-2-3-4-5 (5 ties); households {0,1,2} and {3,4,5}. One bubble of
     // both households, completed to a clique of 15 ties, in force on [0, 3).
-    epimodels::ModelSIR<> model("x", 0.0, 0.0, 0.0);
-    model.agents_from_edgelist({0, 1, 2, 3, 4}, {1, 2, 3, 4, 5}, 6, false);
+    epimodels::ModelSIR<> model("x", 6, 0.0, 0.0, 0.0);
+    model.add_layer(layer::network(
+        "network", AdjList({0, 1, 2, 3, 4}, {1, 2, 3, 4, 5}, 6, false)
+    ));
     model.verbose_off();
 
     Bubbles<> bubbles({0, 0, 0, 1, 1, 1}, BubbleFlavor::Household, 2, 0.0, 0, 3);
-    bubbles.set_ties(BubbleTies::Complete);
+    bubbles.set_ties(BubbleTies::Complete, "network");
     model.add_globalevent(bubbles);
 
     std::vector< size_t > by_day;
     model.add_globalevent([&by_day](Model<> * m) {
         std::vector< int > source, target;
-        m->write_edgelist(source, target);
+        tests_net(*m).get_edgelist(source, target);
         by_day.push_back(source.size());
     }, "count ties");
 

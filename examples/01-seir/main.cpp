@@ -7,6 +7,7 @@ int main() {
 
     epimodels::ModelSEIR<> model(
         "a virus", // Name of the virus
+        n_agents,
         0.01,      // Initial prevalence
         0.9,       // Infectiousness
         7,       // Incubation
@@ -14,9 +15,9 @@ int main() {
     );
 
     // Adding a bernoulli graph as step 0
-    model.agents_from_adjlist(
-        rgraph_smallworld(n_agents, 5, .001, false, model)
-    );
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(n_agents, 5, .001, false, model)
+    ));
 
     // Running and checking the results
     model.run(50, 123);

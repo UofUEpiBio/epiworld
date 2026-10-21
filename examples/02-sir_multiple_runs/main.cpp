@@ -9,20 +9,20 @@ int main() {
 
     epimodels::ModelSIR<> sir(
         "a virus", // Name of the virus
+        1000,
         0.01,      // Initial prevalence
         0.9,       // Infectiousness
         0.3        // Recovery rate
     );
 
     // Adding a bernoulli graph as step 0
-    sir.agents_from_adjlist(
-        rgraph_smallworld(1000, 5, .01, false, sir)
-    );
+    sir.add_layer(layer::network(
+        "network", rgraph_smallworld(1000, 5, .01, false, sir)
+    ));
 
     // Running and checking the results
     std::vector< std::vector< int > > results(total_replicates);
     std::vector< std::string > labels;
-    sir.set_backup();
     sir.verbose_off();
 
     sir.seed(123);

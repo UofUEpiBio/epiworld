@@ -38,7 +38,7 @@ int main()
     );
 
     // Assemble the model
-    Model<int> model;
+    Model<int> model(n_agents);
 
     model.add_state("Susceptible", default_update_susceptible<int>);
     model.add_state("Exposed",     update_exposed);
@@ -59,7 +59,9 @@ int main()
     model.add_virus(virus);
 
     // Population
-    model.agents_smallworld(n_agents, 20, false, 0.01);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(n_agents, 20, 0.01, false, model)
+    ));
 
     // Run and display
     model.run(100, 123);

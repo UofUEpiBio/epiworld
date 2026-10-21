@@ -45,17 +45,19 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
 
         auto partitions_of = [&](BubbleTies ties) -> Seen {
 
-            epimodels::ModelSEIR<> model("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+            epimodels::ModelSEIR<> model("flu", n, 0.0, 0.1, 4.5, 1.0/8.0);
             model.seed(4700);
-            model.agents_smallworld(n, 6, false, 0.05);
+            model.add_layer(layer::network(
+                "network", rgraph_smallworld(n, 6, 0.05, false, model)
+            ));
 
             Bubbles<> by_home(
                 homes, BubbleFlavor::Household, 3u, 0.0, 0, -1, 3,
-                "home bubble", 2u, "home factor", ties
+                "home bubble", 2u, "home factor", ties, "network"
             );
             Bubbles<> by_class(
                 classes, BubbleFlavor::Peer, 1u, 0.0, 0, -1, 4,
-                "class bubble", 4u, "class factor", ties
+                "class bubble", 4u, "class factor", ties, "network"
             );
             model.add_globalevent(by_home);
             model.add_globalevent(by_class);
@@ -128,20 +130,22 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
 
         auto run_pair = [&](bool a_first) -> std::vector<int> {
 
-            epimodels::ModelSEIR<> model("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+            epimodels::ModelSEIR<> model("flu", 3, 0.0, 0.1, 4.5, 1.0/8.0);
             model.seed(31);
             std::vector< int > source = {0, 1};
             std::vector< int > target = {1, 2};
-            model.agents_from_edgelist(source, target, 3, false);
+            model.add_layer(layer::network(
+                "network", AdjList(source, target, 3, false)
+            ));
 
             // A closes on day 3, B on day 6.
             Bubbles<> a(
                 hh, BubbleFlavor::Household, 1u, 0.0, 0, 3, 0,
-                "bubble A", 2u, "factor A", BubbleTies::Complete
+                "bubble A", 2u, "factor A", BubbleTies::Complete, "network"
             );
             Bubbles<> b(
                 hh, BubbleFlavor::Household, 1u, 0.0, 0, 6, 0,
-                "bubble B", 2u, "factor B", BubbleTies::Complete
+                "bubble B", 2u, "factor B", BubbleTies::Complete, "network"
             );
 
             // Order decides which policy creates 0--2 and which tears down
@@ -160,7 +164,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
             std::vector<int> present;
             model.add_globalevent(
                 [&present](Model<> * m) -> void {
-                    present.push_back(m->has_edge(0u, 2u) ? 1 : 0);
+                    present.push_back(tests_net(*m).has_edge(0u, 2u) ? 1 : 0);
                 },
                 "watch 0--2"
             );
@@ -191,16 +195,18 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
     {
         std::vector< size_t > hh = {0u, 0u, 0u};
 
-        epimodels::ModelSEIR<> model("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> model("flu", 3, 0.0, 0.1, 4.5, 1.0/8.0);
         model.seed(77);
         std::vector< int > source = {0, 1};
         std::vector< int > target = {1, 2};
-        model.agents_from_edgelist(source, target, 3, false);
+        model.add_layer(layer::network(
+            "network", AdjList(source, target, 3, false)
+        ));
 
         Bubbles<> bubbles(
             hh, BubbleFlavor::Household, 1u, 0.0, 0, -1, 0,
             "Social bubble", 2u, "Bubble transmission factor",
-            BubbleTies::Complete
+            BubbleTies::Complete, "network"
         );
         model.add_globalevent(bubbles);
 
@@ -210,13 +216,13 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
             [](Model<> * m) -> void {
                 if (m->today() == 4)
                 {
-                    m->rm_edge(0u, 1u);
-                    m->rm_edge(0u, 2u);
+                    tests_net(*m).rm_edge(0u, 1u);
+                    tests_net(*m).rm_edge(0u, 2u);
                 }
                 else if (m->today() == 6)
                 {
-                    m->add_edge(0u, 1u);
-                    m->add_edge(0u, 2u);
+                    tests_net(*m).add_edge(0u, 1u);
+                    tests_net(*m).add_edge(0u, 2u);
                 }
             },
             "isolate agent 0"
@@ -225,8 +231,8 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
         std::vector<int> bubble_tie, network_tie;
         model.add_globalevent(
             [&bubble_tie, &network_tie](Model<> * m) -> void {
-                bubble_tie.push_back(m->has_edge(0u, 2u) ? 1 : 0);
-                network_tie.push_back(m->has_edge(0u, 1u) ? 1 : 0);
+                bubble_tie.push_back(tests_net(*m).has_edge(0u, 2u) ? 1 : 0);
+                network_tie.push_back(tests_net(*m).has_edge(0u, 1u) ? 1 : 0);
             },
             "watch agent 0"
         );
@@ -243,9 +249,9 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
         REQUIRE_THAT(network_tie, Catch::Equals(expected_network));
 
         // Which is the network the run started with.
-        REQUIRE(model.has_edge(0u, 1u));
-        REQUIRE(model.has_edge(1u, 2u));
-        REQUIRE_FALSE(model.has_edge(0u, 2u));
+        REQUIRE(tests_net(model).has_edge(0u, 1u));
+        REQUIRE(tests_net(model).has_edge(1u, 2u));
+        REQUIRE_FALSE(tests_net(model).has_edge(0u, 2u));
     }
 
     // -- 4. Rewiring and directed networks ------------------------------------
@@ -262,20 +268,24 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
 
         auto attempt = [&hh](
             BubbleTies ties,
-            std::function< void(Model<> &) > configure
+            std::function< void(Model<> &) > configure,
+            bool directed = false
         ) -> void {
 
-            epimodels::ModelSEIR<> model("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+            epimodels::ModelSEIR<> model("flu", 6, 0.0, 0.1, 4.5, 1.0/8.0);
             model.seed(20);
             std::vector< int > source = {0, 1, 3, 4, 2};
             std::vector< int > target = {1, 2, 4, 5, 3};
-            model.agents_from_edgelist(source, target, 6, false);
+            model.add_layer(layer::network(
+                "network", AdjList(source, target, 6, directed)
+            ));
 
             configure(model);
 
             Bubbles<> bubbles(
                 hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
-                "Social bubble", 2u, "Bubble transmission factor", ties
+                "Social bubble", 2u, "Bubble transmission factor", ties,
+                "network"
             );
             model.add_globalevent(bubbles);
             model.verbose_off();
@@ -284,20 +294,20 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
         };
 
         auto degseq = [](Model<> & m) -> void {
-            m.set_rewire_fun(rewire_degseq<>);
-            m.set_rewire_prop(0.1);
+            m.add_param(0.1, "Rewiring proportion");
+            tests_net(m).set_rewiring(graph::rewire_degseq("Rewiring proportion"));
         };
 
-        // A function of the user's own, left at a proportion of zero.
+        // A function of the user's own, which changes nothing.
         auto own_function = [](Model<> & m) -> void {
-            m.set_rewire_fun(
-                [](std::vector< Agent<> > *, Model<> *, epiworld_double) -> void {}
+            tests_net(m).set_rewiring(
+                [](layer::Network<> &, Model<> &) -> void {}
             );
         };
 
-        // A proportion with no function to apply it rewires nothing.
+        // A rewiring rate with no function to apply it rewires nothing.
         auto proportion_only = [](Model<> & m) -> void {
-            m.set_rewire_prop(0.1);
+            m.add_param(0.1, "Rewiring proportion");
         };
 
         REQUIRE_THROWS_AS(
@@ -309,20 +319,18 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
         REQUIRE_NOTHROW(attempt(BubbleTies::Complete, proportion_only));
 
         // The same ties, as a directed network.
-        auto directed = [](Model<> & m) -> void {
-            m.agents_from_edgelist({0, 1, 3, 4, 2}, {1, 2, 4, 5, 3}, 6, true);
-        };
+        auto nothing = [](Model<> &) -> void {};
 
         // Refused up front, by the intervention -- not halfway through the run
-        // by add_edge(), which refuses directed models too.
+        // by add_edge(), which refuses directed networks too.
         REQUIRE_THROWS_WITH(
-            attempt(BubbleTies::Complete, directed),
-            Catch::Matchers::Contains("needs an undirected model")
+            attempt(BubbleTies::Complete, nothing, true),
+            Catch::Matchers::Contains("needs an undirected network layer")
         );
 
         // The default realization does not touch the network, so it is fine.
         REQUIRE_NOTHROW(attempt(BubbleTies::Existing, degseq));
-        REQUIRE_NOTHROW(attempt(BubbleTies::Existing, directed));
+        REQUIRE_NOTHROW(attempt(BubbleTies::Existing, nothing, true));
     }
 
     // -- 5. The sampler's ceiling ---------------------------------------------
@@ -333,7 +341,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
     // is each member's resulting degree. But the policy answers only for the
     // ties it adds, not for the network it was given.
     {
-        epimodels::ModelSEIR<> probe("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> probe("flu", 6, 0.0, 0.1, 4.5, 1.0/8.0);
         size_t limit = probe.array_double_tmp.size() / 2u;   // 1024
 
         auto attempt = [](
@@ -343,16 +351,16 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
             const std::vector< size_t > & hh
         ) -> void {
 
-            epimodels::ModelSEIR<> model("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+            epimodels::ModelSEIR<> model("flu", static_cast<int>(n), 0.0, 0.1, 4.5, 1.0/8.0);
             model.seed(5);
-            model.agents_from_edgelist(
-                source, target, static_cast<int>(n), false
-            );
+            model.add_layer(layer::network(
+                "network", AdjList(source, target, static_cast<int>(n), false)
+            ));
 
             Bubbles<> bubbles(
                 hh, BubbleFlavor::Household, 1u, 0.0, 0, -1, 0,
                 "Social bubble", 2u, "Bubble transmission factor",
-                BubbleTies::Complete
+                BubbleTies::Complete, "network"
             );
             model.add_globalevent(bubbles);
             model.verbose_off();

@@ -20,11 +20,13 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
 
     // Create a simple SIR model
     epimodels::ModelSIR<> model(
-        "virus", 0.01, 0.5, 0.3
+        "virus", 1000, 0.01, 0.5, 0.3
     );
 
     model.seed(123);
-    model.agents_smallworld(1000, 5, false, 0.01);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(1000, 5, 0.01, false, model)
+    ));
     model.verbose_off();
 
     // Add a global event that runs every day (day = -1)

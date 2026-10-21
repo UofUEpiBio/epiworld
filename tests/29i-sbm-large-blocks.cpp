@@ -22,16 +22,18 @@ EPIWORLD_TEST_CASE("SBM large block n_possible", "[sbm-large]") {
     };
 
     epimodels::ModelSIR<> model(
-        "a virus", 0.001, 0.3, 0.5
+        "a virus", std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)), 0.001, 0.3, 0.5
     );
     model.verbose_off();
     model.seed(42);
 
     // This should not throw or produce 0 edges
-    model.agents_sbm(block_sizes, mixing_matrix, true);
+    model.add_layer(layer::network(
+        "network", rgraph_sbm(block_sizes, mixing_matrix, true, model)
+    ));
 
     std::vector< int > source, target;
-    model.write_edgelist(source, target);
+    tests_net(model).get_edgelist(source, target);
 
     // Expected: p = 0.5 / 47000 ≈ 1.064e-5
     // N = 47000 * 47000 = 2.209e9

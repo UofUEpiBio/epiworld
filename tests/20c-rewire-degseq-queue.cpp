@@ -34,15 +34,13 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
 
         Run r;
 
-        epimodels::ModelSIR<> model("v", 0.01, 0.3, 0.2);
+        epimodels::ModelSIR<> model("v", 2000, 0.01, 0.3, 0.2);
         model.verbose_off();
-        model.agents_smallworld(2000, 6, false, 0.05);
-        model.set_rewire_fun(
-            [](std::vector< Agent<> > * a, Model<> * m, epiworld_double p) -> void {
-                rewire_degseq(a, m, p);
-            }
-        );
-        model.set_rewire_prop(0.1);
+        model.add_layer(layer::network(
+            "network", rgraph_smallworld(2000, 6, 0.05, false, model)
+        ));
+        model.add_param(0.1, "Rewiring proportion");
+        tests_net(model).set_rewiring(graph::rewire_degseq("Rewiring proportion"));
         model.set_transmission_mode(mode);
 
         if (!queuing)
@@ -56,7 +54,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
                 ++r.n_pull;
         }, "count steps");
 
-        model.write_edgelist(r.net_source_0, r.net_target_0);
+        tests_net(model).get_edgelist(r.net_source_0, r.net_target_0);
 
         model.run(60, 123);
 
@@ -64,7 +62,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
         model.get_db().get_transmissions(
             r.date, r.source, r.target, r.virus, r.source_exposure_date
         );
-        model.write_edgelist(r.net_source, r.net_target);
+        tests_net(model).get_edgelist(r.net_source, r.net_target);
 
         return r;
 

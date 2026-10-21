@@ -134,7 +134,9 @@ static void build_seirh(Model<> & model, size_t n)
     pathogen.set_prob_infecting("Transmission rate");
     model.add_virus(pathogen);
 
-    model.agents_smallworld(n, 10, false, 0.05);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(n, 10, 0.05, false, model)
+    ));
 }
 
 // Scenario E network: household cliques (size 1 to 6) plus a layer of random
@@ -201,7 +203,9 @@ static void build_heterogeneous(Model<> & model, size_t n)
             target.push_back(stubs[k + 1u]);
         }
 
-    model.agents_from_edgelist(source, target, static_cast< int >(n), false);
+    model.add_layer(layer::network(
+        "network", AdjList(source, target, static_cast< int >(n), false)
+    ));
 
 }
 
@@ -357,7 +361,7 @@ int main(int argc, char ** argv)
 
                 if (scen == "A")
                 {
-                    Model<> model;
+                    Model<> model(n);
                     model.seed(20260907);
                     build_seirh(model, n);
                     res = time_model(model, o, mode, {0u});
@@ -369,17 +373,21 @@ int main(int argc, char ** argv)
                     double beta = t * recovery / (1.0 - t * (1.0 - recovery));
                     epimodels::ModelSEIR<> model(
                         "Benchmark pathogen",
+                        n,
                         100.0 / static_cast< double >(n),
                         beta, 4.0, recovery
                     );
                     model.seed(20260907);
-                    model.agents_smallworld(n, 10, false, 0.05);
+                    model.add_layer(layer::network(
+                        "network", rgraph_smallworld(n, 10, 0.05, false, model)
+                    ));
                     res = time_model(model, o, mode, {0u});
                 }
                 else if (scen == "D")
                 {
                     epimodels::ModelSEIR<> model(
                         "Measles-like pathogen",
+                        n,
                         10.0 / static_cast< double >(n),
                         0.3, 10.0, 1.0 / 8.0
                     );
@@ -388,13 +396,16 @@ int main(int argc, char ** argv)
                         0u, sampler::make_update_susceptible<>({1u})
                     );
                     model.seed(20260907);
-                    model.agents_smallworld(n, 10, false, 0.05);
+                    model.add_layer(layer::network(
+                        "network", rgraph_smallworld(n, 10, 0.05, false, model)
+                    ));
                     res = time_model(model, o, mode, {0u});
                 }
                 else if (scen == "E")
                 {
                     epimodels::ModelSEIR<> model(
                         "Heterogeneous pathogen",
+                        n,
                         100.0 / static_cast< double >(n),
                         0.10, 3.0, 1.0 / 7.0
                     );
@@ -408,9 +419,11 @@ int main(int argc, char ** argv)
                 }
                 else if (scen == "C")
                 {
-                    epimodels::ModelSIR<> model("Dense pathogen", 0.01, 0.05, 0.2);
+                    epimodels::ModelSIR<> model("Dense pathogen", n, 0.01, 0.05, 0.2);
                     model.seed(20260907);
-                    model.agents_smallworld(n, 50, false, 0.1);
+                    model.add_layer(layer::network(
+                        "network", rgraph_smallworld(n, 50, 0.1, false, model)
+                    ));
                     res = time_model(model, o, mode, {0u});
                 }
                 else

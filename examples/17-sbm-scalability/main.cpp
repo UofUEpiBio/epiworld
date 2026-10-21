@@ -26,31 +26,16 @@
 
 using namespace epiworld;
 
-/// Helper: initialise the model with n agents and no edges.
-static void reset_agents(
-    epimodels::ModelSIR<> & model,
-    size_t n
-)
-{
-    model.agents_from_adjlist(
-        AdjList(
-            std::vector<int>{},
-            std::vector<int>{},
-            static_cast<int>(n),
-            false
-        )
-    );
-}
-
 int main() {
 
     std::vector<size_t> group_counts = {3, 5, 10, 50};
     std::vector<size_t> total_sizes  = {1000, 2500, 5000};
     const int n_reps = 10;
 
-    // A lightweight SIR model – we only need its RNG, not its dynamics.
+    // A lightweight SIR model – we only need its RNG, not its dynamics (nor
+    // agents: the generators only draw graphs).
     epimodels::ModelSIR<> model(
-        "bench-virus", 0.01, 0.3, 0.5
+        "bench-virus", 0, 0.01, 0.3, 0.5
     );
     model.verbose_off();
 
@@ -89,7 +74,6 @@ int main() {
                     mixing[g * n_groups + h] =
                         (g == h) ? within_degree : between_degree;
 
-            reset_agents(model, n_total);
             rgraph_sbm(block_sizes, mixing, true, model); // warm-up
 
             double total_ms = 0.0, total_edges = 0.0;
@@ -133,7 +117,6 @@ int main() {
     {
         double p = 10.0 / static_cast<double>(n_total - 1u);
 
-        reset_agents(model, n_total);
         rgraph_bernoulli(n_total, p, false, model); // warm-up
 
         double total_ms = 0.0, total_edges = 0.0;
@@ -174,7 +157,6 @@ int main() {
         epiworld_fast_uint k = 10;
         double p_rewire = 0.1;
 
-        reset_agents(model, n_total);
         rgraph_smallworld(n_total, k, p_rewire, false, model); // warm-up
 
         double total_ms = 0.0, total_edges = 0.0;

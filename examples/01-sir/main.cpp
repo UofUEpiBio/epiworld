@@ -8,15 +8,16 @@ int main() {
 
     epimodels::ModelSIR<> model(
         "a virus", // Name of the virus
+        n_agents,
         0.01,      // Initial prevalence
         0.9,       // Infectiousness
         0.5       // Recovery rate
     );
 
     // Adding a bernoulli graph as step 0
-    model.agents_from_adjlist(
-        rgraph_smallworld(n_agents, 20, .01, false, model)
-    );
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(n_agents, 20, .01, false, model)
+    ));
 
     // Running and checking the results
     model.run(50, 123);

@@ -16,6 +16,7 @@ int main() {
     for (epiworld_fast_uint i = 0u; i < nthreads; ++i)
         Models.emplace_back(
             "a virus", // Name of the virus
+            n_agents,  // Number of agents
             0.01,      // Initial prevalence
             0.9,       // Infectiousness
             0.3        // Recovery rate
@@ -23,9 +24,9 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     printf("Generating random graph... ");fflush(stdout);
-    Models[0u].agents_from_adjlist(
-        rgraph_smallworld(n_agents, 5, .01, false, Models[0u])
-    );
+    Models[0u].add_layer(layer::network(
+        "network", rgraph_smallworld(n_agents, 5, .01, false, Models[0u])
+    ));
 
     for (unsigned i = 1u; i < nthreads; ++i)
         Models[i] = Models[0u];

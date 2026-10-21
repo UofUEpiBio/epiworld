@@ -19,7 +19,7 @@ struct Batch {
 epimodels::ModelSIR<> make_ring()
 {
 
-    epimodels::ModelSIR<> model("Virus", 0.0, 1.0, 0.0);
+    epimodels::ModelSIR<> model("Virus", 8, 0.0, 1.0, 0.0);
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
@@ -35,7 +35,9 @@ epimodels::ModelSIR<> make_ring()
         source.push_back(i);
         target.push_back((i + 1) % 8);
     }
-    model.agents_from_edgelist(source, target, 8, false);
+    model.add_layer(layer::network(
+        "network", AdjList(source, target, 8, false)
+    ));
     model.set_transmission_mode(TransmissionMode::pull);
     model.verbose_off();
 
@@ -160,8 +162,10 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
 
     auto run = [](bool hook) -> std::vector< int > {
 
-        epimodels::ModelSEIR<> model("Virus", 0.02, 0.4, 3.0, 0.2);
-        model.agents_smallworld(2000, 6, false, 0.1);
+        epimodels::ModelSEIR<> model("Virus", 2000, 0.02, 0.4, 3.0, 0.2);
+        model.add_layer(layer::network(
+            "network", rgraph_smallworld(2000, 6, 0.1, false, model)
+        ));
         model.set_transmission_mode(TransmissionMode::pull);
         model.verbose_off();
 

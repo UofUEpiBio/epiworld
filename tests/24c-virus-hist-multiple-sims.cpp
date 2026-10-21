@@ -13,11 +13,13 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
 
     // Create a simple SIR model
     epimodels::ModelSIR<> model(
-        "test virus", 10.0, 0.9, 0.3
+        "test virus", 1000, 10.0, 0.9, 0.3
     );
 
     model.seed(1231);
-    model.agents_smallworld(1000, 4, false, 0.01);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(1000, 4, 0.01, false, model)
+    ));
     model.verbose_off();
 
     // Run for 10 days, 2 simulations with saver

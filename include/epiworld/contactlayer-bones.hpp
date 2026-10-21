@@ -12,15 +12,27 @@
  *
  * The model drives the life cycle of its layers:
  *
- * - `reset()` at the end of `Model::reset()`, once the population is in its
- *   initial state. A layer restores its baseline if it was edited during the
- *   previous run (see `is_dirty()`) and sizes its per-run buffers.
+ * - `reset()` at the start of `Model::reset()`, before anything is distributed
+ *   (entities, viruses, tools, the global events' set-up), so that those see
+ *   the run's contacts. A layer restores its baseline if it was edited during
+ *   the previous run (see `is_dirty()`), or draws a new one, and sizes its
+ *   per-run buffers.
  * - `update()` at the end of every step, including day 0 (at the start of
  *   `Model::next()`): after the agents' update functions, the global events
  *   and rewiring, so that whatever changed during a step (states, edits of the
  *   layer) is in force for the next step's contacts.
  * - `clone()` whenever the model is copied (`run_multiple()` copies models),
  *   so replicates never share layer state.
+ *
+ * ### Ownership
+ *
+ * Layers are created as shared pointers (`layer::network()`,
+ * `layer::mixing()`; `std::make_shared` for a layer type of your own), and
+ * `Model::add_layer()` shares the pointer: the model and whoever else holds it
+ * see the same layer, so an edit made through either is an edit of the model.
+ * A layer belongs to one model at most. A copy of the model clones its layers
+ * (the pointers held outside keep pointing at the original's), and a layer
+ * outlives its model only detached from it. A copy of a layer is detached too.
  *
  * ### Edits and the dirty flag
  *
@@ -32,7 +44,7 @@
  *
  * @ingroup contact_layers
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
+template<typename TSeq>
 class ContactLayer {
 
     friend class Model<TSeq>;
@@ -45,6 +57,9 @@ private:
     bool in_run = false; ///< Set by the model while it runs
 
 protected:
+
+    /// The model the layer belongs to (set by the model), or `nullptr`.
+    Model<TSeq> * model = nullptr;
 
     /**
      * @brief Call it from every method that edits the layer.
@@ -64,6 +79,12 @@ public:
 
     explicit ContactLayer(std::string name_) : name(std::move(name_)) {}
 
+    /// A copy belongs to no model (see `clone()`).
+    ContactLayer(const ContactLayer<TSeq> & other) :
+        name(other.name), dirty(other.dirty) {}
+
+    ContactLayer<TSeq> & operator=(const ContactLayer<TSeq> &) = delete;
+
     virtual ~ContactLayer() = default;
 
     const std::string & get_name() const { return name; }
@@ -77,7 +98,10 @@ public:
     virtual void update(Model<TSeq> & model) = 0;
 
     /// Deep copy (the model's copy constructor calls it).
-    virtual std::unique_ptr< ContactLayer<TSeq> > clone() const = 0;
+    virtual std::shared_ptr< ContactLayer<TSeq> > clone() const = 0;
+
+    /// The layer as a network layer, or `nullptr` if it is of another kind.
+    virtual layer::Network<TSeq> * as_network() { return nullptr; }
 
 };
 

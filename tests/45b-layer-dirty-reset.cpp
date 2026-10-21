@@ -91,7 +91,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
                 *model_cast< epimodels::ModelSIRMixing<>, int >(m)
             );
             REQUIRE_THROWS_AS(
-                m->add_layer(std::make_unique< layer::Mixing<> >(
+                m->add_layer(layer::mixing(
                     "late", std::vector< int >{1}, std::vector< int >{0, 1}
                 )),
                 std::logic_error

@@ -20,9 +20,11 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
     size_t n = 300u, hh_size = 3u, group = 2u;
     auto hh = make_households(n, hh_size);
 
-    epimodels::ModelSEIR<> model("flu", 0.05, 0.1, 4.5, 1.0/8.0);
+    epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
     model.seed(11);
-    model.agents_smallworld(n, 6, false, 0.05);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(n, 6, 0.05, false, model)
+    ));
 
     // Adding the intervention is all there is to it: it sets itself up (the
     // partition included) on the first day of the run.
@@ -63,7 +65,7 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
     for (auto & a : model.get_agents())
     {
         size_t ia = static_cast<size_t>(a.get_id());
-        for (auto * nb : a.get_neighbors(model))
+        for (auto * nb : tests_net(model).neighbors_view(ia))
         {
             size_t ib = static_cast<size_t>(nb->get_id());
             if (hh[ia] != hh[ib])

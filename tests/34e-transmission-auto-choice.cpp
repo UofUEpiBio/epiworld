@@ -32,7 +32,7 @@ Modes simulate(const std::string & mode, double kappa = -1.0)
 
     const size_t n = 20000u;
 
-    epimodels::ModelSEIR<> model("virus", 100.0 / static_cast< double >(n), 0.1, 3.0, 1.0 / 7.0);
+    epimodels::ModelSEIR<> model("virus", n, 100.0 / static_cast< double >(n), 0.1, 3.0, 1.0 / 7.0);
     model.set_state_function(0u, sampler::make_update_susceptible<>({1u}));
     model.seed(8);
     tests_heterogeneous_network(model, n);

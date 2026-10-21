@@ -21,7 +21,7 @@ EPIWORLD_TEST_CASE("Contact tracing - SIR with 100% transmission", "[contact-tra
     // The susceptible update function records contacts and attempts infection.
     // -----------------------------------------------------------------------
 
-    Model<> model;
+    Model<> model(500);
 
     // Susceptible update: mirrors default_update_susceptible but also records contacts
     auto update_susceptible = [](Agent<> * p, Model<> * m) -> void {
@@ -30,7 +30,7 @@ EPIWORLD_TEST_CASE("Contact tracing - SIR with 100% transmission", "[contact-tra
         auto & ct = m->get_contact_tracing();
 
         size_t nviruses_tmp = 0u;
-        for (auto & neighbor : p->get_neighbors(*m))
+        for (auto * neighbor : tests_net(*m).neighbors_view(p->get_id()))
         {
             if (neighbor->get_virus() == nullptr)
                 continue;
@@ -85,7 +85,9 @@ EPIWORLD_TEST_CASE("Contact tracing - SIR with 100% transmission", "[contact-tra
     model.contact_tracing_on();
 
     // Build a small-world network and run
-    model.agents_smallworld(500, 5, false, 0.01);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(500, 5, 0.01, false, model)
+    ));
     model.seed(2024);
     model.verbose_off();
     model.run(50);

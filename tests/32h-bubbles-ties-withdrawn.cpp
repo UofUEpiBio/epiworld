@@ -15,7 +15,7 @@ static std::vector<size_t> make_households(size_t n, size_t hh_size)
 static std::set< std::pair<int,int> > edges_of(Model<> & model)
 {
     std::vector< int > source, target;
-    model.write_edgelist(source, target);
+    tests_net(model).get_edgelist(source, target);
 
     std::set< std::pair<int,int> > res;
     for (size_t i = 0u; i < source.size(); ++i)
@@ -40,21 +40,25 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
         size_t n = 240u;
         auto hh = make_households(n, 4u);
 
-        epimodels::ModelSEIR<> base("flu", 0.05, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> base("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         base.seed(404);
-        base.agents_smallworld(n, 6, false, 0.05);
+        base.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 6, 0.05, false, base)
+        ));
         auto baseline = edges_of(base);
 
-        epimodels::ModelSEIR<> model("flu", 0.05, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         model.seed(404);
-        model.agents_smallworld(n, 6, false, 0.05);
+        model.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 6, 0.05, false, model)
+        ));
 
         int start = 3, end = 9;
 
         Bubbles<> bubbles(
             hh, BubbleFlavor::Household, 2u, 0.0, start, end, 0,
             "Social bubble", 2u, "Bubble transmission factor",
-            BubbleTies::Complete
+            BubbleTies::Complete, "network"
         );
         model.add_globalevent(bubbles);
         model.verbose_off();
@@ -66,7 +70,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
         model.add_globalevent(
             [&sizes](Model<> * m) -> void {
                 std::vector< int > s, t;
-                m->write_edgelist(s, t);
+                tests_net(*m).get_edgelist(s, t);
                 sizes.emplace_back(m->today(), s.size());
             },
             "record edge counts"
@@ -106,14 +110,16 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
         // (e) A policy that never lifts is still withdrawn when the run ends --
         //     there is no end-of-run callback for a global event, so the last
         //     day is where it has to happen.
-        epimodels::ModelSEIR<> never_lifts("flu", 0.05, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> never_lifts("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         never_lifts.seed(404);
-        never_lifts.agents_smallworld(n, 6, false, 0.05);
+        never_lifts.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 6, 0.05, false, never_lifts)
+        ));
 
         Bubbles<> forever(
             hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
             "Social bubble", 2u, "Bubble transmission factor",
-            BubbleTies::Complete
+            BubbleTies::Complete, "network"
         );
         never_lifts.add_globalevent(forever);
         never_lifts.verbose_off();
@@ -124,7 +130,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
                 if (m->today() != 9)
                     return;
                 std::vector< int > s, t;
-                m->write_edgelist(s, t);
+                tests_net(*m).get_edgelist(s, t);
                 on_last_day = s.size();
             },
             "record the second-to-last day"
@@ -137,14 +143,16 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
         REQUIRE(Bubbles<>::get_from(never_lifts)->get_created_ties().empty());
 
         // (f) restore_network() cleans up a hand-driven loop that stopped early.
-        epimodels::ModelSEIR<> partial("flu", 0.05, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> partial("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         partial.seed(404);
-        partial.agents_smallworld(n, 6, false, 0.05);
+        partial.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 6, 0.05, false, partial)
+        ));
 
         Bubbles<> always_on(
             hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
             "Social bubble", 2u, "Bubble transmission factor",
-            BubbleTies::Complete
+            BubbleTies::Complete, "network"
         );
         partial.add_globalevent(always_on);
         partial.verbose_off();
@@ -187,9 +195,11 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
 
         auto run_with = [&](TransmissionMode mode, bool queuing) -> Outcome {
 
-            epimodels::ModelSEIR<> model("flu", 0.05, 0.15, 4.5, 1.0/8.0);
+            epimodels::ModelSEIR<> model("flu", n, 0.05, 0.15, 4.5, 1.0/8.0);
             model.seed(8181);
-            model.agents_smallworld(n, 6, false, 0.05);
+            model.add_layer(layer::network(
+                "network", rgraph_smallworld(n, 6, 0.05, false, model)
+            ));
             model.set_transmission_mode(mode);
 
             if (!queuing)
@@ -201,7 +211,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
             Bubbles<> bubbles(
                 hh, BubbleFlavor::Household, 2u, 0.3, 2, -1, 5,
                 "Social bubble", 2u, "Bubble transmission factor",
-                BubbleTies::Complete
+                BubbleTies::Complete, "network"
             );
             model.add_globalevent(bubbles);
             model.verbose_off();

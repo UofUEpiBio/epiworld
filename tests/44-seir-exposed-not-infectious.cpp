@@ -17,14 +17,16 @@ EPIWORLD_TEST_CASE("Exposed agents do not transmit", "[seir-exposed]") {
             std::unique_ptr< Model<> > model;
             if (with_death)
                 model = std::make_unique< epimodels::ModelSEIRD<> >(
-                    "virus", 0.01, 1.0, 1e9, 0.1, 0.01
+                    "virus", n, 0.01, 1.0, 1e9, 0.1, 0.01
                 );
             else
                 model = std::make_unique< epimodels::ModelSEIR<> >(
-                    "virus", 0.01, 1.0, 1e9, 0.1
+                    "virus", n, 0.01, 1.0, 1e9, 0.1
                 );
 
-            model->agents_smallworld(n, 10, false, 0.1);
+            model->add_layer(layer::network(
+                "network", rgraph_smallworld(n, 10, 0.1, false, *model)
+            ));
             model->set_transmission_mode(mode);
             model->verbose_off();
             model->run(30, 1912);

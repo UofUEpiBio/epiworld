@@ -53,7 +53,7 @@ static_assert(
 static std::vector< std::pair<int,int> > edges_of(Model<> & model)
 {
     std::vector< int > source, target;
-    model.write_edgelist(source, target);
+    tests_net(model).get_edgelist(source, target);
 
     std::vector< std::pair<int,int> > res;
     res.reserve(source.size());
@@ -94,13 +94,15 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
         target.push_back(static_cast<int>(i));
     }
 
-    epimodels::ModelSIR<> model("a virus", 0.05, 0.9, 0.3);
+    epimodels::ModelSIR<> model("a virus", static_cast<int>(n), 0.05, 0.9, 0.3);
     model.seed(4321);
-    model.agents_from_edgelist(source, target, static_cast<int>(n), false);
+    model.add_layer(layer::network(
+        "network", AdjList(source, target, static_cast<int>(n), false)
+    ));
     model.verbose_off();
 
-    REQUIRE(model.get_agent(hub).get_n_neighbors() == hub_degree);
-    REQUIRE(model.get_agent(n - 1u).get_n_neighbors() == 0u);
+    REQUIRE(tests_net(model).get_degree(hub) == hub_degree);
+    REQUIRE(tests_net(model).get_degree(n - 1u) == 0u);
 
     auto baseline = edges_of(model);
 
@@ -108,7 +110,7 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
     // An isolate has nothing to point at, so the empty view is a pair of null
     // pointers; its size must not be computed by subtracting them.
     {
-        auto view = model.get_agent(n - 1u).neighbors_view(model);
+        auto view = tests_net(model).neighbors_view(n - 1u);
         REQUIRE(view.size() == 0u);
         REQUIRE(view.empty());
         REQUIRE(view.begin() == view.end());
@@ -130,61 +132,112 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
         REQUIRE(view.begin() == view.end());
     }
 
-    // And where there *are* ties, the view agrees with get_neighbors().
+    // And where there *are* ties, the view agrees with the edge list.
     {
-        std::vector< int > from_view, from_vector;
-        for (auto * nb : model.get_agent(hub).neighbors_view(model))
+        std::vector< int > from_view, from_edges;
+        for (auto * nb : tests_net(model).neighbors_view(hub))
             from_view.push_back(nb->get_id());
-        for (auto * nb : model.get_agent(hub).get_neighbors(model))
-            from_vector.push_back(nb->get_id());
+        for (const auto & e : baseline)
+            if (static_cast< size_t >(e.first) == hub)
+                from_edges.push_back(e.second);
+            else if (static_cast< size_t >(e.second) == hub)
+                from_edges.push_back(e.first);
+        std::sort(from_view.begin(), from_view.end());
+        std::sort(from_edges.begin(), from_edges.end());
 
-        REQUIRE(model.get_agent(hub).neighbors_view(model).size() == hub_degree);
-        REQUIRE_THAT(from_view, Catch::Equals(from_vector));
+        REQUIRE(tests_net(model).neighbors_view(hub).size() == hub_degree);
+        REQUIRE_THAT(from_view, Catch::Equals(from_edges));
     }
 
     // -- has_edge agrees with the network we asked for ------------------------
-    REQUIRE(model.has_edge(hub, 1u));
-    REQUIRE(model.has_edge(1u, hub));            // ties are undirected
-    REQUIRE_FALSE(model.has_edge(hub, n - 1u));
+    REQUIRE(tests_net(model).has_edge(hub, 1u));
+    REQUIRE(tests_net(model).has_edge(1u, hub));            // ties are undirected
+    REQUIRE_FALSE(tests_net(model).has_edge(hub, n - 1u));
 
     // -- adding ------------------------------------------------------------
     // A tie to the isolate, one that crosses the hub's indexed list, and one
     // between two ordinary (scanned) agents.
-    REQUIRE(model.add_edge(hub, n - 1u));
-    REQUIRE(model.add_edge(n - 1u, 5u));
-    REQUIRE(model.add_edge(10u, 50u));
+    REQUIRE(tests_net(model).add_edge(hub, n - 1u));
+    REQUIRE(tests_net(model).add_edge(n - 1u, 5u));
+    REQUIRE(tests_net(model).add_edge(10u, 50u));
 
-    REQUIRE(model.get_agent(n - 1u).get_n_neighbors() == 2u);
-    REQUIRE(model.get_agent(hub).get_n_neighbors() == hub_degree + 1u);
+    REQUIRE(tests_net(model).get_degree(n - 1u) == 2u);
+    REQUIRE(tests_net(model).get_degree(hub) == hub_degree + 1u);
 
     // Both ends see the tie.
-    REQUIRE(model.has_edge(hub, n - 1u));
-    REQUIRE(model.has_edge(n - 1u, hub));
+    REQUIRE(tests_net(model).has_edge(hub, n - 1u));
+    REQUIRE(tests_net(model).has_edge(n - 1u, hub));
 
     // Adding again is a no-op, in either direction.
-    REQUIRE_FALSE(model.add_edge(hub, n - 1u));
-    REQUIRE_FALSE(model.add_edge(n - 1u, hub));
-    REQUIRE(model.get_agent(n - 1u).get_n_neighbors() == 2u);
+    REQUIRE_FALSE(tests_net(model).add_edge(hub, n - 1u));
+    REQUIRE_FALSE(tests_net(model).add_edge(n - 1u, hub));
+    REQUIRE(tests_net(model).get_degree(n - 1u) == 2u);
 
     REQUIRE(edges_of(model).size() == baseline.size() + 3u);
 
     // -- removing ----------------------------------------------------------
     // A tie that is not there cannot be removed.
-    REQUIRE_FALSE(model.rm_edge(20u, 100u));
+    REQUIRE_FALSE(tests_net(model).rm_edge(20u, 100u));
 
-    REQUIRE(model.rm_edge(hub, n - 1u));
-    REQUIRE_FALSE(model.has_edge(hub, n - 1u));
-    REQUIRE_FALSE(model.has_edge(n - 1u, hub));
-    REQUIRE_FALSE(model.rm_edge(hub, n - 1u));   // already gone
+    REQUIRE(tests_net(model).rm_edge(hub, n - 1u));
+    REQUIRE_FALSE(tests_net(model).has_edge(hub, n - 1u));
+    REQUIRE_FALSE(tests_net(model).has_edge(n - 1u, hub));
+    REQUIRE_FALSE(tests_net(model).rm_edge(hub, n - 1u));   // already gone
 
-    REQUIRE(model.rm_edge(5u, n - 1u));          // removing from the other end
-    REQUIRE(model.rm_edge(10u, 50u));
+    REQUIRE(tests_net(model).rm_edge(5u, n - 1u));          // removing from the other end
+    REQUIRE(tests_net(model).rm_edge(10u, 50u));
 
     // Back to exactly the network we started with -- same ties, and the
     // survivors in the same order, which is what decides who infects whom.
-    REQUIRE(model.get_agent(n - 1u).get_n_neighbors() == 0u);
-    REQUIRE(model.get_agent(hub).get_n_neighbors() == hub_degree);
+    REQUIRE(tests_net(model).get_degree(n - 1u) == 0u);
+    REQUIRE(tests_net(model).get_degree(hub) == hub_degree);
     REQUIRE(edges_of(model) == baseline);
+
+    // -- swapping ties -----------------------------------------------------
+    // (hub-1) and (n-3 -- n-2) become (hub -- n-2) and (n-3 -- 1); swapping
+    // back restores the lists, in order.
+    {
+        auto & net = tests_net(model);
+        auto pos = [&net](size_t a, size_t b) -> size_t {
+            for (size_t p = 0u; p < net.get_degree(a); ++p)
+                if (net.neighbors_view(a).id(p) == b)
+                    return p;
+            return net.get_degree(a);
+        };
+
+        const size_t u = n - 3u, v = n - 2u;
+        REQUIRE(net.has_edge(u, v));
+
+        net.swap_ties(hub, pos(hub, 1u), u, pos(u, v));
+        REQUIRE(net.has_edge(hub, v));
+        REQUIRE(net.has_edge(v, hub));
+        REQUIRE(net.has_edge(u, 1u));
+        REQUIRE(net.has_edge(1u, u));
+        REQUIRE_FALSE(net.has_edge(hub, 1u));
+        REQUIRE_FALSE(net.has_edge(u, v));
+        REQUIRE(net.get_degree(hub) == hub_degree);
+
+        net.swap_ties(hub, pos(hub, v), u, pos(u, 1u));
+        REQUIRE(edges_of(model) == baseline);
+
+        // Ties that share an agent are refused, and nothing is touched: the
+        // same agent twice, the same alter twice, and a tie with its own
+        // reverse (which would leave self-ties)
+        REQUIRE_THROWS_AS(
+            net.swap_ties(hub, pos(hub, 1u), hub, pos(hub, 2u)), std::logic_error
+        );
+        REQUIRE_THROWS_AS(
+            net.swap_ties(1u, pos(1u, hub), 2u, pos(2u, hub)), std::logic_error
+        );
+        REQUIRE_THROWS_AS(
+            net.swap_ties(hub, pos(hub, 1u), 1u, pos(1u, hub)), std::logic_error
+        );
+        // A path: (1-2) and (2-3) share agent 2
+        REQUIRE_THROWS_AS(
+            net.swap_ties(1u, pos(1u, 2u), 2u, pos(2u, 3u)), std::logic_error
+        );
+        REQUIRE(edges_of(model) == baseline);
+    }
 
     // -- ties removed from the middle of a list keep the rest in order -------
     // Drop three of the hub's ties, including one before the threshold and one
@@ -197,18 +250,18 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
             expected.push_back(static_cast<int>(i));
 
     for (size_t d : dropped)
-        REQUIRE(model.rm_edge(hub, d));
+        REQUIRE(tests_net(model).rm_edge(hub, d));
 
     std::vector< int > remaining;
-    for (auto * nb : model.get_agent(hub).get_neighbors(model))
+    for (auto * nb : tests_net(model).neighbors_view(hub))
         remaining.push_back(nb->get_id());
 
     REQUIRE_THAT(remaining, Catch::Equals(expected));
 
     // -- invalid arguments --------------------------------------------------
-    REQUIRE_THROWS(model.add_edge(1u, 1u));      // self-loop
-    REQUIRE_THROWS(model.add_edge(0u, n));       // out of range
-    REQUIRE_THROWS(model.rm_edge(n + 10u, 0u));
+    REQUIRE_THROWS(tests_net(model).add_edge(1u, 1u));      // self-loop
+    REQUIRE_THROWS(tests_net(model).add_edge(0u, n));       // out of range
+    REQUIRE_THROWS(tests_net(model).rm_edge(n + 10u, 0u));
 
     // -- and the model still runs on the edited network ---------------------
     model.run(20);

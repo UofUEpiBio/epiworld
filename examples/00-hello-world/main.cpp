@@ -10,7 +10,7 @@ int main()
     constexpr int initial_cases = n_agents / 200;
 
     // Creating a model
-    epiworld::Model<int> model;
+    epiworld::Model<int> model(n_agents);
 
     // Declaring the three states in the model
     model.add_state("Susceptible", epiworld::default_update_susceptible<int>);
@@ -32,7 +32,9 @@ int main()
     model.add_tool(tool);
 
     // Generating a random pop
-    model.agents_smallworld(n_agents, 20, false, .01);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(n_agents, 20, .01, false, model)
+    ));
 
     // Running the model
     model.run(100, 123);

@@ -4,7 +4,7 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
-    epiworld::Model<> m;
+    epiworld::Model<> m(1000);
 
     auto susceptible_state = m.add_state("Susceptible", default_update_susceptible<>);
     auto recovered_state = m.add_state("Recovered");
@@ -14,7 +14,9 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     v.set_state(susceptible_state, recovered_state);
 
     m.seed(1333);
-    m.agents_smallworld(1000);
+    m.add_layer(layer::network(
+        "network", rgraph_smallworld(1000, 5, .01, false, m)
+    ));
 
     m.add_virus(v);
     m.add_tool(t);
@@ -29,13 +31,13 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
     // Looking at people
     std::cout << "Neighbors agent[0] in m : " ;
-    for (auto & n : m.get_agents()[0u].get_neighbors(m))
+    for (auto * n : tests_net(m).neighbors_view(0u))
         std::cout << n << ", ";
     std::cout << std::endl;
 
 
     std::cout << "Neighbors agent[0] in m2 : " ;
-    for (auto & n : m2.get_agents()[0u].get_neighbors(m2))
+    for (auto * n : tests_net(m2).neighbors_view(0u))
         std::cout << n << ", ";
     std::cout << std::endl;
 

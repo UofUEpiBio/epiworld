@@ -108,7 +108,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 {
 
     // The contacts come from one mixing layer, grouped by entity
-    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+    auto mixing = layer::mixing<TSeq>(
         "mixing",
         std::vector< int >({ModelSEIRMixing<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixing<TSeq>::SUSCEPTIBLE, ModelSEIRMixing<TSeq>::EXPOSED, ModelSEIRMixing<TSeq>::INFECTED, ModelSEIRMixing<TSeq>::RECOVERED})
@@ -241,7 +241,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
     this->queuing_off(); // No queuing need
 
     // Adding the empty population
-    this->agents_empty_graph(n);
+    this->set_population_size(n);
 
     this->set_name("Susceptible-Exposed-Infected-Removed (SEIR) with Mixing");
 

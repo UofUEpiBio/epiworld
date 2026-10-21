@@ -4,7 +4,7 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Multiple events", "[multi-events]") {
 
-    epiworld::Model<> model_0;
+    epiworld::Model<> model_0(100);
 
     EPI_NEW_UPDATEFUN_LAMBDA(update_twice, int) {
 
@@ -33,7 +33,9 @@ EPIWORLD_TEST_CASE("Multiple events", "[multi-events]") {
     model_0.add_state("State 1", update_once);
     model_0.add_state("State 2", update_back);
 
-    model_0.agents_empty_graph(100);
+    model_0.add_layer(layer::network(
+        "network", AdjList(std::vector< int >{}, std::vector< int >{}, 100, false)
+    ));
     model_0.queuing_off();
     model_0.run(2000, 1);
     model_0.print(false);

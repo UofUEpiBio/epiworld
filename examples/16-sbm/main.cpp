@@ -7,6 +7,7 @@ int main() {
     // Creating an SIR model
     epimodels::ModelSIR<> model(
         "a virus", // Name of the virus
+        5000,      // Number of agents (the block sizes below add up to it)
         0.01,      // Initial prevalence
         0.3,       // Transmission rate
         0.5        // Recovery rate
@@ -32,7 +33,9 @@ int main() {
         1.0, 1.5, 7.5
     };
 
-    model.agents_sbm(block_sizes, mixing_matrix, true);
+    model.add_layer(layer::network(
+        "network", rgraph_sbm(block_sizes, mixing_matrix, true, model)
+    ));
 
     // Running and checking the results
     model.run(50, 123);

@@ -5,7 +5,7 @@ int main()
 {
 
     // Setting up model --------------------------------------------------------
-    epiworld::Model<> model;
+    epiworld::Model<> model(200);
     model.add_state("Susceptible", epiworld::default_update_susceptible<>);
     auto exposed_state = model.add_state("Exposed", epiworld::default_update_exposed<>);
     auto removed_state = model.add_state("Removed");
@@ -13,9 +13,9 @@ int main()
 
     model.set_user_data({"agent_id", "virus_id"});
 
-    model.agents_from_adjlist(
-        epiworld::rgraph_smallworld(200, 5, .1, false, model)
-    );
+    model.add_layer(epiworld::layer::network(
+        "network", epiworld::rgraph_smallworld(200, 5, .1, false, model)
+    ));
 
     model.add_param(.9, "infectiousness");
     model.add_param(.3, "recovery");

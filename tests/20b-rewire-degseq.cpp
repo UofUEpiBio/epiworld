@@ -12,16 +12,18 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
 
     // Create a baseline model (p=0, no rewiring)
     epimodels::ModelSEIR<> baseline_model(
-        "a virus", 0.01, 0.5, 7.0, 0.3
+        "a virus", n_agents, 0.01, 0.5, 7.0, 0.3
     );
     
     baseline_model.seed(1231);
-    baseline_model.agents_smallworld(n_agents, k, false, 0.0); // p=0: pure ring lattice
+    baseline_model.add_layer(layer::network(
+        "network", rgraph_smallworld(n_agents, k, 0.0, false, baseline_model)
+    )); // p=0: pure ring lattice
     baseline_model.verbose_off();
     
     // Get baseline edgelist
     std::vector<int> source_baseline, target_baseline;
-    baseline_model.write_edgelist(source_baseline, target_baseline);
+    tests_net(baseline_model).get_edgelist(source_baseline, target_baseline);
     
     // Create a set of baseline edges for comparison
     std::set<std::pair<int,int>> edges_baseline;
@@ -52,16 +54,18 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
 
         // Create a model with p=0.3
         epimodels::ModelSEIR<> rewired_model(
-            "a virus", 0.01, 0.5, 7.0, 0.3
+            "a virus", n_agents, 0.01, 0.5, 7.0, 0.3
         );
         
         rewired_model.seed(1231 + iter); // Different seed each iteration
-        rewired_model.agents_smallworld(n_agents, k, false, p);
+        rewired_model.add_layer(layer::network(
+            "network", rgraph_smallworld(n_agents, k, p, false, rewired_model)
+        ));
         rewired_model.verbose_off();
         
         // Get rewired edgelist
         std::vector<int> source_rewired, target_rewired;
-        rewired_model.write_edgelist(source_rewired, target_rewired);
+        tests_net(rewired_model).get_edgelist(source_rewired, target_rewired);
         
         
         for (size_t i = 0; i < source_rewired.size(); ++i) {

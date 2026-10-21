@@ -9,15 +9,16 @@ int main() {
 
     epimodels::ModelSIR<> sir(
         "a virus", // Name of the virus
+        pop_size,
         0.01,      // Initial prevalence
         0.9,       // Infectiousness
         0.3        // Recovery rate
     );
 
     // Adding a bernoulli graph as step 0
-    sir.agents_from_adjlist(
-        rgraph_smallworld(pop_size, 5, .01, false, sir)
-    );
+    sir.add_layer(layer::network(
+        "network", rgraph_smallworld(pop_size, 5, .01, false, sir)
+    ));
 
     // Function to record each replicate results 
     std::vector< std::vector< int > > results(total_replicates);

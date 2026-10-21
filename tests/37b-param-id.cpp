@@ -11,9 +11,11 @@ using namespace epiworld;
  */
 EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
 
-    epimodels::ModelSIR<> model("a virus", 0.01, 0.9, 0.25);
+    epimodels::ModelSIR<> model("a virus", 2000, 0.01, 0.9, 0.25);
     model.seed(2231);
-    model.agents_smallworld(2000, 6, false, 0.1);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(2000, 6, 0.1, false, model)
+    ));
     model.verbose_off();
 
     ParamId beta = model.get_param_id("Transmission rate");
@@ -40,7 +42,7 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     REQUIRE(copy.get_param_layout_id() == model.get_param_layout_id());
 
     // Equality compares parameters by name, not by position
-    Model<> order_1, order_2;
+    Model<> order_1(0), order_2(0);
     order_1.add_param(0.1, "a");
     order_1.add_param(0.2, "b");
     order_2.add_param(0.2, "b");
@@ -82,9 +84,11 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     REQUIRE(after == 0);
 
     // The same run with the change made by name gives the same history
-    epimodels::ModelSIR<> model_name("a virus", 0.01, 0.1, 0.3);
+    epimodels::ModelSIR<> model_name("a virus", 2000, 0.01, 0.1, 0.3);
     model_name.seed(2231);
-    model_name.agents_smallworld(2000, 6, false, 0.1);
+    model_name.add_layer(layer::network(
+        "network", rgraph_smallworld(2000, 6, 0.1, false, model_name)
+    ));
     model_name.verbose_off();
     model_name.add_param(0.5, "Another parameter");
     model_name.add_globalevent(

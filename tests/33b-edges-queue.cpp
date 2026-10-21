@@ -13,12 +13,12 @@ static void rewire_some_ties(Model<> * m)
     if ((day % 10) == 5)
     {
         for (size_t i = 0u; i < 60u; ++i)
-            m->add_edge(i, i + 900u);
+            tests_net(*m).add_edge(i, i + 900u);
     }
     else if ((day % 10) == 8)
     {
         for (size_t i = 0u; i < 60u; ++i)
-            m->rm_edge(i, i + 900u);
+            tests_net(*m).rm_edge(i, i + 900u);
     }
 
 }
@@ -41,9 +41,11 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
 
     auto build = [&](bool queuing) -> std::vector< int > {
 
-        epimodels::ModelSIR<> model("a virus", 0.02, 0.9, 0.3);
+        epimodels::ModelSIR<> model("a virus", n, 0.02, 0.9, 0.3);
         model.seed(3131);
-        model.agents_smallworld(n, 6, false, 0.02);
+        model.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 6, 0.02, false, model)
+        ));
 
         if (!queuing)
             model.queuing_off();
@@ -72,9 +74,11 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
     // queue included.
     auto build_multi = [&](bool queuing) -> std::vector< int > {
 
-        epimodels::ModelSIR<> model("a virus", 0.02, 0.9, 0.3);
+        epimodels::ModelSIR<> model("a virus", n, 0.02, 0.9, 0.3);
         model.seed(717);
-        model.agents_smallworld(n, 6, false, 0.02);
+        model.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 6, 0.02, false, model)
+        ));
 
         if (!queuing)
             model.queuing_off();

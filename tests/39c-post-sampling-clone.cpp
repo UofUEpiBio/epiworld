@@ -11,8 +11,10 @@ namespace {
 std::vector< size_t > deliveries(int nthreads, size_t nsims)
 {
 
-    epimodels::ModelSEIR<> model("Virus", 0.02, 0.5, 3.0, 0.2);
-    model.agents_smallworld(1000, 6, false, 0.1);
+    epimodels::ModelSEIR<> model("Virus", 1000, 0.02, 0.5, 3.0, 0.2);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(1000, 6, 0.1, false, model)
+    ));
     model.verbose_off();
 
     // One slot per replicate: replicates never share a slot
@@ -36,8 +38,10 @@ std::vector< size_t > deliveries(int nthreads, size_t nsims)
 EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sampling-clone]") {
 
     // A clone keeps the callback; removing it there leaves the original alone
-    epimodels::ModelSEIR<> model("Virus", 0.02, 0.5, 3.0, 0.2);
-    model.agents_smallworld(500, 6, false, 0.1);
+    epimodels::ModelSEIR<> model("Virus", 500, 0.02, 0.5, 3.0, 0.2);
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(500, 6, 0.1, false, model)
+    ));
     model.verbose_off();
 
     size_t original = 0u, copied = 0u;
@@ -71,8 +75,10 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
     // reset(): the scratch is sized for their own population
     {
 
-        epimodels::ModelSEIR<> base("Virus", 0.05, 0.5, 3.0, 0.2);
-        base.agents_smallworld(500, 6, false, 0.1);
+        epimodels::ModelSEIR<> base("Virus", 500, 0.05, 0.5, 3.0, 0.2);
+        base.add_layer(layer::network(
+            "network", rgraph_smallworld(500, 6, 0.1, false, base)
+        ));
         base.verbose_off();
 
         size_t n_batches = 0u;
@@ -92,8 +98,10 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
         moved.update_state();
 
         // Assigned from a model with a different population
-        epimodels::ModelSEIR<> other("Virus", 0.05, 0.5, 3.0, 0.2);
-        other.agents_smallworld(100, 4, false, 0.1);
+        epimodels::ModelSEIR<> other("Virus", 100, 0.05, 0.5, 3.0, 0.2);
+        other.add_layer(layer::network(
+            "network", rgraph_smallworld(100, 4, 0.1, false, other)
+        ));
         other.verbose_off();
         other = base;
         other.update_state();

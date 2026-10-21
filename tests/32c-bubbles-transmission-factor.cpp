@@ -31,9 +31,11 @@ EPIWORLD_TEST_CASE(
         epiworld_double factor, epiworld_double override_factor
     ) -> TransmissionCounts {
 
-        epimodels::ModelSEIR<> model("flu", 0.1, 0.2, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> model("flu", n, 0.1, 0.2, 4.5, 1.0/8.0);
         model.seed(2024);
-        model.agents_smallworld(n, 8, false, 0.10);
+        model.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 8, 0.10, false, model)
+        ));
 
         Bubbles<> bubbles(hh, BubbleFlavor::Household, group, factor, 0, -1, 0);
         model.add_globalevent(bubbles);

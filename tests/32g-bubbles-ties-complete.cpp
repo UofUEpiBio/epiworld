@@ -8,7 +8,7 @@ using namespace epiworld;
 static std::set< std::pair<int,int> > edges_of(Model<> & model)
 {
     std::vector< int > source, target;
-    model.write_edgelist(source, target);
+    tests_net(model).get_edgelist(source, target);
 
     std::set< std::pair<int,int> > res;
     for (size_t i = 0u; i < source.size(); ++i)
@@ -32,7 +32,9 @@ static void two_households(Model<> & model)
 {
     std::vector< int > source = {0, 1, 3, 4, 2};
     std::vector< int > target = {1, 2, 4, 5, 3};
-    model.agents_from_edgelist(source, target, 6, false);
+    model.add_layer(layer::network(
+        "network", AdjList(source, target, 6, false)
+    ));
 }
 
 // Under BubbleTies::Complete a bubble stops being only a transmission rule and
@@ -46,13 +48,13 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
     {
         std::vector< size_t > hh = {0u, 0u, 0u, 1u, 1u, 1u};
 
-        epimodels::ModelSEIR<> base("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> base("flu", 6, 0.0, 0.1, 4.5, 1.0/8.0);
         base.seed(20);
         two_households(base);
         auto baseline = edges_of(base);
 
         // Existing: the bubble is only a transmission rule.
-        epimodels::ModelSEIR<> keep("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> keep("flu", 6, 0.0, 0.1, 4.5, 1.0/8.0);
         keep.seed(20);
         two_households(keep);
 
@@ -64,19 +66,19 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
         // Nothing was added: 2--3 is still the only contact between the
         // households, and neither household got completed.
         REQUIRE(edges_of(keep) == baseline);
-        REQUIRE_FALSE(keep.has_edge(0u, 2u));
-        REQUIRE_FALSE(keep.has_edge(0u, 3u));
+        REQUIRE_FALSE(tests_net(keep).has_edge(0u, 2u));
+        REQUIRE_FALSE(tests_net(keep).has_edge(0u, 3u));
 
         // Complete: the bubble becomes a clique. Asked for the way the docs
         // show it -- on the object about to be added, whose copy the model
         // then owns.
-        epimodels::ModelSEIR<> full("flu", 0.0, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> full("flu", 6, 0.0, 0.1, 4.5, 1.0/8.0);
         full.seed(20);
         two_households(full);
 
         Bubbles<> as_ties(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0);
         REQUIRE(as_ties.get_ties() == BubbleTies::Existing);   // the default
-        as_ties.set_ties(BubbleTies::Complete);
+        as_ties.set_ties(BubbleTies::Complete, "network");
 
         full.add_globalevent(as_ties);
         REQUIRE(Bubbles<>::get_from(full)->get_ties() == BubbleTies::Complete);
@@ -96,19 +98,19 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
                 for (size_t i = 0u; i < 6u; ++i)
                     for (size_t j = i + 1u; j < 6u; ++j)
                         if (bid[i] == bid[j])
-                            REQUIRE(m->has_edge(i, j));
+                            REQUIRE(tests_net(*m).has_edge(i, j));
 
                 // 6 agents, all in one bubble -> C(6,2) = 15 ties.
-                REQUIRE(m->get_agent(0u).get_n_neighbors() == 5u);
+                REQUIRE(tests_net(*m).get_degree(0u) == 5u);
 
                 // Within a household: 0--2 and 3--5 did not exist before.
-                REQUIRE(m->has_edge(0u, 2u));
-                REQUIRE(m->has_edge(3u, 5u));
+                REQUIRE(tests_net(*m).has_edge(0u, 2u));
+                REQUIRE(tests_net(*m).has_edge(3u, 5u));
 
                 // Across households: every one of the 9 pairs, not just 2--3.
                 for (size_t a = 0u; a < 3u; ++a)
                     for (size_t b = 3u; b < 6u; ++b)
-                        REQUIRE(m->has_edge(a, b));
+                        REQUIRE(tests_net(*m).has_edge(a, b));
 
                 // Only the ties it actually created are on the intervention's
                 // books: 15 pairs minus the 5 the network already had.
@@ -150,21 +152,25 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
             hh[i] = i / hh_size;
 
         // The same network, built the same way, with nothing done to it.
-        epimodels::ModelSEIR<> base("flu", 0.05, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> base("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         base.seed(913);
-        base.agents_smallworld(n, 6, false, 0.05);
+        base.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 6, 0.05, false, base)
+        ));
         auto baseline = edges_of(base);
 
-        epimodels::ModelSEIR<> model("flu", 0.05, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         model.seed(913);
-        model.agents_smallworld(n, 6, false, 0.05);
+        model.add_layer(layer::network(
+            "network", rgraph_smallworld(n, 6, 0.05, false, model)
+        ));
 
         REQUIRE(edges_of(model) == baseline);   // same seed, same network
 
         Bubbles<> bubbles(
             hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 3,
             "Social bubble", 2u, "Bubble transmission factor",
-            BubbleTies::Complete
+            BubbleTies::Complete, "network"
         );
         model.add_globalevent(bubbles);
         model.verbose_off();
@@ -201,7 +207,7 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
                     for (size_t i = 0u; i < who.size(); ++i)
                         for (size_t j = i + 1u; j < who.size(); ++j)
                         {
-                            REQUIRE(m->has_edge(who[i], who[j]));
+                            REQUIRE(tests_net(*m).has_edge(who[i], who[j]));
                             ++within_pairs;
                         }
                 }
@@ -219,7 +225,7 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
                         if (hh[a] != hh[b])
                             continue;
 
-                        REQUIRE(m->has_edge(a, b));
+                        REQUIRE(tests_net(*m).has_edge(a, b));
 
                         auto pair = std::make_pair(
                             static_cast<int>(a), static_cast<int>(b)
