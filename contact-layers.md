@@ -136,11 +136,19 @@ turnover is high relative to contacts.
    (infectious-contact counts over its own structure), so a susceptible samples
    only the layers where it is exposed. A mixing layer that cannot queue does
    not disable the queue of the others.
-9. **Contact tracing is recorded after sampling, whatever the layer.** The
-   recorder (`ContactTracing::add_contact`) is called by every layer's pull or
-   push path for each contact with an infectious agent, so tracing needs no
-   layer-specific logic. It will change the random stream of a run when on;
-   that is accepted.
+9. **Contact tracing is per layer, opt-in, and recorded after sampling.** The
+   contact log belongs to the layer (`layer.enable_tracing(max_contacts)`), so
+   it resets, clones and runs in parallel with the layer, and the model keeps
+   no tracer of its own (`use_contact_tracing`, `get_contact_tracing()` go, per
+   point 18). Every layer's pull or push path reports each contact with an
+   infectious agent to the layer's own log, tagged with the layer, so tracing
+   needs no layer-specific logic and a layer that is not traced pays nothing.
+   Layers differ in what tracing can mean (a school is traced by membership, a
+   random mixing layer by what was sampled), so each has its own capacity and
+   the models read each layer's success rate and window from model parameters
+   (point 17); one layer's contacts never push another's out of a shared
+   budget. It will change the random stream of a run when on; that is
+   accepted. See D11 for the interface.
 10. **Transmissions record their layer** (`layer` column; -1 for seeded or
     non-contact infections). This is a breaking change to outputs.
 11. **Dirty-flag reset.** Every edit to a layer (add/remove a tie, move an agent
@@ -359,6 +367,40 @@ schedules) or in global events that set layer weights and flags. Layers own
 routine schedules; global events own one-off interventions (closing schools).
 Recommendation: both, with that split.
 
+### D11. Contact tracing by layer
+
+Settled (point 9): the log is owned by the layer, opt-in, with its own
+capacity. Open:
+
+- **Rows allocated lazily.** Today's `ContactTracing` is dense, `n_agents x
+  max_contacts` slots of 16 bytes (about 320 MB at 1M agents and 20 slots, from
+  the class description). A log per traced layer multiplies that. The log is
+  keyed by the infectious agent, so rows can be allocated when an agent first
+  appears as a source; narrower integer types are the other lever. Measure
+  before choosing (memory and the cost of the lookup).
+- **Structural tracing.** "Notify the whole class" needs no log: `Affiliation`
+  exposes `members_of(group)` and `groups_of(agent)`, and the measles "high
+  risk" branch (shares an entity with the case) becomes that query. A network's
+  current ties are not the contacts someone had last week, and
+  `ModelSEIRNetworkQuarantine` traces from the log, so structural tracing is an
+  option next to the log, not a replacement.
+- **Meaning of a contact.** The log holds sampled contacts with infectious
+  agents. When the combination rule moves to independent exposures (D1,
+  Phase 6) the recorder hooks into the individual exposure events so the meaning
+  stays the same.
+- **A shared tracing policy.** The consumers (`ModelSEIRMixingQuarantine`,
+  `ModelSEIRNetworkQuarantine`, the measles mixing models, the PEP
+  intervention) repeat one loop: cap at the tracking limit, draw a success per
+  contact, apply a date window, filter by state. The order of the success draw
+  relative to the other checks differs between them and sets the random stream,
+  so a helper can share the iteration but not the draw. Extract a policy object
+  (layers to read, per-layer success and window, action) only after the Phase 3
+  port shows what is common; "tracing at school and in the community" in one
+  model is the first real second user.
+- **Per-layer actions** (quarantine from school only, keep household) need the
+  per-layer participation of D2. Tracing with per-layer success rates works
+  without it; D2 widens what the traced agents can be made to do.
+
 ---
 
 ## 5. Design
@@ -548,8 +590,8 @@ the step (point 13), so results do not depend on agent update order.
 
 - `record_transmission(i, j, virus, date, layer)`; `get_transmissions()` gets a
   `layer` column (-1 for seeded/non-contact).
-- The contact-tracing recorder and the post-sampling callback receive the layer
-  of each contact.
+- The contact-tracing recorder (the layer's own log, point 9) and the
+  post-sampling callback receive the layer of each contact.
 - `write_edgelist()` / `get_edgelist()` per layer.
 
 ### 5.10 Compatibility
@@ -675,7 +717,11 @@ different epidemic sizes).
 - The accumulator (5.4) for every kind of layer (Phase 2 does networks);
   layer weights; virus targets per layer; per-layer queues (5.7); layer id in
   transmission records, contact tracing and post-sampling; `layer::Affiliation` with fixed memberships (`q = 1`, several
-  memberships per agent); per-layer edgelist and membership I/O.
+  memberships per agent, `members_of()` / `groups_of()` queries); per-layer
+  edgelist and membership I/O.
+- Contact tracing moves into the layers (point 9, D11): `enable_tracing()` on
+  a layer, the model's tracer and its shims removed, the consumers reading each
+  layer's log with per-layer parameters.
 - Layer-membership builders replace the entity distribution functions; remove
   entities (D6), including the entity fallback of `layer::Mixing`, the
   entity-level tools and events, and `Bubbles` as an entity (it becomes an
@@ -683,6 +729,12 @@ different epidemic sizes).
   reduced-contact state reads a model parameter, point 17).
 - An example model: households (`Affiliation`) + workplace (`Network`) + public
   spaces (`Mixing`).
+- Acceptance: `ModelMeaslesMixingRiskQuarantine` (school traced by membership,
+  community by log) and the SEIR mixing and network quarantine models are
+  rebuilt on layers and stay draw-for-draw identical, which also shows the
+  per-layer tracing design holds. Then a model with tracing at school and in the
+  community with different success rates, as the first test of per-layer
+  policies.
 - Tests (end-to-end, about three files):
   - an `Affiliation` layer with `q = 1` matches the equivalent
     complete-graph-per-household network in distribution;
