@@ -200,11 +200,24 @@ turnover is high relative to contacts.
     replicate draws a new network from its own seed. Generators live outside
     the layer (`graph::smallworld(k, p)`, wrappers of the `rgraph_*`
     functions), so adding one is writing a function. A fixed network is built
-    from a graph instead (`layer::Network(name, adjlist)`), read from a file or
+    from a graph instead (`layer::network(name, adjlist)`), read from a file or
     drawn once; it is restored at reset if dirty. Rewiring follows the same pattern: the layer holds a
     rewiring function called at the end of each step (degree-preserving
     rewiring is the first; an ERGM-style rewirer can be another), reading its
     rate from a model parameter (point 17).
+21. **Layers are shared pointers.** A layer is created by its factory
+    (`layer::network()`, `layer::mixing()`; the constructors are protected) or,
+    for a user-defined layer type, by `std::make_shared`, and
+    `model.add_layer(ptr)` shares it: the caller's pointer and the model's are
+    the same layer, so an edit through either is an edit of the model, and
+    nothing is copied. Three rules keep that safe: a layer belongs to one
+    model at most (`add_layer()` throws otherwise; add a copy); a model
+    detaches its layers when it is destroyed or assigned to, so a pointer that
+    outlives the model is a detached layer, not a dangling one; and a copy of
+    the model (`run_multiple()`) clones its layers, so outside pointers stay
+    with the original. The bindings hold the same pointer (pybind11's
+    `shared_ptr` holder, an R external pointer to it), so an R or Python layer
+    object is the model's layer.
 
 ---
 
@@ -431,7 +444,7 @@ public:
     // Lifecycle
     virtual void reset(Model<TSeq> & m) = 0;    // restore if dirty (point 11)
     virtual void update(Model<TSeq> & m) = 0;   // once per step, before transmission
-    virtual std::unique_ptr<ContactLayer<TSeq>> clone() const = 0; // run_multiple
+    virtual std::shared_ptr<ContactLayer<TSeq>> clone() const = 0; // run_multiple
 
     // Pull: append the contacts of `i` this step that carry a virus the
     // layer admits, repeats allowed. Returns how many were appended.
@@ -466,8 +479,8 @@ network, and before `Bubbles` sets itself up. `layer::Mixing` draws no random
 numbers at reset; its fallback grouping from entities, which are distributed
 later, is built at its first update instead, so its results are unchanged.
 
-The model holds `std::vector<std::unique_ptr<ContactLayer<TSeq>>>`, with
-`add_layer()`, `get_layer(name|id)`, `get_layer_id(name)` (resolve names once,
+The model holds `std::vector<std::shared_ptr<ContactLayer<TSeq>>>` (point
+21), with `add_layer(ptr)`, `get_layer(name|id)`, `get_layer_id(name)` (resolve names once,
 use ids in hot loops). `Model`'s copy constructor and `clone_ptr()` must
 deep-copy layers (`run_multiple()` clones models).
 
@@ -707,7 +720,8 @@ different epidemic sizes).
 - Switch the combination rule to independent exposures (D1) in one commit that
   updates the expected results; add the analytic P(infection) test.
 - Merge `v1-layers` into `master`; release 1.0.0.
-- epiworldR, epiworldpy, epiworldjs: `add_layer()`, population in the model
+- epiworldR, epiworldpy, epiworldjs: `add_layer()` with the layer objects
+  holding the model's pointer (point 21), population in the model
   constructors, network layers from generators, named-list neighbors, `layer` column in transmissions; entities removed.
 - Docs: new `docs/impl/contact-layers.md`; update
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
@@ -743,7 +757,7 @@ different epidemic sizes).
 
 - **Random stream changes.** Any change of draw order changes results. Phases
   1-2 must be draw-for-draw identical; the rule switch is isolated in Phase 6.
-- **Cloning and reset.** Layers behind `unique_ptr` must be deep-copied in
+- **Cloning and reset.** Layers behind `shared_ptr` must be deep-copied in
   `Model`'s copy constructor/assignment and `clone_ptr()` of every model, or
   `run_multiple()` shares state across threads. Every mutator must set the
   dirty flag; a path that edits a layer without it would leak state between
