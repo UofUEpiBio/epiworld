@@ -28,20 +28,32 @@
  */
 
 template<typename TSeq>
-inline Virus<TSeq> * Model<TSeq>::sample_virus(
+inline size_t Model<TSeq>::add_exposures(
     Agent<TSeq> * agent,
+    const ContactLayer<TSeq> * layer,
     const size_t * contacts,
-    size_t n
+    size_t n,
+    size_t n_exposures
 )
 {
 
-    size_t n_exposures = 0u;
+    const bool weighted = (layer != nullptr) && layer->has_weight();
+    const epiworld_double weight = weighted ? layer->get_weight(*this) : 1.0;
+    const int layer_id = (layer == nullptr) ? -1 : static_cast< int >(layer->get_id());
+
+    // A layer of weight 0 transmits nothing
+    if (weighted && (weight <= 0.0))
+        return n_exposures;
+
     for (size_t k = 0u; k < n; ++k)
     {
 
         auto & contact = population[contacts[k]];
         auto & v = contact.get_virus();
         if (v == nullptr)
+            continue;
+
+        if ((layer != nullptr) && !layer->admits(*v))
             continue;
 
         #ifdef EPI_DEBUG
@@ -51,22 +63,55 @@ inline Virus<TSeq> * Model<TSeq>::sample_virus(
             );
         #endif
 
-        array_double_tmp[n_exposures] =
+        epiworld_double p =
             (1.0 - agent->get_susceptibility_reduction(v, *this)) *
             v->get_prob_infecting(this) *
             (1.0 - contact.get_transmission_reduction(v, *this))
             ;
 
-        array_virus_tmp[n_exposures++] = &(*v);
+        // The weight scales the odds p / (1 - p); a certain exposure stays so
+        if (weighted && (p < 1.0))
+            p = weight * p / (1.0 - p + weight * p);
+
+        array_double_tmp[n_exposures] = p;
+        array_virus_tmp[n_exposures] = &(*v);
+        array_layer_tmp[n_exposures++] = layer_id;
 
     }
+
+    return n_exposures;
+
+}
+
+template<typename TSeq>
+inline Virus<TSeq> * Model<TSeq>::draw_exposure(size_t n_exposures)
+{
+
+    sampled_layer = -1;
 
     if (n_exposures == 0u)
         return nullptr;
 
     const int which = roulette(n_exposures, this);
 
-    return (which < 0) ? nullptr : array_virus_tmp[which];
+    if (which < 0)
+        return nullptr;
+
+    sampled_layer = array_layer_tmp[which];
+    return array_virus_tmp[which];
+
+}
+
+template<typename TSeq>
+inline Virus<TSeq> * Model<TSeq>::sample_virus(
+    Agent<TSeq> * agent,
+    const size_t * contacts,
+    size_t n,
+    const ContactLayer<TSeq> * layer
+)
+{
+
+    return draw_exposure(add_exposures(agent, layer, contacts, n, 0u));
 
 }
 
@@ -84,28 +129,35 @@ inline Virus<TSeq> * Model<TSeq>::sample_virus(
         );
 
     const size_t id = static_cast< size_t >(agent->get_id());
-    const size_t degree = network_degree(id);
-    if (degree == 0u)
+
+    size_t n_contacts = 0u;
+    size_t n_exposures = 0u;
+    for (const auto & layer : layers)
+    {
+
+        layer_contacts.clear();
+        const size_t n = layer->sample(id, *this, exclude, layer_contacts);
+        if (n == 0u)
+            continue;
+
+        n_contacts += n;
+        n_exposures = add_exposures(
+            agent, layer.get(), layer_contacts.data(), n, n_exposures
+        );
+
+    }
+
+    if (n_contacts == 0u)
+    {
+        sampled_layer = -1;
         return nullptr;
-
-    if (network_contacts.size() < degree)
-        network_contacts.resize(degree);
-
-    // The recording path is chosen once per call, not per contact
-    size_t n = 0u;
-    for (const auto * net : network_layers)
-        n += post_sampling_on ?
-            net->template sample<true>(id, *this, exclude, network_contacts.data() + n) :
-            net->template sample<false>(id, *this, exclude, network_contacts.data() + n);
-
-    if (n == 0u)
-        return nullptr;
+    }
 
     #ifdef EPI_DEBUG
     db.n_transmissions_potential++;
     #endif
 
-    Virus<TSeq> * virus = sample_virus(agent, network_contacts.data(), n);
+    Virus<TSeq> * virus = draw_exposure(n_exposures);
 
     #ifdef EPI_DEBUG
     if (virus != nullptr)

@@ -53,8 +53,8 @@ Outcomes simulate(Model<> & model, int ndays, int nsims)
         }
         out.peak.add(peak);
 
-        std::vector< int > date, source, target, virus, sexp;
-        m->get_db().get_transmissions(date, source, target, virus, sexp);
+        std::vector< int > date, source, target, virus, sexp, sexp_layer;
+        m->get_db().get_transmissions(date, source, target, virus, sexp, sexp_layer);
         double inc = 0.0;
         for (auto d : date)
             if ((d > 0) && (d <= 10))
@@ -126,8 +126,8 @@ Run record(Model<> & m)
 {
     Run r;
     m.get_db().get_hist_total(nullptr, nullptr, &r.counts);
-    std::vector< int > virus, sexp;
-    m.get_db().get_transmissions(r.date, r.source, r.target, virus, sexp);
+    std::vector< int > virus, sexp, sexp_layer;
+    m.get_db().get_transmissions(r.date, r.source, r.target, virus, sexp, sexp_layer);
     return r;
 }
 

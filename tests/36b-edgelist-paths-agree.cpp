@@ -17,10 +17,10 @@ static Run run_model(Model<> & model)
     model.run(50, 1231);
 
     Run r;
-    std::vector< int > date, virus, sexp;
+    std::vector< int > date, virus, sexp, sexp_layer;
     model.get_db().get_hist_total(&date, nullptr, &r.hist);
     model.get_db().get_transmissions(
-        r.tdate, r.tsource, r.ttarget, virus, sexp
+        r.tdate, r.tsource, r.ttarget, virus, sexp, sexp_layer
     );
     tests_net(model).get_edgelist(r.s, r.t);
 

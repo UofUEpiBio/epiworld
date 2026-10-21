@@ -70,8 +70,8 @@ std::map< int, int > count_infectors(Model<> & model, int nsims, int seed)
 {
     std::map< int, int > counts;
     auto saver = [&counts](size_t, Model<> * m) -> void {
-        std::vector< int > date, source, target, virus, sexp;
-        m->get_db().get_transmissions(date, source, target, virus, sexp);
+        std::vector< int > date, source, target, virus, sexp, sexp_layer;
+        m->get_db().get_transmissions(date, source, target, virus, sexp, sexp_layer);
         int who = -1;
         for (size_t k = 0u; k < date.size(); ++k)
             if ((date[k] == 1) && (target[k] == 0))

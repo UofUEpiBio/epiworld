@@ -88,8 +88,8 @@ Run simulate(
 
     Run r;
     model.get_db().get_hist_total(nullptr, nullptr, &r.counts);
-    std::vector< int > virus, sexp;
-    model.get_db().get_transmissions(r.date, r.source, r.target, virus, sexp);
+    std::vector< int > virus, sexp, sexp_layer;
+    model.get_db().get_transmissions(r.date, r.source, r.target, virus, sexp, sexp_layer);
     return r;
 
 }

@@ -93,8 +93,8 @@ EPIWORLD_TEST_CASE("ParamRef across models", "[parameters][ParamRef]") {
     // A change made by name is seen through the cached positions
     model_b.set_param("beta", 0.0);
     model_b.run(60, 331);
-    std::vector< int > date, source, target, v, se;
-    model_b.get_db().get_transmissions(date, source, target, v, se);
+    std::vector< int > date, source, target, v, se, se_layer;
+    model_b.get_db().get_transmissions(date, source, target, v, se, se_layer);
     int n_transmissions = 0;
     for (auto s : source)
         if (s >= 0)

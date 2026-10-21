@@ -16,7 +16,7 @@ using namespace epiworld;
 namespace {
 
 struct Outcome {
-    std::vector< int > date, source, target, virus, exposure, hist;
+    std::vector< int > date, source, target, virus, exposure, layer, hist;
     std::vector< epiworld_fast_uint > states;
 };
 
@@ -24,7 +24,7 @@ Outcome outcome_of(Model<> & model)
 {
     Outcome o;
     model.get_db().get_transmissions(
-        o.date, o.source, o.target, o.virus, o.exposure
+        o.date, o.source, o.target, o.virus, o.exposure, o.layer
     );
 
     std::vector< int > date;
@@ -42,6 +42,7 @@ void require_same(const Outcome & a, const Outcome & b)
     REQUIRE(a.target == b.target);
     REQUIRE(a.virus == b.virus);
     REQUIRE(a.exposure == b.exposure);
+    REQUIRE(a.layer == b.layer);
     REQUIRE(a.hist == b.hist);
     REQUIRE(a.states == b.states);
 }

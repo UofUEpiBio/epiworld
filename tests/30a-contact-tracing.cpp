@@ -95,8 +95,8 @@ EPIWORLD_TEST_CASE("Contact tracing - SIR with 100% transmission", "[contact-tra
     // -----------------------------------------------------------------------
     // Extract transmissions from the database
     // -----------------------------------------------------------------------
-    std::vector<int> t_date, t_source, t_target, t_virus, t_expo_date;
-    model.get_db().get_transmissions(t_date, t_source, t_target, t_virus, t_expo_date);
+    std::vector<int> t_date, t_source, t_target, t_virus, t_expo_date, t_expo_date_layer;
+    model.get_db().get_transmissions(t_date, t_source, t_target, t_virus, t_expo_date, t_expo_date_layer);
 
     // Build a set of (source, target) transmission pairs
     std::set<std::pair<int,int>> transmission_pairs;

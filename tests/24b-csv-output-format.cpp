@@ -116,7 +116,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         REQUIRE(quote_count == 2);
     }
 
-    // Test 5: transmission - should have quotes around virus name
+    // Test 5: transmission - should have quotes around the virus and layer names
     {
         std::ifstream file(fn.directory + "/csv_test_transmission.csv");
         std::string header, line;
@@ -126,11 +126,11 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
             std::cout << "   Header: " << header << std::endl;
             std::cout << "   Sample: " << line << std::endl;
             
-            // Should have quotes around virus name (2 quotes)
+            // Should have quotes around the virus and layer names (4 quotes)
             int quote_count = std::count(line.begin(), line.end(), '"');
-            std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
+            std::cout << "   Quote count: " << quote_count << " (expected: 4)" << std::endl;
             
-            REQUIRE(quote_count == 2);
+            REQUIRE(quote_count == 4);
         } else {
             std::cout << "\n5. transmission: No transmissions recorded" << std::endl;
         }

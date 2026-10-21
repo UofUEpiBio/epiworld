@@ -94,13 +94,13 @@ EPIWORLD_TEST_CASE(
     model.run(100, 233);
 
     // Retrieving the transmission data
-    std::vector<int> date, source, target, virus, source_exposure_date;
+    std::vector<int> date, source, target, virus, source_exposure_date, source_exposure_date_layer;
     model.get_db().get_transmissions(
         date,
         source,
         target,
         virus,
-        source_exposure_date
+        source_exposure_date, source_exposure_date_layer
     );  
 
     // Priting the counts

@@ -74,9 +74,9 @@ EPIWORLD_TEST_CASE(
     std::vector<int> trans_source;
     std::vector<int> trans_target;
     std::vector<int> trans_virus;
-    std::vector<int> trans_source_exposure;
+    std::vector<int> trans_source_exposure, trans_source_exposure_layer;
     db.get_transmissions(trans_date, trans_source, trans_target, 
-                            trans_virus, trans_source_exposure);
+                            trans_virus, trans_source_exposure, trans_source_exposure_layer);
 
     int total_transmissions = static_cast<int>(trans_date.size());
 
