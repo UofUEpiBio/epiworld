@@ -15,11 +15,26 @@ std::vector<double> contact_matrix = {
     0.3, 0.3, 0.4   /* Group C has more balanced interactions across groups. */
 };
 
-/* Set the contact matrix for the simulation. */
-model.set_contact_matrix(contact_matrix);
+/* Set the contact matrix of the model's mixing layer. */
+model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
 ```
 
 In this example, the contact matrix specifies that agents in group $A$ interact with agents in group $A$ $80 \%$ of the time, with smaller probabilities of interacting with groups $B$ and $C$. Similarly, group $B$ has a $70 \%$ self-interaction rate, and group $C$ has a more balanced interaction pattern.
+
+## The Mixing Layer
+
+The mixing models (`ModelSIRMixing`, `ModelSEIRMixing`, `ModelSEIRMixingQuarantine`) draw their contacts from a *contact layer*, a `layer::Mixing` named `"mixing"` that the model owns as its layer 0. The layer holds the contact matrix, the grouping of the agents, and the pools of infectious agents that `sample()` draws from each step. The model has no contact-matrix methods of its own: everything goes through the layer, which `model.get_layer_as< layer::Mixing<> >("mixing")` returns.
+
+By default the grouping comes from the entities: at the start of each run the layer assigns every agent to the group of its first entity (agents without entities take no part). From then on the layer works on its own table, so a grouping can also be given directly, without entities:
+
+```cpp
+// Group of each agent (layer::Mixing<>::NO_GROUP leaves one out), and the
+// number of groups
+auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
+mixing.set_groups(groups, 3u);
+```
+
+Whether an edit is permanent depends only on when it is made. Edits made during a run (in a global event, say), such as `mixing.set_group(agent, g)` or `mixing.set_contact_matrix(cmat)`, apply to that run only: they set the layer's dirty flag, and the next run starts from the baseline again. The same calls made between runs set the baseline. `set_groups()` replaces the whole grouping and can only be called between runs.
 
 ## Entity Distribution Functions
 Entity distribution functions define how agents are assigned to entities or groups. These assignments influence the contact and transmission dynamics, as agents within the same entity may have higher interaction rates or specific behavioral patterns. The API provides several functions for distributing agents into entities, each tailored to different use cases.

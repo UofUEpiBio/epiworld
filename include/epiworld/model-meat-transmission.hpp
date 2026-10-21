@@ -3,7 +3,8 @@
 
 /**
  * @file model-meat-transmission.hpp
- * @brief Network transmission by pushing infection odds.
+ * @brief Transmission: from contacts to infections, and network transmission
+ * by pushing infection odds.
  *
  * @details A susceptible agent `i` whose update function is
  * `default_update_susceptible` (or `sampler::make_update_susceptible()`)
@@ -25,6 +26,49 @@
  * The docs page "Push and Pull Transmission" (docs/impl/transmission-sampling.md)
  * has the derivation.
  */
+
+template<typename TSeq>
+inline Virus<TSeq> * Model<TSeq>::sample_virus(
+    Agent<TSeq> * agent,
+    const size_t * contacts,
+    size_t n
+)
+{
+
+    size_t n_exposures = 0u;
+    for (size_t k = 0u; k < n; ++k)
+    {
+
+        auto & contact = population[contacts[k]];
+        auto & v = contact.get_virus();
+        if (v == nullptr)
+            continue;
+
+        #ifdef EPI_DEBUG
+        if (n_exposures >= array_virus_tmp.size())
+            throw std::logic_error(
+                "Trying to add an extra element to a temporal array outside of the range."
+            );
+        #endif
+
+        array_double_tmp[n_exposures] =
+            (1.0 - agent->get_susceptibility_reduction(v, *this)) *
+            v->get_prob_infecting(this) *
+            (1.0 - contact.get_transmission_reduction(v, *this))
+            ;
+
+        array_virus_tmp[n_exposures++] = &(*v);
+
+    }
+
+    if (n_exposures == 0u)
+        return nullptr;
+
+    const int which = roulette(n_exposures, this);
+
+    return (which < 0) ? nullptr : array_virus_tmp[which];
+
+}
 
 template<typename TSeq>
 inline bool Model<TSeq>::transmission_prepare()

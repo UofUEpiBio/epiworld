@@ -2,46 +2,38 @@
 
 using namespace epiworld;
 
-// A model built directly on sampler::Mixing: a susceptible agent is infected
-// only through the contacts the sampler hands it. The contact matrix is
+// A model built directly on layer::Mixing: a susceptible agent is infected
+// only through the contacts the layer hands it. The contact matrix is
 // column-major, entry (i, j) = contacts of group i with group j.
 namespace {
 
-class SamplerModel :
-    public Model<>,
-    public ContactMatrix
+class SamplerModel : public Model<>
 {
 public:
 
-    sampler::Mixing<> mixing;
-
-    SamplerModel(size_t n, std::vector< double > cm) :
-        mixing({1}, {0, 1})
+    SamplerModel(size_t n, std::vector< double > cm)
     {
 
-        set_contact_matrix(cm, true);
+        auto layer = std::make_unique< layer::Mixing<> >(
+            "mixing", std::vector< int >({1}), std::vector< int >({0, 1})
+        );
+        layer->set_contact_matrix(cm);
+        add_layer(std::move(layer));
 
         UpdateFun<> susceptible = [](Agent<> * p, Model<> * m) -> void
         {
 
-            auto * mod = model_cast<SamplerModel, int>(m);
-            const size_t n_contacts = mod->mixing.sample(p, *m, *mod);
+            auto & mixing = m->get_layer_as< layer::Mixing<> >(0u);
+            const size_t n_contacts = mixing.sample(p, *m);
 
             // Any sampled contact is infectious: it transmits for sure
             if (n_contacts > 0u)
-                p->set_virus(*m, *m->get_agent(mod->mixing.sampled_ids()[0]).get_virus(), 1);
+                p->set_virus(*m, *m->get_agent(mixing.sampled_ids()[0]).get_virus(), 1);
 
         };
 
         add_state("Susceptible", susceptible);
         add_state("Infected");
-
-        add_globalevent(
-            [](Model<> * m) -> void {
-                model_cast<SamplerModel, int>(m)->mixing.update(*m);
-            },
-            "Update infectious pools"
-        );
 
         Virus<> v("Virus", 0.0, true);
         v.set_state(1, 1, 1);
@@ -51,13 +43,6 @@ public:
         queuing_off();
         agents_empty_graph(n);
 
-    }
-
-    void reset() override
-    {
-        Model<>::reset();
-        validate_contact_matrix(entities.size());
-        mixing.reset(*this);
     }
 
     std::unique_ptr< Model<> > clone_ptr() override
@@ -106,7 +91,7 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
     REQUIRE(inf[2] == 0u);
 
     // The infectious agent is its own pool member but is never sampled
-    REQUIRE(model.mixing.get_n_infectious(2u) == 0u);
-    REQUIRE(model.mixing.get_n_infectious(0u) == inf[0]);
+    REQUIRE(model.get_layer_as< layer::Mixing<> >(0u).get_n_infectious(2u) == 0u);
+    REQUIRE(model.get_layer_as< layer::Mixing<> >(0u).get_n_infectious(0u) == inf[0]);
 
 }

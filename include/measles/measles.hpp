@@ -30,6 +30,9 @@ inline std::string measles_version() {
 
 namespace measles {
 
+    // Contact matrix of the mixing models (until they use contact layers)
+    #include "contactmatrix-meat.hpp"
+
     // Tools and interventions
     #include "immunoglobulin-meat.hpp"
     #include "interventionmeaslespep-meat.hpp"

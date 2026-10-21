@@ -185,6 +185,8 @@ protected:
     // actual horizon. Not copied: a copy of the model is not in a run.
     bool running = false;
 
+    void set_running(bool value); ///< Also tells the layers (see `ContactLayer`)
+
     void dist_tools();
     void dist_virus();
     void dist_entities();
@@ -201,6 +203,9 @@ protected:
     void chrono_end();
 
     std::vector<GlobalEventPtr<TSeq>> globalevents;
+
+    /// Contact layers (see `add_layer()`), deep-copied with the model
+    std::vector< std::unique_ptr< ContactLayer<TSeq> > > layers;
 
     Queue<TSeq> queue;
     bool use_queuing   = true;
@@ -879,6 +884,25 @@ public:
     }
 
     /**
+     * @brief Draws the virus, if any, that infects `agent` from its contacts.
+     * @details This is where contacts become an infection. Every contact that
+     * carries a virus is an exposure with probability
+     * `(1 - susceptibility reduction of agent) * probability of infecting *
+     * (1 - transmission reduction of the contact)`, and one draw
+     * (`roulette()`) picks at most one infector. A contact listed twice is
+     * two exposures.
+     * @param agent Agent without a virus.
+     * @param contacts Ids of the contacts (e.g., `layer::Mixing::sampled_ids()`).
+     * @param n Number of contacts.
+     * @return The virus transmitted, or `nullptr` if none is.
+     */
+    Virus<TSeq> * sample_virus(
+        Agent<TSeq> * agent,
+        const size_t * contacts,
+        size_t n
+    );
+
+    /**
      * @name Network transmission mode
      *
      * @details States whose update function is `default_update_susceptible`
@@ -1060,6 +1084,48 @@ public:
     void rm_globalevent(size_t i); ///< Remove a global action by index
 
     void run_globalevents();
+
+    /**
+     * @name Contact layers
+     * @brief Sources of contacts of the model (see `ContactLayer`).
+     * @{
+     */
+
+    /**
+     * @brief Adds a contact layer to the model.
+     * @details The model owns the layer, resets it at the end of `reset()`,
+     * updates it at the end of every step (see `ContactLayer`), and copies it
+     * with the model. Layers are added between runs only (a layer that should
+     * act only part of the time is added up front and edited, e.g., by a
+     * global event).
+     * @param layer The layer. Its name must not be in use by another layer.
+     * @return A reference to the layer, valid while the model lives.
+     */
+    ContactLayer<TSeq> & add_layer(std::unique_ptr< ContactLayer<TSeq> > layer);
+
+    size_t get_n_layers() const; ///< Number of contact layers
+    bool has_layer(std::string_view name) const; ///< Whether a layer by that name exists
+    size_t get_layer_id(std::string_view name) const; ///< Id of a layer by name (throws if absent)
+    ContactLayer<TSeq> & get_layer(size_t id); ///< Retrieve a layer by id
+    ContactLayer<TSeq> & get_layer(std::string_view name); ///< Retrieve a layer by name
+
+    /// Retrieve a layer as its own type (unchecked cast; ids are cheaper than names)
+    template<typename TLayer>
+    TLayer & get_layer_as(size_t id)
+    {
+        return static_cast< TLayer & >(get_layer(id));
+    }
+
+    template<typename TLayer>
+    TLayer & get_layer_as(std::string_view name)
+    {
+        return static_cast< TLayer & >(get_layer(name));
+    }
+
+    /// Calls `update()` on every layer (done by `next()` at the end of each step)
+    void update_layers();
+
+    /** @} */
 
     void clear_state_set();
 
