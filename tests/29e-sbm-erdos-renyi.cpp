@@ -38,10 +38,10 @@ EPIWORLD_TEST_CASE("SBM between-block edge count", "[sbm-er]") {
     {
         model.seed(rep + 1u);
         // The model only provides the random numbers
-        layer::Network<> net("network", rgraph_sbm(block_sizes, mixing_matrix, true, model));
+        auto net = layer::network("network", rgraph_sbm(block_sizes, mixing_matrix, true, model));
 
         std::vector< int > source, target;
-        net.get_edgelist(source, target);
+        net->get_edgelist(source, target);
         edge_sum += static_cast<double>(source.size());
     }
 

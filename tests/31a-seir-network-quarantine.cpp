@@ -36,7 +36,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     model.add_virus(v1);
 
     // Set up the SBM network (disconnected blocks)
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_sbm(block_sizes, mixing_matrix, true, model)
     ));
 
@@ -103,7 +103,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     v2.set_distribution(dist_virus<>(0));
     model2.add_virus(v2);
 
-    model2.add_layer(std::make_unique< layer::Network<> >(
+    model2.add_layer(layer::network(
         "network", rgraph_sbm(block_sizes, full_mixing, true, model2)
     ));
 

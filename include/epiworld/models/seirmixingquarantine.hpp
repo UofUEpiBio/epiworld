@@ -642,7 +642,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
 {
 
     // The contacts come from one mixing layer, grouped by entity
-    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+    auto mixing = layer::mixing<TSeq>(
         "mixing",
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})

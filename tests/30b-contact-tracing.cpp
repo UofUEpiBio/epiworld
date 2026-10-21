@@ -230,7 +230,7 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
 
     model.set_name("SIR get_contacts test");
     model.contact_tracing_on();
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(200, 5, 0.01, false, model)
     ));
     model.seed(42);

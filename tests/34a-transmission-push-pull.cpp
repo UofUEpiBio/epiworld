@@ -40,7 +40,7 @@ void make_star(Model<> & model, int nleaves)
         source.push_back(0);
         target.push_back(k);
     }
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", AdjList(source, target, nleaves + 1, false)
     ));
 }

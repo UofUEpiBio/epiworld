@@ -144,7 +144,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         {
             epimodels::ModelSEIR<> m_seir("flu", 1500, 0.01, 0.04, 4.0, 1.0 / 7.0);
             m_seir.seed(11);
-            m_seir.add_layer(std::make_unique< layer::Network<> >(
+            m_seir.add_layer(layer::network(
                 "network", rgraph_smallworld(1500, 8, 0.1, false, m_seir)
             ));
             m_seir.set_transmission_mode(mode);
@@ -153,7 +153,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
             Model<> m_seirh(1500);
             build_seirh(m_seirh);
             m_seirh.seed(11);
-            m_seirh.add_layer(std::make_unique< layer::Network<> >(
+            m_seirh.add_layer(layer::network(
                 "network", rgraph_smallworld(1500, 8, 0.1, false, m_seirh)
             ));
             m_seirh.set_transmission_mode(mode);
@@ -186,7 +186,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         {
             epimodels::ModelSIR<> model("flu", 2000, 0.02, 0.9, 0.3);
             model.seed(3131);
-            model.add_layer(std::make_unique< layer::Network<> >(
+            model.add_layer(layer::network(
                 "network", rgraph_smallworld(2000, 6, 0.02, false, model)
             ));
             if (!queuing)
@@ -221,7 +221,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
             v.set_prob_recovery(0.2);
             m.add_virus(v);
             m.seed(99);
-            m.add_layer(std::make_unique< layer::Network<> >(
+            m.add_layer(layer::network(
                 "network", rgraph_smallworld(1000, 6, 0.05, false, m)
             ));
             m.verbose_off();
@@ -247,7 +247,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
     {
         epimodels::ModelSIR<> model("flu", 2000, 0.01, 0.05, 0.2);
         model.seed(5);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(2000, 50, 0.1, false, model)
         ));
         model.verbose_off();

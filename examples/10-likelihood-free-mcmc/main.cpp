@@ -60,7 +60,7 @@ void sumfun(
 int main()
 {
 
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(1000, 5, .01, false, model)
     ));
 

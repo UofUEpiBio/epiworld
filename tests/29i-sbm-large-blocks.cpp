@@ -28,7 +28,7 @@ EPIWORLD_TEST_CASE("SBM large block n_possible", "[sbm-large]") {
     model.seed(42);
 
     // This should not throw or produce 0 edges
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_sbm(block_sizes, mixing_matrix, true, model)
     ));
 

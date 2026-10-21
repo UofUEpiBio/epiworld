@@ -49,7 +49,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
     // -- directed ------------------------------------------------------------
     epimodels::ModelSIR<> model("a virus", n, 0.1, 0.5, 0.3);
     model.verbose_off();
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", AdjList(source, target, n, true)
     ));
 
@@ -81,7 +81,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
     // Every tie is reported once, with the reciprocated pair merged into one.
     epimodels::ModelSIR<> model_u("a virus", n, 0.1, 0.5, 0.3);
     model_u.verbose_off();
-    model_u.add_layer(std::make_unique< layer::Network<> >(
+    model_u.add_layer(layer::network(
         "network", AdjList(source, target, n, false)
     ));
 
@@ -99,7 +99,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
         epimodels::ModelSIR<> m("a virus", 300u, 0.1, 0.5, 0.3);
         m.seed(77);
         AdjList al = rgraph_bernoulli(300u, 0.02, true, m);
-        m.add_layer(std::make_unique< layer::Network<> >("network", al));
+        m.add_layer(layer::network("network", al));
 
         std::vector< std::pair<int,int> > expected;
         for (size_t i = 0u; i < al.get_dat().size(); ++i)
@@ -118,7 +118,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
     {
         epimodels::ModelSIR<> m("a virus", 300u, 0.1, 0.5, 0.3);
         m.seed(77);
-        m.add_layer(std::make_unique< layer::Network<> >(
+        m.add_layer(layer::network(
             "network", rgraph_bernoulli(300u, 0.02, false, m)
         ));
 
@@ -143,7 +143,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
     {
         epimodels::ModelSIR<> m("a virus", 200u, 0.1, 0.5, 0.3);
         m.seed(78);
-        m.add_layer(std::make_unique< layer::Network<> >(
+        m.add_layer(layer::network(
             "network", rgraph_smallworld(200u, 4u, 0.0, true, m)
         ));
 
@@ -162,7 +162,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
         epimodels::ModelSIR<> m("a virus", 300u, 0.05, 0.5, 0.3);
         m.seed(79);
         m.verbose_off();
-        m.add_layer(std::make_unique< layer::Network<> >(
+        m.add_layer(layer::network(
             "network", rgraph_smallworld(300u, 6u, 0.0, true, m)
         ));
 

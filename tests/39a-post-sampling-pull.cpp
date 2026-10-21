@@ -35,7 +35,7 @@ epimodels::ModelSIR<> make_ring()
         source.push_back(i);
         target.push_back((i + 1) % 8);
     }
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", AdjList(source, target, 8, false)
     ));
     model.set_transmission_mode(TransmissionMode::pull);
@@ -163,7 +163,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
     auto run = [](bool hook) -> std::vector< int > {
 
         epimodels::ModelSEIR<> model("Virus", 2000, 0.02, 0.4, 3.0, 0.2);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(2000, 6, 0.1, false, model)
         ));
         model.set_transmission_mode(TransmissionMode::pull);

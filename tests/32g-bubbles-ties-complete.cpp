@@ -32,7 +32,7 @@ static void two_households(Model<> & model)
 {
     std::vector< int > source = {0, 1, 3, 4, 2};
     std::vector< int > target = {1, 2, 4, 5, 3};
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", AdjList(source, target, 6, false)
     ));
 }
@@ -154,14 +154,14 @@ EPIWORLD_TEST_CASE("Bubbles - complete ties", "[bubbles]") {
         // The same network, built the same way, with nothing done to it.
         epimodels::ModelSEIR<> base("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         base.seed(913);
-        base.add_layer(std::make_unique< layer::Network<> >(
+        base.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.05, false, base)
         ));
         auto baseline = edges_of(base);
 
         epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         model.seed(913);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.05, false, model)
         ));
 

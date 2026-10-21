@@ -28,7 +28,7 @@ EPIWORLD_TEST_CASE("Bubbles - replicates are independent", "[bubbles]") {
 
         epimodels::ModelSEIR<> model("flu", n, 0.1, 0.2, 4.5, 1.0/8.0);
         model.seed(2024);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 8, 0.10, false, model)
         ));
 

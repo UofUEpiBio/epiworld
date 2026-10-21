@@ -26,7 +26,7 @@ static void build_model(
     model.add_virus(virus);
 
     model.seed(8812);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(2000, 8, 0.1, false, model)
     ));
     model.verbose_off();

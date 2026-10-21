@@ -30,7 +30,7 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         );
 
     model_0.seed(1231);
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_0)
     ));
     model_0.verbose_off();
@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
         );
 
     model_1.seed(1231);
-    model_1.add_layer(std::make_unique< layer::Network<> >(
+    model_1.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_1)
     ));
     model_1.verbose_off();

@@ -9,7 +9,7 @@ EPIWORLD_TEST_CASE("SIR multiple", "[SIR-multiple]") {
         "a virus", 10000, 0.01, .9, .3
         );
 
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_0)
     ));
     

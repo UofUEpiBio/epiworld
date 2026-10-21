@@ -84,7 +84,7 @@ int main() {
 
     // Contacts come from layers: here, a small-world network, drawn anew
     // for every run
-    hello.add_layer(std::make_unique< layer::Network<> >(
+    hello.add_layer(layer::network(
         "contacts", graph::smallworld(10, 0.01)
     ));
 

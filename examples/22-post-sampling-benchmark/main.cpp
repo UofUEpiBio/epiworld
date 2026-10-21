@@ -131,7 +131,7 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
     {
         epimodels::ModelSEIR<> model("Benchmark pathogen", n, prevalence, 0.05, 4.0, 0.2);
         model.seed(20260930);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 10, 0.05, false, model)
         ));
         model.set_transmission_mode(scen == "L" ? "pull" : "push");

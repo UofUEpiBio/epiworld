@@ -85,7 +85,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     auto run_path = [&](bool directed, size_t seed_agent, bool queuing) {
         epimodels::ModelSIR<> model("a virus", n, 0.0, 1.0, 0.0);
         model.verbose_off();
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", AdjList(source, target, n, directed)
         ));
         model.get_virus(0u).set_distribution(
@@ -139,7 +139,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
         epimodels::ModelSEIR<> model("a virus", 1500u, 0.01, 0.5, 3.0, 0.2);
         model.verbose_off();
         model.seed(2026);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_bernoulli(1500u, 0.004, true, model)
         ));
         if (!queuing)
@@ -175,7 +175,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
 
         epimodels::ModelSIR<> model("a virus", n, 0.0, 1.0, 0.0);
         model.verbose_off();
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", AdjList(source, target, n, true)
         ));
 

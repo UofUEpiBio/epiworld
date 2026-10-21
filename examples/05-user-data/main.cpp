@@ -13,7 +13,7 @@ int main()
 
     model.set_user_data({"agent_id", "virus_id"});
 
-    model.add_layer(std::make_unique< epiworld::layer::Network<> >(
+    model.add_layer(epiworld::layer::network(
         "network", epiworld::rgraph_smallworld(200, 5, .1, false, model)
     ));
 

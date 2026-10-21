@@ -24,6 +24,16 @@
  * - `clone()` whenever the model is copied (`run_multiple()` copies models),
  *   so replicates never share layer state.
  *
+ * ### Ownership
+ *
+ * Layers are created as shared pointers (`layer::network()`,
+ * `layer::mixing()`; `std::make_shared` for a layer type of your own), and
+ * `Model::add_layer()` shares the pointer: the model and whoever else holds it
+ * see the same layer, so an edit made through either is an edit of the model.
+ * A layer belongs to one model at most. A copy of the model clones its layers
+ * (the pointers held outside keep pointing at the original's), and a layer
+ * outlives its model only detached from it. A copy of a layer is detached too.
+ *
  * ### Edits and the dirty flag
  *
  * Whether an edit is permanent depends only on when it is made. An edit made
@@ -69,6 +79,12 @@ public:
 
     explicit ContactLayer(std::string name_) : name(std::move(name_)) {}
 
+    /// A copy belongs to no model (see `clone()`).
+    ContactLayer(const ContactLayer<TSeq> & other) :
+        name(other.name), dirty(other.dirty) {}
+
+    ContactLayer<TSeq> & operator=(const ContactLayer<TSeq> &) = delete;
+
     virtual ~ContactLayer() = default;
 
     const std::string & get_name() const { return name; }
@@ -82,7 +98,7 @@ public:
     virtual void update(Model<TSeq> & model) = 0;
 
     /// Deep copy (the model's copy constructor calls it).
-    virtual std::unique_ptr< ContactLayer<TSeq> > clone() const = 0;
+    virtual std::shared_ptr< ContactLayer<TSeq> > clone() const = 0;
 
     /// The layer as a network layer, or `nullptr` if it is of another kind.
     virtual layer::Network<TSeq> * as_network() { return nullptr; }

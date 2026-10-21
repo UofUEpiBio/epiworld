@@ -11,7 +11,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network", "[rewir
     );
     
     model_0.seed(1231);
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(100, 4, 0.0, false, model_0)
     )); // p=0: no rewiring
     model_0.verbose_off();
@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network", "[rewir
     );
     
     model_1.seed(1231);
-    model_1.add_layer(std::make_unique< layer::Network<> >(
+    model_1.add_layer(layer::network(
         "network", rgraph_smallworld(100, 4, 0.5, false, model_1)
     )); // p=0.5: 50% rewiring
     model_1.verbose_off();

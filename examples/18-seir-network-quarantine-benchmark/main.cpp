@@ -169,7 +169,7 @@ int main() {
         );
 
         // Set up SBM network (this creates the agent connections)
-        model_net.add_layer(std::make_unique< layer::Network<> >(
+        model_net.add_layer(layer::network(
             "network",
             rgraph_sbm(std::vector<size_t>(n_groups, group_size), sbm_mixing, true, model_net)
         ));

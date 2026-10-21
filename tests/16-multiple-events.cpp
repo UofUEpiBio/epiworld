@@ -33,7 +33,7 @@ EPIWORLD_TEST_CASE("Multiple events", "[multi-events]") {
     model_0.add_state("State 1", update_once);
     model_0.add_state("State 2", update_back);
 
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", AdjList(std::vector< int >{}, std::vector< int >{}, 100, false)
     ));
     model_0.queuing_off();

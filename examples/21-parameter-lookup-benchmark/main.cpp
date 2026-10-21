@@ -143,7 +143,7 @@ static void build_seirh(Model<> & model, size_t n)
     pathogen.set_prob_infecting("Transmission rate");
     model.add_virus(pathogen);
 
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(n, 10, 0.05, false, model)
     ));
 }

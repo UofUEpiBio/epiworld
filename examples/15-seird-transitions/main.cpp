@@ -59,7 +59,7 @@ int main()
     model.add_virus(virus);
 
     // Population
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(n_agents, 20, 0.01, false, model)
     ));
 

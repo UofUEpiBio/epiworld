@@ -125,7 +125,7 @@ int main() {
     model.add_virus(mrsa);
 
     // Add a population
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(1000, 4, 0.1, false, model)
     ));
 

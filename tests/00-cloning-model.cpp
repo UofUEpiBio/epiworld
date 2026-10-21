@@ -14,7 +14,7 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     v.set_state(susceptible_state, recovered_state);
 
     m.seed(1333);
-    m.add_layer(std::make_unique< layer::Network<> >(
+    m.add_layer(layer::network(
         "network", rgraph_smallworld(1000, 5, .01, false, m)
     ));
 

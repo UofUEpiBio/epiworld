@@ -85,7 +85,7 @@ EPIWORLD_TEST_CASE("Contact tracing - SIR with 100% transmission", "[contact-tra
     model.contact_tracing_on();
 
     // Build a small-world network and run
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(500, 5, 0.01, false, model)
     ));
     model.seed(2024);

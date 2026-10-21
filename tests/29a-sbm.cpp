@@ -112,11 +112,11 @@ EPIWORLD_TEST_CASE("SBM expected degree", "[sbm]") {
     {
         model.seed(seeds[rep]);
         // The model only provides the random numbers
-        layer::Network<> net("network", rgraph_sbm(block_sizes, mixing_matrix, true, model));
+        auto net = layer::network("network", rgraph_sbm(block_sizes, mixing_matrix, true, model));
 
         // Get the edgelist and compute degrees
         std::vector< int > source, target;
-        net.get_edgelist(source, target);
+        net->get_edgelist(source, target);
 
         std::vector< int > degree(n, 0);
         for (size_t e = 0u; e < source.size(); ++e)

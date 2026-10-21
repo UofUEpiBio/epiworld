@@ -8,7 +8,7 @@ EPIWORLD_TEST_CASE("run_multiple runs every replicate in a smaller team", "[run-
     const size_t nreps = 10u;
 
     epimodels::ModelSIR<> model("a virus", 200, 0.01, 0.5, 0.3);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(200, 4, 0.1, false, model)
     ));
     model.verbose_off();

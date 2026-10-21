@@ -30,7 +30,7 @@ int main()
     model.add_virus(virus);
     
     // Generating a random pop from a smallworld network
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "contacts", graph::smallworld(10, .01)
     ));
 

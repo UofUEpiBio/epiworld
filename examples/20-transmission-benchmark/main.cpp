@@ -134,7 +134,7 @@ static void build_seirh(Model<> & model, size_t n)
     pathogen.set_prob_infecting("Transmission rate");
     model.add_virus(pathogen);
 
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(n, 10, 0.05, false, model)
     ));
 }
@@ -203,7 +203,7 @@ static void build_heterogeneous(Model<> & model, size_t n)
             target.push_back(stubs[k + 1u]);
         }
 
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", AdjList(source, target, static_cast< int >(n), false)
     ));
 
@@ -378,7 +378,7 @@ int main(int argc, char ** argv)
                         beta, 4.0, recovery
                     );
                     model.seed(20260907);
-                    model.add_layer(std::make_unique< layer::Network<> >(
+                    model.add_layer(layer::network(
                         "network", rgraph_smallworld(n, 10, 0.05, false, model)
                     ));
                     res = time_model(model, o, mode, {0u});
@@ -396,7 +396,7 @@ int main(int argc, char ** argv)
                         0u, sampler::make_update_susceptible<>({1u})
                     );
                     model.seed(20260907);
-                    model.add_layer(std::make_unique< layer::Network<> >(
+                    model.add_layer(layer::network(
                         "network", rgraph_smallworld(n, 10, 0.05, false, model)
                     ));
                     res = time_model(model, o, mode, {0u});
@@ -421,7 +421,7 @@ int main(int argc, char ** argv)
                 {
                     epimodels::ModelSIR<> model("Dense pathogen", n, 0.01, 0.05, 0.2);
                     model.seed(20260907);
-                    model.add_layer(std::make_unique< layer::Network<> >(
+                    model.add_layer(layer::network(
                         "network", rgraph_smallworld(n, 50, 0.1, false, model)
                     ));
                     res = time_model(model, o, mode, {0u});

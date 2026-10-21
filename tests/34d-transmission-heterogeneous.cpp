@@ -125,7 +125,7 @@ EPIWORLD_TEST_CASE("Transmission - heterogeneous network", "[transmission]") {
     {
         Model<> model(20);
         model.add_state("Susceptible", default_update_susceptible<>);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(20, 4, 0.0, false, model)
         ));
         model.verbose_off();

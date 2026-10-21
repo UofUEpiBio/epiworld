@@ -392,7 +392,7 @@ public:
  *
  * ```cpp
  * epimodels::ModelSEIR<> model("flu", 10000, 0.01, 0.1, 4.5, 1.0/7.0);
- * model.add_layer(std::make_unique< layer::Network<> >(
+ * model.add_layer(layer::network(
  *     "contacts", graph::smallworld(8, 0.05)
  * ));
  *

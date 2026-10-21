@@ -46,7 +46,7 @@ EPIWORLD_TEST_CASE("SIRD via set_state_function", "[set-state-function]") {
 
     model.set_state_function("Infected", update_infected_sird);
 
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(5000, 5, 0.02, false, model)
     ));
     model.verbose_off();

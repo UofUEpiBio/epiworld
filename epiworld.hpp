@@ -9111,6 +9111,16 @@ inline void ContactTracing::print(size_t agent)
  * - `clone()` whenever the model is copied (`run_multiple()` copies models),
  *   so replicates never share layer state.
  *
+ * ### Ownership
+ *
+ * Layers are created as shared pointers (`layer::network()`,
+ * `layer::mixing()`; `std::make_shared` for a layer type of your own), and
+ * `Model::add_layer()` shares the pointer: the model and whoever else holds it
+ * see the same layer, so an edit made through either is an edit of the model.
+ * A layer belongs to one model at most. A copy of the model clones its layers
+ * (the pointers held outside keep pointing at the original's), and a layer
+ * outlives its model only detached from it. A copy of a layer is detached too.
+ *
  * ### Edits and the dirty flag
  *
  * Whether an edit is permanent depends only on when it is made. An edit made
@@ -9156,6 +9166,12 @@ public:
 
     explicit ContactLayer(std::string name_) : name(std::move(name_)) {}
 
+    /// A copy belongs to no model (see `clone()`).
+    ContactLayer(const ContactLayer<TSeq> & other) :
+        name(other.name), dirty(other.dirty) {}
+
+    ContactLayer<TSeq> & operator=(const ContactLayer<TSeq> &) = delete;
+
     virtual ~ContactLayer() = default;
 
     const std::string & get_name() const { return name; }
@@ -9169,7 +9185,7 @@ public:
     virtual void update(Model<TSeq> & model) = 0;
 
     /// Deep copy (the model's copy constructor calls it).
-    virtual std::unique_ptr< ContactLayer<TSeq> > clone() const = 0;
+    virtual std::shared_ptr< ContactLayer<TSeq> > clone() const = 0;
 
     /// The layer as a network layer, or `nullptr` if it is of another kind.
     virtual layer::Network<TSeq> * as_network() { return nullptr; }
@@ -10688,7 +10704,7 @@ protected:
     std::vector<GlobalEventPtr<TSeq>> globalevents;
 
     /// Contact layers (see `add_layer()`), deep-copied with the model
-    std::vector< std::unique_ptr< ContactLayer<TSeq> > > layers;
+    std::vector< std::shared_ptr< ContactLayer<TSeq> > > layers;
 
     /**
      * @name Network layers
@@ -10702,7 +10718,8 @@ protected:
     std::vector< layer::Network<TSeq> * > network_layers;
     std::vector< size_t > network_contacts; ///< Scratch of `sample_virus()`
     void layers_attach(); ///< Points the layers at this model, lists the networks
-    void add_layer_ptr(std::unique_ptr< ContactLayer<TSeq> > layer);
+    void layers_detach(); ///< Leaves the layers without a model (they may outlive it)
+    void add_layer_ptr(std::shared_ptr< ContactLayer<TSeq> > layer);
     size_t network_degree(size_t id) const; ///< Ties of agent `id`, all networks
     bool has_directed_network() const;
 
@@ -10889,7 +10906,7 @@ public:
     Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
-    virtual ~Model() {};
+    virtual ~Model() { layers_detach(); };
 
     DataBase<TSeq> & get_db();
     const DataBase<TSeq> & get_db() const;
@@ -11431,17 +11448,18 @@ public:
 
     /**
      * @brief Adds a contact layer to the model.
-     * @details The model owns the layer, resets it at the start of `reset()`,
-     * updates it at the end of every step (see `ContactLayer`), and copies it
-     * with the model. Layers are added between runs only (a layer that should
-     * act only part of the time is added up front and edited, e.g., by a
-     * global event).
-     * @param layer The layer. Its name must not be in use by another layer.
-     * @return A reference to the layer, as its own type, valid while the
-     * model lives.
+     * @details The model shares the layer with the caller (an edit through
+     * `layer` is an edit of the model's layer), resets it at the start of
+     * `reset()`, updates it at the end of every step, and clones it when the
+     * model is copied (see `ContactLayer`). Layers are added between runs only
+     * (a layer that should act only part of the time is added up front and
+     * edited, e.g., by a global event).
+     * @param layer The layer (e.g., from `layer::network()`). Its name must not
+     * be in use by another layer, and it must not belong to another model.
+     * @return A reference to the layer, as its own type.
      */
     template<typename TLayer>
-    TLayer & add_layer(std::unique_ptr< TLayer > layer)
+    TLayer & add_layer(std::shared_ptr< TLayer > layer)
     {
         TLayer * ptr = layer.get();
         add_layer_ptr(std::move(layer));
@@ -12761,6 +12779,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     for (const auto & ge : m.globalevents)
         globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
 
+    layers_detach();
     layers.clear();
     layers.reserve(m.layers.size());
     for (const auto & layer : m.layers)
@@ -14722,12 +14741,18 @@ inline void Model<TSeq>::run_globalevents()
 
 template<typename TSeq>
 inline void Model<TSeq>::add_layer_ptr(
-    std::unique_ptr< ContactLayer<TSeq> > layer
+    std::shared_ptr< ContactLayer<TSeq> > layer
 )
 {
 
     if (!layer)
         throw std::invalid_argument("Cannot add a null contact layer.");
+
+    if (layer->model != nullptr)
+        throw std::logic_error(
+            "The contact layer '" + layer->get_name() + "' already belongs to "
+            "a model; a layer belongs to one model at most (add a copy)."
+        );
 
     // Layers are part of the model's setup: a run resets them all before day 0
     if (running)
@@ -14819,6 +14844,20 @@ inline void Model<TSeq>::layers_attach()
         if (auto * net = layers[i]->as_network())
             network_layers.push_back(net);
     }
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::layers_detach()
+{
+
+    for (auto & layer : layers)
+    {
+        layer->model = nullptr;
+        layer->in_run = false;
+    }
+
+    network_layers.clear();
 
 }
 
@@ -20195,10 +20234,28 @@ inline double Model<TSeq>::get_transmission_kappa() const
 
 namespace layer {
 
+template<typename TSeq>
+class Mixing;
+
+/**
+ * @brief A mixing layer (see `Mixing`).
+ * @param name Name of the layer (unique in a model).
+ * @param infectious States whose agents can be sampled as contacts.
+ * @param available States whose agents take part in the mixing.
+ * @ingroup contact_layers
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+std::shared_ptr< Mixing<TSeq> > mixing(
+    std::string name,
+    std::vector< int > infectious,
+    std::vector< int > available
+);
+
 /**
  * @brief Contact layer with mixing (a contact matrix across groups).
  *
- * @details The layer is configured with two lists of states: the
+ * @details Created with `layer::mixing()`. The layer is configured with two
+ * lists of states: the
  * *infectious* states (whose agents can be contacted and transmit) and the
  * *available* states (agents that take part in the mixing, which is what the
  * contact rate is spread over).
@@ -20275,13 +20332,9 @@ private:
 
     void rebuild_layout();
 
-public:
+protected:
 
-    /**
-     * @param name Name of the layer (unique in a model).
-     * @param infectious States whose agents can be sampled as contacts.
-     * @param available States whose agents take part in the mixing.
-     */
+    // Created with layer::mixing()
     Mixing(
         std::string name,
         std::vector< int > infectious,
@@ -20289,6 +20342,13 @@ public:
     ) : ContactLayer<TSeq>(std::move(name)),
         infectious_states(std::move(infectious)),
         available_states(std::move(available)) {}
+
+    template<typename T>
+    friend std::shared_ptr< Mixing<T> > mixing(
+        std::string, std::vector< int >, std::vector< int >
+    );
+
+public:
 
     /**
      * @brief Sets the grouping of the layer (between runs only).
@@ -20340,9 +20400,9 @@ public:
      */
     void update(Model<TSeq> & model) override;
 
-    std::unique_ptr< ContactLayer<TSeq> > clone() const override
+    std::shared_ptr< ContactLayer<TSeq> > clone() const override
     {
-        return std::make_unique< Mixing<TSeq> >(*this);
+        return std::make_shared< Mixing<TSeq> >(*this);
     }
 
     /**
@@ -20359,6 +20419,18 @@ public:
     size_t get_n_infectious(size_t group) const { return counts[group]; }
 
 };
+
+template<typename TSeq>
+inline std::shared_ptr< Mixing<TSeq> > mixing(
+    std::string name,
+    std::vector< int > infectious,
+    std::vector< int > available
+)
+{
+    return std::shared_ptr< Mixing<TSeq> >(new Mixing<TSeq>(
+        std::move(name), std::move(infectious), std::move(available)
+    ));
+}
 
 template<typename TSeq>
 inline void Mixing<TSeq>::set_groups(
@@ -20712,14 +20784,38 @@ inline size_t Mixing<TSeq>::sample(
 namespace layer {
 
 /**
+ * @brief A fixed network layer (see `Network`).
+ * @param name Name of the layer (unique in a model).
+ * @param graph The ties; its number of vertices must match the model's
+ * population. Directed if the graph is.
+ * @ingroup contact_layers
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+std::shared_ptr< Network<TSeq> > network(std::string name, const AdjList & graph);
+
+/**
+ * @brief A network layer drawn at every reset (see `Network`).
+ * @param name Name of the layer (unique in a model).
+ * @param generator Called with the model at every reset; the graph it returns
+ * must have one vertex per agent.
+ * @ingroup contact_layers
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+std::shared_ptr< Network<TSeq> > network(
+    std::string name,
+    typename Network<TSeq>::Generator generator
+);
+
+/**
  * @brief Contact layer with explicit ties (a network).
  *
  * @details The contacts of an agent in this layer are its ties. A network
- * layer is built either from a graph, which is then *fixed*, or from a
- * *generator*, a function that receives the model and returns a graph, which
- * the layer calls at every reset: each run (and each replicate of
- * `run_multiple()`) then gets its own draw, from its own seed. The `graph::`
- * functions return generators; any function `AdjList(Model<TSeq> &)` is one.
+ * layer is created with `layer::network()`, either from a graph, which is then
+ * *fixed*, or from a *generator*, a function that receives the model and
+ * returns a graph, which the layer calls at every reset: each run (and each
+ * replicate of `run_multiple()`) then gets its own draw, from its own seed.
+ * The `graph::` functions return generators; any function
+ * `AdjList(Model<TSeq> &)` is one.
  *
  * ### Ties and their order
  *
@@ -20789,23 +20885,21 @@ private:
     void check_endpoints(size_t i, size_t j) const;
     void edit();
 
-public:
+protected:
 
-    /**
-     * @brief A fixed network.
-     * @param name Name of the layer (unique in a model).
-     * @param graph The ties; its number of vertices must match the model's
-     * population. Directed if the graph is.
-     */
+    // Created with layer::network()
     Network(std::string name, const AdjList & graph);
-
-    /**
-     * @brief A network drawn at every reset.
-     * @param name Name of the layer (unique in a model).
-     * @param generator Called with the model at every reset; the graph it
-     * returns must have one vertex per agent.
-     */
     Network(std::string name, Generator generator);
+
+    template<typename T>
+    friend std::shared_ptr< Network<T> > network(std::string, const AdjList &);
+
+    template<typename T>
+    friend std::shared_ptr< Network<T> > network(
+        std::string, typename Network<T>::Generator
+    );
+
+public:
 
     size_t size() const { return ties.size(); } ///< Number of agents
     bool is_directed() const { return directed; }
@@ -20884,12 +20978,34 @@ public:
 
     layer::Network<TSeq> * as_network() override { return this; }
 
-    std::unique_ptr< ContactLayer<TSeq> > clone() const override
+    std::shared_ptr< ContactLayer<TSeq> > clone() const override
     {
-        return std::make_unique< Network<TSeq> >(*this);
+        return std::make_shared< Network<TSeq> >(*this);
     }
 
 };
+
+template<typename TSeq>
+inline std::shared_ptr< Network<TSeq> > network(
+    std::string name,
+    const AdjList & graph
+)
+{
+    return std::shared_ptr< Network<TSeq> >(
+        new Network<TSeq>(std::move(name), graph)
+    );
+}
+
+template<typename TSeq>
+inline std::shared_ptr< Network<TSeq> > network(
+    std::string name,
+    typename Network<TSeq>::Generator generator
+)
+{
+    return std::shared_ptr< Network<TSeq> >(
+        new Network<TSeq>(std::move(name), std::move(generator))
+    );
+}
 
 template<typename TSeq>
 inline Network<TSeq>::Network(std::string name, const AdjList & graph) :
@@ -22773,7 +22889,7 @@ public:
  *
  * ```cpp
  * epimodels::ModelSEIR<> model("flu", 10000, 0.01, 0.1, 4.5, 1.0/7.0);
- * model.add_layer(std::make_unique< layer::Network<> >(
+ * model.add_layer(layer::network(
  *     "contacts", graph::smallworld(8, 0.05)
  * ));
  *
@@ -28049,7 +28165,7 @@ inline ModelSEIRMixing<TSeq>::ModelSEIRMixing(
 {
 
     // The contacts come from one mixing layer, grouped by entity
-    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+    auto mixing = layer::mixing<TSeq>(
         "mixing",
         std::vector< int >({ModelSEIRMixing<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixing<TSeq>::SUSCEPTIBLE, ModelSEIRMixing<TSeq>::EXPOSED, ModelSEIRMixing<TSeq>::INFECTED, ModelSEIRMixing<TSeq>::RECOVERED})
@@ -28326,7 +28442,7 @@ inline ModelSIRMixing<TSeq>::ModelSIRMixing(
 {
 
     // The contacts come from one mixing layer, grouped by entity
-    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+    auto mixing = layer::mixing<TSeq>(
         "mixing",
         std::vector< int >({ModelSIRMixing<TSeq>::INFECTED}),
         std::vector< int >({ModelSIRMixing<TSeq>::SUSCEPTIBLE, ModelSIRMixing<TSeq>::INFECTED, ModelSIRMixing<TSeq>::RECOVERED})
@@ -29120,7 +29236,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
 {
 
     // The contacts come from one mixing layer, grouped by entity
-    auto mixing = std::make_unique< layer::Mixing<TSeq> >(
+    auto mixing = layer::mixing<TSeq>(
         "mixing",
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::INFECTED}),
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})

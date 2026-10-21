@@ -96,7 +96,7 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
 
     epimodels::ModelSIR<> model("a virus", static_cast<int>(n), 0.05, 0.9, 0.3);
     model.seed(4321);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", AdjList(source, target, static_cast<int>(n), false)
     ));
     model.verbose_off();

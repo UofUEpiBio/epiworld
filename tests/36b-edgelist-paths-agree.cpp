@@ -65,14 +65,14 @@ EPIWORLD_TEST_CASE("Edge list - all build paths agree", "[edgelist]") {
     {
 
         auto m_el = make_model(n);
-        m_el.add_layer(std::make_unique< layer::Network<> >(
+        m_el.add_layer(layer::network(
             "network", AdjList(source, target, n, directed)
         ));
 
         auto m_fn = make_model(n);
         AdjList from_file;
         from_file.read_edgelist(fn, n, 0, directed);
-        m_fn.add_layer(std::make_unique< layer::Network<> >("network", from_file));
+        m_fn.add_layer(layer::network("network", from_file));
 
         REQUIRE(tests_net(m_el).is_directed() == directed);
         REQUIRE(tests_net(m_fn).is_directed() == directed);
@@ -91,7 +91,7 @@ EPIWORLD_TEST_CASE("Edge list - all build paths agree", "[edgelist]") {
 
         // Rebuilding from the model's own edge list reproduces the run.
         auto m_rt = make_model(n);
-        m_rt.add_layer(std::make_unique< layer::Network<> >(
+        m_rt.add_layer(layer::network(
             "network", AdjList(r_el.s, r_el.t, n, directed)
         ));
         Run r_rt = run_model(m_rt);

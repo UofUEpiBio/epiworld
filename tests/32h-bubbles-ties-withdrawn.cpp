@@ -42,14 +42,14 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
 
         epimodels::ModelSEIR<> base("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         base.seed(404);
-        base.add_layer(std::make_unique< layer::Network<> >(
+        base.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.05, false, base)
         ));
         auto baseline = edges_of(base);
 
         epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         model.seed(404);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.05, false, model)
         ));
 
@@ -112,7 +112,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
         //     day is where it has to happen.
         epimodels::ModelSEIR<> never_lifts("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         never_lifts.seed(404);
-        never_lifts.add_layer(std::make_unique< layer::Network<> >(
+        never_lifts.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.05, false, never_lifts)
         ));
 
@@ -145,7 +145,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
         // (f) restore_network() cleans up a hand-driven loop that stopped early.
         epimodels::ModelSEIR<> partial("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         partial.seed(404);
-        partial.add_layer(std::make_unique< layer::Network<> >(
+        partial.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.05, false, partial)
         ));
 
@@ -197,7 +197,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties are withdrawn", "[bubbles]") {
 
             epimodels::ModelSEIR<> model("flu", n, 0.05, 0.15, 4.5, 1.0/8.0);
             model.seed(8181);
-            model.add_layer(std::make_unique< layer::Network<> >(
+            model.add_layer(layer::network(
                 "network", rgraph_smallworld(n, 6, 0.05, false, model)
             ));
             model.set_transmission_mode(mode);

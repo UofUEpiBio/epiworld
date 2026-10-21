@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
         "virus", 1000, 0.05, 0.7, 0.15  // Parameters tuned for observable spread
     );
 
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(1000, 8, 0.02, false, model)
     ));
     model.verbose_off();

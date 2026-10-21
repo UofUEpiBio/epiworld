@@ -72,7 +72,7 @@ EPIWORLD_TEST_CASE("Agents in state - the index follows the model", "[agents-in-
 
         epimodels::ModelSEIR<> model("flu", 1000, 0.02, 0.3, 3.0, 0.2);
         model.seed(42);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(1000, 6, 0.05, false, model)
         ));
         model.verbose_off();

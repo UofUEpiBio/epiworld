@@ -12,7 +12,7 @@ std::vector< size_t > deliveries(int nthreads, size_t nsims)
 {
 
     epimodels::ModelSEIR<> model("Virus", 1000, 0.02, 0.5, 3.0, 0.2);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(1000, 6, 0.1, false, model)
     ));
     model.verbose_off();
@@ -39,7 +39,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
 
     // A clone keeps the callback; removing it there leaves the original alone
     epimodels::ModelSEIR<> model("Virus", 500, 0.02, 0.5, 3.0, 0.2);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(500, 6, 0.1, false, model)
     ));
     model.verbose_off();
@@ -76,7 +76,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
     {
 
         epimodels::ModelSEIR<> base("Virus", 500, 0.05, 0.5, 3.0, 0.2);
-        base.add_layer(std::make_unique< layer::Network<> >(
+        base.add_layer(layer::network(
             "network", rgraph_smallworld(500, 6, 0.1, false, base)
         ));
         base.verbose_off();
@@ -99,7 +99,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
 
         // Assigned from a model with a different population
         epimodels::ModelSEIR<> other("Virus", 100, 0.05, 0.5, 3.0, 0.2);
-        other.add_layer(std::make_unique< layer::Network<> >(
+        other.add_layer(layer::network(
             "network", rgraph_smallworld(100, 4, 0.1, false, other)
         ));
         other.verbose_off();

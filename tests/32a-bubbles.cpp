@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
 
     epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
     model.seed(11);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(n, 6, 0.05, false, model)
     ));
 

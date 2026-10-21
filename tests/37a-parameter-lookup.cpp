@@ -61,10 +61,10 @@ EPIWORLD_TEST_CASE("Parameter lookup by name", "[parameters]") {
     model_b.set_param(long_view, 0.1);
     model_b.set_param("Recovery rate", 0.25);
 
-    model_a.add_layer(std::make_unique< layer::Network<> >(
+    model_a.add_layer(layer::network(
         "network", rgraph_smallworld(2000, 6, 0.1, false, model_a)
     ));
-    model_b.add_layer(std::make_unique< layer::Network<> >(
+    model_b.add_layer(layer::network(
         "network", rgraph_smallworld(2000, 6, 0.1, false, model_b)
     ));
     model_a.verbose_off();

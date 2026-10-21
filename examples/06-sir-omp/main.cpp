@@ -24,7 +24,7 @@ int main() {
 
     // Adding a bernoulli graph as step 0
     printf("Generating random graph... ");fflush(stdout);
-    Models[0u].add_layer(std::make_unique< layer::Network<> >(
+    Models[0u].add_layer(layer::network(
         "network", rgraph_smallworld(n_agents, 5, .01, false, Models[0u])
     ));
 

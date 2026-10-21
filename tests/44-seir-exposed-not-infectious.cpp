@@ -24,7 +24,7 @@ EPIWORLD_TEST_CASE("Exposed agents do not transmit", "[seir-exposed]") {
                     "virus", n, 0.01, 1.0, 1e9, 0.1
                 );
 
-            model->add_layer(std::make_unique< layer::Network<> >(
+            model->add_layer(layer::network(
                 "network", rgraph_smallworld(n, 10, 0.1, false, *model)
             ));
             model->set_transmission_mode(mode);

@@ -70,7 +70,7 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
 
         epimodels::ModelSIR<> model("a virus", static_cast< int >(n), 0.1, 0.5, 0.3);
         model.verbose_off();
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", AdjList(source, target, static_cast< int >(n), directed)
         ));
 
@@ -161,7 +161,7 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
     for (bool directed : {false, true})
     {
         Model<> model(nbig);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", AdjList(bs, bt, nbig, directed)
         ));
         auto rows = expected_rows(bs, bt, nbig, directed);
@@ -192,13 +192,13 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
 
     Model<> model(3);
     model.add_state("Susceptible");
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", AdjList({0, 1}, {1, 2}, 3, false)
     ));
 
     Model<> wrong_size(4);
     wrong_size.add_state("Susceptible");
-    wrong_size.add_layer(std::make_unique< layer::Network<> >(
+    wrong_size.add_layer(layer::network(
         "network", AdjList({0, 1}, {1, 2}, 3, false)
     ));
     wrong_size.verbose_off();
@@ -209,7 +209,7 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
 
     // An empty list gives isolates.
     Model<> empty(4);
-    empty.add_layer(std::make_unique< layer::Network<> >(
+    empty.add_layer(layer::network(
         "network", AdjList(std::vector< int >{}, std::vector< int >{}, 4, false)
     ));
     REQUIRE(tests_net(empty).size() == 4u);

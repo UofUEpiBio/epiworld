@@ -16,7 +16,7 @@ int main() {
     );
 
     // Adding a bernoulli graph as step 0
-    sir.add_layer(std::make_unique< layer::Network<> >(
+    sir.add_layer(layer::network(
         "network", rgraph_smallworld(pop_size, 5, .01, false, sir)
     ));
 

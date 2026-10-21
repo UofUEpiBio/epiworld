@@ -59,10 +59,10 @@ EPIWORLD_TEST_CASE("SBM column-major", "[sbm-colmajor]") {
         {
             model.seed(rep + 1u);
             // The model only provides the random numbers
-            layer::Network<> net("network", rgraph_sbm(block_sizes, matrix, row_major, model));
+            auto net = layer::network("network", rgraph_sbm(block_sizes, matrix, row_major, model));
 
             std::vector< int > source, target;
-            net.get_edgelist(source, target);
+            net->get_edgelist(source, target);
 
             std::vector< int > degree(n, 0);
             for (size_t e = 0u; e < source.size(); ++e)

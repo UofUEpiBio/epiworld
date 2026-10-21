@@ -13,7 +13,7 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
 
     epimodels::ModelSIR<> model("a virus", 2000, 0.01, 0.9, 0.25);
     model.seed(2231);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(2000, 6, 0.1, false, model)
     ));
     model.verbose_off();
@@ -86,7 +86,7 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     // The same run with the change made by name gives the same history
     epimodels::ModelSIR<> model_name("a virus", 2000, 0.01, 0.1, 0.3);
     model_name.seed(2231);
-    model_name.add_layer(std::make_unique< layer::Network<> >(
+    model_name.add_layer(layer::network(
         "network", rgraph_smallworld(2000, 6, 0.1, false, model_name)
     ));
     model_name.verbose_off();

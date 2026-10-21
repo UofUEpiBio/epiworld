@@ -49,8 +49,8 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
     epimodels::ModelSIR<> draw("flu", n, 0.0, 0.0, 0.0);
     draw.seed(46);
     std::vector< int > source, target;
-    layer::Network<>("all", rgraph_smallworld(n, 6, 0.1, false, draw))
-        .get_edgelist(source, target);
+    layer::network("all", rgraph_smallworld(n, 6, 0.1, false, draw))
+        ->get_edgelist(source, target);
 
     auto make = [&](size_t n_layers) {
 
@@ -67,10 +67,10 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
             t[l].push_back(target[k]);
         }
 
-        model->add_layer(std::make_unique< layer::Network<> >(
+        model->add_layer(layer::network(
             "a", AdjList(s[0], t[0], static_cast< int >(n), false)
         ));
-        model->add_layer(std::make_unique< layer::Network<> >(
+        model->add_layer(layer::network(
             "b", AdjList(s[1], t[1], static_cast< int >(n), false)
         ));
 
@@ -83,7 +83,7 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
     {
         epimodels::ModelSIR<> single("flu", n, 0.01, 0.1, 0.2);
         single.verbose_off();
-        single.add_layer(std::make_unique< layer::Network<> >(
+        single.add_layer(layer::network(
             "a", AdjList(source, target, static_cast< int >(n), false)
         ));
         single.set_transmission_mode(mode);

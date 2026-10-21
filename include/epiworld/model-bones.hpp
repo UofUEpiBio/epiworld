@@ -202,7 +202,7 @@ protected:
     std::vector<GlobalEventPtr<TSeq>> globalevents;
 
     /// Contact layers (see `add_layer()`), deep-copied with the model
-    std::vector< std::unique_ptr< ContactLayer<TSeq> > > layers;
+    std::vector< std::shared_ptr< ContactLayer<TSeq> > > layers;
 
     /**
      * @name Network layers
@@ -216,7 +216,8 @@ protected:
     std::vector< layer::Network<TSeq> * > network_layers;
     std::vector< size_t > network_contacts; ///< Scratch of `sample_virus()`
     void layers_attach(); ///< Points the layers at this model, lists the networks
-    void add_layer_ptr(std::unique_ptr< ContactLayer<TSeq> > layer);
+    void layers_detach(); ///< Leaves the layers without a model (they may outlive it)
+    void add_layer_ptr(std::shared_ptr< ContactLayer<TSeq> > layer);
     size_t network_degree(size_t id) const; ///< Ties of agent `id`, all networks
     bool has_directed_network() const;
 
@@ -403,7 +404,7 @@ public:
     Model(Model<TSeq> && m);
     Model<TSeq> & operator=(const Model<TSeq> & m);
 
-    virtual ~Model() {};
+    virtual ~Model() { layers_detach(); };
 
     DataBase<TSeq> & get_db();
     const DataBase<TSeq> & get_db() const;
@@ -945,17 +946,18 @@ public:
 
     /**
      * @brief Adds a contact layer to the model.
-     * @details The model owns the layer, resets it at the start of `reset()`,
-     * updates it at the end of every step (see `ContactLayer`), and copies it
-     * with the model. Layers are added between runs only (a layer that should
-     * act only part of the time is added up front and edited, e.g., by a
-     * global event).
-     * @param layer The layer. Its name must not be in use by another layer.
-     * @return A reference to the layer, as its own type, valid while the
-     * model lives.
+     * @details The model shares the layer with the caller (an edit through
+     * `layer` is an edit of the model's layer), resets it at the start of
+     * `reset()`, updates it at the end of every step, and clones it when the
+     * model is copied (see `ContactLayer`). Layers are added between runs only
+     * (a layer that should act only part of the time is added up front and
+     * edited, e.g., by a global event).
+     * @param layer The layer (e.g., from `layer::network()`). Its name must not
+     * be in use by another layer, and it must not belong to another model.
+     * @return A reference to the layer, as its own type.
      */
     template<typename TLayer>
-    TLayer & add_layer(std::unique_ptr< TLayer > layer)
+    TLayer & add_layer(std::shared_ptr< TLayer > layer)
     {
         TLayer * ptr = layer.get();
         add_layer_ptr(std::move(layer));

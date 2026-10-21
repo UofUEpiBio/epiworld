@@ -785,6 +785,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     for (const auto & ge : m.globalevents)
         globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
 
+    layers_detach();
     layers.clear();
     layers.reserve(m.layers.size());
     for (const auto & layer : m.layers)
@@ -2409,12 +2410,18 @@ inline void Model<TSeq>::run_globalevents()
 
 template<typename TSeq>
 inline void Model<TSeq>::add_layer_ptr(
-    std::unique_ptr< ContactLayer<TSeq> > layer
+    std::shared_ptr< ContactLayer<TSeq> > layer
 )
 {
 
     if (!layer)
         throw std::invalid_argument("Cannot add a null contact layer.");
+
+    if (layer->model != nullptr)
+        throw std::logic_error(
+            "The contact layer '" + layer->get_name() + "' already belongs to "
+            "a model; a layer belongs to one model at most (add a copy)."
+        );
 
     // Layers are part of the model's setup: a run resets them all before day 0
     if (running)
@@ -2506,6 +2513,20 @@ inline void Model<TSeq>::layers_attach()
         if (auto * net = layers[i]->as_network())
             network_layers.push_back(net);
     }
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::layers_detach()
+{
+
+    for (auto & layer : layers)
+    {
+        layer->model = nullptr;
+        layer->in_run = false;
+    }
+
+    network_layers.clear();
 
 }
 

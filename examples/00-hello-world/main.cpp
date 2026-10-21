@@ -32,7 +32,7 @@ int main()
     model.add_tool(tool);
 
     // Generating a random pop
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(n_agents, 20, .01, false, model)
     ));
 

@@ -3,10 +3,28 @@
 
 namespace layer {
 
+template<typename TSeq>
+class Mixing;
+
+/**
+ * @brief A mixing layer (see `Mixing`).
+ * @param name Name of the layer (unique in a model).
+ * @param infectious States whose agents can be sampled as contacts.
+ * @param available States whose agents take part in the mixing.
+ * @ingroup contact_layers
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+std::shared_ptr< Mixing<TSeq> > mixing(
+    std::string name,
+    std::vector< int > infectious,
+    std::vector< int > available
+);
+
 /**
  * @brief Contact layer with mixing (a contact matrix across groups).
  *
- * @details The layer is configured with two lists of states: the
+ * @details Created with `layer::mixing()`. The layer is configured with two
+ * lists of states: the
  * *infectious* states (whose agents can be contacted and transmit) and the
  * *available* states (agents that take part in the mixing, which is what the
  * contact rate is spread over).
@@ -83,13 +101,9 @@ private:
 
     void rebuild_layout();
 
-public:
+protected:
 
-    /**
-     * @param name Name of the layer (unique in a model).
-     * @param infectious States whose agents can be sampled as contacts.
-     * @param available States whose agents take part in the mixing.
-     */
+    // Created with layer::mixing()
     Mixing(
         std::string name,
         std::vector< int > infectious,
@@ -97,6 +111,13 @@ public:
     ) : ContactLayer<TSeq>(std::move(name)),
         infectious_states(std::move(infectious)),
         available_states(std::move(available)) {}
+
+    template<typename T>
+    friend std::shared_ptr< Mixing<T> > mixing(
+        std::string, std::vector< int >, std::vector< int >
+    );
+
+public:
 
     /**
      * @brief Sets the grouping of the layer (between runs only).
@@ -148,9 +169,9 @@ public:
      */
     void update(Model<TSeq> & model) override;
 
-    std::unique_ptr< ContactLayer<TSeq> > clone() const override
+    std::shared_ptr< ContactLayer<TSeq> > clone() const override
     {
-        return std::make_unique< Mixing<TSeq> >(*this);
+        return std::make_shared< Mixing<TSeq> >(*this);
     }
 
     /**
@@ -167,6 +188,18 @@ public:
     size_t get_n_infectious(size_t group) const { return counts[group]; }
 
 };
+
+template<typename TSeq>
+inline std::shared_ptr< Mixing<TSeq> > mixing(
+    std::string name,
+    std::vector< int > infectious,
+    std::vector< int > available
+)
+{
+    return std::shared_ptr< Mixing<TSeq> >(new Mixing<TSeq>(
+        std::move(name), std::move(infectious), std::move(available)
+    ));
+}
 
 template<typename TSeq>
 inline void Mixing<TSeq>::set_groups(

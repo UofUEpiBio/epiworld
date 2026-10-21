@@ -37,7 +37,7 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     model.add_tool(tool);
 
     // Generating a random pop
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(40, 5, .01, false, model)
     ));
 

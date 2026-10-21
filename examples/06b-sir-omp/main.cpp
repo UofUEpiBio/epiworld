@@ -24,7 +24,7 @@ int main(int argc, char * argv[]) {
         0.3        // Recovery rate
     );
 
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(n_agents, 4, .01, false, model)
     ));
 

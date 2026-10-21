@@ -47,7 +47,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
 
             epimodels::ModelSEIR<> model("flu", n, 0.0, 0.1, 4.5, 1.0/8.0);
             model.seed(4700);
-            model.add_layer(std::make_unique< layer::Network<> >(
+            model.add_layer(layer::network(
                 "network", rgraph_smallworld(n, 6, 0.05, false, model)
             ));
 
@@ -134,7 +134,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
             model.seed(31);
             std::vector< int > source = {0, 1};
             std::vector< int > target = {1, 2};
-            model.add_layer(std::make_unique< layer::Network<> >(
+            model.add_layer(layer::network(
                 "network", AdjList(source, target, 3, false)
             ));
 
@@ -199,7 +199,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
         model.seed(77);
         std::vector< int > source = {0, 1};
         std::vector< int > target = {1, 2};
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", AdjList(source, target, 3, false)
         ));
 
@@ -276,7 +276,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
             model.seed(20);
             std::vector< int > source = {0, 1, 3, 4, 2};
             std::vector< int > target = {1, 2, 4, 5, 3};
-            model.add_layer(std::make_unique< layer::Network<> >(
+            model.add_layer(layer::network(
                 "network", AdjList(source, target, 6, directed)
             ));
 
@@ -353,7 +353,7 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
 
             epimodels::ModelSEIR<> model("flu", static_cast<int>(n), 0.0, 0.1, 4.5, 1.0/8.0);
             model.seed(5);
-            model.add_layer(std::make_unique< layer::Network<> >(
+            model.add_layer(layer::network(
                 "network", AdjList(source, target, static_cast<int>(n), false)
             ));
 

@@ -4,14 +4,38 @@
 namespace layer {
 
 /**
+ * @brief A fixed network layer (see `Network`).
+ * @param name Name of the layer (unique in a model).
+ * @param graph The ties; its number of vertices must match the model's
+ * population. Directed if the graph is.
+ * @ingroup contact_layers
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+std::shared_ptr< Network<TSeq> > network(std::string name, const AdjList & graph);
+
+/**
+ * @brief A network layer drawn at every reset (see `Network`).
+ * @param name Name of the layer (unique in a model).
+ * @param generator Called with the model at every reset; the graph it returns
+ * must have one vertex per agent.
+ * @ingroup contact_layers
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+std::shared_ptr< Network<TSeq> > network(
+    std::string name,
+    typename Network<TSeq>::Generator generator
+);
+
+/**
  * @brief Contact layer with explicit ties (a network).
  *
  * @details The contacts of an agent in this layer are its ties. A network
- * layer is built either from a graph, which is then *fixed*, or from a
- * *generator*, a function that receives the model and returns a graph, which
- * the layer calls at every reset: each run (and each replicate of
- * `run_multiple()`) then gets its own draw, from its own seed. The `graph::`
- * functions return generators; any function `AdjList(Model<TSeq> &)` is one.
+ * layer is created with `layer::network()`, either from a graph, which is then
+ * *fixed*, or from a *generator*, a function that receives the model and
+ * returns a graph, which the layer calls at every reset: each run (and each
+ * replicate of `run_multiple()`) then gets its own draw, from its own seed.
+ * The `graph::` functions return generators; any function
+ * `AdjList(Model<TSeq> &)` is one.
  *
  * ### Ties and their order
  *
@@ -81,23 +105,21 @@ private:
     void check_endpoints(size_t i, size_t j) const;
     void edit();
 
-public:
+protected:
 
-    /**
-     * @brief A fixed network.
-     * @param name Name of the layer (unique in a model).
-     * @param graph The ties; its number of vertices must match the model's
-     * population. Directed if the graph is.
-     */
+    // Created with layer::network()
     Network(std::string name, const AdjList & graph);
-
-    /**
-     * @brief A network drawn at every reset.
-     * @param name Name of the layer (unique in a model).
-     * @param generator Called with the model at every reset; the graph it
-     * returns must have one vertex per agent.
-     */
     Network(std::string name, Generator generator);
+
+    template<typename T>
+    friend std::shared_ptr< Network<T> > network(std::string, const AdjList &);
+
+    template<typename T>
+    friend std::shared_ptr< Network<T> > network(
+        std::string, typename Network<T>::Generator
+    );
+
+public:
 
     size_t size() const { return ties.size(); } ///< Number of agents
     bool is_directed() const { return directed; }
@@ -176,12 +198,34 @@ public:
 
     layer::Network<TSeq> * as_network() override { return this; }
 
-    std::unique_ptr< ContactLayer<TSeq> > clone() const override
+    std::shared_ptr< ContactLayer<TSeq> > clone() const override
     {
-        return std::make_unique< Network<TSeq> >(*this);
+        return std::make_shared< Network<TSeq> >(*this);
     }
 
 };
+
+template<typename TSeq>
+inline std::shared_ptr< Network<TSeq> > network(
+    std::string name,
+    const AdjList & graph
+)
+{
+    return std::shared_ptr< Network<TSeq> >(
+        new Network<TSeq>(std::move(name), graph)
+    );
+}
+
+template<typename TSeq>
+inline std::shared_ptr< Network<TSeq> > network(
+    std::string name,
+    typename Network<TSeq>::Generator generator
+)
+{
+    return std::shared_ptr< Network<TSeq> >(
+        new Network<TSeq>(std::move(name), std::move(generator))
+    );
+}
 
 template<typename TSeq>
 inline Network<TSeq>::Network(std::string name, const AdjList & graph) :

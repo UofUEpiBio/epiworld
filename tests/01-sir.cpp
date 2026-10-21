@@ -11,7 +11,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     model_0.seed(1231);
 
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.02, false, model_0)
     ));
 
@@ -25,7 +25,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     model_1.seed(1231);
 
-    model_1.add_layer(std::make_unique< layer::Network<> >(
+    model_1.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.02, false, model_1)
     ));
 
@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     model_2.seed(1231);
 
-    model_2.add_layer(std::make_unique< layer::Network<> >(
+    model_2.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.02, false, model_2)
     ));
 

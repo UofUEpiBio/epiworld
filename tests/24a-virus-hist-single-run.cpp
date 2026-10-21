@@ -17,7 +17,7 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
     );
 
     model.seed(1231);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(100, 4, 0.01, false, model)
     ));
     model.verbose_off();

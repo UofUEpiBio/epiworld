@@ -14,7 +14,7 @@ int main() {
     );
 
     // Adding a bernoulli graph as step 0
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(n_agents, 5, .001, false, model)
     ));
 

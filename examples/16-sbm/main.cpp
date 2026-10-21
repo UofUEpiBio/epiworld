@@ -33,7 +33,7 @@ int main() {
         1.0, 1.5, 7.5
     };
 
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_sbm(block_sizes, mixing_matrix, true, model)
     ));
 

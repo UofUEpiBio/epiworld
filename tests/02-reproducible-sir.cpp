@@ -44,7 +44,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
     
     model_0.seed(112);
 
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_0)
     ));
     
@@ -58,7 +58,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
 
     model_1.seed(112);
 
-    model_1.add_layer(std::make_unique< layer::Network<> >(
+    model_1.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_1)
     ));
 

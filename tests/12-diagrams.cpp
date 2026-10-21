@@ -11,7 +11,7 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
 
     model_0.seed(1231);
 
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(1000, 5, 0.01, false, model_0)
     ));
 

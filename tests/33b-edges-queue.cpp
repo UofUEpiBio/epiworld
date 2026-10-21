@@ -43,7 +43,7 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
 
         epimodels::ModelSIR<> model("a virus", n, 0.02, 0.9, 0.3);
         model.seed(3131);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.02, false, model)
         ));
 
@@ -76,7 +76,7 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
 
         epimodels::ModelSIR<> model("a virus", n, 0.02, 0.9, 0.3);
         model.seed(717);
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.02, false, model)
         ));
 

@@ -7,7 +7,7 @@ EPIWORLD_TEST_CASE("SIS and SISD", "[SISD-multiple]") {
     // Queuing doesn't matter and get results that are meaningful
     epimodels::ModelSIS<> model_0("SIS", 2000, 0.1, 0.3, 0.3);
 
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(2000, 5, 0.01, false, model_0)
     ));
     

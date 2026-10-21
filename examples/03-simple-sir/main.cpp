@@ -25,7 +25,7 @@ int main()
   model.add_tool(vax);
 
   // Generating a random pop
-  model.add_layer(std::make_unique< epiworld::layer::Network<> >(
+  model.add_layer(epiworld::layer::network(
       "network", epiworld::rgraph_smallworld(1000, 5, 0.01, false, model)
   ));
 

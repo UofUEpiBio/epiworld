@@ -532,7 +532,7 @@ inline void tests_heterogeneous_network(epiworld::Model<> & model, size_t n)
             target.push_back(stubs[k + 1u]);
         }
 
-    model.add_layer(std::make_unique< epiworld::layer::Network<> >(
+    model.add_layer(epiworld::layer::network(
         "network", epiworld::AdjList(source, target, static_cast< int >(n), false)
     ));
 

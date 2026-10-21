@@ -31,7 +31,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
     {
         epimodels::ModelSIR<> model("flu", n, 0.02, 0.2, 0.2);
         model.verbose_off();
-        auto & net = model.add_layer(std::make_unique< layer::Network<> >(
+        auto & net = model.add_layer(layer::network(
             "contacts", graph::smallworld(4, 0.2)
         ));
 
@@ -74,7 +74,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
     {
         epimodels::ModelSIR<> model("flu", n, 0.02, 0.2, 0.2);
         model.verbose_off();
-        auto & net = model.add_layer(std::make_unique< layer::Network<> >(
+        auto & net = model.add_layer(layer::network(
             "contacts", rgraph_smallworld(n, 4, 0.0, false, model)
         ));
         const auto baseline = ties(model, "contacts");
@@ -113,7 +113,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
         // A graph of the wrong size is refused when the model runs
         epimodels::ModelSIR<> wrong("flu", n + 1u, 0.02, 0.2, 0.2);
         wrong.verbose_off();
-        wrong.add_layer(std::make_unique< layer::Network<> >(
+        wrong.add_layer(layer::network(
             "contacts", rgraph_smallworld(n, 4, 0.0, false, wrong)
         ));
         REQUIRE_THROWS_AS(wrong.run(5, 1), std::length_error);

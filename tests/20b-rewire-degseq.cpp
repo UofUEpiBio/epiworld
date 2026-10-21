@@ -16,7 +16,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
     );
     
     baseline_model.seed(1231);
-    baseline_model.add_layer(std::make_unique< layer::Network<> >(
+    baseline_model.add_layer(layer::network(
         "network", rgraph_smallworld(n_agents, k, 0.0, false, baseline_model)
     )); // p=0: pure ring lattice
     baseline_model.verbose_off();
@@ -58,7 +58,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
         );
         
         rewired_model.seed(1231 + iter); // Different seed each iteration
-        rewired_model.add_layer(std::make_unique< layer::Network<> >(
+        rewired_model.add_layer(layer::network(
             "network", rgraph_smallworld(n_agents, k, p, false, rewired_model)
         ));
         rewired_model.verbose_off();

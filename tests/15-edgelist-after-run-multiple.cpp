@@ -10,7 +10,7 @@ EPIWORLD_TEST_CASE("Edgelist is preserved in run multiple", "[Edgelist]") {
         );
 
     model_0.seed(1231);
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(500, 5, 0.01, false, model_0)
     ));
     model_0.verbose_off();

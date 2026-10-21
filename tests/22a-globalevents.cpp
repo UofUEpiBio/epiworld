@@ -24,7 +24,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
     );
 
     model.seed(123);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_smallworld(1000, 5, 0.01, false, model)
     ));
     model.verbose_off();

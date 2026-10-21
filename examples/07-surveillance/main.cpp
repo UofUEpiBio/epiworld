@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
     );
 
     // Adding a bernoulli graph as step 0
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", epiworld::rgraph_smallworld(popsize, 5, .01, false, model)
     ));
 

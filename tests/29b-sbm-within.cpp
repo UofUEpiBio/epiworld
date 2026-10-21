@@ -25,7 +25,7 @@ EPIWORLD_TEST_CASE("SBM within-group only", "[sbm-within]") {
     );
     model.verbose_off();
     model.seed(12345);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", rgraph_sbm(block_sizes, mixing_matrix, true, model)
     ));
 

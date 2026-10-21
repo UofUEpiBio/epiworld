@@ -36,7 +36,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
 
         epimodels::ModelSIR<> model("v", 2000, 0.01, 0.3, 0.2);
         model.verbose_off();
-        model.add_layer(std::make_unique< layer::Network<> >(
+        model.add_layer(layer::network(
             "network", rgraph_smallworld(2000, 6, 0.05, false, model)
         ));
         model.add_param(0.1, "Rewiring proportion");

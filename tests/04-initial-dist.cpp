@@ -9,7 +9,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "a virus", 10000, 0.01, .9, .3
         );
 
-    model_0.add_layer(std::make_unique< layer::Network<> >(
+    model_0.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_0)
     ));
 
@@ -21,7 +21,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "a virus", 10000, 0.01, .9, .3
         );
 
-    model_1.add_layer(std::make_unique< layer::Network<> >(
+    model_1.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_1)
     ));
 
@@ -70,7 +70,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     
-    model_2.add_layer(std::make_unique< layer::Network<> >(
+    model_2.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_2)
     ));
 
@@ -127,7 +127,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "a virus", 10000, 0.01, .9, .3, .1
     );
 
-    model_5.add_layer(std::make_unique< layer::Network<> >(
+    model_5.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_5)
     ));
 
@@ -152,7 +152,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "a virus", 10000, 0.1, .9, 7, .3, .1
     );
 
-    model_6.add_layer(std::make_unique< layer::Network<> >(
+    model_6.add_layer(layer::network(
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_6)
     ));
 

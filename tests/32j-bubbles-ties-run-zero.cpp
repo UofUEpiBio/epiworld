@@ -18,7 +18,7 @@ EPIWORLD_TEST_CASE("Bubbles - a zero-day run leaves the network as it found it",
     // Path 0-1-2-3-4-5 (5 ties); households {0,1,2} and {3,4,5}. One bubble of
     // both households, completed to a clique of 15 ties, in force on [0, 3).
     epimodels::ModelSIR<> model("x", 6, 0.0, 0.0, 0.0);
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "network", AdjList({0, 1, 2, 3, 4}, {1, 2, 3, 4, 5}, 6, false)
     ));
     model.verbose_off();

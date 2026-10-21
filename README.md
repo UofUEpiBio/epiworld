@@ -62,7 +62,7 @@ int main()
 
     // Contacts come from layers: here, a small-world network, drawn anew
     // for every run
-    hello.add_layer(std::make_unique< layer::Network<> >(
+    hello.add_layer(layer::network(
         "contacts", graph::smallworld(10, .01)
     ));
 
@@ -158,7 +158,7 @@ int main()
     model.add_virus(virus);
     
     // Contacts from a small-world network
-    model.add_layer(std::make_unique< layer::Network<> >(
+    model.add_layer(layer::network(
         "contacts", graph::smallworld(10, .01)
     ));
 
