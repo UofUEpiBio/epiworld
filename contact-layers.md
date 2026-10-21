@@ -195,8 +195,11 @@ turnover is high relative to contacts.
 18. **No compatibility shims.** The 1.0.0 API lives where the data lives: the
     model does not forward layer methods (no `model.set_contact_matrix()`; it
     is `model.get_layer_as<layer::Mixing<>>("mixing").set_contact_matrix()`),
-    and agents do not forward network methods (D3). The bindings are updated
-    once, in Phase 6, against the final API.
+    and agents do not forward network methods (D3). The bindings follow the
+    same rule and move with the core: each wrapper has its own `v1-layers`
+    branch, updated by one companion PR per phase (Section 6). An API the core
+    removes becomes a defunct stub in the wrappers (it errors and names the
+    replacement), never a working alias.
 19. **The population is given to the model's constructor**, and that is the only
     way to set it (`Model<> m(n)`, `ModelSIR<> m("flu", n, ...)`). Nothing
     about the population mentions networks: `agents_empty_graph()`,
@@ -609,10 +612,33 @@ in the release notes.
 All work goes on the long-lived integration branch **`v1-layers`**, one PR per
 phase into it. `master` stays releasable (0.x fixes keep landing there and are
 merged into `v1-layers` regularly). `v1-layers` merges into `master` and is
-released as 1.0.0 when Phase 6 is done. The wrappers (epiworldR, epiworldpy,
-epiworldjs) track `master`, so they are not broken by in-progress phases.
-Version bumps: none per phase on `v1-layers`; the first commit there sets the
-development version to 1.0.0.
+released as 1.0.0 when Phase 6 is done. Version bumps: none per phase on
+`v1-layers`; the first commit there sets the development version to 1.0.0.
+
+**Wrappers move with the core.** epiworldR, epiworldpy, epiworldjs and the
+measles R package each keep a `v1-layers` branch (version `1.0.0-0`; measles
+its own next minor, depending on epiworldR's branch), so a binding problem
+shows up while the C++ API can still change, not in Phase 6. Their `main`
+branches keep tracking epiworld `master`.
+
+- A first catch-up PR per wrapper brings it to Phases 1-2 (population in the
+  model constructors, layer objects, network and contact-matrix methods on the
+  layers).
+- Every phase PR into `v1-layers` gets a companion PR with the **same branch
+  name** in each wrapper it breaks. A CI job in epiworld (`downstream.yml`,
+  non-blocking) builds each wrapper (the same-named branch if it exists, else
+  its `v1-layers`) against the PR's headers and runs its tests, so a phase
+  shows what it breaks before it merges.
+- Merge order: the epiworld PR, then the companion PRs re-vendored from the
+  merged commit (the wrapper records it), then measles after epiworldR.
+  `master` -> `v1-layers` merges here are mirrored by `main` -> `v1-layers`
+  merges in the wrappers.
+- The wrappers mirror the core API and add none of their own. What the core
+  removes becomes a defunct stub (R `.Defunct()`, collected in one file and
+  one help page; Python and JS raise or throw), with one message table per
+  wrapper that also feeds the migration notes. The stubs stay through 1.x.
+- Every wrapper vendors epiworld and measles headers from the same epiworld
+  commit.
 
 Each phase ships on its own and keeps the suite green. Phases 1-2 are refactors:
 the test is that existing model-level results stay identical.
@@ -767,14 +793,22 @@ different epidemic sizes).
   and cost model (revisit `EPI_TRANSMISSION_AGENT_COST` and kappa).
 - Benchmark: push vs pull for mixing layers early in an outbreak.
 
+### Model registry (#312) -- after Phase 3
+
+- Once entities are gone, model construction is final: land the registry
+  (`make_model()` / `list_models()`) on `v1-layers`, with the measles models
+  registered too.
+- The wrappers replace their per-model bindings with the registry (one
+  generic constructor); epiworldjs drops its own `cpp/registry.hpp`.
+
 ### Phase 6 -- independent exposures, 1.0.0, bindings, docs
 
 - Switch the combination rule to independent exposures (D1) in one commit that
   updates the expected results; add the analytic P(infection) test.
 - Merge `v1-layers` into `master`; release 1.0.0.
-- epiworldR, epiworldpy, epiworldjs: `add_layer()` with the layer objects
-  holding the model's pointer (point 21), population in the model
-  constructors, network layers from generators, named-list neighbors, `layer` column in transmissions; entities removed.
+- Wrappers: the companion PR updates expected values for the new rule; then
+  each wrapper's `v1-layers` merges into its `main` and is released after
+  epiworld 1.0.0 (measles after epiworldR is on CRAN).
 - Docs: new `docs/impl/contact-layers.md`; update
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
   `transmission-sampling.md`; migration guide.
@@ -820,8 +854,13 @@ different epidemic sizes).
   phase.
 - **Integration branch drift.** `v1-layers` must merge `master` regularly, or
   the final merge is painful.
-- **Binding churn** across three language packages (Phase 6); the `layer`
-  column and moved accessors break positional readers.
+- **Binding churn** across four packages, spread over the phases by the
+  companion PRs; the `layer` column and moved accessors break positional
+  readers.
+- **Callables across the language boundary.** Generators, rewirers and
+  user-defined layers written in R, Python or JS (calls back into the
+  interpreter from inside a run, and from `run_multiple()` threads). The
+  wrappers expose only the built-in generators until a phase needs more.
 - **Membership churn.** With low `q`, many memberships change every step; the
   queue notifications and venue member lists must stay O(changes), not
   O(population).
