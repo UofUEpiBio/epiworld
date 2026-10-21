@@ -1,10 +1,13 @@
 # Contact layers: combining networks and mixing in one model
 
-**Status:** Phase 0 done; Phase 1 in review (#316). Written 2026-10-08;
-revised 2026-10-19 after the design review (layers replace the in-`Agent`
-network and entities; per-layer queues; layer weights and virus targets;
-release as 1.0.0 on `v1-layers`), and again the same day (no compatibility
-shims; model parameters are the single source of truth for scalars).
+**Status:** Phases 0 and 1 done (#315, #316); Phase 2 next. Written
+2026-10-08; revised 2026-10-19 after the design review (layers replace the
+in-`Agent` network and entities; per-layer queues; layer weights and virus
+targets; release as 1.0.0 on `v1-layers`), and again the same day (no
+compatibility shims; model parameters are the single source of truth for
+scalars). Revised 2026-10-21 before Phase 2 (models create no layers;
+population in the constructor; networks come from generators; rewiring in the
+layer).
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -103,8 +106,9 @@ turnover is high relative to contacts.
 1. **Layers are first-class objects of the model.** A layer is network-type or
    mixing-type (or affiliation-type, Section 5.1). There is **no network
    inside `Agent` and no implicit baseline network**: a model may have any
-   number of layers of any kind, or none (no transmission). Models that today
-   have "the" network create a named layer in their constructor.
+   number of layers of any kind, or none (no transmission). Models create no
+   layers: the user adds the ones the model needs, and the default susceptible
+   update draws from every layer the model has.
 2. **Each layer owns a sampler** that answers "whom did agent `i` contact this
    step?". A network layer returns the agent's ties; a mixing layer samples
    from the population and returns the same kind of list -- as if it were a
@@ -145,7 +149,10 @@ turnover is high relative to contacts.
     during a run marks the layer dirty, and `reset()` restores only dirty
     layers from their baseline; an edit between runs becomes the new baseline
     (`Model::run()` tells its layers when it runs). This also replaces copying
-    the whole agent backup (ties included) on every replicate.
+    the whole agent backup (ties included) on every replicate. Layers are never
+    closed to edits. A network layer's baseline is its generator (point 20): a
+    fixed graph is restored if dirty, and a random graph is simply redrawn, so
+    edits to it last until the next draw.
 12. **Recurrence is a first-class property of a layer.** Between a fixed network
     and fresh mixing sits the *affiliation* layer (Section 5.2): stable venue
     memberships with a persistence probability `q`.
@@ -171,12 +178,33 @@ turnover is high relative to contacts.
     not part of the layer's baseline or dirty flag). What is structure, not a
     scalar, stays in the layer: contact matrices, ties, groupings, memberships.
     A layer may still default a parameter it needs (adding it to the model when
-    absent), the way models add theirs in their constructors.
+    absent), the way models add theirs in their constructors. The line between
+    the two: what a layer reads **every step** (weight, contact rates, `q`, `k`,
+    rewiring rate) is a model parameter; what is used **once per draw** (the
+    arguments of a graph generator) is structure, like a contact matrix. A
+    generator that should follow a parameter reads it itself (it receives the
+    model).
 18. **No compatibility shims.** The 1.0.0 API lives where the data lives: the
     model does not forward layer methods (no `model.set_contact_matrix()`; it
     is `model.get_layer_as<layer::Mixing<>>("mixing").set_contact_matrix()`),
     and agents do not forward network methods (D3). The bindings are updated
     once, in Phase 6, against the final API.
+19. **The population is given to the model's constructor**, and that is the only
+    way to set it (`Model<> m(n)`, `ModelSIR<> m("flu", n, ...)`). Nothing
+    about the population mentions networks: `agents_empty_graph()`,
+    `agents_smallworld()`, `agents_from_edgelist()` and `agents_from_adjlist()`
+    are removed. A different size is a new model.
+20. **Networks come from generators.** A `layer::Network` holds a generator, a
+    function that receives the model and returns a graph (`AdjList` until a
+    flat edge list replaces it), and calls it at every reset, so every run and
+    replicate draws a new network from its own seed. Generators live outside
+    the layer (`graph::smallworld(k, p)`, wrappers of the `rgraph_*`
+    functions), so adding one is writing a function. A fixed network is a
+    generator that returns the same graph (`graph::fixed(adjlist)`), read from
+    a file or drawn once. Rewiring follows the same pattern: the layer holds a
+    rewiring function called at the end of each step (degree-preserving
+    rewiring is the first; an ERGM-style rewirer can be another), reading its
+    rate from a model parameter (point 17).
 
 ---
 
@@ -261,9 +289,9 @@ alternatives can be added later.
 With no network in `Agent`, `Agent::get_neighbors()`, `neighbors_view()`,
 `Model::add_edge()`, `rm_edge()`, `has_edge()`, `agents_from_edgelist()`,
 `agents_from_adjlist()`, `agents_smallworld()`, `rewire()`,
-`write_edgelist()` become methods of `layer::Network` (or builders that return
-one), and nothing else. No one-argument shorthand for "the only network
-layer" (point 18).
+`write_edgelist()` become methods of `layer::Network` or generators (point 20),
+and nothing else. No one-argument shorthand for "the only network layer"
+(point 18).
 
 ### D4. Mixing layers and the queue
 
@@ -429,6 +457,13 @@ Only what a phase uses is added in that phase (no `sample_reverse` before
 Phase 5, no weights before Phase 3). Virtual dispatch happens once per
 (agent, layer) per step, not per contact.
 
+**Reset order.** Layers reset right after entities are distributed and before
+viruses, tools, initial states and the global events' set-up: a redrawn
+network must exist before agents get a virus (the queue follows ties), before
+seeding that depends on the network, and before `Bubbles` sets itself up.
+`layer::Mixing` draws no random numbers at reset, so moving it there leaves its
+results unchanged.
+
 The model holds `std::vector<std::unique_ptr<ContactLayer<TSeq>>>`, with
 `add_layer()`, `get_layer(name|id)`, `get_layer_id(name)` (resolve names once,
 use ids in hot loops). `Model`'s copy constructor and `clone_ptr()` must
@@ -465,6 +500,9 @@ the step (point 13), so results do not depend on agent update order.
 - `layer::Network` keeps per-agent tie lists so edits (`add_edge`, `rm_edge`,
   `swap_neighbors`/`rewire_degseq`) and **neighbor order** (which fixes the
   random stream) are preserved in the refactor phase.
+- One way to read ties: `neighbors_view()` (the allocating `get_neighbors()`
+  goes). One way to edit them: the layer's `add_edge()`, `rm_edge()` and the
+  rewiring function, which keep the queue and degree sums in step.
 - Bindings: a named list of per-layer neighbor vectors; edgelist I/O gets a
   layer column.
 
@@ -476,6 +514,8 @@ the step (point 13), so results do not depend on agent update order.
   `rm_edge()` do today, `Queue::notify_edge_added/removed`).
 - A susceptible is sampled in a layer only if queued there (or if the layer has
   no queue, e.g. `Mixing`, until push exists, D4).
+- Phase 2 keeps today's single queue, on only when the model has exactly one
+  network layer; per-layer queues come in Phase 3.
 - Excluded agents (flag) simply produce no contacts; the queue stays
   conservative.
 
@@ -588,12 +628,17 @@ different epidemic sizes).
 
 ### Phase 2 -- `layer::Network`
 
-- Move ties out of `Agent` into `layer::Network`; per-layer `NeighborsView`;
-  network models create their layer in the constructor; D3 settled here.
-- Update the queue, `state_index_degree` / carrier-degree sums (push cost
-  model), the push loop, `add_edge`/`rm_edge`/`rewire`, directed handling,
-  `Bubbles`, `diffnet`, `sirlogit`, `surveillance`, `seirnetworkquarantine`,
-  `randgraph.hpp`, database edgelist output.
+1. Population: every model takes `n` in its constructor (point 19).
+2. Ties leave `Agent` for `layer::Network`, which holds the generator, the
+   ties and `directed` (points 20, D5).
+3. Network functions leave `Model`: `add_edge`, `rm_edge`, `has_edge`,
+   `neighbors_view`, edgelist output and rewiring are the layer's (D3).
+4. The default susceptible update pulls from every network layer through
+   `Model::sample_virus()` (with one layer, results are identical).
+5. The queue and push follow the layer, with today's counts (one network
+   layer; 5.7, 5.8). Layers reset before the distributions (5.3).
+6. Port the network models, `Bubbles` (it names the layer it edits, until
+   Phase 3), `randgraph.hpp`, and the tests.
 - The network pull goes through `Model::sample_virus()` too:
   `collect_neighbor_viruses` becomes `layer::Network::sample()` (contact ids,
   like `Mixing::sample()`), and `sampler::UpdateSusceptible`,
@@ -602,16 +647,18 @@ different epidemic sizes).
   `default_update_susceptible` is the one generic update; push recognizes only
   it). `agent-meat-virus-sampling.hpp` goes away.
 - Tests: the whole suite unchanged in results (notably `15`, `20*`, `33*`,
-  `34*`, `35*`, `36a`). Benchmark: no regression in pull or push (CPU time,
-  interleaved).
+  `34*`, `35*`, `36a`; random graphs drawn once become `graph::fixed(...)`);
+  new: a network split into two layers matches the single layer in
+  distribution; a redrawn network differs across replicates and repeats with
+  the seed. Benchmark: no regression in pull or push (CPU time, interleaved).
 - Risk: largest phase (about 200 references to `neighbors` in `include/`, 47 in
   `agent-meat.hpp`). Neighbor order must be preserved exactly.
 
 ### Phase 3 -- several layers in one model, entities removed
 
-- Layer-aware susceptible update and accumulator (5.4); layer weights; virus
-  targets per layer; layer id in transmission records, contact tracing and
-  post-sampling; `layer::Affiliation` with fixed memberships (`q = 1`, several
+- The accumulator (5.4) for every kind of layer (Phase 2 does networks);
+  layer weights; virus targets per layer; per-layer queues (5.7); layer id in
+  transmission records, contact tracing and post-sampling; `layer::Affiliation` with fixed memberships (`q = 1`, several
   memberships per agent); per-layer edgelist and membership I/O.
 - Layer-membership builders replace the entity distribution functions; remove
   entities (D6), including the entity fallback of `layer::Mixing`, the
@@ -621,8 +668,6 @@ different epidemic sizes).
 - An example model: households (`Affiliation`) + workplace (`Network`) + public
   spaces (`Mixing`).
 - Tests (end-to-end, about three files):
-  - a network split into two layers matches the single-layer network in
-    distribution (`run_multiple`, attack rate and transmission counts);
   - an `Affiliation` layer with `q = 1` matches the equivalent
     complete-graph-per-household network in distribution;
   - a combined model attributes transmissions to the expected layers (a
@@ -636,7 +681,9 @@ different epidemic sizes).
   changes notified to the layer queue.
 - Bubbles: exclusion from other layers (the bubble layer itself is Phase 3).
 - An example model: the Phase 3 model plus a transit layer (morning and evening
-  trips, route pools, `q < 1`, weekdays only).
+  trips, route pools, `q < 1`, weekdays only). Another: an ERGM-style rewirer
+  (tie dissolution plus Metropolis-Hastings toggles on given coefficients;
+  estimation stays in R's `ergm`/`tergm`).
 - Tests (end-to-end):
   - deterministic -- with `p = 1`, an isolated infectious agent infects only
     household members; a closed layer records no transmission;
@@ -657,8 +704,8 @@ different epidemic sizes).
 - Switch the combination rule to independent exposures (D1) in one commit that
   updates the expected results; add the analytic P(infection) test.
 - Merge `v1-layers` into `master`; release 1.0.0.
-- epiworldR, epiworldpy, epiworldjs: `add_layer()`, layer-aware construction,
-  named-list neighbors, `layer` column in transmissions; entities removed.
+- epiworldR, epiworldpy, epiworldjs: `add_layer()`, population in the model
+  constructors, network layers from generators, named-list neighbors, `layer` column in transmissions; entities removed.
 - Docs: new `docs/impl/contact-layers.md`; update
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
   `transmission-sampling.md`; migration guide.
