@@ -1901,6 +1901,10 @@ inline void Model<TSeq>::reset() {
     for (auto & layer : layers)
         layer->reset(*this);
 
+    // A generator decides the graph's direction at its reset, so the
+    // classification waits until every layer has one.
+    layers_classify();
+
     sampled_layer = -1;
 
     // Everyone is now in the baseline state with no virus; from here on

@@ -321,6 +321,7 @@ protected:
         double odds;                // Sum of p / (1 - p) over the contacts
         unsigned int n_certain;     // Contacts with p >= 1
         Virus<TSeq> * candidate;    // Infector's virus drawn so far
+        int layer;                  // Layer of the candidate's contact
     };
 
     std::vector< char > push_pushable;       ///< [state] Uses the default susceptible sampler

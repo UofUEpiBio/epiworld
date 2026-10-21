@@ -199,4 +199,98 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         }
     }
 
+    // -- push, pull and auto agree --------------------------------------------
+    // A 10-agent star, hub seeded, certain transmission, no recovery: after one
+    // step a zero-weight layer, or one closed to the hub's virus, infects no one,
+    // and an open layer infects all nine leaves, each recording layer 0 -- in
+    // every transmission mode. With the leaves pointing at the hub (a directed
+    // graph from a generator, known only after the reset) every mode must pull
+    // and expose all nine leaves to the hub.
+    {
+        const size_t n = 10u;
+        std::vector< int > src, tgt;
+        for (size_t i = 1u; i < n; ++i)
+        {
+            src.push_back(0);
+            tgt.push_back(static_cast< int >(i));
+        }
+        AdjList star(src, tgt, static_cast< int >(n), false);
+
+        for (std::string mode : {"pull", "push", "auto"})
+        for (int scenario = 0; scenario < 3; ++scenario)
+        {
+
+            Model<> m = make_model(n);
+            Virus<> v = make_virus("flu", 1.0);
+            v.set_distribution(distribute_virus_to_set<>({0u}));
+            m.add_virus(v);
+            m.add_param(0.0, "Weight");
+            Virus<> other = make_virus("other", 1.0);
+            m.add_virus(other);
+
+            auto net = layer::network("star", star);
+            if (scenario == 0)
+                net->set_weight("Weight");
+            else if (scenario == 1)
+                net->add_virus_target(m.get_virus(1));
+            m.add_layer(net);
+
+            m.set_transmission_mode(mode);
+            m.run(1, 1);
+
+            INFO("mode " << mode << ", scenario " << scenario);
+            const size_t infected = m.get_db().get_today_total("Infected");
+
+            if (scenario < 2)
+                REQUIRE(infected == 1u);
+            else
+            {
+                REQUIRE(infected == n);
+                auto t = transmissions(m);
+                size_t through = 0u;
+                for (size_t i = 0u; i < t.date.size(); ++i)
+                    if (t.source[i] >= 0)
+                    {
+                        REQUIRE(t.layer[i] == 0);
+                        ++through;
+                    }
+                REQUIRE(through == n - 1u);
+            }
+
+        }
+
+        for (std::string mode : {"pull", "push", "auto"})
+        for (bool queuing : {true, false})
+        {
+
+            Model<> m = make_model(n);
+            Virus<> v = make_virus("flu", 1.0);
+            v.set_distribution(distribute_virus_to_set<>({0u}));
+            m.add_virus(v);
+            if (!queuing)
+                m.queuing_off();
+
+            m.add_layer(layer::network(
+                "in", [n](Model<> &) -> AdjList {
+                    std::vector< int > s, t;
+                    for (size_t i = 1u; i < n; ++i)
+                    {
+                        s.push_back(static_cast< int >(i));
+                        t.push_back(0);
+                    }
+                    return AdjList(s, t, static_cast< int >(n), true);
+                }
+            ));
+
+            m.set_transmission_mode(mode);
+            m.run(1, 1);
+
+            INFO("mode " << mode << ", queuing " << queuing);
+            REQUIRE(m.get_last_transmission_mode() == TransmissionMode::pull);
+            REQUIRE(m.get_db().get_today_total("Infected") == n);
+
+        }
+
+    }
+
 }
