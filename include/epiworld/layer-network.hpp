@@ -158,6 +158,9 @@ public:
      *
      * @details (i-j), (k-l) become (i-l), (k-j); in an undirected network the
      * other ends follow. No degree changes. Used by rewiring functions.
+     * @throws std::range_error if an id or a position is out of range.
+     * @throws std::logic_error if the network is undirected and the ties share
+     * an endpoint (`i`, `j`, `k` and `l` must be four different agents).
      */
     void swap_ties(size_t i, size_t pos_i, size_t k, size_t pos_k);
 
@@ -581,10 +584,20 @@ inline void Network<TSeq>::swap_ties(
             " ties."
         );
 
-    edit();
-
     const size_t j = ties[i][pos_i];
     const size_t l = ties[k][pos_k];
+
+    // The other ends follow in an undirected network, so ties that share an
+    // agent would write into the rows being swapped (and leave self-ties)
+    if (!directed && ((i == k) || (j == l) || (i == l) || (k == j)))
+        throw std::logic_error(
+            "Network layer '" + this->get_name() + "': swap_ties() needs four "
+            "different agents in an undirected network; the ties (" +
+            std::to_string(i) + "-" + std::to_string(j) + ") and (" +
+            std::to_string(k) + "-" + std::to_string(l) + ") share one."
+        );
+
+    edit();
 
     std::swap(ties[i][pos_i], ties[k][pos_k]);
 

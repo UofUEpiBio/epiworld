@@ -193,6 +193,52 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
     REQUIRE(tests_net(model).get_degree(hub) == hub_degree);
     REQUIRE(edges_of(model) == baseline);
 
+    // -- swapping ties -----------------------------------------------------
+    // (hub-1) and (n-3 -- n-2) become (hub -- n-2) and (n-3 -- 1); swapping
+    // back restores the lists, in order.
+    {
+        auto & net = tests_net(model);
+        auto pos = [&net](size_t a, size_t b) -> size_t {
+            for (size_t p = 0u; p < net.get_degree(a); ++p)
+                if (net.neighbors_view(a).id(p) == b)
+                    return p;
+            return net.get_degree(a);
+        };
+
+        const size_t u = n - 3u, v = n - 2u;
+        REQUIRE(net.has_edge(u, v));
+
+        net.swap_ties(hub, pos(hub, 1u), u, pos(u, v));
+        REQUIRE(net.has_edge(hub, v));
+        REQUIRE(net.has_edge(v, hub));
+        REQUIRE(net.has_edge(u, 1u));
+        REQUIRE(net.has_edge(1u, u));
+        REQUIRE_FALSE(net.has_edge(hub, 1u));
+        REQUIRE_FALSE(net.has_edge(u, v));
+        REQUIRE(net.get_degree(hub) == hub_degree);
+
+        net.swap_ties(hub, pos(hub, v), u, pos(u, 1u));
+        REQUIRE(edges_of(model) == baseline);
+
+        // Ties that share an agent are refused, and nothing is touched: the
+        // same agent twice, the same alter twice, and a tie with its own
+        // reverse (which would leave self-ties)
+        REQUIRE_THROWS_AS(
+            net.swap_ties(hub, pos(hub, 1u), hub, pos(hub, 2u)), std::logic_error
+        );
+        REQUIRE_THROWS_AS(
+            net.swap_ties(1u, pos(1u, hub), 2u, pos(2u, hub)), std::logic_error
+        );
+        REQUIRE_THROWS_AS(
+            net.swap_ties(hub, pos(hub, 1u), 1u, pos(1u, hub)), std::logic_error
+        );
+        // A path: (1-2) and (2-3) share agent 2
+        REQUIRE_THROWS_AS(
+            net.swap_ties(1u, pos(1u, 2u), 2u, pos(2u, 3u)), std::logic_error
+        );
+        REQUIRE(edges_of(model) == baseline);
+    }
+
     // -- ties removed from the middle of a list keep the rest in order -------
     // Drop three of the hub's ties, including one before the threshold and one
     // after it, and check the remaining ids are the original ones minus those.
