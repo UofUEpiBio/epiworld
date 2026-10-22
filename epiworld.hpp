@@ -11053,9 +11053,25 @@ protected:
 
 public:
 
-    std::array<epiworld_double, 1024u * 2u> array_double_tmp;
-    std::array<Virus<TSeq> *, 1024u * 2u> array_virus_tmp;
-    std::array<int, 1024u * 2u> array_layer_tmp; ///< Layer of each exposure
+    /**
+     * @name Scratch arrays for sampling exposures
+     * @details Update functions store each exposure's probability in
+     * `array_double_tmp` and its virus in `array_virus_tmp`, then draw with
+     * `roulette()`, which uses two doubles per exposure. An agent can have any
+     * number of exposures across its layers, so call `reserve_tmp()` before
+     * storing them.
+     */
+    ///@{
+    std::vector< epiworld_double > array_double_tmp =
+        std::vector< epiworld_double >(1024u * 2u);
+    std::vector< Virus<TSeq> * > array_virus_tmp =
+        std::vector< Virus<TSeq> * >(1024u);
+    std::vector< int > array_layer_tmp =
+        std::vector< int >(1024u); ///< Layer of each exposure
+
+    /// Makes room for `n` exposures in the scratch arrays.
+    void reserve_tmp(size_t n);
+    ///@}
 
     /// A model with `n` agents.
     explicit Model(size_t n);
@@ -12140,6 +12156,20 @@ inline size_t Model<TSeq>::sample_from_probs(size_t n) {
         array_double_tmp[ans + 1] += array_double_tmp[ans];
     }
     return ans;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::reserve_tmp(size_t n) {
+
+    if (n <= array_virus_tmp.size())
+        return;
+
+    // Doubling keeps the growth amortized
+    n = std::max(n, 2u * array_virus_tmp.size());
+    array_virus_tmp.resize(n);
+    array_layer_tmp.resize(n);
+    array_double_tmp.resize(2u * n);
 
 }
 
@@ -19885,6 +19915,8 @@ inline size_t Model<TSeq>::add_exposures(
     if (weighted && (weight <= 0.0))
         return n_exposures;
 
+    reserve_tmp(n_exposures + n);
+
     for (size_t k = 0u; k < n; ++k)
     {
 
@@ -19895,13 +19927,6 @@ inline size_t Model<TSeq>::add_exposures(
 
         if ((layer != nullptr) && !layer->admits(*v))
             continue;
-
-        #ifdef EPI_DEBUG
-        if (n_exposures >= array_virus_tmp.size())
-            throw std::logic_error(
-                "Trying to add an extra element to a temporal array outside of the range."
-            );
-        #endif
 
         epiworld_double p =
             (1.0 - agent->get_susceptibility_reduction(v, *this)) *
@@ -23117,16 +23142,6 @@ public:
  * from under it and never withdrawn. Both are checked when the intervention
  * sets itself up. The grouping rules read the contacts of every network layer.
  *
- * Finally, the clique has to fit the virus sampler, which weighs at most half of
- * `Model::array_double_tmp` in neighbors at once when pulling (`roulette()` uses
- * two slots per candidate). The policy answers for the ties it adds, not for the
- * network it was given: a bubble is refused if completing it would take a
- * member past that ceiling, or add to one already past it, while a member the
- * network itself put past it -- a hub -- is fine as long as its bubble adds
- * nothing to it. What binds is each member's resulting *degree*, not the size of
- * the bubble: the clique is added on top of the ties an agent already has
- * outside it.
- *
  * ## The algorithms
  *
  * Both rules start from the **household contact graph**: one node per
@@ -24078,64 +24093,6 @@ inline void Bubbles<TSeq>::build_ties(Model<TSeq> * model)
     for (size_t a = 0u; a < bubble_id.size(); ++a)
         if (bubble_id[a] >= 0)
             members[static_cast< size_t >(bubble_id[a])].push_back(a);
-
-    // What the sampler can take is a *degree*, not a bubble size: when pulling,
-    // roulette() uses two slots per candidate in the fixed scratch array, so an
-    // agent may have at most `array_double_tmp.size() / 2` infectious neighbors
-    // before it throws. Pushing has no such ceiling, but the automatic mode may
-    // pull on any day, so the check does not depend on the mode. Completing a
-    // bubble adds ties on top of the ones an agent already has outside it, so
-    // the number that matters is what each member's degree will be afterwards
-    // -- a bubble small enough to look harmless can still push a
-    // well-connected member over.
-    //
-    // The policy answers for the ties it adds, not for the network it was
-    // handed. A member the network already put past the ceiling -- a hub -- is
-    // fine as long as its bubble adds nothing to it; what is refused is a
-    // clique that takes a member past the ceiling, or adds to one already
-    // there.
-    //
-    // Checked for every member before a single tie is created, so a bubble that
-    // is too large fails without leaving the network half-rewritten.
-    size_t max_degree = model->array_double_tmp.size() / 2u;
-
-    for (auto & who : members)
-    {
-
-        if (who.size() < 2u)
-            continue;
-
-        for (size_t x : who)
-        {
-
-            // Ties to bubble-mates the agent already has are not added twice.
-            size_t already = 0u;
-            size_t degree  = 0u;
-            for (auto * net : model->get_network_layers())
-            {
-                degree += net->get_degree(x);
-                for (auto * nb : net->neighbors_view(x))
-                    if (bubble_id[static_cast< size_t >(nb->get_id())] ==
-                        bubble_id[x])
-                        ++already;
-            }
-
-            size_t projected = degree + (who.size() - 1u) - already;
-
-            if ((projected > max_degree) && (projected > degree))
-                throw std::length_error(
-                    "Bubbles: completing a bubble of " +
-                    std::to_string(who.size()) + " would give agent " +
-                    std::to_string(x) + " a degree of " +
-                    std::to_string(projected) + " (up from " +
-                    std::to_string(degree) + "), above the " +
-                    std::to_string(max_degree) + " neighbors the virus sampler "
-                    "can weigh. Reduce group_size or max_households."
-                );
-
-        }
-
-    }
 
     auto & net = tie_layer(model);
 
@@ -25772,6 +25729,7 @@ inline ModelSURV<TSeq>::ModelSURV(
                 (1.0 - neighbor->get_transmission_reduction(v, m_ref)) 
                 ; 
         
+            m->reserve_tmp(nviruses_tmp + 1u);
             m->array_double_tmp[nviruses_tmp]  = tmp_transmission;
             m->array_virus_tmp[nviruses_tmp++] = &(*v);
         }
@@ -26184,10 +26142,7 @@ inline ModelSIRCONN<TSeq>::ModelSIRCONN(
 
                 auto & v = neighbor.get_virus();
 
-                #ifdef EPI_DEBUG
-                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                #endif
+                m->reserve_tmp(static_cast< size_t >(nviruses_tmp) + 1u);
                     
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
@@ -26554,10 +26509,7 @@ inline ModelSEIRCONN<TSeq>::ModelSEIRCONN(
                 // The neighbor is infected by construction
                 auto & v = neighbor.get_virus();
 
-                #ifdef EPI_DEBUG
-                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                #endif
+                m->reserve_tmp(static_cast< size_t >(nviruses_tmp) + 1u);
                     
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
@@ -27335,10 +27287,7 @@ inline ModelSIRDCONN<TSeq>::ModelSIRDCONN(
 
                     auto & v = neighbor.get_virus();
                     
-                    #ifdef EPI_DEBUG
-                    if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                        throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                    #endif
+                    m->reserve_tmp(static_cast< size_t >(nviruses_tmp) + 1u);
                         
                     /* And it is a function of susceptibility_reduction as well */ 
                     m->array_double_tmp[nviruses_tmp] =
@@ -27661,10 +27610,7 @@ inline ModelSEIRDCONN<TSeq>::ModelSEIRDCONN(
                 // All neighbors in this set are infected by construction
                 auto & v = neighbor.get_virus();
             
-                #ifdef EPI_DEBUG
-                if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                #endif
+                m->reserve_tmp(static_cast< size_t >(nviruses_tmp) + 1u);
                     
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
@@ -28056,10 +28002,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
                 auto & v = neighbor->get_virus();
 
-                #ifdef EPI_DEBUG
-                if (nviruses_tmp >= m->array_virus_tmp.size())
-                    throw std::logic_error("Trying to add an extra element to a temporal array outside of the range.");
-                #endif
+                m->reserve_tmp(nviruses_tmp + 1u);
                     
                 /* And it is a function of susceptibility_reduction as well */ 
                 m->array_double_tmp[nviruses_tmp] =
@@ -29847,12 +29790,7 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_susceptible(
         if (record)
             m->register_sampled_contact(neighbor->get_id(), p->get_id());
 
-        #ifdef EPI_DEBUG
-        if (nviruses_tmp >= static_cast<int>(m->array_virus_tmp.size()))
-            throw std::logic_error(
-                "Trying to add an extra element to a temporal array outside of the range."
-            );
-        #endif
+        m->reserve_tmp(static_cast< size_t >(nviruses_tmp) + 1u);
 
         m->array_double_tmp[nviruses_tmp] =
             (1.0 - p->get_susceptibility_reduction(v, *m)) *

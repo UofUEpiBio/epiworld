@@ -123,6 +123,7 @@ $(NAME)_SOURCES := \
 	46a-layer-network-several.cpp \
 	46b-layer-network-reset.cpp \
 	46c-layer-ownership.cpp \
+	46d-layer-network-many-exposures.cpp \
 	47a-layer-weights-targets.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
