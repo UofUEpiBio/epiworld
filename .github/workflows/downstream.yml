@@ -1,0 +1,146 @@
+# Builds and tests every wrapper against the headers of a PR into v1-layers
+# (contact-layers.md, Section 6, step 1): epiworldR, epiworldpy, epiworldjs
+# and the measles package, each at its own v1-layers branch, with its vendored
+# epiworld (and measles) headers replaced by this PR's. No wrapper code is
+# changed. Non-blocking: it reports which wrappers a phase breaks, so their
+# bindings can shape the C++ API before it merges; the ports come after.
+name: Downstream wrappers
+
+on:
+  pull_request:
+    branches: [v1-layers]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+
+  epiworldR:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: epiworld
+      - uses: actions/checkout@v6
+        with:
+          repository: UofUEpiBio/epiworldR
+          ref: v1-layers
+          path: epiworldR
+      - name: Use this PR's headers
+        run: rsync -a --delete epiworld/include/epiworld/ epiworldR/inst/include/epiworld/
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: epiworldR
+          extra-packages: any::rcmdcheck
+          needs: check
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: epiworldR
+          build_args: 'c("--no-build-vignettes")'
+          args: 'c("--no-manual", "--ignore-vignettes")'
+          upload-snapshots: false
+          upload-results: false
+          error-on: '"error"'
+
+  measles:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: epiworld
+      - uses: actions/checkout@v6
+        with:
+          repository: UofUEpiBio/epiworldR
+          ref: v1-layers
+          path: epiworldR
+      - uses: actions/checkout@v6
+        with:
+          repository: UofUEpiBio/measles
+          ref: v1-layers
+          path: measles
+      - name: Use this PR's headers
+        run: |
+          rsync -a --delete epiworld/include/epiworld/ epiworldR/inst/include/epiworld/
+          rsync -a --delete epiworld/include/measles/ measles/inst/include/measles/
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: measles
+          extra-packages: any::rcmdcheck
+          needs: check
+      # After the dependencies, which install epiworldR's v1-layers as is
+      - name: Install epiworldR with this PR's headers
+        run: R CMD INSTALL epiworldR
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: measles
+          build_args: 'c("--no-build-vignettes")'
+          args: 'c("--no-manual", "--ignore-vignettes")'
+          upload-snapshots: false
+          upload-results: false
+          error-on: '"error"'
+
+  epiworldpy:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: epiworld
+      - uses: actions/checkout@v6
+        with:
+          repository: UofUEpiBio/epiworldpy
+          ref: v1-layers
+          path: epiworldpy
+      - name: Use this PR's headers
+        run: rsync -a --delete epiworld/include/epiworld/ epiworldpy/epiworldpy/include/epiworld/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build and install
+        working-directory: epiworldpy
+        run: pip install ".[test]"
+      # From tests/, so that `import epiworldpy` is the installed package
+      - name: Test
+        working-directory: epiworldpy/tests
+        run: pytest
+
+  epiworldjs:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    container: emscripten/emsdk:3.1.74
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: epiworld
+      - uses: actions/checkout@v6
+        with:
+          repository: UofUEpiBio/epiworldjs
+          ref: v1-layers
+          path: epiworldjs
+      # Same packages as epiworldjs's .devcontainer/Dockerfile
+      - run: |
+          apt-get update
+          apt-get install -y --no-install-recommends clang libc++-dev libc++abi-dev rsync
+      - name: Use this PR's headers
+        run: |
+          rsync -a --delete --exclude LICENSE.md epiworld/include/epiworld/ epiworldjs/vendor/epiworld/
+          rsync -a --delete --exclude LICENSE.md epiworld/include/measles/ epiworldjs/vendor/measles/
+      - name: Build and test (native, WASM, golden)
+        working-directory: epiworldjs
+        run: |
+          make check-version test-native wasm build/golden-native.txt build/golden.cjs
+          node --test test/*.test.js
+          node build/golden.cjs > build/golden-wasm.txt
+          cmp build/golden-native.txt build/golden-wasm.txt
