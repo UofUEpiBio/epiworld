@@ -972,8 +972,10 @@ git -C <epiworld checkout> log --oneline origin/v1-layers -10
 # The epiworld commit each wrapper vendors, on its v1-layers branch
 for f in epiworldR:inst/include/VERSIONS epiworldpy:epiworldpy/include/VERSIONS \
          epiworldjs:vendor/VERSIONS measles:inst/include/VERSIONS; do
+  echo "-- ${f%%:*}"
   gh api "repos/UofUEpiBio/${f%%:*}/contents/${f#*:}?ref=v1-layers" \
-    -q .content 2>/dev/null | base64 -d | grep '^epiworld'
+    -q .content 2>/dev/null | base64 -d 2>/dev/null | grep '^epiworld' ||
+    echo "no VERSIONS file: not caught up yet"
 done
 ```
 
