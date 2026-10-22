@@ -134,10 +134,7 @@ Pushing applies to states whose update function is `default_update_susceptible` 
 
 Everything else keeps pulling: states with custom update functions (e.g., `ModelSIRLogit`, `ModelSURV`, `ModelSEIRNetworkQuarantine`, `ModelDiffNet`) and the connected, mixing, and measles models, which sample contacts differently. Directed networks (built with `directed = true`) also always pull, and so does building without RTTI (recognizing the functions uses `std::function::target()`). Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
 
-Two numerical differences are worth knowing:
-
-- Pulling fills fixed-size scratch arrays, so it fails for agents with more than 1024 neighbors carrying a virus. Pushing has no such limit.
-- `roulette()` multiplies the $(1 - p)$ terms in `epiworld_double` (a `float` by default). With many high-probability contacts (e.g., 40 contacts with $p = 0.9$), the product underflows to 0 and the pull falls back to the last contact. Pushing sums the odds in `double` and keeps the exact probabilities.
+Both directions draw from the odds: `roulette()` normalizes by $1 + R_j$, as above, rather than by the product of the $(1 - p)$ terms, which underflows to 0 with many high-probability contacts (before epiworld 1.0.0 the pull then fell back to the last contact). Pulling has no limit on the number of contacts carrying a virus either: its scratch arrays grow as needed (before 1.0.0, 1024). The one numerical difference left is precision: pulling sums the odds in `epiworld_double` (a `float` by default), pushing in `double`.
 
 ## Reproducibility
 
