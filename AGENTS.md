@@ -2,6 +2,15 @@
 
 This file contains conventions and rules for AI agents working on this repository.
 
+## Contact layers (epiworld 1.0.0)
+
+On the `v1-layers` branch, and in the `v1-layers` branches of epiworldR,
+epiworldpy, epiworldjs and the measles package, the work follows
+`contact-layers.md` (in this repository's `v1-layers`). To resume it, read
+its **Section 11 (Runbook)**: it says how to find where things stand from the
+open pull requests and what to do next. Every epiworld PR into `v1-layers`
+updates the runbook's status table.
+
 ## Build Environment
 
 The repository ships a container image definition in `.devcontainer/` (`Containerfile`: Ubuntu 24.04, g++, make, gdb, doxygen, Perl, mkdocs). **Prefer building, testing and benchmarking inside that container whenever `docker` or `podman` is available** (check with `command -v podman docker`), so results do not depend on the host toolchain. Fall back to the host toolchain only when neither is installed.
