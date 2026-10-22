@@ -34,7 +34,21 @@ auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
 mixing.set_groups(groups, 3u);
 ```
 
-Whether an edit is permanent depends only on when it is made. Edits made during a run (in a global event, say), such as `mixing.set_group(agent, g)` or `mixing.set_contact_matrix(cmat)`, apply to that run only: they set the layer's dirty flag, and the next run starts from the baseline again. The same calls made between runs set the baseline. `set_groups()` replaces the whole grouping and can only be called between runs.
+Whether an edit is permanent depends only on when it is made. Edits made during a run (in a global event, say), such as `mixing.set_group(agent, g)`, `mixing.set_contact_matrix(cmat)` or `mixing.set_rates(r)`, apply to that run only: they set the layer's dirty flag, and the next run starts from the baseline again. The same calls made between runs set the baseline, so a calibration (ABC, LFMCMC) can reuse one model. `set_groups()` replaces the whole grouping and can only be called between runs.
+
+### Mixing within groups only
+
+A contact matrix suits a few groups that meet each other. For many small groups that only meet inside -- households, classrooms, transit trips -- give a contact rate per group instead, the diagonal of a matrix that is never stored:
+
+```cpp
+// Households of 10 (group of agent i: i / 10), 3 contacts a day within each
+auto households = layer::mixing<>("households", {infected}, {s, infected, r});
+households->set_groups(groups, n_households);
+households->set_rates(3.0);   // or one rate per household
+model.add_layer(households);
+```
+
+An agent in group `g` makes about `rates[g]` contacts a day with the members of `g`: the same draw a diagonal contact matrix gives, without walking a row of the matrix. The layer needs its grouping from `set_groups()`, and `members_of(g)` lists a group. Since an infectious agent reaches only its own group, the model's queue follows the layer (see [Queueing System](queueing-system.md)); a layer with a contact matrix makes the model visit every agent instead. Setting rates between runs drops the contact matrix, and the reverse.
 
 ## Entity Distribution Functions
 Entity distribution functions define how agents are assigned to entities or groups. These assignments influence the contact and transmission dynamics, as agents within the same entity may have higher interaction rates or specific behavioral patterns. The API provides several functions for distributing agents into entities, each tailored to different use cases.
