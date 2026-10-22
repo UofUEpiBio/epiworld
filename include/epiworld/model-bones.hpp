@@ -419,9 +419,25 @@ protected:
 
 public:
 
-    std::array<epiworld_double, 1024u * 2u> array_double_tmp;
-    std::array<Virus<TSeq> *, 1024u * 2u> array_virus_tmp;
-    std::array<int, 1024u * 2u> array_layer_tmp; ///< Layer of each exposure
+    /**
+     * @name Scratch arrays for sampling exposures
+     * @details Update functions store each exposure's probability in
+     * `array_double_tmp` and its virus in `array_virus_tmp`, then draw with
+     * `roulette()`, which uses two doubles per exposure. An agent can have any
+     * number of exposures across its layers, so call `reserve_tmp()` before
+     * storing them.
+     */
+    ///@{
+    std::vector< epiworld_double > array_double_tmp =
+        std::vector< epiworld_double >(1024u * 2u);
+    std::vector< Virus<TSeq> * > array_virus_tmp =
+        std::vector< Virus<TSeq> * >(1024u);
+    std::vector< int > array_layer_tmp =
+        std::vector< int >(1024u); ///< Layer of each exposure
+
+    /// Makes room for `n` exposures in the scratch arrays.
+    void reserve_tmp(size_t n);
+    ///@}
 
     /// A model with `n` agents.
     explicit Model(size_t n);

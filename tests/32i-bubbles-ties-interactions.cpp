@@ -5,7 +5,7 @@ using namespace epiworld;
 
 // What completing a bubble must leave alone, and what it refuses to do: the
 // grouping rules, a second policy's bubble, another event's edits to the
-// network, rewiring, and the virus sampler's ceiling.
+// network, and rewiring.
 EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
 
     // -- 1. Grouping never sees the ties ------------------------------------
@@ -331,103 +331,6 @@ EPIWORLD_TEST_CASE("Bubbles - ties do not interfere", "[bubbles]") {
         // The default realization does not touch the network, so it is fine.
         REQUIRE_NOTHROW(attempt(BubbleTies::Existing, degseq));
         REQUIRE_NOTHROW(attempt(BubbleTies::Existing, nothing, true));
-    }
-
-    // -- 5. The sampler's ceiling ---------------------------------------------
-    //
-    // When pulling, roulette() weighs at most array_double_tmp.size() / 2
-    // candidates, because it uses two slots each. Completing a bubble adds
-    // ties on top of whatever an agent already has outside it, so what binds
-    // is each member's resulting degree. But the policy answers only for the
-    // ties it adds, not for the network it was given.
-    {
-        epimodels::ModelSEIR<> probe("flu", 6, 0.0, 0.1, 4.5, 1.0/8.0);
-        size_t limit = probe.array_double_tmp.size() / 2u;   // 1024
-
-        auto attempt = [](
-            size_t n,
-            const std::vector< int > & source,
-            const std::vector< int > & target,
-            const std::vector< size_t > & hh
-        ) -> void {
-
-            epimodels::ModelSEIR<> model("flu", static_cast<int>(n), 0.0, 0.1, 4.5, 1.0/8.0);
-            model.seed(5);
-            model.add_layer(layer::network(
-                "network", AdjList(source, target, static_cast<int>(n), false)
-            ));
-
-            Bubbles<> bubbles(
-                hh, BubbleFlavor::Household, 1u, 0.0, 0, -1, 0,
-                "Social bubble", 2u, "Bubble transmission factor",
-                BubbleTies::Complete, "network"
-            );
-            model.add_globalevent(bubbles);
-            model.verbose_off();
-            model.run(3);
-
-        };
-
-        // (a) One household of exactly `limit` agents -- fine on its own, since
-        //     completing it gives each member limit-1 ties -- plus two
-        //     outsiders tied to agent 0, which puts agent 0 at limit+1. Refused
-        //     up front, rather than throwing from inside the sampler partway
-        //     through a run.
-        {
-            size_t n = limit + 2u;
-
-            std::vector< size_t > hh(n, 0u);
-            hh[limit] = 1u;
-            hh[limit + 1u] = 2u;
-
-            std::vector< int > source, target;
-            for (size_t i = 1u; i < limit; ++i)      // the household is a path
-            {
-                source.push_back(static_cast<int>(i - 1u));
-                target.push_back(static_cast<int>(i));
-            }
-            source.push_back(0); target.push_back(static_cast<int>(limit));
-            source.push_back(0); target.push_back(static_cast<int>(limit + 1u));
-
-            REQUIRE_THROWS_AS(
-                attempt(n, source, target, hh), std::length_error
-            );
-        }
-
-        // (b) A hub the network itself put past the ceiling: agent 0, tied to
-        //     limit+1 others. In a household of two with a neighbor, its bubble
-        //     adds nothing to it, so there is nothing to refuse.
-        //
-        // (c) The same hub in a household with an agent it is not tied to:
-        //     completing that bubble would add to a degree already past the
-        //     ceiling, and that is refused.
-        {
-            size_t n = limit + 3u;          // hub 0, leaves 1..limit+1, and one more
-            size_t loner = limit + 2u;
-
-            std::vector< int > source, target;
-            for (size_t i = 1u; i <= limit + 1u; ++i)
-            {
-                source.push_back(0);
-                target.push_back(static_cast<int>(i));
-            }
-
-            // Households of two -- {0, 1}, {2, 3}, ... -- and the loner alone.
-            std::vector< size_t > hh(n);
-            for (size_t i = 0u; i < n; ++i)
-                hh[i] = i / 2u;
-            hh[loner] = n;
-
-            REQUIRE_NOTHROW(attempt(n, source, target, hh));
-
-            // The hub shares a household with the loner instead of agent 1.
-            hh[1u]    = n + 1u;
-            hh[loner] = hh[0u];
-
-            REQUIRE_THROWS_AS(
-                attempt(n, source, target, hh), std::length_error
-            );
-        }
     }
 
 }

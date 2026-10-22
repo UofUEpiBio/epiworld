@@ -45,6 +45,8 @@ inline size_t Model<TSeq>::add_exposures(
     if (weighted && (weight <= 0.0))
         return n_exposures;
 
+    reserve_tmp(n_exposures + n);
+
     for (size_t k = 0u; k < n; ++k)
     {
 
@@ -55,13 +57,6 @@ inline size_t Model<TSeq>::add_exposures(
 
         if ((layer != nullptr) && !layer->admits(*v))
             continue;
-
-        #ifdef EPI_DEBUG
-        if (n_exposures >= array_virus_tmp.size())
-            throw std::logic_error(
-                "Trying to add an extra element to a temporal array outside of the range."
-            );
-        #endif
 
         epiworld_double p =
             (1.0 - agent->get_susceptibility_reduction(v, *this)) *
