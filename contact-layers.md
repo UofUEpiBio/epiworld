@@ -1022,10 +1022,14 @@ PR.
 | epiworldjs | `make update-vendors EPIWORLD_REF=v1-layers` (measles from epiworld's `include/measles`) | `vendor/VERSIONS` | `make check-version test`; `npx playwright test` before a release |
 | measles | `make update EPIWORLD_BRANCH=v1-layers` (`include/measles`) | `inst/include/VERSIONS` | install epiworldR from its `v1-layers` first; tinytest; `R CMD check --no-manual` |
 
-**The pre-merge check** (Section 6, step 1), until `downstream.yml` does it:
-for each wrapper, vendor the C++ PR's branch (`EPIWORLD_BRANCH=<pr branch>`),
-build and run the tests, report what breaks in the C++ PR, then discard the
-changes. No wrapper code is written at this stage.
+**The pre-merge check** (Section 6, step 1) is `.github/workflows/downstream.yml`:
+on every PR into `v1-layers`, one job per wrapper checks out the wrapper's
+`v1-layers`, replaces its vendored headers with the PR's, and builds and
+tests it (non-blocking). Read its results before the C++ PR merges and report
+what breaks in the PR; a failure that a port can fix is expected, one that
+needs a different C++ API is not. No wrapper code is written at this stage.
+To reproduce a job locally, vendor the PR's branch
+(`EPIWORLD_BRANCH=<pr branch>`), build, test, and discard the changes.
 
 **A wrapper's first PR (catch-up)** also sets it up: on its `v1-layers`, the
 Makefile defaults to epiworld `v1-layers`; the version is `1.0.0-0` (measles:
@@ -1066,20 +1070,20 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-21).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-22).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
 | Phase 0 (benchmark) | #315 merged | -- | -- | -- | -- |
-| Phases 1-2 | #316, #317 merged | #216 open (catch-up through 3a) | not started | not started | not started |
-| Phase 3a (+ fixes) | #318, #319 merged | #216 | not started | not started | not started |
-| `downstream.yml` | not started | | | | |
+| Phases 1-2 | #316, #317 merged | #216 merged (catch-up through 3a) | #33 merged (catch-up through 3a) | #18 merged (catch-up through 3a) | #65 merged (catch-up through 3a) |
+| Phase 3a (+ fixes) | #318, #319 merged | #216 | #33 | #18 | #65 |
+| `downstream.yml` | open | | | | |
 | Phase 3b | not started | | | | |
 | Phase 3c | not started | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
-**Next** (as of the date above): the epiworldpy catch-up through 3a (#216's
-review comments are answered); then epiworldjs, then measles once #216 has
-merged; then `downstream.yml` and Phase 3b.
+**Next** (as of the date above): Phase 3b (`layer::Affiliation` and per-layer
+queues). Its PR's `downstream.yml` run is the pre-merge check of the
+wrappers.
