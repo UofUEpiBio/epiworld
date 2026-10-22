@@ -589,14 +589,19 @@ the step (point 13), so results do not depend on agent update order.
 
 ### 5.7 Queue
 
-- Each queue-capable layer (`Network`, within-group `Mixing`) keeps its own
-  queue: a carrier queues its ties (or the members of its group) in that
-  layer; a tie or membership change notifies that layer's queue (as
-  `add_edge()` / `rm_edge()` do today, `Queue::notify_edge_added/removed`).
-- A susceptible is sampled in a layer only if queued there (or if the layer has
-  no queue, i.e. `Mixing` with a matrix, until push exists, D4).
-- Phase 2 keeps today's single queue; an agent's count covers its ties in every
-  network layer (counts add across layers). Per-layer queues come in Phase 3.
+- The model keeps one queue, fed by every layer it can see
+  (`ContactLayer::supports_queue()`): undirected networks and within-group
+  `Mixing`. A carrier queues its ties and the members of its group in every
+  such layer (counts add across layers); a tie or membership change notifies
+  the queue (`Queue::notify_ties_changed()`, `notify_group_changed()`).
+- A model with a layer the queue cannot see (a directed network, `Mixing` with
+  a matrix) visits every agent, until push exists (D4).
+- Per-layer queues (sampling a layer only where the agent is queued in it) were
+  planned for 3b and dropped: with one queue, a 6,000-agent model with 600
+  households visits 614 susceptibles in 30 days instead of 177,331, and a
+  layer an agent has no infectious contact in costs almost nothing to sample
+  (a within-group layer returns at once). Revisit with push (Phase 5) if
+  profiling shows otherwise.
 - Excluded agents (flag) simply produce no contacts; the queue stays
   conservative.
 
@@ -789,8 +794,7 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
   (`Model::reserve_tmp()`), in the generic path and in every model with its
   own sampler; there is no ceiling on an agent's exposures, and the 1,024
   neighbor limit of `Bubbles` is gone.
-- **3b. Within-group `Mixing` (rates per group), membership builders, and
-  per-layer queues.**
+- **3b. Within-group `Mixing` (rates per group), seen by the queue.**
 - **3c. Contact tracing into the layers** (point 9, D11).
 - **3d. Entities removed, measles models and the example model on layers**
   (the acceptance tests of D11).
@@ -798,15 +802,17 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
 The list below is the whole of Phase 3.
 
 - The accumulator (5.4) for every kind of layer (Phase 2 does networks);
-  layer weights; virus targets per layer; per-layer queues (5.7); layer id in
+  layer weights; virus targets per layer; the queue following within-group
+  layers (5.7); layer id in
   transmission records, contact tracing and post-sampling; within-group
   `layer::Mixing` (a rate per group, as a vector or one number; `set_rates()`
-  / `get_rates()`; fixed groups, `q = 1`; `members_of()` / `get_group()`);
-  membership builders; per-layer edgelist and membership I/O.
+  / `get_rates()`; groups from `set_groups()`, `q = 1`; `members_of()` /
+  `get_group()`).
 - Contact tracing moves into the layers (point 9, D11): `enable_tracing()` on
   a layer, the model's tracer and its shims removed, the consumers reading each
   layer's log with per-layer parameters.
-- Layer-membership builders replace the entity distribution functions; remove
+- Layer-membership builders (groupings drawn at random or by size) and
+  membership I/O replace the entity distribution functions; remove
   entities (D6), including the entity fallback of `layer::Mixing`, the
   entity-level tools and events, and `Bubbles` as an entity (whether its
   complete ties stay network edits or become a within-group `Mixing` layer is
@@ -1082,9 +1088,9 @@ that on `v1-layers` this plan is the source of truth.
 |---|---|
 | 1-2 (catch-up) | Population in the constructors (`n`); layer objects (`layer_network(name, graph_*())`, `add_layer()`, `get_layer()`); network edits and edge lists on the network layer; contact matrix on the mixing layer; `Bubbles` names its layer; `agents_smallworld()` & co. defunct. |
 | 3a | `layer` column in the transmissions; `get_layer()` by id; `set_weight(layer, param)`; `add_virus_target(layer, virus)`. |
-| 3b | Bind the within-group form of `layer::Mixing`: one constructor with exactly one of a contact matrix and rates (vector or one number), `set_rates()` / `get_rates()`, membership builders and queries (`members_of()`, `get_group()`); per-layer queues are internal. |
+| 3b | Bind `layer::Mixing` for user-added layers: one constructor with the groups and exactly one of a contact matrix and rates (vector or one number); `set_rates()` / `get_rates()`; `members_of()`, `get_group()`. The queue is internal. |
 | 3c | Per-layer `enable_tracing()` and its logs; whatever the wrapper binds of the model-level tracer (e.g., the quarantine models' parameters) follows the core, and removed accessors become defunct. |
-| 3d | Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing models take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
+| 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing models take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
 | 5 | Re-vendor only, unless a push/pull setting becomes public. |
