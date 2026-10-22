@@ -8,7 +8,9 @@ weights and virus targets; release as 1.0.0 on `v1-layers`), and again the same
 day (no compatibility shims; model parameters are the single source of truth
 for scalars). Revised 2026-10-21 before Phase 2 (models create no layers;
 population in the constructor; networks come from generators; rewiring in the
-layer), and after 3a (wrappers follow each merged phase; runbook).
+layer), and after 3a (wrappers follow each merged phase; runbook). Revised
+2026-10-22: no `Affiliation` kind -- `layer::Mixing` also describes contacts
+within groups only, with a rate per group (5.1, 5.2, D9).
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -105,7 +107,7 @@ turnover is high relative to contacts.
 ## 3. Settled decisions
 
 1. **Layers are first-class objects of the model.** A layer is network-type or
-   mixing-type (or affiliation-type, Section 5.1). There is **no network
+   mixing-type (Section 5.1). There is **no network
    inside `Agent` and no implicit baseline network**: a model may have any
    number of layers of any kind, or none (no transmission). Models create no
    layers: the user adds the ones the model needs, and the default susceptible
@@ -163,8 +165,10 @@ turnover is high relative to contacts.
     fixed graph is restored if dirty, and a random graph is simply redrawn, so
     edits to it last until the next draw.
 12. **Recurrence is a first-class property of a layer.** Between a fixed network
-    and fresh mixing sits the *affiliation* layer (Section 5.2): stable venue
-    memberships with a persistence probability `q`.
+    and mixing across groups sits *within-group* mixing (Section 5.2): contacts
+    drawn fresh every step, but only among the members of an agent's group (a
+    household, a classroom, a bus trip), so the same cohort recurs; groups can
+    persist or change (persistence `q`, Phase 4).
 13. **Layers can change over time**: schedules (weekdays), membership changes.
     All changes take effect at the end of a step (like state changes).
 14. **Contact rate does not shrink when people leave a layer.** If classmates
@@ -179,18 +183,25 @@ turnover is high relative to contacts.
     to independent exposures (D1) and updates expected results.
 17. **Model parameters are the single source of truth for scalars.** A layer
     never stores its own copy of a number a user may calibrate or change: its
-    weight, a default contact rate, a persistence `q`, a within-venue `k`, a
-    reduced-contact factor are named model parameters, which the layer reads
+    weight, a persistence `q`, a reduced-contact factor are named model
+    parameters, which the layer reads
     with a `ParamRef` (the same way `Virus::set_prob_infecting("name")` works).
     So calibration (LFMCMC), `set_param()` and global events reach layers with
     no layer-specific code, and parameters keep their usual semantics (they are
     not part of the layer's baseline or dirty flag). What is structure, not a
-    scalar, stays in the layer: contact matrices, ties, groupings, memberships.
+    scalar, stays in the layer: contact matrices and per-group rates, ties,
+    groupings. Structure is edited with the layer's setters
+    (`set_contact_matrix()`, `set_rates()`, `set_group()`, `add_edge()`, ...)
+    under the dirty-flag rules (point 11): between runs an edit is the new
+    baseline (so ABC or LFMCMC can reuse one model), during a run it lasts for
+    that run. The layer's weight, a model parameter, scales all of a layer's
+    contacts, so one overall level is calibrated like any parameter.
     A layer may still default a parameter it needs (adding it to the model when
     absent), the way models add theirs in their constructors. The line between
-    the two: what a layer reads **every step** (weight, contact rates, `q`, `k`,
-    rewiring rate) is a model parameter; what is used **once per draw** (the
-    arguments of a graph generator) is structure, like a contact matrix. A
+    the two: a single number the layer reads **every step** (weight, `q`, a
+    reduced-contact factor, rewiring rate) is a model parameter; values per
+    group or per tie, and what is used **once per draw** (the arguments of a
+    graph generator), are structure, like a contact matrix. A
     generator that should follow a parameter reads it itself (it receives the
     model).
 18. **No compatibility shims.** The 1.0.0 API lives where the data lives: the
@@ -348,21 +359,26 @@ removal.
 Reuse the 63-bit mask of `Tool::add_target` (so at most 63 layers/viruses) or a
 dynamic bitset. Recommendation: mask, same limits and wording as virus targets.
 
-### D8. Persistence model for affiliation memberships
+### D8. Persistence model for group memberships
 
-Section 5.2 proposes "usual venue with probability `q`, otherwise a random venue
+Section 5.2 proposes "usual group with probability `q`, otherwise a random group
 in the same pool", with `q` per layer. Alternatives: `q` per agent (strict vs
 irregular commuters), or a user-supplied assignment function
-`venue(agent, step)` for data-driven schedules. Recommendation: per-layer `q`
+`group(agent, step)` for data-driven schedules. Recommendation: per-layer `q`
 plus an optional per-agent override, and the assignment function as the
 general escape hatch.
 
-### D9. Within-venue contact rate
+### D9. Within-group contact rate (settled 2026-10-22)
 
-A fixed `k` per layer, `k` as a function of venue size, or `k` per venue
-(crowded peak trips vs empty off-peak ones). Recommendation: per-venue `k`
-with a per-layer default; it costs one value per venue and lets capacity and
-crowding studies set it directly.
+There is no separate affiliation layer: `layer::Mixing` describes contacts
+either with a contact matrix (across groups) or with a **rate per group**
+(within groups only), the diagonal of a matrix that is never stored. The rates
+are structure (point 17): a vector, or one number for every group; bus trips and
+subway cars in one transit layer simply have different rates. `set_rates()`
+edits them like `set_contact_matrix()` edits a matrix; the layer weight, a
+model parameter, scales them all. There is no clique mode: a within-group layer
+draws contacts at a rate (with replacement, as `Mixing` does), which is not
+"everyone meets everyone once" -- that is a `Network` of complete subgraphs.
 
 ### D10. Where schedules live
 
@@ -382,8 +398,8 @@ capacity. Open:
   keyed by the infectious agent, so rows can be allocated when an agent first
   appears as a source; narrower integer types are the other lever. Measure
   before choosing (memory and the cost of the lookup).
-- **Structural tracing.** "Notify the whole class" needs no log: `Affiliation`
-  exposes `members_of(group)` and `groups_of(agent)`, and the measles "high
+- **Structural tracing.** "Notify the whole class" needs no log: a mixing
+  layer exposes `members_of(group)` and `get_group(agent)`, and the measles "high
   risk" branch (shares an entity with the case) becomes that query. A network's
   current ties are not the contacts someone had last week, and
   `ModelSEIRNetworkQuarantine` traces from the log, so structural tracing is an
@@ -414,52 +430,56 @@ capacity. Open:
 | Kind | Describes | Storage | Example |
 |---|---|---|---|
 | `layer::Network` | explicit ties | per-agent tie lists (as today) | workplace, sexual partners |
-| `layer::Mixing` | contact matrix across a few large groups | group id per agent + `G x G` matrix | age groups in public spaces |
-| `layer::Affiliation` | mixing **within** venues an agent belongs to; memberships may persist or change | venues per agent (CSR) + members per venue + within-venue contact rate | households, classrooms, transit trips |
+| `layer::Mixing` | contacts drawn fresh each step, by group: across groups (a contact matrix) or within groups only (a rate per group) | group id per agent + a `G x G` matrix, or `G` rates | age groups in public spaces (matrix); households, classrooms, transit trips (rates) |
 
-`Affiliation` is a mixing-type layer with a block-diagonal matrix. It exists
-because a dense matrix cannot hold 100k households, because it can express
-recurring cohorts (Section 5.2), and because, unlike `Mixing`, it supports the
-queue (an infectious agent reaches only the members of its venues).
-`Bubbles` with `BubbleTies::Complete` (cliques added and withdrawn) becomes an
-`Affiliation` layer instead of edits to the network (Phase 3).
+One class, two ways to give the contacts, one sampler: for an agent in group
+`i`, a binomial number of draws from the infectious members of group `g` with
+probability `rate(i, g) / available(g)`, over every `g` with a matrix and over
+`g = i` only with rates. A matrix suits a few groups that meet each other; it
+cannot hold 100k households, and its sampler walks the whole row. Rates suit
+many small groups: no matrix is stored, sampling costs only the agent's own
+group, cohorts recur (Section 5.2), and since an infectious agent reaches only
+its own group, the layer supports the queue (5.7). An agent belongs to one group
+per layer; several memberships (a household and a classroom, a morning and an
+evening trip) are several layers.
 
-Recurrence, from most to least, across the three kinds: `Network` (same
-individuals), `Affiliation` with `q = 1` (same cohort), `Affiliation` with
-`q < 1` or one large venue per route (same pool), `Mixing` (none).
+Whether `Bubbles` with `BubbleTies::Complete` (cliques added and withdrawn)
+stays as edits to a network or becomes a within-group `Mixing` layer is decided
+in 3d: a clique is "everyone meets everyone", which a rate does not express
+(D9), so the switch would change what a bubble means.
 
-### 5.2 Affiliation layers, recurrence, and schedules
+Recurrence, from most to least: `Network` (same individuals), within-group
+`Mixing` with `q = 1` (same cohort), with `q < 1` or one large group per route
+(same pool), `Mixing` across groups (none).
 
-**Venues and memberships.** An affiliation layer holds venues (a household; the
-7:40 departure of route 12) and, per agent, a short list of venues, stored
-compactly (CSR: offsets + venue ids; members per venue likewise). An agent may
-hold several memberships in one layer (morning trip and evening trip), each a
-separate exposure.
+### 5.2 Within-group mixing, recurrence, and schedules
 
-**Contacts within a venue.** Each step, an agent makes about `k` contacts among
-the members of each of its venues who are present (not excluded), drawn fresh:
-a binomial number of draws from the venue's infectious members with probability
-`k / (number of present members - 1)`, as the `Mixing`
-sampler does per group. Recurrence is at the cohort level: you meet the same
+**Groups.** A within-group mixing layer holds many small groups (a household;
+the 7:40 departure of route 12), one per agent (or none), and a contact rate per
+group. Membership builders (3b) make the grouping from data (a group id per
+agent, or the members of each group); `members_of(group)` and `get_group(agent)`
+query it.
+
+**Contacts within a group.** Each step, an agent in group `g` makes about
+`rate[g]` contacts among the members of `g` who are present (not excluded),
+drawn fresh: a binomial number of draws from the group's infectious members
+with probability `rate[g] / available(g)`, exactly the draw `Mixing` makes for
+the diagonal of a matrix. Recurrence is at the cohort level: you meet the same
 crowd, not necessarily the same seatmate. Dyad-level recurrence (same seatmate)
 belongs in a `Network` layer.
 
-`k` can be a single rate for the layer or a function of venue size (a
-household of 4 vs a full train car); for households, `k = size - 1` makes the
-venue a clique.
-
-**Persistence.** Each agent has a *usual* venue per membership slot, and venues
-are grouped into *pools* (a route, a station, a school). Each step, with
-probability `q` the agent attends its usual venue; otherwise it attends another
-venue drawn from the same pool:
+**Persistence (Phase 4).** Each agent has a *usual* group, and groups are
+gathered into *pools* (a route, a station, a school). Each step, with
+probability `q` the agent attends its usual group; otherwise it attends another
+group drawn from the same pool (a `set_group()` for that step):
 
 - `q = 1`: fixed cohorts (households, classrooms, strict commuters);
 - `0 < q < 1`: familiar strangers (mostly the same train, sometimes another);
 - `q = 0`: random vehicle at your station each step (JUNE);
-- one venue per pool: route-level mixing.
+- one group per pool: route-level mixing.
 
-Only agents who switch venue cost anything per step (`O(riders x (1 - q))`
-membership updates), plus `O(k)` per infectious member. A membership change
+Only agents who switch group cost anything per step (`O(riders x (1 - q))`
+membership updates), plus `O(rate)` per infectious member. A membership change
 notifies the queue, as `add_edge()`/`rm_edge()` do today
 (`Queue::notify_edge_added/removed`).
 
@@ -569,12 +589,12 @@ the step (point 13), so results do not depend on agent update order.
 
 ### 5.7 Queue
 
-- Each queue-capable layer (`Network`, `Affiliation`) keeps its own queue:
-  a carrier queues its ties (or the members of its venues) in that layer; a
-  tie or membership change notifies that layer's queue (as `add_edge()` /
-  `rm_edge()` do today, `Queue::notify_edge_added/removed`).
+- Each queue-capable layer (`Network`, within-group `Mixing`) keeps its own
+  queue: a carrier queues its ties (or the members of its group) in that
+  layer; a tie or membership change notifies that layer's queue (as
+  `add_edge()` / `rm_edge()` do today, `Queue::notify_edge_added/removed`).
 - A susceptible is sampled in a layer only if queued there (or if the layer has
-  no queue, e.g. `Mixing`, until push exists, D4).
+  no queue, i.e. `Mixing` with a matrix, until push exists, D4).
 - Phase 2 keeps today's single queue; an agent's count covers its ties in every
   network layer (counts add across layers). Per-layer queues come in Phase 3.
 - Excluded agents (flag) simply produce no contacts; the queue stays
@@ -586,7 +606,7 @@ the step (point 13), so results do not depend on agent update order.
   network layer (today's behavior). Everything else pulls.
 - Phase 5: `sample_reverse()` for `Mixing` (for infectious `j` in group `g`,
   contacts in group `h` ~ Binomial(available in `h`, c(h,g) / available in
-  `g`), same pair probabilities as pulling) and `Affiliation`; each layer
+  `g`), same pair probabilities as pulling; with rates, `h = g` only); each layer
   chooses push or pull by its own cost model, and their contributions merge in
   the shared accumulator.
 
@@ -769,7 +789,8 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
   (`Model::reserve_tmp()`), in the generic path and in every model with its
   own sampler; there is no ceiling on an agent's exposures, and the 1,024
   neighbor limit of `Bubbles` is gone.
-- **3b. `layer::Affiliation` and per-layer queues.**
+- **3b. Within-group `Mixing` (rates per group), membership builders, and
+  per-layer queues.**
 - **3c. Contact tracing into the layers** (point 9, D11).
 - **3d. Entities removed, measles models and the example model on layers**
   (the acceptance tests of D11).
@@ -778,19 +799,21 @@ The list below is the whole of Phase 3.
 
 - The accumulator (5.4) for every kind of layer (Phase 2 does networks);
   layer weights; virus targets per layer; per-layer queues (5.7); layer id in
-  transmission records, contact tracing and post-sampling; `layer::Affiliation` with fixed memberships (`q = 1`, several
-  memberships per agent, `members_of()` / `groups_of()` queries); per-layer
-  edgelist and membership I/O.
+  transmission records, contact tracing and post-sampling; within-group
+  `layer::Mixing` (a rate per group, as a vector or one number; `set_rates()`
+  / `get_rates()`; fixed groups, `q = 1`; `members_of()` / `get_group()`);
+  membership builders; per-layer edgelist and membership I/O.
 - Contact tracing moves into the layers (point 9, D11): `enable_tracing()` on
   a layer, the model's tracer and its shims removed, the consumers reading each
   layer's log with per-layer parameters.
 - Layer-membership builders replace the entity distribution functions; remove
   entities (D6), including the entity fallback of `layer::Mixing`, the
-  entity-level tools and events, and `Bubbles` as an entity (it becomes an
-  `Affiliation` layer). The measles models move to layers here (their
+  entity-level tools and events, and `Bubbles` as an entity (whether its
+  complete ties stay network edits or become a within-group `Mixing` layer is
+  decided here, see 5.1). The measles models move to layers here (their
   reduced-contact state reads a model parameter, point 17).
-- An example model: households (`Affiliation`) + workplace (`Network`) + public
-  spaces (`Mixing`).
+- An example model: households (within-group `Mixing`) + workplace (`Network`)
+  + public spaces (`Mixing` with a matrix).
 - Acceptance: `ModelMeaslesMixingRiskQuarantine` (school traced by membership,
   community by log) and the SEIR mixing and network quarantine models are
   rebuilt on layers and stay draw-for-draw identical, which also shows the
@@ -798,8 +821,9 @@ The list below is the whole of Phase 3.
   community with different success rates, as the first test of per-layer
   policies.
 - Tests (end-to-end, about three files):
-  - an `Affiliation` layer with `q = 1` matches the equivalent
-    complete-graph-per-household network in distribution;
+  - a within-group `Mixing` layer matches the same layer built with the
+    equivalent diagonal contact matrix, in distribution (the two forms draw
+    the same contacts through different loops);
   - a combined model attributes transmissions to the expected layers (a
     layer with weight 0, or one that excludes the virus, records none).
 
@@ -807,8 +831,8 @@ The list below is the whole of Phase 3.
 
 - Per-agent exclusion flags (end-of-step), layer-targeted tools (D2, D7),
   `isolate(agent, keep = ...)`, global event to scale/close a layer.
-- Schedules (D10), persistence and per-venue contact rate (D8, D9), membership
-  changes notified to the layer queue.
+- Schedules (D10), persistence (D8), membership changes notified to the layer
+  queue.
 - Bubbles: exclusion from other layers (the bubble layer itself is Phase 3).
 - An example model: the Phase 3 model plus a transit layer (morning and evening
   trips, route pools, `q < 1`, weekdays only). Another: an ERGM-style rewirer
@@ -820,12 +844,12 @@ The list below is the whole of Phase 3.
   - a tool targeting a layer reduces transmission in that layer only;
   - schedules and persistence -- no transit-layer transmission on inactive
     steps; with `q = 1` every transit transmission is between members of the
-    same usual venue, with `q = 0` transmissions also cross venues in a pool;
+    same usual group, with `q = 0` transmissions also cross groups in a pool;
   - contact rate stays constant when part of a mixing group is excluded.
 
-### Phase 5 -- push for mixing and affiliation layers
+### Phase 5 -- push for mixing layers
 
-- `sample_reverse()` for `Mixing` and `Affiliation`; per-layer push/pull choice
+- `sample_reverse()` for `Mixing` (both forms); per-layer push/pull choice
   and cost model (revisit `EPI_TRANSMISSION_AGENT_COST` and kappa).
 - Benchmark: push vs pull for mixing layers early in an outbreak.
 
@@ -868,9 +892,11 @@ The list below is the whole of Phase 3.
   replicate with the dirty flag vs the full agent backup.
 - Phase 3: overhead of a single-layer model through the multi-layer path vs the
   Phase 2 path (to decide whether a fast path must stay).
-- Phase 4: cost per step of an affiliation layer as `q` falls (membership
-  churn and queue notifications), at transit-like sizes (venues of 50-200,
-  two memberships per commuter).
+- Phase 3b: cost per step of a within-group layer of 100k households, vs a
+  network of the same households as cliques.
+- Phase 4: cost per step of a within-group layer as `q` falls (membership
+  churn and queue notifications), at transit-like sizes (groups of 50-200,
+  two transit layers per commuter).
 - Phase 5: push vs pull for mixing layers early in an outbreak.
 - Use CPU time and interleave variants; wall-clock on the macOS host is
   unreliable.
@@ -906,7 +932,7 @@ The list below is the whole of Phase 3.
   generic path or rejects, in `add_layer()`, the layers it does not read; the
   wrappers document the gap until then.
 - **Membership churn.** With low `q`, many memberships change every step; the
-  queue notifications and venue member lists must stay O(changes), not
+  queue notifications and group member lists must stay O(changes), not
   O(population).
 - **Mixing push (D4).** Until Phase 5, a public mixing layer is pulled for
   every susceptible each step.
@@ -1037,7 +1063,7 @@ that on `v1-layers` this plan is the source of truth.
 ### 11.4 A wrapper port PR
 
 - **Branch** `port-<epiworld branch>` off the wrapper's `v1-layers` (e.g.,
-  `port-phase3b-affiliation`); the catch-up is `v1-catchup`.
+  `port-phase3b-within-group-mixing`); the catch-up is `v1-catchup`.
 - **Title** `Port epiworld <phase> (UofUEpiBio/epiworld#N)`; the body starts
   with `Ports UofUEpiBio/epiworld#N; vendors <sha>.` so the state can be read
   from GitHub.
@@ -1056,7 +1082,7 @@ that on `v1-layers` this plan is the source of truth.
 |---|---|
 | 1-2 (catch-up) | Population in the constructors (`n`); layer objects (`layer_network(name, graph_*())`, `add_layer()`, `get_layer()`); network edits and edge lists on the network layer; contact matrix on the mixing layer; `Bubbles` names its layer; `agents_smallworld()` & co. defunct. |
 | 3a | `layer` column in the transmissions; `get_layer()` by id; `set_weight(layer, param)`; `add_virus_target(layer, virus)`. |
-| 3b | Bind `layer::Affiliation` and its membership builders and queries (`members_of()`, `groups_of()`); per-layer queues are internal. |
+| 3b | Bind the within-group form of `layer::Mixing`: one constructor with exactly one of a contact matrix and rates (vector or one number), `set_rates()` / `get_rates()`, membership builders and queries (`members_of()`, `get_group()`); per-layer queues are internal. |
 | 3c | Per-layer `enable_tracing()` and its logs; whatever the wrapper binds of the model-level tracer (e.g., the quarantine models' parameters) follows the core, and removed accessors become defunct. |
 | 3d | Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing models take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
