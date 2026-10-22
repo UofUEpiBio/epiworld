@@ -412,8 +412,9 @@ inline void Mixing<TSeq>::set_rates(std::vector< double > rates_)
                 "contact matrix; rates can only replace it between runs."
             );
 
+        // A copy: assign() may free the element before reading it
         if (rates_.size() == 1u)
-            rates_.assign(n_groups, rates_[0u]);
+            rates_.assign(n_groups, double(rates_[0u]));
         else if (rates_.size() != n_groups)
             throw std::length_error(
                 "Mixing layer '" + this->get_name() + "': " +
@@ -522,8 +523,9 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
             );
 
         rates = rates_baseline;
+        // A copy: assign() may free the element before reading it
         if (rates.size() == 1u)
-            rates.assign(n_groups, rates[0u]);
+            rates.assign(n_groups, double(rates[0u]));
         else if (rates.size() != n_groups)
             throw std::length_error(
                 "Mixing layer '" + this->get_name() + "': " +
