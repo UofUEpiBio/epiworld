@@ -621,9 +621,10 @@ its own next minor, depending on epiworldR's branch), so a binding problem
 shows up while the C++ API can still change, not in Phase 6. Their `main`
 branches keep tracking epiworld `master`.
 
-- A first catch-up PR per wrapper brings it to Phases 1-2 (population in the
-  model constructors, layer objects, network and contact-matrix methods on the
-  layers).
+- A first catch-up PR per wrapper brings it to the `v1-layers` head
+  (population in the model constructors, layer objects, network and
+  contact-matrix methods on the layers; from 3a, the `layer` column, weights
+  and virus targets).
 - Every phase PR into `v1-layers` gets a companion PR with the **same branch
   name** in each wrapper it breaks. A CI job in epiworld (`downstream.yml`,
   non-blocking) builds each wrapper (the same-named branch if it exists, else
@@ -757,6 +758,13 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
   use the generic path; the measles models keep their own sampler until 3d.
   Draw-for-draw identical to Phase 2 for every model in the identity harness.
   Post-sampling and contact tracing receive the layer in 3c.
+  Follow-up (#319, found reviewing epiworldR #216): the sampler's scratch
+  arrays (`array_double_tmp`, `array_virus_tmp`, `array_layer_tmp`) were fixed
+  at 2,048 slots and only bounds-checked under `EPI_DEBUG`, so an agent with
+  more exposures than that across its layers corrupted memory. They now grow
+  (`Model::reserve_tmp()`), in the generic path and in every model with its
+  own sampler; there is no ceiling on an agent's exposures, and the 1,024
+  neighbor limit of `Bubbles` is gone.
 - **3b. `layer::Affiliation` and per-layer queues.**
 - **3c. Contact tracing into the layers** (point 9, D11).
 - **3d. Entities removed, measles models and the example model on layers**
@@ -885,6 +893,14 @@ The list below is the whole of Phase 3.
   user-defined layers written in R, Python or JS (calls back into the
   interpreter from inside a run, and from `run_multiple()` threads). The
   wrappers expose only the built-in generators until a phase needs more.
+- **Layers a model ignores.** Models that keep their own sampler accept any
+  layer but read only some: the connected models (`*CONN`) draw from the list
+  of infected agents and ignore every layer; SIRLogit, SURV and the SEIR
+  network-quarantine model read network layers only; the measles mixing models
+  read their own mixing layer until 3d. An added layer then silently carries
+  no transmission. By the end of Phase 3 each such model either moves to the
+  generic path or rejects, in `add_layer()`, the layers it does not read; the
+  wrappers document the gap until then.
 - **Membership churn.** With low `q`, many memberships change every step; the
   queue notifications and venue member lists must stay O(changes), not
   O(population).
