@@ -6,15 +6,16 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      # ubuntu-latest (26.04) has no clang-14; 24.04 has both versions
       matrix:
         include:
           - os: macos-latest
             llvm: 18
           - os: macos-latest
             llvm: 14
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             llvm: 18
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             llvm: 14
 
     steps:
