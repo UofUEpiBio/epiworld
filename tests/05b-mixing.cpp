@@ -164,10 +164,11 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
     std::cout << "R0 obs " << R0_obs3 << " vs exp " << R0_exp3 << std::endl;
     std::cout << "R0 obs " << R0_obs4 << " vs exp " << R0_exp4 << std::endl;
 
-    REQUIRE_FALSE(moreless(R0_obs1, R0_exp1, 0.2));
-    REQUIRE_FALSE(moreless(R0_obs2, R0_exp2, 0.2));
-    REQUIRE_FALSE(moreless(R0_obs3, R0_exp3, 0.2));
-    REQUIRE_FALSE(moreless(R0_obs4, R0_exp4, 0.2));
+    // Within 20% (the SE of the mean is about 6% of R0 with 400 runs)
+    REQUIRE_FALSE(moreless(R0_obs1, R0_exp1, 0.2 * R0_exp1));
+    REQUIRE_FALSE(moreless(R0_obs2, R0_exp2, 0.2 * R0_exp2));
+    REQUIRE_FALSE(moreless(R0_obs3, R0_exp3, 0.2 * R0_exp3));
+    REQUIRE_FALSE(moreless(R0_obs4, R0_exp4, 0.2 * R0_exp4));
 
     #undef calc_r0
 

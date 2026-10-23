@@ -72,7 +72,7 @@ A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbor
 
 ### Mixing layers
 
-A mixing layer with a rate per group (`layer::Mixing::set_rates()`, contacts within groups only) is seen by the queue like a network of cliques: registering an agent credits the other members of its group, and a `layer::Mixing::set_group()` made during a run moves those credits from the old group to the new one (`Queue::notify_group_changed()`) at the end of the step, together with the pools, so the credits and the pools never disagree. A mixing layer with a contact matrix reaches every group, so a model with one visits every agent, as with a directed network.
+A mixing layer with a contact probability per pair (`layer::Mixing::set_contact_prob()`, contacts within groups only) is seen by the queue like a network of cliques: registering an agent credits the other members of its group, and a `layer::Mixing::set_group()` made during a run moves those credits from the old group to the new one (`Queue::notify_group_changed()`) at the end of the step, together with the pools, so the credits and the pools never disagree. A mixing layer with a contact matrix reaches every group, so a model with one visits every agent, as with a directed network.
 
 ## See Also
 

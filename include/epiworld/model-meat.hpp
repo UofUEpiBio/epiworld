@@ -1362,7 +1362,7 @@ inline Model<TSeq> & Model<TSeq>::run(
     this->ndays = ndays;
 
     if (seed >= 0)
-        engine->seed(seed);
+        this->seed(static_cast< size_t >(seed));
 
     last_seed = seed;
 

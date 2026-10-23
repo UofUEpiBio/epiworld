@@ -12237,7 +12237,21 @@ inline void Model<TSeq>::reserve_tmp(size_t n) {
 
 template<typename TSeq>
 inline void Model<TSeq>::seed(size_t s) {
+
     this->engine->seed(s);
+
+    // Some distributions keep state between calls (e.g., the normal draws
+    // made in pairs, also inside the binomial); without a reset, a run would
+    // depend on the runs before it, not only on its seed
+    rnormd.reset();
+    rgammad.reset();
+    rlognormald.reset();
+    rexpd.reset();
+    rbinomd.reset();
+    rnbinomd.reset();
+    rgeomd.reset();
+    rpoissd.reset();
+
 }
 
 #endif
@@ -13623,7 +13637,7 @@ inline Model<TSeq> & Model<TSeq>::run(
     this->ndays = ndays;
 
     if (seed >= 0)
-        engine->seed(seed);
+        this->seed(static_cast< size_t >(seed));
 
     last_seed = seed;
 
@@ -20650,15 +20664,18 @@ std::shared_ptr< Mixing<TSeq> > mixing(
  * built. Either way, from then on the layer works on its own table, not on the
  * entities.
  *
- * ### Contacts: a matrix or a rate per group
+ * ### Contacts: a matrix or a probability per pair
  *
  * The contacts are given in one of two ways:
  * - `set_contact_matrix()`: contacts across groups, for a few groups that meet
- *   each other (age groups in public spaces).
- * - `set_rates()`: contacts within groups only, for many small groups
- *   (households, classrooms, transit trips), at a rate per group -- the
- *   diagonal of a contact matrix that is never stored. One number sets the
- *   same rate for every group. It needs the grouping from `set_groups()`.
+ *   each other (age groups in public spaces). Entry `(g, h)` is the expected
+ *   number of contacts per day of an agent in `g` with agents in `h`.
+ * - `set_contact_prob()`: contacts within groups only, for many small groups
+ *   (households, classrooms, transit trips). Each member meets each other
+ *   member of its group with probability `q` per day, whatever the size of the
+ *   group; `q = 1` makes every group a clique (everyone meets everyone, every
+ *   day), with no ties stored. One number sets the same `q` for every group.
+ *   It needs the grouping from `set_groups()`.
  *
  * Setting one between runs drops the other. A within-group layer is seen by
  * the model's queue (an infectious agent reaches only its own group), and
@@ -20672,20 +20689,23 @@ std::shared_ptr< Mixing<TSeq> > mixing(
  * walked in ascending id order), and available counts are the group sizes
  * minus the few agents in non-available states.
  *
- * `sample()` then draws, for each group `g`, a binomial number of contacts
- * (with probability `contact_rate(group of agent, g) / available(g)` over the
- * infectious agents of `g`), picks the infectious agents with replacement
- * (duplicates are kept) and rejects contacts with the agent itself. With rates,
- * the only group is the agent's own, and the rate is `rates[g]`: the same draw
- * a diagonal matrix gives.
+ * `sample()` then meets each infectious agent of a group `g` with a
+ * probability `p` per pair, independently: it draws a binomial number of
+ * contacts over the infectious agents of `g` and picks that many *distinct*
+ * ones (a partial shuffle of the pool), skipping the agent itself. With
+ * `p = 1` it takes them all, with no random draws. Within groups, the only
+ * group is the agent's own and `p = q[g]`. With a matrix, `p = min(1,
+ * contact_matrix(group of agent, g) / others(g))`, where `others(g)` is the
+ * number of available agents of `g` other than the agent itself: the
+ * contacts per day stay as the matrix says when agents become unavailable.
  *
  * ### Edits
  *
- * `set_group()`, `set_contact_matrix()` and `set_rates()` called during a run
- * apply to that run only: they set the dirty flag, and the next `reset()`
- * restores the baseline. A move made during a step takes effect at the end of
- * the step, with the pools (the agents of the step sample from the grouping it
- * started with). Called between runs, they set the baseline (so a
+ * `set_group()`, `set_contact_matrix()` and `set_contact_prob()` called
+ * during a run apply to that run only: they set the dirty flag, and the next
+ * `reset()` restores the baseline. A move made during a step takes effect at
+ * the end of the step, with the pools (the agents of the step sample from the
+ * grouping it started with). Called between runs, they set the baseline (so a
  * calibration can reuse one model). `set_groups()` sets the baseline grouping
  * and can only be called between runs.
  *
@@ -20718,8 +20738,8 @@ private:
 
     std::vector< double > contact_matrix;          ///< Column-major
     std::vector< double > contact_matrix_baseline; ///< Set between runs
-    std::vector< double > rates;          ///< Within-group rate per group
-    std::vector< double > rates_baseline; ///< Set between runs (one entry: every group)
+    std::vector< double > contact_prob;          ///< Within-group `q`, per group
+    std::vector< double > contact_prob_baseline; ///< Set between runs (one entry: every group)
 
     std::vector< std::vector< size_t > > members; ///< Agents of each group
 
@@ -20729,8 +20749,7 @@ private:
     std::vector< size_t > pool;      ///< Infectious agents, partitioned by group
     std::vector< size_t > offsets;   ///< Where each group starts in `pool`
     std::vector< size_t > counts;    ///< Infectious agents per group
-    std::vector< double > inv_available; ///< 1 / (available agents), per group
-    std::vector< size_t > n_available;
+    std::vector< size_t > n_available; ///< Available agents, per group
 
     std::vector< uint64_t > marks;   ///< Bitset used to order the pool
     std::vector< size_t > ordered;   ///< Infectious ids (ascending), scratch
@@ -20739,7 +20758,7 @@ private:
     void rebuild_members();
     void move(size_t agent_id, size_t group, bool notify_queue);
 
-    /// Draws `rbinom(infectious in g, p)` contacts from group `g`.
+    /// Meets each infectious agent of group `g` with probability `p`.
     void draw(size_t g, double p, size_t agent, Model<TSeq> & model,
         std::vector< size_t > & out);
 
@@ -20801,21 +20820,26 @@ public:
     }
 
     /**
-     * @brief Sets the contact rate within each group (contacts within groups
-     * only).
-     * @param rates_ One rate per group, the expected number of contacts per day
-     * an agent has with the members of its group; or a single rate for every
-     * group.
+     * @brief Sets the probability that two members of a group meet on a given
+     * day (contacts within groups only).
+     * @param q One probability per group, or a single one for every group;
+     * `1` makes the groups cliques (everyone meets everyone, every day).
      */
-    void set_rates(std::vector< double > rates_);
-    void set_rates(double rate) { set_rates(std::vector< double >{rate}); }
+    void set_contact_prob(std::vector< double > q);
+    void set_contact_prob(double q)
+    {
+        set_contact_prob(std::vector< double >{q});
+    }
 
-    /// The within-group rates (one per group after `reset()`; empty with a
-    /// contact matrix).
-    const std::vector< double > & get_rates() const { return rates; }
+    /// The within-group contact probabilities (one per group after `reset()`;
+    /// empty with a contact matrix).
+    const std::vector< double > & get_contact_prob() const
+    {
+        return contact_prob;
+    }
 
-    /// Whether the layer mixes within groups only (`set_rates()`).
-    bool within_groups() const { return !rates_baseline.empty(); }
+    /// Whether the layer mixes within groups only (`set_contact_prob()`).
+    bool within_groups() const { return !contact_prob_baseline.empty(); }
 
     /// The agents of group `g`, in no particular order (valid after `reset()`).
     const std::vector< size_t > & members_of(size_t g) const
@@ -20993,13 +21017,13 @@ inline void Mixing<TSeq>::set_contact_matrix(std::vector< double > cmat)
     if (this->edits_baseline())
     {
         contact_matrix_baseline = cmat;
-        rates_baseline.clear();
+        contact_prob_baseline.clear();
     }
     else if (within_groups())
         throw std::logic_error(
             "Mixing layer '" + this->get_name() + "': the layer mixes within "
-            "groups (set_rates()); a contact matrix can only replace the rates "
-            "between runs."
+            "groups (set_contact_prob()); a contact matrix can only replace "
+            "the contact probabilities between runs."
         );
     else if (cmat.size() != n_groups * n_groups)
         throw std::length_error(
@@ -21013,27 +21037,27 @@ inline void Mixing<TSeq>::set_contact_matrix(std::vector< double > cmat)
 }
 
 template<typename TSeq>
-inline void Mixing<TSeq>::set_rates(std::vector< double > rates_)
+inline void Mixing<TSeq>::set_contact_prob(std::vector< double > q)
 {
 
-    if (rates_.empty())
+    if (q.empty())
         throw std::length_error(
-            "Mixing layer '" + this->get_name() + "': set_rates() needs at "
-            "least one rate."
+            "Mixing layer '" + this->get_name() + "': set_contact_prob() needs "
+            "at least one probability."
         );
 
-    for (double r : rates_)
-        if (!(r >= 0.0))
+    for (double x : q)
+        if (!((x >= 0.0) && (x <= 1.0)))
             throw std::range_error(
-                "Mixing layer '" + this->get_name() + "': contact rates must be "
-                "non-negative (" + std::to_string(r) + ")."
+                "Mixing layer '" + this->get_name() + "': contact probabilities "
+                "must be in [0, 1] (" + std::to_string(x) + ")."
             );
 
     // Between runs, the size is checked by reset(); during a run, the
     // grouping and the form are fixed
     if (this->edits_baseline())
     {
-        rates_baseline = rates_;
+        contact_prob_baseline = q;
         contact_matrix_baseline.clear();
     }
     else
@@ -21042,22 +21066,23 @@ inline void Mixing<TSeq>::set_rates(std::vector< double > rates_)
         if (!within_groups())
             throw std::logic_error(
                 "Mixing layer '" + this->get_name() + "': the layer has a "
-                "contact matrix; rates can only replace it between runs."
+                "contact matrix; contact probabilities can only replace it "
+                "between runs."
             );
 
         // A copy: assign() may free the element before reading it
-        if (rates_.size() == 1u)
-            rates_.assign(n_groups, double(rates_[0u]));
-        else if (rates_.size() != n_groups)
+        if (q.size() == 1u)
+            q.assign(n_groups, double(q[0u]));
+        else if (q.size() != n_groups)
             throw std::length_error(
                 "Mixing layer '" + this->get_name() + "': " +
-                std::to_string(rates_.size()) + " rates, but the layer has " +
-                std::to_string(n_groups) + " groups."
+                std::to_string(q.size()) + " contact probabilities, but the "
+                "layer has " + std::to_string(n_groups) + " groups."
             );
 
     }
 
-    rates = std::move(rates_);
+    contact_prob = std::move(q);
 
 }
 
@@ -21084,7 +21109,6 @@ inline void Mixing<TSeq>::rebuild_layout()
     counts.assign(n_groups, 0u);
     offsets.assign(n_groups, 0u);
     n_available.assign(n_groups, 0u);
-    inv_available.assign(n_groups, 0.0);
 
     // Groups start where the previous one ends (at most its size)
     for (size_t i = 1u; i < n_groups; ++i)
@@ -21151,18 +21175,20 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
         // members must be known now, not taken from the entities later
         if (!explicit_groups)
             throw std::logic_error(
-                "Mixing layer '" + this->get_name() + "': a layer with rates "
-                "(within groups) needs its groups from set_groups()."
+                "Mixing layer '" + this->get_name() + "': a layer with contact "
+                "probabilities (within groups) needs its groups from "
+                "set_groups()."
             );
 
-        rates = rates_baseline;
+        contact_prob = contact_prob_baseline;
         // A copy: assign() may free the element before reading it
-        if (rates.size() == 1u)
-            rates.assign(n_groups, double(rates[0u]));
-        else if (rates.size() != n_groups)
+        if (contact_prob.size() == 1u)
+            contact_prob.assign(n_groups, double(contact_prob[0u]));
+        else if (contact_prob.size() != n_groups)
             throw std::length_error(
                 "Mixing layer '" + this->get_name() + "': " +
-                std::to_string(rates.size()) + " rates, but the layer has " +
+                std::to_string(contact_prob.size()) + " contact "
+                "probabilities, but the layer has " +
                 std::to_string(n_groups) + " groups."
             );
 
@@ -21180,7 +21206,7 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
                 "the layer has " + std::to_string(n_groups) + " groups."
             );
 
-        rates.clear();
+        contact_prob.clear();
 
     }
 
@@ -21280,10 +21306,6 @@ inline void Mixing<TSeq>::update(Model<TSeq> & model)
         }
     }
 
-    for (size_t g = 0u; g < n_groups; ++g)
-        inv_available[g] = (n_available[g] > 0u) ?
-            1.0 / static_cast< double >(n_available[g]) : 0.0;
-
 }
 
 template<typename TSeq>
@@ -21298,23 +21320,34 @@ inline void Mixing<TSeq>::draw(
 
     const size_t n_pool = counts[g];
 
-    if (n_pool == 0u)
+    if ((n_pool == 0u) || (p <= 0.0))
         return;
 
-    // How many from this group?
-    int nsamples = model.rbinom(n_pool, p);
+    // A binomial number of distinct agents is the same as meeting each one
+    // independently with probability p; with p = 1 (a clique) it is everyone,
+    // with no draws. A partial shuffle of the pool puts the ones met first.
+    const size_t n_met = (p < 1.0) ?
+        static_cast< size_t >(model.rbinom(static_cast< int >(n_pool), p)) :
+        n_pool;
 
-    for (int s = 0; s < nsamples; ++s)
+    size_t * first = pool.data() + offsets[g];
+    for (size_t s = 0u; s < n_met; ++s)
     {
 
-        // Randomly selecting an agent
-        int which = model.runif() * n_pool;
+        if (n_met < n_pool)
+        {
+            size_t which = s + static_cast< size_t >(
+                model.runif() * static_cast< double >(n_pool - s)
+            );
 
-        // Correcting overflow error
-        if (which >= static_cast< int >(n_pool))
-            which = static_cast< int >(n_pool) - 1;
+            // Correcting overflow error
+            if (which >= n_pool)
+                which = n_pool - 1u;
 
-        const size_t id = pool[offsets[g] + which];
+            std::swap(first[s], first[which]);
+        }
+
+        const size_t id = first[s];
 
         #ifdef EPI_DEBUG
         if (!is_infectious[model.get_agent(id).get_state()])
@@ -21323,11 +21356,9 @@ inline void Mixing<TSeq>::draw(
             );
         #endif
 
-        // Can't sample itself
-        if (id == agent)
-            continue;
-
-        out.push_back(id);
+        // Can't meet itself
+        if (id != agent)
+            out.push_back(id);
 
     }
 
@@ -21347,18 +21378,35 @@ inline size_t Mixing<TSeq>::sample(
 
     const size_t first = out.size();
 
+    const size_t own = groups[agent];
+
     if (within_groups())
     {
         // Only the agent's own group
-        const size_t g = groups[agent];
-        draw(g, inv_available[g] * rates[g], agent, model, out);
+        draw(own, contact_prob[own], agent, model, out);
     }
     else
     {
+
+        // In its own group, an available agent's contacts are the others
+        const bool available =
+            is_available[model.get_agent(agent).get_state()];
+
         // Column of the agent's group: entry (agent's group, g) is rate[g]
-        const double * rate = contact_matrix.data() + groups[agent];
+        const double * rate = contact_matrix.data() + own;
         for (size_t g = 0u; g < n_groups; ++g)
-            draw(g, inv_available[g] * rate[g * n_groups], agent, model, out);
+        {
+            const size_t others =
+                n_available[g] - (((g == own) && available) ? 1u : 0u);
+
+            if (others > 0u)
+                draw(
+                    g,
+                    std::min(1.0, rate[g * n_groups] / static_cast< double >(others)),
+                    agent, model, out
+                );
+        }
+
     }
 
     // Reporting the interactions, only if somebody listens
