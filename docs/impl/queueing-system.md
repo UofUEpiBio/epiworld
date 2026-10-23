@@ -70,6 +70,10 @@ The queue only decides *which* agents are updated. How susceptible agents acquir
 
 A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `i` is exposed to `j`. The queue marks the neighbors of an agent that becomes infectious, and in a directed network those are the agents it is exposed to. The agents it can infect are the ones that list *it*, which the queue never sees. So in a directed network, `Model::update_state()` and `Model::mutate_virus()` visit every agent at each step, as if queuing were off. The results are the same either way.
 
+### Mixing layers
+
+A mixing layer with a contact probability per pair (`layer::Mixing::set_contact_prob()`, contacts within groups only) is seen by the queue like a network of cliques: registering an agent credits the other members of its group, and a `layer::Mixing::set_group()` made during a run moves those credits from the old group to the new one (`Queue::notify_group_changed()`) at the end of the step, together with the pools, so the credits and the pools never disagree. A mixing layer with a contact matrix reaches every group, so a model with one visits every agent, as with a directed network.
+
 ## See Also
 
 - [Library Architecture](library-architecture.md) — overview of the `Model` class that the `Queue` integrates with.

@@ -15,12 +15,13 @@ concurrency:
 
 jobs:
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v6
 
-      # clang-18 and llvm-18 (llvm-profdata, llvm-cov) ship with the runner image.
+      # clang-18 and llvm-18 (llvm-profdata, llvm-cov) ship with the 24.04 image
+      # (not with 26.04, now ubuntu-latest).
       - name: Install dependencies
         run: |
           sudo apt-get update && \

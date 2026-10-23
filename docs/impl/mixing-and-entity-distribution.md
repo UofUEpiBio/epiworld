@@ -34,7 +34,23 @@ auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
 mixing.set_groups(groups, 3u);
 ```
 
-Whether an edit is permanent depends only on when it is made. Edits made during a run (in a global event, say), such as `mixing.set_group(agent, g)` or `mixing.set_contact_matrix(cmat)`, apply to that run only: they set the layer's dirty flag, and the next run starts from the baseline again. The same calls made between runs set the baseline. `set_groups()` replaces the whole grouping and can only be called between runs.
+Whether an edit is permanent depends only on when it is made. Edits made during a run (in a global event, say), such as `mixing.set_group(agent, g)`, `mixing.set_contact_matrix(cmat)` or `mixing.set_contact_prob(q)`, apply to that run only: they set the layer's dirty flag, and the next run starts from the baseline again. A move made during a step takes effect at the end of the step, when the pools are rebuilt, so every agent of that step samples from the grouping the step started with. The same calls made between runs set the baseline, so a calibration (ABC, LFMCMC) can reuse one model. `set_groups()` replaces the whole grouping and can only be called between runs.
+
+### Mixing within groups only
+
+A contact matrix suits a few groups that meet each other. For many small groups that only meet inside -- households, classrooms, transit trips -- give the probability `q` that two members of a group meet on a given day instead:
+
+```cpp
+// Households (group of agent i: i / 10) where everyone meets everyone daily
+auto households = layer::mixing<>("households", {infected}, {s, infected, r});
+households->set_groups(groups, n_households);
+households->set_contact_prob(1.0);   // or one probability per household
+model.add_layer(households);
+```
+
+Each member meets each other member of its group independently with probability `q[g]`, whatever the size of the group: a member of a household of 3 meets `2q` people a day on average, one of a household of 10 meets `9q`. With `q = 1` every group is a clique, with no ties stored; a member who is not available (in a state outside the layer's available states) is simply not met, and the others keep meeting with the same `q`. How much a contact transmits is the layer weight's business (`set_weight()`), not `q`'s. The layer needs its grouping from `set_groups()`, and `members_of(g)` lists a group. Since an infectious agent reaches only its own group, the model's queue follows the layer (see [Queueing System](queueing-system.md)); a layer with a contact matrix makes the model visit every agent instead. Setting contact probabilities between runs drops the contact matrix, and the reverse.
+
+Both forms draw contacts the same way: for each group, a binomial number of *distinct* infectious members (the same as meeting each one independently with a probability `p` per pair). Within groups, `p = q[g]`; with a matrix, `p = min(1, c(g, h) / others(h))`, where `others(h)` counts the available agents of `h` other than the agent itself, so a matrix keeps its contacts per day when agents become unavailable. A diagonal matrix with `c(g, g) = q * others(g)` therefore gives the same run as `q`.
 
 ## Entity Distribution Functions
 Entity distribution functions define how agents are assigned to entities or groups. These assignments influence the contact and transmission dynamics, as agents within the same entity may have higher interaction rates or specific behavioral patterns. The API provides several functions for distributing agents into entities, each tailored to different use cases.

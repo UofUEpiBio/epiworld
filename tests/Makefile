@@ -124,7 +124,8 @@ $(NAME)_SOURCES := \
 	46b-layer-network-reset.cpp \
 	46c-layer-ownership.cpp \
 	46d-layer-network-many-exposures.cpp \
-	47a-layer-weights-targets.cpp
+	47a-layer-weights-targets.cpp \
+	48a-layer-mixing-within-groups.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.

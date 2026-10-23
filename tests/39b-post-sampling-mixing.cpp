@@ -94,8 +94,9 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
 
         REQUIRE(total > 0u);
 
-        // Contacts are a multiset: repeated draws are kept
-        REQUIRE(d.duplicates > 0u);
+        // Contacts are distinct: an agent meets each infectious agent at most
+        // once a step
+        REQUIRE(d.duplicates == 0u);
 
         // And the tracing drives the quarantine
         REQUIRE(quarantined_ever(model) > 0u);
