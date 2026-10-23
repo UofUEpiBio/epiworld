@@ -90,6 +90,40 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     REQUIRE(hist[0] == hist[1]);
     REQUIRE(src[0] == src[1]);
 
+    // A move made while the agents update (here, by the carrier itself) waits
+    // for the end of the step: the carrier's housemate still meets it (one
+    // contact for sure, which transmits for sure), with or without the queue
+    for (bool queue : {true, false})
+    {
+
+        epimodels::ModelSIR<> tiny("flu", 3, 0.0, 1.0, 0.0);
+        tiny.verbose_off();
+        tiny.get_virus(0).set_distribution(distribute_virus_to_set<>({0}));
+
+        auto hh = layer::mixing<>("hh", {1}, {0, 1, 2});
+        hh->set_groups({0, 0, 1}, 2);
+        hh->set_rates(2.0);
+        tiny.add_layer(hh);
+
+        tiny.set_state_function(1, [](Agent<> * a, Model<> * m) -> void {
+            if (a->get_id() == 0)
+                m->get_layer_as< layer::Mixing<> >("hh").set_group(0, 1);
+        });
+
+        if (!queue)
+            tiny.queuing_off();
+
+        tiny.run(1, 46);
+
+        std::vector< int > states;
+        for (const auto & a : tiny.get_agents())
+            states.push_back(static_cast< int >(a.get_state()));
+
+        REQUIRE(states == std::vector< int >{1, 1, 0});
+        REQUIRE(hh->get_group(0) == 1u);
+
+    }
+
     // The edit lasted for that run only
     auto check = make(rates);
     check->add_globalevent(move, "move", 5);

@@ -72,7 +72,9 @@ std::shared_ptr< Mixing<TSeq> > mixing(
  *
  * `set_group()`, `set_contact_matrix()` and `set_rates()` called during a run
  * apply to that run only: they set the dirty flag, and the next `reset()`
- * restores the baseline. Called between runs, they set the baseline (so a
+ * restores the baseline. A move made during a step takes effect at the end of
+ * the step, with the pools (the agents of the step sample from the grouping it
+ * started with). Called between runs, they set the baseline (so a
  * calibration can reuse one model). `set_groups()` sets the baseline grouping
  * and can only be called between runs.
  *
@@ -110,6 +112,9 @@ private:
 
     std::vector< std::vector< size_t > > members; ///< Agents of each group
 
+    /// Moves made during a step (agent, group), applied by `update()`
+    std::vector< std::pair< size_t, size_t > > moves;
+
     std::vector< size_t > pool;      ///< Infectious agents, partitioned by group
     std::vector< size_t > offsets;   ///< Where each group starts in `pool`
     std::vector< size_t > counts;    ///< Infectious agents per group
@@ -121,6 +126,7 @@ private:
 
     void rebuild_layout();
     void rebuild_members();
+    void move(size_t agent_id, size_t group, bool notify_queue);
 
     /// Draws `rbinom(infectious in g, p)` contacts from group `g`.
     void draw(size_t g, double p, size_t agent, Model<TSeq> & model,
@@ -163,7 +169,8 @@ public:
      * @brief Moves an agent to another group (`NO_GROUP` takes it out of the
      * layer).
      * @details Like every change made during a step, it is in force for the
-     * contacts of the next step (the pools are rebuilt at the end of the step).
+     * contacts of the next step: the move waits for the end of the step, when
+     * the pools are rebuilt (until then, `get_group()` gives the old group).
      */
     void set_group(size_t agent_id, size_t group);
 
@@ -305,23 +312,38 @@ inline void Mixing<TSeq>::set_group(size_t agent_id, size_t group)
             std::to_string(n_groups) + " groups)."
         );
 
-    const bool baseline = this->edits_baseline();
-    if (baseline)
+    // During a run, the move waits for the end of the step (see update())
+    if (!this->edits_baseline())
     {
-        if (!explicit_groups)
-            throw std::logic_error(
-                "Mixing layer '" + this->get_name() + "': set_groups() must be "
-                "called before set_group() outside a run."
-            );
-        groups_baseline[agent_id] = group;
+        moves.emplace_back(agent_id, group);
+        return;
     }
+
+    if (!explicit_groups)
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': set_groups() must be "
+            "called before set_group() outside a run."
+        );
+
+    groups_baseline[agent_id] = group;
+    move(agent_id, group, false);
+
+}
+
+template<typename TSeq>
+inline void Mixing<TSeq>::move(
+    size_t agent_id,
+    size_t group,
+    bool notify_queue
+)
+{
 
     const size_t old = groups[agent_id];
     if (old == group)
         return;
 
     // During a run, the queue follows the move (it sees within-group layers)
-    if ((this->model != nullptr) && !baseline && within_groups())
+    if (notify_queue && (this->model != nullptr) && within_groups())
         this->model->group_member_moved(
             agent_id,
             old   == NO_GROUP ? nullptr : &members[old],
@@ -552,6 +574,7 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
     }
 
     rebuild_members();
+    moves.clear();
 
     pool.assign(n, 0u);
     ordered.clear();
@@ -581,6 +604,11 @@ inline void Mixing<TSeq>::update(Model<TSeq> & model)
         layout_stale = true;
         rebuild_members();
     }
+
+    // Moves made during the step
+    for (const auto & [agent_id, group] : moves)
+        move(agent_id, group, true);
+    moves.clear();
 
     if (layout_stale)
         rebuild_layout();
