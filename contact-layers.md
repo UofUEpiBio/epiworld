@@ -1168,12 +1168,14 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-23).
 | Phases 1-2 | #316, #317 merged | #216 merged (catch-up through 3a) | #33 merged (catch-up through 3a) | #18 merged (catch-up through 3a) | #65 merged (catch-up through 3a) |
 | Phase 3a (+ fixes) | #318, #319 merged | #216 | #33 | #18 | #65 |
 | `downstream.yml` | #321 merged | | | | |
-| Phase 3b | #323 open (plan: #322 merged) | | | | |
+| Phase 3b | #323 merged (plan: #322; checked accessors: this PR) | #218 merged | port open after this PR | | |
 | Phase 3c | not started | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
-**Next** (as of the date above): merge #323, then the 3b ports (epiworldR,
-epiworldpy, epiworldjs, measles), binding `layer::Mixing` for user-added
-layers (11.5); then Phase 3c.
+**Next** (as of the date above): the remaining 3b ports (epiworldpy, which
+vendors this PR's checked `get_group()`/`members_of()`; epiworldjs; measles),
+binding `layer::Mixing` for user-added layers (11.5); then Phase 3c, whose
+epiworldR port drops the R-side size bookkeeping that #218 needed before the
+accessors were checked.
