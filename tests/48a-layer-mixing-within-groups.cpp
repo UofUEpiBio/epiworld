@@ -245,4 +245,9 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     REQUIRE_THROWS_AS(wrong->run(1, 1), std::length_error);
     REQUIRE_THROWS_AS(layer.set_contact_prob(1.5), std::range_error);
 
+    // Agents and groups out of range are errors, not reads past the end
+    REQUIRE_THROWS_AS(layer.get_group(n), std::range_error);
+    REQUIRE_THROWS_AS(layer.members_of(n_groups), std::range_error);
+    REQUIRE_THROWS_AS(layer.set_group(0u, n_groups), std::range_error);
+
 }
