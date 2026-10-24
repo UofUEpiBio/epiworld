@@ -3,10 +3,11 @@
 
 using namespace epiworld;
 
-// The post-sampling callback in the mixing models. The built-in models with
-// contact tracing record contacts through the callback they install: every
-// sampled contact must end up in the tracing exactly once, and the tracing
-// must still drive the quarantine.
+// The post-sampling callback in the mixing models. SEIR mixing with quarantine
+// traces its mixing layer, and the measles models record contacts in the
+// model's log through the callback they install: either way, every sampled
+// contact must end up in the log exactly once, and the log must still drive
+// the quarantine.
 
 namespace {
 
@@ -83,8 +84,9 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
         model.verbose_off();
         model.run(40, 1231);
 
-        // Every contact delivered is in the tracing, once
-        auto & ct = model.get_contact_tracing();
+        // Every contact delivered is in the mixing layer's log, once
+        REQUIRE_FALSE(model.is_contact_tracing_on());
+        auto & ct = model.get_layer("mixing").get_tracing();
         size_t total = 0u;
         for (size_t i = 0u; i < model.size(); ++i)
         {

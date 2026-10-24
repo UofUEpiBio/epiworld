@@ -843,7 +843,21 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
   neighbor limit of `Bubbles` is gone.
 - **3b. Within-group `Mixing` (a contact probability per pair), seen by the
   queue; one sampler drawing distinct contacts (D9).**
-- **3c. Contact tracing into the layers** (point 9, D11).
+- **3c. Contact tracing into the layers** (point 9, D11), in two PRs
+  (settled 2026-10-24):
+  - **3c-1. Layer logs.** `enable_tracing(max_contacts)` on any layer: the
+    layer logs the contacts it samples (pull, push and the models' own
+    samplers), under the carrier, in a `ContactTracing` that starts empty at
+    every run. `ModelSEIRMixingQuarantine` traces its mixing layer and
+    `ModelSEIRNetworkQuarantine` its network layers (turned on at reset); both
+    read every traced layer's log, layer by layer, and no longer install the
+    post-sampling recorder. Draw-for-draw identical for a model with one
+    traced layer; with several, each layer keeps its own `max_contacts`
+    (before, one log was shared). The measles models do not sample from
+    layers until 3d, so they keep the model's log (`contact_tracing_on()`)
+    and the PEP intervention reads it; 3d removes it with them.
+  - **3c-2. Group history.** Within-group layers keep the history of moves and
+    absences and answer `groupmates_of(agent, d1, d2)` (D11).
 - **3d. Entities removed, measles models and the example model on layers**
   (the acceptance tests of D11).
 
@@ -1151,7 +1165,7 @@ that on `v1-layers` this plan is the source of truth.
 | 1-2 (catch-up) | Population in the constructors (`n`); layer objects (`layer_network(name, graph_*())`, `add_layer()`, `get_layer()`); network edits and edge lists on the network layer; contact matrix on the mixing layer; `Bubbles` names its layer; `agents_smallworld()` & co. defunct. |
 | 3a | `layer` column in the transmissions; `get_layer()` by id; `set_weight(layer, param)`; `add_virus_target(layer, virus)`. |
 | 3b | Bind `layer::Mixing` for user-added layers: one constructor with the groups and exactly one of a contact matrix and contact probabilities (vector or one number, `1` for cliques); `set_contact_prob()` / `get_contact_prob()`; `members_of()`, `get_group()`. The queue is internal. Expected values of the mixing models' tests change (distinct contacts, D9). |
-| 3c | Per-layer `enable_tracing()` and its logs; `groupmates_of()` on within-group layers; whatever the wrapper binds of the model-level tracer (e.g., the quarantine models' parameters) follows the core, and removed accessors become defunct. |
+| 3c | Per-layer `enable_tracing()` / `is_tracing()` / `get_tracing()` and its logs (3c-1); `groupmates_of()` on within-group layers (3c-2); whatever the wrapper binds of the model-level tracer (e.g., the quarantine models' parameters) follows the core, and removed accessors become defunct. |
 | 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing models take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
@@ -1160,7 +1174,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-23).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-24).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1168,14 +1182,13 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-23).
 | Phases 1-2 | #316, #317 merged | #216 merged (catch-up through 3a) | #33 merged (catch-up through 3a) | #18 merged (catch-up through 3a) | #65 merged (catch-up through 3a) |
 | Phase 3a (+ fixes) | #318, #319 merged | #216 | #33 | #18 | #65 |
 | `downstream.yml` | #321 merged | | | | |
-| Phase 3b | #323 merged (plan: #322; checked accessors: this PR) | #218 merged | port open after this PR | | |
-| Phase 3c | not started | | | | |
+| Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
+| Phase 3c-1 (layer logs) | this PR | | | | |
+| Phase 3c-2 (group history) | not started | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
-**Next** (as of the date above): the remaining 3b ports (epiworldpy, which
-vendors this PR's checked `get_group()`/`members_of()`; epiworldjs; measles),
-binding `layer::Mixing` for user-added layers (11.5); then Phase 3c, whose
-epiworldR port drops the R-side size bookkeeping that #218 needed before the
-accessors were checked.
+**Next** (as of the date above): the 3c-1 ports (epiworldR first, which also
+drops the R-side size bookkeeping that #218 needed before the accessors were
+checked; then epiworldpy, epiworldjs, measles), then 3c-2.

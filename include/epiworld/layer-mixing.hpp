@@ -808,6 +808,7 @@ inline size_t Mixing<TSeq>::sample(
 
     // Reporting the interactions, only if somebody listens
     const size_t n_sampled = out.size() - first;
+    this->trace(out.data() + first, n_sampled, agent);
     if (model.has_post_sampling())
         model.register_sampled_contacts(
             out.data() + first, n_sampled, static_cast< int >(agent)
