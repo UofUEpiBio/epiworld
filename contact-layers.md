@@ -929,8 +929,9 @@ the measles models stay: they differ in the disease, not only in the contacts.
 - `ModelSEIRMixing` and `ModelSEIR` + the same layer differ only because
   `ModelSEIR` recovers with `runif() < "Recovery rate"`: it ignores the virus's
   recovery probability and the tools' recovery enhancers, unlike every other
-  model. With that fixed they are draw-for-draw identical (5 seeds). This is a
-  bug on `master` too: fix it there first, in its own PR.
+  model. With that fixed (Infected uses `default_update_exposed`, as in
+  `ModelSIR`) they are draw-for-draw identical (5 seeds). This is a bug on
+  `master` too, fixed there first in its own PR (#327).
 - `*CONN` models sample infectious contacts with replacement (rate `c / n`);
   a one-group mixing layer samples distinct ones (rate `c / (n - 1)`). The
   final sizes agree (contact rate 4, transmission 0.05, recovery 1/7, 300
@@ -939,37 +940,67 @@ the measles models stay: they differ in the disease, not only in the contacts.
   profile, `Mixing::sample()` / `draw()` and the binomial draw per
   susceptible lead. Close that gap before the `*CONN` models go.
 
+**Sampling with replacement goes** (settled 2026-10-25). A `*CONN` model
+draws its contacts from the infectious agents with replacement, and a person
+drawn twice enters the draw twice, so their chance of infecting goes up. That
+is not a model of meeting someone more often: how many times a pair meets is
+left to chance, and the user cannot set it. Repeated or more intense contact is
+said explicitly, with a layer's weight or contact probability. Every layer
+draws distinct contacts (D9).
+
 **What the core needs first.**
 
-1. **The contact rate is a model parameter.** In the `*CONN` models "Contact
-   rate" is a parameter (global events and calibration change it); in a
-   layer the matrix is structure. A mixing layer can take its contact level
-   from a parameter: its contacts are the parameter times the matrix (the
-   `*CONN` replacement: a 1 x 1 matrix of 1 and "Contact rate"). This is the
-   contact-level counterpart of `set_weight(param)`, which scales the odds.
-2. **Which states transmit and take part, said once.** A mixing layer lists
-   its infectious and available states by id (`layer::mixing(name,
+1. **The contact level is a model parameter** (settled 2026-10-25). In the
+   `*CONN` models "Contact rate" is a parameter (global events and calibration
+   change it); in a layer the matrix is structure (point 17). A mixing layer
+   can take its contact level from a parameter: its contacts are the parameter
+   times the matrix (the `*CONN` replacement: a 1 x 1 matrix of 1 and "Contact
+   rate"). This is the contact-level counterpart of `set_weight(param)`, which
+   scales the odds.
+2. **Which states transmit, said once** (settled 2026-10-25). A mixing layer
+   lists its infectious and available states by id (`layer::mixing(name,
    infectious, available)`), and network sampling takes a separate exclude
-   list (`make_update_susceptible({EXPOSED})`). A user adding a layer to
-   `ModelSEIR` must know those ids. Proposed: a model declares them once and
-   a layer built without lists uses the model's. Settle the API in the PR.
+   list (`make_update_susceptible({EXPOSED})`); a user adding a layer to
+   `ModelSEIR` must know those ids. Instead, a model declares once which of
+   its states transmit (in SEIR only Infected; Exposed carries the virus but
+   does not), and every layer reads that: networks and mixing alike. Every
+   other agent can be met. Taking agents out of a layer is participation (D2,
+   Phase 4): exclusion, and leaky isolation as layer-targeted tools. Until then
+   `ModelSEIRQuarantine` keeps its isolated, quarantined and hospitalized
+   agents out of the layers with the layer's available states, as the mixing
+   quarantine model does today; D2 replaces that mechanism.
 3. **The one-group cost** (above).
 
 **The merged models.**
 
-- Parameter names: one set for SIR, SEIR, SIRD, SEIRD and the quarantine model
-  (the plain models' names, "Transmission rate", "Recovery rate",
-  "Incubation days", unless the PR finds a reason to prefer others).
+- **Parameter names say what the code does**, in the terms epidemiology uses
+  (settled 2026-10-25). Most are daily rates: the probability per day of
+  leaving a state, so the mean time in it is 1 / rate days. One set for SIR,
+  SEIR, SIRD, SEIRD and the quarantine model. Proposed (to confirm in the PR):
+
+  | Now | Proposed | What the code does |
+  |---|---|---|
+  | "Transmission rate", "Prob. Transmission" | "Transmission probability" | Probability that one contact with an infectious agent infects (per contact, not per day). |
+  | "Recovery rate", "Prob. Recovery" | "Recovery rate" | Daily probability of recovering while infectious; mean infectious period 1 / rate. |
+  | "Incubation days", "Avg. Incubation days" | "Latent period" | Mean days in Exposed (daily probability 1 / period). Epidemiology calls the time until infectious the latent period; the incubation period ends at symptoms. |
+  | "Contact rate" | "Contact rate" | Expected contacts per day. |
+  | "Death rate" | "Death rate" | Daily probability of dying while infectious. |
+  | "Hospitalization rate", "Hospitalization period" | unchanged | Daily probability; mean days in hospital. |
+  | "Days undetected" | "Detection delay" | Mean days infectious before detection (daily probability 1 / delay; 0 detects at once, a negative value never). |
+  | "Contact tracing success rate" | "Contact tracing probability" | Probability that a contact is traced (per contact). |
+  | "Contact tracing days prior" | "Contact tracing window" | Days before detection whose contacts are traced. |
+  | "Quarantine period", "Isolation period", the two willingness parameters | unchanged | Days; the probability that an agent complies (drawn once per agent). |
+
 - `ModelSEIRQuarantine` keeps the network model's ten states ("Detected
   Hospitalized" separate from "Hospitalized"), samples through the generic
   path (so layer weights, virus targets, and push on networks work; the
-  network model's own sampler ignored them) with Exposed, Isolated and the
-  hospitalized and quarantined states unable to transmit, as today. It traces
-  every layer it is given. The mixing model's unused `day_exposed` goes.
+  network model's own sampler ignored them), with only Infected transmitting
+  (item 2). It traces every layer it is given. The mixing model's unused
+  `day_exposed` goes.
 - The `*CONN`-only `generation_time_expected()` and `get_n_infected()` go
   (no wrapper binds them, no test uses them).
 
-**Order.** The `ModelSEIR` recovery fix on `master` (merged into
+**Order.** The `ModelSEIR` recovery fix on `master` (#327, merged into
 `v1-layers`); one epiworld PR with the core items and the consolidation; then
 the wrapper ports. Then 3c-2.
 
