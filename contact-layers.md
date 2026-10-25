@@ -883,9 +883,9 @@ The list below is the whole of Phase 3.
 - An example model: households (within-group `Mixing`) + workplace (`Network`)
   + public spaces (`Mixing` with a matrix).
 - Acceptance: `ModelMeaslesMixingRiskQuarantine` (school traced by membership,
-  community by log) and the SEIR mixing and network quarantine models are
-  rebuilt on layers and stay draw-for-draw identical, which also shows the
-  per-layer tracing design holds. Then a model with tracing at school and in the
+  community by log) is rebuilt on layers and stays draw-for-draw identical,
+  which also shows the per-layer tracing design holds (the SEIR quarantine
+  models are merged into one before 3d, see "Model consolidation"). Then a model with tracing at school and in the
   community with different success rates, as the first test of per-layer
   policies.
 - Tests (end-to-end, about three files):
@@ -895,6 +895,90 @@ The list below is the whole of Phase 3.
     Binomial(others, `q`) housemates (`48a`);
   - a combined model attributes transmissions to the expected layers (a
     layer with weight 0, or one that excludes the virus, records none).
+
+### Model consolidation -- one model per disease (after the 3c-1 ports)
+
+Settled 2026-10-25. Contacts now come from layers, so a model is a disease
+(states, parameters, update rules) and its layers are where contacts come
+from. Models that differ only in where contacts come from go:
+
+| Removed | Replaced by |
+|---|---|
+| `ModelSIRMixing`, `ModelSEIRMixing` | `ModelSIR`, `ModelSEIR` + a mixing layer (contact matrix) |
+| `ModelSIRCONN`, `ModelSEIRCONN`, `ModelSIRDCONN`, `ModelSEIRDCONN` | `ModelSIR`, `ModelSEIR`, `ModelSIRD`, `ModelSEIRD` + a one-group mixing layer |
+| `ModelSEIRMixingQuarantine`, `ModelSEIRNetworkQuarantine` | `ModelSEIRQuarantine`, on any layers, tracing each of them |
+
+About 2,500 of the 5,426 lines in `include/epiworld/models/`, plus their
+bindings in every wrapper. It also removes the `*CONN` models from the risk
+"Layers a model ignores" (Section 9). SIS, SISD, SIRLogit, SURV, DiffNet and
+the measles models stay: they differ in the disease, not only in the contacts.
+
+**Rules (from the user, 2026-10-25).**
+
+- Where the old models differ, keep what agrees with epidemiological theory;
+  the old implementations are not a reference to reproduce.
+- Every number a user may set or calibrate is a model parameter (point 17).
+- Where one model is more flexible than the other, the merged one keeps that
+  flexibility.
+
+**What the check found** (scratch harness on `phase3c-layer-tracing`,
+2026-10-25; 10,000 agents):
+
+- `ModelSIRMixing` and `ModelSIR` + the same layer are draw-for-draw identical
+  (5 seeds).
+- `ModelSEIRMixing` and `ModelSEIR` + the same layer differ only because
+  `ModelSEIR` recovers with `runif() < "Recovery rate"`: it ignores the virus's
+  recovery probability and the tools' recovery enhancers, unlike every other
+  model. With that fixed they are draw-for-draw identical (5 seeds). This is a
+  bug on `master` too: fix it there first, in its own PR.
+- `*CONN` models sample infectious contacts with replacement (rate `c / n`);
+  a one-group mixing layer samples distinct ones (rate `c / (n - 1)`). The
+  final sizes agree (contact rate 4, transmission 0.05, recovery 1/7, 300
+  runs): SIR mean 4,246 vs 4,245 (sd 380 vs 378), SEIR 1,943 vs 1,950 (sd 410
+  vs 396). But the layer costs 1.6 to 2 times the CPU time; in a callgrind
+  profile, `Mixing::sample()` / `draw()` and the binomial draw per
+  susceptible lead. Close that gap before the `*CONN` models go.
+
+**What the core needs first.**
+
+1. **The contact rate is a model parameter.** In the `*CONN` models "Contact
+   rate" is a parameter (global events and calibration change it); in a
+   layer the matrix is structure. A mixing layer can take its contact level
+   from a parameter: its contacts are the parameter times the matrix (the
+   `*CONN` replacement: a 1 x 1 matrix of 1 and "Contact rate"). This is the
+   contact-level counterpart of `set_weight(param)`, which scales the odds.
+2. **Which states transmit and take part, said once.** A mixing layer lists
+   its infectious and available states by id (`layer::mixing(name,
+   infectious, available)`), and network sampling takes a separate exclude
+   list (`make_update_susceptible({EXPOSED})`). A user adding a layer to
+   `ModelSEIR` must know those ids. Proposed: a model declares them once and
+   a layer built without lists uses the model's. Settle the API in the PR.
+3. **The one-group cost** (above).
+
+**The merged models.**
+
+- Parameter names: one set for SIR, SEIR, SIRD, SEIRD and the quarantine model
+  (the plain models' names, "Transmission rate", "Recovery rate",
+  "Incubation days", unless the PR finds a reason to prefer others).
+- `ModelSEIRQuarantine` keeps the network model's ten states ("Detected
+  Hospitalized" separate from "Hospitalized"), samples through the generic
+  path (so layer weights, virus targets, and push on networks work; the
+  network model's own sampler ignored them) with Exposed, Isolated and the
+  hospitalized and quarantined states unable to transmit, as today. It traces
+  every layer it is given. The mixing model's unused `day_exposed` goes.
+- The `*CONN`-only `generation_time_expected()` and `get_n_infected()` go
+  (no wrapper binds them, no test uses them).
+
+**Order.** The `ModelSEIR` recovery fix on `master` (merged into
+`v1-layers`); one epiworld PR with the core items and the consolidation; then
+the wrapper ports. Then 3c-2.
+
+**Tests** (end-to-end): `ModelSIR`/`ModelSEIR` + a matrix layer reproduces
+the histories the Mixing models gave (recorded before they go); the `*CONN`
+replacement matches the old final-size mean and sd within sampling error;
+`ModelSEIRQuarantine` on one traced layer reproduces each old quarantine
+model's results within sampling error, and on a network plus a mixing layer
+quarantines contacts from both.
 
 ### Phase 4 -- participation, tools, schedules, persistence
 
@@ -1003,8 +1087,9 @@ The list below is the whole of Phase 3.
   wrappers expose only the built-in generators until a phase needs more.
 - **Layers a model ignores.** Models that keep their own sampler accept any
   layer but read only some: the connected models (`*CONN`) draw from the list
-  of infected agents and ignore every layer; SIRLogit, SURV and the SEIR
-  network-quarantine model read network layers only; the measles mixing models
+  of infected agents and ignore every layer (they go in the model
+  consolidation); SIRLogit, SURV and the SEIR network-quarantine model read
+  network layers only; the measles mixing models
   read their own mixing layer until 3d. An added layer then silently carries
   no transmission. By the end of Phase 3 each such model either moves to the
   generic path or rejects, in `add_layer()`, the layers it does not read; the
@@ -1166,7 +1251,8 @@ that on `v1-layers` this plan is the source of truth.
 | 3a | `layer` column in the transmissions; `get_layer()` by id; `set_weight(layer, param)`; `add_virus_target(layer, virus)`. |
 | 3b | Bind `layer::Mixing` for user-added layers: one constructor with the groups and exactly one of a contact matrix and contact probabilities (vector or one number, `1` for cliques); `set_contact_prob()` / `get_contact_prob()`; `members_of()`, `get_group()`. The queue is internal. Expected values of the mixing models' tests change (distinct contacts, D9). |
 | 3c | Per-layer `enable_tracing()` / `is_tracing()` / `get_tracing()` and its logs (3c-1); `groupmates_of()` on within-group layers (3c-2); whatever the wrapper binds of the model-level tracer (e.g., the quarantine models' parameters) follows the core, and removed accessors become defunct. |
-| 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing models take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
+| Consolidation | The removed models (`ModelSIRMixing`, `ModelSEIRMixing`, the four `*CONN`, the two SEIR quarantine models) become defunct stubs naming the replacement (the plain model + `add_layer()`; `ModelSEIRQuarantine`); the parameter that sets a mixing layer's contact level; tests and the vignettes that use them (epiworldR: getting-started, advanced-modeling, mixing, run-multiple, implementation) rewritten. epiworldjs: registry entries. measles: unaffected. |
+| 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing layers take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
 | 5 | Re-vendor only, unless a push/pull setting becomes public. |
@@ -1174,7 +1260,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-24).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-25).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1183,7 +1269,8 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-24).
 | Phase 3a (+ fixes) | #318, #319 merged | #216 | #33 | #18 | #65 |
 | `downstream.yml` | #321 merged | | | | |
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
-| Phase 3c-1 (layer logs) | this PR | | | | |
+| Phase 3c-1 (layer logs) | #325 | | | | |
+| Model consolidation | not started (plan: #PLAN) | | | | |
 | Phase 3c-2 (group history) | not started | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
@@ -1191,4 +1278,5 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-24).
 
 **Next** (as of the date above): the 3c-1 ports (epiworldR first, which also
 drops the R-side size bookkeeping that #218 needed before the accessors were
-checked; then epiworldpy, epiworldjs, measles), then 3c-2.
+checked; then epiworldpy, epiworldjs, measles), then the model consolidation
+(the `ModelSEIR` recovery fix on `master` first), then 3c-2.
