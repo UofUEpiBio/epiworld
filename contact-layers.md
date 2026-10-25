@@ -956,7 +956,13 @@ draws distinct contacts (D9).
    can take its contact level from a parameter: its contacts are the parameter
    times the matrix (the `*CONN` replacement: a 1 x 1 matrix of 1 and "Contact
    rate"). This is the contact-level counterpart of `set_weight(param)`, which
-   scales the odds.
+   scales the odds, and it binds the same way: the layer keeps the parameter's
+   name as a `ParamRef` (as `weight_ref` does) and reads the model's value
+   each time it samples, never a copy taken when the layer is added. A global
+   event or a calibration step that changes "Contact rate" therefore changes
+   the contacts drawn on the next day. Acceptance test: a run whose global
+   event sets "Contact rate" to 0 on day k has no new exposures after day k,
+   while the same seed without the event has some.
 2. **Which states transmit, said once** (settled 2026-10-25). A mixing layer
    lists its infectious and available states by id (`layer::mixing(name,
    infectious, available)`), and network sampling takes a separate exclude
@@ -967,8 +973,26 @@ draws distinct contacts (D9).
    other agent can be met. Taking agents out of a layer is participation (D2,
    Phase 4): exclusion, and leaky isolation as layer-targeted tools. Until then
    `ModelSEIRQuarantine` keeps its isolated, quarantined and hospitalized
-   agents out of the layers with the layer's available states, as the mixing
-   quarantine model does today; D2 replaces that mechanism.
+   agents out of the layers, as the mixing quarantine model does today; D2
+   replaces that mechanism.
+
+   The interim contract, so a generic layer holds no eligibility policy:
+
+   - The public constructor loses both state lists: `layer::mixing(name)`.
+     A generic layer samples every agent in the group (everyone counts in the
+     denominator), and only agents in the model's transmitting states infect.
+   - Two cases stay distinct. *Non-transmitting* agents can be met but cannot
+     infect (they still take a share of each susceptible's contacts).
+     *Excluded* agents are not met at all: they leave the denominator, so the
+     contacts go to the others. Only exclusion needs a policy.
+   - Until D2, exclusion is private to `ModelSEIRQuarantine`: an internal
+     (not public, not bound by the wrappers) setter on its layers lists the
+     excluded states. In SEIRQuarantine: Susceptible, Exposed and Recovered
+     are met and do not transmit; Infected is met and transmits; Isolated,
+     Detected Hospitalized, Hospitalized, Quarantined Susceptible,
+     Quarantined Exposed and Isolated Recovered are excluded. On a network
+     layer exclusion means the tie is skipped. D2 removes the internal setter
+     and the quarantine model moves to exclusion and layer-targeted tools.
 3. **The one-group cost** (above).
 
 **The merged models.**
@@ -1004,12 +1028,30 @@ draws distinct contacts (D9).
 `v1-layers`); one epiworld PR with the core items and the consolidation; then
 the wrapper ports. Then 3c-2.
 
-**Tests** (end-to-end): `ModelSIR`/`ModelSEIR` + a matrix layer reproduces
-the histories the Mixing models gave (recorded before they go); the `*CONN`
-replacement matches the old final-size mean and sd within sampling error;
-`ModelSEIRQuarantine` on one traced layer reproduces each old quarantine
-model's results within sampling error, and on a network plus a mixing layer
-quarantines contacts from both.
+**Tests** (end-to-end, in the suite): `ModelSIR`/`ModelSEIR` + a matrix
+layer reproduces the histories the Mixing models gave, draw for draw
+(recorded before they go); the "Contact rate" global-event test (item 1);
+`ModelSEIRQuarantine` on a network plus a mixing layer quarantines contacts
+from both.
+
+**Acceptance check** (run once in the consolidation PR, with the old models
+still in the tree; the script and its output go in the PR description). For
+each replacement -- SIRCONN, SEIRCONN, SIRDCONN, SEIRDCONN, and each old
+quarantine model against `ModelSEIRQuarantine` on the equivalent layer:
+
+- 1,000 runs per model, seeds 1 to 1,000, 10,000 agents, 100 days, the
+  parameters of the measurement above (quarantine models: their test-suite
+  parameters).
+- Statistics: final size (agents ever infected) and peak prevalence.
+- Pass: for each statistic, the standardized mean difference
+  |mean_old - mean_new| / pooled sd is at most 0.1, and the sd ratio is
+  between 0.9 and 1.1.
+- The CONN replacements must pass (the switch to distinct contacts changes
+  the rate from c / n to c / (n - 1), which is within this threshold at these
+  sizes). A quarantine model may fail only where the difference is traced to
+  a deliberate change listed above (only Infected transmits, the generic
+  sampler); the PR reports the failing statistic and its cause, and the user
+  decides.
 
 ### Phase 4 -- participation, tools, schedules, persistence
 
