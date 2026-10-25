@@ -885,9 +885,9 @@ The list below is the whole of Phase 3.
 - Acceptance: `ModelMeaslesMixingRiskQuarantine` (school traced by membership,
   community by log) is rebuilt on layers and stays draw-for-draw identical,
   which also shows the per-layer tracing design holds (the SEIR quarantine
-  models are merged into one before 3d, see "Model consolidation"). Then a model with tracing at school and in the
-  community with different success rates, as the first test of per-layer
-  policies.
+  models are merged into one before 3d, see "Model consolidation"). Then a
+  model with tracing at school and in the community with different success
+  rates, as the first test of per-layer policies.
 - Tests (end-to-end, about three files):
   - a within-group `Mixing` layer is the same run as the same layer built
     with the equivalent diagonal contact matrix; `q = 1` infects every
@@ -1270,7 +1270,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-25).
 | `downstream.yml` | #321 merged | | | | |
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
 | Phase 3c-1 (layer logs) | #325 | | | | |
-| Model consolidation | not started (plan: #PLAN) | | | | |
+| Model consolidation | not started (plan: #326) | | | | |
 | Phase 3c-2 (group history) | not started | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
