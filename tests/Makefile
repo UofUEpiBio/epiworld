@@ -80,6 +80,7 @@ $(NAME)_SOURCES := \
 	29a-state-update-transition.cpp \
 	30a-contact-tracing.cpp \
 	30b-contact-tracing.cpp \
+	30c-layer-tracing.cpp \
 	31a-seir-network-quarantine.cpp \
 	32a-bubbles.cpp \
 	32b-bubbles-peer.cpp \

@@ -9214,6 +9214,15 @@ inline void ContactTracing::print(size_t agent)
  * dirty layer and clears the flag. An edit made between runs becomes the new
  * baseline.
  *
+ * ### Contact tracing
+ *
+ * `enable_tracing()` makes the layer keep a log of its contacts (a
+ * `ContactTracing`): every contact the layer samples, with a carrier, is
+ * recorded under the carrier, with the day. The log starts empty at every run
+ * and keeps the last `max_contacts` contacts of each agent. Tracing is off by
+ * default, and it is a setting, not an edit: it lasts across runs whenever it
+ * is turned on or off.
+ *
  * @ingroup contact_layers
  */
 template<typename TSeq>
@@ -9230,6 +9239,15 @@ private:
 
     std::optional< ParamRef > weight_ref; ///< Empty: weight 1
     uint64_t virus_mask = ~uint64_t(0);   ///< Lineages that spread here
+    size_t trace_max = 0u;   ///< Contacts kept per agent; 0: not traced
+    ContactTracing trace_log; ///< This run's contacts, if traced
+
+    /// An empty log for a run of `n` agents (the model calls it at reset).
+    void reset_tracing(size_t n)
+    {
+        if (trace_max > 0u)
+            trace_log.reset(n, trace_max);
+    }
 
 protected:
 
@@ -9257,7 +9275,8 @@ public:
     /// A copy belongs to no model (see `clone()`).
     ContactLayer(const ContactLayer<TSeq> & other) :
         name(other.name), dirty(other.dirty), weight_ref(other.weight_ref),
-        virus_mask(other.virus_mask) {}
+        virus_mask(other.virus_mask), trace_max(other.trace_max),
+        trace_log(other.trace_log) {}
 
     ContactLayer<TSeq> & operator=(const ContactLayer<TSeq> &) = delete;
 
@@ -9287,6 +9306,36 @@ public:
     ///@{
     void add_virus_target(int lineage_id);
     void add_virus_target(const Virus<TSeq> & v);
+    ///@}
+
+    /**
+     * @name Contact tracing
+     * @brief Keep a log of the layer's contacts (see the class description).
+     */
+    ///@{
+    /// Turn tracing on, keeping up to `max_contacts` contacts per agent.
+    void enable_tracing(size_t max_contacts = EPI_MAX_TRACKING);
+    void disable_tracing();
+    bool is_tracing() const { return trace_max > 0u; }
+    /// The log of the current run (throws if tracing is off).
+    ContactTracing & get_tracing();
+
+    /// Log that `source` (the carrier) met `contact` today, if traced.
+    void trace(size_t source, size_t contact)
+    {
+        if (trace_max > 0u)
+            trace_log.add_contact(
+                source, contact, static_cast< size_t >(model->today())
+            );
+    }
+
+    /// Log that each of the `n` `sources` met `contact` today, if traced.
+    void trace(const size_t * sources, size_t n, size_t contact)
+    {
+        if (trace_max > 0u)
+            for (size_t k = 0u; k < n; ++k)
+                trace(sources[k], contact);
+    }
     ///@}
 
     /// Whether the virus spreads through the layer.
@@ -9336,6 +9385,40 @@ public:
     virtual bool supports_queue() const { return false; }
 
 };
+
+template<typename TSeq>
+inline void ContactLayer<TSeq>::enable_tracing(size_t max_contacts)
+{
+    if (max_contacts == 0u)
+        throw std::invalid_argument(
+            "Contact tracing should keep at least one contact per agent."
+        );
+
+    trace_max = max_contacts;
+
+    // Turned on in a model that has agents: logs from now on
+    if (model != nullptr)
+        reset_tracing(model->size());
+}
+
+template<typename TSeq>
+inline void ContactLayer<TSeq>::disable_tracing()
+{
+    trace_max = 0u;
+    trace_log = ContactTracing();
+}
+
+template<typename TSeq>
+inline ContactTracing & ContactLayer<TSeq>::get_tracing()
+{
+    if (trace_max == 0u)
+        throw std::logic_error(
+            "The contact layer '" + name + "' is not traced; call "
+            "enable_tracing() first."
+        );
+
+    return trace_log;
+}
 
 template<typename TSeq>
 inline void ContactLayer<TSeq>::add_virus_target(int lineage_id)
@@ -11772,6 +11855,11 @@ public:
      * functions by calling `get_contact_tracing().add_contact(...)`.
      * Contact tracing is off by default.
      *
+     * A contact layer keeps its own log instead (see
+     * `ContactLayer::enable_tracing()`), which the SEIR quarantine models
+     * read. The model's log stays only for the measles models, which do not
+     * sample from layers yet, and goes when they do.
+     *
      * @param max_contacts Maximum number of contacts to track per agent
      * (default: EPI_MAX_TRACKING). Only used when turning tracing on.
      */
@@ -11792,9 +11880,9 @@ public:
      * push). Pull and push report the same contacts. The callback is kept by
      * copies of the model, including the ones `run_multiple()` makes.
      *
-     * Installing a callback replaces the previous one. The built-in models
-     * with contact tracing install `make_contact_tracing_post_sampling()`;
-     * replacing it stops them from recording contacts.
+     * Installing a callback replaces the previous one. The measles models
+     * install `make_contact_tracing_post_sampling()` to fill the model's
+     * contact log; replacing it stops them from recording contacts.
      */
     ///@{
     Model<TSeq> & set_post_sampling(PostSamplingFun<TSeq> fun); ///< Install a callback (an empty function clears it).
@@ -14175,7 +14263,10 @@ inline void Model<TSeq>::reset() {
     // follows the ties as agents get a virus, and an intervention may edit
     // them.
     for (auto & layer : layers)
+    {
         layer->reset(*this);
+        layer->reset_tracing(population.size());
+    }
 
     // A generator decides the graph's direction at its reset, so the
     // classification waits until every layer has one.
@@ -20267,7 +20358,11 @@ inline void Model<TSeq>::transmission_push()
 {
 
     // The recording path is chosen once per step, not per contact
-    if (post_sampling_on)
+    bool record = post_sampling_on;
+    for (const auto * net : network_layers)
+        record = record || net->is_tracing();
+
+    if (record)
         transmission_push_impl<true>();
     else
         transmission_push_impl<false>();
@@ -20331,7 +20426,7 @@ inline void Model<TSeq>::transmission_push_impl()
 
             // Every network, in the order the layers were added, as a pull
             // reads them
-            for (const auto * net : network_layers)
+            for (auto * net : network_layers)
             {
 
                 // Layer rules, as add_exposures() applies them in a pull
@@ -20362,12 +20457,16 @@ inline void Model<TSeq>::transmission_push_impl()
                     if (use_queuing && (queue[i_id] <= 0))
                         continue;
 
-                    // The post-sampling callback sees every eligible contact, also
-                    // the ones that cannot transmit, as a pull reports them. The
-                    // carriers are visited in ascending id order, so the pairs
-                    // come out grouped by infectious agent.
+                    // The post-sampling callback and the layer's log see every
+                    // eligible contact, also the ones that cannot transmit, as a
+                    // pull reports them. The carriers are visited in ascending id
+                    // order, so the pairs come out grouped by infectious agent.
                     if constexpr (Record)
-                        register_sampled_contact(j_id, i_id);
+                    {
+                        if (post_sampling_on)
+                            register_sampled_contact(j_id, i_id);
+                        net->trace(j_id, i_id);
+                    }
 
                     // A layer of weight 0, or closed to this virus, transmits
                     // nothing (its contacts were still reported above)
@@ -21433,6 +21532,7 @@ inline size_t Mixing<TSeq>::sample(
 
     // Reporting the interactions, only if somebody listens
     const size_t n_sampled = out.size() - first;
+    this->trace(out.data() + first, n_sampled, agent);
     if (model.has_post_sampling())
         model.register_sampled_contacts(
             out.data() + first, n_sampled, static_cast< int >(agent)
@@ -21680,6 +21780,7 @@ public:
             pull<false>(agent, model, exclude, out.data() + first);
 
         out.resize(first + n);
+        this->trace(out.data() + first, n, agent);
         return n;
 
     }
@@ -29706,68 +29807,77 @@ inline void ModelSEIRMixingQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m
             continue;
         }
 
-        // Getting the number of contacts, if it is greater
-        // than the maximum, it means that we overflowed, so
-        // we will only quarantine the first EPI_MAX_TRACKING
-        auto & ct = m->get_contact_tracing();
-        size_t n_contacts = ct.get_n_contacts(agent_i);
-        if (n_contacts >= EPI_MAX_TRACKING)
-            n_contacts = EPI_MAX_TRACKING;
-
         auto success_rate = EPI_PAR(m, "Contact tracing success rate");
         auto days_prior = EPI_PAR(m, "Contact tracing days prior");
-        for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
+
+        // The contacts in the log of every traced layer, in the order the
+        // layers were added (a log keeps each agent's last contacts only)
+        for (size_t layer_i = 0u; layer_i < m->get_n_layers(); ++layer_i)
         {
 
-            // Checking if we will detect the contact
-            if (m->runif() > success_rate)
+            auto & layer = m->get_layer(layer_i);
+            if (!layer.is_tracing())
                 continue;
 
-            auto [contact_id, contact_date] = ct.get_contact(
-                agent_i, contact_i
+            auto & ct = layer.get_tracing();
+            const size_t n_contacts = std::min(
+                ct.get_n_contacts(agent_i), ct.get_max_contacts()
             );
 
-            // Skip contacts outside the tracing window
-            if ((static_cast<double>(m->today()) -
-                static_cast<double>(contact_date)) > days_prior)
-                continue;
-
-            auto & agent = m->get_agent(contact_id);
-
-            if (agent.get_state() > INFECTED)
-                continue;
-
-            // Agents with some tool won't be quarantined
-            if (agent.get_n_tools() != 0u)
-                continue;
-
-            if (model->quarantine_willingness[contact_id])
+            for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
             {
 
-                switch (agent.get_state())
-                {
-                    case SUSCEPTIBLE:
-                        agent.change_state(*m, ModelSEIRMixingQuarantine<TSeq>::QUARANTINED_SUSCEPTIBLE);
-                        model->day_flagged[contact_id] = m->today();
-                        break;
-                    case EXPOSED:
-                        agent.change_state(*m, ModelSEIRMixingQuarantine<TSeq>::QUARANTINED_EXPOSED);
-                        model->day_flagged[contact_id] = m->today();
-                        break;
-                    case INFECTED:
-                        if (model->isolation_willingness[contact_id])
-                        {
-                            agent.change_state(*m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED);
-                            model->day_flagged[contact_id] = m->today();
-                        }
-                        break;
-                    default:
-                        throw std::logic_error(
-                            "The agent is not in a state that can be quarantined."
-                        );
-                }
+                // Checking if we will detect the contact
+                if (m->runif() > success_rate)
+                    continue;
 
+                auto [contact_id, contact_date] = ct.get_contact(
+                    agent_i, contact_i
+                );
+
+                // Skip contacts outside the tracing window
+                if ((static_cast<double>(m->today()) -
+                    static_cast<double>(contact_date)) > days_prior)
+                    continue;
+
+                auto & agent = m->get_agent(contact_id);
+
+                if (agent.get_state() > INFECTED)
+                    continue;
+
+                // Agents with some tool won't be quarantined
+                if (agent.get_n_tools() != 0u)
+                    continue;
+
+                if (model->quarantine_willingness[contact_id])
+                {
+
+                    switch (agent.get_state())
+                    {
+                        case SUSCEPTIBLE:
+                            agent.change_state(*m, ModelSEIRMixingQuarantine<TSeq>::QUARANTINED_SUSCEPTIBLE);
+                            model->day_flagged[contact_id] = m->today();
+                            break;
+                        case EXPOSED:
+                            agent.change_state(*m, ModelSEIRMixingQuarantine<TSeq>::QUARANTINED_EXPOSED);
+                            model->day_flagged[contact_id] = m->today();
+                            break;
+                        case INFECTED:
+                            if (model->isolation_willingness[contact_id])
+                            {
+                                agent.change_state(*m, ModelSEIRMixingQuarantine<TSeq>::ISOLATED);
+                                model->day_flagged[contact_id] = m->today();
+                            }
+                            break;
+                        default:
+                            throw std::logic_error(
+                                "The agent is not in a state that can be quarantined."
+                            );
+                    }
+
+                }
             }
+
         }
 
         // Setting the quarantine process off
@@ -29830,6 +29940,7 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
         std::vector< int >({ModelSEIRMixingQuarantine<TSeq>::SUSCEPTIBLE, ModelSEIRMixingQuarantine<TSeq>::EXPOSED, ModelSEIRMixingQuarantine<TSeq>::INFECTED, ModelSEIRMixingQuarantine<TSeq>::RECOVERED})
     );
     mixing->set_contact_matrix(contact_matrix);
+    mixing->enable_tracing(); // For the quarantine process
     this->add_layer(std::move(mixing));
 
     // Setting up parameters
@@ -29884,10 +29995,6 @@ inline ModelSEIRMixingQuarantine<TSeq>::ModelSEIRMixingQuarantine(
     this->add_virus(virus);
 
     this->queuing_off(); // No queuing need
-
-    // Enable contact tracing for quarantine process
-    this->contact_tracing_on(EPI_MAX_TRACKING);
-    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
 
     // Adding the empty population
     this->set_population_size(n);
@@ -29956,7 +30063,9 @@ inline ModelSEIRMixingQuarantine<TSeq> & ModelSEIRMixingQuarantine<TSeq>::initia
  * - Network-based contacts (the model's network layers, see `layer::Network`)
  * - Quarantine measures for exposed contacts
  * - Isolation policies for detected infected individuals
- * - Contact tracing with configurable success rates
+ * - Contact tracing with configurable success rates, from the contact logs
+ *   of its network layers (the model turns tracing on for each of them at
+ *   reset; see `ContactLayer::enable_tracing()`)
  * - Hospitalization of severe cases
  * - Individual willingness to comply with public health measures
  * - Queueing system support for computational efficiency
@@ -30121,6 +30230,12 @@ public:
 template<typename TSeq>
 inline void ModelSEIRNetworkQuarantine<TSeq>::reset()
 {
+
+    // The quarantine process reads the contacts of every network layer
+    for (auto * net : this->get_network_layers())
+        if (!net->is_tracing())
+            net->enable_tracing();
+
     Model<TSeq>::reset();
 
     // Setting up the quarantine parameters
@@ -30173,6 +30288,8 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_update_susceptible(
         // Report the contact: infected neighbor -> susceptible agent
         if (record)
             m->register_sampled_contact(neighbor->get_id(), p->get_id());
+
+        net->trace(neighbor->get_id(), p->get_id());
 
         m->reserve_tmp(static_cast< size_t >(nviruses_tmp) + 1u);
 
@@ -30490,61 +30607,74 @@ inline void ModelSEIRNetworkQuarantine<TSeq>::_quarantine_process(
             continue;
         }
 
-        size_t n_contacts = m->get_contact_tracing().get_n_contacts(agent_i);
-        if (n_contacts >= EPI_MAX_TRACKING)
-            n_contacts = EPI_MAX_TRACKING;
-
         auto success_rate = EPI_PAR(m, "Contact tracing success rate");
         auto days_prior = EPI_PAR(m, "Contact tracing days prior");
-        for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
+
+        // The contacts in the log of every traced layer, in the order the
+        // layers were added (a log keeps each agent's last contacts only)
+        for (size_t layer_i = 0u; layer_i < m->get_n_layers(); ++layer_i)
         {
-            // Checking if we will detect the contact
-            if (m->runif() > success_rate)
+
+            auto & layer = m->get_layer(layer_i);
+            if (!layer.is_tracing())
                 continue;
 
-            auto [contact_id, contact_date] = m->get_contact_tracing().get_contact(
-                agent_i, contact_i
+            auto & ct = layer.get_tracing();
+            const size_t n_contacts = std::min(
+                ct.get_n_contacts(agent_i), ct.get_max_contacts()
             );
 
-            // Skip contacts outside the tracing window
-            if ((static_cast<double>(m->today()) -
-                static_cast<double>(contact_date)) > days_prior)
-                continue;
-
-            auto & agent = m->get_agent(contact_id);
-
-            if (agent.get_state() > INFECTED)
-                continue;
-
-            // Agents with some tool won't be quarantined
-            if (agent.get_n_tools() != 0u)
-                continue;
-
-            if (model->quarantine_willingness[contact_id])
+            for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
             {
-                switch (agent.get_state())
+                // Checking if we will detect the contact
+                if (m->runif() > success_rate)
+                    continue;
+
+                auto [contact_id, contact_date] = ct.get_contact(
+                    agent_i, contact_i
+                );
+
+                // Skip contacts outside the tracing window
+                if ((static_cast<double>(m->today()) -
+                    static_cast<double>(contact_date)) > days_prior)
+                    continue;
+
+                auto & agent = m->get_agent(contact_id);
+
+                if (agent.get_state() > INFECTED)
+                    continue;
+
+                // Agents with some tool won't be quarantined
+                if (agent.get_n_tools() != 0u)
+                    continue;
+
+                if (model->quarantine_willingness[contact_id])
                 {
-                    case SUSCEPTIBLE:
-                        agent.change_state(*m, QUARANTINED_SUSCEPTIBLE);
-                        model->day_flagged[contact_id] = m->today();
-                        break;
-                    case EXPOSED:
-                        agent.change_state(*m, QUARANTINED_EXPOSED);
-                        model->day_flagged[contact_id] = m->today();
-                        break;
-                    case INFECTED:
-                        if (model->isolation_willingness[contact_id])
-                        {
-                            agent.change_state(*m, ISOLATED);
+                    switch (agent.get_state())
+                    {
+                        case SUSCEPTIBLE:
+                            agent.change_state(*m, QUARANTINED_SUSCEPTIBLE);
                             model->day_flagged[contact_id] = m->today();
-                        }
-                        break;
-                    default:
-                        throw std::logic_error(
-                            "The agent is not in a state that can be quarantined."
-                        );
+                            break;
+                        case EXPOSED:
+                            agent.change_state(*m, QUARANTINED_EXPOSED);
+                            model->day_flagged[contact_id] = m->today();
+                            break;
+                        case INFECTED:
+                            if (model->isolation_willingness[contact_id])
+                            {
+                                agent.change_state(*m, ISOLATED);
+                                model->day_flagged[contact_id] = m->today();
+                            }
+                            break;
+                        default:
+                            throw std::logic_error(
+                                "The agent is not in a state that can be quarantined."
+                            );
+                    }
                 }
             }
+
         }
 
         // Setting the quarantine process off
@@ -30626,10 +30756,6 @@ inline ModelSEIRNetworkQuarantine<TSeq>::ModelSEIRNetworkQuarantine(
     virus.set_incubation("Avg. Incubation days");
 
     this->add_virus(virus);
-
-    // Enable contact tracing for quarantine process
-    this->contact_tracing_on(EPI_MAX_TRACKING);
-    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
 
     this->set_name("SEIR with Network and Quarantine");
 
