@@ -12,10 +12,10 @@ namespace {
 using Log = std::set< std::pair< size_t, size_t > >;
 
 // Every (carrier, contact) pair in the log
-Log pairs_of(ContactTracing & ct, size_t n)
+Log pairs_of(ContactTracing & ct)
 {
     Log out;
-    for (size_t a = 0u; a < n; ++a)
+    for (size_t a = 0u; a < ct.get_n_agents(); ++a)
         for (const auto & rec : ct.get_contacts(a))
             out.insert({a, rec.get_contact_id()});
     return out;
@@ -54,8 +54,9 @@ EPIWORLD_TEST_CASE("Layer contact tracing", "[layer-tracing]") {
     std::vector< int > date, source, target, virus, expo, layer;
     model.get_db().get_transmissions(date, source, target, virus, expo, layer);
 
-    const Log home_log = pairs_of(home->get_tracing(), model.size());
-    const Log hh_log = pairs_of(hh->get_tracing(), model.size());
+    REQUIRE(home->get_tracing().get_n_agents() == model.size());
+    const Log home_log = pairs_of(home->get_tracing());
+    const Log hh_log = pairs_of(hh->get_tracing());
 
     // Every transmission through a traced layer is in that layer's log
     size_t n_traced = 0u, n_work = 0u;
@@ -88,7 +89,7 @@ EPIWORLD_TEST_CASE("Layer contact tracing", "[layer-tracing]") {
 
     // Every run starts with an empty log: the same seed, the same log
     model.run(30, 54);
-    REQUIRE(pairs_of(home->get_tracing(), model.size()) == home_log);
+    REQUIRE(pairs_of(home->get_tracing()) == home_log);
 
     size_t total = 0u;
     for (size_t a = 0u; a < model.size(); ++a)
