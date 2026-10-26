@@ -883,11 +883,11 @@ The list below is the whole of Phase 3.
 - An example model: households (within-group `Mixing`) + workplace (`Network`)
   + public spaces (`Mixing` with a matrix).
 - Acceptance: `ModelMeaslesMixingRiskQuarantine` (school traced by membership,
-  community by log) and the SEIR mixing and network quarantine models are
-  rebuilt on layers and stay draw-for-draw identical, which also shows the
-  per-layer tracing design holds. Then a model with tracing at school and in the
-  community with different success rates, as the first test of per-layer
-  policies.
+  community by log) is rebuilt on layers and stays draw-for-draw identical,
+  which also shows the per-layer tracing design holds (the SEIR quarantine
+  models are merged into one before 3d, see "Model consolidation"). Then a
+  model with tracing at school and in the community with different success
+  rates, as the first test of per-layer policies.
 - Tests (end-to-end, about three files):
   - a within-group `Mixing` layer is the same run as the same layer built
     with the equivalent diagonal contact matrix; `q = 1` infects every
@@ -895,6 +895,163 @@ The list below is the whole of Phase 3.
     Binomial(others, `q`) housemates (`48a`);
   - a combined model attributes transmissions to the expected layers (a
     layer with weight 0, or one that excludes the virus, records none).
+
+### Model consolidation -- one model per disease (after the 3c-1 ports)
+
+Settled 2026-10-25. Contacts now come from layers, so a model is a disease
+(states, parameters, update rules) and its layers are where contacts come
+from. Models that differ only in where contacts come from go:
+
+| Removed | Replaced by |
+|---|---|
+| `ModelSIRMixing`, `ModelSEIRMixing` | `ModelSIR`, `ModelSEIR` + a mixing layer (contact matrix) |
+| `ModelSIRCONN`, `ModelSEIRCONN`, `ModelSIRDCONN`, `ModelSEIRDCONN` | `ModelSIR`, `ModelSEIR`, `ModelSIRD`, `ModelSEIRD` + a one-group mixing layer |
+| `ModelSEIRMixingQuarantine`, `ModelSEIRNetworkQuarantine` | `ModelSEIRQuarantine`, on any layers, tracing each of them |
+
+About 2,500 of the 5,426 lines in `include/epiworld/models/`, plus their
+bindings in every wrapper. It also removes the `*CONN` models from the risk
+"Layers a model ignores" (Section 9). SIS, SISD, SIRLogit, SURV, DiffNet and
+the measles models stay: they differ in the disease, not only in the contacts.
+
+**Rules (from the user, 2026-10-25).**
+
+- Where the old models differ, keep what agrees with epidemiological theory;
+  the old implementations are not a reference to reproduce.
+- Every number a user may set or calibrate is a model parameter (point 17).
+- Where one model is more flexible than the other, the merged one keeps that
+  flexibility.
+
+**What the check found** (scratch harness on `phase3c-layer-tracing`,
+2026-10-25; 10,000 agents):
+
+- `ModelSIRMixing` and `ModelSIR` + the same layer are draw-for-draw identical
+  (5 seeds).
+- `ModelSEIRMixing` and `ModelSEIR` + the same layer differ only because
+  `ModelSEIR` recovers with `runif() < "Recovery rate"`: it ignores the virus's
+  recovery probability and the tools' recovery enhancers, unlike every other
+  model. With that fixed (Infected uses `default_update_exposed`, as in
+  `ModelSIR`) they are draw-for-draw identical (5 seeds). This is a bug on
+  `master` too, fixed there first in its own PR (#327).
+- `*CONN` models sample infectious contacts with replacement (rate `c / n`);
+  a one-group mixing layer samples distinct ones (rate `c / (n - 1)`). The
+  final sizes agree (contact rate 4, transmission 0.05, recovery 1/7, 300
+  runs): SIR mean 4,246 vs 4,245 (sd 380 vs 378), SEIR 1,943 vs 1,950 (sd 410
+  vs 396). But the layer costs 1.6 to 2 times the CPU time; in a callgrind
+  profile, `Mixing::sample()` / `draw()` and the binomial draw per
+  susceptible lead. Close that gap before the `*CONN` models go.
+
+**Sampling with replacement goes** (settled 2026-10-25). A `*CONN` model
+draws its contacts from the infectious agents with replacement, and a person
+drawn twice enters the draw twice, so their chance of infecting goes up. That
+is not a model of meeting someone more often: how many times a pair meets is
+left to chance, and the user cannot set it. Repeated or more intense contact is
+said explicitly, with a layer's weight or contact probability. Every layer
+draws distinct contacts (D9).
+
+**What the core needs first.**
+
+1. **The contact level is a model parameter** (settled 2026-10-25). In the
+   `*CONN` models "Contact rate" is a parameter (global events and calibration
+   change it); in a layer the matrix is structure (point 17). A mixing layer
+   can take its contact level from a parameter: its contacts are the parameter
+   times the matrix (the `*CONN` replacement: a 1 x 1 matrix of 1 and "Contact
+   rate"). This is the contact-level counterpart of `set_weight(param)`, which
+   scales the odds, and it binds the same way: the layer keeps the parameter's
+   name as a `ParamRef` (as `weight_ref` does) and reads the model's value
+   each time it samples, never a copy taken when the layer is added. A global
+   event or a calibration step that changes "Contact rate" therefore changes
+   the contacts drawn on the next day. Acceptance test: a run whose global
+   event sets "Contact rate" to 0 on day k has no new exposures after day k,
+   while the same seed without the event has some.
+2. **Which states transmit, said once** (settled 2026-10-25). A mixing layer
+   lists its infectious and available states by id (`layer::mixing(name,
+   infectious, available)`), and network sampling takes a separate exclude
+   list (`make_update_susceptible({EXPOSED})`); a user adding a layer to
+   `ModelSEIR` must know those ids. Instead, a model declares once which of
+   its states transmit (in SEIR only Infected; Exposed carries the virus but
+   does not), and every layer reads that: networks and mixing alike. Every
+   other agent can be met. Taking agents out of a layer is participation (D2,
+   Phase 4): exclusion, and leaky isolation as layer-targeted tools. Until then
+   `ModelSEIRQuarantine` keeps its isolated, quarantined and hospitalized
+   agents out of the layers, as the mixing quarantine model does today; D2
+   replaces that mechanism.
+
+   The interim contract, so a generic layer holds no eligibility policy:
+
+   - The public constructor loses both state lists: `layer::mixing(name)`.
+     A generic layer samples every agent in the group (everyone counts in the
+     denominator), and only agents in the model's transmitting states infect.
+   - Two cases stay distinct. *Non-transmitting* agents can be met but cannot
+     infect (they still take a share of each susceptible's contacts).
+     *Excluded* agents are not met at all: they leave the denominator, so the
+     contacts go to the others. Only exclusion needs a policy.
+   - Until D2, exclusion is private to `ModelSEIRQuarantine`: an internal
+     (not public, not bound by the wrappers) setter on its layers lists the
+     excluded states. In SEIRQuarantine: Susceptible, Exposed and Recovered
+     are met and do not transmit; Infected is met and transmits; Isolated,
+     Detected Hospitalized, Hospitalized, Quarantined Susceptible,
+     Quarantined Exposed and Isolated Recovered are excluded. On a network
+     layer exclusion means the tie is skipped. D2 removes the internal setter
+     and the quarantine model moves to exclusion and layer-targeted tools.
+3. **The one-group cost** (above).
+
+**The merged models.**
+
+- **Parameter names say what the code does**, in the terms epidemiology uses
+  (settled 2026-10-25). Most are daily rates: the probability per day of
+  leaving a state, so the mean time in it is 1 / rate days. One set for SIR,
+  SEIR, SIRD, SEIRD and the quarantine model. Proposed (to confirm in the PR):
+
+  | Now | Proposed | What the code does |
+  |---|---|---|
+  | "Transmission rate", "Prob. Transmission" | "Transmission probability" | Probability that one contact with an infectious agent infects (per contact, not per day). |
+  | "Recovery rate", "Prob. Recovery" | "Recovery rate" | Daily probability of recovering while infectious; mean infectious period 1 / rate. |
+  | "Incubation days", "Avg. Incubation days" | "Latent period" | Mean days in Exposed (daily probability 1 / period). Epidemiology calls the time until infectious the latent period; the incubation period ends at symptoms. |
+  | "Contact rate" | "Contact rate" | Expected contacts per day. |
+  | "Death rate" | "Death rate" | Daily probability of dying while infectious. |
+  | "Hospitalization rate", "Hospitalization period" | unchanged | Daily probability; mean days in hospital. |
+  | "Days undetected" | "Detection delay" | Mean days infectious before detection (daily probability 1 / delay; 0 detects at once, a negative value never). |
+  | "Contact tracing success rate" | "Contact tracing probability" | Probability that a contact is traced (per contact). |
+  | "Contact tracing days prior" | "Contact tracing window" | Days before detection whose contacts are traced. |
+  | "Quarantine period", "Isolation period", the two willingness parameters | unchanged | Days; the probability that an agent complies (drawn once per agent). |
+
+- `ModelSEIRQuarantine` keeps the network model's ten states ("Detected
+  Hospitalized" separate from "Hospitalized"), samples through the generic
+  path (so layer weights, virus targets, and push on networks work; the
+  network model's own sampler ignored them), with only Infected transmitting
+  (item 2). It traces every layer it is given. The mixing model's unused
+  `day_exposed` goes.
+- The `*CONN`-only `generation_time_expected()` and `get_n_infected()` go
+  (no wrapper binds them, no test uses them).
+
+**Order.** The `ModelSEIR` recovery fix on `master` (#327, merged into
+`v1-layers`); one epiworld PR with the core items and the consolidation; then
+the wrapper ports. Then 3c-2.
+
+**Tests** (end-to-end, in the suite): `ModelSIR`/`ModelSEIR` + a matrix
+layer reproduces the histories the Mixing models gave, draw for draw
+(recorded before they go); the "Contact rate" global-event test (item 1);
+`ModelSEIRQuarantine` on a network plus a mixing layer quarantines contacts
+from both.
+
+**Acceptance check** (run once in the consolidation PR, with the old models
+still in the tree; the script and its output go in the PR description). For
+each replacement -- SIRCONN, SEIRCONN, SIRDCONN, SEIRDCONN, and each old
+quarantine model against `ModelSEIRQuarantine` on the equivalent layer:
+
+- 1,000 runs per model, seeds 1 to 1,000, 10,000 agents, 100 days, the
+  parameters of the measurement above (quarantine models: their test-suite
+  parameters).
+- Statistics: final size (agents ever infected) and peak prevalence.
+- Pass: for each statistic, the standardized mean difference
+  |mean_old - mean_new| / pooled sd is at most 0.1, and the sd ratio is
+  between 0.9 and 1.1.
+- The CONN replacements must pass (the switch to distinct contacts changes
+  the rate from c / n to c / (n - 1), which is within this threshold at these
+  sizes). A quarantine model may fail only where the difference is traced to
+  a deliberate change listed above (only Infected transmits, the generic
+  sampler); the PR reports the failing statistic and its cause, and the user
+  decides.
 
 ### Phase 4 -- participation, tools, schedules, persistence
 
@@ -1003,8 +1160,9 @@ The list below is the whole of Phase 3.
   wrappers expose only the built-in generators until a phase needs more.
 - **Layers a model ignores.** Models that keep their own sampler accept any
   layer but read only some: the connected models (`*CONN`) draw from the list
-  of infected agents and ignore every layer; SIRLogit, SURV and the SEIR
-  network-quarantine model read network layers only; the measles mixing models
+  of infected agents and ignore every layer (they go in the model
+  consolidation); SIRLogit, SURV and the SEIR network-quarantine model read
+  network layers only; the measles mixing models
   read their own mixing layer until 3d. An added layer then silently carries
   no transmission. By the end of Phase 3 each such model either moves to the
   generic path or rejects, in `add_layer()`, the layers it does not read; the
@@ -1166,7 +1324,8 @@ that on `v1-layers` this plan is the source of truth.
 | 3a | `layer` column in the transmissions; `get_layer()` by id; `set_weight(layer, param)`; `add_virus_target(layer, virus)`. |
 | 3b | Bind `layer::Mixing` for user-added layers: one constructor with the groups and exactly one of a contact matrix and contact probabilities (vector or one number, `1` for cliques); `set_contact_prob()` / `get_contact_prob()`; `members_of()`, `get_group()`. The queue is internal. Expected values of the mixing models' tests change (distinct contacts, D9). |
 | 3c | Per-layer `enable_tracing()` / `is_tracing()` / `get_tracing()` and its logs (3c-1); `groupmates_of()` on within-group layers (3c-2); whatever the wrapper binds of the model-level tracer (e.g., the quarantine models' parameters) follows the core, and removed accessors become defunct. |
-| 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing models take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
+| Consolidation | The removed models (`ModelSIRMixing`, `ModelSEIRMixing`, the four `*CONN`, the two SEIR quarantine models) become defunct stubs naming the replacement (the plain model + `add_layer()`; `ModelSEIRQuarantine`); the parameter that sets a mixing layer's contact level; tests and the vignettes that use them (epiworldR: getting-started, advanced-modeling, mixing, run-multiple, implementation) rewritten. epiworldjs: registry entries. measles: unaffected. |
+| 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing layers take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
 | 5 | Re-vendor only, unless a push/pull setting becomes public. |
@@ -1174,7 +1333,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-24).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-25).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1183,7 +1342,8 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-24).
 | Phase 3a (+ fixes) | #318, #319 merged | #216 | #33 | #18 | #65 |
 | `downstream.yml` | #321 merged | | | | |
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
-| Phase 3c-1 (layer logs) | this PR | | | | |
+| Phase 3c-1 (layer logs) | #325 | | | | |
+| Model consolidation | not started (plan: #326) | | | | |
 | Phase 3c-2 (group history) | not started | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
@@ -1191,4 +1351,5 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-24).
 
 **Next** (as of the date above): the 3c-1 ports (epiworldR first, which also
 drops the R-side size bookkeeping that #218 needed before the accessors were
-checked; then epiworldpy, epiworldjs, measles), then 3c-2.
+checked; then epiworldpy, epiworldjs, measles), then the model consolidation
+(the `ModelSEIR` recovery fix on `master` first), then 3c-2.
