@@ -1,7 +1,8 @@
 # State durations: timers and transitions for epiworld
 
-**Status:** proposal, revision 2 (2026-10-27). Revision 1 was reviewed on
-#330; Section 13 maps every review comment to the change it caused. Nothing
+**Status:** proposal, revision 3 (2026-10-27). Revisions 1 and 2 were
+reviewed on #330; Section 13 maps every review comment to the change it
+caused. Nothing
 here is settled until the review is closed. It is a companion to
 `contact-layers.md` (the 1.0.0 plan on `v1-layers`); Section 8 says how it
 folds into that plan.
@@ -199,8 +200,10 @@ auto waning = timer::hazard("waning",
   [](Agent<> & a, Model<> & m, int days_in) { return weibull_h(days_in, m); }
 );
 
-// Deadline: a hazard that is 1 once days_in reaches a value read every step;
-// no random draw. A negative value never fires (today's "disabled" sentinel).
+// Deadline: true once days_in reaches a value read every step; no random
+// draw, and never spent: a predicate re-checked on every visit to a state
+// where it has an exit (4.4). A negative value never fires (today's
+// "disabled" sentinel).
 auto quarantine = timer::deadline("quarantine", "Quarantine period");
 auto risk_quarantine = timer::deadline("quarantine",
   [](Agent<> & a, Model<> & m) { return risk_period(a, m); }  // current risk level
@@ -267,22 +270,49 @@ A state with transitions gets a generated update function. A state with a
 hand-written update function can still use timers through the decision API
 (4.3) and leave the bookkeeping to the core.
 
-### 4.3 The decision: once per agent and step
+### 4.3 The decision: sampled once per slot and day, resolved on every query
 
-The first time on a step that anything asks about an agent's timers (the
-generated update function, `p->timer_fired(m, "rash")` in a hand-written one,
-or a global event), the core **evaluates every active timer of the agent's
-current state together** and caches the result for that agent and day:
+Two things are kept apart: **sampling** (the random part, per slot) and
+**resolution** (where the agent goes, which depends on its current state).
+Only sampling is remembered; resolution is recomputed on every query, so it
+never uses an obsolete state, infection or timer.
 
-1. each hazard timer makes its one draw, under its rule;
-2. each drawn timer and deadline compares its end with `days_in`;
-3. the fired set is resolved (below) into one destination, the actions to
-   apply, and the outcome of each fired timer.
+**Which timers are evaluated.** Only the agent's active slots whose timer has
+an **exit in the current state**. A carried timer (no exit here) is not
+evaluated: a hazard only ages, a drawn timer or deadline keeps its end (4.4).
 
-Repeated queries on the same step return the cached result: a second query
-never gives a hazard a second chance (`1 - (1 - p)^2`). Hazard timers in one
-state are independent sources; within one hazard timer, outcomes compete
-under its rule.
+**Sampling** (per slot). Each evaluated slot yields fired / not fired, and an
+outcome:
+
+- a **hazard** slot draws at most **once per day**, under its rule, and
+  records `{day, fired, outcome}` in the slot. Any later query that day reads
+  the record: a second query never gives it a second chance
+  (`1 - (1 - p)^2`), whoever asks (the generated update, `timer_fired()` in a
+  hand-written one, a global event), and whatever state the agent is in by
+  then, as long as the slot survives;
+- a **drawn** slot fires when `days_in` reaches its end (outcome drawn at
+  materialization); a **deadline** fires when `days_in` reaches its value
+  read now. No random draw.
+
+**Resolution** (every query). From the current state and the sampled results
+of its evaluated slots, the chain below gives one destination and the
+composed actions. Nothing is cached, so:
+
+| Same-day event between two queries | Effect |
+|---|---|
+| state change (Latent -> Quarantined Latent) | the next query uses the new state's exits and its new slots (a new `quarantine` deadline); the shared `latent` hazard keeps today's record |
+| new infection (`rm_virus` then `add_virus`) | infection-scoped slots are new, so they have no record: the new infection's hazards draw for themselves; nothing of the old infection is reused |
+| `restart_timer` | a new slot, no record |
+| `cancel_timer` | the slot is gone |
+| `set_timer_end` | the drawn slot's end changes; deterministic, recomputed |
+
+**Firing is consumed by committing.** A fired hazard record or an expired
+drawn timer becomes `spent` when a transition through it is committed (4.4).
+A firing that no one commits by the end of the step is discarded: the hazard
+had its chance that day.
+
+Hazard timers in one state are independent sources; within one hazard timer,
+outcomes compete under its rule.
 
 **Several timers fire on the same step: chain them.** Apply the first fired
 transition (in declaration order); in the destination, if another fired timer
@@ -298,9 +328,9 @@ order). This reproduces both measles boundary cases from today's code:
 | Isolated | `rash` (recover), `isolation` | -> Isolated Recovered -> Recovered | Recovered (`_update_isolated`) |
 
 For these two the order of the chain does not matter (quarantine first: ->
-Latent -> Prodromal; isolation first: -> Rash -> Recovered). A model whose
-chains depend on the order must say which order it wants by declaration
-order; the T1 tests cover an order-dependent example.
+Latent -> Prodromal; isolation first: -> Rash -> Recovered). Each fired timer
+is used at most once in a chain. A model whose chains depend on the order gets
+declaration order, and the check below flags it.
 
 **Derived moves are shown, not hidden.** A chained move (Quarantined Latent ->
 Prodromal) appears in no `add_transition` row, so the core lists it. When a
@@ -320,9 +350,22 @@ Transitions
   Isolated           --[rash: recover + isolation]-> Recovered    (derived)
 ```
 
-A derived move that depends on the chain order is flagged in that listing
-(both orders are computed when the run starts; only the sets of timers a state
-actually has are enumerated, which is a handful per state).
+**Order check.** When a run starts, for every state and every set of its
+timers (with exits there) that can fire together, the model resolves the
+chain in **every order** of that set, not only the declared order and its
+reverse: with three timers, two orders can agree while a third differs
+(review of #330: S -> X -> Y -> Z by `a,b,c` and `c,b,a`, but S -> X -> W by
+`a,c,b`). Two things are compared, and flagged separately in the listing:
+
+- the **final state** (`order-dependent target`);
+- the **composed actions**: whether the virus is removed, and the sequence of
+  `on_fire` hooks (`order-dependent actions`; equal targets can still run
+  different hooks, or the same hooks in another order).
+
+Cost: a state with `k` timers with exits has `sum over s of C(k, s) s!`
+orders (5 for `k = 2`, 16 for 3, 65 for 4, 326 for 5). The check runs up to
+`k = 5`; a state with more is listed as `order unchecked`. Measles has at most
+two per state.
 
 **Order of drawn timers vs hazards.** Hazards are evaluated on every step the
 timer is active, including the step a drawn timer of the same state ends, so a
@@ -365,27 +408,49 @@ timers, even on the same day and even if the state does not change.
   `events_run()` call that created it, after every event of that call. So a
   tool added in the same batch (PEP adds its tool, then moves the agent) is
   seen by the draw.
-- **Reset.** `Agent::reset()` clears the slots. During `Model::reset()` the
-  distribution steps (`dist_entities`, `dist_virus`, `dist_tools`) only
-  create `pending` slots; one **initialization pass** after `dist_tools()`
-  visits every agent in id order and (a) creates the slots of its current
-  state, including state 0, for agents that got no event (an initially immune
-  agent with waning, a model whose initial state is quarantine), and
-  (b) materializes all pending slots with start day 0. Seeded infections
-  therefore see baseline vaccines. The pass consumes random numbers only for
-  drawn timers; models with only hazards and deadlines (every model today)
-  draw nothing new, so the order of today's random stream is unchanged.
-- **Spent.** A timer that fired is `spent`: it is kept while the agent stays
-  in states that use it, never fires again and is never restarted implicitly
-  (only `restart_timer`), and is dropped when the agent leaves those states.
-  So Isolated -> Rash on release keeps a spent `isolation` in Rash without
-  restarting it, and a drawn timer that fires into a state sharing it does
-  not fire again.
-- **Expired before its exit.** A carried timer can end in a state without an
-  exit (isolation shorter than the time to detection, in Rash). It stays
-  `active` and fires at the first evaluation in a state with its exit, which
-  is what `_update_isolated` does today (`days_since >= period` on the first
-  update).
+- **Reset.** `Agent::reset()` clears the slots. `Model::reset()` runs, in
+  order (`model-meat.hpp:1952-1967`): `dist_entities()`, `dist_virus()`,
+  `dist_tools()`, `initial_states_fun()`, each global event's `reset()`, and
+  a final `events_run()`. Materialization is suppressed for all of it: every
+  slot created during reset stays `pending`, keeping its start day 0. One
+  **initialization pass runs after that final `events_run()`**, when the
+  states and tools are final. It visits every agent in id order and
+  (a) creates the slots of its current state, including state 0, for agents
+  that got no event (an initially immune agent with waning, a model whose
+  initial state is quarantine), (b) drops pending slots that the agent's
+  final state does not use (a seed moved from Exposed to Infected by
+  `initial_states_fun()` loses `latent` without drawing it), and
+  (c) materializes the rest. Seeded infections therefore see baseline
+  vaccines, including tools installed by a global event's `reset()`. The
+  pass consumes random numbers only for drawn timers; models with only
+  hazards and deadlines (every model today) draw nothing new, so today's
+  random stream is unchanged.
+- **Spent** (drawn and hazard timers only). A drawn or hazard timer whose
+  firing was committed is `spent`: it is kept while the agent stays in states
+  that use it, never fires again and is never restarted implicitly (only
+  `restart_timer`), and is dropped when the agent leaves those states. So a
+  drawn timer that fires into a state sharing it does not fire again.
+- **Deadlines are never spent.** A deadline is a predicate on its anchor
+  (start day) and a value read each step, re-checked on every evaluation in a
+  state where it has an exit. It keeps its anchor while the agent is in
+  states that use it (as an exit or carried). Measles needs this: Isolated ->
+  Rash on release keeps `isolation` (carried in Rash) with its rash-onset
+  anchor; if Rash detects the agent again (`_update_rash()` draws detection
+  every step) and it goes back to Isolated or Isolated Recovered, the
+  deadline is already past and releases it at the next update, as today.
+  Re-anchoring on the new detection would change today's behavior, and is
+  what `restart_timer` is for.
+- **Carried and expired before its exit.** Only timers with an exit in the
+  current state are evaluated (4.3), so for a carried timer:
+  - a **hazard** only ages: no draws while carried; it is sampled from the
+    first step in a state with its exit, with `days_in` counted from its
+    start. No firing is latched while carried;
+  - a **drawn** timer keeps its end; if the end passed while carried, it
+    fires at the first evaluation in a state with its exit;
+  - a **deadline** likewise fires at the first evaluation in a state with its
+    exit once its value is reached (isolation shorter than the time to
+    detection: Rash -> Isolated, then released at the next update, as
+    `_update_isolated` does today with `days_since >= period`).
 - **Seeds start at age 0.** A seeded infection starts its disease timers at
   day 0, with no time already elapsed. With hazards (today) this changes
   nothing; with drawn timers it means every seed is newly infected. Starting
@@ -444,8 +509,9 @@ mmr.set_param_factor("Hospitalization prob", "MMR hospitalization factor");
   is not a rescaling of a duration already drawn (that is Q10).
 - **When it is read.** A drawn timer reads factors once, at materialization
   (4.4); a hazard or deadline reads them every step. Baseline tools are seen
-  by seeded timers because materialization during reset waits for
-  `dist_tools()`.
+  by seeded timers because materialization during reset waits for the end of
+  reset (after `dist_tools()`, `initial_states_fun()` and the global events'
+  `reset()`).
 
 ### 4.8 Timer definitions, model copies, and threads
 
@@ -454,9 +520,16 @@ mmr.set_param_factor("Hospitalization prob", "MMR hospitalization factor");
   share the definitions, which is safe because they never change; slots are
   copied with the agents.
 - `m.set_timer("latent", new_definition)` replaces the definition **by name**,
-  so every state sharing the timer sees it (one logical clock). The new one
-  must have the same number of outcomes. It is allowed between runs only
-  (throws during a run, like `add_layer()`); active slots never migrate.
+  so every state sharing the timer sees it (one logical clock). It replaces
+  the **law** (kind, rule, outcome probabilities, durations), never the
+  **scope**: the scope belongs to the name and comes from the model's
+  declaration. A new definition that leaves the scope unset inherits it; one
+  that states a different scope is an error (a different scope is a
+  different timer, declared with its own name and transitions). So swapping
+  in a lognormal latent period keeps infection scope, with its reinfection
+  and lineage-filtering semantics. The new definition must have the same
+  number of outcomes. It is allowed between runs only (throws during a run,
+  like `add_layer()`); active slots never migrate.
 - Parameters are read through `ParamRef` (thread-safe). C++ callbacks must be
   thread-safe for `run_multiple()` with threads; the documentation says so.
 - T1 tests: a clone runs independently of its original after `set_timer()` on
@@ -541,7 +614,7 @@ ModelSEIR<> m("measles-like", 10000, ...);
 m.add_param(2.7, "Latent period sd");
 m.set_timer("latent", timer::drawn(
   "latent", duration::lognormal("Latent period", "Latent period sd")
-));  // between runs; same outcome count
+));  // between runs; same outcome count; inherits infection scope (4.8)
 ```
 
 ### 5.3 A simple model with a fixed quarantine
@@ -667,15 +740,31 @@ transition matrix, release days, hospitalization records.
   a negative one never;
 - a state-0 timer (all agents baseline, no virus) fires on its day, again
   after `reset()` in a second run;
+- reset: an `initial_states_fun()` that moves an Exposed seed to Infected
+  leaves no `latent` slot and draws nothing for it; a seed whose baseline
+  tool is installed by a global event's `reset()` materializes with that
+  tool's factor (T3 for the factor itself);
 - same-day A -> B -> A keeps A's end day; a same-day recovery and reinfection
   gets new infection timers; `restart_timer` extends a quarantine without a
   state change;
-- repeated `timer_fired()` queries on one step return the same result;
-- a timer firing into a state that shares it does not fire again (spent); an
-  expired carried timer fires on entering its exit state;
-- the two chain cases of 4.3 and an order-dependent chain;
-  `get_transitions()` lists the two derived moves of 5.4 and flags the
-  order-dependent one;
+- repeated `timer_fired()` queries on one step return the same result, and a
+  hazard draws once per slot and day; between two queries on the same day,
+  a state change makes the second query use the new state's exits and slots,
+  and a recovery plus reinfection makes it use the new infection's slots
+  (no result of the old infection reused);
+- a drawn timer firing into a state that shares it does not fire again
+  (spent); a deadline is never spent;
+- carried timers: a carried drawn timer or deadline that expired fires on
+  entering its exit state; a carried hazard makes no draws until it has an
+  exit (the stream shows no draws in the carrying state);
+- the two chain cases of 4.3; the three-timer case of 4.3 (`a,b,c` and
+  `c,b,a` reach Z, `a,c,b` reaches W) is flagged `order-dependent target`;
+  equal targets with different `on_fire` hook sequences are flagged
+  `order-dependent actions`; `get_transitions()` lists the two derived moves
+  of 5.4 and a state with six timers is listed `order unchecked`;
+- `set_timer` with a definition that leaves the scope unset keeps infection
+  scope (a same-day reinfection gets a new slot), and one that states another
+  scope is an error;
 - an `rm_virus` action clears the virus, runs the post-recovery hook, updates
   virus counts; SIS reinfection afterwards works;
 - validation errors for each case of 4.5.
@@ -693,12 +782,16 @@ serial vs parallel equality (4.8).
 period and quarantine end the same day goes to Prodromal; an isolated agent
 recovering on its isolation deadline goes to Recovered; a mid-quarantine
 change of "Quarantine period" and a risk reclassification change the release
-day; PEP effective and ineffective paths.
+day; PEP effective and ineffective paths; release -> detection again ->
+re-entry into Isolated (and into Isolated Recovered) -> released at the next
+update with the original rash-onset anchor, as today.
 
 **T3, factors:** baseline-vaccinated seeds draw with the factor; vaccination
 after entry does not change a drawn duration but changes a hazard; a factor
 for one lineage leaves another lineage's agents alone; stacked factors
-multiply; an invalid scaled probability is an error.
+multiply; an invalid scaled probability is an error; after
+`set_timer("latent", lognormal)`, a factor restricted to another lineage
+still leaves this lineage's latent period alone (scope kept, 4.8).
 
 ### 7.4 Benchmarks
 
@@ -872,3 +965,14 @@ Questions worth a reviewer's time:
 | Summary: factor on mean vs sd | -- | A factor scales the drawn value (CV kept), not the sd parameter, not an already-drawn duration (4.7) |
 | Summary: acceptance beyond aggregates; no new RNG scheme | -- | Identity per legacy rule, exact histories, survival-curve tests (7.2, 7.3) |
 | Summary: pin Covasim version | -- | 3.1.6 pinned; Starsim and EMOD added (12) |
+
+### Second round (review of revision 2)
+
+| Comment | Severity | Change |
+|---|---|---|
+| A spent isolation deadline cannot release after a second detection | P2 | Deadlines are predicates, never spent; they keep their anchor while the agent is in states that use them, so release -> detection -> re-entry -> release works with the original rash-onset anchor, as today (4.1, 4.4); deterministic test (7.3, T2b) |
+| A cache keyed by agent and day can resolve an obsolete state or infection | P2 | Sampling (once per hazard slot and day, recorded in the slot) separated from resolution (recomputed on every query from the current state); table of same-day invalidations (4.3); tests with a state change and a reinfection between queries (7.3) |
+| Materialize after all of reset, not after `dist_tools()` | P2 | Materialization suppressed through `initial_states_fun()`, the global events' `reset()` and the final `events_run()`; the pass runs after that, drops pending slots the final state does not use, keeps day-0 anchors (4.4, 4.7); tests (7.3) |
+| `set_timer` example loses infection scope | P2 | Scope belongs to the name; `set_timer` replaces the law only, an unset scope is inherited, a different one is an error (4.8, 5.2); tests on reinfection and lineage factors after replacement (7.3) |
+| Stochastic carried timers sampled before they have an exit | P2 | Only timers with an exit in the current state are evaluated; a carried hazard only ages; carried drawn timers and deadlines fire on the first evaluation where they have an exit (4.3, 4.4); tests (7.3) |
+| Order-dependence check misses three-timer cases; targets vs actions | P2 | Every order of every fired set is resolved up to five timers per state (`order unchecked` above); final state and composed actions flagged separately (4.3); the reviewer's three-timer case is a test (7.3) |
