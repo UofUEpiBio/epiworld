@@ -1,8 +1,10 @@
 # State durations: timers and transitions for epiworld
 
-**Status:** proposal for review (2026-10-27). Nothing here is settled until the
-review of this PR. It is a companion to `contact-layers.md` (the 1.0.0 plan on
-`v1-layers`); Section 8 says how it folds into that plan.
+**Status:** proposal, revision 2 (2026-10-27). Revision 1 was reviewed on
+#330; Section 13 maps every review comment to the change it caused. Nothing
+here is settled until the review is closed. It is a companion to
+`contact-layers.md` (the 1.0.0 plan on `v1-layers`); Section 8 says how it
+folds into that plan.
 
 **Base:** every code reference is to `origin/v1-layers` at `1ab03e2`
 ("ContactTracing: get_n_agents() (#329)"). Section 11 lists the claims a
@@ -12,6 +14,14 @@ reviewer should check, with the commands to check them.
 lognormal latent period, a fixed 21-day quarantine), with the dynamics handled
 once by the core, for any number of states, while keeping today's
 memoryless behavior, and its results, where a model wants it.
+
+**Shape of the design.** Three things are kept apart (Section 4):
+
+1. the **clock**: when a timer started, and when (or how) it ends;
+2. the **decision**: which exit fires on a given step, made once per agent
+   and step;
+3. the **action**: what firing commits (a state change, removing the virus, a
+   record), applied through the existing events.
 
 ---
 
@@ -41,13 +51,16 @@ lines up with infectiousness.
 
 | Where | What | How |
 |---|---|---|
-| `include/measles/measlesmixing.hpp` (and the other two measles models) | Quarantine release | `day_flagged[id]` stored when quarantined; each step `Quarantine period <= today - day_flagged` |
+| `include/measles/measlesmixing.hpp` (and the other two measles models) | Quarantine release | `day_flagged[id]` stored when quarantined; each step `Quarantine period <= today - day_flagged`, reading the parameter **live** |
 | same | Isolation release | anchored on `day_rash_onset[id]`, set when Rash starts, read in Isolated and Isolated Recovered |
+| `include/measles/measlesmixingriskquarantine.hpp` (`m_get_risk_period`, line 253) | Quarantine length by risk level | reads the agent's **current** risk level and the matching parameter every step |
 | `include/measles/immunoglobulin-meat.hpp` (`_set_immunity`) | IG protection | draws a normal half-life on first use, stores `_removal_time` |
-| `include/measles/measlesmixingriskquarantine.hpp` | Quarantine length by risk level | `m_get_risk_period(agent)` |
 
-Each is a timer, written differently, with its own state vectors and its own
-reset logic. A general mechanism removes them.
+Each is a timer, written differently, with its own state vectors and reset
+logic. A general mechanism removes the release arithmetic. `day_rash_onset`
+itself stays: contact tracing and the measles quarantine processes read it as
+history (`measlesmixing.hpp:617-626`, `measlesmixingriskquarantine.hpp:826`,
+`measlesschool.hpp:177,188`), which is not what a timer is for (4.9).
 
 ---
 
@@ -55,44 +68,60 @@ reset logic. A general mechanism removes them.
 
 - **State changes are events, applied at the end of the step.**
   `Agent::change_state()`, `set_virus()`, `rm_virus()` queue an event;
-  `Model::events_run()` (`include/epiworld/model-meat.hpp`, from line 349)
-  applies them, sets `p->state = new_state`, and records
-  `p->state_last_changed = today()`. `events_run()` can run several times in a
+  `Model::events_run()` (`model-meat.hpp:349`) applies them, sets
+  `p->state = new_state`, records `p->state_last_changed = today()`, and
+  applies the event's queue change. `events_run()` can run several times in a
   step: global events call it (e.g., `InterventionMeaslesPEP::operator()`), so
   an agent can change state more than once in a day; the transition matrix
-  already handles that with `state_prev`.
-- **Seeding goes through events too** (`events_run()` is called after the
-  virus and tool distribution at reset), so a timer hook in `events_run()` sees
-  seeded agents.
-- **Agents with a virus are visited every step** (the queue adds them; the
-  measles models run without the queue), so an update function that checks a
-  timer runs every day the timer can fire.
+  handles that with `state_prev`.
+- **`rm_virus()` is not a state change only.** `_event_rm_virus()`
+  (`agent-events-meat.hpp:90`) runs the virus's post-recovery hook, clears the
+  infection, updates the virus counts, and the event carries the virus's queue
+  change. `default_update_exposed()` leaves Infected through `rm_virus()`, and
+  the measles hospital exit also calls `record_hospitalization()`.
+- **Reset bypasses events for the baseline state.** `Agent::reset()`
+  (`agent-meat.hpp:440`) sets `state = 0` directly. `Model::reset()` then
+  calls `dist_entities()`, `dist_virus()`, `dist_tools()`
+  (`model-meat.hpp:1952-1954`), each followed by `events_run()`. So seeded
+  infections are applied **before** baseline tools (vaccines) exist, and an
+  agent that stays in state 0 never gets an event.
+- **The queue decides who is updated.** With queuing on (the default) and no
+  queue-blind layer, `update_state()` visits only agents with `queue[i] > 0`
+  (`model-meat.hpp:1712-1715`); the push path filters the same way.
+  `change_state()` makes no queue change by default. Infected agents are
+  queued through their virus; an uninfected agent in a timed state (a
+  quarantined susceptible on an isolated vertex) is not. The measles models
+  turn queuing off.
 - **Each infection has its own `Virus` copy**: `_event_add_virus`
-  (`include/epiworld/agent-events-meat.hpp:5`) stores the event's copy and
-  sets its date.
+  (`agent-events-meat.hpp:5`) stores the event's copy and sets its date.
 - **Rates live on the virus and on tools.** `Virus` has `incubation`,
-  `probability_of_recovery`, `probability_of_death` (`virus-bones.hpp:55-58`)
-  with setters by parameter name, number or function; tools have
-  `recovery_enhancer` and `death_reduction`. `default_update_exposed`
-  (`agent-meat-state.hpp:148`) combines them:
-  death `= p_d (1 - reduction)`, recovery `= 1 - (1 - p_r)(1 - enhancer)`,
-  then `roulette(2)`.
-- **A generic transition factory exists:** `new_state_update_transition(params,
-  targets)` (`agent-meat-state.hpp`, before line 148) builds an update function
-  from parameter names (`ParamRef`) and target states, with a roulette.
-- **Three different draw rules are in use for a state's exits:**
-  1. `runif() < p` (ModelSEIR's exposed state, measles latent and prodromal);
-  2. `roulette()` (`misc.hpp:128`): independent competing events, odds
-     `p / (1 - p)`, `P(none) = 1 / (1 + sum of odds)`;
+  `probability_of_recovery`, `probability_of_death` (`virus-bones.hpp:55-58`);
+  tools have `recovery_enhancer` and `death_reduction`, combined by the
+  model's mixers, which skip tools that do not target the agent's virus
+  lineage (`Tool::target_mask`). `default_update_exposed`
+  (`agent-meat-state.hpp:148`): death `= p_d (1 - reduction)`, recovery
+  `= 1 - (1 - p_r)(1 - enhancer)`, then `roulette(2)`.
+- **Three draw rules are in use for a state's exits**, and they are different
+  laws, not interchangeable implementations:
+  1. `runif() < p` (ModelSEIR's exposed state; measles latent, prodromal,
+     hospital);
+  2. `roulette()` (`misc.hpp:128`): inputs as independent competing events,
+     odds `p / (1 - p)`, `P(none) = 1 / (1 + sum of odds)`; for inputs 0.5 and
+     0.5, none / A / B = 1/3 each (`default_update_exposed`,
+     `new_state_update_transition`);
   3. `sample_from_probs()` (`model-rand-meat.hpp:269`): mutually exclusive
-     probabilities, `P(k) = p_k` (measles Rash and Isolated).
+     probabilities, `P(k) = p_k`; for 0.5 and 0.5, none / A / B = 0 / 0.5 / 0.5
+     (measles Rash and Isolated).
 
-  Rules 1 and 2 agree in distribution for a single exit but consume the
-  uniform differently (`r < p` vs `r >= 1 - p`); rules 2 and 3 differ in
-  distribution when there are several exits. This matters for identity
-  (Section 7.2).
+  Rules 1 and 2 agree in law for a single exit but use the uniform differently
+  (`r < p` vs `r >= 1 - p`).
+- **`new_state_update_transition` is used by examples only**
+  (`examples/15-seird-transitions`, `20-transmission-benchmark`,
+  `21-parameter-lookup-benchmark`); no built-in model calls it.
 - **Parameters are read through `ParamRef`** (`param-ref.hpp:53`): a name
-  resolved to a position once per parameter layout; values are never cached.
+  resolved to a position once per parameter layout; values are never cached;
+  the cache is atomic, so a `ParamRef` is safe to share across copies and
+  threads.
 
 ---
 
@@ -100,27 +129,31 @@ reset logic. A general mechanism removes them.
 
 Recorded so a reviewer does not re-propose them without new arguments.
 
-1. *A clock on the virus, one per disease stage* (first draft). It ties timers
-   to infections, so it cannot time a quarantine of a susceptible agent, and
-   a quarantined latent agent needs two clocks at once (latent period and
-   quarantine). Dropped in favor of timers on the agent.
+1. *A clock on the virus, one per disease stage* (first draft). It cannot time
+   a quarantine of a susceptible agent, and a quarantined latent agent needs
+   two clocks at once. Replaced by timers on the agent, with an
+   infection scope for disease timers (4.4), which keeps the one thing the
+   virus clock got right: a new infection is a new clock.
 2. *Geometric vs "other" distributions.* The real split is the mechanism:
-   checked every step (hazard) or drawn at entry. A hazard that depends on the
-   days already spent in the state describes any discrete distribution and
-   still responds to tools and global events at once.
-3. *A virtual `Virus::recover(model)` implemented by each disease.* Kept the
-   idea that the disease defines its natural history, but: it must cover every
-   state, not only recovery (measles has Latent, Prodromal, Rash, Hospitalized);
-   it must be a question ("does it end today?"), not an action, because the
-   destination depends on the model (Recovered vs Isolated Recovered); and it
-   should be configured with objects rather than subclassing, so R, Python and
-   JS users set a lognormal without callbacks into the interpreter every step.
-4. *Drawing the whole course at infection.* Same distribution for independent
-   stages, but it stores stages that never happen when the course branches.
-   Only correlated stage durations need it; not requested.
-5. *An event calendar* (a priority queue of scheduled transitions). Agents in
-   timed states are visited every step anyway; a comparison with an end day is
-   cheaper than today's daily draw.
+   drawn at entry, or checked every step (hazard). A hazard that depends on the
+   days already spent describes any discrete distribution and still responds
+   to tools and global events at once. A fixed deadline that reads its
+   parameter live is such a hazard (4.1).
+3. *A virtual `Virus::recover(model)` per disease.* Kept the idea that the
+   disease defines its natural history, but it must cover every state, it must
+   separate deciding from acting (the destination depends on the model), and
+   it should be configured with objects, so R, Python and JS users need no
+   callbacks into the interpreter every step.
+4. *Drawing the whole course at infection* (Covasim 3.1.6 `People.infect()`).
+   Same law for independent stages; it stores stages that never happen when
+   the course branches, and it fixes every later stage before interventions
+   act. Only correlated stage durations need it; not requested.
+5. *An event calendar* (a priority queue of scheduled transitions). Not needed:
+   agents with active timers are kept in the update set by the timers
+   themselves (4.6), and checking an end day is cheaper than today's daily
+   draw. Revision 1 argued this from "agents with a virus are visited every
+   step", which is false for uninfected timed agents under the queue; the
+   queue contribution in 4.6 is what makes the argument hold.
 
 ---
 
@@ -128,126 +161,244 @@ Recorded so a reviewer does not re-propose them without new arguments.
 
 ### 4.1 Timers
 
-A **timer** is something an agent waits for while in a state. It has one or
-more **outcomes** (which exit it leads to) and one of two kinds:
+A **timer** is a named, immutable definition of something an agent waits for
+while in a state. It has one or more **outcomes** (which exit it leads to) and
+one of two kinds.
 
-- **Drawn** (at entry): when the timer starts, it draws the outcome with its
-  probability, then that outcome's duration. It fires on the drawn day. Cheap,
-  and the end is known in advance. This is a semi-Markov state: an embedded
-  choice of exit plus a duration per exit.
-- **Hazard** (checked every step): each step, a draw decides whether it fires
-  and through which outcome. A constant probability gives today's geometric
-  duration. The probability may depend on the days already spent
-  (`days_in`), so any discrete distribution is possible, and tools and global
-  events act at once.
+- **Drawn** (at the start): when the timer starts, it picks the outcome with
+  its probability, then that outcome's duration, and fires on the drawn day.
+  Cheap, and the end is known in advance. This is a semi-Markov state: an
+  embedded choice of exit plus a duration per exit (Covasim 3.1.6 and EMOD
+  sample periods this way).
+- **Hazard** (checked every step): each step, one draw decides whether it
+  fires and through which outcome. A constant probability gives today's
+  geometric duration. The probability may depend on the agent and on the
+  days already spent (`days_in`), and it is read every step, so tools and
+  global events act at once.
 
 ```cpp
 // Drawn, one outcome
-auto latent     = timer::drawn(
-  duration::lognormal("Latent period", "Latent period sd")
+auto latent = timer::drawn(
+  "latent", duration::lognormal("Latent period", "Latent period sd")
 );
-auto quarantine = timer::drawn(duration::fixed("Quarantine period"));
 
-// Drawn, two outcomes: the outcome first ("" takes the remaining probability),
-// then its own duration
-auto rash = timer::drawn({
+// Drawn, two outcomes: the outcome first ("" takes the remaining
+// probability), then its own duration
+auto rash = timer::drawn("rash", {
   {"Hospitalization prob", duration::lognormal("Days to hospital", "Days to hospital sd")},
   {"",                     duration::lognormal("Rash period", "Rash period sd")}
 });
 
-// Hazard: today's behavior
-auto infectious = timer::hazard({"Death rate", "Recovery rate"});
+// Hazard, today's behavior
+auto infectious = timer::hazard(
+  "infectious", {"Death rate", "Recovery rate"}, hazard_rule::competing
+);
 
-// Hazard that depends on the days in the state (not geometric, still live)
-auto waning = timer::hazard(
+// Hazard depending on the days in the state (non-geometric, still live)
+auto waning = timer::hazard("waning",
   [](Agent<> & a, Model<> & m, int days_in) { return weibull_h(days_in, m); }
+);
+
+// Deadline: a hazard that is 1 once days_in reaches a value read every step;
+// no random draw. A negative value never fires (today's "disabled" sentinel).
+auto quarantine = timer::deadline("quarantine", "Quarantine period");
+auto risk_quarantine = timer::deadline("quarantine",
+  [](Agent<> & a, Model<> & m) { return risk_period(a, m); }  // current risk level
 );
 ```
 
-`weibull_h` stands for any user function returning the day's probability.
+`weibull_h` and `risk_period` stand for user functions.
 
-**Durations** (`duration::`) are distributions over model parameters
-(`contact-layers.md` point 17: scalars are model parameters):
-`fixed(mean)`, `geometric(mean)`, `lognormal(mean, sd)`, `gamma(mean, sd)`,
-and a user function `(agent, model) -> days`. All are set by mean and sd in
-days: papers report those, and switching family keeps a calibrated mean.
-Lognormal from mean `m` and sd `s`: `sigma^2 = log(1 + s^2/m^2)`,
-`mu = log(m) - sigma^2/2`; gamma: `shape = m^2/s^2`, `scale = s^2/m`.
+**Probabilities and durations are per agent.** Every outcome probability,
+hazard and duration is either a parameter name (read for the agent, 4.7) or a
+C++ function of `(agent, model)` (plus `days_in` for hazards). So age-, risk-
+or strain-dependent branch probabilities do not need artificial states or
+tools. The wrappers expose the parameter forms only until callbacks across the
+language boundary are supported (Section 8); a tabulated form (a value per
+group of an agent attribute) is the candidate built-in for them (Q13).
 
-**Rounding:** a drawn duration is rounded to whole days, at least 1, so a
-state lasts at least one step, as today (open item Q8).
+**Hazard rules.** A hazard timer with several outcomes states its law,
+because the draw rules in use are different laws (Section 2):
 
-### 4.2 Transitions
+| Rule | Law | Today's users |
+|---|---|---|
+| `hazard_rule::bernoulli` | one outcome, fires if `runif() < p` | SEIR exposed, measles latent, prodromal, hospital |
+| `hazard_rule::competing` | `roulette()`: independent competing inputs | `default_update_exposed` |
+| `hazard_rule::exclusive` | `sample_from_probs()`: mutually exclusive probabilities | measles Rash, Isolated |
 
-A model declares, per state, which timers run there and where each outcome
-leads:
+The default is `bernoulli` for one outcome and `competing` for several. Each
+rule consumes the random stream exactly as the code it names, so ports can be
+draw-for-draw identical (7.2).
+
+**Durations** (`duration::`): `fixed(mean)`, `geometric(mean)`,
+`lognormal(mean, sd)`, `gamma(mean, sd)`, and a function of
+`(agent, model)`. `mean` and `sd` describe the **continuous** distribution
+(lognormal: `sigma^2 = log(1 + sd^2/mean^2)`, `mu = log(mean) - sigma^2/2`;
+gamma: `shape = mean^2/sd^2`, `scale = sd^2/mean`); the realized number of
+days is its discretization (4.5).
+
+### 4.2 Transitions and actions
+
+A model declares, per state, which timers run there, where each outcome
+leads, and what firing does:
 
 ```cpp
-m.add_transition(from_state, timer, {target_for_outcome_0, ...});
-m.add_timer(state, timer);   // runs in the state, no exit from it
+m.add_transition(state, timer, {target_0, target_1, ...}, actions);
+m.add_timer(state, timer);   // runs in the state, no exit from it ("carried")
 ```
 
-`add_transition` implies `add_timer`. A **carried** timer (`add_timer` only)
-keeps running through a state that cannot be left by it. Measles isolation
-needs this: it is anchored on rash onset, so it starts in Rash, which is not
-left when it ends, and it releases from Isolated and Isolated Recovered.
+- **Targets** are state names, or `Virus::POST` / `Virus::REMOVED` (the
+  agent's virus's own post-recovery or removal state, as
+  `default_update_exposed` uses today).
+- **Actions**, per outcome: `action::move` (the default: `change_state`),
+  `action::rm_virus` (`rm_virus(target)`: post-recovery hook, virus counts,
+  queue change), and an optional hook `on_fire(agent, model, outcome)` that
+  runs when the outcome is committed (e.g., `record_hospitalization()`).
+- `add_transition` implies `add_timer`. A **carried** timer keeps running
+  through a state it cannot be left by. Measles isolation needs this: it is
+  anchored on rash onset, so it starts in Rash and releases from Isolated and
+  Isolated Recovered.
+- The same timer can be used by several states; that is how states **share**
+  it (Latent and Quarantined Latent share `latent`), each mapping the shared
+  timer's outcomes to its own targets and actions. Every state using a timer
+  must map all its outcomes (checked when the model starts a run).
 
-The same timer object can be used by several states; that is how states
-**share** a timer (Latent and Quarantined Latent share `latent`), and each state
-maps the shared timer's outcomes to its own targets (Rash's "recover" goes to
-Recovered, Isolated's to Isolated Recovered).
+A state with transitions gets a generated update function. A state with a
+hand-written update function can still use timers through the decision API
+(4.3) and leave the bookkeeping to the core.
 
-A state that has transitions gets a generated update function (as
-`new_state_update_transition` does today). A state with a hand-written update
-function can still use timers (Section 4.6).
+### 4.3 The decision: once per agent and step
 
-### 4.3 Dynamics
+The first time on a step that anything asks about an agent's timers (the
+generated update function, `p->timer_fired(m, "rash")` in a hand-written one,
+or a global event), the core **evaluates every active timer of the agent's
+current state together** and caches the result for that agent and day:
 
-**At a state change** (in `events_run()`, where `p->state = new_state` is
-set), for each timer:
+1. each hazard timer makes its one draw, under its rule;
+2. each drawn timer and deadline compares its end with `days_in`;
+3. the fired set is resolved (below) into one destination, the actions to
+   apply, and the outcome of each fired timer.
+
+Repeated queries on the same step return the cached result: a second query
+never gives a hazard a second chance (`1 - (1 - p)^2`). Hazard timers in one
+state are independent sources; within one hazard timer, outcomes compete
+under its rule.
+
+**Several timers fire on the same step: chain them.** Apply the first fired
+transition (in declaration order); in the destination, if another fired timer
+has an exit there, apply it too; repeat until no fired timer has an exit in
+the current state. Only the final state is committed, with one event, and the
+actions along the chain are composed (if any step removes the virus, the
+event is a `rm_virus` into the final state; `on_fire` hooks run in chain
+order). This reproduces both measles boundary cases from today's code:
+
+| Start | Fired on the same step | Chain | Today's code |
+|---|---|---|---|
+| Quarantined Latent | `latent`, `quarantine` | -> Quarantined Prodromal -> Prodromal | Prodromal (`_update_quarantine_latent`) |
+| Isolated | `rash` (recover), `isolation` | -> Isolated Recovered -> Recovered | Recovered (`_update_isolated`) |
+
+For these two the order of the chain does not matter (quarantine first: ->
+Latent -> Prodromal; isolation first: -> Rash -> Recovered). A model whose
+chains depend on the order must say which order it wants by declaration
+order; the T1 tests cover an order-dependent example.
+
+**Order of drawn timers vs hazards.** Hazards are evaluated on every step the
+timer is active, including the step a drawn timer of the same state ends, so a
+state lasting `d` days offers `d` daily chances to each hazard. If both fire,
+the chain decides.
+
+**Committing.** The resolved transition is applied through the existing
+events (`change_state` / `rm_virus`), so counts, queue changes, post-recovery
+hooks and the transition matrix behave as today.
+
+### 4.4 The clock: lifecycle of a timer slot
+
+Per agent, a slot per active timer: `{timer, outcome, start day, end day,
+status}`, where status is `pending`, `active` or `spent`.
+
+**Scope.** A timer is `state`-scoped (the default: quarantine, isolation) or
+`infection`-scoped (disease timers: latent, prodromal, rash). An
+infection-scoped slot belongs to the current infection: any `add_virus` or
+`rm_virus` event drops it, so a new infection always starts new disease
+timers, even on the same day and even if the state does not change.
+
+**At a state change** (in `events_run()`, where `p->state` is set):
 
 | Old state has it | New state has it | Result |
 |---|---|---|
-| yes | yes | keeps running (start day, end day and outcome unchanged) |
-| no | yes | starts: drawn picks outcome and end day; hazard records the start day |
-| yes | no | dropped |
+| yes | yes | keeps its slot (dates, outcome, status) |
+| no | yes | a new slot, `pending`, start day = today |
+| yes | no | dropped (`state`-scoped: revivable today, below) |
 
-Same-day churn: an agent can change state more than once in a step (Section 2).
-A dropped timer is only marked `dropped_on = today`; if a later change on the
-same day enters a state that has it again, it is revived unchanged. Marked
-slots are discarded on the next step. Without this, A -> B -> A in one day
-would redraw A's timers.
+- **Same-day churn.** A `state`-scoped slot dropped by a state change is kept
+  as revivable until the end of the day: if a later change on the same day
+  enters a state that has it, it comes back unchanged (A -> B -> A in one step
+  keeps A's end day). Infection-scoped slots are never revived across an
+  infection change.
+- **Explicit restart.** `p->restart_timer(m, "quarantine")` starts a slot anew
+  (a second quarantine order extends the quarantine even if the state does
+  not change); `p->cancel_timer(m, name)` drops it.
+- **Materialization.** A `pending` slot draws its outcome and end day (drawn
+  timers) or just becomes `active` (hazards, deadlines) at the end of the
+  `events_run()` call that created it, after every event of that call. So a
+  tool added in the same batch (PEP adds its tool, then moves the agent) is
+  seen by the draw.
+- **Reset.** `Agent::reset()` clears the slots. During `Model::reset()` the
+  distribution steps (`dist_entities`, `dist_virus`, `dist_tools`) only
+  create `pending` slots; one **initialization pass** after `dist_tools()`
+  visits every agent in id order and (a) creates the slots of its current
+  state, including state 0, for agents that got no event (an initially immune
+  agent with waning, a model whose initial state is quarantine), and
+  (b) materializes all pending slots with start day 0. Seeded infections
+  therefore see baseline vaccines. The pass consumes random numbers only for
+  drawn timers; models with only hazards and deadlines (every model today)
+  draw nothing new, so the order of today's random stream is unchanged.
+- **Spent.** A timer that fired is `spent`: it is kept while the agent stays
+  in states that use it, never fires again and is never restarted implicitly
+  (only `restart_timer`), and is dropped when the agent leaves those states.
+  So Isolated -> Rash on release keeps a spent `isolation` in Rash without
+  restarting it, and a drawn timer that fires into a state sharing it does
+  not fire again.
+- **Expired before its exit.** A carried timer can end in a state without an
+  exit (isolation shorter than the time to detection, in Rash). It stays
+  `active` and fires at the first evaluation in a state with its exit, which
+  is what `_update_isolated` does today (`days_since >= period` on the first
+  update).
+- **Seeds start at age 0.** A seeded infection starts its disease timers at
+  day 0, with no time already elapsed. With hazards (today) this changes
+  nothing; with drawn timers it means every seed is newly infected. Starting
+  prevalent cases part-way (an elapsed age, or a remaining duration drawn
+  conditionally) is deferred (Q14).
 
-Agent reset (`Agent::reset()`) clears all timers.
+### 4.5 Discretization and domain
 
-**Each step**, the generated update function of a state, for an agent in it:
+- A drawn duration `x` (continuous) becomes `d = max(1, ceil(x))` days: the
+  slot ends `d` steps after it started. This is today's elapsed-time rule
+  (`Quarantine period <= today - day_flagged` releases a 1.4-day quarantine
+  after 2 updates and a 0-day one at the first update), so fixed periods
+  release on the same day as now.
+- The realized mean is therefore larger than `mean` (about +0.5 day for a
+  smooth distribution, more when much of the mass is below 1). `mean` and
+  `sd` are the continuous input; the documentation says so, and the tests
+  check the discrete distribution (7.3), not the input moments.
+- A negative value never fires (today's disabled sentinel for quarantine and
+  isolation). NaN or infinite values, `sd < 0`, a geometric mean below 1, a
+  probability outside [0, 1], and a residual `""` probability below 0 are
+  errors, raised when the model starts a run where they can be checked and
+  otherwise at the draw, naming the timer, the parameter and the agent. Gamma
+  or lognormal with `sd = 0` is `fixed`. An end day past `INT_MAX` never fires.
 
-1. evaluates its hazard timers (one draw for all their outcomes);
-2. if none fired, fires the first drawn timer whose end day has come, in the
-   order the state's transitions were declared;
-3. moves the agent to the target of the fired outcome.
+### 4.6 Who is updated: timer-owned queue membership
 
-Hazards go first so that a state lasting `d` days offers `d` daily chances to
-every hazard (open item Q2). Timers carried without an exit are never fired;
-they only keep their dates.
+An agent with at least one `active` slot whose state can be left by a timer
+must be visited every step, whatever the queue says. The slot bookkeeping
+adds a queue contribution of its own: `OnlySelf` +1 when the agent goes from
+no such slot to at least one, -1 when it goes back, balanced independently of
+the infection and contact contributions. With queuing off (measles) nothing
+changes. Visits stay in ascending id order, so the random stream of models
+without timers is unchanged.
 
-**Timing.** An agent entering a state at the end of step `t` is first
-updated at step `t + 1`. A drawn duration `d` fires at the update of step
-`t + d` (the agent spent `d` steps in the state). A hazard sees
-`days_in = today - start`, so 1 at its first check. This must reproduce the
-measles release rule `Quarantine period <= today - day_flagged` exactly, which
-the implementation checks against the current models (Section 7.2).
-
-### 4.4 Storage
-
-Per agent, a small list of slots: `{timer id, outcome, start day, end day,
-dropped_on}` (about 16 bytes). Most agents have none (susceptible,
-recovered); an infected, quarantined agent has two or three. Proposed: a
-`std::vector` per agent reserved on first use (24 bytes when empty); measure
-against a fixed inline array before choosing (open item Q6). Slots are copied
-with the agent, so `run_multiple()` clones need nothing more.
-
-### 4.5 Durations and probabilities per agent: tools scale parameters
+### 4.7 Parameters per agent; tools scale them
 
 A timer reads its parameters **for an agent**. A tool can scale a parameter
 for the agents holding it:
@@ -258,71 +409,86 @@ mmr.set_param_factor("Prodromal period",     "MMR prodromal factor");
 mmr.set_param_factor("Hospitalization prob", "MMR hospitalization factor");
 ```
 
-The factor is itself a parameter name (point 17). The value a timer sees is
-the model's value times the product of the factors of the agent's tools that
-target that parameter.
+- **Which tools count.** A tool counts if it scales that parameter and, for an
+  infection-scoped timer, targets the agent's virus lineage (the same check
+  as the recovery and death mixers). For a timer with no virus, every tool
+  that scales the parameter counts.
+- **Stacking.** Factors multiply. The result is validated (4.5): a scaled
+  probability above 1, or a residual `""` below 0, is an error, not a silent
+  clamp.
+- **Durations.** A factor on a duration's mean scales the **drawn** value
+  (`x * factor`), which scales the mean and sd together and keeps the
+  coefficient of variation. It does not change the sd parameter alone, and it
+  is not a rescaling of a duration already drawn (that is Q10).
+- **When it is read.** A drawn timer reads factors once, at materialization
+  (4.4); a hazard or deadline reads them every step. Baseline tools are seen
+  by seeded timers because materialization during reset waits for
+  `dist_tools()`.
 
-- A **drawn** timer reads it **once, at entry**: vaccination later in the
-  state does not change the time already drawn. That is the trade-off of a
-  drawn timer; a model that needs an immediate effect uses a hazard timer, or
-  the intervention re-times the agent (Section 4.7).
-- A **hazard** timer reads it **every step**.
-- This covers vaccination status known before the run (the tool is there at
-  entry) and vaccination during the run (PEP, campaigns), which precomputing
-  at the start of the simulation would miss.
-- Agent attributes that are not tools (age, risk level) go through a user
-  duration function of `(agent, model)`.
+### 4.8 Timer definitions, model copies, and threads
 
-Cost: a parameter read for an agent scans that agent's tools (few). Measure.
+- Definitions are immutable and named; the model keeps them by name as
+  `std::shared_ptr<const Timer>`. Model copies (`run_multiple()`, clones)
+  share the definitions, which is safe because they never change; slots are
+  copied with the agents.
+- `m.set_timer("latent", new_definition)` replaces the definition **by name**,
+  so every state sharing the timer sees it (one logical clock). The new one
+  must have the same number of outcomes. It is allowed between runs only
+  (throws during a run, like `add_layer()`); active slots never migrate.
+- Parameters are read through `ParamRef` (thread-safe). C++ callbacks must be
+  thread-safe for `run_multiple()` with threads; the documentation says so.
+- T1 tests: a clone runs independently of its original after `set_timer()` on
+  the original; serial and parallel `run_multiple()` give the same results.
 
-### 4.6 Hand-written update functions
+### 4.9 Live and snapshotted values
 
-Models whose states do more than move (the measles Rash state draws detection
-and triggers contact tracing) keep their update functions and ask the core:
+| Value | Read | Why |
+|---|---|---|
+| Deadline (quarantine, isolation, risk-level quarantine) | every step | today's semantics: a policy change from 21 to 7 days affects agents already in quarantine; a risk reclassification changes the period |
+| Hazard probabilities | every step | today's semantics |
+| Drawn outcome and duration | once, at materialization | that is what drawn means; an intervention that must change it calls `restart_timer` or sets the end day (`set_timer_end`) |
 
-```cpp
-int k = p->timer_fired(*m, rash);   // -1, or the outcome that fires today
-```
+`day_rash_onset` is history, read by contact tracing and quarantine
+processes; it stays a model vector, written where it is today. Slots are
+disposable and are not history.
 
-and read or set a timer's dates (`get_timer_end()`, `set_timer_end()`), for
-example to replace `day_rash_onset` reads with the rash timer's start day.
-The keep/start/drop rule still runs in `events_run()`, so these models need
-no bookkeeping of their own.
-
-### 4.7 Interventions
+### 4.10 Interventions
 
 | What the intervention does | Effect on timers | Example |
 |---|---|---|
-| Ends the infection (moves to Recovered) | timers of the old state that Recovered lacks are dropped | effective PEP |
-| Moves to a parallel state | shared timers keep running; new ones start | Latent -> Quarantined Latent keeps `latent`, starts `quarantine` |
-| Develops the disease during quarantine | the quarantine timer is dropped by the rule, unless the new state carries it | Quarantined Prodromal -> Isolated |
-| Changes a rate | hazard timers see it at once; drawn timers do not | a global event changing "Recovery rate" |
-| Changes the time left | code sets the end day, or redraws | not needed today |
+| Ends the infection (`rm_virus`) | infection-scoped slots dropped; state-scoped ones follow the state rule | effective PEP |
+| Moves to a parallel state | shared slots keep running; new ones start | Latent -> Quarantined Latent keeps `latent`, starts `quarantine` |
+| Develops the disease during quarantine | the quarantine slot follows the state rule | Quarantined Prodromal -> Isolated drops it |
+| Orders quarantine again | `restart_timer("quarantine")` | repeated orders |
+| Changes a policy parameter | deadlines and hazards see it at once | 21 -> 7 days |
+| Changes the time left | `set_timer_end`, or `restart_timer` | not needed today |
 
-PEP, step by step, in the measles mixing model with timers: an agent in Latent
-is offered PEP. If it works, `rm_virus(RECOVERED)`: Recovered has no timers,
-so `latent` is dropped. If not, the agent goes to Quarantined Latent:
-`latent` keeps its drawn end day (quarantine does not pause the disease) and
-`quarantine` starts. Today, a quarantined latent agent instead becomes
-prodromal by a fresh daily draw.
+PEP, step by step, in the measles mixing model with timers: an agent in
+Latent is offered PEP. If it works, `rm_virus(RECOVERED)` drops `latent`
+(infection-scoped). If not, the agent goes to Quarantined Latent: `latent`
+keeps its end day (quarantine does not pause the disease) and `quarantine`
+starts. With hazard defaults this is today's behavior; with a drawn `latent`,
+the agent becomes prodromal on its drawn day instead of by a fresh daily
+draw.
 
-**Not now:** a tool that speeds up or slows down a drawn timer (IG lengthens
-the measles incubation; antivirals shorten the infectious period). With an end
-day stored, it means rescaling the time left when the tool is added or
-removed. Deferred until a model needs it (Q10).
+**Not now:** a tool that speeds up or slows down a drawn timer already
+running (IG lengthens the measles incubation; antivirals shorten the
+infectious period): rescaling the time left when the tool is added or
+removed (Q10).
 
-### 4.8 What it replaces
+### 4.11 What it replaces
 
-- `new_state_update_transition()` becomes `add_transition()` with hazard
-  timers.
-- The measles `day_flagged`, `day_rash_onset` (as a timer anchor) and the
-  release arithmetic in about ten update functions.
-- Possibly `ToolImmunoglobulin::_removal_time` (a timer on a tool, not a state:
-  out of scope for now, Q11).
-- Virus-level rates stay for now (Q1): the built-in hazard for infected states
-  reads `virus->get_prob_recovery()` and `get_prob_death()` with the tools'
-  enhancer and reduction, exactly as `default_update_exposed` does, so
-  multi-strain models keep working.
+- `new_state_update_transition()`: becomes `add_transition()` with hazard
+  timers (examples only; their streams change where they use one outcome,
+  since `bernoulli` replaces `roulette(1)`).
+- The measles `day_flagged` and the release arithmetic in about ten update
+  functions (not `day_rash_onset`, 4.9).
+- Virus-level rates stay (Q1): built-in hazards read
+  `virus->get_prob_recovery()`, `get_prob_death()`, `get_incubation()` with the
+  tools' enhancer and reduction, exactly as today, so multi-strain models keep
+  working.
+- `ToolImmunoglobulin::_removal_time` is a timer on a tool, not on a state:
+  out of scope (Q11).
 
 ---
 
@@ -332,68 +498,70 @@ removed. Deferred until a model needs it (Q10).
 
 ```cpp
 // in the constructor
-auto latent     = timer::hazard(virus_incubation());     // runif() < 1 / incubation
-auto infectious = timer::hazard(virus_death_recovery()); // as default_update_exposed
+auto latent = timer::hazard("latent", virus_incubation());      // bernoulli, 1 / incubation
+auto infectious = timer::hazard(
+  "infectious", virus_death_recovery(), hazard_rule::competing  // as default_update_exposed
+);
+latent.scope(timer_scope::infection);
+infectious.scope(timer_scope::infection);
 add_transition("Exposed",  latent,     {"Infected"});
-add_transition("Infected", infectious, {"Deceased", "Recovered"});   // SEIRD
+add_transition("Infected", infectious, {Virus::REMOVED, Virus::POST},
+               {action::rm_virus, action::rm_virus});
 ```
 
-`virus_incubation()` and `virus_death_recovery()` are the built-in hazards
-over the virus's rates (Section 4.8). They must consume the random stream as
-the current functions do (Section 7.2).
+`virus_incubation()` and `virus_death_recovery()` are built-in hazards over
+the virus's rates and the tools' mixers (4.11).
 
 ### 5.2 ModelSEIR with a lognormal latent period
 
 ```cpp
 ModelSEIR<> m("measles-like", 10000, ...);
 m.add_param(2.7, "Latent period sd");
-m.set_timer("Exposed", timer::drawn(
-  duration::lognormal("Latent period", "Latent period sd")
-));
+m.set_timer("latent", timer::drawn(
+  "latent", duration::lognormal("Latent period", "Latent period sd")
+));  // between runs; same outcome count
 ```
-
-`set_timer(state, timer)` replaces the timer of a state that has one
-(name to settle in review).
 
 ### 5.3 A simple model with a fixed quarantine
 
 ```cpp
-auto quarantine = timer::drawn(duration::fixed("Quarantine period"));
+auto quarantine = timer::deadline("quarantine", "Quarantine period");
 m.add_transition("Quarantined", quarantine, {"Susceptible"});
 ```
 
 Every quarantined agent returns to Susceptible exactly `Quarantine period`
-days after entering.
+days after entering, with queuing on and no infectious neighbors (4.6).
 
 ### 5.4 Measles (mixing model), whole table
 
-Timers: `latent`, `prodromal` (drawn or hazard), `rash` (two outcomes:
-hospitalize, recover), `hospital`, `quarantine` (fixed), `isolation` (fixed,
-anchored on rash onset).
+Timers: `latent`, `prodromal`, `hospital` (infection-scoped; hazards with
+`bernoulli` by default), `rash` (infection-scoped; `exclusive` hazard over
+recovery and hospitalization by default, as today), `quarantine` (deadline),
+`isolation` (deadline, state-scoped, carried from rash onset).
 
-| State | Timers (exit -> target) | Carried | Hand-written part |
+| State | Timers (outcome -> target, action) | Carried | Hand-written part |
 |---|---|---|---|
 | Latent | latent -> Prodromal | | |
 | Quarantined Latent | latent -> Quarantined Prodromal; quarantine -> Latent | | |
-| Prodromal | prodromal -> Rash | | |
-| Quarantined Prodromal | prodromal -> Isolated; quarantine -> Prodromal | | |
-| Rash | rash: hospitalize -> Hospitalized, recover -> Recovered | isolation | detection draw, quarantine trigger, Isolated if detected; recovery goes to Isolated Recovered if detected |
-| Isolated | rash: hospitalize -> Hospitalized, recover -> Isolated Recovered; isolation -> Rash | | |
+| Prodromal | prodromal -> Rash | | `day_rash_onset` written by an `on_fire` hook |
+| Quarantined Prodromal | prodromal -> Isolated; quarantine -> Prodromal | | same hook |
+| Rash | rash: hospitalize -> Hospitalized (`on_fire`: `record_hospitalization`), recover -> Recovered (`rm_virus`) | isolation | detection draw and quarantine trigger; if detected, recover goes to Isolated Recovered and "no exit" goes to Isolated |
+| Isolated | rash: hospitalize -> Hospitalized, recover -> Isolated Recovered (`rm_virus`); isolation -> Rash | | |
 | Isolated Recovered | isolation -> Recovered | | |
 | Quarantined Susceptible | quarantine -> Susceptible | | |
 | Quarantined Recovered | quarantine -> Recovered | | |
-| Hospitalized | hospital -> Recovered | | |
+| Hospitalized | hospital -> Recovered (`rm_virus`) | | |
 
-What changes in behavior:
+Rash keeps a hand-written update function: the detection draw happens before
+the rash decision today, and the destination depends on it. It reads the rash
+decision through `timer_fired()` and commits it itself. The two same-day
+boundary cases resolve as today through the chain (4.3).
 
-- With drawn `latent` and `prodromal`, quarantine no longer redraws them
-  (Section 4.7).
-- Quarantined Latent whose `latent` and `quarantine` end on the same day: today
-  the agent goes straight to Prodromal; with "first declared wins" it goes to
-  Quarantined Prodromal, then to Prodromal the next day (its quarantine timer
-  is still expired). Q3.
-- Rash and Isolated today use `sample_from_probs` (exclusive probabilities);
-  the generic hazard uses one rule (Q4).
+With the defaults above, no difference from today is intended: T2b must
+reach draw-for-draw identity for each measles model, or report the exact
+cause (7.2). Drawn latent and prodromal periods, and a hospitalization
+probability per case (Q5), are then options a user sets, not changes to the
+defaults.
 
 ---
 
@@ -401,15 +569,18 @@ What changes in behavior:
 
 | Item | Kind |
 |---|---|
-| `timer::drawn(duration)`, `timer::drawn({{prob_param, duration}, ...})` | timer factory |
-| `timer::hazard({params...})`, `timer::hazard(fun)` | timer factory |
-| `duration::fixed`, `geometric`, `lognormal`, `gamma`, user function | duration factory |
-| `Model::add_transition(state, timer, targets)`, `Model::add_timer(state, timer)`, `Model::set_timer(state, timer)` | model |
-| `Agent::timer_fired(model, timer)`, `get_timer_start()`, `get_timer_end()`, `set_timer_end()` | agent |
+| `timer::drawn(name, duration)`, `timer::drawn(name, {{prob, duration}, ...})` | timer |
+| `timer::hazard(name, probs or fun, rule)`, `timer::deadline(name, param or fun)` | timer |
+| `.scope(timer_scope::state / infection)` | timer |
+| `hazard_rule::bernoulli / competing / exclusive` | timer |
+| `duration::fixed`, `geometric`, `lognormal`, `gamma`, function | duration |
+| `Model::add_transition(state, timer, targets, actions)`, `add_timer(state, timer)`, `set_timer(name, timer)` | model |
+| `action::move`, `action::rm_virus`, `on_fire` hook; targets `Virus::POST`, `Virus::REMOVED` | transition |
+| `Agent::timer_fired(model, name)`, `restart_timer`, `cancel_timer`, `get_timer_start`, `get_timer_end`, `set_timer_end` | agent |
 | `Tool::set_param_factor(param, factor_param)` | tool |
 
-States are named by their string names in the public API (resolved to ids at
-`run()`), so the bindings need no state ids.
+States and timers are named by strings in the public API (resolved when a run
+starts), so the bindings need no ids.
 
 ---
 
@@ -419,48 +590,73 @@ States are named by their string names in the public API (resolved to ids at
 
 | PR | Content | Results |
 |---|---|---|
-| **T1. Core** | `include/epiworld/timer-bones.hpp` / `timer-meat.hpp` (timers, durations), agent slots, the keep/start/drop rule in `events_run()`, `add_transition` / `add_timer` / `set_timer`, the generated update function, `timer_fired` and the date accessors | No model changes: every result identical |
-| **T2a. Default models** | SIR, SEIR, SIRD, SEIRD, SIS, SISD, `ModelSEIRQuarantine` (after the consolidation) on `add_transition`; `new_state_update_transition` removed | Identical where the draw rule is reproduced (7.2) |
-| **T2b. Measles** | the three measles models on timers; `day_flagged`, `day_rash_onset` and the release arithmetic removed (after 3d) | Distributional acceptance (7.2) |
-| **T3. Tool factors** | `Tool::set_param_factor`; parameter reads per agent | Identical without factors |
+| **T1. Core** | `include/epiworld/timer-bones.hpp` / `timer-meat.hpp`: definitions, rules, durations, validation; agent slots and lifecycle (4.4) in `events_run()` and `reset()`; the initialization pass; timer-owned queue membership; decision cache and chain resolution; actions through existing events; `add_transition`, `add_timer`, `set_timer`; the agent API | No model uses it: every result identical |
+| **T2a. Default models** | SIR, SEIR, SIRD, SEIRD, SIS, SISD, `ModelSEIRQuarantine` (after the consolidation) on `add_transition`; `new_state_update_transition` removed, examples ported | Draw-for-draw identical (7.2) |
+| **T2b. Measles** | the three measles models on timers; `day_flagged` and the release arithmetic removed (after 3d) | Draw-for-draw identical with defaults, or the cause reported (7.2) |
+| **T3. Tool factors** | `Tool::set_param_factor`, parameter reads per agent with lineage targets | Identical without factors |
 
-### 7.2 Identity and acceptance
+### 7.2 Identity
 
-- **T1:** the identity harness (the scratchpad `idnet.cpp` pattern in
-  `contact-layers.md`, Section 11): every model draw-for-draw identical.
-- **T2a:** single-exit hazards use `runif() < p` and multi-exit ones
-  `roulette()`, as the functions they replace; then draw-for-draw identical.
-  Any model that differs is reported with the cause.
-- **T2b:** the measles models are not draw-for-draw identical (`sample_from_probs`
-  vs the generic rule; Q3 and Q4; quarantine no longer redrawing the latent
-  period when drawn timers are chosen). Acceptance as in the consolidation
-  plan: 1,000 runs per model, standardized mean difference of final size and
-  peak prevalence at most 0.1, sd ratio within 0.9-1.1, **with geometric
-  (hazard) defaults**. Fixed timers (quarantine, isolation) must release on
-  exactly the same day as today.
+- **T1:** the identity harness (`contact-layers.md`, Section 11): every model
+  draw-for-draw identical.
+- **T2a and T2b:** each state keeps its legacy rule (`bernoulli`,
+  `competing`, `exclusive`), and the decision consumes the stream in the
+  same order as the update function it replaces; so both are expected to be
+  draw-for-draw identical, including exact quarantine and isolation release
+  days. A model that is not must report the first diverging draw and its
+  cause; the user decides. Aggregate statistics are not enough here: final
+  size and peak can agree while quarantine person-days differ.
+- A **new random-number scheme** (e.g., common random numbers per agent and
+  timer, as in Starsim) is not part of any of these PRs.
 
-### 7.3 Tests (end-to-end, three files, one `EPIWORLD_TEST_CASE` each)
+### 7.3 Tests
 
-1. **Fixed and drawn durations.** `ModelSEIR`, no transmission, every seed in
-   Exposed on day 0, Exposed fixed at 5 days: nobody Infected before day 5,
-   everyone on day 5 (`run()`). Lognormal and gamma: over `run_multiple()`,
-   the time in Exposed (from the daily transitions) has the parameters' mean
-   and sd within tolerance.
-2. **Shared and dropped timers.** `ModelSEIRQuarantine` with a fixed latent
-   period: quarantined exposed agents become infected on the same day as the
-   others; an agent recovered by an intervention never progresses; a fixed
-   quarantine releases exactly `Quarantine period` days after entry; an agent
-   that becomes infected in quarantine leaves on its disease timer, not on the
-   quarantine one.
-3. **Branching and tools.** A two-outcome drawn timer sends the expected share
-   to each outcome (`run_multiple()`); a tool with a parameter factor on a
-   duration shortens it for holders only.
+End-to-end, one `EPIWORLD_TEST_CASE` per file. Deterministic cases assert
+exact histories: agent states by day, virus presence and counts, tools, the
+transition matrix, release days, hospitalization records.
+
+**T1, lifecycle (deterministic, `run()`):**
+- a fixed deadline releases exactly `period` days after entry, with queuing
+  on and no infectious neighbors; a 1.4-day deadline releases after 2 updates;
+  a negative one never;
+- a state-0 timer (all agents baseline, no virus) fires on its day, again
+  after `reset()` in a second run;
+- same-day A -> B -> A keeps A's end day; a same-day recovery and reinfection
+  gets new infection timers; `restart_timer` extends a quarantine without a
+  state change;
+- repeated `timer_fired()` queries on one step return the same result;
+- a timer firing into a state that shares it does not fire again (spent); an
+  expired carried timer fires on entering its exit state;
+- the two chain cases of 4.3 and an order-dependent chain;
+- an `rm_virus` action clears the virus, runs the post-recovery hook, updates
+  virus counts; SIS reinfection afterwards works;
+- validation errors for each case of 4.5.
+
+**T1, distributions (`run_multiple()`, fixed seeds):** for drawn lognormal,
+gamma and fixed durations, the realized days (from the transitions,
+censored at the end of the run) match `max(1, ceil(x))` of the input
+distribution by a Kolmogorov-Smirnov-type comparison of the survival curve;
+branch frequencies of a two-outcome drawn timer match the probabilities; the
+joint laws of `competing` and `exclusive` hazards match their formulas
+(e.g., 0.5 and 0.5: 1/3 each vs 0 / 0.5 / 0.5); clone independence and
+serial vs parallel equality (4.8).
+
+**T2b, measles boundaries (deterministic):** a quarantined latent agent whose
+period and quarantine end the same day goes to Prodromal; an isolated agent
+recovering on its isolation deadline goes to Recovered; a mid-quarantine
+change of "Quarantine period" and a risk reclassification change the release
+day; PEP effective and ineffective paths.
+
+**T3, factors:** baseline-vaccinated seeds draw with the factor; vaccination
+after entry does not change a drawn duration but changes a hazard; a factor
+for one lineage leaves another lineage's agents alone; stacked factors
+multiply; an invalid scaled probability is an error.
 
 ### 7.4 Benchmarks
 
 CPU time, interleaved, in the devcontainer (`AGENTS.md`): SEIR at 1e5 and 1e6
-agents, hazard defaults vs today (T1 overhead: the hook in `events_run()`),
-and drawn vs hazard latent periods.
+agents, before and after T1 (the hook in `events_run()`, the initialization
+pass, the decision cache), and drawn vs hazard latent periods.
 
 ---
 
@@ -472,20 +668,19 @@ them rewrites each update function once and keeps 3d's acceptance (measles
 draw for draw) a check of layers alone.
 
 **Order.** Model consolidation -> **T1** (can run in parallel with 3c-2) ->
-**T2a** -> 3d -> **T2b** -> **T3** (with Phase 4, which also gives tools new
-targets: layer targets and parameter factors should be designed together).
-T1 adds API without breaking any; it could go to `master` instead (Q9).
+**T2a** -> 3d -> **T2b** -> **T3** (with Phase 4, which also gives tools
+layer targets: both kinds of targets should be designed together). T1 breaks
+no API; it could go to `master` instead (Q9).
 
-**Wrappers.** Each PR is ported like a phase (`contact-layers.md`, Section 6):
-epiworldR, then epiworldpy, epiworldjs, measles; lag at most one PR.
+**Wrappers.** Each PR is ported like a phase (`contact-layers.md`,
+Section 6): epiworldR, then epiworldpy, epiworldjs, measles; lag at most one.
 
-- R: `timer_drawn()`, `timer_hazard()`, `duration_lognormal()` and the
-  others return external pointers; `add_transition(model, state, timer,
-  targets)`, `set_timer()`.
-- User-defined durations and hazards written in R, Python or JS are callbacks
-  across the language boundary (risk already listed in `contact-layers.md`,
-  Section 9): not exposed until needed; the built-in ones cover the use cases
-  above.
+- R: `timer_drawn()`, `timer_hazard()`, `timer_deadline()`,
+  `duration_lognormal()` and the others return external pointers;
+  `add_transition(model, state, timer, targets, actions)`, `set_timer()`.
+- Callbacks across the language boundary (`contact-layers.md`, Section 9) are
+  not exposed until needed; parameter-based and tabulated forms cover the
+  examples above.
 - `new_state_update_transition` bindings become defunct stubs naming
   `add_transition` (T2a).
 
@@ -495,9 +690,8 @@ PR):
 1. Section 4: a short **D12. State durations** pointing to this file, with the
    settled answers to Section 9 below.
 2. Section 6: entries T1, T2a, T2b, T3 at the places given above.
-3. Section 9 (Risks): the T2b change of measles results; per-agent memory.
-4. Section 11.5 (what each phase means for the wrappers) and 11.6 (status):
-   one row per PR.
+3. Section 9 (Risks): per-agent memory; callbacks in the bindings.
+4. Sections 11.5 and 11.6: one row per PR.
 5. The consolidation's parameter table, if Q7 is accepted.
 
 ---
@@ -505,52 +699,46 @@ PR):
 ## 9. Open questions (recommendation first)
 
 - **Q1. Virus-level rates.** Keep `Virus::set_prob_recovery`, `set_incubation`,
-  `set_prob_death` as the sources of the built-in hazards (recommended: multi-
-  strain models and every wrapper use them), or move all durations to
-  model-level timers.
-- **Q2. Order within a step.** Hazards before drawn timers (recommended: a
-  state of `d` days gives `d` chances to each hazard) or the reverse.
-- **Q3. Measles simultaneous expiry** in Quarantined Latent: accept the
-  one-day detour through Quarantined Prodromal, or keep a hand-written update
-  for that state.
-- **Q4. Rule for several hazard exits.** `roulette()` (independent competing
-  events, today's default) or exclusive probabilities (`sample_from_probs`,
-  today's measles). One rule for the generic function (recommended:
-  `roulette()`; the measles change is small at their hospitalization rates,
-  to be measured in T2b).
-- **Q5. Measles hospitalization**: a branch probability of the rash timer
-  (calibrates "x% of cases hospitalized" directly; recommended if drawn timers
-  are used) or a daily hazard.
+  `set_prob_death` as the sources of the built-in hazards (recommended).
+- **Q2. Chain order.** Declaration order (recommended), or reject
+  order-dependent chains when a run starts (costly to detect in general).
+- **Q4. Default rule for several hazard outcomes**: `competing`
+  (recommended, today's default) with `exclusive` and `bernoulli` selectable.
+- **Q5. Measles hospitalization**: keep the daily hazard as the default
+  (identity); offer a drawn `rash` timer with a hospitalization probability
+  per case as an option.
 - **Q6. Slot storage**: per-agent vector vs fixed inline array (measure).
 - **Q7. Parameter names**: rename "Recovery rate" to "Infectious period" (mean
   days) in the consolidation table, so every state is set by its mean.
-- **Q8. Rounding** of drawn durations: nearest day with a minimum of 1
-  (recommended) or ceiling.
-- **Q9. Where T1 lands**: `v1-layers` (recommended, with the rest of 1.0.0) or
-  `master` (it breaks nothing).
-- **Q10. Re-timing drawn timers when a tool is added mid-state**: not now.
-- **Q11. Timers on tools** (IG protection, waning vaccines): out of scope; the
-  same duration objects can serve them later.
-- **Q12. `Tool::set_param_factor` vs the existing tool effects**
-  (`recovery_enhancer`, `death_reduction`). They overlap for the infected
-  state: a factor multiplies a parameter, the enhancer combines probabilities
-  (`1 - (1 - p)(1 - e)`), which is not a multiplier. Recommended: keep both in
-  1.0.0 (the enhancer feeds the built-in hazards, Q1), factors for timer
-  parameters only; revisit after T3.
+- **Q9. Where T1 lands**: `v1-layers` (recommended) or `master`.
+- **Q10. Rescaling a drawn timer when a tool is added or removed mid-state**:
+  deferred.
+- **Q11. Timers on tools** (IG protection, waning vaccines): out of scope.
+- **Q12. `set_param_factor` vs the existing tool effects**
+  (`recovery_enhancer`, `death_reduction`): keep both in 1.0.0; factors for
+  timer parameters only; revisit after T3.
+- **Q13. Agent-dependent values in the wrappers**: a tabulated form (a value
+  per group of an agent attribute) before general callbacks.
+- **Q14. Prevalent seeds** (elapsed age or a conditional remaining duration):
+  deferred; seeds start at age 0 (4.4).
+
+(Q3 and Q8 of revision 1 are settled: the chain resolves simultaneous expiry
+as today, and discretization is `max(1, ceil(x))`.)
 
 ---
 
 ## 10. Risks
 
-- **Random stream changes** in T2b (measles), and in T2a if a draw rule is not
-  reproduced exactly.
-- **Same-day churn** (Section 4.3): a missing revive would redraw timers when
-  global events change states mid-step; test it (A -> B -> A in one step keeps
-  A's end day).
+- **Identity in T2a/T2b** depends on reproducing each legacy draw in order;
+  the decision cache and chain must not add or reorder draws.
+- **Lifecycle bugs** (missed initialization, queue imbalance, revive across
+  infections) leak between replicates or freeze agents; the T1 deterministic
+  tests target each.
 - **Memory** at 1e6+ agents if slots are inline (Q6).
 - **Callbacks in the bindings** (Section 8).
 - **Semantics users may not expect:** a drawn timer ignores later parameter
-  changes and later tools; documented in the vignette that introduces timers.
+  changes and later tools, and the realized mean of a drawn duration is above
+  its input mean (4.5); both documented in the vignette that introduces timers.
 
 ---
 
@@ -559,30 +747,31 @@ PR):
 Check the facts in Section 2 against `origin/v1-layers` (`1ab03e2`):
 
 ```sh
-git show 1ab03e2:include/epiworld/model-meat.hpp | sed -n 349,470p        # events_run, state_last_changed
-git show 1ab03e2:include/epiworld/agent-events-meat.hpp | sed -n 1,25p    # per-infection Virus copy
+git show 1ab03e2:include/epiworld/model-meat.hpp | sed -n 349,470p        # events_run
+git show 1ab03e2:include/epiworld/model-meat.hpp | sed -n 1690,1740p      # update_state, queue filter
+git show 1ab03e2:include/epiworld/model-meat.hpp | sed -n 1890,1960p      # reset order: dist_entities, dist_virus, dist_tools
+git show 1ab03e2:include/epiworld/agent-meat.hpp | sed -n 440,456p        # Agent::reset sets state 0 directly
+git show 1ab03e2:include/epiworld/agent-events-meat.hpp | sed -n 1,131p   # add/rm virus events
 git show 1ab03e2:include/epiworld/agent-meat-state.hpp | sed -n 30,190p   # new_state_update_transition, default_update_exposed
 git show 1ab03e2:include/epiworld/misc.hpp | sed -n 120,180p              # roulette
 git show 1ab03e2:include/epiworld/model-rand-meat.hpp | sed -n 265,285p   # sample_from_probs
-git show 1ab03e2:include/measles/measlesmixing.hpp | sed -n 330,600p      # measles update functions, day_flagged, day_rash_onset
-git show 1ab03e2:include/measles/immunoglobulin-meat.hpp | sed -n 70,100p # IG removal time
-git grep -n -E 'set_prob_recovery|set_incubation' 1ab03e2 -- include/     # users of the virus rate setters
+git show 1ab03e2:include/measles/measlesmixing.hpp | sed -n 330,660p      # measles updates, day_flagged, day_rash_onset readers
+git show 1ab03e2:include/measles/measlesmixingriskquarantine.hpp | sed -n 250,275p  # live risk period
+git grep -n 'new_state_update_transition' 1ab03e2 -- include tests examples
 ```
 
 Questions worth a reviewer's time:
 
-1. Does the keep/start/drop rule (4.3) give the right answer for every
-   measles path in 5.4, including PEP (4.7) and the isolation anchor on rash
-   onset (a carried timer)?
-2. Is there a path into a timed state that bypasses `events_run()` (and so
-   would start no timer)?
-3. Can the generated update function reproduce each current model's draws
-   (7.2)? Which cannot, and is the difference only in the stream or also in
-   distribution?
+1. Does the lifecycle (4.4) give the right answer on every measles path in
+   5.4, including PEP (4.10) and the carried isolation timer?
+2. Is there a path into a timed state that the initialization pass and the
+   `events_run()` hook both miss?
+3. Can each legacy update function be expressed with its rule and the chain,
+   consuming the same draws in the same order (7.2)? Which cannot?
 4. Is anything here redundant with `contact-layers.md` (Phase 4 participation,
    layer-targeted tools), or could fewer building blocks do the same?
-5. Do the timing rules (4.3) match the current release rule
-   `Quarantine period <= today - day_flagged` to the day?
+5. Is the queue contribution (4.6) balanced on every path (spent, revived,
+   restarted, dropped by `rm_virus`)?
 
 ---
 
@@ -592,8 +781,42 @@ Questions worth a reviewer's time:
   acute respiratory viral infections: a systematic review. *Lancet Infect
   Dis* 9(5):291-300. Measles: median 12.5 days, dispersion 1.23 (cited from
   memory; check before relying on it).
-- Covasim's "prognoses" (outcome drawn at infection, then durations per
-  outcome) is the model for the branching drawn timer (from memory).
-- `contact-layers.md` on `v1-layers`: point 17 (model parameters as the single
-  source of truth), Section 6 (phases, wrapper ports), Section 9 (risks),
-  Section 11 (runbook, identity harness).
+- Covasim **3.1.6**, `People.infect()` and `check_quar()`
+  (<https://github.com/starsimhub/covasim/blob/v3.1.6/covasim/people.py>):
+  branches and dates sampled at infection; quarantine tracked separately,
+  repeated orders extend its end. Describes that version only.
+- Starsim distribution parameters and time conversion
+  (<https://docs.starsim.org/user_guide/basics_parameters.html>,
+  <https://docs.starsim.org/api/distributions.html>) and common random numbers
+  (<https://docs.starsim.org/user_guide/advanced_random.html>).
+- EMOD `Infection.cpp` at `01f8b6f`
+  (<https://github.com/EMOD-Hub/EMOD/blob/01f8b6f20522ede55da11c208e24ef5c5207bb38/Eradication/Infection.cpp>):
+  sampled incubation and infectious periods with mortality checks during or
+  at the end of infection.
+- `contact-layers.md` on `v1-layers`: point 17, Sections 6, 9 and 11.
+
+---
+
+## 13. Review of revision 1 (#330) and what changed
+
+| Comment | Severity | Change |
+|---|---|---|
+| Transition actions, not only targets (`rm_virus`, hooks, hospitalization records) | P1 | Actions per outcome, `Virus::POST`/`REMOVED` targets, `on_fire` hook, committed through existing events (4.2, 4.3); tests on virus counts, hooks, SIS reinfection (7.3) |
+| Uninfected timed agents skipped by the queue | P1 | Timer-owned queue membership (4.6); §3 item 5 qualified; queued tests with no infectious neighbors (7.3) |
+| Baseline state never gets an event | P1 | Initialization pass after `dist_tools()`, including state 0 (4.4); state-0 and second-run tests |
+| Seeds drawn before baseline vaccines | P1 | Pending slots materialized by the initialization pass, after `dist_tools()`; no draws for hazard-only models, so today's stream is kept (4.4, 4.7); T3 tests |
+| Joint hazard semantics; samplers are different laws | P2 | Three named rules with their laws and legacy stream use (4.1); decision evaluated jointly per agent and step (4.3); identity per legacy rule (7.2) |
+| Simultaneous release and progression | P2 | Chain resolution, reproducing both measles cases (4.3); deterministic boundary tests (7.3) |
+| Live quarantine policy and risk level | P2 | `timer::deadline` reads its value every step, with an agent function for risk (4.1, 4.9); tests of mid-quarantine changes |
+| Resuming vs a new episode | P2 | Infection scope; revive only for state-scoped slots; `restart_timer`, `cancel_timer` (4.4) |
+| `timer_fired` observes, samples or consumes | P2 | Cached decision per agent and step; spent status; expired carried timers (4.3, 4.4); tests |
+| Discretization and domain | P2 | `max(1, ceil(x))` matching today's elapsed-time rule; mean/sd are the continuous input; sentinels and errors (4.5); survival-curve tests |
+| Factors vs lineage targets; invalid scaled probabilities | P2 | Lineage check as in the mixers; errors, not clamps (4.7); T3 tests |
+| Summary: agent-dependent branch probabilities, multi-outcome hazard callbacks | -- | Every probability and duration takes a parameter or an `(agent, model)` function (4.1); tabulated form for wrappers (Q13) |
+| Summary: `set_timer` contract | -- | By name, same outcome count, between runs only, no slot migration (4.8) |
+| Summary: identity across copies and threads | -- | Immutable shared definitions; clone and serial/parallel tests (4.8) |
+| Summary: prevalent seeds | -- | Explicit assumption (age 0) and deferral (4.4, Q14) |
+| Summary: tracing reads `day_rash_onset` | -- | It stays as history (1.2, 4.9) |
+| Summary: factor on mean vs sd | -- | A factor scales the drawn value (CV kept), not the sd parameter, not an already-drawn duration (4.7) |
+| Summary: acceptance beyond aggregates; no new RNG scheme | -- | Identity per legacy rule, exact histories, survival-curve tests (7.2, 7.3) |
+| Summary: pin Covasim version | -- | 3.1.6 pinned; Starsim and EMOD added (12) |
