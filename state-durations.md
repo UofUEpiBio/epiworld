@@ -302,6 +302,28 @@ Latent -> Prodromal; isolation first: -> Rash -> Recovered). A model whose
 chains depend on the order must say which order it wants by declaration
 order; the T1 tests cover an order-dependent example.
 
+**Derived moves are shown, not hidden.** A chained move (Quarantined Latent ->
+Prodromal) appears in no `add_transition` row, so the core lists it. When a
+run starts, the model computes, for every state and every set of its timers
+that can fire together, the final state the chain reaches. `Model::print()`
+shows these derived moves under the declared ones, and
+`Model::get_transitions()` returns both (declared and derived, with the timers
+involved), so the bindings and the tests can read them:
+
+```
+Transitions
+  Quarantined Latent --[latent]--------------> Quarantined Prodromal
+  Quarantined Latent --[quarantine]----------> Latent
+  Quarantined Latent --[latent + quarantine]-> Prodromal          (derived)
+  Isolated           --[rash: recover]-------> Isolated Recovered
+  Isolated           --[isolation]-----------> Rash
+  Isolated           --[rash: recover + isolation]-> Recovered    (derived)
+```
+
+A derived move that depends on the chain order is flagged in that listing
+(both orders are computed when the run starts; only the sets of timers a state
+actually has are enumerated, which is a handful per state).
+
 **Order of drawn timers vs hazards.** Hazards are evaluated on every step the
 timer is active, including the step a drawn timer of the same state ends, so a
 state lasting `d` days offers `d` daily chances to each hazard. If both fire,
@@ -557,6 +579,29 @@ the rash decision today, and the destination depends on it. It reads the rash
 decision through `timer_fired()` and commits it itself. The two same-day
 boundary cases resolve as today through the chain (4.3).
 
+Quarantined Latent has two declared exits, but three possible moves; the
+third comes from the chain. Every case on one step, against today's
+`_update_quarantine_latent`:
+
+| `latent` ends | `quarantine` ends | Proposed | Today |
+|---|---|---|---|
+| no | no | stays | stays |
+| no | yes | -> Latent (declared) | `else if (unquarantine)` -> LATENT |
+| yes | no | -> Quarantined Prodromal (declared) | -> QUARANTINED_PRODROMAL |
+| yes | yes | -> Quarantined Prodromal -> **Prodromal** (derived, one recorded change) | `unquarantine ? PRODROMAL : ...` -> PRODROMAL |
+
+Isolated likewise, against today's `_update_isolated`:
+
+| `rash` (recover) ends | `isolation` ends | Proposed | Today |
+|---|---|---|---|
+| no | no | stays | stays |
+| no | yes | -> Rash (declared) | `else if (unisolate)` -> RASH |
+| yes | no | -> Isolated Recovered (declared) | -> ISOLATED_RECOVERED |
+| yes | yes | -> Isolated Recovered -> **Recovered** (derived) | `unisolate ? RECOVERED : ...` -> RECOVERED |
+
+(Hospitalization from Isolated is a declared exit of `rash` and chains with
+nothing: Hospitalized has no `isolation` exit.)
+
 With the defaults above, no difference from today is intended: T2b must
 reach draw-for-draw identity for each measles model, or report the exact
 cause (7.2). Drawn latent and prodromal periods, and a hospitalization
@@ -575,6 +620,7 @@ defaults.
 | `hazard_rule::bernoulli / competing / exclusive` | timer |
 | `duration::fixed`, `geometric`, `lognormal`, `gamma`, function | duration |
 | `Model::add_transition(state, timer, targets, actions)`, `add_timer(state, timer)`, `set_timer(name, timer)` | model |
+| `Model::get_transitions()` (declared and derived moves); `Model::print()` lists them | model |
 | `action::move`, `action::rm_virus`, `on_fire` hook; targets `Virus::POST`, `Virus::REMOVED` | transition |
 | `Agent::timer_fired(model, name)`, `restart_timer`, `cancel_timer`, `get_timer_start`, `get_timer_end`, `set_timer_end` | agent |
 | `Tool::set_param_factor(param, factor_param)` | tool |
@@ -628,6 +674,8 @@ transition matrix, release days, hospitalization records.
 - a timer firing into a state that shares it does not fire again (spent); an
   expired carried timer fires on entering its exit state;
 - the two chain cases of 4.3 and an order-dependent chain;
+  `get_transitions()` lists the two derived moves of 5.4 and flags the
+  order-dependent one;
 - an `rm_virus` action clears the virus, runs the post-recovery hook, updates
   virus counts; SIS reinfection afterwards works;
 - validation errors for each case of 4.5.
@@ -702,6 +750,10 @@ PR):
   `set_prob_death` as the sources of the built-in hazards (recommended).
 - **Q2. Chain order.** Declaration order (recommended), or reject
   order-dependent chains when a run starts (costly to detect in general).
+  Explicit joint rows (`add_transition(state, {timer_a, timer_b}, target)`)
+  were considered and not chosen: every pair that can end together would need
+  one, and a forgotten pair would fall back silently. The derived moves are
+  printed instead (4.3).
 - **Q4. Default rule for several hazard outcomes**: `competing`
   (recommended, today's default) with `exclusive` and `bernoulli` selectable.
 - **Q5. Measles hospitalization**: keep the daily hazard as the default
