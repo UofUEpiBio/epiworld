@@ -363,7 +363,7 @@ reverse: with three timers, two orders can agree while a third differs
   different hooks, or the same hooks in another order).
 
 Cost: a state with `k` timers with exits has `sum over s of C(k, s) s!`
-orders (5 for `k = 2`, 16 for 3, 65 for 4, 326 for 5). The check runs up to
+orders, `s` from 1 to `k` (4 for `k = 2`, 15 for 3, 64 for 4, 325 for 5). The check runs up to
 `k = 5`; a state with more is listed as `order unchecked`. Measles has at most
 two per state.
 
