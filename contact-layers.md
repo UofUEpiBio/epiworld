@@ -1362,7 +1362,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-27).
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
 | Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only) |
 | `master` -> `v1-layers` | #328 merged (#327, the `ModelSEIR` recovery fix) | | | | |
-| Model consolidation | in review (plan: #326 merged) | | | | |
+| Model consolidation | #331 (plan: #326 merged) | | | | |
 | Phase 3c-2 (group history) | not started | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
