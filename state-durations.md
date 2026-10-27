@@ -362,10 +362,10 @@ reverse: with three timers, two orders can agree while a third differs
   `on_fire` hooks (`order-dependent actions`; equal targets can still run
   different hooks, or the same hooks in another order).
 
-Cost: a state with `k` timers with exits has `sum over s of C(k, s) s!`
-orders, `s` from 1 to `k` (4 for `k = 2`, 15 for 3, 64 for 4, 325 for 5). The check runs up to
-`k = 5`; a state with more is listed as `order unchecked`. Measles has at most
-two per state.
+Cost: a state with `k` timers with exits has `sum of C(k, s) s!` orders for
+`s` from 1 to `k` (4 for `k = 2`, 15 for 3, 64 for 4, 325 for 5). The check
+runs up to `k = 5`; a state with more is listed as `order unchecked`. Measles
+has at most two per state.
 
 **Order of drawn timers vs hazards.** Hazards are evaluated on every step the
 timer is active, including the step a drawn timer of the same state ends, so a
