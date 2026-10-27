@@ -855,7 +855,10 @@ public:
      * nobody, in any layer; they can still be met (in a mixing layer, they take
      * their share of each agent's contacts).
      * @param states State ids; an empty list makes every state infectious.
-     * @throws std::range_error (at `reset()`) for a state out of range.
+     * Called during a run (e.g., from a global event), it applies from the
+     * next step.
+     * @throws std::range_error for a state out of range (at `reset()` if
+     * called before the first one).
      */
     Model<TSeq> & set_infectious_states(std::vector< int > states);
 

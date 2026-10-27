@@ -31,6 +31,11 @@ template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::set_infectious_states(std::vector< int > states)
 {
     infectious_states = std::move(states);
+
+    // After a reset (e.g., from a global event), from the next step on
+    if (state_index_ready)
+        state_masks_build();
+
     return *this;
 }
 
@@ -38,6 +43,9 @@ template<typename TSeq>
 inline void Model<TSeq>::set_excluded_states(std::vector< int > states)
 {
     excluded_states = std::move(states);
+
+    if (state_index_ready)
+        state_masks_build();
 }
 
 template<typename TSeq>

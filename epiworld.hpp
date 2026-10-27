@@ -11624,7 +11624,10 @@ public:
      * nobody, in any layer; they can still be met (in a mixing layer, they take
      * their share of each agent's contacts).
      * @param states State ids; an empty list makes every state infectious.
-     * @throws std::range_error (at `reset()`) for a state out of range.
+     * Called during a run (e.g., from a global event), it applies from the
+     * next step.
+     * @throws std::range_error for a state out of range (at `reset()` if
+     * called before the first one).
      */
     Model<TSeq> & set_infectious_states(std::vector< int > states);
 
@@ -20017,6 +20020,11 @@ template<typename TSeq>
 inline Model<TSeq> & Model<TSeq>::set_infectious_states(std::vector< int > states)
 {
     infectious_states = std::move(states);
+
+    // After a reset (e.g., from a global event), from the next step on
+    if (state_index_ready)
+        state_masks_build();
+
     return *this;
 }
 
@@ -20024,6 +20032,9 @@ template<typename TSeq>
 inline void Model<TSeq>::set_excluded_states(std::vector< int > states)
 {
     excluded_states = std::move(states);
+
+    if (state_index_ready)
+        state_masks_build();
 }
 
 template<typename TSeq>
