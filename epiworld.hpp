@@ -8938,6 +8938,9 @@ public:
     size_t get_n_contacts(size_t agent); 
 
     size_t get_max_contacts() const;
+
+    /// Number of agents the log covers (agent ids run from 0 to this - 1).
+    size_t get_n_agents() const;
     
     /**
      * @brief Get the contact object
@@ -9062,6 +9065,11 @@ inline size_t ContactTracing::get_n_contacts(size_t agent)
 inline size_t ContactTracing::get_max_contacts() const
 {
     return max_contacts;
+}
+
+inline size_t ContactTracing::get_n_agents() const
+{
+    return n_agents;
 }
 
 inline std::pair< size_t, int> ContactTracing::get_contact(size_t agent, size_t idx)
