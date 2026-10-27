@@ -15,9 +15,6 @@ public:
     unsigned long long infected_state;
     unsigned long long infected_hospitalized_state;
 
-    // One entry per state: true for the states whose agents do not transmit
-    std::vector< bool > not_transmitting;
-
     explicit CommunityHospModel(size_t n);
 };
 
@@ -32,8 +29,8 @@ inline void update_susceptible(Agent<int> * p, Model<int> * m)
     auto hm = static_cast<CommunityHospModel*>(m);
 
     // Drawing at most one virus from the neighbors who transmit (infected
-    // agents in the hospital do not)
-    Virus<int> * virus = m->sample_virus(p, &hm->not_transmitting);
+    // agents in the hospital do not; see the constructor)
+    Virus<int> * virus = m->sample_virus(p);
 
     if (virus == nullptr)
         return;
@@ -108,8 +105,8 @@ CommunityHospModel::CommunityHospModel(size_t n) : Model<int>(n)
     this->infected_hospitalized_state = this->add_state(
         "Infected (hospitalized)", update_infected_hospitalized);
 
-    not_transmitting.resize(this->get_states().size(), false);
-    not_transmitting[this->infected_hospitalized_state] = true;
+    // Only infected agents in the community transmit
+    this->set_infectious_states({static_cast< int >(this->infected_state)});
 }
 
 int main() {

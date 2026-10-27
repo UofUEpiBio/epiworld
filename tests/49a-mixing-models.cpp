@@ -5,7 +5,9 @@ using namespace epiworld;
 // ModelSIR and ModelSEIR with a mixing layer are the models ModelSIRMixing and
 // ModelSEIRMixing were (removed in 1.0.0): the same runs, draw for draw. The
 // histories below were recorded with those models (epiworld 1ab03e2, 1,000
-// agents in two groups, seed 1912).
+// agents in two groups, seed 1912) with libstdc++. The binomial and Poisson
+// draws come from the standard library, whose algorithms differ between
+// implementations, so elsewhere the test only checks the counts add up.
 EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixing-models]") {
 
     const size_t n = 1000u;
@@ -28,6 +30,22 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
         return counts;
     };
 
+    auto check = [n](
+        const std::vector< int > & got,
+        const std::vector< int > & expected,
+        size_t n_states
+    ) {
+        #ifdef __GLIBCXX__
+        REQUIRE_THAT(got, Catch::Equals(expected));
+        #else
+        REQUIRE(got.size() == expected.size());
+        for (size_t d = 0u; d < got.size(); d += n_states)
+            REQUIRE(std::accumulate(
+                got.begin() + d, got.begin() + d + n_states, 0
+            ) == static_cast< int >(n));
+        #endif
+    };
+
     epimodels::ModelSIR<> sir("v", n, 0.02, 0.1, 1.0 / 7.0);
     add_mixing(sir);
     const std::vector< int > sir_expected = {
@@ -37,7 +55,7 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
         365, 216, 373, 411, 178, 367, 455, 140, 348, 512, 116, 330, 554,
         103, 293, 604, 88, 272, 640, 76, 242, 682
     };
-    REQUIRE_THAT(history(sir), Catch::Equals(sir_expected));
+    check(history(sir), sir_expected, 3u);
 
     epimodels::ModelSEIR<> seir("v", n, 0.02, 0.1, 3.0, 1.0 / 7.0);
     add_mixing(seir);
@@ -49,6 +67,6 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
         104, 135, 97, 605, 131, 151, 113, 566, 123, 177, 134, 515, 136,
         199, 150, 463, 142, 215, 180, 417, 148, 225, 210
     };
-    REQUIRE_THAT(history(seir), Catch::Equals(seir_expected));
+    check(history(seir), seir_expected, 4u);
 
 }
